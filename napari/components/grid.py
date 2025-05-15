@@ -1,3 +1,5 @@
+from collections.abc import Iterator
+
 import numpy as np
 
 from napari.settings._application import (
@@ -89,7 +91,7 @@ class GridCanvas(EventedModel):
         n_row = max(1, n_row)
         n_column = max(1, n_column)
 
-        return (n_row, n_column)
+        return (int(n_row), int(n_column))
 
     def position(self, index: int, nlayers: int) -> tuple[int, int]:
         """Return the position of a given linear index in grid.
@@ -120,4 +122,21 @@ class GridCanvas(EventedModel):
         adj_i = adj_i % (n_row * n_column)
         i_row = adj_i // n_column
         i_column = adj_i % n_column
-        return (i_row, i_column)
+        # convert to python int from np int
+        return (int(i_row), int(i_column))
+
+    def contents_at(
+        self, position: tuple[int, int], nlayers: int
+    ) -> tuple[int, ...]:
+        if not self.enabled:
+            return ()
+
+        return tuple(
+            i for i in range(nlayers) if self.position(i, nlayers) == position
+        )
+
+    def iter_quadrants(
+        self, nlayers: int
+    ) -> Iterator[tuple[tuple[int, int], tuple[int, ...]]]:
+        for row, col in np.ndindex(self.actual_shape(nlayers)):
+            yield (row, col), self.contents_at((row, col), nlayers)

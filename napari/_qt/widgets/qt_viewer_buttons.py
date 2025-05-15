@@ -574,7 +574,7 @@ class QtViewerButtons(QFrame):
         )
 
         spacing_help_msg = trans._(
-            'Proportional spacing between grid layers. 0 has the layers touching. Positive values will space the layers apart, and negative values will overlap the layers.'
+            'DeprecationWarning, will be deprecated in v0.6.1: This parameter has no effect in the new grid mode.'
         )
 
         # set up
@@ -699,7 +699,14 @@ class QtViewerButtons(QFrame):
         value : float
             New grid spacing value.
         """
-
+        warnings.warn(
+            trans._(
+                'Grid spacing will be deprecated in v0.6.1 and removed in v0.6.5 as it no longer has an effect with the'
+                'new grid mode.'
+            ),
+            DeprecationWarning,
+            stacklevel=2,
+        )
         self.viewer.grid.spacing = value
 
 

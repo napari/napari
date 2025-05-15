@@ -227,7 +227,6 @@ def test_changing_image_gamma(make_napari_viewer):
 @skip_on_win_ci
 @skip_local_popups
 def test_grid_mode(make_napari_viewer):
-    """Test changing gamma changes rendering."""
     viewer = make_napari_viewer(show=True)
 
     # Add images
@@ -237,9 +236,6 @@ def test_grid_mode(make_napari_viewer):
     assert not viewer.grid.enabled
     assert viewer.grid.actual_shape(6) == (1, 1)
     assert viewer.grid.stride == 1
-    translations = [layer._translate_grid for layer in viewer.layers]
-    expected_translations = np.zeros((6, 2))
-    np.testing.assert_allclose(translations, expected_translations)
 
     # check screenshot
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
@@ -251,16 +247,6 @@ def test_grid_mode(make_napari_viewer):
     assert viewer.grid.enabled
     assert viewer.grid.actual_shape(6) == (2, 3)
     assert viewer.grid.stride == 1
-    translations = [layer._translate_grid for layer in viewer.layers]
-    expected_translations = [
-        [0, 0],
-        [0, 15],
-        [0, 30],
-        [15, 0],
-        [15, 15],
-        [15, 30],
-    ]
-    np.testing.assert_allclose(translations, expected_translations[::-1])
 
     # check screenshot
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
@@ -314,9 +300,6 @@ def test_grid_mode(make_napari_viewer):
     assert not viewer.grid.enabled
     assert viewer.grid.actual_shape(6) == (1, 1)
     assert viewer.grid.stride == 1
-    translations = [layer._translate_grid for layer in viewer.layers]
-    expected_translations = np.zeros((6, 2))
-    np.testing.assert_allclose(translations, expected_translations)
 
     # check screenshot
     screenshot = viewer.screenshot(canvas_only=True, flash=False)

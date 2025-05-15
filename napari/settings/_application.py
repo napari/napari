@@ -207,7 +207,9 @@ class ApplicationSettings(EventedModel):
     grid_spacing: GridSpacing = Field(  # type: ignore [valid-type]
         default=0.0,
         title=trans._('Grid Spacing'),
-        description=trans._('Proportional spacing between grid layers.'),
+        description=trans._(
+            'DeprecationWarning, will be deprecated in v0.6.1: This parameter has no effect in the new grid mode'
+        ),
     )
 
     confirm_close_window: bool = Field(
