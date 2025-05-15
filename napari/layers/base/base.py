@@ -1527,7 +1527,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         logger.debug('Layer.refresh: %s', self)
         # If async is enabled then emit an event that the viewer should handle.
         if get_settings().experimental.async_:
-            self.events.reload(layer=self)
+            self._refresh_async(
+                data_displayed=data_displayed,
+                extent=extent,
+                force=force,
+            )
         # Otherwise, slice immediately on the calling thread.
         else:
             self._refresh_sync(
@@ -1560,6 +1564,22 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             self._update_thumbnail()
         if highlight:
             self._set_highlight(force=True)
+
+    def _refresh_async(
+        self,
+        *,
+        data_displayed: bool = False,
+        extent: bool = False,
+        force: bool = False,
+    ) -> None:
+        logger.debug('Layer._refresh_async: %s', self)
+        if not (self.visible or force):
+            return
+        if extent:
+            self._clear_extent()
+            self._clear_extent_augmented()
+        if data_displayed:
+            self.events.reload(layer=self)
 
     def world_to_data(self, position: npt.ArrayLike) -> npt.NDArray:
         """Convert from world coordinates to data coordinates.
