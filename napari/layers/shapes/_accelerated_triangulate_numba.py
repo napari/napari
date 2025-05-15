@@ -222,7 +222,7 @@ def _set_centers_and_offsets(
         Half the length of the segment between the current path vertex and the
         next path vertex (used for bevel join calculation).
     j : int
-        The current index in the ouput arrays.
+        The current index in the output arrays.
     cos_limit : float
         Miter limit which determines when to switch from a miter join to a
         bevel join, to avoid very sharp shape angles.
@@ -494,7 +494,7 @@ def _direction_vec_and_half_length(
     np.ndarray
         The array of limit of length of inner vectors in bevel joins.
         To reduce the graphical artifacts, the inner vectors are limited
-        to half of the length of the adjacent egdes in path.
+        to half of the length of the adjacent edges in path.
     """
     normals = np.empty_like(path)
     vec_len_arr = np.empty((len(path)), dtype=np.float32)

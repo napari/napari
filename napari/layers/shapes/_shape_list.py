@@ -413,7 +413,7 @@ class ShapeList:
 
          1. Some updates are triggered by events, but sometimes multiple pieces
             of data that trigger events must be set before the data can be
-            recomputed. For example changing number of dimension cause broacast
+            recomputed. For example changing number of dimension cause broadcast
             error on partially update structures.
          2. Performance. Ideally we want to update the display only once.
 

@@ -174,7 +174,7 @@ def test_widget_types_supported(
 ):
     """Test all supported widget types correctly instantiated and call processor.
 
-    The 4 parametrized `Widget`s represent the varing widget constructors and
+    The 4 parametrized `Widget`s represent the varying widget constructors and
     signatures that we want to support.
     """
     # Using the decorator as a function on the parametrized `Widget`

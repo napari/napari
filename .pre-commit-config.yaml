@@ -32,3 +32,11 @@ repos:
     exclude: .*\.py|.*\.md
   - id: mixed-line-ending
     exclude: .*\.py
+
+- repo: https://github.com/codespell-project/codespell
+  # Configuration for codespell is in pyproject.toml
+  rev: v2.4.0
+  hooks:
+  - id: codespell
+    additional_dependencies:
+    - tomli

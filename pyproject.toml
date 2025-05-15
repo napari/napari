@@ -106,7 +106,7 @@ pyside = [
 ]
 pyqt5 = [
     "PyQt5>=5.15.8",
-    "pyqt5-qt5<=5.15.2; sys_platform == 'Windows'",  # 5.15.2 is latest to build on Windows, required for `uv add` compatability as of uv 0.6.9
+    "pyqt5-qt5<=5.15.2; sys_platform == 'Windows'",  # 5.15.2 is latest to build on Windows, required for `uv add` compatibility as of uv 0.6.9
 ]
 pyqt = [
     "napari[pyqt5]"
@@ -430,7 +430,7 @@ filterwarnings = [
 markers = [
     "examples: Test of examples",
     "disable_qthread_start: Disable thread start in this Test",
-    "disable_qthread_pool_start: Disable strarting QRunnable using QThreadPool start in this Test",
+    "disable_qthread_pool_start: Disable starting QRunnable using QThreadPool start in this Test",
     "disable_qtimer_start: Disable timer start in this Test",
     "disable_qanimation_start: Disable animation start in this Test",
     "enable_console: Don't mock the IPython console (in QtConsole) in this Test",
@@ -466,7 +466,7 @@ always_false=['PYSIDE6', 'PYSIDE2', 'PYQT5']
 always_true=['PYQT6']
 
 
-# gloabl ignore error
+# global ignore error
 [[tool.mypy.overrides]]
 module = [
   '*._tests.*',
@@ -889,3 +889,12 @@ ignore_imports = [
     # TODO: remove once npe1 deprecated
     "napari._qt.qt_main_window -> napari._qt._qplugins",
 ]
+
+[tool.codespell]
+# Ref: https://github.com/codespell-project/codespell#using-a-config-file
+skip = '.git*,*.svg,*.rtf,*.rtf.tmpl,.venv,./tools/string_list.json'
+check-hidden = true
+# lines with é -- non-English
+ignore-regex = '(.*[àéç].*|^\s*"image/\S+": ".*|\biTerm\b)'
+# some variable names
+ignore-words-list = 'nd,ontop,deques'

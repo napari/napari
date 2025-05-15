@@ -1148,7 +1148,7 @@ class Window:
     ):
         """Convenience method to add a QDockWidget to the main window.
 
-        If name is not provided a generic name will be addded to avoid
+        If name is not provided a generic name will be added to avoid
         `saveState` warnings on close.
 
         Parameters
