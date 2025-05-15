@@ -2654,13 +2654,12 @@ class Shapes(Layer):
                         show_warning(
                             trans._(
                                 'Polygons must have three or more vertices. '
-                                'Lasso polygons are simplified using an '
-                                'algorithm called RDP, which may cause '
-                                'polygons smaller than the RDP epsilon '
-                                'parameter to disappear entirely. If you are '
-                                'having trouble drawing small polygons, try '
-                                'reducing the value of napari > Settings > '
-                                'Experimental > RDP epsilon.'
+                                'Lasso polygons are simplified using the '
+                                'RDP algorithm, which may cause polygons '
+                                'smaller than RDP epsilon to disappear. If  '
+                                'you face issues drawing small polygons, '
+                                'try reducing napari > Settings > '
+                                'Experimental > RDP epsilon. '
                             ),
                         )
                 if len(vertices) <= 3:
