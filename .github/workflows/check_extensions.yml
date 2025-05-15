@@ -43,5 +43,5 @@ jobs:
           body: |
             This PR is automatically created and updated by napari GitHub
             action cron to keep the file reader extension list up to date.
-          token: ${{ secrets.GHA_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           author: napari-bot <napari-bot@users.noreply.github.com>
