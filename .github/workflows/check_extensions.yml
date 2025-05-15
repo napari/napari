@@ -7,7 +7,7 @@ on:
     - cron:  '6 6 * * *' # every sunday
   pull_request:
     paths:
-      - '.github/workflows/check_extenstions.yml'
+      - '.github/workflows/check_extensions.yml'
 
 jobs:
   read_extentions:
