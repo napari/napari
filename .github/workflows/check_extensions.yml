@@ -9,6 +9,10 @@ on:
     paths:
       - '.github/workflows/check_extensions.yml'
 
+permissions:
+  pull-requests: write
+  contents: write
+
 jobs:
   read_extentions:
     name: Update Extension list
@@ -41,7 +45,3 @@ jobs:
             action cron to keep the file reader extension list up to date.
           token: ${{ secrets.GHA_TOKEN }}
           author: napari-bot <napari-bot@users.noreply.github.com>
-          # Token permissions required by the action:
-          # * pull requests: write and read
-          # * repository contents: read and write
-          # for screenshots please see https://github.com/napari/napari/pull/5777
