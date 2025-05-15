@@ -166,6 +166,7 @@ class VispyCanvas:
         self.viewer.camera.events.zoom.connect(self._on_cursor)
         self.viewer.layers.events.reordered.connect(self._reorder_layers)
         self.viewer.layers.events.removed.connect(self._remove_layer)
+        self.viewer.layers.events.connect(self._update_units)
         self.destroyed.connect(self._disconnect_theme)
 
     @property
@@ -581,8 +582,13 @@ class VispyCanvas:
 
         napari_layer.events.visible.connect(self._reorder_layers)
         self.viewer.camera.events.angles.connect(vispy_layer._on_camera_move)
-
+        self._update_units()
         self._reorder_layers()
+
+    def _update_units(self):
+        """Update the units of the canvas and all layers."""
+        for vispy_layer in self.layer_to_visual.values():
+            vispy_layer.units = self.viewer.layers.extent.units
 
     def _remove_layer(self, event: Event) -> None:
         """Upon receiving event closes the Vispy visual, deletes it and reorders the still existing layers.
