@@ -598,12 +598,8 @@ class QtViewer(QSplitter):
                 # `set_data` notifies the corresponding vispy layer of the new
                 # slice.
                 layer.events.set_data()
-                layer._refresh_sync(
-                    data_displayed=True,
-                    thumbnail=True,
-                    highlight=True,
-                    extent=True,
-                )
+                layer._update_thumbnail()
+                layer._set_highlight(force=True)
 
     def _on_active_change(self):
         """When active layer changes change keymap handler."""
