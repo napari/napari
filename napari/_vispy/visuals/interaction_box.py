@@ -1,4 +1,7 @@
+from typing import Any, ClassVar, Optional
+
 import numpy as np
+import numpy.typing as npt
 from vispy.scene.visuals import Compound, Line
 
 from napari._vispy.visuals.markers import Markers
@@ -17,7 +20,7 @@ class InteractionBox(Compound):
     #  5   9   6
     #  |       |
     #  1---7---3
-    _edges = np.array(
+    _edges: ClassVar[npt.NDArray[Any]] = np.array(
         [
             [0, 1],
             [1, 3],
@@ -27,7 +30,7 @@ class InteractionBox(Compound):
         ]
     )
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         self._marker_color = (1, 1, 1, 1)
         self._marker_size = 10
         self._highlight_width = 2
@@ -38,14 +41,20 @@ class InteractionBox(Compound):
         super().__init__([Line(), Markers(antialias=0)], *args, **kwargs)
 
     @property
-    def line(self):
+    def line(self) -> Line:
         return self._subvisuals[0]
 
     @property
-    def markers(self):
+    def markers(self) -> Markers:
         return self._subvisuals[1]
 
-    def set_data(self, top_left, bot_right, handles=True, selected=None):
+    def set_data(
+        self,
+        top_left: tuple[float, float],
+        bot_right: tuple[float, float],
+        handles: bool = True,
+        selected: Optional[int] = None,
+    ) -> None:
         vertices = generate_interaction_box_vertices(
             top_left, bot_right, handles=handles
         )
