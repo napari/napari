@@ -195,6 +195,7 @@ class QtViewerButtons(QFrame):
 
         rdb = QtViewerPushButton('roll', action='napari:roll_axes')
         self.rollDimsButton = rdb
+        rdb.setProperty('is3d', self.viewer.dims.ndisplay == 3)
         rdb.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         rdb.customContextMenuRequested.connect(self._open_roll_popup)
 
@@ -234,6 +235,8 @@ class QtViewerButtons(QFrame):
 
         @self.viewer.dims.events.ndisplay.connect
         def _set_ndisplay_mode_checkstate(event):
+            rdb.setProperty('is3d', event.value == 3)
+            rdb.style().polish(rdb)
             ndb.setChecked(event.value == 3)
 
         layout = QHBoxLayout()

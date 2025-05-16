@@ -1,4 +1,3 @@
-
 /* ----------------- Buttons -------------------- */
 
 QtViewerPushButton{
@@ -34,8 +33,12 @@ QtViewerPushButton[mode="console"] {
   image: url("theme_{{ id }}:/console.svg");
 }
 
-QtViewerPushButton[mode="roll"] {
-  image: url("theme_{{ id }}:/roll.svg");
+QtViewerPushButton[mode="roll"][is3d="false"] {
+  image: url("theme_{{ id }}:/roll-2D.svg");
+}
+
+QtViewerPushButton[mode="roll"][is3d="true"] {
+  image: url("theme_{{ id }}:/roll-3D.svg");
 }
 
 QtViewerPushButton[mode="transpose"] {
