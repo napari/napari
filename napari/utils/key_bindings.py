@@ -32,7 +32,6 @@ into two statements with the yield keyword::
 To create a keymap that will block others, ``bind_key(..., ...)```.
 """
 
-import contextlib
 import inspect
 import time
 from collections import ChainMap
@@ -398,7 +397,7 @@ class KeymapHandler:
 
         return active_keymap_final
 
-    def press_key(self, key_bind):
+    def press_key(self, key_bind: KeyBindingLike) -> bool:
         """Simulate a key press to activate a keybinding.
 
         Parameters
@@ -413,10 +412,10 @@ class KeymapHandler:
         elif Ellipsis in keymap:  # catch-all
             func = keymap[...]
         else:
-            return  # no keybinding found
+            return False
 
         if func is Ellipsis:  # blocker
-            return
+            return False
         if not callable(func):
             raise TypeError(
                 trans._(
@@ -442,8 +441,9 @@ class KeymapHandler:
                 generator_or_callback,
                 time.time(),
             )
+        return True
 
-    def release_key(self, key_bind):
+    def release_key(self, key_bind: KeyBindingLike) -> bool:
         """Simulate a key release for a keybinding.
 
         Parameters
@@ -455,7 +455,7 @@ class KeymapHandler:
 
         key_bind = coerce_keybinding(key_bind)
         key = str(key_bind.parts[-1].key)
-        with contextlib.suppress(KeyError, StopIteration):
+        try:
             val = self._key_release_generators[key]
             # val could be callback function with time to check
             # if it should be called or generator that need to make
@@ -469,6 +469,11 @@ class KeymapHandler:
                     callback()
             else:
                 next(val)  # call function
+        except KeyError:
+            return False
+        except StopIteration:
+            pass
+        return True
 
     def on_key_press(self, event):
         """Called whenever key pressed in canvas.
@@ -504,7 +509,7 @@ class KeymapHandler:
             # one of the navigation keys (helps with scrolling).
             return
 
-        self.press_key(kb)
+        event.handled = self.press_key(kb)
 
     def on_key_release(self, event):
         """Called whenever key released in canvas.
@@ -520,4 +525,4 @@ class KeymapHandler:
         ):
             return
         kb = _vispy2appmodel(event)
-        self.release_key(kb)
+        event.handled = self.release_key(kb)
