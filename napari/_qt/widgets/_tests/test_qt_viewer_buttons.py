@@ -39,16 +39,22 @@ def test_roll_dims_button_popup(qt_viewer_buttons, qtbot):
     # get viewer model and buttons
     viewer, viewer_buttons = qt_viewer_buttons
     assert viewer_buttons.rollDimsButton
+    assert viewer.dims.ndisplay == 2
+    assert viewer_buttons.rollDimsButton.property('is3d') is False
 
     # make dims order settings popup
     viewer_buttons.rollDimsButton.customContextMenuRequested.emit(QPoint())
-
     # check that the popup widget is available
     dims_sorter_popup = None
     for widget in QApplication.topLevelWidgets():
         if isinstance(widget, QtPopup):
             dims_sorter_popup = widget
     assert dims_sorter_popup
+
+    # Check that the property changes, and thereby the icon will switch
+    viewer.dims.ndisplay = 3
+    assert viewer.dims.ndisplay == 3
+    assert viewer_buttons.rollDimsButton.property('is3d') is True
 
 
 def test_grid_view_button_popup(qt_viewer_buttons, qtbot):
