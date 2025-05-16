@@ -18,6 +18,12 @@ def test_dims_sorter(qtbot):
     assert tuple(dim_sorter.axis_list) == ('x', 'y')
     assert tuple(dims.order) == (1, 0)
 
+    dims.order = (0, 1)
+    assert tuple(dim_sorter.axis_list) == (0, 1)
+    dim_sorter.axis_list.move(1, 0)
+    assert tuple(dim_sorter.axis_list) == (1, 0)
+    assert tuple(dims.order) == (1, 0)
+
 
 def test_dims_sorter_callback_management(qtbot):
     dims = Dims()
@@ -28,6 +34,11 @@ def test_dims_sorter_callback_management(qtbot):
 
     # assert callback hook up
     assert len(dims.events.order.callbacks) == base_callback_count + 1
+    assert len(dim_sorter.axis_list.events.reordered.callbacks) == 2
+
+    # Change dims order to trigger axis_list recreation
+    # then test that a fresh callback is added
+    dims.order = (1, 0)
     assert len(dim_sorter.axis_list.events.reordered.callbacks) == 2
 
 

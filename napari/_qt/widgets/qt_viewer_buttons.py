@@ -534,10 +534,6 @@ class QtViewerButtons(QFrame):
 
     def _open_roll_popup(self):
         """Open a grid popup to manually order the dimensions"""
-        if self.viewer.dims.ndisplay != 2:
-            return
-
-        # popup
         pop = QtPopup(self)
 
         # dims sorter widget
