@@ -60,7 +60,9 @@ class QtDimsSorter(QWidget):
         widget_tooltip.setObjectName('help_label')
         widget_tooltip.setToolTip(
             trans._(
-                'Drag dimensions to reorder, click lock icon to lock dimension in place.'
+                'Drag dimensions to reorder.'
+                '\nDouble-click to edit axis label.'
+                '\nClick lock icon to lock dimension in place.'
             )
         )
 
