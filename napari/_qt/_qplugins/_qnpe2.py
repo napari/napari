@@ -361,6 +361,8 @@ def _build_widgets_submenu_actions(
     mf: PluginManifest,
 ) -> tuple[list[tuple[str, SubmenuItem]], list[Action]]:
     """Build widget submenu and actions for a single npe2 plugin manifest."""
+    from napari._app_model.constants._menus import is_menu_contributable
+
     # If no widgets, return
     if not mf.contributions.widgets:
         return [], []
@@ -407,6 +409,7 @@ def _build_widgets_submenu_actions(
             ._command_menu_map[mf.name][widget.command]
             .items()
             for menu_item in menu_items
+            if is_menu_contributable(menu_key)
         ] + [
             {
                 'id': default_submenu_id,
