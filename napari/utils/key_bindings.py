@@ -505,6 +505,7 @@ class KeymapHandler:
             return
 
         self.press_key(kb)
+        event.handled = True
 
     def on_key_release(self, event):
         """Called whenever key released in canvas.
@@ -521,3 +522,5 @@ class KeymapHandler:
             return
         kb = _vispy2appmodel(event)
         self.release_key(kb)
+
+        event.handled = True
