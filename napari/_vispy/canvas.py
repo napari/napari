@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 from weakref import WeakSet
 
 import numpy as np
+from qtpy.QtCore import QEvent, QObject
 from superqt.utils import qthrottled
 from vispy.scene import SceneCanvas as SceneCanvas_, Widget
 
@@ -42,6 +43,16 @@ if TYPE_CHECKING:
     from napari.layers import Layer
     from napari.utils.events.event import Event
     from napari.utils.key_bindings import KeymapHandler
+
+
+class CanvasKeyEventFilter(QObject):
+    """Event filter to ignore key events in the canvas and let them bubble up to parent widgets."""
+
+    def eventFilter(self, obj, event):
+        if event.type() in (QEvent.KeyPress, QEvent.KeyRelease):
+            event.ignore()
+            return True
+        return False
 
 
 class NapariSceneCanvas(SceneCanvas_):
@@ -112,6 +123,9 @@ class VispyCanvas:
         self._scene_canvas = NapariSceneCanvas(
             *args, keys=None, vsync=True, **kwargs
         )
+        self._key_filter = CanvasKeyEventFilter()
+        self._scene_canvas.native.installEventFilter(self._key_filter)
+
         self.view = self.central_widget.add_view(border_width=0)
         self.camera = VispyCamera(
             self.view, self.viewer.camera, self.viewer.dims
