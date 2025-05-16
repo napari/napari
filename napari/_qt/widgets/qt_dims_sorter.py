@@ -85,3 +85,6 @@ class QtDimsSorter(QWidget):
         # Regenerate AxisList upon Dims side order changes for easy cleanup
         self.axis_list = AxisList.from_dims(self.dims)
         self.view.setRoot(self.axis_list)
+        self.axis_list.events.reordered.connect(
+            self._axis_list_reorder_callback,
+        )
