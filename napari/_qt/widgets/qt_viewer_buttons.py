@@ -84,6 +84,11 @@ class QtLayerButtons(QFrame):
             'delete_button', action='napari:delete_selected_layers'
         )
 
+        self.linkLayersButton = QtViewerPushButton(
+            'link_layers_button',
+            action='napari:link_selected_layers',
+        )
+
         self.newPointsButton = QtViewerPushButton(
             'new_points',
             trans._('New points layer'),
@@ -107,6 +112,7 @@ class QtLayerButtons(QFrame):
         layout.addWidget(self.newShapesButton)
         layout.addWidget(self.newLabelsButton)
         layout.addStretch(0)
+        layout.addWidget(self.linkLayersButton)
         layout.addWidget(self.deleteButton)
         self.setLayout(layout)
 
