@@ -203,9 +203,11 @@ def test_toggle_menubar(make_napari_viewer, qtbot):
     app.commands.execute_command(action_id)
     assert not viewer.window._qt_window.menuBar().isVisible()
     assert viewer.window._qt_window._toggle_menubar_visibility
-
+    viewer.window._qt_window.move(0, 0)
+    qtbot.waitUntil(viewer.window._qt_window.isVisible)
     # Check menubar gets visible via mouse hovering over the window top area
-    qtbot.mouseMove(viewer.window._qt_window, pos=QPoint(10, 10))
+    qtbot.mouseMove(viewer.window._qt_window)
+    qtbot.wait(50)
     qtbot.mouseMove(viewer.window._qt_window, pos=QPoint(15, 15))
     qtbot.waitUntil(viewer.window._qt_window.menuBar().isVisible)
 

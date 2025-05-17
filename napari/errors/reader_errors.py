@@ -71,10 +71,14 @@ class ReaderPluginError(ValueError):
         message: str,
         reader_plugin: str,
         paths: list[PathLike],
+        original_error: Exception | None = None,
         *args: object,
     ) -> None:
+        if original_error:
+            message = f'{message}\n\nScroll up to see the full stack trace.\n\nOriginal error from plugin "{reader_plugin}":\n{original_error.__class__.__name__}: {original_error}'
         super().__init__(message, *args)
         self.reader_plugin = reader_plugin
+        self.original_error = original_error
         self.paths = paths
 
 
