@@ -6,6 +6,7 @@ import numpy as np
 from app_model.types import KeyCode, KeyMod
 
 from napari.components.viewer_model import ViewerModel
+from napari.layers.utils._link_layers import layer_is_linked
 from napari.utils.action_manager import action_manager
 from napari.utils.notifications import show_info
 from napari.utils.theme import available_themes, get_system_theme
@@ -98,6 +99,18 @@ def reset_view(viewer: Viewer):
 @register_viewer_action(trans._('Delete selected layers'))
 def delete_selected_layers(viewer: Viewer):
     viewer.layers.remove_selected()
+
+
+@register_viewer_action(trans._('Link/Unlink selected layers'))
+def link_selected_layers(viewer: Viewer):
+    """Link/Unlink selected layers"""
+    layers = viewer.layers.selection
+    if len(layers) < 2:
+        return
+    if all(layer_is_linked(layer) for layer in layers):
+        viewer.layers.unlink_layers(layers)
+    else:
+        viewer.layers.link_layers(layers)
 
 
 @register_viewer_action(
