@@ -935,10 +935,15 @@ def _move_active_element_under_cursor(
             vertices = layer._data_view.shapes[index].data
             if (
                 layer._mode == Mode.DIRECT
-                and vertex == len(vertices) - 1
+                and vertex in {0, len(vertices) - 1}
                 and np.array_equal(vertices[0], vertices[-1])
             ):
-                vertices[0] = coordinates
+                # polygon added with same point at start and end
+                if vertex == 0:
+                    # If first vertex is moved, move last vertex too
+                    vertices[-1] = coordinates
+                else:
+                    vertices[0] = coordinates
             vertices[vertex] = coordinates
 
             layer._data_view.edit(index, vertices, new_type=new_type)
