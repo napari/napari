@@ -933,7 +933,14 @@ def _move_active_element_under_cursor(
         else:
             new_type = Polygon if shape_type == Rectangle else None
             vertices = layer._data_view.shapes[index].data
+            if (
+                layer._mode == Mode.DIRECT
+                and vertex == len(vertices) - 1
+                and np.array_equal(vertices[0], vertices[-1])
+            ):
+                vertices[0] = coordinates
             vertices[vertex] = coordinates
+
             layer._data_view.edit(index, vertices, new_type=new_type)
             shapes = layer.selected_data
             layer._selected_box = layer.interaction_box(shapes)
