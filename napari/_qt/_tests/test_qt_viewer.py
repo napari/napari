@@ -331,15 +331,14 @@ def test_export_figure_3d(make_napari_viewer):
     assert (img[img > 250].shape[0] / img[img <= 200].shape[0]) > 0.5
 
 
-def test_export_rois(make_napari_viewer, tmp_path):
+def test_export_rois(qt_viewer, viewer_model, tmp_path):
     # Create an image with a defined shape (100x100) and a square in the middle
 
     img = np.zeros((100, 100), dtype=np.uint8)
     img[25:75, 25:75] = 255
 
     # Add viewer
-    viewer = make_napari_viewer(show=True)
-    viewer.add_image(img, colormap='gray')
+    viewer_model.add_image(img, colormap='gray')
 
     # Create a couple of clearly defined rectangular polygons for validation
     roi_shapes_data = [
@@ -355,13 +354,13 @@ def test_export_rois(make_napari_viewer, tmp_path):
     ]
 
     # Save original camera state for comparison later
-    camera_center = viewer.camera.center
-    camera_zoom = viewer.camera.zoom
+    camera_center = viewer_model.camera.center
+    camera_zoom = viewer_model.camera.zoom
 
     with pytest.raises(ValueError, match='The number of file'):
-        viewer.export_rois(roi_shapes_data, paths=paths + ['fake'])
+        qt_viewer.export_rois(roi_shapes_data, paths=paths + ['fake'])
     # Export ROI to image path
-    test_roi = viewer.export_rois(roi_shapes_data, paths=paths)
+    test_roi = qt_viewer.export_rois(roi_shapes_data, paths=paths)
 
     assert all(
         (tmp_path / f'roi_{i}.png').exists()
@@ -371,16 +370,16 @@ def test_export_rois(make_napari_viewer, tmp_path):
     # This test uses scaling to adjust the expected size of ROI images
     # and number of white pixels in the ROI screenshots
     # The assertion may fail if the test is run on screens with fractional scaling.
-    scaling = viewer.window._qt_window.screen().devicePixelRatio()
+    scaling = qt_viewer.screen().devicePixelRatio()
 
     assert all(
         roi.shape == (20 * scaling, 20 * scaling, 4) for roi in test_roi
     )
-    assert viewer.camera.center == camera_center
-    assert viewer.camera.zoom == camera_zoom
+    assert viewer_model.camera.center == camera_center
+    assert viewer_model.camera.zoom == camera_zoom
 
     test_dir = tmp_path / 'test_dir'
-    viewer.export_rois(roi_shapes_data, paths=test_dir)
+    qt_viewer.export_rois(roi_shapes_data, paths=test_dir)
     assert all(
         (test_dir / f'roi_{i}.png').exists()
         for i in range(len(roi_shapes_data))
@@ -391,9 +390,6 @@ def test_export_rois(make_napari_viewer, tmp_path):
         assert (
             np.count_nonzero(gray_img) == expected_values[index] * scaling**2
         ), f'Wrong number of white pixels in the ROI {index}'
-
-    # Not testing the exact content of the screenshot. It seems not to work within the test, but manual testing does.
-    viewer.close()
 
 
 def test_export_rois_3d_fail(make_napari_viewer):

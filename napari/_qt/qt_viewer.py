@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import logging
 import sys
 import traceback
@@ -16,7 +17,7 @@ from weakref import WeakSet, ref
 
 import numpy as np
 from qtpy.QtCore import QCoreApplication, QObject, Qt, QUrl
-from qtpy.QtGui import QGuiApplication
+from qtpy.QtGui import QGuiApplication, QImage
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 from superqt import ensure_main_thread
 
@@ -41,6 +42,7 @@ from napari.settings import get_settings
 from napari.settings._application import DaskSettings
 from napari.utils import config, perf, resize_dask_cache
 from napari.utils.action_manager import action_manager
+from napari.utils.geometry import get_center_bbox
 from napari.utils.history import (
     get_open_history,
     get_save_history,
@@ -826,27 +828,14 @@ class QtViewer(QSplitter):
         if self._show_welcome_screen:
             self._welcome_widget.set_welcome_visible(not self.viewer.layers)
 
-    def _screenshot(self, flash=True):
-        """Capture a screenshot of the Vispy canvas.
-
-        Parameters
-        ----------
-        flash : bool
-            Flag to indicate whether flash animation should be shown after
-            the screenshot was captured.
-        """
-        img = self.canvas.screenshot()
-        if flash:
-            from napari._qt.utils import add_flash_animation
-
-            # Here we are actually applying the effect to the `_welcome_widget`
-            # and not # the `native` widget because it does not work on the
-            # `native` widget. It's probably because the widget is in a stack
-            # with the `QtWelcomeWidget`.
-            add_flash_animation(self._welcome_widget)
-        return img
-
-    def screenshot(self, path=None, flash=True) -> np.ndarray:
+    def screenshot(
+        self,
+        path: str | None = None,
+        flash: bool = True,
+        size: tuple[int, int] | None = None,
+        scale: float = 1.0,
+        fit_to_data_extent: bool = False,
+    ) -> QImage:
         """Take currently displayed screen and convert to an image array.
 
         Parameters
@@ -856,6 +845,59 @@ class QtViewer(QSplitter):
         flash : bool
             Flag to indicate whether flash animation should be shown after
             the screenshot was captured.
+        size : tuple[int, int]
+            Size (resolution height x width) of the screenshot.
+        scale : float
+            Scale factor used to increase resolution of canvas for the screenshot.
+            By default, the currently displayed resolution.
+        fit_to_data_extent: bool
+            Tightly fit the canvas around the data to prevent margins from
+            showing in the screenshot. If False, a screenshot of the currently
+            visible canvas will be generated.
+
+        Returns
+        -------
+        image : array
+            Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
+            upper-left corner of the rendered region.
+        """
+        img = QImg2array(
+            self._screenshot(
+                flash=flash,
+                size=size,
+                scale=scale,
+                fit_to_data_extent=fit_to_data_extent,
+            )
+        )
+        if path is not None:
+            imsave(path, img)
+        return img
+
+    def _screenshot(
+        self,
+        flash: bool = True,
+        size: tuple[int, int] | None = None,
+        scale: float = 1.0,
+        fit_to_data_extent: bool = False,
+    ) -> np.ndarray:
+        """Take currently displayed screen and convert to an image array.
+
+        Parameters
+        ----------
+        path : str
+            Filename for saving screenshot image.
+        flash : bool
+            Flag to indicate whether flash animation should be shown after
+            the screenshot was captured.
+        size : tuple[int, int]
+            Size (resolution height x width) of the screenshot.
+        scale : float
+            Scale factor used to increase resolution of canvas for the screenshot.
+            By default, the currently displayed resolution.
+        fit_to_data_extent: bool
+            Tightly fit the canvas around the data to prevent margins from
+            showing in the screenshot. If False, a screenshot of the currently
+            visible canvas will be generated.
 
         Returns
         -------
@@ -864,10 +906,65 @@ class QtViewer(QSplitter):
             upper-left corner of the rendered region.
         """
 
-        img = QImg2array(self._screenshot(flash))
-        if path is not None:
-            imsave(path, img)  # scikit-image imsave method
-        return img
+        if size is not None and len(size) != 2:
+            raise ValueError(
+                trans._(
+                    'screenshot size must be 2 values, got {len_size}',
+                    deferred=True,
+                    len_size=len(size),
+                )
+            )
+
+        if fit_to_data_extent:
+            # Use the same scene parameter calculations as in viewer_model.fit_to_view
+            ndisplay = self.viewer.dims.ndisplay
+            extent, _, _, total_size = self.viewer._get_scene_parameters()
+            extent_scale = min(self.viewer.layers.extent.step[-ndisplay:])
+
+            if ndisplay == 3:
+                total_size = self.viewer._calculate_bounding_box(
+                    extent=extent,
+                    view_direction=self.viewer.camera.view_direction,
+                    up_direction=self.viewer.camera.up_direction,
+                )
+
+            # adjust size by the scale, to return the size in real pixels
+            size = np.ceil(total_size / extent_scale).astype(int)
+
+        with self.resize_canvas(size, scale):
+            if fit_to_data_extent:
+                self.viewer.fit_to_view(margin=0)
+            img = self.canvas.screenshot()
+            if flash:
+                from napari._qt.utils import add_flash_animation
+
+                # Here we are actually applying the effect to the `_welcome_widget`
+                # and not # the `native` widget because it does not work on the
+                # `native` widget. It's probably because the widget is in a stack
+                # with the `QtWelcomeWidget`.
+                add_flash_animation(self._welcome_widget)
+
+            return img
+
+    @contextlib.contextmanager
+    def resize_canvas(self, size: tuple[int, int] | None, scale: float):
+        canvas = self.canvas
+        prev_size = canvas.size
+        camera = self.viewer.camera
+        old_center = camera.center
+        old_zoom = camera.zoom
+        if size is not None:
+            size = np.asarray(size) / self.devicePixelRatio()
+        else:
+            size = np.asarray(prev_size)
+        size = (size * scale).astype(np.int64)
+        canvas.size = tuple(size)
+        try:
+            yield
+        finally:
+            canvas.size = prev_size
+            camera.center = old_center
+            camera.zoom = old_zoom
 
     def clipboard(self, flash=True):
         """Take a screenshot of the currently displayed screen and copy the
@@ -1190,6 +1287,91 @@ class QtViewer(QSplitter):
             self.console.close()
         self.dockConsole.deleteLater()
         event.accept()
+
+    def export_rois(
+        self,
+        rois: list[np.ndarray],
+        paths: str | Path | list[str | Path] | None = None,
+        scale: float = 1.0,
+    ):
+        """Export the given rectangular rois to specified file paths.
+
+        For each shape, moves the camera to the center of the shape
+        and adjust the canvas size to fit the shape.
+        Note: The shape height and width can be of type float.
+        However, the canvas size only accepts a tuple of integers.
+        This can result in slight misalignment.
+
+        Parameters
+        ----------
+        rois: list[np.ndarray]
+            A list of arrays  with each being of shape (4, 2) representing
+            a rectangular roi.
+        paths: str, Path, list[str, Path], optional
+            Where to save the rois. If a string or a Path, a directory will
+            be created if it does not exist yet and screenshots will be
+            saved with filename `roi_{n}.png` where n is the nth roi. If
+            paths is a list of either string or paths, these need to be the
+            full paths of where to store each individual roi. In this case
+            the length of the list and the number of rois must match.
+            If None, the screenshots will only be returned and not saved
+            to disk.
+        scale: float, optional
+            Scale factor used to increase resolution of canvas for the screenshot.
+            By default, uses the displayed scale.
+
+        Returns
+        -------
+        screenshot_list: list
+            The list with roi screenshots.
+
+        """
+        if (
+            paths is not None
+            and isinstance(paths, list)
+            and len(paths) != len(rois)
+        ):
+            raise ValueError(
+                trans._(
+                    'The number of file paths does not match the number of ROI shapes',
+                    deferred=True,
+                )
+            )
+
+        if isinstance(paths, str | Path):
+            storage_dir = Path(paths).expanduser()
+            storage_dir.mkdir(parents=True, exist_ok=True)
+            paths = [storage_dir / f'roi_{n}.png' for n in range(len(rois))]
+
+        if self.viewer.dims.ndisplay > 2:
+            raise NotImplementedError(
+                "'export_rois' is not implemented for 3D view."
+            )
+
+        screenshot_list = []
+        camera = self.viewer.camera
+        start_camera_center = camera.center
+        start_camera_zoom = camera.zoom
+        canvas = self.canvas
+        prev_size = canvas.size
+
+        visible_dims = list(self.viewer.dims.displayed)
+        step = min(self.viewer.layers.extent.step[visible_dims])
+
+        for index, roi in enumerate(rois):
+            center_coord, height, width = get_center_bbox(roi)
+            camera.center = center_coord
+            canvas.size = (int(height / step), int(width / step))
+
+            camera.zoom = 1 / step
+            path = paths[index] if paths is not None else None
+            screenshot_list.append(self.screenshot(path=path, scale=scale))
+
+        canvas.size = prev_size
+        camera.center = start_camera_center
+        camera.zoom = start_camera_zoom
+
+        return screenshot_list
 
 
 if TYPE_CHECKING:
