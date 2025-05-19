@@ -12,6 +12,7 @@ from types import FrameType
 from typing import (
     TYPE_CHECKING,
     Any,
+    Literal,
 )
 from weakref import WeakSet, ref
 
@@ -835,7 +836,7 @@ class QtViewer(QSplitter):
         size: tuple[int, int] | None = None,
         scale: float = 1.0,
         fit_to_data_extent: bool = False,
-    ) -> QImage:
+    ) -> np.ndarray[tuple[int, int, Literal[4]], np.dtype[np.uint8]]:
         """Take currently displayed screen and convert to an image array.
 
         Parameters
@@ -879,13 +880,11 @@ class QtViewer(QSplitter):
         size: tuple[int, int] | None = None,
         scale: float = 1.0,
         fit_to_data_extent: bool = False,
-    ) -> np.ndarray:
+    ) -> QImage:
         """Take currently displayed screen and convert to an image array.
 
         Parameters
         ----------
-        path : str
-            Filename for saving screenshot image.
         flash : bool
             Flag to indicate whether flash animation should be shown after
             the screenshot was captured.
