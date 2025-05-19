@@ -1364,7 +1364,9 @@ class QtViewer(QSplitter):
 
             camera.zoom = 1 / step
             path = paths[index] if paths is not None else None
-            screenshot_list.append(self.screenshot(path=path, scale=scale))
+            screenshot_list.append(
+                self.screenshot(path=path, scale=scale, flash=False)
+            )
 
         canvas.size = prev_size
         camera.center = start_camera_center
