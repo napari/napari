@@ -10,7 +10,7 @@ certifi==2025.4.26
     # via requests
 charset-normalizer==3.4.2
     # via requests
-click==8.1.8
+click==8.2.0
     # via typer
 docstring-parser==0.16
     # via magicgui
@@ -34,7 +34,7 @@ packaging==25.0
     # via
     #   build
     #   qtpy
-psygnal==0.12.0
+psygnal==0.13.0
     # via
     #   magicgui
     #   npe2
@@ -71,7 +71,7 @@ rich==14.0.0
     # via
     #   npe2
     #   typer
-setuptools==80.3.1
+setuptools==80.4.0
     # via types-setuptools
 shellingham==1.5.4
     # via typer
@@ -85,7 +85,7 @@ types-pyyaml==6.0.12.20250402
     # via -r resources/requirements_mypy.in
 types-requests==2.32.0.20250328
     # via -r resources/requirements_mypy.in
-types-setuptools==80.3.0.20250505
+types-setuptools==80.4.0.20250511
     # via -r resources/requirements_mypy.in
 typing-extensions==4.13.2
     # via
