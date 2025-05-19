@@ -87,7 +87,11 @@ class _ThickNDSlice(Generic[_T]):
     ):
         """Generate from a Dims object's point and margins."""
         point = dims.point
-        if layer_units is not None and dims.units is not None:
+        if (
+            layer_units is not None
+            and dims.units is not None
+            and len(dims.units) >= len(layer_units)
+        ):
             reg = pint.get_application_registry()
             scale = tuple(
                 reg.get_base_units(x)[0] / reg.get_base_units(y)[0]
