@@ -13,9 +13,9 @@ recursive-include src/napari *.py_tmpl
 # these things are not being included unless we ask
 recursive-exclude tools *
 recursive-exclude src/napari *.pyc
-exclude napari/benchmarks/*
+exclude src/napari/benchmarks/*
 
-include napari/benchmarks/utils.py
+include src/napari/benchmarks/utils.py
 recursive-exclude resources *
 recursive-exclude binder *
 recursive-exclude examples *
