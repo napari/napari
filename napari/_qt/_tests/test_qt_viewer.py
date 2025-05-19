@@ -990,9 +990,9 @@ def test_axis_labels(make_napari_viewer):
     layer = viewer.add_image(np.zeros((2, 2, 2)), scale=(1, 2, 4))
 
     layer_visual = viewer._window._qt_viewer.layer_to_visual[layer]
-    axes_visual = viewer._window._qt_viewer.canvas._overlay_to_visual[
+    axes_visual = viewer._window._qt_viewer.canvas._overlay_to_visuals[
         viewer._overlays['axes']
-    ]
+    ][0]
 
     layer_visual_size = vispy_image_scene_size(layer_visual)
     assert tuple(layer_visual_size) == (8, 4, 2)

@@ -425,7 +425,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         """Fit the current data view to the canvas.
 
         Adjusts the camera zoom and centers the view so that all visible layers
-        are within the canvas, accounting for the current grid mode and margin.
+        are within the canvas.
 
         Parameters
         ----------
@@ -433,7 +433,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             Margin as fraction of the canvas, showing blank space around the
             data. Default is 0.05 (5% of the canvas).
         """
-        # Get the scene parameters, including the total_size of the grid
+        # Get the scene parameters
         extent, scene_size, corner = self._get_scene_parameters()
 
         self.camera.center = self._calculate_view_center(corner, scene_size)
@@ -477,8 +477,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             Size of the bounding box containing all layers.
         corner : array, shape (D,)
             Minimum coordinate values of the bounding box (i.e. extent[0]).
-        total_size : array, shape (D,)
-            Total size of the scene including grid spacing
         """
         extent = self._sliced_extent_world_augmented
         scene_size = extent[1] - extent[0]
@@ -486,10 +484,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         return extent, scene_size, corner
 
-    def _calculate_view_center(self, corner, total_size):
-        """Calculate the center of the view based on the total size."""
+    def _calculate_view_center(self, corner, scene_size):
+        """Calculate the center of the view based on the scene size."""
 
-        center_array = np.add(corner, np.divide(total_size, 2))[
+        center_array = np.add(corner, np.divide(scene_size, 2))[
             -self.dims.ndisplay :
         ]
         center = cast(
@@ -515,20 +513,20 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         )
 
     def _get_2d_camera_zoom(
-        self, total_size: np.ndarray, scale_factor: float
+        self, scene_size: np.ndarray, scale_factor: float
     ) -> float:
         """Get the camera zoom for 2D view."""
-        scale = np.array(total_size[-2:])
+        scale = np.array(scene_size[-2:])
         scale[np.isclose(scale, 0)] = 1
         return scale_factor * np.min(np.array(self._canvas_size) / scale)
 
     def _get_3d_camera_zoom(
-        self, extent: np.ndarray, total_size: np.ndarray, scale_factor: float
+        self, extent: np.ndarray, scene_size: np.ndarray, scale_factor: float
     ) -> float:
         """Calculate the zoom such that the minimum of the bounding box fits the canvas."""
         extent = extent.copy()
-        # calculate max coords with grid spacing included
-        extent[1] = extent[0] + total_size
+        # calculate max coords
+        extent[1] = extent[0] + scene_size
 
         bounding_box = self._calculate_bounding_box(
             extent=extent,
