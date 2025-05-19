@@ -23,6 +23,13 @@ contributions:
       python_name: napari_builtins.io:write_layer_data_with_plugins
       title: napari built-in save to folder
 
+    - id: napari.filters.gaussian
+      python_name: napari_builtins._filters:gaussian
+      title: built-in gaussian filtering
+    - id: napari.filters.sobel
+      python_name: napari_builtins._filters:sobel
+      title: built-in sobel filtering
+
     # samples
     - id: napari.data.astronaut
       title: Generate astronaut sample
@@ -127,6 +134,10 @@ contributions:
       title: Generate 3d_balls sample
       python_name: napari_builtins._ndims_balls:labeled_particles3d
 
+  menus:
+    napari/layers/filter:
+      - command: napari.filters.gaussian
+      - command: napari.filters.sobel
   readers:
     - command: napari.get_reader
       accepts_directories: true
