@@ -2,12 +2,10 @@
 
 from __future__ import annotations
 
-import time
 from typing import TYPE_CHECKING
 from weakref import WeakSet
 
 import numpy as np
-from qtpy.QtCore import QEventLoop, QTimer
 from superqt.utils import qthrottled
 from vispy.scene import SceneCanvas as SceneCanvas_, ViewBox, Widget
 
@@ -800,24 +798,6 @@ class VispyCanvas:
 
     def screenshot(self) -> QImage:
         """Return a QImage based on what is shown in the viewer."""
-
-        # wait for canvas to be initialized properly
-        # see https://github.com/napari/napari/pull/7870#issuecomment-2880531108
-        loop = QEventLoop()
-        start_time = time.time()
-
-        def check_size():
-            size = self._scene_canvas.size
-            if size == (0, 0):
-                QTimer.singleShot(50, check_size)  # check again after 50ms
-            elif (time.time() - start_time) * 1000 > 2000:
-                loop.quit()
-            else:
-                loop.quit()
-
-        check_size()
-        loop.exec_()
-
         return self.native.grabFramebuffer()
 
     def enable_dims_play(self, *args) -> None:
