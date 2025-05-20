@@ -487,14 +487,16 @@ def test_register_label_attr_action(monkeypatch):
     def set_value_1(x):
         x.value = 1
 
-    handler.press_key('K')
+    assert handler.press_key('K')
+    assert not handler.press_key('L')
     assert foo.value == 1
-    handler.release_key('K')
+    assert handler.release_key('K')
+    assert not handler.release_key('L')
     assert foo.value == 1
 
     foo.value = 0
-    handler.press_key('K')
+    assert handler.press_key('K')
     assert foo.value == 1
     monkeypatch.setattr(time, 'time', lambda: 2)
-    handler.release_key('K')
+    assert handler.release_key('K')
     assert foo.value == 0
