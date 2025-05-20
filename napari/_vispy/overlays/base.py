@@ -58,7 +58,7 @@ class VispyCanvasOverlay(VispyBaseOverlay):
     """
 
     def __init__(self, *, overlay, node, parent=None) -> None:
-        super().__init__(overlay=overlay, node=node, parent=None)
+        super().__init__(overlay=overlay, node=node, parent=parent)
 
         # offsets and size are used to control fine positioning, and will depend
         # on the subclass and visual that needs to be rendered
@@ -114,7 +114,7 @@ class VispySceneOverlay(VispyBaseOverlay):
     """
 
     def __init__(self, *, overlay, node, parent=None) -> None:
-        super().__init__(overlay=overlay, node=node, parent=None)
+        super().__init__(overlay=overlay, node=node, parent=parent)
         self.node.transform = MatrixTransform()
 
 

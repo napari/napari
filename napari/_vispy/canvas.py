@@ -35,6 +35,7 @@ if TYPE_CHECKING:
     from qtpy.QtGui import QCursor, QImage
     from vispy.app.backends._qt import CanvasBackendDesktop
     from vispy.app.canvas import DrawEvent, MouseEvent, ResizeEvent
+    from vispy.scene import Node
 
     from napari._vispy.layers.base import VispyBaseLayer
     from napari._vispy.overlays.base import VispyBaseOverlay
@@ -135,8 +136,7 @@ class VispyCanvas:
         # using an lru_cache.
         self.max_texture_sizes = get_max_texture_sizes()
 
-        for overlay in self.viewer._overlays.values():
-            self._add_overlay_to_visual(overlay)
+        self._update_viewer_overlays()
 
         self._scene_canvas.events.ignore_callback_errors = False
         self._scene_canvas.context.set_depth_func('lequal')
@@ -589,10 +589,11 @@ class VispyCanvas:
         self.viewer.camera.events.angles.connect(vispy_layer._on_camera_move)
 
         # create overlay visuals for this layer
-        self._update_layer_overlays_to_visual(napari_layer)
+        self._update_layer_overlays(napari_layer)
         # we need to trigger _on_matrix_change once after adding the overlays so that
         # all children nodes are assigned the correct transforms
         vispy_layer._on_matrix_change()
+
         self._reorder_layers()
 
     def _remove_layer(self, event: Event) -> None:
@@ -614,7 +615,7 @@ class VispyCanvas:
         vispy_layer.close()
         del vispy_layer
         del self.layer_to_visual[layer]
-        self._remove_layer_overlays_to_visual(layer)
+        self._remove_layer_overlays(layer)
         del self._layer_overlay_to_visual[layer]
         self._reorder_layers()
 
@@ -639,18 +640,25 @@ class VispyCanvas:
         self._scene_canvas._draw_order.clear()
         self._scene_canvas.update()
 
-    def _add_overlay_to_visual(self, overlay: Overlay) -> None:
+    def _add_viewer_overlay(self, overlay: Overlay, parent: Node) -> None:
         """Create vispy overlay and add to dictionary of overlay visuals"""
         vispy_overlay = create_vispy_overlay(
-            overlay=overlay, viewer=self.viewer
+            overlay=overlay, viewer=self.viewer, parent=parent
         )
-
-        if isinstance(overlay, CanvasOverlay):
-            vispy_overlay.node.parent = self.view
-            self._connect_canvas_overlay_events(overlay)
-        else:
-            vispy_overlay.node.parent = self.view.scene
         self._overlay_to_visual[overlay] = vispy_overlay
+
+    def _update_viewer_overlays(self):
+        for overlay in list(self._overlay_to_visual):
+            overlay_visual = self._overlay_to_visual.pop(overlay)
+            self._disconnect_canvas_overlay_events(overlay)
+            overlay_visual.close()
+
+        for overlay in self.viewer._overlays.values():
+            if isinstance(overlay, CanvasOverlay):
+                self._add_viewer_overlay(overlay, self.view)
+                self._connect_canvas_overlay_events(overlay)
+            else:
+                self._add_viewer_overlay(overlay, self.view.scene)
 
     def _connect_canvas_overlay_events(self, overlay):
         overlay.events.position.connect(self._update_overlay_canvas_positions)
@@ -664,44 +672,39 @@ class VispyCanvas:
             self._update_overlay_canvas_positions
         )
 
-    def _update_layer_overlays_to_visual(self, layer: Layer) -> None:
+    def _update_layer_overlays(self, layer: Layer) -> None:
         """Update the overlay visuals for each layer in the canvas.
 
         Also ensures that overlays are properly assigned parents depending on
         they class (canvas vs scene overlays).
         """
+        # reparenting does not work well in a few cases (we end up with overlay visuals
+        # "clipping" through the canvas edges) so we just remake them
+        # whenever we need to change them.
+        for overlay in list(self._layer_overlay_to_visual[layer]):
+            overlay_visual = self._layer_overlay_to_visual[layer].pop(overlay)
+            self._disconnect_canvas_overlay_events(overlay)
+            overlay_visual.close()
+
         overlay_models = layer._overlays.values()
 
-        # add missing overlay visuals
         for overlay in overlay_models:
-            if overlay in self._layer_overlay_to_visual[layer]:
-                continue
+            if isinstance(overlay, CanvasOverlay):
+                parent = self.view
+            else:
+                parent = self.layer_to_visual[layer].node
 
+            # TODO: is this blocker still needed?
             with layer.events._overlays.blocker():
-                overlay_visual = create_vispy_overlay(overlay, layer=layer)
+                overlay_visual = create_vispy_overlay(
+                    overlay, layer=layer, parent=parent
+                )
+            if isinstance(overlay, CanvasOverlay):
+                self._connect_canvas_overlay_events(overlay)
+
             self._layer_overlay_to_visual[layer][overlay] = overlay_visual
 
-        # remove stale ones if any
-        for overlay in list(self._layer_overlay_to_visual[layer]):
-            if overlay not in overlay_models:
-                overlay_visual = self._layer_overlay_to_visual[layer].pop(
-                    overlay
-                )
-                if isinstance(overlay, CanvasOverlay):
-                    self._disconnect_canvas_overlay_events(overlay)
-                overlay_visual.close()
-
-        # set parent node appropriately and connect events
-        for overlay, overlay_visual in self._layer_overlay_to_visual[
-            layer
-        ].items():
-            if isinstance(overlay, CanvasOverlay):
-                overlay_visual.node.parent = self.view
-                self._connect_canvas_overlay_events(overlay)
-            else:
-                overlay_visual.node.parent = self.layer_to_visual[layer].node
-
-    def _remove_layer_overlays_to_visual(self, layer: Layer) -> None:
+    def _remove_layer_overlays(self, layer: Layer) -> None:
         for overlay in list(self._layer_overlay_to_visual[layer]):
             overlay_visual = self._layer_overlay_to_visual[layer].pop(overlay)
             if isinstance(overlay, CanvasOverlay):
