@@ -1,0 +1,10 @@
+rules:
+  - id: avoid-any-fstring-in-trans
+    languages: [python]
+    message: "Avoid any f-strings inside trans._(); use .format() after translation."
+    severity: ERROR
+    patterns:
+      - pattern: trans._($STR)
+      - metavariable-pattern:
+          metavariable: $STR
+          pattern: f"..."
