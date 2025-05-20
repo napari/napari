@@ -128,8 +128,8 @@ class VispyCanvas:
 
         self.layer_to_visual: dict[Layer, VispyBaseLayer] = {}
         self._overlay_to_visuals: dict[Overlay, list[VispyBaseOverlay]] = {}
-        self._layer_overlay_to_visuals: dict[
-            Layer, dict[Overlay, list[VispyBaseOverlay]]
+        self._layer_overlay_to_visual: dict[
+            Layer, dict[Overlay, VispyBaseOverlay]
         ] = {}
         self._key_map_handler = key_map_handler
         self._instances.add(self)
@@ -175,7 +175,7 @@ class VispyCanvas:
         self.viewer.camera.events.mouse_pan.connect(self._on_interactive)
         self.viewer.camera.events.mouse_zoom.connect(self._on_interactive)
         self.viewer.camera.events.zoom.connect(self._on_cursor)
-        self.viewer.layers.events.reordered.connect(self._reorder_layers)
+        self.viewer.layers.events.reordered.connect(self._update_scenegraph)
         self.viewer.layers.events.removed.connect(self._remove_layer)
         self.viewer.layers.selection.events.connect(
             self._highlight_selected_grid
@@ -611,9 +611,9 @@ class VispyCanvas:
         None
         """
         self.layer_to_visual[napari_layer] = vispy_layer
-        self._layer_overlay_to_visuals[napari_layer] = {}
+        self._layer_overlay_to_visual[napari_layer] = {}
 
-        napari_layer.events.visible.connect(self._reorder_layers)
+        napari_layer.events.visible.connect(self._update_scenegraph)
         self.viewer.camera.events.angles.connect(vispy_layer._on_camera_move)
 
         # create overlay visuals for this layer
@@ -621,7 +621,7 @@ class VispyCanvas:
         # we need to trigger _on_matrix_change once after adding the overlays so that
         # all children nodes are assigned the correct transforms
         vispy_layer._on_matrix_change()
-        self._reorder_layers()
+        self._update_scenegraph()
 
     def _remove_layer(self, event: Event) -> None:
         """Upon receiving event closes the Vispy visual, deletes it and reorders the still existing layers.
@@ -636,20 +636,18 @@ class VispyCanvas:
         None
         """
         layer = event.value
-        layer.events.visible.disconnect(self._reorder_layers)
+        layer.events.visible.disconnect(self._update_scenegraph)
         vispy_layer = self.layer_to_visual[layer]
         self.viewer.camera.events.disconnect(vispy_layer._on_camera_move)
         vispy_layer.close()
         del vispy_layer
         del self.layer_to_visual[layer]
         self._remove_layer_overlays(layer)
-        del self._layer_overlay_to_visuals[layer]
-        self._reorder_layers()
+        del self._layer_overlay_to_visual[layer]
+        self._update_scenegraph()
 
     def _reorder_layers(self) -> None:
         """When the list is reordered, propagate changes to draw order."""
-        self._update_scenegraph()
-
         if self.viewer.grid.enabled:
             for _, layer_indices in self.viewer.grid.iter_quadrants(
                 len(self.viewer.layers)
@@ -688,6 +686,8 @@ class VispyCanvas:
 
     def _update_viewer_overlays(self):
         for overlay in list(self._overlay_to_visuals):
+            if isinstance(overlay, CanvasOverlay):
+                overlay.events.gridded.disconnect(self._update_scenegraph)
             overlay_visuals = self._overlay_to_visuals.pop(overlay)
             for overlay_visual in overlay_visuals:
                 overlay_visual.close()
@@ -701,6 +701,7 @@ class VispyCanvas:
             if isinstance(overlay, CanvasOverlay):
                 for view in views:
                     self._add_viewer_overlay(overlay, view)
+                    overlay.events.gridded.connect(self._update_scenegraph)
             else:
                 for view in views:
                     self._add_viewer_overlay(overlay, view.scene)
@@ -709,25 +710,16 @@ class VispyCanvas:
         # reparenting does not work well with grid mode (we end up with overlay visuals
         # "clipping" where the grid cell boundary used to be...) so we just remake them
         # whenever we need to change them
-        for overlay, overlay_visuals in list(
-            self._layer_overlay_to_visuals[layer].items()
-        ):
-            for overlay_visual in overlay_visuals:
-                overlay_visual = self._layer_overlay_to_visuals[layer].pop(
-                    overlay
-                )
-                overlay_visual.close()
+        self._remove_layer_overlays(layer)
 
         overlay_models = layer._overlays.values()
         for overlay in overlay_models:
             with layer.events._overlays.blocker():
                 overlay_visual = create_vispy_overlay(overlay, layer=layer)
-            self._layer_overlay_to_visuals[layer].setdefault(
-                overlay, []
-            ).append(overlay_visual)
+            self._layer_overlay_to_visual[layer][overlay] = overlay_visual
 
         # set parent node appropriately and connect events
-        for overlay, overlay_visual in self._layer_overlay_to_visuals[
+        for overlay, overlay_visual in self._layer_overlay_to_visual[
             layer
         ].items():
             if isinstance(overlay, CanvasOverlay):
@@ -748,13 +740,8 @@ class VispyCanvas:
             overlay_visual.reset()
 
     def _remove_layer_overlays(self, layer: Layer) -> None:
-        for overlay, overlay_visuals in list(
-            self._layer_overlay_to_visuals[layer].items()
-        ):
-            for overlay_visual in overlay_visuals:
-                overlay_visual = self._layer_overlay_to_visuals[layer].pop(
-                    overlay
-                )
+        for overlay in list(self._layer_overlay_to_visual[layer]):
+            overlay_visual = self._layer_overlay_to_visual[layer].pop(overlay)
             overlay_visual.close()
 
     def _calculate_view_direction(
@@ -827,6 +814,7 @@ class VispyCanvas:
         else:
             self._setup_single_view()
 
+        self._reorder_layers()
         self._update_viewer_overlays()
 
     def _setup_single_view(self):
