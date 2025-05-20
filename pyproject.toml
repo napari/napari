@@ -848,13 +848,17 @@ source = [
 
 [tool.coverage.paths]
 source = [
+    "src/napari/",
     "napari/",
+    ".tox/*/lib/python*/site-packages/napari/",
     "D:\\a\\napari\\napari\\src\\napari",
     "/home/runner/work/napari/napari/src/napari",
     "/Users/runner/work/napari/napari/src/napari",
 ]
 builtins = [
+    "src/napari_builtins/",
     "napari_builtins/",
+    ".tox/*/lib/python*/site-packages/napari_builtins/",
     "D:\\a\\napari\\napari\\src\\napari_builtins",
     "/home/runner/work/napari/napari/src/napari_builtins",
     "/Users/runner/work/napari/napari/src/napari_builtins",
