@@ -274,7 +274,6 @@ def test_grid_mode(make_napari_viewer):
         )
         np.testing.assert_almost_equal(screenshot[coord], c)
 
-    # TODO: fix moving layers adjusts grid position of layers
     # reorder layers, swapping 0 and 5
     viewer.layers.move(5, 0)
     viewer.layers.move(1, 6)

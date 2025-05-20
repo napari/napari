@@ -60,7 +60,7 @@ class VispyCanvasOverlay(VispyBaseOverlay):
     """
 
     def __init__(self, *, overlay, node, parent=None) -> None:
-        super().__init__(overlay=overlay, node=node, parent=None)
+        super().__init__(overlay=overlay, node=node, parent=parent)
 
         # offsets and size are used to control fine positioning, and will depend
         # on the subclass and visual that needs to be rendered
@@ -74,9 +74,9 @@ class VispyCanvasOverlay(VispyBaseOverlay):
     def _on_position_change(self, event=None):
         # subclasses should set sizes correctly and adjust offsets to get
         # the optimal positioning
-        if self.node.canvas is None:
+        if self.node.parent is None:
             return
-        x_max, y_max = list(self.node.canvas.size)
+        x_max, y_max = list(self.node.parent.size)
         position = self.overlay.position
 
         if position == CanvasPosition.TOP_LEFT:
@@ -135,7 +135,7 @@ class VispySceneOverlay(VispyBaseOverlay):
     """
 
     def __init__(self, *, overlay, node, parent=None) -> None:
-        super().__init__(overlay=overlay, node=node, parent=None)
+        super().__init__(overlay=overlay, node=node, parent=parent)
         self.node.transform = MatrixTransform()
 
 

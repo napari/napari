@@ -599,7 +599,7 @@ class QtViewer(QSplitter):
                 # slice.
                 layer.events.set_data()
                 layer._refresh_sync(
-                    data_displayed=True,
+                    data_displayed=False,
                     thumbnail=True,
                     highlight=True,
                     extent=True,
