@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from functools import partial
 from typing import TYPE_CHECKING
 from weakref import WeakSet
 
@@ -169,6 +170,7 @@ class VispyCanvas:
         self.viewer.camera.events.zoom.connect(self._on_cursor)
         self.viewer.layers.events.reordered.connect(self._reorder_layers)
         self.viewer.layers.events.removed.connect(self._remove_layer)
+        self.viewer._overlays.events.connect(self._update_viewer_overlays)
         self.destroyed.connect(self._disconnect_theme)
 
     @property
@@ -584,6 +586,9 @@ class VispyCanvas:
         self._layer_overlay_to_visual[napari_layer] = {}
 
         napari_layer.events.visible.connect(self._reorder_layers)
+        napari_layer._overlays.events.connect(
+            partial(self._update_layer_overlays, napari_layer)
+        )
         self.viewer.camera.events.angles.connect(vispy_layer._on_camera_move)
 
         # create overlay visuals for this layer
@@ -608,6 +613,8 @@ class VispyCanvas:
         """
         layer = event.value
         layer.events.visible.disconnect(self._reorder_layers)
+        # TODO: how to disconnect this properly?
+        layer._overlays.events.disconnect(self._update_layer_overlays)
         vispy_layer = self.layer_to_visual[layer]
         self.viewer.camera.events.disconnect(vispy_layer._on_camera_move)
         vispy_layer.close()
