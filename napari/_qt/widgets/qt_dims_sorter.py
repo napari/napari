@@ -60,7 +60,9 @@ class QtDimsSorter(QWidget):
         widget_tooltip.setObjectName('help_label')
         widget_tooltip.setToolTip(
             trans._(
-                'Drag dimensions to reorder, click lock icon to lock dimension in place.'
+                'Drag dimensions to reorder.'
+                '\nDouble-click to edit axis label.'
+                '\nClick lock icon to lock dimension in place.'
             )
         )
 
@@ -85,3 +87,6 @@ class QtDimsSorter(QWidget):
         # Regenerate AxisList upon Dims side order changes for easy cleanup
         self.axis_list = AxisList.from_dims(self.dims)
         self.view.setRoot(self.axis_list)
+        self.axis_list.events.reordered.connect(
+            self._axis_list_reorder_callback,
+        )
