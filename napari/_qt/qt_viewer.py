@@ -116,7 +116,7 @@ def _extension_string_for_layers(
             ext_str = ';;'.join(ext_list)
 
             ext_str = trans._(
-                f'All Files (*);; Image file types:;;{ext_str}',
+                'All Files (*);; Image file types:;;{ext_str}',
                 ext_str=ext_str,
             )
 
@@ -778,7 +778,7 @@ class QtViewer(QSplitter):
             )
         filename, selected_filter = dlg.getSaveFileName(
             self,  # parent
-            trans._(f'Save {msg} layers', msg=msg),  # caption
+            trans._('Save {msg} layers', msg=msg),  # caption
             # home dir by default if selected all, home dir and file name if only 1 layer
             str(
                 Path(hist[0]) / selected_layer_name
@@ -792,8 +792,10 @@ class QtViewer(QSplitter):
         )
         logging.getLogger('napari').debug(
             trans._(
-                f'QFileDialog - filename: {filename} '
-                f'selected_filter: {selected_filter}',
+                'QFileDialog - filename: {filename} '
+                'selected_filter: {selected_filter}',
+                filename=filename or None,
+                selected_filter=selected_filter or None,
             )
         )
 
@@ -811,7 +813,10 @@ class QtViewer(QSplitter):
             if not saved:
                 raise OSError(
                     trans._(
-                        f'File {filename} save failed.\n{error_messages}',
+                        'File {filename} save failed.\n{error_messages}',
+                        deferred=True,
+                        filename=filename,
+                        error_messages=error_messages,
                     )
                 )
 
