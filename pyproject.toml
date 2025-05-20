@@ -849,15 +849,15 @@ source = [
 [tool.coverage.paths]
 source = [
     "napari/",
-    "D:\\a\\napari\\napari\\napari",
-    "/home/runner/work/napari/napari/napari",
-    "/Users/runner/work/napari/napari/napari",
+    "D:\\a\\napari\\napari\\src\\napari",
+    "/home/runner/work/napari/napari/src/napari",
+    "/Users/runner/work/napari/napari/src/napari",
 ]
 builtins = [
     "napari_builtins/",
-    "D:\\a\\napari\\napari\\napari_builtins",
-    "/home/runner/work/napari/napari/napari_builtins",
-    "/Users/runner/work/napari/napari/napari_builtins",
+    "D:\\a\\napari\\napari\\src\\napari_builtins",
+    "/home/runner/work/napari/napari/src/napari_builtins",
+    "/Users/runner/work/napari/napari/src/napari_builtins",
 ]
 
 [tool.importlinter]
