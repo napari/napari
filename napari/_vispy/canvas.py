@@ -125,7 +125,9 @@ class VispyCanvas:
             self.view, self.viewer.camera, self.viewer.dims
         )
 
-        self.grid = self.central_widget.add_grid(border_width=0)
+        self.grid = self.central_widget.add_grid(
+            border_width=0, spacing=viewer.grid.spacing
+        )
         self.grid._default_class = NapariViewBox
         self.grid_views = []
         self.grid_cameras = []
@@ -814,7 +816,9 @@ class VispyCanvas:
 
         # grid are really not designed to be reset, so it's easier to replace it
         self.grid.parent = None
-        self.grid = self.central_widget.add_grid(border_width=0)
+        self.grid = self.central_widget.add_grid(
+            border_width=0, spacing=self.viewer.grid.spacing
+        )
 
         if self.viewer.grid.enabled:
             self._setup_layer_views_in_grid()
