@@ -613,7 +613,6 @@ class VispyCanvas:
         self.viewer.camera.events.angles.connect(vispy_layer._on_camera_move)
 
         self._reorder_layers()
-        self._update_scenegraph()
         # we need to trigger _on_matrix_change once after adding the overlays so that
         # all children nodes are assigned the correct transforms
         vispy_layer._on_matrix_change()
@@ -640,7 +639,6 @@ class VispyCanvas:
         self._remove_layer_overlays_to_visual(layer)
         del self._layer_overlay_to_visual[layer]
         self._reorder_layers()
-        self._update_scenegraph()
 
     def _reorder_layers(self) -> None:
         """When the list is reordered, propagate changes to draw order."""
@@ -654,6 +652,8 @@ class VispyCanvas:
                 self._reorder_layers_in_the_same_view(layers)
         else:
             self._reorder_layers_in_the_same_view(self.viewer.layers)
+
+        self._update_scenegraph()
 
     def _reorder_layers_in_the_same_view(self, layers):
         first_visible_found = False
