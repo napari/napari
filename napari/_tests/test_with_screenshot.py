@@ -224,8 +224,8 @@ def test_changing_image_gamma(make_napari_viewer):
     assert screenshot[(*center, 0)] < 80
 
 
-# @skip_on_win_ci
-# @skip_local_popups
+@skip_on_win_ci
+@skip_local_popups
 def test_grid_mode(make_napari_viewer):
     viewer = make_napari_viewer(show=True)
 
@@ -282,13 +282,13 @@ def test_grid_mode(make_napari_viewer):
     # check screenshot
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
     # CGRMYB color order
-    color = [
-        [0, 255, 255, 255],
-        [0, 255, 0, 255],
-        [255, 0, 0, 255],
-        [255, 0, 255, 255],
-        [255, 255, 0, 255],
+    color = color = [
         [0, 0, 255, 255],
+        [255, 255, 0, 255],
+        [255, 0, 255, 255],
+        [255, 0, 0, 255],
+        [0, 255, 0, 255],
+        [0, 255, 255, 255],
     ]
     for c, p in zip(color, pos, strict=False):
         coord = tuple(
