@@ -126,9 +126,9 @@ def test_empty_path_prefix():
 
     # Test are all None because the path_prefix matches everything
     # magic_name reads through until the end of the stack
-    assert eval_with_filename('foo(42)', 'hi.py') is None
+    assert eval_with_filename('foo(42)', '/tmp/hi.py') is None
 
     r = 8  # noqa
-    assert eval_with_filename('foo(r)', 'bye.py') is None
+    assert eval_with_filename('foo(r)', '/tmp/bye.py') is None
 
-    assert eval_with_filename('foo(i:=33)', 'rye.py') is None
+    assert eval_with_filename('foo(i:=33)', '/tmp/rye.py') is None
