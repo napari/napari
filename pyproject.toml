@@ -853,6 +853,7 @@ source = [
     ".tox/*/lib/python*/site-packages/napari/",
     ".tox/*/Lib/site-packages/napari/",
     "D:\\a\\napari\\napari\\src\\napari",
+    "D:\\a\\napari\\napari\\.tox\\*\\Lib\\site-packages\\napari",
     "/home/runner/work/napari/napari/src/napari",
     "/Users/runner/work/napari/napari/src/napari",
 ]
@@ -862,6 +863,7 @@ builtins = [
     ".tox/*/lib/python*/site-packages/napari_builtins/",
     ".tox/*/Lib/site-packages/napari_builtins/",
     "D:\\a\\napari\\napari\\src\\napari_builtins",
+    "D:\\a\\napari\\napari\\.tox\\*\\Lib\\site-packages\\napari_builtins",
     "/home/runner/work/napari/napari/src/napari_builtins",
     "/Users/runner/work/napari/napari/src/napari_builtins",
 ]
