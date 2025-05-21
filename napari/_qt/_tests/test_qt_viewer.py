@@ -270,10 +270,10 @@ def test_screenshot(make_napari_viewer):
 
 
 def test_export_figure(make_napari_viewer, tmp_path):
-    viewer = make_napari_viewer()
+    viewer = make_napari_viewer(show=True)
     np.random.seed(0)
     # Add image
-    data = np.random.randint(150, 250, size=(250, 250))
+    data = np.ones((250, 250))
     layer = viewer.add_image(data)
 
     camera_center = viewer.camera.center
@@ -283,8 +283,8 @@ def test_export_figure(make_napari_viewer, tmp_path):
     assert viewer.camera.center == camera_center
     assert viewer.camera.zoom == camera_zoom
     np.testing.assert_allclose(img.shape, (250, 250, 4), atol=1)
-    # assert img.shape == (250, 250, 4)
-    assert np.all(img != np.array([0, 0, 0, 0]))
+
+    assert (img.reshape(-1, 4) == [255, 255, 255, 255]).all(axis=1).all()
 
     assert (tmp_path / 'img.png').exists()
 
