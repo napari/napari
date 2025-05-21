@@ -840,7 +840,8 @@ omit = [
     "*/benchmarks/*",
     "napari/utils/indexing.py",
     "**/add_layer.py_tmpl",
-    "bye.py"
+    "bye.py",
+    "hi.py",
 ]
 source = [
     "napari",
