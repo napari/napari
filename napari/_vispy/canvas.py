@@ -173,8 +173,16 @@ class VispyCanvas:
         self.viewer.camera.events.zoom.connect(self._on_cursor)
         self.viewer.layers.events.reordered.connect(self._reorder_layers)
         self.viewer.layers.events.removed.connect(self._remove_layer)
-        self.viewer._overlays.events.connect(self._update_viewer_overlays)
-        self.destroyed.connect(self._disconnect_theme)
+        self.viewer._overlays.events.added.connect(
+            self._update_viewer_overlays
+        )
+        self.viewer._overlays.events.removed.connect(
+            self._update_viewer_overlays
+        )
+        self.viewer._overlays.events.changed.connect(
+            self._update_viewer_overlays
+        )
+        self.destroyed.connect(self._disconnect_events)
 
     @property
     def events(self):
@@ -232,8 +240,14 @@ class VispyCanvas:
         )[0]
         self.bgcolor = self._last_theme_color
 
-    def _disconnect_theme(self) -> None:
-        self.viewer.events.theme.disconnect(self._on_theme_change)
+    def _disconnect_events(self) -> None:
+        disconnect_events(self.viewer.events, self)
+        disconnect_events(self.viewer._overlays.events, self)
+        disconnect_events(self.viewer.camera.events, self)
+        disconnect_events(self.viewer.layers.events, self)
+        disconnect_events(self.viewer.camera.events, self)
+        disconnect_events(self.viewer.cursor.events, self)
+        disconnect_events(self._scene_canvas.events, self)
 
     @property
     def bgcolor(self) -> str:
