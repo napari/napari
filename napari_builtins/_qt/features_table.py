@@ -143,7 +143,7 @@ class PandasModel(QAbstractTableModel):
             role == Qt.ItemDataRole.CheckStateRole
             and pd.api.types.is_bool_dtype(dtype)
         ):
-            self.df.iat[row, col - 1] = value == Qt.Checked
+            self.df.iat[row, col - 1] = bool(value) == Qt.Checked
             self.dataChanged.emit(
                 index, index, [Qt.ItemDataRole.CheckStateRole]
             )
@@ -232,8 +232,9 @@ class BoolFriendlyProxyModel(QSortFilterProxyModel):
 
         # ensure booleans compare as expected. Not sure what happens internally in qt
         # that doesn't work, but doing it ourselves in python works.
+        # One thing that breaks it are numpy bools
         if all(pd.api.types.is_bool(d) for d in (left_data, right_data)):
-            return left_data < right_data
+            return bool(left_data < right_data)
 
         return super().lessThan(left, right)
 
