@@ -72,9 +72,9 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
         self.overlay.events.points.connect(self._on_points_change)
         self.overlay.events.enabled.connect(self._on_enabled_change)
 
-        layer.events.selected_label.connect(self._update_color)
-        layer.events.colormap.connect(self._update_color)
-        layer.events.opacity.connect(self._update_color)
+        self.layer.events.selected_label.connect(self._update_color)
+        self.layer.events.colormap.connect(self._update_color)
+        self.layer.events.opacity.connect(self._update_color)
 
         self._first_point_pos = np.zeros(2)
 
@@ -233,3 +233,11 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
     def reset(self):
         super().reset()
         self._on_points_change()
+
+    def close(self):
+        self.layer.mouse_move_callbacks.remove(self._on_mouse_move)
+        self.layer.mouse_drag_callbacks.remove(self._on_mouse_press)
+        self.layer.mouse_double_click_callbacks.remove(
+            self._on_mouse_double_click
+        )
+        super().close()

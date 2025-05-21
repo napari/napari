@@ -18,6 +18,8 @@ from napari._vispy.utils.visual import create_vispy_overlay
 from napari.components.overlays import CanvasOverlay
 from napari.utils._proxies import ReadOnlyWrapper
 from napari.utils.colormaps.standardize_color import transform_color
+from napari.utils.events import disconnect_events
+from napari.utils.events.event import Event
 from napari.utils.interactions import (
     mouse_double_click_callbacks,
     mouse_move_callbacks,
@@ -42,7 +44,6 @@ if TYPE_CHECKING:
     from napari.components import ViewerModel
     from napari.components.overlays import Overlay
     from napari.layers import Layer
-    from napari.utils.events.event import Event
     from napari.utils.key_bindings import KeymapHandler
 
 
@@ -125,6 +126,8 @@ class VispyCanvas:
         ] = {}
         self._key_map_handler = key_map_handler
         self._instances.add(self)
+
+        self._overlay_callbacks = {}
 
         self.bgcolor = transform_color(
             get_theme(self.viewer.theme).canvas.as_hex()
@@ -586,9 +589,11 @@ class VispyCanvas:
         self._layer_overlay_to_visual[napari_layer] = {}
 
         napari_layer.events.visible.connect(self._reorder_layers)
-        napari_layer._overlays.events.connect(
-            partial(self._update_layer_overlays, napari_layer)
-        )
+        overlay_callback = partial(self._update_layer_overlays, napari_layer)
+        napari_layer._overlays.events.added.connect(overlay_callback)
+        napari_layer._overlays.events.removed.connect(overlay_callback)
+        napari_layer._overlays.events.changed.connect(overlay_callback)
+        self._overlay_callbacks[napari_layer] = overlay_callback
         self.viewer.camera.events.angles.connect(vispy_layer._on_camera_move)
 
         # create overlay visuals for this layer
@@ -612,11 +617,13 @@ class VispyCanvas:
         None
         """
         layer = event.value
-        layer.events.visible.disconnect(self._reorder_layers)
-        # TODO: how to disconnect this properly?
-        layer._overlays.events.disconnect(self._update_layer_overlays)
+        disconnect_events(layer.events, self)
+        disconnect_events(
+            layer._overlays.events, self._overlay_callbacks[layer]
+        )
+        del self._overlay_callbacks[layer]
         vispy_layer = self.layer_to_visual[layer]
-        self.viewer.camera.events.disconnect(vispy_layer._on_camera_move)
+        disconnect_events(self.viewer.camera.events, vispy_layer)
         vispy_layer.close()
         del vispy_layer
         del self.layer_to_visual[layer]
@@ -652,8 +659,8 @@ class VispyCanvas:
 
     def _update_viewer_overlays(self):
         for overlay in list(self._overlay_to_visual):
-            overlay_visual = self._overlay_to_visual.pop(overlay)
-            overlay_visual.close()
+            vispy_overlay = self._overlay_to_visual.pop(overlay)
+            vispy_overlay.close()
 
         for overlay in self.viewer._overlays.values():
             if isinstance(overlay, CanvasOverlay):
@@ -671,8 +678,8 @@ class VispyCanvas:
         # "clipping" through the canvas edges) so we just remake them
         # whenever we need to change them.
         for overlay in list(self._layer_overlay_to_visual[layer]):
-            overlay_visual = self._layer_overlay_to_visual[layer].pop(overlay)
-            overlay_visual.close()
+            vispy_overlay = self._layer_overlay_to_visual[layer].pop(overlay)
+            vispy_overlay.close()
 
         overlay_models = layer._overlays.values()
 
@@ -682,18 +689,16 @@ class VispyCanvas:
             else:
                 parent = self.layer_to_visual[layer].node
 
-            # TODO: is this blocker still needed?
-            with layer.events._overlays.blocker():
-                overlay_visual = create_vispy_overlay(
-                    overlay, layer=layer, parent=parent
-                )
+            vispy_overlay = create_vispy_overlay(
+                overlay, layer=layer, parent=parent
+            )
 
-            self._layer_overlay_to_visual[layer][overlay] = overlay_visual
+            self._layer_overlay_to_visual[layer][overlay] = vispy_overlay
 
     def _remove_layer_overlays(self, layer: Layer) -> None:
         for overlay in list(self._layer_overlay_to_visual[layer]):
-            overlay_visual = self._layer_overlay_to_visual[layer].pop(overlay)
-            overlay_visual.close()
+            vispy_overlay = self._layer_overlay_to_visual[layer].pop(overlay)
+            vispy_overlay.close()
 
     def _calculate_view_direction(
         self, event_pos: tuple[float, float]
