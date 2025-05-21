@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from functools import partial
 from typing import TYPE_CHECKING
 from weakref import WeakSet
 
@@ -17,6 +18,8 @@ from napari._vispy.utils.visual import create_vispy_overlay
 from napari.components.overlays import CanvasOverlay
 from napari.utils._proxies import ReadOnlyWrapper
 from napari.utils.colormaps.standardize_color import transform_color
+from napari.utils.events import disconnect_events
+from napari.utils.events.event import Event
 from napari.utils.interactions import (
     mouse_double_click_callbacks,
     mouse_move_callbacks,
@@ -41,7 +44,6 @@ if TYPE_CHECKING:
     from napari.components import ViewerModel
     from napari.components.overlays import Overlay
     from napari.layers import Layer
-    from napari.utils.events.event import Event
     from napari.utils.key_bindings import KeymapHandler
 
 
@@ -134,6 +136,8 @@ class VispyCanvas:
         self._key_map_handler = key_map_handler
         self._instances.add(self)
 
+        self._overlay_callbacks = {}
+
         self.bgcolor = transform_color(
             get_theme(self.viewer.theme).canvas.as_hex()
         )[0]
@@ -181,6 +185,7 @@ class VispyCanvas:
             self._highlight_selected_grid
         )
         self.viewer.grid.events.connect(self._update_scenegraph)
+        self.viewer._overlays.events.connect(self._update_viewer_overlays)
         self.destroyed.connect(self._disconnect_theme)
 
         self._update_scenegraph()
@@ -614,6 +619,11 @@ class VispyCanvas:
         self._layer_overlay_to_visual[napari_layer] = {}
 
         napari_layer.events.visible.connect(self._update_scenegraph)
+        overlay_callback = partial(self._update_layer_overlays, napari_layer)
+        napari_layer._overlays.events.added.connect(overlay_callback)
+        napari_layer._overlays.events.removed.connect(overlay_callback)
+        napari_layer._overlays.events.changed.connect(overlay_callback)
+        self._overlay_callbacks[napari_layer] = overlay_callback
         self.viewer.camera.events.angles.connect(vispy_layer._on_camera_move)
 
         # create overlay visuals for this layer
@@ -636,9 +646,13 @@ class VispyCanvas:
         None
         """
         layer = event.value
-        layer.events.visible.disconnect(self._update_scenegraph)
+        disconnect_events(layer.events, self)
+        disconnect_events(
+            layer._overlays.events, self._overlay_callbacks[layer]
+        )
+        del self._overlay_callbacks[layer]
         vispy_layer = self.layer_to_visual[layer]
-        self.viewer.camera.events.disconnect(vispy_layer._on_camera_move)
+        disconnect_events(self.viewer.camera.events, vispy_layer)
         vispy_layer.close()
         del vispy_layer
         del self.layer_to_visual[layer]
@@ -688,9 +702,9 @@ class VispyCanvas:
         for overlay in list(self._overlay_to_visuals):
             if isinstance(overlay, CanvasOverlay):
                 overlay.events.gridded.disconnect(self._update_scenegraph)
-            overlay_visuals = self._overlay_to_visuals.pop(overlay)
-            for overlay_visual in overlay_visuals:
-                overlay_visual.close()
+            vispy_overlays = self._overlay_to_visuals.pop(overlay)
+            for vispy_overlay in vispy_overlays:
+                vispy_overlay.close()
 
         for overlay in self.viewer._overlays.values():
             if self.viewer.grid.enabled and getattr(overlay, 'gridded', True):
@@ -715,11 +729,11 @@ class VispyCanvas:
         overlay_models = layer._overlays.values()
         for overlay in overlay_models:
             with layer.events._overlays.blocker():
-                overlay_visual = create_vispy_overlay(overlay, layer=layer)
-            self._layer_overlay_to_visual[layer][overlay] = overlay_visual
+                vispy_overlay = create_vispy_overlay(overlay, layer=layer)
+            self._layer_overlay_to_visual[layer][overlay] = vispy_overlay
 
         # set parent node appropriately and connect events
-        for overlay, overlay_visual in self._layer_overlay_to_visual[
+        for overlay, vispy_overlay in self._layer_overlay_to_visual[
             layer
         ].items():
             if isinstance(overlay, CanvasOverlay):
@@ -732,17 +746,17 @@ class VispyCanvas:
                 else:
                     view = self.view
 
-                overlay_visual.node.parent = view
+                vispy_overlay.node.parent = view
             else:
-                overlay_visual.node.parent = self.layer_to_visual[layer].node
+                vispy_overlay.node.parent = self.layer_to_visual[layer].node
 
             # needed to bring up to date to the viewer
-            overlay_visual.reset()
+            vispy_overlay.reset()
 
     def _remove_layer_overlays(self, layer: Layer) -> None:
         for overlay in list(self._layer_overlay_to_visual[layer]):
-            overlay_visual = self._layer_overlay_to_visual[layer].pop(overlay)
-            overlay_visual.close()
+            vispy_overlay = self._layer_overlay_to_visual[layer].pop(overlay)
+            vispy_overlay.close()
 
     def _calculate_view_direction(
         self, event_pos: tuple[float, float]
