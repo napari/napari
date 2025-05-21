@@ -82,3 +82,7 @@ class VispyBrushCircleOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         super().reset()
         self._on_size_change()
         self._last_mouse_pos = None
+
+    def close(self):
+        self.node.events.canvas_change.disconnect(self._on_canvas_change)
+        super().close()
