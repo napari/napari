@@ -105,12 +105,12 @@ def test_path_prefix():
 
         return bar(x)
 
-    assert eval_with_filename('foo(42)', 'hi.py') is None
+    assert eval_with_filename('foo(42)', '/tmp/hi.py') is None
 
     r = 8  # noqa
-    assert eval_with_filename('foo(r)', 'bye.py') == 'r'
+    assert eval_with_filename('foo(r)', '/tmp/bye.py') == 'r'
 
-    assert eval_with_filename('foo(i:=33)', 'rye.py') == 'i'
+    assert eval_with_filename('foo(i:=33)', '/tmp/rye.py') == 'i'
 
 
 def test_empty_path_prefix():
