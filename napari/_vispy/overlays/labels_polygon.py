@@ -240,4 +240,7 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
         self.layer.mouse_double_click_callbacks.remove(
             self._on_mouse_double_click
         )
+        get_settings().experimental.events.completion_radius.disconnect(
+            self._on_completion_radius_settings_change
+        )
         super().close()
