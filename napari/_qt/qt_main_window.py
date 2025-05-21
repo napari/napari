@@ -84,7 +84,6 @@ from napari.settings import get_settings
 from napari.utils import perf
 from napari.utils._proxies import PublicOnlyProxy
 from napari.utils.events import Event
-from napari.utils.geometry import get_center_bbox
 from napari.utils.io import imsave
 from napari.utils.misc import (
     in_ipython,
@@ -1751,7 +1750,7 @@ class Window:
         self,
         rois: list[np.ndarray],
         paths: str | Path | list[str | Path] | None = None,
-        scale: float | None = None,
+        scale: float = 1.0,
     ):
         """Export the given rectangular rois to specified file paths.
 
@@ -1785,54 +1784,11 @@ class Window:
             The list with roi screenshots.
 
         """
-        if (
-            paths is not None
-            and isinstance(paths, list)
-            and len(paths) != len(rois)
-        ):
-            raise ValueError(
-                trans._(
-                    'The number of file paths does not match the number of ROI shapes',
-                    deferred=True,
-                )
-            )
-
-        if isinstance(paths, str | Path):
-            storage_dir = Path(paths).expanduser()
-            storage_dir.mkdir(parents=True, exist_ok=True)
-            paths = [storage_dir / f'roi_{n}.png' for n in range(len(rois))]
-
-        if self._qt_viewer.viewer.dims.ndisplay > 2:
-            raise NotImplementedError(
-                "'export_rois' is not implemented for 3D view."
-            )
-
-        screenshot_list = []
-        camera = self._qt_viewer.viewer.camera
-        start_camera_center = camera.center
-        start_camera_zoom = camera.zoom
-        canvas = self._qt_viewer.canvas
-        prev_size = canvas.size
-
-        visible_dims = list(self._qt_viewer.viewer.dims.displayed)
-        step = min(self._qt_viewer.viewer.layers.extent.step[visible_dims])
-
-        for index, roi in enumerate(rois):
-            center_coord, height, width = get_center_bbox(roi)
-            camera.center = center_coord
-            canvas.size = (int(height / step), int(width / step))
-
-            camera.zoom = 1 / step
-            path = paths[index] if paths is not None else None
-            screenshot_list.append(
-                self.screenshot(path=path, canvas_only=True, scale=scale)
-            )
-
-        canvas.size = prev_size
-        camera.center = start_camera_center
-        camera.zoom = start_camera_zoom
-
-        return screenshot_list
+        return self._qt_viewer.export_rois(
+            rois=rois,
+            paths=paths,
+            scale=scale,
+        )
 
     def screenshot(
         self, path=None, size=None, scale=None, flash=True, canvas_only=False

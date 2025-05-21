@@ -1325,6 +1325,11 @@ class QtViewer(QSplitter):
             The list with roi screenshots.
 
         """
+        if any(roi.shape[-2:] != (4, 2) for roi in rois):
+            raise ValueError(
+                'ROI found with invalid shape, all rois must have shape (4, 2), i.e. have 4 corners defined in 2 '
+                'dimensions. 3D is not supported.'
+            )
         if (
             paths is not None
             and isinstance(paths, list)

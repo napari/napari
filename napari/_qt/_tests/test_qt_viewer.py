@@ -392,9 +392,7 @@ def test_export_rois(qt_viewer, viewer_model, tmp_path):
         ), f'Wrong number of white pixels in the ROI {index}'
 
 
-def test_export_rois_3d_fail(make_napari_viewer):
-    viewer = make_napari_viewer()
-
+def test_export_rois_3d_fail(qt_viewer, viewer_model):
     # create 3d ROI for testing
     roi_3d = [
         np.array([[0, 0, 0], [0, 20, 0], [0, 20, 20], [0, 0, 20]]),
@@ -403,11 +401,11 @@ def test_export_rois_3d_fail(make_napari_viewer):
 
     # Only 2D roi supported at the moment
     with pytest.raises(ValueError, match='ROI found with invalid'):
-        viewer.export_rois(roi_3d)
+        qt_viewer.export_rois(roi_3d)
 
     test_data = np.zeros((4, 50, 50))
-    viewer.add_image(test_data)
-    viewer.dims.ndisplay = 3
+    viewer_model.add_image(test_data)
+    viewer_model.dims.ndisplay = 3
 
     # 3D view should fail
     roi_data = [
@@ -417,8 +415,7 @@ def test_export_rois_3d_fail(make_napari_viewer):
     with pytest.raises(
         NotImplementedError, match="'export_rois' is not implemented"
     ):
-        viewer.export_rois(roi_data)
-    viewer.close()
+        qt_viewer.export_rois(roi_data)
 
 
 @pytest.mark.skip('new approach')
