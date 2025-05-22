@@ -90,8 +90,10 @@ class VispyCanvas:
     _last_theme_color : Optional[npt.NDArray[np.float]]
         Theme color represented as numpy ndarray of shape (4,) before theme change
         was applied.
-    _overlay_to_visual : dict(napari.components.overlays, napari._vispy.overlays)
+    _overlay_to_visual : dict(napari.components.overlays, list(napari._vispy.overlays))
         A mapping of the napari overlays that are part of the viewer and their corresponding Vispy counterparts.
+    _layer_overlay_to_visual : dict(napari.layers.Layer, dict(napari.components.overlays, napari._vispy.overlays))
+        A mapping from each layer in the layerlist to their mappings of napari overlay->vispy counterpart.
     _scene_canvas : napari._vispy.canvas.NapariSceneCanvas
         SceneCanvas which automatically draws the contents of a scene. It is ultimately a VispySceneCanvas, but allows
         for ignoring mousewheel events with modifiers.
@@ -129,7 +131,7 @@ class VispyCanvas:
         self.grid_cameras = []
 
         self.layer_to_visual: dict[Layer, VispyBaseLayer] = {}
-        self._overlay_to_visuals: dict[Overlay, list[VispyBaseOverlay]] = {}
+        self._overlay_to_visual: dict[Overlay, list[VispyBaseOverlay]] = {}
         self._layer_overlay_to_visual: dict[
             Layer, dict[Overlay, VispyBaseOverlay]
         ] = {}
@@ -712,15 +714,24 @@ class VispyCanvas:
         vispy_overlay = create_vispy_overlay(
             overlay=overlay, viewer=self.viewer, parent=parent
         )
-        self._overlay_to_visuals.setdefault(overlay, []).append(vispy_overlay)
+        self._overlay_to_visual.setdefault(overlay, []).append(vispy_overlay)
 
-    def _update_viewer_overlays(self):
-        for overlay in list(self._overlay_to_visuals):
+    def _remove_viewer_overlays(self) -> None:
+        """Remove all viewer overlay visuals and disconnect their events."""
+        for overlay in list(self._overlay_to_visual):
             if isinstance(overlay, CanvasOverlay):
                 overlay.events.gridded.disconnect(self._update_scenegraph)
-            vispy_overlays = self._overlay_to_visuals.pop(overlay)
+            vispy_overlays = self._overlay_to_visual.pop(overlay)
             for vispy_overlay in vispy_overlays:
                 vispy_overlay.close()
+
+    def _update_viewer_overlays(self):
+        """Update the viewer overlay visuals.
+
+        Also ensures that overlays are properly assigned parents depending on
+        their class (canvas vs scene overlays).
+        """
+        self._remove_viewer_overlays()
 
         for overlay in self.viewer._overlays.values():
             if self.viewer.grid.enabled and getattr(overlay, 'gridded', True):
@@ -736,43 +747,49 @@ class VispyCanvas:
                 for view in views:
                     self._add_viewer_overlay(overlay, view.scene)
 
+    def _add_layer_overlay(
+        self, layer: Layer, overlay: Overlay, parent: Node
+    ) -> None:
+        """Create vispy overlay and add to dictionary of layer overlay visuals"""
+        vispy_overlay = create_vispy_overlay(
+            overlay, layer=layer, parent=parent
+        )
+
+        self._layer_overlay_to_visual[layer][overlay] = vispy_overlay
+
+    def _remove_layer_overlays(self, layer: Layer) -> None:
+        """Remove all layer overlay visuals and disconnect their events."""
+        for overlay in list(self._layer_overlay_to_visual[layer]):
+            vispy_overlay = self._layer_overlay_to_visual[layer].pop(overlay)
+            vispy_overlay.close()
+
     def _update_layer_overlays(self, layer: Layer) -> None:
-        # reparenting does not work well with grid mode (we end up with overlay visuals
-        # "clipping" where the grid cell boundary used to be...) so we just remake them
-        # whenever we need to change them
+        """Update the overlay visuals for each layer in the canvas.
+
+        Also ensures that overlays are properly assigned parents depending on
+        their class (canvas vs scene overlays).
+        """
+        # reparenting does not work well in a few cases (we end up with overlay visuals
+        # "clipping" through the canvas edges) so we just remake them
+        # whenever we need to change them.
         self._remove_layer_overlays(layer)
 
         overlay_models = layer._overlays.values()
         for overlay in overlay_models:
-            with layer.events._overlays.blocker():
-                vispy_overlay = create_vispy_overlay(overlay, layer=layer)
-            self._layer_overlay_to_visual[layer][overlay] = vispy_overlay
-
-        # set parent node appropriately and connect events
-        for overlay, vispy_overlay in self._layer_overlay_to_visual[
-            layer
-        ].items():
             if isinstance(overlay, CanvasOverlay):
                 if self.viewer.grid.enabled:
                     row, col = self.viewer.grid.position(
                         self.viewer.layers.index(layer),
                         len(self.viewer.layers),
                     )
-                    view = self.grid[row, col]
+                    parent = self.grid[row, col]
                 else:
-                    view = self.view
+                    parent = self.view
 
-                vispy_overlay.node.parent = view
             else:
-                vispy_overlay.node.parent = self.layer_to_visual[layer].node
+                parent = self.layer_to_visual[layer].node
 
-            # needed to bring up to date to the viewer
-            vispy_overlay.reset()
-
-    def _remove_layer_overlays(self, layer: Layer) -> None:
-        for overlay in list(self._layer_overlay_to_visual[layer]):
-            vispy_overlay = self._layer_overlay_to_visual[layer].pop(overlay)
-            vispy_overlay.close()
+            self._add_layer_overlay(layer, overlay, parent)
 
     def _calculate_view_direction(
         self, event_pos: tuple[float, float]
