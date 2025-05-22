@@ -48,6 +48,7 @@ overlay_to_visual[SelectionBoxNoRotation] = VispySelectionBoxNoRotation
 
 viewer = napari.Viewer()
 
+# we add an image layer with random data;
 data = np.random.randint(0, 255, size=(1024, 1024), dtype=np.uint8)
 image = viewer.add_image(
     data,
@@ -57,8 +58,12 @@ image = viewer.add_image(
 # just for type checking
 assert isinstance(image, Image)
 
+# we recover the bounds of the image layer;
+# this method will ensure that the overlay is drawn
+# correctly in the viewer
+layer_bounds = tuple(tuple(x.tolist()) for x in image._display_bounding_box_augmented([0, 1]).T)
 image._overlays['selection_no_rotation'] = SelectionBoxNoRotation(
-    bounds=[(0, 0), data.shape], handles=True
+    bounds=layer_bounds, handles=True
 )
 
 
