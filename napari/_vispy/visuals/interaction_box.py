@@ -84,7 +84,7 @@ class InteractionBox(Compound):
         )
 
         edges = self._edges if handles else self._edges[:4]
-        markers = self._marker_symbol if rotation else self._marker_symbol[:7]
+        markers = self._marker_symbol if rotation else self._marker_symbol[:8]
 
         self.line.set_data(pos=vertices, connect=edges)
 
