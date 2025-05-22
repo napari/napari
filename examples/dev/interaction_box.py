@@ -9,19 +9,29 @@ from napari._vispy.overlays.interaction_box import (
     InteractionBox,
 )
 from napari._vispy.utils.visual import overlay_to_visual
-from napari.components.overlays.interaction_box import SelectionBoxOverlay
+from napari.components.overlays import SceneOverlay
 from napari.layers import Image
+from napari.layers.utils.interaction_box import (
+    InteractionBoxHandle,
+    calculate_bounds_from_contained_points,
+)
 
 
 # define a model for the selection box overlay;
 # we subclass from SelectionBoxOverlay to get the
 # default behavior of the selection box; we redefine
 # the handles attribute to True to show the handles
-class SelectionBoxNoRotation(SelectionBoxOverlay):
+class SelectionBoxNoRotation(SceneOverlay):
     """Selection box overlay with no rotation handle."""
 
     rotation: bool = False
     handles: bool = True
+    bounds: tuple[tuple[float, float], tuple[float, float]] = ((0, 0), (0, 0))
+    selected_handle: InteractionBoxHandle | None = None
+
+    def update_from_points(self, points: np.ndarray) -> None:
+        """Create as a bounding box of the given points"""
+        self.bounds = calculate_bounds_from_contained_points(points)
 
 
 # we also need to define an equivalent vispy overlay;
@@ -29,7 +39,9 @@ class SelectionBoxNoRotation(SelectionBoxOverlay):
 class VispySelectionBoxNoRotation(LayerOverlayMixin, VispySceneOverlay):
     """Vispy selection box overlay with no rotation handle."""
 
+    layer: Image
     node: InteractionBox
+    overlay: SelectionBoxNoRotation
 
     def __init__(self, *, layer, overlay, parent=None) -> None:
         super().__init__(
@@ -93,8 +105,10 @@ def toggle_overlay(
 ) -> None:
     with warnings.catch_warnings():
         warnings.simplefilter('ignore')
-        viewer.layers['image']._overlays['selection_no_rotation'].visible = selection_no_rotation
-        viewer.layers['image']._overlays["transform_box"].visible = transform_box
+        transform = viewer.layers['image']._overlays["transform_box"]
+        selection = viewer.layers['image']._overlays['selection_no_rotation']
+        transform.visible = transform_box
+        selection.visible = selection_no_rotation
 
 
 viewer.window.add_dock_widget(toggle_overlay)
