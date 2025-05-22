@@ -28,13 +28,13 @@ mypy-extensions==1.1.0
     # via mypy
 npe2==0.7.8
     # via -r resources/requirements_mypy.in
-numpy==2.2.5
+numpy==2.2.6
     # via -r resources/requirements_mypy.in
 packaging==25.0
     # via
     #   build
     #   qtpy
-psygnal==0.12.0
+psygnal==0.13.0
     # via
     #   magicgui
     #   npe2
@@ -71,21 +71,19 @@ rich==14.0.0
     # via
     #   npe2
     #   typer
-setuptools==80.3.1
-    # via types-setuptools
 shellingham==1.5.4
     # via typer
 superqt==0.7.3
     # via magicgui
 tomli-w==1.2.0
     # via npe2
-typer==0.15.3
+typer==0.15.4
     # via npe2
-types-pyyaml==6.0.12.20250402
+types-pyyaml==6.0.12.20250516
     # via -r resources/requirements_mypy.in
-types-requests==2.32.0.20250328
+types-requests==2.32.0.20250515
     # via -r resources/requirements_mypy.in
-types-setuptools==80.3.0.20250505
+types-setuptools==80.7.0.20250516
     # via -r resources/requirements_mypy.in
 typing-extensions==4.13.2
     # via

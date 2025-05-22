@@ -14,7 +14,7 @@ import numpy as np
 from typing_extensions import Self
 
 from napari._pydantic_compat import Field, PrivateAttr, validator
-from napari.utils.color import ColorArray
+from napari.utils.color import ColorArray, ColorValue
 from napari.utils.colormaps import _accelerated_cmap as _accel_cmap
 from napari.utils.colormaps.colorbars import make_colorbar
 from napari.utils.colormaps.standardize_color import transform_color
@@ -60,6 +60,12 @@ class Colormap(EventedModel):
         'zero'. If 'linear', ncontrols = ncolors (one
         color per control point). If 'zero', ncontrols
         = ncolors+1 (one color per bin).
+    nan_color : ColorValue
+        Mapping for NaN values. Equivalent to matplotlib's `bad_color`
+    high_color : ColorValue
+        Mapping for values equal to or greater than 1.
+    low_color : ColorValue
+        Mapping for values equal to or less than 0.
     """
 
     # fields
@@ -68,6 +74,9 @@ class Colormap(EventedModel):
     _display_name: str | None = PrivateAttr(None)
     interpolation: ColormapInterpolationMode = ColormapInterpolationMode.LINEAR
     controls: Array = Field(default_factory=lambda: cast(Array, []))
+    nan_color: ColorValue = ColorValue('transparent')
+    high_color: ColorValue | None = None
+    low_color: ColorValue | None = None
 
     def __init__(
         self, colors, display_name: str | None = None, **data
@@ -126,9 +135,6 @@ class Colormap(EventedModel):
 
         return v
 
-    def __iter__(self):
-        yield from (self.colors, self.controls, self.interpolation)
-
     def __len__(self):
         return len(self.colors)
 
@@ -157,6 +163,14 @@ class Colormap(EventedModel):
                     deferred=True,
                 )
             )
+
+        values = values[..., None]
+        # map NaNs, lows, and highs
+        cols = np.where(np.isnan(values), self.nan_color, cols)
+        if self.high_color is not None:
+            cols = np.where(values >= 1, self.high_color, cols)
+        if self.low_color is not None:
+            cols = np.where(values <= 0, self.low_color, cols)
 
         return cols
 

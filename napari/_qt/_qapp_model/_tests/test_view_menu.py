@@ -8,10 +8,10 @@ from qtpy.QtCore import QPoint, Qt
 from qtpy.QtWidgets import QApplication
 
 from napari._app_model import get_app_model
+from napari._app_model.actions._view import toggle_action_details
 from napari._qt._qapp_model.qactions._view import (
     _get_current_tooltip_visibility,
     _toggle_canvas_ndim,
-    toggle_action_details,
 )
 from napari._tests.utils import skip_local_focus, skip_local_popups
 from napari.viewer import ViewerModel
@@ -47,7 +47,7 @@ def check_view_menu_visibility(viewer, qtbot):
     toggle_action_details,
 )
 def test_toggle_axes_scale_bar_attr(
-    make_napari_viewer, action_id, action_title, viewer_attr, sub_attr
+    action_id, action_title, viewer_attr, sub_attr
 ):
     """
     Test toggle actions related with viewer axes and scale bar attributes.
@@ -65,7 +65,7 @@ def test_toggle_axes_scale_bar_attr(
         * `ticks`
     """
     app = get_app_model()
-    viewer = make_napari_viewer()
+    viewer = ViewerModel()
 
     # Get viewer attribute to check (`axes` or `scale_bar`)
     axes_scale_bar = getattr(viewer, viewer_attr)
@@ -74,7 +74,8 @@ def test_toggle_axes_scale_bar_attr(
     initial_value = getattr(axes_scale_bar, sub_attr)
 
     # Change sub-attribute via action command execution and check value
-    app.commands.execute_command(action_id)
+    with app.injection_store.register(providers={ViewerModel: viewer}):
+        app.commands.execute_command(action_id)
     changed_value = getattr(axes_scale_bar, sub_attr)
     assert initial_value is not changed_value
 

@@ -11,6 +11,7 @@ from napari.utils.colormaps.colormap_utils import (
     _VISPY_COLORMAPS_TRANSLATIONS,
     AVAILABLE_COLORMAPS,
     _increment_unnamed_colormap,
+    _napari_cmap_to_vispy,
     ensure_colormap,
     vispy_or_mpl_colormap,
 )
@@ -35,7 +36,7 @@ def test_colormap(name):
 
     # Create vispy colormap and check current colormaps match vispy
     # colormap
-    vispy_cmap = VispyColormap(*cmap)
+    vispy_cmap = _napari_cmap_to_vispy(cmap)
     vispy_colors = vispy_cmap.map(values)
     np.testing.assert_almost_equal(colors, vispy_colors, decimal=6)
 
