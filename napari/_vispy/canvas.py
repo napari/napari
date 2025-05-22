@@ -201,9 +201,9 @@ class VispyCanvas:
 
     @background_color_override.setter
     def background_color_override(
-        self, value: str | npt.ArrayLike | None
+        self, value: str | tuple | npt.ArrayLike | None
     ) -> None:
-        if value:
+        if value is not None:
             self.view.bgcolor = value
         else:
             self.view.bgcolor = None
