@@ -135,14 +135,14 @@ def test_all_layer_actions_are_accessible_via_shortcut(
     ('layer_class', 'a_unique_name', 'ndim'), layer_test_data
 )
 def test_add_layer_magic_name(
-    make_napari_viewer, layer_class, a_unique_name, ndim
+    make_napari_viewer, layer_class, a_unique_name, ndim, tmp_path
 ):
     """Test magic_name works when using add_* for layers"""
     # Tests for issue #1709
     viewer = make_napari_viewer()  # noqa: F841
     layer = eval_with_filename(
         'add_layer_by_type(viewer, layer_class, a_unique_name)',
-        '/tmp/somefile.py',
+        str(tmp_path / 'somefile.py'),
     )
     assert layer.name == 'a_unique_name'
 

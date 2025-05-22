@@ -95,7 +95,7 @@ def test_assignment():
     assert result == 'd'
 
 
-def test_path_prefix():
+def test_path_prefix(tmp_path):
     """Test that path prefixes work as expected."""
     mname = functools.partial(magic_name, path_prefix=__file__)
 
@@ -105,15 +105,15 @@ def test_path_prefix():
 
         return bar(x)
 
-    assert eval_with_filename('foo(42)', '/tmp/hi.py') is None
+    assert eval_with_filename('foo(42)', str(tmp_path / 'hi.py')) is None
 
     r = 8  # noqa
-    assert eval_with_filename('foo(r)', '/tmp/bye.py') == 'r'
+    assert eval_with_filename('foo(r)', str(tmp_path / 'bye.py')) == 'r'
 
-    assert eval_with_filename('foo(i:=33)', '/tmp/rye.py') == 'i'
+    assert eval_with_filename('foo(i:=33)', str(tmp_path / 'rye.py')) == 'i'
 
 
-def test_empty_path_prefix():
+def test_empty_path_prefix(tmp_path):
     """Test an empty path prefix that matches the entire stack"""
     # Repeat tests with an empty path_prefix
     mname = functools.partial(magic_name, path_prefix='')
@@ -126,9 +126,9 @@ def test_empty_path_prefix():
 
     # Test are all None because the path_prefix matches everything
     # magic_name reads through until the end of the stack
-    assert eval_with_filename('foo(42)', '/tmp/hi.py') is None
+    assert eval_with_filename('foo(42)', str(tmp_path / 'hi.py')) is None
 
     r = 8  # noqa
-    assert eval_with_filename('foo(r)', '/tmp/bye.py') is None
+    assert eval_with_filename('foo(r)', str(tmp_path / 'bye.py')) is None
 
-    assert eval_with_filename('foo(i:=33)', '/tmp/rye.py') is None
+    assert eval_with_filename('foo(i:=33)', str(tmp_path / 'rye.py')) is None
