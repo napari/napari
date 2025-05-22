@@ -11,8 +11,9 @@ def test_viewer_overlays(make_napari_viewer):
 
     for overlay in viewer._overlays.values():
         if isinstance(overlay, CanvasOverlay):
-            assert (
-                canvas._overlay_to_visual[overlay].node in canvas.view.children
+            assert all(
+                visual.node in canvas.view.children
+                for visual in canvas._overlay_to_visuals[overlay]
             )
         else:
             assert (
