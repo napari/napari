@@ -72,6 +72,8 @@ if __name__ == '__main__':
             print('Extensions updated.')
             sys.exit(0)
         else:
+            print('Here is the new extension block:\n')
+            print(new)
             sys.exit(1)
 
     print('Extension patterns are up to date.')
