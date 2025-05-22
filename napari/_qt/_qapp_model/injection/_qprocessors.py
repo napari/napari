@@ -88,7 +88,7 @@ def _add_layer_data_to_viewer(
     source : dict or None
         An optional layer source to use.
     meta: dict or None
-        An optional dict pased as keyword arguments to the layer constructor.
+        An optional dict passed as keyword arguments to the layer constructor.
         Currently used to pass information like a scale, units, etc.
 
     Examples

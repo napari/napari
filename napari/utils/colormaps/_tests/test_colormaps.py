@@ -23,7 +23,7 @@ from napari.utils.colormaps.vendored import cm
 def test_colormap(name):
     if name in {'label_colormap', 'custom'}:
         pytest.skip(
-            'label_colormap  and custom are inadvertantly added to AVAILABLE_COLORMAPS but is not a normal colormap'
+            'label_colormap  and custom are inadvertently added to AVAILABLE_COLORMAPS but is not a normal colormap'
         )
 
     np.random.seed(0)

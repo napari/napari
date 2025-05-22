@@ -156,7 +156,7 @@ def rotate_layers(viewer: Viewer):
             visible_dims = list(viewer.dims.displayed)
 
         initial_affine = layer.affine.set_slice(visible_dims)
-        # want to rotate around a fixed refernce for all layers
+        # want to rotate around a fixed reference for all layers
         center = (
             np.asarray(viewer.dims.range)[:, 0][
                 np.asarray(viewer.dims.displayed)

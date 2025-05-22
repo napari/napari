@@ -222,7 +222,7 @@ class QtLayerControls(QFrame):
         layer : napari.layers.Layer
             The layer instance that this button controls.n
         btn_name : str
-            name fo the button
+            name for the button
         mode : Enum
             Value Associated to current button
         edit_button: bool
@@ -242,7 +242,7 @@ class QtLayerControls(QFrame):
 
         Notes
         -----
-        When shortcuts are modifed/added/removed via the action manager, the
+        When shortcuts are modified/added/removed via the action manager, the
         tooltip will be updated to reflect the new shortcut.
         """
         action_name = f'napari:{action_name}'

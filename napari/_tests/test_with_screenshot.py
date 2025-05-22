@@ -108,7 +108,7 @@ def test_z_order_image_points(make_napari_viewer):
 @skip_on_win_ci
 @skip_local_popups
 def test_z_order_images_after_ndisplay(make_napari_viewer):
-    """Test z order of images remanins constant after chaning ndisplay."""
+    """Test z order of images remains constant after changing ndisplay."""
     data = np.ones((11, 11))
 
     viewer = make_napari_viewer(show=True)
@@ -138,7 +138,7 @@ def test_z_order_images_after_ndisplay(make_napari_viewer):
 @skip_on_win_ci
 @skip_local_popups
 def test_z_order_image_points_after_ndisplay(make_napari_viewer):
-    """Test z order of image and points remanins constant after chaning ndisplay."""
+    """Test z order of image and points remains constant after changing ndisplay."""
     data = np.ones((11, 11))
 
     viewer = make_napari_viewer(show=True)

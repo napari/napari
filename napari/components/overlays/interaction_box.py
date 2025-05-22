@@ -13,7 +13,7 @@ class SelectionBoxOverlay(SceneOverlay):
     bounds : 2-tuple of 2-tuples
         Corners at top left and bottom right in layer coordinates.
     handles : bool
-        Whether to show the handles for transfomation or just the box.
+        Whether to show the handles for transformation or just the box.
     selected_handle : Optional[InteractionBoxHandle]
         The currently selected handle.
     visible : bool

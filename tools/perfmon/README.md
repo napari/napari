@@ -1,4 +1,4 @@
-# Utilties for napari performance monitoring
+# Utilities for napari performance monitoring
 
 This directory contains configs and tools associated with [performance monitoring as described on napari.org](https://napari.org/stable/howtos/perfmon.html?highlight=perfmon).
 

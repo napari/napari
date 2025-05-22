@@ -779,7 +779,7 @@ def test_mixed_2d_and_3d_layers(make_napari_viewer, multiscale):
 
 def test_remove_add_image_3D(make_napari_viewer):
     """
-    Test that adding, removing and readding an image layer in 3D does not cause issues
+    Test that adding, removing and re-adding an image layer in 3D does not cause issues
     due to the vispy node change. See https://github.com/napari/napari/pull/3670
     """
     viewer = make_napari_viewer(ndisplay=3)

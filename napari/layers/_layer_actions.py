@@ -208,7 +208,7 @@ def _project(ll: LayerList, axis: int = 0, mode: str = 'max') -> None:
     data = (getattr(np, mode)(layer.data, axis=axis, keepdims=False),)
 
     # Get the meta-data of the layer, but without transforms,
-    # the transforms are updated bellow as projection of transforms
+    # the transforms are updated below as projection of transforms
     # requires a bit more work than just copying them
     # (e.g., the axis of the projection should be removed).
     # It is done in `set_slice` method of `TransformChain`

@@ -38,7 +38,7 @@ class TypedMutableSequence(MutableSequence[_T]):
         to that type.  This is used for custom indexing.  For example, if a
         ``lookup`` of {str: lambda x: x.name} is provided, then you can index
         into the list using ``list['frank']`` and it will search for an object
-        whos attribute ``.name`` equals ``'frank'``.
+        whose attribute ``.name`` equals ``'frank'``.
     """
 
     def __init__(

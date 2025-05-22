@@ -63,7 +63,7 @@ def test_weakref_event_emitter_cb(disconnect_and_should_be_none):
     reason is that unlike with bound method, the callback may be a closure and
     may not stick around.
 
-    We thus expect the wekref to be None only if explicitely disconnected
+    We thus expect the wekref to be None only if explicitly disconnected
 
     """
     e = EventEmitter(type_name='test_weak')

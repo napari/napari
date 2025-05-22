@@ -23,7 +23,7 @@ viewer.add_image(
 viewer.scale_bar.visible = True
 
 # Text options
-viewer.scale_bar.unit = 'um'  # set to None to diplay no unit
+viewer.scale_bar.unit = 'um'  # set to None to display no unit
 viewer.scale_bar.length = 23  # length, in units, of the scale bar
 viewer.scale_bar.font_size = 20  # default is 10
 

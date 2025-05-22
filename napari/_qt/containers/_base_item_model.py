@@ -113,7 +113,7 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
         """Returns the item flags for the given `index`.
 
         This describes the properties of a given item in the model.  We set
-        them to be editable, checkable, dragable, droppable, etc...
+        them to be editable, checkable, draggable, droppable, etc...
         If index is not a list, we additionally set `Qt.ItemNeverHasChildren`
         (for optimization). Editable models must return a value containing
         `Qt.ItemIsEditable`.

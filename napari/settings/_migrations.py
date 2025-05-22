@@ -185,7 +185,7 @@ def v060_070(model: NapariSettings):
 
     In #7747, we changed from `experimental.compiled_triangulation` (bool) to
     `experimental.triangulation_backend` (enum). We need to migrate the bool
-    setting to oen of the backends.
+    setting to one of the backends.
 
     Note: both PRs occurred between 0.5.6 and 0.6.0, so they require only a
     single version bump/migration.

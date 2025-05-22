@@ -70,7 +70,7 @@ vec4 calculateShadedCategoricalColor(vec4 betterColor, vec3 loc, vec3 step)
     int nlights = 1;
     for (int i=0; i<nlights; i++)
     {
-        // Get light direction (make sure to prevent zero devision)
+        // Get light direction (make sure to prevent zero division)
         vec3 L = normalize(view_ray);  //lightDirs[i];
         float lightEnabled = float( length(L) > 0.0 );
         L = normalize(L+(1.0-lightEnabled));

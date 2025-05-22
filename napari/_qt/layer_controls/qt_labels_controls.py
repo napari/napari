@@ -348,7 +348,7 @@ class QtLabelsControls(QtLayerControls):
               the result is opaque.
             * iso_categorical: isosurface for categorical data (e.g., labels).
               Cast a ray until a value greater than zero is encountered. At that
-              location, lighning calculations are performed to give the visual
+              location, lighting calculations are performed to give the visual
               appearance of a surface.
         """
         self.isoGradientComboBox.setEnabled(

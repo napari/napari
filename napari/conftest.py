@@ -761,13 +761,13 @@ def _dangling_qtimers(monkeypatch, request):
             else:
                 base_start(self)
 
-        def single_shot(msec, reciver, method=None):
+        def single_shot(msec, receiver, method=None):
             t = QTimer()
             t.setSingleShot(True)
             if method is None:
-                t.timeout.connect(reciver)
+                t.timeout.connect(receiver)
             else:
-                t.timeout.connect(getattr(reciver, method))
+                t.timeout.connect(getattr(receiver, method))
             calling_place = _get_calling_place(2)
             if 'superqt' in calling_place and 'throttler' in calling_place:
                 calling_place += _get_calling_stack()

@@ -80,7 +80,7 @@ def rotation_matrix_from_vectors_2d(
     Returns
     -------
     rotation_matrix : np.ndarray
-        The (2, 2) tranformation matrix that rotates vec_1 to vec_2.
+        The (2, 2) transformation matrix that rotates vec_1 to vec_2.
     """
     # ensure unit vectors
     vec_1 = vec_1 / np.linalg.norm(vec_1)

@@ -82,7 +82,7 @@ class CallerFrame:
         - capture local namespace of `napari.run()` when starting the qt-console
 
     For more complex logic you could use a callable that keep track of
-    previous/state/frames, though be careful, the predicate is not guarantied to
+    previous/state/frames, though be careful, the predicate is not guaranteed to
     be called on all subsequents frames.
 
     """

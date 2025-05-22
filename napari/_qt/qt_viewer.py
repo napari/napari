@@ -92,7 +92,7 @@ def _extension_string_for_layers(
 ) -> tuple[str, list[WriterContribution]]:
     """Return an extension string and the list of corresponding writers.
 
-    The extension string is a ";;" delimeted string of entries. Each entry
+    The extension string is a ";;" delimited string of entries. Each entry
     has a brief description of the file type and a list of extensions.
 
     The writers, when provided, are the npe2.manifest.io.WriterContribution

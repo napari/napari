@@ -106,7 +106,7 @@ class Labels(ScalarFieldBase):
         Features table where each row corresponds to a label and each column
         is a feature. The first row corresponds to the background label.
     iso_gradient_mode : str
-        Method for calulating the gradient (used to get the surface normal) in the
+        Method for calculating the gradient (used to get the surface normal) in the
         'iso_categorical' rendering mode. Must be one of {'fast', 'smooth'}.
         'fast' uses a simple finite difference gradient in x, y, and z. 'smooth' uses an
         isotropic Sobel gradient, which is smoother but more computationally expensive.
@@ -209,7 +209,7 @@ class Labels(ScalarFieldBase):
     brush_size : float
         Size of the paint brush in data coordinates.
     iso_gradient_mode : str
-        Method for calulating the gradient (used to get the surface normal) in the
+        Method for calculating the gradient (used to get the surface normal) in the
         'iso_categorical' rendering mode. Must be one of {'fast', 'smooth'}.
         'fast' uses a simple finite difference gradient in x, y, and z. 'smooth' uses an
         isotropic Sobel gradient, which is smoother but more computationally expensive.
@@ -427,13 +427,13 @@ class Labels(ScalarFieldBase):
         """Return current rendering mode.
 
         Selects a preset rendering mode in vispy that determines how
-        lablels are displayed.  Options include:
+        labels are displayed.  Options include:
 
         * ``translucent``: voxel colors are blended along the view ray until
           the result is opaque.
         * ``iso_categorical``: isosurface for categorical data.
           Cast a ray until a non-background value is encountered. At that
-          location, lighning calculations are performed to give the visual
+          location, lighting calculations are performed to give the visual
           appearance of a surface.
 
         Returns
