@@ -12,8 +12,7 @@ from napari.layers import Image
 
 # define a model for the selection box overlay;
 # we subclass from SelectionBoxOverlay to get the
-# default behavior of the selection box; we redefine
-# the handles attribute to True to show the handles
+# default behavior of the selection box;
 class SelectionBoxNoRotation(SelectionBoxOverlay):
     """Selection box overlay with no rotation handle."""
 
@@ -23,6 +22,9 @@ class SelectionBoxNoRotation(SelectionBoxOverlay):
 class VispySelectionBoxNoRotation(VispySelectionBoxOverlay):
     """Vispy selection box overlay with no rotation handle."""
 
+    # the _on_bounds_change method is the same as in the
+    # original VispySelectionBoxOverlay, but we set
+    # rotation to False to not draw the rotation handle
     def _on_bounds_change(self):
         if self.layer._slice_input.ndisplay == 2:
             top_left, bot_right = self.overlay.bounds
@@ -32,11 +34,16 @@ class VispySelectionBoxNoRotation(VispySelectionBoxOverlay):
                 bot_right[::-1],
                 handles=self.overlay.handles,
                 selected=self.overlay.selected_handle,
+                # by setting rotation to False,
+                # the circle handle will not be drawn
                 rotation=False,
             )
 
 
-# register the new overlay classes
+# before we can use the new overlay, we have to update
+# the overlay_to_visual mapping to include our new overlay;
+# this is necessary so that the correct vispy overlay
+# is used when the overlay is created
 overlay_to_visual[SelectionBoxNoRotation] = VispySelectionBoxNoRotation
 
 viewer = napari.Viewer()
@@ -55,18 +62,18 @@ image._overlays['selection_no_rotation'] = SelectionBoxNoRotation(
 )
 
 
+# we use a simple magicgui widget to allow
+# the toggling of the selection box overlay
+# as demonstration
 @magicgui
 def toggle_overlay(
-    viewer: napari.Viewer, transform_box: bool = False, selection_no_rotation: bool = False
+    viewer: napari.Viewer, toggle_selection_box: bool = False
 ) -> None:
     with warnings.catch_warnings():
         warnings.simplefilter('ignore')
-        transform = viewer.layers['image']._overlays["transform_box"]
-        selection = viewer.layers['image']._overlays['selection_no_rotation']
-        transform.visible = transform_box
-        selection.visible = selection_no_rotation
+        viewer.layers['image']._overlays['selection_no_rotation'].visible = toggle_selection_box
 
-
+# add the widget to the viewer
 viewer.window.add_dock_widget(toggle_overlay)
 
 if __name__ == '__main__':
