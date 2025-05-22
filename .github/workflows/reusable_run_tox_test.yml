@@ -103,8 +103,14 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install python${{ inputs.python_version }}-dbg gdb
+          sudo apt-get install gdb
           which python
+          ls -l $(dirname $(which python))
+
+      - name: Install python debug symbols
+        if: runner.os == 'Linux' and inputs.python_version == '3.12'
+        run: |
+          sudo apt-get install python${{ inputs.python_version }}-dbg
           ls -l $(dirname $(which python))
 
       - name: Disable ptrace security restrictions
