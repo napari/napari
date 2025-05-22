@@ -693,7 +693,8 @@ class VispyCanvas:
         """Remove all viewer overlay visuals and disconnect their events."""
         for overlay in list(self._overlay_to_visual):
             vispy_overlay = self._overlay_to_visual.pop(overlay)
-            self._disconnect_canvas_overlay_events(overlay)
+            if isinstance(overlay, CanvasOverlay):
+                self._disconnect_canvas_overlay_events(overlay)
             vispy_overlay.close()
 
     def _update_viewer_overlays(self):
@@ -727,7 +728,8 @@ class VispyCanvas:
         """Remove all layer overlay visuals and disconnect their events."""
         for overlay in list(self._layer_overlay_to_visual[layer]):
             vispy_overlay = self._layer_overlay_to_visual[layer].pop(overlay)
-            self._disconnect_canvas_overlay_events(overlay)
+            if isinstance(overlay, CanvasOverlay):
+                self._disconnect_canvas_overlay_events(overlay)
             vispy_overlay.close()
 
     def _update_layer_overlays(self, layer: Layer) -> None:
