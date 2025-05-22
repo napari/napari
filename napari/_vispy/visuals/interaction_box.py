@@ -26,6 +26,7 @@ class InteractionBox(Compound):
     |       |
     1---7---3
     """
+
     _edges: ClassVar[npt.NDArray[Any]] = np.array(
         [
             [0, 1],
