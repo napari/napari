@@ -344,8 +344,12 @@ class VispyCanvas:
         interactive = (
             self.viewer.camera.mouse_zoom or self.viewer.camera.mouse_pan
         )
-        self.view.interactive = interactive
-        self.grid.interactive = interactive
+        if self.viewer.grid.enabled:
+            self.view.interactive = False
+            self.grid.interactive = interactive
+        else:
+            self.view.interactive = interactive
+            self.grid.interactive = False
 
     def _map_canvas2world(
         self,
@@ -842,6 +846,7 @@ class VispyCanvas:
 
         self._reorder_layers()
         self._update_viewer_overlays()
+        self._on_interactive()
 
     def _setup_single_view(self):
         for napari_layer, vispy_layer in self.layer_to_visual.items():
