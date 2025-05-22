@@ -57,6 +57,8 @@ class VispyDotOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
 
     def _on_size_change(self, event=None):
         self.node.radius = self.overlay.size / 2
+        self.x_size = self.overlay.size
+        self.y_size = self.overlay.size
         # trigger position update since the radius changed
         self._on_position_change()
 
@@ -80,11 +82,7 @@ viewer.add_shapes()
 # suppress them for the purpose of this example
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
-    # add the overlay to the viewer (currently private attribute)
     viewer._overlays['dot'] = DotOverlay(visible=True)
-    # there is currently no automation on adding a new overlay, so we also need to
-    # manually trigger the generation of the visual
-    viewer.window._qt_viewer.canvas._add_overlay_to_visual(viewer._overlays['dot'])
 
 # let's make a simple widget to control the overlay
 @magicgui(

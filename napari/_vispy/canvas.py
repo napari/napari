@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from functools import partial
 from typing import TYPE_CHECKING
 from weakref import WeakSet
 
@@ -18,6 +19,8 @@ from napari.components._viewer_constants import CanvasPosition
 from napari.components.overlays import CanvasOverlay
 from napari.utils._proxies import ReadOnlyWrapper
 from napari.utils.colormaps.standardize_color import transform_color
+from napari.utils.events import disconnect_events
+from napari.utils.events.event import Event
 from napari.utils.interactions import (
     mouse_double_click_callbacks,
     mouse_move_callbacks,
@@ -42,7 +45,6 @@ if TYPE_CHECKING:
     from napari.components import ViewerModel
     from napari.components.overlays import Overlay
     from napari.layers import Layer
-    from napari.utils.events.event import Event
     from napari.utils.key_bindings import KeymapHandler
 
 
@@ -91,6 +93,8 @@ class VispyCanvas:
         was applied.
     _overlay_to_visual : dict(napari.components.overlays, napari._vispy.overlays)
         A mapping of the napari overlays that are part of the viewer and their corresponding Vispy counterparts.
+    _layer_overlay_to_visual : dict(napari.layers.Layer, dict(napari.components.overlays, napari._vispy.overlays))
+        A mapping from each layer in the layerlist to their mappings of napari overlay->vispy counterpart.
     _scene_canvas : napari._vispy.canvas.NapariSceneCanvas
         SceneCanvas which automatically draws the contents of a scene. It is ultimately a VispySceneCanvas, but allows
         for ignoring mousewheel events with modifiers.
@@ -125,6 +129,8 @@ class VispyCanvas:
         ] = {}
         self._key_map_handler = key_map_handler
         self._instances.add(self)
+
+        self._overlay_callbacks = {}
 
         self.bgcolor = transform_color(
             get_theme(self.viewer.theme).canvas.as_hex()
@@ -170,7 +176,16 @@ class VispyCanvas:
         self.viewer.camera.events.zoom.connect(self._on_cursor)
         self.viewer.layers.events.reordered.connect(self._reorder_layers)
         self.viewer.layers.events.removed.connect(self._remove_layer)
-        self.destroyed.connect(self._disconnect_theme)
+        self.viewer._overlays.events.added.connect(
+            self._update_viewer_overlays
+        )
+        self.viewer._overlays.events.removed.connect(
+            self._update_viewer_overlays
+        )
+        self.viewer._overlays.events.changed.connect(
+            self._update_viewer_overlays
+        )
+        self.destroyed.connect(self._disconnect_events)
 
     @property
     def events(self):
@@ -228,8 +243,14 @@ class VispyCanvas:
         )[0]
         self.bgcolor = self._last_theme_color
 
-    def _disconnect_theme(self) -> None:
-        self.viewer.events.theme.disconnect(self._on_theme_change)
+    def _disconnect_events(self) -> None:
+        disconnect_events(self.viewer.events, self)
+        disconnect_events(self.viewer._overlays.events, self)
+        disconnect_events(self.viewer.camera.events, self)
+        disconnect_events(self.viewer.layers.events, self)
+        disconnect_events(self.viewer.camera.events, self)
+        disconnect_events(self.viewer.cursor.events, self)
+        disconnect_events(self._scene_canvas.events, self)
 
     @property
     def bgcolor(self) -> str:
@@ -586,6 +607,11 @@ class VispyCanvas:
         self._layer_overlay_to_visual[napari_layer] = {}
 
         napari_layer.events.visible.connect(self._reorder_layers)
+        overlay_callback = partial(self._update_layer_overlays, napari_layer)
+        napari_layer._overlays.events.added.connect(overlay_callback)
+        napari_layer._overlays.events.removed.connect(overlay_callback)
+        napari_layer._overlays.events.changed.connect(overlay_callback)
+        self._overlay_callbacks[napari_layer] = overlay_callback
         self.viewer.camera.events.angles.connect(vispy_layer._on_camera_move)
 
         # create overlay visuals for this layer
@@ -609,9 +635,13 @@ class VispyCanvas:
         None
         """
         layer = event.value
-        layer.events.visible.disconnect(self._reorder_layers)
+        disconnect_events(layer.events, self)
+        disconnect_events(
+            layer._overlays.events, self._overlay_callbacks[layer]
+        )
+        del self._overlay_callbacks[layer]
         vispy_layer = self.layer_to_visual[layer]
-        self.viewer.camera.events.disconnect(vispy_layer._on_camera_move)
+        disconnect_events(self.viewer.camera.events, vispy_layer)
         vispy_layer.close()
         del vispy_layer
         del self.layer_to_visual[layer]
@@ -640,26 +670,6 @@ class VispyCanvas:
         self._scene_canvas._draw_order.clear()
         self._scene_canvas.update()
 
-    def _add_viewer_overlay(self, overlay: Overlay, parent: Node) -> None:
-        """Create vispy overlay and add to dictionary of overlay visuals"""
-        vispy_overlay = create_vispy_overlay(
-            overlay=overlay, viewer=self.viewer, parent=parent
-        )
-        self._overlay_to_visual[overlay] = vispy_overlay
-
-    def _update_viewer_overlays(self):
-        for overlay in list(self._overlay_to_visual):
-            overlay_visual = self._overlay_to_visual.pop(overlay)
-            self._disconnect_canvas_overlay_events(overlay)
-            overlay_visual.close()
-
-        for overlay in self.viewer._overlays.values():
-            if isinstance(overlay, CanvasOverlay):
-                self._add_viewer_overlay(overlay, self.view)
-                self._connect_canvas_overlay_events(overlay)
-            else:
-                self._add_viewer_overlay(overlay, self.view.scene)
-
     def _connect_canvas_overlay_events(self, overlay):
         overlay.events.position.connect(self._update_overlay_canvas_positions)
         overlay.events.visible.connect(self._update_overlay_canvas_positions)
@@ -672,19 +682,64 @@ class VispyCanvas:
             self._update_overlay_canvas_positions
         )
 
+    def _add_viewer_overlay(self, overlay: Overlay, parent: Node) -> None:
+        """Create vispy overlay and add to dictionary of overlay visuals"""
+        vispy_overlay = create_vispy_overlay(
+            overlay=overlay, viewer=self.viewer, parent=parent
+        )
+        self._overlay_to_visual[overlay] = vispy_overlay
+
+    def _remove_viewer_overlays(self) -> None:
+        """Remove all viewer overlay visuals and disconnect their events."""
+        for overlay in list(self._overlay_to_visual):
+            vispy_overlay = self._overlay_to_visual.pop(overlay)
+            self._disconnect_canvas_overlay_events(overlay)
+            vispy_overlay.close()
+
+    def _update_viewer_overlays(self):
+        """Update the viewer overlay visuals.
+
+        Also ensures that overlays are properly assigned parents depending on
+        their class (canvas vs scene overlays).
+        """
+        self._remove_viewer_overlays()
+
+        for overlay in self.viewer._overlays.values():
+            if isinstance(overlay, CanvasOverlay):
+                self._add_viewer_overlay(overlay, self.view)
+                self._connect_canvas_overlay_events(overlay)
+            else:
+                self._add_viewer_overlay(overlay, self.view.scene)
+
+    def _add_layer_overlay(
+        self, layer: Layer, overlay: Overlay, parent: Node
+    ) -> None:
+        """Create vispy overlay and add to dictionary of layer overlay visuals"""
+        vispy_overlay = create_vispy_overlay(
+            overlay, layer=layer, parent=parent
+        )
+        if isinstance(overlay, CanvasOverlay):
+            self._connect_canvas_overlay_events(overlay)
+
+        self._layer_overlay_to_visual[layer][overlay] = vispy_overlay
+
+    def _remove_layer_overlays(self, layer: Layer) -> None:
+        """Remove all layer overlay visuals and disconnect their events."""
+        for overlay in list(self._layer_overlay_to_visual[layer]):
+            vispy_overlay = self._layer_overlay_to_visual[layer].pop(overlay)
+            self._disconnect_canvas_overlay_events(overlay)
+            vispy_overlay.close()
+
     def _update_layer_overlays(self, layer: Layer) -> None:
         """Update the overlay visuals for each layer in the canvas.
 
         Also ensures that overlays are properly assigned parents depending on
-        they class (canvas vs scene overlays).
+        their class (canvas vs scene overlays).
         """
         # reparenting does not work well in a few cases (we end up with overlay visuals
         # "clipping" through the canvas edges) so we just remake them
         # whenever we need to change them.
-        for overlay in list(self._layer_overlay_to_visual[layer]):
-            overlay_visual = self._layer_overlay_to_visual[layer].pop(overlay)
-            self._disconnect_canvas_overlay_events(overlay)
-            overlay_visual.close()
+        self._remove_layer_overlays(layer)
 
         overlay_models = layer._overlays.values()
 
@@ -694,22 +749,7 @@ class VispyCanvas:
             else:
                 parent = self.layer_to_visual[layer].node
 
-            # TODO: is this blocker still needed?
-            with layer.events._overlays.blocker():
-                overlay_visual = create_vispy_overlay(
-                    overlay, layer=layer, parent=parent
-                )
-            if isinstance(overlay, CanvasOverlay):
-                self._connect_canvas_overlay_events(overlay)
-
-            self._layer_overlay_to_visual[layer][overlay] = overlay_visual
-
-    def _remove_layer_overlays(self, layer: Layer) -> None:
-        for overlay in list(self._layer_overlay_to_visual[layer]):
-            overlay_visual = self._layer_overlay_to_visual[layer].pop(overlay)
-            if isinstance(overlay, CanvasOverlay):
-                self._disconnect_canvas_overlay_events(overlay)
-            overlay_visual.close()
+            self._add_layer_overlay(layer, overlay, parent)
 
     def _get_ordered_visible_canvas_overlays(self):
         # first viewer overlays
