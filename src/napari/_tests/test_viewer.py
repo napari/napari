@@ -142,7 +142,7 @@ def test_add_layer_magic_name(
     viewer = make_napari_viewer()  # noqa: F841
     layer = eval_with_filename(
         'add_layer_by_type(viewer, layer_class, a_unique_name)',
-        'somefile.py',
+        '/tmp/somefile.py',
     )
     assert layer.name == 'a_unique_name'
 
