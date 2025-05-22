@@ -272,8 +272,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         )
 
         # Connect events
-        self.grid.events.connect(self.fit_to_view)
-        self.grid.events.connect(self._on_grid_change)
         self.dims.events.ndisplay.connect(self._update_layers)
         self.dims.events.ndisplay.connect(self.fit_to_view)
         self.dims.events.order.connect(self._update_layers)
@@ -292,7 +290,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self.cursor.events.position.connect(self.update_status_from_cursor)
         self.layers.events.inserted.connect(self._on_add_layer)
         self.layers.events.removed.connect(self._on_remove_layer)
-        self.layers.events.reordered.connect(self._on_grid_change)
         self.layers.events.reordered.connect(self._on_layers_change)
         self.layers.selection.events.active.connect(self._on_active_layer)
 
@@ -428,7 +425,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         """Fit the current data view to the canvas.
 
         Adjusts the camera zoom and centers the view so that all visible layers
-        are within the canvas, accounting for the current grid mode and margin.
+        are within the canvas.
 
         Parameters
         ----------
@@ -436,10 +433,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             Margin as fraction of the canvas, showing blank space around the
             data. Default is 0.05 (5% of the canvas).
         """
-        # Get the scene parameters, including the total_size of the grid
-        extent, scene_size, corner, total_size = self._get_scene_parameters()
+        # Get the scene parameters
+        extent, scene_size, corner = self._get_scene_parameters()
 
-        self.camera.center = self._calculate_view_center(corner, total_size)
+        self.camera.center = self._calculate_view_center(corner, scene_size)
 
         scale_factor = self._get_scale_factor(margin)
 
@@ -452,12 +449,12 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         elif self.dims.ndisplay == 2:
             self.camera.zoom = self._get_2d_camera_zoom(
-                total_size, scale_factor
+                scene_size, scale_factor
             )
 
         elif self.dims.ndisplay == 3:
             self.camera.zoom = self._get_3d_camera_zoom(
-                extent, total_size, scale_factor
+                extent, scene_size, scale_factor
             )
 
         # Emit a reset view event, which is no longer used internally, but
@@ -480,32 +477,17 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             Size of the bounding box containing all layers.
         corner : array, shape (D,)
             Minimum coordinate values of the bounding box (i.e. extent[0]).
-        total_size : array, shape (D,)
-            Total size of the scene including grid spacing
         """
         extent = self._sliced_extent_world_augmented
         scene_size = extent[1] - extent[0]
         corner = extent[0]
-        grid_size = list(self.grid.actual_shape(len(self.layers)))
 
-        if len(scene_size) > len(grid_size):
-            grid_size = [1] * (len(scene_size) - len(grid_size)) + grid_size
+        return extent, scene_size, corner
 
-        # total spacing accounts for the distance between layers
-        # results in 0 if not grid mode (grid_size = [1, 1] - 1)
-        total_spacing = (
-            np.mean(scene_size[-2:])
-            * self.grid.spacing
-            * (np.array(grid_size) - 1)
-        )
-        total_size = np.multiply(scene_size, grid_size) + total_spacing
+    def _calculate_view_center(self, corner, scene_size):
+        """Calculate the center of the view based on the scene size."""
 
-        return extent, scene_size, corner, total_size
-
-    def _calculate_view_center(self, corner, total_size):
-        """Calculate the center of the view based on the total size."""
-
-        center_array = np.add(corner, np.divide(total_size, 2))[
+        center_array = np.add(corner, np.divide(scene_size, 2))[
             -self.dims.ndisplay :
         ]
         center = cast(
@@ -531,23 +513,23 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         )
 
     def _get_2d_camera_zoom(
-        self, total_size: np.ndarray, scale_factor: float
+        self, scene_size: np.ndarray, scale_factor: float
     ) -> float:
         """Get the camera zoom for 2D view."""
-        scale = np.array(total_size[-2:])
+        scale = np.array(scene_size[-2:])
         scale[np.isclose(scale, 0)] = 1
         return scale_factor * np.min(np.array(self._canvas_size) / scale)
 
     def _get_3d_camera_zoom(
-        self, extent: np.ndarray, total_size: np.ndarray, scale_factor: float
+        self, extent: np.ndarray, scene_size: np.ndarray, scale_factor: float
     ) -> float:
         """Calculate the zoom such that the minimum of the bounding box fits the canvas."""
-        grid_extent = extent.copy()
-        # calculate max coords with grid spacing included
-        grid_extent[1] = extent[0] + total_size
+        extent = extent.copy()
+        # calculate max coords
+        extent[1] = extent[0] + scene_size
 
         bounding_box = self._calculate_bounding_box(
-            extent=grid_extent,
+            extent=extent,
             view_direction=self.camera.view_direction,
             up_direction=self.camera.up_direction,
         )
@@ -797,46 +779,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         if (active := self.layers.selection.active) is not None:
             self.help = active.help
 
-    def _on_grid_change(self):
-        """Arrange the current layers is a 2D grid."""
-        extent = self._sliced_extent_world_augmented
-        n_layers = len(self.layers)
-        for i, layer in enumerate(self.layers):
-            i_row, i_column = self.grid.position(n_layers - 1 - i, n_layers)
-            self._subplot(layer, (i_row, i_column), extent, self.grid.spacing)
-
-    def _subplot(
-        self,
-        layer: Layer,
-        position: tuple[int, int],
-        extent: np.ndarray,
-        spacing: float,
-    ):
-        """Shift a layer to a specified position in a 2D grid.
-
-        Parameters
-        ----------
-        layer : napari.layers.Layer
-            Layer that is to be moved.
-        position : 2-tuple of int
-            New position of layer in grid.
-        extent : array, shape (2, D)
-            Extent of the world.
-        spacing : float, optional
-            Value for spacing between layers. Negative values will
-            cause layers to overlap. Positive values will cause layers to
-            have space between them.
-        """
-        scene_shift = extent[1] - extent[0]
-        position_array = np.array(position)
-        # shift the layer in the grid by the extent of the scene
-        translate_2d = np.multiply(scene_shift[-2:], position_array)
-        # calculate average scene extent, and use for a symmetrical spacing adjustment
-        translate_2d += np.mean(scene_shift[-2:]) * spacing * position_array
-        translate = [0] * layer.ndim
-        translate[-2:] = translate_2d
-        layer._translate_grid = np.array(translate)
-
     @property
     def experimental(self):
         """Experimental commands for IPython console.
@@ -878,9 +820,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             layer.events.mode.connect(self._on_layer_mode_change)
         self._layer_help_from_mode(layer)
 
-        # Update dims and grid model
+        # Update dims
         self._on_layers_change()
-        self._on_grid_change()
         # Slice current layer based on dims
         self._update_layers(layers=[layer])
 
@@ -948,12 +889,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         disconnect_events(layer.events, self)
         disconnect_events(layer.events, self.layers)
 
-        # Clean up overlays
-        for overlay in list(layer._overlays):
-            del layer._overlays[overlay]
-
         self._on_layers_change()
-        self._on_grid_change()
 
     def add_layer(self, layer: Layer) -> Layer:
         """Add a layer to the viewer.
