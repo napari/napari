@@ -169,7 +169,12 @@ class VispyCanvas:
         self._scene_canvas.events.draw.connect(self.on_draw)
         self.viewer.cursor.events.style.connect(self._on_cursor)
         self.viewer.cursor.events.size.connect(self._on_cursor)
-        self.viewer.events.theme.connect(self._on_theme_change)
+        # position=first is important to some downstream components such as
+        # scale_bar overlay which need to have access to the updated color
+        # by the time they get updated as well
+        self.viewer.events.theme.connect(
+            self._on_theme_change, position='first'
+        )
         self.viewer.camera.events.mouse_pan.connect(self._on_interactive)
         self.viewer.camera.events.mouse_zoom.connect(self._on_interactive)
         self.viewer.camera.events.zoom.connect(self._on_cursor)
@@ -208,23 +213,19 @@ class VispyCanvas:
 
     @property
     def background_color_override(self) -> str | None:
-        """Background color of VispyCanvas.view returned as hex string. When not None, color is shown instead of
-        VispyCanvas.bgcolor. The setter expects str (any in vispy.color.get_color_names) or hex starting
-        with # or a tuple | np.array ({3,4},) with values between 0 and 1.
+        """Background color of VispyCanvas.
+
+        When not None, color is shown instead of VispyCanvas.bgcolor.
 
         """
-        if self.view in self.central_widget._widgets:
-            return self.view.bgcolor.hex
-        return None
+        return self._background_color_override
 
     @background_color_override.setter
     def background_color_override(
         self, value: str | npt.ArrayLike | None
     ) -> None:
-        if value:
-            self.view.bgcolor = value
-        else:
-            self.view.bgcolor = None
+        self._background_color_override = value
+        self.bgcolor = value or self._last_theme_color
 
     def _on_theme_change(self, event: Event) -> None:
         self._set_theme_change(event.value)
@@ -260,7 +261,7 @@ class VispyCanvas:
 
     @bgcolor.setter
     def bgcolor(self, value: str | npt.ArrayLike) -> None:
-        self._scene_canvas.bgcolor = value
+        self._scene_canvas.bgcolor = self._background_color_override or value
 
     @property
     def central_widget(self) -> Widget:
