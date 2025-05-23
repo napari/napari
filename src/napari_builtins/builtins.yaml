@@ -321,6 +321,3 @@ contributions:
   menus:
     napari/layers/visualize:
       - command: napari.widgets.features_table
-    napari/layers/context:
-      - command: napari.widgets.features_table
-        when: active_layer_has_features
