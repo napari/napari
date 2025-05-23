@@ -414,6 +414,8 @@ class VispyCanvas:
         if layer is not None:
             mouse_callbacks(layer, read_only_event)
 
+        event.handled = napari_event.handled
+
     def _on_mouse_double_click(self, event: MouseEvent) -> None:
         """Called whenever a mouse double-click happen on the canvas
 

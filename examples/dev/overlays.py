@@ -1,5 +1,6 @@
 import warnings
 
+import numpy as np
 from magicgui import magicgui
 from vispy.scene.visuals import Ellipse
 
@@ -74,7 +75,7 @@ overlay_to_visual[DotOverlay] = VispyDotOverlay
 viewer = napari.Viewer()
 # we also need to add at least a layer to see any overlay,
 # since the canvas is otherwise covered by the welcome widget
-viewer.add_shapes()
+viewer.add_image(np.random.rand(10, 10))
 
 # note that we're accessing private attributes externally, which triggers a bunch of warnings.
 # suppress them for the purpose of this example
@@ -86,23 +87,44 @@ with warnings.catch_warnings():
     # manually trigger the generation of the visual
     viewer.window._qt_viewer.canvas._add_overlay_to_visual(viewer._overlays['dot'])
 
+
 # let's make a simple widget to control the overlay
 @magicgui(
     auto_call=True,
     color={'choices': ['red', 'blue', 'green', 'magenta']},
-    size={'widget_type': 'Slider', 'min': 1, 'max': 100}
 )
-def control_dot(viewer: napari.Viewer, color='red', size=20, position: CanvasPosition = 'top_left'):
-    with warnings.catch_warnings():
-        warnings.simplefilter('ignore')
-        dot = viewer._overlays['dot']
-        dot.color = color
-        dot.size = size
-        dot.position = position
+def control_dot(viewer: napari.Viewer, color='red', position: CanvasPosition = 'top_left'):
+    dot = viewer._overlays['dot']
+    dot.color = color
+    dot.position = position
+
 
 viewer.window.add_dock_widget(control_dot)
-control_dot()
 
+
+# and let's also add a mouse callback to do something when dragging the mouse
+def change_size(viewer, event):
+    pos = np.array(event.pos)
+    size = viewer._overlays['dot'].size
+
+    # use event.handled to tell vispy to not drag the canvas
+    event.handled = True
+
+    yield
+
+    while event.type == 'mouse_move':
+        new_pos = event.pos
+        drag = new_pos[0] - pos[0]
+
+        viewer._overlays['dot'].size = size + drag
+        yield
+
+
+viewer.mouse_drag_callbacks.append(change_size)
 
 if __name__ == '__main__':
-    napari.run()
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+
+        control_dot()
+        napari.run()

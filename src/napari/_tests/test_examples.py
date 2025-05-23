@@ -13,10 +13,10 @@ from napari._qt.qt_main_window import Window
 from napari.utils.notifications import notification_manager
 
 # check if this module has been explicitly requested or `--test-examples` is included
-fpath = os.path.join(*__file__.split(os.path.sep)[-3:])
+fpath = os.path.join(*__file__.split(os.path.sep)[-4:])
 if '--test-examples' not in sys.argv and fpath not in sys.argv:
     pytest.skip(
-        'Use `--test-examples` to test examples', allow_module_level=True
+        'Use `--test-examples` to test examples.', allow_module_level=True
     )
 
 # not testing these examples
@@ -36,8 +36,8 @@ skip = [
 # cause they are hard to adapt for testing
 skip_dev = ['leaking_check.py', 'demo_shape_creation.py']
 
-EXAMPLE_DIR = Path(napari.__file__).parent.parent / 'examples/'
-DEV_EXAMPLE_DIR = Path(napari.__file__).parent.parent / 'examples/dev'
+EXAMPLE_DIR = Path(__file__).parent.parent.parent.parent / 'examples/'
+DEV_EXAMPLE_DIR = Path(__file__).parent.parent.parent.parent / 'examples' / 'dev'
 # using f.name here and re-joining at `run_path()` for test key presentation
 # (works even if the examples list is empty, as opposed to using an ids lambda)
 examples = [f.name for f in EXAMPLE_DIR.glob('*.py') if f.name not in skip]
