@@ -5,6 +5,10 @@ on:
   schedule:
     # * is a special character in YAML so you have to quote this string
     - cron:  '0 2 * * *'
+  pull_request:
+    paths:
+      - '.github/workflows/test_vendored.yml'
+
 
 jobs:
   vendor:
@@ -29,6 +33,7 @@ jobs:
         with:
           commit-message: Update vendored modules.
           branch: update-vendored-examples
+          base: main
           delete-branch: true
           title: "[Automatic] Update ${{ steps.check_v.outputs.vendored }} vendored module"
           labels: maintenance
