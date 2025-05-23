@@ -111,7 +111,6 @@ class MousePosition(NamedTuple):
 
 # this callback will handle the mouse events of
 # dragging and dropping the selection box handles;
-# we need to check if the mouse is within the bounds
 # it will check if the mouse is in range of one of the
 # overlay handles; if it is, we will set the selected handle
 # to the handle that is closest to the mouse position;
@@ -157,9 +156,8 @@ def resize_selection_box(
 
     # Main event loop for handling drag events
     while event.type == 'mouse_move':
-        # this event.handled assignment should prevent propagation
-        # to the pan-zoom event handler, but it does not and the
-        # pan-zoom event handler is called anyway
+        # to prevent the event from being passed down to the
+        # pan-zoom event handler, set the event as handled;
         event.handled = True
         mouse_pos = MousePosition(
             *layer.world_to_data(event.position)[event.dims_displayed]
