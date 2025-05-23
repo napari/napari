@@ -774,7 +774,8 @@ class VispyCanvas:
                     yield overlay, vispy_overlay
 
     def _update_overlay_canvas_positions(self, event=None):
-        offsets = dict.fromkeys(CanvasPosition, 0)
+        x_offsets = dict.fromkeys(CanvasPosition, 0)
+        y_offsets = dict.fromkeys(CanvasPosition, 0)
         for (
             overlay,
             vispy_overlay,
@@ -783,10 +784,19 @@ class VispyCanvas:
                 # some canvas overlays do no use CanvasPosition, but are
                 # instead free-floating (such as the cursor overlay)
                 continue
-            vispy_overlay.x_offset_tiling = offsets[overlay.position]
-            offsets[overlay.position] += (
-                vispy_overlay.x_size + vispy_overlay.x_offset
-            )
+            # TODO: these should be settable!
+            if overlay.position in ('top_right', 'bottom_left'):
+                vispy_overlay.x_offset_tiling = x_offsets[overlay.position]
+                x_offsets[overlay.position] += (
+                    vispy_overlay.x_size + vispy_overlay.x_offset
+                )
+                vispy_overlay.y_offset_tiling = 0
+            else:
+                vispy_overlay.y_offset_tiling = y_offsets[overlay.position]
+                y_offsets[overlay.position] += (
+                    vispy_overlay.y_size + vispy_overlay.y_offset
+                )
+                vispy_overlay.x_offset_tiling = 0
             vispy_overlay._on_position_change()
 
     def _calculate_view_direction(
