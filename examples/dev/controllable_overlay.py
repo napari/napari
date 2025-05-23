@@ -71,7 +71,9 @@ assert isinstance(image, Image)
 # we recover the bounds of the image layer;
 # this method will ensure that the overlay is drawn
 # correctly in the viewer
-layer_bounds = tuple(tuple(x.tolist()) for x in image._display_bounding_box_augmented([0, 1]).T)
+layer_bounds = tuple(
+    tuple(x.tolist()) for x in image._display_bounding_box_augmented([0, 1]).T
+)
 image._overlays['selection_no_rotation'] = SelectionBoxNoRotation(
     bounds=layer_bounds, handles=True
 )
@@ -80,6 +82,7 @@ image._overlays['selection_no_rotation'] = SelectionBoxNoRotation(
 # can be interacted with via mouse events;
 # we need to first setup the mouse event handlers
 # to allow for the interaction with the overlay;
+
 
 # this is an helper named tuple to just
 # allow us to access new mouse positions
@@ -98,12 +101,13 @@ class MousePosition(NamedTuple):
         X coordinate of the mouse position.
     """
 
-    y: int
-    x: int
+    y: float
+    x: float
 
     def __repr__(self) -> str:
         """Return a string representation of the mouse position."""
-        return f"(y={self.y}, x={self.x})"
+        return f'(y={self.y}, x={self.x})'
+
 
 # this callback will handle the mouse events of
 # dragging and dropping the selection box handles;
@@ -113,15 +117,15 @@ class MousePosition(NamedTuple):
 # to the handle that is closest to the mouse position;
 # then we will set the bounds of the overlay to the
 # new position of the mouse;
-def resize_roi_box(
-    layer: Image, event: "NapariMouseEvent"
-) -> "Generator[None, None, None]":
-    """Resize the ROI box based on mouse movement.
+def resize_selection_box(
+    layer: Image, event: 'NapariMouseEvent'
+) -> 'Generator[None, None, None]':
+    """Resize the selection box based on mouse movement.
 
     Parameters
     ----------
     layer : DetectorLayer
-        The layer to resize the ROI box for.
+        The layer to resize the selection box for.
     event : NapariMouseEvent
         The event triggered by mouse movement.
 
@@ -134,99 +138,83 @@ def resize_roi_box(
         return
 
     # Get the selected handle
-    selected_handle = layer._overlays["selection_no_rotation"].selected_handle
+    selected_handle = layer._overlays['selection_no_rotation'].selected_handle
     if selected_handle is None or selected_handle in [
         InteractionBoxHandle.INSIDE,
         InteractionBoxHandle.ROTATION,
     ]:
-        # If no handle is selected or the selected handle is INSIDE or ROTATION, do nothing
+        # If no handle is selected or the selected handle
+        # is INSIDE or ROTATION, do nothing
         return
 
-    current_bounds = deepcopy(layer._overlays["selection_no_rotation"].bounds)
-
-    width, height = layer.data.shape[0], layer.data.shape[1]
+    top_left, bot_right = (
+        list(x)
+        for x in deepcopy(layer._overlays['selection_no_rotation'].bounds)
+    )
+    width, height = bot_right
 
     yield
 
     # Main event loop for handling drag events
-    while event.type == "mouse_move":
+    while event.type == 'mouse_move':
         # this event.handled assignment should prevent propagation
         # to the pan-zoom event handler, but it does not and the
         # pan-zoom event handler is called anyway
         event.handled = True
         mouse_pos = MousePosition(
-            *tuple(
-                layer.world_to_data(event.position)[event.dims_displayed].astype(
-                    int
-                )
-            )
+            *tuple(layer.world_to_data(event.position)[event.dims_displayed])
         )
 
-        # check if the mouse position is within the bounds of the image
+        # based on the new mouse position, we recalculate the bounds
+        # of the overlay; we need to ensure that the new bounds are within
+        # the bounds of the image
         match selected_handle:
             case InteractionBoxHandle.CENTER_LEFT:
-                if mouse_pos.x >= 0 and mouse_pos.x <= width - 1:
-                    current_bounds = (
-                        (mouse_pos.x, layer._overlays["selection_no_rotation"].bounds[0][1]),
-                        layer._overlays["selection_no_rotation"].bounds[1],
-                    )
+                top_left[1] = np.clip(mouse_pos.x, 0, width)
             case InteractionBoxHandle.CENTER_RIGHT:
-                if mouse_pos.x >= 1 and mouse_pos.x <= width:
-                    current_bounds = (
-                        layer._overlays["selection_no_rotation"].bounds[0],
-                        (mouse_pos.x, layer._overlays["selection_no_rotation"].bounds[1][1]),
-                    )
+                bot_right[1] = np.clip(mouse_pos.x, 0, width)
             case InteractionBoxHandle.TOP_LEFT:
-                if (mouse_pos.y >= 0 and mouse_pos.y <= height - 1) and (
-                    mouse_pos.x >= 0 and mouse_pos.x <= width - 1
-                ):
-                    print("top left not implemented", mouse_pos)
+                top_left[0] = np.clip(mouse_pos.y, 0, height)
+                top_left[1] = np.clip(mouse_pos.x, 0, width)
             case InteractionBoxHandle.TOP_RIGHT:
-                if (mouse_pos.y >= 0 and mouse_pos.y <= height - 1) and (
-                    mouse_pos.x >= 1 and mouse_pos.x <= width
-                ):
-                    print("top right not implemented", mouse_pos)
+                top_left[0] = np.clip(mouse_pos.y, 0, height)
+                bot_right[1] = np.clip(mouse_pos.x, 0, width)
             case InteractionBoxHandle.TOP_CENTER:
-                if mouse_pos.y >= 0 and mouse_pos.y <= height - 1:
-                    current_bounds = (
-                        (layer._overlays["selection_no_rotation"].bounds[0][0], mouse_pos.y),
-                        layer._overlays["selection_no_rotation"].bounds[1],
-                    )
+                top_left[0] = np.clip(mouse_pos.y, 0, height)
             case InteractionBoxHandle.BOTTOM_CENTER:
-                if mouse_pos.y >= 1 and mouse_pos.y <= height:
-                    current_bounds = (
-                        (layer._overlays["selection_no_rotation"].bounds[0][0], mouse_pos.y),
-                        layer._overlays["selection_no_rotation"].bounds[1],
-                    )
+                bot_right[0] = np.clip(mouse_pos.y, 0, height)
             case InteractionBoxHandle.BOTTOM_LEFT:
-                if (mouse_pos.y >= 1 and mouse_pos.y <= height) and (
-                    mouse_pos.x >= 0 and mouse_pos.x <= width - 1
-                ):
-                    print("bottom left not implemented", mouse_pos)
+                bot_right[0] = np.clip(mouse_pos.y, 0, height)
+                top_left[1] = np.clip(mouse_pos.x, 0, width)
             case InteractionBoxHandle.BOTTOM_RIGHT:
-                if (mouse_pos.y >= 1 and mouse_pos.y <= height) and (
-                    mouse_pos.x >= 1 and mouse_pos.x <= width
-                ):
-                    print("bottom right not implemented", mouse_pos)
-
+                bot_right[0] = np.clip(mouse_pos.y, 0, height)
+                bot_right[1] = np.clip(mouse_pos.x, 0, width)
             case _:  # fallback on other handles, do nothing
-                current_bounds = deepcopy(layer._overlays["selection_no_rotation"].bounds)
+                pass
 
-        layer._overlays["selection_no_rotation"].bounds = deepcopy(current_bounds)
+        # now we update the bounds of the overlay
+        # to trigger the visual update;
+        layer._overlays['selection_no_rotation'].bounds = deepcopy(
+            (tuple(top_left), tuple(bot_right))
+        )
         yield
+
 
 # this callback will hightlight the overlay handles
 # when the mouse hovers over them;
 def highlight_roi_box_handles(layer: Image, event: NapariMouseEvent) -> None:
-    """Highlight the hovered handle of a ROI.
+    """Highlight the hovered handle of a selection box.
 
     Parameters
     ----------
     layer : Image
-        The layer to highlight the ROI box for.
+        The layer to highlight the selection box for.
     event : NapariMouseEvent
         The event triggered by mouse movement.
     """
+    # the event is not handled by the viewer
+    # if the number of displayed dimensions is not 2
+    # this is a requirement for the overlay to be displayed
     if len(event.dims_displayed) != 2:
         return
 
@@ -238,14 +226,21 @@ def highlight_roi_box_handles(layer: Image, event: NapariMouseEvent) -> None:
     pos = np.array(world_to_data(event.position))[event.dims_displayed]
 
     handle_coords = generate_interaction_box_vertices(
-        *layer._overlays["selection_no_rotation"].bounds, handles=True
+        *layer._overlays['selection_no_rotation'].bounds, handles=True
     )[:, ::-1]
     nearby_handle = get_nearby_handle(pos, handle_coords)
-    if nearby_handle in [InteractionBoxHandle.INSIDE, InteractionBoxHandle.ROTATION]:
+
+    # if the selected handle is INSIDE or ROTATION, we don't want to
+    # highlight the handles, so we return without doing anything
+    if nearby_handle in [
+        InteractionBoxHandle.INSIDE,
+        InteractionBoxHandle.ROTATION,
+    ]:
         return
 
     # set the selected vertex of the box to the nearby_handle (can also be INSIDE or None)
-    layer._overlays["selection_no_rotation"].selected_handle = nearby_handle
+    layer._overlays['selection_no_rotation'].selected_handle = nearby_handle
+
 
 # after defining the callbacks, we need to connect them to our layer;
 # mouse_move_callbacks is a list of callbacks invoked when the mouse
@@ -253,19 +248,22 @@ def highlight_roi_box_handles(layer: Image, event: NapariMouseEvent) -> None:
 # mouse_drag_callbacks is a list of callbacks invoked when the
 # mouse is pressed, moved and released;
 image.mouse_move_callbacks.append(highlight_roi_box_handles)
-image.mouse_drag_callbacks.append(resize_roi_box)
+image.mouse_drag_callbacks.append(resize_selection_box)
 
 
 # we use a simple magicgui widget to allow
 # the toggling of the selection box overlay
 # as demonstration
-@magicgui
+@magicgui(auto_call=True)
 def toggle_overlay(
     viewer: napari.Viewer, toggle_selection_box: bool = False
 ) -> None:
     with warnings.catch_warnings():
         warnings.simplefilter('ignore')
-        viewer.layers['image']._overlays['selection_no_rotation'].visible = toggle_selection_box
+        viewer.layers['image']._overlays[
+            'selection_no_rotation'
+        ].visible = toggle_selection_box
+
 
 # add the widget to the viewer
 viewer.window.add_dock_widget(toggle_overlay)
