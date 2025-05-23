@@ -9,7 +9,7 @@ of a compatible layer (such as Points, Labels or Shapes).
 Selection is synchronized between the table widget and the data. When selecting rows in the table widget, the corresponding data will be selected on the layer. When selecting data on the layer, the corresponding row in the table widget will be selected.
 on the layer and viceversa.
 
-.. tags:: gui
+.. tags:: gui, features-table
 """
 
 import numpy as np
