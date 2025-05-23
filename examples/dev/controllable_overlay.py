@@ -162,7 +162,7 @@ def resize_selection_box(
         # pan-zoom event handler is called anyway
         event.handled = True
         mouse_pos = MousePosition(
-            *tuple(layer.world_to_data(event.position)[event.dims_displayed])
+            *layer.world_to_data(event.position)[event.dims_displayed]
         )
 
         # based on the new mouse position, we recalculate the bounds
