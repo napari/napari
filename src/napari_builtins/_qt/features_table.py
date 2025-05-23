@@ -79,7 +79,7 @@ class PandasModel(QAbstractTableModel):
 
         # show booleans as respective checkboxes
         if role == Qt.CheckStateRole and pd.api.types.is_bool_dtype(dtype):
-            return Qt.Checked if value else Qt.Unchecked
+            return Qt.CheckState.Checked if value else Qt.CheckState.Unchecked
 
         if role in {Qt.ItemDataRole.DisplayRole, Qt.ItemDataRole.EditRole}:
             # format based on dtype
@@ -152,7 +152,9 @@ class PandasModel(QAbstractTableModel):
             role == Qt.ItemDataRole.CheckStateRole
             and pd.api.types.is_bool_dtype(dtype)
         ):
-            self.df.iat[row, col - 1] = bool(value) == Qt.Checked
+            self.df.iat[row, col - 1] = (
+                Qt.CheckState(value) == Qt.CheckState.Checked
+            )
             self.dataChanged.emit(
                 index, index, [Qt.ItemDataRole.CheckStateRole]
             )
