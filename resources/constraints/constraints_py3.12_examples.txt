@@ -56,7 +56,7 @@ crc32c==2.7.1
     # via numcodecs
 cycler==0.12.1
     # via matplotlib
-dask==2025.4.1
+dask==2025.5.0
     # via
     #   napari (pyproject.toml)
     #   distributed
@@ -66,7 +66,7 @@ decorator==5.2.1
     # via ipython
 distlib==0.3.9
     # via virtualenv
-distributed==2025.4.1
+distributed==2025.5.0
     # via dask
 docstring-parser==0.16
     # via
@@ -95,7 +95,7 @@ fsspec==2025.3.2
     #   napari (pyproject.toml)
     #   dask
     #   torch
-glasbey==0.2.1
+glasbey==0.3.0
     # via napari (pyproject.toml)
 h5netcdf==1.6.1
     # via napari (pyproject.toml)
@@ -105,7 +105,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.131.15
+hypothesis==6.131.18
     # via napari (pyproject.toml)
 idna==3.10
     # via requests
@@ -229,7 +229,7 @@ numba==0.61.2
     #   glasbey
 numcodecs==0.16.0
     # via zarr
-numpy==2.2.5
+numpy==2.2.6
     # via
     #   napari (pyproject.toml)
     #   bermuda
@@ -343,7 +343,7 @@ platformdirs==4.3.8
     #   pint
     #   pooch
     #   virtualenv
-pluggy==1.5.0
+pluggy==1.6.0
     # via
     #   pytest
     #   pytest-qt
@@ -490,7 +490,7 @@ rich==14.0.0
     #   typer
 roman-numerals-py==3.1.0
     # via sphinx
-rpds-py==0.24.0
+rpds-py==0.25.0
     # via
     #   jsonschema
     #   referencing
@@ -506,7 +506,7 @@ scipy==1.15.3
     #   nilearn
     #   scikit-image
     #   scikit-learn
-setuptools==80.4.0
+setuptools==80.7.1
     # via
     #   torch
     #   triton
@@ -547,7 +547,7 @@ tabulate==0.9.0
     # via numpydoc
 tblib==3.1.0
     # via distributed
-tensorstore==0.1.74
+tensorstore==0.1.75
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
@@ -567,7 +567,7 @@ toolz==1.0.0
     #   partd
 torch==2.7.0
     # via napari (pyproject.toml)
-tornado==6.4.2
+tornado==6.5
     # via
     #   distributed
     #   ipykernel
@@ -617,7 +617,7 @@ urllib3==2.4.0
     #   requests
 virtualenv==20.31.2
     # via napari (pyproject.toml)
-vispy==0.15.0
+vispy==0.15.1
     # via
     #   napari (pyproject.toml)
     #   napari-svg
