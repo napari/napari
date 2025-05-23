@@ -39,7 +39,16 @@ if TYPE_CHECKING:
 
 
 class PandasModel(QAbstractTableModel):
-    """Qt Model for a pandas DataFrame."""
+    """Qt Model for a pandas DataFrame.
+
+    Follows the Qt Model/View protocol, implementing all the needed methods
+    for a QTableView to be able to read/write changes to a pandas dataframe.
+    Columns of specific dtypes get special treatment (bools become tickboxes,
+    categoricals are exposed through comboboxes, etc).
+    It's designed to be used in conjunction with the BoolFriendlyProxyModel
+    in order to properly sort, and with the DelegateCategorical in order to
+    provide comboboxes for categoricals.
+    """
 
     def __init__(self, df: pd.DataFrame | None = None, parent=None):
         super().__init__(parent)
@@ -240,6 +249,15 @@ class BoolFriendlyProxyModel(QSortFilterProxyModel):
 
 
 class PandasView(QTableView):
+    """View for PandasModel to interact with pandas dataframes via a table.
+
+    This class is designed to work in tandem with PandasModel, and allows
+    the following things:
+    - sorting the table without affecting the data
+    - copy/pasting cells
+    - edting the data with specific editors depending on the dtype
+    """
+
     def __init__(self, parent=None):
         super().__init__(parent)
 
@@ -344,7 +362,16 @@ class PandasView(QTableView):
 
 
 class FeaturesTable(QWidget):
-    """Widget to display layer features as an editable table."""
+    """Widget to display layer features as an editable table.
+
+    The table automatically shows the contents of the current active layer
+    in the layerlist, if that layer has a features table.
+    Features can be edited directly if the `editable` toggle is enabled.
+    Columns can be sorted without affecting the layer data.
+    Selecting a row in the table will select the corresponding data in the
+    layer, and viceversa.
+    Data can be copy/pasted as csv, and can be saved to file.
+    """
 
     def __init__(
         self,
