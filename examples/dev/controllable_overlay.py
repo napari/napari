@@ -2,7 +2,6 @@
 import warnings
 from collections.abc import Generator
 from copy import deepcopy
-from typing import NamedTuple
 
 import numpy as np
 from magicgui import magicgui
@@ -59,7 +58,7 @@ overlay_to_visual[SelectionBoxNoRotation] = VispySelectionBoxNoRotation
 viewer = napari.Viewer()
 
 # we add an image layer with random data;
-data = np.random.randint(0, 255, size=(1024, 1024), dtype=np.uint8)
+data = np.random.randint(0, 255, size=(1024, 512), dtype=np.uint8)
 image = viewer.add_image(
     data,
     name='image',
@@ -71,9 +70,8 @@ assert isinstance(image, Image)
 # we recover the bounds of the image layer;
 # this method will ensure that the overlay is drawn
 # correctly in the viewer
-layer_bounds = tuple(
-    tuple(x.tolist()) for x in image._display_bounding_box_augmented([0, 1]).T
-)
+# TODO: this half pixel offset should be done on the visual side actually
+layer_bounds = ((0, 0), data.shape)
 image._overlays['selection_no_rotation'] = SelectionBoxNoRotation(
     bounds=layer_bounds, handles=True
 )
@@ -82,31 +80,6 @@ image._overlays['selection_no_rotation'] = SelectionBoxNoRotation(
 # can be interacted with via mouse events;
 # we need to first setup the mouse event handlers
 # to allow for the interaction with the overlay;
-
-
-# this is an helper named tuple to just
-# allow us to access new mouse positions
-# as x and y coordinates;
-class MousePosition(NamedTuple):
-    """Mouse position in data coordinates.
-
-    An helper class to simplify access to
-    the mouse position in data coordinates.
-
-    Parameters
-    ----------
-    y : int
-        Y coordinate of the mouse position.
-    x : int
-        X coordinate of the mouse position.
-    """
-
-    y: float
-    x: float
-
-    def __repr__(self) -> str:
-        """Return a string representation of the mouse position."""
-        return f'(y={self.y}, x={self.x})'
 
 
 # this callback will handle the mouse events of
@@ -150,44 +123,46 @@ def resize_selection_box(
         list(x)
         for x in deepcopy(layer._overlays['selection_no_rotation'].bounds)
     )
-    width, height = bot_right
+
+    layer_bounds = image._display_bounding_box_augmented([0, 1])
+
+    # to prevent the event from being passed down to the
+    # pan-zoom event handler, set the event as handled;
+    event.handled = True
 
     yield
 
     # Main event loop for handling drag events
     while event.type == 'mouse_move':
-        # to prevent the event from being passed down to the
-        # pan-zoom event handler, set the event as handled;
-        event.handled = True
-        mouse_pos = MousePosition(
-            *layer.world_to_data(event.position)[event.dims_displayed]
-        )
+        mouse_pos = layer.world_to_data(event.position)[event.dims_displayed]
+        clipped_y = np.clip(mouse_pos[0], *layer_bounds[0])
+        clipped_x = np.clip(mouse_pos[1], *layer_bounds[1])
 
         # based on the new mouse position, we recalculate the bounds
         # of the overlay; we need to ensure that the new bounds are within
         # the bounds of the image
         match selected_handle:
-            case InteractionBoxHandle.CENTER_LEFT:
-                top_left[1] = np.clip(mouse_pos.x, 0, width)
-            case InteractionBoxHandle.CENTER_RIGHT:
-                bot_right[1] = np.clip(mouse_pos.x, 0, width)
             case InteractionBoxHandle.TOP_LEFT:
-                top_left[0] = np.clip(mouse_pos.y, 0, height)
-                top_left[1] = np.clip(mouse_pos.x, 0, width)
-            case InteractionBoxHandle.TOP_RIGHT:
-                top_left[0] = np.clip(mouse_pos.y, 0, height)
-                bot_right[1] = np.clip(mouse_pos.x, 0, width)
+                top_left[0] = clipped_y
+                top_left[1] = clipped_x
             case InteractionBoxHandle.TOP_CENTER:
-                top_left[0] = np.clip(mouse_pos.y, 0, height)
-            case InteractionBoxHandle.BOTTOM_CENTER:
-                bot_right[0] = np.clip(mouse_pos.y, 0, height)
+                top_left[0] = clipped_y
+            case InteractionBoxHandle.TOP_RIGHT:
+                top_left[0] = clipped_y
+                bot_right[1] = clipped_x
+            case InteractionBoxHandle.CENTER_LEFT:
+                top_left[1] = clipped_x
+            case InteractionBoxHandle.CENTER_RIGHT:
+                bot_right[1] = clipped_x
             case InteractionBoxHandle.BOTTOM_LEFT:
-                bot_right[0] = np.clip(mouse_pos.y, 0, height)
-                top_left[1] = np.clip(mouse_pos.x, 0, width)
+                bot_right[0] = clipped_y
+                top_left[1] = clipped_x
+            case InteractionBoxHandle.BOTTOM_CENTER:
+                bot_right[0] = clipped_y
             case InteractionBoxHandle.BOTTOM_RIGHT:
-                bot_right[0] = np.clip(mouse_pos.y, 0, height)
-                bot_right[1] = np.clip(mouse_pos.x, 0, width)
-            case _:  # fallback on other handles, do nothing
+                bot_right[0] = clipped_y
+                bot_right[1] = clipped_x
+            case _:
                 pass
 
         # now we update the bounds of the overlay
@@ -221,11 +196,14 @@ def highlight_roi_box_handles(layer: Image, event: NapariMouseEvent) -> None:
     world_to_data = (
         layer._transforms[1:].set_slice(layer._slice_input.displayed).inverse
     )
-    pos = np.array(world_to_data(event.position))[event.dims_displayed]
 
+    # interaction box calculations all happen in vispy coordinates (zyx)
+    pos = np.array(world_to_data(event.position))[event.dims_displayed][::-1]
+
+    top_left, bot_right = layer._overlays['selection_no_rotation'].bounds
     handle_coords = generate_interaction_box_vertices(
-        *layer._overlays['selection_no_rotation'].bounds, handles=True
-    )[:, ::-1]
+        top_left[::-1], bot_right[::-1], handles=True
+    )
     nearby_handle = get_nearby_handle(pos, handle_coords)
 
     # if the selected handle is INSIDE or ROTATION, we don't want to
@@ -234,7 +212,7 @@ def highlight_roi_box_handles(layer: Image, event: NapariMouseEvent) -> None:
         InteractionBoxHandle.INSIDE,
         InteractionBoxHandle.ROTATION,
     ]:
-        return
+        nearby_handle = None
 
     # set the selected vertex of the box to the nearby_handle (can also be INSIDE or None)
     layer._overlays['selection_no_rotation'].selected_handle = nearby_handle
