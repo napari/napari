@@ -127,12 +127,6 @@ jobs:
         env:
           PIP_CONSTRAINT: ""
 
-      - name: create _version.py file
-        # workaround for not using src layout
-        run: |
-          echo "__version__ = version = '0.5.5a2.dev364'" > napari/_version.py
-          echo "__version_tuple__ = version_tuple = (0, 5, 5, 'dev364', '')" >> napari/_version.py
-
       # here we pass off control of environment creation and running of tests to tox
       # tox-gh-actions, installed above, helps to convert environment variables into
       # tox "factors" ... limiting the scope of what gets tested on each platform

@@ -71,8 +71,8 @@ jobs:
         run: |
           pip install --upgrade pip semgrep
           # f"..." and f'...' are the same for semgrep
-          semgrep --error --lang python --pattern 'trans._(f"...")' napari
-          semgrep --error --lang python --pattern "trans._(\$X.format(...))" napari
+          semgrep --error --lang python --pattern 'trans._(f"...")' src/napari
+          semgrep --error --lang python --pattern "trans._(\$X.format(...))" src/napari
 
   build_wheel:
     name: Build wheel
