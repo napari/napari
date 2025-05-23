@@ -81,17 +81,17 @@ def create_vispy_layer(layer: Layer) -> VispyBaseLayer:
     visual : VispyBaseLayer
         Vispy layer
     """
-    for layer_type, visual_class in layer_to_visual.items():
-        if isinstance(layer, layer_type):
-            return visual_class(layer)
-
-    raise TypeError(
-        trans._(
-            'Could not find VispyLayer for layer of type {dtype}',
-            deferred=True,
-            dtype=type(layer),
+    visual_class = layer_to_visual.get(layer.__class__)
+    if visual_class is None:
+        raise TypeError(
+            trans._(
+                'Could not find VispyLayer for layer of type {dtype}',
+                deferred=True,
+                dtype=type(layer),
+            )
         )
-    )
+
+    return visual_class(layer)
 
 
 def create_vispy_overlay(overlay: Overlay, **kwargs) -> VispyBaseOverlay:
@@ -108,17 +108,17 @@ def create_vispy_overlay(overlay: Overlay, **kwargs) -> VispyBaseOverlay:
     visual : VispyBaseOverlay
         Vispy overlay
     """
-    for overlay_type, visual_class in overlay_to_visual.items():
-        if isinstance(overlay, overlay_type):
-            return visual_class(overlay=overlay, **kwargs)
-
-    raise TypeError(
-        trans._(
-            'Could not find VispyOverlay for overlay of type {dtype}',
-            deferred=True,
-            dtype=type(overlay),
+    visual_class = overlay_to_visual.get(overlay.__class__)
+    if visual_class is None:
+        raise TypeError(
+            trans._(
+                'Could not find VispyOverlay for overlay of type {dtype}',
+                deferred=True,
+                dtype=type(overlay),
+            )
         )
-    )
+
+    return visual_class(overlay=overlay, **kwargs)
 
 
 def get_view_direction_in_scene_coordinates(
