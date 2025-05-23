@@ -143,7 +143,7 @@ class PandasModel(QAbstractTableModel):
             role == Qt.ItemDataRole.CheckStateRole
             and pd.api.types.is_bool_dtype(dtype)
         ):
-            self.df.iat[row, col - 1] = bool(value) == Qt.Checked
+            self.df.iat[row, col - 1] = Qt.CheckState(value) == Qt.Checked
             self.dataChanged.emit(
                 index, index, [Qt.ItemDataRole.CheckStateRole]
             )
