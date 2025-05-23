@@ -1032,6 +1032,19 @@ def _find_dangling_widgets(request, qtbot):
         raise RuntimeError(f'Found dangling widgets:\n{text}')
 
 
+@pytest.fixture(autouse=True)
+def _fix_magic_name(monkeypatch, request):
+    """Fix napari.utils.naming.magic_name to handle test as as internal napari module."""
+
+    from napari.utils import naming
+
+    monkeypatch.setitem(
+        naming.magic_name.__kwdefaults__,
+        'path_prefix',
+        (naming.ROOT_DIR, str(request.fspath)),
+    )
+
+
 def pytest_runtest_setup(item):
     """Add Qt leak detection fixtures *only* in tests using the qapp fixture.
 
