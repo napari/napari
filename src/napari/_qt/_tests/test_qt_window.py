@@ -4,6 +4,7 @@ from unittest.mock import MagicMock, patch
 import numpy as np
 import pytest
 from qtpy.QtGui import QImage
+from qtpy.QtWidgets import QWidget
 
 from napari._qt.qt_main_window import Window, _QtMainWindow
 from napari._qt.utils import QImg2array
@@ -190,3 +191,28 @@ def test_shimmed_dialog_show(make_napari_viewer, npe2pm):
         mock_dialog.assert_called_once_with(
             viewer.window._qt_window, {'plugin1', 'plugin2'}
         )
+
+
+def test_add_plugin_dock_widget(make_napari_viewer, monkeypatch):
+    """Test that we can add a plugin dock widget to the viewer."""
+
+    class InnerWidget(QWidget):
+        pass
+
+    mock = MagicMock(return_value=(InnerWidget, 'widget name'))
+    monkeypatch.setattr('napari.plugins._npe2.get_widget_contribution', mock)
+    viewer = make_napari_viewer()
+
+    docked, widget = viewer.window.add_plugin_dock_widget(
+        'sample_plugin', 'sample_widget'
+    )
+    assert isinstance(widget, InnerWidget)
+    assert docked.inner_widget() is widget
+    docked2, widget2 = viewer.window.add_plugin_dock_widget(
+        'sample_plugin', 'sample_widget'
+    )
+    assert docked is docked2
+    assert widget is widget2
+    assert (
+        viewer.window.get_dock_widget('widget name (sample_plugin)') is docked
+    )
