@@ -12,6 +12,9 @@ on:
 
 jobs:
   vendor:
+    permissions:
+      pull-requests: write
+      issues: write
     name: Vendored
     runs-on: ubuntu-latest
     steps:
