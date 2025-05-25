@@ -1098,10 +1098,7 @@ class Window:
         full_name = plugin_menu_item_template.format(plugin_name, widget_name)
         if full_name in self._dock_widgets:
             dock_widget = self._dock_widgets[full_name]
-            wdg = dock_widget.widget()
-            if hasattr(wdg, '_magic_widget'):
-                wdg = wdg._magic_widget
-            return dock_widget, wdg
+            return dock_widget, dock_widget.inner_widget()
 
         wdg = _instantiate_dock_widget(
             widget_class, cast('Viewer', self._qt_viewer.viewer)
