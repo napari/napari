@@ -3,6 +3,7 @@ from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pytest
+from magicgui.widgets import Container
 from qtpy.QtGui import QImage
 from qtpy.QtWidgets import QWidget
 
@@ -193,10 +194,11 @@ def test_shimmed_dialog_show(make_napari_viewer, npe2pm):
         )
 
 
-def test_add_plugin_dock_widget(make_napari_viewer, monkeypatch):
+@pytest.mark.parametrize('BaseClass', [Container, QWidget])
+def test_add_plugin_dock_widget(make_napari_viewer, monkeypatch, BaseClass):
     """Test that we can add a plugin dock widget to the viewer."""
 
-    class InnerWidget(QWidget):
+    class InnerWidget(BaseClass):
         pass
 
     mock = MagicMock(return_value=(InnerWidget, 'widget name'))
