@@ -14,7 +14,7 @@ import imageio
 import tifffile
 
 BUILTINS_YAML_PATH = (
-    Path(__file__).parent.parent / 'napari_builtins' / 'builtins.yaml'
+    Path(__file__).parent.parent / 'src' / 'napari_builtins' / 'builtins.yaml'
 )
 
 re_exts = re.compile(
