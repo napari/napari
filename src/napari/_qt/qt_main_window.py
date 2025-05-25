@@ -696,6 +696,9 @@ class Window:
         qapp = get_qapp()
 
         # Dictionary holding dock widgets
+        # As many plugins uses `_dock_widget` to access one widget from the
+        # other widget wqe should not change this neame without a good reason,
+        # even if it is marked as private.
         self._dock_widgets: MutableMapping[str, QtViewerDockWidget] = (
             WeakValueDictionary()
         )
@@ -1242,6 +1245,21 @@ class Window:
         self._dock_widgets[dock_widget.name] = dock_widget
 
         return dock_widget
+
+    def get_dock_widget(self, name: str) -> QtViewerDockWidget | None:
+        """Get a dock widget by name.
+
+        Parameters
+        ----------
+        name : str
+            Name of the dock widget to retrieve.
+
+        Returns
+        -------
+        QtViewerDockWidget | None
+            The dock widget with the specified name, or None if not found.
+        """
+        return self._dock_widgets.get(name, None)
 
     def _add_viewer_dock_widget(
         self,
