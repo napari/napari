@@ -204,12 +204,16 @@ def test_add_plugin_dock_widget(make_napari_viewer, monkeypatch, BaseClass):
     mock = MagicMock(return_value=(InnerWidget, 'widget name'))
     monkeypatch.setattr('napari.plugins._npe2.get_widget_contribution', mock)
     viewer = make_napari_viewer()
+    assert viewer.window.get_docked_widget_names() == []
 
     docked, widget = viewer.window.add_plugin_dock_widget(
         'sample_plugin', 'sample_widget'
     )
     assert isinstance(widget, InnerWidget)
     assert docked.inner_widget() is widget
+    assert viewer.window.get_docked_widget_names() == [
+        'widget name (sample_plugin)'
+    ]
     docked2, widget2 = viewer.window.add_plugin_dock_widget(
         'sample_plugin', 'sample_widget'
     )

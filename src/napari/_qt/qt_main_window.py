@@ -1258,6 +1258,20 @@ class Window:
         """
         return self._dock_widgets.get(name, None)
 
+    def get_docked_widget_names(self) -> list[str]:
+        """Get the names of all docked widgets.
+
+        As we store dock widget as weak references,
+        we prefer to not provide list of dock widgets,
+        but only their names.
+
+        Returns
+        -------
+        list[str]
+            A list of names of all docked widgets.
+        """
+        return list(self._dock_widgets.keys())
+
     def _add_viewer_dock_widget(
         self,
         dock_widget: QtViewerDockWidget,
