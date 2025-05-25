@@ -40,7 +40,7 @@ def check_vendored_files(
     org: str, reponame: str, tag: str, source_paths: List[Path], target_path: Path
 ) -> str:
     repo_path = _clone(org, reponame, tag)
-    vendor_path = REPO_ROOT_PATH / NAPARI_FOLDER / target_path
+    vendor_path = REPO_ROOT_PATH / 'src' / NAPARI_FOLDER / target_path
     for s in source_paths:
         shutil.copy(repo_path / s, vendor_path)
     return check_output(["git", "diff"], cwd=vendor_path).decode("utf-8")
