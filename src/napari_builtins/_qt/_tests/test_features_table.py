@@ -1,6 +1,10 @@
+from unittest.mock import MagicMock
+
 import numpy as np
+import pandas as pd
 from qtpy.QtCore import QItemSelection, QItemSelectionModel, Qt
-from qtpy.QtWidgets import QLineEdit
+from qtpy.QtGui import QGuiApplication
+from qtpy.QtWidgets import QFileDialog, QLineEdit
 
 from napari.components import ViewerModel
 from napari_builtins._qt.features_table import FeaturesTable
@@ -97,3 +101,41 @@ def test_features_table_edit(qtbot):
     assert editor.text() == 'hello'
     w.table.commitData(editor)
     assert layer.features.loc[0, 'a'] == 'hello'
+
+
+def test_features_table_save_csv(qtbot, tmp_path):
+    v = ViewerModel()
+    w = FeaturesTable(v)
+
+    df = pd.DataFrame({'a': [1, 2]})
+    v.add_points(np.zeros((2, 2)), features=df)
+
+    path = tmp_path / 'test.csv'
+    QFileDialog.getSaveFileName = MagicMock(return_value=(path, None))
+
+    w.save.click()
+
+    pd.testing.assert_frame_equal(pd.read_csv(path, index_col=0), df)
+
+
+def test_features_table_copy_paste(qtbot):
+    v = ViewerModel()
+    w = FeaturesTable(v)
+
+    df = pd.DataFrame({'a': [1, 2, 3], 'b': [4, 5, 6]})
+
+    layer = v.add_points(np.zeros((3, 2)), features=df)
+
+    layer.selected_data = {1}
+
+    w.table.copySelection()
+
+    assert QGuiApplication.clipboard().text() == '2\t5\n'
+
+    layer.selected_data = {2}
+
+    w.toggle.click()
+    QGuiApplication.clipboard().setText('2\t5\n')
+    w.table.pasteSelection()
+
+    assert pd.testing.assert_series_equal(df.iloc[1], df.iloc[2])

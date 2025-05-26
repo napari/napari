@@ -465,17 +465,22 @@ class FeaturesTable(QWidget):
         if hasattr(self._active_layer, 'selected_label'):
             raw_index = self.table.selectionModel().currentIndex()
             current = self.table.model().mapToSource(raw_index).row()
-            self._active_layer.selected_label = current
+            with self._block_selection():
+                self._active_layer.selected_label = current
 
         elif hasattr(self._active_layer, 'selected_data'):
             selected_rows = {
                 self.table.model().mapToSource(raw_index).row()
                 for raw_index in self.table.selectionModel().selectedIndexes()
             }
-            self._active_layer.selected_data = selected_rows
+            with self._block_selection():
+                self._active_layer.selected_data = selected_rows
 
     def _on_layer_selection_changed(self):
         """Update table selected cells when layer selection changes."""
+        if self._selection_blocked:
+            return
+
         model = self.table.model()
         if hasattr(self._active_layer, 'selected_label'):
             sel = self._active_layer.selected_label
