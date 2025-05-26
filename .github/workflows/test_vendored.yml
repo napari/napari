@@ -30,9 +30,11 @@ jobs:
 
       - name: Create PR updating vendored modules
         uses: peter-evans/create-pull-request@v7
+        if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
         with:
           commit-message: Update vendored modules.
           branch: update-vendored-examples
+          base: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.ref || '' }}
           delete-branch: true
           title: "[Automatic] Update ${{ steps.check_v.outputs.vendored }} vendored module"
           labels: maintenance
