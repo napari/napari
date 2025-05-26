@@ -12,6 +12,9 @@ on:
 
 jobs:
   vendor:
+    permissions:
+      contents: write
+      pull-requests: write
     name: Vendored
     runs-on: ubuntu-latest
     steps:
@@ -47,7 +50,7 @@ jobs:
             action cron to keep vendored modules up to date.
 
             It look like ${{ steps.check_v.outputs.vendored }} has a new version.
-          token: ${{ secrets.GHA_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           author: napari-bot <napari-bot@users.noreply.github.com>
           # Token permissions required by the action:
           # * pull requests: write and read
