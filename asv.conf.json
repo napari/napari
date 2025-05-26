@@ -47,7 +47,7 @@
 
     // The directory (relative to the current directory) where the benchmarks
     // are stored
-    "benchmark_dir": "napari/benchmarks",
+    "benchmark_dir": "src/napari/benchmarks",
 
     // The number of characters to retain in the commit hashes.
     "hash_length": 8,

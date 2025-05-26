@@ -13,21 +13,21 @@ def test_viewer_overlays(make_napari_viewer):
         if isinstance(overlay, CanvasOverlay):
             assert all(
                 visual.node in canvas.view.children
-                for visual in canvas._overlay_to_visuals[overlay]
+                for visual in canvas._overlay_to_visual[overlay]
             )
         else:
             assert all(
                 visual.node in canvas.view.scene.children
-                for visual in canvas._overlay_to_visuals[overlay]
+                for visual in canvas._overlay_to_visual[overlay]
             )
 
-    old_vispy_overlays = list(canvas._overlay_to_visuals.values())
+    old_vispy_overlays = list(canvas._overlay_to_visual.values())
 
     new_overlay = ScaleBarOverlay()
     viewer._overlays['test'] = new_overlay
 
-    assert new_overlay in canvas._overlay_to_visuals
-    new_overlay_node = canvas._overlay_to_visuals[new_overlay][0].node
+    assert new_overlay in canvas._overlay_to_visual
+    new_overlay_node = canvas._overlay_to_visual[new_overlay][0].node
     assert new_overlay_node not in canvas.view.scene.children
     assert new_overlay_node in canvas.view.children
 
@@ -37,7 +37,7 @@ def test_viewer_overlays(make_napari_viewer):
         assert old_ov[0].node not in canvas.view.children
 
     viewer._overlays.pop('test')
-    assert new_overlay not in canvas._overlay_to_visuals
+    assert new_overlay not in canvas._overlay_to_visual
     assert new_overlay_node not in canvas.view.children
 
 
