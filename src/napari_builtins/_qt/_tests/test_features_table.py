@@ -121,21 +121,38 @@ def test_features_table_save_csv(qtbot, tmp_path):
 def test_features_table_copy_paste(qtbot):
     v = ViewerModel()
     w = FeaturesTable(v)
+    proxy = w.table.model()
 
     df = pd.DataFrame({'a': [1, 2, 3], 'b': [4, 5, 6]})
 
-    layer = v.add_points(np.zeros((3, 2)), features=df)
+    layer = v.add_points(np.zeros((3, 2)), features=df.copy())
 
-    layer.selected_data = {1}
+    first_cell = proxy.index(1, 1)
+    last_cell = proxy.index(1, 2)
+    selection = QItemSelection()
+    selection.select(first_cell, last_cell)
+
+    w.table.selectionModel().select(
+        selection,
+        QItemSelectionModel.ClearAndSelect,
+    )
 
     w.table.copySelection()
 
     assert QGuiApplication.clipboard().text() == '2\t5\n'
 
-    layer.selected_data = {2}
+    first_cell = proxy.index(2, 1)
+    last_cell = proxy.index(2, 2)
+    selection = QItemSelection()
+    selection.select(first_cell, last_cell)
+
+    w.table.selectionModel().select(
+        selection,
+        QItemSelectionModel.ClearAndSelect,
+    )
 
     w.toggle.click()
     QGuiApplication.clipboard().setText('2\t5\n')
     w.table.pasteSelection()
 
-    assert pd.testing.assert_series_equal(df.iloc[1], df.iloc[2])
+    np.testing.assert_array_equal(layer.features.iloc[2], df.iloc[1])

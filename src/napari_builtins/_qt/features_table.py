@@ -298,10 +298,8 @@ class PandasView(QTableView):
         map_func = proxy_model.mapToSource
 
         # determine selected block
-        rows = sorted({idx.row() for idx in selection})
-        cols = sorted(
-            {idx.column() for idx in selection if idx.column() > 0}
-        )  # skip index
+        rows = sorted({idx.row() for idx in selection if idx.column() > 0})
+        cols = sorted({idx.column() for idx in selection if idx.column() > 0})
 
         if not rows or not cols:
             return
@@ -324,7 +322,13 @@ class PandasView(QTableView):
         clipboard = QGuiApplication.clipboard().text()
         sel = self.selectedIndexes()
 
-        if not clipboard or not sel or not model.editable:
+        # if index is in the selection, just get out
+        if (
+            not clipboard
+            or not sel
+            or not model.editable
+            or any(s.column() == 0 for s in sel)
+        ):
             return
 
         rows = clipboard.strip().split('\n')
@@ -336,15 +340,12 @@ class PandasView(QTableView):
         start_proxy_index = min(sel, key=lambda x: (x.row(), x.column()))
         start_source_index = map_func(start_proxy_index)
         start_row = start_source_index.row()
-        start_col = start_source_index.column() - 1  # skip index column
-
-        if start_col < 0:
-            return  # trying to paste into index column — skip
+        start_col = start_source_index.column()
 
         for i in range(n_rows):
             for j in range(n_cols):
                 r = start_row + i
-                c = start_col + j
+                c = start_col + j - 1  # offset index
                 if r >= df.shape[0] or c >= df.shape[1]:
                     continue
                 val = data[i][j]
@@ -358,7 +359,7 @@ class PandasView(QTableView):
                     pass
 
         # notify the model/view
-        top_left = model.index(start_row, start_col + 1)
+        top_left = model.index(start_row, start_col)
         bottom_right = model.index(start_row + n_rows - 1, start_col + n_cols)
         model.dataChanged.emit(top_left, bottom_right)
 
