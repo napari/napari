@@ -452,6 +452,7 @@ class FeaturesTable(QWidget):
             self._active_layer.features
         )
         self.table.resizeColumnsToContents()
+        self._on_layer_selection_changed()
 
     def _on_editable_change(self):
         self.table.model().sourceModel().editable = self.toggle.isChecked()

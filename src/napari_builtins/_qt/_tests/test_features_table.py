@@ -1,15 +1,8 @@
 import numpy as np
-from qtpy.QtCore import Qt
+from qtpy.QtCore import QItemSelection, QItemSelectionModel, Qt
 
 from napari.components import ViewerModel
 from napari_builtins._qt.features_table import FeaturesTable
-
-
-def _detect_warn(*args):
-    if args[-1] == 'edit: editing failed':
-        raise RuntimeError
-    if args[-1] == 'edit: index was invalid':
-        raise KeyError
 
 
 def test_features_table(qtbot):
@@ -53,3 +46,28 @@ def test_features_table(qtbot):
             )
             == sorted(layer.features['b'])[i]
         )
+
+    # test selection (with sorted rows)
+    layer.selected_data = {1, 2}
+
+    selected_rows = {
+        proxy.mapToSource(raw_index).row()
+        for raw_index in w.table.selectionModel().selectedIndexes()
+    }
+    assert selected_rows == layer.selected_data
+
+    # click on top left cell
+    idx = proxy.mapFromSource(proxy.sourceModel().index(0, 0))
+
+    # select whole rows
+    first_cell = proxy.index(idx.row(), 0)
+    last_cell = proxy.index(idx.row(), proxy.columnCount() - 1)
+    selection = QItemSelection()
+    selection.select(first_cell, last_cell)
+
+    w.table.selectionModel().select(
+        selection,
+        QItemSelectionModel.ClearAndSelect | QItemSelectionModel.Rows,
+    )
+
+    assert layer.selected_data == {0}
