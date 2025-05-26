@@ -67,6 +67,7 @@ class VispyCanvasOverlay(VispyBaseOverlay):
         self.x_size = 0
         self.y_size = 0
         self.x_offset_tiling = 0
+        self.y_offset_tiling = 0
         self._canvas = None
         self.node.transform = STTransform()
         self.overlay.events.position.connect(self._on_position_change)
@@ -82,9 +83,11 @@ class VispyCanvasOverlay(VispyBaseOverlay):
         x_offset = 0
         y_offset = 0
         if 'top' in position:
-            y_offset = self.y_offset
+            y_offset = self.y_offset + self.y_offset_tiling
         elif 'bottom' in position:
-            y_offset = y_max - self.y_size - self.y_offset
+            y_offset = (
+                y_max - self.y_size - self.y_offset - self.y_offset_tiling
+            )
 
         if 'left' in position:
             x_offset = self.x_offset + self.x_offset_tiling
@@ -93,9 +96,7 @@ class VispyCanvasOverlay(VispyBaseOverlay):
                 x_max - self.x_size - self.x_offset - self.x_offset_tiling
             )
         elif 'center' in position:
-            # tiling for 'center' is just tiling to the right, not ideal, but a lot
-            # harder to do some sort of "autocenter"
-            x_offset = x_max / 2 - self.x_size / 2 + self.x_offset_tiling
+            x_offset = x_max / 2 - self.x_size / 2
 
         transform = [x_offset, y_offset, 0, 0]
 
