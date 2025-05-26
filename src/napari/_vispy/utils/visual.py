@@ -81,17 +81,18 @@ def create_vispy_layer(layer: Layer) -> VispyBaseLayer:
     visual : VispyBaseLayer
         Vispy layer
     """
-    visual_class = layer_to_visual.get(layer.__class__)
-    if visual_class is None:
-        raise TypeError(
-            trans._(
-                'Could not find VispyLayer for layer of type {dtype}',
-                deferred=True,
-                dtype=type(layer),
-            )
-        )
+    # find the closest parent class, to maintain behaviour from #2757
+    for cls in layer.__class__.mro():
+        if cls in layer_to_visual:
+            return layer_to_visual[cls](layer)
 
-    return visual_class(layer)
+    raise TypeError(
+        trans._(
+            'Could not find VispyLayer for layer of type {dtype}',
+            deferred=True,
+            dtype=type(layer),
+        )
+    )
 
 
 def create_vispy_overlay(overlay: Overlay, **kwargs) -> VispyBaseOverlay:
@@ -108,17 +109,17 @@ def create_vispy_overlay(overlay: Overlay, **kwargs) -> VispyBaseOverlay:
     visual : VispyBaseOverlay
         Vispy overlay
     """
-    visual_class = overlay_to_visual.get(overlay.__class__)
-    if visual_class is None:
-        raise TypeError(
-            trans._(
-                'Could not find VispyOverlay for overlay of type {dtype}',
-                deferred=True,
-                dtype=type(overlay),
-            )
-        )
+    for cls in overlay.__class__.mro():
+        if cls in overlay_to_visual:
+            return overlay_to_visual[cls](overlay=overlay, **kwargs)
 
-    return visual_class(overlay=overlay, **kwargs)
+    raise TypeError(
+        trans._(
+            'Could not find VispyOverlay for overlay of type {dtype}',
+            deferred=True,
+            dtype=type(overlay),
+        )
+    )
 
 
 def get_view_direction_in_scene_coordinates(
