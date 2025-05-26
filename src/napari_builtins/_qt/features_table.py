@@ -162,7 +162,7 @@ class PandasModel(QAbstractTableModel):
 
         if role == Qt.ItemDataRole.EditRole:
             try:
-                if not pd.api.types.is_categorical_dtype(dtype):
+                if not isinstance(dtype, pd.CategoricalDtype):
                     value = dtype.type(value)
                 self.df.iat[row, col - 1] = value
             except ValueError:
@@ -199,7 +199,7 @@ class DelegateCategorical(QStyledItemDelegate):
 
         dtype = source_model.df.dtypes.iat[col - 1]
 
-        if pd.api.types.is_categorical_dtype(dtype):
+        if isinstance(dtype, pd.CategoricalDtype):
             editor = QComboBox(parent)
             categories = source_model.df.iloc[:, col - 1].cat.categories
             editor.addItems([str(c) for c in categories])
@@ -350,7 +350,7 @@ class PandasView(QTableView):
                 val = data[i][j]
                 dtype = df.dtypes.iloc[c]
                 try:
-                    if not pd.api.types.is_categorical_dtype(dtype):
+                    if not isinstance(dtype, pd.CategoricalDtype):
                         val = dtype.type(val)
                     df.iat[r, c] = val
                 except ValueError:

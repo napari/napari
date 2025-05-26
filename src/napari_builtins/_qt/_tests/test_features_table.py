@@ -1,5 +1,6 @@
 import numpy as np
 from qtpy.QtCore import QItemSelection, QItemSelectionModel, Qt
+from qtpy.QtWidgets import QLineEdit
 
 from napari.components import ViewerModel
 from napari_builtins._qt.features_table import FeaturesTable
@@ -71,3 +72,28 @@ def test_features_table(qtbot):
     )
 
     assert layer.selected_data == {0}
+
+
+def test_features_table_edit(qtbot):
+    v = ViewerModel()
+    w = FeaturesTable(v)
+    proxy = w.table.model()
+
+    original_a = ['x', 'y']
+
+    layer = v.add_points(np.zeros((2, 2)), features={'a': original_a})
+
+    idx = proxy.index(0, 1)
+    w.table.edit(idx)
+    assert not w.table.isPersistentEditorOpen(idx)
+
+    w.toggle.click()
+    assert proxy.sourceModel().editable
+    w.table.edit(idx)
+    assert w.table.isPersistentEditorOpen(idx)
+
+    editor = w.table.findChild(QLineEdit)
+    qtbot.keyClicks(editor, 'hello')
+    assert editor.text() == 'hello'
+    w.table.commitData(editor)
+    assert layer.features.loc[0, 'a'] == 'hello'
