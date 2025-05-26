@@ -67,7 +67,7 @@ def check_vendored_module(org: str, reponame: str, tag: str) -> str:
     """
     repo_path = _clone(org, reponame, tag)
 
-    vendor_path = REPO_ROOT_PATH / NAPARI_FOLDER / VENDOR_FOLDER / reponame
+    vendor_path = REPO_ROOT_PATH / 'src' / NAPARI_FOLDER / VENDOR_FOLDER / reponame
     if vendor_path.is_dir():
         shutil.rmtree(vendor_path)
 
