@@ -8,6 +8,7 @@ on:
   pull_request:
     paths:
       - '.github/workflows/test_vendored.yml'
+      - 'tools/check_vendored_modules.py'
 
 jobs:
   vendor:
