@@ -11,6 +11,11 @@ class GridLinesOverlay(SceneOverlay):
     ----------
     color : ColorValue
         Color of the grid lines.
+    labels : bool
+        Whether to display ticks and tick labels.
+    n_labels : int
+        How many ticks and labels should be displayed. This number will be
+        targeted approximately, to prioritize nice round numbers.
     visible : bool
         If the overlay is visible or not.
     opacity : float
