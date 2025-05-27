@@ -617,9 +617,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         ]
         dtype_str = get_settings().application.new_labels_dtype
         empty_labels = np.zeros(shape, dtype=dtype_str)
-        self.add_labels(
+        self.add_labels(  # type: ignore[attr-defined]
             empty_labels, translate=np.array(corner), scale=scale, units=units
-        )  # type: ignore[attr-defined]
+        )
         # We define `add_labels` dynamically, so mypy doesn't know about it.
 
     def _on_layer_reload(self, event: Event) -> None:
