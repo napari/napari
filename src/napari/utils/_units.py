@@ -60,7 +60,14 @@ def _generate_ticks(base, exp, min_value, max_value):
     return np.arange(tick_min, tick_max + step, step).astype(float)
 
 
-def compute_nice_ticks(min_value, max_value, target_ticks=5):
+def compute_nice_ticks(
+    min_value: float, max_value: float, target_ticks: int = 5
+) -> np.ndarray:
+    best_ticks = np.empty(0, float)
+
+    if min_value == max_value:
+        return best_ticks
+
     # Decimal needed for small values float imprecision
     min_value = Decimal(min_value)
     max_value = Decimal(max_value)
@@ -70,8 +77,6 @@ def compute_nice_ticks(min_value, max_value, target_ticks=5):
 
     ideal_exponent = int(np.floor(np.log10(ideal_step)))
     exp_candidates = range(ideal_exponent - 1, ideal_exponent + 1)
-
-    best_ticks = None
 
     for exp in exp_candidates:
         for base in PREFERRED_TICK_VALUES:
