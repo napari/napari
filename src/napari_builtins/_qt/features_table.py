@@ -63,7 +63,7 @@ class PandasModel(QAbstractTableModel):
         return self.df.shape[1] + 1  # include index
 
     def data(self, index: QModelIndex, role=Qt.ItemDataRole.DisplayRole):
-        if not index.isValid():  # pragma: no cover 
+        if not index.isValid():  # pragma: no cover
             return None
 
         row = index.row()
