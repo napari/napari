@@ -6,7 +6,12 @@ import pytest
 from pandas.core.generic import pandas_dtype
 from qtpy.QtCore import QItemSelection, QItemSelectionModel, Qt
 from qtpy.QtGui import QGuiApplication
-from qtpy.QtWidgets import QComboBox, QFileDialog, QLineEdit
+from qtpy.QtWidgets import (
+    QAbstractItemDelegate,
+    QComboBox,
+    QFileDialog,
+    QLineEdit,
+)
 
 from napari.components import ViewerModel
 from napari_builtins._qt.features_table import FeaturesTable
@@ -216,6 +221,9 @@ def test_features_tables_dtypes(
     elif editor_class == QComboBox:
         qtbot.keyClick(editor, Qt.Key.Key_Down)
         w.table.commitData(editor)
+    qtbot.wait(5)  # wait on singleShot execution
+    w.table.closeEditor(editor, QAbstractItemDelegate.EndEditHint.NoHint)
+
     assert (
         layer.features.loc[0, 'a']
         == pd.Series(new_val, dtype=pandas_dtype(dtype))[0]
