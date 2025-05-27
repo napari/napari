@@ -11,6 +11,7 @@ on:
   pull_request:
     paths:
       - '.github/workflows/test_prereleases.yml'
+      - 'resources/constraints/version_denylist.txt'
 
 env:
   COLUMNS: 120
@@ -23,13 +24,17 @@ jobs:
     permissions:
       contents: read
       issues: write
-    if: github.repository == 'napari/napari'
+    if: ${{ github.repository == 'napari/napari' || github.event_name == 'workflow_dispatch' }}
     strategy:
       fail-fast: false
       matrix:
         platform: [windows-latest, macos-latest, ubuntu-latest]
-        python: [3.12]
+        python: [3.12, 3.13]
         backend: [pyqt5, pyqt6]
+        include:
+          - platform: ubuntu-latest
+            python: 3.12
+            backend: pyqt6_no_numba
 
     steps:
       - uses: actions/checkout@v4
@@ -42,12 +47,22 @@ jobs:
 
       - uses: tlambert03/setup-qt-libs@v1
 
+      - name: Setup Graphviz
+        uses: ts-graphviz/setup-graphviz@v2
+        continue-on-error: true
+
+      - name: Set Windows resolution
+        if: runner.os == 'Windows'
+        run: Set-DisplayResolution -Width 1920 -Height 1080 -Force
+        shell: powershell
+
       - name: Install Windows OpenGL
         if: runner.os == 'Windows'
         run: |
           git clone --depth 1 https://github.com/pyvista/gl-ci-helpers.git
           powershell gl-ci-helpers/appveyor/install_opengl.ps1
           if (Test-Path -Path "C:\Windows\system32\opengl32.dll" -PathType Leaf) {Exit 0} else {Exit 1}
+        shell: powershell
 
       - name: Install dependencies
         run: |
@@ -62,8 +77,10 @@ jobs:
         env:
           PLATFORM: ${{ matrix.platform }}
           BACKEND: ${{ matrix.backend }}
+          PYTHON: ${{ matrix.python }}
           COVERAGE: "no_cov"
           PYVISTA_OFF_SCREEN: True  # required for opengl on windows
+          PIP_CONSTRAINT: resources/constraints/version_denylist.txt
 
       # If something goes wrong, we can open an issue in the repo
       - name: Report Failures

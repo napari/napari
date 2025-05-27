@@ -20,10 +20,10 @@ classifiers = [
     "Programming Language :: C",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Scientific/Engineering",
     "Topic :: Scientific/Engineering :: Visualization",
     "Topic :: Scientific/Engineering :: Information Analysis",
@@ -34,42 +34,43 @@ classifiers = [
     "Operating System :: Unix",
     "Operating System :: MacOS",
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
     "appdirs>=1.4.4",
-    "app-model>=0.2.5,<0.3.0",
+    "app-model>=0.3.0,<0.4.0",
     "cachey>=0.2.1",
     "certifi>=2018.1.18",
     "dask[array]>=2021.10.0",
     "imageio>=2.20,!=2.22.1",
     "jsonschema>=3.2.0",
-    "lazy_loader>=0.2",
+    "lazy_loader>=0.3",
     "magicgui>=0.7.0",
-    "napari-console>=0.0.9",
+    "napari-console>=0.1.1",
     "napari-plugin-engine>=0.1.9",
     "napari-svg>=0.1.8",
-    "npe2>=0.7.4",
-    "numpy>=1.22.2,<2",
-    "numpydoc>=0.9.2",
-    "pandas>=1.3.0",
+    "npe2>=0.7.8",
+    "numpy>=1.24.2",
+    "numpydoc>=1.0.0",
+    "pandas>=1.3.3",
     "Pillow>=9.0",
     "pint>=0.17",
-    "psutil>=5.0",
+    "psutil>=5.9.0",
     "psygnal>=0.5.0",
-    "pydantic>=1.9.0",
+    "pydantic>=2.2.0",
     "pygments>=2.6.0",
-    "PyOpenGL>=3.1.0",
-    "PyYAML>=5.1",
-    "qtpy>=1.10.0",
+    "PyOpenGL>=3.1.5",
+    "pywin32 ; platform_system == 'Windows'",
+    "PyYAML>=6.0",
+    "qtpy>=2.3.1",
     "scikit-image[data]>=0.19.1",
-    "scipy>=1.5.4",
-    "superqt>=0.5.0",
-    "tifffile>=2022.4.8",
-    "toolz>=0.10.0",
+    "scipy>=1.10.1",
+    "superqt>=0.6.7",
+    "tifffile>=2022.7.28",
+    "toolz>=0.11.0",
     "tqdm>=4.56.0",
-    "typing_extensions>=4.2.0",
-    "vispy>=0.14.1,<0.15",
-    "wrapt>=1.11.1",
+    "typing_extensions>=4.6.1",
+    "vispy>=0.15.0,<0.16",
+    "wrapt>=1.13.3",
 ]
 dynamic = [
     "version",
@@ -91,20 +92,21 @@ Documentation = "https://napari.org"
 
 [project.optional-dependencies]
 pyside2 = [
-    "PySide2>=5.13.2,!=5.15.0 ; python_version < '3.12'",
+    "PySide2>=5.15.1 ; python_version < '3.11' and platform_machine != 'arm64'",
 ]
 pyside6_experimental = [
     "PySide6 < 6.5 ; python_version < '3.12'"
 ]
-pyqt6_experimental = [
-    "PyQt6",
+pyqt6 = [
+    "PyQt6 > 6.5",
     "PyQt6 != 6.6.1 ; platform_system == 'Darwin'"
 ]
 pyside = [
     "napari[pyside2]"
 ]
 pyqt5 = [
-    "PyQt5>=5.12.3,!=5.15.0",
+    "PyQt5>=5.15.8",
+    "pyqt5-qt5<=5.15.2; sys_platform == 'Windows'",  # 5.15.2 is latest to build on Windows, required for `uv add` compatability as of uv 0.6.9
 ]
 pyqt = [
     "napari[pyqt5]"
@@ -113,21 +115,35 @@ qt = [
     "napari[pyqt]"
 ]
 all = [
-    "napari[pyqt,optional]",
-    "napari-plugin-manager >=0.1.0a1, <0.2.0",
+    "napari[pyqt,optional]"
+]
+optional-base = [
+    "zarr>=2.12.0", # needed by `builtins` (dask.array.from_zarr) to open zarr
+    "napari-plugin-manager >=0.1.3, <0.2.0",
+]
+optional-numba = [
+    "numba>=0.57.1",
 ]
 optional = [
-    "triangle ; platform_machine != 'arm64'",
-    "numba>=0.57.1",
-    "zarr>=2.12.0", # needed by `builtins` (dask.array.from_zarr) to open zarr
+    "napari[optional-base,optional-numba,bermuda]",
+    "triangle",
+]
+bermuda = [
+    "bermuda>=0.1.4",
+]
+partsegcore = [
+    "PartSegCore-compiled-backend>=0.15.11",
+]
+all_optional = [
+    "napari[optional,partsegcore]"
 ]
 testing = [
+    "napari[gallery]",
     "babel>=2.9.0",
     "fsspec>=2023.10.0",
     "hypothesis>=6.8.0",
     "lxml[html_clean]>5",
     "matplotlib >= 3.6.1",
-    "numba>=0.57.1",
     "pooch>=1.6.0",
     "coverage>7",
     "docstring_parser>=0.15",
@@ -135,21 +151,59 @@ testing = [
     "pyautogui>=0.9.54",
     "pytest-qt>=4.3.1",
     "pytest-pretty>=1.1.0",
-    "pytest>=8.1.0",
-    "tensorstore>=0.1.13",
+    "pytest>=8.3.5",
+    "tensorstore>=0.1.32",
     "virtualenv>=20.17",
     "xarray>=0.16.2",
-    "zarr>=2.12.0",
     "IPython>=7.25.0",
     "qtconsole>=4.5.1",
     "rich>=12.0.0",
-    "napari-plugin-manager >=0.1.0a2, <0.2.0",
+    "napari[optional-base]",
 ]
 testing_extra = [
-    "torch>=1.7",
+    "torch>=1.10.2",
+]
+# needed for gallery examples
+gallery = [
+    "glasbey",
+    "zarr",
+    "dask[array,distributed]",
+    "matplotlib",
+    "pooch",
+    "nilearn",
+    "xarray",
+    "h5netcdf",
+]
+# needed to build docs
+docs = [
+    "napari[gallery]",
+    "sphinx<8",
+    "sphinx-autobuild",
+    "sphinx-tabs",
+    "sphinx-tags",
+    "sphinx-design",
+    "sphinx-external-toc",
+    "sphinx-favicon>=1.0",
+    "sphinx-copybutton",
+    "sphinx-gallery",
+    "sphinx_autodoc_typehints==1.12.0",
+    "sphinxcontrib-mermaid>=1.0.0",
+    "sphinxext-opengraph[social-cards]",
+    "myst-nb",
+    "napari-sphinx-theme>=0.3.0",
+    "matplotlib",
+    "lxml[html_clean]>5",
+    "imageio-ffmpeg",
+    "pydeps",
+    "seedir",
+    # triangle and bermuda needed for docs/guides/triangulation.md
+    "triangle",
+    "bermuda>=0.1.4",
+    "pytest",
+    "linkify-it-py",
 ]
 release = [
-    "PyGithub>=1.44.1",
+    "PyGithub>=1.46",
     "twine>=3.1.1",
     "gitpython>=3.1.0",
     "requests-cache>=0.9.2",
@@ -158,7 +212,10 @@ dev = [
     "ruff",
     "check-manifest>=0.42",
     "pre-commit>=2.9.0",
-    "pydantic[dotenv]",
+    "pydantic",
+    "python-dotenv",
+    "tox",
+    "tox-min-req",
     "napari[testing]",
 ]
 build = [
@@ -183,6 +240,9 @@ license-files = [
 ]
 
 [tool.setuptools.packages.find]
+where = [
+    "src",
+]
 namespaces = false
 
 [tool.setuptools.package-data]
@@ -195,7 +255,8 @@ napari_builtins = [
 
 
 [tool.setuptools_scm]
-write_to = "napari/_version.py"
+write_to = "src/napari/_version.py"
+fallback_version = "0.6.0.nogit"
 
 [tool.check-manifest]
 ignore = [
@@ -204,15 +265,15 @@ ignore = [
   "asv.conf.json",
   "codecov.yml",
   "Makefile",
-  "napari/_version.py",  # added during build by setuptools_scm
+  "src/napari/_version.py",  # added during build by setuptools_scm
   "tools/minreq.py",
   "tox.ini",
-  "napari/_qt/qt_resources/_qt_resources_*.py",
+  "src/napari/_qt/qt_resources/_qt_resources_*.py",
   "*.pyi",  # added by make typestubs
   "binder/*",
   ".env_sample",
   ".devcontainer/*",
-  "napari/resources/icons/_themes/*/*.svg"
+  "src/napari/resources/icons/_themes/*/*.svg"
 ]
 
 [tool.ruff]
@@ -250,7 +311,7 @@ select = [
     "UP", # pyupgrade
     "I", # isort
     "YTT", #flake8-2020
-    "TCH", # flake8-type-checing
+    "TC", # flake8-type-checing
     "BLE", # flake8-blind-exception
     "B", # flake8-bugbear
     "A", # flake8-builtins
@@ -269,15 +330,17 @@ select = [
     "TRY", # tryceratops
     "ICN", # flake8-import-conventions
     "RUF", # ruff specyfic rules
+    "NPY201", # checks compatibility with numpy version 2.0
     "ASYNC", # flake8-async
     "EXE", # flake8-executable
     "FA", # flake8-future-annotations
     "LOG", # flake8-logging
     "SLOT", # flake8-slots
     "PT", # flake8-pytest-style
+    "T20", # flake8-print
 ]
 ignore = [
-    "E501", "TCH001", "TCH002", "TCH003",
+    "E501", "TC001", "TC002", "TC003",
     "A003", # flake8-builtins - we have class attributes violating these rule
     "COM812", # flake8-commas - we don't like adding comma on single line of arguments
     "COM819", # conflicts with ruff-format
@@ -288,17 +351,22 @@ ignore = [
     "B028", # need to be fixed
     "PYI015", # it produces bad looking files (@jni opinion)
     "W191", "Q000", "Q001", "Q002", "Q003", "ISC001", # https://docs.astral.sh/ruff/formatter/#conflicting-lint-rules
+    "UP007", # temporary disable migrtion form Union[X, Y] to X | Y
+    "TC006", # put types in quotes in typing.cast
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"napari/_vispy/__init__.py" = ["E402"]
+"src/napari/_vispy/__init__.py" = ["E402"]
 "**/_tests/*.py" = ["B011", "INP001", "TRY301", "B018", "RUF012"]
-"napari/utils/_testsupport.py" = ["B011"]
+"src/napari/utils/_testsupport.py" = ["B011"]
 "tools/validate_strings.py" = ["F401"]
-"tools/**" = ["INP001", "T20"]
-"examples/**" = ["ICN001", "INP001", "T20"]
+"tools/**" = ["INP001", "T20", "LOG015"]
+"examples/**" = ["ICN001", "INP001", "T20", "LOG015"]
 "**/vendored/**" = ["TID"]
-"napari/benchmarks/**" = ["RUF012", "TID252"]
+"src/napari/benchmarks/**" = ["RUF012", "TID252"]
+
+[tool.ruff.lint.flake8-builtins]
+builtins-allowed-modules = ["io", "types", "threading"]
 
 [tool.ruff.lint.pyupgrade]
 keep-runtime-typing = true
@@ -331,6 +399,7 @@ minversion = "8"
 # log_cli_level = "INFO"
 xfail_strict = true
 testpaths = ["napari", "napari_builtins"]
+#pythonpath = "src"
 
 
 # NOTE: only put things that will never change in here.
@@ -354,6 +423,13 @@ filterwarnings = [
   "ignore:distutils Version classes are deprecated::",
   "ignore:There is no current event loop:DeprecationWarning:",
   "ignore:(?s).*Pyarrow will become a required dependency of pandas:DeprecationWarning",  # pandas pyarrow (pandas<3.0),
+  # TODO: remove once xarray is updated to avoid this warning
+  # https://github.com/pydata/xarray/blame/b1f3fea467f9387ed35c221205a70524f4caa18b/pyproject.toml#L333-L334
+  # https://github.com/pydata/xarray/pull/8939
+  "ignore:__array__ implementation doesn't accept a copy keyword, so passing copy=False failed.",
+  "ignore:pkg_resources is deprecated",
+  "ignore:Deprecated call to `pkg_resources.declare_namespace",
+  "ignore:Use Group.create_array instead."
 ]
 markers = [
     "examples: Test of examples",
@@ -362,13 +438,16 @@ markers = [
     "disable_qtimer_start: Disable timer start in this Test",
     "disable_qanimation_start: Disable animation start in this Test",
     "enable_console: Don't mock the IPython console (in QtConsole) in this Test",
+    # mark slow tests, so they can be skipped using: pytest -m "not slow"
+    "slow: mark a test as slow",
+    "key_bindings: Test of keybindings",
 ]
 
 [tool.mypy]
 files = "napari"
 # This file triggers an internal mypy error, so exclude collection
 # TODO: fix this
-exclude = "napari/utils/events/_tests/test_evented_model\\.py"
+exclude = "src/napari/utils/events/_tests/test_evented_model\\.py"
 plugins =  "numpy.typing.mypy_plugin, pydantic.mypy"
 ignore_missing_imports = true
 hide_error_codes = false
@@ -447,7 +526,6 @@ module = [
     'napari._qt.layer_controls.qt_tracks_controls',
     'napari._qt.layer_controls.qt_vectors_controls',
     'napari._qt.menus._util',
-    'napari._qt.menus.debug_menu',
     'napari._qt.menus.file_menu',
     'napari._qt.perf.qt_event_tracing',
     'napari._qt.perf.qt_performance',
@@ -468,6 +546,7 @@ module = [
     'napari._qt.widgets.qt_font_size',
     'napari._qt.widgets.qt_highlight_preview',
     'napari._qt.widgets.qt_keyboard_settings',
+    'napari._qt.widgets.qt_logger',
     'napari._qt.widgets.qt_message_popup',
     'napari._qt.widgets.qt_mode_buttons',
     'napari._qt.widgets.qt_plugin_sorter',
@@ -543,7 +622,7 @@ module = [
     "napari._vispy.visuals.surface",
     "napari.layers.shapes._shapes_models.path",
     "napari.layers.shapes._shapes_models.polygon",
-    "napari.layers.shapes._shapes_models._polgyon_base",
+    "napari.layers.shapes._shapes_models._polygon_base",
     "napari.layers.shapes._shapes_models.ellipse",
     "napari.layers.shapes._shapes_models.line",
     "napari.layers.shapes._shapes_models.rectangle",
@@ -601,7 +680,6 @@ module = [
     "napari._vispy.overlays.scale_bar",
     "napari._vispy.overlays.text",
     "napari.layers.labels._labels_key_bindings",
-    "napari.layers.tracks._tracks_key_bindings",
     "napari.layers.utils._slice_input",
     "napari.utils._register",
     "napari.utils.colormaps.categorical_colormap",
@@ -682,7 +760,6 @@ module = [
     "napari.conftest",
     "napari.layers.labels._labels_utils",
     "napari.layers.points._points_mouse_bindings",
-    "napari.layers.tracks._track_utils",
     "napari.utils.colormaps.colormap",
     "napari.utils.notifications",
 ]
@@ -739,42 +816,61 @@ module = [
 check_untyped_defs = false
 disallow_untyped_defs = false
 
+[[tool.mypy.overrides]]
+module = [
+    "napari._pydantic_compat",
+]
+ignore_errors = true
+
 
 [tool.coverage.report]
 exclude_lines = [
     "pragma: no cover",
     "if TYPE_CHECKING:",
+    "if typing.TYPE_CHECKING:",
     "raise NotImplementedError()",
     "except ImportError:",
     "^ +\\.\\.\\.$",
 ]
 
 [tool.coverage.run]
-parallel = true
 omit = [
     "*/_vendor/*",
     "*/_version.py",
     "*/benchmarks/*",
     "napari/utils/indexing.py",
-    "**/add_layer.py_tmpl"
+    "**/add_layer.py_tmpl",
+    "*/.pytest_tmp/**",
 ]
 source = [
+    "src/napari",
+    "src/napari_builtins",
     "napari",
     "napari_builtins",
 ]
 
 [tool.coverage.paths]
 source = [
+    "src/napari/",
     "napari/",
-    "D:\\a\\napari\\napari\\napari",
-    "/home/runner/work/napari/napari/napari",
-    "/Users/runner/work/napari/napari/napari",
+    ".tox/*/lib/python*/site-packages/napari/",
+    "/tmp/.tox/*/lib/python*/site-packages/napari/",
+    ".tox/*/Lib/site-packages/napari/",
+    "D:\\a\\napari\\napari\\src\\napari",
+    "D:\\a\\napari\\napari\\.tox\\*\\Lib\\site-packages\\napari",
+    "/home/runner/work/napari/napari/src/napari",
+    "/Users/runner/work/napari/napari/src/napari",
 ]
 builtins = [
+    "src/napari_builtins/",
     "napari_builtins/",
-    "D:\\a\\napari\\napari\\napari_builtins",
-    "/home/runner/work/napari/napari/napari_builtins",
-    "/Users/runner/work/napari/napari/napari_builtins",
+    ".tox/*/lib/python*/site-packages/napari_builtins/",
+    "/tmp/.tox/*/lib/python*/site-packages/napari_builtins/",
+    ".tox/*/Lib/site-packages/napari_builtins/",
+    "D:\\a\\napari\\napari\\src\\napari_builtins",
+    "D:\\a\\napari\\napari\\.tox\\*\\Lib\\site-packages\\napari_builtins",
+    "/home/runner/work/napari/napari/src/napari_builtins",
+    "/Users/runner/work/napari/napari/src/napari_builtins",
 ]
 
 [tool.importlinter]

@@ -1,0 +1,452 @@
+import numpy as np
+import numpy.testing as npt
+import pint
+import pytest
+from scipy.stats import special_ortho_group
+
+from napari.utils.transforms import Affine, CompositeAffine, ScaleTranslate
+
+transform_types = [Affine, CompositeAffine, ScaleTranslate]
+
+affine_type = [Affine, CompositeAffine]
+
+REG = pint.get_application_registry()
+PIXEL = REG.pixel
+
+
+@pytest.mark.parametrize('Transform', transform_types)
+def test_scale_translate(Transform):
+    coord = [10, 13]
+    transform = Transform(scale=[2, 3], translate=[8, -5], name='st')
+    assert transform._is_diagonal
+    new_coord = transform(coord)
+    target_coord = [2 * 10 + 8, 3 * 13 - 5]
+    assert transform.name == 'st'
+    npt.assert_allclose(new_coord, target_coord)
+
+
+@pytest.mark.parametrize('Transform', [Affine, CompositeAffine])
+def test_affine_is_diagonal(Transform):
+    transform = Transform(scale=[2, 3], translate=[8, -5], name='st')
+    assert transform._is_diagonal
+    transform.rotate = 5.0
+    assert not transform._is_diagonal
+    # Rotation back to 0.0 will result in tiny non-zero off-diagonal values.
+    # _is_diagonal assumes values below 1e-8 are equivalent to 0.
+    transform.rotate = 0.0
+    assert transform._is_diagonal
+
+
+def test_diagonal_scale_setter():
+    diag_transform = Affine(scale=[2, 3], name='st')
+    assert diag_transform._is_diagonal
+    diag_transform.scale = [1]
+    npt.assert_allclose(diag_transform.scale, [1.0, 1.0])
+
+
+@pytest.mark.parametrize('Transform', transform_types)
+def test_scale_translate_broadcast_scale(Transform):
+    coord = [1, 10, 13]
+    transform = Transform(scale=[4, 2, 3], translate=[8, -5], name='st')
+    new_coord = transform(coord)
+    target_coord = [4, 2 * 10 + 8, 3 * 13 - 5]
+    assert transform.name == 'st'
+    npt.assert_allclose(transform.scale, [4, 2, 3])
+    npt.assert_allclose(transform.translate, [0, 8, -5])
+    npt.assert_allclose(new_coord, target_coord)
+
+
+@pytest.mark.parametrize('Transform', transform_types)
+def test_scale_translate_broadcast_translate(Transform):
+    coord = [1, 10, 13]
+    transform = Transform(scale=[2, 3], translate=[5, 8, -5], name='st')
+    new_coord = transform(coord)
+    target_coord = [6, 2 * 10 + 8, 3 * 13 - 5]
+    assert transform.name == 'st'
+    npt.assert_allclose(transform.scale, [1, 2, 3])
+    npt.assert_allclose(transform.translate, [5, 8, -5])
+    npt.assert_allclose(new_coord, target_coord)
+
+
+@pytest.mark.parametrize('Transform', transform_types)
+def test_scale_translate_inverse(Transform):
+    coord = [10, 13]
+    transform = Transform(scale=[2, 3], translate=[8, -5])
+    new_coord = transform(coord)
+    target_coord = [2 * 10 + 8, 3 * 13 - 5]
+    npt.assert_allclose(new_coord, target_coord)
+
+    inverted_new_coord = transform.inverse(new_coord)
+    npt.assert_allclose(inverted_new_coord, coord)
+
+
+@pytest.mark.parametrize('Transform', transform_types)
+def test_scale_translate_compose(Transform):
+    coord = [10, 13]
+    transform_a = Transform(scale=[2, 3], translate=[8, -5])
+    transform_b = Transform(scale=[0.3, 1.4], translate=[-2.2, 3])
+    transform_c = transform_b.compose(transform_a)
+
+    new_coord_1 = transform_c(coord)
+    new_coord_2 = transform_b(transform_a(coord))
+    npt.assert_allclose(new_coord_1, new_coord_2)
+
+
+@pytest.mark.parametrize('Transform', transform_types)
+def test_scale_translate_slice(Transform):
+    transform_a = Transform(scale=[2, 3], translate=[8, -5])
+    transform_b = Transform(scale=[2, 1, 3], translate=[8, 3, -5], name='st')
+    npt.assert_allclose(transform_b.set_slice([0, 2]).scale, transform_a.scale)
+    npt.assert_allclose(
+        transform_b.set_slice([0, 2]).translate, transform_a.translate
+    )
+    assert transform_b.set_slice([0, 2]).name == 'st'
+
+
+@pytest.mark.parametrize('Transform', transform_types)
+def test_scale_translate_expand_dims(Transform):
+    transform_a = Transform(scale=[2, 3], translate=[8, -5], name='st')
+    transform_b = Transform(scale=[2, 1, 3], translate=[8, 0, -5])
+    npt.assert_allclose(transform_a.expand_dims([1]).scale, transform_b.scale)
+    npt.assert_allclose(
+        transform_a.expand_dims([1]).translate, transform_b.translate
+    )
+    assert transform_a.expand_dims([1]).name == 'st'
+
+
+@pytest.mark.parametrize('Transform', transform_types)
+def test_scale_translate_identity_default(Transform):
+    coord = [10, 13]
+    transform = Transform()
+    new_coord = transform(coord)
+    npt.assert_allclose(new_coord, coord)
+
+
+def test_affine_properties():
+    transform = Affine(scale=[2, 3], translate=[8, -5], rotate=90, shear=[1])
+    npt.assert_allclose(transform.translate, [8, -5])
+    npt.assert_allclose(transform.scale, [2, 3])
+    npt.assert_almost_equal(transform.rotate, [[0, -1], [1, 0]])
+    npt.assert_almost_equal(transform.shear, [1])
+
+
+def test_affine_properties_setters():
+    transform = Affine()
+    transform.translate = [8, -5]
+    npt.assert_allclose(transform.translate, [8, -5])
+    transform.scale = [2, 3]
+    npt.assert_allclose(transform.scale, [2, 3])
+    transform.rotate = 90
+    npt.assert_almost_equal(transform.rotate, [[0, -1], [1, 0]])
+    transform.shear = [1]
+    npt.assert_almost_equal(transform.shear, [1])
+
+
+def test_rotate():
+    coord = [10, 13]
+    transform = Affine(rotate=90)
+    new_coord = transform(coord)
+    # As rotate by 90 degrees, can use [-y, x]
+    target_coord = [-coord[1], coord[0]]
+    npt.assert_allclose(new_coord, target_coord)
+
+
+def test_scale_translate_rotate():
+    coord = [10, 13]
+    transform = Affine(scale=[2, 3], translate=[8, -5], rotate=90)
+    new_coord = transform(coord)
+    post_scale = np.multiply(coord, [2, 3])
+    # As rotate by 90 degrees, can use [-y, x]
+    post_rotate = [-post_scale[1], post_scale[0]]
+    target_coord = np.add(post_rotate, [8, -5])
+    npt.assert_allclose(new_coord, target_coord)
+
+
+def test_scale_translate_rotate_inverse():
+    coord = [10, 13]
+    transform = Affine(scale=[2, 3], translate=[8, -5], rotate=90)
+    new_coord = transform(coord)
+    post_scale = np.multiply(coord, [2, 3])
+    # As rotate by 90 degrees, can use [-y, x]
+    post_rotate = [-post_scale[1], post_scale[0]]
+    target_coord = np.add(post_rotate, [8, -5])
+    npt.assert_allclose(new_coord, target_coord)
+
+    inverted_new_coord = transform.inverse(new_coord)
+    npt.assert_allclose(inverted_new_coord, coord)
+
+
+def test_scale_translate_rotate_compose():
+    coord = [10, 13]
+    transform_a = Affine(scale=[2, 3], translate=[8, -5], rotate=25)
+    transform_b = Affine(scale=[0.3, 1.4], translate=[-2.2, 3], rotate=65)
+    transform_c = transform_b.compose(transform_a)
+
+    new_coord_1 = transform_c(coord)
+    new_coord_2 = transform_b(transform_a(coord))
+    npt.assert_allclose(new_coord_1, new_coord_2)
+
+
+def test_scale_translate_rotate_shear_compose():
+    coord = [10, 13]
+    transform_a = Affine(scale=[2, 3], translate=[8, -5], rotate=25, shear=[1])
+    transform_b = Affine(
+        scale=[0.3, 1.4],
+        translate=[-2.2, 3],
+        rotate=65,
+        shear=[-0.5],
+    )
+    transform_c = transform_b.compose(transform_a)
+
+    new_coord_1 = transform_c(coord)
+    new_coord_2 = transform_b(transform_a(coord))
+    npt.assert_allclose(new_coord_1, new_coord_2)
+
+
+@pytest.mark.parametrize('dimensionality', [2, 3])
+def test_affine_matrix(dimensionality):
+    np.random.seed(0)
+    N = dimensionality
+    A = np.eye(N + 1)
+    A[:-1, :-1] = np.random.random((N, N))
+    A[:-1, -1] = np.random.random(N)
+
+    # Create transform
+    transform = Affine(affine_matrix=A)
+
+    # Check affine was passed correctly
+    np.testing.assert_almost_equal(transform.affine_matrix, A)
+
+    # Create input vector
+    x = np.ones(N + 1)
+    x[:-1] = np.random.random(N)
+
+    # Apply transform and direct matrix multiplication
+    result_transform = transform(x[:-1])
+    result_mat_multiply = (A @ x)[:-1]
+
+    np.testing.assert_almost_equal(result_transform, result_mat_multiply)
+
+
+@pytest.mark.parametrize('dimensionality', [2, 3])
+def test_affine_matrix_compose(dimensionality):
+    np.random.seed(0)
+    N = dimensionality
+    A = np.eye(N + 1)
+    A[:-1, :-1] = np.random.random((N, N))
+    A[:-1, -1] = np.random.random(N)
+
+    B = np.eye(N + 1)
+    B[:-1, :-1] = np.random.random((N, N))
+    B[:-1, -1] = np.random.random(N)
+
+    # Create transform
+    transform_A = Affine(affine_matrix=A)
+    transform_B = Affine(affine_matrix=B)
+
+    # Check affine was passed correctly
+    np.testing.assert_almost_equal(transform_A.affine_matrix, A)
+    np.testing.assert_almost_equal(transform_B.affine_matrix, B)
+
+    # Compose transform and directly matrix multiply
+    transform_C = transform_B.compose(transform_A)
+    C = B @ A
+    np.testing.assert_almost_equal(transform_C.affine_matrix, C)
+
+
+@pytest.mark.parametrize('dimensionality', [2, 3])
+def test_numpy_array_protocol(dimensionality):
+    N = dimensionality
+    A = np.eye(N + 1)
+    A[:-1] = np.random.random((N, N + 1))
+    transform = Affine(affine_matrix=A)
+    np.testing.assert_almost_equal(transform.affine_matrix, A)
+    np.testing.assert_almost_equal(np.asarray(transform), A)
+
+    coords = np.random.random((20, N + 1)) * 20
+    coords[:, -1] = 1
+    np.testing.assert_almost_equal(
+        (transform @ coords.T).T[:, :-1], transform(coords[:, :-1])
+    )
+
+
+@pytest.mark.parametrize('dimensionality', [2, 3])
+def test_affine_matrix_inverse(dimensionality):
+    np.random.seed(0)
+    N = dimensionality
+    A = np.eye(N + 1)
+    A[:-1, :-1] = np.random.random((N, N))
+    A[:-1, -1] = np.random.random(N)
+
+    # Create transform
+    transform = Affine(affine_matrix=A)
+
+    # Check affine was passed correctly
+    np.testing.assert_almost_equal(transform.affine_matrix, A)
+
+    # Check inverse is create correctly
+    np.testing.assert_almost_equal(
+        transform.inverse.affine_matrix, np.linalg.inv(A)
+    )
+
+
+def test_repeat_shear_setting():
+    """Test repeatedly setting shear with a lower triangular matrix."""
+    # Note this test is needed to check lower triangular
+    # decomposition of shear is working
+    mat = np.eye(3)
+    mat[2, 0] = 0.5
+    transform = Affine(shear=mat.copy())
+    # Check shear decomposed into lower triangular
+    np.testing.assert_almost_equal(mat, transform.shear)
+
+    # Set shear to same value
+    transform.shear = mat.copy()
+    # Check shear still decomposed into lower triangular
+    np.testing.assert_almost_equal(mat, transform.shear)
+
+    # Set shear to same value
+    transform.shear = mat.copy()
+    # Check shear still decomposed into lower triangular
+    np.testing.assert_almost_equal(mat, transform.shear)
+
+
+@pytest.mark.parametrize('dimensionality', [2, 3])
+def test_composite_affine_equiv_to_affine(dimensionality):
+    np.random.seed(0)
+    translate = np.random.randn(dimensionality)
+    scale = np.random.randn(dimensionality)
+    rotate = special_ortho_group.rvs(dimensionality)
+    shear = np.random.randn((dimensionality * (dimensionality - 1)) // 2)
+
+    composite = CompositeAffine(
+        translate=translate, scale=scale, rotate=rotate, shear=shear
+    )
+    affine = Affine(
+        translate=translate, scale=scale, rotate=rotate, shear=shear
+    )
+
+    np.testing.assert_almost_equal(
+        composite.affine_matrix, affine.affine_matrix
+    )
+
+
+def test_replace_slice_independence():
+    affine = Affine(ndim=6)
+
+    a = Affine(translate=(3, 8), rotate=33, scale=(0.75, 1.2), shear=[-0.5])
+    b = Affine(translate=(2, 5), rotate=-10, scale=(1.0, 2.3), shear=[-0.0])
+    c = Affine(translate=(0, 0), rotate=45, scale=(3.33, 0.9), shear=[1.5])
+
+    affine = affine.replace_slice([1, 2], a)
+    affine = affine.replace_slice([3, 4], b)
+    affine = affine.replace_slice([0, 5], c)
+
+    np.testing.assert_almost_equal(
+        a.affine_matrix, affine.set_slice([1, 2]).affine_matrix
+    )
+    np.testing.assert_almost_equal(
+        b.affine_matrix, affine.set_slice([3, 4]).affine_matrix
+    )
+    np.testing.assert_almost_equal(
+        c.affine_matrix, affine.set_slice([0, 5]).affine_matrix
+    )
+
+
+def test_replace_slice_num_dimensions():
+    with pytest.raises(
+        ValueError, match='provided axes list and transform differ'
+    ):
+        Affine().replace_slice([0], Affine())
+
+
+def test_affine_rotate_3d():
+    a = Affine(rotate=90, ndim=3)
+    npt.assert_array_almost_equal(
+        np.array(
+            [
+                [1, 0, 0],
+                [0, 0, -1],
+                [0, 1, 0],
+            ]
+        ),
+        a.rotate,
+    )
+
+
+@pytest.mark.parametrize('AffineType', affine_type)
+def test_empty_units(AffineType):
+    assert AffineType(ndim=2).units == (PIXEL, PIXEL)
+    assert AffineType(ndim=3).units == (PIXEL, PIXEL, PIXEL)
+    assert AffineType(ndim=2).physical_scale == (1 * PIXEL, 1 * PIXEL)
+    assert AffineType(ndim=3).physical_scale == (
+        1 * PIXEL,
+        1 * PIXEL,
+        1 * PIXEL,
+    )
+
+
+@pytest.mark.parametrize('AffineType', affine_type)
+def test_set_units_constructor(AffineType):
+    assert AffineType(ndim=2, units=('mm', 'mm')).units == (REG.mm, REG.mm)
+    assert AffineType(ndim=2, units=(REG.m, REG.m)).units == (REG.m, REG.m)
+
+    # TODO I think that we should normalize all units of same dimensionality
+    # to the same registry, but this is not currently the case.
+    assert AffineType(ndim=2, units=('cm', 'mm')).units == (REG.cm, REG.mm)
+
+
+@pytest.mark.parametrize('AffineType', affine_type)
+def test_set_units_constructor_error(AffineType):
+    with pytest.raises(ValueError, match='must have length ndim'):
+        AffineType(ndim=2, units=('mm', 'mm', 'mm'))
+
+    with pytest.raises(ValueError, match='Could not find unit'):
+        AffineType(ndim=2, units=('ugh', 'ugh'))
+
+
+@pytest.mark.parametrize('AffineType', affine_type)
+def test_set_units_error(AffineType):
+    affine = AffineType(ndim=2)
+    with pytest.raises(ValueError, match='must have length ndim'):
+        affine.units = ('m', 'm', 'm')
+
+    with pytest.raises(ValueError, match='Could not find unit'):
+        affine.units = ('ugh', 'ugh')
+
+
+@pytest.mark.parametrize('AffineType', affine_type)
+def test_set_units(AffineType):
+    affine = AffineType(ndim=2)
+    affine.units = ('mm', 'mm')
+    assert affine.units == (REG.mm, REG.mm)
+
+    affine.units = (REG.m, REG.m)
+    assert affine.units == (REG.m, REG.m)
+
+
+@pytest.mark.parametrize('AffineType', affine_type)
+def test_empty_axis_labels(AffineType):
+    assert AffineType(ndim=2).axis_labels == ('axis -2', 'axis -1')
+    assert AffineType(ndim=3).axis_labels == ('axis -3', 'axis -2', 'axis -1')
+
+
+@pytest.mark.parametrize('AffineType', affine_type)
+def test_set_axis_labels(AffineType):
+    affine = AffineType(ndim=2)
+    affine.axis_labels = ('x', 'y')
+    assert affine.axis_labels == ('x', 'y')
+
+
+@pytest.mark.parametrize('AffineType', affine_type)
+def test_set_axis_labels_error(AffineType):
+    affine = AffineType(ndim=2)
+    with pytest.raises(ValueError, match='must have length ndim'):
+        affine.axis_labels = ('x', 'y', 'z')
+
+
+@pytest.mark.parametrize('AffineType', affine_type)
+def test_set_axis_error(AffineType):
+    affine = AffineType(ndim=2)
+    with pytest.raises(ValueError, match='must have length ndim'):
+        affine.axis_labels = ('x', 'y', 'z')
