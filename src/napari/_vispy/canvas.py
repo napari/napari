@@ -180,7 +180,9 @@ class VispyCanvas:
         self.viewer.camera.events.zoom.connect(self._on_cursor)
         self.viewer.layers.events.reordered.connect(self._reorder_layers)
         self.viewer.layers.events.removed.connect(self._remove_layer)
-        self.viewer.layers.events.connect(self._update_units)
+        self.viewer.layers.events.inserted.connect(self._update_units)
+        self.viewer.layers.events.removed.connect(self._update_units)
+        self.viewer.layers.events.changed.connect(self._update_units)
         self.viewer._overlays.events.added.connect(
             self._update_viewer_overlays
         )
@@ -627,6 +629,7 @@ class VispyCanvas:
 
     def _update_units(self):
         """Update the units of the canvas and all layers."""
+        return
         for vispy_layer in self.layer_to_visual.values():
             vispy_layer.units = self.viewer.layers.extent.units
 
