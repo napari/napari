@@ -2,9 +2,11 @@ from unittest.mock import MagicMock
 
 import numpy as np
 import pandas as pd
+import pytest
+from pandas.core.generic import pandas_dtype
 from qtpy.QtCore import QItemSelection, QItemSelectionModel, Qt
 from qtpy.QtGui import QGuiApplication
-from qtpy.QtWidgets import QFileDialog, QLineEdit
+from qtpy.QtWidgets import QComboBox, QFileDialog, QLineEdit
 
 from napari.components import ViewerModel
 from napari_builtins._qt.features_table import FeaturesTable
@@ -157,3 +159,64 @@ def test_features_table_copy_paste(qtbot):
     w.table.pasteSelection()
 
     np.testing.assert_array_equal(layer.features.iloc[2], df.iloc[1])
+
+
+@pytest.mark.parametrize(
+    ('dtype', 'val', 'rendered_val', 'editor_class', 'new_val'),
+    [
+        (int, 2, '2', QLineEdit, 3),
+        (float, 123.45678, '123.457', QLineEdit, 1e10),
+        (
+            'datetime64[ns]',
+            '22-07-2025',
+            '2025-07-22',
+            QLineEdit,
+            '2025-03-14',
+        ),
+        (bool, False, '', None, None),  # bool uses checkboxes instead
+        (bool, True, '', None, None),  # bool uses checkboxes instead
+        (pd.CategoricalDtype(['x', 'y']), 'x', 'x', QComboBox, 'y'),
+    ],
+)
+def test_features_tables_dtypes(
+    dtype, val, rendered_val, editor_class, new_val, qtbot
+):
+    v = ViewerModel()
+    w = FeaturesTable(v)
+    proxy = w.table.model()
+
+    df = pd.DataFrame({'a': pd.Series([val], dtype=dtype)})
+
+    layer = v.add_points(np.zeros((1, 2)), features=df)
+    idx = proxy.index(
+        0,
+        1,
+    )
+    assert layer.features['a'].dtype == pandas_dtype(dtype)
+    assert (
+        proxy.data(
+            idx,
+            Qt.ItemDataRole.DisplayRole,
+        )
+        == rendered_val
+    )
+
+    w.toggle.click()
+    w.table.edit(idx)
+
+    if editor_class is None:
+        # bools use checkboxes and not an editor, skip
+        return
+
+    editor = w.table.findChild(editor_class)
+
+    if editor_class == QLineEdit:
+        qtbot.keyClicks(editor, str(new_val))
+        w.table.commitData(editor)
+    elif editor_class == QComboBox:
+        qtbot.keyClick(editor, Qt.Key.Key_Down)
+        w.table.commitData(editor)
+    assert (
+        layer.features.loc[0, 'a']
+        == pd.Series(new_val, dtype=pandas_dtype(dtype))[0]
+    )
