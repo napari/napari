@@ -139,7 +139,8 @@ def test_features_table_copy_paste(qtbot):
 
     w.table.copySelection()
 
-    assert QGuiApplication.clipboard().text() == '2\t5\n'
+    # stip cause windows and linux otherwise differ
+    assert QGuiApplication.clipboard().text().strip() == '2\t5'
 
     first_cell = proxy.index(2, 1)
     last_cell = proxy.index(2, 2)
@@ -152,7 +153,7 @@ def test_features_table_copy_paste(qtbot):
     )
 
     w.toggle.click()
-    QGuiApplication.clipboard().setText('2\t5\n')
+    QGuiApplication.clipboard().setText('2\t5')
     w.table.pasteSelection()
 
     np.testing.assert_array_equal(layer.features.iloc[2], df.iloc[1])
