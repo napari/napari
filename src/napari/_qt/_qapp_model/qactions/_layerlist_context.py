@@ -136,11 +136,11 @@ def _paste_spatial_from_clipboard(ll: LayerList) -> None:
                 loaded_attr_value = np.array(loaded_attr_value)
             if key == 'shear':
                 elem_count = layer.ndim * (layer.ndim - 1) // 2
-                val = np.zeros(elem_count)
-                val[-loaded_attr_value.size :] = loaded_attr_value[
+                val_ = np.zeros(elem_count)
+                val_[-loaded_attr_value.size :] = loaded_attr_value[
                     -elem_count:
                 ]
-                loaded_attr_value = val
+                loaded_attr_value = val_
             elif key == 'affine':
                 if loaded_attr_value.shape[0] >= layer.ndim + 1:
                     loaded_attr_value = loaded_attr_value[
