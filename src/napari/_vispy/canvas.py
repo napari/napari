@@ -181,9 +181,6 @@ class VispyCanvas:
         self.viewer.camera.events.zoom.connect(self._on_cursor)
         self.viewer.layers.events.reordered.connect(self._reorder_layers)
         self.viewer.layers.events.removed.connect(self._remove_layer)
-        self.viewer.layers.events.inserted.connect(self._update_units)
-        self.viewer.layers.events.removed.connect(self._update_units)
-        self.viewer.layers.events.changed.connect(self._update_units)
         self.viewer._overlays.events.added.connect(
             self._update_viewer_overlays
         )
@@ -616,6 +613,7 @@ class VispyCanvas:
         napari_layer._overlays.events.added.connect(overlay_callback)
         napari_layer._overlays.events.removed.connect(overlay_callback)
         napari_layer._overlays.events.changed.connect(overlay_callback)
+        napari_layer.events.extent.connect(self._update_units)
         self._overlay_callbacks[napari_layer] = overlay_callback
         self.viewer.camera.events.angles.connect(vispy_layer._on_camera_move)
         self._update_units()
@@ -655,6 +653,7 @@ class VispyCanvas:
         disconnect_events(
             layer._overlays.events, self._overlay_callbacks[layer]
         )
+        layer.events.extent.disconnect(self._update_units)
         del self._overlay_callbacks[layer]
         vispy_layer = self.layer_to_visual[layer]
         disconnect_events(self.viewer.camera.events, vispy_layer)

@@ -43,6 +43,8 @@ def add_new_points(viewer):
     viewer.add_points(
         ndim=max(viewer.dims.ndim, 2),
         scale=viewer.layers.extent.step,
+        units=viewer.layers.extent.units,
+        translate=viewer.layers.extent.world[0],
     )
 
 
@@ -50,6 +52,8 @@ def add_new_shapes(viewer):
     viewer.add_shapes(
         ndim=max(viewer.dims.ndim, 2),
         scale=viewer.layers.extent.step,
+        units=viewer.layers.extent.units,
+        translate=viewer.layers.extent.world[0],
     )
 
 

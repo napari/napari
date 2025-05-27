@@ -835,6 +835,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         # mypy bug https://github.com/python/mypy/issues/3004
         self._transforms['data2physical'].units = units  # type: ignore[assignment]
         if self.units != prev:
+            self.refresh()
             self.events.units()
 
     @property
@@ -1282,7 +1283,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
                 data_displayed=True,
                 thumbnail=True,
                 highlight=True,
-                extent=True,
+                extent=False,
             )
 
     def _make_slice_input(
