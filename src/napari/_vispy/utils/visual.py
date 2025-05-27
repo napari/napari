@@ -45,7 +45,7 @@ from napari.layers import (
 )
 from napari.utils.translations import trans
 
-layer_to_visual = {
+layer_to_visual: dict[type[Layer], type[VispyBaseLayer]] = {
     Image: VispyImageLayer,
     Labels: VispyLabelsLayer,
     Points: VispyPointsLayer,
