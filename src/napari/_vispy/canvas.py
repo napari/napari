@@ -27,6 +27,7 @@ from napari.utils.interactions import (
     mouse_release_callbacks,
     mouse_wheel_callbacks,
 )
+from napari.utils.notifications import show_warning
 from napari.utils.theme import get_theme
 
 if TYPE_CHECKING:
@@ -629,9 +630,13 @@ class VispyCanvas:
 
     def _update_units(self):
         """Update the units of the canvas and all layers."""
-        return
+        units = self.viewer.layers.extent.units
+        if units is None:
+            show_warning(
+                'Inconsistent units across layers, not use units during rendering.'
+            )
         for vispy_layer in self.layer_to_visual.values():
-            vispy_layer.units = self.viewer.layers.extent.units
+            vispy_layer.units = units
 
     def _remove_layer(self, event: Event) -> None:
         """Upon receiving event closes the Vispy visual, deletes it and reorders the still existing layers.
