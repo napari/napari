@@ -69,6 +69,7 @@ class VispyScalarFieldBaseLayer(VispyBaseLayer[ScalarFieldBase]):
 
     def _on_display_change(self, data=None) -> None:
         parent = self.node.parent
+        children = list(self.node.children)
         self.node.parent = None
         ndisplay = self.layer._slice_input.ndisplay
         self.node = self._layer_node.get_node(
@@ -88,8 +89,9 @@ class VispyScalarFieldBaseLayer(VispyBaseLayer[ScalarFieldBase]):
 
         self.node.parent = parent
         self.node.order = self.order
-        for overlay_visual in self.overlays.values():
-            overlay_visual.node.parent = self.node
+        # reattach overlays to new node
+        for child in children:
+            child.parent = self.node
         self.reset()
 
     def _on_data_change(self) -> None:

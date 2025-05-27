@@ -12,15 +12,15 @@ coverage:
         threshold: 1%
       qt:
         target: auto
-        paths: ['napari/_qt/.*', '!.*/_tests/.*']
+        paths: ['src/napari/_qt/.*', '!.*/_tests/.*']
         threshold: 1%
       layers:
         target: auto
-        paths: [ 'napari/layers/.*', '!.*/_tests/.*' ]
+        paths: [ 'src/napari/layers/.*', '!.*/_tests/.*' ]
         threshold: 1%
       utils:
         target: auto
-        paths: [ 'napari/utils/.*', '!.*/_tests/.*' ]
+        paths: [ 'src/napari/utils/.*', '!.*/_tests/.*' ]
         threshold: 2%
       tests:
         target: auto
