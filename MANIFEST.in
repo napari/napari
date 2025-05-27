@@ -1,20 +1,21 @@
 include LICENSE
 include *.cff
-graft napari/_vendor
-recursive-include napari *.pyi
-recursive-include napari _tests/*.py
-recursive-include napari_builtins _tests/*.py
-recursive-include napari *.pyi
-recursive-include napari *.png *.svg *.qss *.gif *.ico *.icns
-recursive-include napari *.yaml
-recursive-include napari *.py_tmpl
+graft src/napari/_vendor
+recursive-include src/napari *.pyi
+recursive-include src/napari _tests/*.py
+recursive-include src/napari_builtins _tests/*.py
+recursive-include src/napari *.pyi
+recursive-include src/napari *.png *.svg *.qss *.gif *.ico *.icns
+recursive-include src/napari *.yaml
+recursive-include src/napari *.py_tmpl
 
 # explicit excludes to keep check-manifest happy and remind us that
 # these things are not being included unless we ask
 recursive-exclude tools *
-recursive-exclude napari *.pyc
-exclude napari/benchmarks/*
-include napari/benchmarks/utils.py
+recursive-exclude src/napari *.pyc
+exclude src/napari/benchmarks/*
+
+include src/napari/benchmarks/utils.py
 recursive-exclude resources *
 recursive-exclude binder *
 recursive-exclude examples *
