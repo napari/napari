@@ -137,7 +137,7 @@ class PandasModel(QAbstractTableModel):
     def setData(
         self, index: QModelIndex, value: Any, role=Qt.ItemDataRole.EditRole
     ) -> bool:
-        if not index.isValid():
+        if not index.isValid():  # pragma: no cover
             return False
 
         col = index.column()
