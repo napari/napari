@@ -78,7 +78,10 @@ class PandasModel(QAbstractTableModel):
         dtype = self.df.dtypes.iat[col - 1]
 
         # show booleans as respective checkboxes
-        if role == Qt.CheckStateRole and pd.api.types.is_bool_dtype(dtype):
+        if (
+            role == Qt.ItemDataRole.CheckStateRole
+            and pd.api.types.is_bool_dtype(dtype)
+        ):
             return Qt.CheckState.Checked if value else Qt.CheckState.Unchecked
 
         if role in {Qt.ItemDataRole.DisplayRole, Qt.ItemDataRole.EditRole}:
@@ -113,7 +116,7 @@ class PandasModel(QAbstractTableModel):
             return self.df.columns[section - 1]
         return self.df.index[section]
 
-    def flags(self, index: QModelIndex) -> Qt.ItemFlags:
+    def flags(self, index: QModelIndex) -> Qt.ItemFlag:
         if not index.isValid():
             return Qt.ItemFlag.ItemIsEnabled
 
@@ -204,7 +207,7 @@ class DelegateCategorical(QStyledItemDelegate):
             categories = source_model.df.iloc[:, col - 1].cat.categories
             editor.addItems([str(c) for c in categories])
             # allow arrow keys selection
-            editor.setFocusPolicy(Qt.StrongFocus)
+            editor.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
 
             # force editor to open on first click, otherwise we need 2 clicks
             QTimer.singleShot(0, editor.showPopup)
@@ -266,24 +269,26 @@ class PandasView(QTableView):
         # view/model setup with a proxy for sorting and filtering
         proxy_model = BoolFriendlyProxyModel()
         proxy_model.setSourceModel(PandasModel())
-        proxy_model.setSortCaseSensitivity(Qt.CaseInsensitive)
+        proxy_model.setSortCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
         self.setModel(proxy_model)
         self.setSortingEnabled(True)
         # do not auto sort using index on startup
-        self.horizontalHeader().setSortIndicator(-1, Qt.AscendingOrder)
+        self.horizontalHeader().setSortIndicator(
+            -1, Qt.SortOrder.AscendingOrder
+        )
         # disable vertical header (since we duplicate it as a column)
         self.verticalHeader().setVisible(False)
         # delegate which provides comboboxes for editing categorical values
         self.setItemDelegate(DelegateCategorical())
         # enable selection and editing
         self.setSelectionBehavior(QTableView.SelectionBehavior.SelectItems)
-        self.setSelectionMode(QTableView.ExtendedSelection)
-        self.setEditTriggers(QAbstractItemView.AllEditTriggers)
+        self.setSelectionMode(QTableView.SelectionMode.ExtendedSelection)
+        self.setEditTriggers(QAbstractItemView.EditTrigger.AllEditTriggers)
 
     def keyPressEvent(self, event):
-        if event.matches(QKeySequence.Copy):
+        if event.matches(QKeySequence.StandardKey.Copy):
             self.copySelection()
-        elif event.matches(QKeySequence.Paste):
+        elif event.matches(QKeySequence.StandardKey.Paste):
             self.pasteSelection()
         else:
             super().keyPressEvent(event)

@@ -38,7 +38,7 @@ def test_features_table(qtbot):
     assert proxy.rowCount() == 3
 
     # sorting should sort the proxy model but not the data
-    w.table.sortByColumn(1, Qt.AscendingOrder)
+    w.table.sortByColumn(1, Qt.SortOrder.AscendingOrder)
     for i in range(3):
         assert proxy.data(proxy.index(i, 1), Qt.ItemDataRole.EditRole) == str(
             i
@@ -46,7 +46,7 @@ def test_features_table(qtbot):
         assert layer.features['a'][i] == original_a[i]
 
     # sorting bools should work
-    w.table.sortByColumn(2, Qt.AscendingOrder)
+    w.table.sortByColumn(2, Qt.SortOrder.AscendingOrder)
     for i in range(3):
         assert (
             proxy.data(
