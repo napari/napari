@@ -6,7 +6,9 @@ import pytest
 
 from napari._vispy._tests.utils import vispy_image_scene_size
 from napari._vispy.layers.image import VispyImageLayer
+from napari._vispy.utils.visual import create_vispy_overlay
 from napari.components.dims import Dims
+from napari.components.overlays import BoundingBoxOverlay
 from napari.layers import Image
 
 
@@ -144,6 +146,12 @@ def test_transforming_child_node(
     im_layer, translate, exp_translate, rotate, exp_rotate
 ):
     layer = VispyImageLayer(im_layer)
+
+    overlay = create_vispy_overlay(
+        BoundingBoxOverlay(), layer=im_layer, parent=layer.node
+    )
+    layer._on_matrix_change()
+
     npt.assert_array_almost_equal(
         layer.node.transform.matrix[-1][:2], (-0.5, -0.5)
     )
@@ -153,10 +161,10 @@ def test_transforming_child_node(
     rotate(im_layer)
     translate(im_layer)
     npt.assert_array_almost_equal(
-        layer.node.children[0].transform.matrix[:2, :2], ((1, 0), (0, 1))
+        overlay.node.transform.matrix[:2, :2], ((1, 0), (0, 1))
     )
     npt.assert_array_almost_equal(
-        layer.node.children[0].transform.matrix[-1][:2], (0.5, 0.5)
+        overlay.node.transform.matrix[-1][:2], (0.5, 0.5)
     )
     npt.assert_array_almost_equal(
         layer.node.transform.matrix[:2, :2], exp_rotate
@@ -179,12 +187,18 @@ def test_transforming_child_node(
 
 def test_transforming_child_node_pyramid(pyramid_layer):
     layer = VispyImageLayer(pyramid_layer)
+
+    overlay = create_vispy_overlay(
+        BoundingBoxOverlay(), layer=pyramid_layer, parent=layer.node
+    )
+    layer._on_matrix_change()
+
     corner_pixels_world = np.array([[0, 0], [20, 20]])
     npt.assert_array_almost_equal(
         layer.node.transform.matrix[-1][:2], (-0.5, -0.5)
     )
     npt.assert_array_almost_equal(
-        layer.node.children[0].transform.matrix[-1][:2], (0.5, 0.5)
+        overlay.node.transform.matrix[-1][:2], (0.5, 0.5)
     )
     pyramid_layer.translate = (-10, -10)
     pyramid_layer._update_draw(
@@ -197,7 +211,7 @@ def test_transforming_child_node_pyramid(pyramid_layer):
         layer.node.transform.matrix[-1][:2], (-0.5, -0.5)
     )
     npt.assert_array_almost_equal(
-        layer.node.children[0].transform.matrix[-1][:2], (-9.5, -9.5)
+        overlay.node.transform.matrix[-1][:2], (-9.5, -9.5)
     )
 
 

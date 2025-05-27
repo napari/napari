@@ -6,13 +6,7 @@ import pint
 from vispy.scene import VisualNode
 from vispy.visuals.transforms import MatrixTransform
 
-from napari._vispy.overlays.base import VispyBaseOverlay
 from napari._vispy.utils.gl import BLENDING_MODES, get_max_texture_sizes
-from napari.components.overlays.base import (
-    CanvasOverlay,
-    Overlay,
-    SceneOverlay,
-)
 from napari.layers import Layer
 from napari.utils.events import disconnect_events
 
@@ -54,7 +48,6 @@ class VispyBaseLayer(ABC, Generic[_L]):
     """
 
     layer: _L
-    overlays: dict[Overlay, VispyBaseOverlay]
 
     def __init__(self, layer: _L, node: VisualNode) -> None:
         super().__init__()
@@ -64,7 +57,6 @@ class VispyBaseLayer(ABC, Generic[_L]):
         self._array_like = False
         self.node = node
         self.first_visible = False
-        self.overlays = {}
         self._units = layer.units
         self._scale_units = (1,) * layer.ndim
 
@@ -87,7 +79,6 @@ class VispyBaseLayer(ABC, Generic[_L]):
         self.layer.experimental_clipping_planes.events.connect(
             self._on_experimental_clipping_planes_change
         )
-        self.layer.events._overlays.connect(self._on_overlays_change)
 
     @property
     def units(self) -> tuple[pint.Unit, ...]:
@@ -199,34 +190,6 @@ class VispyBaseLayer(ABC, Generic[_L]):
         self.node.set_gl_state(**blending_kwargs)
         self.node.update()
 
-    def _on_overlays_change(self):
-        # avoid circular import; TODO: fix?
-        from napari._vispy.utils.visual import create_vispy_overlay
-
-        overlay_models = self.layer._overlays.values()
-
-        for overlay in overlay_models:
-            if overlay in self.overlays:
-                continue
-
-            with self.layer.events._overlays.blocker():
-                overlay_visual = create_vispy_overlay(
-                    overlay, layer=self.layer
-                )
-            self.overlays[overlay] = overlay_visual
-            if isinstance(overlay, CanvasOverlay):
-                overlay_visual.node.parent = self.node.parent.parent  # viewbox
-            elif isinstance(overlay, SceneOverlay):
-                overlay_visual.node.parent = self.node
-
-            overlay_visual.node.parent = self.node
-            overlay_visual.reset()
-
-        for overlay in list(self.overlays):
-            if overlay not in overlay_models:
-                overlay_visual = self.overlays.pop(overlay)
-                overlay_visual.close()
-
     def _on_matrix_change(self):
         dims_displayed = self.layer._slice_input.displayed
         # mypy: self.layer._transforms.simplified cannot be None
@@ -317,7 +280,6 @@ class VispyBaseLayer(ABC, Generic[_L]):
         self._on_blending_change()
         self._on_matrix_change()
         self._on_experimental_clipping_planes_change()
-        self._on_overlays_change()
         self._on_camera_move()
 
     def _on_poll(self, event=None):
