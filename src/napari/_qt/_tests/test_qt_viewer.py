@@ -331,7 +331,7 @@ def test_export_figure_3d(make_napari_viewer):
     assert (img[img > 250].shape[0] / img[img <= 200].shape[0]) > 0.5
 
 
-def test_export_rois(qt_viewer, viewer_model, tmp_path):
+def test_export_rois(qt_viewer, viewer_model, tmp_path, qtbot):
     # Create an image with a defined shape (100x100) and a square in the middle
 
     img = np.zeros((100, 100), dtype=np.uint8)
@@ -381,6 +381,7 @@ def test_export_rois(qt_viewer, viewer_model, tmp_path):
     test_dir = tmp_path / 'test_dir'
     qt_viewer.export_rois(roi_shapes_data, paths=test_dir)
     QApplication.processEvents()
+    qtbot.wait(10)
     assert all(
         (test_dir / f'roi_{i}.png').exists()
         for i in range(len(roi_shapes_data))
