@@ -70,7 +70,9 @@ overlay_to_visual: dict[type[Overlay], type[VispyBaseOverlay]] = {
 }
 
 
-def create_vispy_layer(layer: Layer, *args: Any, **kwargs: Any) -> VispyBaseLayer:
+def create_vispy_layer(
+    layer: Layer, *args: Any, **kwargs: Any
+) -> VispyBaseLayer:
     """Create vispy visual for a layer based on its layer type.
 
     Parameters
