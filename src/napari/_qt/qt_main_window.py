@@ -699,7 +699,7 @@ class Window:
         # As many plugins uses `_dock_widget` to access one widget from the
         # other widget wqe should not change this neame without a good reason,
         # even if it is marked as private.
-        self._dock_widgets: MutableMapping[str, QtViewerDockWidget] = (
+        self._dock_widgets_private: MutableMapping[str, QtViewerDockWidget] = (
             WeakValueDictionary()
         )
         self._unnamed_dockwidget_count = 1
@@ -1093,11 +1093,13 @@ class Window:
         if not widget_name:
             # if widget_name wasn't provided, `get_widget` will have
             # ensured that there is a single widget available.
-            widget_name = next(iter(plugin_manager._dock_widgets[plugin_name]))
+            widget_name = next(
+                iter(plugin_manager._dock_widgets_private[plugin_name])
+            )
 
         full_name = plugin_menu_item_template.format(plugin_name, widget_name)
-        if full_name in self._dock_widgets:
-            dock_widget = self._dock_widgets[full_name]
+        if full_name in self._dock_widgets_private:
+            dock_widget = self._dock_widgets_private[full_name]
             return dock_widget, dock_widget.inner_widget()
 
         wdg = _instantiate_dock_widget(
@@ -1124,7 +1126,7 @@ class Window:
             returned, otherwise a ValueError will be raised, by default None
         """
         full_name = plugin_menu_item_template.format(plugin_name, widget_name)
-        if full_name in self._dock_widgets:
+        if full_name in self._dock_widgets_private:
             return None
 
         func = plugin_manager._function_widgets[plugin_name][widget_name]
@@ -1239,14 +1241,25 @@ class Window:
             layers_events.reordered.connect(widget.reset_choices)
 
         # Add dock widget to dictionary
-        self._dock_widgets[dock_widget.name] = dock_widget
+        self._dock_widgets_private[dock_widget.name] = dock_widget
 
         return dock_widget
 
     @property
+    def _dock_widgets(self) -> MutableMapping[str, QtViewerDockWidget]:
+        """To provide warning and information about public api."""
+        warnings.warn(
+            'The `_dock_widgets` property is private and should not be used in any plugin code. '
+            'Please use the `dock_widgets` or `docked_widgets` property instead.',
+            FutureWarning,
+            stacklevel=2,
+        )
+        return self._dock_widgets_private
+
+    @property
     def dock_widgets(self) -> Mapping[str, QtViewerDockWidget]:
         """Read only mapping of dock widgets."""
-        return MappingProxy(self._dock_widgets)
+        return MappingProxy(self._dock_widgets_private)
 
     @property
     def docked_widgets(self) -> Mapping[str, 'QWidget | Widget']:
@@ -1254,7 +1267,7 @@ class Window:
 
         For wrapping QtViewerDockWidget use `dock_widgets` property.
         """
-        return InnerWidgetMappingProxy(self._dock_widgets)
+        return InnerWidgetMappingProxy(self._dock_widgets_private)
 
     def _add_viewer_dock_widget(
         self,
@@ -1318,11 +1331,11 @@ class Window:
         dock_widget.setFloating(False)
 
     def _remove_dock_widget(self, event) -> None:
-        names = list(self._dock_widgets.keys())
+        names = list(self._dock_widgets_private.keys())
         for widget_name in names:
             if event.value in widget_name:
                 # remove this widget
-                widget = self._dock_widgets[widget_name]
+                widget = self._dock_widgets_private[widget_name]
                 self.remove_dock_widget(widget)
 
     def remove_dock_widget(self, widget: QWidget, menu=None):
@@ -1341,7 +1354,7 @@ class Window:
             from menu.
         """
         if widget == 'all':
-            for dw in list(self._dock_widgets.values()):
+            for dw in list(self._dock_widgets_private.values()):
                 self.remove_dock_widget(dw)
             return
 
@@ -1369,7 +1382,7 @@ class Window:
             menu.removeAction(_dw.toggleViewAction())
 
         # Remove dock widget from dictionary
-        self._dock_widgets.pop(_dw.name, None)
+        self._dock_widgets_private.pop(_dw.name, None)
 
         # Deleting the dock widget means any references to it will no longer
         # work but it's not really useful anyway, since the inner widget has

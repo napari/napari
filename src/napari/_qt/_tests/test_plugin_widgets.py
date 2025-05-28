@@ -93,7 +93,7 @@ def test_dock_widget_registration(
 
     napari_plugin_manager.register(Plugin, name='Plugin')
     napari_plugin_manager.discover_widgets()
-    widgets = napari_plugin_manager._dock_widgets
+    widgets = napari_plugin_manager._dock_widgets_private
 
     if '[bad_' in request.node.name:
         assert len(recwarn) == 1
@@ -142,7 +142,7 @@ def test_widget_hide_destroy(make_napari_viewer, qtbot):
     """Test that widget hide and destroy works."""
     viewer = make_napari_viewer()
     viewer.window.add_dock_widget(QWidget_example(viewer), name='test')
-    dock_widget = viewer.window._dock_widgets['test']
+    dock_widget = viewer.window._dock_widgets_private['test']
 
     # Check widget persists after hide
     widget = dock_widget.widget()
@@ -151,7 +151,7 @@ def test_widget_hide_destroy(make_napari_viewer, qtbot):
     # Check that widget removed from `_dock_widgets` dict and parent
     # `QtViewerDockWidget` is `None` when closed
     dock_widget.destroyOnClose()
-    assert 'test' not in viewer.window._dock_widgets
+    assert 'test' not in viewer.window._dock_widgets_private
     assert widget.parent() is None
     widget.deleteLater()
     widget.close()
