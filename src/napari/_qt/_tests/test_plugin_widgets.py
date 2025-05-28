@@ -93,7 +93,7 @@ def test_dock_widget_registration(
 
     napari_plugin_manager.register(Plugin, name='Plugin')
     napari_plugin_manager.discover_widgets()
-    widgets = napari_plugin_manager._dock_widgets_private
+    widgets = napari_plugin_manager._dock_widgets
 
     if '[bad_' in request.node.name:
         assert len(recwarn) == 1
