@@ -9,7 +9,7 @@ import os
 import sys
 import time
 import warnings
-from collections.abc import MutableMapping, Sequence
+from collections.abc import Mapping, MutableMapping, Sequence
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
@@ -82,7 +82,7 @@ from napari.plugins import (
 from napari.plugins._npe2 import index_npe1_adapters
 from napari.settings import get_settings
 from napari.utils import perf
-from napari.utils._proxies import PublicOnlyProxy
+from napari.utils._proxies import MappingProxy, PublicOnlyProxy
 from napari.utils.events import Event
 from napari.utils.geometry import get_center_bbox
 from napari.utils.io import imsave
@@ -1243,34 +1243,18 @@ class Window:
 
         return dock_widget
 
-    def get_dock_widget(self, name: str) -> QtViewerDockWidget | None:
-        """Get a dock widget by name.
+    @property
+    def dock_widgets(self) -> Mapping[str, QtViewerDockWidget]:
+        """Read only mapping of dock widgets."""
+        return MappingProxy(self._dock_widgets)
 
-        Parameters
-        ----------
-        name : str
-            Name of the dock widget to retrieve.
+    @property
+    def docked_widgets(self) -> Mapping[str, 'QWidget | Widget']:
+        """Read only mapping of widgets docked in napari window.
 
-        Returns
-        -------
-        QtViewerDockWidget | None
-            The dock widget with the specified name, or None if not found.
+        For wrapping QtViewerDockWidget use `dock_widgets` property.
         """
-        return self._dock_widgets.get(name, None)
-
-    def get_docked_widget_names(self) -> list[str]:
-        """Get the names of all docked widgets.
-
-        As we store dock widget as weak references,
-        we prefer to not provide list of dock widgets,
-        but only their names.
-
-        Returns
-        -------
-        list[str]
-            A list of names of all docked widgets.
-        """
-        return list(self._dock_widgets.keys())
+        return InnerWidgetMappingProxy(self._dock_widgets)
 
     def _add_viewer_dock_widget(
         self,
@@ -2041,3 +2025,15 @@ def _instantiate_dock_widget(wdg_cls, viewer: 'Viewer'):
 
     # instantiate the widget
     return wdg_cls(**kwargs)
+
+
+class InnerWidgetMappingProxy(MappingProxy):
+    """A proxy for the inner widget of a QDockWidget.
+
+    This is used to allow access to the inner widget of a QDockWidget
+    without exposing the QDockWidget itself.
+    """
+
+    def __getitem__(self, key, /) -> 'QWidget | Widget':
+        """Get the inner widget of the QDockWidget."""
+        return self._wrapped[key].inner_widget()

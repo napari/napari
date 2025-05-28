@@ -204,21 +204,29 @@ def test_add_plugin_dock_widget(make_napari_viewer, monkeypatch, BaseClass):
     mock = MagicMock(return_value=(InnerWidget, 'widget name'))
     monkeypatch.setattr('napari.plugins._npe2.get_widget_contribution', mock)
     viewer = make_napari_viewer()
-    assert viewer.window.get_docked_widget_names() == []
+    assert list(viewer.window.dock_widgets.keys()) == []
+    assert list(viewer.window.docked_widgets.keys()) == []
 
     docked, widget = viewer.window.add_plugin_dock_widget(
         'sample_plugin', 'sample_widget'
     )
     assert isinstance(widget, InnerWidget)
     assert docked.inner_widget() is widget
-    assert viewer.window.get_docked_widget_names() == [
+    assert list(viewer.window.dock_widgets.keys()) == [
         'widget name (sample_plugin)'
     ]
+    assert list(viewer.window.docked_widgets.keys()) == [
+        'widget name (sample_plugin)'
+    ]
+    assert viewer.window.dock_widgets['widget name (sample_plugin)'] is docked
+    assert (
+        viewer.window.docked_widgets['widget name (sample_plugin)'] is widget
+    )
     docked2, widget2 = viewer.window.add_plugin_dock_widget(
         'sample_plugin', 'sample_widget'
     )
     assert docked is docked2
     assert widget is widget2
-    assert (
-        viewer.window.get_dock_widget('widget name (sample_plugin)') is docked
-    )
+
+    with pytest.raises(TypeError):
+        viewer.window.docked_widgets['widget name (sample_plugin)'] = 1
