@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 import numpy as np
 from vispy.scene.widgets.viewbox import ViewBox
 
@@ -68,7 +70,7 @@ overlay_to_visual: dict[type[Overlay], type[VispyBaseOverlay]] = {
 }
 
 
-def create_vispy_layer(layer: Layer) -> VispyBaseLayer:
+def create_vispy_layer(layer: Layer, *args: Any, **kwargs: Any) -> VispyBaseLayer:
     """Create vispy visual for a layer based on its layer type.
 
     Parameters
@@ -84,7 +86,7 @@ def create_vispy_layer(layer: Layer) -> VispyBaseLayer:
     # find the closest parent class, to maintain behaviour from #2757
     for cls in layer.__class__.mro():
         if cls in layer_to_visual:
-            return layer_to_visual[cls](layer)
+            return layer_to_visual[cls](layer, *args, **kwargs)
 
     raise TypeError(
         trans._(
