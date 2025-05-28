@@ -2,7 +2,7 @@ import os
 import re
 import sys
 import warnings
-from collections.abc import Callable, Hashable, Mapping
+from collections.abc import Callable, Hashable, Iterator, Mapping
 from typing import Any, Generic, TypeVar, Union
 
 import wrapt
@@ -11,6 +11,8 @@ from napari.utils import misc
 from napari.utils.translations import trans
 
 _T = TypeVar('_T')
+_K = TypeVar('_K', bound=Hashable)
+_V = TypeVar('_V')
 
 
 class ReadOnlyWrapper(wrapt.ObjectProxy):
@@ -195,8 +197,8 @@ class CallablePublicOnlyProxy(PublicOnlyProxy[Callable]):
         return self.create(self.__wrapped__(*args, **kwargs))
 
 
-class MappingProxy(Mapping):
-    def __init__(self, wrapped: Mapping):
+class MappingProxy(Mapping[_K, _V]):
+    def __init__(self, wrapped: Mapping[_K, _V]) -> None:
         """
         A read-only proxy for a mapping object.
 
@@ -207,7 +209,7 @@ class MappingProxy(Mapping):
         """
         self._wrapped = wrapped
 
-    def __getitem__(self, key, /):
+    def __getitem__(self, key: _K, /) -> _V:
         """
         Get an item from the wrapped mapping.
 
@@ -223,7 +225,7 @@ class MappingProxy(Mapping):
         """
         return self._wrapped[key]
 
-    def __len__(self):
+    def __len__(self) -> int:
         """
         Get the length of the wrapped mapping.
 
@@ -234,7 +236,7 @@ class MappingProxy(Mapping):
         """
         return len(self._wrapped)
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[_K]:
         """
         Get an iterator over the keys of the wrapped mapping.
 
