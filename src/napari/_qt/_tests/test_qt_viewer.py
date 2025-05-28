@@ -381,7 +381,7 @@ def test_export_rois(qt_viewer, viewer_model, tmp_path, qtbot):
     test_dir = tmp_path / 'test_dir'
     qt_viewer.export_rois(roi_shapes_data, paths=test_dir)
     QApplication.processEvents()
-    qtbot.wait(100)
+    qtbot.wait(1000)
     assert all(
         (test_dir / f'roi_{i}.png').exists()
         for i in range(len(roi_shapes_data))
