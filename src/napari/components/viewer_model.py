@@ -258,6 +258,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         )
         settings.experimental.events.async_.connect(self._update_async)
 
+        # Add extra reset_view event. Ideally this should be removed in the
+        # future.
+        self.events.add(reset_view=Event)
+
         # Connect events
         self.grid.events.connect(self.fit_to_view)
         self.grid.events.connect(self._on_grid_change)
