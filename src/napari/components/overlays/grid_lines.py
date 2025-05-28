@@ -10,7 +10,7 @@ class GridLinesOverlay(SceneOverlay):
     Attributes
     ----------
     color : ColorValue
-        Color of the grid lines.
+        Color of the grid lines, or None for automatic coloring.
     labels : bool
         Whether to display ticks and tick labels.
     n_labels : int
@@ -24,7 +24,7 @@ class GridLinesOverlay(SceneOverlay):
         The rendering order of the overlay: lower numbers get rendered first.
     """
 
-    color: ColorValue = Field(default_factory=lambda: ColorValue('white'))
+    color: ColorValue | None = None
     labels: bool = True
     n_labels: int = Field(5, ge=2)
     blending: Blending = Blending.ADDITIVE

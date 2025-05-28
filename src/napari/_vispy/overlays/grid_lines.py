@@ -3,6 +3,8 @@ import numpy as np
 from napari._vispy.overlays.base import ViewerOverlayMixin, VispySceneOverlay
 from napari._vispy.visuals.grid_lines import GridLines3D
 from napari.components.camera import DEFAULT_ORIENTATION_TYPED
+from napari.utils.colormaps.standardize_color import transform_color
+from napari.utils.theme import get_theme
 
 
 class VispyGridLinesOverlay(ViewerOverlayMixin, VispySceneOverlay):
@@ -29,6 +31,7 @@ class VispyGridLinesOverlay(ViewerOverlayMixin, VispySceneOverlay):
         self.viewer.camera.events.orientation.connect(
             self._on_view_direction_change
         )
+        self.viewer.events.theme.connect(self._on_data_change)
 
         self.reset()
 
@@ -37,27 +40,48 @@ class VispyGridLinesOverlay(ViewerOverlayMixin, VispySceneOverlay):
         displayed = self.viewer.dims.displayed[::-1]
         ranges = [self.viewer.dims.range[i] for i in displayed]
 
-        self.node.reset_grids(self.overlay.color)
+        color = self.overlay.color
+        if color is None:
+            # set scale color negative of theme background.
+            # the reason for using the `as_hex` here is to avoid
+            # `UserWarning` which is emitted when RGB values are above 1
+            if (
+                self.node.parent is not None
+                and self.node.parent.canvas.bgcolor
+            ):
+                background_color = self.node.parent.canvas.bgcolor.rgba
+            else:
+                background_color = get_theme(self.viewer.theme).canvas.as_hex()
+                background_color = transform_color(background_color)[0]
+            color = np.subtract(1, background_color)
+            color[-1] = background_color[-1]
+
+        self.node.reset_grids(color)
         self.node.set_extents(ranges)
         self.node.set_ticks(self.overlay.labels, self.overlay.n_labels, ranges)
 
         self._on_view_direction_change(force=True)
 
     def _on_view_direction_change(self, force=False):
-        # all is flipped from zyx to xyz for vispy
-        view_direction = np.sign(self.viewer.camera.view_direction)[::-1]
-        up_direction = np.sign(self.viewer.camera.up_direction)[::-1]
-        orientation_flip = [
-            1 if ori == default_ori else -1
-            for ori, default_ori in zip(
-                self.viewer.camera.orientation,
-                DEFAULT_ORIENTATION_TYPED,
-                strict=True,
-            )
-        ][::-1]
-
         displayed = self.viewer.dims.displayed[::-1]
         ranges = [self.viewer.dims.range[i] for i in displayed]
+
+        if self.viewer.dims.ndisplay == 3:
+            # all is flipped from zyx to xyz for vispy
+            view_direction = np.sign(self.viewer.camera.view_direction)[::-1]
+            up_direction = np.sign(self.viewer.camera.up_direction)[::-1]
+            orientation_flip = [
+                1 if ori == default_ori else -1
+                for ori, default_ori in zip(
+                    self.viewer.camera.orientation,
+                    DEFAULT_ORIENTATION_TYPED,
+                    strict=True,
+                )
+            ][::-1]
+        else:
+            view_direction = (1, 1, 1)
+            up_direction = (1, 1, 1)
+            orientation_flip = (1, 1, 1)
 
         self.node.set_view_direction(
             ranges,
