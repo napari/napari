@@ -269,7 +269,6 @@ def test_screenshot(make_napari_viewer):
     assert screenshot.ndim == 3
 
 
-@pytest.mark.skip(reason='testing purpose')
 def test_export_figure(make_napari_viewer, tmp_path):
     viewer = make_napari_viewer()
     np.random.seed(0)
