@@ -18,9 +18,11 @@ from qtpy.QtWidgets import (
     QPushButton,
     QWidget,
 )
-from superqt import QElidingLineEdit, QLabeledDoubleSlider
+from superqt import QElidingLineEdit
 
 from napari._qt.dialogs.qt_modal import QtPopup
+from napari._qt.utils import qt_signals_blocked
+from napari._qt.widgets.qt_mirrored_sliders_popup import QMirroredSlidersPopup
 from napari._qt.widgets.qt_scrollbar import ModifiedScrollBar
 from napari.components import Dims
 from napari.settings import get_settings
@@ -30,6 +32,21 @@ from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from napari._qt.widgets.qt_dims import QtDims
+
+
+class _ModifiedScrollBar(ModifiedScrollBar):
+    def mousePressEvent(self, event):
+        """Update the slider, or, on right-click, pop-up the margin controls.
+
+        Parameters
+        ----------
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
+        """
+        if event.button() == Qt.MouseButton.RightButton:
+            self.parent().show_margins_popupup()
+        else:
+            super().mousePressEvent(event)
 
 
 class QtDimSliderWidget(QWidget):
@@ -45,7 +62,7 @@ class QtDimSliderWidget(QWidget):
     size_changed = Signal()
     play_started = Signal()
     play_stopped = Signal()
-    thickness_changed = Signal(float)
+    margins_changed = Signal(float)
 
     def __init__(self, parent: QWidget, axis: int) -> None:
         super().__init__(parent=parent)
@@ -55,6 +72,7 @@ class QtDimSliderWidget(QWidget):
         self.axis_label = None
         self.slider = None
         self.play_button = None
+        self.margins_popup = None
         self.curslice_label = QLineEdit(self)
         self.curslice_label.setToolTip(
             trans._('Current slice for axis {axis}', axis=axis)
@@ -95,7 +113,6 @@ class QtDimSliderWidget(QWidget):
         self._create_axis_label_widget()
         self._create_range_slider_widget()
         self._create_play_button_widget()
-        self._create_thickness_slider_widget()
 
         layout.addWidget(self.axis_label)
         layout.addWidget(self.play_button)
@@ -103,7 +120,6 @@ class QtDimSliderWidget(QWidget):
         layout.addWidget(self.curslice_label)
         layout.addWidget(sep)
         layout.addWidget(self.totslice_label)
-        layout.addWidget(self.thickness_slider, stretch=1)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(2)
         layout.setAlignment(Qt.AlignmentFlag.AlignVCenter)
@@ -156,8 +172,9 @@ class QtDimSliderWidget(QWidget):
         # Set the maximum values of the range slider to be one step less than
         # the range of the layer as otherwise the slider can move beyond the
         # shape of the layer as the endpoint is included
-        slider = ModifiedScrollBar(Qt.Orientation.Horizontal)
+        slider = _ModifiedScrollBar(Qt.Orientation.Horizontal)
         slider.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        slider.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
         slider.setMinimum(0)
         slider.setMaximum(self.dims.nsteps[self.axis] - 1)
         slider.setSingleStep(1)
@@ -174,28 +191,10 @@ class QtDimSliderWidget(QWidget):
         slider.sliderPressed.connect(slider_focused_listener)
         self.slider = slider
 
-    def _thickness_changed(self, value):
-        thick = list(self.dims.thickness)
-        thick[self.axis] = value
-        self.dims.thickness = tuple(thick)
-
-    def _create_thickness_slider_widget(self):
-        """Creates a slice_thickness slider widget for a given axis."""
-        slider = QLabeledDoubleSlider(Qt.Horizontal)
-        slider.setObjectName('thickness_slider')
-        slider.setFocusPolicy(Qt.NoFocus)
-        slider.setMinimum(0)
-        slider.setMaximum(self.dims.nsteps[self.axis] * 2)
-        slider.setValue(self.dims.thickness[self.axis])
-
-        slider.valueChanged.connect(self._thickness_changed)
-
-        def slider_focused_listener():
-            self.dims.last_used = self.axis
-
-        # linking focus listener to the last used:
-        slider.sliderPressed.connect(slider_focused_listener)
-        self.thickness_slider = slider
+    def show_margins_popupup(self):
+        self.margins_popup = QMarginSlidersPopup(self.dims, self.axis, self)
+        self.margins_popup.setParent(self)
+        self.margins_popup.show_above_mouse()
 
     def _create_play_button_widget(self):
         """Creates the actual play button, which has the modal popup."""
@@ -261,9 +260,8 @@ class QtDimSliderWidget(QWidget):
             self.totslice_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
             self._update_slice_labels()
 
-            self.thickness_slider.setMinimum(0)
-            self.thickness_slider.setMaximum(self.dims.nsteps[self.axis] * 2)
-            self.thickness_slider.setValue(self.dims.thickness[self.axis])
+            if self.margins_popup:
+                self.margins_popup._reset_sliders()
 
     def _update_slider(self):
         """Update dimension slider."""
@@ -274,9 +272,6 @@ class QtDimSliderWidget(QWidget):
         """Update slice labels to match current dimension slider position."""
         self.curslice_label.setText(str(self.dims.current_step[self.axis]))
         self.curslice_label.setAlignment(Qt.AlignmentFlag.AlignRight)
-
-    def _update_thickness(self):
-        self.thickness_slider.setValue(self.dims.thickness[self.axis])
 
     @property
     def fps(self):
@@ -752,3 +747,51 @@ class AnimationThread(QThread):
         # slot for external events to update the current frame
         if self.dims is not None:
             self.current = self.dims.current_step[self.axis]
+
+
+class QMarginSlidersPopup(QMirroredSlidersPopup):
+    def __init__(self, dims: Dims, axis: int, parent=None) -> None:
+        super().__init__(parent)
+
+        self.dims = ref(dims)
+        self.axis = axis
+
+        self._reset_sliders()
+
+        self.left_slider.valueChanged.connect(self._update_margin_left)
+        self.right_slider.valueChanged.connect(self._update_margin_right)
+        dims.events.margin_left.connect(self._reset_sliders)
+        dims.events.margin_right.connect(self._reset_sliders)
+
+    def _update_margin_left(self, value):
+        if (dims := self.dims()) is None:
+            self.left_slider.valueChanged.disconnect(self._update_margin_left)
+            return
+
+        margin_left_step = list(dims.margin_left_step)
+        margin_left_step[self.axis] = value
+        dims.margin_left_step = tuple(margin_left_step)
+
+    def _update_margin_right(self, value):
+        if (dims := self.dims()) is None:
+            self.right_slider.valueChanged.disconnect(
+                self._update_margin_right
+            )
+            return
+
+        margin_right_step = list(dims.margin_right_step)
+        margin_right_step[self.axis] = value
+        dims.margin_right_step = tuple(margin_right_step)
+
+    def _reset_sliders(self):
+        if (dims := self.dims()) is None:
+            return
+
+        with (
+            qt_signals_blocked(self.left_slider),
+            qt_signals_blocked(self.right_slider),
+        ):
+            self.left_slider.setRange(0, dims.nsteps[self.axis] - 1)
+            self.left_slider.setValue(dims.margin_left_step[self.axis])
+            self.right_slider.setRange(0, dims.nsteps[self.axis] - 1)
+            self.right_slider.setValue(dims.margin_right_step[self.axis])
