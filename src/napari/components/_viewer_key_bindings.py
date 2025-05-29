@@ -197,6 +197,16 @@ def toggle_unselected_visibility(viewer: Viewer):
             layer.visible = not layer.visible
 
 
+@register_viewer_action(trans._('Select layer above'))
+def select_layer_above(viewer):
+    viewer.layers.select_next()
+
+
+@register_viewer_action(trans._('Select layer below'))
+def select_layer_below(viewer):
+    viewer.layers.select_previous()
+
+
 @register_viewer_action(trans._('Select and show only layer above'))
 def show_only_layer_above(viewer):
     viewer.layers.select_next()

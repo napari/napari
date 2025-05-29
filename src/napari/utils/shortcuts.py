@@ -24,6 +24,8 @@ _default_shortcuts = {
     'napari:toggle_grid': [KeyMod.CtrlCmd | KeyCode.KeyG],
     'napari:toggle_selected_visibility': [KeyCode.KeyV],
     'napari:toggle_unselected_visibility': [KeyMod.Shift | KeyCode.KeyV],
+    'napari:select_layer_above': [KeyMod.CtrlCmd | KeyCode.UpArrow],
+    'napari:select_layer_below': [KeyMod.CtrlCmd | KeyCode.DownArrow],
     'napari:show_only_layer_above': [
         KeyMod.Shift | KeyMod.Alt | KeyCode.UpArrow
     ],
