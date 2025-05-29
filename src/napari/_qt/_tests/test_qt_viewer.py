@@ -332,7 +332,6 @@ def test_export_figure_3d(make_napari_viewer):
     assert (img[img > 250].shape[0] / img[img <= 200].shape[0]) > 0.5
 
 
-@pytest.mark.skip(reason='testing purpose')
 def test_export_rois(qt_viewer, viewer_model, tmp_path, qtbot):
     # Create an image with a defined shape (100x100) and a square in the middle
 
