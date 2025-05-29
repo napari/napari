@@ -27,6 +27,7 @@ from napari.utils.interactions import (
     mouse_release_callbacks,
     mouse_wheel_callbacks,
 )
+from napari.utils.notifications import show_warning
 from napari.utils.theme import get_theme
 
 if TYPE_CHECKING:
@@ -612,8 +613,10 @@ class VispyCanvas:
         napari_layer._overlays.events.added.connect(overlay_callback)
         napari_layer._overlays.events.removed.connect(overlay_callback)
         napari_layer._overlays.events.changed.connect(overlay_callback)
+        napari_layer.events.extent.connect(self._update_units)
         self._overlay_callbacks[napari_layer] = overlay_callback
         self.viewer.camera.events.angles.connect(vispy_layer._on_camera_move)
+        self._update_units()
 
         # create overlay visuals for this layer
         self._update_layer_overlays(napari_layer)
@@ -622,6 +625,16 @@ class VispyCanvas:
         vispy_layer._on_matrix_change()
 
         self._reorder_layers()
+
+    def _update_units(self):
+        """Update the units of the canvas and all layers."""
+        units = self.viewer.layers.extent.units
+        if units is None:
+            show_warning(
+                'Inconsistent units across layers, not use units during rendering.'
+            )
+        for vispy_layer in self.layer_to_visual.values():
+            vispy_layer.units = units
 
     def _remove_layer(self, event: Event) -> None:
         """Upon receiving event closes the Vispy visual, deletes it and reorders the still existing layers.
@@ -640,6 +653,7 @@ class VispyCanvas:
         disconnect_events(
             layer._overlays.events, self._overlay_callbacks[layer]
         )
+        layer.events.extent.disconnect(self._update_units)
         del self._overlay_callbacks[layer]
         vispy_layer = self.layer_to_visual[layer]
         disconnect_events(self.viewer.camera.events, vispy_layer)
