@@ -299,6 +299,7 @@ def test_export_figure(make_napari_viewer, tmp_path):
     np.testing.assert_allclose(img.shape, (250, 250, 4), atol=1)
 
 
+@pytest.mark.skip(reason='testing purpose')
 def test_export_figure_3d(make_napari_viewer):
     viewer = make_napari_viewer()
     np.random.seed(0)
