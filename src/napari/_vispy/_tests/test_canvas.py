@@ -89,3 +89,42 @@ def test_layer_overlays(make_napari_viewer):
     assert not canvas._layer_overlay_to_visual
     assert len(canvas.view.children) == view_children
     assert len(canvas.view.scene.children) == scene_children
+
+
+def test_tiling_canvas_overlays(make_napari_viewer, qtbot):
+    viewer = make_napari_viewer()
+    canvas = viewer.window._qt_viewer.canvas
+
+    viewer.scale_bar.visible = True
+    viewer.text_overlay.visible = True
+    viewer.text_overlay.text = 'test'
+
+    viewer.scale_bar.position = 'bottom_right'
+    viewer.text_overlay.position = 'bottom_right'
+
+    vispy_scale_bar = canvas._overlay_to_visual[viewer.scale_bar]
+    vispy_text_overlay = canvas._overlay_to_visual[viewer.text_overlay]
+
+    # force update of overlays
+    canvas._update_overlay_canvas_positions()
+
+    assert vispy_scale_bar.x_offset_tiling == 0
+    assert vispy_scale_bar.y_offset_tiling == 0
+    assert vispy_text_overlay.x_offset_tiling == 0
+    assert vispy_text_overlay.y_offset_tiling != 0
+
+    viewer.text_overlay.position = 'top_right'
+    canvas._update_overlay_canvas_positions()
+
+    assert vispy_scale_bar.x_offset_tiling == 0
+    assert vispy_scale_bar.y_offset_tiling == 0
+    assert vispy_text_overlay.x_offset_tiling == 0
+    assert vispy_text_overlay.y_offset_tiling == 0
+
+    viewer.scale_bar.position = 'top_right'
+    canvas._update_overlay_canvas_positions()
+
+    assert vispy_scale_bar.x_offset_tiling == 0
+    assert vispy_scale_bar.y_offset_tiling == 0
+    assert vispy_text_overlay.x_offset_tiling != 0
+    assert vispy_text_overlay.y_offset_tiling == 0
