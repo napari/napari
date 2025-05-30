@@ -119,7 +119,9 @@ def test_features_table_save_csv(qtbot, tmp_path, monkeypatch):
     v.add_points(np.zeros((2, 2)), features=df)
 
     path = tmp_path / 'test.csv'
-    monkeypatch.setattr(QFileDialog, 'getSaveFileName',  MagicMock(return_value=(path, None)))
+    monkeypatch.setattr(
+        QFileDialog, 'getSaveFileName', MagicMock(return_value=(path, None))
+    )
 
     w.save.click()
 
