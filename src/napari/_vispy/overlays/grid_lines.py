@@ -1,14 +1,19 @@
 import numpy as np
+from vispy.scene import Node
 
 from napari._vispy.overlays.base import ViewerOverlayMixin, VispySceneOverlay
 from napari._vispy.visuals.grid_lines import GridLines3D
 from napari.components.camera import DEFAULT_ORIENTATION_TYPED
+from napari.components.overlays import Overlay
+from napari.components.viewer_model import ViewerModel
 from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils.theme import get_theme
 
 
 class VispyGridLinesOverlay(ViewerOverlayMixin, VispySceneOverlay):
-    def __init__(self, *, viewer, overlay, parent=None):
+    def __init__(
+        self, *, viewer: ViewerModel, overlay: Overlay, parent: Node = None
+    ):
         super().__init__(
             node=GridLines3D(),
             viewer=viewer,
@@ -35,7 +40,7 @@ class VispyGridLinesOverlay(ViewerOverlayMixin, VispySceneOverlay):
 
         self.reset()
 
-    def _on_data_change(self):
+    def _on_data_change(self) -> None:
         # napari dims are zyx, but vispy uses xyz
         displayed = self.viewer.dims.displayed[::-1]
         ranges = [self.viewer.dims.range[i] for i in displayed]
@@ -56,28 +61,33 @@ class VispyGridLinesOverlay(ViewerOverlayMixin, VispySceneOverlay):
             color = np.subtract(1, background_color)
             color[-1] = background_color[-1]
 
-        self.node.reset_grids(color)
+        self.node.color = color
+        self.node.reset_grids()
         self.node.set_extents(ranges)
         self.node.set_ticks(self.overlay.labels, self.overlay.n_labels, ranges)
 
         self._on_view_direction_change(force=True)
 
-    def _on_view_direction_change(self, force=False):
+    def _on_view_direction_change(self, force: bool = False) -> None:
         displayed = self.viewer.dims.displayed[::-1]
-        ranges = [self.viewer.dims.range[i] for i in displayed]
+        ranges = tuple(self.viewer.dims.range[i] for i in displayed)
 
         if self.viewer.dims.ndisplay == 3:
             # all is flipped from zyx to xyz for vispy
-            view_direction = np.sign(self.viewer.camera.view_direction)[::-1]
-            up_direction = np.sign(self.viewer.camera.up_direction)[::-1]
-            orientation_flip = [
+            view_direction = tuple(
+                np.sign(self.viewer.camera.view_direction)[::-1]
+            )
+            up_direction = tuple(
+                np.sign(self.viewer.camera.up_direction)[::-1]
+            )
+            orientation_flip = tuple(
                 1 if ori == default_ori else -1
                 for ori, default_ori in zip(
                     self.viewer.camera.orientation,
                     DEFAULT_ORIENTATION_TYPED,
                     strict=True,
                 )
-            ][::-1]
+            )[::-1]
         else:
             view_direction = (1, 1, 1)
             up_direction = (1, 1, 1)
@@ -85,12 +95,12 @@ class VispyGridLinesOverlay(ViewerOverlayMixin, VispySceneOverlay):
 
         self.node.set_view_direction(
             ranges,
-            list(view_direction),
-            list(up_direction),
+            view_direction,
+            up_direction,
             orientation_flip,
             force=force,
         )
 
-    def reset(self):
-        super().reset()
+    def reset(self) -> None:
+        super().reset()  # type: ignore
         self._on_data_change()
