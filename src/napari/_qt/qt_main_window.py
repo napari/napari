@@ -1256,12 +1256,7 @@ class Window:
         return self._wrapped_dock_widgets
 
     @property
-    def dock_widgets(self) -> Mapping[str, QtViewerDockWidget]:
-        """Read only mapping of dock widgets."""
-        return MappingProxy(self._wrapped_dock_widgets)
-
-    @property
-    def docked_widgets(self) -> Mapping[str, 'QWidget | Widget']:
+    def dock_widgets(self) -> Mapping[str, 'QWidget | Widget']:
         """Read only mapping of widgets docked in napari window.
 
         For wrapping QtViewerDockWidget use `dock_widgets` property.
