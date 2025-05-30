@@ -33,7 +33,7 @@ certifi==2025.4.26
     #   requests
 charset-normalizer==3.4.2
     # via requests
-click==8.2.0
+click==8.2.1
     # via
     #   dask
     #   distributed
@@ -48,7 +48,7 @@ comm==0.2.2
     # via ipykernel
 contourpy==1.3.2
     # via matplotlib
-coverage==7.8.0
+coverage==7.8.2
     # via
     #   napari (pyproject.toml)
     #   pytest-cov
@@ -56,7 +56,7 @@ crc32c==2.7.1
     # via numcodecs
 cycler==0.12.1
     # via matplotlib
-dask==2025.4.1
+dask==2025.5.1
     # via
     #   napari (pyproject.toml)
     #   distributed
@@ -66,7 +66,7 @@ decorator==5.2.1
     # via ipython
 distlib==0.3.9
     # via virtualenv
-distributed==2025.4.1
+distributed==2025.5.1
     # via dask
 docstring-parser==0.16
     # via
@@ -90,12 +90,12 @@ fonttools==4.58.0
     # via matplotlib
 freetype-py==2.5.1
     # via vispy
-fsspec==2025.3.2
+fsspec==2025.5.1
     # via
     #   napari (pyproject.toml)
     #   dask
     #   torch
-glasbey==0.2.1
+glasbey==0.3.0
     # via napari (pyproject.toml)
 h5netcdf==1.6.1
     # via napari (pyproject.toml)
@@ -105,7 +105,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.131.15
+hypothesis==6.131.28
     # via napari (pyproject.toml)
 idna==3.10
     # via requests
@@ -143,7 +143,7 @@ jinja2==3.1.6
     #   distributed
     #   sphinx
     #   torch
-joblib==1.5.0
+joblib==1.5.1
     # via
     #   nilearn
     #   scikit-learn
@@ -231,9 +231,9 @@ numba==0.61.2
     # via
     #   napari (pyproject.toml)
     #   glasbey
-numcodecs==0.16.0
+numcodecs==0.16.1
     # via zarr
-numpy==2.2.5
+numpy==2.2.6
     # via
     #   napari (pyproject.toml)
     #   bermuda
@@ -348,7 +348,7 @@ platformdirs==4.3.8
     #   pint
     #   pooch
     #   virtualenv
-pluggy==1.5.0
+pluggy==1.6.0
     # via
     #   pytest
     #   pytest-qt
@@ -379,7 +379,7 @@ pyautogui==0.9.54
     # via napari (pyproject.toml)
 pyconify==0.2.1
     # via superqt
-pydantic==2.11.4
+pydantic==2.11.5
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
@@ -417,7 +417,7 @@ pyqt6==6.9.0
     # via napari (pyproject.toml)
 pyqt6-qt6==6.9.0
     # via pyqt6
-pyqt6-sip==13.10.0
+pyqt6-sip==13.10.2
     # via pyqt6
 pyrect==0.2.0
     # via pygetwindow
@@ -505,7 +505,7 @@ rich==14.0.0
     #   typer
 roman-numerals-py==3.1.0
     # via sphinx
-rpds-py==0.24.0
+rpds-py==0.25.1
     # via
     #   jsonschema
     #   referencing
@@ -521,7 +521,7 @@ scipy==1.15.3
     #   nilearn
     #   scikit-image
     #   scikit-learn
-setuptools==80.4.0
+setuptools==80.8.0
     # via triton
 shellingham==1.5.4
     # via typer
@@ -565,13 +565,13 @@ tabulate==0.9.0
     # via numpydoc
 tblib==3.1.0
     # via distributed
-tensorstore==0.1.74
+tensorstore==0.1.75
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
 threadpoolctl==3.6.0
     # via scikit-learn
-tifffile==2025.5.10
+tifffile==2025.5.24
     # via
     #   napari (pyproject.toml)
     #   scikit-image
@@ -587,7 +587,7 @@ toolz==1.0.0
     #   partd
 torch==2.7.0
     # via napari (pyproject.toml)
-tornado==6.4.2
+tornado==6.5.1
     # via
     #   distributed
     #   ipykernel
@@ -628,7 +628,7 @@ typing-extensions==4.13.2
     #   typer
     #   typing-inspection
     #   zarr
-typing-inspection==0.4.0
+typing-inspection==0.4.1
     # via pydantic
 tzdata==2025.2
     # via pandas
@@ -638,7 +638,7 @@ urllib3==2.4.0
     #   requests
 virtualenv==20.31.2
     # via napari (pyproject.toml)
-vispy==0.15.0
+vispy==0.15.2
     # via
     #   napari (pyproject.toml)
     #   napari-svg
@@ -650,7 +650,7 @@ wrapt==1.17.2
     #   napari (pyproject.toml)
 xarray==2025.4.0
     # via napari (pyproject.toml)
-zarr==3.0.7
+zarr==3.0.8
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
