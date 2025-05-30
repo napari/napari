@@ -508,7 +508,8 @@ class FeaturesTable(QWidget):
         with self._block_selection():
             self.table.selectionModel().select(
                 selection,
-                QItemSelectionModel.SelectionFlag.ClearAndSelect | QItemSelectionModel.SelectionFlag.Rows,
+                QItemSelectionModel.SelectionFlag.ClearAndSelect
+                | QItemSelectionModel.SelectionFlag.Rows,
             )
 
         self.table.viewport().update()
