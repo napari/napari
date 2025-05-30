@@ -141,7 +141,7 @@ jobs:
       # START PYTHON DEPENDENCIES
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.12"
           cache: pip
           cache-dependency-path: 'pyproject.toml'
 
@@ -181,6 +181,11 @@ jobs:
           name: constraints
           path: |
             napari_repo/resources/constraints/constraints*.txt
+
+      - name: Check builtin extensions
+        run: uv run tools/check_extensions.py --ci
+        env:
+          UV_CONSTRAINT: napari_repo/resources/constraints/constraints_py3.12.txt
 
       - name: Add rocket reaction
         # inform that new constraints are available in artifacts
