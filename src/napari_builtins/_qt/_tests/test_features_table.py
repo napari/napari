@@ -79,7 +79,8 @@ def test_features_table(qtbot):
 
     w.table.selectionModel().select(
         selection,
-        QItemSelectionModel.ClearAndSelect | QItemSelectionModel.Rows,
+        QItemSelectionModel.SelectionFlag.ClearAndSelect
+        | QItemSelectionModel.SelectionFlag.Rows,
     )
 
     assert layer.selected_data == {0}
@@ -141,7 +142,7 @@ def test_features_table_copy_paste(qtbot):
 
     w.table.selectionModel().select(
         selection,
-        QItemSelectionModel.ClearAndSelect,
+        QItemSelectionModel.SelectionFlag.ClearAndSelect,
     )
 
     w.table.copySelection()
@@ -156,7 +157,7 @@ def test_features_table_copy_paste(qtbot):
 
     w.table.selectionModel().select(
         selection,
-        QItemSelectionModel.ClearAndSelect,
+        QItemSelectionModel.SelectionFlag.ClearAndSelect,
     )
 
     w.toggle.click()
