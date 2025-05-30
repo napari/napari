@@ -27,4 +27,4 @@ class GridLinesOverlay(SceneOverlay):
     color: ColorValue | None = None
     labels: bool = True
     n_labels: int = Field(5, ge=2)
-    blending: Blending = Blending.ADDITIVE
+    blending: Blending = Blending.TRANSLUCENT_NO_DEPTH
