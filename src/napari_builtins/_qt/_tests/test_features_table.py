@@ -215,7 +215,7 @@ def test_features_tables_dtypes(
 
     editor = w.table.findChild(editor_class)
 
-    if editor_class == QLineEdit:
+    if issubclass(editor_class, QLineEdit):
         qtbot.keyClicks(editor, str(new_val))
         w.table.commitData(editor)
     elif editor_class == QComboBox:
