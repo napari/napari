@@ -83,14 +83,14 @@ def set_backend(backend: TriangulationBackend) -> TriangulationBackend:
     bermuda_loaded = 'bermuda' in sys.modules
     partsegcore_loaded = 'PartSegCore_compiled_backend' in sys.modules
 
-    any_complied_loaded = bermuda_loaded or partsegcore_loaded
+    any_compiled_loaded = bermuda_loaded or partsegcore_loaded
     # triangulation do not contain utils for edge triangulation
 
     need_numba_warmup = (
         backend == TriangulationBackend.numba
         or (
             backend == TriangulationBackend.fastest_available
-            and not any_complied_loaded
+            and not any_compiled_loaded
         )
         or (backend == TriangulationBackend.bermuda and not bermuda_loaded)
         or (
