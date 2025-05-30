@@ -28,6 +28,12 @@ VIEW_SUBMENUS = [
         MenuId.MENUBAR_VIEW,
         SubmenuItem(submenu=MenuId.VIEW_SCALEBAR, title=trans._('Scale Bar')),
     ),
+    (
+        MenuId.MENUBAR_VIEW,
+        SubmenuItem(
+            submenu=MenuId.VIEW_GRIDLINES, title=trans._('Grid Lines')
+        ),
+    ),
 ]
 
 
