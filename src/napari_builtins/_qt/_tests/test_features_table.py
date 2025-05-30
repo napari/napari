@@ -111,7 +111,7 @@ def test_features_table_edit(qtbot):
     assert layer.features.loc[0, 'a'] == 'hello'
 
 
-def test_features_table_save_csv(qtbot, tmp_path):
+def test_features_table_save_csv(qtbot, tmp_path, monkeypatch):
     v = ViewerModel()
     w = FeaturesTable(v)
 
@@ -119,7 +119,7 @@ def test_features_table_save_csv(qtbot, tmp_path):
     v.add_points(np.zeros((2, 2)), features=df)
 
     path = tmp_path / 'test.csv'
-    QFileDialog.getSaveFileName = MagicMock(return_value=(path, None))
+    monkeypatch.setattr(QFileDialog, 'getSaveFileName',  MagicMock(return_value=(path, None)))
 
     w.save.click()
 
