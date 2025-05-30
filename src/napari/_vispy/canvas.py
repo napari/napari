@@ -16,6 +16,7 @@ from napari._vispy.utils.cursor import QtCursorVisual
 from napari._vispy.utils.gl import get_max_texture_sizes
 from napari._vispy.utils.visual import create_vispy_overlay
 from napari.components.overlays import CanvasOverlay
+from napari.settings import get_settings
 from napari.utils._proxies import ReadOnlyWrapper
 from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils.events import disconnect_events
@@ -885,7 +886,7 @@ class VispyCanvas:
             )
             # TODO: hook up theme to border color?
             view = self.grid[row, col]
-            view.border_width = 1
+            view.border_width = self.viewer.grid.border_width
             camera = VispyCamera(view, self.viewer.camera, self.viewer.dims)
             self._scene_canvas.events.draw.connect(camera.on_draw)
             self.grid_views.append(view)
@@ -900,6 +901,7 @@ class VispyCanvas:
         if not self.viewer.grid.enabled:
             return
 
+        hl_color = get_settings().appearance.highlight.highlight_color
         for (row, col), layer_indices in self.viewer.grid.iter_quadrants(
             len(self.viewer.layers)
         ):
@@ -909,7 +911,7 @@ class VispyCanvas:
                 self.viewer.layers[idx] in self.viewer.layers.selection
                 for idx in layer_indices
             ):
-                color = 'yellow'
+                color = hl_color
             else:
                 color = 'gray'
 

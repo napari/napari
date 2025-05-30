@@ -38,6 +38,9 @@ class GridCanvas(EventedModel):
         A value of 0.0 will have the grid layers touching each other.
         Positive values will space the layers apart, and negative values
         will overlap the layers.
+    border_width : int
+        Width of the border separating each viewbox in pixels. Borders will be highlighted
+        baes on which layers are selected in the layerlists.
 
         .. versionadded:: 0.6.0
             ``spacing`` was added in 0.6.0.
@@ -50,6 +53,7 @@ class GridCanvas(EventedModel):
     shape: tuple[GridHeight, GridWidth] = (-1, -1)  # type: ignore[valid-type]
     enabled: bool = False
     spacing: GridSpacing = 0  # type: ignore[valid-type]
+    border_width: int = 0
 
     def actual_shape(self, nlayers: int = 1) -> tuple[int, int]:
         """Return the actual shape of the grid.
