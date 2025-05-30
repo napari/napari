@@ -205,7 +205,6 @@ def test_add_plugin_dock_widget(make_napari_viewer, monkeypatch, BaseClass):
     monkeypatch.setattr('napari.plugins._npe2.get_widget_contribution', mock)
     viewer = make_napari_viewer()
     assert list(viewer.window.dock_widgets.keys()) == []
-    assert list(viewer.window.docked_widgets.keys()) == []
 
     docked, widget = viewer.window.add_plugin_dock_widget(
         'sample_plugin', 'sample_widget'
@@ -215,13 +214,7 @@ def test_add_plugin_dock_widget(make_napari_viewer, monkeypatch, BaseClass):
     assert list(viewer.window.dock_widgets.keys()) == [
         'widget name (sample_plugin)'
     ]
-    assert list(viewer.window.docked_widgets.keys()) == [
-        'widget name (sample_plugin)'
-    ]
-    assert viewer.window.dock_widgets['widget name (sample_plugin)'] is docked
-    assert (
-        viewer.window.docked_widgets['widget name (sample_plugin)'] is widget
-    )
+    assert viewer.window.dock_widgets['widget name (sample_plugin)'] is widget
     docked2, widget2 = viewer.window.add_plugin_dock_widget(
         'sample_plugin', 'sample_widget'
     )
@@ -229,4 +222,4 @@ def test_add_plugin_dock_widget(make_napari_viewer, monkeypatch, BaseClass):
     assert widget is widget2
 
     with pytest.raises(TypeError):
-        viewer.window.docked_widgets['widget name (sample_plugin)'] = 1
+        viewer.window.dock_widgets['widget name (sample_plugin)'] = 1
