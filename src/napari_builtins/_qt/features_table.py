@@ -508,7 +508,7 @@ class FeaturesTable(QWidget):
         with self._block_selection():
             self.table.selectionModel().select(
                 selection,
-                QItemSelectionModel.ClearAndSelect | QItemSelectionModel.Rows,
+                QItemSelectionModel.SelectionFlag.ClearAndSelect | QItemSelectionModel.SelectionFlag.Rows,
             )
 
         self.table.viewport().update()
@@ -533,7 +533,7 @@ class FeaturesTable(QWidget):
             str(Path(hist[0]) / fname),  # directory in PyQt, dir in PySide
             filter='*.csv',
             options=(
-                QFileDialog.DontUseNativeDialog
+                QFileDialog.Option.DontUseNativeDialog
                 if in_ipython()
                 else QFileDialog.Options()
             ),
