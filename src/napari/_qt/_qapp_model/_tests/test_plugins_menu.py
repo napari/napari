@@ -75,7 +75,7 @@ def test_toggle_or_get_widget(
 
     # Trigger the action, opening the widget: `Widget 1`
     app.commands.execute_command('tmp_plugin:Widget')
-    widget = viewer.window._dock_widgets_private[full_name]
+    widget = viewer.window._wrapped_dock_widgets[full_name]
     # Widget takes some time to appear
     qtbot.waitUntil(widget.isVisible)
     assert widget.isVisible()
@@ -118,12 +118,12 @@ def test_plugin_single_widget_menu(
     assert tmp_plugin.display_name == 'Temp Plugin'
     plugin_menu = app.menus.get_menu('napari/plugins')
     assert plugin_menu[0].command.title == 'Widget 1 (Temp Plugin)'
-    assert len(viewer.window._dock_widgets_private) == 0
+    assert len(viewer.window._wrapped_dock_widgets) == 0
     assert 'tmp_plugin:Widget 1' in app.commands
     # trigger the action, opening the widget: `Widget 1`
     app.commands.execute_command('tmp_plugin:Widget 1')
-    assert len(viewer.window._dock_widgets_private) == 1
-    assert 'Widget 1 (Temp Plugin)' in viewer.window._dock_widgets_private
+    assert len(viewer.window._wrapped_dock_widgets) == 1
+    assert 'Widget 1 (Temp Plugin)' in viewer.window._wrapped_dock_widgets
 
 
 def test_plugin_multiple_widget_menu(
@@ -148,12 +148,12 @@ def test_plugin_multiple_widget_menu(
     assert plugin_menu[0].title == tmp_plugin.display_name
     plugin_submenu = app.menus.get_menu('napari/plugins/tmp_plugin')
     assert plugin_submenu[0].command.title == 'Widget 1'
-    assert len(viewer.window._dock_widgets_private) == 0
+    assert len(viewer.window._wrapped_dock_widgets) == 0
     assert 'tmp_plugin:Widget 1' in app.commands
     # Trigger the action, opening the first widget: `Widget 1`
     app.commands.execute_command('tmp_plugin:Widget 1')
-    assert len(viewer.window._dock_widgets_private) == 1
-    assert 'Widget 1 (Temp Plugin)' in viewer.window._dock_widgets_private
+    assert len(viewer.window._wrapped_dock_widgets) == 1
+    assert 'Widget 1 (Temp Plugin)' in viewer.window._wrapped_dock_widgets
 
 
 def test_plugin_menu_plugin_state_change(
@@ -224,8 +224,8 @@ def test_plugin_widget_checked(
     # Trigger the action, opening the widget
     widget_action.trigger()
     assert widget_action.isChecked()
-    assert 'Widget (Temp Plugin)' in viewer.window._dock_widgets_private
-    widget = viewer.window._dock_widgets_private['Widget (Temp Plugin)']
+    assert 'Widget (Temp Plugin)' in viewer.window._wrapped_dock_widgets
+    widget = viewer.window._wrapped_dock_widgets['Widget (Temp Plugin)']
 
     # Hide widget
     widget.title.hide_button.click()

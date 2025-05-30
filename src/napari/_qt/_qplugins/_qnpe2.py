@@ -109,7 +109,7 @@ def _toggle_or_get_widget_npe1(
         msg='Note that widgets cannot be opened in headless mode.'
     )
 
-    if window and (dock_widget := window._dock_widgets_private.get(name)):
+    if window and (dock_widget := window._wrapped_dock_widgets.get(name)):
         dock_widget.setVisible(not dock_widget.isVisible())
         return
 
@@ -334,7 +334,7 @@ def _toggle_or_get_widget(
     )
 
     window = viewer.window
-    if window and (dock_widget := window._dock_widgets_private.get(full_name)):
+    if window and (dock_widget := window._wrapped_dock_widgets.get(full_name)):
         dock_widget.setVisible(not dock_widget.isVisible())
         return None
 
@@ -352,8 +352,8 @@ def _get_current_dock_status(full_name: str) -> bool:
     window = _provide_window_or_raise(
         msg='Note that widgets cannot be opened in headless mode.',
     )
-    if full_name in window._dock_widgets_private:
-        return window._dock_widgets_private[full_name].isVisible()
+    if full_name in window._wrapped_dock_widgets:
+        return window._wrapped_dock_widgets[full_name].isVisible()
     return False
 
 
