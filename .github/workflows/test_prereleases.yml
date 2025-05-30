@@ -82,6 +82,7 @@ jobs:
           PYVISTA_OFF_SCREEN: True  # required for opengl on windows
           PIP_CONSTRAINT: resources/constraints/version_denylist.txt
           PIP_EXTRA_INDEX_URL: https://www.riverbankcomputing.com/pypi/simple/
+          PIP_ONLY_BINARY: "PyQt5,PyQt6"
 
       - name: Upload leaked viewer graph
         if: failure()
