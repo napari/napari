@@ -102,7 +102,7 @@ class VispyCamera:
     @property
     def zoom(self):
         """float: Scale from canvas pixels to world pixels."""
-        canvas_size = np.array(self._view.canvas.size)
+        viewbox_size = np.array(self._view.inner_rect.size)
         if isinstance(self._view.camera, MouseToggledArcballCamera):
             # For fov = 0.0 normalize scale factor by canvas size to get scale factor.
             # Note that the scaling is stored in the `_projection` property of the
@@ -114,14 +114,15 @@ class VispyCamera:
                 [self._view.camera.rect.width, self._view.camera.rect.height]
             )
             scale[np.isclose(scale, 0)] = 1  # fix for #2875
-        zoom = np.min(canvas_size / scale)
+        zoom = np.min(viewbox_size / scale)
         return zoom
 
     @zoom.setter
     def zoom(self, zoom):
         if self.zoom == zoom:
             return
-        scale = np.array(self._view.canvas.size) / zoom
+        viewbox_size = np.array(self._view.inner_rect.size)
+        scale = np.array(viewbox_size) / zoom
         if isinstance(self._view.camera, MouseToggledArcballCamera):
             self._view.camera.scale_factor = np.min(scale)
         else:

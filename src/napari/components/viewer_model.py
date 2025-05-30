@@ -436,6 +436,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         # The default value used below will zoom such that the whole field
         # of view will occupy 95% of the canvas on the most filled axis
         if np.max(scene_size) == 0:
+            # TODO: does this even ever happen?
             self.camera.zoom = scale_factor * np.min(self._canvas_size)
 
         elif self.dims.ndisplay == 2:
@@ -444,9 +445,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             )
 
         elif self.dims.ndisplay == 3:
-            self.camera.zoom = self._get_3d_camera_zoom(
-                extent, scene_size, scale_factor
-            )
+            self.camera.zoom = self._get_3d_camera_zoom(extent, scale_factor)
 
         # Emit a reset view event, which is no longer used internally, but
         # which maybe useful for building on napari.
@@ -509,24 +508,24 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         """Get the camera zoom for 2D view."""
         scale = np.array(scene_size[-2:])
         scale[np.isclose(scale, 0)] = 1
-        return scale_factor * np.min(np.array(self._canvas_size) / scale)
+        grid_shape = np.array(self.grid.actual_shape(len(self.layers)))
+        viewbox_size = np.array(self._canvas_size) / grid_shape
+        return scale_factor * np.min(viewbox_size / scale)
 
     def _get_3d_camera_zoom(
-        self, extent: np.ndarray, scene_size: np.ndarray, scale_factor: float
+        self, extent: np.ndarray, scale_factor: float
     ) -> float:
         """Calculate the zoom such that the minimum of the bounding box fits the canvas."""
-        extent = extent.copy()
-        # calculate max coords
-        extent[1] = extent[0] + scene_size
-
         bounding_box = self._calculate_bounding_box(
             extent=extent,
             view_direction=self.camera.view_direction,
             up_direction=self.camera.up_direction,
         )
-        return scale_factor * np.min(
-            np.array(self._canvas_size) / bounding_box
-        )
+
+        grid_shape = np.array(self.grid.actual_shape(len(self.layers)))
+        viewbox_size = np.array(self._canvas_size) / grid_shape
+
+        return scale_factor * np.min(np.array(viewbox_size) / bounding_box)
 
     @staticmethod
     def _calculate_bounding_box(
