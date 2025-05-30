@@ -696,9 +696,6 @@ class Window:
         qapp = get_qapp()
 
         # Dictionary holding dock widgets
-        # As many plugins uses `_dock_widget` to access one widget from the
-        # other widget wqe should not change this neame without a good reason,
-        # even if it is marked as private.
         self._dock_widgets_private: MutableMapping[str, QtViewerDockWidget] = (
             WeakValueDictionary()
         )
@@ -1248,6 +1245,8 @@ class Window:
     @property
     def _dock_widgets(self) -> MutableMapping[str, QtViewerDockWidget]:
         """To provide warning and information about public api."""
+        # As many plugins uses `_dock_widget` to access one widget from the
+        # other widget we should keep this name for a longer period
         warnings.warn(
             'The `_dock_widgets` property is private and should not be used in any plugin code. '
             'Please use the `dock_widgets` or `docked_widgets` property instead.',
