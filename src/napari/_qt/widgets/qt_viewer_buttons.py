@@ -570,10 +570,12 @@ class QtViewerButtons(QFrame):
         )
 
         spacing_help_msg = trans._(
-            'Proportional spacing between grid layers. 0 has the layers touching. Positive values will space the layers apart, and negative values will overlap the layers.'
+            'Spacing between grid positions (row, column index) in screen pixels. 0 has the layers touching. Positive '
+            'values will space the grid positions apart.'
         )
 
-        # set up
+        # set upnapari
+
         stride_min = self.viewer.grid.__fields__['stride'].type_.ge
         stride_max = self.viewer.grid.__fields__['stride'].type_.le
         stride_not = self.viewer.grid.__fields__['stride'].type_.ne
@@ -612,14 +614,13 @@ class QtViewerButtons(QFrame):
         # set up spacing
         spacing_min = self.viewer.grid.__fields__['spacing'].type_.ge
         spacing_max = self.viewer.grid.__fields__['spacing'].type_.le
-        spacing_step = self.viewer.grid.__fields__['spacing'].type_.step
         grid_spacing.setObjectName('gridSpacingBox')
         grid_spacing.setAlignment(Qt.AlignmentFlag.AlignCenter)
         grid_spacing.setMinimum(spacing_min)
         grid_spacing.setMaximum(spacing_max)
         grid_spacing.setValue(self.viewer.grid.spacing)
-        grid_spacing.setDecimals(2)
-        grid_spacing.setSingleStep(spacing_step)
+        grid_spacing.setDecimals(0)
+        grid_spacing.setSingleStep(5)
         grid_spacing.valueChanged.connect(self._update_grid_spacing)
         self.grid_spacing_box = grid_spacing
 
@@ -695,7 +696,6 @@ class QtViewerButtons(QFrame):
         value : float
             New grid spacing value.
         """
-
         self.viewer.grid.spacing = value
 
 

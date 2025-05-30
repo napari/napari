@@ -1,3 +1,5 @@
+from collections.abc import Iterator
+
 import numpy as np
 
 from napari.settings._application import (
@@ -36,6 +38,9 @@ class GridCanvas(EventedModel):
         A value of 0.0 will have the grid layers touching each other.
         Positive values will space the layers apart, and negative values
         will overlap the layers.
+    border_width : int
+        Width of the border separating each viewbox in pixels. Borders will be highlighted
+        baes on which layers are selected in the layerlists.
 
         .. versionadded:: 0.6.0
             ``spacing`` was added in 0.6.0.
@@ -47,7 +52,8 @@ class GridCanvas(EventedModel):
     stride: GridStride = 1  # type: ignore[valid-type]
     shape: tuple[GridHeight, GridWidth] = (-1, -1)  # type: ignore[valid-type]
     enabled: bool = False
-    spacing: GridSpacing = 0.0  # type: ignore[valid-type]
+    spacing: GridSpacing = 0  # type: ignore[valid-type]
+    border_width: int = 0
 
     def actual_shape(self, nlayers: int = 1) -> tuple[int, int]:
         """Return the actual shape of the grid.
@@ -89,7 +95,7 @@ class GridCanvas(EventedModel):
         n_row = max(1, n_row)
         n_column = max(1, n_column)
 
-        return (n_row, n_column)
+        return (int(n_row), int(n_column))
 
     def position(self, index: int, nlayers: int) -> tuple[int, int]:
         """Return the position of a given linear index in grid.
@@ -120,4 +126,21 @@ class GridCanvas(EventedModel):
         adj_i = adj_i % (n_row * n_column)
         i_row = adj_i // n_column
         i_column = adj_i % n_column
-        return (i_row, i_column)
+        # convert to python int from np int
+        return (int(i_row), int(i_column))
+
+    def contents_at(
+        self, position: tuple[int, int], nlayers: int
+    ) -> tuple[int, ...]:
+        if not self.enabled:
+            return ()
+
+        return tuple(
+            i for i in range(nlayers) if self.position(i, nlayers) == position
+        )
+
+    def iter_quadrants(
+        self, nlayers: int
+    ) -> Iterator[tuple[tuple[int, int], tuple[int, ...]]]:
+        for row, col in np.ndindex(self.actual_shape(nlayers)):
+            yield (row, col), self.contents_at((row, col), nlayers)
