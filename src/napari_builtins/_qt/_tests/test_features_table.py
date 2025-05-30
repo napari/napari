@@ -79,7 +79,8 @@ def test_features_table(qtbot):
 
     w.table.selectionModel().select(
         selection,
-        QItemSelectionModel.SelectionFlag.ClearAndSelect | QItemSelectionModel.SelectionFlag.Rows,
+        QItemSelectionModel.SelectionFlag.ClearAndSelect
+        | QItemSelectionModel.SelectionFlag.Rows,
     )
 
     assert layer.selected_data == {0}
