@@ -180,7 +180,7 @@ def _empty_shapes_layer_selected(s: LayerSel) -> Callable[[], bool]:
     return check_fun
 
 
-def _active_has_features(s: LayerSel) -> bool:
+def _active_supports_features(s: LayerSel) -> bool:
     return hasattr(s.active, 'features')
 
 
@@ -298,8 +298,8 @@ class LayerListSelectionContextKeys(ContextNamespace['LayerSel']):
         trans._('True when there is a shapes layer without data selected.'),
         _empty_shapes_layer_selected,
     )
-    active_layer_has_features = ContextKey(
+    active_layer_supports_features = ContextKey(
         False,
-        trans._('True when there is a shapes layer without data selected.'),
-        _active_has_features,
+        trans._('True when the active layer can have a Features table.'),
+        _active_supports_features,
     )
