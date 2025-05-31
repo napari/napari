@@ -1249,7 +1249,7 @@ class Window:
         # other widget we should keep this name for a longer period
         warnings.warn(
             'The `_dock_widgets` property is private and should not be used in any plugin code. '
-            'Please use the `dock_widgets` or `docked_widgets` property instead.',
+            'Please use the `dock_widgets` property instead.',
             FutureWarning,
             stacklevel=2,
         )
