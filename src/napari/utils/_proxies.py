@@ -2,7 +2,7 @@ import os
 import re
 import sys
 import warnings
-from collections.abc import Callable
+from collections.abc import Callable, Hashable, Iterator, Mapping
 from typing import Any, Generic, TypeVar, Union
 
 import wrapt
@@ -11,6 +11,8 @@ from napari.utils import misc
 from napari.utils.translations import trans
 
 _T = TypeVar('_T')
+_K = TypeVar('_K', bound=Hashable)
+_V = TypeVar('_V')
 
 
 class ReadOnlyWrapper(wrapt.ObjectProxy):
@@ -193,6 +195,73 @@ class CallablePublicOnlyProxy(PublicOnlyProxy[Callable]):
             for k, v in kwargs.items()
         }
         return self.create(self.__wrapped__(*args, **kwargs))
+
+
+class MappingProxy(Mapping[_K, _V]):
+    def __init__(self, wrapped: Mapping[_K, _V]) -> None:
+        """
+        A read-only proxy for a mapping object.
+
+        Parameters
+        ----------
+        wrapped : Mapping
+            The mapping to wrap.
+        """
+        self._wrapped = wrapped
+
+    def __getitem__(self, key: _K, /) -> _V:
+        """
+        Get an item from the wrapped mapping.
+
+        Parameters
+        ----------
+        key : Any
+            The key to get from the mapping.
+
+        Returns
+        -------
+        value : Any
+            The value associated with the key in the wrapped mapping.
+        """
+        return self._wrapped[key]
+
+    def __len__(self) -> int:
+        """
+        Get the length of the wrapped mapping.
+
+        Returns
+        -------
+        length : int
+            The number of items in the wrapped mapping.
+        """
+        return len(self._wrapped)
+
+    def __iter__(self) -> Iterator[_K]:
+        """
+        Get an iterator over the keys of the wrapped mapping.
+
+        Returns
+        -------
+        iterator : Iterator
+            An iterator over the keys of the wrapped mapping.
+        """
+        return iter(self._wrapped)
+
+    def __contains__(self, item: Hashable) -> bool:
+        """
+        Check if the wrapped mapping contains a key.
+
+        Parameters
+        ----------
+        item : Any
+            The key to check for in the wrapped mapping.
+
+        Returns
+        -------
+        contains : bool
+            True if the key is in the wrapped mapping, False otherwise.
+        """
+        return item in self._wrapped
 
 
 def in_main_thread_py() -> bool:

@@ -20,6 +20,9 @@ def test_add_dock_widget(make_napari_viewer):
     assert viewer.window._qt_window.findChild(QDockWidget, 'test')
     assert dwidg.widget() == widg
     dwidg._on_visibility_changed(True)  # smoke test
+    assert viewer.window.dock_widgets['test'] is widg
+    with pytest.raises(KeyError):
+        assert viewer.window.dock_widgets['test2']
 
     widg2 = QPushButton('button')
     dwidg2 = viewer.window.add_dock_widget(widg2, name='test2', area='right')
