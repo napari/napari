@@ -70,7 +70,7 @@ jobs:
           pip install setuptools tox tox-gh-actions
 
       - name: Test with tox (with retry)
-        uses: Wandalen/wretry.action@master
+        uses: Wandalen/wretry.action@v3
         with:
           attempt_limit: 2
           action: aganders3/headless-gui@v2
