@@ -69,11 +69,13 @@ jobs:
           pip install --upgrade pip
           pip install setuptools tox tox-gh-actions
 
-      - name: Test with tox
-        # run tests using pip install --pre
-        uses: aganders3/headless-gui@v2
+      - name: Test with tox (with retry)
+        uses: Wandalen/wretry.action@master
         with:
-          run: python -m tox -v --pre
+          attempt_limit: 2
+          action: aganders3/headless-gui@v2
+          with: |
+            run: python -m tox -v --pre
         env:
           PLATFORM: ${{ matrix.platform }}
           BACKEND: ${{ matrix.backend }}
