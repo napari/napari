@@ -1060,7 +1060,8 @@ def _features_from_properties(
                 else [None] * num_values
             )
             properties_df[name] = pd.Series(values, dtype=dtype)
-    return _validate_features(properties_df, num_data=num_data)
+        properties = properties_df
+    return _validate_features(properties, num_data=num_data)
 
 
 def _features_to_properties(features: pd.DataFrame) -> dict[str, np.ndarray]:
