@@ -1048,15 +1048,19 @@ def _features_from_properties(
     """
     # Create categorical series for any choices provided.
     if property_choices is not None:
-        properties = pd.DataFrame(data=properties)
+        properties_df = pd.DataFrame(data=properties)
         for name, choices in property_choices.items():
             dtype = pd.CategoricalDtype(categories=choices)
-            num_values = properties.shape[0] if num_data is None else num_data
-            values = (
-                properties[name] if name in properties else [None] * num_values
+            num_values = (
+                properties_df.shape[0] if num_data is None else num_data
             )
-            properties[name] = pd.Series(values, dtype=dtype)
-    return _validate_features(properties, num_data=num_data)
+            values = (
+                properties_df[name]
+                if name in properties_df
+                else [None] * num_values
+            )
+            properties_df[name] = pd.Series(values, dtype=dtype)
+    return _validate_features(properties_df, num_data=num_data)
 
 
 def _features_to_properties(features: pd.DataFrame) -> dict[str, np.ndarray]:
