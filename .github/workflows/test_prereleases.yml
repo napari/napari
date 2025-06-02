@@ -73,9 +73,11 @@ jobs:
         uses: Wandalen/wretry.action@v3
         with:
           attempt_limit: 2
+          attempt_delay: 30000 # 30s
+          retry_condition: github.ref_name == 'main'  # avoid restart in PR
           action: aganders3/headless-gui@v2
           with: |
-            run: python -m tox -v --pre
+            run: python -m tox -v --pre  --recreate
         env:
           PLATFORM: ${{ matrix.platform }}
           BACKEND: ${{ matrix.backend }}
