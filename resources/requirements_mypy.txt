@@ -40,7 +40,7 @@ psygnal==0.13.0
     #   npe2
 pyconify==0.2.1
     # via superqt
-pydantic==2.11.4
+pydantic==2.11.5
     # via
     #   -r resources/requirements_mypy.in
     #   npe2
@@ -56,7 +56,7 @@ pyqt6==6.9.0
     # via -r resources/requirements_mypy.in
 pyqt6-qt6==6.9.0
     # via pyqt6
-pyqt6-sip==13.10.0
+pyqt6-sip==13.10.2
     # via pyqt6
 pyyaml==6.0.2
     # via npe2
@@ -83,7 +83,7 @@ types-pyyaml==6.0.12.20250516
     # via -r resources/requirements_mypy.in
 types-requests==2.32.0.20250515
     # via -r resources/requirements_mypy.in
-types-setuptools==80.7.0.20250516
+types-setuptools==80.8.0.20250521
     # via -r resources/requirements_mypy.in
 typing-extensions==4.13.2
     # via
@@ -94,7 +94,7 @@ typing-extensions==4.13.2
     #   superqt
     #   typer
     #   typing-inspection
-typing-inspection==0.4.0
+typing-inspection==0.4.1
     # via pydantic
 urllib3==2.4.0
     # via
