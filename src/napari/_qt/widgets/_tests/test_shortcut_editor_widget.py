@@ -215,7 +215,9 @@ def test_keybinding_with_modifiers(
         (
             Qt.KeyboardModifier.AltModifier
             | Qt.KeyboardModifier.ShiftModifier,
-            [KEY_SYMBOLS['Ctrl']],
+            # this condition isn't allowed, so keybind should be unmodified
+            # 'V' is the default keybinding for 'napari:toggle_selected_visibility'
+            'V',
             False,
         ),
     ],
