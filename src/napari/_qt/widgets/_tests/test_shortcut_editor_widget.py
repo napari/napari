@@ -179,11 +179,13 @@ def test_keybinding_with_modifiers(
     shortcut_editor_widget, qtbot, recwarn, key, modifier, key_symbols
 ):
     widget = shortcut_editor_widget()
-    shortcut = widget._table.item(0, widget._shortcut_col).text()
-    assert shortcut == KEY_SYMBOLS['Ctrl']
+    # 12 is the row for 'napari:toggle_selected_visibility'
+    shortcut = widget._table.item(12, widget._shortcut_col).text()
+    assert shortcut == 'V'
 
     x = widget._table.columnViewportPosition(widget._shortcut_col)
-    y = widget._table.rowViewportPosition(0)
+    # 12 is the row for 'napari:toggle_selected_visibility'
+    y = widget._table.rowViewportPosition(12)
     item_pos = QPoint(x, y)
     index = widget._table.indexAt(item_pos)
     widget._table.setCurrentIndex(index)
@@ -196,7 +198,7 @@ def test_keybinding_with_modifiers(
 
     assert len([warn for warn in recwarn if warn.category is UserWarning]) == 0
 
-    shortcut = widget._table.item(0, widget._shortcut_col).text()
+    shortcut = widget._table.item(12, widget._shortcut_col).text()
     for key_symbol in key_symbols:
         assert key_symbol in shortcut
 
@@ -326,11 +328,12 @@ def test_keybinding_editor_modifier_key_detection(
         https://github.com/asweigart/pyautogui/issues/247#issuecomment-437668855
     """
     widget = shortcut_editor_widget()
-    shortcut = widget._table.item(0, widget._shortcut_col).text()
-    assert shortcut == KEY_SYMBOLS['Ctrl']
+    # 12 is the row for 'napari:toggle_selected_visibility'
+    shortcut = widget._table.item(12, widget._shortcut_col).text()
+    assert shortcut == 'V'
 
     x = widget._table.columnViewportPosition(widget._shortcut_col)
-    y = widget._table.rowViewportPosition(0)
+    y = widget._table.rowViewportPosition(12)
     item_pos = QPoint(x, y)
     qtbot.mouseClick(
         widget._table.viewport(), Qt.MouseButton.LeftButton, pos=item_pos
@@ -366,5 +369,6 @@ def test_keybinding_editor_modifier_key_detection(
     qtbot.waitUntil(lambda: release_check())
 
     qtbot.keyClick(line_edit, Qt.Key_Escape)
-    shortcut = widget._table.item(0, widget._shortcut_col).text()
-    assert shortcut == KEY_SYMBOLS['Ctrl']
+    # 12 is the row for 'napari:toggle_selected_visibility'
+    shortcut = widget._table.item(12, widget._shortcut_col).text()
+    assert shortcut == 'V'

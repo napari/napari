@@ -327,7 +327,8 @@ def test_preferences_dialog_not_dismissed_by_keybind_confirm(
     x = shortcut_widget._table.columnViewportPosition(
         shortcut_widget._shortcut_col
     )
-    y = shortcut_widget._table.rowViewportPosition(0)
+    # 12 is the row for 'napari:toggle_selected_visibility'
+    y = shortcut_widget._table.rowViewportPosition(12)
 
     item_pos = QPoint(x, y)
     qtbot.mouseClick(
