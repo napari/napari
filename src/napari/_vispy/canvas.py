@@ -126,7 +126,10 @@ class VispyCanvas:
         )
 
         self.grid = self.central_widget.add_grid(
-            border_width=0, spacing=viewer.grid.spacing
+            # TODO: why the hell do we need spacing -1 here?
+            #       Something wring in vispy?
+            border_width=0,
+            spacing=viewer.grid.spacing - 1,
         )
         self.grid_views = []
         self.grid_cameras = []
@@ -274,6 +277,7 @@ class VispyCanvas:
     @bgcolor.setter
     def bgcolor(self, value: str | npt.ArrayLike) -> None:
         self._scene_canvas.bgcolor = self._background_color_override or value
+        self._highlight_selected_grid()
 
     @property
     def central_widget(self) -> Widget:
@@ -861,7 +865,7 @@ class VispyCanvas:
         # grid are really not designed to be reset, so it's easier to replace it
         self.grid.parent = None
         self.grid = self.central_widget.add_grid(
-            border_width=0, spacing=self.viewer.grid.spacing
+            border_width=0, spacing=self.viewer.grid.spacing - 1
         )
 
         if self.viewer.grid.enabled:
@@ -884,7 +888,6 @@ class VispyCanvas:
                 self.viewer.layers.index(napari_layer),
                 len(self.viewer.layers),
             )
-            # TODO: hook up theme to border color?
             view = self.grid[row, col]
             view.border_width = self.viewer.grid.border_width
             camera = VispyCamera(view, self.viewer.camera, self.viewer.dims)
@@ -900,13 +903,14 @@ class VispyCanvas:
     def _highlight_selected_grid(self):
         if not self.viewer.grid.enabled:
             return
-
+        for viewbox in self.grid_views:
+            viewbox.border_color = 'black'
         hl_color = get_settings().appearance.highlight.highlight_color
         for (row, col), layer_indices in self.viewer.grid.iter_quadrants(
             len(self.viewer.layers)
         ):
             if not layer_indices:
-                color = 'black'
+                color = self.bgcolor
             elif any(
                 self.viewer.layers[idx] in self.viewer.layers.selection
                 for idx in layer_indices
