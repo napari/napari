@@ -796,7 +796,7 @@ class VispyCanvas:
                 continue
             if (
                 getattr(
-                    self.viewer.canvas.overlay_tiling, str(overlay.position)
+                    self.viewer.canvas.overlay_tiling, overlay.position.value
                 )
                 == 'horizontal'
             ):
