@@ -28,6 +28,7 @@ from napari.components._viewer_mouse_bindings import (
     double_click_to_zoom,
 )
 from napari.components.camera import Camera
+from napari.components.canvas import Canvas
 from napari.components.cursor import Cursor, CursorStyle
 from napari.components.dims import Dims
 from napari.components.grid import GridCanvas
@@ -145,6 +146,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     ----------
     camera: napari.components.camera.Camera
         The camera object modeling the position and view.
+    canvas: napari.components.canvas.Canvas
+        The canvas model.
     cursor: napari.components.cursor.Cursor
         The cursor object containing the position and properties of the cursor.
     dims : napari.components.dims.Dimensions
@@ -179,6 +182,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     # Using allow_mutation=False means these attributes aren't settable and don't
     # have an event emitter associated with them
     camera: Camera = Field(default_factory=Camera, allow_mutation=False)
+    canvas: Canvas = Field(default_factory=Canvas, allow_mutation=False)
     cursor: Cursor = Field(default_factory=Cursor, allow_mutation=False)
     dims: Dims = Field(default_factory=Dims, allow_mutation=False)
     grid: GridCanvas = Field(default_factory=GridCanvas, allow_mutation=False)
