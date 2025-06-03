@@ -813,63 +813,6 @@ class VispyCanvas:
                 vispy_overlay.x_offset_tiling = 0
             vispy_overlay._on_position_change()
 
-    def _remove_viewer_overlays(self) -> None:
-        """Remove all viewer overlay visuals and disconnect their events."""
-        for overlay in list(self._overlay_to_visual):
-            vispy_overlay = self._overlay_to_visual.pop(overlay)
-            vispy_overlay.close()
-
-    def _update_viewer_overlays(self):
-        """Update the viewer overlay visuals.
-
-        Also ensures that overlays are properly assigned parents depending on
-        their class (canvas vs scene overlays).
-        """
-        self._remove_viewer_overlays()
-
-        for overlay in self.viewer._overlays.values():
-            if isinstance(overlay, CanvasOverlay):
-                self._add_viewer_overlay(overlay, self.view)
-            else:
-                self._add_viewer_overlay(overlay, self.view.scene)
-
-    def _add_layer_overlay(
-        self, layer: Layer, overlay: Overlay, parent: Node
-    ) -> None:
-        """Create vispy overlay and add to dictionary of layer overlay visuals"""
-        vispy_overlay = create_vispy_overlay(
-            overlay, layer=layer, parent=parent
-        )
-
-        self._layer_overlay_to_visual[layer][overlay] = vispy_overlay
-
-    def _remove_layer_overlays(self, layer: Layer) -> None:
-        """Remove all layer overlay visuals and disconnect their events."""
-        for overlay in list(self._layer_overlay_to_visual[layer]):
-            vispy_overlay = self._layer_overlay_to_visual[layer].pop(overlay)
-            vispy_overlay.close()
-
-    def _update_layer_overlays(self, layer: Layer) -> None:
-        """Update the overlay visuals for each layer in the canvas.
-
-        Also ensures that overlays are properly assigned parents depending on
-        their class (canvas vs scene overlays).
-        """
-        # reparenting does not work well in a few cases (we end up with overlay visuals
-        # "clipping" through the canvas edges) so we just remake them
-        # whenever we need to change them.
-        self._remove_layer_overlays(layer)
-
-        overlay_models = layer._overlays.values()
-
-        for overlay in overlay_models:
-            if isinstance(overlay, CanvasOverlay):
-                parent = self.view
-            else:
-                parent = self.layer_to_visual[layer].node
-
-            self._add_layer_overlay(layer, overlay, parent)
-
     def _calculate_view_direction(
         self, event_pos: tuple[float, float]
     ) -> npt.NDArray[np.float64] | None:
