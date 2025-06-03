@@ -2006,7 +2006,7 @@ class Points(Layer):
         self.events.data(
             value=self.data,
             action=ActionType.ADDED,
-            data_indices=tuple(np.arange(-len(coords), 0)),
+            data_indices=tuple(np.arange(-len(np.atleast_2d(coords)), 0)),
             vertex_indices=((),),
         )
         self.selected_data = set(np.arange(cur_points, len(self.data)))
