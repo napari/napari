@@ -860,6 +860,8 @@ source = [
     "D:\\a\\napari\\napari\\.tox\\*\\Lib\\site-packages\\napari",
     "/home/runner/work/napari/napari/src/napari",
     "/Users/runner/work/napari/napari/src/napari",
+    "/Users/runner/work/napari/napari/.tox/*/lib/python*/site-packages/napari/",
+    "/home/runner/work/napari/napari/.tox/*/lib/python*/site-packages/napari/",
 ]
 builtins = [
     "src/napari_builtins/",
@@ -871,6 +873,8 @@ builtins = [
     "D:\\a\\napari\\napari\\.tox\\*\\Lib\\site-packages\\napari_builtins",
     "/home/runner/work/napari/napari/src/napari_builtins",
     "/Users/runner/work/napari/napari/src/napari_builtins",
+    "/Users/runner/work/napari/napari/.tox/*/lib/python*/site-packages/napari_builtins/",
+    "/home/runner/work/napari/napari/.tox/*/lib/python*/site-packages/napari_builtins/",
 ]
 
 [tool.importlinter]
