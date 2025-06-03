@@ -53,25 +53,20 @@ class ClippingPlanesControls(QWidget):
                 self._on_planes_change
             )
 
-        if hasattr(self._active_layer, 'features'):
-            self._active_layer.events.features.connect(
-                self._on_features_change
-            )
-            if hasattr(self._active_layer, 'selected_label'):
-                selection_event = self._active_layer.events.selected_label
-            elif hasattr(self._active_layer, 'selected_data'):
-                selection_event = self._active_layer.selected_data.events
-            selection_event.connect(self._on_layer_selection_changed)
+        self._active_layer.experimental_clipping_planes.events.connect(
+            self._on_planes_change
+        )
+        if hasattr(self._active_layer, 'selected_label'):
+            selection_event = self._active_layer.events.selected_label
+        elif hasattr(self._active_layer, 'selected_data'):
+            selection_event = self._active_layer.selected_data.events
+        selection_event.connect(self._on_layer_selection_changed)
 
-            self._on_layer_selection_changed()
-            self._on_features_change()
-            self.toggle.setVisible(True)
-            self.save.setVisible(True)
-            self.table.setVisible(True)
-        else:
-            self.toggle.setVisible(False)
-            self.save.setVisible(False)
-            self.table.setVisible(False)
+        self._on_layer_selection_changed()
+        self._on_features_change()
+        self.toggle.setVisible(True)
+        self.save.setVisible(True)
+        self.table.setVisible(True)
 
         if self._active_layer is None:
             self.info.setText('No layer selected.')
