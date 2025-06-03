@@ -38,18 +38,18 @@ def pref(qtbot):
     assert get_settings().appearance.highlight.highlight_thickness == 1
     dlg._settings.appearance.highlight.highlight_thickness = 5
     assert get_settings().appearance.highlight.highlight_thickness == 5
-    # change `napari:reset_scroll_progress` shortcut/keybinding (default keybinding `Ctrl`/`Control`)
+    # change `napari:toggle_selected_visibility` shortcut/keybinding (default keybinding `V`)
     # a copy of the initial `shortcuts` dictionary needs to be done since, to trigger an
     # event update from the `ShortcutsSettings` model, the whole `shortcuts` dictionary
     # needs to be reassigned.
     assert dlg._settings.shortcuts.shortcuts[
-        'napari:reset_scroll_progress'
-    ] == [KeyBinding.from_str('Ctrl')]
+        'napari:toggle_selected_visibility'
+    ] == [KeyBinding.from_str('V')]
     shortcuts = dlg._settings.shortcuts.shortcuts.copy()
-    shortcuts['napari:reset_scroll_progress'] = [KeyBinding.from_str('U')]
+    shortcuts['napari:toggle_selected_visibility'] = [KeyBinding.from_str('U')]
     dlg._settings.shortcuts.shortcuts = shortcuts
     assert dlg._settings.shortcuts.shortcuts[
-        'napari:reset_scroll_progress'
+        'napari:toggle_selected_visibility'
     ] == [KeyBinding.from_str('U')]
     return dlg
 
@@ -235,8 +235,8 @@ def test_preferences_dialog_cancel(qtbot, pref):
         pref._button_cancel.click()
     assert get_settings().appearance.theme == 'dark'
     assert get_settings().shortcuts.shortcuts[
-        'napari:reset_scroll_progress'
-    ] == [KeyBinding.from_str('Ctrl')]
+        'napari:toggle_selected_visibility'
+    ] == [KeyBinding.from_str('V')]
 
 
 @pytest.mark.key_bindings
@@ -254,12 +254,13 @@ def test_preferences_dialog_restore(qtbot, pref, monkeypatch):
     assert get_settings().appearance.highlight.highlight_thickness == 5
     assert highlight_widget.state['highlight_thickness'] == 5
     assert get_settings().shortcuts.shortcuts[
-        'napari:reset_scroll_progress'
+        'napari:toggle_selected_visibility'
     ] == [KeyBinding.from_str('U')]
     assert KeyBinding.from_str(
         Shortcut.parse_platform(
+            # 12 is the row for 'napari:toggle_selected_visibility'
             shortcut_widget._table.item(
-                0, shortcut_widget._shortcut_col
+                12, shortcut_widget._shortcut_col
             ).text()
         )
     ) == KeyBinding.from_str('U')
@@ -274,15 +275,17 @@ def test_preferences_dialog_restore(qtbot, pref, monkeypatch):
     assert get_settings().appearance.highlight.highlight_thickness == 1
     assert highlight_widget.state['highlight_thickness'] == 1
     assert get_settings().shortcuts.shortcuts[
-        'napari:reset_scroll_progress'
-    ] == [KeyBinding.from_str('Ctrl')]
+        'napari:toggle_selected_visibility'
+    ] == [KeyBinding.from_str('V')]
     assert KeyBinding.from_str(
         Shortcut.parse_platform(
             shortcut_widget._table.item(
-                0, shortcut_widget._shortcut_col
+                # 12 is the row index for 'napari:toggle_selected_visibility'
+                12,
+                shortcut_widget._shortcut_col,
             ).text()
         )
-    ) == KeyBinding.from_str('Ctrl')
+    ) == KeyBinding.from_str('V')
 
 
 @skip_local_focus
