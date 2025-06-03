@@ -79,26 +79,28 @@ def test_potentially_conflicting_actions(shortcut_editor_widget):
 @pytest.mark.key_bindings
 def test_mark_conflicts(shortcut_editor_widget, qtbot):
     widget = shortcut_editor_widget()
-    ctrl_keybinding = KeyBinding.from_str('Ctrl')
+    v_keybinding = KeyBinding.from_str('V')
     u_keybinding = KeyBinding.from_str('U')
-    act = widget._table.item(0, widget._action_col).text()
+    # 12 is the row for 'napari:toggle_selected_visibility'
+    act = widget._table.item(12, widget._action_col).text()
 
     # Add check for initial/default keybinding (first shortcuts column) and
     # added one (second shortcuts column)
-    assert action_manager._shortcuts[act][0] == ctrl_keybinding
-    widget._table.item(0, widget._shortcut_col2).setText(str(u_keybinding))
+    assert action_manager._shortcuts[act][0] == v_keybinding
+    # 12 is the row for 'napari:toggle_selected_visibility'
+    widget._table.item(12, widget._shortcut_col2).setText(str(u_keybinding))
     assert action_manager._shortcuts[act][1] == str(u_keybinding)
 
     # Check conflicts detection using `KeyBindingLike` params
     # (`KeyBinding`, `str` and `int` representations of a shortcut)
     with patch.object(WarnPopup, 'exec_') as mock:
-        assert not widget._mark_conflicts(ctrl_keybinding, 1)
+        assert not widget._mark_conflicts(v_keybinding, 1)
         assert mock.called
     with patch.object(WarnPopup, 'exec_') as mock:
-        assert not widget._mark_conflicts(str(ctrl_keybinding), 1)
+        assert not widget._mark_conflicts(str(v_keybinding), 1)
         assert mock.called
     with patch.object(WarnPopup, 'exec_') as mock:
-        assert not widget._mark_conflicts(int(ctrl_keybinding), 1)
+        assert not widget._mark_conflicts(int(v_keybinding), 1)
         assert mock.called
 
     with patch.object(WarnPopup, 'exec_') as mock:
@@ -120,8 +122,9 @@ def test_mark_conflicts(shortcut_editor_widget, qtbot):
 
 def test_restore_defaults(shortcut_editor_widget):
     widget = shortcut_editor_widget()
-    shortcut = widget._table.item(0, widget._shortcut_col).text()
-    assert shortcut == KEY_SYMBOLS['Ctrl']
+    # 12 is the row for 'napari:toggle_selected_visibility'
+    shortcut = widget._table.item(12, widget._shortcut_col).text()
+    assert shortcut == 'V'
     widget._table.item(0, widget._shortcut_col).setText('H')
     shortcut = widget._table.item(0, widget._shortcut_col).text()
     assert shortcut == 'H'
@@ -131,8 +134,9 @@ def test_restore_defaults(shortcut_editor_widget):
         mock.return_value = QMessageBox.RestoreDefaults
         widget._restore_button.click()
         assert mock.called
-    shortcut = widget._table.item(0, widget._shortcut_col).text()
-    assert shortcut == KEY_SYMBOLS['Ctrl']
+    # 12 is the row for 'napari:toggle_selected_visibility'
+    shortcut = widget._table.item(12, widget._shortcut_col).text()
+    assert shortcut == 'V'
 
 
 @pytest.mark.key_bindings

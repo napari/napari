@@ -318,9 +318,9 @@ def test_preferences_dialog_not_dismissed_by_keybind_confirm(
     pref.show()
     qtbot.waitExposed(pref)
     assert pref.isVisible()
-
+    # 12 is the row for 'napari:toggle_selected_visibility'
     shortcut = shortcut_widget._table.item(
-        0, shortcut_widget._shortcut_col
+        12, shortcut_widget._shortcut_col
     ).text()
     assert shortcut == 'U'
 
@@ -351,6 +351,6 @@ def test_preferences_dialog_not_dismissed_by_keybind_confirm(
 
     # verify that the keybind is changed
     shortcut = shortcut_widget._table.item(
-        0, shortcut_widget._shortcut_col
+        12, shortcut_widget._shortcut_col
     ).text()
     assert shortcut == ''
