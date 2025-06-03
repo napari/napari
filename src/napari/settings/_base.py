@@ -294,6 +294,7 @@ def nested_env_settings(
     def _inner(settings: BaseSettings) -> dict[str, Any]:
         # first call the original implementation
         d = super_eset(settings)
+        env_val: str | dict | None
 
         if settings.__config__.case_sensitive:
             env_vars: Mapping[str, str | None] = os.environ

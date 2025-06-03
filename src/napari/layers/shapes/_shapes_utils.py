@@ -715,7 +715,7 @@ def triangulate_face_and_edges(
         raw_vertices.copy(), edges.copy(), polygon_vertices
     )
 
-    face_tri = (
+    face_tri_ = (
         _fix_vertices_if_needed(vertices, axis=axis, value=value),
         triangles,
     )
@@ -727,7 +727,7 @@ def triangulate_face_and_edges(
         # There is at least one removed edge
         edge_tri = reconstruct_and_triangulate_edge(raw_vertices, edges)
 
-    return face_tri, edge_tri
+    return face_tri_, edge_tri
 
 
 @overload

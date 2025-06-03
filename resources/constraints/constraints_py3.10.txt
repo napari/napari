@@ -91,7 +91,7 @@ flexcache==0.3
     # via pint
 flexparser==0.4
     # via pint
-fonttools==4.58.0
+fonttools==4.58.1
     # via matplotlib
 freetype-py==2.5.1
     # via vispy
@@ -110,7 +110,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.131.28
+hypothesis==6.133.0
     # via napari (pyproject.toml)
 idna==3.10
     # via requests
@@ -136,7 +136,7 @@ ipykernel==6.29.5
     #   -r resources/constraints/version_denylist.txt
     #   napari-console
     #   qtconsole
-ipython==8.36.0
+ipython==8.37.0
     # via
     #   napari (pyproject.toml)
     #   ipykernel
@@ -152,7 +152,7 @@ joblib==1.5.1
     # via
     #   nilearn
     #   scikit-learn
-jsonschema==4.23.0
+jsonschema==4.24.0
     # via napari (pyproject.toml)
 jsonschema-specifications==2025.4.1
     # via jsonschema
@@ -160,7 +160,7 @@ jupyter-client==8.6.3
     # via
     #   ipykernel
     #   qtconsole
-jupyter-core==5.7.2
+jupyter-core==5.8.1
     # via
     #   ipykernel
     #   jupyter-client
@@ -523,7 +523,7 @@ scipy==1.15.3
     #   nilearn
     #   scikit-image
     #   scikit-learn
-setuptools==80.8.0
+setuptools==80.9.0
     # via triton
 shellingham==1.5.4
     # via typer
@@ -617,7 +617,7 @@ triangle==20250106
     # via napari (pyproject.toml)
 triton==3.3.0
     # via torch
-typer==0.15.3
+typer==0.16.0
     # via npe2
 typing-extensions==4.13.2
     # via
@@ -666,5 +666,5 @@ zarr==2.18.3
     #   napari (pyproject.toml)
 zict==3.0.0
     # via distributed
-zipp==3.21.0
+zipp==3.22.0
     # via importlib-metadata
