@@ -224,11 +224,13 @@ def test_keybinding_with_only_modifiers(
     shortcut_editor_widget, qtbot, recwarn, modifiers, key_symbols, valid
 ):
     widget = shortcut_editor_widget()
-    shortcut = widget._table.item(0, widget._shortcut_col).text()
-    assert shortcut == KEY_SYMBOLS['Ctrl']
+    # 12 is the row for 'napari:toggle_selected_visibility'
+    shortcut = widget._table.item(12, widget._shortcut_col).text()
+    assert shortcut == 'V'
 
     x = widget._table.columnViewportPosition(widget._shortcut_col)
-    y = widget._table.rowViewportPosition(0)
+    # 12 is the row for 'napari:toggle_selected_visibility'
+    y = widget._table.rowViewportPosition(12)
     item_pos = QPoint(x, y)
     index = widget._table.indexAt(item_pos)
     widget._table.setCurrentIndex(index)
@@ -246,8 +248,8 @@ def test_keybinding_with_only_modifiers(
             assert mock.called
 
     assert len([warn for warn in recwarn if warn.category is UserWarning]) == 0
-
-    shortcut = widget._table.item(0, widget._shortcut_col).text()
+    # 12 is the row for 'napari:toggle_selected_visibility'
+    shortcut = widget._table.item(12, widget._shortcut_col).text()
     for key_symbol in key_symbols:
         assert key_symbol in shortcut
 
@@ -268,11 +270,13 @@ def test_remove_shortcut(
     shortcut_editor_widget, qtbot, removal_trigger_key, confirm_key
 ):
     widget = shortcut_editor_widget()
-    shortcut = widget._table.item(0, widget._shortcut_col).text()
-    assert shortcut == KEY_SYMBOLS['Ctrl']
+    # 12 is the row for 'napari:toggle_selected_visibility'
+    shortcut = widget._table.item(12, widget._shortcut_col).text()
+    assert shortcut == 'V'
 
     x = widget._table.columnViewportPosition(widget._shortcut_col)
-    y = widget._table.rowViewportPosition(0)
+    # 12 is the row for 'napari:toggle_selected_visibility'
+    y = widget._table.rowViewportPosition(12)
     item_pos = QPoint(x, y)
     index = widget._table.indexAt(item_pos)
     widget._table.setCurrentIndex(index)
@@ -283,8 +287,8 @@ def test_remove_shortcut(
     qtbot.keyClick(editor, confirm_key)
     widget._table.commitData(editor)
     widget._table.closeEditor(editor, QAbstractItemDelegate.NoHint)
-
-    shortcut = widget._table.item(0, widget._shortcut_col).text()
+    # 12 is the row for 'napari:toggle_selected_visibility'
+    shortcut = widget._table.item(12, widget._shortcut_col).text()
     assert shortcut == ''
 
 
