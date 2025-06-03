@@ -126,10 +126,8 @@ class VispyCanvas:
         )
 
         self.grid = self.central_widget.add_grid(
-            # TODO: why the hell do we need spacing -1 here?
-            #       Something wring in vispy?
             border_width=0,
-            spacing=viewer.grid.spacing - 1,
+            spacing=viewer.grid.spacing,
         )
         self.grid_views = []
         self.grid_cameras = []
@@ -312,6 +310,7 @@ class VispyCanvas:
 
     def _on_cursor(self) -> None:
         """Create a QCursor based on the napari cursor settings and set in Vispy."""
+        # TODO: this is also affected by canvas size and camera zoom :/
 
         cursor = self.viewer.cursor.style
         brush_overlay = self.viewer._brush_circle_overlay
@@ -865,7 +864,7 @@ class VispyCanvas:
         # grid are really not designed to be reset, so it's easier to replace it
         self.grid.parent = None
         self.grid = self.central_widget.add_grid(
-            border_width=0, spacing=self.viewer.grid.spacing - 1
+            border_width=0, spacing=self.viewer.grid.spacing
         )
 
         if self.viewer.grid.enabled:
