@@ -32,8 +32,7 @@ jobs:
 
       - name: combine coverage data
         run: |
-          python -Im coverage combine coverage
-          python -Im coverage debug data --debug=pathmap
+          python -Im coverage combine --debug=pathmap coverage
           python -Im coverage xml -o coverage.xml
 
           # Report and write to summary.
