@@ -179,12 +179,6 @@ class VispyCanvas:
         self.viewer.camera.events.mouse_pan.connect(self._on_interactive)
         self.viewer.camera.events.mouse_zoom.connect(self._on_interactive)
         self.viewer.camera.events.zoom.connect(self._on_cursor)
-        self.viewer.canvas.events.background_color.connect(
-            self._on_canvas_bgcolor
-        )
-        self.viewer.canvas.overlay_tiling.events.connect(
-            self._update_overlay_canvas_positions
-        )
         self.viewer.layers.events.reordered.connect(self._reorder_layers)
         self.viewer.layers.events.removed.connect(self._remove_layer)
         self.viewer._overlays.events.added.connect(
@@ -217,9 +211,6 @@ class VispyCanvas:
     def screen_changed(self) -> Callable:
         """Bound method returning signal indicating whether the window screen has changed."""
         return self._scene_canvas._backend.screen_changed
-
-    def _on_canvas_bgcolor(self):
-        self.background_color_override = self.viewer.canvas.background_color
 
     @property
     def background_color_override(self) -> str | None:
@@ -794,12 +785,8 @@ class VispyCanvas:
                 # some canvas overlays do no use CanvasPosition, but are
                 # instead free-floating (such as the cursor overlay)
                 continue
-            if (
-                getattr(
-                    self.viewer.canvas.overlay_tiling, overlay.position.value
-                )
-                == 'horizontal'
-            ):
+            # TODO: these should be settable!
+            if overlay.position in ('top_right', 'bottom_left'):
                 vispy_overlay.x_offset_tiling = x_offsets[overlay.position]
                 x_offsets[overlay.position] += (
                     vispy_overlay.x_size + vispy_overlay.x_offset
