@@ -47,10 +47,10 @@ From inside an IPython shell, you can open up an interactive viewer by calling
 from skimage import data
 import napari
 
-viewer = napari.view_image(data.cells3d(), channel_axis=1, ndisplay=3)
+viewer, layers = napari.imshow(data.cells3d(), channel_axis=1, ndisplay=3)
 ```
 
-![napari viewer with a multichannel image of cells displayed as two image layers: nuclei and membrane.](./napari/resources/multichannel_cells.png)
+![napari viewer with a multichannel image of cells displayed as two image layers: nuclei and membrane.](./src/napari/resources/multichannel_cells.png)
 
 
 To use napari from inside a script, use `napari.run()`:
@@ -59,7 +59,7 @@ To use napari from inside a script, use `napari.run()`:
 from skimage import data
 import napari
 
-viewer = napari.view_image(data.cells3d(), channel_axis=1, ndisplay=3)
+viewer, layers = napari.ismhow(data.cells3d(), channel_axis=1, ndisplay=3)
 napari.run()  # start the "event loop" and show the viewer
 ```
 
