@@ -1,9 +1,9 @@
 """
-View Image and Launch napari
-============================
+Launch napari and display an image
+==================================
 
 Launch an instance of napari and simultaneously display an image using the
-:func:`view_image` API. This example can be run to recreate the README image.
+:func:`imshow` API. This example can be run to recreate the README image.
 
 .. tags:: visualization-basic
 """
@@ -12,7 +12,7 @@ from skimage import data
 
 import napari
 
-viewer = napari.view_image(data.cells3d(), channel_axis=1, ndisplay=3)
+viewer, layers = napari.imshow(data.cells3d(), channel_axis=1, ndisplay=3)
 
 # To recreate the README image uncomment the following lines:
 # viewer.window._qt_window.resize(800, 600)
