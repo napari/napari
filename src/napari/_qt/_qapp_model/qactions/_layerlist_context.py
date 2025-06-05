@@ -118,29 +118,33 @@ def _paste_spatial_from_clipboard(ll: LayerList) -> None:
         return
 
     for layer in ll.selection:
-        for key in loaded:
-            loaded_attr_value = loaded[key]
-            if key == 'units':
-                loaded_attr_value = loaded_attr_value[-layer.ndim :]
-            elif isinstance(loaded_attr_value, list):
-                loaded_attr_value = np.array(loaded_attr_value)
-            if key == 'shear':
-                loaded_attr_value = loaded_attr_value[
-                    -(layer.ndim * (layer.ndim - 1)) // 2 :
-                ]
-            elif key == 'affine':
-                loaded_attr_value = loaded_attr_value[
-                    -(layer.ndim + 1) :, -(layer.ndim + 1) :
-                ]
-            elif isinstance(loaded_attr_value, np.ndarray):
-                if loaded_attr_value.ndim == 1:
+        with layer._block_refresh():
+            for key in loaded:
+                loaded_attr_value = loaded[key]
+                if key == 'units':
                     loaded_attr_value = loaded_attr_value[-layer.ndim :]
-                elif loaded_attr_value.ndim == 2:
+                elif isinstance(loaded_attr_value, list):
+                    loaded_attr_value = np.array(loaded_attr_value)
+                if key == 'shear':
                     loaded_attr_value = loaded_attr_value[
-                        -layer.ndim :, -layer.ndim :
+                        -(layer.ndim * (layer.ndim - 1)) // 2 :
                     ]
+                elif key == 'affine':
+                    loaded_attr_value = loaded_attr_value[
+                        -(layer.ndim + 1) :, -(layer.ndim + 1) :
+                    ]
+                elif isinstance(loaded_attr_value, np.ndarray):
+                    if loaded_attr_value.ndim == 1:
+                        loaded_attr_value = loaded_attr_value[-layer.ndim :]
+                    elif loaded_attr_value.ndim == 2:
+                        loaded_attr_value = loaded_attr_value[
+                            -layer.ndim :, -layer.ndim :
+                        ]
 
-            setattr(layer, key, loaded_attr_value)
+                setattr(layer, key, loaded_attr_value)
+
+    for layer in ll.selection:
+        layer.refresh(data_displayed=False)
 
 
 def is_valid_spatial_in_clipboard() -> bool:
