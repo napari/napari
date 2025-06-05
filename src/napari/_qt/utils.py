@@ -8,6 +8,7 @@ from collections.abc import Iterable, Sequence
 from contextlib import contextmanager
 from enum import auto
 from functools import partial
+from typing import TYPE_CHECKING
 
 import numpy as np
 import qtpy
@@ -37,6 +38,9 @@ from napari.utils.translations import trans
 
 QBYTE_FLAG = '!QBYTE_'
 RICH_TEXT_PATTERN = re.compile('<[^\n]+>')
+
+if TYPE_CHECKING:
+    from magicgui.widgets import Widget
 
 
 class ColorMode(StringEnum):
@@ -218,7 +222,8 @@ def drag_with_pixmap(list_widget: QListWidget) -> QDrag:
 
 
 def combine_widgets(
-    widgets: QWidget | Sequence[QWidget], vertical: bool = False
+    widgets: QWidget | Widget | Sequence[QWidget | Widget],
+    vertical: bool = False,
 ) -> QWidget:
     """Combine a list of widgets into a single QWidget with Layout.
 
