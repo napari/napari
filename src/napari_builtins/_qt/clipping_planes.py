@@ -7,15 +7,15 @@ from vispy.visuals.transforms import MatrixTransform, STTransform
 
 import napari
 
-# TODO: should be applicable to multiple layers at once if desired
+# TODO: scaled layer mess up the math :/
 # TODO: allow adding multiple and controlling direction
 # TODO: allow "locking" planes, hiding them from view and leaving them there
+#       (currently doable by deselecting all layers)
 
 
 class ClippingPlanesControls(QWidget):
     def __init__(self, viewer: napari.Viewer):
         super().__init__()
-        self._active_layer = None
         self.viewer = viewer
 
         # general layout
@@ -30,6 +30,7 @@ class ClippingPlanesControls(QWidget):
             'click/drag below to move its clipping planes.\n'
         )
         self.planes_enabled = QToggleSwitch('enabled')
+        self.planes_enabled.setChecked(True)
 
         lay.addWidget(self.info)
         lay.addWidget(self.planes_enabled)
@@ -54,38 +55,16 @@ class ClippingPlanesControls(QWidget):
         self.viewer.dims.events.range.connect(self._on_extent_change)
         self.viewer.dims.events.ndisplay.connect(self._on_extent_change)
         self.viewer.camera.events.connect(self._on_camera_change)
-
-        self.viewer.layers.selection.events.active.connect(
-            self._on_active_layer_change
-        )
+        self.viewer.layers.selection.events.connect(self._on_extent_change)
         self.canvas.events.mouse_move.connect(self._on_mouse)
         self.canvas.events.mouse_press.connect(self._on_mouse)
         self.planes_enabled.toggled.connect(self._update_planes)
-
-        self._on_active_layer_change()
-
-    def _on_active_layer_change(self):
-        if self._active_layer is not None:
-            self._active_layer.experimental_clipping_planes.events.disconnect(
-                self._on_planes_change
-            )
-            self._active_layer.events.extent.disconnect(self._on_extent_change)
-
-        self._active_layer = self.viewer.layers.selection.active
-
-        if self._active_layer is not None:
-            self._active_layer.experimental_clipping_planes.events.connect(
-                self._on_planes_change
-            )
-            self._active_layer.events.extent.connect(self._on_extent_change)
-
-            self._on_planes_change()
 
         self._on_extent_change()
 
     def _on_extent_change(self):
         displayed = self.viewer.dims.displayed
-        if len(displayed) == 2 or self._active_layer is None:
+        if len(displayed) == 2 or not self.viewer.layers.selection:
             self.view.visible = False
             return
 
@@ -93,7 +72,9 @@ class ClippingPlanesControls(QWidget):
         if self.box is not None:
             self.box.parent = None
 
-        extents = self._active_layer.extent.data[:, displayed]
+        extents = self.viewer.layers.get_extent(
+            self.viewer.layers.selection
+        ).world[:, displayed]
         sizes = extents[1] - extents[0]
         self.box = Box(
             *sizes[::-1],  # swap for vispy
@@ -116,23 +97,6 @@ class ClippingPlanesControls(QWidget):
         extent_displayed = extent_all[list(self.viewer.dims.displayed)]
         diameter = np.linalg.norm(extent_displayed)
         self.view.camera.depth_value = 128 * diameter
-
-    def _on_planes_change(self):
-        for i, plane in enumerate(
-            self._active_layer.experimental_clipping_planes
-        ):
-            offset_direction = plane.normal
-            offset_position = plane.position
-            data_offset = (offset_position - self._center) / offset_direction
-            zoom = np.min(
-                np.array(self.canvas.size) / self.view.camera.scale_factor
-            )
-            offset = np.linalg.norm(data_offset) / zoom
-
-            X = self.canvas.size[0]
-            x = offset + (X / 2)
-            self.lines[i].transform.translate = (x, 0, 0)
-            self._offsets[i] = offset
 
     def _on_camera_change(self):
         if self.box is None:
@@ -177,7 +141,7 @@ class ClippingPlanesControls(QWidget):
         self._update_planes()
 
     def _on_mouse(self, event=None):
-        if self._active_layer is not None and (
+        if self.viewer.layers.selection and (
             event.type == 'mouse_press' or event.button == 1
         ):
             X = self.canvas.size[0]
@@ -193,7 +157,7 @@ class ClippingPlanesControls(QWidget):
             self._update_planes()
 
     def _update_planes(self):
-        planes = []
+        planes_world = []
         for offset in self._offsets:
             zoom = np.min(
                 np.array(self.canvas.size) / self.view.camera.scale_factor
@@ -201,17 +165,32 @@ class ClippingPlanesControls(QWidget):
             data_offset = offset / zoom
             offset_direction = np.array(self.viewer.camera.view_direction)
             offset_position = self._center + offset_direction * data_offset
-            planes.append(
-                {
-                    'position': offset_position,
-                    'normal': offset_direction,
-                    'enabled': self.planes_enabled.isChecked(),
-                }
-            )
+            planes_world.append([offset_position, offset_direction])
 
         # flip normal for second plane
-        planes[1]['normal'] *= -1
-        with self._active_layer.experimental_clipping_planes.events.blocker(
-            self._on_planes_change
-        ):
-            self._active_layer.experimental_clipping_planes = planes
+        planes_world[1][1] *= -1
+
+        # convert to data coordinates
+        displayed = list(self.viewer.dims.displayed)
+        for layer in self.viewer.layers.selection:
+            if layer.ndim < 3:
+                continue
+
+            planes_data = []
+            for plane in planes_world:
+                world_pos_full = np.zeros(self.viewer.dims.ndim)
+                world_pos_full[displayed] = plane[0]
+                data_pos = layer.world_to_data(world_pos_full)[displayed]
+
+                world_norm_full = np.zeros(self.viewer.dims.ndim)
+                world_norm_full[displayed] = plane[1]
+                data_norm = layer.world_to_data(world_norm_full)[displayed]
+
+                planes_data.append(
+                    {
+                        'position': data_pos,
+                        'normal': data_norm,
+                        'enabled': self.planes_enabled.isChecked(),
+                    }
+                )
+            layer.experimental_clipping_planes = planes_data
