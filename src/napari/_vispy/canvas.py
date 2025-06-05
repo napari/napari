@@ -902,8 +902,11 @@ class VispyCanvas:
     def _highlight_selected_grid(self):
         if not self.viewer.grid.enabled:
             return
-        for viewbox in self.grid_views:
-            viewbox.border_color = 'black'
+        # any border_color != None will add a padding of +1, so we return if we want no border https://github.com/vispy/vispy/issues/1492
+        if self.viewer.grid.border_width < 1:
+            for viewbox in self.grid_views:
+                viewbox.border_color = None # reset border_color to None as failsafe
+            return
         hl_color = get_settings().appearance.highlight.highlight_color
         for (row, col), layer_indices in self.viewer.grid.iter_quadrants(
             len(self.viewer.layers)
