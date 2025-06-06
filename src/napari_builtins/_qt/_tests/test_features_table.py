@@ -55,7 +55,7 @@ def test_pandas_model_set_data(qtbot):
 
     with qtbot.waitSignal(view.dataChanged):
         assert view.setData(view.index(0, 2), False)
-    assert df.loc[0, 'b'] is False
+    assert not df.loc[0, 'b']
 
     with qtbot.waitSignal(view.dataChanged):
         assert view.setData(
@@ -63,7 +63,7 @@ def test_pandas_model_set_data(qtbot):
             Qt.CheckState.Checked,
             Qt.ItemDataRole.CheckStateRole,
         )
-    assert df.loc[0, 'b'] is True
+    assert df.loc[0, 'b']
 
 
 def test_pandas_model_set_data_categorical(qtbot):
