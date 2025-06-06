@@ -384,7 +384,7 @@ class FeaturesTable(QWidget):
 
     def __init__(
         self,
-        viewer: napari.components.ViewerModel,
+        viewer: napari.viewer.ViewerModel,
     ) -> None:
         super().__init__()
         self._active_layer = None
@@ -417,22 +417,33 @@ class FeaturesTable(QWidget):
         self._on_active_layer_change()
         self._on_editable_change()
 
+    @staticmethod
+    def _get_selection_event_for_layer(layer):
+        if hasattr(layer, 'selected_label'):
+            return layer.events.selected_label
+        if hasattr(layer, 'selected_data'):
+            return layer.selected_data.events
+        raise RuntimeError(  # pragma: no cover
+            "Layer with features must have either 'selected_label' or 'selected_data'."
+        )
+
     def _on_active_layer_change(self):
         old_layer = self._active_layer
         self._active_layer = self.viewer.layers.selection.active
 
         if old_layer is not None and hasattr(old_layer, 'features'):
             old_layer.events.features.disconnect(self._on_features_change)
+            self._get_selection_event_for_layer(old_layer).disconnect(
+                self._on_layer_selection_changed
+            )
 
         if hasattr(self._active_layer, 'features'):
             self._active_layer.events.features.connect(
                 self._on_features_change
             )
-            if hasattr(self._active_layer, 'selected_label'):
-                selection_event = self._active_layer.events.selected_label
-            elif hasattr(self._active_layer, 'selected_data'):
-                selection_event = self._active_layer.selected_data.events
-            selection_event.connect(self._on_layer_selection_changed)
+            self._get_selection_event_for_layer(self._active_layer).connect(
+                self._on_layer_selection_changed
+            )
 
             self._on_layer_selection_changed()
             self._on_features_change()

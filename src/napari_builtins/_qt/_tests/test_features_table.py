@@ -236,3 +236,42 @@ def test_features_tables_dtypes(
         layer.features.loc[0, 'a']
         == pd.Series(new_val, dtype=pandas_dtype(dtype))[0]
     )
+
+
+def test_features_table_change_active_layer(qtbot):
+    v = ViewerModel()
+    w = FeaturesTable(v)
+    qtbot.add_widget(w)
+
+    df = pd.DataFrame({'a': [1, 2, 3]})
+    layer1 = v.add_points(np.zeros((3, 2)), features=df.copy())
+    layer2 = v.add_labels(
+        np.zeros((10, 10), dtype=np.uint8), features=df.copy()
+    )
+    layer3 = v.add_image(np.empty((10, 10), dtype=np.uint8))
+
+    v.layers.selection.active = layer1
+    assert len(layer1.events.features.callbacks) == 2
+    assert len(layer1.selected_data.events.all) == 1
+    assert len(layer2.events.features.callbacks) == 1
+    assert len(layer2.events.selected_label.callbacks) == 1
+    assert w.info.text() == f'Features of "{layer1.name}"'
+
+    v.layers.selection.active = layer2
+    assert len(layer1.events.features.callbacks) == 1
+    assert len(layer1.selected_data.events.all) == 0
+    assert len(layer2.events.features.callbacks) == 2
+    assert len(layer2.events.selected_label.callbacks) == 2
+    assert w.info.text() == f'Features of "{layer2.name}"'
+
+    v.layers.selection.active = layer3
+    assert len(layer1.events.features.callbacks) == 1
+    assert len(layer1.selected_data.events.all) == 0
+    assert len(layer2.events.features.callbacks) == 1
+    assert len(layer2.events.selected_label.callbacks) == 1
+    assert 'has no features table' in w.info.text()
+
+    v.layers.selection.active = None
+    assert len(layer1.events.features.callbacks) == 1
+    assert len(layer2.events.features.callbacks) == 1
+    assert 'No layer selected.' in w.info.text()
