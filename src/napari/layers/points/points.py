@@ -600,6 +600,7 @@ class Points(Layer):
         else:
             kwargs['action'] = ActionType.REMOVED
         self.events.data(**kwargs)
+        self.events.features()
 
     def _set_data(self, data: np.ndarray | None) -> None:
         """Set the .data array attribute, without emitting an event."""
@@ -2009,6 +2010,7 @@ class Points(Layer):
             vertex_indices=((),),
         )
         self.selected_data = set(np.arange(cur_points, len(self.data)))
+        self.events.features()
 
     def remove_selected(self) -> None:
         """Removes selected points if any."""
@@ -2054,6 +2056,7 @@ class Points(Layer):
                 vertex_indices=((),),
             )
             self.selected_data = set()
+            self.events.features()
 
     def _move(
         self,
@@ -2085,6 +2088,7 @@ class Points(Layer):
                 data_indices=tuple(selection_indices),
                 vertex_indices=((),),
             )
+            self.events.features()
 
     def _set_drag_start(
         self,
