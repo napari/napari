@@ -36,6 +36,7 @@ from napari.utils.misc import in_ipython
 
 if TYPE_CHECKING:
     import napari
+    import napari.components
 
 
 class PandasModel(QAbstractTableModel):
@@ -383,7 +384,7 @@ class FeaturesTable(QWidget):
 
     def __init__(
         self,
-        viewer: napari.viewer.Viewer,
+        viewer: napari.components.ViewerModel,
     ) -> None:
         super().__init__()
         self._active_layer = None
