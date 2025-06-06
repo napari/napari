@@ -20,6 +20,7 @@ from napari_builtins._qt.features_table import FeaturesTable
 def test_features_table(qtbot):
     v = ViewerModel()
     w = FeaturesTable(v)
+    qtbot.add_widget(w)
     proxy = w.table.model()
 
     assert proxy.columnCount() == 1  # 0 is index
@@ -89,6 +90,7 @@ def test_features_table(qtbot):
 def test_features_table_edit(qtbot):
     v = ViewerModel()
     w = FeaturesTable(v)
+    qtbot.add_widget(w)
     proxy = w.table.model()
 
     original_a = ['x', 'y']
@@ -114,6 +116,7 @@ def test_features_table_edit(qtbot):
 def test_features_table_save_csv(qtbot, tmp_path, monkeypatch):
     v = ViewerModel()
     w = FeaturesTable(v)
+    qtbot.add_widget(w)
 
     df = pd.DataFrame({'a': [1, 2]})
     v.add_points(np.zeros((2, 2)), features=df)
@@ -131,6 +134,7 @@ def test_features_table_save_csv(qtbot, tmp_path, monkeypatch):
 def test_features_table_copy_paste(qtbot):
     v = ViewerModel()
     w = FeaturesTable(v)
+    qtbot.add_widget(w)
     proxy = w.table.model()
 
     df = pd.DataFrame({'a': [1, 2, 3], 'b': [4, 5, 6]})
@@ -191,6 +195,7 @@ def test_features_tables_dtypes(
 ):
     v = ViewerModel()
     w = FeaturesTable(v)
+    qtbot.add_widget(w)
     proxy = w.table.model()
 
     df = pd.DataFrame({'a': pd.Series([val], dtype=dtype)})
