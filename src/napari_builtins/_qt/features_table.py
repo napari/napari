@@ -123,11 +123,12 @@ class PandasModel(QAbstractTableModel):
 
         col = index.column()
         # index is read-only
+
+        flags = Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled
         if col == 0:
-            return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
+            return flags
 
         dtype = self.df.dtypes.iat[col - 1]
-        flags = Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled
 
         if self.editable:
             # make boolean columns checkable
@@ -141,7 +142,7 @@ class PandasModel(QAbstractTableModel):
     def setData(
         self, index: QModelIndex, value: Any, role=Qt.ItemDataRole.EditRole
     ) -> bool:
-        if not index.isValid():  # pragma: no cover
+        if not index.isValid():
             return False
 
         col = index.column()
@@ -169,7 +170,9 @@ class PandasModel(QAbstractTableModel):
                 if not isinstance(dtype, pd.CategoricalDtype):
                     value = dtype.type(value)
                 self.df.iat[row, col - 1] = value
-            except ValueError:
+            except (TypeError, ValueError):
+                # Type error is for categorical types that cannot be converted
+                # Value error is for invalid values in dtype.type(value)
                 return False
             self.dataChanged.emit(
                 index,
@@ -297,7 +300,7 @@ class PandasView(QTableView):
     def copySelection(self):
         selection = self.selectedIndexes()
         if not selection:
-            return
+            return  # pragma: no cover
 
         proxy_model = self.model()
         model = proxy_model.sourceModel()
@@ -308,7 +311,7 @@ class PandasView(QTableView):
         cols = sorted({idx.column() for idx in selection if idx.column() > 0})
 
         if not rows or not cols:
-            return
+            return  # pragma: no cover
 
         # convert proxy indices to actual row/column labels
         actual_rows = [map_func(proxy_model.index(r, 1)).row() for r in rows]
@@ -335,7 +338,7 @@ class PandasView(QTableView):
             or not model.editable
             or any(s.column() == 0 for s in sel)
         ):
-            return
+            return  # pragma: no cover
 
         rows = clipboard.strip().split('\n')
         data = [row.split('\t') for row in rows]
@@ -360,7 +363,7 @@ class PandasView(QTableView):
                     if not isinstance(dtype, pd.CategoricalDtype):
                         val = dtype.type(val)
                     df.iat[r, c] = val
-                except ValueError:
+                except (ValueError, TypeError):  # pragma: no cover
                     # TODO: warning? undo?
                     pass
 
@@ -554,7 +557,7 @@ class FeaturesTable(QWidget):
 
         if not fname:
             # was closed without saving
-            return
+            return  # pragma: no cover
 
         df = self.table.model().sourceModel().df
         df.to_csv(fname)

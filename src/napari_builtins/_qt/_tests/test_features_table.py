@@ -14,7 +14,76 @@ from qtpy.QtWidgets import (
 )
 
 from napari.components import ViewerModel
-from napari_builtins._qt.features_table import FeaturesTable
+from napari_builtins._qt.features_table import FeaturesTable, PandasModel
+
+
+@pytest.mark.usefixtures('qapp')
+def test_pandas_model():
+    df = pd.DataFrame({'a': [1, 2, 3, 4], 'b': [True, False, True, False]})
+    view = PandasModel(df)
+    assert view.rowCount() == 4
+    assert view.columnCount() == 3  # 0 is index
+    assert view.data(view.index(0, 1)) == '1'
+    assert view.headerData(1, Qt.Orientation.Horizontal) == 'a'
+    assert view.headerData(2, Qt.Orientation.Horizontal) == 'b'
+    assert view.headerData(1, Qt.Orientation.Vertical) == 1
+
+
+@pytest.mark.usefixtures('qapp')
+def test_pandas_model_flags():
+    df = pd.DataFrame({'a': [1, 2, 3, 4], 'b': [True, False, True, False]})
+    view = PandasModel(df)
+    assert view.flags(view.index(5, 5)) == Qt.ItemFlag.ItemIsEnabled
+    assert view.flags(view.index(5, 5)) == Qt.ItemFlag.ItemIsEnabled
+
+    view.editable = True
+    assert view.flags(view.index(0, 1)) & Qt.ItemFlag.ItemIsEditable
+    assert view.flags(view.index(0, 2)) & Qt.ItemFlag.ItemIsUserCheckable
+
+
+def test_pandas_model_set_data(qtbot):
+    df = pd.DataFrame({'a': [1, 2, 3, 4], 'b': [True, False, True, False]})
+    view = PandasModel(df)
+    assert not view.setData(view.index(5, 5), 1)
+    assert not view.setData(view.index(0, 0), 1)  # cannot edit index
+    assert view.setData(view.index(0, 1), 5)
+    assert df.loc[0, 'a'] == 5
+    assert not view.setData(view.index(0, 1), 7, Qt.ItemDataRole.UserRole)
+    assert not view.setData(
+        view.index(0, 1), 'aaa'
+    )  # cannot set string to int column
+
+    with qtbot.waitSignal(view.dataChanged):
+        assert view.setData(view.index(0, 2), False)
+    assert df.loc[0, 'b'] is False
+
+    with qtbot.waitSignal(view.dataChanged):
+        assert view.setData(
+            view.index(0, 2),
+            Qt.CheckState.Checked,
+            Qt.ItemDataRole.CheckStateRole,
+        )
+    assert df.loc[0, 'b'] is True
+
+
+def test_pandas_model_set_data_categorical(qtbot):
+    df = pd.DataFrame(
+        {
+            'a': pd.Series(['a', 'b', 'a', 'b'], dtype='category'),
+            'b': [1, 2, 3, 4],
+        }
+    )
+    view = PandasModel(df)
+
+    with qtbot.waitSignal(view.dataChanged):
+        assert view.setData(view.index(0, 1), 'b')
+    assert df.loc[0, 'a'] == 'b'
+
+    with qtbot.waitSignal(view.dataChanged):
+        assert view.setData(view.index(0, 1), 'a')
+    assert df.loc[0, 'a'] == 'a'
+
+    assert not view.setData(view.index(0, 1), 'c')  # not in categories
 
 
 def test_features_table(qtbot):
@@ -87,6 +156,22 @@ def test_features_table(qtbot):
     assert layer.selected_data == {0}
 
 
+def test_features_table_selection_labels(qtbot):
+    v = ViewerModel()
+    w = FeaturesTable(v)
+    qtbot.add_widget(w)
+
+    original_a = (2, 0, 1)
+
+    layer = v.add_labels(
+        np.zeros((10, 10), dtype=np.uint8), features={'a': original_a}
+    )
+    assert layer.selected_label == 1
+
+    w.table.selectRow(2)
+    assert layer.selected_label == 2
+
+
 def test_features_table_edit(qtbot):
     v = ViewerModel()
     w = FeaturesTable(v)
@@ -131,7 +216,7 @@ def test_features_table_save_csv(qtbot, tmp_path, monkeypatch):
     pd.testing.assert_frame_equal(pd.read_csv(path, index_col=0), df)
 
 
-def test_features_table_copy_paste(qtbot):
+def test_features_table_copy_paste(qtbot, qapp):
     v = ViewerModel()
     w = FeaturesTable(v)
     qtbot.add_widget(w)
@@ -150,11 +235,13 @@ def test_features_table_copy_paste(qtbot):
         selection,
         QItemSelectionModel.SelectionFlag.ClearAndSelect,
     )
-
-    w.table.copySelection()
+    qapp.clipboard().setText('')
+    qtbot.keyClick(w.table, 'c')
+    assert qapp.clipboard().text().strip() == ''
+    qtbot.keyClick(w.table, 'c', Qt.KeyboardModifier.ControlModifier)
 
     # stip cause windows and linux otherwise differ
-    assert QGuiApplication.clipboard().text().strip() == '2\t5'
+    assert qapp.clipboard().text().strip() == '2\t5'
 
     first_cell = proxy.index(2, 1)
     last_cell = proxy.index(2, 2)
@@ -167,10 +254,12 @@ def test_features_table_copy_paste(qtbot):
     )
 
     w.toggle.click()
-    QGuiApplication.clipboard().setText('2\t5')
-    w.table.pasteSelection()
+    QGuiApplication.clipboard().setText('3\t8\t7')
+    # we test here that presence of additional columns does not
+    # cause issues when pasting and we just discard them
+    qtbot.keyClick(w.table, 'v', Qt.KeyboardModifier.ControlModifier)
 
-    np.testing.assert_array_equal(layer.features.iloc[2], df.iloc[1])
+    np.testing.assert_array_equal(layer.features.iloc[2], [3, 8])
 
 
 @pytest.mark.parametrize(
