@@ -351,7 +351,7 @@ def _maybe_allow_interrupt(qapp):
     code from https://github.com/matplotlib/matplotlib/pull/13306
     """
     old_sigint_handler = signal.getsignal(signal.SIGINT)
-    handler_args = None
+    handler_args: Sequence | None = None
     if old_sigint_handler in (None, signal.SIG_IGN, signal.SIG_DFL):
         yield
         return
@@ -367,6 +367,13 @@ def _maybe_allow_interrupt(qapp):
     def handle(*args):
         nonlocal handler_args
         handler_args = args
+        from napari._qt.qt_main_window import _QtMainWindow
+
+        for instance in _QtMainWindow._instances:
+            if instance.status_thread.isRunning():
+                instance.status_thread.close_terminate()
+                instance.status_thread.wait()
+
         qapp.exit()
 
     signal.signal(signal.SIGINT, handle)
