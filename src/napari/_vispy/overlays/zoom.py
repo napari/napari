@@ -36,12 +36,17 @@ class VispyZoomOverlay(ViewerOverlayMixin, VispySceneOverlay):
         self.overlay.events.bounds.connect(self._on_bounds_change)
         self.overlay.events.handles.connect(self._on_bounds_change)
         self.overlay.events.selected_handle.connect(self._on_bounds_change)
+        self.overlay.events.line_color.connect(self._on_line_color_change)
+        self.overlay.events.line_thickness.connect(self._on_line_color_change)
 
-        self.node._marker_color = (1, 0, 1, 1)
-        self.node._highlight_width = 4
-
+        self._on_line_color_change()
         self._on_visible_change()
         self._on_bounds_change(None)
+
+    def _on_line_color_change(self):
+        self.node._edge_color = self.overlay.line_color
+        self.node._highlight_width = self.overlay.line_thickness
+        self._on_bounds_change()
 
     def _on_bounds_change(self, _evt=None):
         """Change position."""

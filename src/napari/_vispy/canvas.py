@@ -344,10 +344,10 @@ class VispyCanvas:
 
     def _on_boxzoom(self, event):
         """Update zoom level."""
-        from napari.utils.zoom import calculate_zoom
+        from napari._vispy.utils.zoom import calculate_zoom_proportion
 
         xmin, xmax, ymin, ymax = event.value
-        zoom, ycenter, xcenter = calculate_zoom(
+        zoom, ycenter, xcenter = calculate_zoom_proportion(
             xmin, xmax, ymin, ymax, self.viewer
         )
         self.viewer.camera.center = (1, ycenter, xcenter)

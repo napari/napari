@@ -1,9 +1,12 @@
 """Zoom-box."""
 
-import typing as ty
+from __future__ import annotations
 
+from napari._pydantic_compat import Field, validator
 from napari.components.overlays.base import SceneOverlay
 from napari.layers.utils.interaction_box import InteractionBoxHandle
+from napari.utils.color import ColorValue
+from napari.utils.misc import ensure_n_tuple
 
 
 class ZoomOverlay(SceneOverlay):
@@ -30,18 +33,36 @@ class ZoomOverlay(SceneOverlay):
         (0, 0, 0),
     )
     handles: bool = False
-    selected_handle: ty.Optional[InteractionBoxHandle] = None
+    selected_handle: InteractionBoxHandle | None = None
+    line_thickness: int = 4
+    line_color: ColorValue = Field(
+        default_factory=lambda: ColorValue('red'),
+    )
+
+    @validator('bounds', pre=True, always=True, allow_reuse=True)
+    def _validate_bounds(
+        cls, v: tuple[tuple[float, ...], tuple[float, ...]]
+    ) -> tuple[tuple[float, float, float], tuple[float, float, float]]:
+        tup_1, tup_2 = v
+        return ensure_n_tuple(tup_1, n=3, before=False), ensure_n_tuple(
+            tup_2, n=3, before=False
+        )
 
     def extents(
         self, displayed: tuple[int, ...]
     ) -> tuple[float, float, float, float]:
-        """Return the extents of the overlay in the scene coordinates.
+        """Get the extents of the overlay in the scene coordinates.
+
+        Parameters
+        ----------
+        displayed : tuple[int, ...]
+            Axes that are currently displayed in the viewer.
 
         Returns
         -------
         extents : tuple of 4 floats
             The extents of the overlay in the scene coordinates.
-            x_min, x_max, y_min, y_max
+            dim1_min, dim1_max, dim2_min, dim2_max
         """
         top_left, bot_right = self.bounds
         top_left = tuple([top_left[i] for i in displayed])
