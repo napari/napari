@@ -497,10 +497,6 @@ class Points(Layer):
 
         # Indices of selected points
         self._selected_data: Selection[int] = Selection()
-        self._selected_data_stored = set()
-        self._selected_data_history = set()
-        # Indices of selected points within the currently viewed slice
-        self._selected_view = []
 
         # The following point properties are for the new points that will
         # be added. For any given property, if a list is passed to the
