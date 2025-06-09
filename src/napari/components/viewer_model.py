@@ -84,7 +84,6 @@ from napari.utils.events import (
     EventedModel,
     disconnect_events,
 )
-from napari.utils.events.event import WarningEmitter
 from napari.utils.key_bindings import KeymapProvider
 from napari.utils.misc import ensure_list_of_layer_data_tuple, is_sequence
 from napari.utils.mouse_bindings import MousemapProvider
@@ -259,17 +258,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         )
         settings.experimental.events.async_.connect(self._update_async)
 
-        # Add extra events - ideally these will be removed too!
-        self.events.add(
-            layers_change=WarningEmitter(
-                trans._(
-                    'This event will be removed in 0.5.0. Please use viewer.layers.events instead',
-                    deferred=True,
-                ),
-                type_name='layers_change',
-            ),
-            reset_view=Event,
-        )
+        # Add extra reset_view event. Ideally this should be removed in the
+        # future.
+        self.events.add(reset_view=Event)
 
         # Connect events
         self.grid.events.connect(self.fit_to_view)
@@ -688,7 +679,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             self.cursor.position = tuple(
                 list(self.cursor.position) + [0] * dim_diff
             )
-        self.events.layers_change()
 
     def _update_mouse_pan(self, event):
         """Set the viewer interactive mouse panning"""
