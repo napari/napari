@@ -1245,7 +1245,7 @@ class Window:
     @property
     def _dock_widgets(self) -> MutableMapping[str, QtViewerDockWidget]:
         """Access `_wrapped_dock_widgets` with warning.
-        
+
         Before napari 0.6.2, ``_wrapped_dock_widgets`` was just
         ``_dock_widgets``. Even though it was private, many
         resources pointed to its use, as there was no public alternative.
