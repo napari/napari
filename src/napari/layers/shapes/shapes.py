@@ -1216,9 +1216,9 @@ class Shapes(Layer):
             widths = width
         else:
             widths = [width for _ in range(self.nshapes)]
-
-        for i, width in enumerate(widths):
-            self._data_view.update_edge_width(i, width)
+        with self._data_view.batched_updates():
+            for i, width in enumerate(widths):
+                self._data_view.update_edge_width(i, width)
 
     @property
     def z_index(self):
