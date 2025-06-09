@@ -285,7 +285,7 @@ def reconstruct_polygons_from_edges_py(
         adjacency[v2].append(v1)
 
     # Initialize set of unvisited edges
-    unvisited_edges: set[tuple[int, int]] = {
+    unvisited_edges: set[tuple[np.int64, np.int64]] = {
         (edge[0], edge[1]) for edge in edges
     }
     unvisited_edges.update({(edge[1], edge[0]) for edge in edges})
@@ -296,7 +296,7 @@ def reconstruct_polygons_from_edges_py(
     # Process each edge until all are visited
     while unvisited_edges:
         # Start with any unvisited edge
-        edge: tuple[int, int] = next(iter(unvisited_edges))
+        edge: tuple[np.int64, np.int64] = next(iter(unvisited_edges))
         current_vertex = edge[0]
         start_vertex = edge[1]
 
@@ -315,7 +315,7 @@ def reconstruct_polygons_from_edges_py(
             next_vertex = None
             for neighbor in adjacency[current_vertex]:
                 if (current_vertex, neighbor) in unvisited_edges:
-                    next_vertex = int(neighbor)
+                    next_vertex = neighbor
                     unvisited_edges.discard((current_vertex, next_vertex))
                     unvisited_edges.discard((next_vertex, current_vertex))
                     break
