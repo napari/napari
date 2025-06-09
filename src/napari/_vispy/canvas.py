@@ -309,8 +309,6 @@ class VispyCanvas:
 
     def _on_cursor(self) -> None:
         """Create a QCursor based on the napari cursor settings and set in Vispy."""
-        # TODO: this is also affected by canvas size and camera zoom :/
-
         cursor = self.viewer.cursor.style
         brush_overlay = self.viewer._brush_circle_overlay
         brush_overlay.visible = False

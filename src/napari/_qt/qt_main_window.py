@@ -1735,7 +1735,6 @@ class Window:
                 canvas.size = tuple((size * grid_shape).astype(int))
                 # tight view around data
                 self._qt_viewer.viewer.fit_to_view(margin=0)
-                # TODO: account for grid borders
             else:
                 canvas.size = tuple(size.astype(int))
 

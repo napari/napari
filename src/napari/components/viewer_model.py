@@ -502,15 +502,27 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             )
         )
 
+    def _get_viewbox_size(self):
+        """Get the size of a single viewbox (whether grid is enabled or not).
+
+        If grid.border_width > 0, that's accounted for too.
+        """
+        viewbox_size = np.array(self._canvas_size)
+        if self.grid.enabled:
+            grid_shape = np.array(self.grid.actual_shape(len(self.layers)))
+            viewbox_size = viewbox_size / grid_shape
+            # TODO: why the hell is this not just 2 but seems to vary with the border width?
+            # in the meantime, this should be ok with small border width values :/
+            viewbox_size -= self.grid.border_width * 2
+        return viewbox_size
+
     def _get_2d_camera_zoom(
         self, scene_size: np.ndarray, scale_factor: float
     ) -> float:
         """Get the camera zoom for 2D view."""
         scale = np.array(scene_size[-2:])
         scale[np.isclose(scale, 0)] = 1
-        grid_shape = np.array(self.grid.actual_shape(len(self.layers)))
-        viewbox_size = np.array(self._canvas_size) / grid_shape
-        return scale_factor * np.min(viewbox_size / scale)
+        return scale_factor * np.min(self._get_viewbox_size() / scale)
 
     def _get_3d_camera_zoom(
         self, extent: np.ndarray, scale_factor: float
@@ -521,11 +533,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             view_direction=self.camera.view_direction,
             up_direction=self.camera.up_direction,
         )
-
-        grid_shape = np.array(self.grid.actual_shape(len(self.layers)))
-        viewbox_size = np.array(self._canvas_size) / grid_shape
-
-        return scale_factor * np.min(np.array(viewbox_size) / bounding_box)
+        return scale_factor * np.min(self._get_viewbox_size() / bounding_box)
 
     @staticmethod
     def _calculate_bounding_box(
