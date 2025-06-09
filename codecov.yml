@@ -8,19 +8,19 @@ coverage:
       default: false
       library:
         target: auto
-        paths: ['napari/**', '!.*/_tests/.*']
+        paths: ['!.*/_tests/.*']
         threshold: 1%
       qt:
         target: auto
-        paths: ['napari/_qt/.*', '!.*/_tests/.*']
+        paths: ['**/napari/_qt/.*', '!.*/_tests/.*']
         threshold: 1%
       layers:
         target: auto
-        paths: [ 'napari/layers/.*', '!.*/_tests/.*' ]
+        paths: [ '**/napari/layers/.*', '!.*/_tests/.*' ]
         threshold: 1%
       utils:
         target: auto
-        paths: [ 'napari/utils/.*', '!.*/_tests/.*' ]
+        paths: [ '**/napari/utils/.*', '!.*/_tests/.*' ]
         threshold: 2%
       tests:
         target: auto
