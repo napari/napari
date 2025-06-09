@@ -167,6 +167,7 @@ class Shape(ABC):
             and bermuda is not None
         ):
             cls._set_meshes = cls._set_meshes_compiled_bermuda
+            cls._triangulate_edge = cls._triangulate_edge_bermuda
         elif (
             TRIANGULATION_BACKEND
             in {
@@ -176,6 +177,7 @@ class Shape(ABC):
             and partsegcore_triangulate is not None
         ):
             cls._set_meshes = cls._set_meshes_compiled_partseg
+            cls._triangulate_edge = cls._triangulate_edge_partseg
         elif (
             TRIANGULATION_BACKEND
             in {
@@ -577,6 +579,40 @@ class Shape(ABC):
                 self._face_vertices = vertices
                 self._face_triangles = triangles
 
+    def _triangulate_edge(
+        self, data: CoordinateArray, closed: bool
+    ) -> tuple[CoordinateArray, CoordinateArray, TriangleArray]:
+        """Triangulate the edge of the shape.
+
+        Parameters
+        ----------
+        data : np.ndarray
+            Nx2 or Nx3 array specifying the shape to be triangulated
+        closed : bool
+            Bool which determines if the edge is closed or not
+
+        Returns
+        -------
+        tuple
+            Tuple of (centers, offsets, triangles) where centers is a 2D array
+            of the centers of the triangles, offsets is a 2D array of the
+            offsets of the triangles, and triangles is a 2D array of the
+            triangles.
+        """
+        return triangulate_edge(data, closed=closed)
+
+    def _triangulate_edge_partseg(
+        self, data: CoordinateArray, closed: bool
+    ) -> tuple[CoordinateArray, CoordinateArray, TriangleArray]:
+        return partsegcore_triangulate.triangulate_path_edge_numpy(
+            data, closed=closed
+        )
+
+    def _triangulate_edge_bermuda(
+        self, data: CoordinateArray, closed: bool
+    ) -> tuple[CoordinateArray, CoordinateArray, TriangleArray]:
+        return bermuda.triangulate_path_edge(data, closed=closed)
+
     def _all_triangles(self):
         """Return all triangles for the shape
 
@@ -610,7 +646,7 @@ class Shape(ABC):
         self.__dict__.pop('data_displayed', None)  # clear cache
         points = self.data_displayed
         points = remove_path_duplicates(points, closed=self._closed)
-        centers, offsets, triangles = triangulate_edge(
+        centers, offsets, triangles = self._triangulate_edge(
             points, closed=self._closed
         )
         self._edge_vertices = centers
