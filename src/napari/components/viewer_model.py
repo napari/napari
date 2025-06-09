@@ -26,6 +26,7 @@ from napari.components._layer_slicer import _LayerSlicer
 from napari.components._viewer_mouse_bindings import (
     dims_scroll,
     double_click_to_zoom,
+    drag_to_zoom,
 )
 from napari.components.camera import Camera
 from napari.components.cursor import Cursor, CursorStyle
@@ -38,6 +39,7 @@ from napari.components.overlays import (
     Overlay,
     ScaleBarOverlay,
     TextOverlay,
+    ZoomOverlay,
 )
 from napari.components.tooltip import Tooltip
 from napari.errors import (
@@ -120,6 +122,7 @@ DEFAULT_OVERLAYS = {
     'text': TextOverlay,
     'axes': AxesOverlay,
     'brush_circle': BrushCircleOverlay,
+    'zoom': ZoomOverlay,
 }
 
 
@@ -260,7 +263,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         # Add extra reset_view event. Ideally this should be removed in the
         # future.
-        self.events.add(reset_view=Event)
+        self.events.add(reset_view=Event, zoom=Event)
 
         # Connect events
         self.grid.events.connect(self.fit_to_view)
@@ -290,6 +293,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         # Add mouse callback
         self.mouse_wheel_callbacks.append(dims_scroll)
         self.mouse_double_click_callbacks.append(double_click_to_zoom)
+        self.mouse_drag_callbacks.append(drag_to_zoom)
 
         self._overlays.update({k: v() for k, v in DEFAULT_OVERLAYS.items()})
 
@@ -305,6 +309,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     @property
     def text_overlay(self):
         return self._overlays['text']
+
+    @property
+    def zoom(self):
+        return self._overlays['zoom']
 
     @property
     def _brush_circle_overlay(self):

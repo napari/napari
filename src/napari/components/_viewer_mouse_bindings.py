@@ -38,3 +38,32 @@ def double_click_to_zoom(viewer, event):
             np.asarray(event.position)[-2:]
             - np.asarray(viewer.camera.center)[-2:]
         ) * (1 - 1 / zoom_factor)
+
+
+def drag_to_zoom(viewer, event):
+    """Enable zoom."""
+    if 'Shift' not in event.modifiers or viewer.dims.ndisplay == 3:
+        return
+
+    if not viewer.zoom.visible:
+        viewer.zoom.visible = True
+
+    # on mouse press
+    press_position = None
+    if event.type == 'mouse_press':
+        press_position = event.position
+        viewer.zoom.bounds = (press_position, press_position)
+        yield
+
+    # on mouse move
+    while event.type == 'mouse_move' and 'Shift' in event.modifiers:
+        if press_position is None:
+            continue
+        position = event.position
+        viewer.zoom.bounds = (press_position, position)
+        yield
+
+    # on mouse release
+    viewer.zoom.visible = False
+    viewer.events.zoom(value=viewer.zoom.extents(viewer.dims.displayed))
+    yield

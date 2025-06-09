@@ -175,6 +175,7 @@ class VispyCanvas:
         self.viewer.events.theme.connect(
             self._on_theme_change, position='first'
         )
+        self.viewer.events.zoom.connect(self._on_boxzoom)
         self.viewer.camera.events.mouse_pan.connect(self._on_interactive)
         self.viewer.camera.events.mouse_zoom.connect(self._on_interactive)
         self.viewer.camera.events.zoom.connect(self._on_cursor)
@@ -340,6 +341,18 @@ class VispyCanvas:
         self.view.interactive = (
             self.viewer.camera.mouse_zoom or self.viewer.camera.mouse_pan
         )
+
+    def _on_boxzoom(self, event):
+        """Update zoom level."""
+        from napari.utils.zoom import calculate_zoom
+
+        xmin, xmax, ymin, ymax = event.value
+        zoom, ycenter, xcenter = calculate_zoom(
+            xmin, xmax, ymin, ymax, self.viewer
+        )
+        self.viewer.camera.center = (1, ycenter, xcenter)
+        # calculate zoom by checking the current extents
+        self.viewer.camera.zoom = zoom
 
     def _map_canvas2world(
         self,
