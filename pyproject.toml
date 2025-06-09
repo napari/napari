@@ -858,7 +858,7 @@ source = [
 ]
 builtins = [
     "src/napari_builtins/",
-    "src/**/napari_builtins/",
+    "**/src/napari_builtins/",
     "**/.tox/*/lib/python*/site-packages/napari_builtins/",
     "**\\.tox\\*\\Lib\\site-packages\\napari_builtins",
 ]
