@@ -170,10 +170,6 @@ class QtViewer(QSplitter):
 
     _instances = WeakSet()
 
-    # QtReload widget for development purposes.
-    _qdev = None
-    dockQDev = None
-
     def __init__(
         self,
         viewer: ViewerModel,
@@ -205,6 +201,9 @@ class QtViewer(QSplitter):
         self._dockLayerControls = None
         self._dockConsole = None
         self._dockPerformance = None
+        # QtReload widget for development purposes.
+        self._qdev = None
+        self._dockQDev = None
 
         # This dictionary holds the corresponding vispy visual for each layer
         self.canvas = canvas_class(
@@ -413,13 +412,29 @@ class QtViewer(QSplitter):
             )
         return None
 
+    @property
+    def dockQDev(self):
+        """Dock widget for the development tools."""
+        if self._dockQDev is None:
+            self._setup_dev_tools()
+            self._dockQDev = QtViewerDockWidget(
+                self,
+                self._qdev,
+                name='Reload Widget',
+                area='left',
+                allowed_areas=['left', 'right', 'bottom'],
+                object_name='QDev',
+                close_btn=False,
+            )
+        return
+
     def _setup_dev_tools(self) -> None:
         """Setup development tools."""
         import logging
         import os
 
         try:
-            if os.getenv('NAPARI_DEV_MODE', '0') == '1' and self._dev is None:
+            if os.getenv('NAPARI_DEV_MODE', '0') == '1' and self._qdev is None:
                 from napari._qt.widgets.qt_dev import (
                     install_debugger_hook,
                     qdev,
@@ -427,15 +442,6 @@ class QtViewer(QSplitter):
 
                 logging.getLogger('napari').setLevel(logging.DEBUG)
                 self._qdev = qdev()
-                self.dockQDev = QtViewerDockWidget(
-                    self,
-                    self._qdev,
-                    name='Reload Widget',
-                    area='left',
-                    allowed_areas=['left', 'right'],
-                    object_name='qdev',
-                    close_btn=False,
-                )
                 install_debugger_hook()
         except Exception as e:  # noqa
             pass
