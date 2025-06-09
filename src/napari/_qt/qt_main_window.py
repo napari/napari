@@ -1728,14 +1728,17 @@ class Window:
 
         # Part 3: take the screenshot
         if canvas_only:
-            grid_shape = self._qt_viewer.viewer.grid.actual_shape(
-                len(self._qt_viewer.viewer.layers)
-            )
-            # TODO: account for borders
-            canvas.size = tuple((size * grid_shape).astype(int))
             if fit_to_data_extent:
+                grid_shape = self._qt_viewer.viewer.grid.actual_shape(
+                    len(self._qt_viewer.viewer.layers)
+                )
+                canvas.size = tuple((size * grid_shape).astype(int))
                 # tight view around data
                 self._qt_viewer.viewer.fit_to_view(margin=0)
+                # TODO: account for grid borders
+            else:
+                canvas.size = tuple(size.astype(int))
+
             try:
                 img = canvas.screenshot()
                 if flash:
