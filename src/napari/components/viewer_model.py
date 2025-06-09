@@ -725,7 +725,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         # Otherwise, return the layer status of multiple selected layers
         # or gridded layers as well as the tooltip.
-        # TODO: this needs to account for the new grid system properly
         for layer in self.layers[::-1]:
             if (
                 not layer.visible
