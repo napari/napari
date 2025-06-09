@@ -170,6 +170,10 @@ class QtViewer(QSplitter):
 
     _instances = WeakSet()
 
+    # QtReload widget for development purposes.
+    _qdev = None
+    dockQDev = None
+
     def __init__(
         self,
         viewer: ViewerModel,
@@ -408,6 +412,33 @@ class QtViewer(QSplitter):
                 area='bottom',
             )
         return None
+
+    def _setup_dev_tools(self) -> None:
+        """Setup development tools."""
+        import logging
+        import os
+
+        try:
+            if os.getenv('NAPARI_DEV_MODE', '0') == '1' and self._dev is None:
+                from napari._qt.widgets.qt_dev import (
+                    install_debugger_hook,
+                    qdev,
+                )
+
+                logging.getLogger('napari').setLevel(logging.DEBUG)
+                self._qdev = qdev()
+                self.dockQDev = QtViewerDockWidget(
+                    self,
+                    self._qdev,
+                    name='Reload Widget',
+                    area='left',
+                    allowed_areas=['left', 'right'],
+                    object_name='qdev',
+                    close_btn=False,
+                )
+                install_debugger_hook()
+        except Exception as e:  # noqa
+            pass
 
     def _weakref_if_possible(self, obj):
         """Create a weakref to obj.

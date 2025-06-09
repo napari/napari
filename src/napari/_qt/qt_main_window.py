@@ -747,6 +747,8 @@ class Window:
                 self._qt_viewer.dockPerformance, menu=self.window_menu
             )
 
+        self._qt_viewer._setup_dev_tools()
+
         viewer.events.help.connect(self._help_changed)
         viewer.events.title.connect(self._title_changed)
         viewer.events.theme.connect(self._update_theme)

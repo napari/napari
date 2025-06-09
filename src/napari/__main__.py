@@ -165,6 +165,13 @@ def parse_sys_argv():
         nargs=0,
         help='show citation information and exit',
     )
+    # Allow --dev to activate qtreload development mode only if qtreload is installed.
+    # This is useful for napari developers to speed up development and prevent constant restarts.
+    parser.add_argument(
+        '--dev',
+        action='store_true',
+        help='activate qtreload development mode (if qtreload is installed).',
+    )
     # Allow multiple --stack options to be provided.
     # Each stack option will result in its own stack
     parser.add_argument(
@@ -224,6 +231,9 @@ def _run() -> None:
         format='%(asctime)s : %(levelname)s : %(threadName)s : %(message)s',
         datefmt='%H:%M:%S',
     )
+
+    if args.dev:
+        os.environ['NAPARI_DEV_MODE'] = '1'
 
     if args.reset:
         if args.settings_path:

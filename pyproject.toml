@@ -216,6 +216,7 @@ dev = [
     "python-dotenv",
     "tox",
     "tox-min-req",
+    "qtreload",
     "napari[testing]",
 ]
 build = [
