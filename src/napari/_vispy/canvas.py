@@ -176,7 +176,7 @@ class VispyCanvas:
         self._scene_canvas.events.mouse_release.connect(self._on_mouse_release)
         self._scene_canvas.events.mouse_wheel.connect(self._on_mouse_wheel)
         self._scene_canvas.events.resize.connect(self.on_resize)
-        self._scene_canvas.events.draw.connect(self.on_draw)
+        self._scene_canvas.events.draw.connect(self.on_draw, position='last')
         self.viewer.cursor.events.style.connect(self._on_cursor)
         self.viewer.cursor.events.size.connect(self._on_cursor)
         # position=first is important to some downstream components such as
@@ -613,6 +613,8 @@ class VispyCanvas:
                 ],
                 shape_threshold=self._scene_canvas.size,
             )
+        for camera in self.grid_cameras:
+            camera.on_draw(event)
 
     def on_resize(self, event: ResizeEvent) -> None:
         """Called whenever canvas is resized.
@@ -890,7 +892,6 @@ class VispyCanvas:
             view = self.grid[row, col]
             view.border_width = self.viewer.grid.border_width
             camera = VispyCamera(view, self.viewer.camera, self.viewer.dims)
-            self._scene_canvas.events.draw.connect(camera.on_draw)
             self.grid_views.append(view)
             self.grid_cameras.append(camera)
 
