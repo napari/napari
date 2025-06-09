@@ -165,7 +165,6 @@ class VispyCanvas:
             self._key_map_handler.on_key_release
         )
         self._scene_canvas.events.draw.connect(self.enable_dims_play)
-        self._scene_canvas.events.draw.connect(self.camera.on_draw)
         self._scene_canvas.events.mouse_double_click.connect(
             self._on_mouse_double_click
         )
@@ -592,6 +591,10 @@ class VispyCanvas:
         -------
         None
         """
+        # this updates camera zooms if necessary
+        for camera in (self.camera, *self.grid_cameras):
+            camera.on_draw(event)
+
         # The canvas corners in full world coordinates (i.e. across all layers).
         canvas_corners_world = self._canvas_corners_in_world
         for layer in self.viewer.layers:
@@ -606,15 +609,12 @@ class VispyCanvas:
             else:
                 displayed_axes = list(self.viewer.dims.displayed[-nd:])
             layer._update_draw(
-                scale_factor=1
-                / self.camera.zoom,  # this was previously self.viewer.camera.zoom; however, this can be out of sync with the camera zoom because the viewer value is used before the zoom value gets updated by Camera.on_draw
+                scale_factor=1 / self.viewer.camera.zoom,
                 corner_pixels_displayed=canvas_corners_world[
                     :, displayed_axes
                 ],
                 shape_threshold=self._scene_canvas.size,
             )
-        for camera in self.grid_cameras:
-            camera.on_draw(event)
 
     def on_resize(self, event: ResizeEvent) -> None:
         """Called whenever canvas is resized.
