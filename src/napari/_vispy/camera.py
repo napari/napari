@@ -216,7 +216,7 @@ class VispyCamera:
 
         Update camera model angles, center, and zoom.
         """
-        # if the viewboxsize changed since last time, we need to update zoom
+        # if the viewboxsize changed since last time, we need to update
         viewbox_size = np.array(self._view.inner_rect.size)
         if not np.allclose(self._last_viewbox_size, viewbox_size):
             self._last_viewbox_size = viewbox_size
