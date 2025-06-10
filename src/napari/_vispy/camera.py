@@ -42,7 +42,7 @@ class VispyCamera:
         self._view.camera = (
             self._2D_camera if dims.ndisplay == 2 else self._3D_camera
         )
-        self._last_viewbox_size = (0, 0)
+        self._last_viewbox_size = np.array((0, 0))
 
         self._dims.events.ndisplay.connect(
             self._on_ndisplay_change, position='first'
