@@ -29,6 +29,7 @@ class QMirroredSlidersPopup(QtPopup):
         self.toggle_lock.setObjectName('lockButton')
 
         self.left_slider = QLabeledSlider(Qt.Orientation.Horizontal, parent)
+        self.left_slider.setObjectName('invertedSlider')
         self.left_slider.setInvertedAppearance(True)
         self.left_slider.setEdgeLabelPosition(
             QLabeledSlider.LabelPosition.LabelsLeft
