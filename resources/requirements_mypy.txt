@@ -16,7 +16,7 @@ docstring-parser==0.16
     # via magicgui
 idna==3.10
     # via requests
-magicgui==0.10.0
+magicgui==0.10.1
     # via -r resources/requirements_mypy.in
 markdown-it-py==3.0.0
     # via rich
@@ -28,7 +28,7 @@ mypy-extensions==1.1.0
     # via mypy
 npe2==0.7.8
     # via -r resources/requirements_mypy.in
-numpy==2.2.6
+numpy==2.3.0
     # via -r resources/requirements_mypy.in
 packaging==25.0
     # via
@@ -54,9 +54,9 @@ pygments==2.19.1
     #   superqt
 pyproject-hooks==1.2.0
     # via build
-pyqt6==6.9.0
+pyqt6==6.9.1
     # via -r resources/requirements_mypy.in
-pyqt6-qt6==6.9.0
+pyqt6-qt6==6.9.1
     # via pyqt6
 pyqt6-sip==13.10.2
     # via pyqt6
@@ -67,7 +67,7 @@ qtpy==2.4.3
     #   -r resources/requirements_mypy.in
     #   magicgui
     #   superqt
-requests==2.32.3
+requests==2.32.4
     # via pyconify
 rich==14.0.0
     # via
@@ -75,7 +75,7 @@ rich==14.0.0
     #   typer
 shellingham==1.5.4
     # via typer
-superqt==0.7.3
+superqt==0.7.4
     # via magicgui
 tomli-w==1.2.0
     # via npe2
@@ -87,7 +87,7 @@ types-requests==2.32.0.20250602
     # via -r resources/requirements_mypy.in
 types-setuptools==80.9.0.20250529
     # via -r resources/requirements_mypy.in
-typing-extensions==4.13.2
+typing-extensions==4.14.0
     # via
     #   magicgui
     #   mypy
