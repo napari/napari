@@ -55,7 +55,7 @@ class ZoomOverlay(SceneOverlay):
 
     def extents(
         self, displayed: tuple[int, ...]
-    ) -> tuple[float, float, float, float]:
+    ) -> tuple[float, float, float, float, float, float]:
         """Get the extents of the overlay in the scene coordinates.
 
         Parameters
@@ -73,8 +73,12 @@ class ZoomOverlay(SceneOverlay):
         top_left = tuple([top_left[i] for i in displayed])
         bot_right = tuple([bot_right[i] for i in displayed])
 
-        dim2_min = min(top_left[0], bot_right[0])
-        dim2_max = max(top_left[0], bot_right[0])
-        dim1_min = min(top_left[1], bot_right[1])
-        dim1_max = max(top_left[1], bot_right[1])
-        return dim1_min, dim1_max, dim2_min, dim2_max
+        dim1_min = min(top_left[0], bot_right[0])
+        dim1_max = max(top_left[0], bot_right[0])
+        dim2_min = min(top_left[1], bot_right[1])
+        dim2_max = max(top_left[1], bot_right[1])
+        dim3_min, dim3_max = 1, 1
+        if len(displayed) == 3:
+            dim3_min = min(top_left[2], bot_right[2])
+            dim3_max = max(top_left[2], bot_right[2])
+        return dim1_min, dim1_max, dim2_min, dim2_max, dim3_min, dim3_max

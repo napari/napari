@@ -21,6 +21,7 @@ from napari.layers.base._base_constants import (
 from napari.layers.base.base import Layer
 from napari.utils.action_manager import action_manager
 from napari.utils.events import disconnect_events
+from napari.utils.key_bindings import KeyCode
 from napari.utils.translations import trans
 
 # opaque and minimum blending do not support changing alpha (opacity)
@@ -107,7 +108,10 @@ class QtLayerControls(QFrame):
             False,
             self.PAN_ZOOM_ACTION_NAME,
             extra_tooltip_text=trans._(
-                '\n(or hold Space)\n(hold Shift to pan in 3D)'
+                '\n(or hold Space)'
+                '\n(hold {control} to zoom-in using region of interest)'
+                '\n(hold Shift to pan in 3D)',
+                control=KeyCode.from_string('Ctrl').os_symbol(),
             ),
             checked=True,
         )

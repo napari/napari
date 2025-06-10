@@ -350,11 +350,19 @@ class VispyCanvas:
         """Update zoom level."""
         from napari._vispy.utils.zoom import calculate_zoom_proportion
 
-        xmin, xmax, ymin, ymax = event.value
-        zoom, ycenter, xcenter = calculate_zoom_proportion(
-            xmin, xmax, ymin, ymax, self.viewer
+        dim1_min, dim1_max, dim2_min, dim2_max, dim3_min, dim3_max = (
+            event.value
         )
-        self.viewer.camera.center = (1, ycenter, xcenter)
+        zoom, ycenter, xcenter, zcenter = calculate_zoom_proportion(
+            dim1_min,
+            dim1_max,
+            dim2_min,
+            dim2_max,
+            dim3_min,
+            dim3_max,
+            self.viewer,
+        )
+        self.viewer.camera.center = (zcenter, ycenter, xcenter)
         # calculate zoom by checking the current extents
         self.viewer.camera.zoom = zoom
 
