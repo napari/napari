@@ -28,6 +28,9 @@ class QMirroredSlidersPopup(QtPopup):
 
         self.left_slider = QLabeledSlider(Qt.Orientation.Horizontal, parent)
         self.left_slider.setInvertedAppearance(True)
+        self.left_slider.setEdgeLabelPosition(
+            QLabeledSlider.LabelPosition.LabelsLeft
+        )
         # TODO: also move label to the left (see pyapp-kit/superqt#294)
         self.left_slider.label_shift_x = 2
         self.left_slider.label_shift_y = 2
