@@ -45,6 +45,7 @@ def calculate_zoom_proportion(
         zoom = np.min(total_size / (dim3_diff, dim2_diff, dim1_diff))
     else:
         zoom = np.min(total_size / (dim2_diff, dim1_diff))
+
     # ensure zoom is a valid number
     if np.isinf(zoom) or np.isnan(zoom) or zoom == 0:
         zoom = 1
