@@ -852,25 +852,15 @@ source = [
 [tool.coverage.paths]
 source = [
     "src/napari/",
-    "napari/",
-    ".tox/*/lib/python*/site-packages/napari/",
-    "/tmp/.tox/*/lib/python*/site-packages/napari/",
-    ".tox/*/Lib/site-packages/napari/",
-    "D:\\a\\napari\\napari\\src\\napari",
-    "D:\\a\\napari\\napari\\.tox\\*\\Lib\\site-packages\\napari",
-    "/home/runner/work/napari/napari/src/napari",
-    "/Users/runner/work/napari/napari/src/napari",
+    "**/src/napari/",
+    "**/.tox/*/lib/python*/site-packages/napari/",
+    "**\\.tox\\*\\Lib\\site-packages\\napari",
 ]
 builtins = [
     "src/napari_builtins/",
-    "napari_builtins/",
-    ".tox/*/lib/python*/site-packages/napari_builtins/",
-    "/tmp/.tox/*/lib/python*/site-packages/napari_builtins/",
-    ".tox/*/Lib/site-packages/napari_builtins/",
-    "D:\\a\\napari\\napari\\src\\napari_builtins",
-    "D:\\a\\napari\\napari\\.tox\\*\\Lib\\site-packages\\napari_builtins",
-    "/home/runner/work/napari/napari/src/napari_builtins",
-    "/Users/runner/work/napari/napari/src/napari_builtins",
+    "**/src/napari_builtins/",
+    "**/.tox/*/lib/python*/site-packages/napari_builtins/",
+    "**\\.tox\\*\\Lib\\site-packages\\napari_builtins",
 ]
 
 [tool.importlinter]
