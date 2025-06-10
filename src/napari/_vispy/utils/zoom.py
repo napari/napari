@@ -7,9 +7,7 @@ import numpy as np
 from napari.viewer import ViewerModel
 
 
-def _calculate_zoom_for_dimension(
-    dim_min: float, dim_max: float, viewer: ViewerModel
-) -> float:
+def _calculate_zoom_for_dimension(dim_min: float, dim_max: float) -> float:
     """Calculate center and difference for single dimension."""
     dim_center = (dim_min + dim_max) / 2
     dim_diff = dim_max - dim_min
@@ -27,15 +25,9 @@ def calculate_zoom_proportion(
 ) -> tuple[float, float, float, float]:
     """Calculate zoom for specified region."""
     # calculate the center of the rectangle
-    dim1_center, dim1_diff = _calculate_zoom_for_dimension(
-        dim1_min, dim1_max, viewer
-    )
-    dim2_center, dim2_diff = _calculate_zoom_for_dimension(
-        dim2_min, dim2_max, viewer
-    )
-    dim3_center, dim3_diff = _calculate_zoom_for_dimension(
-        dim3_min, dim3_max, viewer
-    )
+    dim1_center, dim1_diff = _calculate_zoom_for_dimension(dim1_min, dim1_max)
+    dim2_center, dim2_diff = _calculate_zoom_for_dimension(dim2_min, dim2_max)
+    dim3_center, dim3_diff = _calculate_zoom_for_dimension(dim3_min, dim3_max)
 
     # using the viewer's scene size to calculate zoom
     _, _, _, total_size = viewer._get_scene_parameters()
