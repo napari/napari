@@ -55,6 +55,8 @@ def drag_to_zoom(viewer, event):
         viewer.zoom.bounds = (press_position, press_position)
         yield
 
+	event.handled = True
+	
     # on mouse move
     while event.type == 'mouse_move' and 'Shift' in event.modifiers:
         if press_position is None:
