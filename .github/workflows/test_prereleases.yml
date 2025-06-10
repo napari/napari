@@ -19,7 +19,7 @@ env:
 jobs:
   test:
     name: ${{ matrix.platform }} py${{ matrix.python }} ${{ matrix.backend }} --pre
-    timeout-minutes: 40
+    timeout-minutes: 60
     runs-on: ${{ matrix.platform }}
     permissions:
       contents: read
@@ -69,11 +69,15 @@ jobs:
           pip install --upgrade pip
           pip install setuptools tox tox-gh-actions
 
-      - name: Test with tox
-        # run tests using pip install --pre
-        uses: aganders3/headless-gui@v2
+      - name: Test with tox (with retry)
+        uses: Wandalen/wretry.action@v3
         with:
-          run: python -m tox -v --pre
+          attempt_limit: 2
+          attempt_delay: 30000 # 30s
+          retry_condition: github.ref_name == 'main'  # avoid restart in PR
+          action: aganders3/headless-gui@v2
+          with: |
+            run: python -m tox -v --pre  --recreate
         env:
           PLATFORM: ${{ matrix.platform }}
           BACKEND: ${{ matrix.backend }}
@@ -81,6 +85,15 @@ jobs:
           COVERAGE: "no_cov"
           PYVISTA_OFF_SCREEN: True  # required for opengl on windows
           PIP_CONSTRAINT: resources/constraints/version_denylist.txt
+          PIP_EXTRA_INDEX_URL: https://www.riverbankcomputing.com/pypi/simple/
+          PIP_ONLY_BINARY: "PyQt5,PyQt6"
+
+      - name: Upload leaked viewer graph
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: leaked ${{ matrix.platform }} py ${{ matrix.python }} ${{ matrix.backend }}
+          path: ./*leak-backref-graph*.pdf
 
       # If something goes wrong, we can open an issue in the repo
       - name: Report Failures
