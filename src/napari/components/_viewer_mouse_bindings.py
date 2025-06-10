@@ -42,7 +42,7 @@ def double_click_to_zoom(viewer, event):
 
 def drag_to_zoom(viewer, event):
     """Enable zoom."""
-    if 'Meta' not in event.modifiers or viewer.dims.ndisplay == 3:
+    if 'Control' not in event.modifiers or viewer.dims.ndisplay == 3:
         return
 
     # on mouse press
@@ -55,7 +55,7 @@ def drag_to_zoom(viewer, event):
         event.handled = True
 
     # on mouse move
-    while event.type == 'mouse_move' and 'Meta' in event.modifiers:
+    while event.type == 'mouse_move' and 'Control' in event.modifiers:
         if press_position is None:
             continue
         move_position = event.position
