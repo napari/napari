@@ -813,24 +813,23 @@ def test_qt_viewer_multscale_image_out_of_view(make_napari_viewer):
     viewer.add_image([np.eye(1024), np.eye(512), np.eye(256)])
 
 
-def test_surface_mixed_dim(make_napari_viewer):
+def test_surface_mixed_dim(qt_viewer, viewer_model):
     """Test that adding a layer that changes the world ndim
     when ndisplay=3 before the mouse cursor has been updated
     doesn't raise an error.
 
     See PR: https://github.com/napari/napari/pull/3881
     """
-    viewer = make_napari_viewer(ndisplay=3)
 
     verts = np.array([[0, 0, 0], [0, 20, 10], [10, 0, -10], [10, 10, -10]])
     faces = np.array([[0, 1, 2], [1, 2, 3]])
     values = np.linspace(0, 1, len(verts))
     data = (verts, faces, values)
-    viewer.add_surface(data)
+    viewer_model.add_surface(data)
 
     timeseries_values = np.vstack([values, values])
     timeseries_data = (verts, faces, timeseries_values)
-    viewer.add_surface(timeseries_data)
+    viewer_model.add_surface(timeseries_data)
 
 
 def test_insert_layer_ordering(make_napari_viewer):
