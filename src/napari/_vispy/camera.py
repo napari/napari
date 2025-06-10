@@ -172,6 +172,7 @@ class VispyCamera:
         self._on_center_change()
         self._on_zoom_change()
         self._on_orientation_change()
+        self._on_perspective_change()
 
     def _on_mouse_toggles_change(self):
         self.mouse_pan = self._camera.mouse_pan
@@ -219,8 +220,7 @@ class VispyCamera:
         viewbox_size = np.array(self._view.inner_rect.size)
         if not np.allclose(self._last_viewbox_size, viewbox_size):
             self._last_viewbox_size = viewbox_size
-            self._on_center_change()
-            self._on_zoom_change()
+            self._on_ndisplay_change()
 
         if not np.allclose(self.angles, self._camera.angles) and (
             self._view.camera,
