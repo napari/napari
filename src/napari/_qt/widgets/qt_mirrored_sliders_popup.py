@@ -1,6 +1,6 @@
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QApplication, QHBoxLayout
-from superqt import QLabeledSlider, QToggleSwitch
+from qtpy.QtWidgets import QApplication, QHBoxLayout, QPushButton
+from superqt import QLabeledSlider
 
 from napari._qt.dialogs.qt_modal import QtPopup
 
@@ -23,8 +23,10 @@ class QMirroredSlidersPopup(QtPopup):
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
 
-        self.toggle_lock = QToggleSwitch('keep symmetric')
+        self.toggle_lock = QPushButton()
+        self.toggle_lock.setCheckable(True)
         self.toggle_lock.setChecked(True)
+        self.toggle_lock.setObjectName('lockButton')
 
         self.left_slider = QLabeledSlider(Qt.Orientation.Horizontal, parent)
         self.left_slider.setInvertedAppearance(True)
@@ -43,10 +45,10 @@ class QMirroredSlidersPopup(QtPopup):
 
         # add widgets to layout
         self._layout = QHBoxLayout()
-        self._layout.setContentsMargins(10, 0, 10, 16)
+        self._layout.setContentsMargins(2, 2, 2, 2)
         self.frame.setLayout(self._layout)
-        self._layout.addWidget(self.toggle_lock)
         self._layout.addWidget(self.left_slider)
+        self._layout.addWidget(self.toggle_lock)
         self._layout.addWidget(self.right_slider)
         QApplication.processEvents()
 
