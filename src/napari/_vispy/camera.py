@@ -39,7 +39,9 @@ class VispyCamera:
         # Create 3D camera
         self._3D_camera = MouseToggledArcballCamera(fov=0)
 
-        self._view.camera = self._2D_camera
+        self._view.camera = (
+            self._2D_camera if dims.ndisplay == 2 else self._3D_camera
+        )
         self._last_viewbox_size = (0, 0)
 
         self._dims.events.ndisplay.connect(
