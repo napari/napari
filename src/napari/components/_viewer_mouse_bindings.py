@@ -45,27 +45,28 @@ def drag_to_zoom(viewer, event):
     if 'Shift' not in event.modifiers or viewer.dims.ndisplay == 3:
         return
 
-    if not viewer.zoom.visible:
-        viewer.zoom.visible = True
+    if not viewer._zoom_box.visible:
+        viewer._zoom_box.visible = True
 
     # on mouse press
     press_position = None
     if event.type == 'mouse_press':
         press_position = event.position
-        viewer.zoom.bounds = (press_position, press_position)
+        viewer._zoom_box.bounds = (press_position, press_position)
         yield
+        event.handled = True
 
-	event.handled = True
-	
     # on mouse move
     while event.type == 'mouse_move' and 'Shift' in event.modifiers:
         if press_position is None:
             continue
         position = event.position
-        viewer.zoom.bounds = (press_position, position)
+        viewer._zoom_box.bounds = (press_position, position)
         yield
 
     # on mouse release
-    viewer.zoom.visible = False
-    viewer.events.zoom(value=viewer.zoom.extents(viewer.dims.displayed))
+    viewer._zoom_box.visible = False
+    viewer._zoom_box.events.zoom(
+        value=viewer._zoom_box.extents(viewer.dims.displayed)
+    )
     yield

@@ -1,3 +1,4 @@
+from contextlib import suppress
 from typing import Any, ClassVar
 
 import numpy as np
@@ -110,3 +111,15 @@ class InteractionBox(Compound):
             )
         else:
             self.markers.set_data(pos=np.empty((0, 2)))
+
+    def _compute_bounds(self, axis, view):
+        bounds = None
+        with suppress(ValueError):
+            for v in view._subvisuals:
+                if v.visible:
+                    vb = v.bounds(axis)
+                    if bounds is None:
+                        bounds = vb
+                    elif vb is not None:
+                        bounds = [min(bounds[0], vb[0]), max(bounds[1], vb[1])]
+        return bounds

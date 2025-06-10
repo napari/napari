@@ -1,25 +1,7 @@
 """Vispy zoom box overlay."""
 
-from contextlib import suppress
-
 from napari._vispy.overlays.base import ViewerOverlayMixin, VispySceneOverlay
-from napari._vispy.visuals.interaction_box import (
-    InteractionBox as _InteractionBox,
-)
-
-
-class InteractionBox(_InteractionBox):
-    def _compute_bounds(self, axis, view):
-        bounds = None
-        with suppress(ValueError):
-            for v in view._subvisuals:
-                if v.visible:
-                    vb = v.bounds(axis)
-                    if bounds is None:
-                        bounds = vb
-                    elif vb is not None:
-                        bounds = [min(bounds[0], vb[0]), max(bounds[1], vb[1])]
-        return bounds
+from napari._vispy.visuals.interaction_box import InteractionBox
 
 
 class VispyZoomOverlay(ViewerOverlayMixin, VispySceneOverlay):

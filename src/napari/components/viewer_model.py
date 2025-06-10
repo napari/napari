@@ -263,7 +263,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         # Add extra reset_view event. Ideally this should be removed in the
         # future.
-        self.events.add(reset_view=Event, zoom=Event)
+        self.events.add(reset_view=Event)
 
         # Connect events
         self.grid.events.connect(self.fit_to_view)
@@ -311,7 +311,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         return self._overlays['text']
 
     @property
-    def zoom(self):
+    def _zoom_box(self):
         return self._overlays['zoom']
 
     @property
