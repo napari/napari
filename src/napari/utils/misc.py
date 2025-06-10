@@ -738,3 +738,14 @@ def argsort(values: Sequence[int]) -> list[int]:
     [1, 2, 0]
     """
     return sorted(range(len(values)), key=values.__getitem__)
+
+
+def is_installed(module: str) -> bool:
+    """Try to import module."""
+    import importlib.util
+
+    try:
+        loader = importlib.util.find_spec(module)
+    except ModuleNotFoundError:
+        return False
+    return loader is not None

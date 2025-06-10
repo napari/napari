@@ -16,7 +16,7 @@ from textwrap import wrap
 from typing import Any
 
 from napari.errors import ReaderPluginError
-from napari.utils.misc import maybe_patch_conda_exe
+from napari.utils.misc import is_installed, maybe_patch_conda_exe
 from napari.utils.translations import trans
 
 
@@ -167,11 +167,20 @@ def parse_sys_argv():
     )
     # Allow --dev to activate qtreload development mode only if qtreload is installed.
     # This is useful for napari developers to speed up development and prevent constant restarts.
-    parser.add_argument(
-        '--dev',
-        action='store_true',
-        help='activate qtreload development mode (if qtreload is installed).',
-    )
+    # This is only available if qtreload is installed.
+    if is_installed('qtreload'):
+        parser.add_argument(
+            '--dev',
+            action='store_true',
+            help='activate qtreload development mode (if qtreload is installed).',
+        )
+        parser.add_argument(
+            '--dev_module',
+            action='append',
+            nargs='*',
+            default=[],
+            help='concatenate multiple modules that should be watched alongside `napari` and `napari_builtins`.',
+        )
     # Allow multiple --stack options to be provided.
     # Each stack option will result in its own stack
     parser.add_argument(
@@ -232,8 +241,13 @@ def _run() -> None:
         datefmt='%H:%M:%S',
     )
 
+    # check whether Dev mode was requested
     if args.dev:
         os.environ['NAPARI_DEV_MODE'] = '1'
+    # check if additional dev modules were requested
+    if args.dev_module:
+        dev_module = list(args.dev_module)
+        os.environ['NAPARI_DEV_MODULES'] = ','.join(dev_module)
 
     if args.reset:
         if args.settings_path:

@@ -1,6 +1,7 @@
 """Development widgets."""
 
 import logging
+import os
 import sys
 import typing as ty
 from contextlib import suppress
@@ -45,6 +46,10 @@ def qdev(
 ) -> 'QtReloadWidget':
     """Create reload widget."""
     from qtreload.qt_reload import QtReloadWidget
+
+    dev_modules = os.environ.get('NAPARI_DEV_MODULES', '').split(',')
+    modules = [*modules, *dev_modules]
+    modules = set(modules)
 
     logger.debug('Creating reload widget for modules: {}.', modules)
     return QtReloadWidget(modules, parent=parent)

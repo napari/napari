@@ -371,9 +371,26 @@ class QtViewer(QSplitter):
 
     @property
     def dockPerformance(self) -> QtViewerDockWidget:
+        """Dock widget for the performance metrics."""
         if self._dockPerformance is None:
             self._dockPerformance = self._create_performance_dock_widget()
         return self._dockPerformance
+
+    @property
+    def dockQDev(self) -> QtViewerDockWidget:
+        """Dock widget for the development tools."""
+        if self._dockQDev is None:
+            self._setup_dev_tools()
+            self._dockQDev = QtViewerDockWidget(
+                self,
+                self._qdev,
+                name='Reload Widget',
+                area='bottom',
+                allowed_areas=['left', 'right', 'bottom'],
+                object_name='QDev',
+                close_btn=False,
+            )
+        return self._dockQDev
 
     @property
     def layer_to_visual(self):
@@ -411,22 +428,6 @@ class QtViewer(QSplitter):
                 area='bottom',
             )
         return None
-
-    @property
-    def dockQDev(self):
-        """Dock widget for the development tools."""
-        if self._dockQDev is None:
-            self._setup_dev_tools()
-            self._dockQDev = QtViewerDockWidget(
-                self,
-                self._qdev,
-                name='Reload Widget',
-                area='left',
-                allowed_areas=['left', 'right', 'bottom'],
-                object_name='QDev',
-                close_btn=False,
-            )
-        return
 
     def _setup_dev_tools(self) -> None:
         """Setup development tools."""
