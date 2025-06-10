@@ -411,6 +411,7 @@ class Points(Layer):
         # Indices of selected points
         self._selected_data_stored = set()
         self._selected_data_history = set()
+        self._selected_data: Selection[int] = Selection()
         # Indices of selected points within the currently viewed slice
         self._selected_view = []
         # Index of hovered point
@@ -418,6 +419,8 @@ class Points(Layer):
         self._value_stored = None
         self._highlight_index = []
         self._highlight_box = None
+        self._mode = Mode.PAN_ZOOM
+        self._status = self.mode
 
         self._drag_start = None
         self._drag_normal = None
@@ -495,9 +498,6 @@ class Points(Layer):
         self._border_width_is_relative = False
         self._shown = np.empty(0).astype(bool)
 
-        # Indices of selected points
-        self._selected_data: Selection[int] = Selection()
-
         # The following point properties are for the new points that will
         # be added. For any given property, if a list is passed to the
         # constructor so each point gets its own value then the default
@@ -509,12 +509,6 @@ class Points(Layer):
         self.current_symbol = (
             np.asarray(symbol) if np.isscalar(symbol) else 'o'
         )
-
-        # Index of hovered point
-        self._value = None
-        self._value_stored = None
-        self._mode = Mode.PAN_ZOOM
-        self._status = self.mode
 
         color_properties = (
             self._feature_table.properties()
