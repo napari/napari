@@ -111,7 +111,7 @@ class QtLayerControls(QFrame):
                 '\n(or hold Space)'
                 '\n(hold {control} to zoom-in using region of interest)'
                 '\n(hold Shift to pan in 3D)',
-                control=KeyCode.from_string('Ctrl').os_symbol(),
+                control=KeyCode.from_string('Alt').os_symbol(),
             ),
             checked=True,
         )
