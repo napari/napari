@@ -2,12 +2,13 @@
 
 from napari._vispy.overlays.base import ViewerOverlayMixin, VispySceneOverlay
 from napari._vispy.visuals.interaction_box import InteractionBox
+from napari.components.overlays.zoom import ZoomOverlay
 
 
 class VispyZoomOverlay(ViewerOverlayMixin, VispySceneOverlay):
     """Zoom box overlay.."""
 
-    def __init__(self, viewer, overlay, parent=None):
+    def __init__(self, viewer, overlay: ZoomOverlay, parent=None):
         super().__init__(
             node=InteractionBox(),
             viewer=viewer,
