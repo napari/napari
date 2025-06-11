@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-from napari._pydantic_compat import Field, validator
+from napari._pydantic_compat import validator
 from napari.components.overlays.base import SceneOverlay
 from napari.layers.utils.interaction_box import InteractionBoxHandle
-from napari.utils.color import ColorValue
 from napari.utils.events import Event
 from napari.utils.misc import ensure_n_tuple
 
@@ -35,10 +34,6 @@ class ZoomOverlay(SceneOverlay):
     )
     handles: bool = False
     selected_handle: InteractionBoxHandle | None = None
-    line_thickness: int = 4
-    line_color: ColorValue = Field(
-        default_factory=lambda: ColorValue('red'),
-    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

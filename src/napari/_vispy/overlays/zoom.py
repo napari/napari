@@ -3,6 +3,7 @@
 from napari._vispy.overlays.base import ViewerOverlayMixin, VispySceneOverlay
 from napari._vispy.visuals.interaction_box import InteractionBox
 from napari.components.overlays.zoom import ZoomOverlay
+from napari.settings import get_settings
 
 
 class VispyZoomOverlay(ViewerOverlayMixin, VispySceneOverlay):
@@ -19,21 +20,21 @@ class VispyZoomOverlay(ViewerOverlayMixin, VispySceneOverlay):
         self.overlay.events.bounds.connect(self._on_bounds_change)
         self.overlay.events.handles.connect(self._on_bounds_change)
         self.overlay.events.selected_handle.connect(self._on_bounds_change)
-        self.overlay.events.line_color.connect(self._on_line_color_change)
-        self.overlay.events.line_thickness.connect(self._on_line_color_change)
 
-        self._on_line_color_change()
         self._on_visible_change()
         self._on_bounds_change(None)
-
-    def _on_line_color_change(self):
-        self.node._edge_color = self.overlay.line_color
-        self.node._highlight_width = self.overlay.line_thickness
-        self._on_bounds_change()
 
     def _on_bounds_change(self, _evt=None):
         """Change position."""
         if self.viewer.dims.ndisplay == 2:
+            settings = get_settings()
+            self.node._highlight_width = (
+                settings.appearance.highlight.highlight_thickness
+            )
+            self.node._edge_color = (
+                settings.appearance.highlight.highlight_color
+            )
+
             top_left, bot_right = self.overlay.bounds
             displayed = self.viewer.dims.displayed
             top_left = tuple([top_left[i] for i in displayed])
