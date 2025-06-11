@@ -8,7 +8,7 @@ from napari._vispy.utils.cursor import QtCursorVisual
 from napari._vispy.utils.quaternion import quaternion2euler_degrees
 from napari._vispy.utils.visual import get_view_direction_in_scene_coordinates
 from napari._vispy.utils.zoom import (
-    _calculate_zoom_for_dimension,
+    _get_dim_info,
     calculate_zoom_proportion,
 )
 from napari.components._viewer_constants import CursorStyle
@@ -22,9 +22,9 @@ angles = [[12, 53, 92], [180, -90, 0], [16, 90, 0]]
 def test_calculate_zoom_for_dimension():
     """Test zoom calculation for a given dimension."""
     # Test with a 2D image
-    dim_centroid, dim_diff = _calculate_zoom_for_dimension(100, 200)
+    dim_centroid, dim_spread = _get_dim_info(100, 200)
     assert dim_centroid == 150, 'Centroid should be 150'
-    assert dim_diff == 100, 'Difference should be 100'
+    assert dim_spread == 100, 'Difference should be 100'
 
 
 def test_calculate_zoom_proportion(make_napari_viewer):
@@ -36,7 +36,7 @@ def test_calculate_zoom_proportion(make_napari_viewer):
     assert dim1_center == 150, 'Centroid for dim1 should be 150'
     assert dim2_center == 100, 'Centroid for dim2 should be 100'
     assert dim3_center == 50, 'Centroid for dim3 should be 50'
-    assert zoom == 5.12, 'Zoom should be 100'
+    assert zoom == 6.0, 'Zoom should be 100'
 
 
 @pytest.mark.parametrize('angles', angles)
