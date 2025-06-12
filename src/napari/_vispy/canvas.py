@@ -381,19 +381,13 @@ class VispyCanvas:
         #         extent, total_size, scale_factor
         #     )
 
-        dim1_min, dim1_max, dim2_min, dim2_max, dim3_min, dim3_max = (
-            event.value
+        # dim1_min, dim1_max, dim2_min, dim2_max, dim3_min, dim3_max = (
+        #     event.value
+        # )
+        zoom, z_center, y_center, x_center = calculate_zoom_proportion(
+            self.viewer
         )
-        zoom, ycenter, xcenter, zcenter = calculate_zoom_proportion(
-            dim1_min,
-            dim1_max,
-            dim2_min,
-            dim2_max,
-            dim3_min,
-            dim3_max,
-            self.viewer,
-        )
-        self.viewer.camera.center = (zcenter, ycenter, xcenter)
+        self.viewer.camera.center = (z_center, x_center, y_center)
         # calculate zoom by checking the current extents
         self.viewer.camera.zoom = zoom
 

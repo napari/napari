@@ -1,12 +1,12 @@
 """Vispy zoom box overlay."""
 
-from napari._vispy.overlays.base import ViewerOverlayMixin, VispySceneOverlay
+from napari._vispy.overlays.base import ViewerOverlayMixin, VispyCanvasOverlay
 from napari._vispy.visuals.interaction_box import InteractionBox
 from napari.components.overlays.zoom import ZoomOverlay
 from napari.settings import get_settings
 
 
-class VispyZoomOverlay(ViewerOverlayMixin, VispySceneOverlay):
+class VispyZoomOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
     """Zoom box overlay.."""
 
     def __init__(self, viewer, overlay: ZoomOverlay, parent=None):
@@ -24,17 +24,16 @@ class VispyZoomOverlay(ViewerOverlayMixin, VispySceneOverlay):
 
     def _on_bounds_change(self, _evt=None):
         """Change position."""
-        # if self.viewer.dims.ndisplay == 2:
         settings = get_settings()
         self.node._highlight_width = (
             settings.appearance.highlight.highlight_thickness
         )
         self.node._edge_color = settings.appearance.highlight.highlight_color
 
+        # displayed = self.viewer.dims.displayed
         top_left, bot_right = self.overlay.bounds
-        displayed = self.viewer.dims.displayed
-        top_left = tuple([top_left[i] for i in displayed])
-        bot_right = tuple([bot_right[i] for i in displayed])
+        # top_left = tuple([top_left[i] for i in displayed])
+        # bot_right = tuple([bot_right[i] for i in displayed])
         self.node.set_data(
             # invert axes for vispy
             top_left[::-1],

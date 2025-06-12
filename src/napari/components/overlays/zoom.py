@@ -3,22 +3,17 @@
 from __future__ import annotations
 
 from napari._pydantic_compat import validator
-from napari.components.overlays.base import SceneOverlay
+from napari.components.overlays.base import CanvasOverlay
 from napari.utils.events import Event
-from napari.utils.misc import ensure_n_tuple
 
 
-class ZoomOverlay(SceneOverlay):
+class ZoomOverlay(CanvasOverlay):
     """A box that can be used to select and transform objects.
 
     Attributes
     ----------
-    bounds : 2-tuple of 3-tuples
+    bounds : 2-tuple of 2-tuples
         Corners at top left and bottom right in layer coordinates.
-    handles : bool
-        Whether to show the handles for transfomation or just the box.
-    selected_handle : Optional[InteractionBoxHandle]
-        The currently selected handle.
     visible : bool
         If the overlay is visible or not.
     opacity : float
@@ -27,10 +22,7 @@ class ZoomOverlay(SceneOverlay):
         The rendering order of the overlay: lower numbers get rendered first.
     """
 
-    bounds: tuple[tuple[float, float, float], tuple[float, float, float]] = (
-        (0, 0, 0),
-        (0, 0, 0),
-    )
+    bounds: tuple[tuple[float, float], tuple[float, float]] = ((0, 0), (0, 0))
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -41,9 +33,11 @@ class ZoomOverlay(SceneOverlay):
         cls, v: tuple[tuple[float, ...], tuple[float, ...]]
     ) -> tuple[tuple[float, float, float], tuple[float, float, float]]:
         tup_1, tup_2 = v
-        return ensure_n_tuple(tup_1, n=3, before=False), ensure_n_tuple(
-            tup_2, n=3, before=False
-        )
+        return tuple(tup_1), tuple(tup_2)
+
+    #     return ensure_n_tuple(tup_1, n=3, before=False), ensure_n_tuple(
+    #         tup_2, n=3, before=False
+    #     )
 
     def extents(
         self, displayed: tuple[int, ...]
@@ -74,3 +68,13 @@ class ZoomOverlay(SceneOverlay):
             dim3_min = min(top_left[2], bot_right[2])
             dim3_max = max(top_left[2], bot_right[2])
         return dim1_min, dim1_max, dim2_min, dim2_max, dim3_min, dim3_max
+
+    def bound_extents(self) -> tuple[float, float, float, float]:
+        """Bounds."""
+        top_left, bot_right = self.bounds
+
+        dim1_min = min(top_left[0], bot_right[0])
+        dim1_max = max(top_left[0], bot_right[0])
+        dim2_min = min(top_left[1], bot_right[1])
+        dim2_max = max(top_left[1], bot_right[1])
+        return dim1_min, dim1_max, dim2_min, dim2_max
