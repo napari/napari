@@ -14,8 +14,11 @@ class ZoomOverlay(CanvasOverlay):
 
     Attributes
     ----------
-    bounds : 2-tuple of 2-tuples
-        Corners at top left and bottom right in layer coordinates.
+    canvas_positions : 2-tuple of 2-tuples
+        Corners at the top left and bottom right in canvas coordinates.
+    data_positions : 2-tuple of D-tuples
+        Data values at the top left and bottom right in data coordinates.
+        Can be D-dimensional, where D is the number of dimensions in the data.
     visible : bool
         If the overlay is visible or not.
     opacity : float
@@ -73,13 +76,3 @@ class ZoomOverlay(CanvasOverlay):
         mins = np.min(extents, axis=0)
         maxs = np.max(extents, axis=0)
         return mins, maxs
-
-    def canvas_extents(self) -> tuple[float, float, float, float]:
-        """Bounds."""
-        top_left, bot_right = self.canvas_positions
-
-        dim1_min = min(top_left[0], bot_right[0])
-        dim1_max = max(top_left[0], bot_right[0])
-        dim2_min = min(top_left[1], bot_right[1])
-        dim2_max = max(top_left[1], bot_right[1])
-        return dim1_min, dim1_max, dim2_min, dim2_max
