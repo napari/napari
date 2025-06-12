@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import logging
 import sys
 import traceback
@@ -8,10 +9,7 @@ import weakref
 from collections.abc import Sequence
 from pathlib import Path
 from types import FrameType
-from typing import (
-    TYPE_CHECKING,
-    Any,
-)
+from typing import TYPE_CHECKING, Any
 from weakref import WeakSet, ref
 
 import numpy as np
@@ -49,7 +47,7 @@ from napari.utils.history import (
 )
 from napari.utils.io import imsave
 from napari.utils.key_bindings import KeymapHandler
-from napari.utils.misc import in_ipython, in_jupyter
+from napari.utils.misc import in_ipython, in_jupyter, is_installed
 from napari.utils.naming import CallerFrame
 from napari.utils.notifications import show_info
 from napari.utils.translations import trans
@@ -380,16 +378,7 @@ class QtViewer(QSplitter):
     def dockQDev(self) -> QtViewerDockWidget:
         """Dock widget for the development tools."""
         if self._dockQDev is None:
-            self._setup_dev_tools()
-            self._dockQDev = QtViewerDockWidget(
-                self,
-                self._qdev,
-                name='Reload Widget',
-                area='bottom',
-                allowed_areas=['left', 'right', 'bottom'],
-                object_name='QDev',
-                close_btn=False,
-            )
+            self._create_dev_tools()
         return self._dockQDev
 
     @property
@@ -429,23 +418,32 @@ class QtViewer(QSplitter):
             )
         return None
 
-    def _setup_dev_tools(self) -> None:
+    def _create_dev_tools(self) -> None:
         """Setup development tools."""
-        import logging
-        import os
-
         try:
-            if os.getenv('NAPARI_DEV_MODE', '0') == '1' and self._qdev is None:
+            if os.getenv('NAPARI_DEV_MODE', '0') == '1' and self._dockQDev is None:
                 from napari._qt.widgets.qt_dev import (
                     install_debugger_hook,
                     qdev,
                 )
 
+                if not is_installed('qtreload'):
+                    raise ImportError(trans._('qtreload is not installed.'))
+
                 logging.getLogger('napari').setLevel(logging.DEBUG)
                 self._qdev = qdev()
+                self._dockQDev = QtViewerDockWidget(
+                    self,
+                    self._qdev,
+                    name=trans._('hot reload'),
+                    area='bottom',
+                    allowed_areas=['left', 'right', 'bottom'],
+                    object_name='QDev',
+                    close_btn=False,
+                )
                 install_debugger_hook()
         except Exception as e:  # noqa
-            pass
+            logging.getLogger('napari').exception(trans._('Error setting up development tools: {e}', e=e))
 
     def _weakref_if_possible(self, obj):
         """Create a weakref to obj.

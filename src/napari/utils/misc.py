@@ -749,3 +749,16 @@ def is_installed(module: str) -> bool:
     except ModuleNotFoundError:
         return False
     return loader is not None
+
+
+def validate_dev_modules(modules: list[str]) -> None:
+    """Validate that dev modules are installed."""
+    for module in modules:
+        if not is_installed(module):
+            warnings.warn(
+                trans._(
+                    'module {module} is not installed - it will not be watched and reloaded.',
+                    deferred=True,
+                    module=module
+                )
+            )
