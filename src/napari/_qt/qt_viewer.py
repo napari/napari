@@ -422,12 +422,14 @@ class QtViewer(QSplitter):
         """Setup development tools."""
         try:
             if os.getenv('NAPARI_DEV', '0') == '1' and self._dockQDev is None:
-                from napari._qt.widgets.qt_dev import (
-                    install_debugger_hook,
-                    qdev,
-                )
+                from napari._qt.widgets.qt_dev import qdev
 
                 if not is_installed('qtreload'):
+                    logging.getLogger('napari').exception(
+                        trans._(
+                            'qtreload is not installed - please install using "pip install napari[reload]"'
+                        )
+                    )
                     return
 
                 logging.getLogger('napari').setLevel(logging.DEBUG)
@@ -441,7 +443,6 @@ class QtViewer(QSplitter):
                     object_name='QDev',
                     close_btn=False,
                 )
-                install_debugger_hook()
         except Exception:
             logging.getLogger('napari').exception(
                 trans._('Error setting up development tools.')
