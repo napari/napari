@@ -12,6 +12,7 @@ from napari.layers.utils.layer_utils import (
     register_layer_action,
     register_layer_attr_action,
 )
+from napari.utils.notifications import show_info
 from napari.utils.translations import trans
 
 
@@ -158,11 +159,35 @@ def paste_shape(layer: Shapes) -> None:
         layer._paste_data()
 
 
-@register_shapes_action(trans._('Select all shapes in the current view slice'))
+@register_shapes_action(
+    trans._('Select/Deselect all shapes in the current view slice')
+)
 def select_all_shapes(layer: Shapes) -> None:
-    """Select all shapes in the current view slice."""
+    """Select/Deselect all shapes in the current view slice."""
     if layer._mode in (Mode.DIRECT, Mode.SELECT):
-        layer.selected_data = set(np.nonzero(layer._data_view._displayed)[0])
+        new_selected = set(np.nonzero(layer._data_view._displayed)[0])
+
+        if new_selected & layer.selected_data == new_selected:
+            # If all visible shapes are already selected, deselect them
+            layer.selected_data = layer.selected_data - new_selected
+            show_info(
+                trans._(
+                    'Deselected all shapes in this slice, use Shift-A to deselect all shapes on the layer. ({n_total} selected)',
+                    n_total=len(layer.selected_data),
+                    deferred=True,
+                )
+            )
+        else:
+            # If not all visible shapes are selected, select them
+            layer.selected_data = layer.selected_data | new_selected
+            show_info(
+                trans._(
+                    'Selected {n_new} shapes in this slice, use Shift-A to select all shapes on the layer. ({n_total} selected)',
+                    n_new=len(new_selected),
+                    n_total=len(layer.selected_data),
+                    deferred=True,
+                )
+            )
         layer._set_highlight()
 
 
