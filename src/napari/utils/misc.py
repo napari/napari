@@ -759,6 +759,6 @@ def validate_dev_modules(modules: list[str]) -> None:
                 trans._(
                     'module {module} is not installed - it will not be watched and reloaded.',
                     deferred=True,
-                    module=module
+                    module=module,
                 )
             )

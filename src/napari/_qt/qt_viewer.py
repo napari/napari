@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import os
 import logging
+import os
 import sys
 import traceback
 import warnings
@@ -421,7 +421,10 @@ class QtViewer(QSplitter):
     def _create_dev_tools(self) -> None:
         """Setup development tools."""
         try:
-            if os.getenv('NAPARI_DEV_MODE', '0') == '1' and self._dockQDev is None:
+            if (
+                os.getenv('NAPARI_DEV_MODE', '0') == '1'
+                and self._dockQDev is None
+            ):
                 from napari._qt.widgets.qt_dev import (
                     install_debugger_hook,
                     qdev,
@@ -442,8 +445,10 @@ class QtViewer(QSplitter):
                     close_btn=False,
                 )
                 install_debugger_hook()
-        except Exception as e:  # noqa
-            logging.getLogger('napari').exception(trans._('Error setting up development tools: {e}', e=e))
+        except Exception as e:
+            logging.getLogger('napari').exception(
+                trans._('Error setting up development tools: {e}', e=e)
+            )
 
     def _weakref_if_possible(self, obj):
         """Create a weakref to obj.

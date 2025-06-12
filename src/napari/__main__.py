@@ -16,7 +16,11 @@ from textwrap import wrap
 from typing import Any
 
 from napari.errors import ReaderPluginError
-from napari.utils.misc import is_installed, maybe_patch_conda_exe, validate_dev_modules
+from napari.utils.misc import (
+    is_installed,
+    maybe_patch_conda_exe,
+    validate_dev_modules,
+)
 from napari.utils.translations import trans
 
 
@@ -213,7 +217,6 @@ def parse_sys_argv():
             default=[],
             help='concatenate multiple modules that should be watched alongside `napari` and `napari_builtins`.',
         )
-
 
     args, unknown = parser.parse_known_args()
     # this is a hack to allow using "=" as a key=value separator while also
