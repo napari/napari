@@ -421,17 +421,14 @@ class QtViewer(QSplitter):
     def _create_dev_tools(self) -> None:
         """Setup development tools."""
         try:
-            if (
-                os.getenv('NAPARI_DEV_MODE', '0') == '1'
-                and self._dockQDev is None
-            ):
+            if os.getenv('NAPARI_DEV', '0') == '1' and self._dockQDev is None:
                 from napari._qt.widgets.qt_dev import (
                     install_debugger_hook,
                     qdev,
                 )
 
                 if not is_installed('qtreload'):
-                    raise ImportError(trans._('qtreload is not installed.'))
+                    return
 
                 logging.getLogger('napari').setLevel(logging.DEBUG)
                 self._qdev = qdev()
@@ -445,9 +442,9 @@ class QtViewer(QSplitter):
                     close_btn=False,
                 )
                 install_debugger_hook()
-        except Exception as e:
+        except Exception:
             logging.getLogger('napari').exception(
-                trans._('Error setting up development tools: {e}', e=e)
+                trans._('Error setting up development tools.')
             )
 
     def _weakref_if_possible(self, obj):

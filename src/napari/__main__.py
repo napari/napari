@@ -247,7 +247,7 @@ def _run() -> None:
 
     # check whether Dev mode was requested
     if args.dev:
-        os.environ['NAPARI_DEV_MODE'] = '1'
+        os.environ['NAPARI_DEV'] = '1'
     # check if additional dev modules were requested
     if args.dev_module:
         dev_module = list(args.dev_module)
