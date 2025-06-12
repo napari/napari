@@ -33,7 +33,8 @@ def calculate_zoom_proportion(
     extent, _, _, total_size = viewer._get_scene_parameters()
 
     # calculate average zoom based on the size of the rectangle
-    if viewer.dims.ndisplay == 3:
+    if viewer.dims.ndisplay == 3 and len(total_size) == 3:
+        dim3_spread = dim3_spread or 1.0
         zoom = np.min(total_size / (dim3_spread, dim2_spread, dim1_spread))
         native_zoom = viewer._get_2d_camera_zoom(total_size, 1.0)
     else:

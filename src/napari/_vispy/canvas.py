@@ -350,6 +350,37 @@ class VispyCanvas:
         """Update zoom level."""
         from napari._vispy.utils.zoom import calculate_zoom_proportion
 
+        # extent, _, _, total_size = self.viewer._get_scene_parameters()
+        # scale_factor = self.viewer._get_scale_factor(0.05)
+        # if self.viewer.dims.ndisplay == 2:
+        #     current_zoom = self.viewer._get_2d_camera_zoom(
+        #         total_size, scale_factor
+        #     )
+        # else:
+        #     current_zoom = self.viewer._get_3d_camera_zoom(
+        #         extent, total_size, scale_factor
+        #     )
+        #
+        # # Bounds
+        #
+        #
+        # # Set camera zoom based on ndisplay
+        # # zoom is defined as the number of canvas pixels per world pixel
+        # # The default value used below will zoom such that the whole field
+        # # of view will occupy 95% of the canvas on the most filled axis
+        # if np.max(scene_size) == 0:
+        #     self.camera.zoom = scale_factor * np.min(self._canvas_size)
+        #
+        # elif self.dims.ndisplay == 2:
+        #     self.camera.zoom = self._get_2d_camera_zoom(
+        #         total_size, scale_factor
+        #     )
+        #
+        # elif self.dims.ndisplay == 3:
+        #     self.camera.zoom = self._get_3d_camera_zoom(
+        #         extent, total_size, scale_factor
+        #     )
+
         dim1_min, dim1_max, dim2_min, dim2_max, dim3_min, dim3_max = (
             event.value
         )
