@@ -18,34 +18,30 @@ class VispyZoomOverlay(ViewerOverlayMixin, VispySceneOverlay):
         )
 
         self.overlay.events.bounds.connect(self._on_bounds_change)
-        self.overlay.events.handles.connect(self._on_bounds_change)
-        self.overlay.events.selected_handle.connect(self._on_bounds_change)
 
         self._on_visible_change()
         self._on_bounds_change(None)
 
     def _on_bounds_change(self, _evt=None):
         """Change position."""
-        if self.viewer.dims.ndisplay == 2:
-            settings = get_settings()
-            self.node._highlight_width = (
-                settings.appearance.highlight.highlight_thickness
-            )
-            self.node._edge_color = (
-                settings.appearance.highlight.highlight_color
-            )
+        # if self.viewer.dims.ndisplay == 2:
+        settings = get_settings()
+        self.node._highlight_width = (
+            settings.appearance.highlight.highlight_thickness
+        )
+        self.node._edge_color = settings.appearance.highlight.highlight_color
 
-            top_left, bot_right = self.overlay.bounds
-            displayed = self.viewer.dims.displayed
-            top_left = tuple([top_left[i] for i in displayed])
-            bot_right = tuple([bot_right[i] for i in displayed])
-            self.node.set_data(
-                # invert axes for vispy
-                top_left[::-1],
-                bot_right[::-1],
-                handles=self.overlay.handles,
-                selected=self.overlay.selected_handle,
-            )
+        top_left, bot_right = self.overlay.bounds
+        displayed = self.viewer.dims.displayed
+        top_left = tuple([top_left[i] for i in displayed])
+        bot_right = tuple([bot_right[i] for i in displayed])
+        self.node.set_data(
+            # invert axes for vispy
+            top_left[::-1],
+            bot_right[::-1],
+            handles=False,
+            selected=None,
+        )
 
     def reset(self):
         """Reset the overlay."""
