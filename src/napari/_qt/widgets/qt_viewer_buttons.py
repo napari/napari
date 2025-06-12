@@ -122,7 +122,7 @@ def labeled_double_slider(
     """Create a labeled double slider widget."""
     slider = QLabeledDoubleSlider(parent)
     slider.setRange(*value_range)
-    slider.setValue(float(value))
+    slider.setValue(value)
     slider.setDecimals(decimals)
     slider.valueChanged.connect(callback)
     return slider
