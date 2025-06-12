@@ -46,11 +46,13 @@ def drag_to_zoom(viewer, event):
         return
 
     # on mouse press
-    press_pos = None
+    press_pos, press_position = None, None
     if event.type == 'mouse_press':
         viewer._zoom_box.visible = True
         press_pos = event.pos[::-1]
-        viewer._zoom_box.bounds = (press_pos, press_pos)
+        press_position = event.position
+        viewer._zoom_box.canvas_positions = (press_pos, press_pos)
+        viewer._zoom_box.data_positions = (press_position, press_position)
         yield
         event.handled = True
 
@@ -60,7 +62,8 @@ def drag_to_zoom(viewer, event):
         if press_pos is None:
             continue
         move_pos = event.pos[::-1]
-        viewer._zoom_box.bounds = (press_pos, move_pos)
+        viewer._zoom_box.canvas_positions = (press_pos, move_pos)
+        viewer._zoom_box.data_positions = (press_position, event.position)
         yield
 
     # on mouse release
@@ -69,9 +72,7 @@ def drag_to_zoom(viewer, event):
     # only trigger zoom if the box is larger than a pixel
     distance = np.abs(np.array(press_pos) - np.array(move_pos))
     if distance.min() > 10:
-        viewer._zoom_box.events.zoom(
-            # value=viewer._zoom_box.extents(viewer.dims.displayed)
-        )
+        viewer._zoom_box.events.zoom()
     yield
 
 
