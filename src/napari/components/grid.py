@@ -132,6 +132,22 @@ class GridCanvas(EventedModel):
     def contents_at(
         self, position: tuple[int, int], nlayers: int
     ) -> tuple[int, ...]:
+        """Return the indices contained in the quadrant at the given position.
+
+        If the grid is not enabled, this will return ().
+
+        Parameters
+        ----------
+        position : 2-tuple of int
+            Row and column position of current index in the grid.
+        nlayers : int
+            Number of layers that need to be placed in the grid.
+
+        Returns
+        -------
+        indices : tuple of int
+            Position of current layer in layer list.
+        """
         if not self.enabled:
             return ()
 
@@ -142,5 +158,19 @@ class GridCanvas(EventedModel):
     def iter_quadrants(
         self, nlayers: int
     ) -> Iterator[tuple[tuple[int, int], tuple[int, ...]]]:
+        """Iterate over each quadrant and its contained indices.
+
+        Parameters
+        ----------
+        nlayers : int
+            Number of layers that need to be placed in the grid.
+
+        Yields
+        -------
+        position : 2-tuple of int
+            Row and column position of current index in the grid.
+        indices : tuple of int
+            Position of current layer in layer list.
+        """
         for row, col in np.ndindex(self.actual_shape(nlayers)):
             yield (row, col), self.contents_at((row, col), nlayers)
