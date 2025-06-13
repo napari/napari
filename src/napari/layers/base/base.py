@@ -832,6 +832,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         # mypy bug https://github.com/python/mypy/issues/3004
         self._transforms['data2physical'].units = units  # type: ignore[assignment]
         if self.units != prev:
+            self._clear_extent()
+            self.refresh(extent=False)
             self.events.units()
 
     @property
@@ -844,7 +846,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         if scale is None:
             scale = np.array([1] * self.ndim)
         self._transforms['data2physical'].scale = np.array(scale)
-        self.refresh()
+        self._clear_extent()
+        self.refresh(extent=False)
+        # self.refresh()
         self.events.scale()
 
     @property
@@ -866,7 +870,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     @translate.setter
     def translate(self, translate: npt.ArrayLike) -> None:
         self._transforms['data2physical'].translate = np.array(translate)
-        self.refresh()
+        self._clear_extent()
+        self.refresh(extent=False)
         self.events.translate()
 
     @property
@@ -877,7 +882,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     @rotate.setter
     def rotate(self, rotate: npt.NDArray) -> None:
         self._transforms['data2physical'].rotate = rotate
-        self.refresh()
+        self._clear_extent()
+        self.refresh(extent=False)
         self.events.rotate()
 
     @property
@@ -888,7 +894,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     @shear.setter
     def shear(self, shear: npt.NDArray) -> None:
         self._transforms['data2physical'].shear = shear
-        self.refresh()
+        self._clear_extent()
+        self.refresh(extent=False)
         self.events.shear()
 
     @property
@@ -904,7 +911,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self._transforms[2] = coerce_affine(
             affine, ndim=self.ndim, name='physical2world'
         )
-        self.refresh()
+        self._clear_extent()
+        self.refresh(extent=False)
         self.events.affine()
 
     def _reset_affine(self) -> None:
@@ -1036,10 +1044,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         """Clear extent cache and emit extent event."""
         if 'extent' in self.__dict__:
             del self.extent
-        self.events.extent()
-
-    def _clear_extent_augmented(self) -> None:
-        """Clear extent_augmented cache and emit extent_augmented event."""
         if '_extent_augmented' in self.__dict__:
             del self._extent_augmented
         self.events._extent_augmented()
@@ -1535,7 +1539,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             return
         if extent:
             self._clear_extent()
-            self._clear_extent_augmented()
         if data_displayed:
             self.set_view_slice()
             self.events.set_data()

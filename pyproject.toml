@@ -448,7 +448,7 @@ files = "napari"
 # This file triggers an internal mypy error, so exclude collection
 # TODO: fix this
 exclude = "src/napari/utils/events/_tests/test_evented_model\\.py"
-plugins =  "numpy.typing.mypy_plugin, pydantic.mypy"
+plugins =  "pydantic.mypy"
 ignore_missing_imports = true
 hide_error_codes = false
 warn_redundant_casts = true

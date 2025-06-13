@@ -68,7 +68,7 @@ def find_planar_axis(
     for axis_idx in range(ndim):
         values = np.unique(points[:, axis_idx])
         if len(values) == 1:
-            return np.delete(points, axis_idx, axis=1), axis_idx, values[0]  # type: ignore[return-value]
+            return np.delete(points, axis_idx, axis=1), axis_idx, values[0]
     return np.empty((0, 2), dtype=points.dtype), None, None  # type: ignore[return-value]
 
 
@@ -429,7 +429,7 @@ def create_box(data: CoordinateArray2D) -> BoxArray:
             (tl + tr + br + bl) / 4,
         ]
     )
-    return box  # type: ignore[return-value]
+    return box
 
 
 def rectangle_to_box(
@@ -471,7 +471,7 @@ def rectangle_to_box(
             data.mean(axis=0),
         ]
     )
-    return box  # type: ignore[return-value]
+    return box
 
 
 def find_corners(data: npt.NDArray) -> npt.NDArray:
@@ -664,7 +664,7 @@ def _fix_vertices_if_needed(
     if axis is None or value is None:
         return vertices
     new_vertices = np.insert(vertices, axis, value, axis=1)
-    return new_vertices  # type: ignore[return-value]
+    return new_vertices
 
 
 def triangulate_face_and_edges(
@@ -774,7 +774,7 @@ def reconstruct_and_triangulate_edge(
         offset_list.append(offset)
         triangles_list.append(triangles + offset_idx)
         offset_idx += len(centers)
-    return (  # type: ignore[return-value]
+    return (
         np.concatenate(centers_list),
         np.concatenate(offset_list),
         np.concatenate(triangles_list),
