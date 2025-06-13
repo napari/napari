@@ -876,7 +876,8 @@ def reconstruct_polygons_from_edges(
                 # chain of vertices, without this break, we would enter an
                 # infinite loop. Therefore, we leave it here for safety.
                 break
-        polygons.append([vertices[x] for x in poly])
+        polygon = [vertices[x] for x in poly]
+        polygons.append(polygon)
     return polygons
 
 
