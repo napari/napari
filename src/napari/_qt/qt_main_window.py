@@ -2057,4 +2057,9 @@ class InnerWidgetMappingProxy(MappingProxy):
         items = (
             f'{k!r}: {v.inner_widget()!r}' for k, v in self._wrapped.items()
         )
-        return f'<{self.__class__.__name__} {{{", ".join(items)}}}>'
+        if items:
+            indent = '\n  '
+            return (
+                f'<{self.__class__.__name__} {{\n  {indent.join(items)}\n}}>'
+            )
+        return f'<{self.__class__.__name__} {{}}>'
