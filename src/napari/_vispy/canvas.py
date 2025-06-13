@@ -791,7 +791,9 @@ class VispyCanvas:
             if isinstance(overlay, CanvasOverlay):
                 if self.viewer.grid.enabled:
                     row, col = self.viewer.grid.position(
-                        self.viewer.layers.index(layer),
+                        # FIXME: this negative sign should be removed
+                        # see https://github.com/napari/napari/pull/7870#issuecomment-2965031040
+                        -self.viewer.layers.index(layer),
                         len(self.viewer.layers),
                     )
                     parent = self.grid[row, col]
@@ -892,7 +894,9 @@ class VispyCanvas:
     def _setup_layer_views_in_grid(self):
         for napari_layer, vispy_layer in self.layer_to_visual.items():
             row, col = self.viewer.grid.position(
-                self.viewer.layers.index(napari_layer),
+                # FIXME: this negative sign should be removed
+                # see https://github.com/napari/napari/pull/7870#issuecomment-2965031040
+                -self.viewer.layers.index(napari_layer),
                 len(self.viewer.layers),
             )
             view = self.grid[row, col]
@@ -923,7 +927,9 @@ class VispyCanvas:
             if not layer_indices:
                 color = self.bgcolor
             elif any(
-                self.viewer.layers[idx] in self.viewer.layers.selection
+                # FIXME: this negative sign should be removed
+                # see https://github.com/napari/napari/pull/7870#issuecomment-2965031040
+                self.viewer.layers[-idx] in self.viewer.layers.selection
                 for idx in layer_indices
             ):
                 color = hl_color
