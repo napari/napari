@@ -127,7 +127,7 @@ class VispyCanvas:
 
         self.grid = self.central_widget.add_grid(
             border_width=0,
-            spacing=viewer.grid.spacing,
+            spacing=self._compute_grid_spacing(),
         )
         self.grid_views = []
         self.grid_cameras = []
@@ -627,6 +627,7 @@ class VispyCanvas:
         None
         """
         self.viewer._canvas_size = self.size
+        self.grid.spacing = self._compute_grid_spacing()
 
     def add_layer_visual_mapping(
         self, napari_layer: Layer, vispy_layer: VispyBaseLayer
@@ -853,6 +854,13 @@ class VispyCanvas:
         """Enable playing of animation. False if awaiting a draw event"""
         self.viewer.dims._play_ready = True
 
+    def _compute_grid_spacing(self):
+        spacing = self.viewer.grid.spacing
+        if spacing >= 1:
+            return int(spacing)
+        mean_size = np.mean(self.viewer._get_viewbox_size())
+        return int(spacing * mean_size / 2)
+
     def _update_scenegraph(self, event=None):
         for camera in self.grid_cameras:
             camera._2D_camera.parent = None
@@ -864,7 +872,7 @@ class VispyCanvas:
         # grid are really not designed to be reset, so it's easier to replace it
         self.grid.parent = None
         self.grid = self.central_widget.add_grid(
-            border_width=0, spacing=self.viewer.grid.spacing
+            border_width=0, spacing=self._compute_grid_spacing()
         )
 
         if self.viewer.grid.enabled:

@@ -16,7 +16,7 @@ from napari.utils.camera_orientations import (
     HorizontalAxisOrientation,
     VerticalAxisOrientation,
 )
-from napari.utils.events.custom_types import conint
+from napari.utils.events.custom_types import confloat, conint
 from napari.utils.events.evented_model import EventedModel
 from napari.utils.notifications import NotificationSeverity
 from napari.utils.translations import trans
@@ -24,7 +24,8 @@ from napari.utils.translations import trans
 GridStride = conint(ge=-50, le=50, ne=0)
 GridWidth = conint(ge=-1, ne=0)
 GridHeight = conint(ge=-1, ne=0)
-GridSpacing = conint(ge=0, le=500)
+GridSpacing = confloat(ge=0)
+GridBorderWidth = conint(ge=0)
 
 _DEFAULT_MEM_FRACTION = 0.25
 MAX_CACHE = virtual_memory().total * 0.5 / 1e9
@@ -207,8 +208,14 @@ class ApplicationSettings(EventedModel):
     grid_spacing: GridSpacing = Field(  # type: ignore [valid-type]
         default=0,
         title=trans._('Grid Spacing'),
+        description=trans._('The amount of spacing inbetween grid positions.'),
+    )
+
+    grid_border_width: GridBorderWidth = Field(  # type: ignore [valid-type]
+        default=0,
+        title=trans._('Grid Border Width'),
         description=trans._(
-            'The amount of spacing inbetween grid positions in screen pixels.'
+            'The width of the border inbetween grid positions in screen pixels.'
         ),
     )
 
