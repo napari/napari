@@ -781,8 +781,9 @@ class ShapeList:
         self._vertices = np.append(
             self._vertices, shape.data_displayed, axis=0
         )
-        index = np.repeat(shape_index, len(shape.data))
-        self._index = np.append(self._index, index, axis=0)
+        self._vertices_index = np.append(
+            self._vertices_index, [self._vertices_index.shape[0]], axis=0
+        )
 
         # Add faces to mesh
         m = len(self._mesh.vertices)
@@ -796,18 +797,20 @@ class ShapeList:
         self._mesh.vertices_offsets = np.append(
             self._mesh.vertices_offsets, vertices, axis=0
         )
-        index = np.repeat([[shape_index, 0]], len(vertices), axis=0)
         self._mesh.vertices_index = np.append(
-            self._mesh.vertices_index, index, axis=0
+            self._mesh.vertices_index,
+            [self._mesh.vertices_index.shape[0]],
+            axis=0,
         )
 
         triangles = shape._face_triangles + m
         self._mesh.triangles = np.append(
             self._mesh.triangles, triangles, axis=0
         )
-        index = np.repeat([[shape_index, 0]], len(triangles), axis=0)
         self._mesh.triangles_index = np.append(
-            self._mesh.triangles_index, index, axis=0
+            self._mesh.triangles_index,
+            [self._mesh.triangles_index.shape[0]],
+            axis=0,
         )
         color_array = np.repeat([face_color], len(triangles), axis=0)
         self._mesh.triangles_colors = np.append(
@@ -828,18 +831,10 @@ class ShapeList:
         self._mesh.vertices_offsets = np.append(
             self._mesh.vertices_offsets, vertices, axis=0
         )
-        index = np.repeat([[shape_index, 1]], len(vertices), axis=0)
-        self._mesh.vertices_index = np.append(
-            self._mesh.vertices_index, index, axis=0
-        )
 
         triangles = shape._edge_triangles + m
         self._mesh.triangles = np.append(
             self._mesh.triangles, triangles, axis=0
-        )
-        index = np.repeat([[shape_index, 1]], len(triangles), axis=0)
-        self._mesh.triangles_index = np.append(
-            self._mesh.triangles_index, index, axis=0
         )
         color_array = np.repeat([edge_color], len(triangles), axis=0)
         self._mesh.triangles_colors = np.append(
