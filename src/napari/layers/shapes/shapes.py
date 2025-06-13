@@ -904,8 +904,11 @@ class Shapes(Layer):
     def current_edge_color(self, edge_color):
         self._current_edge_color = transform_color(edge_color)
         if self._update_properties:
-            for i in self.selected_data:
-                self._data_view.update_edge_color(i, self._current_edge_color)
+            with self._data_view.batched_updates:
+                for i in self.selected_data:
+                    self._data_view.update_edge_color(
+                        i, self._current_edge_color
+                    )
             self.events.edge_color()
             self._update_thumbnail()
         self.events.current_edge_color()
