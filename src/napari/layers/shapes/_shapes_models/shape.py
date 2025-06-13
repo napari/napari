@@ -508,7 +508,7 @@ class Shape(ABC):
                 # axis-aligned plane. However in that situation data2d will be
                 # empty, is_collinear is True, and we will never get here. But
                 # we check anyway for mypy's sake
-                vertices = np.insert(vertices, axis, value, axis=1)  # type: ignore[assignment]
+                vertices = np.insert(vertices, axis, value, axis=1)
             if len(triangles) > 0:
                 self._face_vertices = vertices
                 self._face_triangles = triangles
@@ -574,7 +574,7 @@ class Shape(ABC):
                 # axis-aligned plane. However in that situation data2d will be
                 # empty, is_collinear is True, and we will never get here. But
                 # we check anyway for mypy's sake
-                vertices = np.insert(vertices, axis, value, axis=1)  # type: ignore[assignment]
+                vertices = np.insert(vertices, axis, value, axis=1)
             if len(triangles) > 0:
                 self._face_vertices = vertices
                 self._face_triangles = triangles
@@ -803,7 +803,7 @@ class Shape(ABC):
         else:
             data = self.data_displayed
 
-        data = data[:, -len(shape_plane) :]  # type: ignore[assignment]
+        data = data[:, -len(shape_plane) :]
 
         if self._filled:
             mask_p = poly_to_mask(shape_plane, (data - offset) * zoom_factor)
