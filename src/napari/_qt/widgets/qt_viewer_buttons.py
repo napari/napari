@@ -557,24 +557,27 @@ class QtViewerButtons(QFrame):
         grid_width = QtSpinBox(popup)
         grid_height = QtSpinBox(popup)
         grid_spacing = QDoubleSpinBox(popup)
+        grid_border_width = QtSpinBox(popup)
         shape_help_symbol = QtToolTipLabel(self)
         stride_help_symbol = QtToolTipLabel(self)
         spacing_help_symbol = QtToolTipLabel(self)
+        border_width_help_symbol = QtToolTipLabel(self)
 
         shape_help_msg = trans._(
             'Number of rows and columns in the grid. A value of -1 for either or both of width and height will trigger an auto calculation of the necessary grid shape to appropriately fill all the layers at the appropriate stride. 0 is not a valid entry.'
         )
 
         stride_help_msg = trans._(
-            'Number of layers to place in each grid square before moving on to the next square. The default ordering is to place the most visible layer in the top left corner of the grid. A negative stride will cause the order in which the layers are placed in the grid to be reversed. 0 is not a valid entry.'
+            'Number of layers to place in each grid quadrant before moving on to the next quadrant. The default ordering is to place the most visible layer in the top left corner of the grid. A negative stride will cause the order in which the layers are placed in the grid to be reversed. 0 is not a valid entry.'
         )
 
         spacing_help_msg = trans._(
-            'Spacing between grid positions (row, column index) in screen pixels. 0 has the layers touching. Positive '
-            'values will space the grid positions apart.'
+            'Spacing between grid quadrants. If below 1, interpreted as percentage of the quadrant size, otherwise interpreted as screen pixels. 0 has the layers touching, positive values will space the grid positions apart.'
         )
 
-        # set upnapari
+        border_width_help_msg = trans._(
+            'Width of the border between grid quadrants. If below 1, interpreted as percentage of the quadrant size, otherwise interpreted as screen pixels. 0 has the layers touching, positive values will space the grid positions apart.'
+        )
 
         stride_min = self.viewer.grid.__fields__['stride'].type_.ge
         stride_max = self.viewer.grid.__fields__['stride'].type_.le
@@ -613,16 +616,23 @@ class QtViewerButtons(QFrame):
 
         # set up spacing
         spacing_min = self.viewer.grid.__fields__['spacing'].type_.ge
-        spacing_max = self.viewer.grid.__fields__['spacing'].type_.le
         grid_spacing.setObjectName('gridSpacingBox')
         grid_spacing.setAlignment(Qt.AlignmentFlag.AlignCenter)
         grid_spacing.setMinimum(spacing_min)
-        grid_spacing.setMaximum(spacing_max)
         grid_spacing.setValue(self.viewer.grid.spacing)
-        grid_spacing.setDecimals(0)
+        grid_spacing.setDecimals(2)
         grid_spacing.setSingleStep(5)
         grid_spacing.valueChanged.connect(self._update_grid_spacing)
         self.grid_spacing_box = grid_spacing
+
+        # set up border_width
+        border_width_min = self.viewer.grid.__fields__['border_width'].type_.ge
+        grid_border_width.setObjectName('gridBorderWidthBox')
+        grid_border_width.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        grid_border_width.setMinimum(border_width_min)
+        grid_border_width.setValue(self.viewer.grid.border_width)
+        grid_border_width.valueChanged.connect(self._update_grid_border_width)
+        self.grid_border_width_box = grid_border_width
 
         # help symbols
         shape_help_symbol.setObjectName('help_label')
@@ -633,6 +643,9 @@ class QtViewerButtons(QFrame):
 
         spacing_help_symbol.setObjectName('help_label')
         spacing_help_symbol.setToolTip(spacing_help_msg)
+
+        border_width_help_symbol.setObjectName('help_label')
+        border_width_help_symbol.setToolTip(border_width_help_msg)
 
         # layout
         grid_layout = QGridLayout()
@@ -651,6 +664,10 @@ class QtViewerButtons(QFrame):
         grid_layout.addWidget(QLabel(trans._('Grid spacing:')), 3, 0)
         grid_layout.addWidget(grid_spacing, 3, 1)
         grid_layout.addWidget(spacing_help_symbol, 3, 2)
+
+        grid_layout.addWidget(QLabel(trans._('Grid border width:')), 4, 0)
+        grid_layout.addWidget(grid_border_width, 4, 1)
+        grid_layout.addWidget(border_width_help_symbol, 4, 2)
 
         popup.frame.setLayout(grid_layout)
         popup.show_above_mouse()
@@ -697,6 +714,16 @@ class QtViewerButtons(QFrame):
             New grid spacing value.
         """
         self.viewer.grid.spacing = value
+
+    def _update_grid_border_width(self, value: float) -> None:
+        """Update border width value in grid settings.
+
+        Parameters
+        ----------
+        value : float
+            New grid border width value.
+        """
+        self.viewer.grid.border_width = value
 
 
 def _omit_viewer_args(constructor):

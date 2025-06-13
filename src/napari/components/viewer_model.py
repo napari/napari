@@ -518,6 +518,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             # TODO: why the hell is this not just 2 but seems to vary with the border width?
             # in the meantime, this should be ok with small border width values :/
             viewbox_size -= self.grid.border_width * 2
+            viewbox_size -= self.grid._compute_canvas_spacing(viewbox_size) * 2
         return viewbox_size
 
     def _get_2d_camera_zoom(
@@ -706,6 +707,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         tooltip_text = ''
         selection = self.layers.selection
         active = selection.active
+        # TODO: this doesn't work well yet with grid mode (and is broken by wide borders too)
 
         # Compute the tooltip first since it is always needed.
         if self.tooltip.visible and active is not None and active._loaded:

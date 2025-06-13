@@ -103,7 +103,7 @@ class VispyCamera:
     @property
     def zoom(self):
         """float: Scale from canvas pixels to world pixels."""
-        viewbox_size = np.array(self._view.inner_rect.size)
+        viewbox_size = np.array(self._view.rect.size)
         if isinstance(self._view.camera, MouseToggledArcballCamera):
             # For fov = 0.0 normalize scale factor by canvas size to get scale factor.
             # Note that the scaling is stored in the `_projection` property of the
@@ -122,7 +122,7 @@ class VispyCamera:
     def zoom(self, zoom):
         if self.zoom == zoom:
             return
-        viewbox_size = np.array(self._view.inner_rect.size)
+        viewbox_size = np.array(self._view.rect.size)
         scale = np.array(viewbox_size) / zoom
         if isinstance(self._view.camera, MouseToggledArcballCamera):
             self._view.camera.scale_factor = np.min(scale)
@@ -217,7 +217,7 @@ class VispyCamera:
         Update camera model angles, center, and zoom.
         """
         # if the viewboxsize changed since last time, we need to update
-        viewbox_size = np.array(self._view.inner_rect.size)
+        viewbox_size = np.array(self._view.rect.size)
         if not np.allclose(self._last_viewbox_size, viewbox_size):
             self._last_viewbox_size = viewbox_size
             self._on_ndisplay_change()

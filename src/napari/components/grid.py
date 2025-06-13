@@ -38,12 +38,16 @@ class GridCanvas(EventedModel):
         interpreted as a proportion of the size of the quadrants.
         If equal or greater than 1, it's interpreted as screen pixels.
     border_width : int
-        Width of the border separating each quadrant in screen pixels.
+        Width of the border delineating each quadrant in screen pixels.
+    highlight: bool
         Borders will be highlighted based on which layers are selected
         in the layerlists.
 
         .. versionadded:: 0.6.0
             ``spacing`` was added in 0.6.0.
+        .. versionadded:: 0.6.2
+            ``border_width`` was added in 0.6.2.
+            ``highlight`` was added in 0.6.2.
     """
 
     # fields
@@ -54,6 +58,7 @@ class GridCanvas(EventedModel):
     enabled: bool = False
     spacing: GridSpacing = 0.0  # type: ignore[valid-type]
     border_width: GridBorderWidth = 0  # type: ignore[valid-type]
+    highlight: bool = True
 
     def actual_shape(self, nlayers: int = 1) -> tuple[int, int]:
         """Return the actual shape of the grid.
@@ -174,3 +179,10 @@ class GridCanvas(EventedModel):
         """
         for row, col in np.ndindex(self.actual_shape(nlayers)):
             yield (row, col), self.contents_at((row, col), nlayers)
+
+    def _compute_canvas_spacing(self, viewbox_size):
+        spacing = self.spacing
+        if spacing >= 1:
+            return int(spacing)
+        mean_size = np.mean(viewbox_size)
+        return int(spacing * mean_size / 2)
