@@ -910,7 +910,7 @@ class VispyCanvas:
 
     def _current_viewbox_size(self):
         if self.viewer.grid.enabled and self.grid_views:
-            return self.grid_views[0].inner_rect.size
+            return self.grid_views[0].rect.size
         return self._scene_canvas.size
 
     def _update_grid_spacing(self):
