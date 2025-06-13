@@ -228,7 +228,7 @@ class Tracks(Layer):
         else:
             maxs = np.max(self.data, axis=0)
             mins = np.min(self.data, axis=0)
-            extrema = np.vstack([mins, maxs])  # type: ignore[assignment]
+            extrema = np.vstack([mins, maxs])
         return extrema[:, 1:]
 
     def _get_ndim(self) -> int:
