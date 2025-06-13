@@ -12,7 +12,6 @@ from napari.layers.utils.layer_utils import (
     register_layer_action,
     register_layer_attr_action,
 )
-from napari.utils.notifications import show_info
 from napari.utils.translations import trans
 
 
@@ -170,24 +169,9 @@ def select_all_shapes(layer: Shapes) -> None:
         if new_selected & layer.selected_data == new_selected:
             # If all visible shapes are already selected, deselect them
             layer.selected_data = layer.selected_data - new_selected
-            show_info(
-                trans._(
-                    'Deselected all shapes in this slice, use Shift-A to deselect all shapes on the layer. ({n_total} selected)',
-                    n_total=len(layer.selected_data),
-                    deferred=True,
-                )
-            )
         else:
             # If not all visible shapes are selected, select them
             layer.selected_data = layer.selected_data | new_selected
-            show_info(
-                trans._(
-                    'Selected {n_new} shapes in this slice, use Shift-A to select all shapes on the layer. ({n_total} selected)',
-                    n_new=len(new_selected),
-                    n_total=len(layer.selected_data),
-                    deferred=True,
-                )
-            )
         layer._set_highlight()
 
 
