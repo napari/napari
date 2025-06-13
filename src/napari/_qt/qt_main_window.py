@@ -2055,7 +2055,6 @@ class InnerWidgetMappingProxy(MappingProxy):
     def __repr__(self) -> str:
         """Return a dict-like mapping of widget names to widget class names."""
         items = (
-            f'{k!r}: {v.inner_widget().__class__.__name__!r}'
-            for k, v in self._wrapped.items()
+            f'{k!r}: {v.inner_widget()!r}' for k, v in self._wrapped.items()
         )
         return f'<{self.__class__.__name__} {{{", ".join(items)}}}>'
