@@ -151,6 +151,7 @@ jobs:
         env:
           BACKEND: ${{ env.MAIN }}
           TOX_WORK_DIR: .tox
+          NUMBA_FULL_TRACEBACKS: 1
 
       - name: Test with tox second
         timeout-minutes: ${{ inputs.timeout }}
