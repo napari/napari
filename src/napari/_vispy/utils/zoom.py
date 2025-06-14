@@ -7,7 +7,7 @@ import numpy as np
 from napari.viewer import ViewerModel
 
 
-def _get_dim_info(mins: np.ndarray, maxs: np.ndarray) -> float:
+def _get_dim_info(mins: np.ndarray, maxs: np.ndarray) -> tuple[float, float]:
     """Calculate center and difference for single dimension."""
     center = (mins + maxs) / 2
     spread = maxs - mins
@@ -32,9 +32,9 @@ def _get_data_extents(
     maxs : np.ndarray
         Maximum values of the extents in the scene coordinates.
     """
-    top_left, bot_right = data_positions
-    top_left = np.array([top_left[i] for i in displayed])
-    bot_right = np.array([bot_right[i] for i in displayed])
+    top_left_, bot_right_ = data_positions
+    top_left = np.array([top_left_[i] for i in displayed])
+    bot_right = np.array([bot_right_[i] for i in displayed])
     extents = np.vstack((top_left, bot_right))
     mins = np.min(extents, axis=0)
     maxs = np.max(extents, axis=0)

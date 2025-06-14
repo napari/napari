@@ -42,4 +42,3 @@ class VispyZoomOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
     def reset(self):
         """Reset the overlay."""
         super().reset()
-        self._on__change()
