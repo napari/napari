@@ -7,13 +7,15 @@ from napari._pydantic_compat import ValidationError
 from napari._vispy.utils.cursor import QtCursorVisual
 from napari._vispy.utils.quaternion import quaternion2euler_degrees
 from napari._vispy.utils.visual import get_view_direction_in_scene_coordinates
-from napari._vispy.utils.zoom import _get_dim_info, calculate_zoom_proportion
+from napari._vispy.utils.zoom import (
+    _get_data_extents,
+    _get_dim_info,
+    calculate_zoom_proportion,
+)
 from napari.components._viewer_constants import CursorStyle
 
 # Euler angles to be tested, in degrees
 angles = [[12, 53, 92], [180, -90, 0], [16, 90, 0]]
-
-# Prepare for input and add corresponding values in radians
 
 
 def test_calculate_zoom_for_dimension():
@@ -22,6 +24,21 @@ def test_calculate_zoom_for_dimension():
     dim_centroid, dim_spread = _get_dim_info(100, 200)
     assert dim_centroid == 150, 'Centroid should be 150'
     assert dim_spread == 100, 'Difference should be 100'
+
+
+def test_get_data_extents():
+    """Test data extents calculation."""
+    data_positions = ((0, 0), (300, 200))
+    mins, maxs = _get_data_extents(data_positions, (0, 1))
+    assert mins.shape == maxs.shape == (2,)
+
+    data_positions = ((0, 0, 0), (300, 200, 200))
+    mins, maxs = _get_data_extents(data_positions, (0, 1, 2))
+    assert mins.shape == maxs.shape == (3,)
+
+    data_positions = ((0, 0, 0, 0), (300, 200, 200, 400))
+    mins, maxs = _get_data_extents(data_positions, (0, 1, 2, 3))
+    assert mins.shape == maxs.shape == (4,)
 
 
 def test_calculate_zoom_2d(make_napari_viewer):
@@ -48,6 +65,7 @@ def test_calculate_zoom_3d(make_napari_viewer):
     assert x_center == 150, 'Centroid for dim3 should be 50'
 
 
+# Prepare for input and add corresponding values in radians
 @pytest.mark.parametrize('angles', angles)
 def test_quaternion2euler_degrees(angles):
     """Test quaternion to euler angle conversion."""

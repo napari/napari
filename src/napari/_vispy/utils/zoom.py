@@ -14,14 +14,42 @@ def _get_dim_info(mins: np.ndarray, maxs: np.ndarray) -> float:
     return center, spread
 
 
+def _get_data_extents(
+    data_positions: tuple[tuple[float, ...], tuple[float, ...]],
+    displayed: tuple[int, ...],
+) -> tuple[np.ndarray, np.ndarray]:
+    """Get the extents of the overlay in the scene coordinates.
+
+    Parameters
+    ----------
+    displayed : tuple[int, ...]
+        Axes that are currently displayed in the viewer.
+
+    Returns
+    -------
+    mins : np.ndarray
+        Minimum values of the extents in the scene coordinates.
+    maxs : np.ndarray
+        Maximum values of the extents in the scene coordinates.
+    """
+    top_left, bot_right = data_positions
+    top_left = np.array([top_left[i] for i in displayed])
+    bot_right = np.array([bot_right[i] for i in displayed])
+    extents = np.vstack((top_left, bot_right))
+    mins = np.min(extents, axis=0)
+    maxs = np.max(extents, axis=0)
+    return mins, maxs
+
+
 def calculate_zoom_proportion(
+    data_positions: tuple[tuple[float, ...], tuple[float, ...]],
     viewer: ViewerModel,
 ) -> tuple[float, float, float, float]:
     """Calculate zoom for specified region."""
     extent, _, _, total_size = viewer._get_scene_parameters()
 
     # calculate the center of the rectangle
-    mins, maxs = viewer._zoom_box.data_extents(viewer.dims.displayed)
+    mins, maxs = _get_data_extents(data_positions, viewer.dims.displayed)
     center, spread = _get_dim_info(mins, maxs)
 
     # calculate average zoom based on the size of the rectangle
