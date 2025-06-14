@@ -38,3 +38,39 @@ def double_click_to_zoom(viewer, event):
             np.asarray(event.position)[-2:]
             - np.asarray(viewer.camera.center)[-2:]
         ) * (1 - 1 / zoom_factor)
+
+
+def drag_to_zoom(viewer, event):
+    """Enable zoom."""
+    if 'Alt' not in event.modifiers:
+        return
+
+    # on mouse press
+    press_pos, press_position = None, None
+    if event.type == 'mouse_press':
+        viewer._zoom_box.visible = True
+        press_pos = event.pos[::-1]
+        press_position = event.position
+        viewer._zoom_box.canvas_positions = (press_pos, press_pos)
+        yield
+        event.handled = True
+
+    # on mouse move
+    move_pos = press_pos
+    move_position = press_position
+    while event.type == 'mouse_move' and 'Alt' in event.modifiers:
+        if press_pos is None:
+            continue
+        move_pos = event.pos[::-1]
+        viewer._zoom_box.canvas_positions = (press_pos, move_pos)
+        move_position = event.position
+        yield
+
+    # on mouse release
+    viewer._zoom_box.visible = False
+
+    # only trigger zoom if the box is larger than a pixel
+    distance = np.abs(np.array(press_pos) - np.array(move_pos))
+    if distance.min() > 10:
+        viewer._zoom_box.events.zoom(value=(press_position, move_position))
+    yield
