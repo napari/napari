@@ -46,8 +46,9 @@ def test_calculate_zoom_2d(make_napari_viewer):
     viewer = make_napari_viewer()
     viewer.dims.ndisplay = 2
     viewer._zoom_box.canvas_positions = ((0, 0), (300, 200))
-    viewer._zoom_box.data_positions = ((0, 0), (300, 200))
-    zoom, z_center, y_center, x_center = calculate_zoom_proportion(viewer)
+    zoom, z_center, y_center, x_center = calculate_zoom_proportion(
+        ((0, 0), (300, 200)), viewer
+    )
     assert z_center == 1, 'Centroid for dim1 should be 1'
     assert y_center == 100, 'Centroid for dim2 should be 100'
     assert x_center == 150, 'Centroid for dim2 should be 100'
@@ -58,8 +59,9 @@ def test_calculate_zoom_3d(make_napari_viewer):
     viewer = make_napari_viewer()
     viewer.dims.ndisplay = 3
     viewer._zoom_box.canvas_positions = ((0, 0), (300, 200))
-    viewer._zoom_box.data_positions = ((0, 0, 0), (300, 200, 100))
-    zoom, z_center, y_center, x_center = calculate_zoom_proportion(viewer)
+    zoom, z_center, y_center, x_center = calculate_zoom_proportion(
+        ((0, 0, 0), (300, 200, 100)), viewer
+    )
     assert z_center == 1.0, 'Centroid for dim1 should be 150'
     assert y_center == 100, 'Centroid for dim2 should be 100'
     assert x_center == 150, 'Centroid for dim3 should be 50'
