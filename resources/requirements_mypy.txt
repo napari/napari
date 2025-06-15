@@ -67,7 +67,7 @@ qtpy==2.4.3
     #   -r resources/requirements_mypy.in
     #   magicgui
     #   superqt
-requests==2.32.3
+requests==2.32.4
     # via pyconify
 rich==14.0.0
     # via
@@ -75,7 +75,7 @@ rich==14.0.0
     #   typer
 shellingham==1.5.4
     # via typer
-superqt==0.7.3
+superqt==0.7.4
     # via magicgui
 tomli-w==1.2.0
     # via npe2

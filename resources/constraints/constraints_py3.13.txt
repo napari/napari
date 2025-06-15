@@ -477,7 +477,7 @@ referencing==0.36.2
     # via
     #   jsonschema
     #   jsonschema-specifications
-requests==2.32.3
+requests==2.32.4
     # via
     #   nilearn
     #   pooch
@@ -537,7 +537,7 @@ sphinxcontrib-serializinghtml==2.0.0
     # via sphinx
 stack-data==0.6.3
     # via ipython
-superqt==0.7.3
+superqt==0.7.4
     # via
     #   napari (pyproject.toml)
     #   magicgui
@@ -626,7 +626,7 @@ wrapt==1.17.2
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
-xarray==2025.4.0
+xarray==2025.6.0
     # via napari (pyproject.toml)
 zarr==3.0.8
     # via
