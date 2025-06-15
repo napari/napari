@@ -645,10 +645,10 @@ class ShapeList:
             vertices_range = np.array([], dtype=np.int64)
         else:
             triangle_ranges = np.r_[
-                *[self._mesh_triangles_range(i) for i in disp_indices]
+                tuple(self._mesh_triangles_range(i) for i in disp_indices)
             ]
             vertices_range = np.r_[
-                *[self._vertices_range(i) for i in disp_indices]
+                tuple(self._vertices_range(i) for i in disp_indices)
             ]
 
         self._mesh.displayed_triangles = self._mesh.triangles[z_order][
