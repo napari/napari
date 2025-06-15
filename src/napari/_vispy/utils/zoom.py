@@ -11,6 +11,7 @@ def _get_dim_info(mins: np.ndarray, maxs: np.ndarray) -> tuple[float, float]:
     """Calculate center and difference for single dimension."""
     center = (mins + maxs) / 2
     spread = maxs - mins
+    spread[spread == 0] = 1.0  # avoid division by zero
     return center, spread
 
 
@@ -46,7 +47,7 @@ def calculate_zoom_proportion(
     viewer: ViewerModel,
 ) -> tuple[float, float, float, float]:
     """Calculate zoom for specified region."""
-    extent, _, _, total_size = viewer._get_scene_parameters()
+    _, _, _, total_size = viewer._get_scene_parameters()
 
     # calculate the center of the rectangle
     mins, maxs = _get_data_extents(data_positions, viewer.dims.displayed)
@@ -55,12 +56,12 @@ def calculate_zoom_proportion(
     # calculate average zoom based on the size of the rectangle
     zoom = np.min(total_size / spread)
     scale_factor = viewer._get_scale_factor(0.05)
-    if viewer.dims.ndisplay == 3:
+    if viewer.dims.ndisplay == 2:
         native_zoom = viewer._get_2d_camera_zoom(total_size, scale_factor)
 
     else:
         native_zoom = viewer._get_3d_camera_zoom(
-            extent, total_size, scale_factor
+            np.vstack((mins, maxs)), total_size, scale_factor
         )
 
     # handle 3-D display with 2-D data and 2-D display with N-D data
