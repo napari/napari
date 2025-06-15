@@ -1,6 +1,9 @@
+from collections.abc import Iterator
+
 import numpy as np
 
 from napari.settings._application import (
+    GridBorderWidth,
     GridHeight,
     GridSpacing,
     GridStride,
@@ -20,8 +23,8 @@ class GridCanvas(EventedModel):
     enabled : bool
         If grid is enabled or not.
     stride : int
-        Number of layers to place in each grid square before moving on to
-        the next square. The default ordering is to place the most visible
+        Number of layers to place in each grid quadrant before moving on to
+        the next quadrant. The default ordering is to place the most visible
         layer in the top left corner of the grid. A negative stride will
         cause the order in which the layers are placed in the grid to be
         reversed.
@@ -31,14 +34,20 @@ class GridCanvas(EventedModel):
         auto calculation of the necessary grid shape to appropriately fill
         all the layers at the appropriate stride.
     spacing : float
-        Spacing between grid layers, as a proportion of the average
-        of the height and width of the extent of layers in world coordinates after slicing.
-        A value of 0.0 will have the grid layers touching each other.
-        Positive values will space the layers apart, and negative values
-        will overlap the layers.
+        Spacing between grid quadrants. If between 0 and 1, it's
+        interpreted as a proportion of the size of the quadrants.
+        If equal or greater than 1, it's interpreted as screen pixels.
+    border_width : int
+        Width of the border delineating each quadrant in screen pixels.
+    highlight: bool
+        Borders will be highlighted based on which layers are selected
+        in the layerlists.
 
         .. versionadded:: 0.6.0
             ``spacing`` was added in 0.6.0.
+        .. versionadded:: 0.6.2
+            ``border_width`` was added in 0.6.2.
+            ``highlight`` was added in 0.6.2.
     """
 
     # fields
@@ -48,6 +57,8 @@ class GridCanvas(EventedModel):
     shape: tuple[GridHeight, GridWidth] = (-1, -1)  # type: ignore[valid-type]
     enabled: bool = False
     spacing: GridSpacing = 0.0  # type: ignore[valid-type]
+    border_width: GridBorderWidth = 0  # type: ignore[valid-type]
+    highlight: bool = True
 
     def actual_shape(self, nlayers: int = 1) -> tuple[int, int]:
         """Return the actual shape of the grid.
@@ -89,7 +100,7 @@ class GridCanvas(EventedModel):
         n_row = max(1, n_row)
         n_column = max(1, n_column)
 
-        return (n_row, n_column)
+        return (int(n_row), int(n_column))
 
     def position(self, index: int, nlayers: int) -> tuple[int, int]:
         """Return the position of a given linear index in grid.
@@ -120,4 +131,58 @@ class GridCanvas(EventedModel):
         adj_i = adj_i % (n_row * n_column)
         i_row = adj_i // n_column
         i_column = adj_i % n_column
-        return (i_row, i_column)
+        # convert to python int from np int
+        return (int(i_row), int(i_column))
+
+    def contents_at(
+        self, position: tuple[int, int], nlayers: int
+    ) -> tuple[int, ...]:
+        """Return the indices contained in the quadrant at the given position.
+
+        If the grid is not enabled, this will return ().
+
+        Parameters
+        ----------
+        position : 2-tuple of int
+            Row and column position of current index in the grid.
+        nlayers : int
+            Number of layers that need to be placed in the grid.
+
+        Returns
+        -------
+        indices : tuple of int
+            Position of current layer in layer list.
+        """
+        if not self.enabled:
+            return ()
+
+        return tuple(
+            i for i in range(nlayers) if self.position(i, nlayers) == position
+        )
+
+    def iter_quadrants(
+        self, nlayers: int
+    ) -> Iterator[tuple[tuple[int, int], tuple[int, ...]]]:
+        """Iterate over each quadrant and its contained indices.
+
+        Parameters
+        ----------
+        nlayers : int
+            Number of layers that need to be placed in the grid.
+
+        Yields
+        -------
+        position : 2-tuple of int
+            Row and column position of current index in the grid.
+        indices : tuple of int
+            Position of current layer in layer list.
+        """
+        for row, col in np.ndindex(self.actual_shape(nlayers)):
+            yield (row, col), self.contents_at((row, col), nlayers)
+
+    def _compute_canvas_spacing(self, viewbox_size):
+        spacing = self.spacing
+        if spacing >= 1:
+            return int(spacing)
+        mean_size = np.mean(viewbox_size)
+        return int(spacing * mean_size / 2)
