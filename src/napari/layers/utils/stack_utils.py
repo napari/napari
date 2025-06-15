@@ -308,7 +308,37 @@ def images_to_stack(images: list[Image], axis: int = 0, **kwargs) -> Image:
         kwargs.setdefault('translate', np.insert(meta['translate'], axis, 0))
 
     meta.update(kwargs)
-    new_data = np.stack([image.data for image in images], axis=axis)
+
+    # Check if input images are either all multiscale or not
+    multiscale_flags = [
+        getattr(image, 'multiscale', False) for image in images
+    ]
+    if not all(multiscale_flags) and any(multiscale_flags):
+        raise ValueError(
+            trans._(
+                'All images must have the same multiscale status (all True or all False) to be stacked.\nGot: {multiscale_flags}',
+                multiscale_flags=multiscale_flags[::-1],
+                deferred=True,
+            )
+        )
+    if all(multiscale_flags):
+        # Check that all multiscale images have the same number of levels
+        n_scales_list = [len(image.data) for image in images]
+        if len(set(n_scales_list)) != 1:
+            raise ValueError(
+                trans._(
+                    'All multiscale images must have the same number of levels to be stacked.\nGot: {n_scales_list}',
+                    deferred=True,
+                    n_scales_list=n_scales_list,
+                )
+            )
+        n_scales = n_scales_list[0]
+        new_data = [
+            np.stack([image.data[level] for image in images], axis=axis)
+            for level in range(n_scales)
+        ]
+    else:
+        new_data = np.stack([image.data for image in images], axis=axis)
 
     # RGB images do not need extra dimensions inserted into metadata
     # They can use the meta dict from one of the source image layers

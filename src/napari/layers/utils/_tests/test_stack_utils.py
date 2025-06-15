@@ -140,6 +140,22 @@ def test_images_to_stack_none_scale():
     assert list(stack.translate) == [0, 0, -1, 2]
 
 
+def test_images_to_stack_multiscale():
+    data = np.zeros((100, 100))
+    images = [
+        Image([data, data[::2, ::2]]),
+        Image([data, data[::2, ::2]]),
+    ]
+    assert images[0].multiscale is True
+    assert images[1].multiscale is True
+
+    stack = images_to_stack(images, 0, colormap='green')
+
+    assert isinstance(stack, Image)
+    assert stack.multiscale is True
+    assert stack.data.shape == (2, 100, 100)
+
+
 def test_split_and_merge_rgb():
     """Test merging 3 images with RGB colormaps into single RGB image."""
     # Make an RGB
