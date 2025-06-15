@@ -2,8 +2,8 @@
 Mouse drag callback
 ===================
 
-Example updating the status bar with line profile info while dragging
-lines around in a shapes layer.
+Example printing line profile averages to the terminal while
+dragging lines in a shapes layer over an image.
 
 .. tags:: gui
 """
