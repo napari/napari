@@ -639,22 +639,30 @@ class ShapeList:
         disp_indices = np.nonzero(self._displayed)[0]
 
         z_order = self._mesh.triangles_z_order
-        disp_tri = np.isin(
-            self._mesh.triangles_index[z_order, 0], disp_indices
-        )
+
+        if disp_indices.size == 0:
+            triangle_ranges = np.array([], dtype=np.int64)
+            vertices_range = np.array([], dtype=np.int64)
+        else:
+            triangle_ranges = np.r_[
+                *[self._mesh_triangles_range(i) for i in disp_indices]
+            ]
+            vertices_range = np.r_[
+                *[self._vertices_range(i) for i in disp_indices]
+            ]
+
         self._mesh.displayed_triangles = self._mesh.triangles[z_order][
-            disp_tri
+            triangle_ranges
         ]
         self._mesh.displayed_triangles_index = self._mesh.triangles_index[
-            z_order
-        ][disp_tri]
+            disp_indices
+        ]
         self._mesh.displayed_triangles_colors = self._mesh.triangles_colors[
             z_order
-        ][disp_tri]
+        ][triangle_ranges]
 
-        disp_vert = np.isin(self._index, disp_indices)
-        self.displayed_vertices = self._vertices[disp_vert]
-        self.displayed_index = self._index[disp_vert]
+        self.displayed_vertices = self._vertices[vertices_range]
+        self.displayed_index = self._vertices_index[disp_indices]
 
     def add(
         self,
@@ -888,15 +896,15 @@ class ShapeList:
         self._mesh.vertices_offsets = np.vstack(
             (self._mesh.vertices_offsets, mesh_vertices_offsets)
         )
-        self._mesh.vertices_index = np.vstack(
-            (self._mesh.vertices_index, mesh_vertices_index)
+        self._mesh.vertices_index = np.append(
+            self._mesh.vertices_index, mesh_vertices_index, axis=0
         )
 
         self._mesh.triangles = np.vstack(
             (self._mesh.triangles, mesh_triangles)
         )
-        self._mesh.triangles_index = np.vstack(
-            (self._mesh.triangles_index, mesh_triangles_index)
+        self._mesh.triangles_index = np.append(
+            self._mesh.triangles_index, mesh_triangles_index, axis=0
         )
         self._mesh.triangles_colors = np.vstack(
             (self._mesh.triangles_colors, mesh_triangles_colors)
@@ -1171,13 +1179,12 @@ class ShapeList:
         """Updates the z order of the triangles given the z_index list"""
         self._z_order = np.argsort(self._z_index)
         if len(self._z_order) == 0:
-            self._mesh.triangles_z_order = np.empty((0), dtype=int)
+            self._mesh.triangles_z_order = np.empty(0, dtype=ZOrderDtype)
         else:
-            _, idx, counts = np.unique(
-                self._mesh.triangles_index[:, 0],
-                return_index=True,
-                return_counts=True,
-            )
+            idx = self._mesh.triangles_index
+            counts = idx.copy()
+            counts[:-1] -= idx[1:]
+            counts[-1] = len(self._mesh.triangles) - idx[-1]
             triangles_z_order = [
                 np.arange(idx[z], idx[z] + counts[z]) for z in self._z_order
             ]
