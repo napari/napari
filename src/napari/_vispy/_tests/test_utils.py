@@ -21,9 +21,17 @@ angles = [[12, 53, 92], [180, -90, 0], [16, 90, 0]]
 def test_calculate_zoom_for_dimension():
     """Test zoom calculation for a given dimension."""
     # Test with a 2D image
-    dim_centroid, dim_spread = _get_dim_info(100, 200)
-    assert dim_centroid == 150, 'Centroid should be 150'
-    assert dim_spread == 100, 'Difference should be 100'
+    mins = np.array([100, 200, 100])
+    maxs = np.array([200, 400, 100])
+    center, spread = _get_dim_info(mins, maxs)
+    assert center.shape == (3,), 'Center should be a 2D vector'
+    assert spread.shape == (3,), 'Spread should be a 2D vector'
+    assert center[0] == 150, 'Centroid for dim1 should be 150'
+    assert center[1] == 300, 'Centroid for dim2 should be 300'
+    assert center[2] == 100, 'Centroid for dim3 should be 100'
+    assert spread[0] == 100, 'Spread for dim1 should be 100'
+    assert spread[1] == 200, 'Spread for dim2 should be 200'
+    assert spread[2] == 1, 'Spread for dim3 should be 1'
 
 
 def test_get_data_extents():

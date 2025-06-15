@@ -7,7 +7,9 @@ import numpy as np
 from napari.viewer import ViewerModel
 
 
-def _get_dim_info(mins: np.ndarray, maxs: np.ndarray) -> tuple[float, float]:
+def _get_dim_info(
+    mins: np.ndarray, maxs: np.ndarray
+) -> tuple[np.ndarray, np.ndarray]:
     """Calculate center and difference for single dimension."""
     center = (mins + maxs) / 2
     spread = maxs - mins
