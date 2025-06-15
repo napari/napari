@@ -925,7 +925,7 @@ def normalize_vertices_and_edges(
     if (
         vertices[0, 0] == vertices[-1, 0] and vertices[0, 1] == vertices[-1, 1]
     ):  # closed polygon
-        vertices = vertices[:-1]  # type: ignore[assignment] # make closing implicit
+        vertices = vertices[:-1]  # make closing implicit
         close = True
     # Now, we make sure the vertices are unique (repeated vertices cause
     # problems in spatial algorithms, and those problems can manifest as
