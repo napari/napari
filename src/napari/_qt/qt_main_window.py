@@ -2018,7 +2018,7 @@ class Window:
 
 def _instantiate_dock_widget(wdg_cls, viewer: 'Viewer'):
     # if the signature is looking a for a napari viewer, pass it.
-    from napari.viewer import Viewer
+    from napari.viewer import Viewer, ViewerModel
 
     kwargs = {}
     try:
@@ -2031,7 +2031,14 @@ def _instantiate_dock_widget(wdg_cls, viewer: 'Viewer'):
             if param.name == 'napari_viewer':
                 kwargs['napari_viewer'] = PublicOnlyProxy(viewer)
                 break
-            if param.annotation in ('napari.viewer.Viewer', Viewer):
+            if param.annotation in (
+                'napari.viewer.Viewer',
+                Viewer,
+                'napari.viewer.ViewerModel',
+                'napari.components.ViewerModel',
+                'napari.components.viewer_model.ViewerModel',
+                ViewerModel,
+            ):
                 kwargs[param.name] = PublicOnlyProxy(viewer)
                 break
             # cannot look for param.kind == param.VAR_KEYWORD because

@@ -33,7 +33,7 @@ from napari.plugins import menu_item_template, plugin_manager
 from napari.plugins._npe2 import _when_group_order, get_widget_contribution
 from napari.utils.events import Event
 from napari.utils.translations import trans
-from napari.viewer import Viewer
+from napari.viewer import Viewer, ViewerModel
 
 if TYPE_CHECKING:
     from npe2.manifest import PluginManifest
@@ -297,6 +297,10 @@ def _get_widget_viewer_param(
                 if param.name == 'napari_viewer' or param.annotation in (
                     'napari.viewer.Viewer',
                     Viewer,
+                    'napari.viewer.ViewerModel',
+                    'napari.components.ViewerModel',
+                    'napari.components.viewer_model.ViewerModel',
+                    ViewerModel,
                 ):
                     widget_param = param.name
                     break
