@@ -145,10 +145,10 @@ class QtViewerDockWidget(QDockWidget):
         self.setObjectName(object_name or name)
 
         is_vertical = area in {'left', 'right'}
-        widget = combine_widgets(widget, vertical=is_vertical)
-        self.setWidget(widget)
+        widget_ = combine_widgets(widget, vertical=is_vertical)
+        self.setWidget(widget_)
         if is_vertical and add_vertical_stretch:
-            self._maybe_add_vertical_stretch(widget)
+            self._maybe_add_vertical_stretch(widget_)
 
         self._features = self.features()
         self.dockLocationChanged.connect(self._set_title_orientation)
@@ -161,6 +161,19 @@ class QtViewerDockWidget(QDockWidget):
         self.visibilityChanged.connect(self._on_visibility_changed)
 
         self.dockLocationChanged.connect(self._update_default_dock_area)
+
+    def inner_widget(self) -> 'QWidget | Widget':
+        """The inner widget of the dock widget.
+
+        This is the widget that was passed to the constructor
+        without converting magicgui widgets to QtWidgets.
+        """
+        wdg = self.widget()
+        if hasattr(wdg, '_magic_widget'):
+            # magicgui widget, return the original widget
+            return wdg._magic_widget
+        # otherwise, return the widget itself
+        return wdg
 
     def _update_default_dock_area(self, value):
         if value not in dock_area_to_str:
