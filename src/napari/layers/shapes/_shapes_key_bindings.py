@@ -158,11 +158,20 @@ def paste_shape(layer: Shapes) -> None:
         layer._paste_data()
 
 
-@register_shapes_action(trans._('Select all shapes in the current view slice'))
+@register_shapes_action(
+    trans._('Select/Deselect all shapes in the current view slice')
+)
 def select_all_shapes(layer: Shapes) -> None:
-    """Select all shapes in the current view slice."""
+    """Select/Deselect all shapes in the current view slice."""
     if layer._mode in (Mode.DIRECT, Mode.SELECT):
-        layer.selected_data = set(np.nonzero(layer._data_view._displayed)[0])
+        new_selected = set(np.nonzero(layer._data_view._displayed)[0])
+
+        if new_selected & layer.selected_data == new_selected:
+            # If all visible shapes are already selected, deselect them
+            layer.selected_data = layer.selected_data - new_selected
+        else:
+            # If not all visible shapes are selected, select them
+            layer.selected_data = layer.selected_data | new_selected
         layer._set_highlight()
 
 
