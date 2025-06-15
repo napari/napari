@@ -109,8 +109,8 @@ class QtLayerControls(QFrame):
             self.PAN_ZOOM_ACTION_NAME,
             extra_tooltip_text=trans._(
                 '\n(or hold Space)'
-                '\n(hold {control} to zoom-in using region of interest)'
                 '\n(hold Shift to pan in 3D)',
+                '\n(hold {control} to zoom via ROI selection)'
                 control=KeyCode.from_string('Alt').os_symbol(),
             ),
             checked=True,
