@@ -43,7 +43,7 @@ dependencies = [
     "dask[array]>=2021.10.0",
     "imageio>=2.20,!=2.22.1",
     "jsonschema>=3.2.0",
-    "lazy_loader>=0.2",
+    "lazy_loader>=0.3",
     "magicgui>=0.7.0",
     "napari-console>=0.1.1",
     "napari-plugin-engine>=0.1.9",
@@ -151,7 +151,7 @@ testing = [
     "pyautogui>=0.9.54",
     "pytest-qt>=4.3.1",
     "pytest-pretty>=1.1.0",
-    "pytest>=8.1.0",
+    "pytest>=8.3.5",
     "tensorstore>=0.1.32",
     "virtualenv>=20.17",
     "xarray>=0.16.2",
@@ -240,6 +240,9 @@ license-files = [
 ]
 
 [tool.setuptools.packages.find]
+where = [
+    "src",
+]
 namespaces = false
 
 [tool.setuptools.package-data]
@@ -252,7 +255,7 @@ napari_builtins = [
 
 
 [tool.setuptools_scm]
-write_to = "napari/_version.py"
+write_to = "src/napari/_version.py"
 fallback_version = "0.6.0.nogit"
 
 [tool.check-manifest]
@@ -262,15 +265,15 @@ ignore = [
   "asv.conf.json",
   "codecov.yml",
   "Makefile",
-  "napari/_version.py",  # added during build by setuptools_scm
+  "src/napari/_version.py",  # added during build by setuptools_scm
   "tools/minreq.py",
   "tox.ini",
-  "napari/_qt/qt_resources/_qt_resources_*.py",
+  "src/napari/_qt/qt_resources/_qt_resources_*.py",
   "*.pyi",  # added by make typestubs
   "binder/*",
   ".env_sample",
   ".devcontainer/*",
-  "napari/resources/icons/_themes/*/*.svg"
+  "src/napari/resources/icons/_themes/*/*.svg"
 ]
 
 [tool.ruff]
@@ -353,14 +356,14 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"napari/_vispy/__init__.py" = ["E402"]
+"src/napari/_vispy/__init__.py" = ["E402"]
 "**/_tests/*.py" = ["B011", "INP001", "TRY301", "B018", "RUF012"]
-"napari/utils/_testsupport.py" = ["B011"]
+"src/napari/utils/_testsupport.py" = ["B011"]
 "tools/validate_strings.py" = ["F401"]
 "tools/**" = ["INP001", "T20", "LOG015"]
 "examples/**" = ["ICN001", "INP001", "T20", "LOG015"]
 "**/vendored/**" = ["TID"]
-"napari/benchmarks/**" = ["RUF012", "TID252"]
+"src/napari/benchmarks/**" = ["RUF012", "TID252"]
 
 [tool.ruff.lint.flake8-builtins]
 builtins-allowed-modules = ["io", "types", "threading"]
@@ -396,6 +399,7 @@ minversion = "8"
 # log_cli_level = "INFO"
 xfail_strict = true
 testpaths = ["napari", "napari_builtins"]
+#pythonpath = "src"
 
 
 # NOTE: only put things that will never change in here.
@@ -443,8 +447,8 @@ markers = [
 files = "napari"
 # This file triggers an internal mypy error, so exclude collection
 # TODO: fix this
-exclude = "napari/utils/events/_tests/test_evented_model\\.py"
-plugins =  "numpy.typing.mypy_plugin, pydantic.mypy"
+exclude = "src/napari/utils/events/_tests/test_evented_model\\.py"
+plugins =  "pydantic.mypy"
 ignore_missing_imports = true
 hide_error_codes = false
 warn_redundant_casts = true
@@ -835,25 +839,28 @@ omit = [
     "*/_version.py",
     "*/benchmarks/*",
     "napari/utils/indexing.py",
-    "**/add_layer.py_tmpl"
+    "**/add_layer.py_tmpl",
+    "*/.pytest_tmp/**",
 ]
 source = [
+    "src/napari",
+    "src/napari_builtins",
     "napari",
     "napari_builtins",
 ]
 
 [tool.coverage.paths]
 source = [
-    "napari/",
-    "D:\\a\\napari\\napari\\napari",
-    "/home/runner/work/napari/napari/napari",
-    "/Users/runner/work/napari/napari/napari",
+    "src/napari/",
+    "**/src/napari/",
+    "**/.tox/*/lib/python*/site-packages/napari/",
+    "**\\.tox\\*\\Lib\\site-packages\\napari",
 ]
 builtins = [
-    "napari_builtins/",
-    "D:\\a\\napari\\napari\\napari_builtins",
-    "/home/runner/work/napari/napari/napari_builtins",
-    "/Users/runner/work/napari/napari/napari_builtins",
+    "src/napari_builtins/",
+    "**/src/napari_builtins/",
+    "**/.tox/*/lib/python*/site-packages/napari_builtins/",
+    "**\\.tox\\*\\Lib\\site-packages\\napari_builtins",
 ]
 
 [tool.importlinter]
