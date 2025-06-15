@@ -108,9 +108,8 @@ class QtLayerControls(QFrame):
             False,
             self.PAN_ZOOM_ACTION_NAME,
             extra_tooltip_text=trans._(
-                '\n(or hold Space)'
-                '\n(hold Shift to pan in 3D)',
-                '\n(hold {control} to zoom via ROI selection)'
+                '\n(or hold Space)\n(hold Shift to pan in 3D)',
+                '\n(hold {control} to zoom via ROI selection)',
                 control=KeyCode.from_string('Alt').os_symbol(),
             ),
             checked=True,
