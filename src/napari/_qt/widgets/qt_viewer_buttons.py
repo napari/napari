@@ -576,7 +576,7 @@ class QtViewerButtons(QFrame):
         )
 
         border_width_help_msg = trans._(
-            'Width of the border between grid quadrants. If below 1, interpreted as percentage of the quadrant size, otherwise interpreted as screen pixels. 0 has the layers touching, positive values will space the grid positions apart.'
+            'Width of the border around grid quadrants in sceen pixels.'
         )
 
         stride_min = self.viewer.grid.__fields__['stride'].type_.ge
