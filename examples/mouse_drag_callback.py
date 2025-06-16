@@ -2,8 +2,11 @@
 Mouse drag callback
 ===================
 
-Example printing line profile averages to the terminal while
-dragging lines in a shapes layer over an image.
+This example shows how to use a mouse drag callback in Napari to compute
+and print the average intensity along line shapes as they are moved.
+
+As you drag lines over the image, the script calculates the mean of the
+intensity profile along each line and prints the results to the terminal in real time.
 
 .. tags:: gui
 """
