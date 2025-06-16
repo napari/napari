@@ -1182,8 +1182,8 @@ class ShapeList:
             self._mesh.triangles_z_order = np.empty(0, dtype=ZOrderDtype)
         else:
             idx = self._mesh.triangles_index
-            counts = idx.copy()
-            counts[:-1] -= idx[1:]
+            counts = np.empty(idx.shape, dtype=idx.dtype)
+            counts[:-1] = idx[1:] - idx[:-1]
             counts[-1] = len(self._mesh.triangles) - idx[-1]
             triangles_z_order = [
                 np.arange(idx[z], idx[z] + counts[z]) for z in self._z_order
