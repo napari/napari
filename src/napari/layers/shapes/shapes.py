@@ -2740,12 +2740,12 @@ class Shapes(Layer):
 
             self.thumbnail = colormapped
 
-    def remove(self, indices: list) -> None:
+    def remove(self, indices: list[int]) -> None:
         """Remove any shapes at the given indices.
 
         Parameters
         ----------
-        indices : list
+        indices : List[int]
             List of indices of shapes to remove from the layer.
             If empty, no shapes will be removed.
         """
@@ -2770,14 +2770,6 @@ class Shapes(Layer):
             )
             self._data_view._face_color = np.delete(
                 self._data_view._face_color, indices, axis=0
-            )
-            self.events.data(
-                value=self.data,
-                action=ActionType.REMOVED,
-                data_indices=tuple(
-                    indices,
-                ),
-                vertex_indices=((),),
             )
         self._finish_drawing()
 
