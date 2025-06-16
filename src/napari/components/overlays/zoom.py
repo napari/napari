@@ -34,6 +34,6 @@ class ZoomOverlay(CanvasOverlay):
     @validator('canvas_positions', pre=True, always=True, allow_reuse=True)
     def _validate_bounds(
         cls, v: tuple[tuple[float, ...], tuple[float, ...]]
-    ) -> tuple[tuple[float, float, float], tuple[float, float, float]]:
+    ) -> tuple[tuple[float, float], tuple[float, float]]:
         tup_1, tup_2 = v
-        return tuple(tup_1), tuple(tup_2)
+        return tuple(tup_1), tuple(tup_2)  # type: ignore[return-value]
