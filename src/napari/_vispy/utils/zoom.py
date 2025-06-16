@@ -7,7 +7,7 @@ import numpy as np
 from napari.viewer import ViewerModel
 
 
-def _get_dim_info(
+def _get_zoombox_center_and_size(
     mins: np.ndarray, maxs: np.ndarray
 ) -> tuple[np.ndarray, np.ndarray]:
     """Calculate center and difference for single dimension."""
@@ -17,7 +17,7 @@ def _get_dim_info(
     return center, spread
 
 
-def _get_data_extents(
+def _get_zoombox_extents(
     data_positions: tuple[tuple[float, ...], tuple[float, ...]],
     displayed: tuple[int, ...],
 ) -> tuple[np.ndarray, np.ndarray]:
@@ -52,8 +52,8 @@ def calculate_zoom_proportion(
     _, _, _, total_size = viewer._get_scene_parameters()
 
     # calculate the center of the rectangle
-    mins, maxs = _get_data_extents(data_positions, viewer.dims.displayed)
-    center, spread = _get_dim_info(mins, maxs)
+    mins, maxs = _get_zoombox_extents(data_positions, viewer.dims.displayed)
+    center, spread = _get_zoombox_center_and_size(mins, maxs)
 
     # calculate average zoom based on the size of the rectangle
     zoom = np.min(total_size / spread)
@@ -75,7 +75,11 @@ def calculate_zoom_proportion(
 
     # adjust zoom by the native zoom factor
     zoom = zoom * native_zoom
-    # ensure zoom is a valid number
+
+    # Sometimes in 3-D case, when the zoom box is large (> 50% of the screen),
+    # this value can actually be smaller than 1, which is not desired. In such
+    # a case, we set it to 1 where no zoom will take place although the center
+    # location will still be updated
     if np.isinf(zoom) or np.isnan(zoom) or zoom < 1:
         zoom = 1
     return zoom, z_center, y_center, x_center
