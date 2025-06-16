@@ -1760,7 +1760,7 @@ class Window:
                 # tight view around data
                 self._qt_viewer.viewer.fit_to_view(margin=0)
             try:
-                get_qapp().processEvents()  # fixes issue #8033 https://github.com/napari/napari/issues/8033
+                QApplication.instance().processEvents()  # fixes issue #8033 https://github.com/napari/napari/issues/8033
                 img = canvas.screenshot()
                 if flash:
                     add_flash_animation(self._qt_viewer._welcome_widget)
@@ -1770,7 +1770,7 @@ class Window:
                 camera.center = old_center
                 camera.zoom = old_zoom
         else:
-            get_qapp().processEvents()  # fixes issue #8033 https://github.com/napari/napari/issues/8033
+            QApplication.instance().processEvents()  # fixes issue #8033 https://github.com/napari/napari/issues/8033
             img = self._qt_window.grab().toImage()
             if flash:
                 add_flash_animation(self._qt_window)
