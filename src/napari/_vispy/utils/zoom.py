@@ -63,7 +63,7 @@ def calculate_zoom_proportion(
 
     else:
         native_zoom = viewer._get_3d_camera_zoom(
-            np.vstack((mins, maxs)), total_size, scale_factor
+            np.vstack((mins, maxs)), spread, scale_factor
         )
 
     # handle 3-D display with 2-D data and 2-D display with N-D data
