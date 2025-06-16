@@ -44,7 +44,7 @@ def _get_zoombox_extents(
     return mins, maxs
 
 
-def calculate_zoom_proportion(
+def calculate_zoom(
     data_positions: tuple[tuple[float, ...], tuple[float, ...]],
     viewer: ViewerModel,
 ) -> tuple[float, float, float, float]:

@@ -10,7 +10,7 @@ from napari._vispy.utils.visual import get_view_direction_in_scene_coordinates
 from napari._vispy.utils.zoom import (
     _get_zoombox_center_and_size,
     _get_zoombox_extents,
-    calculate_zoom_proportion,
+    calculate_zoom,
 )
 from napari.components._viewer_constants import CursorStyle
 
@@ -18,7 +18,7 @@ from napari.components._viewer_constants import CursorStyle
 angles = [[12, 53, 92], [180, -90, 0], [16, 90, 0]]
 
 
-def test_calculate_zoom_for_dimension():
+def test_get_zoombox_center_and_size():
     """Test zoom calculation for a given dimension."""
     # Test with a 2D image
     mins = np.array([100, 200, 100])
@@ -34,7 +34,7 @@ def test_calculate_zoom_for_dimension():
     assert spread[2] == 1, 'Spread for dim3 should be 1'
 
 
-def test_get_data_extents():
+def test_get_zoombox_extents():
     """Test data extents calculation."""
     data_positions = ((0, 0), (300, 200))
     mins, maxs = _get_zoombox_extents(data_positions, (0, 1))
@@ -54,7 +54,7 @@ def test_calculate_zoom_2d(make_napari_viewer):
     viewer = make_napari_viewer()
     viewer.dims.ndisplay = 2
     viewer._zoom_box.canvas_positions = ((0, 0), (300, 200))
-    zoom, z_center, y_center, x_center = calculate_zoom_proportion(
+    zoom, z_center, y_center, x_center = calculate_zoom(
         ((0, 0), (300, 200)), viewer
     )
     assert z_center == 1, 'Centroid for dim1 should be 1'
@@ -67,7 +67,7 @@ def test_calculate_zoom_3d(make_napari_viewer):
     viewer = make_napari_viewer()
     viewer.dims.ndisplay = 3
     viewer._zoom_box.canvas_positions = ((0, 0), (300, 200))
-    zoom, z_center, y_center, x_center = calculate_zoom_proportion(
+    zoom, z_center, y_center, x_center = calculate_zoom(
         ((0, 0, 0), (300, 200, 100)), viewer
     )
     assert z_center == 1.0, 'Centroid for dim1 should be 150'
