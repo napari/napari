@@ -293,9 +293,19 @@ class Shape(ABC):
         return self._face_triangles.shape[0]
 
     @property
+    def face_vertices_count(self) -> int:
+        """int: Number of vertices in the face of the shape."""
+        return self._face_vertices.shape[0]
+
+    @property
     def edge_triangles_count(self) -> int:
         """int: Number of triangles in the edge of the shape."""
         return self._edge_triangles.shape[0]
+
+    @property
+    def edge_vertices_count(self) -> int:
+        """int: Number of vertices in the edge of the shape."""
+        return self._edge_vertices.shape[0]
 
     def _set_empty_edge(self) -> None:
         self._edge_vertices = np.empty((0, self.ndisplay), dtype=np.float32)

@@ -71,12 +71,22 @@ class Mesh:
     triangles_colors: ShapeColorArray
     displayed_triangles: TriangleArray
     displayed_triangles_colors: ShapeColorArray
+    displayed_triangles_to_shape_index: IndexArray
     vertices_index: IndexArray
     triangles_index: IndexArray
 
     def __init__(self, ndisplay: int = 2) -> None:
         self._ndisplay = ndisplay
         self.clear()
+
+    @property
+    def triangles_index(self):
+        """Index of triangles in the mesh."""
+        return self._triangles_index
+
+    @triangles_index.setter
+    def triangles_index(self, value: IndexArray) -> None:
+        self._triangles_index = value
 
     def clear(self) -> None:
         """Resets mesh data"""
@@ -94,7 +104,7 @@ class Mesh:
         self.triangles_z_order = np.empty(0, dtype=ZOrderDtype)
 
         self.displayed_triangles = np.empty((0, 3), dtype=TriangleDtype)
-        self.displayed_triangles_index = np.empty(0, dtype=IndexDtype)
+        self.displayed_triangles_to_shape_index = np.empty(0, dtype=IndexDtype)
         self.displayed_triangles_colors = np.empty(
             (0, 4), dtype=ShapeColorDtype
         )

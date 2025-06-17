@@ -256,7 +256,7 @@ def _fill_arrays(
     ):
         # Store z_index ("number of shapes" space)
         z_index[i] = shape.z_index
-        vertices_index[i] = start_mesh_index + vertices_offset
+        vertices_index[i] = start_vertices_index + vertices_offset
         mesh_triangles_index[i] = start_triangle_index + triangles_offset
         mesh_vertices_index[i] = start_mesh_index + mesh_vertices_offset
 
@@ -283,7 +283,7 @@ def _fill_arrays(
 
         # Store face triangles
         face_triangles = (
-            shape._face_triangles + start_mesh_index + triangles_offset
+            shape._face_triangles + start_mesh_index + mesh_vertices_offset
         )
         n_face_triangles = len(face_triangles)
         face_triang_range = range(
@@ -315,7 +315,9 @@ def _fill_arrays(
         mesh_vertices_offsets[edge_vertices_range] = edge_offsets
 
         # Store edge triangles
-        edge_triangles = shape._edge_triangles + start_mesh_index
+        edge_triangles = (
+            shape._edge_triangles + start_mesh_index + mesh_vertices_offset
+        )
         n_edge_triangles = len(edge_triangles)
         edge_triangles_range = range(
             triangles_offset, triangles_offset + n_edge_triangles
@@ -402,8 +404,9 @@ class ShapeList:
         self.shapes: list[Shape] = []
         self._displayed = np.array([])
         self._slice_key = np.array([])
-        self.displayed_vertices = np.array([])
-        self.displayed_index = np.array([])
+        self.displayed_vertices = np.array([], dtype=CoordinateDtype)
+        self.displayed_triangles_to_shape_num = np.array([], dtype=IndexDtype)
+        self.displayed_indices = np.array([], dtype=IndexDtype)
         self._vertices = np.empty((0, self.ndisplay))
         self._vertices_index: IndexArray = np.empty(0, dtype=IndexDtype)
         self._z_index: IndexArray = np.empty(0, dtype=IndexDtype)
@@ -455,15 +458,39 @@ class ShapeList:
         """Return the range of mesh vertices of face triangles for a given shape index."""
         shape = self.shapes[shape_index]
         start = self._mesh.vertices_index[shape_index]
-        return range(start, start + shape.edge_triangles_count)
+        return range(start, start + shape.face_vertices_count)
+
+    def _mesh_triangles_face_range(self, shape_index: int) -> range:
+        """Return the range of mesh triangles of face triangles for a given shape index."""
+        shape = self.shapes[shape_index]
+        start = self._mesh.triangles_index[shape_index]
+        return range(start, start + shape.face_triangles_count)
 
     def _mesh_vertices_edge_range(self, shape_index: int) -> range:
         """Return the range of mesh vertices of edge triangles for a given shape index."""
         shape = self.shapes[shape_index]
         start = (
-            self._mesh.vertices_index[shape_index] + shape.face_triangles_count
+            self._mesh.vertices_index[shape_index] + shape.face_vertices_count
+        )
+        return range(start, start + shape.edge_vertices_count)
+
+    def _mesh_triangles_edge_range(self, shape_index: int) -> range:
+        """Return the range of mesh triangles of edge triangles for a given shape index."""
+        shape = self.shapes[shape_index]
+        start = (
+            self._mesh.triangles_index[shape_index]
+            + shape.face_triangles_count
         )
         return range(start, start + shape.edge_triangles_count)
+
+    def displayed_vertices_range(self, shape_index: int) -> range:
+        """Return the range of displayed vertices for a given shape index."""
+        start = self.displayed_vertices[shape_index]
+        if shape_index + 1 < len(self._vertices_index):
+            end = self._vertices_index[shape_index + 1]
+        else:
+            end = len(self.displayed_vertices)
+        return range(start, end)
 
     @contextmanager
     def batched_updates(self) -> Generator[None, None, None]:
@@ -518,13 +545,17 @@ class ShapeList:
 
         self._ndisplay = ndisplay
         self._mesh.ndisplay = self.ndisplay
+        shapes = self.shapes
+        face_color = self._face_color
+        edge_color = self._edge_color
+
         with self.batched_updates():
-            for index in range(len(self.shapes)):
-                shape = self.shapes[index]
+            for shape in shapes:
                 shape.ndisplay = self.ndisplay
-                self.remove(index, renumber=False)
-                self.add(shape, shape_index=index)
-        self._update_z_order()
+            self.remove_all()
+            self._add_multiple_shapes(
+                shapes, face_colors=face_color, edge_colors=edge_color
+            )
 
     @property
     def slice_keys(
@@ -654,9 +685,18 @@ class ShapeList:
         self._mesh.displayed_triangles = self._mesh.triangles[z_order][
             triangle_ranges
         ]
-        self._mesh.displayed_triangles_index = self._mesh.triangles_index[
-            disp_indices
-        ]
+        self._mesh.displayed_triangles_to_shape_index = np.full(
+            self._mesh.displayed_triangles.shape[0], -1, dtype=IndexDtype
+        )
+        shift_idx = 0
+        for i in disp_indices:
+            r = self._mesh_triangles_range(i)
+            elem_num = r.stop - r.start
+            self._mesh.displayed_triangles_to_shape_index[
+                shift_idx : shift_idx + elem_num
+            ] = i
+            shift_idx += elem_num
+
         self._mesh.displayed_triangles_colors = self._mesh.triangles_colors[
             z_order
         ][triangle_ranges]
@@ -786,16 +826,22 @@ class ShapeList:
             else:
                 self._edge_color[shape_index, :] = edge_color
 
+        self._vertices_index = np.append(
+            self._vertices_index, [len(self._vertices)], axis=0
+        )
+
         self._vertices = np.append(
             self._vertices, shape.data_displayed, axis=0
-        )
-        self._vertices_index = np.append(
-            self._vertices_index, [self._vertices_index.shape[0]], axis=0
         )
 
         # Add faces to mesh
         m = len(self._mesh.vertices)
         vertices = shape._face_vertices
+        self._mesh.vertices_index = np.append(
+            self._mesh.vertices_index,
+            [len(self._mesh.vertices)],
+            axis=0,
+        )
         self._mesh.vertices = np.append(self._mesh.vertices, vertices, axis=0)
         vertices = shape._face_vertices
         self._mesh.vertices_centers = np.append(
@@ -805,20 +851,15 @@ class ShapeList:
         self._mesh.vertices_offsets = np.append(
             self._mesh.vertices_offsets, vertices, axis=0
         )
-        self._mesh.vertices_index = np.append(
-            self._mesh.vertices_index,
-            [self._mesh.vertices_index.shape[0]],
-            axis=0,
-        )
 
         triangles = shape._face_triangles + m
-        self._mesh.triangles = np.append(
-            self._mesh.triangles, triangles, axis=0
-        )
         self._mesh.triangles_index = np.append(
             self._mesh.triangles_index,
-            [self._mesh.triangles_index.shape[0]],
+            [len(self._mesh.triangles)],
             axis=0,
+        )
+        self._mesh.triangles = np.append(
+            self._mesh.triangles, triangles, axis=0
         )
         color_array = np.repeat([face_color], len(triangles), axis=0)
         self._mesh.triangles_colors = np.append(
@@ -988,6 +1029,8 @@ class ShapeList:
         self._vertices_index = np.empty(0, dtype=IndexDtype)
         self._z_index = np.empty(0, dtype=IndexDtype)
         self._z_order = np.empty(0, dtype=ZOrderDtype)
+        self._edge_color = np.empty((0, 4), dtype=ShapeColorDtype)
+        self._face_color = np.empty((0, 4), dtype=ShapeColorDtype)
         self._mesh.clear()
         self._update_displayed()
 
@@ -1092,16 +1135,16 @@ class ShapeList:
             list using `add_shape`.
         """
         indices = self._vertices_range(index)
-        self._vertices = np.delete(self._vertices, indices)
+        self._vertices = np.delete(self._vertices, indices, axis=0)
         diff = indices.stop - indices.start
         self._vertices_index = np.delete(self._vertices_index, index)
         self._vertices_index[index:] -= diff
 
         # Remove triangles
         indices = self._mesh_triangles_range(index)
-        self._mesh.triangles = np.delete(self._mesh.triangles, indices)
+        self._mesh.triangles = np.delete(self._mesh.triangles, indices, axis=0)
         self._mesh.triangles_colors = np.delete(
-            self._mesh.triangles_colors, indices
+            self._mesh.triangles_colors, indices, axis=0
         )
         self._mesh.triangles_index = np.delete(
             self._mesh.triangles_index, index
@@ -1112,12 +1155,12 @@ class ShapeList:
 
         # Remove vertices
         indices = self._mesh_vertices_range(index)
-        self._mesh.vertices = np.delete(self._mesh.vertices, indices)
+        self._mesh.vertices = np.delete(self._mesh.vertices, indices, axis=0)
         self._mesh.vertices_centers = np.delete(
-            self._mesh.vertices_centers, indices
+            self._mesh.vertices_centers, indices, axis=0
         )
         self._mesh.vertices_offsets = np.delete(
-            self._mesh.vertices_offsets, indices
+            self._mesh.vertices_offsets, indices, axis=0
         )
         self._mesh.vertices_index = np.delete(self._mesh.vertices_index, index)
         diff = indices.stop - indices.start
@@ -1125,17 +1168,17 @@ class ShapeList:
 
         if renumber:
             del self.shapes[index]
-            indices = self._index > index
-            self._index[indices] = self._index[indices] - 1
+            # indices = self._index > index
+            # self._index[indices] = self._index[indices] - 1
             self._z_index = np.delete(self._z_index, index)
-            indices = self._mesh.triangles_index[:, 0] > index
-            self._mesh.triangles_index[indices, 0] = (
-                self._mesh.triangles_index[indices, 0] - 1
-            )
-            indices = self._mesh.vertices_index[:, 0] > index
-            self._mesh.vertices_index[indices, 0] = (
-                self._mesh.vertices_index[indices, 0] - 1
-            )
+            # indices = self._mesh.triangles_index[:, 0] > index
+            # self._mesh.triangles_index[indices, 0] = (
+            #     self._mesh.triangles_index[indices, 0] - 1
+            # )
+            # indices = self._mesh.vertices_index[:, 0] > index
+            # self._mesh.vertices_index[indices, 0] = (
+            #     self._mesh.vertices_index[indices, 0] - 1
+            # )
             self._update_z_order()
         self._clear_cache()
 
@@ -1169,7 +1212,7 @@ class ShapeList:
             indices = self._mesh_vertices_face_range(index)
             self._mesh.vertices[indices] = shape._face_vertices
             self._mesh.vertices_centers[indices] = shape._face_vertices
-            indices = self._index == index
+            indices = self._vertices_range(index)
             self._vertices[indices] = shape.data_displayed
             self._update_displayed()
         self._clear_cache()
@@ -1272,7 +1315,7 @@ class ShapeList:
             repeated updates when modifying multiple shapes. Default is True.
         """
         self._edge_color[index] = edge_color
-        indices = self._mesh_vertices_edge_range(index)
+        indices = self._mesh_triangles_edge_range(index)
         self._mesh.triangles_colors[indices] = self._edge_color[index]
         if update:
             self._update_displayed()
@@ -1309,7 +1352,7 @@ class ShapeList:
             repeated updates when modifying multiple shapes. Default is True.
         """
         self._face_color[index] = face_color
-        indices = self._mesh_vertices_face_range(index)
+        indices = self._mesh_triangles_face_range(index)
         self._mesh.triangles_colors[indices] = face_color
         if update:
             self._update_displayed()
@@ -1519,7 +1562,7 @@ class ShapeList:
 
         triangles = self._mesh.vertices[self._mesh.displayed_triangles]
         intersects = triangles_intersect_box(triangles, corners)
-        shapes = self._mesh.displayed_triangles_index[intersects, 0]
+        shapes = self._mesh.displayed_triangles_to_shape_index[intersects, 0]
         shapes = np.unique(shapes).tolist()
 
         return shapes
@@ -1621,8 +1664,8 @@ class ShapeList:
             line_direction=ray_direction,
             triangles=triangles,
         )
-        intersected_shapes = self._mesh.displayed_triangles_index[inside, 0]
-        if len(intersected_shapes) == 0:
+        # intersected_shapes = self._mesh.displayed_triangles_index[inside, 0]
+        if not np.any(inside):
             return None, None
 
         intersection_points = self._triangle_intersection(
@@ -1633,7 +1676,9 @@ class ShapeList:
         start_to_intersection = intersection_points - ray_position
         distances = np.linalg.norm(start_to_intersection, axis=1)
         closest_shape_index = np.argmin(distances)
-        shape = intersected_shapes[closest_shape_index]
+        shape = self._mesh.displayed_triangles_to_shape_index[inside][
+            closest_shape_index
+        ]
         intersection = intersection_points[closest_shape_index]
         return shape, intersection
 
