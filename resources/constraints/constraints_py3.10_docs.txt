@@ -690,7 +690,7 @@ starlette==0.47.0
     # via sphinx-autobuild
 stdlib-list==0.11.1
     # via pydeps
-superqt==0.7.3
+superqt==0.7.4
     # via
     #   napari (pyproject.toml)
     #   magicgui
@@ -808,7 +808,7 @@ wrapt==1.17.2
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
-xarray==2025.4.0
+xarray==2025.6.0
     # via napari (pyproject.toml)
 zarr==2.18.3
     # via
