@@ -1753,25 +1753,7 @@ class Window:
             Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
             upper-left corner of the rendered region.
         """
-        if not isinstance(scale, float | int):
-            raise TypeError(
-                trans._(
-                    'Scale must be a float or an int.',
-                    deferred=True,
-                )
-            )
-
-        img = QImg2array(
-            self._screenshot(
-                scale=scale,
-                flash=flash,
-                canvas_only=True,
-                fit_to_data_extent=True,
-            )
-        )
-        if path is not None:
-            imsave(path, img)
-        return img
+        return self._qt_viewer.export_figure(path, scale, flash)
 
     def export_rois(
         self,

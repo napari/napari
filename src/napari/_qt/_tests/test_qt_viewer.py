@@ -269,19 +269,18 @@ def test_screenshot(make_napari_viewer):
     assert screenshot.ndim == 3
 
 
-def test_export_figure(make_napari_viewer, tmp_path):
-    viewer = make_napari_viewer()
+def test_export_figure(qt_viewer, viewer_model, tmp_path, qtbot):
     np.random.seed(0)
     # Add image
-    data = np.random.randint(150, 250, size=(250, 250))
-    layer = viewer.add_image(data)
+    data = np.random.randint(150, 250, size=(250, 250), dtype=np.uint8)
+    layer = viewer_model.add_image(data)
 
-    camera_center = viewer.camera.center
-    camera_zoom = viewer.camera.zoom
-    img = viewer.export_figure(flash=False, path=str(tmp_path / 'img.png'))
+    camera_center = viewer_model.camera.center
+    camera_zoom = viewer_model.camera.zoom
+    img = qt_viewer.export_figure(flash=False, path=str(tmp_path / 'img.png'))
 
-    assert viewer.camera.center == camera_center
-    assert viewer.camera.zoom == camera_zoom
+    assert viewer_model.camera.center == camera_center
+    assert viewer_model.camera.zoom == camera_zoom
     np.testing.assert_allclose(img.shape, (250, 250, 4), atol=1)
     # assert img.shape == (250, 250, 4)
     assert np.all(img != np.array([0, 0, 0, 0]))
@@ -289,41 +288,40 @@ def test_export_figure(make_napari_viewer, tmp_path):
     assert (tmp_path / 'img.png').exists()
 
     layer.scale = [0.12, 0.24]
-    img = viewer.export_figure(flash=False)
+    img = qt_viewer.export_figure(flash=False)
     # allclose accounts for rounding errors when computing size in hidpi aka
     # retina displays
     np.testing.assert_allclose(img.shape, (250, 500, 4), atol=1)
 
     layer.scale = [0.12, 0.12]
-    img = viewer.export_figure(flash=False)
+    img = qt_viewer.export_figure(flash=False)
     np.testing.assert_allclose(img.shape, (250, 250, 4), atol=1)
 
 
-def test_export_figure_3d(make_napari_viewer):
-    viewer = make_napari_viewer()
+def test_export_figure_3d(qt_viewer, viewer_model, tmp_path, qtbot):
     np.random.seed(0)
     # Add image, keep values low to contrast with white background
-    viewer.dims.ndisplay = 3
-    viewer.theme = 'light'
+    viewer_model.dims.ndisplay = 3
+    viewer_model.theme = 'light'
 
-    data = np.random.randint(50, 100, size=(10, 250, 250))
-    layer = viewer.add_image(data)
+    data = np.random.randint(50, 100, size=(10, 250, 250), dtype=np.uint8)
+    layer = viewer_model.add_image(data)
 
     # check the non-rotated data (angles = 0,0,90) are exported without any
     # visible background, since the margins should be 0
-    img = viewer.export_figure()
+    img = qt_viewer.export_figure()
     np.testing.assert_allclose(img.shape, (250, 250, 4), atol=1)
 
     # check that changing the scale still gives the pixel size
     layer.scale = [1, 0.12, 0.24]
-    img = viewer.export_figure()
+    img = qt_viewer.export_figure()
     np.testing.assert_allclose(img.shape, (250, 500, 4), atol=1)
     layer.scale = [1, 1, 1]
 
     # rotate the data, export the figure, and check that the rotated figure
     # shape is greater than the original data shape
-    viewer.camera.angles = (45, 45, 45)
-    img = viewer.export_figure()
+    viewer_model.camera.angles = (45, 45, 45)
+    img = qt_viewer.export_figure()
     np.testing.assert_allclose(img.shape, (171, 339, 4), atol=1)
 
     # The theme is dark, so the canvas will be white. Test that the image

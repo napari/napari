@@ -1379,6 +1379,31 @@ class QtViewer(QSplitter):
 
         return screenshot_list
 
+    def export_figure(
+        self,
+        path: str | None = None,
+        scale: float = 1,
+        flash=True,
+    ) -> np.ndarray:
+        if not isinstance(scale, float | int):
+            raise TypeError(
+                trans._(
+                    'Scale must be a float or an int.',
+                    deferred=True,
+                )
+            )
+
+        img = QImg2array(
+            self._screenshot(
+                scale=scale,
+                flash=flash,
+                fit_to_data_extent=True,
+            )
+        )
+        if path is not None:
+            imsave(path, img)
+        return img
+
 
 if TYPE_CHECKING:
     from napari._qt.experimental.qt_poll import QtPoll
