@@ -71,8 +71,8 @@ jobs:
         run: |
           pip install --upgrade pip semgrep
           # f"..." and f'...' are the same for semgrep
-          semgrep --error --lang python --pattern 'trans._(f"...")' napari
-          semgrep --error --lang python --pattern "trans._(\$X.format(...))" napari
+          semgrep --error --lang python --pattern 'trans._(f"...")' src/napari
+          semgrep --error --lang python --pattern "trans._(\$X.format(...))" src/napari
 
   build_wheel:
     name: Build wheel
@@ -142,7 +142,7 @@ jobs:
             platform: ubuntu-22.04
             backend: pyqt5
             coverage: cov
-            tox_extras: "optional"
+            tox_extras: "all_optional"
           # test without any Qt backends
           - python: "3.11"
             platform: ubuntu-22.04
@@ -194,8 +194,8 @@ jobs:
       - test
       - test_examples
     permissions:
-      id-token: write  # Required for OIDC
-      contents: read    # Required for checkout
+      id-token: write  # Required for OIDC authentication
+      contents: read    # Required for code checkout
     uses: ./.github/workflows/reusable_coverage_upload.yml
     secrets: inherit
 
