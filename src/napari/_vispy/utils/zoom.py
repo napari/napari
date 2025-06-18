@@ -80,6 +80,6 @@ def calculate_zoom(
     # this value can actually be smaller than 1, which is not desired. In such
     # a case, we set it to 1 where no zoom will take place although the center
     # location will still be updated
-    if np.isinf(zoom) or np.isnan(zoom) or zoom < 1:
+    if np.isinf(zoom) or np.isnan(zoom) or zoom <= 0:
         zoom = 1
     return zoom, z_center, y_center, x_center
