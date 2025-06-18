@@ -757,9 +757,16 @@ class VispyCanvas:
             self._add_layer_overlay(layer, overlay, parent)
 
     def _get_ordered_visible_canvas_overlays(self):
+        # note that some canvas overlays do no use CanvasPosition, but are instead
+        # free-floating (such as the cursor overlay), so those are skipped
+
         # first viewer overlays
         for overlay, vispy_overlay in self._overlay_to_visual.items():
-            if overlay.visible and isinstance(overlay, CanvasOverlay):
+            if (
+                overlay.visible
+                and isinstance(overlay, CanvasOverlay)
+                and overlay.position in list(CanvasPosition)
+            ):
                 yield overlay, vispy_overlay
 
         # then layer overlays
@@ -771,6 +778,7 @@ class VispyCanvas:
                     layer.visible
                     and overlay.visible
                     and isinstance(overlay, CanvasOverlay)
+                    and overlay.position in list(CanvasPosition)
                 ):
                     yield overlay, vispy_overlay
 
@@ -781,10 +789,6 @@ class VispyCanvas:
             overlay,
             vispy_overlay,
         ) in self._get_ordered_visible_canvas_overlays():
-            if overlay.position not in list(CanvasPosition):
-                # some canvas overlays do no use CanvasPosition, but are
-                # instead free-floating (such as the cursor overlay)
-                continue
             # TODO: these should be settable!
             if overlay.position in ('top_right', 'bottom_left'):
                 vispy_overlay.x_offset_tiling = x_offsets[overlay.position]
