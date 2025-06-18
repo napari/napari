@@ -651,7 +651,6 @@ module = [
     "napari.components._viewer_mouse_bindings",
     "napari.components.overlays.base",
     "napari.components.overlays.interaction_box",
-    "napari.components.overlays.zoom",
     "napari.utils.colormaps.categorical_colormap_utils",
 ]
 disallow_untyped_defs = false
@@ -680,7 +679,6 @@ module = [
     "napari._vispy.overlays.labels_polygon",
     "napari._vispy.overlays.scale_bar",
     "napari._vispy.overlays.text",
-    "napari._vispy.overlays.zoom",
     "napari.layers.labels._labels_key_bindings",
     "napari.layers.utils._slice_input",
     "napari.utils._register",
@@ -796,7 +794,6 @@ module = [
     "napari.components.overlays.labels_polygon",
     "napari.plugins.io",
     "napari.utils.colormaps.vendored._cm_listed",
-    "napari._vispy.utils.zoom"
 ]
 disallow_untyped_calls = false
 

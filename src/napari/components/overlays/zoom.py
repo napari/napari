@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from napari._pydantic_compat import validator
 from napari.components.overlays.base import CanvasOverlay
 from napari.utils.events import Event
@@ -27,8 +29,8 @@ class ZoomOverlay(CanvasOverlay):
         (0, 0),
     )
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, **kwargs: Any):
+        super().__init__(**kwargs)
         self.events.add(zoom=Event)
 
     @validator('canvas_positions', pre=True, always=True, allow_reuse=True)
@@ -36,4 +38,6 @@ class ZoomOverlay(CanvasOverlay):
         cls, v: tuple[tuple[float, ...], tuple[float, ...]]
     ) -> tuple[tuple[float, float], tuple[float, float]]:
         tup_1, tup_2 = v
-        return tuple(tup_1), tuple(tup_2)  # type: ignore[return-value]
+        x1, y1 = (float(coord) for coord in tup_1)
+        x2, y2 = (float(coord) for coord in tup_2)
+        return (x1, y1), (x2, y2)

@@ -1,14 +1,26 @@
 """Vispy zoom box overlay."""
 
+from typing import TYPE_CHECKING, Any, Optional
+
 from napari._vispy.overlays.base import ViewerOverlayMixin, VispyCanvasOverlay
 from napari._vispy.visuals.interaction_box import InteractionBox
 from napari.settings import get_settings
+
+if TYPE_CHECKING:
+    from napari.components.overlays import ZoomOverlay
+    from napari.components.viewer_model import ViewerModel
+    from napari.utils.events import Event
 
 
 class VispyZoomOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
     """Zoom box overlay.."""
 
-    def __init__(self, viewer, overlay, parent=None):
+    def __init__(
+        self,
+        viewer: 'ViewerModel',
+        overlay: 'ZoomOverlay',
+        parent: Optional[Any] = None,
+    ):
         super().__init__(
             node=InteractionBox(),
             viewer=viewer,
@@ -20,7 +32,7 @@ class VispyZoomOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
 
         self._on_visible_change()
 
-    def _on_positions_change(self, _evt=None):
+    def _on_positions_change(self, _evt: Optional['Event'] = None) -> None:
         """Change position."""
         settings = get_settings()
         self.node._highlight_width = (
@@ -28,7 +40,6 @@ class VispyZoomOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         )
         self.node._edge_color = settings.appearance.highlight.highlight_color
 
-        # displayed = self.viewer.dims.displayed
         top_left, bot_right = self.overlay.canvas_positions
         self.node.set_data(
             # invert axes for vispy
@@ -38,6 +49,6 @@ class VispyZoomOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
             selected=None,
         )
 
-    def reset(self):
+    def reset(self) -> None:
         """Reset the overlay."""
         super().reset()
