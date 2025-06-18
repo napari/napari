@@ -8,7 +8,7 @@ from weakref import WeakSet
 
 import numpy as np
 from superqt.utils import qthrottled
-from vispy.scene import SceneCanvas as SceneCanvas_, Widget
+from vispy.scene import SceneCanvas as SceneCanvas_, ViewBox, Widget
 
 from napari._vispy.camera import VispyCamera
 from napari._vispy.mouse_event import NapariMouseEvent
@@ -365,6 +365,7 @@ class VispyCanvas:
     def _map_canvas2world(
         self,
         position: tuple[int, ...],
+        view: ViewBox,
     ) -> tuple[float, float]:
         """Map position from canvas pixels into world coordinates.
 
@@ -381,9 +382,6 @@ class VispyCanvas:
         """
         nd = self.viewer.dims.ndisplay
 
-        view = self._get_viewbox_at(position) or self.view
-        # combine the viewbox transform wit the scene transform
-        # so each quadrant in grid mode maps back to the main scene
         transform = view.transform * view.scene.transform
 
         # cartesian to homogeneous coordinates
@@ -449,10 +447,16 @@ class VispyCanvas:
         if event.pos is None:
             return
 
-        if self._get_viewbox_at(event.pos) is None:
+        # ensure that events which began in a specific viewbox continue to be
+        # calculated based on that viewbox's coordinates
+        if event.press_event is not None:
+            viewbox = self._get_viewbox_at(event.press_event.pos)
+        else:
+            viewbox = self._get_viewbox_at(event.pos)
+
+        if viewbox is None:
             # this means we're in an empty quadrant, so do nothing
             event.handled = True
-            return
 
         napari_event = NapariMouseEvent(
             event=event,
@@ -461,7 +465,7 @@ class VispyCanvas:
                 self.viewer.dims.ndim, self.viewer.dims.displayed
             ),
             camera_zoom=self.viewer.camera.zoom,
-            position=self._map_canvas2world(event.pos),
+            position=self._map_canvas2world(event.pos, viewbox),
             dims_displayed=list(self.viewer.dims.displayed),
             dims_point=list(self.viewer.dims.point),
         )
@@ -573,8 +577,10 @@ class VispyCanvas:
             Coordinates of top left and bottom right canvas pixel in the world.
         """
         # Find corners of canvas in world coordinates
-        top_left = self._map_canvas2world((0, 0))
-        bottom_right = self._map_canvas2world(self._scene_canvas.size)
+        top_left = self._map_canvas2world((0, 0), self.view)
+        bottom_right = self._map_canvas2world(
+            self._scene_canvas.size, self.view
+        )
         return np.array([top_left, bottom_right])
 
     def on_draw(self, event: DrawEvent) -> None:
