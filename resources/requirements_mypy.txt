@@ -6,7 +6,7 @@ appdirs==1.4.4
     # via npe2
 build==1.2.2.post1
     # via npe2
-certifi==2025.4.26
+certifi==2025.6.15
     # via requests
 charset-normalizer==3.4.2
     # via requests
@@ -42,7 +42,7 @@ psygnal==0.13.0
     #   npe2
 pyconify==0.2.1
     # via superqt
-pydantic==2.11.5
+pydantic==2.11.7
     # via
     #   -r resources/requirements_mypy.in
     #   npe2
@@ -67,7 +67,7 @@ qtpy==2.4.3
     #   -r resources/requirements_mypy.in
     #   magicgui
     #   superqt
-requests==2.32.3
+requests==2.32.4
     # via pyconify
 rich==14.0.0
     # via
@@ -75,7 +75,7 @@ rich==14.0.0
     #   typer
 shellingham==1.5.4
     # via typer
-superqt==0.7.3
+superqt==0.7.4
     # via magicgui
 tomli-w==1.2.0
     # via npe2
@@ -83,7 +83,7 @@ typer==0.16.0
     # via npe2
 types-pyyaml==6.0.12.20250516
     # via -r resources/requirements_mypy.in
-types-requests==2.32.0.20250602
+types-requests==2.32.4.20250611
     # via -r resources/requirements_mypy.in
 types-setuptools==80.9.0.20250529
     # via -r resources/requirements_mypy.in
