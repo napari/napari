@@ -16,7 +16,6 @@ from napari._vispy.utils.cursor import QtCursorVisual
 from napari._vispy.utils.gl import get_max_texture_sizes
 from napari._vispy.utils.visual import create_vispy_overlay
 from napari.components.overlays import CanvasOverlay
-from napari.settings import get_settings
 from napari.utils._proxies import ReadOnlyWrapper
 from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils.events import disconnect_events
@@ -189,13 +188,10 @@ class VispyCanvas:
         self.viewer.camera.events.zoom.connect(self._on_cursor)
         self.viewer.layers.events.reordered.connect(self._update_scenegraph)
         self.viewer.layers.events.removed.connect(self._remove_layer)
-        self.viewer.layers.selection.events.connect(self._update_grid_borders)
         self.viewer.grid.events.stride.connect(self._update_scenegraph)
         self.viewer.grid.events.shape.connect(self._update_scenegraph)
         self.viewer.grid.events.enabled.connect(self._update_scenegraph)
         self.viewer.grid.events.spacing.connect(self._update_grid_spacing)
-        self.viewer.grid.events.border_width.connect(self._update_grid_borders)
-        self.viewer.grid.events.highlight.connect(self._update_grid_borders)
         self.viewer._overlays.events.added.connect(
             self._update_viewer_overlays
         )
@@ -277,7 +273,6 @@ class VispyCanvas:
     @bgcolor.setter
     def bgcolor(self, value: str | npt.ArrayLike) -> None:
         self._scene_canvas.bgcolor = self._background_color_override or value
-        self._update_grid_borders()
 
     @property
     def central_widget(self) -> Widget:
@@ -883,7 +878,6 @@ class VispyCanvas:
             self.grid = self.central_widget.add_grid(border_width=0)
             self._update_grid_spacing()
             self._setup_layer_views_in_grid()
-            self._update_grid_borders()
         else:
             self._setup_single_view()
 
@@ -907,7 +901,11 @@ class VispyCanvas:
                 len(self.viewer.layers),
             )
             view = self.grid[row, col]
-            view.border_width = self.viewer.grid.border_width
+            # any border_color != None will add a padding of +1
+            # see https://github.com/vispy/vispy/issues/1492
+            view.border_width = 0
+            view.border_color = None
+
             camera = VispyCamera(view, self.viewer.camera, self.viewer.dims)
             self.grid_views.append(view)
             self.grid_cameras.append(camera)
@@ -925,40 +923,3 @@ class VispyCanvas:
             self._current_viewbox_size()
         )
         self._scene_canvas.update()
-
-    def _update_grid_borders(self):
-        if not self.viewer.grid.enabled:
-            return
-
-        base_width = self.viewer.grid.border_width
-        # any border_color != None will add a padding of +1, so we return if we want no border https://github.com/vispy/vispy/issues/1492
-        if self.viewer.grid.border_width < 1:
-            base_color = None
-        else:
-            base_color = self.bgcolor
-
-        hl_color = get_settings().appearance.highlight.highlight_color
-        hl_thickness = get_settings().appearance.highlight.highlight_thickness
-
-        for (row, col), layer_indices in self.viewer.grid.iter_quadrants(
-            len(self.viewer.layers)
-        ):
-            color = 'gray' if layer_indices else base_color
-            width = base_width
-
-            if self.viewer.grid.highlight and any(
-                # FIXME: the use of `len(self.viewer.layers) - 1 - idx` should be removed
-                # see https://github.com/napari/napari/pull/7870#issuecomment-2965031040
-                self.viewer.layers[len(self.viewer.layers) - 1 - idx]
-                in self.viewer.layers.selection
-                for idx in layer_indices
-            ):
-                color = hl_color
-                width = hl_thickness
-
-            self.grid[row, col].border_color = color
-            self.grid[row, col].border_width = width
-
-            # TODO: this should be fixed in vispy; currently changing border width somehow does not fully
-            #       recompute everything, resulting in scenes "overlapping" the borders.
-            self.grid[row, col].events.resize()

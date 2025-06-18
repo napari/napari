@@ -256,9 +256,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         settings.application.events.grid_spacing.connect(
             self._update_viewer_grid
         )
-        settings.application.events.grid_border_width.connect(
-            self._update_viewer_grid
-        )
         settings.experimental.events.async_.connect(self._update_async)
 
         # Add extra reset_view event. Ideally this should be removed in the
@@ -334,7 +331,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             settings.application.grid_width,
         )
         self.grid.spacing = settings.application.grid_spacing
-        self.grid.border_width = settings.application.grid_border_width
 
     @validator('theme', allow_reuse=True)
     def _valid_theme(cls, v):

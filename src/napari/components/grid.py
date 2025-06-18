@@ -3,7 +3,6 @@ from collections.abc import Iterator
 import numpy as np
 
 from napari.settings._application import (
-    GridBorderWidth,
     GridHeight,
     GridSpacing,
     GridStride,
@@ -37,17 +36,9 @@ class GridCanvas(EventedModel):
         Spacing between grid quadrants. If between 0 and 1, it's
         interpreted as a proportion of the size of the quadrants.
         If equal or greater than 1, it's interpreted as screen pixels.
-    border_width : int
-        Width of the border delineating each quadrant in screen pixels.
-    highlight: bool
-        Borders will be highlighted based on which layers are selected
-        in the layerlists.
 
         .. versionadded:: 0.6.0
             ``spacing`` was added in 0.6.0.
-        .. versionadded:: 0.6.2
-            ``border_width`` was added in 0.6.2.
-            ``highlight`` was added in 0.6.2.
     """
 
     # fields
@@ -57,8 +48,6 @@ class GridCanvas(EventedModel):
     shape: tuple[GridHeight, GridWidth] = (-1, -1)  # type: ignore[valid-type]
     enabled: bool = False
     spacing: GridSpacing = 0.0  # type: ignore[valid-type]
-    border_width: GridBorderWidth = 0  # type: ignore[valid-type]
-    highlight: bool = True
 
     def actual_shape(self, nlayers: int = 1) -> tuple[int, int]:
         """Return the actual shape of the grid.
