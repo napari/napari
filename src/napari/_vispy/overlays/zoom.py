@@ -1,5 +1,7 @@
 """Vispy zoom box overlay."""
 
+from __future__ import annotations
+
 from typing import TYPE_CHECKING, Any, Optional
 
 from napari._vispy.overlays.base import ViewerOverlayMixin, VispyCanvasOverlay
@@ -17,8 +19,8 @@ class VispyZoomOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
 
     def __init__(
         self,
-        viewer: 'ViewerModel',
-        overlay: 'ZoomOverlay',
+        viewer: ViewerModel,
+        overlay: ZoomOverlay,
         parent: Optional[Any] = None,
     ):
         super().__init__(
@@ -32,7 +34,7 @@ class VispyZoomOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
 
         self._on_visible_change()
 
-    def _on_positions_change(self, _evt: Optional['Event'] = None) -> None:
+    def _on_positions_change(self, _evt: Optional[Event] = None) -> None:
         """Change position."""
         settings = get_settings()
         self.node._highlight_width = (
