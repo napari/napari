@@ -457,6 +457,7 @@ class VispyCanvas:
         if viewbox is None:
             # this means we're in an empty quadrant, so do nothing
             event.handled = True
+            return
 
         napari_event = NapariMouseEvent(
             event=event,
