@@ -511,9 +511,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         if self.grid.enabled:
             grid_shape = np.array(self.grid.actual_shape(len(self.layers)))
             viewbox_size = viewbox_size / grid_shape
-            # TODO: why the hell is this not just 2 but seems to vary with the border width?
-            # in the meantime, this should be ok with small border width values :/
-            viewbox_size -= self.grid.border_width * 2
             viewbox_size -= self.grid._compute_canvas_spacing(viewbox_size) * 2
         return viewbox_size
 

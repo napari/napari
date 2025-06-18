@@ -169,7 +169,9 @@ class GridCanvas(EventedModel):
         for row, col in np.ndindex(self.actual_shape(nlayers)):
             yield (row, col), self.contents_at((row, col), nlayers)
 
-    def _compute_canvas_spacing(self, viewbox_size):
+    def _compute_canvas_spacing(
+        self, viewbox_size: tuple[int, int] | np.ndarray
+    ) -> int:
         spacing = self.spacing
         if spacing >= 1:
             return int(spacing)
