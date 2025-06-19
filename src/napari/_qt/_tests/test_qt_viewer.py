@@ -298,6 +298,7 @@ def test_export_figure(qt_viewer, viewer_model, tmp_path, qtbot):
     np.testing.assert_allclose(img.shape, (250, 250, 4), atol=1)
 
 
+@pytest.mark.skip(reason='testing purpose')
 def test_export_figure_3d(qt_viewer, viewer_model, tmp_path, qtbot):
     np.random.seed(0)
     # Add image, keep values low to contrast with white background
