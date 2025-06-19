@@ -564,7 +564,7 @@ class VispyCanvas:
         self._process_mouse_event(mouse_wheel_callbacks, event)
 
     @property
-    def _canvas_corners_in_world(self) -> npt.NDArray:
+    def _viewbox_corners_in_world(self) -> npt.NDArray:
         """Location of the corners of canvas in world coordinates.
 
         Returns
@@ -572,11 +572,15 @@ class VispyCanvas:
         corners : np.ndarray
             Coordinates of top left and bottom right canvas pixel in the world.
         """
+        if self.viewer.grid.enabled and self.grid_views:
+            # they are all the same, just take the first one
+            view = self.grid_views[0]
+        else:
+            view = self.view
+
         # Find corners of canvas in world coordinates
-        top_left = self._map_canvas2world((0, 0), self.view)
-        bottom_right = self._map_canvas2world(
-            self._scene_canvas.size, self.view
-        )
+        top_left = self._map_canvas2world((0, 0), view)
+        bottom_right = self._map_canvas2world(view.rect.size, view)
         return np.array([top_left, bottom_right])
 
     def on_draw(self, event: DrawEvent) -> None:
@@ -599,7 +603,7 @@ class VispyCanvas:
             camera.on_draw(event)
 
         # The canvas corners in full world coordinates (i.e. across all layers).
-        canvas_corners_world = self._canvas_corners_in_world
+        viewbox_corners_world = self._viewbox_corners_in_world
         for layer in self.viewer.layers:
             # The following condition should mostly be False. One case when it can
             # be True is when a callback connected to self.viewer.dims.events.ndisplay
@@ -613,10 +617,10 @@ class VispyCanvas:
                 displayed_axes = list(self.viewer.dims.displayed[-nd:])
             layer._update_draw(
                 scale_factor=1 / self.viewer.camera.zoom,
-                corner_pixels_displayed=canvas_corners_world[
+                corner_pixels_displayed=viewbox_corners_world[
                     :, displayed_axes
                 ],
-                shape_threshold=self._scene_canvas.size,
+                shape_threshold=self._current_viewbox_size,
             )
 
     def on_resize(self, event: ResizeEvent) -> None:
@@ -913,6 +917,7 @@ class VispyCanvas:
             vispy_layer.node.parent = view.scene
             self._update_layer_overlays(napari_layer)
 
+    @property
     def _current_viewbox_size(self):
         if self.viewer.grid.enabled and self.grid_views:
             return self.grid_views[0].rect.size
@@ -920,6 +925,6 @@ class VispyCanvas:
 
     def _update_grid_spacing(self):
         self.grid.spacing = self.viewer.grid._compute_canvas_spacing(
-            self._current_viewbox_size()
+            self._current_viewbox_size
         )
         self._scene_canvas.update()
