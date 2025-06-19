@@ -8,6 +8,7 @@ from collections.abc import Iterable, Sequence
 from contextlib import contextmanager
 from enum import auto
 from functools import partial
+from typing import TYPE_CHECKING
 
 import numpy as np
 import qtpy
@@ -37,6 +38,9 @@ from napari.utils.translations import trans
 
 QBYTE_FLAG = '!QBYTE_'
 RICH_TEXT_PATTERN = re.compile('<[^\n]+>')
+
+if TYPE_CHECKING:
+    from magicgui.widgets import Widget
 
 
 class ColorMode(StringEnum):
@@ -218,7 +222,8 @@ def drag_with_pixmap(list_widget: QListWidget) -> QDrag:
 
 
 def combine_widgets(
-    widgets: QWidget | Sequence[QWidget], vertical: bool = False
+    widgets: QWidget | Widget | Sequence[QWidget | Widget],
+    vertical: bool = False,
 ) -> QWidget:
     """Combine a list of widgets into a single QWidget with Layout.
 
@@ -351,7 +356,7 @@ def _maybe_allow_interrupt(qapp):
     code from https://github.com/matplotlib/matplotlib/pull/13306
     """
     old_sigint_handler = signal.getsignal(signal.SIGINT)
-    handler_args = None
+    handler_args: Sequence | None = None
     if old_sigint_handler in (None, signal.SIG_IGN, signal.SIG_DFL):
         yield
         return
@@ -367,6 +372,13 @@ def _maybe_allow_interrupt(qapp):
     def handle(*args):
         nonlocal handler_args
         handler_args = args
+        from napari._qt.qt_main_window import _QtMainWindow
+
+        for instance in _QtMainWindow._instances:
+            if instance.status_thread.isRunning():
+                instance.status_thread.close_terminate()
+                instance.status_thread.wait()
+
         qapp.exit()
 
     signal.signal(signal.SIGINT, handle)

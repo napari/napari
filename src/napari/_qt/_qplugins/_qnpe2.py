@@ -33,7 +33,7 @@ from napari.plugins import menu_item_template, plugin_manager
 from napari.plugins._npe2 import _when_group_order, get_widget_contribution
 from napari.utils.events import Event
 from napari.utils.translations import trans
-from napari.viewer import Viewer
+from napari.viewer import Viewer, ViewerModel
 
 if TYPE_CHECKING:
     from npe2.manifest import PluginManifest
@@ -109,7 +109,7 @@ def _toggle_or_get_widget_npe1(
         msg='Note that widgets cannot be opened in headless mode.'
     )
 
-    if window and (dock_widget := window._dock_widgets.get(name)):
+    if window and (dock_widget := window._wrapped_dock_widgets.get(name)):
         dock_widget.setVisible(not dock_widget.isVisible())
         return
 
@@ -297,6 +297,10 @@ def _get_widget_viewer_param(
                 if param.name == 'napari_viewer' or param.annotation in (
                     'napari.viewer.Viewer',
                     Viewer,
+                    'napari.viewer.ViewerModel',
+                    'napari.components.ViewerModel',
+                    'napari.components.viewer_model.ViewerModel',
+                    ViewerModel,
                 ):
                     widget_param = param.name
                     break
@@ -334,7 +338,7 @@ def _toggle_or_get_widget(
     )
 
     window = viewer.window
-    if window and (dock_widget := window._dock_widgets.get(full_name)):
+    if window and (dock_widget := window._wrapped_dock_widgets.get(full_name)):
         dock_widget.setVisible(not dock_widget.isVisible())
         return None
 
@@ -352,8 +356,8 @@ def _get_current_dock_status(full_name: str) -> bool:
     window = _provide_window_or_raise(
         msg='Note that widgets cannot be opened in headless mode.',
     )
-    if full_name in window._dock_widgets:
-        return window._dock_widgets[full_name].isVisible()
+    if full_name in window._wrapped_dock_widgets:
+        return window._wrapped_dock_widgets[full_name].isVisible()
     return False
 
 

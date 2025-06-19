@@ -1,7 +1,7 @@
 import typing
 import warnings
 from collections import deque
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Generator, Sequence
 from contextlib import contextmanager
 from typing import (
     Any,
@@ -257,7 +257,9 @@ class Labels(ScalarFieldBase):
 
     _modeclass = Mode
 
-    _drag_modes: ClassVar[dict[Mode, Callable[['Labels', Event], None]]] = {  # type: ignore[assignment]
+    _drag_modes: ClassVar[
+        dict[Mode, Callable[['Labels', Event], None | Generator]]
+    ] = {  # type: ignore[assignment]
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: transform_with_box,
         Mode.PICK: pick,
@@ -582,6 +584,7 @@ class Labels(ScalarFieldBase):
         self._update_dims()
         self.events.data(value=self.data)
         self._reset_editable()
+        self.events.features()
 
     @property
     def features(self):

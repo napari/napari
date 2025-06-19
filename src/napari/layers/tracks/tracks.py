@@ -228,7 +228,7 @@ class Tracks(Layer):
         else:
             maxs = np.max(self.data, axis=0)
             mins = np.min(self.data, axis=0)
-            extrema = np.vstack([mins, maxs])  # type: ignore[assignment]
+            extrema = np.vstack([mins, maxs])
         return extrema[:, 1:]
 
     def _get_ndim(self) -> int:
@@ -463,7 +463,7 @@ class Tracks(Layer):
         """Set the track graph."""
         # Ignored type, because mypy can't handle different signatures
         # on getters and setters; see https://github.com/python/mypy/issues/3004
-        self._manager.graph = graph  # type: ignore[assignment]
+        self._manager.graph = graph
         self._manager.build_graph()
         self.events.rebuild_graph()
 
