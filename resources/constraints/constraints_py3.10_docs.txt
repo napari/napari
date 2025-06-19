@@ -136,7 +136,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.135.10
+hypothesis==6.135.11
     # via napari (pyproject.toml)
 idna==3.10
     # via
@@ -516,7 +516,7 @@ pyside6-essentials==6.4.2
     # via
     #   pyside6
     #   pyside6-addons
-pytest==8.4.0
+pytest==8.4.1
     # via
     #   napari (pyproject.toml)
     #   pytest-cov
@@ -691,7 +691,7 @@ starlette==0.47.0
     # via sphinx-autobuild
 stdlib-list==0.11.1
     # via pydeps
-superqt==0.7.4
+superqt==0.7.5
     # via
     #   napari (pyproject.toml)
     #   magicgui
@@ -787,7 +787,7 @@ tzdata==2025.2
     # via pandas
 uc-micro-py==1.0.3
     # via linkify-it-py
-urllib3==2.4.0
+urllib3==2.5.0
     # via
     #   distributed
     #   requests

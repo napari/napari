@@ -22,7 +22,7 @@ markdown-it-py==3.0.0
     # via rich
 mdurl==0.1.2
     # via markdown-it-py
-mypy==1.16.0
+mypy==1.16.1
     # via -r resources/requirements_mypy.in
 mypy-extensions==1.1.0
     # via mypy
@@ -75,7 +75,7 @@ rich==14.0.0
     #   typer
 shellingham==1.5.4
     # via typer
-superqt==0.7.4
+superqt==0.7.5
     # via magicgui
 tomli-w==1.2.0
     # via npe2
@@ -98,7 +98,7 @@ typing-extensions==4.14.0
     #   typing-inspection
 typing-inspection==0.4.1
     # via pydantic
-urllib3==2.4.0
+urllib3==2.5.0
     # via
     #   requests
     #   types-requests
