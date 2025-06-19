@@ -622,7 +622,9 @@ def test_process_mouse_event(make_napari_viewer):
         np.testing.assert_array_equal(event.dims_displayed, [1, 2, 3])
         assert event.dims_point[0] == data.shape[0] // 2
 
-        expected_position = view.canvas._map_canvas2world(new_pos)
+        expected_position = view.canvas._map_canvas2world(
+            new_pos, view.canvas.view
+        )
         np.testing.assert_almost_equal(expected_position, list(event.position))
 
     viewer.dims.ndisplay = 3
@@ -649,7 +651,9 @@ def test_process_mouse_event_2d_layer_3d_viewer(make_napari_viewer):
 
     @image.mouse_drag_callbacks.append
     def on_click(layer, event):
-        expected_position = view.canvas._map_canvas2world(new_pos)
+        expected_position = view.canvas._map_canvas2world(
+            new_pos, view.canvas.view
+        )
         np.testing.assert_almost_equal(expected_position, list(event.position))
 
     assert viewer.dims.ndisplay == 2
