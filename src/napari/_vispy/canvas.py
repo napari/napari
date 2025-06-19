@@ -620,7 +620,7 @@ class VispyCanvas:
                 corner_pixels_displayed=viewbox_corners_world[
                     :, displayed_axes
                 ],
-                shape_threshold=self._current_viewbox_size,
+                shape_threshold=self._current_viewbox_size[::-1],
             )
 
     def on_resize(self, event: ResizeEvent) -> None:
