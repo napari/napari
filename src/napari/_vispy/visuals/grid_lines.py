@@ -39,7 +39,7 @@ class GridLines3D(Node):
                 parent=self,
                 border_width=0,
                 color=self.color,
-                scale=self._scale,
+                scale=self.scale,
             )
             grid.transform = MatrixTransform()
             grid.opacity = self._opacity
