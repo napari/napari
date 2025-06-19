@@ -29,6 +29,7 @@ from napari.layers import Labels, Points
 from napari.settings import get_settings
 from napari.utils.colormaps import DirectLabelColormap, label_colormap
 from napari.utils.interactions import mouse_press_callbacks
+from napari.utils.misc import is_installed
 from napari.utils.theme import available_themes
 
 BUILTINS_DISP = 'napari'
@@ -96,6 +97,48 @@ def test_qt_viewer_console_focus(qtbot, make_napari_viewer):
         )
 
     qtbot.waitUntil(console_has_focus)
+
+
+@pytest.mark.skipif(
+    not is_installed('qtreload'), reason='qtreload not installed'
+)
+def test_qt_viewer_with_qtreload(make_napari_viewer):
+    """Test instantiating qtreload from viewer."""
+    # ensure that qtreload is enabled (before Viewer instantiation)
+    os.environ['NAPARI_DEV'] = '1'
+    viewer = make_napari_viewer()
+    view = viewer.window._qt_viewer
+    assert view._qdev is not None
+    assert view._dockQDev is not None
+
+
+@pytest.mark.skipif(
+    not is_installed('qtreload'), reason='qtreload not installed'
+)
+def test_qt_viewer_with_qtreload_active(make_napari_viewer):
+    """Test instantiating qtreload from viewer."""
+    viewer = make_napari_viewer()
+    # ensure that qtreload is enabled (after Viewer instantiation)
+    os.environ['NAPARI_DEV'] = '1'
+    view = viewer.window._qt_viewer
+    dock = view.dockQDev
+    assert dock is not None
+    assert dock.widget() is view._qdev
+
+
+@pytest.mark.skipif(
+    not is_installed('qtreload'), reason='qtreload not installed'
+)
+def test_qt_viewer_with_qtreload_not_active(make_napari_viewer):
+    """Test instantiating qtreload from viewer."""
+    os.environ['NAPARI_DEV'] = '0'
+    viewer = make_napari_viewer()
+    # ensure that qtreload is not enabled
+    view = viewer.window._qt_viewer
+    dock = view.dockQDev
+    assert dock is None
+    assert view._dockQDev is None
+    assert view._qdev is None
 
 
 @pytest.mark.parametrize(('layer_class', 'data', 'ndim'), layer_test_data)

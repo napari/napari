@@ -441,7 +441,6 @@ class QtViewer(QSplitter):
                     area='bottom',
                     allowed_areas=['left', 'right', 'bottom'],
                     object_name='QDev',
-                    close_btn=False,
                 )
         except Exception:
             logging.getLogger('napari').exception(
