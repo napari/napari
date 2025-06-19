@@ -62,12 +62,12 @@ class VispyCanvasOverlay(VispyBaseOverlay):
 
         # offsets and size are used to control fine positioning, and will depend
         # on the subclass and visual that needs to be rendered
-        self.x_offset = 10
-        self.y_offset = 10
-        self.x_size = 0
-        self.y_size = 0
-        self.x_offset_tiling = 0
-        self.y_offset_tiling = 0
+        self.x_offset = 10.0
+        self.y_offset = 10.0
+        self.x_size = 0.0
+        self.y_size = 0.0
+        self.x_offset_tiling = 0.0
+        self.y_offset_tiling = 0.0
         self._canvas = None
         self.node.transform = STTransform()
         self.overlay.events.position.connect(self._on_position_change)

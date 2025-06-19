@@ -170,7 +170,12 @@ class VispyCanvas:
         self._scene_canvas.events.draw.connect(self.on_draw)
         self.viewer.cursor.events.style.connect(self._on_cursor)
         self.viewer.cursor.events.size.connect(self._on_cursor)
-        self.viewer.events.theme.connect(self._on_theme_change)
+        # position=first is important to some downstream components such as
+        # scale_bar overlay which need to have access to the updated color
+        # by the time they get updated as well
+        self.viewer.events.theme.connect(
+            self._on_theme_change, position='first'
+        )
         self.viewer.camera.events.mouse_pan.connect(self._on_interactive)
         self.viewer.camera.events.mouse_zoom.connect(self._on_interactive)
         self.viewer.camera.events.zoom.connect(self._on_cursor)
@@ -209,23 +214,19 @@ class VispyCanvas:
 
     @property
     def background_color_override(self) -> str | None:
-        """Background color of VispyCanvas.view returned as hex string. When not None, color is shown instead of
-        VispyCanvas.bgcolor. The setter expects str (any in vispy.color.get_color_names) or hex starting
-        with # or a tuple | np.array ({3,4},) with values between 0 and 1.
+        """Background color of VispyCanvas.
+
+        When not None, color is shown instead of VispyCanvas.bgcolor.
 
         """
-        if self.view in self.central_widget._widgets:
-            return self.view.bgcolor.hex
-        return None
+        return self._background_color_override
 
     @background_color_override.setter
     def background_color_override(
         self, value: str | npt.ArrayLike | None
     ) -> None:
-        if value:
-            self.view.bgcolor = value
-        else:
-            self.view.bgcolor = None
+        self._background_color_override = value
+        self.bgcolor = value or self._last_theme_color
 
     def _on_theme_change(self, event: Event) -> None:
         self._set_theme_change(event.value)
@@ -261,7 +262,7 @@ class VispyCanvas:
 
     @bgcolor.setter
     def bgcolor(self, value: str | npt.ArrayLike) -> None:
-        self._scene_canvas.bgcolor = value
+        self._scene_canvas.bgcolor = self._background_color_override or value
 
     @property
     def central_widget(self) -> Widget:
@@ -756,9 +757,16 @@ class VispyCanvas:
             self._add_layer_overlay(layer, overlay, parent)
 
     def _get_ordered_visible_canvas_overlays(self):
+        # note that some canvas overlays do no use CanvasPosition, but are instead
+        # free-floating (such as the cursor overlay), so those are skipped
+
         # first viewer overlays
         for overlay, vispy_overlay in self._overlay_to_visual.items():
-            if overlay.visible and isinstance(overlay, CanvasOverlay):
+            if (
+                overlay.visible
+                and isinstance(overlay, CanvasOverlay)
+                and overlay.position in list(CanvasPosition)
+            ):
                 yield overlay, vispy_overlay
 
         # then layer overlays
@@ -770,6 +778,7 @@ class VispyCanvas:
                     layer.visible
                     and overlay.visible
                     and isinstance(overlay, CanvasOverlay)
+                    and overlay.position in list(CanvasPosition)
                 ):
                     yield overlay, vispy_overlay
 
@@ -780,10 +789,6 @@ class VispyCanvas:
             overlay,
             vispy_overlay,
         ) in self._get_ordered_visible_canvas_overlays():
-            if overlay.position not in list(CanvasPosition):
-                # some canvas overlays do no use CanvasPosition, but are
-                # instead free-floating (such as the cursor overlay)
-                continue
             # TODO: these should be settable!
             if overlay.position in ('top_right', 'bottom_left'):
                 vispy_overlay.x_offset_tiling = x_offsets[overlay.position]
@@ -798,63 +803,6 @@ class VispyCanvas:
                 )
                 vispy_overlay.x_offset_tiling = 0
             vispy_overlay._on_position_change()
-
-    def _remove_viewer_overlays(self) -> None:
-        """Remove all viewer overlay visuals and disconnect their events."""
-        for overlay in list(self._overlay_to_visual):
-            vispy_overlay = self._overlay_to_visual.pop(overlay)
-            vispy_overlay.close()
-
-    def _update_viewer_overlays(self):
-        """Update the viewer overlay visuals.
-
-        Also ensures that overlays are properly assigned parents depending on
-        their class (canvas vs scene overlays).
-        """
-        self._remove_viewer_overlays()
-
-        for overlay in self.viewer._overlays.values():
-            if isinstance(overlay, CanvasOverlay):
-                self._add_viewer_overlay(overlay, self.view)
-            else:
-                self._add_viewer_overlay(overlay, self.view.scene)
-
-    def _add_layer_overlay(
-        self, layer: Layer, overlay: Overlay, parent: Node
-    ) -> None:
-        """Create vispy overlay and add to dictionary of layer overlay visuals"""
-        vispy_overlay = create_vispy_overlay(
-            overlay, layer=layer, parent=parent
-        )
-
-        self._layer_overlay_to_visual[layer][overlay] = vispy_overlay
-
-    def _remove_layer_overlays(self, layer: Layer) -> None:
-        """Remove all layer overlay visuals and disconnect their events."""
-        for overlay in list(self._layer_overlay_to_visual[layer]):
-            vispy_overlay = self._layer_overlay_to_visual[layer].pop(overlay)
-            vispy_overlay.close()
-
-    def _update_layer_overlays(self, layer: Layer) -> None:
-        """Update the overlay visuals for each layer in the canvas.
-
-        Also ensures that overlays are properly assigned parents depending on
-        their class (canvas vs scene overlays).
-        """
-        # reparenting does not work well in a few cases (we end up with overlay visuals
-        # "clipping" through the canvas edges) so we just remake them
-        # whenever we need to change them.
-        self._remove_layer_overlays(layer)
-
-        overlay_models = layer._overlays.values()
-
-        for overlay in overlay_models:
-            if isinstance(overlay, CanvasOverlay):
-                parent = self.view
-            else:
-                parent = self.layer_to_visual[layer].node
-
-            self._add_layer_overlay(layer, overlay, parent)
 
     def _calculate_view_direction(
         self, event_pos: tuple[float, float]

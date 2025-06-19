@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 import numpy as np
 from vispy.scene.widgets.viewbox import ViewBox
 
@@ -47,7 +49,7 @@ from napari.layers import (
 )
 from napari.utils.translations import trans
 
-layer_to_visual = {
+layer_to_visual: dict[type[Layer], type[VispyBaseLayer]] = {
     Image: VispyImageLayer,
     Labels: VispyLabelsLayer,
     Points: VispyPointsLayer,
@@ -71,7 +73,9 @@ overlay_to_visual: dict[type[Overlay], type[VispyBaseOverlay]] = {
 }
 
 
-def create_vispy_layer(layer: Layer) -> VispyBaseLayer:
+def create_vispy_layer(
+    layer: Layer, *args: Any, **kwargs: Any
+) -> VispyBaseLayer:
     """Create vispy visual for a layer based on its layer type.
 
     Parameters
@@ -84,9 +88,10 @@ def create_vispy_layer(layer: Layer) -> VispyBaseLayer:
     visual : VispyBaseLayer
         Vispy layer
     """
-    for layer_type, visual_class in layer_to_visual.items():
-        if isinstance(layer, layer_type):
-            return visual_class(layer)
+    # find the closest parent class, to maintain behaviour from #2757
+    for cls in layer.__class__.mro():
+        if cls in layer_to_visual:
+            return layer_to_visual[cls](layer, *args, **kwargs)
 
     raise TypeError(
         trans._(
@@ -111,9 +116,9 @@ def create_vispy_overlay(overlay: Overlay, **kwargs) -> VispyBaseOverlay:
     visual : VispyBaseOverlay
         Vispy overlay
     """
-    for overlay_type, visual_class in overlay_to_visual.items():
-        if isinstance(overlay, overlay_type):
-            return visual_class(overlay=overlay, **kwargs)
+    for cls in overlay.__class__.mro():
+        if cls in overlay_to_visual:
+            return overlay_to_visual[cls](overlay=overlay, **kwargs)
 
     raise TypeError(
         trans._(

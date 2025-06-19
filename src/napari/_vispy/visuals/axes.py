@@ -263,7 +263,7 @@ class Axes(Compound):
             )
         else:
             arrow_vertices = np.zeros((3, 3))
-            arrow_faces = np.array([[0, 1, 2]])  # type: ignore[assignment]
+            arrow_faces = np.array([[0, 1, 2]])
             arrow_color = [[0, 0, 0, 0]]
 
         self.line.set_data(data, color)
