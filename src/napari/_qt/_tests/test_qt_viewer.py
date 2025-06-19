@@ -309,19 +309,19 @@ def test_export_figure_3d(qt_viewer, viewer_model, tmp_path, qtbot):
 
     # check the non-rotated data (angles = 0,0,90) are exported without any
     # visible background, since the margins should be 0
-    img = qt_viewer.export_figure()
+    img = qt_viewer.export_figure(flash=False)
     np.testing.assert_allclose(img.shape, (250, 250, 4), atol=1)
 
     # check that changing the scale still gives the pixel size
     layer.scale = [1, 0.12, 0.24]
-    img = qt_viewer.export_figure()
+    img = qt_viewer.export_figure(flash=False)
     np.testing.assert_allclose(img.shape, (250, 500, 4), atol=1)
     layer.scale = [1, 1, 1]
 
     # rotate the data, export the figure, and check that the rotated figure
     # shape is greater than the original data shape
     viewer_model.camera.angles = (45, 45, 45)
-    img = qt_viewer.export_figure()
+    img = qt_viewer.export_figure(flash=False)
     np.testing.assert_allclose(img.shape, (171, 339, 4), atol=1)
 
     # The theme is dark, so the canvas will be white. Test that the image
