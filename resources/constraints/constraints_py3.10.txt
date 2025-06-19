@@ -110,7 +110,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.135.10
+hypothesis==6.135.11
     # via napari (pyproject.toml)
 idna==3.10
     # via requests
@@ -440,7 +440,7 @@ pyside6-essentials==6.4.2
     # via
     #   pyside6
     #   pyside6-addons
-pytest==8.4.0
+pytest==8.4.1
     # via
     #   napari (pyproject.toml)
     #   pytest-cov
@@ -560,7 +560,7 @@ sphinxcontrib-serializinghtml==2.0.0
     # via sphinx
 stack-data==0.6.3
     # via ipython
-superqt==0.7.4
+superqt==0.7.5
     # via
     #   napari (pyproject.toml)
     #   magicgui
@@ -644,7 +644,7 @@ typing-inspection==0.4.1
     # via pydantic
 tzdata==2025.2
     # via pandas
-urllib3==2.4.0
+urllib3==2.5.0
     # via
     #   distributed
     #   requests
