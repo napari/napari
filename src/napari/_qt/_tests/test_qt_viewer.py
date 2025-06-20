@@ -110,6 +110,7 @@ def test_qt_viewer_with_qtreload(make_napari_viewer):
     view = viewer.window._qt_viewer
     assert view._qdev is not None
     assert view._dockQDev is not None
+    os.environ['NAPARI_DEV'] = '0'  # reset to default
 
 
 @pytest.mark.skipif(
@@ -124,6 +125,7 @@ def test_qt_viewer_with_qtreload_active(make_napari_viewer):
     dock = view.dockQDev
     assert dock is not None
     assert dock.widget() is view._qdev
+    os.environ['NAPARI_DEV'] = '0'  # reset to default
 
 
 @pytest.mark.skipif(
