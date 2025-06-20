@@ -1,9 +1,10 @@
 from napari._vispy.overlays.zoom import VispyZoomOverlay
 from napari.components.overlays import ZoomOverlay
+from napari.components.viewer_model import ViewerModel
 
 
-def test_zoom_overlay_initialization(make_napari_viewer):
-    viewer = make_napari_viewer()
+def test_zoom_overlay_initialization():
+    viewer = ViewerModel()
     zoom_model = ZoomOverlay()
     zoom_view = VispyZoomOverlay(viewer=viewer, overlay=zoom_model)
 

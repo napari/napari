@@ -17,6 +17,7 @@ def test_zoom_values():
     zoom = ZoomOverlay()
     # validate canvas_positions
     zoom.canvas_positions = ((0, 0), (300, 200))
+
+    # data_positions must be 2-D
     with pytest.raises(ValidationError):
-        # data_positions must be 3-D
         zoom.canvas_positions = ((0, 0, 0), (300, 200, 100))

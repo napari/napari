@@ -1383,11 +1383,10 @@ def test_dask_cache(qt_viewer):
     )
 
 
-def test_viewer_drag_to_zoom(qtbot, make_napari_viewer):
+def test_viewer_drag_to_zoom(qt_viewer, qtbot):
     """Test drag to zoom mouse binding."""
-    np.random.seed(0)
-    viewer = make_napari_viewer()
-    canvas = viewer.window._qt_viewer.canvas
+    viewer = qt_viewer.viewer
+    canvas = qt_viewer.canvas
 
     if os.getenv('CI'):
         viewer.show()
