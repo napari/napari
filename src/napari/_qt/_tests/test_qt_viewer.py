@@ -2,6 +2,7 @@ import gc
 import os
 import weakref
 from itertools import product, takewhile
+from math import isclose
 from unittest import mock
 
 import numpy as np
@@ -280,7 +281,7 @@ def test_export_figure(qt_viewer, viewer_model, tmp_path, qtbot):
     img = qt_viewer.export_figure(flash=False, path=str(tmp_path / 'img.png'))
 
     assert viewer_model.camera.center == camera_center
-    assert viewer_model.camera.zoom == camera_zoom
+    assert isclose(viewer_model.camera.zoom, camera_zoom)
     np.testing.assert_allclose(img.shape, (250, 250, 4), atol=1)
     # assert img.shape == (250, 250, 4)
     assert np.all(img != np.array([0, 0, 0, 0]))
