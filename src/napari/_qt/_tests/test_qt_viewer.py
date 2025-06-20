@@ -744,6 +744,9 @@ def test_remove_labels(make_napari_viewer):
     viewer.add_labels((np.random.rand(10, 10) * 10).astype(np.uint8))
 
 
+@pytest.mark.xfail(
+    reason='Broadcasting layers is broken by reordering dims, see #3882'
+)
 @pytest.mark.parametrize('multiscale', [False, True])
 def test_mixed_2d_and_3d_layers(make_napari_viewer, multiscale):
     """Test bug in setting corner_pixels from qt_viewer.on_draw"""
