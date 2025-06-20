@@ -1389,7 +1389,7 @@ def test_viewer_drag_to_zoom(qt_viewer, qtbot):
     canvas = qt_viewer.canvas
 
     if os.getenv('CI'):
-        viewer.show()
+        qt_viewer.show()
 
     def zoom_callback(event):
         """Mock zoom callback to check zoom box visibility."""
