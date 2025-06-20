@@ -1,5 +1,9 @@
 import numpy as np
 
+# This is the minimum size of the zoom box (in pixels) that will
+# trigger a zoom when the user drags the mouse while holding Alt.
+MIN_ZOOMBOX_SIZE = 5
+
 
 def dims_scroll(viewer, event):
     """Scroll the dimensions slider."""
@@ -41,7 +45,12 @@ def double_click_to_zoom(viewer, event):
 
 
 def drag_to_zoom(viewer, event):
-    """Enable zoom."""
+    """While holding Alt, drag mouse to select a region to zoom.
+
+    This function allows the user to click and drag the mouse while
+    holding the `Alt` key to create a zoom box. When the mouse is released,
+    the camera zooms into the selected region.
+    """
     if 'Alt' not in event.modifiers:
         return
 
@@ -69,8 +78,8 @@ def drag_to_zoom(viewer, event):
     # on mouse release
     viewer._zoom_box.visible = False
 
-    # only trigger zoom if the box is larger than a pixel
+    # only trigger zoom if the box is larger than a MIN_ZOOMBOX_SIZE in pixels
     distance = np.abs(np.array(press_pos) - np.array(move_pos))
-    if distance.min() > 10:
+    if distance.min() > MIN_ZOOMBOX_SIZE:
         viewer._zoom_box.events.zoom(value=(press_position, move_position))
     yield
