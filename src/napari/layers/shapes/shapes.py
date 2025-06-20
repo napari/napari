@@ -763,6 +763,7 @@ class Shapes(Layer):
         self.events.data(**kwargs)
 
         self._reset_editable()
+        self.events.features()
 
     def _on_selection(self, selected: bool):
         # this method is slated for removal.  don't add anything new.
@@ -2125,6 +2126,7 @@ class Shapes(Layer):
                     data_indices=(-1,),
                     vertex_indices=((),),
                 )
+                self.events.features()
 
     def _init_shapes(
         self,
@@ -2777,6 +2779,7 @@ class Shapes(Layer):
                 ),
                 vertex_indices=((),),
             )
+            self.events.features()
         self.selected_data.clear()
         self._finish_drawing()
 
@@ -3111,6 +3114,7 @@ class Shapes(Layer):
             )
 
             self.move_to_front()
+            self.events.features()
 
     def to_masks(self, mask_shape=None):
         """Return an array of binary masks, one for each shape.
