@@ -566,11 +566,11 @@ class QtViewerButtons(QFrame):
         )
 
         stride_help_msg = trans._(
-            'Number of layers to place in each grid quadrant before moving on to the next quadrant. The default ordering is to place the most visible layer in the top left corner of the grid. A negative stride will cause the order in which the layers are placed in the grid to be reversed. 0 is not a valid entry.'
+            'Number of layers to place in each grid viewbox before moving on to the next viewbox. The default ordering is to place the most visible layer in the top left corner of the grid. A negative stride will cause the order in which the layers are placed in the grid to be reversed. 0 is not a valid entry.'
         )
 
         spacing_help_msg = trans._(
-            'Spacing between grid quadrants. If below 1, interpreted as percentage of the quadrant size, otherwise interpreted as screen pixels. 0 has the layers touching, positive values will space the grid positions apart.'
+            'Spacing between grid viewboxes. If below 1, interpreted as percentage of the viewbox size, otherwise interpreted as screen pixels. 0 has the layers touching, positive values will space the grid positions apart.'
         )
 
         stride_min = self.viewer.grid.__fields__['stride'].type_.ge

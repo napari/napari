@@ -22,8 +22,8 @@ class GridCanvas(EventedModel):
     enabled : bool
         If grid is enabled or not.
     stride : int
-        Number of layers to place in each grid quadrant before moving on to
-        the next quadrant. The default ordering is to place the most visible
+        Number of layers to place in each grid viewbox before moving on to
+        the next viewbox. The default ordering is to place the most visible
         layer in the top left corner of the grid. A negative stride will
         cause the order in which the layers are placed in the grid to be
         reversed.
@@ -33,8 +33,8 @@ class GridCanvas(EventedModel):
         auto calculation of the necessary grid shape to appropriately fill
         all the layers at the appropriate stride.
     spacing : float
-        Spacing between grid quadrants. If between 0 and 1, it's
-        interpreted as a proportion of the size of the quadrants.
+        Spacing between grid viewboxes. If between 0 and 1, it's
+        interpreted as a proportion of the size of the viewboxes.
         If equal or greater than 1, it's interpreted as screen pixels.
 
         .. versionadded:: 0.6.0
@@ -126,7 +126,7 @@ class GridCanvas(EventedModel):
     def contents_at(
         self, position: tuple[int, int], nlayers: int
     ) -> tuple[int, ...]:
-        """Return the indices contained in the quadrant at the given position.
+        """Return the indices contained in the viewbox at the given position.
 
         If the grid is not enabled, this will return ().
 
@@ -149,10 +149,10 @@ class GridCanvas(EventedModel):
             i for i in range(nlayers) if self.position(i, nlayers) == position
         )
 
-    def iter_quadrants(
+    def iter_viewboxes(
         self, nlayers: int
     ) -> Iterator[tuple[tuple[int, int], tuple[int, ...]]]:
-        """Iterate over each quadrant and its contained indices.
+        """Iterate over each viewbox and its contained indices.
 
         Parameters
         ----------

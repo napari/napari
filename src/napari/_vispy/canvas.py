@@ -450,7 +450,7 @@ class VispyCanvas:
             viewbox = self._get_viewbox_at(event.pos)
 
         if viewbox is None:
-            # this means we're in an empty quadrant, so do nothing
+            # this means we're in an empty viewbox, so do nothing
             event.handled = True
             return
 
@@ -703,7 +703,7 @@ class VispyCanvas:
     def _reorder_layers(self) -> None:
         """When the list is reordered, propagate changes to draw order."""
         if self.viewer.grid.enabled:
-            for _, layer_indices in self.viewer.grid.iter_quadrants(
+            for _, layer_indices in self.viewer.grid.iter_viewboxes(
                 len(self.viewer.layers)
             ):
                 if not layer_indices:
@@ -835,7 +835,7 @@ class VispyCanvas:
 
         view = self._get_viewbox_at(event_pos) or self.view
         # combine the viewbox transform wit the scene transform
-        # so each quadrant in grid mode maps back to the main scene
+        # so each viewbox in grid mode maps back to the main scene
         transform = view.transform * view.scene.transform
 
         # map click pos to scene coordinates
