@@ -2052,6 +2052,15 @@ class Points(Layer):
                     self._value_stored -= offset
 
             self._set_data(np.delete(self.data, indices, axis=0))
+            self.events.data(
+                value=self.data,
+                action=ActionType.REMOVED,
+                data_indices=tuple(
+                    indices,
+                ),
+                vertex_indices=((),),
+            )
+            self.events.features()
 
     def remove_selected(self) -> None:
         """Remove all selected points."""

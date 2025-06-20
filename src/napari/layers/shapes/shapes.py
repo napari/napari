@@ -2771,6 +2771,15 @@ class Shapes(Layer):
             self._data_view._face_color = np.delete(
                 self._data_view._face_color, indices, axis=0
             )
+            self.events.data(
+                value=self.data,
+                action=ActionType.REMOVED,
+                data_indices=tuple(
+                    indices,
+                ),
+                vertex_indices=((),),
+            )
+            self.events.features()
         self._finish_drawing()
 
     def remove_selected(self) -> None:
