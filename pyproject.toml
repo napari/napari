@@ -55,7 +55,7 @@ dependencies = [
     "Pillow>=9.0",
     "pint>=0.17",
     "psutil>=5.9.0",
-    "psygnal>=0.5.0",
+    "psygnal>=0.10.0",
     "pydantic>=2.2.0",
     "pygments>=2.6.0",
     "PyOpenGL>=3.1.5",
@@ -64,7 +64,7 @@ dependencies = [
     "qtpy>=2.3.1",
     "scikit-image[data]>=0.19.1",
     "scipy>=1.10.1",
-    "superqt>=0.6.7",
+    "superqt>=0.7.3",
     "tifffile>=2022.7.28",
     "toolz>=0.11.0",
     "tqdm>=4.56.0",
@@ -448,7 +448,7 @@ files = "napari"
 # This file triggers an internal mypy error, so exclude collection
 # TODO: fix this
 exclude = "src/napari/utils/events/_tests/test_evented_model\\.py"
-plugins =  "numpy.typing.mypy_plugin, pydantic.mypy"
+plugins =  "pydantic.mypy"
 ignore_missing_imports = true
 hide_error_codes = false
 warn_redundant_casts = true
@@ -852,25 +852,15 @@ source = [
 [tool.coverage.paths]
 source = [
     "src/napari/",
-    "napari/",
-    ".tox/*/lib/python*/site-packages/napari/",
-    "/tmp/.tox/*/lib/python*/site-packages/napari/",
-    ".tox/*/Lib/site-packages/napari/",
-    "D:\\a\\napari\\napari\\src\\napari",
-    "D:\\a\\napari\\napari\\.tox\\*\\Lib\\site-packages\\napari",
-    "/home/runner/work/napari/napari/src/napari",
-    "/Users/runner/work/napari/napari/src/napari",
+    "**/src/napari/",
+    "**/.tox/*/lib/python*/site-packages/napari/",
+    "**\\.tox\\*\\Lib\\site-packages\\napari",
 ]
 builtins = [
     "src/napari_builtins/",
-    "napari_builtins/",
-    ".tox/*/lib/python*/site-packages/napari_builtins/",
-    "/tmp/.tox/*/lib/python*/site-packages/napari_builtins/",
-    ".tox/*/Lib/site-packages/napari_builtins/",
-    "D:\\a\\napari\\napari\\src\\napari_builtins",
-    "D:\\a\\napari\\napari\\.tox\\*\\Lib\\site-packages\\napari_builtins",
-    "/home/runner/work/napari/napari/src/napari_builtins",
-    "/Users/runner/work/napari/napari/src/napari_builtins",
+    "**/src/napari_builtins/",
+    "**/.tox/*/lib/python*/site-packages/napari_builtins/",
+    "**\\.tox\\*\\Lib\\site-packages\\napari_builtins",
 ]
 
 [tool.importlinter]
