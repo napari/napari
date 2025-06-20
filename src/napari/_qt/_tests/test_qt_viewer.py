@@ -299,7 +299,6 @@ def test_export_figure(qt_viewer, viewer_model, tmp_path, qtbot):
     np.testing.assert_allclose(img.shape, (250, 250, 4), atol=1)
 
 
-@pytest.mark.skip(reason='testing purpose')
 def test_export_figure_3d(qt_viewer, viewer_model, tmp_path, qtbot):
     np.random.seed(0)
     # Add image, keep values low to contrast with white background
@@ -394,7 +393,6 @@ def test_export_rois(qt_viewer, viewer_model, tmp_path, qtbot):
         ), f'Wrong number of white pixels in the ROI {index}'
 
 
-@pytest.mark.skip(reason='testing purpose')
 def test_export_rois_3d_fail(qt_viewer, viewer_model):
     # create 3d ROI for testing
     roi_3d = [
