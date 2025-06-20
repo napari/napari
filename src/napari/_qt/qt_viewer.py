@@ -964,7 +964,6 @@ class QtViewer(QSplitter):
             canvas.size = prev_size
             camera.center = old_center
             camera.zoom = old_zoom
-            QGuiApplication.processEvents()
 
     def clipboard(self, flash=True):
         """Take a screenshot of the currently displayed screen and copy the
