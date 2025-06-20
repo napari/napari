@@ -687,15 +687,15 @@ class VispyCanvas:
         """
         layer = event.value
         disconnect_events(layer.events, self)
+        disconnect_events(layer.events, self._overlay_callbacks[layer])
         disconnect_events(
             layer._overlays.events, self._overlay_callbacks[layer]
         )
         del self._overlay_callbacks[layer]
-        vispy_layer = self.layer_to_visual[layer]
+        vispy_layer = self.layer_to_visual.pop(layer)
         disconnect_events(self.viewer.camera.events, vispy_layer)
         vispy_layer.close()
         del vispy_layer
-        del self.layer_to_visual[layer]
         self._remove_layer_overlays(layer)
         del self._layer_overlay_to_visual[layer]
         self._update_scenegraph()
