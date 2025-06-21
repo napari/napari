@@ -766,7 +766,7 @@ class VispyCanvas:
             if isinstance(overlay, CanvasOverlay):
                 for view in views:
                     self._add_viewer_overlay(overlay, view)
-                    overlay.events.gridded.connect(self._update_scenegraph)
+                overlay.events.gridded.connect(self._update_scenegraph)
             else:
                 for view in views:
                     self._add_viewer_overlay(overlay, view.scene)
@@ -1007,4 +1007,16 @@ class VispyCanvas:
         else:
             self.grid.spacing = raw_spacing
 
+        self._force_overlay_position_updates()
         self._scene_canvas.update()
+
+    def _force_overlay_position_updates(self):
+        """Force position updates for all overlays after grid changes."""
+        for overlay_visuals in self._overlay_to_visual.values():
+            for vispy_overlay in overlay_visuals:
+                if hasattr(vispy_overlay, '_on_position_change'):
+                    vispy_overlay._on_position_change()
+        for layer_overlays in self._layer_overlay_to_visual.values():
+            for vispy_overlay in layer_overlays.values():
+                if hasattr(vispy_overlay, '_on_position_change'):
+                    vispy_overlay._on_position_change()
