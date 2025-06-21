@@ -5,7 +5,6 @@ _default_shortcuts = {
     'napari:toggle_console_visibility': [
         KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KeyC
     ],
-    'napari:reset_scroll_progress': [KeyCode.Ctrl],
     'napari:toggle_ndisplay': [KeyMod.CtrlCmd | KeyCode.KeyY],
     'napari:toggle_theme': [KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KeyT],
     'napari:reset_view': [KeyMod.CtrlCmd | KeyCode.KeyR],
