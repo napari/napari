@@ -210,7 +210,11 @@ class ApplicationSettings(EventedModel):
     grid_spacing: GridSpacing = Field(  # type: ignore [valid-type]
         default=0,
         title=trans._('Grid Spacing'),
-        description=trans._('The amount of spacing inbetween grid positions.'),
+        description=trans._(
+            'The amount of spacing inbetween grid viewboxes.'
+            '\nIf between 0 and 1, it is interpreted as a proportion of the size of the viewboxes.'
+            '\nIf equal or greater than 1, it is interpreted as screen pixels.'
+        ),
     )
 
     confirm_close_window: bool = Field(
