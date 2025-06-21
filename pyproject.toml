@@ -845,8 +845,6 @@ omit = [
 source = [
     "src/napari",
     "src/napari_builtins",
-    "napari",
-    "napari_builtins",
 ]
 
 [tool.coverage.paths]
