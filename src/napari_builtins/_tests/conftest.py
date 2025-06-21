@@ -29,31 +29,42 @@ def use_builtins(mock_npe2_pm: PluginManager):
         yield plugin
 
 
-LAYERS: list[layers.Layer] = [
-    layers.Image(np.random.rand(10, 10)),
-    layers.Labels(np.random.randint(0, 16000, (32, 32), 'uint64')),
-    layers.Points(np.random.rand(20, 2)),
-    layers.Points(
-        np.random.rand(20, 2), properties={'values': np.random.rand(20)}
+LAYERS: list[tuple[str, list, dict]] = [
+    ('Image', [np.random.rand(10, 10)], {}),
+    ('Labels', [np.random.randint(0, 16000, (32, 32), 'uint64')], {}),
+    ('Points', [np.random.rand(20, 2)], {}),
+    (
+        'Points',
+        [np.random.rand(20, 2)],
+        {'properties': {'values': np.random.rand(20)}},
     ),
-    layers.Shapes(
+    (
+        'Shapes',
         [
-            [(0, 0), (1, 1)],
-            [(5, 7), (10, 10)],
-            [(1, 3), (2, 4), (3, 5), (4, 6), (5, 7), (6, 8)],
-            [(4, 3), (5, -4), (6.1, 5), (7, 6.5), (8, 7), (9, 8)],
-            [(5.4, 6.7), (1.2, -3)],
+            [
+                [(0, 0), (1, 1)],
+                [(5, 7), (10, 10)],
+                [(1, 3), (2, 4), (3, 5), (4, 6), (5, 7), (6, 8)],
+                [(4, 3), (5, -4), (6.1, 5), (7, 6.5), (8, 7), (9, 8)],
+                [(5.4, 6.7), (1.2, -3)],
+            ]
         ],
-        shape_type=['ellipse', 'line', 'path', 'polygon', 'rectangle'],
+        {
+            'shape_type': ['ellipse', 'line', 'path', 'polygon', 'rectangle'],
+        },
     ),
 ]
 
 
 @pytest.fixture(params=LAYERS)
-def some_layer(request):
-    return request.param
+def some_layer(request) -> layers.Layer:
+    layer_name, args, kwargs = request.param
+    return getattr(layers, layer_name)(*args, **kwargs)
 
 
 @pytest.fixture
-def layers_list():
-    return LAYERS
+def layers_list() -> list[layers.Layer]:
+    return [
+        getattr(layers, layer_name)(*args, **kwargs)
+        for layer_name, args, kwargs in LAYERS
+    ]
