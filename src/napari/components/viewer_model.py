@@ -511,7 +511,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         if self.grid.enabled:
             grid_shape = np.array(self.grid.actual_shape(len(self.layers)))
             viewbox_size = viewbox_size / grid_shape
-            viewbox_size -= self.grid._compute_canvas_spacing(viewbox_size) * 2
+            viewbox_size -= self.grid._compute_canvas_spacing(viewbox_size)
         return viewbox_size
 
     def _get_2d_camera_zoom(
