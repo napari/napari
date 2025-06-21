@@ -880,8 +880,13 @@ class VispyCanvas:
 
         if self.viewer.grid.enabled:
             self.grid = self.central_widget.add_grid(border_width=0)
-            self._update_grid_spacing()
+            # setup the grid views prior to adding spacing
+            # if we add spacing first, then if its a proportional spacing
+            # the initial calculation uses the size of the canvas, instead of the viewbox size
+            # because the grid viewboxes are not yet initialized
             self._setup_layer_views_in_grid()
+            self._update_grid_spacing()
+
         else:
             self._setup_single_view()
 
@@ -920,7 +925,13 @@ class VispyCanvas:
     @property
     def _current_viewbox_size(self):
         if self.viewer.grid.enabled and self.grid_views:
-            return self.grid_views[0].rect.size
+            # cannot use `self.grid_views[0].rect.size` because the value is degenerate (10,10)
+            # before the canvas viewboxes are fully initialized
+            # therefore, we explicitly calculate the viewbox size based on the canvas size
+            rows, cols = self.viewer.grid.actual_shape(len(self.viewer.layers))
+            canvas_width, canvas_height = self._scene_canvas.size
+            return (canvas_width / cols, canvas_height / rows)
+
         return self._scene_canvas.size
 
     def _update_grid_spacing(self):
