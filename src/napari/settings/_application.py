@@ -24,7 +24,10 @@ from napari.utils.translations import trans
 GridStride = conint(ge=-50, le=50, ne=0)
 GridWidth = conint(ge=-1, ne=0)
 GridHeight = conint(ge=-1, ne=0)
-GridSpacing = confloat(ge=0)
+# we could use a smaller or greater 'le' for spacing,
+# this is just meant to be a somewhat reasonable upper limit,
+# as even on a 4k monitor a 2x2 grid will break calculation with >1300 spacing
+GridSpacing = confloat(ge=0, le=1500, step=5)
 
 _DEFAULT_MEM_FRACTION = 0.25
 MAX_CACHE = virtual_memory().total * 0.5 / 1e9

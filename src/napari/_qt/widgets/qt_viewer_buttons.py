@@ -610,12 +610,15 @@ class QtViewerButtons(QFrame):
 
         # set up spacing
         spacing_min = self.viewer.grid.__fields__['spacing'].type_.ge
+        spacing_max = self.viewer.grid.__fields__['spacing'].type_.le
+        spacing_step = self.viewer.grid.__fields__['spacing'].type_.step
         grid_spacing.setObjectName('gridSpacingBox')
         grid_spacing.setAlignment(Qt.AlignmentFlag.AlignCenter)
         grid_spacing.setMinimum(spacing_min)
+        grid_spacing.setMaximum(spacing_max)
         grid_spacing.setValue(self.viewer.grid.spacing)
         grid_spacing.setDecimals(2)
-        grid_spacing.setSingleStep(5)
+        grid_spacing.setSingleStep(spacing_step)
         grid_spacing.valueChanged.connect(self._update_grid_spacing)
         self.grid_spacing_box = grid_spacing
 
