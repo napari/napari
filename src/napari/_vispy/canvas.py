@@ -952,7 +952,7 @@ class VispyCanvas:
         """Get the safe spacing value for the grid.
 
         This value is computed so that the spacing value does not cause
-        viewboxes to become too small (<50px). If the spacing value is too large,
+        viewboxes to become too small (<20px). If the spacing value is too large,
         then viewboxes will dissapear. If viewboxes are too small than
         there will be a division by zero for zoom calculation.
 
@@ -961,7 +961,7 @@ class VispyCanvas:
         int
             The maximum safe spacing value.
         """
-        minimum_viewbox_size = 50  # pixels
+        minimum_viewbox_size = 20  # pixels
         rows, cols = self.viewer.grid.actual_shape(len(self.viewer.layers))
         canvas_width, canvas_height = self._scene_canvas.size
 
