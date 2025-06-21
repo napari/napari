@@ -222,7 +222,7 @@ class VispyCamera:
             self._last_viewbox_size = viewbox_size
             self._on_ndisplay_change()
 
-        if not np.allclose(self.angles, self._camera.angles) and (
+        if not np.allclose(self.angles, self._camera.angles) and isinstance(
             self._view.camera,
             MouseToggledArcballCamera,
         ):
