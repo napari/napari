@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import warnings
 from functools import partial
 from typing import TYPE_CHECKING
 from weakref import WeakSet
@@ -28,6 +29,7 @@ from napari.utils.interactions import (
     mouse_wheel_callbacks,
 )
 from napari.utils.theme import get_theme
+from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -620,7 +622,7 @@ class VispyCanvas:
                 corner_pixels_displayed=viewbox_corners_world[
                     :, displayed_axes
                 ],
-                shape_threshold=self._current_viewbox_size[::-1],
+                shape_threshold=self._actual_viewbox_size[::-1],
             )
 
     def on_resize(self, event: ResizeEvent) -> None:
@@ -923,19 +925,86 @@ class VispyCanvas:
             self._update_layer_overlays(napari_layer)
 
     @property
-    def _current_viewbox_size(self):
+    def _actual_viewbox_size(self):
+        """Get the actual size of the viewboxes in pixels.
+
+        If grid is not enabled, this returns the size of the canvas.
+        If grid is enabled, this returns the size of the viewboxes based on the
+        canvas size and the grid shape. `self.grid_views[0].rect.size`
+        is not used because it can be degenerate (10,10) before the canvas
+        viewboxes are fully initialized. Therefore, explcitly calculate
+        the expected viewbox size based on the canvas size.
+
+        Returns
+        -------
+        tuple[int, int]
+            The size of the viewbox(es) in pixels (width, height)
+        """
         if self.viewer.grid.enabled and self.grid_views:
-            # cannot use `self.grid_views[0].rect.size` because the value is degenerate (10,10)
-            # before the canvas viewboxes are fully initialized
-            # therefore, we explicitly calculate the viewbox size based on the canvas size
             rows, cols = self.viewer.grid.actual_shape(len(self.viewer.layers))
             canvas_width, canvas_height = self._scene_canvas.size
             return (canvas_width / cols, canvas_height / rows)
 
         return self._scene_canvas.size
 
+    @property
+    def _max_safe_spacing(self) -> int:
+        """Get the safe spacing value for the grid.
+
+        This value is computed so that the spacing value does not cause
+        viewboxes to become too small (<50px). If the spacing value is too large,
+        then viewboxes will dissapear. If viewboxes are too small than
+        there will be a division by zero for zoom calculation.
+
+        Returns
+        -------
+        int
+            The maximum safe spacing value.
+        """
+        minimum_viewbox_size = 50  # pixels
+        rows, cols = self.viewer.grid.actual_shape(len(self.viewer.layers))
+        canvas_width, canvas_height = self._scene_canvas.size
+
+        max_horizontal_spacing = (
+            canvas_width - cols * minimum_viewbox_size
+        ) / max(1, cols - 1)
+        max_vertical_spacing = (
+            canvas_height - rows * minimum_viewbox_size
+        ) / max(1, rows - 1)
+
+        max_safe_spacing = min(max_horizontal_spacing, max_vertical_spacing)
+        # Ensure we don't go below 0 or above the safe maximum
+        return max(0, int(max_safe_spacing))
+
     def _update_grid_spacing(self):
-        self.grid.spacing = self.viewer.grid._compute_canvas_spacing(
-            self._current_viewbox_size
+        """Update the grid spacing with a validated spacing value.
+
+        This method computes the raw spacing based on the current canvas size
+        and validates it against the maximum safe spacing. If the raw spacing
+        exceeds the maximum safe spacing, it is reduced to the maximum safe value
+        and a warning is issued to the user.
+        """
+        raw_spacing = self.viewer.grid._compute_canvas_spacing(
+            self._actual_viewbox_size
         )
+        safe_spacing = self._max_safe_spacing
+
+        if raw_spacing > safe_spacing:
+            warnings.warn(
+                trans._(
+                    'Grid spacing of {raw_spacing:.1f} pixels is too large and has been '
+                    'reduced to {safe_spacing:.1f} pixels to prevent viewboxes from '
+                    'becoming too small. Consider using a smaller spacing value or '
+                    'increasing the canvas size.',
+                    deferred=True,
+                    raw_spacing=raw_spacing,
+                    safe_spacing=safe_spacing,
+                ),
+                UserWarning,
+                stacklevel=2,
+            )
+            self.grid.spacing = safe_spacing
+        else:
+            self.grid.spacing = raw_spacing
+
         self._scene_canvas.update()
