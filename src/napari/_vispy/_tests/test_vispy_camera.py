@@ -62,8 +62,10 @@ def test_camera_model_update_from_vispy(make_napari_viewer):
     # updated
     assert viewer.dims.ndisplay == 2
 
+    vispy_camera.on_draw(None)  # required for proper initialization
     # Update vispy camera center and zoom
     vispy_camera.center = (11, 12)
+    assert vispy_camera.center == (0, 11, 12)
     vispy_camera.zoom = 4
     vispy_camera.on_draw(None)
 
@@ -129,6 +131,7 @@ def test_camera_model_update_from_vispy_3D(make_napari_viewer):
 
     viewer.dims.ndisplay = 3
 
+    vispy_camera.on_draw(None)  # required for proper initialization
     # Update vispy camera angles, center, and zoom
     viewer.camera.angles = (24, 12, -19)
     vispy_camera.center = (11, 12, 15)

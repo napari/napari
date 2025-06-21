@@ -24,7 +24,7 @@ from napari.utils.translations import trans
 GridStride = conint(ge=-50, le=50, ne=0)
 GridWidth = conint(ge=-1, ne=0)
 GridHeight = conint(ge=-1, ne=0)
-GridSpacing = confloat(ge=-1.0, le=1.0, step=0.05)
+GridSpacing = confloat(ge=0)
 
 _DEFAULT_MEM_FRACTION = 0.25
 MAX_CACHE = virtual_memory().total * 0.5 / 1e9
@@ -205,9 +205,9 @@ class ApplicationSettings(EventedModel):
     )
 
     grid_spacing: GridSpacing = Field(  # type: ignore [valid-type]
-        default=0.0,
+        default=0,
         title=trans._('Grid Spacing'),
-        description=trans._('Proportional spacing between grid layers.'),
+        description=trans._('The amount of spacing inbetween grid positions.'),
     )
 
     confirm_close_window: bool = Field(
