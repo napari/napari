@@ -172,8 +172,14 @@ class GridCanvas(EventedModel):
     def _compute_canvas_spacing(
         self, viewbox_size: tuple[int, int] | np.ndarray
     ) -> int:
+        """Compute the spacing between viewboxes in canvas pixels.
+
+        If the spacing is between 0 and 1, it is interpreted as a proportion
+        of the size of the individual viewboxes.
+        If it is equal to or greater than 1, it is interpreted as screen pixels.
+        """
         spacing = self.spacing
         if spacing >= 1:
             return int(spacing)
         mean_size = np.mean(viewbox_size)
-        return int(spacing * mean_size / 2)
+        return int(spacing * mean_size)
