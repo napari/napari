@@ -146,7 +146,6 @@ class VispyCanvas:
         self._scene_canvas.events.ignore_callback_errors = False
         self._scene_canvas.context.set_depth_func('lequal')
 
-        # Connecting events from SceneCanvas
         self._scene_canvas.events.key_press.connect(
             self._key_map_handler.on_key_press
         )
@@ -167,6 +166,7 @@ class VispyCanvas:
         self._scene_canvas.events.mouse_wheel.connect(self._on_mouse_wheel)
         self._scene_canvas.events.resize.connect(self.on_resize)
         self._scene_canvas.events.draw.connect(self.on_draw)
+
         self.viewer.cursor.events.style.connect(self._on_cursor)
         self.viewer.cursor.events.size.connect(self._on_cursor)
         # position=first is important to some downstream components such as
@@ -175,11 +175,15 @@ class VispyCanvas:
         self.viewer.events.theme.connect(
             self._on_theme_change, position='first'
         )
+
         self.viewer.camera.events.mouse_pan.connect(self._on_interactive)
         self.viewer.camera.events.mouse_zoom.connect(self._on_interactive)
         self.viewer.camera.events.zoom.connect(self._on_cursor)
+
         self.viewer.layers.events.reordered.connect(self._reorder_layers)
         self.viewer.layers.events.removed.connect(self._remove_layer)
+
+        self.viewer._zoom_box.events.zoom.connect(self._on_boxzoom)
         self.viewer._overlays.events.added.connect(
             self._update_viewer_overlays
         )
@@ -340,6 +344,16 @@ class VispyCanvas:
         self.view.interactive = (
             self.viewer.camera.mouse_zoom or self.viewer.camera.mouse_pan
         )
+
+    def _on_boxzoom(self, event):
+        """Update zoom level."""
+        from napari._vispy.utils.zoom import calculate_zoom
+
+        zoom, z_center, y_center, x_center = calculate_zoom(
+            event.value, self.viewer
+        )
+        self.viewer.camera.center = (z_center, x_center, y_center)
+        self.viewer.camera.zoom = zoom
 
     def _map_canvas2world(
         self,
