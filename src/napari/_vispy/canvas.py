@@ -952,15 +952,11 @@ class VispyCanvas:
             self._update_layer_overlays(napari_layer)
 
     def _setup_layer_views_in_grid(self):
-        for napari_layer, vispy_layer in self.layer_to_visual.items():
-            row, col = self.viewer.grid.position(
-                # FIXME: the use of `len(self.viewer.layers) - 1 - idx` should be removed
-                # see https://github.com/napari/napari/pull/7870#issuecomment-2965031040
-                len(self.viewer.layers)
-                - 1
-                - self.viewer.layers.index(napari_layer),
-                len(self.viewer.layers),
-            )
+        for (row, col), layer_indices in self.viewer.grid.iter_viewboxes(
+            len(self.viewer.layers)
+        ):
+            if not layer_indices:
+                continue
             view = self.grid[row, col]
             # any border_color != None will add a padding of +1
             # see https://github.com/vispy/vispy/issues/1492
@@ -971,8 +967,15 @@ class VispyCanvas:
             self.grid_views.append(view)
             self.grid_cameras.append(camera)
 
-            vispy_layer.node.parent = view.scene
-            self._update_layer_overlays(napari_layer)
+            for idx in layer_indices:
+                # FIXME: the use of `len(self.viewer.layers) - 1 - idx` should be removed
+                # see https://github.com/napari/napari/pull/7870#issuecomment-2965031040
+                napari_layer = self.viewer.layers[
+                    len(self.viewer.layers) - 1 - idx
+                ]
+                vispy_layer = self.layer_to_visual[napari_layer]
+                vispy_layer.node.parent = view.scene
+                self._update_layer_overlays(napari_layer)
 
     @property
     def _current_viewbox_size(self):
