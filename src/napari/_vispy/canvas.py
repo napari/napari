@@ -193,7 +193,7 @@ class VispyCanvas:
         self.viewer.grid.events.stride.connect(self._update_scenegraph)
         self.viewer.grid.events.shape.connect(self._update_scenegraph)
         self.viewer.grid.events.enabled.connect(self._update_scenegraph)
-        self.viewer.grid.events.spacing.connect(self._update_grid_spacing)
+        self.viewer.grid.events.spacing.connect(self._update_scenegraph)
         self.viewer._overlays.events.added.connect(
             self._update_viewer_overlays
         )
@@ -894,6 +894,14 @@ class VispyCanvas:
 
         self._reorder_layers()
         self._update_viewer_overlays()
+
+        # Schedule overlay position updates after grid views are fully initialized
+        self._force_overlay_position_updates()  # doesn't work alone
+        if self.viewer.grid.enabled:
+            self._scene_canvas.events.draw.connect(
+                self._on_first_draw_update_overlays, position='first'
+            )
+
         self._on_interactive()
 
     def _setup_single_view(self):
@@ -1007,8 +1015,32 @@ class VispyCanvas:
         else:
             self.grid.spacing = raw_spacing
 
-        self._force_overlay_position_updates()
         self._scene_canvas.update()
+
+    def _on_first_draw_update_overlays(self, event):
+        """Update overlay positions on first draw when grid views are fully initialized."""
+        # Disconnect this one-time callback
+        self._scene_canvas.events.draw.disconnect(
+            self._on_first_draw_update_overlays
+        )
+
+        # Check if grid views are properly sized (not degenerate)
+        if (
+            self.grid_views
+            and self.grid_views[0].size[0] > 10
+            and self.grid_views[0].size[1] > 10
+        ):
+            # print('Grid views properly sized, updating overlay positions.')
+            # Now force overlay position updates when grid views have their final sizes
+            self._force_overlay_position_updates()
+        else:
+            # Grid views still not properly sized, try again on next draw
+            # print(
+            #     'Grid views not properly sized yet, will retry on next draw.'
+            # )
+            self._scene_canvas.events.draw.connect(
+                self._on_first_draw_update_overlays, position='first'
+            )
 
     def _force_overlay_position_updates(self):
         """Force position updates for all overlays after grid changes."""
