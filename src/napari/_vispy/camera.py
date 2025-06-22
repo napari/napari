@@ -42,10 +42,11 @@ class VispyCamera:
         self._view.camera = (
             self._2D_camera if dims.ndisplay == 2 else self._3D_camera
         )
+        self._last_viewbox_size = np.array((0, 0))
+
         self._dims.events.ndisplay.connect(
             self._on_ndisplay_change, position='first'
         )
-
         self._camera.events.center.connect(self._on_center_change)
         self._camera.events.zoom.connect(self._on_zoom_change)
         self._camera.events.angles.connect(self._on_angles_change)
@@ -214,6 +215,12 @@ class VispyCamera:
 
         Update camera model angles, center, and zoom.
         """
+        # if the viewboxsize changed since last time, we need to update
+        viewbox_size = np.array(self._view.rect.size)
+        if not np.allclose(self._last_viewbox_size, viewbox_size):
+            self._last_viewbox_size = viewbox_size
+            self._on_ndisplay_change()
+
         if not np.allclose(self.angles, self._camera.angles) and isinstance(
             self._view.camera,
             MouseToggledArcballCamera,

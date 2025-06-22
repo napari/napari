@@ -610,8 +610,6 @@ class VispyCanvas:
         if not np.allclose(
             self._last_viewbox_size, self._current_viewbox_size
         ):
-            for camera in (self.camera, *self.grid_cameras):
-                camera._on_ndisplay_change()
             self._update_grid_spacing()
             self._update_overlay_canvas_positions()
             self._last_viewbox_size = self._current_viewbox_size
