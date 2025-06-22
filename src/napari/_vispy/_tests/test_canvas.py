@@ -1,3 +1,5 @@
+import numpy as np
+
 from napari.components.overlays import (
     BoundingBoxOverlay,
     CanvasOverlay,
@@ -90,3 +92,38 @@ def test_layer_overlays(make_napari_viewer):
     assert not canvas._layer_overlay_to_visual
     assert len(canvas.view.children) == view_children
     assert len(canvas.view.scene.children) == scene_children
+
+
+def test_grid_mode(make_napari_viewer):
+    viewer = make_napari_viewer(ndisplay=3)
+    canvas = viewer.window._qt_viewer.canvas
+
+    viewer.add_image(np.ones((10, 10, 10)))
+
+    angles = 10, 20, 30  # just some nonzero stuff
+    zoom = 1
+    viewer.camera.angles = angles
+    viewer.camera.zoom = zoom
+
+    canvas.on_draw(None)
+
+    for camera in (canvas.camera, *canvas.grid_cameras):
+        np.testing.assert_allclose(camera.angles, angles)
+        assert camera.zoom == zoom
+
+    # ensure that switching to grid maintains zoom and angles
+    viewer.grid.enabled = True
+
+    canvas.on_draw(None)
+
+    for camera in (canvas.camera, *canvas.grid_cameras):
+        np.testing.assert_allclose(camera.angles, angles)
+        assert camera.zoom == zoom
+
+    viewer.grid.enabled = False
+
+    canvas.on_draw(None)
+
+    for camera in (canvas.camera, *canvas.grid_cameras):
+        np.testing.assert_allclose(camera.angles, angles)
+        assert camera.zoom == zoom
