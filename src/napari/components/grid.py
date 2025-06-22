@@ -170,16 +170,67 @@ class GridCanvas(EventedModel):
             yield (row, col), self.contents_at((row, col), nlayers)
 
     def _compute_canvas_spacing(
-        self, viewbox_size: tuple[int, int] | np.ndarray
+        self,
+        canvas_size: tuple[int, int] | np.ndarray,
+        nlayers: int,
     ) -> int:
         """Compute the spacing between viewboxes in canvas pixels.
 
         If the spacing is between 0 and 1, it is interpreted as a proportion
         of the size of the individual viewboxes.
         If it is equal to or greater than 1, it is interpreted as screen pixels.
+
+        This value is restricted so that it does not cause viewboxes to become
+        too small (<20px). If the spacing value is too large,
+        then viewboxes will dissapear. If viewboxes are too small than
+        there will be a division by zero for zoom calculation.
         """
+        # limit spacing to avoid degenerate viewboxes
+        # TODO: this should probably be done through a validator that somehow gets
+        #       updated based on the canvas size and nlayers...
+        rows, cols = self.actual_shape(nlayers)
+        canvas_width, canvas_height = canvas_size
+
+        minimum_viewbox_size = 20  # pixels
+        max_horizontal_spacing = (
+            canvas_width - cols * minimum_viewbox_size
+        ) / max(1, cols - 1)
+        max_vertical_spacing = (
+            canvas_height - rows * minimum_viewbox_size
+        ) / max(1, rows - 1)
+
+        max_safe_spacing = min(max_horizontal_spacing, max_vertical_spacing)
+        # Ensure we don't go below 0 or above the safe maximum
+        safe_spacing = max(0, int(max_safe_spacing))
+
+        return min(
+            self._compute_canvas_spacing_raw(canvas_size, nlayers),
+            safe_spacing,
+        )
+
+    def _compute_canvas_spacing_raw(
+        self,
+        canvas_size: tuple[int, int] | np.ndarray,
+        nlayers: int,
+    ) -> int:
+        """Compute the raw spacing between viewboxes in canvas pixels.
+
+        If the spacing is between 0 and 1, it is interpreted as a proportion
+        of the size of the individual viewboxes.
+        If it is equal to or greater than 1, it is interpreted as screen pixels.
+
+        This value is unrestricted (can result in degenerate viewboxes).
+        """
+        rows, cols = self.actual_shape(nlayers)
+        canvas_width, canvas_height = canvas_size
+
         spacing = self.spacing
         if spacing >= 1:
-            return int(spacing)
-        mean_size = np.mean(viewbox_size)
-        return int(spacing * mean_size)
+            spacing = int(spacing)
+        else:
+            # percentage spacing, we need to know the pre-spacing viewbox size
+            unspaced_viewbox_size = (canvas_width / cols, canvas_height / rows)
+            mean_size = np.mean(unspaced_viewbox_size)
+            spacing = int(spacing * mean_size)
+
+        return spacing

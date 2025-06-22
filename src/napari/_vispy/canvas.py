@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import warnings
 from functools import partial
 from typing import TYPE_CHECKING
 from weakref import WeakSet
@@ -16,6 +15,7 @@ from napari._vispy.mouse_event import NapariMouseEvent
 from napari._vispy.utils.cursor import QtCursorVisual
 from napari._vispy.utils.gl import get_max_texture_sizes
 from napari._vispy.utils.visual import create_vispy_overlay
+from napari.components._viewer_constants import CanvasPosition
 from napari.components.overlays import CanvasOverlay
 from napari.utils._proxies import ReadOnlyWrapper
 from napari.utils.colormaps.standardize_color import transform_color
@@ -29,7 +29,6 @@ from napari.utils.interactions import (
     mouse_wheel_callbacks,
 )
 from napari.utils.theme import get_theme
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -47,6 +46,11 @@ if TYPE_CHECKING:
     from napari.components.overlays import Overlay
     from napari.layers import Layer
     from napari.utils.key_bindings import KeymapHandler
+
+
+import warnings
+
+from napari.utils.translations import trans
 
 
 class NapariSceneCanvas(SceneCanvas_):
@@ -141,6 +145,7 @@ class VispyCanvas:
         self._instances.add(self)
 
         self._overlay_callbacks = {}
+        self._last_viewbox_size = np.array((0, 0))
 
         self.bgcolor = transform_color(
             get_theme(self.viewer.theme).canvas.as_hex()
@@ -600,7 +605,18 @@ class VispyCanvas:
         -------
         None
         """
-        # this updates camera zooms if necessary
+        # this updates camera zooms and overlay positions if necessary
+        # (usually after grid mode enable when viewboxes are still degenerate)
+        if not np.allclose(
+            self._last_viewbox_size, self._current_viewbox_size
+        ):
+            for camera in (self.camera, *self.grid_cameras):
+                camera._on_ndisplay_change()
+            self._update_grid_spacing()
+            self._update_overlay_canvas_positions()
+            self._last_viewbox_size = self._current_viewbox_size
+
+        # sync all cameras
         for camera in (self.camera, *self.grid_cameras):
             camera.on_draw(event)
 
@@ -622,7 +638,7 @@ class VispyCanvas:
                 corner_pixels_displayed=viewbox_corners_world[
                     :, displayed_axes
                 ],
-                shape_threshold=self._actual_viewbox_size[::-1],
+                shape_threshold=self._current_viewbox_size[::-1],
             )
 
     def on_resize(self, event: ResizeEvent) -> None:
@@ -638,13 +654,8 @@ class VispyCanvas:
         None
         """
         self.viewer._canvas_size = self.size
-
         if self.viewer.grid.enabled:
             self._update_grid_spacing()
-            # defer overlay drawing until grid view is finished
-            self._scene_canvas.events.draw.connect(
-                self._on_first_draw_update_overlays, position='first'
-            )
 
     def add_layer_visual_mapping(
         self, napari_layer: Layer, vispy_layer: VispyBaseLayer
@@ -777,6 +788,8 @@ class VispyCanvas:
                 for view in views:
                     self._add_viewer_overlay(overlay, view.scene)
 
+        self._update_overlay_canvas_positions()
+
     def _add_layer_overlay(
         self, layer: Layer, overlay: Overlay, parent: Node
     ) -> None:
@@ -824,6 +837,42 @@ class VispyCanvas:
                 parent = self.layer_to_visual[layer].node
 
             self._add_layer_overlay(layer, overlay, parent)
+
+        self._update_overlay_canvas_positions()
+
+    def _get_ordered_visible_canvas_overlays(self):
+        # note that some canvas overlays do no use CanvasPosition, but are instead
+        # free-floating (such as the cursor overlay), so those are skipped
+
+        # first viewer overlays
+        for overlay, vispy_overlays in self._overlay_to_visual.items():
+            if (
+                overlay.visible
+                and isinstance(overlay, CanvasOverlay)
+                and overlay.position in list(CanvasPosition)
+            ):
+                yield overlay, vispy_overlays
+
+        # then layer overlays
+        for layer in self.viewer.layers:
+            for overlay, vispy_overlay in self._layer_overlay_to_visual.get(
+                layer, {}
+            ).items():
+                if (
+                    layer.visible
+                    and overlay.visible
+                    and isinstance(overlay, CanvasOverlay)
+                    and overlay.position in list(CanvasPosition)
+                ):
+                    yield overlay, [vispy_overlay]
+
+    def _update_overlay_canvas_positions(self, event=None):
+        for (
+            _,
+            vispy_overlays,
+        ) in self._get_ordered_visible_canvas_overlays():
+            for vispy_overlay in vispy_overlays:
+                vispy_overlay._on_position_change()
 
     def _calculate_view_direction(
         self, event_pos: tuple[float, float]
@@ -888,10 +937,6 @@ class VispyCanvas:
 
         if self.viewer.grid.enabled:
             self.grid = self.central_widget.add_grid(border_width=0)
-            # setup the grid views prior to adding spacing
-            # if we add spacing first, then if its a proportional spacing
-            # the initial calculation uses the size of the canvas, instead of the viewbox size
-            # because the grid viewboxes are not yet initialized
             self._setup_layer_views_in_grid()
             self._update_grid_spacing()
 
@@ -900,13 +945,6 @@ class VispyCanvas:
 
         self._reorder_layers()
         self._update_viewer_overlays()
-
-        # Schedule overlay position updates after grid views are fully initialized
-        if self.viewer.grid.enabled:
-            self._scene_canvas.events.draw.connect(
-                self._on_first_draw_update_overlays, position='first'
-            )
-
         self._on_interactive()
 
     def _setup_single_view(self):
@@ -938,15 +976,12 @@ class VispyCanvas:
             self._update_layer_overlays(napari_layer)
 
     @property
-    def _actual_viewbox_size(self):
+    def _current_viewbox_size(self):
         """Get the actual size of the viewboxes in pixels.
 
         If grid is not enabled, this returns the size of the canvas.
-        If grid is enabled, this returns the size of the viewboxes based on the
-        canvas size and the grid shape. `self.grid_views[0].rect.size`
-        is not used because it can be degenerate (10,10) before the canvas
-        viewboxes are fully initialized. Therefore, explcitly calculate
-        the expected viewbox size based on the canvas size.
+        If grid is enabled, this returns the size of the viewboxes; note that
+        these can be degenerate if `on_draw` hasn't been called yet!
 
         Returns
         -------
@@ -954,40 +989,9 @@ class VispyCanvas:
             The size of the viewbox(es) in pixels (width, height)
         """
         if self.viewer.grid.enabled and self.grid_views:
-            rows, cols = self.viewer.grid.actual_shape(len(self.viewer.layers))
-            canvas_width, canvas_height = self._scene_canvas.size
-            return (canvas_width / cols, canvas_height / rows)
+            return self.grid_views[0].rect.size
 
-        return self._scene_canvas.size
-
-    @property
-    def _max_safe_spacing(self) -> int:
-        """Get the safe spacing value for the grid.
-
-        This value is computed so that the spacing value does not cause
-        viewboxes to become too small (<20px). If the spacing value is too large,
-        then viewboxes will dissapear. If viewboxes are too small than
-        there will be a division by zero for zoom calculation.
-
-        Returns
-        -------
-        int
-            The maximum safe spacing value.
-        """
-        minimum_viewbox_size = 20  # pixels
-        rows, cols = self.viewer.grid.actual_shape(len(self.viewer.layers))
-        canvas_width, canvas_height = self._scene_canvas.size
-
-        max_horizontal_spacing = (
-            canvas_width - cols * minimum_viewbox_size
-        ) / max(1, cols - 1)
-        max_vertical_spacing = (
-            canvas_height - rows * minimum_viewbox_size
-        ) / max(1, rows - 1)
-
-        max_safe_spacing = min(max_horizontal_spacing, max_vertical_spacing)
-        # Ensure we don't go below 0 or above the safe maximum
-        return max(0, int(max_safe_spacing))
+        return self.view.rect.size
 
     def _update_grid_spacing(self):
         """Update the grid spacing with a validated spacing value.
@@ -997,10 +1001,13 @@ class VispyCanvas:
         exceeds the maximum safe spacing, it is reduced to the maximum safe value
         and a warning is issued to the user.
         """
-        raw_spacing = self.viewer.grid._compute_canvas_spacing(
-            self._actual_viewbox_size
+        # TODO: this should be all handled on the grid model ideally, using validators
+        raw_spacing = self.viewer.grid._compute_canvas_spacing_raw(
+            self._scene_canvas.size, len(self.viewer.layers)
         )
-        safe_spacing = self._max_safe_spacing
+        safe_spacing = self.viewer.grid._compute_canvas_spacing(
+            self._scene_canvas.size, len(self.viewer.layers)
+        )
 
         if raw_spacing > safe_spacing:
             warnings.warn(
@@ -1016,43 +1023,7 @@ class VispyCanvas:
                 UserWarning,
                 stacklevel=2,
             )
-            self.grid.spacing = safe_spacing
-        else:
-            self.grid.spacing = raw_spacing
+            # this shouldn't cause an infinite loop cause now the spacing is fixed!
+            self.viewer.grid.spacing = safe_spacing
 
-        self._scene_canvas.update()
-
-        self._scene_canvas.events.draw.connect(
-            self._on_first_draw_update_overlays, position='first'
-        )
-
-    def _on_first_draw_update_overlays(self, event):
-        """Update overlay positions on first draw when grid views are fully initialized."""
-        # Check if grid views are properly sized (not degenerate)
-        if (
-            self.grid_views
-            and self.grid_views[0].size[0] > 10
-            and self.grid_views[0].size[1] > 10
-        ):
-            # Now force overlay position updates when grid views have their final sizes
-            self._update_viewer_overlays()
-            self._force_overlay_position_updates()
-            self._scene_canvas.events.draw.disconnect(
-                self._on_first_draw_update_overlays
-            )
-        else:
-            # Grid views still not properly sized, try again on next draw
-            self._scene_canvas.events.draw.connect(
-                self._on_first_draw_update_overlays, position='first'
-            )
-
-    def _force_overlay_position_updates(self):
-        """Force position updates for all overlays after grid changes."""
-        for overlay_visuals in self._overlay_to_visual.values():
-            for vispy_overlay in overlay_visuals:
-                if hasattr(vispy_overlay, '_on_position_change'):
-                    vispy_overlay._on_position_change()
-        for layer_overlays in self._layer_overlay_to_visual.values():
-            for vispy_overlay in layer_overlays.values():
-                if hasattr(vispy_overlay, '_on_position_change'):
-                    vispy_overlay._on_position_change()
+        self.grid.spacing = safe_spacing
