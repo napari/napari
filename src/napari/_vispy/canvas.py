@@ -944,6 +944,7 @@ class VispyCanvas:
             self._reorder_layers()
             self._update_viewer_overlays()
             self._on_interactive()
+        self.on_draw(None)
 
     def _setup_single_view(self):
         for napari_layer, vispy_layer in self.layer_to_visual.items():
