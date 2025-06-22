@@ -725,7 +725,12 @@ class VispyCanvas:
             ):
                 if not layer_indices:
                     continue
-                layers = [self.viewer.layers[idx] for idx in layer_indices]
+                # FIXME: the use of `len(self.viewer.layers) - 1 - idx` should be removed
+                # see https://github.com/napari/napari/pull/7870#issuecomment-2965031040
+                layers = [
+                    self.viewer.layers[len(self.viewer.layers) - 1 - idx]
+                    for idx in layer_indices
+                ]
                 self._reorder_layers_in_the_same_view(layers)
         else:
             self._reorder_layers_in_the_same_view(self.viewer.layers)
