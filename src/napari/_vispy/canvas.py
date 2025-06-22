@@ -1022,11 +1022,12 @@ class VispyCanvas:
 
         self._scene_canvas.update()
 
+        self._scene_canvas.events.draw.connect(
+            self._on_first_draw_update_overlays, position='first'
+        )
+
     def _on_first_draw_update_overlays(self, event):
         """Update overlay positions on first draw when grid views are fully initialized."""
-        self._scene_canvas.events.draw.disconnect(
-            self._on_first_draw_update_overlays
-        )
         # Check if grid views are properly sized (not degenerate)
         if (
             self.grid_views
@@ -1034,7 +1035,11 @@ class VispyCanvas:
             and self.grid_views[0].size[1] > 10
         ):
             # Now force overlay position updates when grid views have their final sizes
+            self._update_viewer_overlays()
             self._force_overlay_position_updates()
+            self._scene_canvas.events.draw.disconnect(
+                self._on_first_draw_update_overlays
+            )
         else:
             # Grid views still not properly sized, try again on next draw
             self._scene_canvas.events.draw.connect(
