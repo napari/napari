@@ -922,6 +922,8 @@ class VispyCanvas:
 
     def screenshot(self) -> QImage:
         """Return a QImage based on what is shown in the viewer."""
+        # ensure on_draw is run to bring everything up to date
+        self.on_draw(None)
         return self.native.grabFramebuffer()
 
     def enable_dims_play(self, *args) -> None:
