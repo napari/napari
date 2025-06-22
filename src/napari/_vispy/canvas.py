@@ -926,26 +926,27 @@ class VispyCanvas:
         self.viewer.dims._play_ready = True
 
     def _update_scenegraph(self, event=None):
-        for camera in self.grid_cameras:
-            camera._2D_camera.parent = None
-            camera._3D_camera.parent = None
-            self._scene_canvas.events.draw.disconnect(camera.on_draw)
-        self.grid_cameras.clear()
-        self.grid_views.clear()
-        # grid are really not designed to be reset, so it's easier to replace it
-        self.grid.parent = None
+        with self._scene_canvas.events.draw.blocker():
+            for camera in self.grid_cameras:
+                camera._2D_camera.parent = None
+                camera._3D_camera.parent = None
+                self._scene_canvas.events.draw.disconnect(camera.on_draw)
+            self.grid_cameras.clear()
+            self.grid_views.clear()
+            # grid are really not designed to be reset, so it's easier to replace it
+            self.grid.parent = None
 
-        if self.viewer.grid.enabled:
-            self.grid = self.central_widget.add_grid(border_width=0)
-            self._setup_layer_views_in_grid()
-            self._update_grid_spacing()
+            if self.viewer.grid.enabled:
+                self.grid = self.central_widget.add_grid(border_width=0)
+                self._setup_layer_views_in_grid()
+                self._update_grid_spacing()
 
-        else:
-            self._setup_single_view()
+            else:
+                self._setup_single_view()
 
-        self._reorder_layers()
-        self._update_viewer_overlays()
-        self._on_interactive()
+            self._reorder_layers()
+            self._update_viewer_overlays()
+            self._on_interactive()
 
     def _setup_single_view(self):
         for napari_layer, vispy_layer in self.layer_to_visual.items():
