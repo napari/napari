@@ -638,7 +638,13 @@ class VispyCanvas:
         None
         """
         self.viewer._canvas_size = self.size
-        self._update_grid_spacing()
+
+        if self.viewer.grid.enabled:
+            self._update_grid_spacing()
+            # defer overlay drawing until grid view is finished
+            self._scene_canvas.events.draw.connect(
+                self._on_first_draw_update_overlays, position='first'
+            )
 
     def add_layer_visual_mapping(
         self, napari_layer: Layer, vispy_layer: VispyBaseLayer
@@ -896,7 +902,6 @@ class VispyCanvas:
         self._update_viewer_overlays()
 
         # Schedule overlay position updates after grid views are fully initialized
-        self._force_overlay_position_updates()  # doesn't work alone
         if self.viewer.grid.enabled:
             self._scene_canvas.events.draw.connect(
                 self._on_first_draw_update_overlays, position='first'
@@ -1019,25 +1024,19 @@ class VispyCanvas:
 
     def _on_first_draw_update_overlays(self, event):
         """Update overlay positions on first draw when grid views are fully initialized."""
-        # Disconnect this one-time callback
         self._scene_canvas.events.draw.disconnect(
             self._on_first_draw_update_overlays
         )
-
         # Check if grid views are properly sized (not degenerate)
         if (
             self.grid_views
             and self.grid_views[0].size[0] > 10
             and self.grid_views[0].size[1] > 10
         ):
-            # print('Grid views properly sized, updating overlay positions.')
             # Now force overlay position updates when grid views have their final sizes
             self._force_overlay_position_updates()
         else:
             # Grid views still not properly sized, try again on next draw
-            # print(
-            #     'Grid views not properly sized yet, will retry on next draw.'
-            # )
             self._scene_canvas.events.draw.connect(
                 self._on_first_draw_update_overlays, position='first'
             )
