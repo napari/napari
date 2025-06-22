@@ -759,7 +759,7 @@ class VispyCanvas:
         """Remove all viewer overlay visuals and disconnect their events."""
         for overlay in list(self._overlay_to_visual):
             if isinstance(overlay, CanvasOverlay):
-                overlay.events.gridded.disconnect(self._update_scenegraph)
+                overlay.events.gridded.disconnect(self._update_viewer_overlays)
             vispy_overlays = self._overlay_to_visual.pop(overlay)
             for vispy_overlay in vispy_overlays:
                 vispy_overlay.close()
@@ -781,7 +781,7 @@ class VispyCanvas:
             if isinstance(overlay, CanvasOverlay):
                 for view in views:
                     self._add_viewer_overlay(overlay, view)
-                overlay.events.gridded.connect(self._update_scenegraph)
+                overlay.events.gridded.connect(self._update_viewer_overlays)
             else:
                 for view in views:
                     self._add_viewer_overlay(overlay, view.scene)
@@ -938,7 +938,6 @@ class VispyCanvas:
                 self.grid = self.central_widget.add_grid(border_width=0)
                 self._setup_layer_views_in_grid()
                 self._update_grid_spacing()
-
             else:
                 self._setup_single_view()
 
