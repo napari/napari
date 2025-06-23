@@ -922,6 +922,10 @@ class VispyCanvas:
 
     def screenshot(self) -> QImage:
         """Return a QImage based on what is shown in the viewer."""
+        # ensure on_draw is run to bring everything up to date
+        # needed for some Ubuntu py3.10 pyqt5 tests, but likely inconsistent behavior for other OS.
+        # See: https://github.com/napari/napari/pull/7870#issuecomment-2997167180
+        self.on_draw(None)
         return self.native.grabFramebuffer()
 
     def enable_dims_play(self, *args) -> None:
