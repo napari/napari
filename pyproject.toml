@@ -68,7 +68,7 @@ dependencies = [
     "tifffile>=2022.7.28",
     "toolz>=0.11.0",
     "tqdm>=4.56.0",
-    "typing_extensions>=4.6.1",
+    "typing_extensions>=4.12",
     "vispy>=0.15.0,<0.16",
     "wrapt>=1.13.3",
 ]
