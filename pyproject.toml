@@ -37,7 +37,7 @@ classifiers = [
 requires-python = ">=3.10"
 dependencies = [
     "appdirs>=1.4.4",
-    "app-model>=0.3.0,<0.4.0",
+    "app-model>=0.4.0,<0.5.0",
     "cachey>=0.2.1",
     "certifi>=2018.1.18",
     "dask[array]>=2021.10.0",
