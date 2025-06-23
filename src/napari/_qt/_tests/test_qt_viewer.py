@@ -15,6 +15,7 @@ from qtpy.QtWidgets import QApplication, QMessageBox
 from scipy import ndimage as ndi
 from vispy.app import MouseEvent
 
+from napari._qt.qt_event_loop import get_qapp
 from napari._qt.qt_viewer import QtViewer
 from napari._tests.utils import (
     add_layer_by_type,
@@ -323,6 +324,8 @@ def test_export_figure_3d(make_napari_viewer):
     # rotate the data, export the figure, and check that the rotated figure
     # shape is greater than the original data shape
     viewer.camera.angles = (45, 45, 45)
+    # process all napari events so that the canvas is updated. Issue popped up in PR #7870, but is likely due to #8033
+    get_qapp().processEvents()
     img = viewer.export_figure()
     np.testing.assert_allclose(img.shape, (171, 339, 4), atol=1)
 
