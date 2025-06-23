@@ -1,0 +1,70 @@
+name: Labels and milestone
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - labeled
+      - unlabeled
+      - milestoned
+      - demilestoned
+  merge_group: # to be prepared on merge queue
+    types: [checks_requested]
+
+jobs:
+  check_labels:
+    if: (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ready to merge'))
+    name: Check ready-to-merge PR has at least one type label
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check labels
+        uses: docker://agilepathway/pull-request-label-checker:latest
+        with:
+          any_of: bugfix,feature,documentation,performance,enhancement,maintenance
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+
+  check_next_milestone:
+    name: Check milestone is next release
+    if: (github.event_name == 'pull_request' && github.event.pull_request.milestone != null)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check milestone for closest due date
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_MILESTONE_NAME: ${{ github.event.pull_request.milestone.title }}
+        run: |
+          # Install GitHub CLI if necessary
+          # sudo apt-get install -y gh
+
+          IFS='/' read -r repoOwner repoName <<< "${{ github.repository }}"
+
+          # Fetch the closest future milestone
+          # shellcheck disable=SC2016
+          CLOSEST_MILESTONE=$(gh api graphql -f query='
+            query($repoName: String!, $repoOwner: String!) {
+              repository(name: $repoName, owner: $repoOwner) {
+                milestones(states: OPEN, orderBy: {field: DUE_DATE, direction: ASC}, first: 100) {
+                  nodes {
+                    title
+                    number
+                    dueOn
+                  }
+                }
+              }
+          }' --jq '.data.repository.milestones.nodes | map(select(.dueOn >= now)) | .[0].number' -f repoName="$repoName" -f repoOwner="$repoOwner")
+
+          # Extract the milestone number of the current PR
+          PR_MILESTONE_NUMBER=$(gh api "/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}" --jq '.milestone.number')
+          CLOSEST_MILESTONE_NAME=$(gh api "/repos/${{ github.repository }}/milestones/$CLOSEST_MILESTONE" --jq '.title')
+
+
+          # Check if the PR's milestone is the closest future milestone
+          if [ "$CLOSEST_MILESTONE" != "$PR_MILESTONE_NUMBER" ]; then
+            echo "If this PR can be merged in time for the earlier milestone,"
+            echo "changing the milestone to $CLOSEST_MILESTONE_NAME will make the check pass."
+            echo "If this PR must wait until $PR_MILESTONE_NAME,"
+            echo "remove the ready-to-merge tag to skip this check,"
+            echo "and re-add it when all earlier milestones are completed."
+            exit 1
+          fi

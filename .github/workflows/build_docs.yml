@@ -1,5 +1,5 @@
 # As much as possible, this file should be kept in sync with
-# https://github.com/napari/docs/blob/main/.github/workflows/build_docs.yml
+# https://github.com/napari/docs/blob/main/.github/workflows/build_and_deploy_docs.yml
 name: Build PR Docs
 
 on:
@@ -10,6 +10,9 @@ on:
       - 'v*'
   workflow_dispatch:
   workflow_call:
+  pull_request:
+    paths:
+      - '.github/workflows/build_docs.yml'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -35,20 +38,18 @@ jobs:
 
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.10"
+          python-version: "3.12"
           cache-dependency-path: |
             napari/pyproject.toml
-            docs/requirements.txt
 
       - uses: tlambert03/setup-qt-libs@v1
 
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install "napari/[all]"
-          python -m pip install -r docs/requirements.txt
+          python -m pip install "napari/[pyqt5, docs]"
         env:
-          PIP_CONSTRAINT: ${{ github.workspace }}/napari/resources/constraints/constraints_py3.10_docs.txt
+          PIP_CONSTRAINT: ${{ github.workspace }}/napari/resources/constraints/constraints_py3.12_docs.txt
 
       - name: Testing
         run: |
@@ -60,9 +61,9 @@ jobs:
         env:
           GOOGLE_CALENDAR_ID: ${{ secrets.GOOGLE_CALENDAR_ID }}
           GOOGLE_CALENDAR_API_KEY: ${{ secrets.GOOGLE_CALENDAR_API_KEY }}
-          PIP_CONSTRAINT: ${{ github.workspace }}/napari/resources/constraints/constraints_py3.10_docs.txt
+          PIP_CONSTRAINT: ${{ github.workspace }}/napari/resources/constraints/constraints_py3.12_docs.txt
         with:
-          run:  make -C docs docs
+          run:  make -C docs html
           # skipping setup stops the action from running the default (tiling) window manager
           # the window manager is not necessary for docs builds at this time and it was causing
           # problems with screenshots (https://github.com/napari/docs/issues/285)
@@ -73,4 +74,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: docs
-          path: docs/docs/_build
+          path: docs/docs/_build/html

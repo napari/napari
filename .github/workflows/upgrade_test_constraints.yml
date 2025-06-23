@@ -86,11 +86,11 @@ jobs:
               "https://api.github.com/repos/${{ github.repository }}/pulls/$PR_number" \
           )
 
-          FULL_NAME=$(echo $PR_data  | jq -r .head.repo.full_name)
-          echo "FULL_NAME=$FULL_NAME" >> $GITHUB_ENV
+          FULL_NAME=$(echo "${PR_data}"  | jq -r .head.repo.full_name)
+          echo "FULL_NAME=$FULL_NAME" >> "$GITHUB_ENV"
 
-          BRANCH=$(echo $PR_data  | jq -r .head.ref)
-          echo "BRANCH=$BRANCH" >> $GITHUB_ENV
+          BRANCH=$(echo "${PR_data}"  | jq -r .head.ref)
+          echo "BRANCH=$BRANCH" >> "$GITHUB_ENV"
 
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -99,18 +99,12 @@ jobs:
         # when schedule or workflow_dispatch triggers workflow, then we need to get info about which branch to use
         if: github.event_name != 'issue_comment' && github.event_name != 'pull_request'
         run: |
-          echo "FULL_NAME=${{ github.repository }}" >> $GITHUB_ENV
-          echo "BRANCH=${{ github.ref_name }}" >> $GITHUB_ENV
+          echo "FULL_NAME=${{ github.repository }}" >> "$GITHUB_ENV"
+          echo "BRANCH=${{ github.ref_name }}" >> "$GITHUB_ENV"
 
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Clone docs repo
-        uses: actions/checkout@v4
-        with:
-          path: docs  # place in a named directory
-          repository: napari/docs
 
       - name: Clone target repo (remote)
         uses: actions/checkout@v4
@@ -135,7 +129,7 @@ jobs:
           path: napari_repo  # place in a named directory
           repository: ${{ env.FULL_NAME }}
           ref: ${{ env.BRANCH }}
-          token: ${{ secrets.GHA_TOKEN_NAPARI_BOT_MAIN_REPO }}
+          token: ${{ secrets.GHA_TOKEN_BOT_REPO }}
 
       - name: Add napari-bot/napari to napari_repo upstreams
         run: |
@@ -147,21 +141,6 @@ jobs:
       # START PYTHON DEPENDENCIES
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.9"
-          cache: pip
-          cache-dependency-path: 'pyproject.toml'
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.10"
-          cache: pip
-          cache-dependency-path: 'pyproject.toml'
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-          cache: pip
-          cache-dependency-path: 'pyproject.toml'
-      - uses: actions/setup-python@v5
-        with:
           python-version: "3.12"
           cache: pip
           cache-dependency-path: 'pyproject.toml'
@@ -169,44 +148,31 @@ jobs:
       - name: Upgrade Python dependencies
         # ADD YOUR CUSTOM DEPENDENCY UPGRADE COMMANDS BELOW
         run: |
-          flags=""
+          set -x
+          pip install -U uv
+          cd napari_repo
+          flags=(--quiet --extra pyqt6 --extra pyside2 --extra pyside6_experimental --extra testing --extra testing_extra --extra optional)
+
           # Explanation of below commands
-          # python3.8 -m piptools compile - call pip-compile but ensure proper interpreter
+          # uv pip compile --python-version 3.9 - call uv pip compile but ensure proper interpreter
           # --upgrade upgrade to the latest possible version. Without this pip-compile will take a look to output files and reuse versions (so will ad something on when adding dependency.
-          # -o resources/constraints/constraints_py3.8.txt - output file
+          # -o resources/constraints/constraints_py3.9.txt - output file
           # pyproject.toml resources/constraints/version_denylist.txt - source files. the resources/constraints/version_denylist.txt - contains our test specific constraints like pytes-cov`
           #
-          # --extra pyqt5 etc - names of extra sections from pyproject.toml that should be checked for the dependencies list (maybe we could create a super extra section to collect them all in)
-          flags+=" --extra pyqt5"
-          flags+=" --extra pyqt6_experimental"
-          flags+=" --extra pyside2"
-          flags+=" --extra pyside6_experimental"
-          flags+=" --extra testing"
-          flags+=" --extra testing_extra"
-          flags+=" --extra optional"
-          prefix="napari_repo"
-          pyproject_toml="${prefix}/pyproject.toml"
-          constraints="${prefix}/resources/constraints"
+          # --extra pyqt6 etc - names of extra sections from pyproject.toml that should be checked for the dependencies list (maybe we could create a super extra section to collect them all in)
+          pyproject_toml="pyproject.toml"
+          constraints="resources/constraints"
 
 
-          # allow to put in constraints things like setuptools (look at the end of one of the generated files). It will be the default behavior in the future.
-          flags+=" --allow-unsafe"
-
-          # pip constrains format does not allow to specify extras (like dask[array]) so we need to use this option
-          flags+=" --strip-extras"
-
-          # future default resolver. It is faster. Lower probability of long CI run.
-          flags+=" --resolver=backtracking"
-
-          for pyv in 3.9 3.10 3.11 3.12; do
-            python${pyv}  -m pip install -U pip pip-tools
-            python${pyv}  -m piptools compile --upgrade -o $constraints/constraints_py${pyv}.txt  $pyproject_toml $constraints/version_denylist.txt ${flags}
-            python${pyv}  -m piptools compile --upgrade -o $constraints/constraints_py${pyv}_pydantic_1.txt  $pyproject_toml $constraints/version_denylist.txt $constraints/pydantic_le_2.txt ${flags}
+          for pyv in 3.10 3.11 3.12 3.13; do
+            uv pip compile --python-version ${pyv} --upgrade --output-file ${constraints}/constraints_py${pyv}.txt  ${pyproject_toml} ${constraints}/version_denylist.txt "${flags[@]}"
           done
 
-          python3.9 -m piptools compile --upgrade -o $constraints/constraints_py3.9_examples.txt $pyproject_toml $constraints/version_denylist.txt resources/constraints/version_denylist_examples.txt ${flags}
-          python3.10 -m piptools compile --upgrade -o $constraints/constraints_py3.10_docs.txt $pyproject_toml $constraints/version_denylist.txt resources/constraints/version_denylist_examples.txt docs/requirements.txt $constraints/pydantic_le_2.txt ${flags}
-          python3.11 -m piptools compile --upgrade -o resources/requirements_mypy.txt resources/requirements_mypy.in --resolver=backtracking
+
+          uv pip compile --python-version 3.12 --upgrade --output-file ${constraints}/constraints_py3.12_examples.txt ${pyproject_toml} ${constraints}/version_denylist.txt ${constraints}/version_denylist_examples.txt "${flags[@]}"
+          uv pip compile --python-version 3.10 --upgrade --output-file ${constraints}/constraints_py3.10_docs.txt ${pyproject_toml} ${constraints}/version_denylist.txt ${constraints}/version_denylist_examples.txt --extra docs "${flags[@]}"
+          uv pip compile --python-version 3.12 --upgrade --output-file ${constraints}/constraints_py3.12_docs.txt ${pyproject_toml} ${constraints}/version_denylist.txt ${constraints}/version_denylist_examples.txt --extra docs "${flags[@]}"
+          uv pip compile --python-version 3.12 --upgrade --output-file resources/requirements_mypy.txt resources/requirements_mypy.in
 
       # END PYTHON DEPENDENCIES
 
@@ -216,6 +182,11 @@ jobs:
           name: constraints
           path: |
             napari_repo/resources/constraints/constraints*.txt
+
+      - name: Check builtin extensions
+        run: uv run tools/check_extensions.py --ci
+        env:
+          UV_CONSTRAINT: napari_repo/resources/constraints/constraints_py3.12.txt
 
       - name: Add rocket reaction
         # inform that new constraints are available in artifacts

@@ -1,9 +1,13 @@
 import warnings
 
+import numpy as np
+from magicgui import magicgui
 from vispy.scene.visuals import Ellipse
 
+import napari
 from napari._vispy.overlays.base import ViewerOverlayMixin, VispyCanvasOverlay
 from napari._vispy.utils.visual import overlay_to_visual
+from napari.components._viewer_constants import CanvasPosition
 from napari.components.overlays import CanvasOverlay
 from napari.utils.color import ColorValue
 
@@ -54,6 +58,8 @@ class VispyDotOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
 
     def _on_size_change(self, event=None):
         self.node.radius = self.overlay.size / 2
+        self.x_size = self.overlay.size
+        self.y_size = self.overlay.size
         # trigger position update since the radius changed
         self._on_position_change()
 
@@ -68,42 +74,55 @@ class VispyDotOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
 # this will ideally be exposed at some point
 overlay_to_visual[DotOverlay] = VispyDotOverlay
 
+viewer = napari.Viewer()
+# we also need to add at least a layer to see any overlay,
+# since the canvas is otherwise covered by the welcome widget
+viewer.add_image(np.random.rand(10, 10))
 
 # note that we're accessing private attributes externally, which triggers a bunch of warnings.
 # suppress them for the purpose of this example
+with warnings.catch_warnings():
+    warnings.simplefilter('ignore')
+    viewer._overlays['dot'] = DotOverlay(visible=True)
+
+
+# let's make a simple widget to control the overlay
+@magicgui(
+    auto_call=True,
+    color={'choices': ['red', 'blue', 'green', 'magenta']},
+)
+def control_dot(viewer: napari.Viewer, color='red', position: CanvasPosition = 'top_left'):
+    dot = viewer._overlays['dot']
+    dot.color = color
+    dot.position = position
+
+
+viewer.window.add_dock_widget(control_dot)
+
+
+# and let's also add a mouse callback to do something when dragging the mouse
+def change_size(viewer, event):
+    pos = np.array(event.pos)
+    size = viewer._overlays['dot'].size
+
+    # use event.handled to tell vispy to not drag the canvas
+    event.handled = True
+
+    yield
+
+    while event.type == 'mouse_move':
+        new_pos = event.pos
+        drag = new_pos[0] - pos[0]
+
+        viewer._overlays['dot'].size = size + drag
+        yield
+
+
+viewer.mouse_drag_callbacks.append(change_size)
+
 if __name__ == '__main__':
-    import napari
-
-    viewer = napari.Viewer()
-    # we also need to add at least a layer to see any overlay,
-    # since the canvas is otherwise covered by the welcome widget
-    viewer.add_shapes()
-
     with warnings.catch_warnings():
         warnings.simplefilter('ignore')
-        # add the overlay to the viewer (currently private attribute)
-        viewer._overlays['dot'] = DotOverlay(visible=True)
-        # there is currently no automation on adding a new overlay, so we also need to
-        # manually trigger the generation of the visual
-        viewer.window._qt_viewer._add_overlay(viewer._overlays['dot'])
 
-    # let's make a simple widget to control the overlay
-    from magicgui import magicgui
-
-    from napari.components._viewer_constants import CanvasPosition
-
-    @magicgui(
-        auto_call=True,
-        color={'choices': ['red', 'blue', 'green', 'magenta']},
-        size={'widget_type': 'Slider', 'min': 1, 'max': 100}
-    )
-    def control_dot(viewer: napari.Viewer, color='red', size=20, position: CanvasPosition = 'top_left'):
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore')
-            dot = viewer._overlays['dot']
-            dot.color = color
-            dot.size = size
-            dot.position = position
-
-    viewer.window.add_dock_widget(control_dot)
-    control_dot()
+        control_dot()
+        napari.run()

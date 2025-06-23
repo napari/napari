@@ -1,7 +1,8 @@
 import matplotlib.pyplot as plt
+import numpy as np
 from matplotlib.patches import Polygon
 
-from napari.layers.shapes._shapes_utils import (
+from napari.layers.shapes._accelerated_triangulate_dispatch import (
     generate_2D_edge_meshes,
 )
 
@@ -16,7 +17,7 @@ for closed in [False, True]:
         ax = next(itaxes)
         c = next(colors)
         centers, offsets, triangles = generate_2D_edge_meshes(
-            [[0, 3], [1, 0], [2, 3], [5, 0], [2.5, 5]],
+            np.array([[0, 3], [1, 0], [2, 3], [5, 0], [2.5, 5]]),
             closed=closed,
             limit=3,
             bevel=beveled,
@@ -34,4 +35,6 @@ for closed in [False, True]:
         ax.set_ylim(-1, 6)
         sup.set_xlim(-1, 6)
         sup.set_ylim(-1, 6)
-plt.show()
+
+if __name__ == '__main__':
+    plt.show()
