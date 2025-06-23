@@ -1632,7 +1632,9 @@ def test_switch_color_mode(attribute):
     # transitioning to colormap should raise a warning
     # because there isn't an edge color property yet and
     # the first property in shapes.properties is being automatically selected
-    with pytest.warns(UserWarning):
+    with pytest.warns(
+        UserWarning, match='was not set, setting to: shape_truthiness'
+    ):
         setattr(layer, f'{attribute}_color_mode', 'colormap')
     color_property = getattr(layer, f'_{attribute}_color_property')
     assert color_property == next(iter(properties))
@@ -1958,7 +1960,10 @@ def test_colormap_with_categorical_properties(attribute):
     properties = {'shape_type': _make_cycled_properties(['A', 'B'], shape[0])}
     layer = Shapes(data, properties=properties)
 
-    with pytest.raises(TypeError), pytest.warns(UserWarning):
+    with (
+        pytest.warns(UserWarning, match='was not set, setting to: shape_type'),
+        pytest.raises(TypeError, match='selected property must be numeric'),
+    ):
         setattr(layer, f'{attribute}_color_mode', 'colormap')
 
 

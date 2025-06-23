@@ -23,11 +23,7 @@ def properties() -> dict[str, list]:
 def test_tracks_controls_color_by(null_data, properties, qtbot):
     """Check updating of the color_by combobox."""
     inital_color_by = 'time'
-    with pytest.warns(UserWarning) as wrn:
-        layer = Tracks(
-            null_data, properties=properties, color_by=inital_color_by
-        )
-    assert "Previous color_by key 'time' not present" in str(wrn[0].message)
+    layer = Tracks(null_data, properties=properties, color_by=inital_color_by)
     controls = QtTracksControls(layer)
     qtbot.addWidget(controls)
 

@@ -20,6 +20,7 @@ def test_deprecation_warning_event() -> None:
 
     with pytest.warns(FutureWarning, match=msg):
         event.connect(counter.add)
+    with pytest.warns(FutureWarning, match=msg):
         event(value=1)
 
     assert counter.count == 1

@@ -17,7 +17,6 @@ from napari.utils.translations import trans
 
 logger = getLogger(__name__)
 if TYPE_CHECKING:
-
     from npe2.manifest.contributions import WriterContribution
 
 
