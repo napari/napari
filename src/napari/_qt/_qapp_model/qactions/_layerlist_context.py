@@ -125,58 +125,62 @@ def _paste_spatial_from_clipboard(ll: LayerList) -> None:
         return
 
     for layer in ll.selection:
-        for key in loaded:
-            loaded_attr_value = loaded[key]
-            if key == 'units':
-                loaded_attr_value = (
-                    (DEFAULT_1D_VALUES['units'],) * layer.ndim
-                    + tuple(loaded_attr_value)
-                )[-layer.ndim :]
-            elif isinstance(loaded_attr_value, list):
-                loaded_attr_value = np.array(loaded_attr_value)
-            if key == 'shear':
-                elem_count = layer.ndim * (layer.ndim - 1) // 2
-                val_ = np.zeros(elem_count)
-                val_[-loaded_attr_value.size :] = loaded_attr_value[
-                    -elem_count:
-                ]
-                loaded_attr_value = val_
-            elif key == 'affine':
-                if loaded_attr_value.shape[0] >= layer.ndim + 1:
-                    loaded_attr_value = loaded_attr_value[
-                        -(layer.ndim + 1) :, -(layer.ndim + 1) :
+        with layer._block_refresh():
+            for key in loaded:
+                loaded_attr_value = loaded[key]
+                if key == 'units':
+                    loaded_attr_value = (
+                        (DEFAULT_1D_VALUES['units'],) * layer.ndim
+                        + tuple(loaded_attr_value)
+                    )[-layer.ndim :]
+                elif isinstance(loaded_attr_value, list):
+                    loaded_attr_value = np.array(loaded_attr_value)
+                if key == 'shear':
+                    elem_count = layer.ndim * (layer.ndim - 1) // 2
+                    val_ = np.zeros(elem_count)
+                    val_[-loaded_attr_value.size :] = loaded_attr_value[
+                        -elem_count:
                     ]
-                else:
-                    val = np.eye(layer.ndim + 1)
-                    val[
-                        -loaded_attr_value.shape[0] :,
-                        -loaded_attr_value.shape[1] :,
-                    ] = loaded_attr_value
-                    loaded_attr_value = val
-            elif isinstance(loaded_attr_value, np.ndarray):
-                if loaded_attr_value.ndim == 1:
-                    attr_len = len(loaded_attr_value)
-                    if attr_len >= layer.ndim:
-                        loaded_attr_value = loaded_attr_value[-layer.ndim :]
-                    else:
-                        loaded_attr_value = np.array(
-                            (DEFAULT_1D_VALUES[key],) * (layer.ndim - attr_len)
-                            + tuple(loaded_attr_value)
-                        )
-                elif loaded_attr_value.ndim == 2:
-                    if loaded_attr_value.shape[0] >= layer.ndim:
+                    loaded_attr_value = val_
+                elif key == 'affine':
+                    if loaded_attr_value.shape[0] >= layer.ndim + 1:
                         loaded_attr_value = loaded_attr_value[
-                            -layer.ndim :, -layer.ndim :
+                            -(layer.ndim + 1) :, -(layer.ndim + 1) :
                         ]
                     else:
-                        val = np.eye(layer.ndim)
+                        val = np.eye(layer.ndim + 1)
                         val[
                             -loaded_attr_value.shape[0] :,
                             -loaded_attr_value.shape[1] :,
                         ] = loaded_attr_value
                         loaded_attr_value = val
+                elif isinstance(loaded_attr_value, np.ndarray):
+                    if loaded_attr_value.ndim == 1:
+                        attr_len = len(loaded_attr_value)
+                        if attr_len >= layer.ndim:
+                            loaded_attr_value = loaded_attr_value[
+                                -layer.ndim :
+                            ]
+                        else:
+                            loaded_attr_value = np.array(
+                                (DEFAULT_1D_VALUES[key],)
+                                * (layer.ndim - attr_len)
+                                + tuple(loaded_attr_value)
+                            )
+                    elif loaded_attr_value.ndim == 2:
+                        if loaded_attr_value.shape[0] >= layer.ndim:
+                            loaded_attr_value = loaded_attr_value[
+                                -layer.ndim :, -layer.ndim :
+                            ]
+                        else:
+                            val = np.eye(layer.ndim)
+                            val[
+                                -loaded_attr_value.shape[0] :,
+                                -loaded_attr_value.shape[1] :,
+                            ] = loaded_attr_value
+                            loaded_attr_value = val
 
-            setattr(layer, key, loaded_attr_value)
+                setattr(layer, key, loaded_attr_value)
 
 
 def is_valid_spatial_in_clipboard() -> bool:
