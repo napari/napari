@@ -175,12 +175,15 @@ def _paste_spatial_from_clipboard(ll: LayerList) -> None:
                         else:
                             val = np.eye(layer.ndim)
                             val[
-                                -loaded_attr_value.shape[0] :,
                                 -loaded_attr_value.shape[1] :,
+                                -loaded_attr_value.shape[0] :,
                             ] = loaded_attr_value
                             loaded_attr_value = val
 
                 setattr(layer, key, loaded_attr_value)
+
+    for layer in ll.selection:
+        layer.refresh(data_displayed=False)
 
 
 def is_valid_spatial_in_clipboard() -> bool:
