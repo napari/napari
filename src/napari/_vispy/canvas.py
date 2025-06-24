@@ -725,12 +725,7 @@ class VispyCanvas:
             ):
                 if not layer_indices:
                     continue
-                # FIXME: the use of `len(self.viewer.layers) - 1 - idx` should be removed
-                # see https://github.com/napari/napari/pull/7870#issuecomment-2965031040
-                layers = [
-                    self.viewer.layers[len(self.viewer.layers) - 1 - idx]
-                    for idx in layer_indices
-                ]
+                layers = [self.viewer.layers[idx] for idx in layer_indices]
                 self._reorder_layers_in_the_same_view(layers)
         else:
             self._reorder_layers_in_the_same_view(self.viewer.layers)
@@ -825,11 +820,7 @@ class VispyCanvas:
             if isinstance(overlay, CanvasOverlay):
                 if self.viewer.grid.enabled:
                     row, col = self.viewer.grid.position(
-                        # FIXME: the use of `len(self.viewer.layers) - 1 - idx` should be removed
-                        # see https://github.com/napari/napari/pull/7870#issuecomment-2965031040
-                        len(self.viewer.layers)
-                        - 1
-                        - self.viewer.layers.index(layer),
+                        self.viewer.layers.index(layer),
                         len(self.viewer.layers),
                     )
                     parent = self.grid[row, col]
@@ -977,11 +968,7 @@ class VispyCanvas:
             self.grid_cameras.append(camera)
 
             for idx in layer_indices:
-                # FIXME: the use of `len(self.viewer.layers) - 1 - idx` should be removed
-                # see https://github.com/napari/napari/pull/7870#issuecomment-2965031040
-                napari_layer = self.viewer.layers[
-                    len(self.viewer.layers) - 1 - idx
-                ]
+                napari_layer = self.viewer.layers[idx]
                 vispy_layer = self.layer_to_visual[napari_layer]
                 vispy_layer.node.parent = view.scene
                 self._update_layer_overlays(napari_layer)
