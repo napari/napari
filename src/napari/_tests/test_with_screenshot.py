@@ -259,14 +259,14 @@ def test_grid_mode(make_napari_viewer):
         (3 / 4, 3 / 6),
         (3 / 4, 5 / 6),
     ]
-    # BGRMYC color order
+    # CYMRGB color order
     color = [
-        [0, 0, 255, 255],
-        [0, 255, 0, 255],
-        [255, 0, 0, 255],
-        [255, 0, 255, 255],
-        [255, 255, 0, 255],
         [0, 255, 255, 255],
+        [255, 255, 0, 255],
+        [255, 0, 255, 255],
+        [255, 0, 0, 255],
+        [0, 255, 0, 255],
+        [0, 0, 255, 255],
     ]
     for c, p in zip(color, pos, strict=False):
         coord = tuple(
@@ -282,12 +282,12 @@ def test_grid_mode(make_napari_viewer):
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
     # CGRMYB color order
     color = [
-        [0, 255, 255, 255],
-        [0, 255, 0, 255],
-        [255, 0, 0, 255],
-        [255, 0, 255, 255],
-        [255, 255, 0, 255],
         [0, 0, 255, 255],
+        [255, 255, 0, 255],
+        [255, 0, 255, 255],
+        [255, 0, 0, 255],
+        [0, 255, 0, 255],
+        [0, 255, 255, 255],
     ]
     for c, p in zip(color, pos, strict=False):
         coord = tuple(
@@ -300,9 +300,6 @@ def test_grid_mode(make_napari_viewer):
     assert not viewer.grid.enabled
     assert viewer.grid.actual_shape(6) == (1, 1)
     assert viewer.grid.stride == 1
-
-    # check screenshot
-    screenshot = viewer.screenshot(canvas_only=True, flash=False)
 
 
 @skip_on_win_ci
