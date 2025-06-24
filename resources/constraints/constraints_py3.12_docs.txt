@@ -10,7 +10,7 @@ anyio==4.9.0
     # via
     #   starlette
     #   watchfiles
-app-model==0.3.2
+app-model==0.4.0
     # via napari (pyproject.toml)
 appdirs==1.4.4
     # via
@@ -582,7 +582,7 @@ scikit-learn==1.7.0
     # via
     #   glasbey
     #   nilearn
-scipy==1.15.3
+scipy==1.16.0
     # via
     #   napari (pyproject.toml)
     #   nilearn
