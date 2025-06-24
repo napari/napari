@@ -68,13 +68,13 @@ def test_failed_migration_leaves_version(test_migrator):
         assert model.appearance.theme == 'light'
         raise ValueError('broken migration')
 
-    with pytest.warns(UserWarning) as e:
+    with pytest.warns(
+        UserWarning, match='Failed to migrate settings from v0.1.0 to v0.2.0'
+    ):
         settings = NapariSettings(schema_version='0.1.0')
     assert settings.schema_version == '0.1.0'
     # test migration was atomic, and reverted the theme change
     assert settings.appearance.theme == 'dark'
-    # test that the user was warned
-    assert 'Failed to migrate settings from v0.1.0 to v0.2.0' in str(e[0])
 
 
 @pytest.mark.skipif(

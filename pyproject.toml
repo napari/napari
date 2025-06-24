@@ -352,6 +352,7 @@ ignore = [
     "PYI015", # it produces bad looking files (@jni opinion)
     "W191", "Q000", "Q001", "Q002", "Q003", "ISC001", # https://docs.astral.sh/ruff/formatter/#conflicting-lint-rules
     "UP007", # temporary disable migrtion form Union[X, Y] to X | Y
+    "UP045", # temporary disable migrtion from Optional[X] to X | None
     "TC006", # put types in quotes in typing.cast
 ]
 
