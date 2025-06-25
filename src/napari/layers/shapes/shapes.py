@@ -763,6 +763,7 @@ class Shapes(Layer):
         self.events.data(**kwargs)
 
         self._reset_editable()
+        self.events.features()
 
     def _on_selection(self, selected: bool):
         # this method is slated for removal.  don't add anything new.
@@ -904,8 +905,10 @@ class Shapes(Layer):
     def current_edge_color(self, edge_color):
         self._current_edge_color = transform_color(edge_color)
         if self._update_properties:
-            for i in self.selected_data:
-                self._data_view.update_edge_color(i, self._current_edge_color)
+            indices = np.fromiter(self.selected_data, dtype=int)
+            self._data_view.update_edge_colors(
+                indices, self._current_edge_color
+            )
             self.events.edge_color()
             self._update_thumbnail()
         self.events.current_edge_color()
@@ -920,8 +923,10 @@ class Shapes(Layer):
     def current_face_color(self, face_color):
         self._current_face_color = transform_color(face_color)
         if self._update_properties:
-            for i in self.selected_data:
-                self._data_view.update_face_color(i, self._current_face_color)
+            indices = np.fromiter(self.selected_data, dtype=int)
+            self._data_view.update_face_colors(
+                indices, self._current_face_color
+            )
             self.events.face_color()
             self._update_thumbnail()
         self.events.current_face_color()
@@ -2121,6 +2126,7 @@ class Shapes(Layer):
                     data_indices=(-1,),
                     vertex_indices=((),),
                 )
+                self.events.features()
 
     def _init_shapes(
         self,
@@ -2773,6 +2779,7 @@ class Shapes(Layer):
                 ),
                 vertex_indices=((),),
             )
+            self.events.features()
         self.selected_data.clear()
         self._finish_drawing()
 
@@ -3107,6 +3114,7 @@ class Shapes(Layer):
             )
 
             self.move_to_front()
+            self.events.features()
 
     def to_masks(self, mask_shape=None):
         """Return an array of binary masks, one for each shape.

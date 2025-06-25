@@ -196,7 +196,7 @@ jobs:
   combine-artifacts:
     runs-on: ubuntu-latest
     needs: benchmark
-    if: always()
+    if: always() && needs.benchmark.result != 'skipped'
     steps:
       - name: Download artifact
         uses: actions/download-artifact@v4

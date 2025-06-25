@@ -10,7 +10,7 @@ anyio==4.9.0
     # via
     #   starlette
     #   watchfiles
-app-model==0.3.1
+app-model==0.4.0
     # via napari (pyproject.toml)
 appdirs==1.4.4
     # via
@@ -39,7 +39,7 @@ build==1.2.2.post1
     # via npe2
 cachey==0.2.1
     # via napari (pyproject.toml)
-certifi==2025.4.26
+certifi==2025.6.15
     # via
     #   napari (pyproject.toml)
     #   requests
@@ -65,7 +65,7 @@ comm==0.2.2
     # via ipykernel
 contourpy==1.3.2
     # via matplotlib
-coverage==7.8.2
+coverage==7.9.1
     # via
     #   napari (pyproject.toml)
     #   pytest-cov
@@ -113,7 +113,7 @@ flexcache==0.3
     # via pint
 flexparser==0.4
     # via pint
-fonttools==4.58.2
+fonttools==4.58.4
     # via matplotlib
 freetype-py==2.5.1
     # via vispy
@@ -136,7 +136,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.135.4
+hypothesis==6.135.14
     # via napari (pyproject.toml)
 idna==3.10
     # via
@@ -258,7 +258,7 @@ mouseinfo==0.1.3
     # via pyautogui
 mpmath==1.3.0
     # via sympy
-msgpack==1.1.0
+msgpack==1.1.1
     # via distributed
 myst-nb==1.2.0
     # via napari (pyproject.toml)
@@ -293,7 +293,7 @@ networkx==3.4.2
     #   torch
 nibabel==5.3.2
     # via nilearn
-nilearn==0.11.1
+nilearn==0.12.0
     # via napari (pyproject.toml)
 npe2==0.7.8
     # via
@@ -424,6 +424,7 @@ platformdirs==4.3.8
 pluggy==1.6.0
     # via
     #   pytest
+    #   pytest-cov
     #   pytest-qt
 pooch==1.8.2
     # via
@@ -452,7 +453,7 @@ pyautogui==0.9.54
     # via napari (pyproject.toml)
 pyconify==0.2.1
     # via superqt
-pydantic==2.11.5
+pydantic==2.11.7
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
@@ -469,7 +470,7 @@ pydeps==3.0.1
     # via napari (pyproject.toml)
 pygetwindow==0.0.9
     # via pyautogui
-pygments==2.19.1
+pygments==2.19.2
     # via
     #   napari (pyproject.toml)
     #   accessible-pygments
@@ -515,7 +516,7 @@ pyside6-essentials==6.4.2
     # via
     #   pyside6
     #   pyside6-addons
-pytest==8.4.0
+pytest==8.4.1
     # via
     #   napari (pyproject.toml)
     #   pytest-cov
@@ -523,7 +524,7 @@ pytest==8.4.0
     #   pytest-metadata
     #   pytest-pretty
     #   pytest-qt
-pytest-cov==6.1.1
+pytest-cov==6.2.1
     # via -r resources/constraints/version_denylist.txt
 pytest-json-report==1.5.0
     # via -r resources/constraints/version_denylist.txt
@@ -557,7 +558,7 @@ pyyaml==6.0.2
     #   npe2
     #   sphinx-external-toc
     #   sphinxcontrib-mermaid
-pyzmq==26.4.0
+pyzmq==27.0.0
     # via
     #   ipykernel
     #   jupyter-client
@@ -686,11 +687,11 @@ sqlalchemy==2.0.41
     # via jupyter-cache
 stack-data==0.6.3
     # via ipython
-starlette==0.47.0
+starlette==0.47.1
     # via sphinx-autobuild
 stdlib-list==0.11.1
     # via pydeps
-superqt==0.7.3
+superqt==0.7.5
     # via
     #   napari (pyproject.toml)
     #   magicgui
@@ -775,6 +776,7 @@ typing-extensions==4.14.0
     #   referencing
     #   rich
     #   sqlalchemy
+    #   starlette
     #   superqt
     #   torch
     #   typer
@@ -786,7 +788,7 @@ tzdata==2025.2
     # via pandas
 uc-micro-py==1.0.3
     # via linkify-it-py
-urllib3==2.4.0
+urllib3==2.5.0
     # via
     #   distributed
     #   requests
@@ -798,7 +800,7 @@ vispy==0.15.2
     # via
     #   napari (pyproject.toml)
     #   napari-svg
-watchfiles==1.0.5
+watchfiles==1.1.0
     # via sphinx-autobuild
 wcwidth==0.2.13
     # via prompt-toolkit
@@ -808,7 +810,7 @@ wrapt==1.17.2
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
-xarray==2025.4.0
+xarray==2025.6.1
     # via napari (pyproject.toml)
 zarr==2.18.3
     # via

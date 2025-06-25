@@ -584,6 +584,7 @@ class Labels(ScalarFieldBase):
         self._update_dims()
         self.events.data(value=self.data)
         self._reset_editable()
+        self.events.features()
 
     @property
     def features(self):
