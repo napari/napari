@@ -130,7 +130,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.135.14
+hypothesis==6.135.15
     # via napari (pyproject.toml)
 idna==3.10
     # via
@@ -324,7 +324,7 @@ numpy==2.2.6
     #   vispy
     #   xarray
     #   zarr
-numpydoc==1.8.0
+numpydoc==1.9.0
     # via napari (pyproject.toml)
 nvidia-cublas-cu12==12.6.4.1
     # via
@@ -676,9 +676,7 @@ superqt==0.7.5
 sympy==1.14.0
     # via torch
 tabulate==0.9.0
-    # via
-    #   jupyter-cache
-    #   numpydoc
+    # via jupyter-cache
 tblib==3.1.0
     # via distributed
 tensorstore==0.1.75
