@@ -33,7 +33,7 @@ babel==2.17.0
     #   sphinx
 beautifulsoup4==4.13.4
     # via pydata-sphinx-theme
-bermuda==0.1.4
+bermuda==0.1.5
     # via napari (pyproject.toml)
 build==1.2.2.post1
     # via npe2
