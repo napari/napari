@@ -20,14 +20,8 @@ def _check_installation_path():  # pragma: no cover
     Check if napari is present in site-packages. If napari is installed in editable mode,
     notify the user of a the conflict that napari is also in site-packages.
     """
-    import os
-    import sys
     from pathlib import Path
 
-    if os.environ.get('CI', ''):
-        # Skip the check during testing
-        # we need to move to src layout to fix this
-        return
     napari_installation_path = Path(__file__).absolute().parent.parent
     if napari_installation_path.name == 'site-packages':
         # napari is installed in non-editable mode
@@ -35,21 +29,22 @@ def _check_installation_path():  # pragma: no cover
 
     import numpy as np
 
-    # Use numpy location to determine site packages path
+    # Use numpy location to determine a site-packages path
     site_packages_path = Path(np.__file__).absolute().parent.parent
     if site_packages_path.name != 'site-packages':
         # numpy is not installed in site-packages
         return
 
     napari_site_packages_path = site_packages_path / 'napari'
-    if problematic_napari_path.exists():
-        print(  # noqa: T201
-            f'Found a napari directory: {problematic_napari_path}, '
+    if napari_site_packages_path.exists():
+        text = (
+            f'Found a napari directory: {napari_site_packages_path}, '
             'but napari is installed in editable mode. '
-            'Please remove napari directory from site-packages.',
-            file=sys.stderr,
+            'Please remove napari directory from site-packages.'
         )
-        raise RuntimeError('Mix of local and non local installation')
+        raise RuntimeError(
+            f'Mix of local and non local installation detected.\n{text}'
+        )
 
 
 _check_installation_path()
