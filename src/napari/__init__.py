@@ -35,12 +35,13 @@ def _check_installation_path():  # pragma: no cover
 
     import numpy as np
 
+    # Use numpy location to determine site packages path
     site_packages_path = Path(np.__file__).absolute().parent.parent
     if site_packages_path.name != 'site-packages':
         # numpy is not installed in site-packages
         return
 
-    problematic_napari_path = site_packages_path / 'napari'
+    napari_site_packages_path = site_packages_path / 'napari'
     if problematic_napari_path.exists():
         print(  # noqa: T201
             f'Found a napari directory: {problematic_napari_path}, '
