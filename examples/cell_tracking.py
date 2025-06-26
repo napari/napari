@@ -18,7 +18,6 @@ import pooch
 import tifffile
 
 import napari
-from napari import Viewer
 
 ###############################################################################
 # Download the data
