@@ -288,18 +288,19 @@ class Surface(IntensityVisualizationMixin, Layer):
                     length=len(data),
                 )
             )
-        self._vertices = data[0]
-        self._faces = data[1]
-        if len(data) == 3:
-            self._vertex_values = data[2]
-        else:
-            self._vertex_values = np.ones(len(self._vertices))
 
         self._feature_table = _FeatureTable.from_layer(
             features=features,
             feature_defaults=feature_defaults,
             num_data=len(data[0]),
         )
+
+        self._vertices = data[0]
+        self._faces = data[1]
+        if len(data) == 3:
+            self._vertex_values = data[2]
+        else:
+            self._vertex_values = np.ones(len(self._vertices))
 
         self._texture = texture
         self._texcoords = texcoords
@@ -323,7 +324,9 @@ class Surface(IntensityVisualizationMixin, Layer):
         if contrast_limits is not None:
             self._contrast_limits_range = contrast_limits
         else:
-            self._contrast_limits_range = calc_data_range(self._vertex_values)
+            self._contrast_limits_range = calc_data_range(
+                self.features['vertex_values'].values
+            )
 
         self._contrast_limits = self._contrast_limits_range
         self.colormap = colormap
@@ -353,15 +356,19 @@ class Surface(IntensityVisualizationMixin, Layer):
         self.normals = normals
 
     def _calc_data_range(self, mode='data'):
-        return calc_data_range(self.vertex_values)
+        return calc_data_range(self.features['vertex_values'])
 
     @property
     def dtype(self) -> np.dtype:
-        return self.vertex_values.dtype
+        return self.features['vertex_values'].dtype
 
     @property
     def data(self):
-        return (self.vertices, self.faces, self.vertex_values)
+        return (
+            self.vertices,
+            self.faces,
+            self.features['vertex_values'].values,
+        )
 
     @data.setter
     def data(self, data):
@@ -376,9 +383,9 @@ class Surface(IntensityVisualizationMixin, Layer):
         self._vertices = data[0]
         self._faces = data[1]
         if len(data) == 3:
-            self._vertex_values = data[2]
+            self.features['vertex_values'] = data[2]
         else:
-            self._vertex_values = np.ones(len(self._vertices))
+            self.features['vertex_values'] = np.ones(len(self._vertices))
 
         self._update_dims()
         self.events.data(value=self.data)
@@ -402,7 +409,7 @@ class Surface(IntensityVisualizationMixin, Layer):
 
     @property
     def vertex_values(self) -> np.ndarray:
-        return self._vertex_values
+        return self.features['vertex_values']
 
     @vertex_values.setter
     def vertex_values(self, vertex_values: np.ndarray) -> None:
@@ -410,7 +417,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         if vertex_values is None:
             vertex_values = np.ones(len(self._vertices))
 
-        self._vertex_values = vertex_values
+        self.features['vertex_values'] = vertex_values
 
         self._update_dims()
         self.events.data(value=self.data)
