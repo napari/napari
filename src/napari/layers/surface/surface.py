@@ -298,9 +298,9 @@ class Surface(IntensityVisualizationMixin, Layer):
         self._vertices = data[0]
         self._faces = data[1]
         if len(data) == 3:
-            self._vertex_values = data[2]
+            self.features['vertex_values'] = data[2]
         else:
-            self._vertex_values = np.ones(len(self._vertices))
+            self.features['vertex_values'] = np.ones(len(self._vertices))
 
         self._texture = texture
         self._texcoords = texcoords
