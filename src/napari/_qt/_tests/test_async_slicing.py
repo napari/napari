@@ -105,6 +105,12 @@ def test_async_slice_multiscale_image_on_pan(make_napari_viewer, qtbot, rng):
     image = Image(data)
     vispy_image = setup_viewer_for_async_slicing(viewer, image)
 
+    # Force the image to be at the lower resolution, with #7870 this behavior
+    # changed so that initial zoom was high, resulting in data_level=0.
+    # Likely due to better sequencing of async slicing.
+    viewer.camera.zoom = 0.1
+    viewer.window._qt_viewer.canvas.on_draw(None)
+
     # Check that we're initially slicing the middle of the first dimension
     # over the whole of lowest resolution image.
     assert viewer.dims.not_displayed == (0,)
@@ -126,6 +132,12 @@ def test_async_slice_multiscale_image_on_zoom(qtbot, make_napari_viewer, rng):
     data = [rng.random((4, 8, 10)), rng.random((2, 4, 5))]
     image = Image(data)
     vispy_image = setup_viewer_for_async_slicing(viewer, image)
+
+    # Force the image to be at the lower resolution, with #7870 this behavior
+    # changed so that initial zoom was high, resulting in data_level=0.
+    # Likely due to better sequencing of async slicing.
+    viewer.camera.zoom = 0.1
+    viewer.window._qt_viewer.canvas.on_draw(None)
 
     # Check that we're initially slicing the middle of the first dimension
     # over the whole of lowest resolution image.

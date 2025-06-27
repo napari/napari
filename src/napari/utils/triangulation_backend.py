@@ -5,6 +5,8 @@ If `set_backend` is used nex to settings, the state of the settings
 may be inconsistent with the backend used.
 """
 
+import sys
+
 from napari.utils.compat import StrEnum
 
 
@@ -74,10 +76,31 @@ def set_backend(backend: TriangulationBackend) -> TriangulationBackend:
     """
     from napari.layers.shapes._accelerated_triangulate_dispatch import (
         _set_numba,
+        _set_warmup,
     )
     from napari.layers.shapes._shapes_models import shape
 
+    bermuda_loaded = 'bermuda' in sys.modules
+    partsegcore_loaded = 'PartSegCore_compiled_backend' in sys.modules
+
+    any_compiled_loaded = bermuda_loaded or partsegcore_loaded
+    # triangulation do not contain utils for edge triangulation
+
+    need_numba_warmup = (
+        backend == TriangulationBackend.numba
+        or (
+            backend == TriangulationBackend.fastest_available
+            and not any_compiled_loaded
+        )
+        or (backend == TriangulationBackend.bermuda and not bermuda_loaded)
+        or (
+            backend == TriangulationBackend.partsegcore
+            and not partsegcore_loaded
+        )
+    )
+
     _set_numba(backend != TriangulationBackend.pure_python)
+    _set_warmup(need_numba_warmup)
 
     prev = shape.TRIANGULATION_BACKEND
 

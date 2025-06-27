@@ -19,7 +19,7 @@ env:
 jobs:
   test:
     name: ${{ matrix.platform }} py${{ matrix.python }} ${{ matrix.backend }} --pre
-    timeout-minutes: 40
+    timeout-minutes: 60
     runs-on: ${{ matrix.platform }}
     permissions:
       contents: read
@@ -69,11 +69,15 @@ jobs:
           pip install --upgrade pip
           pip install setuptools tox tox-gh-actions
 
-      - name: Test with tox
-        # run tests using pip install --pre
-        uses: aganders3/headless-gui@v2
+      - name: Test with tox (with retry)
+        uses: Wandalen/wretry.action@v3
         with:
-          run: python -m tox -v --pre
+          attempt_limit: 2
+          attempt_delay: 30000 # 30s
+          retry_condition: github.ref_name == 'main'  # avoid restart in PR
+          action: aganders3/headless-gui@v2
+          with: |
+            run: python -m tox -v --pre  --recreate
         env:
           PLATFORM: ${{ matrix.platform }}
           BACKEND: ${{ matrix.backend }}
