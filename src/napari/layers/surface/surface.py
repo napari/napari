@@ -299,12 +299,12 @@ class Surface(IntensityVisualizationMixin, Layer):
         self._faces = data[1]
         if len(data) == 3:
             self.features['vertex_values'] = data[2]
+            vertex_colors = 'vertex_values'
         else:
             self.features['vertex_values'] = np.ones(len(self._vertices))
 
         self._texture = texture
         self._texcoords = texcoords
-        self._vertex_colors = vertex_colors
 
         color_properties = (
             self._feature_table.properties()
