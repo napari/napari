@@ -570,7 +570,6 @@ class QtViewerButtons(QFrame):
 
         stride_help_msg = trans._(
             'Number of layers to place in each grid viewbox before moving on to the next viewbox.\n'
-            'The default ordering is to place the most visible layer in the top left corner of the grid.\n'
             'A negative stride will cause the order in which the layers are placed in the grid to be reversed.\n'
             '0 is not a valid entry.'
         )
