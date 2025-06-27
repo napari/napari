@@ -575,9 +575,9 @@ class QtViewerButtons(QFrame):
         )
 
         spacing_help_msg = trans._(
-            'Spacing between grid viewboxes.\n'
-            'If below 1, interpreted as percentage of the viewbox size, otherwise interpreted as screen pixels.\n'
-            '0 has the layers touching, positive values will space the grid positions apart.'
+            'The amount of spacing between grid viewboxes.\n'
+            'If between 0 and 1, it is interpreted as a proportion of the size of the viewboxes.\n'
+            'If equal or greater than 1, it is interpreted as screen pixels.'
         )
 
         stride_min = self.viewer.grid.__fields__['stride'].type_.ge
