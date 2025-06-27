@@ -129,7 +129,7 @@ optional = [
     "triangle",
 ]
 bermuda = [
-    "bermuda>=0.1.4",
+    "bermuda>=0.1.5",
 ]
 partsegcore = [
     "PartSegCore-compiled-backend>=0.15.11",
