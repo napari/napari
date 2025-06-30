@@ -1427,7 +1427,12 @@ def test_viewer_drag_to_zoom(qt_viewer, qtbot):
 
     # Simulate drag to zoom
     canvas._scene_canvas.events.mouse_move(
-        pos=(100, 100), modifiers=('Alt',), button=0, press_event=True
+        pos=(100, 100),
+        modifiers=('Alt',),
+        button=0,
+        press_event=MouseEvent(
+            pos=(0, 0), modifiers=('Alt',), button=0, type='mouse_press'
+        ),
     )
     qtbot.wait(10)
     assert viewer._zoom_box.visible is True, (
