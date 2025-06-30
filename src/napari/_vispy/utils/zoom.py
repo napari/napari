@@ -49,22 +49,19 @@ def calculate_zoom(
     viewer: ViewerModel,
 ) -> tuple[float, float, float, float]:
     """Calculate zoom for specified region."""
-    _, _, _, total_size = viewer._get_scene_parameters()
+    extent, scene_size, _ = viewer._get_scene_parameters()
 
     # calculate the center of the rectangle
     mins, maxs = _get_zoombox_extents(data_positions, viewer.dims.displayed)
     center, spread = _get_zoombox_center_and_size(mins, maxs)
 
     # calculate average zoom based on the size of the rectangle
-    zoom = np.min(total_size / spread)
+    zoom = np.min(scene_size / spread)
     scale_factor = viewer._get_scale_factor(0.05)
     if viewer.dims.ndisplay == 2:
-        native_zoom = viewer._get_2d_camera_zoom(total_size, scale_factor)
-
+        native_zoom = viewer._get_2d_camera_zoom(scene_size, scale_factor)
     else:
-        native_zoom = viewer._get_3d_camera_zoom(
-            np.vstack((mins, maxs)), spread, scale_factor
-        )
+        native_zoom = viewer._get_3d_camera_zoom(extent, scale_factor)
 
     # handle 3-D display with 2-D data and 2-D display with N-D data
     if len(center) == 3:
