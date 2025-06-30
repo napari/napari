@@ -1228,6 +1228,9 @@ class QtViewer(QSplitter):
         if self._console is not None:
             self.console.close()
         self.dockConsole.deleteLater()
+        if self._qdev is not None:
+            self._dockQDev.deleteLater()
+            self._qdev.close()
         event.accept()
 
 
