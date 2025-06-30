@@ -173,6 +173,7 @@ class QtLayerControls(QFrame):
             self.projectionComboBox.currentTextChanged.connect(
                 self.changeProjectionMode
             )
+            self._on_projection_mode_change()
 
         if self.__class__ == QtLayerControls:
             # This base class is only instantiated in tests. When it's not a
