@@ -1238,7 +1238,7 @@ class ShapeList:
                         self._mesh.vertices_centers[shape_range.stop :],
                     ]
                 )
-                self._mesh._vertices_offsets = np.concatenate(
+                self._mesh.vertices_offsets = np.concatenate(
                     [
                         self._mesh.vertices_offsets[: shape_range.start],
                         np.zeros(
