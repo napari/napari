@@ -1114,7 +1114,10 @@ def test_switch_color_mode(attribute):
     # transitioning to colormap should raise a warning
     # because there isn't an border color property yet and
     # the first property in points.properties is being automatically selected
-    with pytest.warns(UserWarning):
+    with pytest.warns(
+        UserWarning,
+        match='color_property was not set, setting to: point_truthiness',
+    ):
         setattr(layer, f'{attribute}_color_mode', 'colormap')
     color_manager = getattr(layer, f'_{attribute}')
     color_property_name = color_manager.color_properties.name
@@ -1156,7 +1159,16 @@ def test_colormap_with_categorical_properties(attribute):
     properties = {'point_type': _make_cycled_properties(['A', 'B'], shape[0])}
     layer = Points(data, properties=properties)
 
-    with pytest.raises(TypeError), pytest.warns(UserWarning):
+    with (
+        pytest.raises(
+            TypeError,
+            match='selected property must be numeric to use ColorMode.COLORMAP',
+        ),
+        pytest.warns(
+            UserWarning,
+            match='_color_property was not set, setting to: point_type',
+        ),
+    ):
         setattr(layer, f'{attribute}_color_mode', 'colormap')
 
 
@@ -1907,7 +1919,9 @@ def test_set_face_color_mode_after_set_properties():
 
     # Initially the color_mode is DIRECT, which means that the face ColorManager
     # has no color_properties, so the first property is used with a warning.
-    with pytest.warns(UserWarning):
+    with pytest.warns(
+        UserWarning, match='_face_color_property was not set, setting to: cat'
+    ):
         points.face_color_mode = 'cycle'
 
     first_property_key, first_property_values = next(

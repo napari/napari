@@ -172,6 +172,26 @@ def test_features_table_selection_labels(qtbot):
     assert layer.selected_label == 2
 
 
+def test_features_table_selection_shapes(qtbot):
+    v = ViewerModel()
+    features = pd.DataFrame(
+        {'shape_type': ['rectangle', 'ellipse'], 'value': [1, 2]}
+    )
+    data = [
+        np.array([[0, 0], [1, 1], [1, 0], [0, 1]]),
+        np.array([[2, 2], [3, 3], [3, 2], [2, 3]]),
+    ]
+    layer = v.add_shapes(data, features=features)
+
+    w = FeaturesTable(v)
+    qtbot.add_widget(w)
+
+    assert layer.selected_data == set()
+
+    w.table.selectRow(1)
+    assert layer.selected_data == {1}
+
+
 def test_features_table_edit(qtbot):
     v = ViewerModel()
     w = FeaturesTable(v)

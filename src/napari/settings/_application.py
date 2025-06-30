@@ -24,7 +24,10 @@ from napari.utils.translations import trans
 GridStride = conint(ge=-50, le=50, ne=0)
 GridWidth = conint(ge=-1, ne=0)
 GridHeight = conint(ge=-1, ne=0)
-GridSpacing = confloat(ge=-1.0, le=1.0, step=0.05)
+# we could use a smaller or greater 'le' for spacing,
+# this is just meant to be a somewhat reasonable upper limit,
+# as even on a 4k monitor a 2x2 grid will break calculation with >1300 spacing
+GridSpacing = confloat(ge=0, le=1500, step=5)
 
 _DEFAULT_MEM_FRACTION = 0.25
 MAX_CACHE = virtual_memory().total * 0.5 / 1e9
@@ -205,9 +208,13 @@ class ApplicationSettings(EventedModel):
     )
 
     grid_spacing: GridSpacing = Field(  # type: ignore [valid-type]
-        default=0.0,
+        default=0,
         title=trans._('Grid Spacing'),
-        description=trans._('Proportional spacing between grid layers.'),
+        description=trans._(
+            'The amount of spacing inbetween grid viewboxes.'
+            '\nIf between 0 and 1, it is interpreted as a proportion of the size of the viewboxes.'
+            '\nIf equal or greater than 1, it is interpreted as screen pixels.'
+        ),
     )
 
     confirm_close_window: bool = Field(
