@@ -122,7 +122,7 @@ greenlet==3.2.3
     # via sqlalchemy
 h11==0.16.0
     # via uvicorn
-h5netcdf==1.6.1
+h5netcdf==1.6.3
     # via napari (pyproject.toml)
 h5py==3.14.0
     # via h5netcdf
@@ -130,7 +130,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.135.14
+hypothesis==6.135.17
     # via napari (pyproject.toml)
 idna==3.10
     # via
@@ -215,7 +215,7 @@ locket==1.0.0
     # via
     #   distributed
     #   partd
-lxml==5.4.0
+lxml==6.0.0
     # via
     #   napari (pyproject.toml)
     #   lxml-html-clean
@@ -324,7 +324,7 @@ numpy==2.2.6
     #   vispy
     #   xarray
     #   zarr
-numpydoc==1.8.0
+numpydoc==1.9.0
     # via napari (pyproject.toml)
 nvidia-cublas-cu12==12.6.4.1
     # via
@@ -676,9 +676,7 @@ superqt==0.7.5
 sympy==1.14.0
     # via torch
 tabulate==0.9.0
-    # via
-    #   jupyter-cache
-    #   numpydoc
+    # via jupyter-cache
 tblib==3.1.0
     # via distributed
 tensorstore==0.1.75
@@ -759,7 +757,7 @@ urllib3==2.5.0
     # via
     #   distributed
     #   requests
-uvicorn==0.34.3
+uvicorn==0.35.0
     # via sphinx-autobuild
 virtualenv==20.31.2
     # via napari (pyproject.toml)
