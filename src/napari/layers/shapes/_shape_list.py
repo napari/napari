@@ -430,6 +430,12 @@ class ShapeList:
     def _vertices_range(self, shape_index: int) -> range:
         """Return the range of vertices for a given shape index."""
         start = self._vertices_index[shape_index]
+        shape = self.shapes[shape_index]
+        return range(start, start + shape.data_displayed.shape[0])
+
+    def _vertices_range_available(self, shape_index: int) -> range:
+        """Return the available range of vertices for a given shape index."""
+        start = self._vertices_index[shape_index]
         if shape_index + 1 < len(self._vertices_index):
             end = self._vertices_index[shape_index + 1]
         else:
@@ -439,6 +445,12 @@ class ShapeList:
     def _mesh_vertices_range(self, shape_index: int) -> range:
         """Return the range of mesh vertices for a given shape index."""
         start = self._mesh.vertices_index[shape_index]
+        shape = self.shapes[shape_index]
+        return range(start, start + shape.vertices_count)
+
+    def _mesh_vertices_range_available(self, shape_index: int) -> range:
+        """Return the available range of mesh vertices for a given shape index."""
+        start = self._mesh.vertices_index[shape_index]
         if shape_index + 1 < len(self._mesh.vertices_index):
             end = self._mesh.vertices_index[shape_index + 1]
         else:
@@ -447,6 +459,12 @@ class ShapeList:
 
     def _mesh_triangles_range(self, shape_index: int) -> range:
         """Return the range of mesh triangles for a given shape index."""
+        start = self._mesh.triangles_index[shape_index]
+        shape = self.shapes[shape_index]
+        return range(start, start + shape.triangles_count)
+
+    def _mesh_triangles_range_available(self, shape_index: int) -> range:
+        """Return the available range of mesh triangles for a given shape index."""
         start = self._mesh.triangles_index[shape_index]
         if shape_index + 1 < len(self._mesh.triangles_index):
             end = self._mesh.triangles_index[shape_index + 1]
@@ -482,15 +500,6 @@ class ShapeList:
             + shape.face_triangles_count
         )
         return range(start, start + shape.edge_triangles_count)
-
-    def displayed_vertices_range(self, shape_index: int) -> range:
-        """Return the range of displayed vertices for a given shape index."""
-        start = self.displayed_vertices[shape_index]
-        if shape_index + 1 < len(self._vertices_index):
-            end = self._vertices_index[shape_index + 1]
-        else:
-            end = len(self.displayed_vertices)
-        return range(start, end)
 
     @contextmanager
     def batched_updates(self) -> Generator[None, None, None]:
@@ -702,6 +711,18 @@ class ShapeList:
         ][triangle_ranges]
 
         self.displayed_vertices = self._vertices[vertices_range]
+        self.displayed_triangles_to_shape_num = np.empty(
+            self.displayed_vertices.shape[0], dtype=IndexDtype
+        )
+        start = 0
+        for i in disp_indices:
+            r = self._vertices_range(i)
+
+            self.displayed_triangles_to_shape_num[
+                start : start + (r.stop - r.start)
+            ] = i
+            start += r.stop - r.start
+
         self.displayed_index = self._vertices_index[disp_indices]
 
     def add(
@@ -1044,7 +1065,7 @@ class ShapeList:
 
     def _update_vertices(self, index: int) -> None:
         shape = self.shapes[index]
-        vertices_range = self._vertices_range(index)
+        vertices_range = self._vertices_range_available(index)
         curr_vert_count = vertices_range.stop - vertices_range.start
         if shape.data_displayed.shape[0] == curr_vert_count:
             # If the number of vertices is the same, just update the data
@@ -1052,7 +1073,8 @@ class ShapeList:
         elif shape.data_displayed.shape[0] < curr_vert_count:
             # To avoid relocation, we add first point few times for padding.
             new_range = range(
-                vertices_range.start, vertices_range.start + curr_vert_count
+                vertices_range.start,
+                vertices_range.start + shape.data_displayed.shape[0],
             )
             padding_range = range(new_range.stop, vertices_range.stop)
             self._vertices[new_range] = shape.data_displayed
@@ -1077,7 +1099,7 @@ class ShapeList:
             Location in list of the shape to be changed.
         """
         shape = self.shapes[index]
-        triangles_range = self._mesh_triangles_range(index)
+        triangles_range = self._mesh_triangles_range_available(index)
         current_triangles_count = triangles_range.stop - triangles_range.start
         new_triangle_count = (
             shape.face_triangles_count + shape.edge_triangles_count
@@ -1152,14 +1174,14 @@ class ShapeList:
             expectation is that this shape is being immediately added back to the
             list using `add_shape`.
         """
-        indices = self._vertices_range(index)
+        indices = self._vertices_range_available(index)
         self._vertices = np.delete(self._vertices, indices, axis=0)
         diff = indices.stop - indices.start
         self._vertices_index = np.delete(self._vertices_index, index)
         self._vertices_index[index:] -= diff
 
         # Remove triangles
-        indices = self._mesh_triangles_range(index)
+        indices = self._mesh_triangles_range_available(index)
         self._mesh.triangles = np.delete(self._mesh.triangles, indices, axis=0)
         self._mesh.triangles_colors = np.delete(
             self._mesh.triangles_colors, indices, axis=0
@@ -1172,7 +1194,7 @@ class ShapeList:
         self._mesh.triangles[indices.start :] -= diff
 
         # Remove vertices
-        indices = self._mesh_vertices_range(index)
+        indices = self._mesh_vertices_range_available(index)
         self._mesh.vertices = np.delete(self._mesh.vertices, indices, axis=0)
         self._mesh.vertices_centers = np.delete(
             self._mesh.vertices_centers, indices, axis=0
@@ -1218,7 +1240,7 @@ class ShapeList:
         """
         shape = self.shapes[index]
         if edge and face:
-            shape_range = self._mesh_vertices_range(index)
+            shape_range = self._mesh_vertices_range_available(index)
             current_range = shape_range.stop - shape_range.start
             if current_range < shape.vertices_count:
                 # need to allocate_more space
@@ -1334,6 +1356,7 @@ class ShapeList:
                 z_index=cur_shape.z_index,
                 dims_order=cur_shape.dims_order,
             )
+            self.shapes[index] = shape
         else:
             shape = self.shapes[index]
             shape.data = data
@@ -1625,7 +1648,7 @@ class ShapeList:
 
         triangles = self._mesh.vertices[self._mesh.displayed_triangles]
         intersects = triangles_intersect_box(triangles, corners)
-        shapes = self._mesh.displayed_triangles_to_shape_index[intersects, 0]
+        shapes = self._mesh.displayed_triangles_to_shape_index[intersects]
         shapes = np.unique(shapes).tolist()
 
         return shapes

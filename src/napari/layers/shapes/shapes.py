@@ -2467,7 +2467,7 @@ class Shapes(Layer):
                 ]
                 vertices_range = np.r_[
                     tuple(
-                        self._data_view._vertices_range(i)
+                        self._data_view._vertices_range_available(i)
                         for i in disp_indices
                     )
                 ]
