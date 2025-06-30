@@ -465,7 +465,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     def _get_scene_parameters(
         self,
-    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Get the scene parameters for the current grid mode.
 
         Returns
