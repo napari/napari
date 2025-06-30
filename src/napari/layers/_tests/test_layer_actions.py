@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 import pint
 import pytest
@@ -298,7 +300,9 @@ def test_convert_layer(layer, type_):
     original_scale = layer.scale.copy()
     ll.append(layer)
     assert ll[0]._type_string != type_
-    _convert(ll, type_)
+    # ignore projection_mode warnings, tested below
+    with warnings.catch_warnings(action='ignore'):
+        _convert(ll, 'labels')
     if isinstance(layer, Shapes) or (
         type_ == 'labels'
         and isinstance(layer, Image)
