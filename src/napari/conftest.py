@@ -324,6 +324,7 @@ def qt_viewer_(qtbot, viewer_model, monkeypatch):
     original_dock_layer_controls = viewer.__class__.dockLayerControls.fget
     original_dock_console = viewer.__class__.dockConsole.fget
     original_dock_performance = viewer.__class__.dockPerformance.fget
+    original_dock_qdev = viewer.__class__.dockQDev.fget
 
     def hide_widget(widget):
         widget.hide()
@@ -384,6 +385,12 @@ def qt_viewer_(qtbot, viewer_model, monkeypatch):
             )
         return self._dockPerformance
 
+    def patched_dock_qdev(self):
+        if self._dockQDev is None:
+            self._dockQDev = original_dock_qdev(self)
+            qtbot.addWidget(self._dockQDev, before_close_func=hide_widget)
+        return self._dockQDev
+
     monkeypatch.setattr(
         viewer.__class__, 'controls', property(patched_controls)
     )
@@ -407,6 +414,9 @@ def qt_viewer_(qtbot, viewer_model, monkeypatch):
     )
     monkeypatch.setattr(
         viewer.__class__, 'dockPerformance', property(patched_dock_performance)
+    )
+    monkeypatch.setattr(
+        viewer.__class__, 'dockQDev', property(patched_dock_qdev)
     )
 
     qtbot.addWidget(viewer, before_close_func=hide_and_clear_qt_viewer)
