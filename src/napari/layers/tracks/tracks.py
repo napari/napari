@@ -181,7 +181,7 @@ class Tracks(Layer):
 
         self._track_colors: np.ndarray | None = None
         self._colormaps_dict = colormaps_dict or {}  # additional colormaps
-        self._color_by = color_by  # default color by ID
+        self._color_by = 'track_id'  # default color by ID
         self._colormap = colormap
 
         # use this to update shaders when the displayed dims change
@@ -201,6 +201,7 @@ class Tracks(Layer):
 
         # set the data, features, and graph
         self.data = data
+        self._color_by = color_by
         if properties is not None:
             self.properties = properties
         else:
@@ -228,7 +229,7 @@ class Tracks(Layer):
         else:
             maxs = np.max(self.data, axis=0)
             mins = np.min(self.data, axis=0)
-            extrema = np.vstack([mins, maxs])  # type: ignore[assignment]
+            extrema = np.vstack([mins, maxs])
         return extrema[:, 1:]
 
     def _get_ndim(self) -> int:

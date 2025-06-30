@@ -465,7 +465,7 @@ class Vectors(Layer):
             data[:, 1, :] = data[:, 0, :] + self.length * data[:, 1, :]
             maxs = np.max(data, axis=(0, 1))
             mins = np.min(data, axis=(0, 1))
-            extrema = np.vstack([mins, maxs])  # type: ignore[assignment]
+            extrema = np.vstack([mins, maxs])
         return extrema
 
     @property
@@ -736,7 +736,7 @@ class Vectors(Layer):
 
         self._view_indices = indices
         self._view_alphas = alphas
-        self._view_data = self.data[np.ix_(list(indices), [0, 1], disp)]  # type: ignore[assignment]
+        self._view_data = self.data[np.ix_(list(indices), [0, 1], disp)]
 
     def _update_thumbnail(self):
         """Update thumbnail with current vectors and colors."""

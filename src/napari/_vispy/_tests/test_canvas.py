@@ -1,3 +1,5 @@
+import numpy as np
+
 from napari.components.overlays import (
     BoundingBoxOverlay,
     CanvasOverlay,
@@ -11,13 +13,14 @@ def test_viewer_overlays(make_napari_viewer):
 
     for overlay in viewer._overlays.values():
         if isinstance(overlay, CanvasOverlay):
-            assert (
-                canvas._overlay_to_visual[overlay].node in canvas.view.children
+            assert all(
+                visual.node in canvas.view.children
+                for visual in canvas._overlay_to_visual[overlay]
             )
         else:
-            assert (
-                canvas._overlay_to_visual[overlay].node
-                in canvas.view.scene.children
+            assert all(
+                visual.node in canvas.view.scene.children
+                for visual in canvas._overlay_to_visual[overlay]
             )
 
     old_vispy_overlays = list(canvas._overlay_to_visual.values())
@@ -26,14 +29,14 @@ def test_viewer_overlays(make_napari_viewer):
     viewer._overlays['test'] = new_overlay
 
     assert new_overlay in canvas._overlay_to_visual
-    new_overlay_node = canvas._overlay_to_visual[new_overlay].node
+    new_overlay_node = canvas._overlay_to_visual[new_overlay][0].node
     assert new_overlay_node not in canvas.view.scene.children
     assert new_overlay_node in canvas.view.children
 
     # old visuals should be removed, as everything was recreated
     for old_ov in old_vispy_overlays:
-        assert old_ov.node not in canvas.view.scene.children
-        assert old_ov.node not in canvas.view.children
+        assert old_ov[0].node not in canvas.view.scene.children
+        assert old_ov[0].node not in canvas.view.children
 
     viewer._overlays.pop('test')
     assert new_overlay not in canvas._overlay_to_visual
@@ -89,3 +92,38 @@ def test_layer_overlays(make_napari_viewer):
     assert not canvas._layer_overlay_to_visual
     assert len(canvas.view.children) == view_children
     assert len(canvas.view.scene.children) == scene_children
+
+
+def test_grid_mode(make_napari_viewer):
+    viewer = make_napari_viewer(ndisplay=3)
+    canvas = viewer.window._qt_viewer.canvas
+
+    viewer.add_image(np.ones((10, 10, 10)))
+
+    angles = 10, 20, 30  # just some nonzero stuff
+    zoom = 1
+    viewer.camera.angles = angles
+    viewer.camera.zoom = zoom
+
+    canvas.on_draw(None)
+
+    for camera in (canvas.camera, *canvas.grid_cameras):
+        np.testing.assert_allclose(camera.angles, angles)
+        assert camera.zoom == zoom
+
+    # ensure that switching to grid maintains zoom and angles
+    viewer.grid.enabled = True
+
+    canvas.on_draw(None)
+
+    for camera in (canvas.camera, *canvas.grid_cameras):
+        np.testing.assert_allclose(camera.angles, angles)
+        assert camera.zoom == zoom
+
+    viewer.grid.enabled = False
+
+    canvas.on_draw(None)
+
+    for camera in (canvas.camera, *canvas.grid_cameras):
+        np.testing.assert_allclose(camera.angles, angles)
+        assert camera.zoom == zoom
