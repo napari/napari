@@ -1365,7 +1365,9 @@ class ShapeList:
         update: bool = True,
     ) -> None:
         """same as update_face_color() but for multiple indices/facecolors at once"""
-        if face_colors.ndim == 1:
+        if face_colors.ndim == 1 or (
+            face_colors.ndim == 2 and face_colors.shape[0] == 1
+        ):
             face_colors = repeat(face_colors)
 
         for i, color in zip(indices, face_colors, strict=False):
