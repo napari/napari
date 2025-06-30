@@ -1121,6 +1121,24 @@ class ShapeList:
             self._mesh.triangles_index[index + 1 :] += (
                 new_triangle_count - current_triangles_count
             )
+            # Update triangles colors
+            self._mesh.triangles_colors = np.concatenate(
+                [
+                    self._mesh.triangles_colors[: triangles_range.start],
+                    np.repeat(
+                        [self._face_color[index]],
+                        shape.face_triangles_count,
+                        axis=0,
+                    ),
+                    np.repeat(
+                        [self._edge_color[index]],
+                        shape.edge_triangles_count,
+                        axis=0,
+                    ),
+                    self._mesh.triangles_colors[triangles_range.stop :],
+                ]
+            )
+            self._update_z_order()
 
     def remove(self, index: int, renumber: bool = True) -> None:
         """Removes a single shape located at index.
