@@ -1199,6 +1199,49 @@ class ShapeList:
             faces and to update the underlying shape vertices
         """
         shape = self.shapes[index]
+        if edge and face:
+            shape_range = self._mesh_vertices_range(index)
+            current_range = shape_range.stop - shape_range.start
+            if current_range < shape.vertices_count:
+                # need to allocate_more space
+                self._mesh.vertices = np.concatenate(
+                    [
+                        self._mesh.vertices[: shape_range.start],
+                        shape._face_vertices,
+                        shape._edge_vertices,
+                        self._mesh.vertices[shape_range.stop :],
+                    ]
+                )
+                self._mesh.vertices_centers = np.concatenate(
+                    [
+                        self._mesh.vertices_centers[: shape_range.start],
+                        shape._face_vertices,
+                        shape._edge_vertices,
+                        self._mesh.vertices_centers[shape_range.stop :],
+                    ]
+                )
+                self._mesh._vertices_offsets = np.concatenate(
+                    [
+                        self._mesh.vertices_offsets[: shape_range.start],
+                        np.zeros(
+                            shape._face_vertices.shape,
+                            dtype=shape._face_vertices.dtype,
+                        ),
+                        shape._edge_offsets,
+                        self._mesh.vertices_offsets[shape_range.stop :],
+                    ]
+                )
+                diff = shape.vertices_count - current_range
+                self._mesh.vertices_index[index + 1 :] += diff
+                return
+            if current_range > shape.vertices_count:
+                zeros_range = range(
+                    shape_range.start + shape.vertices_count, shape_range.stop
+                )
+                self._mesh.vertices[zeros_range] = 0
+                self._mesh.vertices_centers[zeros_range] = 0
+                self._mesh.vertices_offsets[zeros_range] = 0
+
         if edge:
             indices = self._mesh_vertices_edge_range(index)
             self._mesh.vertices[indices] = (
