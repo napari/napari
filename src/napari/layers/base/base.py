@@ -1016,6 +1016,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             data=extent_data,
             world=extent_world,
             step=abs(data_to_world.scale),
+            units=self.units,
         )
 
     @cached_property
@@ -1038,6 +1039,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             data=extent_data,
             world=extent_world,
             step=abs(data_to_world.scale),
+            units=self.units,
         )
 
     def _clear_extent(self) -> None:
@@ -1269,7 +1271,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
                 data_displayed=True,
                 thumbnail=True,
                 highlight=True,
-                extent=True,
+                extent=False,
             )
 
     def _make_slice_input(
@@ -1283,7 +1285,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             # in this case, we assume all dims are displayed dimensions
             world_slice = _ThickNDSlice.make_full((np.nan,) * self.ndim)
         else:
-            world_slice = _ThickNDSlice.from_dims(dims)
+            world_slice = _ThickNDSlice.from_dims(dims, layer_units=self.units)
+
         order_array = (
             np.arange(world_ndim)
             if dims.order is None
