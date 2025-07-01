@@ -836,7 +836,9 @@ class QtViewer(QSplitter):
             Flag to indicate whether flash animation should be shown after
             the screenshot was captured.
         """
-        img = self.canvas.screenshot()
+
+        with self.viewer._layer_slicer.force_sync():
+            img = self.canvas.screenshot()
         if flash:
             from napari._qt.utils import add_flash_animation
 
