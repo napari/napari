@@ -476,6 +476,7 @@ class Surface(IntensityVisualizationMixin, Layer):
     @gamma.setter
     def gamma(self, gamma: float) -> None:
         self._gamma = gamma
+        self.events.gamma()
         self.refresh()
 
     @property
