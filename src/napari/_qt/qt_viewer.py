@@ -837,8 +837,8 @@ class QtViewer(QSplitter):
             the screenshot was captured.
         """
 
-        with self.viewer._layer_slicer.force_sync():
-            img = self.canvas.screenshot()
+        self.viewer._layer_slicer.wait_until_idle(timeout=5)
+        img = self.canvas.screenshot()
         if flash:
             from napari._qt.utils import add_flash_animation
 
