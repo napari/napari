@@ -2747,7 +2747,6 @@ class Shapes(Layer):
         ----------
         indices : List[int]
             List of indices of shapes to remove from the layer.
-            If empty, no shapes will be removed.
         """
         to_remove = sorted(indices, reverse=True)
 

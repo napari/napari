@@ -2018,7 +2018,6 @@ class Points(Layer):
         ----------
         indices : List[int]
             List of indices of points to remove from the layer.
-            If empty, no points will be removed.
         """
         indices.sort()
         if len(indices):
