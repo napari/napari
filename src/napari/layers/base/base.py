@@ -400,8 +400,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         #   sample spacing.
         # 3. `physical2world`: An extra transform applied in world-coordinates that
         #   typically aligns this layer with another.
-        # 4. `world2grid`: An additional transform mapping world-coordinates
-        #   into a grid for looking at layers side-by-side.
         if scale is None:
             scale = [1] * ndim
         if translate is None:
@@ -423,7 +421,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
                     units=units,
                 ),
                 self._initial_affine,
-                Affine(np.ones(ndim), np.zeros(ndim), name='world2grid'),
             ]
         )
 
@@ -920,18 +917,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
     def _reset_affine(self) -> None:
         self.affine = self._initial_affine
-
-    @property
-    def _translate_grid(self) -> npt.NDArray:
-        """array: Factors to shift the layer by."""
-        return self._transforms['world2grid'].translate
-
-    @_translate_grid.setter
-    def _translate_grid(self, translate_grid: npt.NDArray) -> None:
-        if np.array_equal(self._translate_grid, translate_grid):
-            return
-        self._transforms['world2grid'].translate = np.array(translate_grid)
-        self.events.translate()
 
     def _update_dims(self) -> None:
         """Update the dimensionality of transforms and slices when data changes."""
@@ -2189,12 +2174,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
                 world=world,
             )
             coords_str, value_str = generate_layer_status_strings(
-                # position may be higher-dimensional due to other
-                # layers in the viewer, but self._translate_grid already
-                # has the correct dimensionality. We subtract translate_grid
-                # so that the coordinates are valid for the layer, regardless
-                # of grid display.
-                position[-self.ndim :] - self._translate_grid,
+                position[-self.ndim :],
                 value,
             )
         else:

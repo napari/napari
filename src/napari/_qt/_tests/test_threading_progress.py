@@ -35,12 +35,14 @@ def test_function_worker_nonzero_total_warns():
     def not_a_generator():
         return
 
-    with pytest.warns(RuntimeWarning):
-        thread_func = qthreading.thread_worker(
-            not_a_generator,
-            progress={'total': 2},
-            start_thread=False,
-        )
+    thread_func = qthreading.thread_worker(
+        not_a_generator,
+        progress={'total': 2},
+        start_thread=False,
+    )
+    with pytest.warns(
+        RuntimeWarning, match='worker is FunctionWorker and will not yield'
+    ):
         thread_func()
 
 

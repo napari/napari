@@ -431,9 +431,6 @@ def test_grid():
     assert viewer.grid.actual_shape(6) == (1, 1)
     assert viewer.grid.stride == 1
     assert viewer.grid.spacing == 0
-    translations = [layer._translate_grid for layer in viewer.layers]
-    expected_translations = np.zeros((6, 2))
-    np.testing.assert_allclose(translations, expected_translations)
 
     # enter grid view
     viewer.grid.enabled = True
@@ -441,41 +438,6 @@ def test_grid():
     assert viewer.grid.actual_shape(6) == (2, 3)
     assert viewer.grid.stride == 1
     assert viewer.grid.spacing == 0
-    translations = [layer._translate_grid for layer in viewer.layers]
-    expected_translations = [
-        [0, 0],
-        [0, 15],
-        [0, 30],
-        [15, 0],
-        [15, 15],
-        [15, 30],
-    ]
-    np.testing.assert_allclose(translations, expected_translations[::-1])
-
-    # test grid spacing, translation will be proportionally 0.1 larger: (0.1 * 15) = 16.5
-    viewer.grid.spacing = 0.1
-    assert viewer.grid.spacing == 0.1
-    translations = [layer._translate_grid for layer in viewer.layers]
-    expected_translations = [
-        [0, 0],
-        [0, 16.5],
-        [0, 33],
-        [16.5, 0],
-        [16.5, 16.5],
-        [16.5, 33],
-    ]
-    np.testing.assert_allclose(translations, expected_translations[::-1])
-    # reset spacing to make remaining translation calculations easier
-    viewer.grid.spacing = 0
-    # return to stack view
-    viewer.grid.enabled = False
-    assert not viewer.grid.enabled
-    assert viewer.grid.actual_shape(6) == (1, 1)
-    assert viewer.grid.stride == 1
-    assert viewer.grid.spacing == 0
-    translations = [layer._translate_grid for layer in viewer.layers]
-    expected_translations = np.zeros((6, 2))
-    np.testing.assert_allclose(translations, expected_translations)
 
     # reenter grid view with new stride
     viewer.grid.stride = -2
@@ -484,16 +446,6 @@ def test_grid():
     assert viewer.grid.actual_shape(6) == (2, 2)
     assert viewer.grid.stride == -2
     assert viewer.grid.spacing == 0
-    translations = [layer._translate_grid for layer in viewer.layers]
-    expected_translations = [
-        [0, 0],
-        [0, 0],
-        [0, 15],
-        [0, 15],
-        [15, 0],
-        [15, 0],
-    ]
-    np.testing.assert_allclose(translations, expected_translations)
 
 
 def test_add_remove_layer_dims_change():
@@ -1177,31 +1129,6 @@ def test_fit_to_view_2d_data_in_3d_view():
 
     np.testing.assert_allclose(viewer.camera.center, (0, 4.5, 9.5))
     assert viewer.camera.angles == (45, 30, 60)
-
-
-def test_fit_to_view_grid():
-    """Test grid view adjusts zoom appropriately."""
-    viewer = ViewerModel()
-    for _ in range(4):
-        viewer.add_image(np.random.random((10, 10)))
-
-    viewer.fit_to_view()
-    default_zoom = viewer.camera.zoom
-
-    # enable grid and reset view
-    viewer.grid.enabled = True
-    viewer.fit_to_view()
-    grid_zoom = viewer.camera.zoom
-
-    # check zoom is less with grid enabled
-    assert grid_zoom < default_zoom
-
-    # space grid apart, then reset view
-    viewer.grid.spacing = 0.2
-    viewer.fit_to_view()
-    spaced_grid_zoom = viewer.camera.zoom
-
-    assert spaced_grid_zoom < grid_zoom
 
 
 def test_fit_to_view_handles_no_layers():
