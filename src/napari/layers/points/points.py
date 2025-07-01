@@ -412,6 +412,7 @@ class Points(Layer):
         # Indices of selected points
         self._selected_data_stored = set()
         self._selected_data_history = set()
+        self._selected_data: Selection[int] = Selection()
         # Indices of selected points within the currently viewed slice
         self._selected_view = []
         # Index of hovered point
@@ -419,6 +420,8 @@ class Points(Layer):
         self._value_stored = None
         self._highlight_index = []
         self._highlight_box = None
+        self._mode = Mode.PAN_ZOOM
+        self._status = self.mode
 
         self._drag_start = None
         self._drag_normal = None
@@ -496,13 +499,6 @@ class Points(Layer):
         self._border_width_is_relative = False
         self._shown = np.empty(0).astype(bool)
 
-        # Indices of selected points
-        self._selected_data: Selection[int] = Selection()
-        self._selected_data_stored = set()
-        self._selected_data_history = set()
-        # Indices of selected points within the currently viewed slice
-        self._selected_view = []
-
         # The following point properties are for the new points that will
         # be added. For any given property, if a list is passed to the
         # constructor so each point gets its own value then the default
@@ -514,12 +510,6 @@ class Points(Layer):
         self.current_symbol = (
             np.asarray(symbol) if np.isscalar(symbol) else 'o'
         )
-
-        # Index of hovered point
-        self._value = None
-        self._value_stored = None
-        self._mode = Mode.PAN_ZOOM
-        self._status = self.mode
 
         color_properties = (
             self._feature_table.properties()
@@ -601,6 +591,7 @@ class Points(Layer):
         else:
             kwargs['action'] = ActionType.REMOVED
         self.events.data(**kwargs)
+        self.events.features()
 
     def _set_data(self, data: np.ndarray | None) -> None:
         """Set the .data array attribute, without emitting an event."""
@@ -2010,6 +2001,7 @@ class Points(Layer):
             vertex_indices=((),),
         )
         self.selected_data = set(np.arange(cur_points, len(self.data)))
+        self.events.features()
 
     def remove(self, indices: list[int]) -> None:
         """Removes any points at the given indices.
@@ -2105,6 +2097,7 @@ class Points(Layer):
                 data_indices=tuple(selection_indices),
                 vertex_indices=((),),
             )
+            self.events.features()
 
     def _set_drag_start(
         self,

@@ -24,7 +24,10 @@ from napari.utils.translations import trans
 GridStride = conint(ge=-50, le=50, ne=0)
 GridWidth = conint(ge=-1, ne=0)
 GridHeight = conint(ge=-1, ne=0)
-GridSpacing = confloat(ge=-1.0, le=1.0, step=0.05)
+# we could use a smaller or greater 'le' for spacing,
+# this is just meant to be a somewhat reasonable upper limit,
+# as even on a 4k monitor a 2x2 grid will break calculation with >1300 spacing
+GridSpacing = confloat(ge=0, le=1500, step=5)
 
 _DEFAULT_MEM_FRACTION = 0.25
 MAX_CACHE = virtual_memory().total * 0.5 / 1e9
@@ -189,7 +192,11 @@ class ApplicationSettings(EventedModel):
     grid_stride: GridStride = Field(  # type: ignore [valid-type]
         default=1,
         title=trans._('Grid Stride'),
-        description=trans._('Number of layers to place in each grid square.'),
+        description=trans._(
+            'Number of layers to place in each grid viewbox before moving on to the next viewbox.\n'
+            'A negative stride will cause the order in which the layers are placed in the grid to be reversed.\n'
+            '0 is not a valid entry.'
+        ),
     )
 
     grid_width: GridWidth = Field(  # type: ignore [valid-type]
@@ -205,9 +212,13 @@ class ApplicationSettings(EventedModel):
     )
 
     grid_spacing: GridSpacing = Field(  # type: ignore [valid-type]
-        default=0.0,
+        default=0,
         title=trans._('Grid Spacing'),
-        description=trans._('Proportional spacing between grid layers.'),
+        description=trans._(
+            'The amount of spacing inbetween grid viewboxes.\n'
+            'If between 0 and 1, it is interpreted as a proportion of the size of the viewboxes.\n'
+            'If equal or greater than 1, it is interpreted as screen pixels.'
+        ),
     )
 
     confirm_close_window: bool = Field(
