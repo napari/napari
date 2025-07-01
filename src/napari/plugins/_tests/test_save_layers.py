@@ -30,9 +30,9 @@ def test_save_layer_single_named_plugin(
 def test_save_layer_no_results():
     """Test no layers is not an error, and warns on no results."""
 
-    with pytest.warns(UserWarning):
+    with pytest.warns(UserWarning, match='No layers to write'):
         result = save_layers('no_layers', [])
-        assert result == []
+    assert result == []
 
 
 # the layer_data_and_types fixture is defined in napari/conftest.py

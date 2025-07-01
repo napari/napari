@@ -94,7 +94,7 @@ def test_plugin_extension_assignment(napari_plugin_manager):
     assert '.png' in tnpm._extension2reader
     assert tnpm.get_reader_for_extension('.png') == 'test_plugin'
 
-    with pytest.warns(UserWarning):
+    with pytest.warns(UserWarning, match='did not return a reader function'):
         # reader may not recognize extension
         tnpm.assign_reader_to_extensions('test_plugin', '.pndfdg')
 

@@ -285,7 +285,7 @@ def reconstruct_polygons_from_edges_py(
         adjacency[v2].append(v1)
 
     # Initialize set of unvisited edges
-    unvisited_edges: set[tuple[int, int]] = {
+    unvisited_edges: set[tuple[np.int64, np.int64]] = {
         (edge[0], edge[1]) for edge in edges
     }
     unvisited_edges.update({(edge[1], edge[0]) for edge in edges})
@@ -296,7 +296,7 @@ def reconstruct_polygons_from_edges_py(
     # Process each edge until all are visited
     while unvisited_edges:
         # Start with any unvisited edge
-        edge: tuple[int, int] = next(iter(unvisited_edges))
+        edge: tuple[np.int64, np.int64] = next(iter(unvisited_edges))
         current_vertex = edge[0]
         start_vertex = edge[1]
 
@@ -330,7 +330,7 @@ def reconstruct_polygons_from_edges_py(
         polygon_vertices = vertices[polygon_indices]
         polygons.append(polygon_vertices)
 
-    return polygons  # type: ignore[return-value]
+    return polygons
 
 
 def normalize_vertices_and_edges_py(
@@ -375,7 +375,7 @@ def normalize_vertices_and_edges_py(
         that are visited twice are removed.
     """
     if tuple(vertices[0]) == tuple(vertices[-1]):  # closed polygon
-        vertices = vertices[:-1]  # type: ignore[assignment] # make closing implicit
+        vertices = vertices[:-1]  # make closing implicit
         close = True
 
     # Now, we make sure the vertices are unique (repeated vertices cause
@@ -418,7 +418,7 @@ def normalize_vertices_and_edges_py(
 
     new_vertices_array = np.array(new_vertices, dtype=np.float32)
     edges_array = np.array(list(edges), dtype=np.int64)
-    return new_vertices_array, edges_array  # type: ignore[return-value]
+    return new_vertices_array, edges_array
 
 
 def _are_polar_angles_monotonic(poly: npt.NDArray, orientation_: int) -> bool:

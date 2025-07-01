@@ -3,10 +3,12 @@ name: napari
 
 contributions:
   commands:
+    # readers
     - id: napari.get_reader
       python_name: napari_builtins.io:napari_get_reader
       title: Builtin Reader
 
+    # writers
     - id: napari.write_image
       python_name: napari_builtins.io:napari_write_image
       title: napari built-in image writer
@@ -127,15 +129,16 @@ contributions:
       title: Generate 3d_balls sample
       python_name: napari_builtins._ndims_balls:labeled_particles3d
 
+    # widgets
+    - id: napari.widgets.features_table
+      title: Features table widget
+      python_name: napari_builtins._qt.features_table:FeaturesTable
+
     # others
     - id: napari.toggle_shape_measures
       title: Toggle shape dimensions measurement
       python_name: napari_builtins._measure_shapes:toggle_shape_measures
       enablement: active_layer_type == 'shapes'
-
-  menus:
-    napari/layers/measure:
-      - command: napari.toggle_shape_measures
 
   readers:
     - command: napari.get_reader
@@ -316,3 +319,13 @@ contributions:
     - display_name: Text
       key: text
       command: napari.data.text
+
+  widgets:
+    - command: napari.widgets.features_table
+      display_name: Features table widget
+
+  menus:
+    napari/layers/visualize:
+      - command: napari.widgets.features_table
+    napari/layers/measure:
+      - command: napari.toggle_shape_measures
