@@ -51,11 +51,12 @@ def test_3D_multiscale_image(make_napari_viewer):
     # Check that this doesn't crash.
     viewer.dims.ndisplay = 3
 
+    # Set canvas size to target amount
+    viewer.window._qt_viewer.canvas.size = (800, 600)
+    viewer.window._qt_viewer.canvas.on_draw(None)
+
     # Check lowest resolution is used
     assert viewer.layers[0].data_level == 1
-
-    # Note that draw command must be explicitly triggered in our tests
-    viewer.window._qt_viewer.canvas.on_draw(None)
 
 
 @skip_on_win_ci

@@ -425,7 +425,11 @@ class FeaturesTable(QWidget):
         if hasattr(layer, 'selected_label'):
             return layer.events.selected_label
         if hasattr(layer, 'selected_data'):
-            return layer.selected_data.events
+            # Points layer has selected_data.events, but Shapes layer uses highlight event
+            if hasattr(layer.selected_data, 'events'):
+                return layer.selected_data.events
+            if hasattr(layer.events, 'highlight'):
+                return layer.events.highlight
         raise RuntimeError(  # pragma: no cover
             "Layer with features must have either 'selected_label' or 'selected_data'."
         )

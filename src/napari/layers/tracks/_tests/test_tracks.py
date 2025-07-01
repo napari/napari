@@ -122,7 +122,6 @@ def test_track_layer_colorby_nonexistent():
         )
 
 
-@pytest.mark.filterwarnings('ignore:.*track_id.*:UserWarning')
 def test_track_layer_properties_changed_colorby():
     """Test behaviour when changes to properties invalidate current color_by"""
     properties_dict_1 = {'time': np.arange(100), 'prop1': np.arange(100)}
@@ -131,7 +130,7 @@ def test_track_layer_properties_changed_colorby():
     data[:, 1] = np.arange(100)
     layer = Tracks(data, properties=properties_dict_1, color_by='prop1')
     # test warning is raised
-    with pytest.warns(UserWarning):
+    with pytest.warns(UserWarning, match='Falling back to track_id'):
         layer.properties = properties_dict_2
     # test default fallback
     assert layer.color_by == 'track_id'
