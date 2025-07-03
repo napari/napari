@@ -929,9 +929,7 @@ class QtViewer(QSplitter):
                 )
 
             # adjust size by the scale, to return the size in real pixels
-            grid_shape = self._qt_viewer.viewer.grid.actual_shape(
-                len(self.viewer.layers)
-            )
+            grid_shape = self.viewer.grid.actual_shape(len(self.viewer.layers))
             size = np.ceil(scene_size / extent_scale * grid_shape).astype(int)
 
         with self.resize_canvas(size, scale):
