@@ -6,12 +6,12 @@ version: 2.1
 # Orbs are reusable packages of CircleCI configuration that you may share across projects.
 # See: https://circleci.com/docs/2.1/orb-intro/
 orbs:
-  python: circleci/python@3.0.0
+  python: circleci/python@3.1.0
 jobs:
   build-docs:
     docker:
       # A list of available CircleCI Docker convenience images are available here: https://circleci.com/developer/images/image/cimg/python
-      - image: cimg/python:3.10.17
+      - image: cimg/python:3.12.10
     steps:
       - checkout:
           path: napari
@@ -33,7 +33,7 @@ jobs:
             . .venv/bin/activate
             uv pip install -e "napari/[pyqt5,docs]"
           environment:
-            PIP_CONSTRAINT: napari/resources/constraints/constraints_py3.10_docs.txt
+            UV_CONSTRAINT: napari/resources/constraints/constraints_py3.12_docs.txt
       - run:
           name: Build docs
           command: |
@@ -41,7 +41,8 @@ jobs:
             cd docs
             xvfb-run --auto-servernum make html
           environment:
-            PIP_CONSTRAINT: ../napari/resources/constraints/constraints_py3.10_docs.txt
+            UV_CONSTRAINT: ../napari/resources/constraints/constraints_py3.12_docs.txt
+          no_output_timeout: 30m
       - store_artifacts:
           path: docs/docs/_build/html/
       - persist_to_workspace:

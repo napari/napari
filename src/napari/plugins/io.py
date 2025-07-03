@@ -17,8 +17,6 @@ from napari.utils.translations import trans
 
 logger = getLogger(__name__)
 if TYPE_CHECKING:
-    from typing import Optional
-
     from npe2.manifest.contributions import WriterContribution
 
 
@@ -484,7 +482,7 @@ def _write_single_layer_with_plugins(
         )
 
     # Call the hook_caller
-    written_path: Optional[str] = hook_caller(
+    written_path: str | None = hook_caller(
         _plugin=plugin_name,
         path=abspath_or_url(path),
         data=layer.data,
