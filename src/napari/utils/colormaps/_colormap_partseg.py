@@ -15,12 +15,12 @@ if TYPE_CHECKING:
     from napari.utils import DirectLabelColormap
 
 __all__ = (
-    'labels_raw_to_texture_direct_partseg',
-    'zero_preserving_modulo_partseg',
+    'labels_raw_to_texture_direct',
+    'zero_preserving_modulo',
 )
 
 
-def zero_preserving_modulo_partseg(
+def zero_preserving_modulo(
     values: np.ndarray, n: int, dtype: np.dtype, to_zero: int = 0
 ) -> np.ndarray:
     out = np.empty(values.size, dtype=dtype)
@@ -28,7 +28,7 @@ def zero_preserving_modulo_partseg(
     return out.reshape(values.shape)
 
 
-def labels_raw_to_texture_direct_partseg(
+def labels_raw_to_texture_direct(
     data: np.ndarray, direct_colormap: 'DirectLabelColormap'
 ) -> np.ndarray:
     if direct_colormap.use_selection:

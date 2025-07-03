@@ -16,10 +16,6 @@ from typing_extensions import Self
 from napari._pydantic_compat import Field, PrivateAttr, validator
 from napari.utils.color import ColorArray, ColorValue
 from napari.utils.colormaps import _accelerated_cmap as _accel_cmap
-from napari.utils.colormaps._colormap_numpy import (
-    labels_raw_to_texture_direct_numpy,
-    zero_preserving_modulo_numpy,
-)
 from napari.utils.colormaps.colorbars import make_colorbar
 from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils.compat import StrEnum
@@ -27,15 +23,6 @@ from napari.utils.events import EventedModel
 from napari.utils.events.custom_types import Array
 from napari.utils.migrations import deprecated_class_name
 from napari.utils.translations import trans
-
-try:
-    from napari.utils.colormaps._colormap_compiled import (
-        labels_raw_to_texture_direct,
-        zero_preserving_modulo,
-    )
-except ImportError:
-    zero_preserving_modulo = zero_preserving_modulo_numpy
-    labels_raw_to_texture_direct = labels_raw_to_texture_direct_numpy
 
 if TYPE_CHECKING:
     from numba import typed
