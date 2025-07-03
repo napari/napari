@@ -236,6 +236,9 @@ def _labels_raw_to_texture_direct_inner_loop(
     return out
 
 
+prange = range
+
+
 try:
     from napari.utils.colormaps._colormap_partseg import (
         labels_raw_to_texture_direct,
@@ -247,7 +250,6 @@ except ImportError:
     except ModuleNotFoundError:
         zero_preserving_modulo = zero_preserving_modulo_numpy
         labels_raw_to_texture_direct = _labels_raw_to_texture_direct_numpy
-        prange = range
     else:
         _zero_preserving_modulo_inner_loop = numba.njit(
             parallel=True, cache=True
@@ -260,5 +262,3 @@ except ImportError:
         prange = numba.prange  # type: ignore [misc]
 
     del numba
-else:
-    prange = range
