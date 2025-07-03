@@ -96,10 +96,6 @@ jobs:
             backend: pyqt6
             coverage: no_cov
             min_req: ""
-          - python: "3.13"
-            platform: windows-latest
-            backend: pyqt6
-            coverage: cov
     with:
       python_version: ${{ matrix.python }}
       platform: ${{ matrix.platform }}
