@@ -261,4 +261,4 @@ except ImportError:
         )(_labels_raw_to_texture_direct_inner_loop)
         prange = numba.prange  # type: ignore [misc]
 
-    del numba
+        del numba
