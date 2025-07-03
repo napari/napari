@@ -240,7 +240,7 @@ def test_z_order_adding_removing_images(make_napari_viewer):
 @skip_on_win_ci
 def test_screenshot(make_napari_viewer):
     "Test taking a screenshot"
-    viewer = make_napari_viewer()
+    viewer = make_napari_viewer(show=True)
 
     np.random.seed(0)
     # Add image
@@ -265,9 +265,10 @@ def test_screenshot(make_napari_viewer):
 
     # Take screenshot
     with pytest.warns(FutureWarning):
-        viewer.window.qt_viewer.screenshot(flash=False)
-    screenshot = viewer.window.screenshot(flash=False, canvas_only=True)
-    assert screenshot.ndim == 3
+        screenshot1 = viewer.window.qt_viewer.screenshot(flash=False)
+    screenshot2 = viewer.window.screenshot(flash=False, canvas_only=True)
+    npt.assert_array_equal(screenshot1, screenshot2)
+    assert screenshot1.ndim == 3
 
 
 def test_export_figure(qt_viewer, viewer_model, tmp_path, qtbot):
