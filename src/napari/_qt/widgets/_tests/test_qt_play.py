@@ -153,7 +153,7 @@ def test_playing_hidden_slider_does_nothing(ref_view):
 
     view.dims.dims.events.current_step.connect(increment)
 
-    with pytest.warns(UserWarning):
+    with pytest.warns(UserWarning, match='Refusing to play a hidden axis'):
         view.dims.play(2, 20)
     view.dims.dims.events.current_step.disconnect(increment)
     assert not view.dims.is_playing

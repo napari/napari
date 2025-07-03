@@ -2697,6 +2697,7 @@ class Shapes(Layer):
                 data_indices=(-1,),
                 vertex_indices=((),),
             )
+            self.events.features()
         self._is_creating = False
         self._update_dims()
 

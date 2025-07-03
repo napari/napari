@@ -382,7 +382,7 @@ def test_layers_save_none_selected(builtins, tmpdir, layer_data_and_types):
     assert not os.path.isdir(path)
 
     # Write data (will get a warning that nothing is selected)
-    with pytest.warns(UserWarning):
+    with pytest.warns(UserWarning, match='No layers selected'):
         layers.save(path, selected=True, plugin=builtins.name)
 
     # Check folder still does not exist
