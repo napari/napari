@@ -1,7 +1,7 @@
 import typing
 import warnings
 from collections import deque
-from collections.abc import Callable, Generator, Sequence
+from collections.abc import Callable, Generator, Iterable, Sequence
 from contextlib import contextmanager
 from typing import (
     Any,
@@ -400,7 +400,7 @@ class Labels(ScalarFieldBase):
         self._overlays.update({'polygon': LabelsPolygonOverlay()})
 
         self._selected_label = 1
-        self._predefined_labels = None
+        self._predefined_labels: dict[int, str | None] | None = None
         self.predefined_labels = predefined_labels
 
         self._feature_table = _FeatureTable.from_layer(
@@ -438,17 +438,20 @@ class Labels(ScalarFieldBase):
         self._reset_editable()
 
     @property
-    def predefined_labels(self) -> dict[int, str | None]:
+    def predefined_labels(self) -> dict[int, str | None] | None:
         return self._predefined_labels
 
     @predefined_labels.setter
     def predefined_labels(
-        self, predefined_labels: list[int] | dict[int, str]
+        self, predefined_labels: Iterable[int] | dict[int, str | None] | None
     ) -> None:
-        if predefined_labels:
-            if not isinstance(predefined_labels, dict):
-                predefined_labels = dict.fromkeys(predefined_labels)
+        if (
+            not isinstance(predefined_labels, dict)
+            and predefined_labels is not None
+        ):
+            predefined_labels = dict.fromkeys(predefined_labels)
 
+        if predefined_labels:
             predefined_labels = predefined_labels.copy()
             if (
                 predefined_labels.get(self.colormap.background_value, None)
@@ -1628,7 +1631,7 @@ class Labels(ScalarFieldBase):
         dims_displayed: list[int] | None = None,
         world: bool = False,
     ) -> list:
-        properties = []
+        properties: list[str] = []
 
         value = self.get_value(
             position,
