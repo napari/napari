@@ -29,7 +29,7 @@ cleared = remove_small_objects(clear_border(bw), 20)
 ignored_area = cleared != bw
 
 # label image regions
-label_image = label(cleared)
+label_image = label(cleared).astype('uint8')
 
 # initialise viewer with coins image
 viewer = napari.view_image(image, name='coins', rgb=False)
@@ -42,14 +42,14 @@ size_range = max(label_areas) - min(label_areas)
 small_threshold = min(label_areas) + (size_range / 2)
 label_mapping = np.zeros(len(label_areas) + 1, dtype=int)
 label_mapping[1:][label_areas < small_threshold] = 1
-label_mapping[1:][label_areas >= small_threshold] = 10
+label_mapping[1:][label_areas >= small_threshold] = 5
 
 label_image = label_mapping[label_image]
 label_image[ignored_area] = 255
 
 labels_df = pd.DataFrame.from_dict({
     1: ['small coin', 'green'],
-    10: ['big coin', 'orange'],
+    5: ['big coin', 'orange'],
     255: ['ignore', 'blue']
 }, orient='index', columns=['name', 'color'])
 
@@ -58,7 +58,7 @@ label_layer = viewer.add_labels(
     label_image,
     name='segmentation',
     predefined_labels=labels_df['name'].to_dict(),
-    color=labels_df['color'].to_dict(),
+    colormap=labels_df['color'].to_dict(),
 )
 
 if __name__ == '__main__':

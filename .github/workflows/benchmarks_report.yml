@@ -15,12 +15,17 @@ on:
     types:
       - completed
 
+permissions:
+  pull-requests: write
+  issues: write
+
 jobs:
   download:
     runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: "Download artifact"
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           script: |
             let allArtifacts = await github.rest.actions.listWorkflowRunArtifacts({
@@ -29,9 +34,14 @@ jobs:
                run_id: context.payload.workflow_run.id,
             });
             let artifactName = `asv-benchmark-results-${context.payload.workflow_run.id}-${context.payload.workflow_run.run_number}-${context.payload.workflow_run.run_attempt}`
+            console.log(`Artifact name: ${artifactName}`);
+            console.log(`All artifacts: ${JSON.stringify(allArtifacts.data.artifacts)}`);
             let matchArtifact = allArtifacts.data.artifacts.filter((artifact) => {
               return artifact.name == artifactName
             })[0];
+            if (matchArtifact === undefined) {
+              throw TypeError('Build Artifact not found!');
+            }
             let download = await github.rest.actions.downloadArtifact({
                owner: context.repo.owner,
                repo: context.repo.repo,
@@ -54,12 +64,12 @@ jobs:
       - name: Collect PR number if available
         run: |
           if [[ -f pr_number ]]; then
-            echo "PR_NUMBER=$(cat pr_number)" >> $GITHUB_ENV
+            echo "PR_NUMBER=$(cat pr_number)" >> "$GITHUB_ENV"
           fi
 
       - name: "Comment on PR"
         if: env.PR_NUMBER != ''
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -71,4 +81,19 @@ jobs:
               repo: context.repo.repo,
               issue_number: issue_number,
               body: body,
+            });
+
+      - name: "Remove run-benchmarks label"
+        if: env.PR_NUMBER != ''
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            let fs = require('fs');
+            let issue_number = Number(process.env.PR_NUMBER);
+            await github.rest.issues.removeLabel({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue_number,
+              name: 'run-benchmarks',
             });

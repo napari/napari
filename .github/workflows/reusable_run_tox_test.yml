@@ -1,0 +1,223 @@
+name: Run test by tox
+
+on:
+  workflow_call:
+    inputs:
+      python_version:
+        required: true
+        type: string
+      platform:
+        required: false
+        type: string
+        default: "ubuntu-latest"
+      toxenv:
+        required: false
+        type: string
+        default: ""
+      qt_backend:
+        required: false
+        type: string
+        default: "headless"
+      min_req:
+        required: false
+        type: string
+        default: ""
+      coverage:
+        required: false
+        type: string
+        default: no_cov
+      timeout:
+        required: false
+        type: number
+        default: 40
+      constraints_suffix:
+        required: false
+        type: string
+        default: ""
+      tox_extras:
+        required: false
+        type: string
+        default: ""
+
+jobs:
+  test:
+    name: ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }} ${{ inputs.MIN_REQ && 'min_req' }} ${{ inputs.coverage }}
+    runs-on: ${{ inputs.platform }}
+    env:
+      TOXENV: ${{ inputs.toxenv }}
+      NUMPY_EXPERIMENTAL_ARRAY_FUNCTION: ${{ inputs.MIN_REQ || 1 }}
+      PYVISTA_OFF_SCREEN: True
+      MIN_REQ: ${{ inputs.min_req }}
+      FORCE_COLOR: 1
+      PIP_CONSTRAINT: ${{ github.workspace }}/resources/constraints/constraints_py${{ inputs.python_version }}${{ inputs.min_req && '_min_req' }}${{ inputs.constraints_suffix }}.txt
+      UV_CONSTRAINT: ${{ github.workspace }}/resources/constraints/constraints_py${{ inputs.python_version }}${{ inputs.min_req && '_min_req' }}${{ inputs.constraints_suffix }}.txt
+      # Above we calculate path to constraints file based on python version and platform
+      # Because there is no single PyQt5-Qt5 package version available for all platforms we was forced to use
+      # different constraints files for Windows. An example with macOS arm64:
+      # ${{ (((inputs.platform == 'macos-latest') && '_macos_arm') || '') }} - if platform is macOS-latest then add '_macos_arm' to constraints file name, else add nothing
+      # ${{ inputs.min_req && '_min_req' }} - if min_req is set then add '_min_req' to constraints file name, else add nothing
+      #  ${{ inputs.constraints_suffix }} - additional suffix for constraints file name (used for example testing).
+      COVERAGE: ${{ inputs.coverage }}
+      TOX_WORK_DIR: .tox
+      TOX_EXTRAS: ${{ inputs.tox_extras }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: wheel
+          path: dist
+
+      - name: Set wheel path
+        run: echo "WHEEL_PATH=$(ls dist/*.whl)" >> "$GITHUB_ENV"
+        shell: bash
+
+      - name: Set up Python ${{ inputs.python_version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ inputs.python_version }}
+          cache: "pip"
+          cache-dependency-path: pyproject.toml
+
+      - uses: tlambert03/setup-qt-libs@v1
+
+      - name: Setup Graphviz
+        uses: ts-graphviz/setup-graphviz@v2
+        continue-on-error: true
+
+      - name: Set Windows resolution
+        if: runner.os == 'Windows'
+        run: Set-DisplayResolution -Width 1920 -Height 1080 -Force
+        shell: powershell
+
+      # strategy borrowed from vispy for installing opengl libs on windows
+      - name: Install Windows OpenGL
+        if: runner.os == 'Windows'
+        run: |
+          git clone --depth 1 https://github.com/pyvista/gl-ci-helpers.git
+          powershell gl-ci-helpers/appveyor/install_opengl.ps1
+          if (Test-Path -Path "C:\Windows\system32\opengl32.dll" -PathType Leaf) {Exit 0} else {Exit 1}
+        shell: powershell
+
+      - name: Disable ptrace security restrictions
+        if: runner.os == 'Linux'
+        run: |
+          echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope
+
+      # tox and tox-gh-actions will take care of the "actual" installation
+      # of python dependencies into a virtualenv.  see tox.ini for more
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install setuptools tox tox-gh-actions tox-min-req tox-uv
+        env:
+          PIP_CONSTRAINT: ""
+
+      # here we pass off control of environment creation and running of tests to tox
+      # tox-gh-actions, installed above, helps to convert environment variables into
+      # tox "factors" ... limiting the scope of what gets tested on each platform
+      # for instance, on ubuntu-latest with python 3.8, it would be equivalent to this command:
+      # `tox -e py38-linux-pyqt,py38-linux-pyside`
+      # see tox.ini for more
+
+      - name: Split qt backend
+        # This is a hack to split the qt_backend variable into four parts
+        # This is required as github actions allow setting only one environment variable in
+        # a single line (redirection to $GITHUB_ENV).
+        #
+        # For example, if qt_backend is set to "pyqt5,pyside2", then the following four
+        # environment variables will be set:
+        # MAIN=pyqt5
+        # SECOND=pyside2
+        # THIRD=none
+        # FOURTH=none
+        shell: bash
+        run: |
+          python tools/split_qt_backend.py 0 ${{ inputs.qt_backend }} >> "$GITHUB_ENV"
+          python tools/split_qt_backend.py 1 ${{ inputs.qt_backend }} >> "$GITHUB_ENV"
+          python tools/split_qt_backend.py 2 ${{ inputs.qt_backend }} >> "$GITHUB_ENV"
+          python tools/split_qt_backend.py 3 ${{ inputs.qt_backend }} >> "$GITHUB_ENV"
+
+      - name: Test with tox main
+        timeout-minutes: ${{ inputs.timeout }}
+        uses: aganders3/headless-gui@v2
+        with:
+          shell: bash
+          run: |
+            echo ${{ env.MAIN }}
+            tox --version
+            python -m tox run --installpkg ${{ env.WHEEL_PATH }} -- --basetemp=.pytest_tmp
+            rm -r .tox
+        env:
+          BACKEND: ${{ env.MAIN }}
+          TOX_WORK_DIR: .tox
+
+      - name: Test with tox second
+        timeout-minutes: ${{ inputs.timeout }}
+        uses: aganders3/headless-gui@v2
+        if : ${{ env.SECOND != 'none' }}
+        with:
+          shell: bash
+          run: |
+            python -m tox run --installpkg ${{ env.WHEEL_PATH }} -- --basetemp=.pytest_tmp
+            rm -r .tox
+        env:
+          BACKEND: ${{ env.SECOND }}
+          NAPARI_TEST_SUBSET: qt
+
+      - name: Test with tox third
+        timeout-minutes: ${{ inputs.timeout }}
+        uses: aganders3/headless-gui@v2
+        if : ${{ env.THIRD != 'none' }}
+        with:
+          shell: bash
+          run: |
+            python -m tox run --installpkg ${{ env.WHEEL_PATH }} -- --basetemp=.pytest_tmp
+            rm -r .tox
+        env:
+          BACKEND: ${{ env.THIRD }}
+          NAPARI_TEST_SUBSET: qt
+
+      - name: Test with tox fourth
+        timeout-minutes: ${{ inputs.timeout }}
+        uses: aganders3/headless-gui@v2
+        if: ${{ env.FOURTH != 'none' }}
+        with:
+          shell: bash
+          run: |
+            python -m tox run --installpkg ${{ env.WHEEL_PATH }} -- --basetemp=.pytest_tmp
+            rm -r .tox
+        env:
+          BACKEND: ${{ env.FOURTH }}
+          NAPARI_TEST_SUBSET: qt
+
+      - name: Upload test artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4.4.0
+        with:
+          name: test artifacts ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }}
+          path: .pytest_tmp
+          include-hidden-files: true
+
+      - name: Upload leaked viewer graph
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: leaked ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }}
+          path: ./*leak-backref-graph*.pdf
+
+      - name: Upload pytest timing reports as json ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: upload pytest timing json ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }} ${{ inputs.tox_extras }}
+          path: |
+            ./report-*.json
+
+      - name: Upload coverage data
+        uses: actions/upload-artifact@v4.4.0
+        if: ${{ inputs.coverage == 'cov' }}
+        with:
+          name: coverage reports ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }}
+          include-hidden-files: true
+          path: |
+            ./.coverage.*

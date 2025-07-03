@@ -4,7 +4,7 @@ Add labels with features
 
 Display a labels layer with various features
 
-.. tags:: layers, analysis
+.. tags:: layers, analysis, features-table
 """
 
 
@@ -44,17 +44,23 @@ label_features = {
     'row': ['none']
     + ['top'] * 4
     + ['bottom'] * 4,  # background is row: none
-    'size': ["none", *coin_sizes],  # background is size: none
+    'size': ['none', *coin_sizes],  # background is size: none
 }
 
-color = {1: 'white', 2: 'blue', 3: 'green', 4: 'red', 5: 'yellow'}
+colors = {1: 'white', 2: 'blue', 3: 'green', 4: 'red', 5: 'yellow',
+          None: 'magenta'}
+# Here we provide a dict with color mappings for a subset of labels;
+# when passed to `add_labels`, using the `colormap` kwarg, it will be
+# internally converted to a `napari.utils.colormaps.DirectLabelColormap`
+# Note: we also provide a default color (`None` key) which will be used
+# by all other labels
 
 # add the labels
 label_layer = viewer.add_labels(
     label_image,
     name='segmentation',
     features=label_features,
-    color=color,
+    colormap=colors,
 )
 
 if __name__ == '__main__':

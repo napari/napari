@@ -1,0 +1,62 @@
+name: Test installed from pip
+
+on:
+  workflow_call:
+
+jobs:
+  test_pip_install:
+    name: ubuntu-latest 3.12 pip install
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: napari-from-github
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.12
+          cache: "pip"
+          cache-dependency-path: napari-from-github/pyproject.toml
+
+      - uses: tlambert03/setup-qt-libs@v1
+
+      - name: Build wheel
+        run: |
+          pip install --upgrade pip build
+          python -m build "./napari-from-github"
+          # there is a bug in build/setuptools that build only wheel will ignore manifest content.
+          # so we need to build sdist first and then build wheel
+
+      - name: get wheel path
+        run: |
+          WHEEL_PATH=$(ls napari-from-github/dist/*.whl)
+          echo "WHEEL_PATH=$WHEEL_PATH" >> "$GITHUB_ENV"
+
+      - name: Install napari from wheel
+        run: |
+          pip install "${{ env.WHEEL_PATH }}[pyqt,testing]"
+        shell:
+            bash
+        env:
+          PIP_CONSTRAINT: napari-from-github/resources/constraints/constraints_py3.12.txt
+
+      - name: uninstall numba
+        run: |
+          pip uninstall -y numba
+
+      - name: Test
+        uses: aganders3/headless-gui@v2
+        with:
+          run: |
+            python -m pytest --pyargs napari --color=yes --basetemp=.pytest_tmp --config-file=napari-from-github/pyproject.toml
+            python -m pytest --pyargs napari_builtins --color=yes --basetemp=.pytest_tmp --config-file=napari-from-github/pyproject.toml
+
+      - name: Upload test artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4.4.0
+        with:
+          name: test artifacts pip install
+          path: .pytest_tmp
+          include-hidden-files: true

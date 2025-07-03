@@ -10,17 +10,20 @@ jobs:
   translations:
     name: Check missing translations
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up Python 3.11
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-          cache-dependency-path: setup.cfg
+          cache-dependency-path: pyproject.toml
       - name: Install napari
         run: |
-          pip install -e .[all]
-          pip install -e .[testing]
+          pip install -e ".[all]"
+          pip install -e ".[testing]"
       - name: Run check
         run: |
           python -m pytest -Wignore tools/ --tb=short

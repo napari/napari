@@ -35,8 +35,8 @@ flat_spot = napari.layers.Surface(
     translate=(1, 0, 0),
     texture=texture,
     texcoords=texcoords,
-    shading="flat",
-    name="texture only",
+    shading='flat',
+    name='texture only',
 )
 
 np.random.seed(0)
@@ -44,9 +44,9 @@ plasma_spot = napari.layers.Surface(
     (vertices, faces, np.random.random((3, 3, n))),
     texture=texture,
     texcoords=texcoords,
-    colormap="plasma",
-    shading="smooth",
-    name="vertex_values and texture",
+    colormap='plasma',
+    shading='smooth',
+    name='vertex_values and texture',
 )
 
 rainbow_spot = napari.layers.Surface(
@@ -57,8 +57,8 @@ rainbow_spot = napari.layers.Surface(
     # the vertices are _roughly_ in [-1, 1] for this model and RGB values just
     # get clipped to [0, 1], adding 0.5 brightens it up a little :)
     vertex_colors=vertices + 0.5,
-    shading="none",
-    name="vertex_colors and texture",
+    shading='none',
+    name='vertex_colors and texture',
 )
 
 # create the viewer and window

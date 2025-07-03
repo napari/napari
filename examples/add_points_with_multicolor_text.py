@@ -33,23 +33,23 @@ text = {
 }
 
 # create a points layer where the face_color is set by the good_point feature
-# and the edge_color is set via a color map (grayscale) on the confidence
+# and the border_color is set via a color map (grayscale) on the confidence
 # feature
 points_layer = viewer.add_points(
     points,
     features=features,
     text=text,
     size=20,
-    edge_width=7,
-    edge_width_is_relative=False,
-    edge_color='confidence',
-    edge_colormap='gray',
+    border_width=7,
+    border_width_is_relative=False,
+    border_color='confidence',
+    border_colormap='gray',
     face_color='good_point',
     face_color_cycle=color_cycle,
 )
 
-# set the edge_color mode to colormap
-points_layer.edge_color_mode = 'colormap'
+# set the border_color mode to colormap
+points_layer.border_color_mode = 'colormap'
 
 if __name__ == '__main__':
     napari.run()

@@ -12,10 +12,10 @@ object as the single "source of truth".
 """
 import napari
 from napari._qt.containers import QtListView
-from napari.qt import get_app
+from napari.qt import get_qapp
 from napari.utils.events import SelectableEventedList
 
-get_app()
+get_qapp()
 
 
 class MyObject:
@@ -37,15 +37,15 @@ view.show()
 
 
 # spy on events
-root.events.reordered.connect(lambda e: print("reordered to: ", e.value))
+root.events.reordered.connect(lambda e: print('reordered to: ', e.value))
 root.selection.events.changed.connect(
     lambda e: print(
-        f"selection changed.  added: {e.added}, removed: {e.removed}"
+        f'selection changed.  added: {e.added}, removed: {e.removed}'
     )
 )
 root.selection.events._current.connect(
-    lambda e: print(f"current item changed to: {e.value}")
+    lambda e: print(f'current item changed to: {e.value}')
 )
 
-
-napari.run()
+if __name__ == '__main__':
+    napari.run()

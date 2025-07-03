@@ -25,7 +25,7 @@ env:
   OPENBLAS_NUM_THREADS: "1"
   MKL_NUM_THREADS: "1"
   OMP_NUM_THREADS: "1"
-  ASV_OPTIONS: "--split --show-stderr --factor 1.5 --attribute timeout=300"
+  ASV_OPTIONS: "--split --show-stderr --factor 1.5 --attribute timeout=900"
   # --split -> split final reports in tables
   # --show-stderr -> print tracebacks if errors occur
   # --factor 1.5 -> report anomaly if tested timings are beyond 1.5x base timings
@@ -37,6 +37,9 @@ jobs:
     if: ${{ github.event.label.name == 'run-benchmarks' && github.event_name == 'pull_request' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
     name: ${{ matrix.benchmark-name }}
     runs-on: ${{ matrix.runs-on }}
+    permissions:
+      contents: read
+      issues: write
     strategy:
       fail-fast: false
       matrix:
@@ -56,20 +59,22 @@ jobs:
     steps:
       # We need the full repo to avoid this issue
       # https://github.com/actions/checkout/issues/23
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         name: Install Python
         with:
-          python-version: "3.9"
-          cache-dependency-path: setup.cfg
+          python-version: "3.12"
+          cache-dependency-path: pyproject.toml
 
       - uses: tlambert03/setup-qt-libs@v1
 
       - name: Setup asv
-        run: python -m pip install asv virtualenv
+        run: python -m pip install "asv[virtualenv]"
+        env:
+          PIP_CONSTRAINT: resources/constraints/benchmark.txt
 
       - uses: octokit/request-action@v2.x
         id: latest_release
@@ -86,8 +91,14 @@ jobs:
           # asv will checkout commits, which might contain LFS artifacts; ignore those errors since
           # they are probably just documentation PNGs not needed here anyway
           GIT_LFS_SKIP_SMUDGE: 1
+          HEAD_LABEL: ${{ github.event.pull_request.head.label }}
+          PIP_CONSTRAINT: ${{ github.workspace }}/resources/constraints/benchmark.txt
+          TMPDIR: ${{ github.workspace }}/tmp
         run: |
           set -euxo pipefail
+          mkdir -p "${TMPDIR}"
+          touch "${TMPDIR}/empty"
+          read -ra cmd_options <<< "$ASV_OPTIONS"
 
           # ID this runner
           asv machine --yes
@@ -97,7 +108,7 @@ jobs:
             BASE_REF=${{ github.event.pull_request.base.sha }}
             CONTENDER_REF=${GITHUB_SHA}
             echo "Baseline:  ${BASE_REF} (${{ github.event.pull_request.base.label }})"
-            echo "Contender: ${CONTENDER_REF} (${{ github.event.pull_request.head.label }})"
+            echo "Contender: ${CONTENDER_REF} ($HEAD_LABEL)"
           elif [[ $GITHUB_EVENT_NAME == schedule ]]; then
             EVENT_NAME="cronjob"
             BASE_REF="${{ fromJSON(steps.latest_release.outputs.data).target_commitish }}"
@@ -112,12 +123,12 @@ jobs:
             echo "Contender: ${CONTENDER_REF} (workflow input)"
           fi
 
-          echo "EVENT_NAME=$EVENT_NAME" >> $GITHUB_ENV
-          echo "BASE_REF=$BASE_REF" >> $GITHUB_ENV
-          echo "CONTENDER_REF=$CONTENDER_REF" >> $GITHUB_ENV
+          echo "EVENT_NAME=$EVENT_NAME" >> "$GITHUB_ENV"
+          echo "BASE_REF=$BASE_REF" >> "$GITHUB_ENV"
+          echo "CONTENDER_REF=$CONTENDER_REF" >> "$GITHUB_ENV"
 
           # Run benchmarks for current commit against base
-          asv continuous $ASV_OPTIONS -b '${{ matrix.selection-regex }}' ${BASE_REF} ${CONTENDER_REF} \
+          asv continuous "${cmd_options[@]}" -b "${{ matrix.selection-regex }}" "${BASE_REF}" "${CONTENDER_REF}" \
           | sed -E "/Traceback | failed$|PERFORMANCE DECREASED/ s/^/::error:: /" \
           | tee asv_continuous.log
 
@@ -140,6 +151,17 @@ jobs:
           filename: .github/TEST_FAIL_TEMPLATE.md
           update_existing: true
 
+      - name: Upload additional information about failure
+#         upload the tmp directory to the artifact
+#         this is where our code stores the dumped
+#         structures that crash triangulation
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          path: ${{ github.workspace }}/tmp
+          include-hidden-files: true
+          name: tmp-${{ matrix.benchmark-name }}
+
       - name: Add more info to artifact
         if: always()
         run: |
@@ -160,10 +182,30 @@ jobs:
           "[CI logs and artifacts](||BENCHMARK_CI_LOGS_URL||) for further details." \
           > .asv/results/message_${{ matrix.benchmark-name }}.txt
 
+          awk  '/Benchmark.*Parameter/,/SOME BENCHMARKS HAVE CHANGED SIGNIFICANTLY/' asv_continuous.log \
+          >> .asv/results/message_${{ matrix.benchmark-name }}.txt
+
           fi
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: asv-benchmark-results-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}
+          name: asv-benchmark-results-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}-${{ matrix.benchmark-name }}
           path: .asv/results
+
+  combine-artifacts:
+    runs-on: ubuntu-latest
+    needs: benchmark
+    if: always() && needs.benchmark.result != 'skipped'
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          pattern: asv-benchmark-results*
+          path: asv_result
+          merge-multiple: true
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: asv-benchmark-results-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}
+          path: asv_result

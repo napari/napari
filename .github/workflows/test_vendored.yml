@@ -1,37 +1,57 @@
 name: Test vendored
 
 on:
+  workflow_dispatch: # Allow running on-demand
   schedule:
     # * is a special character in YAML so you have to quote this string
-    - cron:  '0 2 * * *'
+    - cron:  '0 2 * * 1'    # Mondays, 2AM
+  pull_request:
+    paths:
+      - '.github/workflows/test_vendored.yml'
+      - 'tools/check_vendored_modules.py'
 
 jobs:
   vendor:
+    permissions:
+      contents: write
+      pull-requests: write
     name: Vendored
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - name: Set up Python 3.9
-        uses: actions/setup-python@v4
+      - uses: actions/checkout@v4
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
         with:
-          python-version: 3.9
+          python-version: 3.11
       - name: Run check
         id: check_v
         run: python tools/check_vendored_modules.py --ci
 
+      - name: Set variables
+        run: echo "vendored=$(cat 'tools/vendored_modules.txt')" >> "$GITHUB_OUTPUT"
+        shell: bash
+
+      - name: git diff
+        run: |
+          git diff 
+
       - name: Create PR updating vendored modules
-        uses: peter-evans/create-pull-request@v5
+        uses: peter-evans/create-pull-request@v7
+        if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
         with:
           commit-message: Update vendored modules.
           branch: update-vendored-examples
+          base: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || '' }}
           delete-branch: true
           title: "[Automatic] Update ${{ steps.check_v.outputs.vendored }} vendored module"
+          labels: maintenance
           body: |
             This PR is automatically created and updated by napari GitHub
             action cron to keep vendored modules up to date.
 
             It look like ${{ steps.check_v.outputs.vendored }} has a new version.
-          token: ${{ secrets.GHA_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          author: napari-bot <napari-bot@users.noreply.github.com>
           # Token permissions required by the action:
           # * pull requests: write and read
           # * repository contents: read and write

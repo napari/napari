@@ -32,7 +32,7 @@ if __name__ == '__main__':
         return client.submit(_slow_function, nz)
 
     viewer = napari.Viewer()
-    viewer.window.add_dock_widget(widget, area="right")
+    viewer.window.add_dock_widget(widget, area='right')
 
 if __name__ == '__main__':
     napari.run()

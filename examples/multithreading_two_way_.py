@@ -39,7 +39,7 @@ def two_way_communication_with_args(start, end):
         i = incoming if incoming is not None else i
 
     # do optional teardown here
-    return "done"
+    return 'done'
 
 
 class Controller(QWidget):
@@ -49,9 +49,9 @@ class Controller(QWidget):
         layout = QGridLayout()
         self.setLayout(layout)
         self.status = QLabel('Click "Start"', self)
-        self.play_btn = QPushButton("Start", self)
-        self.abort_btn = QPushButton("Abort!", self)
-        self.reset_btn = QPushButton("Reset", self)
+        self.play_btn = QPushButton('Start', self)
+        self.abort_btn = QPushButton('Abort!', self)
+        self.reset_btn = QPushButton('Reset', self)
         self.progress_bar = QProgressBar()
 
         layout.addWidget(self.play_btn, 0, 0)
@@ -75,10 +75,10 @@ def create_connected_widget():
     w.play_btn.clicked.connect(worker.start)
 
     # it provides signals like {started, yielded, returned, errored, finished}
-    worker.returned.connect(lambda x: w.status.setText(f"worker returned {x}"))
-    worker.errored.connect(lambda x: w.status.setText(f"worker errored {x}"))
-    worker.started.connect(lambda: w.status.setText("worker started..."))
-    worker.aborted.connect(lambda: w.status.setText("worker aborted"))
+    worker.returned.connect(lambda x: w.status.setText(f'worker returned {x}'))
+    worker.errored.connect(lambda x: w.status.setText(f'worker errored {x}'))
+    worker.started.connect(lambda: w.status.setText('worker started...'))
+    worker.aborted.connect(lambda: w.status.setText('worker aborted'))
 
     # send values into the function (like generator.send) using worker.send
     # abort thread with worker.abort()
@@ -92,22 +92,22 @@ def create_connected_widget():
     def on_yield(x):
         # Receive events and update widget progress
         w.progress_bar.setValue(100 * x // steps)
-        w.status.setText(f"worker yielded {x}")
+        w.status.setText(f'worker yielded {x}')
 
     def on_start():
         def handle_pause():
             worker.toggle_pause()
-            w.play_btn.setText("Pause" if worker.is_paused else "Continue")
+            w.play_btn.setText('Pause' if worker.is_paused else 'Continue')
 
         w.play_btn.clicked.disconnect(worker.start)
-        w.play_btn.setText("Pause")
+        w.play_btn.setText('Pause')
         w.play_btn.clicked.connect(handle_pause)
 
     def on_finish():
         w.play_btn.setDisabled(True)
         w.reset_btn.setDisabled(True)
         w.abort_btn.setDisabled(True)
-        w.play_btn.setText("Done")
+        w.play_btn.setText('Done')
 
     w.reset_btn.clicked.connect(on_reset_button_pressed)
     worker.yielded.connect(on_yield)
@@ -116,7 +116,7 @@ def create_connected_widget():
     return w
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
 
     viewer = napari.view_image(np.random.rand(512, 512))
     w = create_connected_widget()

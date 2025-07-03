@@ -42,7 +42,7 @@ def iterable_w_context():
         for i, im_slice in enumerate(pbr):
             # using a context manager also allows us to manipulate
             # the progress object e.g. by setting a description
-            pbr.set_description(f"Slice {i}")
+            pbr.set_description(f'Slice {i}')
 
             # we can group progress bars together in the viewer
             # by passing a parent progress bar to new progress
@@ -58,7 +58,7 @@ def indeterminate():
     with progress(total=0) as pbr:
         x = 0
         while x != 42:
-            pbr.set_description(f"Processing {x}")
+            pbr.set_description(f'Processing {x}')
             x = choice(range(100))
             sleep(0.05)
 
@@ -67,16 +67,16 @@ def arbitrary_steps():
     """
     with progress(total=4) as pbr:
         sleep(3)
-        pbr.set_description("Step 1 Complete")
+        pbr.set_description('Step 1 Complete')
         # manually updating the progress bar by 1
         pbr.update(1)
 
         sleep(1)
-        pbr.set_description("Step 2 Complete")
+        pbr.set_description('Step 2 Complete')
         pbr.update(1)
 
         sleep(2)
-        pbr.set_description("Processing Complete!")
+        pbr.set_description('Processing Complete!')
         # we can manually update by any number of steps
         pbr.update(2)
 
@@ -91,36 +91,36 @@ def cancelable_iterable():
     # You can use cancel_callback to close files, clean up state, etc
     # if the user cancels the operation.
     def cancel_callback():
-        print("Operation canceled - cleaning up!")
+        print('Operation canceled - cleaning up!')
     for _ in cancelable_progress(range(100), cancel_callback=cancel_callback):
         np.random.rand(128, 128, 128).mean(0)
 
 viewer = napari.Viewer()
 button_layout = QVBoxLayout()
 
-iterable_btn = QPushButton("Iterable")
+iterable_btn = QPushButton('Iterable')
 iterable_btn.clicked.connect(iterable)
 button_layout.addWidget(iterable_btn)
 
-iterable_context_btn = QPushButton("Iterable With Context")
+iterable_context_btn = QPushButton('Iterable With Context')
 iterable_context_btn.clicked.connect(iterable_w_context)
 button_layout.addWidget(iterable_context_btn)
 
-indeterminate_btn = QPushButton("Indeterminate")
+indeterminate_btn = QPushButton('Indeterminate')
 indeterminate_btn.clicked.connect(indeterminate)
 button_layout.addWidget(indeterminate_btn)
 
-steps_btn = QPushButton("Arbitrary Steps")
+steps_btn = QPushButton('Arbitrary Steps')
 steps_btn.clicked.connect(arbitrary_steps)
 button_layout.addWidget(steps_btn)
 
-cancel_iter_btn = QPushButton("Cancelable Iterable")
+cancel_iter_btn = QPushButton('Cancelable Iterable')
 cancel_iter_btn.clicked.connect(cancelable_iterable)
 button_layout.addWidget(cancel_iter_btn)
 
 pbar_widget = QWidget()
 pbar_widget.setLayout(button_layout)
-pbar_widget.setObjectName("Progress Examples")
+pbar_widget.setObjectName('Progress Examples')
 
 viewer.window.add_dock_widget(pbar_widget)
 # showing the activity dock so we can see the progress bars

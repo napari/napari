@@ -1,21 +1,34 @@
+exclude: _vendor|vendored
 repos:
--   repo: https://github.com/psf/black
-    rev: 23.3.0
-    hooks:
-    - id: black
-      pass_filenames: true
-      exclude: _vendor|vendored|examples
--   repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.0.272
-    hooks:
-      - id: ruff
-        exclude: _vendor|vendored
--   repo: https://github.com/seddonym/import-linter
-    rev: v1.9.0
-    hooks:
-    - id: import-linter
-      stages: [manual]
--   repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.23.2
-    hooks:
-      - id: check-github-workflows
+- repo: https://github.com/astral-sh/ruff-pre-commit
+  rev: v0.12.0
+  hooks:
+  - id: ruff-format
+    exclude: examples
+  - id: ruff
+#    args:
+#      - "--unsafe-fixes"
+- repo: https://github.com/seddonym/import-linter
+  rev: v2.3
+  hooks:
+  - id: import-linter
+    stages: [manual]
+- repo: https://github.com/python-jsonschema/check-jsonschema
+  rev: 0.33.1
+  hooks:
+  - id: check-github-workflows
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v5.0.0
+  # .py files are skipped cause already checked by other hooks
+  hooks:
+  - id: check-yaml
+  - id: check-toml
+  - id: check-merge-conflict
+    exclude: .*\.py
+  - id: end-of-file-fixer
+    exclude: .*\.py
+  - id: trailing-whitespace
+    # trailing whitespace has meaning in markdown https://www.markdownguide.org/hacks/#indent-tab
+    exclude: .*\.py|.*\.md
+  - id: mixed-line-ending
+    exclude: .*\.py

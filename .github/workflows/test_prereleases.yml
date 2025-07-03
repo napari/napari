@@ -8,6 +8,10 @@ on:
     - cron: '0 */12 * * *'  # every 12 hours
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
+  pull_request:
+    paths:
+      - '.github/workflows/test_prereleases.yml'
+      - 'resources/constraints/version_denylist.txt'
 
 env:
   COLUMNS: 120
@@ -15,26 +19,42 @@ env:
 jobs:
   test:
     name: ${{ matrix.platform }} py${{ matrix.python }} ${{ matrix.backend }} --pre
-    timeout-minutes: 40
+    timeout-minutes: 60
     runs-on: ${{ matrix.platform }}
-    if: github.repository == 'napari/napari'
+    permissions:
+      contents: read
+      issues: write
+    if: ${{ github.repository == 'napari/napari' || github.event_name == 'workflow_dispatch' }}
     strategy:
       fail-fast: false
       matrix:
         platform: [windows-latest, macos-latest, ubuntu-latest]
-        python: [3.9]
-        backend: [pyqt5, pyside2]
+        python: [3.12, 3.13]
+        backend: [pyqt5, pyqt6]
+        include:
+          - platform: ubuntu-latest
+            python: 3.12
+            backend: pyqt6_no_numba
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Set up Python ${{ matrix.python }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
-          cache-dependency-path: setup.cfg
+          cache-dependency-path: pyproject.toml
 
       - uses: tlambert03/setup-qt-libs@v1
+
+      - name: Setup Graphviz
+        uses: ts-graphviz/setup-graphviz@v2
+        continue-on-error: true
+
+      - name: Set Windows resolution
+        if: runner.os == 'Windows'
+        run: Set-DisplayResolution -Width 1920 -Height 1080 -Force
+        shell: powershell
 
       - name: Install Windows OpenGL
         if: runner.os == 'Windows'
@@ -42,25 +62,42 @@ jobs:
           git clone --depth 1 https://github.com/pyvista/gl-ci-helpers.git
           powershell gl-ci-helpers/appveyor/install_opengl.ps1
           if (Test-Path -Path "C:\Windows\system32\opengl32.dll" -PathType Leaf) {Exit 0} else {Exit 1}
+        shell: powershell
 
       - name: Install dependencies
         run: |
           pip install --upgrade pip
           pip install setuptools tox tox-gh-actions
 
-      - name: Test with tox
-        # run tests using pip install --pre
-        uses: aganders3/headless-gui@v1
+      - name: Test with tox (with retry)
+        uses: Wandalen/wretry.action@v3
         with:
-          run: python -m tox -v --pre
+          attempt_limit: 2
+          attempt_delay: 30000 # 30s
+          retry_condition: github.ref_name == 'main'  # avoid restart in PR
+          action: aganders3/headless-gui@v2
+          with: |
+            run: python -m tox -v --pre  --recreate
         env:
           PLATFORM: ${{ matrix.platform }}
           BACKEND: ${{ matrix.backend }}
+          PYTHON: ${{ matrix.python }}
+          COVERAGE: "no_cov"
           PYVISTA_OFF_SCREEN: True  # required for opengl on windows
+          PIP_CONSTRAINT: resources/constraints/version_denylist.txt
+          PIP_EXTRA_INDEX_URL: https://www.riverbankcomputing.com/pypi/simple/
+          PIP_ONLY_BINARY: "PyQt5,PyQt6"
+
+      - name: Upload leaked viewer graph
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: leaked ${{ matrix.platform }} py ${{ matrix.python }} ${{ matrix.backend }}
+          path: ./*leak-backref-graph*.pdf
 
       # If something goes wrong, we can open an issue in the repo
       - name: Report Failures
-        if: ${{ failure() }}
+        if: ${{ failure() && github.event_name == 'schedule' }}
         uses: JasonEtco/create-an-issue@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

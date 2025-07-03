@@ -1,0 +1,744 @@
+/*
+Styles in this file should only refer to built-in QtWidgets
+It will be imported first, and styles declared in other files
+may override these styles, but should only do so on
+custom subclasses, object names, or properties.
+
+might be possible to convert px to em by 1px = 0.0625em
+*/
+
+
+
+/* ----------------- QWidget ------------------ */
+/*
+
+mappings between property and QPalette.ColorRole:
+these colors can be looked up dynamically in widgets using, e.g
+``widget.palette().color(QPalette.Window)``
+
+background -> QPalette.Window/QPalette.Background
+  background-color -> QPalette.Window/QPalette.Background
+color -> QPalette.WindowText/QPalette.Foreground
+selection-color -> QPalette.HighlightedText
+selection-background-color -> QPalette.Highlight
+alternate-background-color -> QPalette.AlternateBase
+
+*/
+
+QWidget {
+  background-color: {{ background }};
+  border: 0px;
+  padding: 1px;
+  margin: 0px;
+  color: {{ text }};
+  selection-background-color: {{ secondary }};
+  selection-color: {{ text }};
+}
+
+QWidget:disabled {
+  color: {{ opacity(text, 90) }};
+}
+
+QWidget[emphasized="true"] {
+    background-color: {{ foreground }};
+}
+
+QWidget[emphasized="true"] > QFrame {
+    background-color: {{ foreground }};
+}
+
+/* ------------ QAbstractScrollArea ------------- */
+
+/* QAbstractScrollArea is the superclass */
+
+QTextEdit {
+  background-color: {{ console }};
+  background-clip: padding;
+  color: {{ text }};
+  selection-background-color: {{ foreground }};
+  padding: 4px 2px 4px 4px;
+  font-size: {{ increase(font_size, 1) }};
+}
+
+/* the area behind the scrollbar */
+QTextEdit > QWidget {
+  background-color: {{ console }};
+}
+
+/* ----------------- QPushButton ------------------ */
+
+QPushButton {
+  background-color: {{ foreground }};
+  border-radius: 2px;
+  padding: 4px;
+  border: 0px;
+  font-size: {{ increase(font_size, 1) }};
+}
+
+QPushButton:hover {
+  background-color: {{ primary }};
+}
+
+QPushButton:pressed {
+  background-color: {{ highlight }};
+}
+
+QPushButton:checked {
+  background-color: {{ highlight }};
+}
+
+QPushButton:disabled {
+  background-color: {{ opacity(foreground, 75) }};
+  border: 1px solid;
+  border-color: {{ foreground }};
+  color: {{ opacity(text, 90) }};
+}
+
+QWidget[emphasized="true"] QPushButton {
+   background-color: {{ primary }};
+}
+
+QWidget[emphasized="true"] QPushButton:disabled {
+  background-color: {{ darken(foreground, 20) }};
+}
+
+QWidget[emphasized="true"] QPushButton:hover {
+    background-color: {{ highlight }};
+}
+
+QWidget[emphasized="true"] QPushButton:pressed {
+  background-color: {{ secondary }};
+}
+
+
+QWidget[emphasized="true"] QPushButton:checked {
+  background-color: {{ current }};
+}
+
+/* ----------------- QComboBox ------------------ */
+
+QComboBox {
+  border-radius: 2px;
+  background-color: {{ foreground }};
+  padding: 3px 10px 3px 8px; /* top right bottom left */
+  font-size: {{ increase(font_size, 1) }};
+}
+
+QComboBox:disabled {
+  background-color: {{ opacity(foreground, 75) }};
+  border: 1px solid;
+  border-color: {{ foreground }};
+  color: {{ opacity(text, 90) }};
+}
+
+QWidget[emphasized="true"]  QComboBox {
+  background-color: {{ primary }};
+}
+
+
+QComboBox::drop-down {
+  width: 26px;
+  border-top-right-radius: 2px;
+  border-bottom-right-radius: 2px;
+}
+
+QComboBox::down-arrow {
+   image: url("theme_{{ id }}:/drop_down_50.svg");
+   width: 14px;
+   height: 14px;
+}
+
+QComboBox::down-arrow:on {
+  /* when the dropdown is open */
+}
+
+QComboBox:on {
+  border-radius: 0px;
+}
+
+QListView {
+  /* controls the color of the open dropdown menu */
+  background-color: {{ foreground }};
+  color: {{ text }};
+  border-radius: 2px;
+  font-size: {{ font_size }};
+}
+
+QListView:item:selected {
+    background-color: {{ highlight }};
+}
+
+QWidget[emphasized="true"] QComboBox {
+  background-color: {{ primary }};
+}
+
+/* ----------------- QLineEdit ------------------ */
+
+QLineEdit {
+  background-color: {{ darken(background, 15) }};
+  color: {{ text }};
+  min-height: 20px;
+  padding: 2px;
+  border-radius: 2px;
+  font-size: {{ decrease(font_size, 1) }};
+}
+
+QWidget[emphasized="true"] QLineEdit {
+  background-color: {{ background }};
+}
+
+/* ----------------- QAbstractSpinBox ------------------ */
+
+QAbstractSpinBox {
+  background-color: {{ foreground }};
+  border: none;
+  padding: 1px 10px;
+  min-width: 70px;
+  min-height: 18px;
+  border-radius: 2px;
+  font-size: {{ font_size }};
+}
+
+QLabeledSlider > QAbstractSpinBox {
+  min-width: 10px;
+  padding: 0px;
+  font-size: {{ decrease(font_size, 1) }};
+}
+
+QLabeledRangeSlider > QAbstractSpinBox {
+  min-width: 5px;
+  padding: 0px;
+}
+
+QWidget[emphasized="true"] QAbstractSpinBox {
+  background-color: {{ primary }};
+}
+
+QAbstractSpinBox::up-button,
+QAbstractSpinBox::down-button {
+    subcontrol-origin: margin;
+    width: 20px;
+    height: 20px;
+}
+
+QAbstractSpinBox::up-button:hover,
+QAbstractSpinBox::down-button:hover {
+  background-color: {{ primary }};
+}
+
+QWidget[emphasized="true"] QAbstractSpinBox::up-button:hover,
+QWidget[emphasized="true"] QAbstractSpinBox::down-button:hover {
+  background-color: {{ highlight }};
+}
+
+QAbstractSpinBox::up-button:pressed,
+QAbstractSpinBox::down-button:pressed {
+  background-color: {{ highlight }};
+}
+
+QWidget[emphasized="true"] QAbstractSpinBox::up-button:pressed,
+QWidget[emphasized="true"] QAbstractSpinBox::down-button:pressed {
+  background-color: {{ lighten(highlight, 15) }};
+}
+
+QAbstractSpinBox::up-button {
+  subcontrol-position: center right;
+  right: 0px;
+  border-top-right-radius: 2px;
+  border-bottom-right-radius: 2px;
+}
+
+
+QAbstractSpinBox::down-button {
+  subcontrol-position: center left;
+  left: 0px;
+  border-top-left-radius: 2px;
+  border-bottom-left-radius: 2px;
+}
+
+QAbstractSpinBox::up-arrow,
+QAbstractSpinBox::down-arrow {
+   width: 10px;
+   height: 10px;
+}
+
+QAbstractSpinBox::up-arrow {
+   image: url("theme_{{ id }}:/plus_50.svg");
+}
+
+QAbstractSpinBox::down-arrow {
+   image: url("theme_{{ id }}:/minus_50.svg");
+}
+
+/* ----------------- QCheckBox ------------------ */
+
+QCheckBox {
+  spacing: 5px;
+  color: {{ text }};
+  background-color: none;
+  font-size: {{ increase(font_size, 1) }};
+}
+
+QCheckBox::indicator {
+  width: 16px;
+  height: 16px;
+  background-color: {{ foreground }};
+  border: 0px;
+  padding: 1px;
+  border-radius: 2px
+}
+
+QCheckBox::indicator:hover {
+  background-color: {{ lighten(foreground, 5) }};
+}
+
+QCheckBox::indicator:unchecked {
+  image: none;
+}
+
+QCheckBox::indicator:checked {
+  image: url("theme_{{ id }}:/check.svg");
+}
+
+QCheckBox::indicator:indeterminate {
+  image: url("theme_{{ id }}:/minus.svg");
+  padding: 2px;
+  width: 14px;
+  height: 14px;
+}
+
+QWidget[emphasized="true"] QCheckBox::indicator {
+  background-color: {{ primary }};
+  border-color: {{ primary }};
+}
+
+QWidget[emphasized="true"] QCheckBox::indicator:hover {
+  background-color: {{ lighten(primary, 5) }};
+}
+
+QWidget[emphasized="true"] QCheckBox::indicator:unchecked:hover {
+  background-color: {{ lighten(primary, 5) }};
+  border-color: {{ lighten(primary, 5) }};
+}
+
+
+/* ----------------- QRadioButton ------------------ */
+
+QRadioButton {
+  background: none;
+  font-size: {{ increase(font_size, 1) }};
+}
+
+QRadioButton::indicator{
+  height: 16px;
+  width: 16px;
+  border-radius: 8px;
+}
+
+QRadioButton::indicator::unchecked {
+  background: {{ foreground }};
+}
+
+QRadioButton::indicator:unchecked:hover {
+  background: {{ lighten(foreground, 5) }};
+}
+
+
+QRadioButton::indicator::checked {
+    background: {{ highlight }};
+}
+
+QRadioButton::indicator::checked {
+  image: url("theme_{{ id }}:/circle.svg");
+  height: 6px;
+  width: 6px;
+  padding: 5px;
+}
+
+QWidget[emphasized="true"] > QRadioButton {
+   background: {{ foreground }};
+}
+
+QWidget[emphasized="true"] > QRadioButton::indicator::unchecked {
+   background-color: {{ primary }};
+}
+
+QWidget[emphasized="true"] > QRadioButton:disabled {
+  background-color: {{ foreground }};
+}
+
+QWidget[emphasized="true"] > QRadioButton::indicator:checked {
+  background-color: {{ secondary }};
+}
+
+QWidget[emphasized="true"] > QRadioButton::indicator:unchecked:hover {
+  background: {{ lighten(primary, 5) }};
+}
+
+
+/* ----------------- QSlider ------------------ */
+
+
+QSlider {
+   background-color: none;
+}
+
+QSlider::groove:horizontal {
+   border: 0px;
+   background-color: {{ foreground }};
+   height: 6px;
+   border-radius: 2px;
+}
+
+QSlider::handle:horizontal {
+   background-color: {{ highlight }};
+   border: 0px;
+   width: 16px;
+   margin-top: -5px;
+   margin-bottom: -5px;
+   border-radius: 8px;
+}
+
+QSlider::handle:hover {
+   background-color: {{ secondary }};
+}
+
+QSlider::sub-page:horizontal {
+    background: {{ primary }};
+    border-radius: 2px;
+}
+
+
+QWidget[emphasized="true"] QSlider::groove:horizontal {
+   background: {{ primary }};
+}
+
+QWidget[emphasized="true"] QSlider::handle:horizontal {
+   background: {{ secondary }};
+
+}
+
+QWidget[emphasized="true"] QSlider::sub-page:horizontal {
+    background: {{ highlight }};
+}
+
+QWidget[emphasized="true"] QSlider::handle:hover {
+   background-color: {{ lighten(secondary, 5) }};
+}
+
+
+QRangeSlider {
+  qproperty-barColor: {{ primary }};
+}
+
+QWidget[emphasized="true"] QRangeSlider {
+  qproperty-barColor: {{ highlight }};
+}
+
+/* ----------------- QScrollBar ------------------ */
+
+QScrollBar {
+  border: none;
+  border-radius: 2px;
+  background: {{ foreground }};
+}
+
+QWidget[emphasized="true"] QScrollBar {
+  background: {{ primary }};
+}
+
+QScrollBar:horizontal {
+    min-height: 13px;
+    max-height: 13px;
+    margin: 0px 16px;
+}
+
+QScrollBar:vertical {
+    max-width: 13px;
+    margin: 16px 0px;
+}
+
+QScrollBar::handle {
+  background: {{ highlight }};
+  border-radius: 2px;
+}
+
+QWidget[emphasized="true"] QScrollBar::handle {
+  background: {{ secondary }};
+}
+
+QScrollBar::handle:horizontal {
+    min-width: 26px;
+}
+
+QScrollBar::handle:vertical {
+    min-height: 26px;
+}
+
+QScrollBar::add-line, QScrollBar::sub-line {
+    border: none;
+    border-radius: 2px;
+    background: {{ foreground }};
+    subcontrol-origin: margin;
+}
+
+QWidget[emphasized="true"] QScrollBar::add-line,
+QWidget[emphasized="true"] QScrollBar::sub-line {
+    background: {{ primary }};
+}
+
+QScrollBar::add-line:horizontal {
+    width: 13px;
+    subcontrol-position: right;
+}
+
+QScrollBar::sub-line:horizontal {
+    width: 13px;
+    subcontrol-position: left;
+}
+
+QScrollBar::add-line:vertical {
+    height: 13px;
+    subcontrol-position: bottom;
+}
+
+QScrollBar::sub-line:vertical {
+    height: 13px;
+    subcontrol-position: top;
+}
+
+QScrollBar::add-line:horizontal:pressed,
+QScrollBar::sub-line:horizontal:pressed {
+    background: {{ highlight }};
+}
+
+QWidget[emphasized="true"] QScrollBar::add-line:horizontal:pressed,
+QWidget[emphasized="true"] QScrollBar::sub-line:horizontal:pressed {
+    background: {{ secondary }};
+}
+
+QScrollBar:left-arrow:horizontal {
+    image: url("theme_{{ id }}:/left_arrow.svg");
+}
+
+QScrollBar::right-arrow:horizontal {
+    image: url("theme_{{ id }}:/right_arrow.svg");
+}
+
+QScrollBar:up-arrow:vertical {
+    image: url("theme_{{ id }}:/up_arrow.svg");
+}
+
+QScrollBar::down-arrow:vertical {
+    image: url("theme_{{ id }}:/down_arrow.svg");
+}
+
+QScrollBar::left-arrow,
+QScrollBar::right-arrow,
+QScrollBar::up-arrow,
+QScrollBar::down-arrow {
+  min-height: 13px;
+  min-width: 13px;
+  max-height: 13px;
+  max-width: 13px;
+  padding: 1px 2px;
+  margin: 0;
+  border: 0;
+  border-radius: 2px;
+  background: {{ foreground }};
+}
+
+QScrollBar::left-arrow:hover,
+QScrollBar::right-arrow:hover,
+QScrollBar::up-arrow:hover,
+QScrollBar::down-arrow:hover {
+  background-color: {{ primary }};
+}
+
+QScrollBar::left-arrow:pressed,
+QScrollBar::right-arrow:pressed,
+QScrollBar::up-arrow:pressed,
+QScrollBar::down-arrow:pressed {
+  background-color: {{ highlight }};
+}
+
+
+QScrollBar::add-page,
+QScrollBar::sub-page {
+    background: none;
+}
+
+/* ----------------- QProgressBar ------------------ */
+
+QProgressBar {
+    border: 1px solid {{ foreground }};
+    border-radius: 2px;
+    text-align: center;
+    padding: 0px;
+    font-size: {{ font_size }};
+}
+
+QProgressBar::horizontal {
+  height: 18px;
+}
+
+QProgressBar::vertical {
+  width: 18px;
+}
+
+QProgressBar::chunk {
+    width: 1px;
+    background-color: vgradient({{ highlight }} - {{ foreground }});
+}
+
+/* ----------------- QToolTip ------------------ */
+
+QToolTip {
+    border: 1px solid {{ foreground }};
+    border-radius: 2px;
+    padding: 2px;
+    background-color: {{ background }};
+    color: {{ text }};
+}
+
+/* ----------------- QGroupBox ------------------ */
+
+QGroupBox {
+    background-color: {{ background }};
+    border: 1px solid {{ foreground }};
+    border-radius: 5px;
+    margin-top: 1ex; /* leave space at the top for the title */
+    font-size: {{ increase(font_size, 1) }};
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    left: 10px;
+    padding: 0 3px;
+    background-color: {{ background }};
+    font-size: {{ increase(font_size, 1) }};
+}
+
+QGroupBox::indicator {
+  width: 12px;
+  height: 12px;
+  background-color: {{ foreground }};
+  border: 0px;
+  padding: 1px;
+  border-radius: 2px
+}
+
+QGroupBox::indicator:hover {
+  background-color: {{ lighten(foreground, 5) }};
+}
+
+QGroupBox::indicator:unchecked {
+  image: none;
+}
+
+QGroupBox::indicator:checked {
+  image: url("theme_{{ id }}:/check.svg");
+}
+
+QGroupBox::indicator:indeterminate {
+  image: url("theme_{{ id }}:/minus.svg");
+  padding: 2px;
+  width: 14px;
+  height: 14px;
+}
+
+QWidget[emphasized="true"] QGroupBox::indicator {
+  background-color: {{ primary }};
+  border-color: {{ primary }};
+}
+
+QWidget[emphasized="true"] QGroupBox::indicator:hover {
+  background-color: {{ lighten(primary, 5) }};
+}
+
+QWidget[emphasized="true"] QGroupBox::indicator:unchecked:hover {
+  background-color: {{ lighten(primary, 5) }};
+  border-color: {{ lighten(primary, 5) }};
+}
+
+
+/* ----------------- QTabWidget ------------------ */
+
+/* The tab widget frame */
+QTabWidget::pane {
+  border: 1px solid {{ darken(foreground, 10) }};
+  border-radius: 2px;
+}
+
+QWidget[emphasized="true"] QTabWidget::pane {
+  border: 1px solid {{ darken(primary, 10) }};
+}
+
+QTabBar, QTabBar::tab {
+  background-color: {{ foreground }};
+  border: 1px solid {{ background }};
+  border-bottom: 0px;
+  border-top-left-radius: 4px;
+  border-top-right-radius: 4px;
+  padding: 3px 6px;
+  background: vgradient({{ lighten(foreground, 15) }} - {{ foreground }});
+  font-size: {{ font_size }};
+}
+
+
+QWidget[emphasized="true"] QTabBar::tab {
+  background-color: {{ primary }};
+  border: 1px solid {{ foreground }};
+  background: vgradient({{ lighten(primary, 15) }} - {{ primary }});
+}
+
+QTabBar::tab:selected {
+  background: vgradient({{ lighten(highlight, 15) }} - {{ highlight }});
+}
+
+QWidget[emphasized="true"] QTabBar::tab:selected {
+    background: vgradient({{ lighten(secondary, 15) }} - {{ secondary }});
+}
+
+/* ----------------- QLabel ------------------ */
+
+QLabel {
+  background-color: none;
+  font-size: {{ increase(font_size, 1) }};
+}
+
+/* ----------------- QMenuBar ------------------ */
+
+QMenuBar::item:selected {
+   background-color: {{ secondary }};
+}
+
+QLCDNumber {
+  background: none;
+}
+
+/* ----------------- QMenu ------------------
+
+QMenu::item {
+    font-size: {{ font_size }};
+    padding: 3px;
+}
+
+QMenu::item:selected {
+    font-size: {{ font_size }};
+    background-color: {{ secondary }};
+}
+*/
+
+/* ----------------- QStatusBar ------------------ */
+
+QStatusBar::item{
+  border: None;
+}
+
+/* ----------------- QHeaderView ----------------- */
+QHeaderView::section {
+  background-color: {{ background }};
+  padding: 2px;
+}

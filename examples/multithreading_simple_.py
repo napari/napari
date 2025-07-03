@@ -29,7 +29,7 @@ def create_widget():
     return widget
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     app = QApplication([])
     wdg = create_widget()
 
@@ -37,8 +37,8 @@ if __name__ == "__main__":
     # By default, @thread_worker-decorated functions do not immediately start
     worker = long_running_function()
     # Signals are best connected *before* starting the worker.
-    worker.started.connect(lambda: wdg.status.setText("worker is running..."))
-    worker.returned.connect(lambda x: wdg.status.setText(f"returned {x}"))
+    worker.started.connect(lambda: wdg.status.setText('worker is running...'))
+    worker.returned.connect(lambda x: wdg.status.setText(f'returned {x}'))
 
     # # Connections may also be passed directly to the decorated function.
     # # The above syntax is equivalent to:
