@@ -192,7 +192,11 @@ class ApplicationSettings(EventedModel):
     grid_stride: GridStride = Field(  # type: ignore [valid-type]
         default=1,
         title=trans._('Grid Stride'),
-        description=trans._('Number of layers to place in each grid square.'),
+        description=trans._(
+            'Number of layers to place in each grid viewbox before moving on to the next viewbox.\n'
+            'A negative stride will cause the order in which the layers are placed in the grid to be reversed.\n'
+            '0 is not a valid entry.'
+        ),
     )
 
     grid_width: GridWidth = Field(  # type: ignore [valid-type]
@@ -211,9 +215,9 @@ class ApplicationSettings(EventedModel):
         default=0,
         title=trans._('Grid Spacing'),
         description=trans._(
-            'The amount of spacing inbetween grid viewboxes.'
-            '\nIf between 0 and 1, it is interpreted as a proportion of the size of the viewboxes.'
-            '\nIf equal or greater than 1, it is interpreted as screen pixels.'
+            'The amount of spacing inbetween grid viewboxes.\n'
+            'If between 0 and 1, it is interpreted as a proportion of the size of the viewboxes.\n'
+            'If equal or greater than 1, it is interpreted as screen pixels.'
         ),
     )
 
