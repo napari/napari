@@ -918,18 +918,21 @@ class QtViewer(QSplitter):
         if fit_to_data_extent:
             # Use the same scene parameter calculations as in viewer_model.fit_to_view
             ndisplay = self.viewer.dims.ndisplay
-            extent, _, _, total_size = self.viewer._get_scene_parameters()
+            extent, scene_size, _ = self.viewer._get_scene_parameters()
             extent_scale = min(self.viewer.layers.extent.step[-ndisplay:])
 
             if ndisplay == 3:
-                total_size = self.viewer._calculate_bounding_box(
+                scene_size = self.viewer._calculate_bounding_box(
                     extent=extent,
                     view_direction=self.viewer.camera.view_direction,
                     up_direction=self.viewer.camera.up_direction,
                 )
 
             # adjust size by the scale, to return the size in real pixels
-            size = np.ceil(total_size / extent_scale).astype(int)
+            grid_shape = self._qt_viewer.viewer.grid.actual_shape(
+                len(self.viewer.layers)
+            )
+            size = np.ceil(scene_size / extent_scale * grid_shape).astype(int)
 
         with self.resize_canvas(size, scale):
             if fit_to_data_extent:
