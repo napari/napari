@@ -2769,6 +2769,7 @@ class Shapes(Layer):
             for ind in to_remove:
                 self._data_view.remove(ind)
 
+            self.selected_data = self.selected_data - set(indices)
             self._feature_table.remove(indices)
             self.text.remove(indices)
             self._data_view._edge_color = np.delete(
