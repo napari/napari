@@ -265,8 +265,12 @@ def test_screenshot(make_napari_viewer, qapp, qtbot):
     qtbot.wait_exposed(viewer.window._qt_window)
 
     qtbot.wait(5)
-    screenshot2 = viewer.window.screenshot(flash=False, canvas_only=True)
     qapp.processEvents()
+
+    screenshot2 = viewer.window.screenshot(flash=False, canvas_only=True)
+
+    qapp.processEvents()
+
     # Take screenshot
     with pytest.warns(FutureWarning, match='qt_viewer'):
         screenshot1 = viewer.window.qt_viewer.screenshot(flash=False)
