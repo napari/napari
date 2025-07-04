@@ -966,10 +966,6 @@ class QtViewer(QSplitter):
 
     @contextlib.contextmanager
     def resize_canvas(self, size: tuple[int, int] | None, scale: float):
-        if scale == 1 and (size is None or size == self.canvas.size):
-            # no need to resize if the size is the same
-            yield
-            return
         canvas = self.canvas
         prev_size = canvas.size
         camera = self.viewer.camera
