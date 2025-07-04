@@ -2791,7 +2791,6 @@ class Shapes(Layer):
     def remove_selected(self) -> None:
         """Remove any selected shapes."""
         self.remove(list(self.selected_data))
-        self.selected_data.clear()
 
     def _rotate_box(self, angle, center=(0, 0)):
         """Perform a rotation on the selected box.
