@@ -88,7 +88,12 @@ class InteractionBox(Compound):
         edges = edges if rotation else edges[:4]
         markers = self._marker_symbol if rotation else self._marker_symbol[:8]
 
-        self.line.set_data(pos=vertices, connect=edges)
+        self.line.set_data(
+            pos=vertices,
+            connect=edges,
+            color=self._edge_color,
+            width=self._highlight_width,
+        )
 
         if handles:
             marker_edges = np.zeros(len(vertices))
