@@ -245,7 +245,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         name=None,
         opacity=1.0,
         plane=None,
-        projection_mode='none',
+        projection_mode='mean',
         rendering='mip',
         rgb=None,
         rotate=None,

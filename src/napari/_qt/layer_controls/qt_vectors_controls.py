@@ -151,6 +151,9 @@ class QtVectorsControls(QtLayerControls):
         self.layout().addRow(trans._('width:'), self.widthSpinBox)
         self.layout().addRow(trans._('length:'), self.lengthSpinBox)
         self.layout().addRow(
+            trans._('projection mode:'), self.projectionComboBox
+        )
+        self.layout().addRow(
             trans._('vector style:'), self.vector_style_comboBox
         )
         self.layout().addRow(
