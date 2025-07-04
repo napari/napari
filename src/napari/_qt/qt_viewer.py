@@ -873,6 +873,15 @@ class QtViewer(QSplitter):
         )
         if path is not None:
             imsave(path, img)
+
+        if flash:
+            from napari._qt.utils import add_flash_animation
+
+            # Here we are actually applying the effect to the `_welcome_widget`
+            # and not # the `native` widget because it does not work on the
+            # `native` widget. It's probably because the widget is in a stack
+            # with the `QtWelcomeWidget`.
+            add_flash_animation(self._welcome_widget)
         return img
 
     def _screenshot(
@@ -914,6 +923,14 @@ class QtViewer(QSplitter):
                     len_size=len(size),
                 )
             )
+
+        try:
+            self.viewer._layer_slicer.wait_until_idle(timeout=5)
+        except TimeoutError as e:  # pragma: no cover
+            raise TimeoutError(
+                'Slicing was too slow. Wait for all layers to load before taking a screenshot, '
+                'or disable async slicing in Preferences->Experimental.'
+            ) from e
 
         if fit_to_data_extent:
             # Use the same scene parameter calculations as in viewer_model.fit_to_view
