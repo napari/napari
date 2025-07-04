@@ -54,7 +54,6 @@ from napari.utils.colormaps.standardize_color import hex_to_name, rgb_to_hex
 from napari.utils.events import Event
 from napari.utils.events.custom_types import Array
 from napari.utils.geometry import project_points_onto_plane, rotate_points
-from napari.utils.notifications import show_warning
 from napari.utils.transforms import Affine
 from napari.utils.translations import trans
 
@@ -2057,15 +2056,6 @@ class Points(Layer):
         """Remove all selected points."""
         self.remove(list(self.selected_data))
         self.selected_data = set()
-
-    def pop(self) -> None:
-        """Remove the last point from the layer."""
-        visible_indices = self._indices_view.tolist()
-        if not visible_indices:
-            # If no points are visible, do nothing
-            show_warning('No points to remove.')
-            return
-        self.remove([visible_indices[-1]])
 
     def _move(
         self,

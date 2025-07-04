@@ -433,24 +433,6 @@ def test_removing_points():
     assert len(layer.data) == shape[0] - 4
 
 
-def test_pop_points():
-    """Test popping points."""
-    shape = (10, 2)
-    np.random.seed(0)
-    data = 20 * np.random.random(shape)
-    layer = Points(data)
-
-    # Remove points using pop
-    layer.pop()
-    assert len(layer.data) == shape[0] - 1
-    assert np.array_equal(layer.data, data[:-1])
-
-    # Remove another point using pop
-    layer.pop()
-    assert len(layer.data) == shape[0] - 2
-    assert np.array_equal(layer.data, data[:-2])
-
-
 def test_removing_selected_points():
     """Test removing selected points."""
     shape = (10, 2)

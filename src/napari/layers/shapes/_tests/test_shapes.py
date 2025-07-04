@@ -1476,57 +1476,6 @@ def test_removing_shapes():
     )
 
 
-def test_pop_shapes():
-    """Test popping shapes."""
-    np.random.seed(0)
-    data = [
-        20 * np.random.random((np.random.randint(2, 12), 2)).astype(np.float32)
-        for i in range(5)
-    ] + list(np.random.random((5, 4, 2)).astype(np.float32))
-    shape_type = ['polygon'] * 5 + ['rectangle'] * 3 + ['ellipse'] * 2
-    layer = Shapes(data, shape_type=shape_type)
-    layer.events.data = Mock()
-    old_data = layer.data
-
-    # Removing last indexed shape using pop
-    layer.pop()
-    last_index = [9]
-    assert layer.events.data.call_args_list[0][1] == {
-        'value': old_data,
-        'action': ActionType.REMOVING,
-        'data_indices': tuple(
-            last_index,
-        ),
-        'vertex_indices': ((),),
-    }
-    assert layer.events.data.call_args_list[1][1] == {
-        'value': layer.data,
-        'action': ActionType.REMOVED,
-        'data_indices': tuple(
-            last_index,
-        ),
-        'vertex_indices': ((),),
-    }
-
-    keep = [*range(9)]
-    data_keep = [data[i] for i in keep]
-    shape_type_keep = [shape_type[i] for i in keep]
-    assert len(layer.data) == len(data_keep)
-    assert np.all(
-        [
-            np.array_equal(ld, d)
-            for ld, d in zip(layer.data, data_keep, strict=False)
-        ]
-    )
-    assert layer.ndim == 2
-    assert np.all(
-        [
-            s == so
-            for s, so in zip(layer.shape_type, shape_type_keep, strict=False)
-        ]
-    )
-
-
 def test_removing_selected_shapes():
     """Test removing selected shapes."""
     np.random.seed(0)

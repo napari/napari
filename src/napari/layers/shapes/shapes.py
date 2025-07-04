@@ -2793,15 +2793,6 @@ class Shapes(Layer):
         self.remove(list(self.selected_data))
         self.selected_data.clear()
 
-    def pop(self) -> None:
-        """Remove the last shape from the layer."""
-        visible_indices = list(set(np.nonzero(self._data_view._displayed)[0]))
-        if not visible_indices:
-            show_warning('No shapes to remove.')
-            return
-        indices = visible_indices[-1]
-        self.remove([indices])
-
     def _rotate_box(self, angle, center=(0, 0)):
         """Perform a rotation on the selected box.
 
