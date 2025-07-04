@@ -839,7 +839,7 @@ class QtViewer(QSplitter):
 
         try:
             self.viewer._layer_slicer.wait_until_idle(timeout=5)
-        except TimeoutError as e:  # pragma: no cover 
+        except TimeoutError as e:  # pragma: no cover
             raise TimeoutError(
                 'Slicing was too slow. Wait for all layers to load before taking a screenshot, '
                 'or disable async slicing in Preferences->Experimental.'
