@@ -9,10 +9,13 @@ import pytest
 
 from napari._pydantic_compat import ValidationError
 from napari.utils.color import ColorArray
-from napari.utils.colormaps import Colormap, _accelerated_cmap, colormap
+from napari.utils.colormaps import (
+    Colormap,
+    _accelerated_cmap,
+    colormap,
+)
 from napari.utils.colormaps._accelerated_cmap import (
     MAPPING_OF_UNKNOWN_VALUE,
-    _labels_raw_to_texture_direct_numpy,
 )
 from napari.utils.colormaps.colormap import (
     CyclicLabelColormap,
@@ -156,6 +159,7 @@ def _disable_jit(monkeypatch):
     no class definitions, only functions.
     """
     pytest.importorskip('numba')
+
     with patch('numba.core.config.DISABLE_JIT', True):
         importlib.reload(_accelerated_cmap)
         yield
@@ -291,11 +295,23 @@ def test_test_cast_direct_labels_to_minimum_type_no_jit(num, dtype):
     assert cast.dtype == dtype
 
 
-def test_zero_preserving_modulo_naive():
+def test_zero_preserving_modulo_naive_vs_numba():
     pytest.importorskip('numba')
+
     data = np.arange(1000, dtype=np.uint32)
     res1 = _accelerated_cmap.zero_preserving_modulo_numpy(data, 49, np.uint8)
     res2 = _accelerated_cmap.zero_preserving_modulo(data, 49, np.uint8)
+    npt.assert_array_equal(res1, res2)
+
+
+def test_zero_preserving_modulo_naive_vs_partseg():
+    pytest.importorskip('PartSegCore_compiled_backend.napari_mapping')
+
+    from napari.utils.colormaps import _colormap_partseg
+
+    data = np.arange(1000, dtype=np.uint32)
+    res1 = _accelerated_cmap.zero_preserving_modulo_numpy(data, 49, np.uint8)
+    res2 = _colormap_partseg.zero_preserving_modulo_partseg(data, 49, np.uint8)
     npt.assert_array_equal(res1, res2)
 
 
@@ -514,7 +530,7 @@ def test_direct_colormap_negative_values_numpy():
     }
     cmap = DirectLabelColormap(color_dict=color_dict)
 
-    res = _labels_raw_to_texture_direct_numpy(
+    res = _accelerated_cmap._labels_raw_to_texture_direct_numpy(
         np.array([-1, -2, 5], dtype=np.int8), cmap
     )
     npt.assert_array_equal(res, [1, 2, 0])
@@ -522,7 +538,7 @@ def test_direct_colormap_negative_values_numpy():
     cmap.selection = -2
     cmap.use_selection = True
 
-    res = _labels_raw_to_texture_direct_numpy(
+    res = _accelerated_cmap._labels_raw_to_texture_direct_numpy(
         np.array([-1, -2, 5], dtype=np.int8), cmap
     )
     npt.assert_array_equal(res, [0, 1, 0])
