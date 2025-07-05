@@ -657,7 +657,8 @@ class QtViewer(QSplitter):
         # clipping in perspective projection, while still preserving enough
         # bit depth in the depth buffer to avoid artifacts. See discussion at:
         # https://github.com/napari/napari/pull/7529#issuecomment-2594203871
-        self.canvas.camera._3D_camera.depth_value = 128 * diameter
+        for camera in [self.canvas.camera] + self.canvas.grid_cameras:
+            camera._3D_camera.depth_value = 128 * diameter
 
     def _add_layer(self, layer):
         """When a layer is added, set its parent and order.
@@ -835,6 +836,15 @@ class QtViewer(QSplitter):
             Flag to indicate whether flash animation should be shown after
             the screenshot was captured.
         """
+
+        try:
+            self.viewer._layer_slicer.wait_until_idle(timeout=5)
+        except TimeoutError as e:  # pragma: no cover
+            raise TimeoutError(
+                'Slicing was too slow. Wait for all layers to load before taking a screenshot, '
+                'or disable async slicing in Preferences->Experimental.'
+            ) from e
+
         img = self.canvas.screenshot()
         if flash:
             from napari._qt.utils import add_flash_animation

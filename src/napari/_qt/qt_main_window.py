@@ -1727,7 +1727,7 @@ class Window:
         # Part 2: compute canvas size and view based on parameters
         if fit_to_data_extent:
             # Use the same scene parameter calculations as in viewer_model.fit_to_view
-            extent, _, _, total_size = (
+            extent, scene_size, _ = (
                 self._qt_viewer.viewer._get_scene_parameters()
             )
             extent_scale = min(
@@ -1735,14 +1735,14 @@ class Window:
             )
 
             if ndisplay == 3:
-                total_size = self._qt_viewer.viewer._calculate_bounding_box(
+                scene_size = self._qt_viewer.viewer._calculate_bounding_box(
                     extent=extent,
                     view_direction=self._qt_viewer.viewer.camera.view_direction,
                     up_direction=self._qt_viewer.viewer.camera.up_direction,
                 )
 
             # adjust size by the scale, to return the size in real pixels
-            size = np.ceil(total_size / extent_scale).astype(int)
+            size = np.ceil(scene_size / extent_scale).astype(int)
 
         if size is not None:
             size = np.asarray(size) / self._qt_window.devicePixelRatio()
@@ -1755,10 +1755,16 @@ class Window:
 
         # Part 3: take the screenshot
         if canvas_only:
-            canvas.size = tuple(size.astype(int))
             if fit_to_data_extent:
+                grid_shape = self._qt_viewer.viewer.grid.actual_shape(
+                    len(self._qt_viewer.viewer.layers)
+                )
+                canvas.size = tuple((size * grid_shape).astype(int))
                 # tight view around data
                 self._qt_viewer.viewer.fit_to_view(margin=0)
+            else:
+                canvas.size = tuple(size.astype(int))
+
             try:
                 QApplication.instance().processEvents()  # fixes issue #8033 https://github.com/napari/napari/issues/8033
                 img = canvas.screenshot()
