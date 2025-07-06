@@ -2057,6 +2057,87 @@ class Points(Layer):
         self.remove(list(self.selected_data))
         self.selected_data = set()
 
+    def get_point_info(self, index: int) -> dict:
+        """
+        Retrieve all available information about a point at the given index.
+
+        Parameters
+        ----------
+        index : int
+            Index of the point.
+
+        Returns
+        -------
+        dict
+            A dictionary containing all relevant details of the point.
+        """
+        if not (0 <= index < len(self.data)):
+            return {
+                'data': None,
+                'properties': {},
+                'features': {},
+                'face_color': None,
+                'border_color': None,
+                'size': None,
+                'symbol': None,
+                'border_width': None,
+                'shown': False,
+                'text': None,
+                'units': None,
+            }
+
+        info = {
+            'data': self.data[index],
+            'properties': {
+                key: (val[index]) for key, val in self.properties.items()
+            }
+            if self.properties
+            else {},
+            'features': (
+                self.features.iloc[index].to_dict()
+                if hasattr(self, 'features') and self.features is not None
+                else {}
+            ),
+            'face_color': self.face_color[index]
+            if len(self.face_color) > 1
+            else self.face_color[0],
+            'border_color': self.border_color[index]
+            if len(self.border_color) > 1
+            else self.border_color[0],
+            'size': self.size[index] if len(self.size) > 1 else self.size[0],
+            'symbol': self.symbol[index]
+            if len(self.symbol) > 1
+            else self.symbol[0],
+            'border_width': self.border_width[index]
+            if len(self.border_width) > 1
+            else self.border_width[0],
+            'shown': self.shown[index]
+            if len(self.shown) > 1
+            else self.shown[0],
+            'text': self.text,
+            'units': self.units,
+        }
+        return info
+
+    def pop(self, index=-1) -> dict[str, Any]:
+        """Remove and return the point at the given index.
+
+        Parameters
+        ----------
+        index : int, optional
+            Index of the point to remove. Default is -1, which removes the last point.
+
+        Returns
+        -------
+        dict[str, Any]
+            Dictionary containing the removed point's data.
+        """
+        if index == -1:
+            index = len(self.data) - 1
+        info = self.get_point_info(index)
+        self.remove([index])
+        return info
+
     def _move(
         self,
         selection_indices: Sequence[int],
