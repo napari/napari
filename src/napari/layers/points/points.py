@@ -2081,9 +2081,6 @@ class Points(Layer):
                 'size': None,
                 'symbol': None,
                 'border_width': None,
-                'shown': False,
-                'text': None,
-                'units': None,
             }
 
         info = {
@@ -2098,24 +2095,11 @@ class Points(Layer):
                 if hasattr(self, 'features') and self.features is not None
                 else {}
             ),
-            'face_color': self.face_color[index]
-            if len(self.face_color) > 1
-            else self.face_color[0],
-            'border_color': self.border_color[index]
-            if len(self.border_color) > 1
-            else self.border_color[0],
-            'size': self.size[index] if len(self.size) > 1 else self.size[0],
-            'symbol': self.symbol[index]
-            if len(self.symbol) > 1
-            else self.symbol[0],
-            'border_width': self.border_width[index]
-            if len(self.border_width) > 1
-            else self.border_width[0],
-            'shown': self.shown[index]
-            if len(self.shown) > 1
-            else self.shown[0],
-            'text': self.text,
-            'units': self.units,
+            'face_color': self.face_color[index],
+            'border_color': self.border_color[index],
+            'size': self.size[index],
+            'symbol': self.symbol[index],
+            'border_width': self.border_width[index],
         }
         return info
 
