@@ -463,6 +463,45 @@ class ShapeList:
         shape = self.shapes[shape_index]
         return range(start, start + shape.triangles_count)
 
+    @staticmethod
+    def _ranges_to_array(ranges: Sequence[range]) -> np.ndarray:
+        count = sum(r.stop - r.start for r in ranges)
+        res = np.empty(count, dtype=np.int64)
+        begin = 0
+        for r in ranges:
+            end = begin + (r.stop - r.start)
+            res[begin:end] = np.arange(r.start, r.stop)
+            begin = end
+        return res
+
+    def _mesh_triangles_range_seq(
+        self, shape_indexes: Sequence[int]
+    ) -> np.ndarray:
+        """Return the range of mesh triangles for a sequence of shape indexes."""
+        if (
+            shape_indexes[-1] - shape_indexes[0] == len(shape_indexes) - 1
+        ):  # If the sequence is continuous, return a range
+            start = self._mesh.triangles_index[shape_indexes[0]]
+            end = self._mesh.triangles_index[shape_indexes[-1]]
+            end_shape = self.shapes[shape_indexes[-1]]
+            return np.arange(start, end + end_shape.triangles_count)
+        # If the sequence is not continuous, return a numpy array
+        ranges = [self._mesh_triangles_range(i) for i in shape_indexes]
+        return self._ranges_to_array(ranges)
+
+    def _vertices_range_seq(self, shape_indexes: Sequence[int]) -> np.ndarray:
+        """Return the range of vertices for a sequence of shape indexes."""
+        if (
+            shape_indexes[-1] - shape_indexes[0] == len(shape_indexes) - 1
+        ):  # If the sequence is continuous, return a range
+            start = self._vertices_index[shape_indexes[0]]
+            end = self._vertices_index[shape_indexes[-1]]
+            end_shape = self.shapes[shape_indexes[-1]]
+            return np.arange(start, end + end_shape.data_displayed.shape[0])
+        # If the sequence is not continuous, return a numpy array
+        ranges = [self._vertices_range(i) for i in shape_indexes]
+        return self._ranges_to_array(ranges)
+
     def _mesh_triangles_range_available(self, shape_index: int) -> range:
         """Return the available range of mesh triangles for a given shape index."""
         start = self._mesh.triangles_index[shape_index]
@@ -684,12 +723,14 @@ class ShapeList:
             triangle_ranges = np.array([], dtype=np.int64)
             vertices_range = np.array([], dtype=np.int64)
         else:
-            triangle_ranges = np.r_[
-                tuple(self._mesh_triangles_range(i) for i in disp_indices)
-            ]
-            vertices_range = np.r_[
-                tuple(self._vertices_range(i) for i in disp_indices)
-            ]
+            # triangle_ranges = np.r_[
+            #     tuple(self._mesh_triangles_range(i) for i in disp_indices)
+            # ]
+            triangle_ranges = self._mesh_triangles_range_seq(disp_indices)
+            # vertices_range = np.r_[
+            #     tuple(self._vertices_range(i) for i in disp_indices)
+            # ]
+            vertices_range = self._vertices_range_seq(disp_indices)
 
         self._mesh.displayed_triangles = self._mesh.triangles[z_order][
             triangle_ranges
