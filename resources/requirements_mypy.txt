@@ -36,7 +36,7 @@ packaging==25.0
     #   qtpy
 pathspec==0.12.1
     # via mypy
-psygnal==0.13.0
+psygnal==0.14.0
     # via
     #   magicgui
     #   npe2
@@ -87,7 +87,7 @@ types-requests==2.32.4.20250611
     # via -r resources/requirements_mypy.in
 types-setuptools==80.9.0.20250529
     # via -r resources/requirements_mypy.in
-typing-extensions==4.14.0
+typing-extensions==4.14.1
     # via
     #   magicgui
     #   mypy
