@@ -333,7 +333,7 @@ class QtLabelsControls(QtLayerControls):
     def _on_data_change(self):
         """Update label selection spinbox min/max when data changes."""
         dtype_lims = get_dtype_limits(get_dtype(self.layer))
-        self.selectionSpinBox.setRange(*dtype_lims)
+        self.labelsSpinbox.selectionSpinBox.setRange(*dtype_lims)
 
     def changeRendering(self, rendering_mode: LabelsRendering):
         """Change rendering mode for image display.
