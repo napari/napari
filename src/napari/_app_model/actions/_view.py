@@ -1,5 +1,10 @@
+from app_model import Action
+from app_model.types import StandardKeyBinding, ToggleRule
+
 from napari._app_model.actions._toggle_action import ViewerModelToggleAction
-from napari._app_model.constants import MenuId
+from napari._app_model.constants import MenuGroup, MenuId
+from napari.components import ViewerModel
+from napari.settings import get_settings
 from napari.utils.translations import trans
 
 toggle_action_details = [
@@ -59,9 +64,104 @@ toggle_action_details = [
     ),
 ]
 
-VIEW_ACTIONS = []
 MENUID_DICT = {'axes': MenuId.VIEW_AXES, 'scale_bar': MenuId.VIEW_SCALEBAR}
 
+
+def _tooltip_visibility_toggle() -> None:
+    settings = get_settings().appearance
+    settings.layer_tooltip_visibility = not settings.layer_tooltip_visibility
+
+
+def _get_current_tooltip_visibility() -> bool:
+    return get_settings().appearance.layer_tooltip_visibility
+
+
+def _fit_to_view(viewer: ViewerModel):
+    viewer.fit_to_view()
+
+
+def _zoom_in(viewer: ViewerModel):
+    viewer.camera.zoom *= 1.5
+
+
+def _zoom_out(viewer: ViewerModel):
+    viewer.camera.zoom /= 1.5
+
+
+def _toggle_canvas_ndim(viewer: ViewerModel):
+    """Toggle the current canvas between 3D and 2D."""
+    if viewer.dims.ndisplay == 2:
+        viewer.dims.ndisplay = 3
+    else:  # == 3
+        viewer.dims.ndisplay = 2
+
+
+VIEW_ACTIONS = [
+    Action(
+        id='napari.viewer.fit_to_view',
+        title=trans._('Fit to View'),
+        menus=[
+            {
+                'id': MenuId.MENUBAR_VIEW,
+                'group': MenuGroup.ZOOM,
+                'order': 1,
+            }
+        ],
+        callback=_fit_to_view,
+        keybindings=[StandardKeyBinding.OriginalSize],
+    ),
+    Action(
+        id='napari.viewer.camera.zoom_in',
+        title=trans._('Zoom In'),
+        menus=[
+            {
+                'id': MenuId.MENUBAR_VIEW,
+                'group': MenuGroup.ZOOM,
+                'order': 1,
+            }
+        ],
+        callback=_zoom_in,
+        keybindings=[StandardKeyBinding.ZoomIn],
+    ),
+    Action(
+        id='napari.viewer.camera.zoom_out',
+        title=trans._('Zoom Out'),
+        menus=[
+            {
+                'id': MenuId.MENUBAR_VIEW,
+                'group': MenuGroup.ZOOM,
+                'order': 1,
+            }
+        ],
+        callback=_zoom_out,
+        keybindings=[StandardKeyBinding.ZoomOut],
+    ),
+    Action(
+        id='napari.window.view.toggle_ndisplay',
+        title=trans._('Toggle 2D/3D Camera'),
+        menus=[
+            {
+                'id': MenuId.MENUBAR_VIEW,
+                'group': MenuGroup.ZOOM,
+                'order': 2,
+            }
+        ],
+        callback=_toggle_canvas_ndim,
+    ),
+    Action(
+        id='napari.window.view.toggle_layer_tooltips',
+        title=trans._('Toggle Layer Tooltips'),
+        menus=[
+            {
+                'id': MenuId.MENUBAR_VIEW,
+                'group': MenuGroup.RENDER,
+                'order': 10,
+            }
+        ],
+        callback=_tooltip_visibility_toggle,
+        toggled=ToggleRule(get_current=_get_current_tooltip_visibility),
+    ),
+]
 
 for cmd, cmd_title, viewer_attr, sub_attr in toggle_action_details:
     VIEW_ACTIONS.append(
