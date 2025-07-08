@@ -693,7 +693,7 @@ class ShapeList:
     ) -> None:
         """Update the displayed triangles to shape index mapping."""
         if (
-            self._mesh.displayed_triangles_to_shape_index.shape
+            self._mesh.displayed_triangles_to_shape_index.shape[0]
             != self._mesh.displayed_triangles.shape[0]
         ):
             self._mesh.displayed_triangles_to_shape_index = np.full(
@@ -714,7 +714,7 @@ class ShapeList:
     ) -> None:
         """Update the displayed vertices to shape index mapping."""
         if (
-            self.displayed_vertices_to_shape_num.shape
+            self.displayed_vertices_to_shape_num.shape[0]
             != self.displayed_vertices.shape[0]
         ):
             self.displayed_vertices_to_shape_num = np.full(
