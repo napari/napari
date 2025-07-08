@@ -26,7 +26,7 @@ mypy==1.16.1
     # via -r resources/requirements_mypy.in
 mypy-extensions==1.1.0
     # via mypy
-npe2==0.7.8
+npe2==0.7.9
     # via -r resources/requirements_mypy.in
 numpy==2.3.1
     # via -r resources/requirements_mypy.in
