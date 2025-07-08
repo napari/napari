@@ -76,19 +76,19 @@ def _get_current_tooltip_visibility() -> bool:
     return get_settings().appearance.layer_tooltip_visibility
 
 
-def _fit_to_view(viewer: ViewerModel):
+def _fit_to_view(viewer: ViewerModel) -> None:
     viewer.fit_to_view()
 
 
-def _zoom_in(viewer: ViewerModel):
+def _zoom_in(viewer: ViewerModel) -> None:
     viewer.camera.zoom *= 1.5
 
 
-def _zoom_out(viewer: ViewerModel):
+def _zoom_out(viewer: ViewerModel) -> None:
     viewer.camera.zoom /= 1.5
 
 
-def _toggle_canvas_ndim(viewer: ViewerModel):
+def _toggle_canvas_ndim(viewer: ViewerModel) -> None:
     """Toggle the current canvas between 3D and 2D."""
     if viewer.dims.ndisplay == 2:
         viewer.dims.ndisplay = 3
