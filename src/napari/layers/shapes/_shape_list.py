@@ -1503,7 +1503,7 @@ class ShapeList:
         """same as update_face_color() but for multiple indices/facecolors at once"""
         face_colors_: Iterable[ShapeColor]
         if face_colors.ndim == 1:
-            face_colors = repeat(typing.cast(ShapeColor, face_colors))
+            face_colors_ = repeat(typing.cast(ShapeColor, face_colors))
         elif face_colors.ndim == 2 and face_colors.shape[0] == 1:
             face_colors_ = repeat(typing.cast(ShapeColor, face_colors[0]))
         else:
