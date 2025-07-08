@@ -10,7 +10,6 @@ from app_model.types import (
     StandardKeyBinding,
 )
 
-from napari._app_model.actions._file import FILE_ACTIONS
 from napari._app_model.constants import MenuGroup, MenuId
 from napari._app_model.context import (
     LayerListContextKeys as LLCK,
@@ -51,7 +50,6 @@ def _close_app(window: Window):
 
 
 Q_FILE_ACTIONS: list[Action] = [
-    *FILE_ACTIONS,
     Action(
         id='napari.window.file._image_from_clipboard',
         title=trans._('New Image from Clipboard'),
