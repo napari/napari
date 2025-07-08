@@ -2584,7 +2584,7 @@ class Shapes(Layer):
             ):
                 # If in one of these mode show the vertices of the shape itself
                 inds = np.isin(
-                    self._data_view.displayed_triangles_to_shape_num,
+                    self._data_view.displayed_vertices_to_shape_num,
                     list(self.selected_data),
                 )
                 vertices = self._data_view.displayed_vertices[inds][:, ::-1]
@@ -2907,7 +2907,7 @@ class Shapes(Layer):
             ):
                 # Check if inside vertex of shape
                 inds = np.isin(
-                    self._data_view.displayed_triangles_to_shape_num,
+                    self._data_view.displayed_vertices_to_shape_num,
                     selected_index,
                 )
                 vertices = self._data_view.displayed_vertices[inds]
@@ -2919,11 +2919,11 @@ class Shapes(Layer):
                 ).nonzero()[0]
                 if len(matches) > 0:
                     index = inds.nonzero()[0][matches[-1]]
-                    shape = self._data_view.displayed_triangles_to_shape_num[
+                    shape = self._data_view.displayed_vertices_to_shape_num[
                         index
                     ]
                     vals, idx = np.unique(
-                        self._data_view.displayed_triangles_to_shape_num,
+                        self._data_view.displayed_vertices_to_shape_num,
                         return_index=True,
                     )
                     shape_in_list = list(vals).index(shape)
