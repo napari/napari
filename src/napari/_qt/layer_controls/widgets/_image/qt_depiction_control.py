@@ -69,8 +69,8 @@ class PlaneNormalButtons(QWidget):
 
 class QtDepictionControl(QtWidgetControlsBase):
     """
-    Class that wraps the connection of events/signals between the layer shading
-    value attribute and Qt widgets.
+    Class that wraps the connection of events/signals between the layer depection
+    and plane value attributes and Qt widgets.
 
     Parameters
     ----------

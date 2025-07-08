@@ -22,35 +22,19 @@ class QtBaseImageControls(QtLayerControls):
 
     Parameters
     ----------
-    layer : napari.layers.Layer
-        An instance of a napari layer.
+    layer : napari.layers.Image
+        An instance of a napari Image layer.
 
     Attributes
     ----------
-    MODE : Enum
-        Available modes in the associated layer.
-    PAN_ZOOM_ACTION_NAME : str
-        String id for the pan-zoom action to bind to the pan_zoom button.
-    TRANSFORM_ACTION_NAME : str
-        String id for the transform action to bind to the transform button.
     _auto_scale_control : napari._qt.layer_controls.widgets.QtAutoScaleControl
-        Widget to wrap widgets related with the layer auto-contrast functionality.
+        Widget that wraps widgets related with the layer auto-contrast functionality.
     _colormap_control : napari._qt.layer_controls.widgets.QtColormapControl
-        Widget to wrap combobox and label widgets related with the layer colormap attribute.
+        Widget that wraps combobox and label widgets related with the layer colormap attribute.
     _contrast_limits_slider_control : napari._qt.layer_controls.widgets.QtContrastLimitsSliderControl
-        Widget to wrap layer contrast range slider widget.
+        Widget that wraps layer contrast range slider widget.
     _gamma_slider_control : napari._qt.layer_controls.widgets.QtGammaSliderControl
-        Widget to wrap layer gamma adjustment slider widget.
-    button_grid : qtpy.QtWidgets.QGridLayout
-        GridLayout for the layer mode buttons
-    button_group : qtpy.QtWidgets.QButtonGroup
-        Button group for image based layer modes (PAN_ZOOM TRANSFORM).
-    layer : napari.layers.Layer
-        An instance of a napari layer.
-    panzoom_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
-        Button to activate move camera mode for layer.
-    transform_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
-        Button to transform image layer.
+        Widget that wraps layer gamma adjustment slider widget.
     """
 
     def __init__(self, layer: Image) -> None:

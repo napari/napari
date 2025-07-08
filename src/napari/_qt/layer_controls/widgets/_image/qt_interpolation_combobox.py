@@ -17,8 +17,8 @@ from napari.utils.translations import trans
 
 class QtInterpolationComboBoxControl(QtWidgetControlsBase):
     """
-    Class that wraps the connection of events/signals between the layer shading
-    value attribute and Qt widgets.
+    Class that wraps the connection of events/signals between the layer interpolation
+    mode attribute and Qt widgets.
 
     Parameters
     ----------

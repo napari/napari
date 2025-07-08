@@ -122,8 +122,8 @@ class QContrastLimitsPopup(QRangeSliderPopup):
 
 class QtContrastLimitsSliderControl(QtWidgetControlsBase):
     """
-    Class that wraps the connection of events/signals between the current brush
-    size attribute and Qt widgets.
+    Class that wraps the connection of events/signals between the layer contrast
+    limits and Qt widgets.
 
     Parameters
     ----------
