@@ -22,6 +22,7 @@ from napari.layers.shapes.shape_types import (
     ShapeColorDtype,
     TriangleArray,
     TriangleDtype,
+    ZOrderArray,
     ZOrderDtype,
 )
 from napari.utils.geometry import (
@@ -33,12 +34,8 @@ from napari.utils.translations import trans
 
 
 class MeshArrayDict(TypedDict):
-    z_index: np.ndarray[
-        int, np.dtype[np.int32]
-    ]  # information about z-order of shapes
-    vertices: np.ndarray[
-        tuple[int, int], np.dtype[np.float32]
-    ]  # vertices of shapes
+    z_index: ZOrderArray  # information about z-order of shapes
+    vertices: CoordinateArray  # vertices of shapes
 
     mesh_vertices: CoordinateArray
     mesh_vertices_centers: CoordinateArray
@@ -166,7 +163,7 @@ def _preallocate_arrays(
 
     # Determine the displayed dimensionality from the first shape
     # All shapes in a batch will have the same dimensionality
-    dim = shapes[0]._face_vertices.shape[1]
+    dim: Literal[2, 3] = shapes[0]._face_vertices.shape[1]
 
     z_index = np.empty(n_shapes, dtype=np.int32)
 
@@ -175,7 +172,6 @@ def _preallocate_arrays(
     mesh_vertices_index = np.empty(n_shapes, dtype=IndexDtype)
 
     vertices = np.empty((n_vertices, dim), dtype=CoordinateDtype)
-    index = np.empty(n_indices, dtype=IndexDtype)
 
     mesh_vertices = np.empty((n_mesh_vertices, dim), dtype=CoordinateDtype)
     mesh_vertices_centers = np.empty(
@@ -193,13 +189,12 @@ def _preallocate_arrays(
 
     return {
         'z_index': z_index,
-        'vertices': vertices,
-        'index': index,
-        'mesh_vertices': mesh_vertices,
-        'mesh_vertices_centers': mesh_vertices_centers,
-        'mesh_vertices_offsets': mesh_vertices_offsets,
-        'mesh_triangles': mesh_triangles,
-        'mesh_triangles_colors': mesh_triangles_colors,
+        'vertices': vertices,  # type: ignore[typeddict-item]
+        'mesh_vertices': mesh_vertices,  # type: ignore[typeddict-item]
+        'mesh_vertices_centers': mesh_vertices_centers,  # type: ignore[typeddict-item]
+        'mesh_vertices_offsets': mesh_vertices_offsets,  # type: ignore[typeddict-item]
+        'mesh_triangles': mesh_triangles,  # type: ignore[typeddict-item]
+        'mesh_triangles_colors': mesh_triangles_colors,  # type: ignore[typeddict-item]
         'vertices_index': vertices_index,
         'mesh_triangles_index': mesh_triangles_index,
         'mesh_vertices_index': mesh_vertices_index,
@@ -411,15 +406,15 @@ class ShapeList:
         self.displayed_vertices = np.array([], dtype=CoordinateDtype)
         self.displayed_vertices_to_shape_num = np.array([], dtype=IndexDtype)
         self.displayed_indices = np.array([], dtype=IndexDtype)
-        self._vertices = np.empty((0, self.ndisplay))
+        self._vertices = np.empty((0, self.ndisplay), dtype=CoordinateDtype)
         self._vertices_index: IndexArray = np.zeros(1, dtype=IndexDtype)
         self._z_index: IndexArray = np.empty(0, dtype=IndexDtype)
         self._z_order: IndexArray = np.empty(0, dtype=IndexDtype)
 
         self._mesh = Mesh(ndisplay=self.ndisplay)
 
-        self._edge_color = np.empty((0, 4))
-        self._face_color = np.empty((0, 4))
+        self._edge_color: ShapeColorArray = np.empty((0, 4))  # type: ignore[assignment]
+        self._face_color: ShapeColorArray = np.empty((0, 4))  # type: ignore[assignment]
 
         # counter for the depth of re entrance of the context manager.
         self.__batched_level = 0
@@ -431,7 +426,7 @@ class ShapeList:
         for d in data:
             self.add(d)
 
-    def _vertices_range(self, shape_index: int) -> range:
+    def _vertices_range(self, shape_index: int | np.integer) -> range:
         """Return the range of vertices for a given shape index."""
         start = self._vertices_index[shape_index]
         shape = self.shapes[shape_index]
@@ -455,7 +450,7 @@ class ShapeList:
         end = self._mesh.vertices_index[shape_index + 1]
         return range(start, end)
 
-    def _mesh_triangles_range(self, shape_index: int) -> range:
+    def _mesh_triangles_range(self, shape_index: int | np.integer) -> range:
         """Return the range of mesh triangles for a given shape index."""
         start = self._mesh.triangles_index[shape_index]
         shape = self.shapes[shape_index]
@@ -473,7 +468,7 @@ class ShapeList:
         return res
 
     def _mesh_triangles_range_seq(
-        self, shape_indexes: Sequence[int]
+        self, shape_indexes: IndexArray
     ) -> np.ndarray:
         """Return the range of mesh triangles for a sequence of shape indexes."""
         if (
@@ -487,7 +482,7 @@ class ShapeList:
         ranges = [self._mesh_triangles_range(i) for i in shape_indexes]
         return self._ranges_to_array(ranges)
 
-    def _vertices_range_seq(self, shape_indexes: Sequence[int]) -> np.ndarray:
+    def _vertices_range_seq(self, shape_indexes: IndexArray) -> np.ndarray:
         """Return the range of vertices for a sequence of shape indexes."""
         if (
             shape_indexes[-1] - shape_indexes[0] == len(shape_indexes) - 1
@@ -689,7 +684,7 @@ class ShapeList:
             self._update_displayed()
 
     def _update_displayed_triangles_to_shape_index(
-        self, displayed_indices: Sequence[int]
+        self, displayed_indices: IndexArray
     ) -> None:
         """Update the displayed triangles to shape index mapping."""
         if (
@@ -710,7 +705,7 @@ class ShapeList:
             shift_idx += elem_num
 
     def _update_displayed_vertices_to_shape_num(
-        self, displayed_indices: Sequence[int]
+        self, displayed_indices: IndexArray
     ) -> None:
         """Update the displayed vertices to shape index mapping."""
         if (
@@ -755,7 +750,7 @@ class ShapeList:
             )
         else:
             self._displayed = np.array([])
-        disp_indices = np.nonzero(self._displayed)[0]
+        disp_indices: IndexArray = np.nonzero(self._displayed)[0]  # type: ignore[assignment]
 
         z_order = self._mesh.triangles_z_order
 
@@ -763,13 +758,7 @@ class ShapeList:
             triangle_ranges = np.array([], dtype=np.int64)
             vertices_range = np.array([], dtype=np.int64)
         else:
-            # triangle_ranges = np.r_[
-            #     tuple(self._mesh_triangles_range(i) for i in disp_indices)
-            # ]
             triangle_ranges = self._mesh_triangles_range_seq(disp_indices)
-            # vertices_range = np.r_[
-            #     tuple(self._vertices_range(i) for i in disp_indices)
-            # ]
             vertices_range = self._vertices_range_seq(disp_indices)
 
         self._mesh.displayed_triangles = self._mesh.triangles[z_order][
@@ -1009,7 +998,7 @@ class ShapeList:
         self._vertices = np.vstack((self._vertices, vertices))
         self._vertices_index = np.append(
             self._vertices_index, vertices_index, axis=0
-        )  # type: ignore[assignment]
+        )
 
         self._mesh.vertices = np.vstack((self._mesh.vertices, mesh_vertices))
         self._mesh.vertices_centers = np.vstack(
@@ -1106,12 +1095,12 @@ class ShapeList:
     def remove_all(self):
         """Removes all shapes"""
         self.shapes = []
-        self._vertices = np.empty((0, self.ndisplay))
+        self._vertices = np.empty((0, self.ndisplay))  # type: ignore[assignment]
         self._vertices_index = np.zeros(1, dtype=IndexDtype)
         self._z_index = np.empty(0, dtype=IndexDtype)
         self._z_order = np.empty(0, dtype=ZOrderDtype)
-        self._edge_color = np.empty((0, 4), dtype=ShapeColorDtype)
-        self._face_color = np.empty((0, 4), dtype=ShapeColorDtype)
+        self._edge_color = np.empty((0, 4), dtype=ShapeColorDtype)  # type: ignore[assignment]
+        self._face_color = np.empty((0, 4), dtype=ShapeColorDtype)  # type: ignore[assignment]
         self._mesh.clear()
         self._update_displayed()
 
@@ -1363,7 +1352,7 @@ class ShapeList:
     @_batch_dec
     def _update_z_order(self):
         """Updates the z order of the triangles given the z_index list"""
-        self._z_order = np.argsort(self._z_index)
+        self._z_order = np.argsort(self._z_index)  # type: ignore[assignment]
         if len(self._z_order) == 0:
             self._mesh.triangles_z_order = np.empty(0, dtype=ZOrderDtype)
         else:
@@ -1472,9 +1461,12 @@ class ShapeList:
         update: bool = True,
     ) -> None:
         """same as update_edge_color() but for multiple indices/edgecolors at once"""
+        edge_colors_: Iterable[ShapeColor]
         if edge_colors.ndim == 1:
-            edge_colors = repeat(edge_colors)
-        for i, color in zip(indices, edge_colors, strict=False):
+            edge_colors_ = repeat(typing.cast(ShapeColor, edge_colors))
+        else:
+            edge_colors_ = edge_colors
+        for i, color in zip(indices, edge_colors_, strict=False):
             self.update_edge_color(i, color, update=False)
         if update:
             self._update_displayed()
@@ -1509,12 +1501,15 @@ class ShapeList:
         update: bool = True,
     ) -> None:
         """same as update_face_color() but for multiple indices/facecolors at once"""
-        if face_colors.ndim == 1 or (
-            face_colors.ndim == 2 and face_colors.shape[0] == 1
-        ):
-            face_colors = repeat(face_colors)
+        face_colors_: Iterable[ShapeColor]
+        if face_colors.ndim == 1:
+            face_colors = repeat(typing.cast(ShapeColor, face_colors))
+        elif face_colors.ndim == 2 and face_colors.shape[0] == 1:
+            face_colors_ = repeat(typing.cast(ShapeColor, face_colors[0]))
+        else:
+            face_colors_ = face_colors
 
-        for i, color in zip(indices, face_colors, strict=False):
+        for i, color in zip(indices, face_colors_, strict=False):
             self.update_face_color(i, color, update=False)
         if update:
             self._update_displayed()

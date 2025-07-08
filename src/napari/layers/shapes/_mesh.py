@@ -81,22 +81,22 @@ class Mesh:
 
     def clear(self) -> None:
         """Resets mesh data"""
-        self.vertices = np.empty((0, self.ndisplay), dtype=CoordinateDtype)
-        self.vertices_centers = np.empty(
+        self.vertices = np.empty((0, self.ndisplay), dtype=CoordinateDtype)  # type: ignore[assignment]
+        self.vertices_centers = np.empty(  # type: ignore[assignment]
             (0, self.ndisplay), dtype=CoordinateDtype
         )
-        self.vertices_offsets = np.empty(
+        self.vertices_offsets = np.empty(  # type: ignore[assignment]
             (0, self.ndisplay), dtype=CoordinateDtype
         )
         self.vertices_index = np.zeros(1, dtype=IndexDtype)
-        self.triangles = np.empty((0, 3), dtype=TriangleDtype)
+        self.triangles = np.empty((0, 3), dtype=TriangleDtype)  # type: ignore[assignment]
         self.triangles_index = np.zeros(1, dtype=IndexDtype)
-        self.triangles_colors = np.empty((0, 4), dtype=ShapeColorDtype)
+        self.triangles_colors = np.empty((0, 4), dtype=ShapeColorDtype)  # type: ignore[assignment]
         self.triangles_z_order = np.empty(0, dtype=ZOrderDtype)
 
-        self.displayed_triangles = np.empty((0, 3), dtype=TriangleDtype)
+        self.displayed_triangles = np.empty((0, 3), dtype=TriangleDtype)  # type: ignore[assignment]
         self.displayed_triangles_to_shape_index = np.zeros(1, dtype=IndexDtype)
-        self.displayed_triangles_colors = np.empty(
+        self.displayed_triangles_colors = np.empty(  # type: ignore[assignment]
             (0, 4), dtype=ShapeColorDtype
         )
 
