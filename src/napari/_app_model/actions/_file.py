@@ -57,14 +57,14 @@ FILE_SUBMENUS = [
 
 
 def add_new_points(viewer: 'ViewerModel') -> None:
-    viewer.add_points(
+    viewer.add_points(  # type: ignore[attr-defined]
         ndim=max(viewer.dims.ndim, 2),
         scale=viewer.layers.extent.step,
     )
 
 
 def add_new_shapes(viewer: 'ViewerModel') -> None:
-    viewer.add_shapes(
+    viewer.add_shapes(  # type: ignore[attr-defined]
         ndim=max(viewer.dims.ndim, 2),
         scale=viewer.layers.extent.step,
     )
@@ -74,11 +74,11 @@ def new_labels(viewer: ViewerModel) -> None:
     viewer._new_labels()
 
 
-def new_points(viewer: ViewerModel):
+def new_points(viewer: ViewerModel) -> None:
     add_new_points(viewer)
 
 
-def new_shapes(viewer: ViewerModel):
+def new_shapes(viewer: ViewerModel) -> None:
     add_new_shapes(viewer)
 
 
