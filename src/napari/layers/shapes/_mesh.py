@@ -79,15 +79,6 @@ class Mesh:
         self._ndisplay = ndisplay
         self.clear()
 
-    @property
-    def triangles_index(self):
-        """Index of triangles in the mesh."""
-        return self._triangles_index
-
-    @triangles_index.setter
-    def triangles_index(self, value: IndexArray) -> None:
-        self._triangles_index = value
-
     def clear(self) -> None:
         """Resets mesh data"""
         self.vertices = np.empty((0, self.ndisplay), dtype=CoordinateDtype)
