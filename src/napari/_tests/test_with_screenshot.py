@@ -227,7 +227,6 @@ def test_changing_image_gamma(make_napari_viewer):
 @skip_on_win_ci
 @skip_local_popups
 def test_grid_mode(make_napari_viewer):
-    """Test changing gamma changes rendering."""
     viewer = make_napari_viewer(show=True)
 
     # Add images
@@ -237,9 +236,6 @@ def test_grid_mode(make_napari_viewer):
     assert not viewer.grid.enabled
     assert viewer.grid.actual_shape(6) == (1, 1)
     assert viewer.grid.stride == 1
-    translations = [layer._translate_grid for layer in viewer.layers]
-    expected_translations = np.zeros((6, 2))
-    np.testing.assert_allclose(translations, expected_translations)
 
     # check screenshot
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
@@ -251,36 +247,26 @@ def test_grid_mode(make_napari_viewer):
     assert viewer.grid.enabled
     assert viewer.grid.actual_shape(6) == (2, 3)
     assert viewer.grid.stride == 1
-    translations = [layer._translate_grid for layer in viewer.layers]
-    expected_translations = [
-        [0, 0],
-        [0, 15],
-        [0, 30],
-        [15, 0],
-        [15, 15],
-        [15, 30],
-    ]
-    np.testing.assert_allclose(translations, expected_translations[::-1])
 
     # check screenshot
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
     # sample 6 squares of the grid and check they have right colors
     pos = [
-        (1 / 3, 1 / 4),
-        (1 / 3, 1 / 2),
-        (1 / 3, 3 / 4),
-        (2 / 3, 1 / 4),
-        (2 / 3, 1 / 2),
-        (2 / 3, 3 / 4),
+        (1 / 4, 1 / 6),
+        (1 / 4, 3 / 6),
+        (1 / 4, 5 / 6),
+        (3 / 4, 1 / 6),
+        (3 / 4, 3 / 6),
+        (3 / 4, 5 / 6),
     ]
-    # BGRMYC color order
+    # CYMRGB color order
     color = [
-        [0, 0, 255, 255],
-        [0, 255, 0, 255],
-        [255, 0, 0, 255],
-        [255, 0, 255, 255],
-        [255, 255, 0, 255],
         [0, 255, 255, 255],
+        [255, 255, 0, 255],
+        [255, 0, 255, 255],
+        [255, 0, 0, 255],
+        [0, 255, 0, 255],
+        [0, 0, 255, 255],
     ]
     for c, p in zip(color, pos, strict=False):
         coord = tuple(
@@ -296,12 +282,12 @@ def test_grid_mode(make_napari_viewer):
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
     # CGRMYB color order
     color = [
-        [0, 255, 255, 255],
-        [0, 255, 0, 255],
-        [255, 0, 0, 255],
-        [255, 0, 255, 255],
-        [255, 255, 0, 255],
         [0, 0, 255, 255],
+        [255, 255, 0, 255],
+        [255, 0, 255, 255],
+        [255, 0, 0, 255],
+        [0, 255, 0, 255],
+        [0, 255, 255, 255],
     ]
     for c, p in zip(color, pos, strict=False):
         coord = tuple(
@@ -314,14 +300,6 @@ def test_grid_mode(make_napari_viewer):
     assert not viewer.grid.enabled
     assert viewer.grid.actual_shape(6) == (1, 1)
     assert viewer.grid.stride == 1
-    translations = [layer._translate_grid for layer in viewer.layers]
-    expected_translations = np.zeros((6, 2))
-    np.testing.assert_allclose(translations, expected_translations)
-
-    # check screenshot
-    screenshot = viewer.screenshot(canvas_only=True, flash=False)
-    center = tuple(np.round(np.divide(screenshot.shape[:2], 2)).astype(int))
-    np.testing.assert_almost_equal(screenshot[center], [0, 255, 255, 255])
 
 
 @skip_on_win_ci

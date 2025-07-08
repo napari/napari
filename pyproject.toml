@@ -37,7 +37,7 @@ classifiers = [
 requires-python = ">=3.10"
 dependencies = [
     "appdirs>=1.4.4",
-    "app-model>=0.3.0,<0.4.0",
+    "app-model>=0.4.0,<0.5.0",
     "cachey>=0.2.1",
     "certifi>=2018.1.18",
     "dask[array]>=2021.10.0",
@@ -48,14 +48,14 @@ dependencies = [
     "napari-console>=0.1.1",
     "napari-plugin-engine>=0.1.9",
     "napari-svg>=0.1.8",
-    "npe2>=0.7.8",
+    "npe2>=0.7.9",
     "numpy>=1.24.2",
     "numpydoc>=1.0.0",
     "pandas>=1.3.3",
     "Pillow>=9.0",
     "pint>=0.17",
     "psutil>=5.9.0",
-    "psygnal>=0.5.0",
+    "psygnal>=0.10.0",
     "pydantic>=2.2.0",
     "pygments>=2.6.0",
     "PyOpenGL>=3.1.5",
@@ -64,12 +64,12 @@ dependencies = [
     "qtpy>=2.3.1",
     "scikit-image[data]>=0.19.1",
     "scipy>=1.10.1",
-    "superqt>=0.6.7",
+    "superqt>=0.7.3",
     "tifffile>=2022.7.28",
     "toolz>=0.11.0",
     "tqdm>=4.56.0",
-    "typing_extensions>=4.6.1",
-    "vispy>=0.15.0,<0.16",
+    "typing_extensions>=4.12",
+    "vispy>=0.15.2,<0.16",
     "wrapt>=1.13.3",
 ]
 dynamic = [
@@ -129,7 +129,7 @@ optional = [
     "triangle",
 ]
 bermuda = [
-    "bermuda>=0.1.4",
+    "bermuda>=0.1.5",
 ]
 partsegcore = [
     "PartSegCore-compiled-backend>=0.15.11",
@@ -352,6 +352,7 @@ ignore = [
     "PYI015", # it produces bad looking files (@jni opinion)
     "W191", "Q000", "Q001", "Q002", "Q003", "ISC001", # https://docs.astral.sh/ruff/formatter/#conflicting-lint-rules
     "UP007", # temporary disable migrtion form Union[X, Y] to X | Y
+    "UP045", # temporary disable migrtion from Optional[X] to X | None
     "TC006", # put types in quotes in typing.cast
 ]
 
