@@ -2463,13 +2463,13 @@ class Shapes(Layer):
             elif len(index) == 1:
                 box = copy(self._data_view.shapes[next(iter(index))]._box)
             else:
-                disp_indices = [
+                displayed_shape_indices = [
                     i for i in index if self._data_view._displayed[i]
                 ]
                 vertices_range = np.r_[
                     tuple(
                         self._data_view._vertices_range_available(i)
-                        for i in disp_indices
+                        for i in displayed_shape_indices
                     )
                 ]
                 box = create_box(
@@ -2906,11 +2906,13 @@ class Shapes(Layer):
                 [Mode.DIRECT, Mode.VERTEX_INSERT, Mode.VERTEX_REMOVE]
             ):
                 # Check if inside vertex of shape
-                inds = np.isin(
+                selected_vertex_mask = np.isin(
                     self._data_view.displayed_vertices_to_shape_num,
                     selected_index,
                 )
-                vertices = self._data_view.displayed_vertices[inds]
+                vertices = self._data_view.displayed_vertices[
+                    selected_vertex_mask
+                ]
                 distances = abs(vertices - coord)
 
                 # Check if any matching vertices
@@ -2918,7 +2920,7 @@ class Shapes(Layer):
                     distances <= self._normalized_vertex_radius, axis=1
                 ).nonzero()[0]
                 if len(matches) > 0:
-                    index = inds.nonzero()[0][matches[-1]]
+                    index = selected_vertex_mask.nonzero()[0][matches[-1]]
                     shape = self._data_view.displayed_vertices_to_shape_num[
                         index
                     ]
