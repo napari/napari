@@ -966,15 +966,15 @@ class QtViewer(QSplitter):
 
     @contextlib.contextmanager
     def resize_canvas(self, size: tuple[int, int] | None, scale: float):
-    """Temporarily, safely, resize the canvas
-    
-    Parameters
-    ----------
-    size: (int, int)
-        New canvas size in pixels. Often calculated based on data size. 
-    scale: float
-        Scale factor to modify final canvas size.
-        
+        """Temporarily, safely, resize the canvas
+
+        Parameters
+        ----------
+        size: (int, int)
+            New canvas size in pixels. Often calculated based on data size.
+        scale: float
+            Scale factor to modify final canvas size.
+        """
         canvas = self.canvas
         prev_size = canvas.size
         camera = self.viewer.camera
@@ -1414,12 +1414,12 @@ class QtViewer(QSplitter):
         flash=True,
     ) -> np.ndarray:
         """Export an image of the full extent of the displayed layer data.
-        
+
         This function finds a tight boundary around the data, resets the view
         around that boundary (and, when scale=1, such that 1 captured pixel is
         equivalent to one data pixel), takes a screenshot, then restores the
         previous zoom and canvas sizes.
-        
+
         Parameters
         ----------
         path : str, optional
@@ -1431,7 +1431,7 @@ class QtViewer(QSplitter):
             Flag to indicate whether flash animation should be shown after
             the screenshot was captured.
             By default, True.
-            
+
         Returns
         -------
         image : array
