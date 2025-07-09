@@ -892,6 +892,7 @@ class Shapes(Layer):
     def current_edge_width(self, edge_width):
         self._current_edge_width = edge_width
         if self._update_properties:
+            # To avoid performance cost of repeated update calls, we batch the updates
             with self._data_view.batched_updates():
                 for i in self.selected_data:
                     self._data_view.update_edge_width(i, edge_width)
