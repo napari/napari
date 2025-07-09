@@ -61,7 +61,7 @@ To use napari from inside a script, use `napari.run()`:
 from skimage import data
 import napari
 
-viewer, layers = napari.ismhow(data.cells3d(), channel_axis=1, ndisplay=3)
+viewer, layers = napari.imshow(data.cells3d(), channel_axis=1, ndisplay=3)
 napari.run()  # start the "event loop" and show the viewer
 ```
 
