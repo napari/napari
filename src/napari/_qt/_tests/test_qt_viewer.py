@@ -265,8 +265,8 @@ def test_screenshot(make_napari_viewer, qapp, qtbot):
     # wait for window be fully rendered
     qtbot.wait_exposed(viewer.window._qt_window)
 
-    # without these two lines, the shape of screenshot1 and screenshot2 differ by 
-    # 2 pixels. It looks like some event requires inactivity in event loop to 
+    # without these two lines, the shape of screenshot1 and screenshot2 differ by
+    # 2 pixels. It looks like some event requires inactivity in event loop to
     # trigger resize to final shape.
     qtbot.wait(5)
     qapp.processEvents()
