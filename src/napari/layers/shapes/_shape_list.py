@@ -270,13 +270,13 @@ def _fill_arrays(
         face_vertices = shape._face_vertices
         n_face_vertices = len(face_vertices)
 
-        face_vert_range = range(
+        face_vertices_range = range(
             mesh_vertices_offset, mesh_vertices_offset + n_face_vertices
         )
 
-        mesh_vertices[face_vert_range] = face_vertices
-        mesh_vertices_centers[face_vert_range] = face_vertices
-        mesh_vertices_offsets[face_vert_range] = (
+        mesh_vertices[face_vertices_range] = face_vertices
+        mesh_vertices_centers[face_vertices_range] = face_vertices
+        mesh_vertices_offsets[face_vertices_range] = (
             0  # no shift for face vertices
         )
 
@@ -285,13 +285,13 @@ def _fill_arrays(
             shape._face_triangles + start_mesh_index + mesh_vertices_offset
         )
         n_face_triangles = len(face_triangles)
-        face_triang_range = range(
+        face_triangles_range = range(
             triangles_offset, triangles_offset + n_face_triangles
         )
-        mesh_triangles[face_triang_range] = face_triangles
+        mesh_triangles[face_triangles_range] = face_triangles
 
         # Create and store face triangles colors
-        mesh_triangles_colors[face_triang_range] = face_color
+        mesh_triangles_colors[face_triangles_range] = face_color
 
         # Update offsets
         mesh_vertices_offset += n_face_vertices
@@ -1257,17 +1257,7 @@ class ShapeList:
 
         if renumber:
             del self.shapes[index]
-            # indices = self._index > index
-            # self._index[indices] = self._index[indices] - 1
             self._z_index = np.delete(self._z_index, index)
-            # indices = self._mesh.triangles_index[:, 0] > index
-            # self._mesh.triangles_index[indices, 0] = (
-            #     self._mesh.triangles_index[indices, 0] - 1
-            # )
-            # indices = self._mesh.vertices_index[:, 0] > index
-            # self._mesh.vertices_index[indices, 0] = (
-            #     self._mesh.vertices_index[indices, 0] - 1
-            # )
             self._update_z_order()
         self._clear_cache()
 
