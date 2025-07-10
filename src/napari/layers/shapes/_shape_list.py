@@ -453,6 +453,8 @@ class ShapeList:
 
         # Counter of number of time _update_displayed has been requested
         self.__update_displayed_called = 0
+        if not isinstance(data, Sequence):
+            data = list(data)
         self.add(data)
 
     def _vertices_range(self, shape_index: int | np.integer) -> range:
