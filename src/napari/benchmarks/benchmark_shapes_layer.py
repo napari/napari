@@ -195,6 +195,7 @@ class Shapes2DSuite(_BackendSelection):
         rng = np.random.default_rng(0)
         self.data = [50 * rng.random((6, 2)) for _ in range(n_shapes)]
         self.layer = Shapes(self.data, shape_type='polygon')
+        self.layer.selected_data = list(range(n_shapes))
 
     def time_create_layer(self, *_):
         """Time to create an image layer."""
@@ -207,6 +208,9 @@ class Shapes2DSuite(_BackendSelection):
     def time_set_view_slice(self, *_):
         """Time to set view slice."""
         self.layer._set_view_slice()
+
+    def time_set_edge_width(self, *_):
+        self.layer.current_edge_width = 10
 
     def time_update_thumbnail(self, *_):
         """Time to update thumbnail."""
