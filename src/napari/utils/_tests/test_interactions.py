@@ -14,7 +14,7 @@ from napari.utils.interactions import Shortcut
     ],
 )
 def test_shortcut_invalid(shortcut, reason):
-    with pytest.warns(UserWarning):
+    with pytest.warns(UserWarning, match='does not seem to be a valid'):
         Shortcut(shortcut)  # Should be Control-A
 
 

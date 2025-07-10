@@ -102,6 +102,7 @@ jobs:
       qt_backend: ${{ matrix.backend }}
       coverage: ${{ matrix.coverage }}
       min_req: ${{ matrix.MIN_REQ }}
+      artifacts_suffix: "initial"
 
   test:
     name: ${{ matrix.platform }}
