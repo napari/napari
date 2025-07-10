@@ -4,7 +4,7 @@ alabaster==1.0.0
     # via sphinx
 annotated-types==0.7.0
     # via pydantic
-app-model==0.3.1
+app-model==0.4.0
     # via napari (pyproject.toml)
 appdirs==1.4.4
     # via
@@ -23,7 +23,7 @@ babel==2.17.0
     # via
     #   napari (pyproject.toml)
     #   sphinx
-bermuda==0.1.4
+bermuda==0.1.5
     # via napari (pyproject.toml)
 build==1.2.2.post1
     # via npe2
@@ -102,7 +102,7 @@ fsspec==2025.5.1
     #   torch
 glasbey==0.3.0
     # via napari (pyproject.toml)
-h5netcdf==1.6.1
+h5netcdf==1.6.3
     # via napari (pyproject.toml)
 h5py==3.14.0
     # via h5netcdf
@@ -110,7 +110,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.135.10
+hypothesis==6.135.17
     # via napari (pyproject.toml)
 idna==3.10
     # via requests
@@ -179,7 +179,7 @@ locket==1.0.0
     # via
     #   distributed
     #   partd
-lxml==5.4.0
+lxml==6.0.0
     # via
     #   napari (pyproject.toml)
     #   lxml-html-clean
@@ -226,9 +226,9 @@ networkx==3.4.2
     #   torch
 nibabel==5.3.2
     # via nilearn
-nilearn==0.11.1
+nilearn==0.12.0
     # via napari (pyproject.toml)
-npe2==0.7.8
+npe2==0.7.9
     # via
     #   napari (pyproject.toml)
     #   napari-plugin-manager
@@ -265,7 +265,7 @@ numpy==2.2.6
     #   vispy
     #   xarray
     #   zarr
-numpydoc==1.8.0
+numpydoc==1.9.0
     # via napari (pyproject.toml)
 nvidia-cublas-cu12==12.6.4.1
     # via
@@ -397,7 +397,7 @@ pydantic-core==2.33.2
     # via pydantic
 pygetwindow==0.0.9
     # via pyautogui
-pygments==2.19.1
+pygments==2.19.2
     # via
     #   napari (pyproject.toml)
     #   ipython
@@ -440,7 +440,7 @@ pyside6-essentials==6.4.2
     # via
     #   pyside6
     #   pyside6-addons
-pytest==8.4.0
+pytest==8.4.1
     # via
     #   napari (pyproject.toml)
     #   pytest-cov
@@ -560,15 +560,13 @@ sphinxcontrib-serializinghtml==2.0.0
     # via sphinx
 stack-data==0.6.3
     # via ipython
-superqt==0.7.4
+superqt==0.7.5
     # via
     #   napari (pyproject.toml)
     #   magicgui
     #   napari-plugin-manager
 sympy==1.14.0
     # via torch
-tabulate==0.9.0
-    # via numpydoc
 tblib==3.1.0
     # via distributed
 tensorstore==0.1.75
@@ -644,7 +642,7 @@ typing-inspection==0.4.1
     # via pydantic
 tzdata==2025.2
     # via pandas
-urllib3==2.4.0
+urllib3==2.5.0
     # via
     #   distributed
     #   requests
