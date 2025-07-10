@@ -33,6 +33,7 @@ LAYERS: list[tuple[str, list, dict]] = [
     ('Image', [np.random.rand(10, 10)], {}),
     ('Labels', [np.random.randint(0, 16000, (32, 32), 'uint64')], {}),
     ('Points', [np.random.rand(20, 2)], {}),
+    # Another points layer with each point having a property called 'values' set to a random float
     (
         'Points',
         [np.random.rand(20, 2)],
