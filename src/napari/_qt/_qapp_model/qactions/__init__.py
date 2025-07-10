@@ -49,7 +49,6 @@ def init_qactions() -> None:
     from napari._qt._qapp_model.qactions._plugins import Q_PLUGINS_ACTIONS
     from napari._qt._qapp_model.qactions._view import (
         Q_VIEW_ACTIONS,
-        VIEW_SUBMENUS,
     )
     from napari._qt._qapp_model.qactions._window import Q_WINDOW_ACTIONS
     from napari._qt.qt_main_window import Window
@@ -86,7 +85,7 @@ def init_qactions() -> None:
 
     # register menubar submenus
     app.menus.append_menu_items(
-        chain(FILE_SUBMENUS, VIEW_SUBMENUS, DEBUG_SUBMENUS, LAYERS_SUBMENUS)
+        chain(FILE_SUBMENUS, DEBUG_SUBMENUS, LAYERS_SUBMENUS)
     )
 
 

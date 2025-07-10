@@ -7,7 +7,6 @@ from app_model.types import (
     KeyCode,
     KeyMod,
     StandardKeyBinding,
-    SubmenuItem,
     ToggleRule,
 )
 
@@ -15,18 +14,6 @@ from napari._app_model.constants import MenuGroup, MenuId
 from napari._qt.qt_main_window import Window
 from napari._qt.qt_viewer import QtViewer
 from napari.utils.translations import trans
-
-# View submenus
-VIEW_SUBMENUS = [
-    (
-        MenuId.MENUBAR_VIEW,
-        SubmenuItem(submenu=MenuId.VIEW_AXES, title=trans._('Axes')),
-    ),
-    (
-        MenuId.MENUBAR_VIEW,
-        SubmenuItem(submenu=MenuId.VIEW_SCALEBAR, title=trans._('Scale Bar')),
-    ),
-]
 
 
 # View actions
@@ -126,6 +113,4 @@ Q_VIEW_ACTIONS: list[Action] = [
         callback=_toggle_activity_dock,
         toggled=ToggleRule(get_current=_get_current_activity_dock_status),
     ),
-    # TODO: this could be made into a toggle setting Action subclass
-    # using a similar pattern to the above ViewerToggleAction classes
 ]

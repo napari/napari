@@ -1,11 +1,23 @@
 from app_model import Action
-from app_model.types import StandardKeyBinding, ToggleRule
+from app_model.types import StandardKeyBinding, SubmenuItem, ToggleRule
 
 from napari._app_model.actions._toggle_action import ViewerModelToggleAction
 from napari._app_model.constants import MenuGroup, MenuId
 from napari.components import ViewerModel
 from napari.settings import get_settings
 from napari.utils.translations import trans
+
+VIEW_SUBMENUS = [
+    (
+        MenuId.MENUBAR_VIEW,
+        SubmenuItem(submenu=MenuId.VIEW_AXES, title=trans._('Axes')),
+    ),
+    (
+        MenuId.MENUBAR_VIEW,
+        SubmenuItem(submenu=MenuId.VIEW_SCALEBAR, title=trans._('Scale Bar')),
+    ),
+]
+
 
 toggle_action_details = [
     (
@@ -136,6 +148,8 @@ VIEW_ACTIONS = [
         callback=_zoom_out,
         keybindings=[StandardKeyBinding.ZoomOut],
     ),
+    # TODO: this could be made into a toggle setting Action subclass
+    # using a similar pattern to the above ViewerToggleAction classes
     Action(
         id='napari.window.view.toggle_ndisplay',
         title=trans._('Toggle 2D/3D Camera'),
