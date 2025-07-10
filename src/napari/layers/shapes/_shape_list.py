@@ -34,6 +34,37 @@ from napari.utils.translations import trans
 
 
 class MeshArrayDict(TypedDict):
+    """Mesh array dict used for adding multiple shapes at once.
+
+    This type is helper for functions used when adding multiple shapes at once.
+    To ensure names and types of arrays are consistent, we use a TypedDict.
+
+    Fields
+    ------
+    z_index : ZOrderArray
+        Information about z-ndex of shapes.
+    vertices : CoordinateArray
+        array of shape vertices
+    mesh_vertices : CoordinateArray
+        array of face triangulation vertices.
+    mesh_vertices_centers : CoordinateArray
+        array of face triangulation vertices centers.
+        It is required for update of edges triangulation.
+    mesh_vertices_offsets : CoordinateArray
+        array of face triangulation vertices offsets.
+        It is required for update of edges triangulation.
+    mesh_triangles : TriangleArray
+        array of triangles in mesh.
+    mesh_triangles_colors : ShapeColorArray
+        colors of triangles in mesh.
+    vertices_index : IndexArray
+        array with information which range of vertices belongs to which shape.
+    mesh_triangles_index : IndexArray
+        array with information which range of triangles belongs to which shape.
+    mesh_vertices_index : IndexArray
+        array with information which range of mesh vertices belongs to which shape.
+    """
+
     z_index: ZOrderArray  # information about z-order of shapes
     vertices: CoordinateArray  # vertices of shapes
 
