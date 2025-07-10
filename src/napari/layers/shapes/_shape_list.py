@@ -453,9 +453,7 @@ class ShapeList:
 
         # Counter of number of time _update_displayed has been requested
         self.__update_displayed_called = 0
-
-        for d in data:
-            self.add(d)
+        self.add(data)
 
     def _vertices_range(self, shape_index: int | np.integer) -> range:
         """Return the range of vertices for a given shape index."""
@@ -529,10 +527,7 @@ class ShapeList:
     def _mesh_triangles_range_available(self, shape_index: int) -> range:
         """Return the available range of mesh triangles for a given shape index."""
         start = self._mesh.triangles_index[shape_index]
-        if shape_index + 1 < len(self._mesh.triangles_index):
-            end = self._mesh.triangles_index[shape_index + 1]
-        else:
-            end = len(self._mesh.triangles)
+        end = self._mesh.triangles_index[shape_index + 1]
         return range(start, end)
 
     def _mesh_vertices_face_range(self, shape_index: int) -> range:
@@ -1485,6 +1480,8 @@ class ShapeList:
         edge_colors_: Iterable[ShapeColor]
         if edge_colors.ndim == 1:
             edge_colors_ = repeat(typing.cast(ShapeColor, edge_colors))
+        elif edge_colors.ndim == 2 and edge_colors.shape[0] == 1:
+            edge_colors_ = repeat(typing.cast(ShapeColor, edge_colors[0]))
         else:
             edge_colors_ = edge_colors
         for i, color in zip(indices, edge_colors_, strict=False):
