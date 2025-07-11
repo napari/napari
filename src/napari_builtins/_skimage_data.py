@@ -22,7 +22,7 @@ def _load_skimage_data(name, **kwargs):
                 {
                     'channel_axis': -1,
                     'name': ['nuclei', 'WGA', 'actin'],
-                    'colormap': ['blue', 'green', 'red'],
+                    'colormap': ['cyan', 'magenta', 'yellow'],
                 },
             )
         ]
@@ -33,7 +33,7 @@ def _load_skimage_data(name, **kwargs):
                 {
                     'channel_axis': -1,
                     'name': ['lily-R', 'lily-G', 'lily-W', 'lily-B'],
-                    'colormap': ['red', 'green', 'gray', 'blue'],
+                    'colormap': ['cyan', 'magenta', 'yellow'],
                 },
             )
         ]
