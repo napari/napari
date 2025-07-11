@@ -147,7 +147,7 @@ class Viewer(ViewerModel):
         self,
         rois: list[np.ndarray],
         paths: str | Path | list[str | Path] | None = None,
-        scale: float | None = None,
+        scale: float = 1.0,
     ):
         """Export the given rectangular rois to specified file paths.
 
@@ -179,13 +179,7 @@ class Viewer(ViewerModel):
             The list containing all the screenshots.
         """
         # Check to see if roi has shape (n,2,2)
-        if any(roi.shape[-2:] != (4, 2) for roi in rois):
-            raise ValueError(
-                'ROI found with invalid shape, all rois must have shape (4, 2), i.e. have 4 corners defined in 2 '
-                'dimensions. 3D is not supported.'
-            )
-
-        screenshot_list = self.window.export_rois(
+        screenshot_list = self.window._qt_viewer.export_rois(
             rois, paths=paths, scale=scale
         )
 
