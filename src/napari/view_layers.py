@@ -14,6 +14,7 @@ of the layer types, like "image", "points", etc...):
 """
 
 import inspect
+import warnings
 from typing import Any
 
 from numpydoc.docscrape import NumpyDocString as _NumpyDocString
@@ -21,6 +22,9 @@ from numpydoc.docscrape import NumpyDocString as _NumpyDocString
 from napari.components.dims import Dims
 from napari.layers import Image
 from napari.viewer import Viewer
+
+warnings.simplefilter('always')
+
 
 __all__ = [
     'imshow',
@@ -152,6 +156,13 @@ def _make_viewer_then(
         ``add_image`` is called with a ``channel_axis=`` keyword
         argument.
     """
+
+    warnings.warn(
+        f'napari.view_{add_method[4:]} is deprecated and will be removed in napari 0.7.0.\n'
+        f'Use `viewer = napari.Viewer(); viewer.add_{add_method[4:]}(...)` instead.',
+        DeprecationWarning,
+        stacklevel=1,
+    )
     vkwargs = {
         k: kwargs.pop(k)
         for k in list(kwargs)
