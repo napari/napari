@@ -116,15 +116,15 @@ class QtLabelControl(QtWidgetControlsBase):
 
     Attributes
     ----------
+    colorbox : QtColorBox
+        Widget that shows current layer label color.
     label_color : qtpy.QtWidget.QWidget
         Wrapper widget for the selection_spinbox and colorbox widgets.
+    label_color_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the label chooser widget.
     selection_spinbox : superqt.QLargeIntSpinBox
         Widget to select a specific label by its index.
         N.B. cannot represent labels > 2**53.
-    colorbox: QtColorBox
-        Widget that shows current layer label color.
-    label_color_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-        Label for the label chooser widget.
     """
 
     def __init__(

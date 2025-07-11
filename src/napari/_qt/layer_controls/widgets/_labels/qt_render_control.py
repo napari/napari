@@ -29,14 +29,14 @@ class QtLabelRenderControl(QtWidgetControlsBase):
 
     Attributes
     ----------
-    render_combobox : superqt.QEnumComboBox
-        Combobox to control current label render method.
-    render_combobox_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-        Label for the way labels should be rendered chooser widget.
     iso_gradient_combobox : superqt.QEnumComboBox
         Combobox to control gradient method when isosurface rendering is selected.
     iso_gradient_combobox_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for the chooser widget of the gradient to use when labels are using isosurface rendering.
+    render_combobox : superqt.QEnumComboBox
+        Combobox to control current label render method.
+    render_combobox_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the way labels should be rendered chooser widget.
     """
 
     def __init__(

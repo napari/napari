@@ -17,7 +17,7 @@ from napari.utils.translations import trans
 class QtContiguousCheckBoxControl(QtWidgetControlsBase):
     """
     Class that wraps the connection of events/signals between the layer contiguous
-    model attribute and Qt widgets.
+    attribute and Qt widgets.
 
     Parameters
     ----------

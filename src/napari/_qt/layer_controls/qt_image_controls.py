@@ -25,10 +25,10 @@ class QtImageControls(QtBaseImageControls):
     ----------
     _depiction_control : napari._qt.layer_controls.widgets._image.QtDepictionControl
         Widget that wraps widgets related with the layer depiction and plane attributes.
-    _render_control : napari._qt.layer_controls.widgets._image.QtImageRenderControl
-        Widget that wraps widgets related with the method used to render the layer.
     _interpolation_control : napari._qt.layer_controls.widgets._image.QtInterpolationComboBoxControl
         Widget that wraps dropdown menu to select the interpolation mode for image display.
+    _render_control : napari._qt.layer_controls.widgets._image.QtImageRenderControl
+        Widget that wraps widgets related with the method used to render the layer.
     """
 
     layer: 'napari.layers.Image'
