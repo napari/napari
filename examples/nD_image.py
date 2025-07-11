@@ -2,7 +2,7 @@
 nD image
 ========
 
-Display one 4-D image layer using the :func:`view_image` API.
+Display one 4-D image layer using the :func:`add_image` API.
 
 .. tags:: visualization-nD
 """
