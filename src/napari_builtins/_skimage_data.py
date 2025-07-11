@@ -32,7 +32,12 @@ def _load_skimage_data(name, **kwargs):
                 skimage.data.lily(),
                 {
                     'channel_axis': -1,
-                    'name': ['lily-R', 'lily-G', 'lily-W', 'lily-B'],
+                    'name': [
+                        'lily-cyan',
+                        'lily-magenta',
+                        'lily-yellow',
+                        'lily-white',
+                    ],
                     'colormap': ['cyan', 'magenta', 'yellow', 'White'],
                 },
             )
