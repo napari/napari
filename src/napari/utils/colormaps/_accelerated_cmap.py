@@ -330,7 +330,7 @@ def set_colormap_backend(backend: ColormapBackend) -> None:
     }:
         zero_preserving_modulo = _zero_preserving_modulo_loop
         labels_raw_to_texture_direct = _labels_raw_to_texture_direct_loop
-        prange = numba.prange  # type: ignore [misc]
+        prange = numba.prange
     else:
         zero_preserving_modulo = zero_preserving_modulo_numpy
         labels_raw_to_texture_direct = _labels_raw_to_texture_direct_numpy
