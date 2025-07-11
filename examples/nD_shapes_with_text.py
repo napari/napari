@@ -13,7 +13,8 @@ blobs = data.binary_blobs(
 ).astype(float)
 
 viewer = napari.Viewer()
-layer = viewer.add_image(blobs.astype(float), ndisplay=3)
+layer = viewer.add_image(blobs.astype(float))
+viewer.dims.ndisplay = 3
 
 n = 50
 shape = [[[n, 40, 40], [n, 40, 60], [n + 20, 60, 60], [n + 20, 60, 40]]]
