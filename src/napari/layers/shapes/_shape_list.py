@@ -301,7 +301,7 @@ def _fill_arrays(
         face_vertices = shape._face_vertices
         n_face_vertices = len(face_vertices)
 
-        face_vertices_range = range(
+        face_vertices_range = slice(
             mesh_vertices_offset, mesh_vertices_offset + n_face_vertices
         )
 
@@ -316,7 +316,7 @@ def _fill_arrays(
             shape._face_triangles + start_mesh_index + mesh_vertices_offset
         )
         n_face_triangles = len(face_triangles)
-        face_triangles_range = range(
+        face_triangles_range = slice(
             triangles_offset, triangles_offset + n_face_triangles
         )
         mesh_triangles[face_triangles_range] = face_triangles
@@ -337,7 +337,7 @@ def _fill_arrays(
 
         # Store edge vertices
         curr_vertices = edge_vertices + shape.edge_width * edge_offsets
-        edge_vertices_range = range(
+        edge_vertices_range = slice(
             mesh_vertices_offset, mesh_vertices_offset + n_edge_vertices
         )
         mesh_vertices[edge_vertices_range] = curr_vertices
@@ -349,7 +349,7 @@ def _fill_arrays(
             shape._edge_triangles + start_mesh_index + mesh_vertices_offset
         )
         n_edge_triangles = len(edge_triangles)
-        edge_triangles_range = range(
+        edge_triangles_range = slice(
             triangles_offset, triangles_offset + n_edge_triangles
         )
         mesh_triangles[edge_triangles_range] = edge_triangles
