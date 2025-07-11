@@ -21,7 +21,8 @@ blobs = np.stack(
     ],
     axis=0,
 )
-viewer = napari.view_image(blobs.astype(float))
+viewer = napari.Viewer()
+layer = viewer.add_image(blobs.astype(float))
 
 if __name__ == '__main__':
     napari.run()
