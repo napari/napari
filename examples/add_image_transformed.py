@@ -2,7 +2,7 @@
 Add image transformed
 =====================
 
-Display one image and transform it using the :func:`view_image` API.
+Display one image and transform it using the :func:`add_image` API.
 
 .. tags:: visualization-basic
 """

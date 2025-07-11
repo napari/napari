@@ -14,7 +14,8 @@ cells = data.cells3d()
 nuclei = cells[:, 1]
 smooth = filters.gaussian(nuclei, sigma=10)
 pts = feature.peak_local_max(smooth)
-viewer = napari.view_image(
+viewer = napari.Viewer
+layer = viewer.add_image(
         cells, channel_axis=1, name=['membranes', 'nuclei'], ndisplay=3
         )
 viewer.add_points(pts)
