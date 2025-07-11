@@ -22,7 +22,7 @@ import napari
 
 # Create a napari viewer with a 3D, 2 channel image, with the `add_image` convenience function.
 viewer = napari.Viewer()
-layer = viewer.add_image(data.cells3d(), channel_axis=1, name=['membrane', 'nuclei'])
+membrane, nuclei = viewer.add_image(data.cells3d(), channel_axis=1, name=['membrane', 'nuclei'])
 viewer.grid.enabled = True
 
 # Add a border overlay to each layer, and modify properties of the border overlay.
