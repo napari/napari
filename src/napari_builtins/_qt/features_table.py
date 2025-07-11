@@ -406,8 +406,8 @@ class FeaturesTable(QWidget):
 
         self.info = QLabel('')
         self.toggle = QToggleSwitch('editable.')
-        self.delete_column = QPushButton('Delete Column')
         self.add_column = QPushButton('Add Column')
+        self.delete_column = QPushButton('Delete Column')
         self.save = QPushButton('Save as CSV...')
         self.table = PandasView()
         self.layout().addWidget(self.info)
