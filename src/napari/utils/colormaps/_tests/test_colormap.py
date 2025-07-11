@@ -14,9 +14,6 @@ from napari.utils.colormaps import (
     _accelerated_cmap,
     colormap,
 )
-from napari.utils.colormaps._accelerated_cmap import (
-    MAPPING_OF_UNKNOWN_VALUE,
-)
 from napari.utils.colormaps.colormap import (
     CyclicLabelColormap,
     DirectLabelColormap,
@@ -208,7 +205,7 @@ def test_direct_label_colormap_simple(direct_label_colormap):
 
     assert len(label_mapping) == 6
     assert len(color_dict) == 5
-    assert label_mapping[None] == MAPPING_OF_UNKNOWN_VALUE
+    assert label_mapping[None] == _accelerated_cmap.MAPPING_OF_UNKNOWN_VALUE
     assert label_mapping[12] == label_mapping[3]
     np.testing.assert_array_equal(
         color_dict[label_mapping[0]], direct_label_colormap.color_dict[0]
@@ -254,17 +251,17 @@ def test_cast_direct_labels_to_minimum_type(direct_label_colormap):
                 label_mapping[1],
                 label_mapping[2],
                 label_mapping[3],
-                MAPPING_OF_UNKNOWN_VALUE,
-                MAPPING_OF_UNKNOWN_VALUE,
-                MAPPING_OF_UNKNOWN_VALUE,
-                MAPPING_OF_UNKNOWN_VALUE,
-                MAPPING_OF_UNKNOWN_VALUE,
-                MAPPING_OF_UNKNOWN_VALUE,
-                MAPPING_OF_UNKNOWN_VALUE,
-                MAPPING_OF_UNKNOWN_VALUE,
+                _accelerated_cmap.MAPPING_OF_UNKNOWN_VALUE,
+                _accelerated_cmap.MAPPING_OF_UNKNOWN_VALUE,
+                _accelerated_cmap.MAPPING_OF_UNKNOWN_VALUE,
+                _accelerated_cmap.MAPPING_OF_UNKNOWN_VALUE,
+                _accelerated_cmap.MAPPING_OF_UNKNOWN_VALUE,
+                _accelerated_cmap.MAPPING_OF_UNKNOWN_VALUE,
+                _accelerated_cmap.MAPPING_OF_UNKNOWN_VALUE,
+                _accelerated_cmap.MAPPING_OF_UNKNOWN_VALUE,
                 label_mapping[3],
-                MAPPING_OF_UNKNOWN_VALUE,
-                MAPPING_OF_UNKNOWN_VALUE,
+                _accelerated_cmap.MAPPING_OF_UNKNOWN_VALUE,
+                _accelerated_cmap.MAPPING_OF_UNKNOWN_VALUE,
             ]
         ),
     )
@@ -306,12 +303,11 @@ def test_zero_preserving_modulo_naive_vs_numba():
 
 def test_zero_preserving_modulo_naive_vs_partseg():
     pytest.importorskip('PartSegCore_compiled_backend.napari_mapping')
-
-    from napari.utils.colormaps import _colormap_partseg
-
     data = np.arange(1000, dtype=np.uint32)
     res1 = _accelerated_cmap.zero_preserving_modulo_numpy(data, 49, np.uint8)
-    res2 = _colormap_partseg.zero_preserving_modulo_partseg(data, 49, np.uint8)
+    res2 = _accelerated_cmap.zero_preserving_modulo_partsegcore(
+        data, 49, np.uint8
+    )
     npt.assert_array_equal(res1, res2)
 
 
