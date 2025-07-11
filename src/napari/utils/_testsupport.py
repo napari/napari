@@ -10,6 +10,7 @@ from unittest.mock import patch
 from weakref import WeakSet
 
 import pytest
+from numba.cuda.cudadrv.devicearray import lru_cache
 
 if TYPE_CHECKING:
     from pytest import FixtureRequest  # noqa: PT013
@@ -171,9 +172,11 @@ def mock_app_model():
         from napari.plugins import _initialize_plugins
     except ImportError:
 
+        @lru_cache
         def init_qactions():
             pass
 
+        @lru_cache
         def _initialize_plugins():
             pass
 
