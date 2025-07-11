@@ -4,6 +4,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+import numpy as np
 import pandas as pd
 from qtpy.QtCore import (
     QAbstractTableModel,
@@ -22,7 +23,10 @@ from qtpy.QtWidgets import (
     QAbstractItemView,
     QComboBox,
     QFileDialog,
+    QHBoxLayout,
+    QInputDialog,
     QLabel,
+    QMessageBox,
     QPushButton,
     QStyledItemDelegate,
     QTableView,
@@ -402,16 +406,24 @@ class FeaturesTable(QWidget):
 
         self.info = QLabel('')
         self.toggle = QToggleSwitch('editable.')
+        self.delete_column = QPushButton('Delete Column')
+        self.add_column = QPushButton('Add Column')
         self.save = QPushButton('Save as CSV...')
         self.table = PandasView()
         self.layout().addWidget(self.info)
-        self.layout().addWidget(self.toggle)
+        button_layout = QHBoxLayout()
+        button_layout.addWidget(self.toggle)
+        button_layout.addWidget(self.delete_column)
+        button_layout.addWidget(self.add_column)
+        self.layout().addLayout(button_layout)
         self.layout().addWidget(self.save)
         self.layout().addWidget(self.table)
         self.layout().addStretch()
 
         self.toggle.toggled.connect(self._on_editable_change)
         self.save.clicked.connect(self._on_save_clicked)
+        self.delete_column.clicked.connect(self._delete_column)
+        self.add_column.clicked.connect(self._add_column)
 
         self.table.selectionModel().selectionChanged.connect(
             self._on_table_selection_changed
@@ -457,10 +469,14 @@ class FeaturesTable(QWidget):
             self.toggle.setVisible(True)
             self.save.setVisible(True)
             self.table.setVisible(True)
+            self.add_column.setVisible(True)
+            self.delete_column.setVisible(True)
         else:
             self.toggle.setVisible(False)
             self.save.setVisible(False)
             self.table.setVisible(False)
+            self.add_column.setVisible(False)
+            self.delete_column.setVisible(False)
 
         if self._active_layer is None:
             self.info.setText('No layer selected.')
@@ -538,6 +554,108 @@ class FeaturesTable(QWidget):
         self._selection_blocked = True
         yield
         self._selection_blocked = False
+
+    def _add_column(self):
+        model = self.table.model().sourceModel()
+        df = model.df
+
+        # Generate a default unique column name
+        base_name = 'new_column'
+        col_name = base_name
+        i = 1
+        while col_name in df.columns:
+            col_name = f'{base_name}_{i}'
+            i += 1
+
+        # Ask for column name
+        text, ok = QInputDialog.getText(
+            self, 'Add Column', 'Enter column name:', text=col_name
+        )
+        if not ok or not text:
+            return
+        col_name = text.strip()
+        if not col_name:
+            return
+
+        # Ask for an expression to evaluate
+        val_input, ok = QInputDialog.getText(
+            self,
+            'Column Expression',
+            f"Enter expression to populate '{col_name}':",  # (e.g. df['x'] + 1 or leave blank for <NA>)
+            text='pd.NA',
+        )
+        if not ok:
+            return
+
+        expr = val_input.strip()
+
+        # Evaluate safely
+        try:
+            local_context = {'df': df.copy(), 'pd': pd, 'np': np}
+            if expr == '' or expr.lower() == 'pd.na':
+                value = pd.NA
+            else:
+                value = eval(expr, {}, local_context)
+
+            df[col_name] = value
+
+        except (KeyError, ValueError, TypeError) as e:
+            QMessageBox.warning(
+                self,
+                'Invalid Expression',
+                f'Could not evaluate expression:\n{expr}\n\nError: {e}\nUsing <NA> as fallback.',
+            )
+            df[col_name] = pd.NA
+
+        # Update both the view and the original layer
+        self._active_layer.features = df
+        model.replace_data(df)
+
+    def _delete_column(self):
+        model = self.table.model().sourceModel()
+        df = model.df
+
+        selection_model = self.table.selectionModel()
+        selected_indexes = selection_model.selectedIndexes()
+
+        if not selected_indexes:
+            QMessageBox.information(
+                self, 'No Column Selected', 'Please select a column to delete.'
+            )
+            return
+
+        selected_cols = sorted(
+            {idx.column() for idx in selected_indexes if idx.column() > 0}
+        )
+        if not selected_cols:
+            QMessageBox.warning(
+                self, 'Invalid Selection', 'Index column cannot be deleted.'
+            )
+            return
+
+        col_names = [df.columns[col - 1] for col in selected_cols]
+
+        msg = (
+            f'Are you sure you want to delete {len(col_names)} column(s)?\n'
+            + ', '.join(col_names)
+        )
+        reply = QMessageBox.question(
+            self,
+            'Delete Column',
+            msg,
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+        )
+
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+
+        # ✅ Update the original features DataFrame
+        self._active_layer.features = self._active_layer.features.drop(
+            columns=col_names
+        )
+
+        # ✅ Trigger the model/view update
+        model.replace_data(self._active_layer.features)
 
     def _on_save_clicked(self):
         dlg = QFileDialog()
