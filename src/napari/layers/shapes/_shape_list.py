@@ -784,6 +784,9 @@ class ShapeList:
 
         z_order = self._mesh.triangles_z_order
 
+        triangle_ranges: IndexArray | slice
+        vertices_range: IndexArray | slice
+
         if disp_indices.size == 0:
             triangle_ranges = np.array([], dtype=np.int64)
             vertices_range = np.array([], dtype=np.int64)
