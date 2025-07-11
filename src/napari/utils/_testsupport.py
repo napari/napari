@@ -166,6 +166,17 @@ def mock_app_model():
 
     from napari._app_model._app import NapariApplication, _napari_names
 
+    try:
+        from napari._qt._qapp_model.qactions import init_qactions
+        from napari.plugins import _initialize_plugins
+    except ImportError:
+
+        def init_qactions():
+            pass
+
+        def _initialize_plugins():
+            pass
+
     app = NapariApplication('test_app')
     app.injection_store.namespace = _napari_names
     with patch.object(NapariApplication, 'get_app_model', return_value=app):
@@ -173,6 +184,8 @@ def mock_app_model():
             yield app
         finally:
             Application.destroy('test_app')
+            _initialize_plugins.cache_clear()
+            init_qactions.cache_clear()
 
 
 @pytest.fixture
