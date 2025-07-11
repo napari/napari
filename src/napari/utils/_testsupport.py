@@ -4,13 +4,13 @@ import sys
 import warnings
 from contextlib import suppress
 from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
 from typing import TYPE_CHECKING
 from unittest.mock import patch
 from weakref import WeakSet
 
 import pytest
-from numba.cuda.cudadrv.devicearray import lru_cache
 
 if TYPE_CHECKING:
     from pytest import FixtureRequest  # noqa: PT013
