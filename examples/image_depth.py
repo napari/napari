@@ -11,7 +11,8 @@ import napari
 
 im_data = np.zeros((50, 50, 50))
 im_data[30:40, 25:35, 25:35] = 1
-viewer = napari.view_image(im_data, colormap='magenta', rendering='iso')
+viewer = napari.Viewer()
+layer = viewer.add_image(im_data, colormap='magenta', rendering='iso')
 viewer.add_image(im_data, colormap='green', rendering='iso', translate=(30, 0, 0))
 
 points_data = [

@@ -30,7 +30,8 @@ blobs_dask_windows = np.squeeze(
     axis=(1, 2),
 )
 blobs_sum = np.sum(blobs_dask_windows, axis=1)
-viewer = napari.view_image(blobs_sum)
+viewer = napari.Viewer()
+layer = viewer.add_image(blobs_sum)
 
 if __name__ == '__main__':
     napari.run()
@@ -63,7 +64,8 @@ def sliding_window_mean(
     )
 
 
-viewer = napari.view_image(blobs_dask, colormap='green')
+viewer = napari.Viewer()
+layer = viewer.add_image(blobs_dask, colormap='green')
 viewer.window.add_dock_widget(magicgui(sliding_window_mean, auto_call=True))
 viewer.dims.current_step = (32, 0, 0)
 

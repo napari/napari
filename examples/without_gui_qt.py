@@ -16,7 +16,8 @@ from skimage import data
 
 import napari
 
-viewer = napari.view_image(data.astronaut(), rgb=True)
+viewer = napari.Viewer()
+layer = viewer.add_image(data.astronaut(), rgb=True)
 
 # You can do anything you would normally do with the viewer object
 # like take a
