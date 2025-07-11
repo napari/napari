@@ -9,6 +9,7 @@ import pytest
 
 from napari._pydantic_compat import ValidationError
 from napari.utils.color import ColorArray
+from napari.utils.colormap_backend import ColormapBackend, set_backend
 from napari.utils.colormaps import (
     Colormap,
     _accelerated_cmap,
@@ -21,6 +22,22 @@ from napari.utils.colormaps.colormap import (
     _normalize_label_colormap,
 )
 from napari.utils.colormaps.colormap_utils import label_colormap
+
+backends = [ColormapBackend.pure_python]
+if _accelerated_cmap.numba is not None:
+    backends.append(ColormapBackend.numba)
+if _accelerated_cmap.partsegcore_mapping is not None:
+    backends.append(ColormapBackend.partsegcore)
+
+
+@pytest.fixture(autouse=True, params=backends)
+def colormap_backend(request):
+    """Fixture to set the colormap backend for each test."""
+    backend = request.param
+    set_backend(backend)
+    yield backend
+    # Reset the backend after the test
+    set_backend(ColormapBackend.fastest_available)
 
 
 def test_linear_colormap():

@@ -293,6 +293,14 @@ def labels_raw_to_texture_direct_partsegcore(
 zero_preserving_modulo = zero_preserving_modulo_numpy
 labels_raw_to_texture_direct = _labels_raw_to_texture_direct_numpy
 
+if numba is not None:
+    _zero_preserving_modulo_inner_loop = numba.njit(parallel=True, cache=True)(
+        _zero_preserving_modulo_inner_loop
+    )
+    _labels_raw_to_texture_direct_inner_loop = numba.njit(
+        parallel=True, cache=True
+    )(_labels_raw_to_texture_direct_inner_loop)
+
 
 def set_colormap_backend(backend: ColormapBackend) -> None:
     """Set the colormap backend to use.
@@ -306,9 +314,7 @@ def set_colormap_backend(backend: ColormapBackend) -> None:
         COLORMAP_BACKEND, \
         labels_raw_to_texture_direct, \
         zero_preserving_modulo, \
-        prange, \
-        _zero_preserving_modulo_inner_loop, \
-        _labels_raw_to_texture_direct_inner_loop
+        prange
     COLORMAP_BACKEND = backend
 
     if partsegcore_mapping is not None and backend in {
@@ -322,14 +328,8 @@ def set_colormap_backend(backend: ColormapBackend) -> None:
         ColormapBackend.fastest_available,
         ColormapBackend.numba,
     }:
-        _zero_preserving_modulo_inner_loop = numba.njit(
-            parallel=True, cache=True
-        )(_zero_preserving_modulo_inner_loop)
         zero_preserving_modulo = _zero_preserving_modulo_loop
         labels_raw_to_texture_direct = _labels_raw_to_texture_direct_loop
-        _labels_raw_to_texture_direct_inner_loop = numba.njit(
-            parallel=True, cache=True
-        )(_labels_raw_to_texture_direct_inner_loop)
         prange = numba.prange  # type: ignore [misc]
     else:
         zero_preserving_modulo = zero_preserving_modulo_numpy
