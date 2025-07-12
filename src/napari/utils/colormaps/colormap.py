@@ -28,6 +28,14 @@ if TYPE_CHECKING:
     from numba import typed
 
 
+__all__ = (
+    'Colormap',
+    'ColormapInterpolationMode',
+    'CyclicLabelColormap',
+    'DirectLabelColormap',
+)
+
+
 class ColormapInterpolationMode(StrEnum):
     """INTERPOLATION: Interpolation mode for colormaps.
 
