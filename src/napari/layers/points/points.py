@@ -2002,51 +2002,125 @@ class Points(Layer):
         self.selected_data = set(np.arange(cur_points, len(self.data)))
         self.events.features()
 
-    def remove_selected(self) -> None:
-        """Removes selected points if any."""
-        index = list(self.selected_data)
-        index.sort()
-        if len(index):
+    def remove(self, indices: list[int]) -> None:
+        """Removes any points at the given indices.
+
+        Parameters
+        ----------
+        indices : List[int]
+            List of indices of points to remove from the layer.
+        """
+        indices.sort()
+        if len(indices):
             self.events.data(
                 value=self.data,
                 action=ActionType.REMOVING,
                 data_indices=tuple(
-                    self.selected_data,
+                    indices,
                 ),
                 vertex_indices=((),),
             )
-            self._shown = np.delete(self._shown, index, axis=0)
-            self._size = np.delete(self._size, index, axis=0)
-            self._symbol = np.delete(self._symbol, index, axis=0)
-            self._border_width = np.delete(self._border_width, index, axis=0)
+            self._shown = np.delete(self._shown, indices, axis=0)
+            self._size = np.delete(self._size, indices, axis=0)
+            self._symbol = np.delete(self._symbol, indices, axis=0)
+            self._border_width = np.delete(self._border_width, indices, axis=0)
             with self._border.events.blocker_all():
-                self._border._remove(indices_to_remove=index)
+                self._border._remove(indices_to_remove=indices)
             with self._face.events.blocker_all():
-                self._face._remove(indices_to_remove=index)
-            self._feature_table.remove(index)
-            self.text.remove(index)
-            if self._value in self.selected_data:
+                self._face._remove(indices_to_remove=indices)
+            self._feature_table.remove(indices)
+            self.text.remove(indices)
+            if self._value in indices:
                 self._value = None
             else:
                 if self._value is not None:
                     # update the index of self._value to account for the
                     # data being removed
-                    indices_removed = np.array(index) < self._value
+                    indices_removed = np.array(indices) < self._value
                     offset = np.sum(indices_removed)
                     self._value -= offset
                     self._value_stored -= offset
 
-            self._set_data(np.delete(self.data, index, axis=0))
+            self._set_data(np.delete(self.data, indices, axis=0))
             self.events.data(
                 value=self.data,
                 action=ActionType.REMOVED,
                 data_indices=tuple(
-                    self.selected_data,
+                    indices,
                 ),
                 vertex_indices=((),),
             )
-            self.selected_data = set()
             self.events.features()
+
+    def remove_selected(self) -> None:
+        """Remove all selected points."""
+        self.remove(list(self.selected_data))
+        self.selected_data = set()
+
+    def get_point_info(self, index: int) -> dict:
+        """
+        Retrieve all available information about a point at the given index.
+
+        Parameters
+        ----------
+        index : int
+            Index of the point.
+
+        Returns
+        -------
+        dict
+            A dictionary containing all relevant details of the point.
+        """
+        if not (0 <= index < len(self.data)):
+            return {
+                'data': None,
+                'properties': {},
+                'features': {},
+                'face_color': None,
+                'border_color': None,
+                'size': None,
+                'symbol': None,
+                'border_width': None,
+            }
+
+        info = {
+            'data': self.data[index],
+            'properties': {
+                key: (val[index]) for key, val in self.properties.items()
+            }
+            if self.properties
+            else {},
+            'features': (
+                self.features.iloc[index].to_dict()
+                if hasattr(self, 'features') and self.features is not None
+                else {}
+            ),
+            'face_color': self.face_color[index],
+            'border_color': self.border_color[index],
+            'size': self.size[index],
+            'symbol': self.symbol[index],
+            'border_width': self.border_width[index],
+        }
+        return info
+
+    def pop(self, index=-1) -> dict[str, Any]:
+        """Remove and return the point at the given index.
+
+        Parameters
+        ----------
+        index : int, optional
+            Index of the point to remove. Default is -1, which removes the last point.
+
+        Returns
+        -------
+        dict[str, Any]
+            Dictionary containing the removed point's data.
+        """
+        if index == -1:
+            index = len(self.data) - 1
+        info = self.get_point_info(index)
+        self.remove([index])
+        return info
 
     def _move(
         self,
