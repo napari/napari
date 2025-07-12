@@ -157,9 +157,10 @@ def _make_viewer_then(
         argument.
     """
 
+    method = add_method[4:] if add_method.startswith('add_') else 'path'
     warnings.warn(
-        f'napari.view_{add_method[4:]} is deprecated and will be removed in napari 0.7.0.\n'
-        f'Use `viewer = napari.Viewer(); viewer.add_{add_method[4:]}(...)` instead.',
+        f'napari.view_{method} is deprecated and will be removed in napari 0.7.0.\n'
+        f'Use `viewer = napari.Viewer(); viewer.add_{method}(...)` instead.',
         DeprecationWarning,
         stacklevel=1,
     )
