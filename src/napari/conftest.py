@@ -37,26 +37,21 @@ import sys
 import threading
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import suppress
+from datetime import timedelta
 from functools import partial
 from itertools import chain
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
+from time import perf_counter
 from typing import TYPE_CHECKING
 from weakref import WeakKeyDictionary
-
-from npe2 import PackageMetadata
-
-with suppress(ModuleNotFoundError):
-    __import__('dotenv').load_dotenv()
-
-from datetime import timedelta
-from time import perf_counter
 
 import dask.threaded
 import numpy as np
 import pytest
 from _pytest.pathlib import bestrelpath
 from IPython.core.history import HistoryManager
+from npe2 import PackageMetadata
 from packaging.version import parse as parse_version
 from pytest_pretty import CustomTerminalReporter
 
