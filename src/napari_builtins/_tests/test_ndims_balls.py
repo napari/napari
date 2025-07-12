@@ -22,6 +22,7 @@ def test_labeled_particles2d():
 
     assert np.all(img[0][labels[0] > 0] > 0)
 
+
 def test_labeled_particles3d():
     img, labels, points = labeled_particles3d()
     assert img[0].ndim == 3
@@ -37,5 +38,3 @@ def test_labeled_particles3d():
     assert points[2] == 'points'
 
     assert np.all(img[0][labels[0] > 0] > 0)
-
-
