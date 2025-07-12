@@ -17,7 +17,8 @@ import napari
 astro = data.astronaut()
 
 # initialise viewer with astro image
-viewer = napari.view_image(rgb2gray(astro), name='astronaut', rgb=False)
+viewer = napari.Viewer()
+layer = viewer.add_image(rgb2gray(astro), name='astronaut', rgb=False)
 
 # add the labels
 # we add 1 because SLIC returns labels from 0, which we consider background

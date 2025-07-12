@@ -23,8 +23,9 @@ for i in range(5):
     data.append(da.from_zarr(zarr_array, chunks=zarr_array.chunks))
 
 # This order presents a better visualization, but seems to break simple async (issue #5106)
-# viewer = napari.view_image(data, order=(1, 0, 2), contrast_limits=(18000, 40000), multiscale=True)
-viewer = napari.view_image(data, contrast_limits=(18000, 40000), multiscale=True)
+# layer = viewer.add_image(data, order=(1, 0, 2), contrast_limits=(18000, 40000), multiscale=True)
+viewer = napari.Viewer()
+layer = viewer.add_image(data, contrast_limits=(18000, 40000), multiscale=True)
 
 if __name__ == '__main__':
     napari.run()
