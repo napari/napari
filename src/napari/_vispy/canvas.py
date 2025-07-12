@@ -163,7 +163,6 @@ class VispyCanvas:
         self._scene_canvas.events.ignore_callback_errors = False
         self._scene_canvas.context.set_depth_func('lequal')
 
-        # Connecting events from SceneCanvas
         self._scene_canvas.events.key_press.connect(
             self._key_map_handler.on_key_press
         )
@@ -190,9 +189,12 @@ class VispyCanvas:
         self.viewer.events.theme.connect(
             self._on_theme_change, position='first'
         )
+
         self.viewer.camera.events.mouse_pan.connect(self._on_interactive)
         self.viewer.camera.events.mouse_zoom.connect(self._on_interactive)
         self.viewer.camera.events.zoom.connect(self._on_cursor)
+
+        self.viewer._zoom_box.events.zoom.connect(self._on_boxzoom)
         self.viewer.layers.events.reordered.connect(self._update_scenegraph)
         self.viewer.layers.events.removed.connect(self._remove_layer)
         self.viewer.grid.events.stride.connect(self._update_scenegraph)
@@ -363,6 +365,16 @@ class VispyCanvas:
         else:
             self.view.interactive = interactive
             self.grid.interactive = False
+
+    def _on_boxzoom(self, event):
+        """Update zoom level."""
+        from napari._vispy.utils.zoom import calculate_zoom
+
+        zoom, z_center, y_center, x_center = calculate_zoom(
+            event.value, self.viewer
+        )
+        self.viewer.camera.center = (z_center, x_center, y_center)
+        self.viewer.camera.zoom = zoom
 
     def _map_canvas2world(
         self,
