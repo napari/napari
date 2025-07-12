@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from functools import lru_cache
+from itertools import chain
 
 from app_model import Application
 
@@ -8,7 +9,7 @@ from napari._app_model.actions._layerlist_context_actions import (
     LAYERLIST_CONTEXT_ACTIONS,
     LAYERLIST_CONTEXT_SUBMENUS,
 )
-from napari._app_model.actions._view import VIEW_ACTIONS
+from napari._app_model.actions._view import VIEW_ACTIONS, VIEW_SUBMENUS
 
 APP_NAME = 'napari'
 
@@ -36,7 +37,9 @@ class NapariApplication(Application):
 
         self.register_actions(LAYERLIST_CONTEXT_ACTIONS)
         self.register_actions(VIEW_ACTIONS)
-        self.menus.append_menu_items(LAYERLIST_CONTEXT_SUBMENUS)
+        self.menus.append_menu_items(
+            chain(LAYERLIST_CONTEXT_SUBMENUS, VIEW_SUBMENUS)
+        )
 
     @classmethod
     def get_app_model(cls, app_name: str = APP_NAME) -> NapariApplication:
