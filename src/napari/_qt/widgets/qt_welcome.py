@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from qtpy.QtCore import QSize, Qt, Signal
+from itertools import cycle
+from random import sample
+
+from qtpy.QtCore import QSize, Qt, QTimer, Signal
 from qtpy.QtGui import QKeySequence, QPainter
 from qtpy.QtWidgets import (
     QFormLayout,
@@ -30,6 +33,14 @@ class QtVersionLabel(QLabel):
     """Label used for displaying version information."""
 
 
+# TODO: make them respect settings?
+TIPS = [
+    'You can take a screenshot and copy it to your clipboard by pressing alt+C',
+    'You can change most shortcuts from the File->Preferences->Shortcuts menu',
+    'You can right click many components of the graphical interface to access advanced controls',
+]
+
+
 class QtWelcomeWidget(QWidget):
     """Welcome widget to display initial information and shortcuts to user."""
 
@@ -48,6 +59,11 @@ class QtWelcomeWidget(QWidget):
                 'Drag image(s) here to open\nor\nUse the menu shortcuts below:'
             )
         )
+        self._tip = QLabel()
+        self._tips = cycle(sample(TIPS, len(TIPS)))
+        self._tip_timer = QTimer()
+        self._tip_timer.timeout.connect(self._next_tip)
+        self._next_tip()
 
         # Widget setup
         self.setAutoFillBackground(True)
@@ -55,6 +71,7 @@ class QtWelcomeWidget(QWidget):
         self._image.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._version_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._tip.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         # Layout
         text_layout = QVBoxLayout()
@@ -98,6 +115,7 @@ class QtWelcomeWidget(QWidget):
         layout.addWidget(self._image)
         layout.addLayout(text_layout)
         layout.addLayout(shortcut_layout)
+        layout.addWidget(self._tip)
         layout.addStretch()
 
         self.setLayout(layout)
@@ -189,6 +207,10 @@ class QtWelcomeWidget(QWidget):
         """
         self._update_property('drag', False)
         self.sig_dropped.emit(event)
+
+    def _next_tip(self, event=None):
+        self._tip.setText(f'Did You Know?\n{next(self._tips)}!')
+        self._tip_timer.start(5000)
 
 
 class QtWidgetOverlay(QStackedWidget):
