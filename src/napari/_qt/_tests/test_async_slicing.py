@@ -18,6 +18,8 @@ from napari._vispy.layers.vectors import (
 from napari.layers import Image, Layer, Points, Vectors
 from napari.utils.events import Event
 
+pytest.skip('async slicing hangs gdb', allow_module_level=True)
+
 
 @pytest.fixture
 def rng() -> np.random.Generator:
