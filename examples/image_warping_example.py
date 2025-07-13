@@ -1,0 +1,81 @@
+"""
+Mouse event callbacks
+=====================
+
+Warp an image based on points moved by user using mouse event callbacks in
+napari.
+
+This example is fully explained in the following tutorial:
+https://napari.org/napari-scipy2025-workshop/notebooks/image_warping.html
+
+.. tags:: interactivity
+"""
+
+import napari
+import numpy as np
+from functools import partial
+import skimage as ski
+
+# Set up base image (to be warped) and points layers
+image = ski.data.checkerboard()
+src = np.array(
+    [
+        [ 66, 66],
+        [133,  66],
+        [ 66, 133],
+        [133, 133]
+    ]
+)
+
+viewer = napari.Viewer()
+checkerboard_image_layer = viewer.add_image(image, name='checkerboard')
+source_points_layer = viewer.add_points(src, name='source_points', symbol='+', face_color='red', size=5)
+moving_points_layer = viewer.add_points(src.copy(), name='moving_points')
+
+
+# Define a function to estimate the warping required to transform the destination points
+# into the source points, and then apply the warping to the original image data, 
+# replacing the image layer data in-place.
+def warp(im_layer: 'napari.layers.Image', src: 'np.ndarray', dst: 'np.ndarray') -> None:
+    # Warp image using thin-plate spline transformation from skimage.
+    tps = ski.transform.ThinPlateSplineTransform()
+    tps.estimate(dst, src)
+    warped = ski.transform.warp(image, tps)
+    # warped will be in 0..1 floats, so we need to
+    # multiple by 255 to get it back to the same range
+    # as the original data
+    im_layer.data = (warped * 255).astype(image.dtype)
+
+# Use partial to specify arguments for the warp function because the event
+# passes only one thing back
+warp_checkerboard = partial(warp, checkerboard_image_layer, src)
+
+
+def warp_on_move(points_layer, event):
+    # we do nothing here, as we don't care about the mouse press,
+    # by yielding we have the chance to do things on drag
+    yield
+
+    # while the mouse is moving, we call our warp function
+    while event.type == 'mouse_move':
+        # find the index into the points data of the currently selected point
+        # we use the last selected point as that's likely what the mouse is hovering
+        # over
+        moved_point_index = list(points_layer.selected_data)[-1]
+        # make a copy of the moving_points so original array is unchanged
+        dst = points_layer.data.copy()
+        # assign the current mouse position into the correct index to
+        # update the location of the point
+        dst[moved_point_index] = event.position
+        # warp image
+        warp_checkerboard(dst)
+        yield
+
+    # Empty here as nothing is done on mouse release
+
+
+# Hook up callback to the layer event
+moving_points_layer.mouse_drag_callbacks.append(warp_on_move)
+
+if __name__ == '__main__':
+    napari.run()
