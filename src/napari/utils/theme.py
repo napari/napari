@@ -358,7 +358,7 @@ DARK = Theme(
     label='Default Dark',
     # Widgets / frame background (e.g. Preferences window). HEX: #262930
     background='rgb(38, 41, 48)',
-    # Layer controls background / layer name background. HEX: #414851 
+    # Layer controls background / layer name background. HEX: #414851
     foreground='rgb(65, 72, 81)',
     # Layer controls widget background. HEX: #5a626c
     primary='rgb(90, 98, 108)',
