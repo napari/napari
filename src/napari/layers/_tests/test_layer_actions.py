@@ -349,7 +349,7 @@ def test_make_label_from_shape_translated():
 
 
 def test_make_label_from_shape_scaled():
-    """Tests that label shape for a translated image captures the translated canvas area.
+    """Tests that label shape for a scale image captures the translated canvas area.
 
     Does not cover affine.scale
     """
