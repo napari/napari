@@ -1200,7 +1200,7 @@ class ShapeList:
                 shape._face_triangles + triangle_shift
             )
             self._mesh.triangles[edge_slice] = shape._edge_triangles + (
-                triangle_shift + shape.face_triangles_count
+                triangle_shift + shape.face_vertices_count
             )
             if new_triangle_count < current_triangles_count:
                 padding_slice = slice(
@@ -1218,7 +1218,7 @@ class ShapeList:
                     before_array,
                     shape._face_triangles + triangles_slice.start,
                     shape._edge_triangles
-                    + (triangles_slice.start + shape.face_triangles_count),
+                    + (triangles_slice.start + shape.face_vertices_count),
                     after_array,
                 ]
             )
