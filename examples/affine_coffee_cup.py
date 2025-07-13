@@ -12,13 +12,23 @@ which is represented as a numpy array, we can move and adjust objects in the nap
 
 import meshio
 import numpy as np
+import pooch
 from magicgui import magicgui
 
 import napari
 
+cup_path = pooch.retrieve(
+    url="https://raw.githubusercontent.com/8bitbiscuit/cup_and_creamer/main/cup.stl",
+    known_hash='b6162298f86c94ebb276eb5f0544409996a8ee81fff9627a2bd4b71309835014',
+)
+creamer_path = pooch.retrieve(
+    url="https://raw.githubusercontent.com/8bitbiscuit/cup_and_creamer/main/creamer.stl",
+    known_hash='122256d942694cf40fc1a186a346cda0b31a03fbdec61ea8a351c915f3d0d6ed',
+)
+
 # Use meshio to read in stl files
-cup_mesh = meshio.read("cup.stl")
-creamer_mesh = meshio.read("creamer.stl")
+cup_mesh = meshio.read(cup_path)
+creamer_mesh = meshio.read(creamer_path)
 
 # Create tuples using the data read in from meshio to be viewed by napari as surfaces
 cup_data = (cup_mesh.points, cup_mesh.cells[0].data)
