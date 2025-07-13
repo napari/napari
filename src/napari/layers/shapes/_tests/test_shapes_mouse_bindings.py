@@ -159,7 +159,7 @@ def test_line_fixed_angles(create_known_shapes_layer):
 
 
 def test_path_tablet(create_known_shapes_layer):
-    layer, n_shapes, _ = create_known_shapes_layer
+    layer, n_shapes, known_non_shape = create_known_shapes_layer
     desired_shape = np.array([[20, 30], [10, 50], [60, 40], [80, 20]])
 
     layer.mode = 'add_path'
