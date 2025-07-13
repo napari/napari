@@ -10,10 +10,11 @@ which is represented as a numpy array, we can move and adjust objects in the nap
 .. tags:: visualization-advanced
 """
 
-import napari
-import numpy as np
 import meshio
+import numpy as np
 from magicgui import magicgui
+
+import napari
 
 # Use meshio to read in stl files
 cup_mesh = meshio.read("cup.stl")
