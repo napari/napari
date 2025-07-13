@@ -322,7 +322,7 @@ def test_make_label_from_shape():
     _convert(ll, 'labels')
 
     # the label array should match the image (world) dimensions
-    expected_label_array = np.array([[0., 0.], [19., 19.]])
+    expected_label_array = np.array([[0.0, 0.0], [19.0, 19.0]])
     assert np.array_equal(ll[2].extent.data, expected_label_array)
 
 
