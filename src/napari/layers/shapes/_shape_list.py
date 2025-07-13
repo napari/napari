@@ -1181,6 +1181,12 @@ class ShapeList:
             Location in list of the shape to be changed.
         """
         shape = self.shapes[index]
+        if index == 0:
+            triangle_shift = 0
+        else:
+            triangle_shift = self._mesh_vertices_slice_available(
+                index - 1
+            ).stop
         triangles_slice = self._mesh_triangles_slice_available(index)
         current_triangles_count = triangles_slice.stop - triangles_slice.start
         new_triangle_count = (
@@ -1195,7 +1201,6 @@ class ShapeList:
                 triangles_slice.start + shape.face_triangles_count,
                 triangles_slice.start + shape.triangles_count,
             )
-            triangle_shift = triangles_slice.start
             self._mesh.triangles[face_slice] = (
                 shape._face_triangles + triangle_shift
             )
@@ -1216,9 +1221,9 @@ class ShapeList:
             self._mesh.triangles = np.concatenate(
                 [
                     before_array,
-                    shape._face_triangles + triangles_slice.start,
+                    shape._face_triangles + triangle_shift,
                     shape._edge_triangles
-                    + (triangles_slice.start + shape.face_vertices_count),
+                    + (triangle_shift + shape.face_vertices_count),
                     after_array,
                 ]
             )
