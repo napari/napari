@@ -11,10 +11,12 @@ https://napari.org/napari-scipy2025-workshop/notebooks/image_warping.html
 .. tags:: interactivity
 """
 
-import napari
-import numpy as np
 from functools import partial
+
+import numpy as np
 import skimage as ski
+
+import napari
 
 # Set up base image (to be warped) and points layers
 image = ski.data.checkerboard()
@@ -34,7 +36,7 @@ moving_points_layer = viewer.add_points(src.copy(), name='moving_points')
 
 
 # Define a function to estimate the warping required to transform the destination points
-# into the source points, and then apply the warping to the original image data, 
+# into the source points, and then apply the warping to the original image data,
 # replacing the image layer data in-place.
 def warp(im_layer: 'napari.layers.Image', src: 'np.ndarray', dst: 'np.ndarray') -> None:
     # Warp image using thin-plate spline transformation from skimage.
