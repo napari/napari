@@ -1,18 +1,5 @@
 import numpy as np
 
-from napari.layers.shapes.shape_types import (
-    CoordinateArray,
-    CoordinateDtype,
-    IndexArray,
-    IndexDtype,
-    ShapeColorArray,
-    ShapeColorDtype,
-    TriangleArray,
-    TriangleDtype,
-    ZOrderArray,
-    ZOrderDtype,
-)
-
 
 class Mesh:
     """Contains meshses of shapes that will ultimately get rendered.
@@ -28,7 +15,7 @@ class Mesh:
         Number of displayed dimensions.
     vertices : np.ndarray
          Qx2 array of vertices of all triangles for shapes including edges and
-         faces For each shape, we store the vertices of the triangles first, then vertices of edges
+         faces
     vertices_centers : np.ndarray
          Qx2 array of centers of vertices of triangles for shapes. For vertices
          corresponding to faces these are the same as the actual vertices. For
@@ -63,17 +50,6 @@ class Mesh:
     """
 
     _types = ('face', 'edge')
-    vertices: CoordinateArray
-    vertices_centers: CoordinateArray
-    vertices_offsets: CoordinateArray
-    triangles: TriangleArray
-    triangles_z_order: ZOrderArray
-    triangles_colors: ShapeColorArray
-    displayed_triangles: TriangleArray
-    displayed_triangles_colors: ShapeColorArray
-    displayed_triangles_to_shape_index: IndexArray
-    vertices_index: IndexArray
-    triangles_index: IndexArray
 
     def __init__(self, ndisplay: int = 2) -> None:
         self._ndisplay = ndisplay
@@ -81,24 +57,18 @@ class Mesh:
 
     def clear(self) -> None:
         """Resets mesh data"""
-        self.vertices = np.empty((0, self.ndisplay), dtype=CoordinateDtype)  # type: ignore[assignment]
-        self.vertices_centers = np.empty(  # type: ignore[assignment]
-            (0, self.ndisplay), dtype=CoordinateDtype
-        )
-        self.vertices_offsets = np.empty(  # type: ignore[assignment]
-            (0, self.ndisplay), dtype=CoordinateDtype
-        )
-        self.vertices_index = np.zeros(1, dtype=IndexDtype)
-        self.triangles = np.empty((0, 3), dtype=TriangleDtype)  # type: ignore[assignment]
-        self.triangles_index = np.zeros(1, dtype=IndexDtype)
-        self.triangles_colors = np.empty((0, 4), dtype=ShapeColorDtype)  # type: ignore[assignment]
-        self.triangles_z_order = np.empty(0, dtype=ZOrderDtype)
+        self.vertices = np.empty((0, self.ndisplay))
+        self.vertices_centers = np.empty((0, self.ndisplay))
+        self.vertices_offsets = np.empty((0, self.ndisplay))
+        self.vertices_index = np.empty((0, 2), dtype=int)
+        self.triangles = np.empty((0, 3), dtype=np.uint32)
+        self.triangles_index = np.empty((0, 2), dtype=int)
+        self.triangles_colors = np.empty((0, 4))
+        self.triangles_z_order = np.empty((0), dtype=int)
 
-        self.displayed_triangles = np.empty((0, 3), dtype=TriangleDtype)  # type: ignore[assignment]
-        self.displayed_triangles_to_shape_index = np.zeros(1, dtype=IndexDtype)
-        self.displayed_triangles_colors = np.empty(  # type: ignore[assignment]
-            (0, 4), dtype=ShapeColorDtype
-        )
+        self.displayed_triangles = np.empty((0, 3), dtype=np.uint32)
+        self.displayed_triangles_index = np.empty((0, 2), dtype=int)
+        self.displayed_triangles_colors = np.empty((0, 4))
 
     @property
     def ndisplay(self) -> int:
