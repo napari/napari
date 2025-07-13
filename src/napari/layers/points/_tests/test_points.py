@@ -1037,6 +1037,7 @@ def test_border_width():
     with pytest.raises(ValueError, match='must be > 0'):
         layer.border_width = -2
 
+
 def test_border_width_update():
     """Test that the current border width is updated."""
     # add a point with default border width
