@@ -56,7 +56,9 @@ def _convert(ll: LayerList, type_: str) -> None:
     for lay in list(ll.selection):
         idx = ll.index(lay)
         if isinstance(lay, Shapes) and type_ == 'labels':
-            data = lay.to_labels(labels_shape=ll.extent.world[-1] + 1)
+            # lay.scale is added to the label world extent to account for the virtual width
+            # of each data index (nominally 1.0 for unscaled images)
+            data = lay.to_labels(labels_shape=lay.world_to_data(ll.extent.world[-1] + lay.scale))
             idx += 1
         elif (
             not np.issubdtype(lay.data.dtype, np.integer) and type_ == 'labels'

@@ -313,20 +313,63 @@ def test_convert_layer(layer, type_):
 
 
 def test_make_label_from_shape():
+    """Tests that label shape matches the maximum extent of added shape."""
     ll = LayerList()
     # add an image
-    ll.append(Image(np.random.rand(20, 20)))
+    layer = Image(np.random.rand(20, 20))
+    ll.append(layer)
     # add a shape within the image
-    ll.append(Shapes([np.array([[5, 5], [5, 15], [15, 5], [15, 15]])]))
+    ll.append(Shapes([np.array([[5, 5], [5, 25], [25, 5], [25, 25]])]))
     # Create a label based on the shape.
     _convert(ll, 'labels')
 
     # the label array should match the image (world) dimensions
-    expected_label_array = np.array([[0., 0.], [19., 19.]])
+    expected_label_array = np.array([[0., 0.], [25., 25.]])
     assert np.array_equal(ll[2].extent.data, expected_label_array)
 
 
-def test_convert_warns_with_projecton_mode():
+def test_make_label_from_shape_translated():
+    """Tests that label shape for a translated image captures the translated canvas area.
+
+    Does not cover affine.translate
+    """
+    ll = LayerList()
+    # add an image
+    layer = Image(np.random.rand(20, 20))
+    layer.translate = (30, 30)
+    ll.append(layer)
+    # add a shape within the image
+    ll.append(Shapes([np.array([[5, 5], [5, 25], [25, 5], [25, 25]])]))
+    # Create a label based on the shape.
+    _convert(ll, 'labels')
+
+    # the label array should match the image (world) dimensions
+    expected_label_array = np.array([[0., 0.], [49., 49.]])
+    assert np.array_equal(ll[2].extent.data, expected_label_array)
+
+
+def test_make_label_from_shape_scaled():
+    """Tests that label shape for a translated image captures the translated canvas area.
+
+    Does not cover affine.scale
+    """
+    ll = LayerList()
+    # add an image
+    layer = Image(np.random.rand(100, 100), scale=(5.0, 5.0))
+    ll.append(layer)
+    # add a shape within the image
+    ll.append(Shapes([np.array([[5, 5], [5, 25], [25, 5], [25, 25]])], scale=(5.0, 5.0)))
+    # Create a label based on the shape.
+    _convert(ll, 'labels')
+    # the label array should match the image (world) dimensions
+    expected_label_data_shape = (100, 100)
+    assert np.array_equal(ll[-1].data.shape, expected_label_data_shape)
+    # multiply the last data index (99) by the scale (5)
+    expected_label_world_extent = [495.0, 495.0]
+    assert np.array_equal(ll[-1].extent.world[-1], expected_label_world_extent)
+
+
+def test_convert_warns_with_projection_mode():
     # inplace
     ll = LayerList(
         [Image(np.random.rand(10, 10).astype(int), projection_mode='mean')]
