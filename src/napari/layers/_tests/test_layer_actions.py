@@ -344,7 +344,7 @@ def test_make_label_from_shape_translated():
     _convert(ll, 'labels')
 
     # the label array should match the image (world) dimensions
-    expected_label_array = np.array([[0., 0.], [49., 49.]])
+    expected_label_array = np.array([[0.0, 0.0], [49.0, 49.0]])
     assert np.array_equal(ll[2].extent.data, expected_label_array)
 
 
@@ -358,7 +358,11 @@ def test_make_label_from_shape_scaled():
     layer = Image(np.random.rand(100, 100), scale=(5.0, 5.0))
     ll.append(layer)
     # add a shape within the image
-    ll.append(Shapes([np.array([[5, 5], [5, 25], [25, 5], [25, 25]])], scale=(5.0, 5.0)))
+    ll.append(
+        Shapes(
+            [np.array([[5, 5], [5, 25], [25, 5], [25, 25]])], scale=(5.0, 5.0)
+        )
+    )
     # Create a label based on the shape.
     _convert(ll, 'labels')
     # the label array should match the image (world) dimensions
