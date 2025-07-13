@@ -56,7 +56,7 @@ def _convert(ll: LayerList, type_: str) -> None:
     for lay in list(ll.selection):
         idx = ll.index(lay)
         if isinstance(lay, Shapes) and type_ == 'labels':
-            data = lay.to_labels()
+            data = lay.to_labels(labels_shape=ll.extent.world[-1] + 1)
             idx += 1
         elif (
             not np.issubdtype(lay.data.dtype, np.integer) and type_ == 'labels'
@@ -87,7 +87,6 @@ def _convert(ll: LayerList, type_: str) -> None:
             )
         new_layer = Layer.create(data, state, type_)
         ll.insert(idx, new_layer)
-
 
 # TODO: currently, we have to create a thin _convert_to_x wrapper around _convert
 # here for the purpose of type hinting (which partial doesn't do) ...

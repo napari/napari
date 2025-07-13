@@ -312,6 +312,20 @@ def test_convert_layer(layer, type_):
         )  # check array data not copied unnecessarily
 
 
+def test_make_label_from_shape():
+    ll = LayerList()
+    # add an image
+    ll.append(Image(np.random.rand(20, 20)))
+    # add a shape within the image
+    ll.append(Shapes([np.array([[5, 5], [5, 15], [15, 5], [15, 15]])]))
+    # Create a label based on the shape.
+    _convert(ll, 'labels')
+
+    # the label array should match the image (world) dimensions
+    expected_label_array = np.array([[0., 0.], [19., 19.]])
+    assert np.array_equal(ll[2].extent.data, expected_label_array)
+
+
 def test_convert_warns_with_projecton_mode():
     # inplace
     ll = LayerList(
