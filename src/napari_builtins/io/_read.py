@@ -1,12 +1,9 @@
 import csv
-import itertools
 import os
 import re
 from collections.abc import Sequence
-from contextlib import suppress
-from glob import glob
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional, Union, List, Tuple, Callable, Any
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 import dask.array as da
 import imageio.v3 as iio
@@ -39,15 +36,15 @@ def imread(filename: Union[str, Path]) -> np.ndarray:
     """Dispatch reading images to imageio.v3 imread."""
     filename_str = str(filename)
     filename_str = abspath_or_url(filename_str)
-    
+
     # Skip .npy handling for URLs
     if _is_url(filename_str):
         return iio.imread(filename_str)
-    
+
     ext = os.path.splitext(filename_str)[1].lower()
     if ext == '.npy':
         return np.load(filename_str)
-    
+
     return iio.imread(filename_str)
 
 
@@ -56,85 +53,95 @@ def _guess_zarr_path(path: Union[str, Path]) -> bool:
     return any(part.endswith('.zarr') for part in Path(path).parts)
 
 
-def read_zarr_dataset(path: Union[str, Path]) -> Tuple[Any, Tuple[int, ...]]:
+def read_zarr_dataset(path: Union[str, Path]) -> tuple[Any, tuple[int, ...]]:
     """Read a zarr dataset, including an array or a group of arrays."""
     path_obj = Path(path)
     if (path_obj / '.zarray').exists():
         image = da.from_zarr(path_obj)
         return image, image.shape
-    elif (path_obj / '.zgroup').exists():
+    if (path_obj / '.zgroup').exists():
         subpaths = [
-            subpath for subpath in sorted(path_obj.iterdir())
+            subpath
+            for subpath in sorted(path_obj.iterdir())
             if not subpath.name.startswith('.') and subpath.is_dir()
         ]
         images = [read_zarr_dataset(subpath)[0] for subpath in subpaths]
         if not images:
-            raise ValueError(trans._('No arrays found in zarr group', deferred=True))
+            raise ValueError(
+                trans._('No arrays found in zarr group', deferred=True)
+            )
         return images, images[0].shape
-    elif (path_obj / 'zarr.json').exists():
+    if (path_obj / 'zarr.json').exists():
         import zarr
+
         store = zarr.open(path_obj)
         if isinstance(store, zarr.Array):
             image = da.from_zarr(store)
             return image, image.shape
-        else:
-            images = [da.from_zarr(store[k]) for k in sorted(store)]
-            if not images:
-                raise ValueError(trans._('No arrays found in zarr group', deferred=True))
-            return images, images[0].shape
-    else:
-        raise ValueError(
-            trans._('Not a zarr dataset or group: {path}', deferred=True, path=path)
+        images = [da.from_zarr(store[k]) for k in sorted(store)]
+        if not images:
+            raise ValueError(
+                trans._('No arrays found in zarr group', deferred=True)
+            )
+        return images, images[0].shape
+    raise ValueError(
+        trans._(
+            'Not a zarr dataset or group: {path}', deferred=True, path=path
         )
+    )
 
 
 def magic_imread(
-    filenames: Union[PathOrStr, List[PathOrStr]], *, use_dask: Optional[bool] = None, stack: bool = True
-) -> Optional[Union[da.Array, np.ndarray, List]]:
+    filenames: Union[PathOrStr, list[PathOrStr]],
+    *,
+    use_dask: Optional[bool] = None,
+    stack: bool = True,
+) -> Optional[Union[da.Array, np.ndarray, list]]:
     """Dispatch the appropriate reader given some files."""
     # Normalize input to list of strings
     if isinstance(filenames, (list, tuple)):
         _filenames = [str(f) for f in filenames]
     else:
         _filenames = [str(filenames)]
-    
+
     if not _filenames:
         raise ValueError(trans._('No files found', deferred=True))
-    
+
     # Expand directories
-    filenames_expanded: List[str] = []
+    filenames_expanded: list[str] = []
     for filename in _filenames:
         if (
-            os.path.isdir(filename) and 
-            not _guess_zarr_path(filename) and 
-            not _is_url(filename)
+            os.path.isdir(filename)
+            and not _guess_zarr_path(filename)
+            and not _is_url(filename)
         ):
             # List non-hidden files in directory
             dir_files = [
-                os.path.join(filename, f) 
-                for f in os.listdir(filename) 
-                if not f.startswith('.') and os.path.isfile(os.path.join(filename, f))
+                os.path.join(filename, f)
+                for f in os.listdir(filename)
+                if not f.startswith('.')
+                and os.path.isfile(os.path.join(filename, f))
             ]
             dir_files.sort(key=_alphanumeric_key)
             filenames_expanded.extend(dir_files)
         else:
             filenames_expanded.append(filename)
-    
+
     if not filenames_expanded:
         raise ValueError(
             trans._(
                 'No valid files found in: {filenames}',
                 deferred=True,
-                filenames=filenames
+                filenames=filenames,
             )
         )
-    
+
     # Determine if we should use dask
     use_dask = len(filenames_expanded) > 1 if use_dask is None else use_dask
-    
+
     images = []
     shape, dtype = None, None
-    
+
     for filename in filenames_expanded:
         if _guess_zarr_path(filename):
             try:
@@ -144,7 +151,7 @@ def magic_imread(
                 images.append(image)
                 if shape is None:
                     shape = img_shape
-            except Exception as e:
+            except Exception:
                 if len(filenames_expanded) == 1:
                     raise
                 continue  # Skip problematic files in batch mode
@@ -152,9 +159,7 @@ def magic_imread(
             if use_dask and shape is not None:
                 # Create delayed reads for subsequent files
                 image = da.from_delayed(
-                    delayed(imread)(filename), 
-                    shape=shape, 
-                    dtype=dtype
+                    delayed(imread)(filename), shape=shape, dtype=dtype
                 )
             else:
                 # Read first file immediately
@@ -163,13 +168,13 @@ def magic_imread(
                     shape = image.shape
                     dtype = image.dtype
             images.append(image)
-    
+
     if not images:
         return None
-    
+
     if len(images) == 1:
         return images[0]
-    
+
     if stack:
         try:
             return da.stack(images) if use_dask else np.stack(images)
@@ -179,7 +184,7 @@ def magic_imread(
                     trans._(
                         'To stack multiple files, all images must have the same shape. '
                         'Set `use_dask=True` to support different shapes.',
-                        deferred=True
+                        deferred=True,
                     )
                 ) from e
             raise
@@ -187,18 +192,21 @@ def magic_imread(
 
 
 def _points_csv_to_layerdata(
-    table: np.ndarray, column_names: List[str]
+    table: np.ndarray, column_names: list[str]
 ) -> 'FullLayerData':
     """Convert CSV data to Points LayerData."""
-    data_axes = [i for i, cn in enumerate(column_names) if cn.startswith('axis-')]
+    data_axes = [
+        i for i, cn in enumerate(column_names) if cn.startswith('axis-')
+    ]
     if not data_axes:
         raise ValueError(trans._('No coordinate columns found', deferred=True))
-    
+
     data = table[:, data_axes].astype(float)
-    
+
     # Handle properties
     prop_cols = [
-        i for i, cn in enumerate(column_names) 
+        i
+        for i, cn in enumerate(column_names)
         if i not in data_axes and (i != 0 or cn != 'index')
     ]
     meta: dict = {}
@@ -211,7 +219,7 @@ def _points_csv_to_layerdata(
 
 
 def _shapes_csv_to_layerdata(
-    table: np.ndarray, column_names: List[str]
+    table: np.ndarray, column_names: list[str]
 ) -> 'FullLayerData':
     """Convert CSV data to Shapes LayerData."""
     try:
@@ -222,37 +230,43 @@ def _shapes_csv_to_layerdata(
         raise ValueError(
             trans._('CSV missing required columns for shapes', deferred=True)
         )
-    
-    data_axes = [i for i, cn in enumerate(column_names) if cn.startswith('axis-')]
+
+    data_axes = [
+        i for i, cn in enumerate(column_names) if cn.startswith('axis-')
+    ]
     if len(data_axes) < 2:
         raise ValueError(
-            trans._('Insufficient coordinate columns for shapes', deferred=True)
+            trans._(
+                'Insufficient coordinate columns for shapes', deferred=True
+            )
         )
-    
+
     raw_data = table[:, data_axes].astype(float)
     indices = table[:, index_col].astype(int)
-    
+
     # Group vertices by shape index
     transitions = np.where(np.diff(indices))[0] + 1
     boundaries = [0] + transitions.tolist() + [len(table)]
-    
+
     if len(boundaries) - 1 != indices[-1] + 1:
-        raise ValueError(
-            trans._('Shape index mismatch', deferred=True)
-        )
-    
+        raise ValueError(trans._('Shape index mismatch', deferred=True))
+
     data, shape_types = [], []
-    for start, end in zip(boundaries[:-1], boundaries[1:]):
+    for start, end in zip(boundaries[:-1], boundaries[1:], strict=False):
         shape_types.append(table[start, type_col])
         data.append(raw_data[start:end])
-    
+
     return data, {'shape_type': shape_types}, 'shapes'
 
 
-def _guess_layer_type_from_column_names(column_names: List[str]) -> Optional[str]:
+def _guess_layer_type_from_column_names(
+    column_names: list[str],
+) -> Optional[str]:
     """Guess layer type from CSV column names."""
     required_shapes = {'index', 'shape-type', 'vertex-index'}
-    if required_shapes.issubset(column_names) and any(c.startswith('axis-') for c in column_names):
+    if required_shapes.issubset(column_names) and any(
+        c.startswith('axis-') for c in column_names
+    ):
         return 'shapes'
     if any(c.startswith('axis-') for c in column_names):
         return 'points'
@@ -261,20 +275,20 @@ def _guess_layer_type_from_column_names(column_names: List[str]) -> Optional[str
 
 def read_csv(
     filename: str, require_type: Optional[str] = None
-) -> Tuple[np.ndarray, List[str], Optional[str]]:
+) -> tuple[np.ndarray, list[str], Optional[str]]:
     """Read CSV file with format validation."""
     with open(filename, newline='') as csvfile:
         reader = csv.reader(csvfile)
         column_names = next(reader)
         layer_type = _guess_layer_type_from_column_names(column_names)
-        
+
         if require_type:
             if not layer_type:
                 raise ValueError(
                     trans._(
                         'File not recognized as valid layer data: {filename}',
                         deferred=True,
-                        filename=filename
+                        filename=filename,
                     )
                 )
             if require_type != 'any' and layer_type != require_type:
@@ -284,10 +298,10 @@ def read_csv(
                         deferred=True,
                         expected=require_type,
                         actual=layer_type,
-                        filename=filename
+                        filename=filename,
                     )
                 )
-        
+
         data = np.array(list(reader))
     return data, column_names, layer_type
 
@@ -313,21 +327,21 @@ def csv_to_layer_data(
     return None
 
 
-def _csv_reader(path: Union[str, Sequence[str]]) -> List['LayerData']:
+def _csv_reader(path: Union[str, Sequence[str]]) -> list['LayerData']:
     paths = [path] if isinstance(path, str) else path
     return [
-        layer_data 
-        for p in paths 
+        layer_data
+        for p in paths
         if (layer_data := csv_to_layer_data(p, require_type=None))
     ]
 
 
-def _magic_imreader(path: Union[str, List[str]]) -> List['LayerData']:
+def _magic_imreader(path: Union[str, list[str]]) -> list['LayerData']:
     return [(magic_imread(path),)]
 
 
 def napari_get_reader(
-    path: Union[str, List[str]]
+    path: Union[str, list[str]],
 ) -> Optional['ReaderFunction']:
     """Main reader dispatch function."""
     # Handle CSV files
@@ -335,6 +349,6 @@ def napari_get_reader(
         return _csv_reader
     if isinstance(path, list) and all(p.endswith('.csv') for p in path):
         return _csv_reader
-    
+
     # Handle image/zarr files
     return _magic_imreader
