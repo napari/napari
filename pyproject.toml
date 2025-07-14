@@ -173,6 +173,7 @@ gallery = [
     "nilearn",
     "xarray",
     "h5netcdf",
+    "tifffile[codecs]",
 ]
 # needed to build docs
 docs = [

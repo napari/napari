@@ -24,7 +24,7 @@ from napari import Viewer
 from napari.utils.colormaps import label_colormap
 
 ###############################################################################
-# Download the data
+# Download data
 # ------------------
 download = pooch.DOIDownloader(progressbar=True)
 doi = "10.5281/zenodo.15597019/01.zip"
@@ -32,7 +32,20 @@ tmp_dir = Path(pooch.os_cache('napari-cell-tracking-example'))
 #os.makedirs(tmp_dir, exist_ok=True)
 tmp_dir.mkdir(parents=True, exist_ok=True)
 
-#data_files = "01.zip"
+url = "https://zenodo.org/records/15832699/files/enhanced_gnn_tracks.csv?download=1"
+data_dir = pooch.retrieve(
+    url=url,
+    known_hash="sha256:a410154f3d0cdd2807f0aa66a87527c8125816979cd035fc9b61378551fe7b52",  
+    fname="enhanced_gnn_tracks",
+    path=pooch.os_cache("my_tracking_project")
+)
+
+label_url = 'https://zenodo.org/records/15852284/files/masks_pred.npz?download=1'
+label_path = pooch.retrieve(url=label_url, 
+                            fname="masks_pred.npz",
+                            known_hash=None,
+                            path=pooch.os_cache("cell_labels")
+                            )
 
 data_path = tmp_dir/"01.zip"
 
@@ -48,7 +61,7 @@ with zipfile.ZipFile(data_path, 'r') as zip_ref:
 
 print("Contents of tmp_dir after extraction:")
 for p in tmp_dir.rglob("*"):
-    print(p)
+    print(f"Extracted {p} files to {tmp_dir}")
 
 #imgs = glob.glob(os.path.join(tmp_dir, "*.tif"))
 imgs = list((tmp_dir/"01").glob ("*.tif"))
@@ -94,14 +107,6 @@ def load_tracks_data(data_dir, filename=""):
     except Exception as e:
         print(f"Error loading tracks file: {e}")
         return None
-
-url = "https://zenodo.org/records/15832699/files/enhanced_gnn_tracks.csv?download=1"
-data_dir = pooch.retrieve(
-    url=url,
-    known_hash="sha256:a410154f3d0cdd2807f0aa66a87527c8125816979cd035fc9b61378551fe7b52",  
-    fname="enhanced_gnn_tracks",
-    path=pooch.os_cache("my_tracking_project")
-)
 
 tracks_data = load_tracks_data(Path(data_dir).parent, filename=Path(data_dir).name)
 
@@ -159,13 +164,6 @@ if tracks_data is not None:
         blending='additive'
     )
 # Add cell lebels 
-label_url = 'https://zenodo.org/records/15852284/files/masks_pred.npz?download=1'
-label_path = pooch.retrieve(url=label_url, 
-                            fname="masks_pred.npz",
-                            known_hash=None,
-                            path=pooch.os_cache("cell_labels")
-                            )
-
 label_data = np.load(label_path)
 labels = label_data["masks"]
 
