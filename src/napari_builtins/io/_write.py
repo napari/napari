@@ -112,9 +112,7 @@ def _write_image_data(
                 imsave(str(level_path), level)
                 written.append(level_path)
             except Exception as e:
-                warnings.warn(
-                    f'Failed to write multiscale level {i}: {e!s}'
-                )
+                warnings.warn(f'Failed to write multiscale level {i}: {e!s}')
         return written[0] if written else None
 
     # 单图像处理
@@ -202,7 +200,9 @@ def _create_shapes_table(
 
     # 构建表格行
     rows = []
-    for shape_idx, (vertices, shape_type) in enumerate(zip(data, shape_types, strict=False)):
+    for shape_idx, (vertices, shape_type) in enumerate(
+        zip(data, shape_types, strict=False)
+    ):
         n_vertices = vertices.shape[0]
         n_dims = vertices.shape[1]
 
