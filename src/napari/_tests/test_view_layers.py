@@ -133,9 +133,10 @@ def test_signature(layer):
 @pytest.mark.parametrize(('layer_type', 'data', 'ndim'), layer_test_data)
 def test_view(qtbot, napari_plugin_manager, layer_type, data, ndim):
     np.random.seed(0)
-    viewer = getattr(napari, f'view_{layer_type.__name__.lower()}')(
-        data, show=False
-    )
+    with pytest.deprecated_call():
+        viewer = getattr(napari, f'view_{layer_type.__name__.lower()}')(
+            data, show=False
+        )
     view = viewer.window._qt_viewer
     check_viewer_functioning(viewer, view, data, ndim)
     viewer.close()
@@ -146,7 +147,8 @@ def test_view_multichannel(qtbot, napari_plugin_manager):
     """Test adding image."""
     np.random.seed(0)
     data = np.random.random((15, 10, 5))
-    viewer = napari.view_image(data, channel_axis=-1, show=False)
+    with pytest.deprecated_call():
+        viewer = napari.view_image(data, channel_axis=-1, show=False)
     assert len(viewer.layers) == data.shape[-1]
     for i in range(data.shape[-1]):
         np.testing.assert_array_equal(
@@ -160,13 +162,14 @@ def test_kwargs_passed(monkeypatch):
 
     viewer_mock = MagicMock(napari.Viewer)
     monkeypatch.setattr(napari.view_layers, 'Viewer', viewer_mock)
-    napari.view_path(
-        path='some/path',
-        title='my viewer',
-        ndisplay=3,
-        name='img name',
-        scale=(1, 2, 3),
-    )
+    with pytest.deprecated_call():
+        napari.view_path(
+            path='some/path',
+            title='my viewer',
+            ndisplay=3,
+            name='img name',
+            scale=(1, 2, 3),
+        )
     assert viewer_mock.mock_calls == [
         call(title='my viewer'),
         call().open(path='some/path', name='img name', scale=(1, 2, 3)),

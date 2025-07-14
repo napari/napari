@@ -122,6 +122,29 @@ _viewer_params = inspect.signature(Viewer).parameters
 _dims_params = Dims.__fields__
 
 
+def send_warning(
+    original_method: str, replaced_method: str, version: str = '0.7.0'
+):
+    """
+    Issue a deprecation warning for a method that will be removed in a future version.
+
+    Parameters
+    ----------
+    original_method : str
+        The name of the deprecated method (e.g., 'view_image').
+    replaced_method : str
+        The name of the recommended replacement method (e.g., 'add_image').
+    version : str, optional
+        The version in which the method will be removed. Default is '0.7.0'.
+    """
+    warnings.warn(
+        f"napari.{original_method} is deprecated and will be removed in 'napari' {version}.\n"
+        f'Use `viewer = napari.Viewer(); viewer.{replaced_method}(...)` instead.',
+        DeprecationWarning,
+        stacklevel=3,
+    )
+
+
 def _make_viewer_then(
     add_method: str,
     /,
@@ -156,14 +179,6 @@ def _make_viewer_then(
         ``add_image`` is called with a ``channel_axis=`` keyword
         argument.
     """
-
-    method = add_method[4:] if add_method.startswith('add_') else 'path'
-    warnings.warn(
-        f'napari.view_{method} is deprecated and will be removed in napari 0.7.0.\n'
-        f'Use `viewer = napari.Viewer(); viewer.add_{method}(...)` instead.',
-        DeprecationWarning,
-        stacklevel=1,
-    )
     vkwargs = {
         k: kwargs.pop(k)
         for k in list(kwargs)
@@ -201,41 +216,49 @@ def _make_viewer_then(
 
 @_merge_layer_viewer_sigs_docs
 def view_image(*args, **kwargs):
+    send_warning('view_image', 'add_image')
     return _make_viewer_then('add_image', *args, **kwargs)[0]
 
 
 @_merge_layer_viewer_sigs_docs
 def view_labels(*args, **kwargs):
+    send_warning('view_labels', 'add_labels')
     return _make_viewer_then('add_labels', *args, **kwargs)[0]
 
 
 @_merge_layer_viewer_sigs_docs
 def view_points(*args, **kwargs):
+    send_warning('view_points', 'add_points')
     return _make_viewer_then('add_points', *args, **kwargs)[0]
 
 
 @_merge_layer_viewer_sigs_docs
 def view_shapes(*args, **kwargs):
+    send_warning('view_shapes', 'add_shapes')
     return _make_viewer_then('add_shapes', *args, **kwargs)[0]
 
 
 @_merge_layer_viewer_sigs_docs
 def view_surface(*args, **kwargs):
+    send_warning('view_surface', 'add_surface')
     return _make_viewer_then('add_surface', *args, **kwargs)[0]
 
 
 @_merge_layer_viewer_sigs_docs
 def view_tracks(*args, **kwargs):
+    send_warning('view_tracks', 'add_tracks')
     return _make_viewer_then('add_tracks', *args, **kwargs)[0]
 
 
 @_merge_layer_viewer_sigs_docs
 def view_vectors(*args, **kwargs):
+    send_warning('view_vectors', 'add_vectors')
     return _make_viewer_then('add_vectors', *args, **kwargs)[0]
 
 
 @_merge_layer_viewer_sigs_docs
 def view_path(*args, **kwargs):
+    send_warning('view_path', 'open')
     return _make_viewer_then('open', *args, **kwargs)[0]
 
 
