@@ -14,7 +14,7 @@ import napari
 # add the image
 photographer = data.camera()
 viewer_a = napari.Viewer()
-layer_a = viewer.add_image(photographer, name='photographer')
+layer_a = viewer_a.add_image(photographer, name='photographer')
 
 # add the image in a new viewer window
 astronaut = data.astronaut()
