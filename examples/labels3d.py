@@ -16,7 +16,7 @@ import napari
 
 cells3d = data.cells3d()
 viewer = napari.Viewer()
-layer = viewer.add_image(
+membranes_layer, nuclei_layer = viewer.add_image(
     cells3d, channel_axis=1, name=['membranes', 'nuclei']
 )
 membrane, nuclei = cells3d.transpose((1, 0, 2, 3)) / np.max(cells3d)
