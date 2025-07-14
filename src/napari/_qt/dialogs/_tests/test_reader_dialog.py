@@ -14,8 +14,6 @@ from napari._qt.dialogs.qt_reader_dialog import (
     open_with_dialog_choices,
     prepare_remaining_readers,
 )
-from napari._qt.qt_viewer import QtViewer
-from napari.components import ViewerModel
 from napari.errors.reader_errors import ReaderPluginError
 from napari.settings import get_settings
 
@@ -167,13 +165,12 @@ def test_open_sample_data_shows_all_readers(
     )
 
 
-def test_open_with_dialog_choices_persist(builtins, tmp_path, qtbot):
+def test_open_with_dialog_choices_persist(
+    builtins, tmp_path, qt_viewer, viewer_model
+):
     pth = tmp_path / 'my-file.npy'
-    np.save(pth, np.random.random((10, 10)))
-
-    viewer = ViewerModel()
-    qt_viewer = QtViewer(viewer)
-    qtbot.addWidget(qt_viewer)
+    rng = np.random.default_rng(0)
+    np.save(pth, rng.random((10, 10)))
 
     open_with_dialog_choices(
         display_name=builtins.display_name,
@@ -184,21 +181,21 @@ def test_open_with_dialog_choices_persist(builtins, tmp_path, qtbot):
         stack=False,
         qt_viewer=qt_viewer,
     )
-    assert len(viewer.layers) == 1
+    assert len(viewer_model.layers) == 1
     # make sure extension was saved with *
     assert get_settings().plugins.extension2reader['*.npy'] == builtins.name
 
 
-def test_open_with_dialog_choices_persist_dir(builtins, tmp_path, qtbot):
+def test_open_with_dialog_choices_persist_dir(
+    builtins, tmp_path, qt_viewer, viewer_model
+):
     pth = tmp_path / 'data.zarr'
+    rng = np.random.default_rng(0)
+
     z = zarr.open(
         store=str(pth), mode='w', shape=(10, 10), chunks=(5, 5), dtype='f4'
     )
-    z[:] = np.random.random((10, 10))
-
-    viewer = ViewerModel()
-    qt_viewer = QtViewer(viewer)
-    qtbot.addWidget(qt_viewer)
+    z[:] = rng.random((10, 10))
 
     open_with_dialog_choices(
         display_name=builtins.display_name,
@@ -209,7 +206,7 @@ def test_open_with_dialog_choices_persist_dir(builtins, tmp_path, qtbot):
         stack=False,
         qt_viewer=qt_viewer,
     )
-    assert len(viewer.layers) == 1
+    assert len(viewer_model.layers) == 1
     # make sure extension was saved without * and with trailing slash
     assert (
         get_settings().plugins.extension2reader[f'{pth}{os.sep}']
