@@ -256,7 +256,7 @@ def split_rgb(stack: Image, with_alpha=False) -> list[Image]:
         raise ValueError(
             trans._('Image must be RGB to use split_rgb', deferred=True)
         )
-    # representing alpha channel  magenta
+    # representing alpha channel as magenta
     images = stack_to_images(stack, -1, colormap=('red', 'green', 'blue', 'magenta'))
     return images if with_alpha else images[:3]
 
