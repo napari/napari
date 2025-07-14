@@ -13,7 +13,7 @@ import napari
 
 # add the image
 photographer = data.camera()
-viewer = napari.Viewer()
+viewer_a = napari.Viewer()
 layer_a = viewer.add_image(photographer, name='photographer')
 
 # add the image in a new viewer window
