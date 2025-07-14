@@ -103,15 +103,7 @@ def load_tracks_data(data_dir, filename=""):
     except Exception as e:
         print(f"Error loading tracks file: {e}")
         return None
-
-url = "https://zenodo.org/records/15832699/files/enhanced_gnn_tracks.csv?download=1"
-data_dir = pooch.retrieve(
-    url=url,
-    known_hash="sha256:a410154f3d0cdd2807f0aa66a87527c8125816979cd035fc9b61378551fe7b52",
-    fname="enhanced_gnn_tracks",
-    path=pooch.os_cache("my_tracking_project")
-)
-
+    
 tracks_data = load_tracks_data(Path(data_dir).parent, filename=Path(data_dir).name)
 
 # Add tracks layer with colors
