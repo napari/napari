@@ -19,6 +19,7 @@ layer_a = viewer_a.add_image(photographer, name='photographer')
 # add the image in a new viewer window
 astronaut = data.astronaut()
 # Also view_path, add_shapes, add_points, add_labels etc.
+viewer_b = napari.Viewer()
 layer_b = viewer_b.add_image(astronaut, name='astronaut')
 
 if __name__ == '__main__':
