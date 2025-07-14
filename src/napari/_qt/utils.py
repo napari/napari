@@ -8,7 +8,7 @@ from collections.abc import Iterable, Sequence
 from contextlib import contextmanager
 from enum import auto
 from functools import partial
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 import numpy as np
 import qtpy
@@ -104,7 +104,9 @@ def str_to_qbytearray(string: str) -> QByteArray:
     return QByteArray.fromBase64(string[len(QBYTE_FLAG) :].encode())
 
 
-def QImg2array(img) -> np.ndarray:
+def QImg2array(
+    img,
+) -> np.ndarray[tuple[int, int, Literal[4]], np.dtype[np.uint8]]:
     """Convert QImage to an array.
 
     Parameters
