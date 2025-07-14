@@ -103,20 +103,6 @@ jobs:
           if (Test-Path -Path "C:\Windows\system32\opengl32.dll" -PathType Leaf) {Exit 0} else {Exit 1}
         shell: powershell
 
-      - name: Install GDB
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install gdb
-          which python
-          ls -l "$(dirname "$(which python)")"
-
-      - name: Install python debug symbols
-        if: runner.os == 'Linux' && inputs.python_version == '3.12'
-        run: |
-          sudo apt-get install "python${{ inputs.python_version }}-dbg"
-          ls -l "$(dirname "$(which python)")"
-
       - name: Disable ptrace security restrictions
         if: runner.os == 'Linux'
         run: |
