@@ -48,7 +48,7 @@ dependencies = [
     "napari-console>=0.1.1",
     "napari-plugin-engine>=0.1.9",
     "napari-svg>=0.1.8",
-    "npe2>=0.7.8",
+    "npe2>=0.7.9",
     "numpy>=1.24.2",
     "numpydoc>=1.0.0",
     "pandas>=1.3.3",
@@ -213,7 +213,6 @@ dev = [
     "check-manifest>=0.42",
     "pre-commit>=2.9.0",
     "pydantic",
-    "python-dotenv",
     "tox",
     "tox-min-req",
     "napari[testing]",
@@ -344,7 +343,6 @@ ignore = [
     "A003", # flake8-builtins - we have class attributes violating these rule
     "COM812", # flake8-commas - we don't like adding comma on single line of arguments
     "COM819", # conflicts with ruff-format
-    "SIM117", # flake8-simplify - we some of merged with statements are not looking great with black, reanble after drop python 3.9
     "RET504", # not fixed yet https://github.com/charliermarsh/ruff/issues/2950
     "TRY003", # require implement multiple exception class
     "RUF005", # problem with numpy compatybility, see https://github.com/charliermarsh/ruff/issues/2142#issuecomment-1451038741

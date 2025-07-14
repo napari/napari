@@ -38,6 +38,10 @@ on:
         required: false
         type: string
         default: ""
+      artifacts_suffix:
+        required: false
+        type: string
+        default: ""
 
 jobs:
   test:
@@ -209,7 +213,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4.4.0
         with:
-          name: test artifacts ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }}
+          name: test artifacts ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }} ${{ inputs.artifacts_suffix }}
           path: .pytest_tmp
           include-hidden-files: true
 
@@ -217,13 +221,13 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: leaked ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }}
+          name: leaked ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }} ${{ inputs.artifacts_suffix }}
           path: ./*leak-backref-graph*.pdf
 
       - name: Upload pytest timing reports as json ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }}
         uses: actions/upload-artifact@v4
         with:
-          name: upload pytest timing json ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }} ${{ inputs.tox_extras }}
+          name: upload pytest timing json ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }} ${{ inputs.tox_extras }} ${{ inputs.artifacts_suffix }}
           path: |
             ./report-*.json
 
@@ -231,7 +235,7 @@ jobs:
         uses: actions/upload-artifact@v4.4.0
         if: ${{ inputs.coverage == 'cov' }}
         with:
-          name: coverage reports ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }}
+          name: coverage reports ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }} ${{ inputs.artifacts_suffix }}
           include-hidden-files: true
           path: |
             ./.coverage.*
