@@ -28,10 +28,12 @@ from qtpy.QtSvg import QSvgRenderer
 from qtpy.QtWidgets import (
     QAbstractItemView,
     QComboBox,
+    QDialog,
+    QDialogButtonBox,
     QFileDialog,
     QHBoxLayout,
-    QInputDialog,
     QLabel,
+    QLineEdit,
     QMessageBox,
     QPushButton,
     QStyledItemDelegate,
@@ -575,7 +577,7 @@ class FeaturesTable(QWidget):
 
     def _add_column(self):
         model = self.table.model().sourceModel()
-        df = model.df
+        df = model.df.copy()
 
         base_name = 'new_column'
         col_name = base_name
@@ -584,41 +586,32 @@ class FeaturesTable(QWidget):
             col_name = f'{base_name}_{i}'
             i += 1
 
-        text, ok = QInputDialog.getText(
-            self, 'Add Column', 'Enter column name:', text=col_name
-        )
-        if not ok or not text:
+        dialog = AddColumnDialog(self, default_name=col_name)
+        if dialog.exec_() != QDialog.Accepted:
             return
-        col_name = text.strip()
+
+        col_name, expr, dtype = dialog.get_values()
         if not col_name:
             return
 
-        val_input, ok = QInputDialog.getText(
-            self,
-            'Column Expression',
-            f"Enter expression to populate '{col_name}':",  # (e.g. df['x'] + 1 or leave blank for <NA>)
-            text='pd.NA',
-        )
-        if not ok:
-            return
-
-        expr = val_input.strip()
         try:
-            local_context = {'df': df.copy(), 'pd': pd, 'np': np}
-            if expr == '' or expr.lower() == 'pd.na':
-                value = pd.NA
+            if expr.strip() == '' or expr.strip().lower() == 'none':
+                value = None
             else:
-                value = eval(expr, {}, local_context)
-
+                value = pd.eval(
+                    expr, local_dict={'df': df, 'pd': pd, 'np': np}
+                )
             df[col_name] = value
+            if value:
+                df[col_name] = df[col_name].astype(dtype)
 
-        except (KeyError, ValueError, TypeError) as e:
+        except (ValueError, TypeError, KeyError, SyntaxError) as e:
             QMessageBox.warning(
                 self,
-                'Invalid Expression',
-                f'Could not evaluate expression:\n{expr}\n\nError: {e}\nUsing <NA> as fallback.',
+                'Invalid Expression or Dtype',
+                f"Could not add column '{col_name}':\n\nExpression: {expr}\nDtype: {dtype}\n\nError:\n{e}\n\nFalling back to None.",
             )
-            df[col_name] = pd.NA
+            df[col_name] = None
 
         self._active_layer.features = df
         model.replace_data(df)
@@ -792,3 +785,46 @@ class CustomIconPushButton(QPushButton):
         painter.end()
 
         return QIcon(tinted_pixmap)
+
+
+class AddColumnDialog(QDialog):
+    def __init__(self, parent=None, default_name='new_column'):
+        super().__init__(parent)
+        self.setWindowTitle('Add Column')
+
+        self.col_name_input = QLineEdit(default_name)
+        self.expr_input = QLineEdit('None')
+        self.dtype_input = QComboBox()
+        self.dtype_input.setEditable(True)
+        self.dtype_input.addItems(
+            ['int', 'float', 'str', 'bool', 'object', 'category']
+        )
+
+        self._buttons = QDialogButtonBox(
+            QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+        )
+        self._buttons.accepted.connect(self.accept)
+        self._buttons.rejected.connect(self.reject)
+
+        layout = QVBoxLayout()
+        layout.addWidget(QLabel('Column Name:'))
+        layout.addWidget(self.col_name_input)
+
+        layout.addWidget(QLabel('Column Expression:'))
+        layout.addWidget(self.expr_input)
+
+        layout.addWidget(QLabel('Column Dtype:'))
+        layout.addWidget(self.dtype_input)
+
+        layout.addWidget(self._buttons)
+        self.setLayout(layout)
+
+        self.resize(350, 150)
+
+    def get_values(self):
+        """Return a tuple: (column_name, expression, dtype)"""
+        return (
+            self.col_name_input.text().strip(),
+            self.expr_input.text().strip(),
+            self.dtype_input.currentText().strip(),
+        )
