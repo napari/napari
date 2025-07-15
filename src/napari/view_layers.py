@@ -23,9 +23,6 @@ from napari.components.dims import Dims
 from napari.layers import Image
 from napari.viewer import Viewer
 
-warnings.simplefilter('always')
-
-
 __all__ = [
     'imshow',
     'view_image',
@@ -126,7 +123,7 @@ def send_warning(
     original_method: str, replaced_method: str, version: str = '0.7.0'
 ):
     """
-    Issue a deprecation warning for a method that will be removed in a future version.
+    Issue a future warning for a method that will be removed in a future version.
 
     Parameters
     ----------
@@ -138,9 +135,9 @@ def send_warning(
         The version in which the method will be removed. Default is '0.7.0'.
     """
     warnings.warn(
-        f"napari.{original_method} is deprecated and will be removed in 'napari' {version}.\n"
+        f'`napari.{original_method}` is deprecated and will be removed in napari {version}.\n'
         f'Use `viewer = napari.Viewer(); viewer.{replaced_method}(...)` instead.',
-        DeprecationWarning,
+        FutureWarning,
         stacklevel=3,
     )
 
