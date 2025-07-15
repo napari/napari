@@ -161,10 +161,21 @@ def labeled_particles(
 @overload
 def labeled_particles(
     shape: Sequence[int],
+    dtype: np.dtype | None,
+    n: int,
+    seed: int | None,
+    return_density: Literal[True],
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]: ...
+
+
+@overload
+def labeled_particles(
+    shape: Sequence[int],
     dtype: np.dtype | None = None,
     n: int = 144,
     seed: int | None = None,
-    return_density: Literal[True] = True,
+    *,
+    return_density: Literal[True],
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]: ...
 
 
