@@ -35,7 +35,6 @@ def init_qactions() -> None:
         Q_DEBUG_ACTIONS,
     )
     from napari._qt._qapp_model.qactions._file import (
-        FILE_SUBMENUS,
         Q_FILE_ACTIONS,
     )
     from napari._qt._qapp_model.qactions._help import Q_HELP_ACTIONS
@@ -84,9 +83,7 @@ def init_qactions() -> None:
     )
 
     # register menubar submenus
-    app.menus.append_menu_items(
-        chain(FILE_SUBMENUS, DEBUG_SUBMENUS, LAYERS_SUBMENUS)
-    )
+    app.menus.append_menu_items(chain(DEBUG_SUBMENUS, LAYERS_SUBMENUS))
 
 
 def add_dummy_actions(context: Context) -> None:

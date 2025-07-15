@@ -5,6 +5,7 @@ from itertools import chain
 
 from app_model import Application
 
+from napari._app_model.actions._file import FILE_ACTIONS, FILE_SUBMENUS
 from napari._app_model.actions._layerlist_context_actions import (
     LAYERLIST_CONTEXT_ACTIONS,
     LAYERLIST_CONTEXT_SUBMENUS,
@@ -37,8 +38,9 @@ class NapariApplication(Application):
 
         self.register_actions(LAYERLIST_CONTEXT_ACTIONS)
         self.register_actions(VIEW_ACTIONS)
+        self.register_actions(FILE_ACTIONS)
         self.menus.append_menu_items(
-            chain(LAYERLIST_CONTEXT_SUBMENUS, VIEW_SUBMENUS)
+            chain(LAYERLIST_CONTEXT_SUBMENUS, VIEW_SUBMENUS, FILE_SUBMENUS)
         )
 
     @classmethod
