@@ -559,7 +559,6 @@ class FeaturesTable(QWidget):
         model = self.table.model().sourceModel()
         df = model.df
 
-        # Generate a default unique column name
         base_name = 'new_column'
         col_name = base_name
         i = 1
@@ -567,7 +566,6 @@ class FeaturesTable(QWidget):
             col_name = f'{base_name}_{i}'
             i += 1
 
-        # Ask for column name
         text, ok = QInputDialog.getText(
             self, 'Add Column', 'Enter column name:', text=col_name
         )
@@ -577,7 +575,6 @@ class FeaturesTable(QWidget):
         if not col_name:
             return
 
-        # Ask for an expression to evaluate
         val_input, ok = QInputDialog.getText(
             self,
             'Column Expression',
@@ -588,8 +585,6 @@ class FeaturesTable(QWidget):
             return
 
         expr = val_input.strip()
-
-        # Evaluate safely
         try:
             local_context = {'df': df.copy(), 'pd': pd, 'np': np}
             if expr == '' or expr.lower() == 'pd.na':
@@ -607,7 +602,6 @@ class FeaturesTable(QWidget):
             )
             df[col_name] = pd.NA
 
-        # Update both the view and the original layer
         self._active_layer.features = df
         model.replace_data(df)
 
@@ -649,12 +643,10 @@ class FeaturesTable(QWidget):
         if reply != QMessageBox.StandardButton.Yes:
             return
 
-        # ✅ Update the original features DataFrame
         self._active_layer.features = self._active_layer.features.drop(
             columns=col_names
         )
 
-        # ✅ Trigger the model/view update
         model.replace_data(self._active_layer.features)
 
     def _on_save_clicked(self):
