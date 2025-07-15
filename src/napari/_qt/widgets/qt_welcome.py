@@ -63,6 +63,7 @@ class QtWelcomeWidget(QWidget):
         self._tip_timer = QTimer()
         self._tip_timer.setInterval(10000)
         self._tip_timer.timeout.connect(self._next_tip)
+        self._next_tip()
 
         # Widget setup
         self.setAutoFillBackground(True)
@@ -212,7 +213,7 @@ class QtWelcomeWidget(QWidget):
         self._tip_timer.start()
 
     def hideEvent(self, event):
-        super().hideEvent()
+        super().hideEvent(event)
         self._tip_timer.stop()
 
     def _next_tip(self, event=None):
