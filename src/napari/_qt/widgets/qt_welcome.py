@@ -20,6 +20,13 @@ from napari.utils.action_manager import action_manager
 from napari.utils.interactions import Shortcut
 from napari.utils.translations import trans
 
+# TODO: make them respect settings?
+TIPS = [
+    'You can take a screenshot and copy it to your clipboard by pressing alt+C',
+    'You can change most shortcuts from the File->Preferences->Shortcuts menu',
+    'You can right click many components of the graphical interface to access advanced controls',
+]
+
 
 class QtWelcomeLabel(QLabel):
     """Labels used for main message in welcome page."""
@@ -31,14 +38,6 @@ class QtShortcutLabel(QLabel):
 
 class QtVersionLabel(QLabel):
     """Label used for displaying version information."""
-
-
-# TODO: make them respect settings?
-TIPS = [
-    'You can take a screenshot and copy it to your clipboard by pressing alt+C',
-    'You can change most shortcuts from the File->Preferences->Shortcuts menu',
-    'You can right click many components of the graphical interface to access advanced controls',
-]
 
 
 class QtWelcomeWidget(QWidget):
