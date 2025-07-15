@@ -628,16 +628,10 @@ class Points(Layer):
                 adding = len(data) - cur_npoints
                 size = np.repeat(self.current_size, adding, axis=0)
 
-                if len(self._border_width) > 0:
-                    new_border_width = copy(self._border_width[-1])
-                else:
-                    new_border_width = self.current_border_width
+                new_border_width = self.current_border_width
                 border_width = np.repeat([new_border_width], adding, axis=0)
 
-                if len(self._symbol) > 0:
-                    new_symbol = copy(self._symbol[-1])
-                else:
-                    new_symbol = self.current_symbol
+                new_symbol = self.current_symbol
                 symbol = np.repeat([new_symbol], adding, axis=0)
 
                 # Add new colors, updating the current property value before

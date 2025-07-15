@@ -390,6 +390,24 @@ def test_adding_points():
     np.testing.assert_equal(layer.data, np.vstack((data, coord)))
 
 
+def test_adding_points_symbol():
+    """Test that the current symbol is used for added point."""
+    # add a point with default (disc) symbol
+    shape = (1, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    layer = Points(data)
+
+    # update the current symbol
+    new_symbol = 'star'
+    layer.current_symbol = new_symbol
+    coord = [20, 20]
+    layer.add(coord)
+
+    # confirm that a newly created point has the updated symbol
+    assert layer.symbol[-1] == new_symbol
+
+
 def test_points_selection_with_setter():
     shape = (10, 2)
     np.random.seed(0)
@@ -1035,6 +1053,24 @@ def test_border_width():
     assert layer.border_width_is_relative is False
     with pytest.raises(ValueError, match='must be > 0'):
         layer.border_width = -2
+
+
+def test_border_width_update():
+    """Test that the current border width is updated."""
+    # add a point with default border width
+    shape = (1, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    layer = Points(data)
+
+    # update the current border width to an arbitrary value
+    new_border_width = 0.43
+    layer.current_border_width = new_border_width
+    coord = [20, 20]
+    layer.add(coord)
+
+    # confirm that a newly created point has the updated border width
+    assert layer.border_width[-1] == new_border_width
 
 
 @pytest.mark.parametrize(

@@ -500,7 +500,7 @@ def vertex_insert(layer: Shapes, event: MouseEvent) -> None:
             pass
         else:
             vertices = layer._data_view.displayed_vertices[
-                layer._data_view.displayed_vertices_to_shape_num == index
+                layer._data_view.displayed_index == index
             ]
             # Find which edge new vertex should inserted along
             closed = shape_type != Path
