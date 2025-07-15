@@ -11,14 +11,20 @@ from qtpy.QtCore import (
     QItemSelection,
     QItemSelectionModel,
     QModelIndex,
+    QSize,
     QSortFilterProxyModel,
     Qt,
     QTimer,
 )
 from qtpy.QtGui import (
+    QColor,
     QGuiApplication,
+    QIcon,
     QKeySequence,
+    QPainter,
+    QPixmap,
 )
+from qtpy.QtSvg import QSvgRenderer
 from qtpy.QtWidgets import (
     QAbstractItemView,
     QComboBox,
@@ -406,17 +412,29 @@ class FeaturesTable(QWidget):
 
         self.info = QLabel('')
         self.toggle = QToggleSwitch('editable.')
-        self.add_column = QPushButton('Add Column')
-        self.delete_column = QPushButton('Delete Column')
-        self.save = QPushButton('Save as CSV...')
+        self.add_column = CustomIconPushButton(
+            tooltip='Add Column',
+            icon_path='src/napari/resources/icons/add.svg',
+            icon_color='green',
+        )
+        self.delete_column = CustomIconPushButton(
+            tooltip='Delete Column',
+            icon_path='src/napari/resources/icons/delete.svg',
+            icon_color='red',
+        )
+        self.save = CustomIconPushButton(
+            tooltip='Save as CSV',
+            icon_path='src/napari/resources/icons/save.svg',
+            icon_color='blue',
+        )
         self.table = PandasView()
         self.layout().addWidget(self.info)
         button_layout = QHBoxLayout()
         button_layout.addWidget(self.toggle)
-        button_layout.addWidget(self.delete_column)
         button_layout.addWidget(self.add_column)
+        button_layout.addWidget(self.delete_column)
+        button_layout.addWidget(self.save)
         self.layout().addLayout(button_layout)
-        self.layout().addWidget(self.save)
         self.layout().addWidget(self.table)
         self.layout().addStretch()
 
@@ -730,3 +748,47 @@ class FeaturesTable(QWidget):
         # Remove invalid characters
         suggested_name = selected_layer_name.translate(translation_table)
         return suggested_name
+
+
+class CustomIconPushButton(QPushButton):
+    def __init__(
+        self,
+        button_name: str = '',
+        tooltip: str = '',
+        icon_path: str = '',
+        icon_color: str = 'white',
+        slot=None,
+    ):
+        super().__init__(button_name)
+
+        tooltip = tooltip or button_name
+        self.setToolTip(tooltip)
+
+        if icon_path != '':
+            icon = self._colored_svg_icon(icon_path, QColor(icon_color))
+            self.setIcon(icon)
+
+        if slot is not None:
+            self.clicked.connect(slot)
+
+    def _colored_svg_icon(self, path: str, color: QColor) -> QIcon:
+        size = QSize(28, 28)
+
+        svg_renderer = QSvgRenderer(path)
+        base_pixmap = QPixmap(size)
+        base_pixmap.fill(Qt.transparent)
+
+        painter = QPainter(base_pixmap)
+        svg_renderer.render(painter)
+        painter.end()
+
+        tinted_pixmap = QPixmap(size)
+        tinted_pixmap.fill(Qt.transparent)
+
+        painter = QPainter(tinted_pixmap)
+        painter.drawPixmap(0, 0, base_pixmap)
+        painter.setCompositionMode(QPainter.CompositionMode_SourceIn)
+        painter.fillRect(tinted_pixmap.rect(), color)
+        painter.end()
+
+        return QIcon(tinted_pixmap)
