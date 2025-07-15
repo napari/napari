@@ -62,8 +62,8 @@ class QtWelcomeWidget(QWidget):
         self._tip = QLabel()
         self._tips = cycle(sample(TIPS, len(TIPS)))
         self._tip_timer = QTimer()
+        self._tip_timer.setInterval(10000)
         self._tip_timer.timeout.connect(self._next_tip)
-        self._next_tip()
 
         # Widget setup
         self.setAutoFillBackground(True)
@@ -208,9 +208,16 @@ class QtWelcomeWidget(QWidget):
         self._update_property('drag', False)
         self.sig_dropped.emit(event)
 
+    def showEvent(self, event):
+        super().showEvent(event)
+        self._tip_timer.start()
+
+    def hideEvent(self, event):
+        super().hideEvent()
+        self._tip_timer.stop()
+
     def _next_tip(self, event=None):
         self._tip.setText(f'Did You Know?\n{next(self._tips)}!')
-        self._tip_timer.start(5000)
 
 
 class QtWidgetOverlay(QStackedWidget):
