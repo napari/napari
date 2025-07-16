@@ -38,6 +38,7 @@ from napari.components.overlays import (
     Overlay,
     ScaleBarOverlay,
     TextOverlay,
+    WelcomeOverlay,
 )
 from napari.components.tooltip import Tooltip
 from napari.errors import (
@@ -116,6 +117,7 @@ def _current_theme() -> str:
 
 
 DEFAULT_OVERLAYS = {
+    'welcome': WelcomeOverlay,
     'scale_bar': ScaleBarOverlay,
     'text': TextOverlay,
     'axes': AxesOverlay,
@@ -283,6 +285,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self.layers.events.removed.connect(self._on_remove_layer)
         self.layers.events.reordered.connect(self._on_layers_change)
         self.layers.selection.events.active.connect(self._on_active_layer)
+        self.layers.events.connect(self._toggle_welcome)
 
         # Add mouse callback
         self.mouse_wheel_callbacks.append(dims_scroll)
@@ -671,6 +674,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             self.cursor.position = tuple(
                 list(self.cursor.position) + [0] * dim_diff
             )
+
+    def _toggle_welcome(self):
+        self._overlays['welcome'].visible = not bool(self.layers)
 
     def _update_mouse_pan(self, event):
         """Set the viewer interactive mouse panning"""
