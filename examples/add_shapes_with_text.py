@@ -15,7 +15,8 @@ from skimage import data
 import napari
 
 # add the image
-viewer = napari.view_image(data.camera(), name='photographer')
+viewer = napari.Viewer()
+layer = viewer.add_image(data.camera(), name='photographer')
 
 # create a list of polygons
 polygons = [
