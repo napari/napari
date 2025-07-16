@@ -1267,19 +1267,6 @@ class ShapeList:
         self._vertices_index = np.delete(self._vertices_index, index)
         self._vertices_index[index:] -= diff
 
-        # Remove triangles
-        indices = self._mesh_triangles_slice_available(index)
-        self._mesh.triangles = np.delete(self._mesh.triangles, indices, axis=0)
-        self._mesh.triangles_colors = np.delete(
-            self._mesh.triangles_colors, indices, axis=0
-        )
-        self._mesh.triangles_index = np.delete(
-            self._mesh.triangles_index, index
-        )
-        diff = indices.stop - indices.start
-        self._mesh.triangles_index[index:] -= diff
-        self._mesh.triangles[indices.start :] -= diff
-
         # Remove vertices
         indices = self._mesh_vertices_slice_available(index)
         self._mesh.vertices = np.delete(self._mesh.vertices, indices, axis=0)
@@ -1292,6 +1279,21 @@ class ShapeList:
         self._mesh.vertices_index = np.delete(self._mesh.vertices_index, index)
         diff = indices.stop - indices.start
         self._mesh.vertices_index[index:] -= diff
+
+        vertices_diff = diff
+
+        # Remove triangles
+        indices = self._mesh_triangles_slice_available(index)
+        self._mesh.triangles = np.delete(self._mesh.triangles, indices, axis=0)
+        self._mesh.triangles_colors = np.delete(
+            self._mesh.triangles_colors, indices, axis=0
+        )
+        self._mesh.triangles_index = np.delete(
+            self._mesh.triangles_index, index
+        )
+        diff = indices.stop - indices.start
+        self._mesh.triangles_index[index:] -= diff
+        self._mesh.triangles[indices.start :] -= vertices_diff
 
         if renumber:
             del self.shapes[index]
