@@ -135,7 +135,7 @@ class _QtMainWindow(QMainWindow):
         super().__init__(parent)
         self._ev = None
         self._window = window
-        self._qt_viewer = QtViewer(viewer, show_welcome_screen=True)
+        self._qt_viewer = QtViewer(viewer)
         self._quit_app = False
 
         self.setWindowIcon(QIcon(self._window_icon))
@@ -160,8 +160,8 @@ class _QtMainWindow(QMainWindow):
         # this ia sa workaround for #5335 issue. The dict is used to not
         # collide shortcuts for close and close all windows
 
-        act_dlg = QtActivityDialog(self._qt_viewer._welcome_widget)
-        self._qt_viewer._welcome_widget.resized.connect(
+        act_dlg = QtActivityDialog(self._qt_viewer.canvas.native)
+        self._qt_viewer.canvas.native.resized.connect(
             act_dlg.move_to_bottom_right
         )
         act_dlg.hide()

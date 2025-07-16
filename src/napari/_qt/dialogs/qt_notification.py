@@ -424,7 +424,7 @@ class NapariQtNotification(QDialog):
             and _QtMainWindow.current()
             and _QtMainWindow.current().isVisible()
         ):
-            canvas = _QtMainWindow.current()._qt_viewer._welcome_widget
+            canvas = _QtMainWindow.current()._qt_viewer.canvas.native
             cls.from_notification(notification, canvas).show()
 
 

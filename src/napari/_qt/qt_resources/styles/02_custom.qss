@@ -627,31 +627,6 @@ QListWidget#Preferences {
  background: {{ background }};
 }
 
-
-QtWelcomeWidget, QtWelcomeWidget[drag=false] {
-  background: {{ canvas }};
-}
-
-QtWelcomeWidget[drag=true] {
-  background: {{ highlight }};
-}
-
-QtWelcomeLabel {
- color: {{ foreground }};
- font-size: {{ increase(font_size, 8) }};
-}
-
-QtShortcutLabel {
- color: {{ foreground }};
- font-size: {{ increase(font_size, 4) }};
-}
-
-QtVersionLabel {
-  color: {{ foreground }};
-  font-size: {{ increase(font_size, 2) }};
-}
-
-
 /* ------------- Narrow scrollbar for qtlayer list --------- */
 
 QtListView {
