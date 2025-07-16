@@ -165,7 +165,6 @@ def test_open_sample_data_shows_all_readers(
     )
 
 
-
 # qt_viewer fixture is used to ensure proper teardown procedure and prevent leaked QtWidgets at the beginning of `make_napari_viewer` fixture.
 def test_open_with_dialog_choices_persist(
     builtins, tmp_path, qt_viewer, viewer_model
@@ -187,7 +186,6 @@ def test_open_with_dialog_choices_persist(
     # make sure extension was saved with *
     assert get_settings().plugins.extension2reader['*.npy'] == builtins.name
 
-    
 
 # qt_viewer fixture is used to ensure proper teardown procedure and prevent leaked QtWidgets at the beginning of `make_napari_viewer` fixture.
 def test_open_with_dialog_choices_persist_dir(
