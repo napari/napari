@@ -2747,42 +2747,117 @@ class Shapes(Layer):
 
             self.thumbnail = colormapped
 
-    def remove_selected(self) -> None:
-        """Remove any selected shapes."""
-        index = list(self.selected_data)
-        to_remove = sorted(index, reverse=True)
+    def remove(self, indices: list[int]) -> None:
+        """Remove any shapes at the given indices.
 
-        if len(index) > 0:
+        Parameters
+        ----------
+        indices : List[int]
+            List of indices of shapes to remove from the layer.
+        """
+        to_remove = sorted(indices, reverse=True)
+
+        if len(indices) > 0:
             self.events.data(
                 value=self.data,
                 action=ActionType.REMOVING,
                 data_indices=tuple(
-                    index,
+                    indices,
                 ),
                 vertex_indices=((),),
             )
             for ind in to_remove:
                 self._data_view.remove(ind)
 
-            self._feature_table.remove(index)
-            self.text.remove(index)
+            self.selected_data = self.selected_data - set(indices)
+            self._feature_table.remove(indices)
+            self.text.remove(indices)
             self._data_view._edge_color = np.delete(
-                self._data_view._edge_color, index, axis=0
+                self._data_view._edge_color, indices, axis=0
             )
             self._data_view._face_color = np.delete(
-                self._data_view._face_color, index, axis=0
+                self._data_view._face_color, indices, axis=0
             )
             self.events.data(
                 value=self.data,
                 action=ActionType.REMOVED,
                 data_indices=tuple(
-                    index,
+                    indices,
                 ),
                 vertex_indices=((),),
             )
             self.events.features()
-        self.selected_data.clear()
         self._finish_drawing()
+
+    def remove_selected(self) -> None:
+        """Remove any selected shapes."""
+        self.remove(list(self.selected_data))
+
+    def get_shape_info(self, index: int) -> dict[str, Any]:
+        """Retrieve all available information for the shape at the given index.
+
+        Parameters
+        ----------
+        index : int
+            Index of the shape.
+
+        Returns
+        -------
+        info : dict
+            A dictionary containing all relevant details of the shape.
+        """
+
+        if not (0 <= index < len(self.data)):
+            return {
+                'data': None,
+                'shape_type': None,
+                'edge_width': None,
+                'edge_color': None,
+                'face_color': None,
+                'z_index': None,
+                'properties': {},
+                'features': {},
+            }
+
+        info = {
+            'data': self.data[index],
+            'shape_type': self.shape_type[index],
+            'edge_width': self.edge_width[index],
+            'edge_color': self.edge_color[index],
+            'face_color': self.face_color[index],
+            'z_index': self.z_index[index],
+            'properties': {
+                key: (val[index]) for key, val in self.properties.items()
+            }
+            if self.properties
+            else {},
+            'features': (
+                self.features.iloc[index].to_dict()
+                if hasattr(self, 'features') and self.features is not None
+                else {}
+            ),
+        }
+        return info
+
+    def pop(self, index=-1) -> dict[str, Any]:
+        """Remove and return the shape at the given index.
+
+        Parameters
+        ----------
+        index : int
+            Index of the shape to remove and return. Defaults to -1, which
+            removes the last shape.
+
+        Returns
+        -------
+        dict[str, Any]
+            Dictionary containing the removed shape's data.
+        """
+        if index == -1:
+            index = len(self.data) - 1
+        info = self.get_shape_info(index)
+        self.remove([index])
+        return info
 
     def _rotate_box(self, angle, center=(0, 0)):
         """Perform a rotation on the selected box.

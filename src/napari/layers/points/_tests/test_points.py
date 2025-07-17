@@ -434,8 +434,25 @@ def test_adding_points_to_empty():
     assert layer.selected_data == {0}
 
 
+def test_removing_points():
+    """Test removing points."""
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    layer = Points(data)
+
+    # Remove points by index
+    layer.remove([0, 2, 5])
+    assert len(layer.data) == shape[0] - 3
+    assert np.array_equal(layer.data, data[[1, 3, 4, 6, 7, 8, 9]])
+
+    # Remove another point by index
+    layer.remove([3])
+    assert len(layer.data) == shape[0] - 4
+
+
 def test_removing_selected_points():
-    """Test selecting points."""
+    """Test removing selected points."""
     shape = (10, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
@@ -458,6 +475,26 @@ def test_removing_selected_points():
     layer.selected_data = {4}
     layer.remove_selected()
     assert len(layer.data) == shape[0] - 3
+
+
+def test_poping_points():
+    """Test popping points."""
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    layer = Points(data)
+
+    # Pop point by default index
+    popped = layer.pop()
+    assert len(layer.data) == shape[0] - 1
+    assert np.array_equal(popped['data'], data[-1])
+    assert np.array_equal(layer.data, data[:-1])
+
+    # Pop a point by index at 3
+    popped = layer.pop(3)
+    assert len(layer.data) == shape[0] - 2
+    assert np.array_equal(popped['data'], data[3])
+    assert np.array_equal(layer.data, data[[0, 1, 2, 4, 5, 6, 7, 8]])
 
 
 def test_deleting_selected_value_changes():
