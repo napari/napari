@@ -8,7 +8,7 @@ import warnings
 import weakref
 from collections.abc import Sequence
 from pathlib import Path
-from types import FrameType
+from types import FrameType, MethodType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -210,9 +210,22 @@ class QtViewer(QSplitter):
             size=self.viewer._canvas_size,
             autoswap=get_settings().experimental.autoswap_buffers,  # see #5734
         )
-        # self.canvas.native.sig_dropped.connect(self.dropEvent)
-        # self.canvas.native.leave.connect(self._leave_canvas)
-        # self.canvas.native.enter.connect(self._enter_canvas)
+
+        # we cannot subclass this, so we just overload the enter/leaave methods
+        def enterEvent(self_, event):
+            self._enter_canvas()
+            super(type(self_), self_).enterEvent(event)
+
+        def leaveEvent(self_, event):
+            self._leave_canvas()
+            super(type(self_), self_).leaveEvent(event)
+
+        self.canvas.native.enterEvent = MethodType(
+            enterEvent, self.canvas.native
+        )
+        self.canvas.native.leaveEvent = MethodType(
+            leaveEvent, self.canvas.native
+        )
 
         main_widget = QWidget()
         main_layout = QVBoxLayout()
