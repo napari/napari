@@ -31,6 +31,7 @@ class VispyWelcomeOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
             background_color = transform_color(background_color)[0]
         color = np.subtract(1, background_color)
         color[-1] = background_color[-1]
+        color *= 0.8  # dim a bit
         self.node.set_color(color)
 
     def _on_visible_change(self):
