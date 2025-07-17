@@ -20,8 +20,8 @@ class VispyWelcomeOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
 
     def _on_position_change(self, event=None):
         if self.node.canvas is not None:
-            x, y = np.array(self.node.canvas.size) / 2
-            self.node.transform.translate = (x, y, 0, 0)
+            x, y = np.array(self.node.canvas.size)
+            self.node.set_scale_and_position(x, y)
 
     def _on_theme_change(self):
         if self.node.parent is not None and self.node.parent.canvas.bgcolor:
