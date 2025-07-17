@@ -2747,42 +2747,51 @@ class Shapes(Layer):
 
             self.thumbnail = colormapped
 
-    def remove_selected(self) -> None:
-        """Remove any selected shapes."""
-        index = list(self.selected_data)
-        to_remove = sorted(index, reverse=True)
+    def remove(self, indices: list[int]) -> None:
+        """Remove any shapes at the given indices.
 
-        if len(index) > 0:
+        Parameters
+        ----------
+        indices : List[int]
+            List of indices of shapes to remove from the layer.
+        """
+        to_remove = sorted(indices, reverse=True)
+
+        if len(indices) > 0:
             self.events.data(
                 value=self.data,
                 action=ActionType.REMOVING,
                 data_indices=tuple(
-                    index,
+                    indices,
                 ),
                 vertex_indices=((),),
             )
             for ind in to_remove:
                 self._data_view.remove(ind)
 
-            self._feature_table.remove(index)
-            self.text.remove(index)
+            self.selected_data = self.selected_data - set(indices)
+            self._feature_table.remove(indices)
+            self.text.remove(indices)
             self._data_view._edge_color = np.delete(
-                self._data_view._edge_color, index, axis=0
+                self._data_view._edge_color, indices, axis=0
             )
             self._data_view._face_color = np.delete(
-                self._data_view._face_color, index, axis=0
+                self._data_view._face_color, indices, axis=0
             )
             self.events.data(
                 value=self.data,
                 action=ActionType.REMOVED,
                 data_indices=tuple(
-                    index,
+                    indices,
                 ),
                 vertex_indices=((),),
             )
             self.events.features()
-        self.selected_data.clear()
         self._finish_drawing()
+
+    def remove_selected(self) -> None:
+        """Remove any selected shapes."""
+        self.remove(list(self.selected_data))
 
     def _rotate_box(self, angle, center=(0, 0)):
         """Perform a rotation on the selected box.
