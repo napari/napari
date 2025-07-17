@@ -15,7 +15,7 @@ from napari.utils.translations import trans
 
 class QtVectorStyleComboBoxControl(QtWidgetControlsBase):
     """
-    Class that wraps the connection of events/signals between the layer edge style
+    Class that wraps the connection of events/signals between the layer vector style
     value attribute and Qt widgets.
 
     Parameters

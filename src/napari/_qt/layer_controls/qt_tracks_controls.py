@@ -27,56 +27,22 @@ class QtTracksControls(QtLayerControls):
 
     Attributes
     ----------
-    MODE : Enum
-        Available modes in the associated layer.
-    PAN_ZOOM_ACTION_NAME : str
-        String id for the pan-zoom action to bind to the pan_zoom button.
-    TRANSFORM_ACTION_NAME : str
-        String id for the transform action to bind to the transform button.
-    button_group : qtpy.QtWidgets.QButtonGroup
-        Button group of points layer modes (ADD, PAN_ZOOM, SELECT).
-    layer : layers.Tracks
-        An instance of a Tracks layer.
-    panzoom_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
-        Button for activate move camera mode for layer.
-    qtColormapComboBoxControl.colormap_combobox : qtpy.QtWidgets.QComboBox
-        ComboBox controlling current colormap of the layer.
-    qtColormapComboBoxControl.colormap_combobox_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-        Label for the colormap chooser widget.
-    qtGraphCheckBoxControl.graph_checkbox : qtpy.QtWidgets.QCheckBox
+    _color_properties_combobox_control : napari._qt.layer_controls.widgets._tracks.QtColorPropertiesComboBoxControl
+        Widget that wraps a comboBox controlling the layer color properties.
+    _colormap_combobox_control : napari._qt.layer_controls.widgets._tracks.QtColormapComboBoxControl
+        Widget that wraps a comboBox controlling current colormap of the layer.
+    _graph_checkbox_control : napari._qt.layer_controls.widgets._tracks.QtGraphCheckBoxControl
         Checkbox controlling if graph of the layer should be shown.
-    qtGraphCheckBoxControl.graph_checkbox_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-        Label for showing the graph chooser widget.
-    qtHeadLengthSliderControl.head_length_slider : qtpy.QtWidgets.QSlider
-        Slider controlling head length of the layer.
-    qtHeadLengthSliderControl.head_length_slider_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-        Label for the head length chooser widget.
-    qtIdCheckBoxControl.id_checkbox : qtpy.QtWidgets.QCheckBox
-        Checkbox controlling if id of the layer should be shown.
-    qtIdCheckBoxControl.id_checkbox_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-        Label for showing the id chooser widget.
-    qtOpacityBlendingControls.blendComboBox : qtpy.QtWidgets.QComboBox
-        Dropdown widget to select blending mode of layer.
-    qtOpacityBlendingControls.blendLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-        Label for the blending combobox widget.
-    qtOpacityBlendingControls.opacityLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-        Label for the opacity slider widget.
-    qtOpacityBlendingControls.opacitySlider : qtpy.QtWidgets.QSlider
-        Slider controlling opacity of the layer.
-    qtTailDisplayCheckBoxControl.tail_checkbox : qtpy.QtWidgets.QCheckBox
-        Checkbox controlling if tails of the layer should be shown.
-    qtTailDisplayCheckBoxControl.tail_tail_checkbox_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-        Label for showing the tails chooser widget.
-    qtTailLengthSliderControl.tail_length_slider : qtpy.QtWidgets.QSlider
-        Slider controlling tail length of the layer.
-    qtTailLengthSliderControl.tail_length_slider_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-        Label for the tail length chooser widget.
-    qtTailWidthSliderControl.tail_width_slider : qtpy.QtWidgets.QSlider
-        Slider controlling tail width of the layer.
-    qtTailWidthSliderControl.tail_width_slider_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-        Label for the tail width chooser widget.
-    transform_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
-        Button to select transform mode.
+    _head_length_slider_control : napari._qt.layer_controls.widgets._tracks.QtHeadLengthSliderControl
+        Widget that wraps a slider controlling head length of the layer.
+    _id_checkbox_control : napari._qt.layer_controls.widgets._tracks.QtIdCheckBoxControl
+        Widget that wraps a checkbox controlling if id of the layer should be shown.
+    _tail_display_checkbox_control : napari._qt.layer_controls.widgets._tracks.QtTailDisplayCheckBoxControl
+        Widget that wraps a checkbox controlling if tails of the layer should be shown.
+    _tail_length_slider_control : napari._qt.layer_controls.widgets._tracks.QtTailLengthSliderControl
+        Widget that wraps a slider controlling tail length of the layer.
+    _tail_width_slider_control : napari._qt.layer_controls.widgets._tracks.QtTailWidthSliderControl
+        Widget that wraps a slider controlling tail width of the layer.
     """
 
     layer: 'napari.layers.Tracks'

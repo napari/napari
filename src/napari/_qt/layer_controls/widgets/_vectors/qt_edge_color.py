@@ -18,7 +18,8 @@ from napari.utils.translations import trans
 class QtEdgeColorPropertyControl(QtWidgetControlsBase):
     """
     Class that wraps the connection of events/signals between the current edge
-    color from the layer properties attribute and Qt widgets.
+    color, color mode and color property selection from the layer attributes and
+    Qt widgets.
 
     Parameters
     ----------

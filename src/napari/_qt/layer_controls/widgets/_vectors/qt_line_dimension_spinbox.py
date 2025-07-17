@@ -14,7 +14,7 @@ from napari.utils.translations import trans
 
 class QtWidthSpinBoxControl(QtWidgetControlsBase):
     """
-    Class that wraps the connection of events/signals between the layer line width
+    Class that wraps the connection of events/signals between the layer edge width
     attribute and Qt widgets.
 
     Parameters
@@ -27,9 +27,9 @@ class QtWidthSpinBoxControl(QtWidgetControlsBase):
     Attributes
     ----------
     width_spinbox : qtpy.QtWidgets.QDoubleSpinBox
-        Spin box widget controlling edge line width of vectors.
+        Spin box widget controlling edge width of vectors.
     width_spinbox_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-        Label for the edge line width of vectors chooser widget.
+        Label for the edge width of vectors chooser widget.
     """
 
     def __init__(self, parent: QWidget, layer: Layer) -> None:
@@ -73,7 +73,7 @@ class QtWidthSpinBoxControl(QtWidgetControlsBase):
 
 class QtLengthSpinBoxControl(QtWidgetControlsBase):
     """
-    Class that wraps the connection of events/signals between the layer line width
+    Class that wraps the connection of events/signals between the layer length of vectors
     attribute and Qt widgets.
 
     Parameters
