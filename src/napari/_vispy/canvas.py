@@ -368,13 +368,13 @@ class VispyCanvas:
 
     def _on_boxzoom(self, event):
         """Update zoom level."""
-        from napari._vispy.utils.zoom import calculate_zoom
-
-        zoom, z_center, y_center, x_center = calculate_zoom(
-            event.value, self.viewer
+        box_size_canvas = np.diff(
+            self.viewer._zoom_box.canvas_positions, axis=0
         )
-        self.viewer.camera.center = (z_center, x_center, y_center)
-        self.viewer.camera.zoom = zoom
+        box_center_world = np.mean(event.value, axis=0)
+        ratio = np.min(self.viewer._canvas_size / box_size_canvas)
+        self.viewer.camera.zoom = self.viewer.camera.zoom * np.min(ratio)
+        self.viewer.camera.center = box_center_world
 
     def _map_canvas2world(
         self,
