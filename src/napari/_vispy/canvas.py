@@ -368,8 +368,8 @@ class VispyCanvas:
 
     def _on_boxzoom(self, event):
         """Update zoom level."""
-        box_size_canvas = np.diff(
-            self.viewer._zoom_box.canvas_positions, axis=0
+        box_size_canvas = np.abs(
+            np.diff(self.viewer._zoom_box.canvas_positions, axis=0)
         )
         box_center_world = np.mean(event.value, axis=0)
         ratio = np.min(self.viewer._canvas_size / box_size_canvas)
