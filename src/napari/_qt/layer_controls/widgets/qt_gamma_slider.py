@@ -28,10 +28,10 @@ class QtGammaSliderControl(QtWidgetControlsBase):
 
     Attributes
     ----------
-        gamma_slider : superqt.QLabeledDoubleSlider
-            Gamma adjustment slider widget.
-        gamma_slider_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-            Label for the gamma chooser widget.
+    gamma_slider : superqt.QLabeledDoubleSlider
+        Gamma adjustment slider widget.
+    gamma_slider_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the gamma chooser widget.
     """
 
     def __init__(

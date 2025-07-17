@@ -26,10 +26,10 @@ class QtColorPropertiesComboBoxControl(QtWidgetControlsBase):
 
     Attributes
     ----------
-        color_by_combobox : qtpy.QtWidgets.QComboBox
-            ComboBox controlling current color property of the layer.
-        color_by_combobox_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-            Label for the color property chooser widget.
+    color_by_combobox : qtpy.QtWidgets.QComboBox
+        ComboBox controlling current color property of the layer.
+    color_by_combobox_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the color property chooser widget.
     """
 
     def __init__(

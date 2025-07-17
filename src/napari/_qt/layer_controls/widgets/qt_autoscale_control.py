@@ -55,10 +55,10 @@ class QtAutoScaleControl(QtWidgetControlsBase):
 
     Attributes
     ----------
-        autoScaleBar : qtpy.QtWidgets.QWidget
-            Widget to wrap push buttons related with the layer auto-contrast funtionality.
-        colormapWidgetLabel : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-            Label for the auto-contrast functionality widget.
+    auto_scale_bar : qtpy.QtWidgets.QWidget
+        Widget to wrap push buttons related with the layer auto-contrast funtionality.
+    auto_scale_bar_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the auto-contrast functionality widget.
     """
 
     def __init__(

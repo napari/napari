@@ -134,12 +134,12 @@ class QtContrastLimitsSliderControl(QtWidgetControlsBase):
 
     Attributes
     ----------
-        clim_popup : napari._qt.qt_range_slider_popup.QRangeSliderPopup
-            Popup widget launching the contrast range slider.
-        contrast_limits_slider : _QDoubleRangeSlider
-            Slider controlling current constrast limits of the layer.
-        contrast_limits_slider_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-            Label for the constrast limits chooser widget.
+    clim_popup : napari._qt.qt_range_slider_popup.QRangeSliderPopup
+        Popup widget launching the contrast range slider.
+    contrast_limits_slider : _QDoubleRangeSlider
+        Slider controlling current constrast limits of the layer.
+    contrast_limits_slider_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the constrast limits chooser widget.
     """
 
     def __init__(

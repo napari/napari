@@ -1,3 +1,4 @@
+from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QCheckBox,
     QWidget,
@@ -56,18 +57,16 @@ class QtOutSliceCheckBoxControl(QtWidgetControlsBase):
 
         Parameters
         ----------
-        state : QCheckBox
+        state : Qt.CheckState
             Checkbox indicating whether to render out of slice.
         """
         # needs cast to bool for Qt6
         with self._layer.events.out_of_slice_display.blocker(
             self._on_out_of_slice_display_change
         ):
-            self._layer.out_of_slice_display = bool(state)
-            # Another alternative is:
-            # self.layer.out_of_slice_display = (
-            #     Qt.CheckState(state) == Qt.CheckState.Checked
-            # )
+            self._layer.out_of_slice_display = (
+                Qt.CheckState(state) == Qt.CheckState.Checked
+            )
 
     def _on_out_of_slice_display_change(self) -> None:
         """Receive layer model out_of_slice_display change event and update checkbox."""
