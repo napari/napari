@@ -12,6 +12,7 @@ class VispyWelcomeOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
             node=Welcome(), viewer=viewer, overlay=overlay, parent=parent
         )
         self.viewer.events.theme.connect(self._on_theme_change)
+        self.viewer.layers.events.connect(self._on_visible_change)
 
         self.node.canvas.native.resized.connect(self._on_position_change)
 
@@ -31,6 +32,9 @@ class VispyWelcomeOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         color = np.subtract(1, background_color)
         color[-1] = background_color[-1]
         self.node.set_color(color)
+
+    def _on_visible_change(self):
+        self.node.visible = self.overlay.visible and not self.viewer.layers
 
     def _on_text_change(self):
         self.node.set_text()

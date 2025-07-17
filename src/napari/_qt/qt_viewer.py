@@ -145,6 +145,9 @@ class QtViewer(QSplitter):
     canvas_class : napari._vispy.canvas.VispyCanvas
         The VispyCanvas class providing the Vispy SceneCanvas. Users can also
         have a custom canvas here.
+    show_welcome_screen : bool, optional
+        Flag to show a welcome message when no layers are present in the
+        canvas. Default is `False`.
 
     Attributes
     ----------
@@ -153,6 +156,8 @@ class QtViewer(QSplitter):
         have a custom canvas here.
     dims : napari.qt_dims.QtDims
         Dimension sliders; Qt View for Dims model.
+    show_welcome_screen : bool
+        Boolean indicating whether to show the welcome screen.
     viewer : napari.components.ViewerModel
         Napari viewer containing the rendered scene, layers, and controls.
     _key_map_handler : napari.utils.key_bindings.KeymapHandler
@@ -168,11 +173,14 @@ class QtViewer(QSplitter):
     def __init__(
         self,
         viewer: ViewerModel,
+        show_welcome_screen: bool = False,
         canvas_class: type[VispyCanvas] = VispyCanvas,
     ) -> None:
         super().__init__()
         self._instances.add(self)
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
+
+        viewer.welcome_screen.visible = show_welcome_screen
 
         QCoreApplication.setAttribute(
             Qt.AA_UseStyleSheetPropagationInWidgetStyles, True

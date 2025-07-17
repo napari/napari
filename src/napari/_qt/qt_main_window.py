@@ -135,7 +135,7 @@ class _QtMainWindow(QMainWindow):
         super().__init__(parent)
         self._ev = None
         self._window = window
-        self._qt_viewer = QtViewer(viewer)
+        self._qt_viewer = QtViewer(viewer, show_welcome_screen=True)
         self._quit_app = False
 
         self.setWindowIcon(QIcon(self._window_icon))
