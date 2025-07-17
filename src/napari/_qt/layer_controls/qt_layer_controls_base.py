@@ -100,6 +100,7 @@ class QtLayerControls(QFrame):
 
         # Buttons
         self.button_group = QButtonGroup(self)
+        # TODO:
         self.panzoom_button = self._radio_button(
             layer,
             'pan',
@@ -108,6 +109,7 @@ class QtLayerControls(QFrame):
             self.PAN_ZOOM_ACTION_NAME,
             extra_tooltip_text=trans._(
                 '\n(or hold Space)\n(hold Shift to pan in 3D)'
+                '\n(hold Alt to zoom via ROI selection)',
             ),
             checked=True,
         )
