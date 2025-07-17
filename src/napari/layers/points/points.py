@@ -381,7 +381,7 @@ class Points(Layer):
         name=None,
         opacity=1.0,
         out_of_slice_display=False,
-        projection_mode='none',
+        projection_mode='all',
         properties=None,
         property_choices=None,
         rotate=None,
