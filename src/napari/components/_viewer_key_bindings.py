@@ -47,19 +47,6 @@ def extend_selection_to_layer_below(viewer: Viewer):
     viewer.layers.select_previous(shift=True)
 
 
-@register_viewer_action(trans._('Reset scroll'))
-def reset_scroll_progress(viewer: Viewer):
-    # on key press
-    viewer.dims._scroll_progress = 0
-    yield
-
-    # on key release
-    viewer.dims._scroll_progress = 0
-
-
-reset_scroll_progress.__doc__ = trans._('Reset dims scroll progress')
-
-
 @register_viewer_action(trans._('Toggle 2D/3D view'))
 def toggle_ndisplay(viewer: Viewer):
     if viewer.dims.ndisplay == 2:

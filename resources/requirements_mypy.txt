@@ -6,55 +6,57 @@ appdirs==1.4.4
     # via npe2
 build==1.2.2.post1
     # via npe2
-certifi==2025.4.26
+certifi==2025.6.15
     # via requests
 charset-normalizer==3.4.2
     # via requests
-click==8.1.8
+click==8.2.1
     # via typer
 docstring-parser==0.16
     # via magicgui
 idna==3.10
     # via requests
-magicgui==0.10.0
+magicgui==0.10.1
     # via -r resources/requirements_mypy.in
 markdown-it-py==3.0.0
     # via rich
 mdurl==0.1.2
     # via markdown-it-py
-mypy==1.15.0
+mypy==1.16.1
     # via -r resources/requirements_mypy.in
 mypy-extensions==1.1.0
     # via mypy
-npe2==0.7.8
+npe2==0.7.9
     # via -r resources/requirements_mypy.in
-numpy==2.2.6
+numpy==2.3.1
     # via -r resources/requirements_mypy.in
 packaging==25.0
     # via
     #   build
     #   qtpy
+pathspec==0.12.1
+    # via mypy
 psygnal==0.13.0
     # via
     #   magicgui
     #   npe2
 pyconify==0.2.1
     # via superqt
-pydantic==2.11.5
+pydantic==2.11.7
     # via
     #   -r resources/requirements_mypy.in
     #   npe2
 pydantic-core==2.33.2
     # via pydantic
-pygments==2.19.1
+pygments==2.19.2
     # via
     #   rich
     #   superqt
 pyproject-hooks==1.2.0
     # via build
-pyqt6==6.9.0
+pyqt6==6.9.1
     # via -r resources/requirements_mypy.in
-pyqt6-qt6==6.9.0
+pyqt6-qt6==6.9.1
     # via pyqt6
 pyqt6-sip==13.10.2
     # via pyqt6
@@ -65,7 +67,7 @@ qtpy==2.4.3
     #   -r resources/requirements_mypy.in
     #   magicgui
     #   superqt
-requests==2.32.3
+requests==2.32.4
     # via pyconify
 rich==14.0.0
     # via
@@ -73,19 +75,19 @@ rich==14.0.0
     #   typer
 shellingham==1.5.4
     # via typer
-superqt==0.7.3
+superqt==0.7.5
     # via magicgui
 tomli-w==1.2.0
     # via npe2
-typer==0.15.4
+typer==0.16.0
     # via npe2
 types-pyyaml==6.0.12.20250516
     # via -r resources/requirements_mypy.in
-types-requests==2.32.0.20250515
+types-requests==2.32.4.20250611
     # via -r resources/requirements_mypy.in
-types-setuptools==80.8.0.20250521
+types-setuptools==80.9.0.20250529
     # via -r resources/requirements_mypy.in
-typing-extensions==4.13.2
+typing-extensions==4.14.0
     # via
     #   magicgui
     #   mypy
@@ -96,7 +98,7 @@ typing-extensions==4.13.2
     #   typing-inspection
 typing-inspection==0.4.1
     # via pydantic
-urllib3==2.4.0
+urllib3==2.5.0
     # via
     #   requests
     #   types-requests

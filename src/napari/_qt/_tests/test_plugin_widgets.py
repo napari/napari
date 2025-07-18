@@ -112,9 +112,11 @@ def test_inject_viewer_proxy(make_napari_viewer):
     assert isinstance(wdg.viewer, PublicOnlyProxy)
 
     # simulate access from outside napari
-    with patch('napari.utils.misc.ROOT_DIR', new='/some/other/package'):
-        with pytest.warns(FutureWarning):
-            wdg.fail()
+    with (
+        patch('napari.utils.misc.ROOT_DIR', new='/some/other/package'),
+        pytest.warns(FutureWarning),
+    ):
+        wdg.fail()
 
 
 @pytest.mark.parametrize(
@@ -142,7 +144,7 @@ def test_widget_hide_destroy(make_napari_viewer, qtbot):
     """Test that widget hide and destroy works."""
     viewer = make_napari_viewer()
     viewer.window.add_dock_widget(QWidget_example(viewer), name='test')
-    dock_widget = viewer.window._dock_widgets['test']
+    dock_widget = viewer.window._wrapped_dock_widgets['test']
 
     # Check widget persists after hide
     widget = dock_widget.widget()
@@ -151,7 +153,7 @@ def test_widget_hide_destroy(make_napari_viewer, qtbot):
     # Check that widget removed from `_dock_widgets` dict and parent
     # `QtViewerDockWidget` is `None` when closed
     dock_widget.destroyOnClose()
-    assert 'test' not in viewer.window._dock_widgets
+    assert 'test' not in viewer.window._wrapped_dock_widgets
     assert widget.parent() is None
     widget.deleteLater()
     widget.close()

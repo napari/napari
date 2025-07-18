@@ -400,8 +400,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         #   sample spacing.
         # 3. `physical2world`: An extra transform applied in world-coordinates that
         #   typically aligns this layer with another.
-        # 4. `world2grid`: An additional transform mapping world-coordinates
-        #   into a grid for looking at layers side-by-side.
         if scale is None:
             scale = [1] * ndim
         if translate is None:
@@ -423,7 +421,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
                     units=units,
                 ),
                 self._initial_affine,
-                Affine(np.ones(ndim), np.zeros(ndim), name='world2grid'),
             ]
         )
 
@@ -835,6 +832,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         # mypy bug https://github.com/python/mypy/issues/3004
         self._transforms['data2physical'].units = units  # type: ignore[assignment]
         if self.units != prev:
+            self._clear_extent()
+            self.refresh(extent=False)
             self.events.units()
 
     @property
@@ -847,7 +846,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         if scale is None:
             scale = np.array([1] * self.ndim)
         self._transforms['data2physical'].scale = np.array(scale)
-        self.refresh()
+        self._clear_extent()
+        self.refresh(extent=False)
+        # self.refresh()
         self.events.scale()
 
     @property
@@ -869,7 +870,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     @translate.setter
     def translate(self, translate: npt.ArrayLike) -> None:
         self._transforms['data2physical'].translate = np.array(translate)
-        self.refresh()
+        self._clear_extent()
+        self.refresh(extent=False)
         self.events.translate()
 
     @property
@@ -880,7 +882,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     @rotate.setter
     def rotate(self, rotate: npt.NDArray) -> None:
         self._transforms['data2physical'].rotate = rotate
-        self.refresh()
+        self._clear_extent()
+        self.refresh(extent=False)
         self.events.rotate()
 
     @property
@@ -891,7 +894,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     @shear.setter
     def shear(self, shear: npt.NDArray) -> None:
         self._transforms['data2physical'].shear = shear
-        self.refresh()
+        self._clear_extent()
+        self.refresh(extent=False)
         self.events.shear()
 
     @property
@@ -907,23 +911,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self._transforms[2] = coerce_affine(
             affine, ndim=self.ndim, name='physical2world'
         )
-        self.refresh()
+        self._clear_extent()
+        self.refresh(extent=False)
         self.events.affine()
 
     def _reset_affine(self) -> None:
         self.affine = self._initial_affine
-
-    @property
-    def _translate_grid(self) -> npt.NDArray:
-        """array: Factors to shift the layer by."""
-        return self._transforms['world2grid'].translate
-
-    @_translate_grid.setter
-    def _translate_grid(self, translate_grid: npt.NDArray) -> None:
-        if np.array_equal(self._translate_grid, translate_grid):
-            return
-        self._transforms['world2grid'].translate = np.array(translate_grid)
-        self.events.translate()
 
     def _update_dims(self) -> None:
         """Update the dimensionality of transforms and slices when data changes."""
@@ -1051,10 +1044,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         """Clear extent cache and emit extent event."""
         if 'extent' in self.__dict__:
             del self.extent
-        self.events.extent()
-
-    def _clear_extent_augmented(self) -> None:
-        """Clear extent_augmented cache and emit extent_augmented event."""
         if '_extent_augmented' in self.__dict__:
             del self._extent_augmented
         self.events._extent_augmented()
@@ -1550,7 +1539,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             return
         if extent:
             self._clear_extent()
-            self._clear_extent_augmented()
         if data_displayed:
             self.set_view_slice()
             self.events.set_data()
@@ -2183,12 +2171,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
                 world=world,
             )
             coords_str, value_str = generate_layer_status_strings(
-                # position may be higher-dimensional due to other
-                # layers in the viewer, but self._translate_grid already
-                # has the correct dimensionality. We subtract translate_grid
-                # so that the coordinates are valid for the layer, regardless
-                # of grid display.
-                position[-self.ndim :] - self._translate_grid,
+                position[-self.ndim :],
                 value,
             )
         else:
