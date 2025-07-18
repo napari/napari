@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from vispy.visuals.transforms import MatrixTransform, STTransform
 
@@ -43,7 +43,7 @@ class VispyBaseOverlay:
         self.node.set_gl_state(**BLENDING_MODES[self.overlay.blending])
         self.node.update()
 
-    def reset(self):
+    def reset(self) -> None:
         self._on_visible_change()
         self._on_opacity_change()
         self._on_blending_change()
@@ -71,7 +71,7 @@ class VispyCanvasOverlay(VispyBaseOverlay):
         self.node.transform = STTransform()
         self.overlay.events.position.connect(self._on_position_change)
 
-    def _on_position_change(self, event=None):
+    def _on_position_change(self, event: Any = None):
         # subclasses should set sizes correctly and adjust offsets to get
         # the optimal positioning
         if self.node.parent is None:
@@ -124,7 +124,7 @@ class VispyCanvasOverlay(VispyBaseOverlay):
         scale = abs(self.node.transform.scale[0])
         self.node.transform.scale = [scale, 1, 1, 1]
 
-    def reset(self):
+    def reset(self) -> None:
         super().reset()
         self._on_position_change()
 
