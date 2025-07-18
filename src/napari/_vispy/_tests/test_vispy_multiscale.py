@@ -196,8 +196,6 @@ def test_5D_multiscale(make_napari_viewer):
     """Test 5D multiscale data."""
     # Show must be true to trigger multiscale draw and corner estimation
     viewer = make_napari_viewer(show=True)
-    view = viewer.window._qt_viewer
-    view.set_welcome_visible(False)
     shapes = [(1, 2, 5, 20, 20), (1, 2, 5, 10, 10), (1, 2, 5, 5, 5)]
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
