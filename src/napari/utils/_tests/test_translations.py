@@ -164,16 +164,19 @@ def test_load_language_invalid(tmp_path):
     with open(temp_config_path, 'w') as fh:
         fh.write(data)
 
-    with pytest.warns(UserWarning):
-        _load_language(temp_config_path)
+    with pytest.warns(
+        UserWarning, match='The `language` setting defined in the napari'
+    ):
+        _load_language(str(temp_config_path))
 
 
 def test_locale_invalid():
-    with pytest.warns(UserWarning):
+    with pytest.warns(UserWarning, match='Requested locale not available'):
         translator._set_locale(TEST_LOCALE)
-        trans = translator.load()
-        result = trans._('BOO')
-        assert result == 'BOO'
+    trans = translator.load()
+
+    result = trans._('BOO')
+    assert result == 'BOO'
 
 
 # Test trans methods

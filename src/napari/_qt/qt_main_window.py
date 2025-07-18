@@ -33,7 +33,7 @@ from qtpy.QtCore import (
     Qt,
     Slot,
 )
-from qtpy.QtGui import QHideEvent, QIcon, QShowEvent
+from qtpy.QtGui import QHideEvent, QIcon, QImage, QShowEvent
 from qtpy.QtWidgets import (
     QApplication,
     QDialog,
@@ -84,7 +84,6 @@ from napari.settings import get_settings
 from napari.utils import perf
 from napari.utils._proxies import MappingProxy, PublicOnlyProxy
 from napari.utils.events import Event
-from napari.utils.geometry import get_center_bbox
 from napari.utils.io import imsave
 from napari.utils.misc import (
     in_ipython,
@@ -1697,13 +1696,6 @@ class Window:
         """
         from napari._qt.utils import add_flash_animation
 
-        canvas = self._qt_viewer.canvas
-        prev_size = canvas.size
-        camera = self._qt_viewer.viewer.camera
-        old_center = camera.center
-        old_zoom = camera.zoom
-        ndisplay = self._qt_viewer.viewer.dims.ndisplay
-
         # Part 1: validate incompatible parameters
         if not canvas_only and (
             fit_to_data_extent or size is not None or scale is not None
@@ -1715,59 +1707,15 @@ class Window:
                     deferred=True,
                 )
             )
-        if size is not None and len(size) != 2:
-            raise ValueError(
-                trans._(
-                    'screenshot size must be 2 values, got {len_size}',
-                    deferred=True,
-                    len_size=len(size),
-                )
-            )
 
-        # Part 2: compute canvas size and view based on parameters
-        if fit_to_data_extent:
-            # Use the same scene parameter calculations as in viewer_model.fit_to_view
-            extent, _, _, total_size = (
-                self._qt_viewer.viewer._get_scene_parameters()
-            )
-            extent_scale = min(
-                self._qt_viewer.viewer.layers.extent.step[-ndisplay:]
-            )
-
-            if ndisplay == 3:
-                total_size = self._qt_viewer.viewer._calculate_bounding_box(
-                    extent=extent,
-                    view_direction=self._qt_viewer.viewer.camera.view_direction,
-                    up_direction=self._qt_viewer.viewer.camera.up_direction,
-                )
-
-            # adjust size by the scale, to return the size in real pixels
-            size = np.ceil(total_size / extent_scale).astype(int)
-
-        if size is not None:
-            size = np.asarray(size) / self._qt_window.devicePixelRatio()
-        else:
-            size = np.asarray(prev_size)
-
-        if scale is not None:
-            # multiply canvas dimensions by the scale factor to get new size
-            size *= scale
-
-        # Part 3: take the screenshot
+        # Part 2: take the screenshot
         if canvas_only:
-            canvas.size = tuple(size.astype(int))
-            if fit_to_data_extent:
-                # tight view around data
-                self._qt_viewer.viewer.fit_to_view(margin=0)
-            try:
-                img = canvas.screenshot()
-                if flash:
-                    add_flash_animation(self._qt_viewer._welcome_widget)
-            finally:
-                # make sure we always go back to the right canvas size
-                canvas.size = prev_size
-                camera.center = old_center
-                camera.zoom = old_zoom
+            img = self._qt_viewer._screenshot(
+                flash=flash,
+                size=size,
+                scale=scale if scale is not None else 1.0,
+                fit_to_data_extent=fit_to_data_extent,
+            )
         else:
             img = self._qt_window.grab().toImage()
             if flash:
@@ -1805,30 +1753,13 @@ class Window:
             Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
             upper-left corner of the rendered region.
         """
-        if not isinstance(scale, float | int):
-            raise TypeError(
-                trans._(
-                    'Scale must be a float or an int.',
-                    deferred=True,
-                )
-            )
-        img = QImg2array(
-            self._screenshot(
-                scale=scale,
-                flash=flash,
-                canvas_only=True,
-                fit_to_data_extent=True,
-            )
-        )
-        if path is not None:
-            imsave(path, img)
-        return img
+        return self._qt_viewer.export_figure(path, scale, flash)
 
     def export_rois(
         self,
         rois: list[np.ndarray],
         paths: str | Path | list[str | Path] | None = None,
-        scale: float | None = None,
+        scale: float = 1.0,
     ):
         """Export the given rectangular rois to specified file paths.
 
@@ -1862,54 +1793,11 @@ class Window:
             The list with roi screenshots.
 
         """
-        if (
-            paths is not None
-            and isinstance(paths, list)
-            and len(paths) != len(rois)
-        ):
-            raise ValueError(
-                trans._(
-                    'The number of file paths does not match the number of ROI shapes',
-                    deferred=True,
-                )
-            )
-
-        if isinstance(paths, str | Path):
-            storage_dir = Path(paths).expanduser()
-            storage_dir.mkdir(parents=True, exist_ok=True)
-            paths = [storage_dir / f'roi_{n}.png' for n in range(len(rois))]
-
-        if self._qt_viewer.viewer.dims.ndisplay > 2:
-            raise NotImplementedError(
-                "'export_rois' is not implemented for 3D view."
-            )
-
-        screenshot_list = []
-        camera = self._qt_viewer.viewer.camera
-        start_camera_center = camera.center
-        start_camera_zoom = camera.zoom
-        canvas = self._qt_viewer.canvas
-        prev_size = canvas.size
-
-        visible_dims = list(self._qt_viewer.viewer.dims.displayed)
-        step = min(self._qt_viewer.viewer.layers.extent.step[visible_dims])
-
-        for index, roi in enumerate(rois):
-            center_coord, height, width = get_center_bbox(roi)
-            camera.center = center_coord
-            canvas.size = (int(height / step), int(width / step))
-
-            camera.zoom = 1 / step
-            path = paths[index] if paths is not None else None
-            screenshot_list.append(
-                self.screenshot(path=path, canvas_only=True, scale=scale)
-            )
-
-        canvas.size = prev_size
-        camera.center = start_camera_center
-        camera.zoom = start_camera_zoom
-
-        return screenshot_list
+        return self._qt_viewer.export_rois(
+            rois=rois,
+            paths=paths,
+            scale=scale,
+        )
 
     def screenshot(
         self, path=None, size=None, scale=None, flash=True, canvas_only=False

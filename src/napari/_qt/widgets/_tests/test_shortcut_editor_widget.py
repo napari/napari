@@ -79,26 +79,28 @@ def test_potentially_conflicting_actions(shortcut_editor_widget):
 @pytest.mark.key_bindings
 def test_mark_conflicts(shortcut_editor_widget, qtbot):
     widget = shortcut_editor_widget()
-    ctrl_keybinding = KeyBinding.from_str('Ctrl')
+    v_keybinding = KeyBinding.from_str('V')
     u_keybinding = KeyBinding.from_str('U')
-    act = widget._table.item(0, widget._action_col).text()
+    # 12 is the row for 'napari:toggle_selected_visibility'
+    act = widget._table.item(12, widget._action_col).text()
 
     # Add check for initial/default keybinding (first shortcuts column) and
     # added one (second shortcuts column)
-    assert action_manager._shortcuts[act][0] == ctrl_keybinding
-    widget._table.item(0, widget._shortcut_col2).setText(str(u_keybinding))
+    assert action_manager._shortcuts[act][0] == v_keybinding
+    # 12 is the row for 'napari:toggle_selected_visibility'
+    widget._table.item(12, widget._shortcut_col2).setText(str(u_keybinding))
     assert action_manager._shortcuts[act][1] == str(u_keybinding)
 
     # Check conflicts detection using `KeyBindingLike` params
     # (`KeyBinding`, `str` and `int` representations of a shortcut)
     with patch.object(WarnPopup, 'exec_') as mock:
-        assert not widget._mark_conflicts(ctrl_keybinding, 1)
+        assert not widget._mark_conflicts(v_keybinding, 1)
         assert mock.called
     with patch.object(WarnPopup, 'exec_') as mock:
-        assert not widget._mark_conflicts(str(ctrl_keybinding), 1)
+        assert not widget._mark_conflicts(str(v_keybinding), 1)
         assert mock.called
     with patch.object(WarnPopup, 'exec_') as mock:
-        assert not widget._mark_conflicts(int(ctrl_keybinding), 1)
+        assert not widget._mark_conflicts(int(v_keybinding), 1)
         assert mock.called
 
     with patch.object(WarnPopup, 'exec_') as mock:
@@ -120,8 +122,9 @@ def test_mark_conflicts(shortcut_editor_widget, qtbot):
 
 def test_restore_defaults(shortcut_editor_widget):
     widget = shortcut_editor_widget()
-    shortcut = widget._table.item(0, widget._shortcut_col).text()
-    assert shortcut == KEY_SYMBOLS['Ctrl']
+    # 12 is the row for 'napari:toggle_selected_visibility'
+    shortcut = widget._table.item(12, widget._shortcut_col).text()
+    assert shortcut == 'V'
     widget._table.item(0, widget._shortcut_col).setText('H')
     shortcut = widget._table.item(0, widget._shortcut_col).text()
     assert shortcut == 'H'
@@ -131,8 +134,9 @@ def test_restore_defaults(shortcut_editor_widget):
         mock.return_value = QMessageBox.RestoreDefaults
         widget._restore_button.click()
         assert mock.called
-    shortcut = widget._table.item(0, widget._shortcut_col).text()
-    assert shortcut == KEY_SYMBOLS['Ctrl']
+    # 12 is the row for 'napari:toggle_selected_visibility'
+    shortcut = widget._table.item(12, widget._shortcut_col).text()
+    assert shortcut == 'V'
 
 
 @pytest.mark.key_bindings
@@ -175,11 +179,13 @@ def test_keybinding_with_modifiers(
     shortcut_editor_widget, qtbot, recwarn, key, modifier, key_symbols
 ):
     widget = shortcut_editor_widget()
-    shortcut = widget._table.item(0, widget._shortcut_col).text()
-    assert shortcut == KEY_SYMBOLS['Ctrl']
+    # 12 is the row for 'napari:toggle_selected_visibility'
+    shortcut = widget._table.item(12, widget._shortcut_col).text()
+    assert shortcut == 'V'
 
     x = widget._table.columnViewportPosition(widget._shortcut_col)
-    y = widget._table.rowViewportPosition(0)
+    # 12 is the row for 'napari:toggle_selected_visibility'
+    y = widget._table.rowViewportPosition(12)
     item_pos = QPoint(x, y)
     index = widget._table.indexAt(item_pos)
     widget._table.setCurrentIndex(index)
@@ -192,7 +198,7 @@ def test_keybinding_with_modifiers(
 
     assert len([warn for warn in recwarn if warn.category is UserWarning]) == 0
 
-    shortcut = widget._table.item(0, widget._shortcut_col).text()
+    shortcut = widget._table.item(12, widget._shortcut_col).text()
     for key_symbol in key_symbols:
         assert key_symbol in shortcut
 
@@ -209,7 +215,9 @@ def test_keybinding_with_modifiers(
         (
             Qt.KeyboardModifier.AltModifier
             | Qt.KeyboardModifier.ShiftModifier,
-            [KEY_SYMBOLS['Ctrl']],
+            # this condition isn't allowed, so keybind should be unmodified
+            # 'V' is the default keybinding for 'napari:toggle_selected_visibility'
+            'V',
             False,
         ),
     ],
@@ -218,11 +226,13 @@ def test_keybinding_with_only_modifiers(
     shortcut_editor_widget, qtbot, recwarn, modifiers, key_symbols, valid
 ):
     widget = shortcut_editor_widget()
-    shortcut = widget._table.item(0, widget._shortcut_col).text()
-    assert shortcut == KEY_SYMBOLS['Ctrl']
+    # 12 is the row for 'napari:toggle_selected_visibility'
+    shortcut = widget._table.item(12, widget._shortcut_col).text()
+    assert shortcut == 'V'
 
     x = widget._table.columnViewportPosition(widget._shortcut_col)
-    y = widget._table.rowViewportPosition(0)
+    # 12 is the row for 'napari:toggle_selected_visibility'
+    y = widget._table.rowViewportPosition(12)
     item_pos = QPoint(x, y)
     index = widget._table.indexAt(item_pos)
     widget._table.setCurrentIndex(index)
@@ -240,8 +250,8 @@ def test_keybinding_with_only_modifiers(
             assert mock.called
 
     assert len([warn for warn in recwarn if warn.category is UserWarning]) == 0
-
-    shortcut = widget._table.item(0, widget._shortcut_col).text()
+    # 12 is the row for 'napari:toggle_selected_visibility'
+    shortcut = widget._table.item(12, widget._shortcut_col).text()
     for key_symbol in key_symbols:
         assert key_symbol in shortcut
 
@@ -262,11 +272,13 @@ def test_remove_shortcut(
     shortcut_editor_widget, qtbot, removal_trigger_key, confirm_key
 ):
     widget = shortcut_editor_widget()
-    shortcut = widget._table.item(0, widget._shortcut_col).text()
-    assert shortcut == KEY_SYMBOLS['Ctrl']
+    # 12 is the row for 'napari:toggle_selected_visibility'
+    shortcut = widget._table.item(12, widget._shortcut_col).text()
+    assert shortcut == 'V'
 
     x = widget._table.columnViewportPosition(widget._shortcut_col)
-    y = widget._table.rowViewportPosition(0)
+    # 12 is the row for 'napari:toggle_selected_visibility'
+    y = widget._table.rowViewportPosition(12)
     item_pos = QPoint(x, y)
     index = widget._table.indexAt(item_pos)
     widget._table.setCurrentIndex(index)
@@ -277,8 +289,8 @@ def test_remove_shortcut(
     qtbot.keyClick(editor, confirm_key)
     widget._table.commitData(editor)
     widget._table.closeEditor(editor, QAbstractItemDelegate.NoHint)
-
-    shortcut = widget._table.item(0, widget._shortcut_col).text()
+    # 12 is the row for 'napari:toggle_selected_visibility'
+    shortcut = widget._table.item(12, widget._shortcut_col).text()
     assert shortcut == ''
 
 
@@ -322,11 +334,12 @@ def test_keybinding_editor_modifier_key_detection(
         https://github.com/asweigart/pyautogui/issues/247#issuecomment-437668855
     """
     widget = shortcut_editor_widget()
-    shortcut = widget._table.item(0, widget._shortcut_col).text()
-    assert shortcut == KEY_SYMBOLS['Ctrl']
+    # 12 is the row for 'napari:toggle_selected_visibility'
+    shortcut = widget._table.item(12, widget._shortcut_col).text()
+    assert shortcut == 'V'
 
     x = widget._table.columnViewportPosition(widget._shortcut_col)
-    y = widget._table.rowViewportPosition(0)
+    y = widget._table.rowViewportPosition(12)
     item_pos = QPoint(x, y)
     qtbot.mouseClick(
         widget._table.viewport(), Qt.MouseButton.LeftButton, pos=item_pos
@@ -362,5 +375,6 @@ def test_keybinding_editor_modifier_key_detection(
     qtbot.waitUntil(lambda: release_check())
 
     qtbot.keyClick(line_edit, Qt.Key_Escape)
-    shortcut = widget._table.item(0, widget._shortcut_col).text()
-    assert shortcut == KEY_SYMBOLS['Ctrl']
+    # 12 is the row for 'napari:toggle_selected_visibility'
+    shortcut = widget._table.item(12, widget._shortcut_col).text()
+    assert shortcut == 'V'

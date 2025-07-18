@@ -390,6 +390,24 @@ def test_adding_points():
     np.testing.assert_equal(layer.data, np.vstack((data, coord)))
 
 
+def test_adding_points_symbol():
+    """Test that the current symbol is used for added point."""
+    # add a point with default (disc) symbol
+    shape = (1, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    layer = Points(data)
+
+    # update the current symbol
+    new_symbol = 'star'
+    layer.current_symbol = new_symbol
+    coord = [20, 20]
+    layer.add(coord)
+
+    # confirm that a newly created point has the updated symbol
+    assert layer.symbol[-1] == new_symbol
+
+
 def test_points_selection_with_setter():
     shape = (10, 2)
     np.random.seed(0)
@@ -1020,6 +1038,24 @@ def test_border_width():
         layer.border_width = -2
 
 
+def test_border_width_update():
+    """Test that the current border width is updated."""
+    # add a point with default border width
+    shape = (1, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    layer = Points(data)
+
+    # update the current border width to an arbitrary value
+    new_border_width = 0.43
+    layer.current_border_width = new_border_width
+    coord = [20, 20]
+    layer.add(coord)
+
+    # confirm that a newly created point has the updated border width
+    assert layer.border_width[-1] == new_border_width
+
+
 @pytest.mark.parametrize(
     'border_width',
     [1, float(1), np.array([1, 2, 3, 4, 5]), [1, 2, 3, 4, 5]],
@@ -1114,7 +1150,10 @@ def test_switch_color_mode(attribute):
     # transitioning to colormap should raise a warning
     # because there isn't an border color property yet and
     # the first property in points.properties is being automatically selected
-    with pytest.warns(UserWarning):
+    with pytest.warns(
+        UserWarning,
+        match='color_property was not set, setting to: point_truthiness',
+    ):
         setattr(layer, f'{attribute}_color_mode', 'colormap')
     color_manager = getattr(layer, f'_{attribute}')
     color_property_name = color_manager.color_properties.name
@@ -1156,7 +1195,16 @@ def test_colormap_with_categorical_properties(attribute):
     properties = {'point_type': _make_cycled_properties(['A', 'B'], shape[0])}
     layer = Points(data, properties=properties)
 
-    with pytest.raises(TypeError), pytest.warns(UserWarning):
+    with (
+        pytest.raises(
+            TypeError,
+            match='selected property must be numeric to use ColorMode.COLORMAP',
+        ),
+        pytest.warns(
+            UserWarning,
+            match='_color_property was not set, setting to: point_type',
+        ),
+    ):
         setattr(layer, f'{attribute}_color_mode', 'colormap')
 
 
@@ -1907,7 +1955,9 @@ def test_set_face_color_mode_after_set_properties():
 
     # Initially the color_mode is DIRECT, which means that the face ColorManager
     # has no color_properties, so the first property is used with a warning.
-    with pytest.warns(UserWarning):
+    with pytest.warns(
+        UserWarning, match='_face_color_property was not set, setting to: cat'
+    ):
         points.face_color_mode = 'cycle'
 
     first_property_key, first_property_values = next(
