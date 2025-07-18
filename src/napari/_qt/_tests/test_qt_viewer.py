@@ -510,17 +510,11 @@ def test_qt_viewer_clipboard_with_flash(make_napari_viewer, qtbot):
     assert not clipboard_image.isNull()
 
     # ensure the flash effect is applied
-    assert (
-        viewer.window._qt_viewer._welcome_widget.graphicsEffect() is not None
-    )
-    assert hasattr(
-        viewer.window._qt_viewer._welcome_widget, '_flash_animation'
-    )
+    assert viewer.window._qt_viewer.graphicsEffect() is not None
+    assert hasattr(viewer.window._qt_viewer, '_flash_animation')
     qtbot.wait(500)  # wait for the animation to finish
-    assert viewer.window._qt_viewer._welcome_widget.graphicsEffect() is None
-    assert not hasattr(
-        viewer.window._qt_viewer._welcome_widget, '_flash_animation'
-    )
+    assert viewer.window._qt_viewer.graphicsEffect() is None
+    assert not hasattr(viewer.window._qt_viewer, '_flash_animation')
 
     # clear clipboard and grab image from application view
     QGuiApplication.clipboard().clear()
@@ -558,10 +552,8 @@ def test_qt_viewer_clipboard_without_flash(make_napari_viewer):
     assert not clipboard_image.isNull()
 
     # ensure the flash effect is not applied
-    assert viewer.window._qt_viewer._welcome_widget.graphicsEffect() is None
-    assert not hasattr(
-        viewer.window._qt_viewer._welcome_widget, '_flash_animation'
-    )
+    assert viewer.window._qt_viewer.graphicsEffect() is None
+    assert not hasattr(viewer.window._qt_viewer, '_flash_animation')
 
     # clear clipboard and grab image from application view
     QGuiApplication.clipboard().clear()
