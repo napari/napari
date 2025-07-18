@@ -652,8 +652,6 @@ class VispyCanvas:
         None
         """
         self.viewer._canvas_size = self.size
-        if self.viewer.grid.enabled:
-            self._update_grid_spacing()
 
     def add_layer_visual_mapping(
         self, napari_layer: Layer, vispy_layer: VispyBaseLayer
@@ -745,8 +743,22 @@ class VispyCanvas:
                 vispy_layer.first_visible = False
             vispy_layer._on_blending_change()
 
+        self._update_overlay_canvas_positions()
+
         self._scene_canvas._draw_order.clear()
         self._scene_canvas.update()
+
+    def _connect_canvas_overlay_events(self, overlay):
+        overlay.events.position.connect(self._update_overlay_canvas_positions)
+        overlay.events.visible.connect(self._update_overlay_canvas_positions)
+
+    def _disconnect_canvas_overlay_events(self, overlay):
+        overlay.events.position.disconnect(
+            self._update_overlay_canvas_positions
+        )
+        overlay.events.visible.disconnect(
+            self._update_overlay_canvas_positions
+        )
 
     def _add_viewer_overlay(self, overlay: Overlay, parent: Node) -> None:
         """Create vispy overlay and add to dictionary of overlay visuals"""
@@ -759,6 +771,7 @@ class VispyCanvas:
         """Remove all viewer overlay visuals and disconnect their events."""
         for overlay in list(self._overlay_to_visual):
             if isinstance(overlay, CanvasOverlay):
+                self._disconnect_canvas_overlay_events(overlay)
                 overlay.events.gridded.disconnect(self._update_viewer_overlays)
             vispy_overlays = self._overlay_to_visual.pop(overlay)
             for vispy_overlay in vispy_overlays:
@@ -781,6 +794,7 @@ class VispyCanvas:
             if isinstance(overlay, CanvasOverlay):
                 for view in views:
                     self._add_viewer_overlay(overlay, view)
+                self._connect_canvas_overlay_events(overlay)
                 overlay.events.gridded.connect(self._update_viewer_overlays)
             else:
                 for view in views:
@@ -795,6 +809,8 @@ class VispyCanvas:
         vispy_overlay = create_vispy_overlay(
             overlay, layer=layer, parent=parent
         )
+        if isinstance(overlay, CanvasOverlay):
+            self._connect_canvas_overlay_events(overlay)
 
         self._layer_overlay_to_visual[layer][overlay] = vispy_overlay
 
@@ -802,6 +818,8 @@ class VispyCanvas:
         """Remove all layer overlay visuals and disconnect their events."""
         for overlay in list(self._layer_overlay_to_visual[layer]):
             vispy_overlay = self._layer_overlay_to_visual[layer].pop(overlay)
+            if isinstance(overlay, CanvasOverlay):
+                self._disconnect_canvas_overlay_events(overlay)
             vispy_overlay.close()
 
     def _update_layer_overlays(self, layer: Layer) -> None:
@@ -832,41 +850,83 @@ class VispyCanvas:
 
             self._add_layer_overlay(layer, overlay, parent)
 
-        self._update_overlay_canvas_positions()
+        # self._update_overlay_canvas_positions()
 
     def _get_ordered_visible_canvas_overlays(self):
         # note that some canvas overlays do no use CanvasPosition, but are instead
         # free-floating (such as the cursor overlay), so those are skipped
 
-        # first viewer overlays
+        # first the base view (non-gridded viewer overlays)
         for overlay, vispy_overlays in self._overlay_to_visual.items():
             if (
                 overlay.visible
                 and isinstance(overlay, CanvasOverlay)
                 and overlay.position in list(CanvasPosition)
+                and not (overlay.gridded and self.viewer.grid.enabled)
             ):
-                yield overlay, vispy_overlays
+                yield overlay, vispy_overlays[0], None
 
-        # then layer overlays
-        for layer in self.viewer.layers:
-            for overlay, vispy_overlay in self._layer_overlay_to_visual.get(
-                layer, {}
-            ).items():
+        # then gridded viewer overlays and layer overlays, by viewbox, in order
+        for viewbox_idx, (_, layer_indices) in enumerate(
+            self.viewer.grid.iter_viewboxes(len(self.viewer.layers))
+        ):
+            if not layer_indices:
+                # last empty boxes of the grid
+                break
+            view = viewbox_idx if self.viewer.grid.enabled else None
+
+            for overlay, vispy_overlays in self._overlay_to_visual.items():
                 if (
-                    layer.visible
-                    and overlay.visible
+                    overlay.visible
                     and isinstance(overlay, CanvasOverlay)
                     and overlay.position in list(CanvasPosition)
+                    and (overlay.gridded and self.viewer.grid.enabled)
                 ):
-                    yield overlay, [vispy_overlay]
+                    yield overlay, vispy_overlays[viewbox_idx], view
+
+            for layer_idx in layer_indices:
+                layer = self.viewer.layers[layer_idx]
+                for (
+                    overlay,
+                    vispy_overlay,
+                ) in self._layer_overlay_to_visual.get(layer, {}).items():
+                    if (
+                        layer.visible
+                        and overlay.visible
+                        and isinstance(overlay, CanvasOverlay)
+                        and overlay.position in list(CanvasPosition)
+                    ):
+                        yield overlay, vispy_overlay, view
 
     def _update_overlay_canvas_positions(self, event=None):
+        x_offsets = {}
+        y_offsets = {}
         for (
-            _,
-            vispy_overlays,
+            overlay,
+            vispy_overlay,
+            view,
         ) in self._get_ordered_visible_canvas_overlays():
-            for vispy_overlay in vispy_overlays:
-                vispy_overlay._on_position_change()
+            # TODO: these should be settable!
+            x_offsets.setdefault(view, dict.fromkeys(CanvasPosition, 0))
+            y_offsets.setdefault(view, dict.fromkeys(CanvasPosition, 0))
+
+            if overlay.position in ('top_right', 'bottom_left'):
+                vispy_overlay.x_offset_tiling = x_offsets[view][
+                    overlay.position
+                ]
+                x_offsets[view][overlay.position] += (
+                    vispy_overlay.x_size + vispy_overlay.x_offset
+                )
+                vispy_overlay.y_offset_tiling = 0
+            else:
+                vispy_overlay.y_offset_tiling = y_offsets[view][
+                    overlay.position
+                ]
+                y_offsets[view][overlay.position] += (
+                    vispy_overlay.y_size + vispy_overlay.y_offset
+                )
+                vispy_overlay.x_offset_tiling = 0
+            vispy_overlay._on_position_change()
 
     def _calculate_view_direction(
         self, event_pos: tuple[float, float]
