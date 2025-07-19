@@ -33,8 +33,6 @@ class QtVersionLabel(QLabel):
 class QtWelcomeWidget(QWidget):
     """Welcome widget to display initial information and shortcuts to user."""
 
-    sig_dropped = Signal('QEvent')
-
     def __init__(self, parent) -> None:
         super().__init__(parent)
 
@@ -188,7 +186,12 @@ class QtWelcomeWidget(QWidget):
             Event from the Qt context.
         """
         self._update_property('drag', False)
-        self.sig_dropped.emit(event)
+        if (
+            self.parent() is not None
+            and self.parent().parent() is not None
+            and self.parent().parent().parent() is not None
+        ):
+            self.parent().parent().parent().dropEvent(event)
 
 
 class QtWidgetOverlay(QStackedWidget):
@@ -196,7 +199,6 @@ class QtWidgetOverlay(QStackedWidget):
     Stacked widget providing switching between the widget and a welcome page.
     """
 
-    sig_dropped = Signal('QEvent')
     resized = Signal()
     leave = Signal()
     enter = Signal()
@@ -210,9 +212,6 @@ class QtWidgetOverlay(QStackedWidget):
         self.addWidget(widget)
         self.addWidget(self._overlay)
         self.setCurrentIndex(0)
-
-        # Signals
-        self._overlay.sig_dropped.connect(self.sig_dropped)
 
     def set_welcome_visible(self, visible=True):
         """Show welcome screen widget on stack."""

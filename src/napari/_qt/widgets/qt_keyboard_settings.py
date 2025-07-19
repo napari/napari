@@ -76,8 +76,13 @@ class ShortcutEditor(QWidget):
         self.layer_combo_box = QComboBox(self)
         self._label = QLabel(self)
         self._table = QTableWidget(self)
-        self._table.setSelectionBehavior(QAbstractItemView.SelectItems)
-        self._table.setSelectionMode(QAbstractItemView.SingleSelection)
+        self._table.cellChanged.connect(self._set_keybinding)
+        self._table.setSelectionBehavior(
+            QAbstractItemView.SelectionBehavior.SelectItems
+        )
+        self._table.setSelectionMode(
+            QAbstractItemView.SelectionMode.SingleSelection
+        )
         self._table.setShowGrid(False)
         self._restore_button = QPushButton(trans._('Restore All Keybindings'))
 
@@ -172,6 +177,14 @@ class ShortcutEditor(QWidget):
         self._set_table(layer_str=self.layer_combo_box.currentText())
 
     def _set_table(self, layer_str: str = ''):
+        prev = self._skip
+        self._skip = True
+        try:
+            self._set_table_(layer_str)
+        finally:
+            self._skip = prev
+
+    def _set_table_(self, layer_str: str = ''):
         """Builds and populates keybindings table.
 
         Parameters
@@ -198,10 +211,6 @@ class ShortcutEditor(QWidget):
         if not layer_str:
             layer_str = self.VIEWER_KEYBINDINGS
 
-        # If rebuilding the table, then need to disconnect the connection made
-        # previously as well as clear the table contents.
-        with contextlib.suppress(TypeError, RuntimeError):
-            self._table.cellChanged.disconnect(self._set_keybinding)
         self._table.clearContents()
 
         # Table styling set up.
@@ -277,9 +286,6 @@ class ShortcutEditor(QWidget):
                 # action_name is stored in the table to use later, but is not shown on dialog.
                 item_action = QTableWidgetItem(action_name)
                 self._table.setItem(row, self._action_col, item_action)
-
-            # If a cell is changed, run .set_keybinding.
-            self._table.cellChanged.connect(self._set_keybinding)
         else:
             # Display that there are no actions for this layer.
             self._table.setRowCount(1)
