@@ -78,7 +78,7 @@ class ShortcutEditor(QWidget):
         self._table = QTableWidget(self)
         self._table.cellChanged.connect(self._set_keybinding)
         self._table.setSelectionBehavior(
-            QAbstractItemView.SelectionMode.SelectItems
+            QAbstractItemView.SelectionBehavior.SelectItems
         )
         self._table.setSelectionMode(
             QAbstractItemView.SelectionMode.SingleSelection
