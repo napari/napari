@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import gc
 from functools import partial
 from typing import TYPE_CHECKING
 from weakref import WeakSet
@@ -709,12 +710,18 @@ class VispyCanvas:
             layer._overlays.events, self._overlay_callbacks[layer]
         )
         del self._overlay_callbacks[layer]
+
         vispy_layer = self.layer_to_visual.pop(layer)
         disconnect_events(self.viewer.camera.events, vispy_layer)
         vispy_layer.close()
         del vispy_layer
+
         self._remove_layer_overlays(layer)
         del self._layer_overlay_to_visual[layer]
+
+        gc.collect()
+        self._scene_canvas.context.finish()
+
         self._update_scenegraph()
 
     def _reorder_layers(self) -> None:
