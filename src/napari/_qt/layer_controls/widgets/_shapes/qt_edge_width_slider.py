@@ -9,7 +9,9 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,
 )
+from napari._qt.utils import qt_signals_blocked
 from napari.layers.base.base import Layer
+from napari.utils.events.event_utils import connect_setattr
 from napari.utils.translations import trans
 
 
@@ -50,8 +52,12 @@ class QtEdgeWidthSliderControl(QtWidgetControlsBase):
                 value = np.asarray(value)
             value = value.mean()
         sld.setValue(int(value))
-        sld.valueChanged.connect(self.change_width)
         self.edge_width_slider = sld
+        connect_setattr(
+            self.edge_width_slider.valueChanged,
+            self._layer,
+            'current_edge_width',
+        )
         self.edge_width_slider.setToolTip(
             trans._(
                 'Set the edge width of currently selected shapes and any added afterwards.'
@@ -71,7 +77,7 @@ class QtEdgeWidthSliderControl(QtWidgetControlsBase):
 
     def _on_edge_width_change(self) -> None:
         """Receive layer model edge line width change event and update slider."""
-        with self._layer.events.edge_width.blocker():
+        with qt_signals_blocked(self.edge_width_slider):
             value = self._layer.current_edge_width
             value = np.clip(int(value), 0, 40)
             self.edge_width_slider.setValue(value)

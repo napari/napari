@@ -33,7 +33,7 @@ def test_base_controls_creation(qtbot, layer):
     qtbot.addWidget(qtctrl)
     original_clims = tuple(layer.contrast_limits)
     slider_clims = (
-        qtctrl._contrast_limits_slider_control.contrast_limits_slider.value()
+        qtctrl._contrast_limits_control.contrast_limits_slider.value()
     )
     assert slider_clims[0] == 0
     assert slider_clims[1] == 99
@@ -47,10 +47,10 @@ def test_clim_right_click_shows_popup(mock_show, qtbot, layer):
     qtctrl = QtBaseImageControls(layer)
     qtbot.addWidget(qtctrl)
     qtbot.mousePress(
-        qtctrl._contrast_limits_slider_control.contrast_limits_slider,
+        qtctrl._contrast_limits_control.contrast_limits_slider,
         Qt.RightButton,
     )
-    assert hasattr(qtctrl._contrast_limits_slider_control, 'clim_popup')
+    assert hasattr(qtctrl._contrast_limits_control, 'clim_popup')
     # this mock doesn't seem to be working on cirrus windows
     # but it works on local windows tests...
     if not (os.name == 'nt' and os.getenv('CI')):
@@ -65,9 +65,7 @@ def test_changing_model_updates_view(qtbot, layer):
     new_clims = (20, 40)
     layer.contrast_limits = new_clims
     assert (
-        tuple(
-            qtctrl._contrast_limits_slider_control.contrast_limits_slider.value()
-        )
+        tuple(qtctrl._contrast_limits_control.contrast_limits_slider.value())
         == new_clims
     )
 
@@ -85,24 +83,22 @@ def test_range_popup_clim_buttons(mock_show, qtbot, qapp, layer):
     original_clims = tuple(layer.contrast_limits)
     layer.contrast_limits = (20, 40)
     qtbot.mousePress(
-        qtctrl._contrast_limits_slider_control.contrast_limits_slider,
+        qtctrl._contrast_limits_control.contrast_limits_slider,
         Qt.RightButton,
     )
 
     # pressing the reset button returns the clims to the default values
-    reset_button = qtctrl._contrast_limits_slider_control.clim_popup.findChild(
+    reset_button = qtctrl._contrast_limits_control.clim_popup.findChild(
         QPushButton, 'reset_clims_button'
     )
     reset_button.click()
     qapp.processEvents()
     assert (
-        tuple(
-            qtctrl._contrast_limits_slider_control.contrast_limits_slider.value()
-        )
+        tuple(qtctrl._contrast_limits_control.contrast_limits_slider.value())
         == original_clims
     )
 
-    rangebtn = qtctrl._contrast_limits_slider_control.clim_popup.findChild(
+    rangebtn = qtctrl._contrast_limits_control.clim_popup.findChild(
         QPushButton, 'full_clim_range_button'
     )
     # data in this test is uint16 or int32 for Image, and float for Surface.
@@ -112,8 +108,8 @@ def test_range_popup_clim_buttons(mock_show, qtbot, qapp, layer):
         rangebtn.click()
         qapp.processEvents()
         assert tuple(layer.contrast_limits_range) == (info.min, info.max)
-        min_ = qtctrl._contrast_limits_slider_control.contrast_limits_slider.minimum()
-        max_ = qtctrl._contrast_limits_slider_control.contrast_limits_slider.maximum()
+        min_ = qtctrl._contrast_limits_control.contrast_limits_slider.minimum()
+        max_ = qtctrl._contrast_limits_control.contrast_limits_slider.maximum()
         assert (min_, max_) == (info.min, info.max)
     else:
         assert rangebtn is None
@@ -147,9 +143,7 @@ def test_qt_image_controls_change_contrast(qtbot):
     layer = Image(np.random.rand(8, 8))
     qtctrl = QtBaseImageControls(layer)
     qtbot.addWidget(qtctrl)
-    qtctrl._contrast_limits_slider_control.contrast_limits_slider.setValue(
-        (0.1, 0.8)
-    )
+    qtctrl._contrast_limits_control.contrast_limits_slider.setValue((0.1, 0.8))
     assert tuple(layer.contrast_limits) == (0.1, 0.8)
 
 

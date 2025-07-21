@@ -8,6 +8,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,
 )
+from napari._qt.utils import qt_signals_blocked
 from napari.layers.base.base import Layer
 from napari.utils.translations import trans
 
@@ -64,7 +65,7 @@ class QtWidthSpinBoxControl(QtWidgetControlsBase):
 
     def _on_edge_width_change(self) -> None:
         """Receive layer model width change event and update width spinbox."""
-        with self._layer.events.edge_width.blocker():
+        with qt_signals_blocked(self.width_spinbox):
             self.width_spinbox.setValue(self._layer.edge_width)
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
@@ -126,7 +127,7 @@ class QtLengthSpinBoxControl(QtWidgetControlsBase):
 
     def _on_length_change(self) -> None:
         """Change length of vectors."""
-        with self._layer.events.length.blocker():
+        with qt_signals_blocked(self.length_spinbox):
             self.length_spinbox.setValue(self._layer.length)
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:

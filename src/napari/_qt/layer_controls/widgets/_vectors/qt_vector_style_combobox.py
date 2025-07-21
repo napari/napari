@@ -8,8 +8,10 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,
 )
+from napari._qt.utils import qt_signals_blocked
 from napari.layers.base.base import Layer
 from napari.layers.vectors._vectors_constants import VECTORSTYLE_TRANSLATIONS
+from napari.utils.events.event_utils import connect_setattr
 from napari.utils.translations import trans
 
 
@@ -48,28 +50,19 @@ class QtVectorStyleComboBoxControl(QtWidgetControlsBase):
                 vector_style_combobox.setCurrentIndex(index)
 
         self.vector_style_combobox = vector_style_combobox
-        self.vector_style_combobox.currentTextChanged.connect(
-            self.change_vector_style
+        connect_setattr(
+            self.vector_style_combobox.currentTextChanged,
+            self._layer,
+            'vector_style',
         )
 
         self.vector_style_combobox_label = QtWrappedLabel(
             trans._('vector style:')
         )
 
-    def change_vector_style(self, vector_style: str) -> None:
-        """Change vector style of vectors on the layer model.
-
-        Parameters
-        ----------
-        vector_style : str
-            Name of vectors style, eg: 'line', 'triangle' or 'arrow'.
-        """
-        with self._layer.events.vector_style.blocker():
-            self._layer.vector_style = vector_style
-
     def _on_vector_style_change(self) -> None:
         """Receive layer model vector style change event & update dropdown."""
-        with self._layer.events.vector_style.blocker():
+        with qt_signals_blocked(self.vector_style_combobox):
             vector_style = self._layer.vector_style
             index = self.vector_style_combobox.findText(
                 vector_style, Qt.MatchFlag.MatchFixedString

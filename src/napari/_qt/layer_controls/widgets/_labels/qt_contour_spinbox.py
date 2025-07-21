@@ -10,6 +10,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,
 )
+from napari._qt.utils import qt_signals_blocked
 from napari.layers.base.base import Layer
 from napari.layers.labels._labels_utils import get_dtype
 from napari.utils._dtype import get_dtype_limits
@@ -71,7 +72,7 @@ class QtContourSpinBoxControl(QtWidgetControlsBase):
 
     def _on_contour_change(self) -> None:
         """Receive layer model contour value change event and update spinbox."""
-        with self._layer.events.contour.blocker():
+        with qt_signals_blocked(self.contour_spinbox):
             value = self._layer.contour
             self.contour_spinbox.setValue(value)
 

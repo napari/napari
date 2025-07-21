@@ -10,6 +10,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,
 )
+from napari._qt.utils import qt_signals_blocked
 from napari.layers.base.base import Layer
 from napari.utils.translations import trans
 
@@ -70,7 +71,7 @@ class QtDisplaySelectedLabelCheckBoxControl(QtWidgetControlsBase):
 
     def _on_show_selected_label_change(self) -> None:
         """Receive layer model show_selected_labels event and update the checkbox."""
-        with self._layer.events.show_selected_label.blocker():
+        with qt_signals_blocked(self.selected_color_checkbox):
             self.selected_color_checkbox.setChecked(
                 self._layer.show_selected_label
             )

@@ -13,6 +13,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,
 )
+from napari._qt.utils import qt_signals_blocked
 from napari.layers.base.base import Layer
 from napari.layers.image._image_constants import VolumeDepiction
 from napari.utils.action_manager import action_manager
@@ -145,7 +146,7 @@ class QtDepictionControl(QtWidgetControlsBase):
 
     def _on_depiction_change(self) -> None:
         """Receive layer model depiction change event and update combobox."""
-        with self._layer.events.depiction.blocker():
+        with qt_signals_blocked(self.depiction_combobox):
             index = self.depiction_combobox.findText(
                 self._layer.depiction, Qt.MatchFlag.MatchFixedString
             )

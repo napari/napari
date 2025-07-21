@@ -11,6 +11,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
 )
 from napari.layers.base._base_constants import BLENDING_TRANSLATIONS, Blending
 from napari.layers.base.base import Layer
+from napari.utils.events.event_utils import connect_setattr
 from napari.utils.translations import trans
 
 # opaque and minimum blending do not support changing alpha (opacity)
@@ -53,8 +54,10 @@ class QtOpacityBlendingControls(QtWidgetControlsBase):
         sld.setMinimum(0)
         sld.setMaximum(1)
         sld.setSingleStep(0.01)
-        sld.valueChanged.connect(self.change_opacity)
         self.opacity_slider = sld
+        connect_setattr(
+            self.opacity_slider.valueChanged, self._layer, 'opacity'
+        )
         self.opacity_label = QtWrappedLabel(trans._('opacity:'))
         self._on_opacity_change()
 
@@ -76,18 +79,6 @@ class QtOpacityBlendingControls(QtWidgetControlsBase):
         self.opacity_label.setEnabled(
             self._layer.blending not in NO_OPACITY_BLENDING_MODES
         )
-
-    def change_opacity(self, value: float) -> None:
-        """Change opacity value on the layer model.
-
-        Parameters
-        ----------
-        value : float
-            Opacity value for shapes.
-            Input range 0 - 100 (transparent to fully opaque).
-        """
-        with self._layer.events.blocker(self._on_opacity_change):
-            self._layer.opacity = value
 
     def change_blending(self, text: str) -> None:
         """Change blending mode on the layer model.

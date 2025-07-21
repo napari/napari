@@ -8,6 +8,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,
 )
+from napari._qt.utils import qt_signals_blocked
 from napari.layers.base.base import Layer
 from napari.layers.image._image_constants import (
     ImageRendering,
@@ -141,7 +142,7 @@ class QtImageRenderControl(QtWidgetControlsBase):
 
     def _on_rendering_change(self):
         """Receive layer model rendering change event and update dropdown menu."""
-        with self._layer.events.rendering.blocker():
+        with qt_signals_blocked(self.render_combobox):
             index = self.render_combobox.findText(
                 self._layer.rendering, Qt.MatchFlag.MatchFixedString
             )
@@ -149,19 +150,19 @@ class QtImageRenderControl(QtWidgetControlsBase):
             self._update_rendering_parameter_visibility()
 
     def _on_contrast_limits_change(self):
-        with self._layer.events.blocker(self._on_iso_threshold_change):
+        with qt_signals_blocked(self.iso_threshold_slider):
             cmin, cmax = self._layer.contrast_limits_range
             self.iso_threshold_slider.setMinimum(cmin)
             self.iso_threshold_slider.setMaximum(cmax)
 
     def _on_iso_threshold_change(self):
         """Receive layer model isosurface change event and update the slider."""
-        with self._layer.events.iso_threshold.blocker():
+        with qt_signals_blocked(self.iso_threshold_slider):
             self.iso_threshold_slider.setValue(self._layer.iso_threshold)
 
     def _on_attenuation_change(self):
         """Receive layer model attenuation change event and update the slider."""
-        with self._layer.events.attenuation.blocker():
+        with qt_signals_blocked(self.attenuation_slider):
             self.attenuation_slider.setValue(self._layer.attenuation)
 
     def _on_display_change_hide(self):

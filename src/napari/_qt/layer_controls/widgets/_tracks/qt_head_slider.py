@@ -8,7 +8,9 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,
 )
+from napari._qt.utils import qt_signals_blocked
 from napari.layers.base.base import Layer
+from napari.utils.events.event_utils import connect_setattr
 from napari.utils.translations import trans
 
 
@@ -44,23 +46,15 @@ class QtHeadLengthSliderControl(QtWidgetControlsBase):
         self.head_length_slider.setMinimum(0)
         self.head_length_slider.setMaximum(self._layer._max_length)
         self.head_length_slider.setSingleStep(1)
-        self.head_length_slider.valueChanged.connect(self.change_head_length)
+        connect_setattr(
+            self.head_length_slider.valueChanged, self._layer, 'head_length'
+        )
 
         self.head_length_slider_label = QtWrappedLabel(trans._('head length:'))
 
-    def change_head_length(self, value) -> None:
-        """Change edge line forward length of shapes on the layer model.
-
-        Parameters
-        ----------
-        value : int
-            Line length of track tails.
-        """
-        self._layer.head_length = value
-
     def _on_head_length_change(self) -> None:
         """Receive layer model track line width change event and update slider."""
-        with self._layer.events.head_length.blocker():
+        with qt_signals_blocked(self.head_length_slider):
             value = self._layer.head_length
             if value > self.head_length_slider.maximum():
                 self.head_length_slider.setMaximum(self._layer._max_length)

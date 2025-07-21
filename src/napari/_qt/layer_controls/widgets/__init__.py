@@ -1,11 +1,8 @@
-from napari._qt.layer_controls.widgets.qt_autoscale_control import (
-    QtAutoScaleControl,
-)
 from napari._qt.layer_controls.widgets.qt_colormap_control import (
     QtColormapControl,
 )
 from napari._qt.layer_controls.widgets.qt_contrast_limits import (
-    QtContrastLimitsSliderControl,
+    QtContrastLimitsControl,
 )
 from napari._qt.layer_controls.widgets.qt_face_color import QtFaceColorControl
 from napari._qt.layer_controls.widgets.qt_gamma_slider import (
@@ -25,9 +22,8 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
 )
 
 __all__ = [
-    'QtAutoScaleControl',
     'QtColormapControl',
-    'QtContrastLimitsSliderControl',
+    'QtContrastLimitsControl',
     'QtFaceColorControl',
     'QtGammaSliderControl',
     'QtInterpolationComboBoxControl',

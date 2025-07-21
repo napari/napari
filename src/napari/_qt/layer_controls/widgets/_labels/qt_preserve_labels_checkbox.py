@@ -10,6 +10,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,
 )
+from napari._qt.utils import qt_signals_blocked
 from napari.layers.base.base import Layer
 from napari.utils.translations import trans
 
@@ -70,7 +71,7 @@ class QtPreserveLabelsCheckBoxControl(QtWidgetControlsBase):
 
     def _on_preserve_labels_change(self) -> None:
         """Receive layer model preserve_labels event and update the checkbox."""
-        with self._layer.events.preserve_labels.blocker():
+        with qt_signals_blocked(self.preserve_labels_checkbox):
             self.preserve_labels_checkbox.setChecked(
                 self._layer.preserve_labels
             )

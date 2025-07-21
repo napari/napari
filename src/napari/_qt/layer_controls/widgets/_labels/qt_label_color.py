@@ -13,6 +13,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,
 )
+from napari._qt.utils import qt_signals_blocked
 from napari.layers.base.base import Layer
 from napari.layers.labels._labels_utils import get_dtype
 from napari.utils._dtype import get_dtype_limits
@@ -171,14 +172,15 @@ class QtLabelControl(QtWidgetControlsBase):
 
     def _on_selected_label_change(self) -> None:
         """Receive layer model label selection change event and update spinbox."""
-        with self._layer.events.selected_label.blocker():
+        with qt_signals_blocked(self.selection_spinbox):
             value = self._layer.selected_label
             self.selection_spinbox.setValue(value)
 
     def _on_data_change(self) -> None:
         """Update label selection spinbox min/max when data changes."""
-        dtype_lims = get_dtype_limits(get_dtype(self._layer))
-        self.selection_spinbox.setRange(*dtype_lims)
+        with qt_signals_blocked(self.selection_spinbox):
+            dtype_lims = get_dtype_limits(get_dtype(self._layer))
+            self.selection_spinbox.setRange(*dtype_lims)
 
     def disconnect_widget_controls(self) -> None:
         self.colorbox.disconnect_widget_controls()

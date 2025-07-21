@@ -9,6 +9,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,
 )
+from napari._qt.utils import qt_signals_blocked
 from napari.layers.base.base import Layer
 from napari.layers.surface._surface_constants import SHADING_TRANSLATION
 from napari.utils.translations import trans
@@ -65,7 +66,7 @@ class QtShadingComboBoxControl(QtWidgetControlsBase):
 
     def _on_shading_change(self) -> None:
         """Receive layer model shading change event and update combobox."""
-        with self._layer.events.shading.blocker():
+        with qt_signals_blocked(self.shading_combobox):
             self.shading_combobox.setCurrentIndex(
                 self.shading_combobox.findData(
                     SHADING_TRANSLATION[self._layer.shading]

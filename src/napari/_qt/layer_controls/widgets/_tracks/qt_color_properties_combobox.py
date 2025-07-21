@@ -9,6 +9,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
 )
 from napari._qt.utils import qt_signals_blocked
 from napari.layers.base.base import Layer
+from napari.utils.events.event_utils import connect_setattr
 from napari.utils.translations import trans
 
 
@@ -45,18 +46,17 @@ class QtColorPropertiesComboBoxControl(QtWidgetControlsBase):
         # keys
         self.color_by_combobox = QComboBox()
         self.color_by_combobox.addItems(self._layer.properties_to_color_by)
-        self.color_by_combobox.currentTextChanged.connect(self.change_color_by)
+        connect_setattr(
+            self.color_by_combobox.currentTextChanged, self._layer, 'color_by'
+        )
 
         self.color_by_combobox_label = QtWrappedLabel(trans._('color by:'))
 
         self._on_color_by_change()
 
-    def change_color_by(self, value: str) -> None:
-        self._layer.color_by = value
-
     def _on_color_by_change(self) -> None:
         """Receive layer model color_by change event and update combobox."""
-        with self._layer.events.color_by.blocker():
+        with qt_signals_blocked(self.color_by_combobox):
             color_by = self._layer.color_by
 
             idx = self.color_by_combobox.findText(

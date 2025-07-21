@@ -9,7 +9,9 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,
 )
+from napari._qt.utils import qt_signals_blocked
 from napari.layers.base.base import Layer
+from napari.utils.events.event_utils import connect_setattr
 from napari.utils.translations import trans
 
 
@@ -45,25 +47,17 @@ class QtTailLengthSliderControl(QtWidgetControlsBase):
         self.tail_length_slider.setMinimum(1)
         self.tail_length_slider.setMaximum(self._layer._max_length)
         self.tail_length_slider.setSingleStep(1)
-        self.tail_length_slider.valueChanged.connect(self.change_tail_length)
+        connect_setattr(
+            self.tail_length_slider.valueChanged, self._layer, 'tail_length'
+        )
 
         self.tail_length_slider_label = QtWrappedLabel(trans._('tail length:'))
 
         self._on_tail_length_change()
 
-    def change_tail_length(self, value) -> None:
-        """Change edge line backward length of shapes on the layer model.
-
-        Parameters
-        ----------
-        value : int
-            Line length of track tails.
-        """
-        self._layer.tail_length = value
-
     def _on_tail_length_change(self) -> None:
         """Receive layer model track line width change event and update slider."""
-        with self._layer.events.tail_length.blocker():
+        with qt_signals_blocked(self.tail_length_slider):
             value = self._layer.tail_length
             if value > self.tail_length_slider.maximum():
                 self.tail_length_slider.setMaximum(self._layer._max_length)
@@ -103,28 +97,20 @@ class QtTailWidthSliderControl(QtWidgetControlsBase):
         self.tail_width_slider = QSlider(Qt.Orientation.Horizontal)
         self.tail_width_slider.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.tail_width_slider.setMinimum(1)
-        self.tail_width_slider.setMaximum(int(2 * self._layer._max_width))
+        self.tail_width_slider.setMaximum(int(self._layer._max_width))
         self.tail_width_slider.setSingleStep(1)
-        self.tail_width_slider.valueChanged.connect(self.change_tail_width)
+        connect_setattr(
+            self.tail_width_slider.valueChanged, self._layer, 'tail_width'
+        )
 
         self.tail_width_slider_label = QtWrappedLabel(trans._('tail width:'))
 
         self._on_tail_width_change()
 
-    def change_tail_width(self, value):
-        """Change track line width of shapes on the layer model.
-
-        Parameters
-        ----------
-        value : float
-            Line width of track tails.
-        """
-        self._layer.tail_width = float(value) / 2.0
-
     def _on_tail_width_change(self) -> None:
         """Receive layer model track line width change event and update slider."""
-        with self._layer.events.tail_width.blocker():
-            value = int(2 * self._layer.tail_width)
+        with qt_signals_blocked(self.tail_width_slider):
+            value = int(self._layer.tail_width)
             self.tail_width_slider.setValue(value)
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:

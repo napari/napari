@@ -10,6 +10,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,
 )
+from napari._qt.utils import qt_signals_blocked
 from napari.layers.base.base import Layer
 from napari.utils.translations import trans
 
@@ -72,7 +73,7 @@ class QtNdimSpinBoxControl(QtWidgetControlsBase):
 
     def _on_n_edit_dimensions_change(self) -> None:
         """Receive layer model n-dim mode change event and update the checkbox."""
-        with self._layer.events.n_edit_dimensions.blocker():
+        with qt_signals_blocked(self.ndim_spinbox):
             value = self._layer.n_edit_dimensions
             self.ndim_spinbox.setValue(int(value))
             # TODO: Check how to decouple this

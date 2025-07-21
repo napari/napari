@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, Optional
 
 import numpy as np
 from qtpy.QtCore import Qt, Signal
-from qtpy.QtWidgets import QPushButton, QWidget
+from qtpy.QtWidgets import QHBoxLayout, QPushButton, QWidget
 from superqt import QDoubleRangeSlider
 
 from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
@@ -13,7 +13,7 @@ from napari._qt.utils import qt_signals_blocked
 from napari._qt.widgets.qt_range_slider_popup import QRangeSliderPopup
 from napari.layers.base.base import Layer
 from napari.utils._dtype import normalize_dtype
-from napari.utils.events.event_utils import connect_setattr
+from napari.utils.events.event_utils import connect_no_arg, connect_setattr
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
@@ -120,10 +120,36 @@ class QContrastLimitsPopup(QRangeSliderPopup):
             )
 
 
-class QtContrastLimitsSliderControl(QtWidgetControlsBase):
+class AutoScaleButtons(QWidget):
+    def __init__(self, layer: 'Image', parent=None) -> None:
+        super().__init__(parent=parent)
+
+        self.setLayout(QHBoxLayout())
+        self.layout().setSpacing(2)
+        self.layout().setContentsMargins(0, 0, 0, 0)
+        once_btn = QPushButton(trans._('once'))
+        once_btn.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+
+        auto_btn = QPushButton(trans._('continuous'))
+        auto_btn.setCheckable(True)
+        auto_btn.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        once_btn.clicked.connect(lambda: auto_btn.setChecked(False))
+        connect_no_arg(once_btn.clicked, layer, 'reset_contrast_limits')
+        connect_setattr(auto_btn.toggled, layer, '_keep_auto_contrast')
+        connect_no_arg(auto_btn.clicked, layer, 'reset_contrast_limits')
+
+        self.layout().addWidget(once_btn)
+        self.layout().addWidget(auto_btn)
+
+        # just for testing
+        self._once_btn = once_btn
+        self._auto_btn = auto_btn
+
+
+class QtContrastLimitsControl(QtWidgetControlsBase):
     """
     Class that wraps the connection of events/signals between the layer contrast
-    limits and Qt widgets.
+    limits/autocontrast and Qt widgets.
 
     Parameters
     ----------
@@ -134,6 +160,10 @@ class QtContrastLimitsSliderControl(QtWidgetControlsBase):
 
     Attributes
     ----------
+    auto_scale_bar : AutoScaleButtons
+        Widget to wrap push buttons related with the layer auto-contrast funtionality.
+    auto_scale_bar_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the auto-contrast functionality widget.
     clim_popup : napari._qt.qt_range_slider_popup.QRangeSliderPopup
         Popup widget launching the contrast range slider.
     contrast_limits_slider : _QDoubleRangeSlider
@@ -155,6 +185,8 @@ class QtContrastLimitsSliderControl(QtWidgetControlsBase):
         )
 
         # Setup widgets
+        self.auto_scale_bar = AutoScaleButtons(layer, parent)
+        self.auto_scale_bar_label = QtWrappedLabel(trans._('auto-contrast:'))
         self.contrast_limits_slider = _QDoubleRangeSlider(
             Qt.Orientation.Horizontal,
         )
@@ -224,5 +256,6 @@ class QtContrastLimitsSliderControl(QtWidgetControlsBase):
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
         return [
-            (self.contrast_limits_slider_label, self.contrast_limits_slider)
+            (self.contrast_limits_slider_label, self.contrast_limits_slider),
+            (self.auto_scale_bar, self.auto_scale_bar_label),
         ]

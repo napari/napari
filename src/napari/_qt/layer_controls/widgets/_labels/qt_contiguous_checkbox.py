@@ -10,6 +10,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,
 )
+from napari._qt.utils import qt_signals_blocked
 from napari.layers.base.base import Layer
 from napari.utils.translations import trans
 
@@ -62,7 +63,7 @@ class QtContiguousCheckBoxControl(QtWidgetControlsBase):
 
     def _on_contiguous_change(self) -> None:
         """Receive layer model contiguous change event and update the checkbox."""
-        with self._layer.events.contiguous.blocker():
+        with qt_signals_blocked(self.contiguous_checkbox):
             self.contiguous_checkbox.setChecked(self._layer.contiguous)
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:

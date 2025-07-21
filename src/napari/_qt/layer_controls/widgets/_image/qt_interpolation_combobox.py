@@ -90,11 +90,7 @@ class QtInterpolationComboBoxControl(QtWidgetControlsBase):
         """
         interp_string = event.value.value
 
-        with (
-            self._layer.events.interpolation.blocker(),
-            self._layer.events.interpolation2d.blocker(),
-            self._layer.events.interpolation3d.blocker(),
-        ):
+        with qt_signals_blocked(self.interpolation_combobox):
             if self.interpolation_combobox.findText(interp_string) == -1:
                 self.interpolation_combobox.addItem(interp_string)
             self.interpolation_combobox.setCurrentText(interp_string)

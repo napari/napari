@@ -1,3 +1,5 @@
+from abc import ABC, abstractclassmethod
+
 from qtpy.QtCore import QObject, Qt
 from qtpy.QtWidgets import QLabel, QWidget
 
@@ -19,7 +21,11 @@ class QtWrappedLabel(QLabel):
         )
 
 
-class QtWidgetControlsBase(QObject):
+class MetaWidgetControlsBase(type(ABC), type(QObject)):
+    pass
+
+
+class QtWidgetControlsBase(QObject, ABC, metaclass=MetaWidgetControlsBase):
     """
     Base class that defines base methods for wrapper classes that do the
     connection of events/signals between layer attributes and Qt widgets.
@@ -39,6 +45,7 @@ class QtWidgetControlsBase(QObject):
         # Setup layer
         self._layer = layer
 
+    @abstractclassmethod
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
         """
         Enable access to the created labels and control widgets.
@@ -49,7 +56,6 @@ class QtWidgetControlsBase(QObject):
             List of tuples of the label and widget controls available.
 
         """
-        raise NotImplementedError
 
     def disconnect_widget_controls(self) -> None:
         """
@@ -58,5 +64,5 @@ class QtWidgetControlsBase(QObject):
         disconnect_events(self._layer.events, self)
 
     def deleteLater(self) -> None:
-        disconnect_events(self._layer.events, self)
+        self.disconnect_widget_controls()
         super().deleteLater()

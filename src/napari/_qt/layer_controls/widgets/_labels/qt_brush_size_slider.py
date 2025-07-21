@@ -11,6 +11,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,
 )
+from napari._qt.utils import qt_signals_blocked
 from napari.layers.base.base import Layer
 from napari.utils.translations import trans
 
@@ -66,7 +67,7 @@ class QtBrushSizeSliderControl(QtWidgetControlsBase):
 
     def _on_brush_size_change(self) -> None:
         """Receive layer model brush size change event and update the slider."""
-        with self._layer.events.brush_size.blocker():
+        with qt_signals_blocked(self.brush_size_slider):
             value = self._layer.brush_size
             value = np.maximum(1, int(value))
             if value > self.brush_size_slider.maximum():

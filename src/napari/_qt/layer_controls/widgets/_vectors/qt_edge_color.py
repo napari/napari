@@ -12,6 +12,7 @@ from napari._qt.utils import qt_signals_blocked
 from napari._qt.widgets.qt_color_swatch import QColorSwatchEdit
 from napari.layers.base.base import Layer
 from napari.layers.utils._color_manager_constants import ColorMode
+from napari.utils.events.event_utils import connect_setattr
 from napari.utils.translations import trans
 
 
@@ -71,8 +72,8 @@ class QtEdgeColorPropertyControl(QtWidgetControlsBase):
                 'Click to set current edge color',
             ),
         )
-        self.edge_color_edit.color_changed.connect(
-            self.change_edge_color_direct
+        connect_setattr(
+            self.edge_color_edit.color_changed, self._layer, 'edge_color'
         )
         self.edge_color_label = QtWrappedLabel(trans._('edge color:'))
         self._on_edge_color_change()
@@ -86,16 +87,6 @@ class QtEdgeColorPropertyControl(QtWidgetControlsBase):
         )
         self.color_mode_label = QtWrappedLabel(trans._('edge color mode:'))
         self._on_edge_color_mode_change()
-
-    def change_edge_color_direct(self, color: np.ndarray):
-        """Change edge color of vectors on the layer model.
-
-        Parameters
-        ----------
-        color : np.ndarray
-            Edge color for vectors, in an RGBA array
-        """
-        self._layer.edge_color = color
 
     def change_edge_color_property(self, property_name: str):
         """Change edge_color_property of vectors on the layer model.

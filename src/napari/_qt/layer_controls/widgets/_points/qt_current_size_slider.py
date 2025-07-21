@@ -14,6 +14,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
 )
 from napari._qt.utils import qt_signals_blocked
 from napari.layers.base.base import Layer
+from napari.utils.events.event_utils import connect_setattr
 from napari.utils.translations import trans
 
 
@@ -62,23 +63,12 @@ class QtCurrentSizeSliderControl(QtWidgetControlsBase):
         sld.setSingleStep(1)
         value = self._layer.current_size
         sld.setValue(int(value))
-        sld.valueChanged.connect(self.change_current_size)
         self.size_slider = sld
+        connect_setattr(
+            self.size_slider.valueChanged, self._layer, 'current_size'
+        )
 
         self.size_slider_label = QtWrappedLabel(trans._('point size:'))
-
-    def change_current_size(self, value: float) -> None:
-        """Change size of points on the layer model.
-
-        Parameters
-        ----------
-        value : float
-            Size of points.
-        """
-        with self._layer.events.current_size.blocker(
-            self._on_current_size_change
-        ):
-            self._layer.current_size = value
 
     def _on_current_size_change(self) -> None:
         """Receive layer model size change event and update point size slider."""

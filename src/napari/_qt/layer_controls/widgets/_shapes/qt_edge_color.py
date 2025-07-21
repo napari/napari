@@ -1,6 +1,5 @@
 from typing import Optional
 
-import numpy as np
 from qtpy.QtWidgets import QWidget
 
 from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
@@ -10,6 +9,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
 from napari._qt.utils import qt_signals_blocked
 from napari._qt.widgets.qt_color_swatch import QColorSwatchEdit
 from napari.layers.base.base import Layer
+from napari.utils.events.event_utils import connect_setattr
 from napari.utils.translations import trans
 
 
@@ -48,20 +48,12 @@ class QtEdgeColorControl(QtWidgetControlsBase):
             tooltip=tooltip,
         )
         self._on_current_edge_color_change()
-        self.edge_color_edit.color_changed.connect(self.change_edge_color)
+        connect_setattr(
+            self.edge_color_edit.color_changed,
+            self._layer,
+            'current_edge_color',
+        )
         self.edge_color_label = QtWrappedLabel(trans._('edge color:'))
-
-    def change_edge_color(self, color: np.ndarray) -> None:
-        """Change edge color of shapes.
-
-        Parameters
-        ----------
-        color : np.ndarray
-            Edge color for shapes, color name or hex string.
-            Eg: 'white', 'red', 'blue', '#00ff00', etc.
-        """
-        with self._layer.events.current_edge_color.blocker():
-            self._layer.current_edge_color = color
 
     def _on_current_edge_color_change(self) -> None:
         """Receive layer model edge color change event and update color swatch."""

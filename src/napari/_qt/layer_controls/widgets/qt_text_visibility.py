@@ -5,6 +5,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,
 )
+from napari._qt.utils import qt_signals_blocked
 from napari.layers.base.base import Layer
 from napari.utils.events import disconnect_events
 from napari.utils.translations import trans
@@ -62,7 +63,7 @@ class QtTextVisibilityControl(QtWidgetControlsBase):
 
     def _on_text_visibility_change(self) -> None:
         """Receive layer model text visibiltiy change change event and update checkbox."""
-        with self._layer.text.events.visible.blocker():
+        with qt_signals_blocked(self.text_disp_checkbox):
             self.text_disp_checkbox.setChecked(self._layer.text.visible)
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
@@ -71,7 +72,3 @@ class QtTextVisibilityControl(QtWidgetControlsBase):
     def disconnect_widget_controls(self) -> None:
         disconnect_events(self._layer.text.events, self)
         super().disconnect_widget_controls()
-
-    def deleteLater(self) -> None:
-        disconnect_events(self._layer.text.events, self)
-        super().deleteLater()
