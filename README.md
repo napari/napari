@@ -49,7 +49,7 @@ See here for the full [installation guide](https://napari.org/stable/tutorials/f
 
 ## simple example
 
-This example uses a data sample from the `scikit-image` library, but you can change the example to use your own dataset.
+This example uses a data sample from the `scikit-image` library, but you can pass your own dataset as an array to `imshow`.
 From inside an IPython shell, you can open up an interactive viewer by calling
 
 ```python
