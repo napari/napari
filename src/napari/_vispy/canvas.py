@@ -719,7 +719,23 @@ class VispyCanvas:
         self._remove_layer_overlays(layer)
         del self._layer_overlay_to_visual[layer]
 
+        # Critical two-step fix for Windows OpenGL access violation bug
+        # This prevents the race condition where scenegraph updates occur while
+        # GPU resources from the removed layer are still being processed/deleted.
+
+        # Step 1: Force immediate garbage collection of OpenGL resources
+        # When vispy_layer.close() is called above, it marks OpenGL objects (textures,
+        # buffers, etc.) for deletion, but Python's garbage collector may not run
+        # immediately. On some Windows OpenGL drivers (especially NVIDIA cards),
+        # this can leave "dangling" OpenGL resource references.
         gc.collect()
+
+        # Step 2: Synchronize the OpenGL command queue
+        # Layer removal involves deleting GPU textures, buffers, and shader programs/
+        # The subsequent _update_scenegraph() call rebuilds the scene graph with new GPU resources.
+        # If the GPU is still processing deletion commands from the removed layer, it can lead to
+        # memory access violations when the scene graph is updated with new resources.
+        # finish() ensures complete GPU synchronization before proceeding
         self._scene_canvas.context.finish()
 
         self._update_scenegraph()
