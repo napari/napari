@@ -82,8 +82,17 @@ class Welcome(Node):
         self.transform.translate = (x / 2, y / 2, 0, 0)
         scale = min(x, y) * 0.002  # magic number
         self.transform.scale = (scale, scale, 0, 0)
+
+        # update the dpi scale factor to account for screen dpi
+        # because vispy scales pixel height of text by screen dpi
+        if self.transforms.dpi:
+            # use 96 as the napari reference dpi for historical reasons
+            dpi_scale_factor = 96 / self.transforms.dpi
+        else:
+            dpi_scale_factor = 1
+
         for text in (self.version, self.shortcuts, self.tips):
-            text.font_size = max(scale * 10, 10)
+            text.font_size = max(scale * 10 * dpi_scale_factor, 10)
 
     def set_gl_state(self, *args: Any, **kwargs: Any) -> None:
         for node in self.children:
