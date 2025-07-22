@@ -915,7 +915,7 @@ class VispyCanvas:
         w, h = self.size
         nd = self.viewer.dims.ndisplay
 
-        view, _ = self._get_viewbox_at(event_pos)[0] or self.view
+        view = self._get_viewbox_at(event_pos)[0] or self.view
         # combine the viewbox transform wit the scene transform
         # so each viewbox in grid mode maps back to the main scene
         transform = view.transform * view.scene.transform
