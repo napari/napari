@@ -7,75 +7,14 @@ from napari._pydantic_compat import ValidationError
 from napari._vispy.utils.cursor import QtCursorVisual
 from napari._vispy.utils.quaternion import quaternion2euler_degrees
 from napari._vispy.utils.visual import get_view_direction_in_scene_coordinates
-from napari._vispy.utils.zoom import (
-    _get_zoombox_center_and_size,
-    _get_zoombox_extents,
-    calculate_zoom,
-)
 from napari.components._viewer_constants import CursorStyle
 
 # Euler angles to be tested, in degrees
 angles = [[12, 53, 92], [180, -90, 0], [16, 90, 0]]
 
-
-def test_get_zoombox_center_and_size():
-    """Test zoom calculation for a given dimension."""
-    # Test with a 2D image
-    mins = np.array([100, 200, 100])
-    maxs = np.array([200, 400, 100])
-    center, spread = _get_zoombox_center_and_size(mins, maxs)
-    assert center.shape == (3,), 'Center should be a 2D vector'
-    assert spread.shape == (3,), 'Spread should be a 2D vector'
-    assert center[0] == 150, 'Centroid for dim1 should be 150'
-    assert center[1] == 300, 'Centroid for dim2 should be 300'
-    assert center[2] == 100, 'Centroid for dim3 should be 100'
-    assert spread[0] == 100, 'Spread for dim1 should be 100'
-    assert spread[1] == 200, 'Spread for dim2 should be 200'
-    assert spread[2] == 1, 'Spread for dim3 should be 1'
-
-
-def test_get_zoombox_extents():
-    """Test data extents calculation."""
-    data_positions = ((0, 0), (300, 200))
-    mins, maxs = _get_zoombox_extents(data_positions, (0, 1))
-    assert mins.shape == maxs.shape == (2,)
-
-    data_positions = ((0, 0, 0), (300, 200, 200))
-    mins, maxs = _get_zoombox_extents(data_positions, (0, 1, 2))
-    assert mins.shape == maxs.shape == (3,)
-
-    data_positions = ((0, 0, 0, 0), (300, 200, 200, 400))
-    mins, maxs = _get_zoombox_extents(data_positions, (0, 1, 2, 3))
-    assert mins.shape == maxs.shape == (4,)
-
-
-def test_calculate_zoom_2d(make_napari_viewer):
-    """Test zoom calculation for a given region."""
-    viewer = make_napari_viewer()
-    viewer.dims.ndisplay = 2
-    viewer._zoom_box.canvas_positions = ((0, 0), (300, 200))
-    zoom, z_center, y_center, x_center = calculate_zoom(
-        ((0, 0), (300, 200)), viewer
-    )
-    assert z_center == 1, 'Centroid for dim1 should be 1'
-    assert y_center == 100, 'Centroid for dim2 should be 100'
-    assert x_center == 150, 'Centroid for dim2 should be 100'
-
-
-def test_calculate_zoom_3d(make_napari_viewer):
-    """Test zoom calculation for a given region."""
-    viewer = make_napari_viewer()
-    viewer.dims.ndisplay = 3
-    viewer._zoom_box.canvas_positions = ((0, 0), (300, 200))
-    zoom, z_center, y_center, x_center = calculate_zoom(
-        ((0, 0, 0), (300, 200, 100)), viewer
-    )
-    assert z_center == 1.0, 'Centroid for dim1 should be 150'
-    assert y_center == 100, 'Centroid for dim2 should be 100'
-    assert x_center == 150, 'Centroid for dim3 should be 50'
-
-
 # Prepare for input and add corresponding values in radians
+
+
 @pytest.mark.parametrize('angles', angles)
 def test_quaternion2euler_degrees(angles):
     """Test quaternion to euler angle conversion."""
