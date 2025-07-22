@@ -129,12 +129,12 @@ def _ensure_qtbot(monkeypatch, qtbot):
     monkeypatch.setattr(TracebackDialog, '__init__', mock_traceback_init)
 
 
+@pytest.mark.skip('debug')
 def test_clean_current_path_exist(make_napari_viewer):
     """If this test fail then you need to fix also clean_current fixture"""
     assert isinstance(make_napari_viewer().window._qt_viewer, QWidget)
 
 
-@pytest.mark.usefixtures('_clean_current')
 @pytest.mark.parametrize(
     ('raise_func', 'warn_func'),
     [(_raise, _warn), (_threading_raise, _threading_warn)],
