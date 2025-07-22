@@ -4,9 +4,7 @@ import numpy as np
 import pytest
 
 from napari.components import ViewerModel
-from napari.components._viewer_mouse_bindings import (
-    double_click_to_zoom,
-)
+from napari.components._viewer_mouse_bindings import double_click_to_zoom
 from napari.utils._test_utils import read_only_mouse_event
 from napari.utils.interactions import mouse_wheel_callbacks
 
