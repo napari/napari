@@ -10,6 +10,8 @@
 [![Supported Python versions](https://img.shields.io/pypi/pyversions/napari.svg)](https://python.org)
 [![Python package index](https://img.shields.io/pypi/v/napari.svg)](https://pypi.org/project/napari)
 [![Python package index download statistics](https://img.shields.io/pypi/dm/napari.svg)](https://pypistats.org/packages/napari)
+[![Conda Version](https://img.shields.io/conda/vn/conda-forge/napari.svg)](https://anaconda.org/conda-forge/napari)
+![Conda Downloads](https://img.shields.io/conda/dn/conda-forge/napari?label=Conda%20downloads)
 [![Development Status](https://img.shields.io/pypi/status/napari.svg)](https://en.wikipedia.org/wiki/Software_release_life_cycle#Alpha)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![DOI](https://zenodo.org/badge/144513571.svg)](https://zenodo.org/badge/latestdoi/144513571)
@@ -23,9 +25,17 @@ If you want to refer to our documentation, please go to [napari.org](https://www
 
 We're working on [tutorials](https://napari.org/stable/tutorials/), but you can also quickly get started by looking below.
 
-## installation
+## try it out now!
+[Install uv](https://docs.astral.sh/uv/getting-started/installation/#standalone-installer) to try napari.
+Then launch the program in a terminal window with the command:
+```sh
+uvx "napari[all]"
+```
+In the `File` menu, select `Open Sample` and select a sample image to get started.
 
-It is recommended to install napari into a virtual environment, like this:
+
+## installation
+For a full installation, we recommend installing napari into a virtual environment, like this:
 
 ```sh
 conda create -y -n napari-env -c conda-forge python=3.11
@@ -59,7 +69,7 @@ To use napari from inside a script, use `napari.run()`:
 from skimage import data
 import napari
 
-viewer, layers = napari.ismhow(data.cells3d(), channel_axis=1, ndisplay=3)
+viewer, layers = napari.imshow(data.cells3d(), channel_axis=1, ndisplay=3)
 napari.run()  # start the "event loop" and show the viewer
 ```
 
