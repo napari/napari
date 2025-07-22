@@ -24,7 +24,7 @@ class QtTailLengthSliderControl(QtWidgetControlsBase):
     ----------
     parent: qtpy.QtWidgets.QWidget
         An instance of QWidget that will be used as widgets parent
-    layer : napari.layers.Layer
+    layer : napari.layers.Tracks
         An instance of a napari layer.
 
     Attributes
@@ -76,7 +76,7 @@ class QtTailWidthSliderControl(QtWidgetControlsBase):
     ----------
     parent: qtpy.QtWidgets.QWidget
         An instance of QWidget that will be used as widgets parent
-    layer : napari.layers.Layer
+    layer : napari.layers.Tracks
         An instance of a napari layer.
 
     Attributes
@@ -126,7 +126,7 @@ class QtTailDisplayCheckBoxControl(QtWidgetControlsBase):
     ----------
     parent: qtpy.QtWidgets.QWidget
         An instance of QWidget that will be used as widgets parent
-    layer : napari.layers.Layer
+    layer : napari.layers.Tracks
         An instance of a napari layer.
 
     Attributes

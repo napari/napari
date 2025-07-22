@@ -72,7 +72,7 @@ class _QDoubleRangeSlider(QDoubleRangeSlider):
 
 
 class QContrastLimitsPopup(QRangeSliderPopup):
-    def __init__(self, layer: 'Image', parent=None) -> None:
+    def __init__(self, layer: 'Image' | 'Surface', parent=None) -> None:
         super().__init__(parent)
 
         decimals = range_to_decimals(layer.contrast_limits_range, layer.dtype)
@@ -257,5 +257,5 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
         return [
             (self.contrast_limits_slider_label, self.contrast_limits_slider),
-            (self.auto_scale_bar, self.auto_scale_bar_label),
+            (self.auto_scale_bar_label, self.auto_scale_bar),
         ]

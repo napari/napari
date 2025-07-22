@@ -98,7 +98,7 @@ class QtOpacityBlendingControls(QtWidgetControlsBase):
         )
 
         blending_tooltip = ''
-        if self._layer.blending == str(Blending.MINIMUM):
+        if self._layer.blending == Blending.MINIMUM:
             blending_tooltip = trans._(
                 '`minimum` blending mode works best with inverted colormaps with a white background.',
             )
