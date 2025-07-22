@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Optional
+from typing import Optional
 
 import numpy as np
 from qtpy.QtCore import Qt, Signal
@@ -11,13 +11,11 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
 )
 from napari._qt.utils import qt_signals_blocked
 from napari._qt.widgets.qt_range_slider_popup import QRangeSliderPopup
+from napari.layers import Image, Surface
 from napari.layers.base.base import Layer
 from napari.utils._dtype import normalize_dtype
 from napari.utils.events.event_utils import connect_no_arg, connect_setattr
 from napari.utils.translations import trans
-
-if TYPE_CHECKING:
-    from napari.layers import Image
 
 
 def range_to_decimals(range_, dtype):
@@ -72,7 +70,7 @@ class _QDoubleRangeSlider(QDoubleRangeSlider):
 
 
 class QContrastLimitsPopup(QRangeSliderPopup):
-    def __init__(self, layer: 'Image' | 'Surface', parent=None) -> None:
+    def __init__(self, layer: Image | Surface, parent=None) -> None:
         super().__init__(parent)
 
         decimals = range_to_decimals(layer.contrast_limits_range, layer.dtype)
