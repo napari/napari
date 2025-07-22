@@ -49,8 +49,7 @@ See here for the full [installation guide](https://napari.org/stable/tutorials/f
 
 ## simple example
 
-(The examples below require the `scikit-image` package to run. We just use data samples from this package for demonstration purposes. If you change the examples to use your own dataset, you may not need to install this package.)
-
+This example uses a data sample from the `scikit-image` library, but you can pass your own dataset as an array to `imshow`.
 From inside an IPython shell, you can open up an interactive viewer by calling
 
 ```python
