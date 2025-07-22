@@ -99,11 +99,11 @@ class ExperimentalSettings(EventedSettings):
         ColormapBackend.fastest_available,
         title=trans._('Colormap backend to use for Labels layer'),
         description=trans._(
-            'Triangulation backend to use for Shapes layer.\n'
-            "The 'partsegcore' requires the optional 'partsegcore-compiled-backend' package.\n"
-            "The 'numba' backend requires the optional 'numba' package.\n"
-            "The 'pure python' backend uses the pure python, limited implementation.\n"
-            "The 'fastest available' backend will select the fastest available backend.\n"
+            'Color mapping backend to use for Labels layer.\n'
+            "'partsegcore' requires the optional 'partsegcore-compiled-backend' package.\n"
+            "'numba' requires the optional 'numba' package.\n"
+            "'pure python' uses only NumPy and Python.\n"
+            "The 'fastest available' backend will select the fastest installed backend.\n"
         ),
         env='napari_colormap_backend',
     )
