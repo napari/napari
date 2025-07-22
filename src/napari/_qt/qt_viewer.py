@@ -217,7 +217,6 @@ class QtViewer(QSplitter):
         # Stacked widget to provide a welcome page
         self._welcome_widget = QtWidgetOverlay(self, self.canvas.native)
         self._welcome_widget.set_welcome_visible(show_welcome_screen)
-        self._welcome_widget.sig_dropped.connect(self.dropEvent)
         self._welcome_widget.leave.connect(self._leave_canvas)
         self._welcome_widget.enter.connect(self._enter_canvas)
 
