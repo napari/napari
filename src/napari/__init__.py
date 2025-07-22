@@ -41,15 +41,25 @@ def _check_installation_path():  # pragma: no cover
         return
 
     napari_site_packages_path = site_packages_path / 'napari'
+    napari_builtins_package_path = site_packages_path / 'napari_builtins'
+
+    path_text = ''
     if napari_site_packages_path.exists():
+        path_text += (
+            f'Path to a napari directory: {napari_site_packages_path}.\n'
+        )
+    if napari_builtins_package_path.exists():
+        path_text += f'Path to a napari_builtins directory: {napari_builtins_package_path}.\n'
+
+    if path_text:
         text = (
             'Mix of local and non local installation detected.\n'
             'Napari is installed in editable mode but also found napari '
             'directory in site-packages.\n'
-            f'Path to a napari directory: {napari_site_packages_path}.\n'
+            f'{path_text}'
             'Mix of local and non local installation is leading '
             'to hard to understand errors. '
-            'Please remove the napari directory from site-packages.'
+            'See https://napari.org/stable/troubleshooting.html#mixed-napari-installations for more details.'
         )
         raise RuntimeError(text)
 
