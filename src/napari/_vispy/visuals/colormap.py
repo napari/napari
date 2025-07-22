@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import numpy as np
-from vispy.scene import Image, Line, Node, STTransform, Text
+from vispy.scene import Axis, Image, Line, Node, STTransform
 
 if TYPE_CHECKING:
     from typing import Any
@@ -27,15 +27,24 @@ class Colormap(Node):
 
     def __init__(self) -> None:
         super().__init__()
+        self.ticks = Axis(
+            pos=self._box_data[2:4],
+            tick_direction=(1, 0),
+            tick_width=1,
+            axis_width=0,
+            parent=self,
+        )
+        self.ticks.transform = STTransform()
         self.img = Image(parent=self)
         self.img.transform = STTransform()
         self.box = Line(
-            pos=self._box_data, connect='strip', method='gl', parent=self
+            pos=self._box_data,
+            connect='strip',
+            method='gl',
+            width=1,
+            parent=self,
         )
         self.box.transform = STTransform()
-        self.ticks = Line(connect='segments', method='gl', parent=self)
-        self.ticks.transform = STTransform()
-        self.tick_values: list[Text] = []
 
         self._texture_size = 250
         self.set_data_and_clim()
@@ -64,47 +73,24 @@ class Colormap(Node):
     def set_size(self, size: tuple[float, float]) -> None:
         self.img.transform.scale = size[0], size[1] / self._texture_size
         self.box.transform.scale = size
+        self.ticks.transform.scale = size
 
     def set_ticks_and_get_text_width(
         self,
-        show: bool,
-        n: int,
-        tick_length: float,
         size: tuple[float, float],
+        tick_length: float,
         font_size: int,
         clim: tuple[float, float],
         color: ColorValue,
     ) -> float:
         self.box.set_data(color=color)
-        self.ticks.visible = show
-        for text in self.tick_values:
-            text.parent = None
+        self.ticks.axis_color = color
+        self.ticks.text_color = color
+        self.ticks.tick_color = color
+        self.ticks.tick_font_size = font_size
+        self.ticks.major_tick_length = tick_length
+        self.ticks.minor_tick_length = tick_length / 2
+        self.ticks.domain = clim
 
-        if not show:
-            return 0
-
-        ticks_pos = np.linspace(0, 1, n)
-        ticks_x = np.tile((size[0], size[0] + tick_length), n)
-        ticks_y = np.repeat(ticks_pos, 2) * size[1]
-        ticks_coords = np.stack([ticks_x, ticks_y]).T
-        self.ticks.set_data(pos=ticks_coords, color=color, width=1)
-
-        ticks_vals = np.interp(1 - ticks_pos, (0, 1), clim)
-        max_val_width = 0
-        for val, pos in zip(ticks_vals, ticks_coords[1::2], strict=True):
-            val_str = f'{val:.3g}'
-            max_val_width = max(max_val_width, len(val_str))
-            # using anchor_y=center doesn't work well for some reason
-            # so instead we use top and shift y manually
-            text = Text(
-                text=val_str,
-                pos=pos + (3, font_size / 2),
-                color=color,
-                anchor_x='left',
-                anchor_y='top',
-                font_size=font_size,
-                parent=self,
-            )
-            self.tick_values.append(text)
-
-        return max_val_width * font_size
+        # hacky nonsense
+        return font_size * 4 + tick_length + 10

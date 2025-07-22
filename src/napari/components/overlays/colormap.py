@@ -20,8 +20,6 @@ class ColormapOverlay(CanvasOverlay):
 
     color: ColorValue | None = None
     size: tuple[float, float] = 25, 150
-    ticks: bool = True
-    n_ticks: int = 4
     tick_length: float = 5
     font_size: float = 7
     position: CanvasPosition = CanvasPosition.TOP_RIGHT
