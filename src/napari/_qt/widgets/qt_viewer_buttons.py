@@ -16,6 +16,7 @@ from qtpy.QtWidgets import (
 )
 from superqt import QEnumComboBox, QLabeledDoubleSlider
 
+from napari._app_model.actions._file import add_new_points, add_new_shapes
 from napari._qt.dialogs.qt_modal import QtPopup
 from napari._qt.widgets.qt_dims_sorter import QtDimsSorter
 from napari._qt.widgets.qt_spinbox import QtSpinBox
@@ -37,24 +38,6 @@ if TYPE_CHECKING:
     from typing import Any
 
     from napari.viewer import ViewerModel
-
-
-def add_new_points(viewer):
-    viewer.add_points(
-        ndim=max(viewer.dims.ndim, 2),
-        scale=viewer.layers.extent.step,
-        units=viewer.layers.extent.units,
-        translate=viewer.layers.extent.world[0],
-    )
-
-
-def add_new_shapes(viewer):
-    viewer.add_shapes(
-        ndim=max(viewer.dims.ndim, 2),
-        scale=viewer.layers.extent.step,
-        units=viewer.layers.extent.units,
-        translate=viewer.layers.extent.world[0],
-    )
 
 
 class QtLayerButtons(QFrame):
