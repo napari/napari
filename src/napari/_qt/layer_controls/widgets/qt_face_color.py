@@ -1,7 +1,5 @@
 from typing import Optional
 
-import numpy as np
-from qtpy.QtCore import Slot
 from qtpy.QtWidgets import QWidget
 
 from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
@@ -11,6 +9,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
 from napari._qt.utils import qt_signals_blocked
 from napari._qt.widgets.qt_color_swatch import QColorSwatchEdit
 from napari.layers.base.base import Layer
+from napari.utils.events.event_utils import connect_setattr
 from napari.utils.translations import trans
 
 
@@ -55,22 +54,11 @@ class QtFaceColorControl(QtWidgetControlsBase):
         )
         self.face_color_label = QtWrappedLabel(trans._('face color:'))
         self._on_current_face_color_change()
-        self.face_color_edit.color_changed.connect(self.change_face_color)
-
-    @Slot(np.ndarray)
-    def change_face_color(self, color: np.ndarray) -> None:
-        """Change face color of shapes.
-
-        Parameters
-        ----------
-        color : np.ndarray
-            Face color for shapes, color name or hex string.
-            Eg: 'white', 'red', 'blue', '#00ff00', etc.
-        """
-        with self._layer.events.current_face_color.blocker(
-            self._on_current_face_color_change
-        ):
-            self._layer.current_face_color = color
+        connect_setattr(
+            self.face_color_edit.color_changed,
+            self._layer,
+            'current_face_color',
+        )
 
     def _on_current_face_color_change(self) -> None:
         """Receive layer model face color change event and update color swatch."""

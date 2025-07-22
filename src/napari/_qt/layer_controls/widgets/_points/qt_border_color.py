@@ -1,7 +1,5 @@
 from typing import Optional
 
-import numpy as np
-from qtpy.QtCore import Slot
 from qtpy.QtWidgets import QWidget
 
 from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
@@ -11,6 +9,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
 from napari._qt.utils import qt_signals_blocked
 from napari._qt.widgets.qt_color_swatch import QColorSwatchEdit
 from napari.layers.base.base import Layer
+from napari.utils.events.event_utils import connect_setattr
 from napari.utils.translations import trans
 
 
@@ -53,18 +52,13 @@ class QtBorderColorControl(QtWidgetControlsBase):
                 'Click to set the border color of currently selected points and any added afterwards.'
             ),
         )
-        self.border_color_edit.color_changed.connect(
-            self.changeCurrentBorderColor
+        connect_setattr(
+            self.border_color_edit.color_changed,
+            self._layer,
+            'current_border_color',
         )
-        self.border_color_edit_label = QtWrappedLabel(trans._('border color:'))
 
-    @Slot(np.ndarray)
-    def changeCurrentBorderColor(self, color: np.ndarray) -> None:
-        """Update border color of layer model from color picker user input."""
-        with self._layer.events.current_border_color.blocker(
-            self._on_current_border_color_change
-        ):
-            self._layer.current_border_color = color
+        self.border_color_edit_label = QtWrappedLabel(trans._('border color:'))
 
     def _on_current_border_color_change(self) -> None:
         """Receive layer.current_border_color() change event and update view."""
