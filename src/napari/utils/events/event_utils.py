@@ -7,13 +7,15 @@ if TYPE_CHECKING:
     from collections.abc import Callable
     from typing import Protocol
 
+    from napari.utils.events import EmitterGroup
+
     class Emitter(Protocol):
         def connect(self, callback: Callable): ...
 
         def disconnect(self, callback: Callable): ...
 
 
-def disconnect_events(emitter, listener):
+def disconnect_events(emitter: EmitterGroup, listener: object) -> None:
     """Disconnect all events between an emitter group and a listener.
 
     Parameters

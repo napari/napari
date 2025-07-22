@@ -10,13 +10,15 @@ from napari.utils.events.containers import SelectableEventedList
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
-    from qtpy.QtWidgets import QWidget  # type: ignore[attr-defined]
+    from qtpy.QtWidgets import QWidget
+
+    from napari.utils.events import Event
 
 
-ItemType = TypeVar('ItemType')
+ItemType = TypeVar('ItemType', bound=MutableSequence)
 
-ItemRole = Qt.UserRole
-SortRole = Qt.UserRole + 1
+ItemRole = Qt.ItemDataRole.UserRole
+SortRole = Qt.ItemDataRole.UserRole + 1
 
 _BASE_FLAGS = (
     Qt.ItemFlag.ItemIsSelectable
@@ -82,7 +84,7 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
         super().__init__(parent=parent)
         self.setRoot(root)
 
-    def parent(self, index):
+    def parent(self, index: QModelIndex) -> QModelIndex:  # type: ignore[override]
         """Return the parent of the model item with the given ``index``.
 
         (The parent in a basic list is always the root, Tree models will need
@@ -90,7 +92,7 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
         """
         return QModelIndex()
 
-    def data(self, index: QModelIndex, role: Qt.ItemDataRole) -> Any:
+    def data(self, index: QModelIndex, role: Qt.ItemDataRole) -> Any:  # type: ignore[override]
         """Returns data stored under `role` for the item at `index`.
 
         A given `QModelIndex` can store multiple types of data, each
@@ -101,7 +103,7 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
         see: https://doc.qt.io/qt-5/qt.html#ItemDataRole-enum
 
         """
-        if role == Qt.DisplayRole:
+        if role == Qt.ItemDataRole.DisplayRole:
             return str(self.getItem(index))
         if role == ItemRole:
             return self.getItem(index)
@@ -109,7 +111,7 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
             return index.row()
         return None
 
-    def flags(self, index: QModelIndex) -> Qt.ItemFlags:
+    def flags(self, index: QModelIndex) -> Qt.ItemFlag:
         """Returns the item flags for the given `index`.
 
         This describes the properties of a given item in the model.  We set
@@ -127,7 +129,7 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
             return _BASE_FLAGS | Qt.ItemFlag.ItemIsDropEnabled
         return _BASE_FLAGS | Qt.ItemFlag.ItemNeverHasChildren
 
-    def columnCount(self, parent: QModelIndex) -> int:
+    def columnCount(self, parent: QModelIndex) -> int:  # type: ignore[override]
         """Return the number of columns for the children of the given `parent`.
 
         In a list view, and most tree views, the number of columns is always 1.
@@ -183,18 +185,18 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
             else QModelIndex()  # instead of index error, Qt wants null index
         )
 
-    def supportedDropActions(self) -> Qt.DropActions:
+    def supportedDropActions(self) -> Qt.DropAction:
         """Returns the drop actions supported by this model.
 
         The default implementation returns `Qt.CopyAction`. We re-implement to
         support only `Qt.MoveAction`. See also dropMimeData(), which must
         handle each supported drop action type.
         """
-        return Qt.MoveAction
+        return Qt.DropAction.MoveAction
 
     # ###### Non-Qt methods added for SelectableEventedList Model ############
 
-    def setRoot(self, root: SelectableEventedList[ItemType]):
+    def setRoot(self, root: SelectableEventedList[ItemType]) -> None:
         """Call during __init__, to set the python model and connections"""
         if not isinstance(root, SelectableEventedList):
             raise TypeError(
@@ -235,7 +237,7 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
             par = self.index(i, 0, par)
         return par, idx
 
-    def _on_begin_inserting(self, event):
+    def _on_begin_inserting(self, event: Event) -> None:
         """Begins a row insertion operation.
 
         See Qt documentation:
@@ -244,11 +246,11 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
         par, idx = self._split_nested_index(event.index)
         self.beginInsertRows(par, idx, idx)
 
-    def _on_end_insert(self):
+    def _on_end_insert(self) -> None:
         """Must be called after insert operation to update model."""
         self.endInsertRows()
 
-    def _on_begin_removing(self, event):
+    def _on_begin_removing(self, event: Event) -> None:
         """Begins a row removal operation.
 
         See Qt documentation:
@@ -257,11 +259,11 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
         par, idx = self._split_nested_index(event.index)
         self.beginRemoveRows(par, idx, idx)
 
-    def _on_end_remove(self):
+    def _on_end_remove(self) -> None:
         """Must be called after remove operation to update model."""
         self.endRemoveRows()
 
-    def _on_begin_moving(self, event):
+    def _on_begin_moving(self, event: Event) -> None:
         """Begins a row move operation.
 
         See Qt documentation:
@@ -272,17 +274,19 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
 
         self.beginMoveRows(src_par, src_idx, src_idx, dest_par, dest_idx)
 
-    def _on_end_move(self):
+    def _on_end_move(self) -> None:
         """Must be called after move operation to update model."""
         self.endMoveRows()
 
-    def getItem(self, index: QModelIndex) -> ItemType:
+    def getItem(
+        self, index: QModelIndex
+    ) -> ItemType | SelectableEventedList[ItemType]:
         """Return python object for a given `QModelIndex`.
 
         An invalid `QModelIndex` will return the root object.
         """
         return self._root[index.row()] if index.isValid() else self._root
 
-    def _process_event(self, event):
+    def _process_event(self, event: Event) -> None:
         # for subclasses to handle ItemType-specific data
-        pass
+        ...
