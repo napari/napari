@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import gc
 from functools import partial
 from typing import TYPE_CHECKING
 from weakref import WeakSet
@@ -721,12 +722,34 @@ class VispyCanvas:
             layer._overlays.events, self._overlay_callbacks[layer]
         )
         del self._overlay_callbacks[layer]
+
         vispy_layer = self.layer_to_visual.pop(layer)
         disconnect_events(self.viewer.camera.events, vispy_layer)
         vispy_layer.close()
         del vispy_layer
+
         self._remove_layer_overlays(layer)
         del self._layer_overlay_to_visual[layer]
+
+        # Critical two-step fix for Windows OpenGL access violation bug
+        # This prevents the race condition where scenegraph updates occur while
+        # GPU resources from the removed layer are still being processed/deleted.
+
+        # Step 1: Force immediate garbage collection of OpenGL resources
+        # When vispy_layer.close() is called above, it marks OpenGL objects (textures,
+        # buffers, etc.) for deletion, but Python's garbage collector may not run
+        # immediately. On some Windows OpenGL drivers (especially NVIDIA cards),
+        # this can leave "dangling" OpenGL resource references.
+        gc.collect()
+
+        # Step 2: Synchronize the OpenGL command queue
+        # Layer removal involves deleting GPU textures, buffers, and shader programs/
+        # The subsequent _update_scenegraph() call rebuilds the scene graph with new GPU resources.
+        # If the GPU is still processing deletion commands from the removed layer, it can lead to
+        # memory access violations when the scene graph is updated with new resources.
+        # finish() ensures complete GPU synchronization before proceeding
+        self._scene_canvas.context.finish()
+
         self._update_scenegraph()
 
     def _reorder_layers(self) -> None:
@@ -737,12 +760,7 @@ class VispyCanvas:
             ):
                 if not layer_indices:
                     continue
-                # FIXME: the use of `len(self.viewer.layers) - 1 - idx` should be removed
-                # see https://github.com/napari/napari/pull/7870#issuecomment-2965031040
-                layers = [
-                    self.viewer.layers[len(self.viewer.layers) - 1 - idx]
-                    for idx in layer_indices
-                ]
+                layers = [self.viewer.layers[idx] for idx in layer_indices]
                 self._reorder_layers_in_the_same_view(layers)
         else:
             self._reorder_layers_in_the_same_view(self.viewer.layers)
@@ -837,11 +855,7 @@ class VispyCanvas:
             if isinstance(overlay, CanvasOverlay):
                 if self.viewer.grid.enabled:
                     row, col = self.viewer.grid.position(
-                        # FIXME: the use of `len(self.viewer.layers) - 1 - idx` should be removed
-                        # see https://github.com/napari/napari/pull/7870#issuecomment-2965031040
-                        len(self.viewer.layers)
-                        - 1
-                        - self.viewer.layers.index(layer),
+                        self.viewer.layers.index(layer),
                         len(self.viewer.layers),
                     )
                     parent = self.grid[row, col]
@@ -989,11 +1003,7 @@ class VispyCanvas:
             self.grid_cameras.append(camera)
 
             for idx in layer_indices:
-                # FIXME: the use of `len(self.viewer.layers) - 1 - idx` should be removed
-                # see https://github.com/napari/napari/pull/7870#issuecomment-2965031040
-                napari_layer = self.viewer.layers[
-                    len(self.viewer.layers) - 1 - idx
-                ]
+                napari_layer = self.viewer.layers[idx]
                 vispy_layer = self.layer_to_visual[napari_layer]
                 vispy_layer.node.parent = view.scene
                 self._update_layer_overlays(napari_layer)

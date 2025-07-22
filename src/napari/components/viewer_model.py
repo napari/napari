@@ -596,7 +596,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         return np.array([displayed_height, displayed_width])
 
-    def _new_labels(self):
+    def _new_labels(self) -> None:
         """Create new labels layer filling full world coordinates space."""
         layers_extent = self.layers.extent
         extent = layers_extent.world
