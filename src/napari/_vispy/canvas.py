@@ -146,6 +146,7 @@ class VispyCanvas:
 
         self._overlay_callbacks = {}
         self._last_viewbox_size = np.array((0, 0))
+        self._needs_overlay_position_update = False
 
         self.bgcolor = transform_color(
             get_theme(self.viewer.theme).canvas.as_hex()
@@ -611,8 +612,12 @@ class VispyCanvas:
             self._last_viewbox_size, self._current_viewbox_size
         ):
             self._update_grid_spacing()
-            self._update_overlay_canvas_positions()
             self._last_viewbox_size = self._current_viewbox_size
+            self._needs_overlay_position_update = True
+
+        if self._needs_overlay_position_update:
+            self._update_overlay_canvas_positions()
+            self._needs_overlay_position_update = False
 
         # sync all cameras
         for camera in (self.camera, *self.grid_cameras):
@@ -743,22 +748,21 @@ class VispyCanvas:
                 vispy_layer.first_visible = False
             vispy_layer._on_blending_change()
 
-        self._update_overlay_canvas_positions()
+        self._defer_overlay_position_update()
 
         self._scene_canvas._draw_order.clear()
         self._scene_canvas.update()
 
+    def _defer_overlay_position_update(self):
+        self._needs_overlay_position_update = True
+
     def _connect_canvas_overlay_events(self, overlay):
-        overlay.events.position.connect(self._update_overlay_canvas_positions)
-        overlay.events.visible.connect(self._update_overlay_canvas_positions)
+        overlay.events.position.connect(self._defer_overlay_position_update)
+        overlay.events.visible.connect(self._defer_overlay_position_update)
 
     def _disconnect_canvas_overlay_events(self, overlay):
-        overlay.events.position.disconnect(
-            self._update_overlay_canvas_positions
-        )
-        overlay.events.visible.disconnect(
-            self._update_overlay_canvas_positions
-        )
+        overlay.events.position.disconnect(self._defer_overlay_position_update)
+        overlay.events.visible.disconnect(self._defer_overlay_position_update)
 
     def _add_viewer_overlay(self, overlay: Overlay, parent: Node) -> None:
         """Create vispy overlay and add to dictionary of overlay visuals"""
@@ -800,7 +804,7 @@ class VispyCanvas:
                 for view in views:
                     self._add_viewer_overlay(overlay, view.scene)
 
-        self._update_overlay_canvas_positions()
+        self._defer_overlay_position_update()
 
     def _add_layer_overlay(
         self, layer: Layer, overlay: Overlay, parent: Node
@@ -850,7 +854,7 @@ class VispyCanvas:
 
             self._add_layer_overlay(layer, overlay, parent)
 
-        # self._update_overlay_canvas_positions()
+        self._defer_overlay_position_update()
 
     def _get_ordered_visible_canvas_overlays(self):
         # note that some canvas overlays do no use CanvasPosition, but are instead
@@ -927,6 +931,8 @@ class VispyCanvas:
                 )
                 vispy_overlay.x_offset_tiling = 0
             vispy_overlay._on_position_change()
+
+        self._needs_overlay_position_update = False
 
     def _calculate_view_direction(
         self, event_pos: tuple[float, float]
