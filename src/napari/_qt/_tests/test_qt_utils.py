@@ -2,7 +2,7 @@ from unittest.mock import patch
 
 import numpy as np
 import pytest
-from qtpy.QtCore import QObject, Signal
+from qtpy.QtCore import QByteArray, QObject, Signal
 from qtpy.QtGui import QColor
 from qtpy.QtWidgets import QApplication, QColorDialog, QMainWindow
 
@@ -28,7 +28,6 @@ class Emitter(QObject):
 
 def test_signal_blocker(qtbot):
     """make sure context manager signal blocker works"""
-    import pytestqt.exceptions
 
     obj = Emitter()
 
@@ -39,22 +38,25 @@ def test_signal_blocker(qtbot):
     # make sure blocker works
     with (
         qt_signals_blocked(obj),
-        pytest.raises(pytestqt.exceptions.TimeoutError),
-        qtbot.waitSignal(obj.test_signal, timeout=500),
+        qtbot.assert_not_emitted(obj.test_signal, wait=500),
     ):
         obj.go()
+    obj.deleteLater()
 
 
 def test_is_qbyte_valid():
-    is_qbyte(QBYTE_FLAG)
-    is_qbyte(
+    assert is_qbyte(QBYTE_FLAG)
+    assert is_qbyte(
         '!QBYTE_AAAA/wAAAAD9AAAAAgAAAAAAAAECAAACePwCAAAAAvsAAAAcAGwAYQB5AGUAcgAgAGMAbwBuAHQAcgBvAGwAcwEAAAAAAAABFwAAARcAAAEX+wAAABQAbABhAHkAZQByACAAbABpAHMAdAEAAAEXAAABYQAAALcA////AAAAAwAAAAAAAAAA/AEAAAAB+wAAAA4AYwBvAG4AcwBvAGwAZQAAAAAA/////wAAADIA////AAADPAAAAngAAAAEAAAABAAAAAgAAAAI/AAAAAA='
     )
 
 
 def test_str_to_qbytearray_valid():
-    str_to_qbytearray(
-        '!QBYTE_AAAA/wAAAAD9AAAAAgAAAAAAAAECAAACePwCAAAAAvsAAAAcAGwAYQB5AGUAcgAgAGMAbwBuAHQAcgBvAGwAcwEAAAAAAAABFwAAARcAAAEX+wAAABQAbABhAHkAZQByACAAbABpAHMAdAEAAAEXAAABYQAAALcA////AAAAAwAAAAAAAAAA/AEAAAAB+wAAAA4AYwBvAG4AcwBvAGwAZQAAAAAA/////wAAADIA////AAADPAAAAngAAAAEAAAABAAAAAgAAAAI/AAAAAA='
+    assert isinstance(
+        str_to_qbytearray(
+            '!QBYTE_AAAA/wAAAAD9AAAAAgAAAAAAAAECAAACePwCAAAAAvsAAAAcAGwAYQB5AGUAcgAgAGMAbwBuAHQAcgBvAGwAcwEAAAAAAAABFwAAARcAAAEX+wAAABQAbABhAHkAZQByACAAbABpAHMAdAEAAAEXAAABYQAAALcA////AAAAAwAAAAAAAAAA/AEAAAAB+wAAAA4AYwBvAG4AcwBvAGwAZQAAAAAA/////wAAADIA////AAADPAAAAngAAAAEAAAABAAAAAgAAAAI/AAAAAA='
+        ),
+        QByteArray,
     )
 
 
@@ -132,42 +134,41 @@ def test_get_color(qtbot):
     qtbot.addWidget(widget)
 
     with patch.object(QColorDialog, 'exec_') as mock:
-        mock.return_value = QColorDialog.Accepted
+        mock.return_value = QColorDialog.DialogCode.Accepted
         color = get_color(None, 'hex')
         assert isinstance(color, str), 'Expected string color'
 
     with patch.object(QColorDialog, 'exec_') as mock:
-        mock.return_value = QColorDialog.Accepted
+        mock.return_value = QColorDialog.DialogCode.Accepted
         color = get_color('#FF00FF', 'hex')
         assert isinstance(color, str), 'Expected string color'
         assert color == '#ff00ff', 'Expected color to be #FF00FF'
 
     with patch.object(QColorDialog, 'exec_') as mock:
-        mock.return_value = QColorDialog.Accepted
+        mock.return_value = QColorDialog.DialogCode.Accepted
         color = get_color(None, 'array')
         assert not isinstance(color, str), 'Expected array color'
         assert isinstance(color, np.ndarray), 'Expected numpy array color'
 
     with patch.object(QColorDialog, 'exec_') as mock:
-        mock.return_value = QColorDialog.Accepted
+        mock.return_value = QColorDialog.DialogCode.Accepted
         color = get_color(np.asarray([255, 0, 255]), 'array')
         assert not isinstance(color, str), 'Expected array color'
         assert isinstance(color, np.ndarray), 'Expected numpy array color'
         np.testing.assert_array_equal(color, np.asarray([1, 0, 1]))
 
     with patch.object(QColorDialog, 'exec_') as mock:
-        mock.return_value = QColorDialog.Accepted
+        mock.return_value = QColorDialog.DialogCode.Accepted
         color = get_color(None, 'qcolor')
         assert not isinstance(color, np.ndarray), 'Expected QColor color'
         assert isinstance(color, QColor), 'Expected QColor color'
 
     with patch.object(QColorDialog, 'exec_') as mock:
-        mock.return_value = QColorDialog.Rejected
+        mock.return_value = QColorDialog.DialogCode.Rejected
         color = get_color(None, 'qcolor')
         assert color is None, 'Expected None color'
 
     # close still open popup widgets
     for widget in QApplication.topLevelWidgets():
         if isinstance(widget, QColorDialog):
-            widget.accept()
-            widget.close()
+            qtbot.addWidget(widget)
