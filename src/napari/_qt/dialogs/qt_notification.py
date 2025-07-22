@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Sequence
-from typing import cast
+from contextlib import suppress
+from typing import ClassVar
 
 from qtpy.QtCore import (
     QEasingCurve,
@@ -73,6 +74,8 @@ class NapariQtNotification(QDialog):
     message: QElidingLabel
     source_label: QLabel
     severity_icon: QLabel
+
+    _instances: ClassVar[list[NapariQtNotification]] = []
 
     def __init__(
         self,
@@ -155,14 +158,12 @@ class NapariQtNotification(QDialog):
     def show(self):
         """Show the message with a fade and slight slide in from the bottom."""
         super().show()
+        self._instances.append(self)
         self.slide_in()
         if self.parent() is not None and not self.parent().isActiveWindow():
             return
         if self.parent() is not None:
-            notifications = cast(
-                list[NapariQtNotification],
-                self.parent().findChildren(NapariQtNotification),
-            )
+            notifications = self._instances
             for notification in notifications:
                 notification.timer_stop()
         if self.DISMISS_AFTER > 0:
@@ -196,11 +197,11 @@ class NapariQtNotification(QDialog):
         self.timer_stop()
         self.opacity_anim.stop()
         self.geom_anim.stop()
+        with suppress(ValueError):
+            # if show is not called, the element is not in list
+            self._instances.remove(self)
         if self.parent() is not None:
-            notifications = cast(
-                list[NapariQtNotification],
-                self.parent().findChildren(NapariQtNotification),
-            )
+            notifications = self._instances
             if len(notifications) > 1 and notifications[-1] == self:
                 notifications[-2].timer_start()
             self.parent().setFocus()

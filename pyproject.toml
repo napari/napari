@@ -94,8 +94,8 @@ Documentation = "https://napari.org"
 pyside2 = [
     "PySide2>=5.15.1 ; python_version < '3.11' and platform_machine != 'arm64'",
 ]
-pyside6_experimental = [
-    "PySide6 < 6.5 ; python_version < '3.12'"
+pyside6 = [
+    "PySide6 > 6.7"
 ]
 pyqt6 = [
     "PyQt6 > 6.5",
@@ -173,6 +173,7 @@ gallery = [
     "nilearn",
     "xarray",
     "h5netcdf",
+    "meshio",
 ]
 # needed to build docs
 docs = [
