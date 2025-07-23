@@ -123,7 +123,7 @@ class _BaseEventedItemView(QAbstractItemView, Generic[ItemType]):
         sel_model.select(selection, sel_model.SelectionFlag.ClearAndSelect)
 
 
-def index_of(model: QAbstractItemModel, obj: ItemType) -> QModelIndex:  # type: ignore
+def index_of(model: QAbstractItemModel, obj: ItemType) -> QModelIndex:
     """Find the `QModelIndex` for a given object in the model."""
     fl = Qt.MatchFlag.MatchExactly | Qt.MatchFlag.MatchRecursive
     hits = model.match(
