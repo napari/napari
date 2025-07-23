@@ -492,9 +492,6 @@ ignore_errors = true
 [[tool.mypy.overrides]]
 module = [
     'napari._qt.code_syntax_highlight',
-    'napari._qt.containers.qt_list_view',
-    'napari._qt.containers.qt_tree_model',
-    'napari._qt.containers.qt_tree_view',
     'napari._qt.dialogs.confirm_close_dialog',
     'napari._qt.dialogs.preferences_dialog',
     'napari._qt.dialogs.qt_about',

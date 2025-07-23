@@ -1,16 +1,13 @@
 from __future__ import annotations
 
-from collections.abc import MutableSequence
 from itertools import chain, repeat
-from typing import TYPE_CHECKING, Generic, TypeVar, cast
+from typing import TYPE_CHECKING, Generic, cast
 
 from qtpy.QtCore import QItemSelection, QModelIndex, Qt
 from qtpy.QtWidgets import QAbstractItemView
 
-from napari._qt.containers._base_item_model import ItemRole
+from napari._qt.containers._base_item_model import ItemRole, ItemType
 from napari._qt.containers._factory import create_model
-
-ItemType = TypeVar('ItemType', bound=MutableSequence)
 
 if TYPE_CHECKING:
     from qtpy.QtCore import QAbstractItemModel, QItemSelectionModel

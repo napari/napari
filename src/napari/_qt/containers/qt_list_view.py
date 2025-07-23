@@ -1,18 +1,19 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING
 
 from qtpy.QtWidgets import QListView
 
-from napari._qt.containers._base_item_view import _BaseEventedItemView
+from napari._qt.containers._base_item_view import (
+    ItemType,
+    _BaseEventedItemView,
+)
 from napari._qt.containers.qt_list_model import QtListModel
 
 if TYPE_CHECKING:
-    from qtpy.QtWidgets import QWidget  # type: ignore[attr-defined]
+    from qtpy.QtWidgets import QWidget
 
     from napari.utils.events.containers import SelectableEventedList
-
-ItemType = TypeVar('ItemType')
 
 
 class QtListView(_BaseEventedItemView[ItemType], QListView):
@@ -39,10 +40,12 @@ class QtListView(_BaseEventedItemView[ItemType], QListView):
         parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
-        self.setDragDropMode(QListView.InternalMove)
+        self.setDragDropMode(QListView.DragDropMode.InternalMove)
         self.setDragDropOverwriteMode(False)
-        self.setSelectionMode(QListView.ExtendedSelection)
+        self.setSelectionMode(QListView.SelectionMode.ExtendedSelection)
         self.setRoot(root)
 
     def model(self) -> QtListModel[ItemType]:
+        # TODO: JA: need to understand how to properly type
+        # the base class return types
         return super().model()
