@@ -530,6 +530,7 @@ module = [
     'napari._qt.layer_controls.widgets.qt_opacity_blending_controls',
     'napari._qt.layer_controls.widgets.qt_text_visibility',
     'napari._qt.layer_controls.widgets.qt_out_slice_checkbox',
+    'napari._qt.layer_controls.widgets.qt_projection_mode_control',
     'napari._qt.layer_controls.widgets._shapes.qt_edge_color',
     'napari._qt.layer_controls.widgets._shapes.qt_edge_width_slider',
     'napari._qt.layer_controls.widgets._labels.qt_label_color',

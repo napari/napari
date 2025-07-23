@@ -53,7 +53,7 @@ class QtProjectionModeControl(QtWidgetControlsBase):
             trans._('projection mode:')
         )
 
-    def _on_projection_mode_change(self):
+    def _on_projection_mode_change(self) -> None:
         with qt_signals_blocked(self.projection_combobox):
             self.projection_combobox.setCurrentText(
                 str(self._layer.projection_mode)
