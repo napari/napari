@@ -485,3 +485,43 @@ def napari_get_reader(
         return _csv_reader
 
     return _magic_imreader
+
+
+def load_and_execute_python_code(path: str) -> list['LayerData']:
+    """Load and execute Python code from a file.
+
+    Parameters
+    ----------
+    path : str
+        Path to the Python file to be executed.
+    """
+    if not os.path.exists(path):
+        raise FileNotFoundError(f'File not found: {path}')
+
+    with open(path) as file:
+        code = file.read()
+        exec(code)
+    return [(None,)]
+
+
+def napari_get_py_reader(path: str) -> 'ReaderFunction | None':
+    """Return a reader function for Python files.
+
+    This function is used to read Python files and execute their content.
+    It returns a callable that executes the code in the file.
+
+    Parameters
+    ----------
+    path : str
+        Path to the Python file to be executed.
+
+    Returns
+    -------
+    callable
+        A function that executes the Python code in the specified file.
+    """
+    if not os.path.exists(path):
+        return None
+    if os.path.splitext(path)[1] != '.py':
+        return None
+    return load_and_execute_python_code
