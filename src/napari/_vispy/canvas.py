@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import gc
 from functools import partial
 from typing import TYPE_CHECKING
 from weakref import WeakSet
@@ -164,7 +165,6 @@ class VispyCanvas:
         self._scene_canvas.events.ignore_callback_errors = False
         self._scene_canvas.context.set_depth_func('lequal')
 
-        # Connecting events from SceneCanvas
         self._scene_canvas.events.key_press.connect(
             self._key_map_handler.on_key_press
         )
@@ -191,9 +191,12 @@ class VispyCanvas:
         self.viewer.events.theme.connect(
             self._on_theme_change, position='first'
         )
+
         self.viewer.camera.events.mouse_pan.connect(self._on_interactive)
         self.viewer.camera.events.mouse_zoom.connect(self._on_interactive)
         self.viewer.camera.events.zoom.connect(self._on_cursor)
+
+        self.viewer._zoom_box.events.zoom.connect(self._on_boxzoom)
         self.viewer.layers.events.reordered.connect(self._update_scenegraph)
         self.viewer.layers.events.removed.connect(self._remove_layer)
         self.viewer.grid.events.stride.connect(self._update_scenegraph)
@@ -365,6 +368,16 @@ class VispyCanvas:
             self.view.interactive = interactive
             self.grid.interactive = False
 
+    def _on_boxzoom(self, event):
+        """Update zoom level."""
+        box_size_canvas = np.abs(
+            np.diff(self.viewer._zoom_box.canvas_positions, axis=0)
+        )
+        box_center_world = np.mean(event.value, axis=0)
+        ratio = np.min(self._current_viewbox_size / box_size_canvas)
+        self.viewer.camera.zoom = self.viewer.camera.zoom * np.min(ratio)
+        self.viewer.camera.center = box_center_world
+
     def _map_canvas2world(
         self,
         position: tuple[int, ...],
@@ -406,15 +419,20 @@ class VispyCanvas:
         return tuple(position_world)
 
     def _get_viewbox_at(self, position):
+        """Get the viewbox and its grid coordinates from the mouse position."""
         if not self.viewer.grid.enabled:
-            return self.view
+            return self.view, (0, 0)
 
-        for viewbox in self.grid_views:
+        for (coords, _), viewbox in zip(
+            self.viewer.grid.iter_viewboxes(len(self.viewer.layers)),
+            self.grid_views,
+            strict=False,
+        ):
             shifted_pos = position - viewbox.transform.translate[:2]
             if viewbox.inner_rect.contains(*shifted_pos):
-                return viewbox
+                return viewbox, coords
 
-        return None
+        return None, None
 
     def _process_mouse_event(
         self, mouse_callbacks: Callable, event: MouseEvent
@@ -453,9 +471,11 @@ class VispyCanvas:
         # ensure that events which began in a specific viewbox continue to be
         # calculated based on that viewbox's coordinates
         if event.press_event is not None:
-            viewbox = self._get_viewbox_at(event.press_event.pos)
+            viewbox, grid_coords = self._get_viewbox_at(event.press_event.pos)
         else:
-            viewbox = self._get_viewbox_at(event.pos)
+            viewbox, grid_coords = self._get_viewbox_at(event.pos)
+
+        self.viewer.cursor.viewbox = grid_coords
 
         if viewbox is None:
             # this means we're in an empty viewbox, so do nothing
@@ -472,6 +492,7 @@ class VispyCanvas:
             position=self._map_canvas2world(event.pos, viewbox),
             dims_displayed=list(self.viewer.dims.displayed),
             dims_point=list(self.viewer.dims.point),
+            viewbox=grid_coords,
         )
 
         # Update the cursor position
@@ -712,12 +733,34 @@ class VispyCanvas:
             layer._overlays.events, self._overlay_callbacks[layer]
         )
         del self._overlay_callbacks[layer]
+
         vispy_layer = self.layer_to_visual.pop(layer)
         disconnect_events(self.viewer.camera.events, vispy_layer)
         vispy_layer.close()
         del vispy_layer
+
         self._remove_layer_overlays(layer)
         del self._layer_overlay_to_visual[layer]
+
+        # Critical two-step fix for Windows OpenGL access violation bug
+        # This prevents the race condition where scenegraph updates occur while
+        # GPU resources from the removed layer are still being processed/deleted.
+
+        # Step 1: Force immediate garbage collection of OpenGL resources
+        # When vispy_layer.close() is called above, it marks OpenGL objects (textures,
+        # buffers, etc.) for deletion, but Python's garbage collector may not run
+        # immediately. On some Windows OpenGL drivers (especially NVIDIA cards),
+        # this can leave "dangling" OpenGL resource references.
+        gc.collect()
+
+        # Step 2: Synchronize the OpenGL command queue
+        # Layer removal involves deleting GPU textures, buffers, and shader programs/
+        # The subsequent _update_scenegraph() call rebuilds the scene graph with new GPU resources.
+        # If the GPU is still processing deletion commands from the removed layer, it can lead to
+        # memory access violations when the scene graph is updated with new resources.
+        # finish() ensures complete GPU synchronization before proceeding
+        self._scene_canvas.context.finish()
+
         self._update_scenegraph()
 
     def _reorder_layers(self) -> None:
@@ -950,7 +993,7 @@ class VispyCanvas:
         w, h = self.size
         nd = self.viewer.dims.ndisplay
 
-        view = self._get_viewbox_at(event_pos) or self.view
+        view = self._get_viewbox_at(event_pos)[0] or self.view
         # combine the viewbox transform wit the scene transform
         # so each viewbox in grid mode maps back to the main scene
         transform = view.transform * view.scene.transform
