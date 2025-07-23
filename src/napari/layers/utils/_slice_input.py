@@ -201,6 +201,11 @@ class _SliceInput:
         world_slice_not_disp = self.world_slice[self.not_displayed].as_array()
 
         data_slice = slice_world_to_data(world_slice_not_disp)
+        try:
+            scale = slice_world_to_data.scale
+        except ValueError:
+            scale = 1
+        data_slice[1:] = world_slice_not_disp[1:] * scale
 
         full_data_slice = np.full((3, self.ndim), np.nan)
 
