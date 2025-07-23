@@ -756,6 +756,20 @@ QtLayerList::indicator:checked {
   min-width: 36px;
 }
 
+/* ------------- thick slicing dialog --------- */
+QPushButton#lockButton {
+  max-height: 15px;
+  max-width: 15px;
+}
+
+QPushButton#lockButton:checked {
+  image: url("theme_{{ id }}:/lock.svg");
+}
+
+QPushButton#lockButton:!checked {
+  image: url("theme_{{ id }}:/lock_open.svg");
+}
+
 /* ------------- Set size for dims sorter --------- */
 
 QtDimsSorter > QtListView {
