@@ -495,9 +495,6 @@ def load_and_execute_python_code(path: str) -> list['LayerData']:
     path : str
         Path to the Python file to be executed.
     """
-    if not os.path.exists(path):
-        raise FileNotFoundError(f'File not found: {path}')
-
     with open(path) as file:
         code = file.read()
         exec(code)
