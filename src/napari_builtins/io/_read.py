@@ -14,6 +14,7 @@ import numpy as np
 from dask import delayed
 
 from napari.utils.misc import abspath_or_url
+from napari.utils.notifications import notification_manager
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
@@ -497,7 +498,10 @@ def load_and_execute_python_code(path: str) -> list['LayerData']:
     """
     with open(path) as file:
         code = file.read()
-        exec(code)
+        try:
+            exec(code)
+        except BaseException as e:  # noqa: BLE001
+            notification_manager.receive_error(type(e), e, e.__traceback__)
     return [(None,)]
 
 
