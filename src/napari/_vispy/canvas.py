@@ -164,7 +164,6 @@ class VispyCanvas:
         self._scene_canvas.events.ignore_callback_errors = False
         self._scene_canvas.context.set_depth_func('lequal')
 
-        # Connecting events from SceneCanvas
         self._scene_canvas.events.key_press.connect(
             self._key_map_handler.on_key_press
         )
@@ -191,9 +190,12 @@ class VispyCanvas:
         self.viewer.events.theme.connect(
             self._on_theme_change, position='first'
         )
+
         self.viewer.camera.events.mouse_pan.connect(self._on_interactive)
         self.viewer.camera.events.mouse_zoom.connect(self._on_interactive)
         self.viewer.camera.events.zoom.connect(self._on_cursor)
+
+        self.viewer._zoom_box.events.zoom.connect(self._on_boxzoom)
         self.viewer.layers.events.reordered.connect(self._update_scenegraph)
         self.viewer.layers.events.removed.connect(self._remove_layer)
         self.viewer.grid.events.stride.connect(self._update_scenegraph)
@@ -364,6 +366,16 @@ class VispyCanvas:
         else:
             self.view.interactive = interactive
             self.grid.interactive = False
+
+    def _on_boxzoom(self, event):
+        """Update zoom level."""
+        box_size_canvas = np.abs(
+            np.diff(self.viewer._zoom_box.canvas_positions, axis=0)
+        )
+        box_center_world = np.mean(event.value, axis=0)
+        ratio = np.min(self._current_viewbox_size / box_size_canvas)
+        self.viewer.camera.zoom = self.viewer.camera.zoom * np.min(ratio)
+        self.viewer.camera.center = box_center_world
 
     def _map_canvas2world(
         self,

@@ -793,7 +793,7 @@ module = [
     "napari._app_model.context._layerlist_context",
     "napari.components.overlays.labels_polygon",
     "napari.plugins.io",
-    "napari.utils.colormaps.vendored._cm_listed"
+    "napari.utils.colormaps.vendored._cm_listed",
 ]
 disallow_untyped_calls = false
 
