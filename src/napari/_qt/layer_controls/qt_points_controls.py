@@ -4,6 +4,7 @@ from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
 from napari._qt.layer_controls.widgets import (
     QtFaceColorControl,
     QtOutSliceCheckBoxControl,
+    QtProjectionModeControl,
     QtTextVisibilityControl,
 )
 from napari._qt.layer_controls.widgets._points import (
@@ -39,6 +40,8 @@ class QtPointsControls(QtLayerControls):
         Widget to select display color for points faces.
     _out_slice_checkbox_control : napari._qt.layer_controls.widgets.QtOutSliceCheckBoxControl
         Widget that wraps a checkbox to indicate whether to render out of slice.
+    _projection_mode_control : napari._qt.layer_controls.widgets.QtProjectionModeControl
+        Widget that wraps dropdown menu to select the projection mode for the layer.
     _symbol_combobox_control : napari._qt.layer_controls.widgets._points.QtSymbolComboBoxControl
         Widget that wraps a dropdown list of symbol options for points markers.
     _text_visibility_control : napari._qt.layer_controls.widgets.QtTextVisibilityControl
@@ -95,6 +98,8 @@ class QtPointsControls(QtLayerControls):
         self.button_grid.addWidget(self.select_button, 0, 5)
 
         # Setup widgets controls
+        self._projection_mode_control = QtProjectionModeControl(self, layer)
+        self._add_widget_controls(self._projection_mode_control)
         self._current_size_slider_control = QtCurrentSizeSliderControl(
             self, layer
         )

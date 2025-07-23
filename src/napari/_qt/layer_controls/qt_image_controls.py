@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 from napari._qt.layer_controls.qt_image_controls_base import (
     QtBaseImageControls,
 )
+from napari._qt.layer_controls.widgets import QtProjectionModeControl
 from napari._qt.layer_controls.widgets._image import (
     QtDepictionControl,
     QtImageRenderControl,
@@ -27,6 +28,8 @@ class QtImageControls(QtBaseImageControls):
         Widget that wraps widgets related with the layer depiction and plane attributes.
     _interpolation_control : napari._qt.layer_controls.widgets._image.QtInterpolationComboBoxControl
         Widget that wraps dropdown menu to select the interpolation mode for image display.
+    _projection_mode_control : napari._qt.layer_controls.widgets.QtProjectionModeControl
+        Widget that wraps dropdown menu to select the projection mode for the layer.
     _render_control : napari._qt.layer_controls.widgets._image.QtImageRenderControl
         Widget that wraps widgets related with the method used to render the layer.
     """
@@ -38,6 +41,8 @@ class QtImageControls(QtBaseImageControls):
     def __init__(self, layer) -> None:
         super().__init__(layer)
         # Setup widgets controls
+        self._projection_mode_control = QtProjectionModeControl(self, layer)
+        self._add_widget_controls(self._projection_mode_control)
         self._interpolation_control = QtInterpolationComboBoxControl(
             self, layer
         )

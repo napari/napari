@@ -354,12 +354,11 @@ def make_napari_viewer(
     else:
         gc.collect(1)
 
-    if request.config.getoption(_SAVE_GRAPH_OPNAME):
-        fail_obj_graph(QtViewer)
-
     if request.node.rep_call.failed:
         # IF test failed do not check for leaks
         QtViewer._instances.clear()
+    elif request.config.getoption(_SAVE_GRAPH_OPNAME):
+        fail_obj_graph(QtViewer)
 
     _do_not_inline_below = len(QtViewer._instances)
 

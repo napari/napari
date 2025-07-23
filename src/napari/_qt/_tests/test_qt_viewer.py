@@ -1399,3 +1399,114 @@ def test_dask_cache(qt_viewer):
     mock_resize_dask_cache.assert_called_once_with(
         int(int(True) * initial_dask_cache * 1e9)
     )
+
+
+def test_viewer_drag_to_zoom(qt_viewer, qtbot):
+    """Test drag to zoom mouse binding."""
+    viewer = qt_viewer.viewer
+    canvas = qt_viewer.canvas
+
+    if os.getenv('CI'):
+        qt_viewer.show()
+
+    def zoom_callback(event):
+        """Mock zoom callback to check zoom box visibility."""
+        data_positions = event.value
+        assert len(data_positions) == 2, (
+            'Zoom event should release two positions'
+        )
+
+    viewer._zoom_box.events.zoom.connect(zoom_callback)
+
+    # Add an image layer
+    data = np.random.random((10, 20))
+    viewer.add_image(data)
+
+    assert viewer._zoom_box.visible is False, (
+        'Zoom box should be hidden initially'
+    )
+    # Simulate press to start zooming
+    canvas._scene_canvas.events.mouse_press(
+        pos=(0, 0), modifiers=('Alt',), button=0
+    )
+    qtbot.wait(10)
+    assert viewer._zoom_box.visible is True, (
+        'Zoom box should be visible after press'
+    )
+
+    # Simulate drag to zoom
+    canvas._scene_canvas.events.mouse_move(
+        pos=(100, 100),
+        modifiers=('Alt',),
+        button=0,
+        press_event=MouseEvent(
+            pos=(0, 0), modifiers=('Alt',), button=0, type='mouse_press'
+        ),
+    )
+    qtbot.wait(10)
+    assert viewer._zoom_box.visible is True, (
+        'Zoom box should remain visible during drag'
+    )
+    assert viewer._zoom_box.canvas_positions == ((0, 0), (100, 100)), (
+        'Zoom box canvas positions should match the drag coordinates'
+    )
+
+    # Simulate release to finish zooming
+    canvas._scene_canvas.events.mouse_release(
+        pos=(100, 100), modifiers=('Alt',), button=0
+    )
+    qtbot.wait(10)
+    assert viewer._zoom_box.visible is False, (
+        'Zoom box should be hidden after release'
+    )
+
+
+def test_viewer_drag_to_zoom_with_cancel(qt_viewer, qtbot):
+    """Test drag to zoom mouse binding."""
+    viewer = qt_viewer.viewer
+    canvas = qt_viewer.canvas
+
+    if os.getenv('CI'):
+        qt_viewer.show()
+
+    def zoom_callback(event):
+        """Mock zoom callback to check zoom box visibility."""
+        data_positions = event.value
+        assert len(data_positions) == 2, (
+            'Zoom event should release two positions'
+        )
+
+    viewer._zoom_box.events.zoom.connect(zoom_callback)
+
+    # Add an image layer
+    data = np.random.random((10, 20))
+    viewer.add_image(data)
+
+    assert viewer._zoom_box.visible is False, (
+        'Zoom box should be hidden initially'
+    )
+    # Simulate press to start zooming
+    canvas._scene_canvas.events.mouse_press(
+        pos=(0, 0), modifiers=('Alt',), button=0
+    )
+    qtbot.wait(10)
+    assert viewer._zoom_box.visible is True, (
+        'Zoom box should be visible after press'
+    )
+
+    # Simulate drag to zoom BUT remove modifiers to cancel
+    canvas._scene_canvas.events.mouse_move(
+        pos=(100, 100),
+        modifiers=(),
+        button=0,
+        press_event=MouseEvent(
+            pos=(0, 0), modifiers=('Alt',), button=0, type='mouse_press'
+        ),
+    )
+    qtbot.wait(10)
+    assert viewer._zoom_box.visible is False, (
+        'Zoom box should remain visible during drag'
+    )
+    assert viewer._zoom_box.canvas_positions == ((0, 0), (0, 0)), (
+        'Zoom box canvas positions should match the drag coordinates'
+    )

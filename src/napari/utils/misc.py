@@ -371,7 +371,9 @@ def all_subclasses(cls: type) -> set:
     )
 
 
-def ensure_n_tuple(val: Iterable, n: int, fill: int = 0) -> tuple:
+def ensure_n_tuple(
+    val: Iterable, n: int, fill: int = 0, before: bool = True
+) -> tuple:
     """Ensure input is a length n tuple.
 
     Parameters
@@ -380,6 +382,8 @@ def ensure_n_tuple(val: Iterable, n: int, fill: int = 0) -> tuple:
         Iterable to be forced into length n-tuple.
     n : int
         Length of tuple.
+    before : bool, default True
+        Fill the tuple with `fill` before or after the input iterable.
 
     Returns
     -------
@@ -388,7 +392,9 @@ def ensure_n_tuple(val: Iterable, n: int, fill: int = 0) -> tuple:
     """
     assert n > 0, 'n must be greater than 0'
     tuple_value = tuple(val)
-    return (fill,) * (n - len(tuple_value)) + tuple_value[-n:]
+    if before:
+        return (fill,) * (n - len(tuple_value)) + tuple_value[-n:]
+    return tuple_value[:n] + (fill,) * (n - len(tuple_value))
 
 
 def ensure_layer_data_tuple(val: tuple) -> tuple:
