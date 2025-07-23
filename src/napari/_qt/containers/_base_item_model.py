@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from napari.utils.events import Event
 
 
-ItemType = TypeVar('ItemType', bound=MutableSequence)
+ItemType = TypeVar('ItemType', bound=MutableSequence | Any)
 
 ItemRole = Qt.ItemDataRole.UserRole
 SortRole = Qt.ItemDataRole.UserRole + 1

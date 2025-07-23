@@ -1,15 +1,18 @@
+from __future__ import annotations
+
 import logging
 import pickle
 from collections.abc import Sequence
-from typing import Optional, TypeVar
 
 from qtpy.QtCore import QMimeData, QModelIndex, Qt
 
-from napari._qt.containers._base_item_model import _BaseEventedItemModel
+from napari._qt.containers._base_item_model import (
+    ItemType,
+    _BaseEventedItemModel,
+)
 
 logger = logging.getLogger(__name__)
 ListIndexMIMEType = 'application/x-list-index'
-ItemType = TypeVar('ItemType')
 
 
 class QtListModel(_BaseEventedItemModel[ItemType]):
@@ -30,7 +33,7 @@ class QtListModel(_BaseEventedItemModel[ItemType]):
         """
         return [ListIndexMIMEType, 'text/plain']
 
-    def mimeData(self, indices: list[QModelIndex]) -> Optional['QMimeData']:
+    def mimeData(self, indices: list[QModelIndex]) -> QMimeData | None:
         """Return an object containing serialized data from `indices`.
 
         If the list of indexes is empty, or there are no supported MIME types,
@@ -38,10 +41,12 @@ class QtListModel(_BaseEventedItemModel[ItemType]):
         """
         if not indices:
             return None
-        items, indices = zip(
+        items_tuple, indices_tuple = zip(
             *[(self.getItem(i), i.row()) for i in indices], strict=False
         )
-        return ItemMimeData(items, indices)
+        ret_items: list[ItemType] = list(items_tuple)
+        ret_indices: list[int] = list(indices_tuple)
+        return ItemMimeData(ret_items, ret_indices)
 
     def dropMimeData(
         self,
