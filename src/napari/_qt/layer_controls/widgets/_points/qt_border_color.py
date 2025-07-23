@@ -1,5 +1,3 @@
-from typing import Optional
-
 from qtpy.QtWidgets import QWidget
 
 from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
@@ -33,9 +31,7 @@ class QtBorderColorControl(QtWidgetControlsBase):
         Label for the current egde color chooser widget.
     """
 
-    def __init__(
-        self, parent: QWidget, layer: Layer, tooltip: Optional[str] = None
-    ) -> None:
+    def __init__(self, parent: QWidget, layer: Layer) -> None:
         super().__init__(parent, layer)
         # Setup layer
         self._layer.events.current_border_color.connect(

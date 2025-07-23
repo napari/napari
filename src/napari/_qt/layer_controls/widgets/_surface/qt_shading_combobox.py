@@ -1,5 +1,3 @@
-from typing import Optional
-
 from qtpy.QtWidgets import (
     QComboBox,
     QWidget,
@@ -35,9 +33,7 @@ class QtShadingComboBoxControl(QtWidgetControlsBase):
         Label for the shading value chooser widget.
     """
 
-    def __init__(
-        self, parent: QWidget, layer: Layer, tooltip: Optional[str] = None
-    ) -> None:
+    def __init__(self, parent: QWidget, layer: Layer) -> None:
         super().__init__(parent, layer)
         # Setup layer
         self._layer.events.shading.connect(self._on_shading_change)

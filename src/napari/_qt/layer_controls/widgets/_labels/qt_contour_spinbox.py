@@ -1,5 +1,3 @@
-from typing import Optional
-
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QWidget,
@@ -37,9 +35,7 @@ class QtContourSpinBoxControl(QtWidgetControlsBase):
         Label for the layer contour thickness chooser widget.
     """
 
-    def __init__(
-        self, parent: QWidget, layer: Layer, tooltip: Optional[str] = None
-    ) -> None:
+    def __init__(self, parent: QWidget, layer: Layer) -> None:
         super().__init__(parent, layer)
         # Setup layer
         self._layer.events.contour.connect(self._on_contour_change)

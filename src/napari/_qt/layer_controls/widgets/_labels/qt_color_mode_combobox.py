@@ -1,5 +1,3 @@
-from typing import Optional
-
 from qtpy.QtWidgets import (
     QComboBox,
     QWidget,
@@ -38,9 +36,7 @@ class QtColorModeComboBoxControl(QtWidgetControlsBase):
         Label for the color mode chooser widget.
     """
 
-    def __init__(
-        self, parent: QWidget, layer: Layer, tooltip: Optional[str] = None
-    ) -> None:
+    def __init__(self, parent: QWidget, layer: Layer) -> None:
         super().__init__(parent, layer)
         # Setup layer
         self._layer.events.colormap.connect(self._on_colormap_change)

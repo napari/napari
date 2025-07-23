@@ -1,5 +1,3 @@
-from typing import Optional
-
 import numpy as np
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QComboBox, QWidget
@@ -45,9 +43,7 @@ class QtEdgeColorPropertyControl(QtWidgetControlsBase):
         Label for the current selected _edge_color_property chooser widget.
     """
 
-    def __init__(
-        self, parent: QWidget, layer: Layer, tooltip: Optional[str] = None
-    ) -> None:
+    def __init__(self, parent: QWidget, layer: Layer) -> None:
         super().__init__(parent, layer)
         # Setup layer
         self._layer.events.edge_color_mode.connect(

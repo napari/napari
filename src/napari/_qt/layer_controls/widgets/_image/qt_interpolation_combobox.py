@@ -1,5 +1,3 @@
-from typing import Optional
-
 from qtpy.QtWidgets import (
     QComboBox,
     QWidget,
@@ -24,8 +22,8 @@ class QtInterpolationComboBoxControl(QtWidgetControlsBase):
     ----------
     parent: qtpy.QtWidgets.QWidget
         An instance of QWidget that will be used as widgets parent
-    layer : napari.layers.Layer
-        An instance of a napari layer.
+    layer : napari.layers.Image
+        An instance of a napari Image layer.
 
     Attributes
     ----------
@@ -35,9 +33,7 @@ class QtInterpolationComboBoxControl(QtWidgetControlsBase):
         Label for the shading value chooser widget.
     """
 
-    def __init__(
-        self, parent: QWidget, layer: Layer, tooltip: Optional[str] = None
-    ) -> None:
+    def __init__(self, parent: QWidget, layer: Layer) -> None:
         super().__init__(parent, layer)
         # Setup layer
         self._layer.events.interpolation2d.connect(

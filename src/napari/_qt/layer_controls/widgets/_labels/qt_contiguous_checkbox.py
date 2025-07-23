@@ -1,5 +1,3 @@
-from typing import Optional
-
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QCheckBox,
@@ -35,9 +33,7 @@ class QtContiguousCheckBoxControl(QtWidgetControlsBase):
         Label for the contiguous model chooser widget.
     """
 
-    def __init__(
-        self, parent: QWidget, layer: Layer, tooltip: Optional[str] = None
-    ) -> None:
+    def __init__(self, parent: QWidget, layer: Layer) -> None:
         super().__init__(parent, layer)
         # Setup layer
         self._layer.events.contiguous.connect(self._on_contiguous_change)

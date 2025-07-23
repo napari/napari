@@ -1,5 +1,3 @@
-from typing import Optional
-
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QCheckBox,
@@ -35,9 +33,7 @@ class QtDisplaySelectedLabelCheckBoxControl(QtWidgetControlsBase):
         Label for the layer should show only currently selected label chooser widget.
     """
 
-    def __init__(
-        self, parent: QWidget, layer: Layer, tooltip: Optional[str] = None
-    ) -> None:
+    def __init__(self, parent: QWidget, layer: Layer) -> None:
         super().__init__(parent, layer)
         # Setup layer
         self._layer.events.show_selected_label.connect(

@@ -21,8 +21,8 @@ class QtBaseImageControls(QtLayerControls):
 
     Parameters
     ----------
-    layer : napari.layers.Image
-        An instance of a napari Image layer.
+    layer : napari.layers.Image | napari.layers.Surface
+        An instance of a napari Image or Surface layer.
 
     Attributes
     ----------

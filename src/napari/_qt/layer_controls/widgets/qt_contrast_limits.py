@@ -1,5 +1,3 @@
-from typing import Optional
-
 import numpy as np
 from qtpy.QtCore import Qt, Signal
 from qtpy.QtWidgets import QHBoxLayout, QPushButton, QWidget
@@ -170,9 +168,7 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
         Label for the constrast limits chooser widget.
     """
 
-    def __init__(
-        self, parent: QWidget, layer: Layer, tooltip: Optional[str] = None
-    ) -> None:
+    def __init__(self, parent: QWidget, layer: Layer) -> None:
         super().__init__(parent, layer)
         # Setup layer
         self._layer.events.contrast_limits.connect(

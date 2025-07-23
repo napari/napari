@@ -1,5 +1,3 @@
-from typing import Optional
-
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QComboBox, QWidget
 
@@ -33,9 +31,7 @@ class QtColorPropertiesComboBoxControl(QtWidgetControlsBase):
         Label for the color property chooser widget.
     """
 
-    def __init__(
-        self, parent: QWidget, layer: Layer, tooltip: Optional[str] = None
-    ) -> None:
+    def __init__(self, parent: QWidget, layer: Layer) -> None:
         super().__init__(parent, layer)
         # Setup layer
         self._layer.events.color_by.connect(self._on_color_by_change)

@@ -1,5 +1,3 @@
-from typing import Optional
-
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QWidget
 from superqt import QLabeledDoubleSlider
@@ -34,9 +32,7 @@ class QtGammaSliderControl(QtWidgetControlsBase):
         Label for the gamma chooser widget.
     """
 
-    def __init__(
-        self, parent: QWidget, layer: Layer, tooltip: Optional[str] = None
-    ) -> None:
+    def __init__(self, parent: QWidget, layer: Layer) -> None:
         super().__init__(parent, layer)
         # Setup layer
         self._layer.events.gamma.connect(self._on_gamma_change)

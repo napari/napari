@@ -1,5 +1,4 @@
 import contextlib
-from typing import Optional
 
 import numpy as np
 from qtpy.QtCore import Qt
@@ -38,9 +37,7 @@ class QtCurrentSizeSliderControl(QtWidgetControlsBase):
         Label for the size chooser widget.
     """
 
-    def __init__(
-        self, parent: QWidget, layer: Layer, tooltip: Optional[str] = None
-    ) -> None:
+    def __init__(self, parent: QWidget, layer: Layer) -> None:
         super().__init__(parent, layer)
         # Setup layer
         self._layer.events.size.connect(self._on_current_size_change)

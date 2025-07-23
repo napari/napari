@@ -1,5 +1,3 @@
-from typing import Optional
-
 from qtpy.QtWidgets import QComboBox, QWidget
 
 from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
@@ -35,9 +33,7 @@ class QtSymbolComboBoxControl(QtWidgetControlsBase):
         Label for the current symbol chooser widget.
     """
 
-    def __init__(
-        self, parent: QWidget, layer: Layer, tooltip: Optional[str] = None
-    ) -> None:
+    def __init__(self, parent: QWidget, layer: Layer) -> None:
         super().__init__(parent, layer)
         # Setup layer
         self._layer.events.symbol.connect(self._on_current_symbol_change)

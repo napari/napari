@@ -275,6 +275,11 @@ class QtLayerControls(QFrame):
             self.layer.editable and self.layer.visible and self.ndisplay == 2,
         )
 
+    def _disconnect_child_widget_controls(self, child) -> None:
+        disconnect_method = getattr(child, 'disconnect_widget_controls', None)
+        if disconnect_method is not None:
+            disconnect_method()
+
     def eventFilter(self, qobject, event):
         """
         Event filter implementation to handle the Alt + Left mouse click interaction to
@@ -303,11 +308,7 @@ class QtLayerControls(QFrame):
     def deleteLater(self):
         disconnect_events(self.layer.events, self)
         for child in self.children():
-            disconnect_method = getattr(
-                child, 'disconnect_widget_controls', None
-            )
-            if disconnect_method is not None:
-                disconnect_method()
+            self._disconnect_child_widget_controls(child)
         super().deleteLater()
 
     def close(self):
@@ -315,11 +316,7 @@ class QtLayerControls(QFrame):
         disconnect_events(self.layer.events, self)
         for child in self.children():
             close_method = getattr(child, 'close', None)
-            disconnect_method = getattr(
-                child, 'disconnect_widget_controls', None
-            )
-            if disconnect_method is not None:
-                disconnect_method()
+            self._disconnect_child_widget_controls(child)
             if close_method is not None:
                 close_method()
         return super().close()

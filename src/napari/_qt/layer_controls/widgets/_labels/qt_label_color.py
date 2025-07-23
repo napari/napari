@@ -1,5 +1,3 @@
-from typing import Optional
-
 import numpy as np
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QColor, QPainter
@@ -128,9 +126,7 @@ class QtLabelControl(QtWidgetControlsBase):
         N.B. cannot represent labels > 2**53.
     """
 
-    def __init__(
-        self, parent: QWidget, layer: Layer, tooltip: Optional[str] = None
-    ) -> None:
+    def __init__(self, parent: QWidget, layer: Layer) -> None:
         super().__init__(parent, layer)
         # Setup layer
         self._layer.events.selected_label.connect(
