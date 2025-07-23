@@ -418,15 +418,20 @@ class VispyCanvas:
         return tuple(position_world)
 
     def _get_viewbox_at(self, position):
+        """Get the viewbox and its grid coordinates from the mouse position."""
         if not self.viewer.grid.enabled:
-            return self.view
+            return self.view, (0, 0)
 
-        for viewbox in self.grid_views:
+        for (coords, _), viewbox in zip(
+            self.viewer.grid.iter_viewboxes(len(self.viewer.layers)),
+            self.grid_views,
+            strict=False,
+        ):
             shifted_pos = position - viewbox.transform.translate[:2]
             if viewbox.inner_rect.contains(*shifted_pos):
-                return viewbox
+                return viewbox, coords
 
-        return None
+        return None, None
 
     def _process_mouse_event(
         self, mouse_callbacks: Callable, event: MouseEvent
@@ -465,9 +470,11 @@ class VispyCanvas:
         # ensure that events which began in a specific viewbox continue to be
         # calculated based on that viewbox's coordinates
         if event.press_event is not None:
-            viewbox = self._get_viewbox_at(event.press_event.pos)
+            viewbox, grid_coords = self._get_viewbox_at(event.press_event.pos)
         else:
-            viewbox = self._get_viewbox_at(event.pos)
+            viewbox, grid_coords = self._get_viewbox_at(event.pos)
+
+        self.viewer.cursor.viewbox = grid_coords
 
         if viewbox is None:
             # this means we're in an empty viewbox, so do nothing
@@ -484,6 +491,7 @@ class VispyCanvas:
             position=self._map_canvas2world(event.pos, viewbox),
             dims_displayed=list(self.viewer.dims.displayed),
             dims_point=list(self.viewer.dims.point),
+            viewbox=grid_coords,
         )
 
         # Update the cursor position
@@ -919,7 +927,7 @@ class VispyCanvas:
         w, h = self.size
         nd = self.viewer.dims.ndisplay
 
-        view = self._get_viewbox_at(event_pos) or self.view
+        view = self._get_viewbox_at(event_pos)[0] or self.view
         # combine the viewbox transform wit the scene transform
         # so each viewbox in grid mode maps back to the main scene
         transform = view.transform * view.scene.transform
