@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import pickle
 from collections.abc import Sequence
+from typing import TYPE_CHECKING
 
 from qtpy.QtCore import QMimeData, QModelIndex, Qt
 
@@ -10,6 +11,9 @@ from napari._qt.containers._base_item_model import (
     ItemType,
     _BaseEventedItemModel,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
 
 logger = logging.getLogger(__name__)
 ListIndexMIMEType = 'application/x-list-index'
@@ -33,7 +37,7 @@ class QtListModel(_BaseEventedItemModel[ItemType]):
         """
         return [ListIndexMIMEType, 'text/plain']
 
-    def mimeData(self, indices: list[QModelIndex]) -> QMimeData | None:
+    def mimeData(self, indices: Iterable[QModelIndex]) -> QMimeData | None:
         """Return an object containing serialized data from `indices`.
 
         If the list of indexes is empty, or there are no supported MIME types,
@@ -50,7 +54,7 @@ class QtListModel(_BaseEventedItemModel[ItemType]):
 
     def dropMimeData(
         self,
-        data: QMimeData,
+        data: QMimeData | None,
         action: Qt.DropAction,
         destRow: int,
         col: int,

@@ -1,4 +1,6 @@
-import typing
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
 
 from qtpy.QtCore import QModelIndex, QSize, Qt
 from qtpy.QtGui import QImage
@@ -9,28 +11,34 @@ from napari.layers import Layer
 from napari.settings import get_settings
 from napari.utils.translations import trans
 
-ThumbnailRole = Qt.UserRole + 2
-LoadedRole = Qt.UserRole + 3
+if TYPE_CHECKING:
+    from napari.utils.events import Event
+
+ThumbnailRole = Qt.ItemDataRole.UserRole + 2
+LoadedRole = Qt.ItemDataRole.UserRole + 3
 
 
 class QtLayerListModel(QtListModel[Layer]):
-    def data(self, index: QModelIndex, role: Qt.ItemDataRole):
+    def data(
+        self, index: QModelIndex, role: int = Qt.ItemDataRole.DisplayRole
+    ) -> Any:
         """Return data stored under ``role`` for the item at ``index``."""
         if not index.isValid():
             return None
-        layer = self.getItem(index)
+        item = self.getItem(index)
+        layer = item if isinstance(item, Layer) else item[0]
         viewer = current_viewer()
         layer_loaded = layer.loaded
         # Playback with async slicing causes flickering between the thumbnail
         # and loading animation in some cases due quick changes in the loaded
         # state, so report as unloaded in that case to avoid that.
-        if get_settings().experimental.async_ and (viewer := current_viewer()):
+        if get_settings().experimental.async_ and viewer:
             viewer_playing = viewer.window._qt_viewer.dims.is_playing
             layer_loaded = layer.loaded and not viewer_playing
         if role == Qt.ItemDataRole.DisplayRole:  # used for item text
             return layer.name
         if role == Qt.ItemDataRole.TextAlignmentRole:  # alignment of the text
-            return Qt.AlignCenter
+            return Qt.AlignmentFlag.AlignCenter
         if role == Qt.ItemDataRole.EditRole:
             # used to populate line edit when editing
             return layer.name
@@ -52,10 +60,10 @@ class QtLayerListModel(QtListModel[Layer]):
         if role == ThumbnailRole:  # return the thumbnail
             thumbnail = layer.thumbnail
             return QImage(
-                thumbnail,
+                thumbnail.data,
                 thumbnail.shape[1],
                 thumbnail.shape[0],
-                QImage.Format_RGBA8888,
+                QImage.Format.Format_RGBA8888,
             )
         if role == LoadedRole:
             return layer_loaded
@@ -68,19 +76,19 @@ class QtLayerListModel(QtListModel[Layer]):
     def setData(
         self,
         index: QModelIndex,
-        value: typing.Any,
+        value: Any,
         role: int = Qt.ItemDataRole.EditRole,
     ) -> bool:
+        item = self.getItem(index)
+        layer = item if isinstance(item, Layer) else item[0]
         if role == Qt.ItemDataRole.CheckStateRole:
             # The item model stores a Qt.CheckState enum value that can be
             # partially checked, but we only use the unchecked and checked
             # to correspond to the layer's visibility.
             # https://doc.qt.io/qt-5/qt.html#CheckState-enum
-            self.getItem(index).visible = (
-                Qt.CheckState(value) == Qt.CheckState.Checked
-            )
+            layer.visible = Qt.CheckState(value) == Qt.CheckState.Checked
         elif role == Qt.ItemDataRole.EditRole:
-            self.getItem(index).name = value
+            layer.name = value
             role = Qt.ItemDataRole.DisplayRole
         else:
             return super().setData(index, value, role=role)
@@ -88,14 +96,14 @@ class QtLayerListModel(QtListModel[Layer]):
         self.dataChanged.emit(index, index, [role])
         return True
 
-    def all_loaded(self):
+    def all_loaded(self) -> bool:
         """Return if all the layers are loaded."""
         return all(
             self.index(row, 0).data(LoadedRole)
             for row in range(self.rowCount())
         )
 
-    def _process_event(self, event):
+    def _process_event(self, event: Event) -> None:
         # The model needs to emit `dataChanged` whenever data has changed
         # for a given index, so that views can update themselves.
         # Here we convert native events to the dataChanged signal.

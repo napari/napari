@@ -92,7 +92,7 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
         """
         return QModelIndex()
 
-    def data(self, index: QModelIndex, role: Qt.ItemDataRole) -> Any:  # type: ignore[override]
+    def data(self, index: QModelIndex, role: int) -> Any:
         """Returns data stored under `role` for the item at `index`.
 
         A given `QModelIndex` can store multiple types of data, each
