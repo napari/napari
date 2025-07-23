@@ -60,15 +60,14 @@ class VispyCanvasOverlay(VispyBaseOverlay):
     def __init__(self, *, overlay, node, parent=None) -> None:
         super().__init__(overlay=overlay, node=node, parent=parent)
 
-        # offsets and size are used to control fine positioning, and will depend
+        # size is used to control fine positioning, and will depend
         # on the subclass and visual that needs to be rendered
-        self.x_offset = 10.0
-        self.y_offset = 10.0
         self.x_size = 0.0
         self.y_size = 0.0
-        self.x_offset_tiling = 0.0
-        self.y_offset_tiling = 0.0
-        self._canvas = None
+        # tiling offsets shouldn't be touched and are only used by the canvas
+        # to tile overlays properly
+        self.x_offset = 0.0
+        self.y_offset = 0.0
         self.node.transform = STTransform()
         self.overlay.events.position.connect(self._on_position_change)
 
@@ -83,18 +82,14 @@ class VispyCanvasOverlay(VispyBaseOverlay):
         x_offset = 0
         y_offset = 0
         if 'top' in position:
-            y_offset = self.y_offset + self.y_offset_tiling
+            y_offset = self.y_offset
         elif 'bottom' in position:
-            y_offset = (
-                y_max - self.y_size - self.y_offset - self.y_offset_tiling
-            )
+            y_offset = y_max - self.y_size - self.y_offset
 
         if 'left' in position:
-            x_offset = self.x_offset + self.x_offset_tiling
+            x_offset = self.x_offset
         elif 'right' in position:
-            x_offset = (
-                x_max - self.x_size - self.x_offset - self.x_offset_tiling
-            )
+            x_offset = x_max - self.x_size - self.x_offset
         elif 'center' in position:
             x_offset = x_max / 2 - self.x_size / 2
 
