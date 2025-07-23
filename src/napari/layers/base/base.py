@@ -479,6 +479,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         )
         self.name = name
         self.mode = mode
+        self.projection_mode = projection_mode
         self._overlays.update(
             {
                 'transform_box': TransformBoxOverlay(),

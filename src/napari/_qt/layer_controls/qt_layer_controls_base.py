@@ -11,7 +11,10 @@ from qtpy.QtWidgets import (
 )
 from superqt import QLabeledDoubleSlider
 
-from napari._qt.utils import set_widgets_enabled_with_opacity
+from napari._qt.utils import (
+    qt_signals_blocked,
+    set_widgets_enabled_with_opacity,
+)
 from napari._qt.widgets.qt_mode_buttons import QtModeRadioButton
 from napari.layers.base._base_constants import (
     BLENDING_TRANSLATIONS,
@@ -161,6 +164,19 @@ class QtLayerControls(QFrame):
         self.opacityLabel.setEnabled(
             self.layer.blending not in NO_OPACITY_BLENDING_MODES
         )
+
+        proj_modes = [i.value for i in self.layer._projectionclass]
+        if len(proj_modes) > 1:
+            self.projectionComboBox = QComboBox(self)
+            self.projectionComboBox.addItems(proj_modes)
+            self.layer.events.projection_mode.connect(
+                self._on_projection_mode_change
+            )
+            self.projectionComboBox.currentTextChanged.connect(
+                self.changeProjectionMode
+            )
+            self._on_projection_mode_change()
+
         if self.__class__ == QtLayerControls:
             # This base class is only instantiated in tests. When it's not a
             # concrete subclass, we need to parent the button_grid to the
@@ -204,6 +220,10 @@ class QtLayerControls(QFrame):
             )
         self.blendComboBox.setToolTip(blending_tooltip)
         self.layer.help = blending_tooltip
+
+    def changeProjectionMode(self, text):
+        with self.layer.events.blocker(self._on_projection_mode_change):
+            self.layer.projection_mode = text
 
     def _radio_button(
         self,
@@ -304,6 +324,12 @@ class QtLayerControls(QFrame):
         with self.layer.events.blending.blocker():
             self.blendComboBox.setCurrentIndex(
                 self.blendComboBox.findData(self.layer.blending)
+            )
+
+    def _on_projection_mode_change(self):
+        with qt_signals_blocked(self.projectionComboBox):
+            self.projectionComboBox.setCurrentText(
+                str(self.layer.projection_mode)
             )
 
     @property
