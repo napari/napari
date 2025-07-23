@@ -80,6 +80,11 @@ authors:
   affiliation: University of Minnesota — Twin Cities
   orcid: https://orcid.org/0000-0003-4905-757X
   alias: TimMonko
+- given-names: Carol
+  family-names: Willing
+  affiliation: Willing Consulting
+  orcid: https://orcid.org/0000-0002-9817-8485
+  alias: willingc
 - given-names: Loic
   family-names: Royer
   affiliation: Chan Zuckerberg Biohub
@@ -345,11 +350,6 @@ authors:
   affiliation: TU-Dresden / EPFL
   orcid: https://orcid.org/0000-0002-7780-9057
   alias: maweigert
-- given-names: Carol
-  family-names: Willing
-  affiliation: Willing Consulting
-  orcid: https://orcid.org/0000-0002-9817-8485
-  alias: willingc
 - given-names: Jonas
   family-names: Windhager
   affiliation: ETH Zurich / University of Zurich
