@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 import sys
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 from warnings import warn
 
 from qtpy import PYQT5, PYSIDE2
@@ -79,9 +79,7 @@ def _focus_changed(old: QWidget | None, new: QWidget | None):
 
     if not isinstance(window, _QtMainWindow):
         return
-    notifications = cast(
-        list[NapariQtNotification], window.findChildren(NapariQtNotification)
-    )
+    notifications = NapariQtNotification._instances
     if not notifications:
         return
     if start_timer:

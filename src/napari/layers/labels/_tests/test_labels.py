@@ -573,7 +573,7 @@ def test_contour(input_data, expected_data_view):
     np.testing.assert_array_equal(layer.data, input_data)
 
     np.testing.assert_array_equal(
-        layer._raw_to_displayed(input_data.astype(np.float32)),
+        layer._raw_to_displayed(input_data),
         layer._data_view,
     )
     data_view_before_contour = layer._data_view.copy()

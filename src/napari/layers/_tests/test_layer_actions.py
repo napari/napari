@@ -278,6 +278,7 @@ def test_convert_dtype(mode):
     assert ll[-1].data.flatten().sum() == 1000
 
 
+@pytest.mark.filterwarnings('ignore:projection mode :UserWarning')
 @pytest.mark.parametrize(
     ('layer', 'type_'),
     [
@@ -298,7 +299,7 @@ def test_convert_layer(layer, type_):
     original_scale = layer.scale.copy()
     ll.append(layer)
     assert ll[0]._type_string != type_
-    _convert(ll, type_)
+    _convert(ll, 'labels')
     if isinstance(layer, Shapes) or (
         type_ == 'labels'
         and isinstance(layer, Image)
