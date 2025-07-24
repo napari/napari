@@ -10,7 +10,6 @@ def add_layers(img1: ImageData, img2: ImageData) -> ImageData:
     return img1 + img2
 
 viewer = Viewer()
-print("title: ", viewer.title)
 
 viewer.open_sample('napari', 'cells3d')
 viewer.window.add_function_widget(add_layers)
