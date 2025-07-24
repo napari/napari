@@ -39,6 +39,7 @@ class QtNdimSpinBoxControl(QtWidgetControlsBase):
         self._layer.events.n_edit_dimensions.connect(
             self._on_n_edit_dimensions_change
         )
+        self._layer.events.data.connect(self._on_data_change)
 
         # Setup widgets
         ndim_sb = QSpinBox()
@@ -74,6 +75,9 @@ class QtNdimSpinBoxControl(QtWidgetControlsBase):
             self.ndim_spinbox.setValue(int(value))
             # TODO: Check how to decouple this
             self.parent()._set_polygon_tool_state()
+
+    def _on_data_change(self) -> None:
+        self.ndim_spinbox.setMaximum(self._layer.ndim)
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
         return [(self.ndim_spinbox_label, self.ndim_spinbox)]
