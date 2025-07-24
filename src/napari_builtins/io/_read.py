@@ -497,14 +497,13 @@ def _patch_viewer_new():
     original_init = Viewer.__init__
 
     def patched_init(self, *args, **kwargs):
-        pass
+        Viewer.__init__ = original_init
 
     def patched_new(cls, *args, **kwargs):
         if not kwargs:
             viewer = current_viewer()
             if viewer is not None:
                 Viewer.__new__ = original_new
-                Viewer.__init__ = original_init
                 return viewer
         return original_new()
 
