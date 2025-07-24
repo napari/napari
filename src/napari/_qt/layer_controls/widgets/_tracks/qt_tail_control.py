@@ -91,6 +91,7 @@ class QtTailWidthSliderControl(QtWidgetControlsBase):
         super().__init__(parent, layer)
         # Setup layer
         self._layer.events.tail_width.connect(self._on_tail_width_change)
+        self._layer.events.data.connect(self._on_data_change)
 
         # Setup widgets
         # slider for track edge width
@@ -112,6 +113,9 @@ class QtTailWidthSliderControl(QtWidgetControlsBase):
         with qt_signals_blocked(self.tail_width_slider):
             value = int(self._layer.tail_width)
             self.tail_width_slider.setValue(value)
+
+    def _on_data_change(self) -> None:
+        self.tail_width_slider.setMaximum(int(self._layer._max_width))
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
         return [(self.tail_width_slider_label, self.tail_width_slider)]
