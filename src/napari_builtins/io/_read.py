@@ -3,7 +3,7 @@ import itertools
 import os
 import re
 from collections.abc import Sequence
-from contextlib import suppress
+from contextlib import contextmanager, suppress
 from glob import glob
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional, Union
@@ -488,6 +488,35 @@ def napari_get_reader(
     return _magic_imreader
 
 
+@contextmanager
+def _patch_viewer_new():
+    """Context manager to patch the viewer's new method."""
+    from napari.viewer import Viewer, current_viewer
+
+    original_new = Viewer.__new__
+    original_init = Viewer.__init__
+
+    def patched_init(self, *args, **kwargs):
+        pass
+
+    def patched_new(cls, *args, **kwargs):
+        if not kwargs:
+            viewer = current_viewer()
+            if viewer is not None:
+                Viewer.__new__ = original_new
+                Viewer.__init__ = original_init
+                return viewer
+        return original_new()
+
+    Viewer.__new__ = patched_new
+    Viewer.__init__ = patched_init
+    try:
+        yield
+    finally:
+        Viewer.__new__ = original_new
+        Viewer.__init__ = original_init
+
+
 def load_and_execute_python_code(path: str) -> list['LayerData']:
     """Load and execute Python code from a file.
 
@@ -496,8 +525,8 @@ def load_and_execute_python_code(path: str) -> list['LayerData']:
     path : str
         Path to the Python file to be executed.
     """
-    with open(path) as file:
-        code = file.read()
+    code = Path(path).read_text()
+    with _patch_viewer_new():
         try:
             exec(code)
         except BaseException as e:  # noqa: BLE001

@@ -2,18 +2,16 @@
 
 To use this example, open napari and drag this file into the viewer.
 """
-import sys
-
-from napari import current_viewer
+from napari import Viewer
 from napari.types import ImageData
 
 
 def add_layers(img1: ImageData, img2: ImageData) -> ImageData:
     return img1 + img2
 
-if current_viewer() is None:
-    sys.exit(0)
+viewer = Viewer()
+print("title: ", viewer.title)
 
-current_viewer().open_sample('napari', 'cells3d')
-current_viewer().window.add_function_widget(add_layers)
+viewer.open_sample('napari', 'cells3d')
+viewer.window.add_function_widget(add_layers)
 
