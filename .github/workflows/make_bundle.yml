@@ -37,11 +37,11 @@ jobs:
             python-version: "3.8"
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
         with:
           fetch-depth: 0
       - name: Install Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@7f4fc3e22c37d6ff65e88745f38bd3157c663f7c # v4.9.1
         with:
           python-version: ${{ matrix.python-version }}
           cache-dependency-path: setup.cfg
@@ -70,17 +70,17 @@ jobs:
         if: runner.os != 'Linux'
         run: python bundle.py
       - name: Upload Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5 # v3.2.1
         with:
           name: napari-${{ env.version }}-${{ runner.os }}-${{ env.arch-suffix }}.zip
           path: napari-${{ env.version }}-${{ runner.os }}-${{ env.arch-suffix }}.zip
       - name: Get Release
         if: startsWith(github.ref, 'refs/tags/v')
         id: get_release
-        uses: bruceadams/get-release@v1.3.2
+        uses: bruceadams/get-release@74c3d60f5a28f358ccf241a00c9021ea16f0569f # v1.3.2
       - name: Upload Release Asset
         if: startsWith(github.ref, 'refs/tags/v')
-        uses: actions/upload-release-asset@v1
+        uses: actions/upload-release-asset@e8f9f06c4b078e705bd2ea027f0926603fc9b4d5 # v1.0.2
         with:
           upload_url: ${{ steps.get_release.outputs.upload_url }}
           asset_path: napari-${{ env.version }}-${{ runner.os }}-${{ env.arch-suffix }}.zip
@@ -88,7 +88,7 @@ jobs:
           asset_content_type: application/zip
       - name: Upload Nightly Build Asset
         if: ${{ github.event_name == 'schedule' }}
-        uses: WebFreak001/deploy-nightly@v1.2.0
+        uses: WebFreak001/deploy-nightly@b2651b28edc94c14f10c169905cd2aa84c75037d # v1.2.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -100,7 +100,7 @@ jobs:
           asset_content_type: application/zip
           max_releases: 1
       - name: Update latest tag
-        uses: EndBug/latest-tag@latest
+        uses: EndBug/latest-tag@7589411ebda7bc8f98deb2dbc37e3dc45828f7d0 # v1.6.2
         if: ${{ github.event_name == 'schedule' }}
         with:
           description: latest code released from nightly build

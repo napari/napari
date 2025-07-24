@@ -12,4 +12,4 @@ jobs:
   assign-author:
     runs-on: ubuntu-latest
     steps:
-      - uses: toshimaru/auto-author-assign@v1.6.1
+      - uses: toshimaru/auto-author-assign@c619c1aabed85ca18696baed036e82f910cbcb6f # v1.6.1

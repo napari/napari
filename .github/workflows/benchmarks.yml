@@ -56,22 +56,21 @@ jobs:
     steps:
       # We need the full repo to avoid this issue
       # https://github.com/actions/checkout/issues/23
-      - uses: actions/checkout@v3
+    - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-python@v4
+    - uses: actions/setup-python@7f4fc3e22c37d6ff65e88745f38bd3157c663f7c # v4.9.1
         name: Install Python
         with:
           python-version: "3.9"
           cache-dependency-path: setup.cfg
 
-      - uses: tlambert03/setup-qt-libs@v1
-
+    - uses: tlambert03/setup-qt-libs@19e4ef2d781d81f5f067182e228b54ec90d23b76 # v1.8
       - name: Setup asv
         run: python -m pip install asv virtualenv
 
-      - uses: octokit/request-action@v2.x
+    - uses: octokit/request-action@05a2312de9f8207044c4c9e41fe19703986acc13 # v2.x
         id: latest_release
         with:
           route: GET /repos/{owner}/{repo}/releases/latest
@@ -128,7 +127,7 @@ jobs:
 
       - name: Report Failures as Issue
         if: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && failure() }}
-        uses: JasonEtco/create-an-issue@v2
+      uses: JasonEtco/create-an-issue@1b14a70e4d8dc185e5cc76d3bec9eab20257b2c5 # v2.9.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PLATFORM: ${{ matrix.runs-on }}
@@ -162,7 +161,7 @@ jobs:
 
           fi
 
-      - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5 # v3.2.1
         if: always()
         with:
           name: asv-benchmark-results-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}
