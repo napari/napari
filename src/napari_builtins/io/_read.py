@@ -3,7 +3,7 @@ import itertools
 import os
 import re
 from collections.abc import Sequence
-from contextlib import suppress
+from contextlib import contextmanager, suppress
 from glob import glob
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional, Union
@@ -14,6 +14,7 @@ import numpy as np
 from dask import delayed
 
 from napari.utils.misc import abspath_or_url
+from napari.utils.notifications import notification_manager
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
@@ -485,3 +486,71 @@ def napari_get_reader(
         return _csv_reader
 
     return _magic_imreader
+
+
+@contextmanager
+def _patch_viewer_new():
+    """Context manager to patch the viewer's new method."""
+    from napari.viewer import Viewer, current_viewer
+
+    original_new = Viewer.__new__
+    original_init = Viewer.__init__
+
+    def patched_init(self, *args, **kwargs):
+        Viewer.__init__ = original_init
+
+    def patched_new(cls, *args, **kwargs):
+        if not kwargs:
+            viewer = current_viewer()
+            if viewer is not None:
+                Viewer.__new__ = original_new
+                return viewer
+        return original_new()
+
+    Viewer.__new__ = patched_new
+    Viewer.__init__ = patched_init
+    try:
+        yield
+    finally:
+        Viewer.__new__ = original_new
+        Viewer.__init__ = original_init
+
+
+def load_and_execute_python_code(path: str) -> list['LayerData']:
+    """Load and execute Python code from a file.
+
+    Parameters
+    ----------
+    path : str
+        Path to the Python file to be executed.
+    """
+    code = Path(path).read_text()
+    with _patch_viewer_new():
+        try:
+            exec(code)
+        except BaseException as e:  # noqa: BLE001
+            notification_manager.receive_error(type(e), e, e.__traceback__)
+    return [(None,)]
+
+
+def napari_get_py_reader(path: str) -> 'ReaderFunction | None':
+    """Return a reader function for Python files.
+
+    This function is used to read Python files and execute their content.
+    It returns a callable that executes the code in the file.
+
+    Parameters
+    ----------
+    path : str
+        Path to the Python file to be executed.
+
+    Returns
+    -------
+    callable
+        A function that executes the Python code in the specified file.
+    """
+    if not os.path.exists(path):
+        return None
+    if os.path.splitext(path)[1] != '.py':
+        return None
+    return load_and_execute_python_code
