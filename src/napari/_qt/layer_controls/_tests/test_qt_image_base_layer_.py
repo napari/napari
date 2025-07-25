@@ -7,10 +7,12 @@ from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QApplication, QColorDialog, QPushButton
 
 from napari._qt.layer_controls.qt_image_controls_base import (
-    QContrastLimitsPopup,
-    QRangeSliderPopup,
     QtBaseImageControls,
     QtLayerControls,
+)
+from napari._qt.layer_controls.widgets.qt_contrast_limits import (
+    QContrastLimitsPopup,
+    QRangeSliderPopup,
     range_to_decimals,
 )
 from napari.components.dims import Dims
@@ -30,7 +32,9 @@ def test_base_controls_creation(qtbot, layer):
     qtctrl = QtBaseImageControls(layer)
     qtbot.addWidget(qtctrl)
     original_clims = tuple(layer.contrast_limits)
-    slider_clims = qtctrl.contrastLimitsSlider.value()
+    slider_clims = (
+        qtctrl._contrast_limits_control.contrast_limits_slider.value()
+    )
     assert slider_clims[0] == 0
     assert slider_clims[1] == 99
     assert tuple(slider_clims) == original_clims
@@ -42,8 +46,11 @@ def test_clim_right_click_shows_popup(mock_show, qtbot, layer):
     """Right clicking on the contrast limits slider should show a popup."""
     qtctrl = QtBaseImageControls(layer)
     qtbot.addWidget(qtctrl)
-    qtbot.mousePress(qtctrl.contrastLimitsSlider, Qt.RightButton)
-    assert hasattr(qtctrl, 'clim_popup')
+    qtbot.mousePress(
+        qtctrl._contrast_limits_control.contrast_limits_slider,
+        Qt.RightButton,
+    )
+    assert hasattr(qtctrl._contrast_limits_control, 'clim_popup')
     # this mock doesn't seem to be working on cirrus windows
     # but it works on local windows tests...
     if not (os.name == 'nt' and os.getenv('CI')):
@@ -57,7 +64,10 @@ def test_changing_model_updates_view(qtbot, layer):
     qtbot.addWidget(qtctrl)
     new_clims = (20, 40)
     layer.contrast_limits = new_clims
-    assert tuple(qtctrl.contrastLimitsSlider.value()) == new_clims
+    assert (
+        tuple(qtctrl._contrast_limits_control.contrast_limits_slider.value())
+        == new_clims
+    )
 
 
 @patch.object(QRangeSliderPopup, 'show')
@@ -72,17 +82,23 @@ def test_range_popup_clim_buttons(mock_show, qtbot, qapp, layer):
     qtbot.addWidget(qtctrl)
     original_clims = tuple(layer.contrast_limits)
     layer.contrast_limits = (20, 40)
-    qtbot.mousePress(qtctrl.contrastLimitsSlider, Qt.RightButton)
+    qtbot.mousePress(
+        qtctrl._contrast_limits_control.contrast_limits_slider,
+        Qt.RightButton,
+    )
 
     # pressing the reset button returns the clims to the default values
-    reset_button = qtctrl.clim_popup.findChild(
+    reset_button = qtctrl._contrast_limits_control.clim_popup.findChild(
         QPushButton, 'reset_clims_button'
     )
     reset_button.click()
     qapp.processEvents()
-    assert tuple(qtctrl.contrastLimitsSlider.value()) == original_clims
+    assert (
+        tuple(qtctrl._contrast_limits_control.contrast_limits_slider.value())
+        == original_clims
+    )
 
-    rangebtn = qtctrl.clim_popup.findChild(
+    rangebtn = qtctrl._contrast_limits_control.clim_popup.findChild(
         QPushButton, 'full_clim_range_button'
     )
     # data in this test is uint16 or int32 for Image, and float for Surface.
@@ -92,8 +108,8 @@ def test_range_popup_clim_buttons(mock_show, qtbot, qapp, layer):
         rangebtn.click()
         qapp.processEvents()
         assert tuple(layer.contrast_limits_range) == (info.min, info.max)
-        min_ = qtctrl.contrastLimitsSlider.minimum()
-        max_ = qtctrl.contrastLimitsSlider.maximum()
+        min_ = qtctrl._contrast_limits_control.contrast_limits_slider.minimum()
+        max_ = qtctrl._contrast_limits_control.contrast_limits_slider.maximum()
         assert (min_, max_) == (info.min, info.max)
     else:
         assert rangebtn is None
@@ -127,7 +143,7 @@ def test_qt_image_controls_change_contrast(qtbot):
     layer = Image(np.random.rand(8, 8))
     qtctrl = QtBaseImageControls(layer)
     qtbot.addWidget(qtctrl)
-    qtctrl.contrastLimitsSlider.setValue((0.1, 0.8))
+    qtctrl._contrast_limits_control.contrast_limits_slider.setValue((0.1, 0.8))
     assert tuple(layer.contrast_limits) == (0.1, 0.8)
 
 
@@ -145,22 +161,22 @@ def test_blending_opacity_slider(qtbot):
     qtbot.addWidget(qtctrl)
     assert layer.blending == 'translucent'
     # check that the opacity slider is present by default
-    assert qtctrl.opacitySlider.isEnabled()
+    assert qtctrl._opacity_blending_controls.opacity_slider.isEnabled()
     # set minimum blending, the opacity slider should be disabled
     layer.blending = 'minimum'
-    assert not qtctrl.opacitySlider.isEnabled()
+    assert not qtctrl._opacity_blending_controls.opacity_slider.isEnabled()
     # set the blending to 'additive' confirm the slider is enabled
     layer.blending = 'additive'
     assert layer.blending == 'additive'
-    assert qtctrl.opacitySlider.isEnabled()
+    assert qtctrl._opacity_blending_controls.opacity_slider.isEnabled()
     # set opaque blending, the opacity slider should be disabled
     layer.blending = 'opaque'
     assert layer.blending == 'opaque'
-    assert not qtctrl.opacitySlider.isEnabled()
+    assert not qtctrl._opacity_blending_controls.opacity_slider.isEnabled()
     # set the blending back to 'translucent' confirm the slider is enabled
     layer.blending = 'translucent'
     assert layer.blending == 'translucent'
-    assert qtctrl.opacitySlider.isEnabled()
+    assert qtctrl._opacity_blending_controls.opacity_slider.isEnabled()
 
 
 @pytest.mark.parametrize('layer', [Image(_IMAGE), Surface(_SURF)])
@@ -169,10 +185,12 @@ def test_custom_colormap(qtbot, layer):
     qtctrl = QtBaseImageControls(layer)
 
     # check widget popup
-    assert isinstance(qtctrl.colorbarLabel, QPushButton), (
+    assert isinstance(qtctrl._colormap_control.colorbar_label, QPushButton), (
         'Colorbar button not found'
     )
-    qtbot.mouseRelease(qtctrl.colorbarLabel, Qt.MouseButton.LeftButton)
+    qtbot.mouseRelease(
+        qtctrl._colormap_control.colorbar_label, Qt.MouseButton.LeftButton
+    )
     # close still open popup widgets
     for widget in QApplication.topLevelWidgets():
         if isinstance(widget, QColorDialog):
