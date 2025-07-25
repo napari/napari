@@ -899,6 +899,7 @@ def test_thick_slice():
     layer._slice_dims(Dims(ndim=3, point=(0.5, 0, 0)))
     np.testing.assert_array_equal(layer._slice.image.raw, data[0])
 
+    layer.projection_mode = 'none'
     # no changes if projection mode is 'none'
     layer._slice_dims(
         Dims(

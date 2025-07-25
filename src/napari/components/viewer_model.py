@@ -26,6 +26,7 @@ from napari.components._layer_slicer import _LayerSlicer
 from napari.components._viewer_mouse_bindings import (
     dims_scroll,
     double_click_to_zoom,
+    drag_to_zoom,
 )
 from napari.components.camera import Camera
 from napari.components.cursor import Cursor, CursorStyle
@@ -38,6 +39,7 @@ from napari.components.overlays import (
     Overlay,
     ScaleBarOverlay,
     TextOverlay,
+    ZoomOverlay,
 )
 from napari.components.tooltip import Tooltip
 from napari.errors import (
@@ -120,6 +122,7 @@ DEFAULT_OVERLAYS = {
     'text': TextOverlay,
     'axes': AxesOverlay,
     'brush_circle': BrushCircleOverlay,
+    'zoom': ZoomOverlay,
 }
 
 
@@ -287,6 +290,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         # Add mouse callback
         self.mouse_wheel_callbacks.append(dims_scroll)
         self.mouse_double_click_callbacks.append(double_click_to_zoom)
+        self.mouse_drag_callbacks.append(drag_to_zoom)
 
         self._overlays.update({k: v() for k, v in DEFAULT_OVERLAYS.items()})
 
@@ -302,6 +306,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     @property
     def text_overlay(self):
         return self._overlays['text']
+
+    @property
+    def _zoom_box(self):
+        return self._overlays['zoom']
 
     @property
     def _brush_circle_overlay(self):
@@ -455,7 +463,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             angles=self.camera.angles,
         )
 
-    def _get_scene_parameters(self):
+    def _get_scene_parameters(
+        self,
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Get the scene parameters for the current grid mode.
 
         Returns
@@ -586,7 +596,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         return np.array([displayed_height, displayed_width])
 
-    def _new_labels(self):
+    def _new_labels(self) -> None:
         """Create new labels layer filling full world coordinates space."""
         layers_extent = self.layers.extent
         extent = layers_extent.world
@@ -936,7 +946,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         name=None,
         opacity=1.0,
         plane=None,
-        projection_mode='none',
+        projection_mode='mean',
         rendering='mip',
         rgb=None,
         rotate=None,

@@ -1,7 +1,8 @@
 from functools import partial
 from typing import Dict, List, Optional, TYPE_CHECKING, Tuple
+from packaging.version import parse as parse_version
 
-from qtpy import QtCore, QtGui, QtWidgets
+from qtpy import QtCore, QtGui, QtWidgets, QT_VERSION
 
 from ...._qt.widgets.qt_extension2reader import Extension2ReaderTable
 from ...._qt.widgets.qt_highlight_preview import QtHighlightPreviewWidget
@@ -18,6 +19,9 @@ from ...._qt.widgets.qt_spinbox import QtSpinBox
 
 if TYPE_CHECKING:
     from .form import WidgetBuilder
+
+
+QT_GE_66 = parse_version(QT_VERSION) >= parse_version("6.6.0")
 
 
 class SchemaWidgetMixin:
@@ -64,9 +68,14 @@ class SchemaWidgetMixin:
     def _set_valid_state(self, error: Exception = None):
         palette = self.palette()
         colour = QtGui.QColor()
-        colour.setNamedColor(
-            self.VALID_COLOUR if error is None else self.INVALID_COLOUR
-        )
+        if QT_GE_66:
+            colour.fromString(
+                self.VALID_COLOUR if error is None else self.INVALID_COLOUR
+            )
+        else:
+            colour.setNamedColor(
+                self.VALID_COLOUR if error is None else self.INVALID_COLOUR
+            )
         palette.setColor(self.backgroundRole(), colour)
 
         self.setPalette(palette)
