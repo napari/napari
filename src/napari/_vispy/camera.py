@@ -113,7 +113,10 @@ class VispyCamera:
             scale = np.array(
                 [self._view.camera.rect.width, self._view.camera.rect.height]
             )
-            scale[np.isclose(scale, 0)] = 1  # fix for #2875
+            # we just never want this to be zero; however, ideally we should block zooming
+            # itself (currently we rely on vispy to do camera callbacks so we can't do this)
+            # other stuff breaks at lower than 1e-8, so we shhouldn't go there...
+            scale = np.clip(scale, 1e-8, np.inf)
         zoom = np.min(viewbox_size / scale)
         return zoom
 
