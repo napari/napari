@@ -1,6 +1,12 @@
-"""This example demonstrates how to execute a python script by drag'n'drop
+"""
+Drag and Drop Python Code Example
+=================================
+
+This example demonstrates how to execute a python script by drag'n'drop
 
 To use this example, open napari and drag this file into the viewer.
+
+.. tags:: interactivity
 """
 from napari import Viewer
 from napari.types import ImageData
