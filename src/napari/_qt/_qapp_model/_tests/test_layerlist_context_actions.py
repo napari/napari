@@ -29,7 +29,8 @@ def test_layer_actions_ctx_menu_execute_command(
             app.commands.execute_command(command_id)
     elif command_id == 'napari.layer.merge_rgb':
         with pytest.raises(
-            ValueError, match='Merging to RGB requires exactly 3 Image'
+            ValueError,
+            match='Merging to RGB requires either 3 or 4 Image layers',
         ):
             app.commands.execute_command(command_id)
     elif command_id in [
