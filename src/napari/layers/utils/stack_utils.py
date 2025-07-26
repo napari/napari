@@ -384,7 +384,9 @@ def merge_rgb(images: list[Image]) -> Image:
         missing_colormaps = set(r_g_b) - colormaps
         raise ValueError(
             trans._(
-                'Missing colormap(s): {missing_colormaps}! To merge layers to RGB, ensure you have red, green, and blue as layer colormaps.',
+                'Missing colormap(s): {missing_colormaps}! To merge layers to '
+                f'{"RGB" if len(r_g_b) == 3 else "RGBA"}, ensure you have '
+                f'{", ".join(r_g_b[:-1])}, and {r_g_b[-1]} as layer colormaps.',
                 missing_colormaps=missing_colormaps,
                 deferred=True,
             )
