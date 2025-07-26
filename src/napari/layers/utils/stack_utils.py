@@ -256,9 +256,9 @@ def split_rgb(stack: Image, with_alpha=False) -> list[Image]:
         raise ValueError(
             trans._('Image must be RGB to use split_rgb', deferred=True)
         )
-    # representing alpha channel as magenta
+    # representing alpha channel as gray
     images = stack_to_images(
-        stack, -1, colormap=('red', 'green', 'blue', 'magenta')
+        stack, -1, colormap=('red', 'green', 'blue', 'gray')
     )
     return images if with_alpha else images[:3]
 
@@ -377,9 +377,9 @@ def merge_rgb(images: list[Image]) -> Image:
     # we will check for the presence of R G B colormaps to determine how to merge
     colormaps = {image.colormap.name for image in images}
     r_g_b = ['red', 'green', 'blue']
-    # if image is rgba, add magenta colormap to represent alpha channel
+    # if image is rgba, add gray colormap to represent alpha channel
     if len(colormaps) == 4:
-        r_g_b.append('magenta')
+        r_g_b.append('gray')
     if colormaps != set(r_g_b):
         missing_colormaps = set(r_g_b) - colormaps
         raise ValueError(

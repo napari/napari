@@ -189,8 +189,8 @@ def test_split_and_merge_rgba():
     images = split_rgb(stack, with_alpha=True)
     assert len(images) == 4
     colormaps = {image.colormap.name for image in images}
-    # magenta should be assigned to alpha channel
-    assert colormaps == {'red', 'green', 'blue', 'magenta'}
+    # gray should be assigned to alpha channel
+    assert colormaps == {'red', 'green', 'blue', 'gray'}
 
     # merge the 4 images back into a rgba image
     rgb_image = merge_rgb(images)
