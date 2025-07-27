@@ -500,8 +500,14 @@ def _patch_viewer_new():
         Viewer.__init__ = original_init
 
     def patched_new(cls, *args, **kwargs):
-        if not kwargs:
+        ndisplay = None
+        if len(kwargs) == 1 and 'ndisplay' in kwargs:
+            ndisplay = kwargs.pop('ndisplay')
+
+        if not kwargs and not args:
             viewer = current_viewer()
+            if ndisplay is not None:
+                viewer.dims.ndisplay = ndisplay
             if viewer is not None:
                 Viewer.__new__ = original_new
                 return viewer
