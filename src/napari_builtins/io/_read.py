@@ -505,7 +505,8 @@ def _patch_viewer_new():
             if viewer is not None:
                 Viewer.__new__ = original_new
                 return viewer
-        return original_new()
+        Viewer.__init__ = original_init
+        return original_new(cls)
 
     Viewer.__new__ = patched_new
     Viewer.__init__ = patched_init
