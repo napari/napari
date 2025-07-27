@@ -67,6 +67,10 @@ class Viewer(ViewerModel):
         self._window = Window(self, show=show)
         self._instances.add(self)
 
+    def __new__(cls, *args, **kwargs):
+        # required to allow unpatch on drop of py file
+        return object.__new__(cls)
+
     # Expose private window publicly. This is needed to keep window off pydantic model
     @property
     def window(self) -> 'Window':

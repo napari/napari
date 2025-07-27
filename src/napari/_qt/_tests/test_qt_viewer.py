@@ -1,14 +1,17 @@
 import gc
 import os
+import textwrap
 import weakref
 from itertools import product, takewhile
 from math import isclose
 from unittest import mock
+from unittest.mock import MagicMock
 
 import numpy as np
 import numpy.testing as npt
 import pytest
 from imageio import imread
+from PyQt6.QtCore import QUrl
 from pytestqt.qtbot import QtBot
 from qtpy.QtCore import QEvent, Qt
 from qtpy.QtGui import QGuiApplication, QKeyEvent
@@ -1508,3 +1511,89 @@ def test_viewer_drag_to_zoom_with_cancel(qt_viewer, qtbot):
     assert viewer._zoom_box.canvas_positions == ((0, 0), (0, 0)), (
         'Zoom box canvas positions should match the drag coordinates'
     )
+
+
+@pytest.mark.usefixtures('builtins')
+def test_drop_python_file(make_napari_viewer, tmp_path):
+    """Test that dropping a python file on the viewer works."""
+    viewer = make_napari_viewer()
+    filename = tmp_path / 'test.py'
+    file_content = textwrap.dedent("""
+    import numpy as np
+    from napari import Viewer
+
+    data = np.zeros((10, 10))
+    viewer = Viewer()
+    viewer.add_image(data, name='Dropped Image')
+    """)
+    filename.write_text(file_content)
+
+    # Simulate dropping the file
+    mock_event = MagicMock()
+    mock_event.mimeData.return_value.urls.return_value = [
+        QUrl(filename.as_uri())
+    ]
+    viewer.window._qt_viewer.dropEvent(mock_event)
+
+    # Check that the file was executed
+    assert viewer.layers[0].name == 'Dropped Image'
+
+
+@pytest.mark.usefixtures('builtins')
+def test_drop_python_file_3d(make_napari_viewer, tmp_path):
+    """Test that dropping a python file on the viewer works."""
+    viewer = make_napari_viewer()
+    filename = tmp_path / 'test.py'
+    file_content = textwrap.dedent("""
+    import numpy as np
+    from napari import Viewer
+
+    data = np.zeros((2, 10, 10))
+    viewer = Viewer(ndisplay=3)
+    viewer.add_image(data, name='Dropped Image')
+    """)
+    filename.write_text(file_content)
+
+    # Simulate dropping the file
+    mock_event = MagicMock()
+    mock_event.mimeData.return_value.urls.return_value = [
+        QUrl(filename.as_uri())
+    ]
+    viewer.window._qt_viewer.dropEvent(mock_event)
+
+    # Check that the file was executed
+    assert viewer.layers[0].name == 'Dropped Image'
+    assert viewer.dims.ndim == 3
+
+
+@pytest.mark.usefixtures('builtins')
+def test_drop_python_file_double_viewer(make_napari_viewer, tmp_path):
+    """Test that dropping a python file on the viewer works."""
+    viewer = make_napari_viewer()
+    filename = tmp_path / 'test.py'
+    file_content = textwrap.dedent("""
+    import numpy as np
+    from napari import Viewer
+
+    data = np.zeros((10, 10))
+    viewer1 = Viewer()
+    viewer1.add_image(data, name='Dropped Image')
+    viewer2 = Viewer(title="text")
+    viewer2.add_image(data, name='Dropped Image 2')
+    """)
+    filename.write_text(file_content)
+
+    # Simulate dropping the file
+    mock_event = MagicMock()
+    mock_event.mimeData.return_value.urls.return_value = [
+        QUrl(filename.as_uri())
+    ]
+    viewer.window._qt_viewer.dropEvent(mock_event)
+
+    # Check that the file was executed
+    assert viewer.layers[0].name == 'Dropped Image'
+    assert len(viewer._instances) == 2  # Two viewers should be created
+    instances = list(viewer._instances)
+    idx = 0 if instances[1] == viewer else 1
+    assert instances[idx].title == 'text'  # Check the second viewer's name
+    instances[idx].close()  # Close the second viewer
