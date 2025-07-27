@@ -11,9 +11,8 @@ import numpy as np
 import numpy.testing as npt
 import pytest
 from imageio import imread
-from PyQt6.QtCore import QUrl
 from pytestqt.qtbot import QtBot
-from qtpy.QtCore import QEvent, Qt
+from qtpy.QtCore import QEvent, Qt, QUrl
 from qtpy.QtGui import QGuiApplication, QKeyEvent
 from qtpy.QtWidgets import QApplication, QMessageBox
 from scipy import ndimage as ndi
