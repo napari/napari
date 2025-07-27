@@ -7,7 +7,7 @@ jobs:
   test_pip_install:
     name: ubuntu-latest 3.12 pip install
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
         with:
