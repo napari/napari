@@ -267,8 +267,36 @@ class Dims(EventedModel):
     @current_step.setter
     def current_step(self, value):
         self.point = tuple(
-            rng.start + point * rng.step
+            rng.start + point * (rng.step or 1)
             for point, rng in zip(value, self.range, strict=False)
+        )
+
+    @property
+    def margin_left_step(self) -> tuple[int, ...]:
+        return tuple(
+            round(mrg / (rng.step or 1))
+            for mrg, rng in zip(self.margin_left, self.range, strict=False)
+        )
+
+    @margin_left_step.setter
+    def margin_left_step(self, value):
+        self.margin_left = tuple(
+            mrg * (rng.step or 1)
+            for mrg, rng in zip(value, self.range, strict=False)
+        )
+
+    @property
+    def margin_right_step(self) -> tuple[int, ...]:
+        return tuple(
+            round(mrg / (rng.step or 1))
+            for mrg, rng in zip(self.margin_right, self.range, strict=False)
+        )
+
+    @margin_right_step.setter
+    def margin_right_step(self, value):
+        self.margin_right = tuple(
+            mrg * (rng.step or 1)
+            for mrg, rng in zip(value, self.range, strict=False)
         )
 
     @property
@@ -283,6 +311,21 @@ class Dims(EventedModel):
     @thickness.setter
     def thickness(self, value):
         self.margin_left = self.margin_right = tuple(val / 2 for val in value)
+
+    @property
+    def thickness_step(self) -> tuple[int, ...]:
+        return tuple(
+            left + right
+            for left, right in zip(
+                self.margin_left_step, self.margin_right_step, strict=False
+            )
+        )
+
+    @thickness_step.setter
+    def thickness_step(self, value):
+        self.margin_left_step = self.margin_right_step = tuple(
+            val // 2 for val in value
+        )
 
     @property
     def displayed(self) -> tuple[int, ...]:
