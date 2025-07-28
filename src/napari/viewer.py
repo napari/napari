@@ -68,8 +68,34 @@ class Viewer(ViewerModel):
         self._instances.add(self)
 
     def __new__(cls, *args, **kwargs):
-        # required to allow unpatch on drop of py file
-        return object.__new__(cls)
+        """Overload of __new__ operator for simplify patching
+
+        In some scenarios, like dropping python scripts in the viewer,
+        we want to avoid creating a new instance of the viewer but rather
+        use the existing one.
+        This is done by patching the __new__ operator to return the
+        existing instance if it exists or create a new one.
+
+        But the super().__new__() is object.__new__(cls) which
+        does not allow us to pass any arguments.
+
+        But once one assigns anything to the `__new__` method, the python
+        interpreter will automatically call it with *args and **kwargs
+
+        It means that if we want to do simple patching:
+
+        >>> old_new = Viewer.__new__
+        ... Viewer.__new__ = lambda cls, *args, **kwargs: list(cls._instances)[0]
+        ... # some code that creates Viewer
+        ... Viewer.__new__ = old_new
+
+        It will not work because the `old_new` will be called with
+        * args and **kwargs, which is not what we want.
+
+        So we declare this simple __new__ method that does take *args and **kwargs
+        but calls the original `super().__new__()` without them.
+        """
+        return super().__new__(cls)
 
     # Expose private window publicly. This is needed to keep window off pydantic model
     @property
