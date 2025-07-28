@@ -8,7 +8,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWrappedLabel,
 )
 from napari._qt.utils import qt_signals_blocked
-from napari.layers.base.base import Layer
+from napari.layers import Image
 from napari.layers.image._image_constants import Interpolation
 from napari.utils.translations import trans
 
@@ -33,7 +33,7 @@ class QtInterpolationComboBoxControl(QtWidgetControlsBase):
         Label for the shading value chooser widget.
     """
 
-    def __init__(self, parent: QWidget, layer: Layer) -> None:
+    def __init__(self, parent: QWidget, layer: Image) -> None:
         super().__init__(parent, layer)
         # Setup layer
         self._layer.events.interpolation2d.connect(

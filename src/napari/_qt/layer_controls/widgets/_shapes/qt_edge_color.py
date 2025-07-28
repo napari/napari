@@ -8,7 +8,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
 )
 from napari._qt.utils import qt_signals_blocked
 from napari._qt.widgets.qt_color_swatch import QColorSwatchEdit
-from napari.layers.base.base import Layer
+from napari.layers import Shapes
 from napari.utils.events.event_utils import connect_setattr
 from napari.utils.translations import trans
 
@@ -23,7 +23,7 @@ class QtEdgeColorControl(QtWidgetControlsBase):
     parent: qtpy.QtWidgets.QWidget
         An instance of QWidget that will be used as widgets parent
     layer : napari.layers.Shapes
-        An instance of a napari layer.
+        An instance of a napari Shapes layer.
     toolip : str
         String to use for the tooltip of the edge color edit widget.
 
@@ -36,7 +36,7 @@ class QtEdgeColorControl(QtWidgetControlsBase):
     """
 
     def __init__(
-        self, parent: QWidget, layer: Layer, tooltip: Optional[str] = None
+        self, parent: QWidget, layer: Shapes, tooltip: Optional[str] = None
     ) -> None:
         super().__init__(parent, layer)
         # Setup layer

@@ -8,7 +8,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
 )
 from napari._qt.utils import qt_signals_blocked
 from napari._qt.widgets.qt_color_swatch import QColorSwatchEdit
-from napari.layers.base.base import Layer
+from napari.layers import Vectors
 from napari.layers.utils._color_manager_constants import ColorMode
 from napari.utils.events.event_utils import connect_setattr
 from napari.utils.translations import trans
@@ -25,7 +25,7 @@ class QtEdgeColorPropertyControl(QtWidgetControlsBase):
     parent: qtpy.QtWidgets.QWidget
         An instance of QWidget that will be used as widgets parent
     layer : napari.layers.Vectors
-        An instance of a napari layer.
+        An instance of a napari Vectors layer.
 
     Attributes
     ----------
@@ -43,7 +43,7 @@ class QtEdgeColorPropertyControl(QtWidgetControlsBase):
         Label for the current selected _edge_color_property chooser widget.
     """
 
-    def __init__(self, parent: QWidget, layer: Layer) -> None:
+    def __init__(self, parent: QWidget, layer: Vectors) -> None:
         super().__init__(parent, layer)
         # Setup layer
         self._layer.events.edge_color_mode.connect(

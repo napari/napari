@@ -12,7 +12,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWrappedLabel,
 )
 from napari._qt.utils import qt_signals_blocked
-from napari.layers.base.base import Layer
+from napari.layers import Points
 from napari.utils.events.event_utils import connect_setattr
 from napari.utils.translations import trans
 
@@ -27,7 +27,7 @@ class QtCurrentSizeSliderControl(QtWidgetControlsBase):
     parent: qtpy.QtWidgets.QWidget
         An instance of QWidget that will be used as widgets parent
     layer : napari.layers.Points
-        An instance of a napari layer.
+        An instance of a napari Points layer.
 
     Attributes
     ----------
@@ -37,7 +37,7 @@ class QtCurrentSizeSliderControl(QtWidgetControlsBase):
         Label for the size chooser widget.
     """
 
-    def __init__(self, parent: QWidget, layer: Layer) -> None:
+    def __init__(self, parent: QWidget, layer: Points) -> None:
         super().__init__(parent, layer)
         # Setup layer
         self._layer.events.size.connect(self._on_current_size_change)

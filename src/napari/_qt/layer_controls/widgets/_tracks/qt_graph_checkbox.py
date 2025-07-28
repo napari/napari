@@ -7,7 +7,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,
 )
-from napari.layers.base.base import Layer
+from napari.layers import Tracks
 from napari.utils.translations import trans
 
 
@@ -21,7 +21,7 @@ class QtGraphCheckBoxControl(QtWidgetControlsBase):
     parent: qtpy.QtWidgets.QWidget
         An instance of QWidget that will be used as widgets parent
     layer : napari.layers.Tracks
-        An instance of a napari layer.
+        An instance of a napari Tracks layer.
 
     Attributes
     ----------
@@ -31,7 +31,7 @@ class QtGraphCheckBoxControl(QtWidgetControlsBase):
         Label for showing the graph chooser widget.
     """
 
-    def __init__(self, parent: QWidget, layer: Layer) -> None:
+    def __init__(self, parent: QWidget, layer: Tracks) -> None:
         super().__init__(parent, layer)
         # Setup layer
         # NOTE(arl): there are no events fired for changing checkbox (layer `display_graph` attribute)

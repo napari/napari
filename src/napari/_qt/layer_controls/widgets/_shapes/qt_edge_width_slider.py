@@ -10,7 +10,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWrappedLabel,
 )
 from napari._qt.utils import qt_signals_blocked
-from napari.layers.base.base import Layer
+from napari.layers import Shapes
 from napari.utils.events.event_utils import connect_setattr
 from napari.utils.translations import trans
 
@@ -25,7 +25,7 @@ class QtEdgeWidthSliderControl(QtWidgetControlsBase):
     parent: qtpy.QtWidgets.QWidget
         An instance of QWidget that will be used as widgets parent
     layer : napari.layers.Shapes
-        An instance of a napari layer.
+        An instance of a napari Shapes layer.
 
     Attributes
     ----------
@@ -35,7 +35,7 @@ class QtEdgeWidthSliderControl(QtWidgetControlsBase):
         Label for the current edge width widget.
     """
 
-    def __init__(self, parent: QWidget, layer: Layer) -> None:
+    def __init__(self, parent: QWidget, layer: Shapes) -> None:
         super().__init__(parent, layer)
         # Setup layer
         self._layer.events.edge_width.connect(self._on_edge_width_change)

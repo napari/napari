@@ -1,3 +1,5 @@
+from typing import Optional
+
 import numpy as np
 from qtpy.QtCore import Qt, Signal
 from qtpy.QtWidgets import QHBoxLayout, QPushButton, QWidget
@@ -10,7 +12,6 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
 from napari._qt.utils import qt_signals_blocked
 from napari._qt.widgets.qt_range_slider_popup import QRangeSliderPopup
 from napari.layers import Image, Surface
-from napari.layers.base.base import Layer
 from napari.utils._dtype import normalize_dtype
 from napari.utils.events.event_utils import connect_no_arg, connect_setattr
 from napari.utils.translations import trans
@@ -68,7 +69,9 @@ class _QDoubleRangeSlider(QDoubleRangeSlider):
 
 
 class QContrastLimitsPopup(QRangeSliderPopup):
-    def __init__(self, layer: Image | Surface, parent=None) -> None:
+    def __init__(
+        self, layer: Image | Surface, parent: Optional[QWidget] = None
+    ) -> None:
         super().__init__(parent)
 
         decimals = range_to_decimals(layer.contrast_limits_range, layer.dtype)
@@ -117,7 +120,9 @@ class QContrastLimitsPopup(QRangeSliderPopup):
 
 
 class AutoScaleButtons(QWidget):
-    def __init__(self, layer: 'Image', parent=None) -> None:
+    def __init__(
+        self, layer: Image | Surface, parent: Optional[QWidget] = None
+    ) -> None:
         super().__init__(parent=parent)
 
         self.setLayout(QHBoxLayout())
@@ -168,7 +173,7 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
         Label for the constrast limits chooser widget.
     """
 
-    def __init__(self, parent: QWidget, layer: Layer) -> None:
+    def __init__(self, parent: QWidget, layer: Image | Surface) -> None:
         super().__init__(parent, layer)
         # Setup layer
         self._layer.events.contrast_limits.connect(

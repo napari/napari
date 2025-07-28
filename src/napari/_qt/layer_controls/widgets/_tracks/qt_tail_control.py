@@ -10,7 +10,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWrappedLabel,
 )
 from napari._qt.utils import qt_signals_blocked
-from napari.layers.base.base import Layer
+from napari.layers import Tracks
 from napari.utils.events.event_utils import connect_setattr
 from napari.utils.translations import trans
 
@@ -35,7 +35,7 @@ class QtTailLengthSliderControl(QtWidgetControlsBase):
         Label for the tail length chooser widget.
     """
 
-    def __init__(self, parent: QWidget, layer: Layer) -> None:
+    def __init__(self, parent: QWidget, layer: Tracks) -> None:
         super().__init__(parent, layer)
         # Setup layer
         self._layer.events.tail_length.connect(self._on_tail_length_change)
@@ -77,7 +77,7 @@ class QtTailWidthSliderControl(QtWidgetControlsBase):
     parent: qtpy.QtWidgets.QWidget
         An instance of QWidget that will be used as widgets parent
     layer : napari.layers.Tracks
-        An instance of a napari layer.
+        An instance of a napari Tracks layer.
 
     Attributes
     ----------
@@ -87,7 +87,7 @@ class QtTailWidthSliderControl(QtWidgetControlsBase):
         Label for the tail width chooser widget.
     """
 
-    def __init__(self, parent: QWidget, layer: Layer) -> None:
+    def __init__(self, parent: QWidget, layer: Tracks) -> None:
         super().__init__(parent, layer)
         # Setup layer
         self._layer.events.tail_width.connect(self._on_tail_width_change)
@@ -131,7 +131,7 @@ class QtTailDisplayCheckBoxControl(QtWidgetControlsBase):
     parent: qtpy.QtWidgets.QWidget
         An instance of QWidget that will be used as widgets parent
     layer : napari.layers.Tracks
-        An instance of a napari layer.
+        An instance of a napari Tracks layer.
 
     Attributes
     ----------
@@ -141,7 +141,7 @@ class QtTailDisplayCheckBoxControl(QtWidgetControlsBase):
         Label for showing the tails chooser widget.
     """
 
-    def __init__(self, parent: QWidget, layer: Layer) -> None:
+    def __init__(self, parent: QWidget, layer: Tracks) -> None:
         super().__init__(parent, layer)
         # Setup layer
         # NOTE(arl): there are no events fired for changing checkbox (layer `display_tail` attribute)

@@ -7,7 +7,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,
 )
-from napari.layers.base.base import Layer
+from napari.layers import Labels
 from napari.layers.labels._labels_constants import (
     LABEL_COLOR_MODE_TRANSLATIONS,
     LabelColorMode,
@@ -26,7 +26,7 @@ class QtColorModeComboBoxControl(QtWidgetControlsBase):
     parent: qtpy.QtWidgets.QWidget
         An instance of QWidget that will be used as widgets parent
     layer : napari.layers.Labels
-        An instance of a napari layer.
+        An instance of a napari Labels layer.
 
     Attributes
     ----------
@@ -36,7 +36,7 @@ class QtColorModeComboBoxControl(QtWidgetControlsBase):
         Label for the color mode chooser widget.
     """
 
-    def __init__(self, parent: QWidget, layer: Layer) -> None:
+    def __init__(self, parent: QWidget, layer: Labels) -> None:
         super().__init__(parent, layer)
         # Setup layer
         self._layer.events.colormap.connect(self._on_colormap_change)

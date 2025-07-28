@@ -12,7 +12,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWrappedLabel,
 )
 from napari._qt.utils import qt_signals_blocked
-from napari.layers.base.base import Layer
+from napari.layers import Image
 from napari.layers.image._image_constants import VolumeDepiction
 from napari.utils.action_manager import action_manager
 from napari.utils.translations import trans
@@ -94,7 +94,7 @@ class QtDepictionControl(QtWidgetControlsBase):
         Label for the plane normal thickness value chooser widget.
     """
 
-    def __init__(self, parent: QWidget, layer: Layer) -> None:
+    def __init__(self, parent: QWidget, layer: Image) -> None:
         super().__init__(parent, layer)
         # Setup layer
         self._layer.events.depiction.connect(self._on_depiction_change)

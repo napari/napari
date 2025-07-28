@@ -5,7 +5,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWrappedLabel,
 )
 from napari._qt.utils import qt_signals_blocked
-from napari.layers.base.base import Layer
+from napari.layers import Image, Points, Vectors
 from napari.utils.events.event_utils import connect_setattr
 from napari.utils.translations import trans
 
@@ -30,7 +30,9 @@ class QtProjectionModeControl(QtWidgetControlsBase):
         Label for the projection mode chooser widget.
     """
 
-    def __init__(self, parent: QWidget, layer: Layer) -> None:
+    def __init__(
+        self, parent: QWidget, layer: Image | Points | Vectors
+    ) -> None:
         super().__init__(parent, layer)
         # Setup layer
         self._layer.events.projection_mode.connect(
