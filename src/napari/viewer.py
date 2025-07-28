@@ -68,32 +68,28 @@ class Viewer(ViewerModel):
         self._instances.add(self)
 
     def __new__(cls, *args, **kwargs):
-        """Overload of __new__ operator for simplify patching
+        """Overload __new__ to facilitate temporary monkey-patching.
 
-        In some scenarios, like dropping python scripts in the viewer,
-        we want to avoid creating a new instance of the viewer but rather
-        use the existing one.
-        This is done by patching the __new__ operator to return the
-        existing instance if it exists or create a new one.
+        This method simplifies scenarios where temporary patching of `__new__`
+        is needed—for example, to ensure only one viewer instance exists
+        when scripts are dropped into the viewer.
 
-        But the super().__new__() is object.__new__(cls) which
-        does not allow us to pass any arguments.
+        By default, Python implicitly calls `object.__new__(cls)` with only one argument (`cls`).
+        However, once `__new__` is explicitly overridden or patched, Python automatically
+        forwards all constructor arguments (`*args` and `**kwargs`) to it, causing signature mismatches.
 
-        But once one assigns anything to the `__new__` method, the python
-        interpreter will automatically call it with *args and **kwargs
-
-        It means that if we want to do simple patching:
+        Thus, directly assigning a patched function like this:
 
         >>> old_new = Viewer.__new__
-        ... Viewer.__new__ = lambda cls, *args, **kwargs: list(cls._instances)[0]
-        ... # some code that creates Viewer
-        ... Viewer.__new__ = old_new
+        >>> Viewer.__new__ = lambda cls, *args, **kwargs: list(cls._instances)[0]
+        >>> # code creating a Viewer instance...
+        >>> Viewer.__new__ = old_new
 
-        It will not work because the `old_new` will be called with
-        * args and **kwargs, which is not what we want.
+        may fail afterward because the restored original `__new__` (typically `object.__new__`)
+        doesn't accept extra arguments, raising a TypeError.
 
-        So we declare this simple __new__ method that does take *args and **kwargs
-        but calls the original `super().__new__()` without them.
+        This explicit override accepts arbitrary arguments but intentionally discards them,
+        forwarding only the class to `object.__new__`, thus making temporary patching safe and convenient.
         """
         return super().__new__(cls)
 
