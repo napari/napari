@@ -127,6 +127,11 @@ authors:
   family-names: Aronssohn
   orcid: https://orcid.org/0009-0008-5607-9463
   alias: cnstt
+- given-names: Filippo
+  family-names: Balzaretti
+  affiliation: University of California, Santa Cruz
+  orcid: 0000-0002-4172-4676
+  alias: FilBalza
 - given-names: Peter
   family-names: Boone
   alias: boonepeter
