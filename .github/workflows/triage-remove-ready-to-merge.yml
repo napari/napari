@@ -1,4 +1,4 @@
-name: Remove "ready to merge" label
+name: Triage - Remove "ready to merge" label
 
 on:
   pull_request_target:

@@ -1,5 +1,5 @@
 # https://github.com/marketplace/actions/pr-dependency-check
-name: "PR Dependency Check"
+name: "triage-pr-check-dependencies for merge order"
 on:
   pull_request:
   issue_comment:

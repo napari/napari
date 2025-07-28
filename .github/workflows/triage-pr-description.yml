@@ -1,4 +1,4 @@
-name: Clean up PR description
+name: triage-pr-description
 
 on:
   # see https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#pull_request_target
