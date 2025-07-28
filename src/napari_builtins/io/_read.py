@@ -28,6 +28,8 @@ def _alphanumeric_key(s: str) -> list[str | int]:
 
 URL_REGEX = re.compile(r'https?://|ftps?://|file://|file:\\')
 
+SCRIPTS_NAMESPACE = {}
+
 
 def _is_url(filename):
     """Return True if string is an http or ftp path.
@@ -534,7 +536,7 @@ def load_and_execute_python_code(path: str) -> list['LayerData']:
     code = Path(path).read_text()
     with _patch_viewer_new():
         try:
-            exec(code)
+            exec(code, SCRIPTS_NAMESPACE.setdefault(path, {}))
         except BaseException as e:  # noqa: BLE001
             notification_manager.receive_error(type(e), e, e.__traceback__)
     return [(None,)]
