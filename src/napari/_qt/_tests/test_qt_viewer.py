@@ -1,3 +1,16 @@
+"""Tests of Qt Viewer.
+
+The general test areas are:
+- Basic viewer functionality
+- Layer operations
+- Rendering and display
+- Event handling
+- Memory management
+- Label layer specifics
+- UI components
+- Advanced features (zoom)
+"""
+
 import gc
 import os
 import weakref
@@ -717,6 +730,166 @@ def test_leaks_labels(qtbot, make_napari_viewer):
     gc.collect()
     assert not lr()
     assert not dr()
+
+
+@skip_local_popups
+def test_memory_leak_detection(qtbot, make_napari_viewer):
+    """Memory leak test with focus on Windows compatibility and comprehensive checking."""
+    viewer = make_napari_viewer(
+        show=False
+    )  # Don't show to avoid OpenGL context issues
+    view = viewer.window._qt_viewer
+
+    # Track various objects using weakrefs
+    layer_refs = []
+    data_refs = []
+    visual_refs = []
+    widget_refs = []
+
+    # Test different layer types
+    layer_types = [
+        ('image', np.random.rand(10, 10)),
+        ('labels', (np.random.rand(10, 10) * 10).astype(np.uint8)),
+        ('points', np.random.rand(10, 2)),
+        ('shapes', [np.array([[0, 0], [10, 0], [10, 10], [0, 10]])]),
+    ]
+
+    # Add layers and collect references
+    for layer_type, data in layer_types:
+        if layer_type == 'image':
+            layer = viewer.add_image(data)
+        elif layer_type == 'labels':
+            layer = viewer.add_labels(data)
+        elif layer_type == 'points':
+            layer = viewer.add_points(data)
+        elif layer_type == 'shapes':
+            layer = viewer.add_shapes(data)
+
+        # Store weak references
+        layer_refs.append(weakref.ref(layer))
+        data_refs.append(weakref.ref(layer.data))
+
+        # Store visual references if available
+        if (
+            hasattr(view.canvas, 'layer_to_visual')
+            and layer in view.canvas.layer_to_visual
+        ):
+            visual_refs.append(weakref.ref(view.canvas.layer_to_visual[layer]))
+
+        # Store widget references if available
+        if (
+            hasattr(view.controls, 'widgets')
+            and layer in view.controls.widgets
+        ):
+            widget_refs.append(weakref.ref(view.controls.widgets[layer]))
+
+    # Ensure all layers are properly initialized
+    qtbot.wait(50)
+    QApplication.processEvents()
+
+    # Remove all layers
+    viewer.layers.clear()
+
+    # Ensure Qt events are processed
+    qtbot.wait(100)
+    QApplication.processEvents()
+    qtbot.wait(100)
+
+    # Force garbage collection multiple times
+    for _ in range(3):
+        gc.collect()
+        qtbot.wait(10)
+
+    # Check that all references are cleaned up
+    for i, (layer_ref, data_ref) in enumerate(
+        zip(layer_refs, data_refs, strict=False)
+    ):
+        assert layer_ref() is None, f'Layer {i} was not garbage collected'
+        assert data_ref() is None, f'Data {i} was not garbage collected'
+
+    for i, visual_ref in enumerate(visual_refs):
+        assert visual_ref() is None, f'Visual {i} was not garbage collected'
+
+    for i, widget_ref in enumerate(widget_refs):
+        assert widget_ref() is None, f'Widget {i} was not garbage collected'
+
+
+@pytest.mark.skipif(os.name != 'nt', reason='Windows-specific test')
+def test_windows_memory_leak_with_opengl(qtbot, make_napari_viewer):
+    """Test memory leaks on Windows with special handling for OpenGL/Qt issues."""
+    # Set environment variable to use software OpenGL on Windows
+    old_opengl = os.environ.get('QT_OPENGL', None)
+    os.environ['QT_OPENGL'] = 'software'
+
+    try:
+        viewer = make_napari_viewer(show=False)
+        view = viewer.window._qt_viewer
+
+        # Track references
+        layer_refs = []
+        visual_refs = []
+
+        # Add a simple image layer
+        data = np.ones((10, 10))
+        layer = viewer.add_image(data)
+        layer_refs.append(weakref.ref(layer))
+
+        # Wait for initialization
+        qtbot.wait(50)
+        QApplication.processEvents()
+
+        # Store visual reference if available
+        if (
+            hasattr(view.canvas, 'layer_to_visual')
+            and layer in view.canvas.layer_to_visual
+        ):
+            visual = view.canvas.layer_to_visual[layer]
+            visual_refs.append(weakref.ref(visual))
+
+            # Explicitly disconnect any OpenGL context
+            if hasattr(visual, 'node') and hasattr(visual.node, 'detach'):
+                visual.node.detach()
+
+        # Clear layers with proper cleanup
+        viewer.layers.clear()
+
+        # Extra synchronization for Windows
+        for _ in range(3):
+            qtbot.wait(50)
+            QApplication.processEvents()
+
+        # Explicitly delete the viewer to ensure cleanup
+        viewer.close()
+        del viewer
+
+        # Force garbage collection
+        for _ in range(5):
+            gc.collect()
+            qtbot.wait(10)
+
+        # Check cleanup
+        for i, ref in enumerate(layer_refs):
+            assert ref() is None, (
+                f'Layer {i} was not garbage collected on Windows'
+            )
+
+        for i, ref in enumerate(visual_refs):
+            # On Windows, visuals might persist slightly longer
+            if ref() is not None:
+                # Try one more aggressive cleanup
+                gc.collect()
+                qtbot.wait(100)
+                gc.collect()
+            assert ref() is None, (
+                f'Visual {i} was not garbage collected on Windows'
+            )
+
+    finally:
+        # Restore original OpenGL setting
+        if old_opengl is None:
+            os.environ.pop('QT_OPENGL', None)
+        else:
+            os.environ['QT_OPENGL'] = old_opengl
 
 
 @pytest.mark.parametrize('theme', available_themes())
