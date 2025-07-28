@@ -767,7 +767,9 @@ def test_memory_leak_detection(qtbot, make_napari_viewer):
 
         # Store weak references
         layer_refs.append(weakref.ref(layer))
-        data_refs.append(weakref.ref(layer.data))
+        # For shapes, layer.data is a list which cannot be weakly referenced
+        if layer_type != 'shapes':
+            data_refs.append(weakref.ref(layer.data))
 
         # Store visual references if available
         if (
@@ -801,10 +803,10 @@ def test_memory_leak_detection(qtbot, make_napari_viewer):
         qtbot.wait(10)
 
     # Check that all references are cleaned up
-    for i, (layer_ref, data_ref) in enumerate(
-        zip(layer_refs, data_refs, strict=False)
-    ):
+    for i, layer_ref in enumerate(layer_refs):
         assert layer_ref() is None, f'Layer {i} was not garbage collected'
+
+    for i, data_ref in enumerate(data_refs):
         assert data_ref() is None, f'Data {i} was not garbage collected'
 
     for i, visual_ref in enumerate(visual_refs):
