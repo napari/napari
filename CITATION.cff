@@ -194,6 +194,11 @@ authors:
   family-names: Hutchings
   affiliation: University College London
   alias: katherine-hutchings
+- given-names: Robert
+  family-names: Kozar
+  affiliation: Naval Nuclear Laboratory
+  orcid: orcid.org/0009-0007-6114-8446
+  alias: rwkozar
 - given-names: Jessy
   family-names: Lauer
   affiliation: Swiss Federal Institute of Technology (EPFL), Lausanne, Switzerland
