@@ -1,0 +1,77 @@
+# Benchmark tests for pull requests - runs only if initial and full tests pass
+name: Benchmarks
+
+on:
+  workflow_run:
+    workflows: ["Initial Tests", "Full Tests"]
+    types:
+      - completed
+    branches:
+      - main
+      - "v*x"
+
+concurrency:
+  group: benchmark-${{ github.event.workflow_run.head_branch }}
+  cancel-in-progress: true
+
+env:
+  COLUMNS: 120
+
+jobs:
+  test_benchmarks:
+    name: test benchmarks
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    timeout-minutes: 60
+    env:
+      GIT_LFS_SKIP_SMUDGE: 1
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.12
+          cache-dependency-path: pyproject.toml
+
+      - uses: tlambert03/setup-qt-libs@v1
+
+      - uses: octokit/request-action@v2.x
+        # here we get hash of the latest release commit to compare with PR
+        id: latest_release
+        with:
+          route: GET /repos/{owner}/{repo}/releases/latest
+          owner: napari
+          repo: napari
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install "asv[virtualenv]"
+        env:
+          PIP_CONSTRAINT: resources/constraints/benchmark.txt
+
+      - name: asv machine
+        run: asv machine --yes
+
+      - name: Run benchmarks PR
+        uses: aganders3/headless-gui@v2
+        with:
+          run: |
+            asv run --show-stderr --quick  --attribute timeout=300 HEAD^!
+        env:
+          PR: 1 # prevents asv from running very compute-intensive benchmarks
+          PIP_CONSTRAINT: ${{ github.workspace }}/resources/constraints/benchmark.txt
+
+      - name: Run benchmarks latest release
+        # here we check if the benchmark on the latest release is not broken
+        uses: aganders3/headless-gui@v2
+        with:
+          run: |
+            asv run --show-stderr --quick  --attribute timeout=300  ${{ fromJSON(steps.latest_release.outputs.data).target_commitish }}^!
+        env:
+          PR: 1  # prevents asv from running very compute-intensive benchmarks
+          PIP_CONSTRAINT: ${{ github.workspace }}/resources/constraints/benchmark.txt

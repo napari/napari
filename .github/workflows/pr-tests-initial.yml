@@ -1,0 +1,46 @@
+# Initial test suite for pull requests
+name: Initial Tests
+
+on:
+  pull_request:
+    branches:
+      - main
+      - "v*x"
+
+concurrency:
+  group: initial-test-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  COLUMNS: 120
+
+jobs:
+  build_wheel:
+    name: Build wheel
+    uses: ./.github/workflows/reusable_build_wheel.yml
+
+  test_initial:
+    name: Initial test
+    uses: ./.github/workflows/reusable_run_tox_test.yml
+    needs: build_wheel
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - python: "3.10"
+            platform: ubuntu-latest
+            backend: pyqt5
+            coverage: no_cov
+            min_req: ""
+          - python: "3.13"
+            platform: ubuntu-latest
+            backend: pyqt6
+            coverage: no_cov
+            min_req: ""
+    with:
+      python_version: ${{ matrix.python }}
+      platform: ${{ matrix.platform }}
+      qt_backend: ${{ matrix.backend }}
+      coverage: ${{ matrix.coverage }}
+      min_req: ${{ matrix.MIN_REQ }}
+      artifacts_suffix: "initial"
