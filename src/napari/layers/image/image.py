@@ -529,15 +529,16 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
             if image.shape[2] == 4:  # image is RGBA
                 colormapped = np.copy(downsampled)
                 colormapped[..., 3] = downsampled[..., 3] * self.opacity
-                if downsampled.dtype == np.uint8:
+                if self.dtype == np.uint8:
                     colormapped = colormapped.astype(np.uint8)
             else:  # image is RGB
-                if downsampled.dtype == np.uint8:
+                if self.dtype == np.uint8:
                     alpha = np.full(
                         downsampled.shape[:2] + (1,),
                         int(255 * self.opacity),
                         dtype=np.uint8,
                     )
+                    downsampled = downsampled.astype(np.uint8)
                 else:
                     alpha = np.full(downsampled.shape[:2] + (1,), self.opacity)
                 colormapped = np.concatenate([downsampled, alpha], axis=2)
