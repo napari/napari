@@ -1,9 +1,10 @@
 """
-Updated Cell tracking example
-==============================
+Cell tracking example
+=====================
 
-This example demonstrates how the tracking layer is used
-for displaying 2D + time dataset of cells with colored properties for track-id.
+This example demonstrates how the track layer is used
+for visualizing cell tracking data, by displaying 2D + time dataset 
+of cells with colored properties for track-id.
 
 Thanks to Dr. Alessia Ruggieri and Philipp Klein, Centre for Integrative Infectious
 Disease Research (CIID), University Hospital Heidelberg, Germany for the data.
