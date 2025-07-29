@@ -2,17 +2,15 @@
 #    uv pip compile --python-version 3.12 --output-file resources/requirements_mypy.txt resources/requirements_mypy.in
 annotated-types==0.7.0
     # via pydantic
-appdirs==1.4.4
-    # via npe2
 build==1.2.2.post1
     # via npe2
-certifi==2025.6.15
+certifi==2025.7.14
     # via requests
 charset-normalizer==3.4.2
     # via requests
 click==8.2.1
     # via typer
-docstring-parser==0.16
+docstring-parser==0.17.0
     # via magicgui
 idna==3.10
     # via requests
@@ -22,7 +20,7 @@ markdown-it-py==3.0.0
     # via rich
 mdurl==0.1.2
     # via markdown-it-py
-mypy==1.16.1
+mypy==1.17.0
     # via -r resources/requirements_mypy.in
 mypy-extensions==1.1.0
     # via mypy
@@ -36,7 +34,9 @@ packaging==25.0
     #   qtpy
 pathspec==0.12.1
     # via mypy
-psygnal==0.13.0
+platformdirs==4.3.8
+    # via npe2
+psygnal==0.14.0
     # via
     #   magicgui
     #   npe2
@@ -87,7 +87,7 @@ types-requests==2.32.4.20250611
     # via -r resources/requirements_mypy.in
 types-setuptools==80.9.0.20250529
     # via -r resources/requirements_mypy.in
-typing-extensions==4.14.0
+typing-extensions==4.14.1
     # via
     #   magicgui
     #   mypy

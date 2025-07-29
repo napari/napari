@@ -97,6 +97,11 @@ class QtDims(QWidget):
         self.setMinimumHeight(nsliders * self.SLIDERHEIGHT)
         self._resize_slice_labels()
 
+    def _update_thickness(self):
+        """Updates thickness for a given slider."""
+        for widget in self.slider_widgets:
+            widget._update_thickness()
+
     def _update_display(self):
         """Updates display for all sliders."""
         widgets = reversed(list(enumerate(self.slider_widgets)))

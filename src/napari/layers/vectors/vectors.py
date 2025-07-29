@@ -214,7 +214,7 @@ class Vectors(Layer):
         ndim=None,
         opacity=0.7,
         out_of_slice_display=False,
-        projection_mode='none',
+        projection_mode='all',
         properties=None,
         property_choices=None,
         rotate=None,

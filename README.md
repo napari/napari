@@ -25,9 +25,17 @@ If you want to refer to our documentation, please go to [napari.org](https://www
 
 We're working on [tutorials](https://napari.org/stable/tutorials/), but you can also quickly get started by looking below.
 
-## installation
+## try it out now!
+[Install uv](https://docs.astral.sh/uv/getting-started/installation/#standalone-installer) to try napari.
+Then launch the program in a terminal window with the command:
+```sh
+uvx "napari[all]"
+```
+In the `File` menu, select `Open Sample` and select a sample image to get started.
 
-It is recommended to install napari into a virtual environment, like this:
+
+## installation
+For a full installation, we recommend installing napari into a virtual environment, like this:
 
 ```sh
 conda create -y -n napari-env -c conda-forge python=3.11
@@ -41,8 +49,7 @@ See here for the full [installation guide](https://napari.org/stable/tutorials/f
 
 ## simple example
 
-(The examples below require the `scikit-image` package to run. We just use data samples from this package for demonstration purposes. If you change the examples to use your own dataset, you may not need to install this package.)
-
+This example uses a data sample from the `scikit-image` library, but you can pass your own dataset as an array to `imshow`.
 From inside an IPython shell, you can open up an interactive viewer by calling
 
 ```python

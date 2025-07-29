@@ -64,7 +64,7 @@ dependencies = [
     "qtpy>=2.3.1",
     "scikit-image[data]>=0.19.1",
     "scipy>=1.10.1",
-    "superqt>=0.7.3",
+    "superqt>=0.7.4",
     "tifffile>=2022.7.28",
     "toolz>=0.11.0",
     "tqdm>=4.56.0",
@@ -94,8 +94,8 @@ Documentation = "https://napari.org"
 pyside2 = [
     "PySide2>=5.15.1 ; python_version < '3.11' and platform_machine != 'arm64'",
 ]
-pyside6_experimental = [
-    "PySide6 < 6.5 ; python_version < '3.12'"
+pyside6 = [
+    "PySide6 > 6.7"
 ]
 pyqt6 = [
     "PyQt6 > 6.5",
@@ -174,6 +174,7 @@ gallery = [
     "xarray",
     "h5netcdf",
     "tifffile[codecs]",
+    "meshio",
 ]
 # needed to build docs
 docs = [
@@ -214,7 +215,6 @@ dev = [
     "check-manifest>=0.42",
     "pre-commit>=2.9.0",
     "pydantic",
-    "python-dotenv",
     "tox",
     "tox-min-req",
     "napari[testing]",
@@ -345,7 +345,6 @@ ignore = [
     "A003", # flake8-builtins - we have class attributes violating these rule
     "COM812", # flake8-commas - we don't like adding comma on single line of arguments
     "COM819", # conflicts with ruff-format
-    "SIM117", # flake8-simplify - we some of merged with statements are not looking great with black, reanble after drop python 3.9
     "RET504", # not fixed yet https://github.com/charliermarsh/ruff/issues/2950
     "TRY003", # require implement multiple exception class
     "RUF005", # problem with numpy compatybility, see https://github.com/charliermarsh/ruff/issues/2142#issuecomment-1451038741
@@ -795,7 +794,7 @@ module = [
     "napari._app_model.context._layerlist_context",
     "napari.components.overlays.labels_polygon",
     "napari.plugins.io",
-    "napari.utils.colormaps.vendored._cm_listed"
+    "napari.utils.colormaps.vendored._cm_listed",
 ]
 disallow_untyped_calls = false
 

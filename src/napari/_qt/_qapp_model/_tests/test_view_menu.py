@@ -8,10 +8,10 @@ from qtpy.QtCore import QPoint, Qt
 from qtpy.QtWidgets import QApplication
 
 from napari._app_model import get_app_model
-from napari._app_model.actions._view import toggle_action_details
-from napari._qt._qapp_model.qactions._view import (
+from napari._app_model.actions._view import (
     _get_current_tooltip_visibility,
     _toggle_canvas_ndim,
+    toggle_action_details,
 )
 from napari._tests.utils import skip_local_focus, skip_local_popups
 from napari.viewer import ViewerModel
