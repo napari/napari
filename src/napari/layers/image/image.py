@@ -394,7 +394,9 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
             data = response.image.raw
             input_data = data[-1] if self.multiscale else data
             self.contrast_limits = calc_data_range(
-                typing.cast(LayerDataProtocol, input_data), rgb=self.rgb
+                typing.cast(LayerDataProtocol, input_data),
+                rgb=self.rgb,
+                dtype=self.dtype,
             )
 
         super()._update_slice_response(response)
@@ -580,7 +582,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
                 )
             )
         return calc_data_range(
-            cast(LayerDataProtocol, input_data), rgb=self.rgb
+            cast(LayerDataProtocol, input_data), rgb=self.rgb, dtype=self.dtype
         )
 
     def _raw_to_displayed(self, raw: np.ndarray) -> np.ndarray:
