@@ -195,6 +195,7 @@ class Shapes2DSuite(_BackendSelection):
         rng = np.random.default_rng(0)
         self.data = [50 * rng.random((6, 2)) for _ in range(n_shapes)]
         self.layer = Shapes(self.data, shape_type='polygon')
+        self.layer.selected_data = list(range(n_shapes))
 
     def time_create_layer(self, *_):
         """Time to create an image layer."""
@@ -224,6 +225,36 @@ class Shapes2DSuite(_BackendSelection):
     def mem_data(self, *_):
         """Memory used by raw data."""
         return self.data
+
+    def time_edit_shape(self, *_):
+        """Time to edit a shape."""
+        # Simulate editing the first shape
+        self.layer._data_view.edit(
+            0, np.array([[10, 10], [20, 20], [30, 30]]), new_type='polygon'
+        )
+
+
+class Shape2DEditSuite:
+    params = [tuple(2**i for i in range(4, 9)), ('single', 'all')]
+    params_names = ['n_shapes', 'selection']
+
+    def setup(self, n_shapes, selection):
+        rng = np.random.default_rng(0)
+        self.data = [50 * rng.random((6, 2)) for _ in range(n_shapes)]
+        self.layer = Shapes(self.data, shape_type='polygon')
+        if selection == 'all':
+            self.layer.selected_data = list(range(n_shapes))
+        else:
+            self.layer.selected_data = [2]
+
+    def time_set_edge_width(self, *_):
+        self.layer.current_edge_width = 10
+
+    def time_set_edge_color(self, *_):
+        self.layer.current_edge_color = 'red'  # RGBA red
+
+    def time_set_face_color(self, *_):
+        self.layer.current_face_color = 'red'
 
 
 class Shapes3DSuite:
