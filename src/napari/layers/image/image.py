@@ -569,8 +569,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         if mode == 'data':
             input_data = self.data[-1] if self.multiscale else self.data
         elif mode == 'slice':
-            data = self._slice.image.raw  # ugh
-            input_data = data[-1] if self.multiscale else data
+            input_data = self._slice.image.raw  # ugh
         else:
             raise ValueError(
                 trans._(
