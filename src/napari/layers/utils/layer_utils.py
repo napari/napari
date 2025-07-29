@@ -225,9 +225,7 @@ def calc_data_range(
     If the data type is uint8, no calculation is performed, and 0-255 is
     returned.
     """
-    if dtype is None:
-        dtype = data.dtype
-    if dtype == np.uint8:
+    if (dtype is not None and dtype == np.uint8) or data.dtype == np.uint8:
         return (0, 255)
 
     if isinstance(data, np.ndarray) and data.ndim < 3:
