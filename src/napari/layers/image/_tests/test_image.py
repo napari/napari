@@ -975,6 +975,7 @@ def test_thick_slice_maintains_contrast_limits():
     layer.projection_mode = 'mean'
     layer.reset_contrast_limits()
     assert layer.contrast_limits == [0, 255]
+    np.testing.assert_array_equal(layer.thumbnail[..., -1], 255)
 
 
 def test_adjust_contrast_out_of_range():
