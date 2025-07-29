@@ -16,6 +16,7 @@ from skimage.draw import polygon2mask
 
 from napari.layers._data_protocols import LayerDataProtocol
 from napari.layers._multiscale_data import MultiScaleData
+from napari.layers._scalar_field._slice import _ScalarFieldSliceResponse
 from napari.layers._scalar_field.scalar_field import ScalarFieldBase
 from napari.layers.base import Layer, no_op
 from napari.layers.base._base_mouse_bindings import (
@@ -23,7 +24,6 @@ from napari.layers.base._base_mouse_bindings import (
     transform_with_box,
 )
 from napari.layers.image._image_utils import guess_multiscale
-from napari.layers.image._slice import _ImageSliceResponse
 from napari.layers.labels._labels_constants import (
     IsoCategoricalGradientMode,
     LabelColorMode,
@@ -829,7 +829,9 @@ class Labels(ScalarFieldBase):
         """
         return vispy_texture_dtype(data)
 
-    def _update_slice_response(self, response: _ImageSliceResponse) -> None:
+    def _update_slice_response(
+        self, response: _ScalarFieldSliceResponse
+    ) -> None:
         """Override to convert raw slice data to displayed label colors."""
         response = response.to_displayed(self._raw_to_displayed)
         super()._update_slice_response(response)
