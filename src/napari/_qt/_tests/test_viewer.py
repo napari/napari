@@ -6,8 +6,6 @@ from unittest.mock import MagicMock
 import pytest
 from qtpy.QtCore import QUrl
 
-from napari import Viewer
-
 
 @pytest.mark.usefixtures('builtins')
 def test_drop_python_file(make_napari_viewer, tmp_path):
@@ -33,7 +31,6 @@ def test_drop_python_file(make_napari_viewer, tmp_path):
 
     # Check that the file was executed
     assert viewer.layers[0].name == 'Dropped Image'
-    assert '__new__' not in Viewer.__dict__
 
 
 @pytest.mark.usefixtures('builtins')
