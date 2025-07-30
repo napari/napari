@@ -9,9 +9,9 @@ from qtpy.QtCore import QUrl
 
 @pytest.mark.usefixtures('builtins')
 def test_drop_python_file(make_napari_viewer, tmp_path):
-    """Test that dropping a python file on the viewer works."""
+    """Test dropping a python file on to the viewer."""
     viewer = make_napari_viewer()
-    filename = tmp_path / 'test.py'
+    filename = tmp_path / 'image_to_drop.py'
     file_content = textwrap.dedent("""
     import numpy as np
     from napari import Viewer
@@ -35,9 +35,9 @@ def test_drop_python_file(make_napari_viewer, tmp_path):
 
 @pytest.mark.usefixtures('builtins')
 def test_drop_python_file_3d(make_napari_viewer, tmp_path):
-    """Test that dropping a python file on the viewer works."""
+    """Test that dropping a python file using a 3D image on the viewer works."""
     viewer = make_napari_viewer()
-    filename = tmp_path / 'test.py'
+    filename = tmp_path / 'image_to_drop_3d.py'
     file_content = textwrap.dedent("""
     import numpy as np
     from napari import Viewer
