@@ -256,8 +256,8 @@ class QtImageRenderingSuite:
         _ = QApplication.instance() or QApplication([])
         rng = np.random.default_rng(0)
         self.data = rng.random((n, n)) * 2**12
-        self.viewer = napari.Viewer
-        self.layer = self.viewer.add_image(self.data, ndisplay=2)
+        self.viewer = napari.Viewer(ndisplay=2)
+        self.layer = self.viewer.add_image(self.data)
 
     def teardown(self, n):
         self.viewer.close()
@@ -290,8 +290,8 @@ class QtVolumeRenderingSuite:
         _ = QApplication.instance() or QApplication([])
         rng = np.random.default_rng(0)
         self.data = rng.random((n, n, n)) * 2**12
-        self.viewer = napari.Viewer
-        self.viewer.add_image(self.data, ndisplay=3)
+        self.viewer = napari.Viewer(ndisplay=3)
+        self.viewer.add_image(self.data)
 
     def teardown(self, n):
         self.viewer.close()
