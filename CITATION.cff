@@ -158,7 +158,7 @@ authors:
 - given-names: Ian
   family-names: Coccimiglio
   affiliation: Unaffiliated
-  ORCID: https://orcid.org/0000-0001-7194-7750
+  orcid: https://orcid.org/0000-0001-7194-7750
   alias:: ian-coccimiglio
 - given-names: Jan
   family-names: Eglinger
