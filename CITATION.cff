@@ -130,7 +130,7 @@ authors:
 - given-names: Filippo
   family-names: Balzaretti
   affiliation: University of California, Santa Cruz
-  orcid: 0000-0002-4172-4676
+  orcid: https://orcid.org/0000-0002-4172-4676
   alias: FilBalza
 - given-names: Peter
   family-names: Boone
@@ -150,6 +150,11 @@ authors:
     CNRS, Palaiseau, France
   orcid: https://orcid.org/0000-0002-9441-9173
   alias: ClementCaporal
+- given-names: Ian
+  family-names: Coccimiglio
+  affiliation: Unaffiliated
+  ORCID: https://orcid.org/0000-0001-7194-7750
+  alias:: ian-coccimiglio
 - given-names: Jan
   family-names: Eglinger
   affiliation: Friedrich Miescher Institute for Biomedical Research (FMI), Basel (Switzerland)
@@ -197,7 +202,7 @@ authors:
 - given-names: Robert
   family-names: Kozar
   affiliation: Naval Nuclear Laboratory
-  orcid: orcid.org/0009-0007-6114-8446
+  orcid: https://orcid.org/0009-0007-6114-8446
   alias: rwkozar
 - given-names: Jessy
   family-names: Lauer
