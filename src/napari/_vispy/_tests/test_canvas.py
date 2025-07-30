@@ -140,8 +140,8 @@ def test_tiling_canvas_overlays(make_napari_viewer, qtbot):
     viewer.scale_bar.position = 'bottom_right'
     viewer.text_overlay.position = 'bottom_right'
 
-    vispy_scale_bar = canvas._overlay_to_visual[viewer.scale_bar]
-    vispy_text_overlay = canvas._overlay_to_visual[viewer.text_overlay]
+    vispy_scale_bar = canvas._overlay_to_visual[viewer.scale_bar][0]
+    vispy_text_overlay = canvas._overlay_to_visual[viewer.text_overlay][0]
 
     # force update of overlays
     canvas._update_overlay_canvas_positions()
