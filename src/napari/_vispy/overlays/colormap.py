@@ -96,7 +96,7 @@ class VispyColormapOverlay(LayerOverlayMixin, VispyCanvasOverlay):
         else:
             dpi_scale_factor = 1
 
-        text_width = self.node.set_ticks_and_get_text_width(
+        text_width, text_height = self.node.set_ticks_and_get_text_width(
             size=self.overlay.size,
             tick_length=self.overlay.tick_length,
             font_size=self.overlay.font_size * dpi_scale_factor,
@@ -108,9 +108,9 @@ class VispyColormapOverlay(LayerOverlayMixin, VispyCanvasOverlay):
 
         # 7 is the base, 0.8 is just a magic number to scale font size
         self.x_size = (
-            self.overlay.size[0] + self.overlay.tick_length + text_width * 0.8
+            self.overlay.size[0] + self.overlay.tick_length + text_width
         )
-        self.y_offset = 7 + self.overlay.font_size
+        self.y_offset = 7 + text_height
 
         self._on_position_change()
 

@@ -47,6 +47,7 @@ class Colormap(Node):
         self.box.transform = STTransform()
 
         self._texture_size = 250
+        self._text_vertices_size = (0, 0)
         self.set_data_and_clim()
 
     def set_data_and_clim(
@@ -92,5 +93,24 @@ class Colormap(Node):
         self.ticks.minor_tick_length = tick_length / 2
         self.ticks.domain = clim
 
-        # hacky nonsense
-        return font_size * 4 + tick_length + 10
+        text = self.ticks._text
+        if text.transforms.dpi:
+            # use 96 as the napari reference dpi for historical reasons
+            dpi_scale_factor = 96 / text.transforms.dpi
+        else:
+            dpi_scale_factor = 1
+
+        font_size *= dpi_scale_factor
+
+        vert_buffer = text._vertices_data
+        if vert_buffer is not None:
+            pos = vert_buffer['a_position']
+            tl = pos.min(axis=0)
+            br = pos.max(axis=0)
+            self._text_vertices_size = (br[0] - tl[0]), (br[1] - tl[1])
+
+        text_width = self._text_vertices_size[0] * font_size * 1.3  # magic?
+        # fixed multiplier for height to avoid fluttering when zooming
+        text_height = font_size * 1.5
+
+        return text_width, text_height
