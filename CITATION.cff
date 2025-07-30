@@ -17,9 +17,7 @@ authors:
   alias: tlambert03
 - given-names: Grzegorz
   family-names: Bokota
-  affiliation:
-      - napari
-      - University of Warsaw, Faculty of Mathematics, Informatics, and Mechanics
+  affiliation: napari; University of Warsaw, Faculty of Mathematics, Informatics, and Mechanics
   orcid: https://orcid.org/0000-0002-5470-1676
   alias: Czaki
 - given-names: Juan
