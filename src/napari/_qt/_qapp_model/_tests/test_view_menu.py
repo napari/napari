@@ -128,7 +128,7 @@ def test_toggle_fullscreen_from_normal(make_napari_viewer, qtbot):
 
 
 @skip_local_popups
-@pytest.mark.flaky(retries=2, delay=5)  # sometimes fails on macos CI
+@pytest.mark.flaky(reruns=2, reruns_delay=5)  # sometimes fails on macos CI
 @pytest.mark.skipif(
     QT_VERSION == '6.9.0',
     reason='bug in Qt with maximized windows, https://bugreports.qt.io/browse/QTBUG-135844',
