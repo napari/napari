@@ -98,6 +98,11 @@ authors:
   affiliation: Chan Zuckerberg Initiative
   orcid: https://orcid.org/0000-0002-7237-1973
   alias: kephale
+- given-names: Jacopo
+  family-names: Abramo
+  affiliation: Leibniz-IPHT, Jena, Germany
+  orcid: https://orcid.org/0000-0001-9293-2179
+  alias: jacopoabramo
 - given-names: Jannis
   family-names: Ahlers
   affiliation: Monash University
