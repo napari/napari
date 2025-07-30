@@ -18,6 +18,7 @@ from napari.utils.notifications import notification_manager
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
+    from napari import Viewer
     from napari.types import FullLayerData, LayerData, ReaderFunction
 
 
@@ -536,10 +537,9 @@ def filter_variables(variables: dict[str, Any]) -> dict[str, Any]:
     return res
 
 
-def _add_dropped_scripts_to_console(variables: dict[str, Any]) -> None:
-    from napari.viewer import current_viewer
-
-    viewer = current_viewer()
+def _add_dropped_scripts_to_console(
+    variables: dict[str, Any], viewer: 'Viewer | None'
+) -> None:
     if viewer is None:
         return
 
@@ -560,11 +560,16 @@ def load_and_execute_python_code(path: str) -> list['LayerData']:
     path : str
         Path to the Python file to be executed.
     """
+    from napari.viewer import current_viewer
+
     code = Path(path).read_text()
     with _patch_viewer_new():
         try:
+            viewer = current_viewer()
             exec(code, _DROPPED_SCRIPTS_NAMESPACE.setdefault(path, {}))
-            _add_dropped_scripts_to_console(_DROPPED_SCRIPTS_NAMESPACE[path])
+            _add_dropped_scripts_to_console(
+                _DROPPED_SCRIPTS_NAMESPACE[path], viewer
+            )
         except BaseException as e:  # noqa: BLE001
             notification_manager.receive_error(type(e), e, e.__traceback__)
     return [(None,)]
