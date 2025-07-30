@@ -13,6 +13,7 @@ from skimage.morphology import diamond, octahedron
 from vispy.app import MouseEvent
 
 import napari
+import napari.layers
 from napari.components.viewer_model import ViewerModel
 from napari.qt import QtViewer
 from napari.utils.colormaps import DirectLabelColormap
@@ -25,12 +26,17 @@ NAPARI_0_4_19 = parse_version(napari.__version__) <= parse_version('0.4.19')
 class QtViewerSingleLabelsSuite:
     """Benchmarks for editing a single labels layer in the viewer."""
 
+    data: np.ndarray
+    viewer: napari.Viewer
+    layer: napari.layers.Labels
+    event: MouseEvent
+
     def setup(self):
         _ = QApplication.instance() or QApplication([])
-        np.random.seed(0)
-        self.data = np.random.randint(10, size=(512, 512))
-        self.viewer = napari.view_labels(self.data)
-        self.layer = self.viewer.layers[0]
+        rng = np.random.default_rng(0)
+        self.data = rng.integers(10, size=(512, 512))
+        self.viewer = napari.Viewer()
+        self.layer = self.viewer.add_labels(self.data)
         self.layer.brush_size = 10
         self.layer.mode = 'paint'
         self.layer.selected_label = 3
