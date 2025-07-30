@@ -11,6 +11,7 @@ from scipy import ndimage as ndi
 
 from napari.layers._data_protocols import LayerDataProtocol
 from napari.layers._multiscale_data import MultiScaleData
+from napari.layers._scalar_field._slice import _ScalarFieldSliceResponse
 from napari.layers._scalar_field.scalar_field import ScalarFieldBase
 from napari.layers.image._image_constants import (
     ImageProjectionMode,
@@ -19,7 +20,6 @@ from napari.layers.image._image_constants import (
     InterpolationStr,
 )
 from napari.layers.image._image_utils import guess_rgb
-from napari.layers.image._slice import _ImageSliceResponse
 from napari.layers.intensity_mixin import IntensityVisualizationMixin
 from napari.layers.utils.layer_utils import calc_data_range
 from napari.utils._dtype import get_dtype_limits, normalize_dtype
@@ -389,7 +389,9 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         )
         return state
 
-    def _update_slice_response(self, response: _ImageSliceResponse) -> None:
+    def _update_slice_response(
+        self, response: _ScalarFieldSliceResponse
+    ) -> None:
         if self._keep_auto_contrast:
             data = response.image.raw
             input_data = data[-1] if self.multiscale else data
