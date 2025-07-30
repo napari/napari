@@ -28,7 +28,12 @@ def _alphanumeric_key(s: str) -> list[str | int]:
 
 URL_REGEX = re.compile(r'https?://|ftps?://|file://|file:\\')
 
-SCRIPTS_NAMESPACE = {}
+_DROPPED_SCRIPTS_NAMESPACE = {}
+# This is a global dictionary to store the namespace for scripts that are
+# executed using drag and drop or the Python file reader.
+# The content is a mapping from the script path to the namespace.
+# The dict should not be overwritten but only modified, as
+# it may be broken the execution of scripts that are already running.
 
 
 def _is_url(filename):
@@ -536,7 +541,7 @@ def load_and_execute_python_code(path: str) -> list['LayerData']:
     code = Path(path).read_text()
     with _patch_viewer_new():
         try:
-            exec(code, SCRIPTS_NAMESPACE.setdefault(path, {}))
+            exec(code, _DROPPED_SCRIPTS_NAMESPACE.setdefault(path, {}))
         except BaseException as e:  # noqa: BLE001
             notification_manager.receive_error(type(e), e, e.__traceback__)
     return [(None,)]
