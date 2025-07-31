@@ -22,9 +22,6 @@ import tifffile
 
 import napari
 
-###############################################################################
-# Download data
-# ------------------
 download = pooch.DOIDownloader(progressbar=True)
 doi = "10.5281/zenodo.15597019/01.zip"
 tmp_dir = Path(pooch.os_cache('napari-cell-tracking-example'))
