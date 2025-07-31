@@ -14,6 +14,7 @@ from pathlib import Path
 from textwrap import wrap
 from typing import Any
 
+from napari import Viewer
 from napari.errors import ReaderPluginError
 from napari.utils.misc import maybe_patch_conda_exe
 from napari.utils.translations import trans
@@ -209,7 +210,7 @@ def parse_sys_argv():
 
 
 def _run() -> None:
-    from napari import Viewer, run
+    from napari import run
     from napari.settings import get_settings
 
     """Main program."""

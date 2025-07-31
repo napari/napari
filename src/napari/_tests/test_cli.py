@@ -43,7 +43,7 @@ def test_cli_parses_unknowns(mock_run, monkeypatch, make_napari_viewer):
         assert kwargs['contrast_limits'] == (0, 1)
 
     # testing all the variants of literal_evals
-    with mock.patch('napari.Viewer', return_value=v):
+    with mock.patch('napari.__main__.Viewer', return_value=v):
         monkeypatch.setattr(
             napari.components.viewer_model.ViewerModel, 'open', assert_kwargs
         )
@@ -78,17 +78,21 @@ def test_cli_raises(monkeypatch):
         assert str(e.value) == 'error: argument --gamma expected one argument'
 
 
-@mock.patch('runpy.run_path')
-def test_cli_runscript(run_path, monkeypatch, tmp_path):
+@mock.patch('qtpy.QtWidgets.QApplication.exec_')
+@pytest.mark.usefixtures('builtins')
+def test_cli_runscript(exec_, monkeypatch, tmp_path, make_napari_viewer):
     """Test that running napari script.py runs a script"""
+    v = make_napari_viewer()
     script = tmp_path / 'test.py'
-    script.write_text('import napari; v = napari.Viewer(show=False)')
+    script.write_text('import napari; v = napari.Viewer(); v.add_points([])')
 
     with monkeypatch.context() as m:
         m.setattr(sys, 'argv', ['napari', str(script)])
+        m.setattr(__main__, 'Viewer', lambda: v)
         __main__._run()
 
-    run_path.assert_called_once_with(str(script))
+    assert len(v.layers) == 1
+    exec_.assert_called_once_with()
 
 
 @mock.patch('napari._qt.qt_viewer.QtViewer._qt_open')
@@ -97,7 +101,7 @@ def test_cli_passes_kwargs(qt_open, mock_run, monkeypatch, make_napari_viewer):
     v = make_napari_viewer()
 
     with (
-        mock.patch('napari.Viewer', return_value=v),
+        mock.patch('napari.__main__.Viewer', return_value=v),
         monkeypatch.context() as m,
     ):
         m.setattr(sys, 'argv', ['n', 'file', '--name', 'some name'])
@@ -121,7 +125,7 @@ def test_cli_passes_kwargs_stack(
     v = make_napari_viewer()
 
     with (
-        mock.patch('napari.Viewer', return_value=v),
+        mock.patch('napari.__main__.Viewer', return_value=v),
         monkeypatch.context() as m,
     ):
         m.setattr(
@@ -172,7 +176,9 @@ def test_cli_retains_viewer_ref(mock_run, monkeypatch, make_napari_viewer):
     with monkeypatch.context() as m:
         m.setattr(sys, 'argv', ['napari', 'path/to/file.tif'])
         # return our local v
-        with mock.patch('napari.Viewer', return_value=v) as mock_viewer:
+        with mock.patch(
+            'napari.__main__.Viewer', return_value=v
+        ) as mock_viewer:
             ref_count = sys.getrefcount(v)  # count current references
             # mock gui open so we're not opening dialogs/throwing errors on fake path
             with mock.patch(
