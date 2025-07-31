@@ -6,7 +6,7 @@ from collections.abc import Sequence
 from contextlib import contextmanager, suppress
 from glob import glob
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 import dask.array as da
 import imageio.v3 as iio
@@ -18,6 +18,7 @@ from napari.utils.notifications import notification_manager
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
+    from napari import Viewer
     from napari.types import FullLayerData, LayerData, ReaderFunction
 
 
@@ -530,6 +531,27 @@ def _patch_viewer_new():
         Viewer.__init__ = original_init
 
 
+def filter_variables(variables: dict[str, Any]) -> dict[str, Any]:
+    res = variables.copy()
+    res.pop('viewer', None)
+    return res
+
+
+def _add_dropped_scripts_to_console(
+    variables: dict[str, Any], viewer: 'Viewer | None'
+) -> None:
+    if viewer is None:
+        return
+
+    variables = filter_variables(variables)
+
+    if viewer.window._qt_viewer._console is None:
+        viewer.window._qt_viewer.add_to_console_backlog(variables)
+    else:
+        console = viewer.window._qt_viewer._console
+        console.push(variables)
+
+
 def load_and_execute_python_code(path: str) -> list['LayerData']:
     """Load and execute Python code from a file.
 
@@ -538,10 +560,16 @@ def load_and_execute_python_code(path: str) -> list['LayerData']:
     path : str
         Path to the Python file to be executed.
     """
+    from napari.viewer import current_viewer
+
     code = Path(path).read_text()
     with _patch_viewer_new():
         try:
+            viewer = current_viewer()
             exec(code, _DROPPED_SCRIPTS_NAMESPACE.setdefault(path, {}))
+            _add_dropped_scripts_to_console(
+                _DROPPED_SCRIPTS_NAMESPACE[path], viewer
+            )
         except BaseException as e:  # noqa: BLE001
             notification_manager.receive_error(type(e), e, e.__traceback__)
     return [(None,)]
