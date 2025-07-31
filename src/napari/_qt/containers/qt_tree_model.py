@@ -1,12 +1,18 @@
+from __future__ import annotations
+
 import logging
 import pickle
-from typing import Optional, TypeVar
+from collections.abc import Iterable, MutableSequence
+from typing import TYPE_CHECKING, Generic, TypeVar
 
 from qtpy.QtCore import QMimeData, QModelIndex, Qt
 
 from napari._qt.containers._base_item_model import _BaseEventedItemModel
 from napari.utils.translations import trans
 from napari.utils.tree import Group, Node
+
+if TYPE_CHECKING:
+    from typing import Any
 
 logger = logging.getLogger(__name__)
 NodeType = TypeVar('NodeType', bound=Node)
@@ -27,7 +33,9 @@ class QtNodeTreeModel(_BaseEventedItemModel[NodeType]):
 
     # ########## Reimplemented Public Qt Functions ##################
 
-    def data(self, index: QModelIndex, role: Qt.ItemDataRole):
+    def data(
+        self, index: QModelIndex, role: int = Qt.ItemDataRole.DisplayRole
+    ) -> Any:
         """Return data stored under ``role`` for the item at ``index``.
 
         A given class:`QModelIndex` can store multiple types of data, each with
@@ -62,13 +70,15 @@ class QtNodeTreeModel(_BaseEventedItemModel[NodeType]):
         #   3. Have special treatment when we encounter integers in the model
         if parent is None:
             parent = QModelIndex()
+        item = self.getItem(parent)
+        actual_item = item[row] if isinstance(item, MutableSequence) else item
         return (
-            self.createIndex(row, column, self.getItem(parent)[row])
+            self.createIndex(row, column, actual_item)
             if self.hasIndex(row, column, parent)
             else QModelIndex()  # instead of index error, Qt wants null index
         )
 
-    def getItem(self, index: QModelIndex) -> NodeType:
+    def getItem(self, index: QModelIndex) -> NodeType | Group[NodeType]:
         """Return python object for a given `QModelIndex`.
 
         An invalid `QModelIndex` will return the root object.
@@ -79,15 +89,15 @@ class QtNodeTreeModel(_BaseEventedItemModel[NodeType]):
                 return item
         return self._root
 
-    def parent(self, index: QModelIndex) -> QModelIndex:
+    def parent(self, child: QModelIndex) -> QModelIndex:  # type: ignore[override]
         """Return the parent of the model item with the given ``index``.
 
         If the item has no parent, an invalid QModelIndex is returned.
         """
-        if not index.isValid():
+        if not child.isValid():
             return QModelIndex()  # null index
 
-        parentItem = self.getItem(index).parent
+        parentItem = self.getItem(child).parent
         if parentItem is None or parentItem == self._root:
             return QModelIndex()
 
@@ -118,7 +128,9 @@ class QtNodeTreeModel(_BaseEventedItemModel[NodeType]):
         """
         return [NodeMIMEType, 'text/plain']
 
-    def mimeData(self, indices: list[QModelIndex]) -> Optional['NodeMimeData']:
+    def mimeData(
+        self, indices: Iterable[QModelIndex]
+    ) -> NodeMimeData[NodeType]:
         """Return an object containing serialized data from `indices`.
 
         The format used to describe the encoded data is obtained from the
@@ -129,13 +141,27 @@ class QtNodeTreeModel(_BaseEventedItemModel[NodeType]):
         """
         # If the list of indexes is empty, or there are no supported MIME types
         # nullptr is returned rather than a serialized empty list.
-        if not indices:
-            return 0
-        return NodeMimeData([self.getItem(i) for i in indices])
+
+        # TODO: JA: this may be a terrible mistake,
+        # don't merge unless properly reviewed first.
+        # if the list is empty (or there are no valid indeces),
+        # we return an empty NodeMimeData
+        items: list[NodeType] = []
+        for i in indices:
+            if not i.isValid():
+                continue
+            item = self.getItem(i)
+            if isinstance(item, MutableSequence):
+                # in case getItem returns a _root...
+                # ... is this correct?
+                items.extend(item)
+            else:
+                items.append(item)
+        return NodeMimeData(items)
 
     def dropMimeData(
         self,
-        data: QMimeData,
+        data: QMimeData | None,
         action: Qt.DropAction,
         destRow: int,
         col: int,
@@ -166,17 +192,17 @@ class QtNodeTreeModel(_BaseEventedItemModel[NodeType]):
                 'dropMimeData: indices {ind} ➡ {idx}',
                 extra={'ind': moving_indices, 'idx': dest_idx},
             )
-
             if len(moving_indices) == 1:
                 self._root.move(moving_indices[0], dest_idx)
             else:
+                # TODO: JA: is this functionally correct? How does it work?
                 self._root.move_multiple(moving_indices, dest_idx)
             return True
         return False
 
     # ###### Non-Qt methods added for Group Model ############
 
-    def setRoot(self, root: Group[NodeType]):
+    def setRoot(self, root: Group[NodeType]) -> None:  # type: ignore[override]
         if not isinstance(root, Group):
             raise TypeError(
                 trans._(
@@ -208,7 +234,7 @@ class QtNodeTreeModel(_BaseEventedItemModel[NodeType]):
         return self.index(child, 0, parent)
 
 
-class NodeMimeData(QMimeData):
+class NodeMimeData(QMimeData, Generic[NodeType]):
     """An object to store Node data during a drag operation."""
 
     def __init__(self, nodes: list[NodeType] | None = None) -> None:
