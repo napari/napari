@@ -13,11 +13,16 @@ from napari.layers.surface._surface_utils import (
 )
 from napari.layers.surface.normals import SurfaceNormals
 from napari.layers.surface.wireframe import SurfaceWireframe
+from napari.layers.utils.color_manager import ColorManager
 from napari.layers.utils.interactivity_utils import (
     nd_line_segment_to_displayed_data_ray,
 )
 from napari.layers.utils.layer_utils import _FeatureTable, calc_data_range
-from napari.utils.colormaps import AVAILABLE_COLORMAPS
+from napari.utils.colormaps import (
+    AVAILABLE_COLORMAPS,
+    Colormap,
+    ValidColormapArg,
+)
 from napari.utils.events import Event
 from napari.utils.events.event_utils import connect_no_arg
 from napari.utils.geometry import find_nearest_triangle_intersection
@@ -236,7 +241,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         texture=None,
         translate=None,
         units=None,
-        vertex_colors=None,
+        vertex_colors='white',
         visible=True,
         wireframe=None,
     ) -> None:
@@ -283,12 +288,6 @@ class Surface(IntensityVisualizationMixin, Layer):
                     length=len(data),
                 )
             )
-        self._vertices = data[0]
-        self._faces = data[1]
-        if len(data) == 3:
-            self._vertex_values = data[2]
-        else:
-            self._vertex_values = np.ones(len(self._vertices))
 
         self._feature_table = _FeatureTable.from_layer(
             features=features,
@@ -296,16 +295,38 @@ class Surface(IntensityVisualizationMixin, Layer):
             num_data=len(data[0]),
         )
 
+        self._vertices = data[0]
+        self._faces = data[1]
+        if len(data) == 3:
+            self.features['vertex_values'] = data[2]
+            vertex_colors = 'vertex_values'
+        else:
+            self.features['vertex_values'] = np.ones(len(self._vertices))
+
         self._texture = texture
         self._texcoords = texcoords
-        self._vertex_colors = vertex_colors
+
+        color_properties = (
+            self._feature_table.properties()
+            if self._vertices.size > 0
+            else self._feature_table.currents()
+        )
+        self._vertex = ColorManager._from_layer_kwargs(
+            n_colors=len(self._vertices),
+            colors=vertex_colors,
+            continuous_colormap=colormap,
+            contrast_limits=contrast_limits,
+            properties=color_properties,
+        )
 
         # Set contrast_limits and colormaps
-        self._gamma = gamma
+        self.gamma = gamma
         if contrast_limits is not None:
             self._contrast_limits_range = contrast_limits
         else:
-            self._contrast_limits_range = calc_data_range(self._vertex_values)
+            self._contrast_limits_range = calc_data_range(
+                self.features['vertex_values'].values
+            )
 
         self._contrast_limits = self._contrast_limits_range
         self.colormap = colormap
@@ -335,15 +356,19 @@ class Surface(IntensityVisualizationMixin, Layer):
         self.normals = normals
 
     def _calc_data_range(self, mode='data'):
-        return calc_data_range(self.vertex_values)
+        return calc_data_range(self.features['vertex_values'])
 
     @property
     def dtype(self) -> np.dtype:
-        return self.vertex_values.dtype
+        return self.features['vertex_values'].dtype
 
     @property
     def data(self):
-        return (self.vertices, self.faces, self.vertex_values)
+        return (
+            self.vertices,
+            self.faces,
+            self.features['vertex_values'].values,
+        )
 
     @data.setter
     def data(self, data):
@@ -358,9 +383,9 @@ class Surface(IntensityVisualizationMixin, Layer):
         self._vertices = data[0]
         self._faces = data[1]
         if len(data) == 3:
-            self._vertex_values = data[2]
+            self.features['vertex_values'] = data[2]
         else:
-            self._vertex_values = np.ones(len(self._vertices))
+            self.features['vertex_values'] = np.ones(len(self._vertices))
 
         self._update_dims()
         self.events.data(value=self.data)
@@ -384,7 +409,7 @@ class Surface(IntensityVisualizationMixin, Layer):
 
     @property
     def vertex_values(self) -> np.ndarray:
-        return self._vertex_values
+        return self.features['vertex_values']
 
     @vertex_values.setter
     def vertex_values(self, vertex_values: np.ndarray) -> None:
@@ -392,7 +417,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         if vertex_values is None:
             vertex_values = np.ones(len(self._vertices))
 
-        self._vertex_values = vertex_values
+        self.features['vertex_values'] = vertex_values
 
         self._update_dims()
         self.events.data(value=self.data)
@@ -400,10 +425,10 @@ class Surface(IntensityVisualizationMixin, Layer):
 
     @property
     def vertex_colors(self) -> np.ndarray | None:
-        return self._vertex_colors
+        return self._vertex.colors
 
     @vertex_colors.setter
-    def vertex_colors(self, vertex_colors: np.ndarray | None) -> None:
+    def vertex_colors(self, vertex_colors) -> None:
         """Values used to directly color vertices.
 
         Note that dims sliders for this layer are based on vertex_values, so
@@ -419,20 +444,66 @@ class Surface(IntensityVisualizationMixin, Layer):
                 f'texture should be None or ndarray; got {type(vertex_colors)}'
             )
             raise ValueError(msg)
-        self._vertex_colors = vertex_colors
+        self._vertex._set_color(
+            color=vertex_colors,
+            n_colors=len(self._vertices),
+            current_properties=self._feature_table.currents(),
+        )
         self._update_dims()
         self.events.data(value=self.data)
         self._reset_editable()
 
     @property
+    def contrast_limits(self) -> None | tuple[float, float]:
+        """
+        None, (float, float) : clims for mapping the vertex_color
+        colormap property to 0 and 1
+        """
+        return self._vertex.contrast_limits
+
+    @contrast_limits.setter
+    def contrast_limits(
+        self, contrast_limits: None | tuple[float, float]
+    ) -> None:
+        self._vertex.contrast_limits = contrast_limits
+        self.refresh()
+
+    @property
+    def gamma(self) -> float:
+        """Gamma correction for determining colormap linearity."""
+        return self._gamma
+
+    @gamma.setter
+    def gamma(self, gamma: float) -> None:
+        self._gamma = gamma
+        self.events.gamma()
+        self.refresh()
+
+    @property
     def faces(self) -> np.ndarray:
-        return self._faces
+        return np.asarray(self._faces)
+
+    @property
+    def colormap(self) -> Colormap:
+        """Return the colormap to be applied to a property to get the face color.
+
+        Returns
+        -------
+        colormap : napari.utils.Colormap
+            The Colormap object.
+        """
+        return self._vertex.continuous_colormap
+
+    @colormap.setter
+    def colormap(self, colormap: ValidColormapArg) -> None:
+        self._vertex.continuous_colormap = colormap
+        self.refresh()
 
     @faces.setter
     def faces(self, faces: np.ndarray) -> None:
         """Array of indices of mesh triangles."""
 
-        self.faces = faces
+        self.faces = np.asarray(faces)
 
         self.refresh(extent=False)
         self.events.data(value=self.data)
