@@ -231,7 +231,7 @@ def _nanmax(array):
 
 
 def calc_data_range(
-    data: LayerDataProtocol, rgb: bool = False
+    data: LayerDataProtocol, rgb: bool = False, dtype: np.dtype | None = None
 ) -> tuple[float, float]:
     """Calculate range of data values. If all values are equal return [0, 1].
 
@@ -241,6 +241,8 @@ def calc_data_range(
         Data to calculate range of values over.
     rgb : bool
         Flag if data is rgb.
+    dtype : np.dtype, optional
+        Dtype of the layer data. If None, the dtype of the data is used.
 
     Returns
     -------
@@ -252,7 +254,7 @@ def calc_data_range(
     If the data type is uint8, no calculation is performed, and 0-255 is
     returned.
     """
-    if data.dtype == np.uint8:
+    if (dtype is not None and dtype == np.uint8) or data.dtype == np.uint8:
         return (0, 255)
 
     if isinstance(data, np.ndarray) and data.ndim < 3:

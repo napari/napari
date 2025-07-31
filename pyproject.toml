@@ -64,7 +64,7 @@ dependencies = [
     "qtpy>=2.3.1",
     "scikit-image[data]>=0.19.1",
     "scipy>=1.10.1",
-    "superqt>=0.7.3",
+    "superqt>=0.7.4",
     "tifffile>=2022.7.28",
     "toolz>=0.11.0",
     "tqdm>=4.56.0",
@@ -152,6 +152,7 @@ testing = [
     "pytest-qt>=4.3.1",
     "pytest-pretty>=1.1.0",
     "pytest>=8.3.5",
+    "pytest-rerunfailures>=15.1",
     "tensorstore>=0.1.32",
     "virtualenv>=20.17",
     "xarray>=0.16.2",
@@ -793,7 +794,7 @@ module = [
     "napari._app_model.context._layerlist_context",
     "napari.components.overlays.labels_polygon",
     "napari.plugins.io",
-    "napari.utils.colormaps.vendored._cm_listed"
+    "napari.utils.colormaps.vendored._cm_listed",
 ]
 disallow_untyped_calls = false
 
