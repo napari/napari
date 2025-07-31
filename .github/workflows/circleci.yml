@@ -19,7 +19,7 @@ jobs:
     # if: github.repository == 'napari/docs'
     steps:
       - name: GitHub Action step
-        uses: larsoner/circleci-artifacts-redirector-action@master
+        uses: larsoner/circleci-artifacts-redirector-action@839631420e45a08af893032e5a5e8843bf47e8ff # v1.2.0
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           api-token: ${{ secrets.CIRCLECI_TOKEN }}
