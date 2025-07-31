@@ -17,6 +17,8 @@ from napari.utils.theme import available_themes
 
 
 @pytest.mark.usefixtures('builtins')
+@pytest.mark.enable_console
+@pytest.mark.filterwarnings('ignore::DeprecationWarning:jupyter_client')
 def test_drop_python_file(make_napari_viewer, tmp_path):
     """Test dropping a python file on to the viewer."""
     viewer = make_napari_viewer()
@@ -41,8 +43,15 @@ def test_drop_python_file(make_napari_viewer, tmp_path):
     # Check that the file was executed
     assert viewer.layers[0].name == 'Dropped Image'
 
+    # Check that the console is updated with locals from the script
+    console = viewer.window._qt_viewer.console
+    assert 'data' in console.shell.user_ns
+    assert np.array_equal(console.shell.user_ns['data'], np.zeros((10, 10)))
+
 
 @pytest.mark.usefixtures('builtins')
+@pytest.mark.enable_console
+@pytest.mark.filterwarnings('ignore::DeprecationWarning:jupyter_client')
 def test_drop_python_file_3d(make_napari_viewer, tmp_path):
     """Test that dropping a python file using a 3D image on the viewer works."""
     viewer = make_napari_viewer()
@@ -68,8 +77,15 @@ def test_drop_python_file_3d(make_napari_viewer, tmp_path):
     assert viewer.layers[0].name == 'Dropped Image'
     assert viewer.dims.ndim == 3
 
+    # Check that the console is updated with locals from the script
+    console = viewer.window._qt_viewer.console
+    assert 'data' in console.shell.user_ns
+    assert np.array_equal(console.shell.user_ns['data'], np.zeros((2, 10, 10)))
+
 
 @pytest.mark.usefixtures('builtins')
+@pytest.mark.enable_console
+@pytest.mark.filterwarnings('ignore::DeprecationWarning:jupyter_client')
 def test_drop_python_file_double_viewer(make_napari_viewer, tmp_path):
     """Test that dropping a python file on the viewer works."""
     viewer = make_napari_viewer()
@@ -100,6 +116,13 @@ def test_drop_python_file_double_viewer(make_napari_viewer, tmp_path):
     idx = 0 if instances[1] == viewer else 1
     assert instances[idx].title == 'text'  # Check the second viewer's name
     instances[idx].close()  # Close the second viewer
+
+    # check that the console is updated with locals from the script
+    console = viewer.window._qt_viewer.console
+    assert 'data' in console.shell.user_ns
+    assert np.array_equal(console.shell.user_ns['data'], np.zeros((10, 10)))
+    assert 'viewer1' in console.shell.user_ns
+    assert 'viewer2' in console.shell.user_ns
 
 
 def test_qt_viewer(make_napari_viewer):
