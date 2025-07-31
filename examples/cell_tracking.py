@@ -10,9 +10,6 @@ Thanks to Dr. Alessia Ruggieri and Philipp Klein, Centre for Integrative Infecti
 Disease Research (CIID), University Hospital Heidelberg, Germany for the data.
 You can find the data on: https://doi.org/10.5281/zenodo.15597019
 
-"""
-
-"""
 .. tags:: visualization-advanced, colored 2D tracks
 """
 import zipfile
