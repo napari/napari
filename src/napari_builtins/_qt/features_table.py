@@ -4,6 +4,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+import numpy as np
 import pandas as pd
 from qtpy.QtCore import (
     QAbstractTableModel,
@@ -122,10 +123,10 @@ class PandasModel(QAbstractTableModel):
             return Qt.ItemFlag.ItemIsEnabled
 
         col = index.column()
-        # index is read-only
+        # index and layer_name columns are read-only
 
         flags = Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled
-        if col == 0:
+        if col == 0 or col == self.df.shape[1]:  # index or layer_name column
             return flags
 
         dtype = self.df.dtypes.iat[col - 1]
@@ -148,6 +149,8 @@ class PandasModel(QAbstractTableModel):
         col = index.column()
         if col == 0:
             return False  # index is read-only
+        if col == self.df.shape[1]:
+            return False  # layer_name column is read-only
 
         row = index.row()
         dtype = self.df.dtypes.iat[col - 1]
@@ -306,9 +309,21 @@ class PandasView(QTableView):
         model = proxy_model.sourceModel()
         map_func = proxy_model.mapToSource
 
-        # determine selected block
-        rows = sorted({idx.row() for idx in selection if idx.column() > 0})
-        cols = sorted({idx.column() for idx in selection if idx.column() > 0})
+        # determine selected block (excluding index and layer_name columns)
+        rows = sorted(
+            {
+                idx.row()
+                for idx in selection
+                if 0 < idx.column() < model.df.shape[1]
+            }
+        )
+        cols = sorted(
+            {
+                idx.column()
+                for idx in selection
+                if 0 < idx.column() < model.df.shape[1]
+            }
+        )
 
         if not rows or not cols:
             return  # pragma: no cover
@@ -331,12 +346,14 @@ class PandasView(QTableView):
         clipboard = QGuiApplication.clipboard().text()
         sel = self.selectedIndexes()
 
-        # if index is in the selection, just get out
+        # if index or layer_name column is in the selection, just get out
         if (
             not clipboard
             or not sel
             or not model.editable
-            or any(s.column() == 0 for s in sel)
+            or any(
+                s.column() == 0 or s.column() == model.df.shape[1] for s in sel
+            )
         ):
             return  # pragma: no cover
 
@@ -354,8 +371,14 @@ class PandasView(QTableView):
         for i in range(n_rows):
             for j in range(n_cols):
                 r = start_row + i
-                c = start_col + j - 1  # offset index
-                if r >= df.shape[0] or c >= df.shape[1]:
+                view_col = start_col + j  # view column index
+                c = view_col - 1  # dataframe column index (offset for index)
+                if (
+                    r >= df.shape[0]
+                    or view_col >= model.columnCount()
+                    or view_col == 0
+                    or view_col == model.df.shape[1]
+                ):  # skip index or layer_name columns
                     continue
                 val = data[i][j]
                 dtype = df.dtypes.iloc[c]
@@ -390,16 +413,12 @@ class FeaturesTable(QWidget):
         viewer: napari.viewer.ViewerModel,
     ) -> None:
         super().__init__()
-        self._active_layer = None
         self._selected_layers = []
         self._selection_blocked = False
 
         self.viewer = viewer
-        # self.viewer.layers.selection.events.active.connect(
-        #     self._on_active_layer_change
-        # )
         self.viewer.layers.selection.events.changed.connect(
-            self._on_change_layer_selection
+            self._on_layer_selection_change
         )
 
         self.setLayout(QVBoxLayout())
@@ -421,8 +440,7 @@ class FeaturesTable(QWidget):
             self._on_table_selection_changed
         )
 
-        # self._on_active_layer_change()
-        self._on_change_layer_selection()
+        self._on_layer_selection_change()
         self._on_editable_change()
 
     @staticmethod
@@ -439,29 +457,27 @@ class FeaturesTable(QWidget):
             "Layer with features must have either 'selected_label' or 'selected_data'."
         )
 
-    def _on_change_layer_selection(self):
+    def _on_layer_selection_change(self):
+        """Update the table when the layer selection changes and handles event connections."""
         old_layer_list = self._selected_layers
-        # print(f'Old selected layers: {[l.name for l in old_layer_list]}')
         self._selected_layers = list(self.viewer.layers.selection)
-        # print(f'Selected layers: {[l.name for l in self._selected_layers]}')
-
         if len(old_layer_list) > 0:
-            # disconnect from old layers
+            # disconnect events from old layers
             for layer in old_layer_list:
                 if hasattr(layer, 'features'):
                     layer.events.features.disconnect(self._on_features_change)
-                    # self._get_selection_event_for_layer(layer).disconnect(
-                    #     self._on_layer_selection_changed
-                    # )
+                    self._get_selection_event_for_layer(layer).disconnect(
+                        self._update_table_selected_cells
+                    )
 
         if len(self._selected_layers) > 0:
-            # connect to new layers
+            # connect events to new layers
             for layer in self._selected_layers:
                 if hasattr(layer, 'features'):
                     layer.events.features.connect(self._on_features_change)
-                    # self._get_selection_event_for_layer(layer).connect(
-                    #     self._on_layer_selection_changed
-                    # )
+                    self._get_selection_event_for_layer(layer).connect(
+                        self._update_table_selected_cells
+                    )
             self._on_features_change()
             self.toggle.setVisible(True)
             self.save.setVisible(True)
@@ -474,52 +490,15 @@ class FeaturesTable(QWidget):
             self.save.setVisible(False)
             self.table.setVisible(False)
             self.info.setText('No layer selected.')
-            # self._on_layer_selection_changed()
-
-    def _on_active_layer_change(self):
-        old_layer = self._active_layer
-        self._active_layer = self.viewer.layers.selection.active
-
-        if old_layer is not None and hasattr(old_layer, 'features'):
-            old_layer.events.features.disconnect(self._on_features_change)
-            self._get_selection_event_for_layer(old_layer).disconnect(
-                self._on_layer_selection_changed
-            )
-
-        if hasattr(self._active_layer, 'features'):
-            self._active_layer.events.features.connect(
-                self._on_features_change
-            )
-            self._get_selection_event_for_layer(self._active_layer).connect(
-                self._on_layer_selection_changed
-            )
-
-            self._on_layer_selection_changed()
-            self._on_features_change()
-            self.toggle.setVisible(True)
-            self.save.setVisible(True)
-            self.table.setVisible(True)
-        else:
-            self.toggle.setVisible(False)
-            self.save.setVisible(False)
-            self.table.setVisible(False)
-
-        if self._active_layer is None:
-            self.info.setText('No layer selected.')
-        elif not hasattr(self._active_layer, 'features'):
-            self.info.setText(
-                f'"{self._active_layer.name}" has no features table.'
-            )
-        else:
-            self.info.setText(f'Features of "{self._active_layer.name}"')
 
     def _on_features_change(self):
+        """Update the table with the features of the currently selected layers."""
         # TODO: optimize for smaller changes?
         self.table.model().sourceModel().replace_data(
             self._build_multilayer_features_table()
         )
         self.table.resizeColumnsToContents()
-        # self._on_layer_selection_changed()
+        self._update_table_selected_cells()
 
     def _build_multilayer_features_table(self):
         """Builds a features table for multiple layers."""
@@ -532,8 +511,11 @@ class FeaturesTable(QWidget):
                         'layer_name'
                     ].astype('category')
                 df_list.append(layer.features)
-
-        return pd.concat(df_list)
+        df = pd.concat(df_list, ignore_index=True)
+        # ensure 'layer_name' is the last column
+        layer_name_col = df.pop('layer_name')
+        df['layer_name'] = layer_name_col
+        return df
 
     def _on_editable_change(self):
         self.table.model().sourceModel().editable = self.toggle.isChecked()
@@ -543,33 +525,75 @@ class FeaturesTable(QWidget):
         if self._selection_blocked:
             return
 
-        if hasattr(self._active_layer, 'selected_label'):
-            raw_index = self.table.selectionModel().currentIndex()
-            current = self.table.model().mapToSource(raw_index).row()
-            with self._block_selection():
-                self._active_layer.selected_label = current
+        # Get all selected row indices from the table
+        selected_global_rows = [
+            self.table.model().mapToSource(raw_index).row()
+            for raw_index in self.table.selectionModel().selectedIndexes()
+        ]
 
-        elif hasattr(self._active_layer, 'selected_data'):
-            selected_rows = {
-                self.table.model().mapToSource(raw_index).row()
-                for raw_index in self.table.selectionModel().selectedIndexes()
-            }
-            with self._block_selection():
-                self._active_layer.selected_data = selected_rows
+        if not selected_global_rows:
+            return
 
-    def _on_layer_selection_changed(self):
+        df = self.table.model().sourceModel().df
+        if df.empty:
+            return
+
+        # Calculate layer start indices for all layers once (most efficient)
+        layer_starts = df.groupby(
+            'layer_name', sort=False, observed=False
+        ).apply(lambda x: x.index[0], include_groups=False)
+
+        # Get layer names for selected rows and convert to layer-specific indices
+        selected_layer_names = df['layer_name'].iloc[selected_global_rows]
+        layer_start_indices = selected_layer_names.map(layer_starts).astype(
+            int
+        )
+        layer_specific_indices = (
+            np.array(selected_global_rows) - layer_start_indices.values
+        )
+
+        # Group by layer name efficiently
+        selections_by_layer = {}
+        for layer_name, layer_idx in zip(
+            selected_layer_names, layer_specific_indices, strict=False
+        ):
+            selections_by_layer.setdefault(layer_name, []).append(layer_idx)
+
+        # Update layer selections
+        for layer in self._selected_layers:
+            if layer.name not in selections_by_layer:
+                continue
+            layer_indices = selections_by_layer[layer.name]
+
+            with self._block_selection():
+                if hasattr(layer, 'selected_label'):
+                    layer.selected_label = layer_indices[-1]
+                elif hasattr(layer, 'selected_data'):
+                    layer.selected_data = set(layer_indices)
+
+    def _update_table_selected_cells(self):
         """Update table selected cells when layer selection changes."""
         if self._selection_blocked:
             return
 
         model = self.table.model()
-        if hasattr(self._active_layer, 'selected_label'):
-            sel = self._active_layer.selected_label
-            indices = [sel]
-        elif hasattr(self._active_layer, 'selected_data'):
-            sel = self._active_layer.selected_data
-            indices = sel
+        df = model.sourceModel().df
+        if df.empty:
+            return
 
+        indices = []
+        for layer in self._selected_layers:
+            if hasattr(layer, 'selected_label'):
+                sel = layer.selected_label
+                layer_data_row_index = df[df['layer_name'] == layer.name].index
+                indices += [[layer_data_row_index[sel]]]
+            elif hasattr(layer, 'selected_data'):
+                sel = layer.selected_data
+                layer_data_row_index = df[df['layer_name'] == layer.name].index
+                indices += [layer_data_row_index[list(sel)]]
+            else:
+                continue
+        indices = np.concatenate(indices)
         selection = QItemSelection()
 
         for idx in indices:
@@ -600,7 +624,16 @@ class FeaturesTable(QWidget):
         hist = get_save_history()
         dlg.setHistory(hist)
 
-        fname = f'{self._active_layer.name}_features.csv'
+        # Generate filename for multiple layers
+        if len(self._selected_layers) == 1:
+            fname = f'{self._selected_layers[0].name}_features.csv'
+        elif len(self._selected_layers) > 1:
+            first_layer = self._selected_layers[0].name
+            others_count = len(self._selected_layers) - 1
+            fname = (
+                f'{first_layer}_and_{others_count}_other_layers_features.csv'
+            )
+
         fname = self._remove_invalid_chars(fname)
 
         fname, _ = dlg.getSaveFileName(
