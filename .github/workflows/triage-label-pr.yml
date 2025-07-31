@@ -1,5 +1,5 @@
 # https://github.com/marketplace/actions/labeler
-name: triage-labels-pr
+name: triage-pr-labels
 on:
 - pull_request_target
 
