@@ -1,4 +1,4 @@
-name: Conda
+name: make-bundle-conda
 
 on:
   push:

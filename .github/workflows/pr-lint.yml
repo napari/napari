@@ -1,0 +1,75 @@
+# Linting and code quality checks for pull requests
+name: Lint
+
+on:
+  pull_request:
+    branches:
+      - main
+      - "v*x"
+
+concurrency:
+  group: lint-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  COLUMNS: 120
+
+jobs:
+  import_lint:
+    name: Import lint
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.12
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install tox
+      - name: Run import lint
+        run: tox -e import-lint
+
+  manifest:
+    # make sure all necessary files will be bundled in the release
+    name: Check Manifest
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache-dependency-path: pyproject.toml
+          cache: 'pip'
+      - name: Install Dependencies
+        run: pip install --upgrade pip
+      - name: Install Napari dev
+        run: pip install -e .[build]
+        env:
+          PIP_CONSTRAINT: resources/constraints/constraints_py3.12.txt
+      - name: Make Typestubs
+        run: |
+          make typestubs
+      - name: Check Manifest
+        run: |
+          make check-manifest
+
+  localization_syntax:
+    # make sure all necessary files will be bundled in the release
+    name: Check l18n syntax
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Check localization formatting
+        run: |
+          pip install --upgrade pip semgrep
+          # f"..." and f'...' are the same for semgrep
+          semgrep --error --lang python --pattern 'trans._(f"...")' src/napari
+          semgrep --error --lang python --pattern "trans._(\$X.format(...))" src/napari
