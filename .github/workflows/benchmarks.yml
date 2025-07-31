@@ -37,6 +37,8 @@ jobs:
     if: ${{ github.event.label.name == 'run-benchmarks' && github.event_name == 'pull_request' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
     name: ${{ matrix.benchmark-name }}
     runs-on: ${{ matrix.runs-on }}
+    env:
+      PYTHON_VERSION: "3.12"
     permissions:
       contents: read
       issues: write
@@ -66,7 +68,7 @@ jobs:
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         name: Install Python
         with:
-          python-version: "3.12"
+          python-version: ${{ env.PYTHON_VERSION }}
           cache-dependency-path: pyproject.toml
 
       - uses: tlambert03/setup-qt-libs@19e4ef2d781d81f5f067182e228b54ec90d23b76 # v1.8
@@ -143,7 +145,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PLATFORM: ${{ matrix.runs-on }}
-          PYTHON: "3.9"
+          PYTHON: ${{ env.PYTHON_VERSION }}
           BACKEND: ${{ matrix.benchmark-name }}
           RUN_ID: ${{ github.run_id }}
           TITLE: "[test-bot] Benchmark tests failing"

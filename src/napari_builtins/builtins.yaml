@@ -7,6 +7,9 @@ contributions:
     - id: napari.get_reader
       python_name: napari_builtins.io:napari_get_reader
       title: Builtin Reader
+    - id: napari.get_py_reader
+      python_name: napari_builtins.io:napari_get_py_reader
+      title: Builtin Python Reader
 
     # writers
     - id: napari.write_image
@@ -172,6 +175,9 @@ contributions:
           '*.wdp', '*.webm', '*.webp', '*.wmf', '*.wmv', '*.xbm', '*.xpm',
           '*.zarr', '*.zif'
         ]
+    - command: napari.get_py_reader
+      filename_patterns:
+            ['*.py']
 
   writers:
     - command: napari.write_image
