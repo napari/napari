@@ -6,7 +6,6 @@ import argparse
 import contextlib
 import logging
 import os
-import runpy
 import sys
 import warnings
 from ast import literal_eval
@@ -245,23 +244,6 @@ def _run() -> None:
         # which emits "WARNING: No such plugin for spec 'builtins'"
         # so remove --plugin from sys.argv to prevent that warning
         sys.argv.remove('--plugin')
-
-    if any(p.endswith('.py') for p in args.paths):
-        # we're running a script
-        if len(args.paths) > 1:
-            sys.exit(
-                'When providing a python script, only a '
-                'single positional argument may be provided'
-            )
-
-        # run the file
-        mod = runpy.run_path(args.paths[0])
-
-        from napari_plugin_engine.markers import HookImplementationMarker
-
-        # if this file had any hook implementations, register and run as plugin
-        if any(isinstance(i, HookImplementationMarker) for i in mod.values()):
-            _run_plugin_module(mod, os.path.basename(args.paths[0]))
 
     else:
         if args.with_:
