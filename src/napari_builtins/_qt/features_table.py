@@ -391,11 +391,15 @@ class FeaturesTable(QWidget):
     ) -> None:
         super().__init__()
         self._active_layer = None
+        self._selected_layers = []
         self._selection_blocked = False
 
         self.viewer = viewer
-        self.viewer.layers.selection.events.active.connect(
-            self._on_active_layer_change
+        # self.viewer.layers.selection.events.active.connect(
+        #     self._on_active_layer_change
+        # )
+        self.viewer.layers.selection.events.changed.connect(
+            self._on_change_layer_selection
         )
 
         self.setLayout(QVBoxLayout())
@@ -417,7 +421,8 @@ class FeaturesTable(QWidget):
             self._on_table_selection_changed
         )
 
-        self._on_active_layer_change()
+        # self._on_active_layer_change()
+        self._on_change_layer_selection()
         self._on_editable_change()
 
     @staticmethod
@@ -433,6 +438,43 @@ class FeaturesTable(QWidget):
         raise RuntimeError(  # pragma: no cover
             "Layer with features must have either 'selected_label' or 'selected_data'."
         )
+
+    def _on_change_layer_selection(self):
+        old_layer_list = self._selected_layers
+        # print(f'Old selected layers: {[l.name for l in old_layer_list]}')
+        self._selected_layers = list(self.viewer.layers.selection)
+        # print(f'Selected layers: {[l.name for l in self._selected_layers]}')
+
+        if len(old_layer_list) > 0:
+            # disconnect from old layers
+            for layer in old_layer_list:
+                if hasattr(layer, 'features'):
+                    layer.events.features.disconnect(self._on_features_change)
+                    # self._get_selection_event_for_layer(layer).disconnect(
+                    #     self._on_layer_selection_changed
+                    # )
+
+        if len(self._selected_layers) > 0:
+            # connect to new layers
+            for layer in self._selected_layers:
+                if hasattr(layer, 'features'):
+                    layer.events.features.connect(self._on_features_change)
+                    # self._get_selection_event_for_layer(layer).connect(
+                    #     self._on_layer_selection_changed
+                    # )
+            self._on_features_change()
+            self.toggle.setVisible(True)
+            self.save.setVisible(True)
+            self.table.setVisible(True)
+            self.info.setText(
+                f'Features of "{[layer.name for layer in self._selected_layers]}"'
+            )
+        else:
+            self.toggle.setVisible(False)
+            self.save.setVisible(False)
+            self.table.setVisible(False)
+            self.info.setText('No layer selected.')
+            # self._on_layer_selection_changed()
 
     def _on_active_layer_change(self):
         old_layer = self._active_layer
@@ -474,10 +516,24 @@ class FeaturesTable(QWidget):
     def _on_features_change(self):
         # TODO: optimize for smaller changes?
         self.table.model().sourceModel().replace_data(
-            self._active_layer.features
+            self._build_multilayer_features_table()
         )
         self.table.resizeColumnsToContents()
-        self._on_layer_selection_changed()
+        # self._on_layer_selection_changed()
+
+    def _build_multilayer_features_table(self):
+        """Builds a features table for multiple layers."""
+        df_list = []
+        for layer in self._selected_layers:
+            if hasattr(layer, 'features') and layer.features is not None:
+                if 'layer_name' not in layer.features.columns:
+                    layer.features['layer_name'] = layer.name
+                    layer.features['layer_name'] = layer.features[
+                        'layer_name'
+                    ].astype('category')
+                df_list.append(layer.features)
+
+        return pd.concat(df_list)
 
     def _on_editable_change(self):
         self.table.model().sourceModel().editable = self.toggle.isChecked()
