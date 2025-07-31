@@ -425,15 +425,18 @@ class FeaturesTable(QWidget):
 
         self.info = QLabel('')
         self.toggle = QToggleSwitch('editable.')
+        self.join_toggle = QToggleSwitch('common_columns.')
         self.save = QPushButton('Save as CSV...')
         self.table = PandasView()
         self.layout().addWidget(self.info)
         self.layout().addWidget(self.toggle)
+        self.layout().addWidget(self.join_toggle)
         self.layout().addWidget(self.save)
         self.layout().addWidget(self.table)
         self.layout().addStretch()
 
         self.toggle.toggled.connect(self._on_editable_change)
+        self.join_toggle.toggled.connect(self._on_join_change)
         self.save.clicked.connect(self._on_save_clicked)
 
         self.table.selectionModel().selectionChanged.connect(
@@ -482,11 +485,19 @@ class FeaturesTable(QWidget):
             self.toggle.setVisible(True)
             self.save.setVisible(True)
             self.table.setVisible(True)
+
+            # Show join toggle only when multiple layers are selected
+            if len(self._selected_layers) > 1:
+                self.join_toggle.setVisible(True)
+            else:
+                self.join_toggle.setVisible(False)
+
             self.info.setText(
                 f'Features of "{[layer.name for layer in self._selected_layers]}"'
             )
         else:
             self.toggle.setVisible(False)
+            self.join_toggle.setVisible(False)
             self.save.setVisible(False)
             self.table.setVisible(False)
             self.info.setText('No layer selected.')
@@ -494,13 +505,16 @@ class FeaturesTable(QWidget):
     def _on_features_change(self):
         """Update the table with the features of the currently selected layers."""
         # TODO: optimize for smaller changes?
+        join_type = 'inner' if self.join_toggle.isChecked() else 'outer'
         self.table.model().sourceModel().replace_data(
-            self._build_multilayer_features_table()
+            self._build_multilayer_features_table(join=join_type)
         )
         self.table.resizeColumnsToContents()
         self._update_table_selected_cells()
 
-    def _build_multilayer_features_table(self):
+    def _build_multilayer_features_table(
+        self, join: str = 'outer'
+    ) -> pd.DataFrame:
         """Builds a features table for multiple layers."""
         df_list = []
         for layer in self._selected_layers:
@@ -511,7 +525,7 @@ class FeaturesTable(QWidget):
                         'layer_name'
                     ].astype('category')
                 df_list.append(layer.features)
-        df = pd.concat(df_list, ignore_index=True)
+        df = pd.concat(df_list, ignore_index=True, join=join)
         # ensure 'layer_name' is the last column
         layer_name_col = df.pop('layer_name')
         df['layer_name'] = layer_name_col
@@ -519,6 +533,10 @@ class FeaturesTable(QWidget):
 
     def _on_editable_change(self):
         self.table.model().sourceModel().editable = self.toggle.isChecked()
+
+    def _on_join_change(self):
+        """Update the table when join mode changes."""
+        self._on_features_change()
 
     def _on_table_selection_changed(self):
         """Update layer selection when table cells are selected."""
