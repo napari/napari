@@ -7,8 +7,8 @@ from unittest.mock import MagicMock
 import numpy as np
 import pytest
 from numpy import testing as npt
-from PyQt6.QtGui import QGuiApplication
 from qtpy.QtCore import QUrl
+from qtpy.QtGui import QGuiApplication
 
 from napari._qt._tests.test_qt_viewer import qt_viewer
 from napari._tests.utils import skip_local_popups, skip_on_win_ci
