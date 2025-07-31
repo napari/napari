@@ -62,6 +62,8 @@ from napari.utils.misc import ROOT_DIR
 if TYPE_CHECKING:
     from npe2._pytest_plugin import TestPluginManager
 
+    from napari._qt.qt_viewer import QtViewer
+
 # touch ~/.Xauthority for Xlib support, must happen before importing pyautogui
 if os.getenv('CI') and sys.platform.startswith('linux'):
     xauth = Path('~/.Xauthority').expanduser()
@@ -306,7 +308,7 @@ def viewer_model():
 
 
 @pytest.fixture
-def qt_viewer_(qtbot, viewer_model, monkeypatch):
+def qt_viewer_(qtbot, viewer_model, monkeypatch) -> QtViewer:
     from napari._qt.qt_viewer import QtViewer
 
     viewer = QtViewer(viewer_model)
@@ -409,11 +411,13 @@ def qt_viewer_(qtbot, viewer_model, monkeypatch):
 
 
 @pytest.fixture
-def qt_viewer(qt_viewer_):
+def qt_viewer(qt_viewer_: QtViewer, request) -> QtViewer:
     """We created `qt_viewer_` fixture to allow modifying qt_viewer
     if module-level-specific modifications are necessary.
     For example, in `test_qt_viewer.py`.
     """
+    if 'show_qt_viewer' in request.keywords:
+        qt_viewer_.show()
     return qt_viewer_
 
 
