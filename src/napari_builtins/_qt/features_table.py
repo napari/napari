@@ -527,16 +527,16 @@ class FeaturesTable(QWidget):
         for layer in self._selected_layers:
             # All layers in self._selected_layers are guaranteed to have features
             if layer.features is not None:
-                if 'layer_name' not in layer.features.columns:
-                    layer.features['layer_name'] = layer.name
-                    layer.features['layer_name'] = layer.features[
-                        'layer_name'
-                    ].astype('category')
+                if 'layer' not in layer.features.columns:
+                    layer.features['layer'] = layer.name
+                    layer.features['layer'] = layer.features['layer'].astype(
+                        'category'
+                    )
                 df_list.append(layer.features)
         df = pd.concat(df_list, ignore_index=True, join=join)
-        # ensure 'layer_name' is the last column
-        layer_name_col = df.pop('layer_name')
-        df['layer_name'] = layer_name_col
+        # ensure 'layer' is the last column
+        layer_name_col = df.pop('layer')
+        df['layer'] = layer_name_col
         return df
 
     def _on_editable_change(self):
@@ -565,12 +565,12 @@ class FeaturesTable(QWidget):
             return
 
         # Calculate layer start indices for all layers once (most efficient)
-        layer_starts = df.groupby(
-            'layer_name', sort=False, observed=False
-        ).apply(lambda x: x.index[0], include_groups=False)
+        layer_starts = df.groupby('layer', sort=False, observed=False).apply(
+            lambda x: x.index[0], include_groups=False
+        )
 
         # Get layer names for selected rows and convert to layer-specific indices
-        selected_layer_names = df['layer_name'].iloc[selected_global_rows]
+        selected_layer_names = df['layer'].iloc[selected_global_rows]
         layer_start_indices = selected_layer_names.map(layer_starts).astype(
             int
         )
@@ -611,11 +611,11 @@ class FeaturesTable(QWidget):
         for layer in self._selected_layers:
             if hasattr(layer, 'selected_label'):
                 sel = layer.selected_label
-                layer_data_row_index = df[df['layer_name'] == layer.name].index
+                layer_data_row_index = df[df['layer'] == layer.name].index
                 indices += [[layer_data_row_index[sel]]]
             elif hasattr(layer, 'selected_data'):
                 sel = layer.selected_data
-                layer_data_row_index = df[df['layer_name'] == layer.name].index
+                layer_data_row_index = df[df['layer'] == layer.name].index
                 indices += [layer_data_row_index[list(sel)]]
             else:
                 continue
