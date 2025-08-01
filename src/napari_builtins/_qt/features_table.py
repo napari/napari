@@ -462,55 +462,52 @@ class FeaturesTable(QWidget):
     def _on_layer_selection_change(self):
         """Update the table when the layer selection changes and handles event connections."""
         old_layer_list = self._selected_layers
-        self._selected_layers = list(self.viewer.layers.selection)
+        # Filter to only keep layers with features
+        self._selected_layers = [
+            layer
+            for layer in self.viewer.layers.selection
+            if hasattr(layer, 'features')
+        ]
+
         if len(old_layer_list) > 0:
             # disconnect events from old layers
             for layer in old_layer_list:
-                if hasattr(layer, 'features'):
-                    layer.events.features.disconnect(self._on_features_change)
-                    selection_event = self._get_selection_event_for_layer(
-                        layer
+                layer.events.features.disconnect(self._on_features_change)
+                selection_event = self._get_selection_event_for_layer(layer)
+                if selection_event is not None:
+                    selection_event.disconnect(
+                        self._update_table_selected_cells
                     )
-                    if selection_event is not None:
-                        selection_event.disconnect(
-                            self._update_table_selected_cells
-                        )
 
         if len(self._selected_layers) > 0:
-            # connect events to new layers
-            has_features = False
+            # connect events to new layers (all have features by definition)
             for layer in self._selected_layers:
-                if hasattr(layer, 'features'):
-                    has_features = True
-                    layer.events.features.connect(self._on_features_change)
-                    selection_event = self._get_selection_event_for_layer(
-                        layer
-                    )
-                    if selection_event is not None:
-                        selection_event.connect(
-                            self._update_table_selected_cells
-                        )
-            if has_features:
-                self._on_features_change()
+                layer.events.features.connect(self._on_features_change)
+                selection_event = self._get_selection_event_for_layer(layer)
+                if selection_event is not None:
+                    selection_event.connect(self._update_table_selected_cells)
+
+            # Show widgets and update table
+            self._on_features_change()
             self.toggle.setVisible(True)
             self.save.setVisible(True)
             self.table.setVisible(True)
-
-            # Show join toggle only when multiple layers are selected
-            if len(self._selected_layers) > 1:
-                self.join_toggle.setVisible(True)
-            else:
-                self.join_toggle.setVisible(False)
-
+            self.join_toggle.setVisible(len(self._selected_layers) > 1)
             self.info.setText(
                 f'Features of "{[layer.name for layer in self._selected_layers]}"'
             )
         else:
+            # Hide widgets and show appropriate message
             self.toggle.setVisible(False)
             self.join_toggle.setVisible(False)
             self.save.setVisible(False)
             self.table.setVisible(False)
-            self.info.setText('No layer selected.')
+
+            # Determine message based on original selection
+            if len(self.viewer.layers.selection) > 0:
+                self.info.setText('Selected layers do not have features.')
+            else:
+                self.info.setText('No layer selected.')
 
     def _on_features_change(self):
         """Update the table with the features of the currently selected layers."""
@@ -528,7 +525,8 @@ class FeaturesTable(QWidget):
         """Builds a features table for multiple layers."""
         df_list = []
         for layer in self._selected_layers:
-            if hasattr(layer, 'features') and layer.features is not None:
+            # All layers in self._selected_layers are guaranteed to have features
+            if layer.features is not None:
                 if 'layer_name' not in layer.features.columns:
                     layer.features['layer_name'] = layer.name
                     layer.features['layer_name'] = layer.features[
