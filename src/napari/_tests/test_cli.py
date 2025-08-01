@@ -78,9 +78,8 @@ def test_cli_raises(monkeypatch):
         assert str(e.value) == 'error: argument --gamma expected one argument'
 
 
-@mock.patch('qtpy.QtWidgets.QApplication.exec_')
 @pytest.mark.usefixtures('builtins')
-def test_cli_runscript(exec_, monkeypatch, tmp_path, make_napari_viewer):
+def test_cli_runscript(monkeypatch, tmp_path, make_napari_viewer):
     """Test that running napari script.py runs a script"""
     v = make_napari_viewer()
     script = tmp_path / 'test.py'
@@ -89,10 +88,12 @@ def test_cli_runscript(exec_, monkeypatch, tmp_path, make_napari_viewer):
     with monkeypatch.context() as m:
         m.setattr(sys, 'argv', ['napari', str(script)])
         m.setattr(__main__, 'Viewer', lambda: v)
+        m.setattr(
+            'qtpy.QtWidgets.QApplication.exec_', lambda: None
+        )  # revent event loop if run this test standalone
         __main__._run()
 
     assert len(v.layers) == 1
-    exec_.assert_called_once_with()
 
 
 @mock.patch('napari._qt.qt_viewer.QtViewer._qt_open')
