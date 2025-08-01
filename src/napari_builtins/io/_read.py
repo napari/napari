@@ -531,6 +531,24 @@ def _patch_viewer_new():
         Viewer.__init__ = original_init
 
 
+@contextmanager
+def _patch_run():
+    """Context manager to patch the run method of the viewer."""
+    from napari._qt import qt_event_loop
+
+    origial_ipython_check = qt_event_loop._ipython_has_eventloop
+
+    def patched_ipython_check() -> bool:
+        # Do not call the original run method
+        return True
+
+    qt_event_loop._ipython_has_eventloop = patched_ipython_check
+    try:
+        yield
+    finally:
+        qt_event_loop._ipython_has_eventloop = origial_ipython_check
+
+
 def filter_variables(variables: dict[str, Any]) -> dict[str, Any]:
     res = variables.copy()
     res.pop('viewer', None)
@@ -563,10 +581,15 @@ def load_and_execute_python_code(path: str) -> list['LayerData']:
     from napari.viewer import current_viewer
 
     code = Path(path).read_text()
-    with _patch_viewer_new():
+    with _patch_viewer_new(), _patch_run():
         try:
             viewer = current_viewer()
-            exec(code, _DROPPED_SCRIPTS_NAMESPACE.setdefault(path, {}))
+            script_namespace = _DROPPED_SCRIPTS_NAMESPACE.setdefault(path, {})
+            script_namespace['__name__'] = '__main__'
+            exec(code, script_namespace)
+            script_namespace.pop(
+                '__name__', None
+            )  # remove __name__ to avoid conflicts
             _add_dropped_scripts_to_console(
                 _DROPPED_SCRIPTS_NAMESPACE[path], viewer
             )
