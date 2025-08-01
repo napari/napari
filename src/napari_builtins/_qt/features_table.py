@@ -472,7 +472,11 @@ class FeaturesTable(QWidget):
         if len(old_layer_list) > 0:
             # disconnect events from old layers
             for layer in old_layer_list:
-                layer.events.features.disconnect(self._on_features_change)
+                # Only disconnect features event if it exists
+                if hasattr(layer, 'events') and hasattr(
+                    layer.events, 'features'
+                ):
+                    layer.events.features.disconnect(self._on_features_change)
                 selection_event = self._get_selection_event_for_layer(layer)
                 if selection_event is not None:
                     selection_event.disconnect(
@@ -482,7 +486,11 @@ class FeaturesTable(QWidget):
         if len(self._selected_layers) > 0:
             # connect events to new layers (all have features by definition)
             for layer in self._selected_layers:
-                layer.events.features.connect(self._on_features_change)
+                # Only connect features event if it exists
+                if hasattr(layer, 'events') and hasattr(
+                    layer.events, 'features'
+                ):
+                    layer.events.features.connect(self._on_features_change)
                 selection_event = self._get_selection_event_for_layer(layer)
                 if selection_event is not None:
                     selection_event.connect(self._update_table_selected_cells)
