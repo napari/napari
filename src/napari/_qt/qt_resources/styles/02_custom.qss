@@ -196,7 +196,7 @@ QWidget[emphasized="true"] QDoubleSlider::handle:disabled {
 }
 
 SliderLabel {
-  background-color: "white"; /*{{ darken(background, 15) }};*/
+  background-color: {{ darken(background, 15) }};
   color: {{ text }};
   min-height: 16px;
   padding: 0px;
