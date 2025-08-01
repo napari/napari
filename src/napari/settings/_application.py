@@ -269,6 +269,15 @@ class ApplicationSettings(EventedModel):
         ),
     )
 
+    startup_script: str = Field(
+        default='',
+        title=trans._('Startup script'),
+        description=trans._(
+            'Path to a Python script that will be executed on napari startup. '
+            'This can be used to customize the behavior of napari or load specific plugins automatically.'
+        ),
+    )
+
     @validator('window_state', allow_reuse=True)
     def _validate_qbtye(cls, v: str) -> str:
         if v and (not isinstance(v, str) or not v.startswith('!QBYTE_')):
