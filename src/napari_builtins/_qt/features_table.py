@@ -456,9 +456,8 @@ class FeaturesTable(QWidget):
                 return layer.selected_data.events
             if hasattr(layer.events, 'highlight'):
                 return layer.events.highlight
-        raise RuntimeError(  # pragma: no cover
-            "Layer with features must have either 'selected_label' or 'selected_data'."
-        )
+        # Return None if layer doesn't have expected selection attributes
+        return None
 
     def _on_layer_selection_change(self):
         """Update the table when the layer selection changes and handles event connections."""
@@ -469,18 +468,26 @@ class FeaturesTable(QWidget):
             for layer in old_layer_list:
                 if hasattr(layer, 'features'):
                     layer.events.features.disconnect(self._on_features_change)
-                    self._get_selection_event_for_layer(layer).disconnect(
-                        self._update_table_selected_cells
+                    selection_event = self._get_selection_event_for_layer(
+                        layer
                     )
+                    if selection_event is not None:
+                        selection_event.disconnect(
+                            self._update_table_selected_cells
+                        )
 
         if len(self._selected_layers) > 0:
             # connect events to new layers
             for layer in self._selected_layers:
                 if hasattr(layer, 'features'):
                     layer.events.features.connect(self._on_features_change)
-                    self._get_selection_event_for_layer(layer).connect(
-                        self._update_table_selected_cells
+                    selection_event = self._get_selection_event_for_layer(
+                        layer
                     )
+                    if selection_event is not None:
+                        selection_event.connect(
+                            self._update_table_selected_cells
+                        )
             self._on_features_change()
             self.toggle.setVisible(True)
             self.save.setVisible(True)
@@ -611,6 +618,10 @@ class FeaturesTable(QWidget):
                 indices += [layer_data_row_index[list(sel)]]
             else:
                 continue
+
+        if not indices:
+            return  # No layers with selection attributes, nothing to select
+
         indices = np.concatenate(indices)
         selection = QItemSelection()
 
