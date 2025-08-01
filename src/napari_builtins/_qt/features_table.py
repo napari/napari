@@ -478,8 +478,10 @@ class FeaturesTable(QWidget):
 
         if len(self._selected_layers) > 0:
             # connect events to new layers
+            has_features = False
             for layer in self._selected_layers:
                 if hasattr(layer, 'features'):
+                    has_features = True
                     layer.events.features.connect(self._on_features_change)
                     selection_event = self._get_selection_event_for_layer(
                         layer
@@ -488,7 +490,8 @@ class FeaturesTable(QWidget):
                         selection_event.connect(
                             self._update_table_selected_cells
                         )
-            self._on_features_change()
+            if has_features:
+                self._on_features_change()
             self.toggle.setVisible(True)
             self.save.setVisible(True)
             self.table.setVisible(True)
