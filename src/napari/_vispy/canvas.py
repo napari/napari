@@ -960,12 +960,16 @@ class VispyCanvas:
             y_offsets.setdefault(view, dict.fromkeys(CanvasPosition, 0))
 
             if overlay.position in ('top_right', 'bottom_left'):
-                vispy_overlay.x_offset = x_offsets[overlay.position]
-                x_offsets[overlay.position] += vispy_overlay.x_size + x_padding
+                vispy_overlay.x_offset = x_offsets[view][overlay.position]
+                x_offsets[view][overlay.position] += (
+                    vispy_overlay.x_size + x_padding
+                )
                 vispy_overlay.y_offset = y_padding
             else:
-                vispy_overlay.y_offset = y_offsets[overlay.position]
-                y_offsets[overlay.position] += vispy_overlay.y_size + y_padding
+                vispy_overlay.y_offset = y_offsets[view][overlay.position]
+                y_offsets[view][overlay.position] += (
+                    vispy_overlay.y_size + y_padding
+                )
                 vispy_overlay.x_offset = x_padding
             vispy_overlay._on_position_change()
 
