@@ -536,7 +536,7 @@ def _patch_run():
     """Context manager to patch the run method of the viewer."""
     from napari._qt import qt_event_loop
 
-    origial_ipython_check = qt_event_loop._ipython_has_eventloop
+    original_ipython_check = qt_event_loop._ipython_has_eventloop
 
     def patched_ipython_check() -> bool:
         # Do not call the original run method
@@ -546,7 +546,7 @@ def _patch_run():
     try:
         yield
     finally:
-        qt_event_loop._ipython_has_eventloop = origial_ipython_check
+        qt_event_loop._ipython_has_eventloop = original_ipython_check
 
 
 def filter_variables(variables: dict[str, Any]) -> dict[str, Any]:
