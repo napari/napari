@@ -629,7 +629,10 @@ class FeaturesTable(QWidget):
                 continue
 
         if not indices:
-            return  # No layers with selection attributes, nothing to select
+            # deselect all rows if no selection attributes are found
+            self.table.selectionModel().clearSelection()
+            self.table.viewport().update()
+            return  # nothing to select
 
         indices = np.concatenate(indices)
         selection = QItemSelection()
