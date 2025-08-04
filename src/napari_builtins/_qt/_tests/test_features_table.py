@@ -8,10 +8,12 @@ from qtpy.QtCore import QItemSelection, QItemSelectionModel, Qt
 from qtpy.QtGui import QGuiApplication
 from qtpy.QtWidgets import (
     QAbstractItemDelegate,
+    QAbstractSpinBox,
     QComboBox,
     QDoubleSpinBox,
     QFileDialog,
     QLineEdit,
+    QSpinBox,
 )
 
 from napari.components import ViewerModel
@@ -284,8 +286,8 @@ def test_features_table_copy_paste(qtbot, qapp):
 @pytest.mark.parametrize(
     ('dtype', 'val', 'rendered_val', 'editor_class', 'new_val'),
     [
-        (int, 2, 2, QLineEdit, 3),
-        (float, 123.45678, 123.45678, QLineEdit, 1e10),
+        (int, 2, 2, QSpinBox, 3),
+        (float, 123.45678, 123.45678, QDoubleSpinBox, 123456789),
         (
             'datetime64[ns]',
             '22-07-2025',
@@ -331,7 +333,8 @@ def test_features_tables_dtypes(
 
     editor = w.table.findChild(editor_class)
 
-    if issubclass(editor_class, QLineEdit | QDoubleSpinBox):
+    if issubclass(editor_class, QLineEdit | QAbstractSpinBox):
+        editor.selectAll()
         qtbot.keyClicks(editor, str(new_val))
         w.table.commitData(editor)
     elif editor_class == QComboBox:
@@ -343,7 +346,7 @@ def test_features_tables_dtypes(
     assert (
         layer.features.loc[0, 'a']
         == pd.Series(new_val, dtype=pandas_dtype(dtype))[0]
-    )
+    ), editor.value()
 
 
 def test_features_table_change_active_layer(qtbot):
