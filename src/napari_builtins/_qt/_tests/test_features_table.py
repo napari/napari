@@ -9,6 +9,7 @@ from qtpy.QtGui import QGuiApplication
 from qtpy.QtWidgets import (
     QAbstractItemDelegate,
     QComboBox,
+    QDoubleSpinBox,
     QFileDialog,
     QLineEdit,
 )
@@ -23,7 +24,7 @@ def test_pandas_model():
     view = PandasModel(df)
     assert view.rowCount() == 4
     assert view.columnCount() == 3  # 0 is index
-    assert view.data(view.index(0, 1)) == '1'
+    assert view.data(view.index(0, 1)) == 1
     assert view.headerData(1, Qt.Orientation.Horizontal) == 'a'
     assert view.headerData(2, Qt.Orientation.Horizontal) == 'b'
     assert view.headerData(1, Qt.Orientation.Vertical) == 1
@@ -110,9 +111,7 @@ def test_features_table(qtbot):
     # sorting should sort the proxy model but not the data
     w.table.sortByColumn(1, Qt.SortOrder.AscendingOrder)
     for i in range(3):
-        assert proxy.data(proxy.index(i, 1), Qt.ItemDataRole.EditRole) == str(
-            i
-        )
+        assert proxy.data(proxy.index(i, 1), Qt.ItemDataRole.EditRole) == i
         assert layer.features['a'][i] == original_a[i]
 
     # sorting bools should work
@@ -285,8 +284,8 @@ def test_features_table_copy_paste(qtbot, qapp):
 @pytest.mark.parametrize(
     ('dtype', 'val', 'rendered_val', 'editor_class', 'new_val'),
     [
-        (int, 2, '2', QLineEdit, 3),
-        (float, 123.45678, '123.457', QLineEdit, 1e10),
+        (int, 2, 2, QLineEdit, 3),
+        (float, 123.45678, 123.45678, QLineEdit, 1e10),
         (
             'datetime64[ns]',
             '22-07-2025',
@@ -332,7 +331,7 @@ def test_features_tables_dtypes(
 
     editor = w.table.findChild(editor_class)
 
-    if issubclass(editor_class, QLineEdit):
+    if issubclass(editor_class, QLineEdit | QDoubleSpinBox):
         qtbot.keyClicks(editor, str(new_val))
         w.table.commitData(editor)
     elif editor_class == QComboBox:
