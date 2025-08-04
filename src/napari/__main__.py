@@ -330,14 +330,18 @@ def _run() -> None:
         # in a way that is machine, os, time (and likely weather dependant).
         viewer = Viewer()
         script_path = get_settings().application.startup_script
-        if (
-            script_path
-            and os.path.exists(script_path)
-            and os.path.isfile(script_path)
-        ):
-            from napari_builtins.io._read import load_and_execute_python_code
-
-            load_and_execute_python_code(script_path)
+        if script_path:
+            if os.path.exists(script_path) and os.path.isfile(script_path):
+                from napari_builtins.io._read import load_and_execute_python_code
+                load_and_execute_python_code(script_path)
+            else:
+                warnings.warn(
+                    trans._(
+                        "Startup script path is set to {script_path}, but this file does not exist or is not a file--ignoring.",
+                        deferred=True,
+                        script_path=script_path
+                    )
+                )
 
         # For backwards compatibility
         # If the --stack option is provided without additional arguments
