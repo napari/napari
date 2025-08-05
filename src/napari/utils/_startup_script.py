@@ -1,3 +1,4 @@
+import logging
 import time
 import warnings
 from dataclasses import dataclass
@@ -19,7 +20,12 @@ startup_script_status_info: StartupScriptStatusInfo | None = None
 def _maybe_run_startup_script() -> None:
     from napari.settings import get_settings
 
+    logger = logging.getLogger(__name__)
+
     if not get_settings().application.startup_script:
+        logger.debug(
+            'No startup script is set in the settings. Skipping execution.'
+        )
         return
     script_path = (
         Path(get_settings().application.startup_script).expanduser().resolve()
@@ -44,6 +50,10 @@ def _maybe_run_startup_script() -> None:
     execute_python_code(script_code, script_path)
 
     total_time = time.time() - start_time
+
+    logger.info(
+        'Loaded startup script: %s in %f seconds', script_path, total_time
+    )
 
     globals()['startup_script_status_info'] = StartupScriptStatusInfo(
         startup_time=total_time,
