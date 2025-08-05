@@ -16,7 +16,7 @@ from textwrap import wrap
 from typing import Any
 
 from napari.errors import ReaderPluginError
-from napari.utils._startup_script import _maybe_run_startup_script
+from napari.utils._startup_script import _run_configured_startup_script
 from napari.utils.misc import maybe_patch_conda_exe
 from napari.utils.translations import trans
 
@@ -330,7 +330,7 @@ def _run() -> None:
         # it will collect it and hang napari at start time.
         # in a way that is machine, os, time (and likely weather dependant).
         viewer = Viewer()
-        _maybe_run_startup_script()
+        _run_configured_startup_script()
 
         # For backwards compatibility
         # If the --stack option is provided without additional arguments
