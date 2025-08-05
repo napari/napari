@@ -8,8 +8,10 @@ import logging
 import os
 import runpy
 import sys
+import time
 import warnings
 from ast import literal_eval
+from dataclasses import dataclass
 from itertools import chain, repeat
 from pathlib import Path
 from textwrap import wrap
@@ -18,6 +20,16 @@ from typing import Any
 from napari.errors import ReaderPluginError
 from napari.utils.misc import maybe_patch_conda_exe
 from napari.utils.translations import trans
+
+
+@dataclass
+class StartupScriptStatusInfo:
+    startup_time: float
+    script_path: Path
+    script_code: str
+
+
+startup_script_status_info: StartupScriptStatusInfo | None = None
 
 
 class InfoAction(argparse.Action):
@@ -329,14 +341,33 @@ def _run() -> None:
         # it will collect it and hang napari at start time.
         # in a way that is machine, os, time (and likely weather dependant).
         viewer = Viewer()
-        script_path = get_settings().application.startup_script
-        if script_path:
-            if os.path.exists(script_path) and os.path.isfile(script_path):
+        if get_settings().application.startup_script:
+            script_path = (
+                Path(get_settings().application.startup_script)
+                .expanduser()
+                .resolve()
+            )
+
+            if script_path.exists() and script_path.is_file():
+                global startup_script_status_info
+
                 from napari_builtins.io._read import (
-                    load_and_execute_python_code,
+                    execute_python_code,
                 )
 
-                load_and_execute_python_code(script_path)
+                script_code = script_path.read_text()
+                start_time = time.time()
+
+                execute_python_code(script_code, script_path)
+
+                total_time = time.time() - start_time
+
+                startup_script_status_info = StartupScriptStatusInfo(
+                    startup_time=total_time,
+                    script_path=script_path,
+                    script_code=script_code,
+                )
+
             else:
                 warnings.warn(
                     trans._(

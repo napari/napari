@@ -560,19 +560,36 @@ def load_and_execute_python_code(path: str) -> list['LayerData']:
     path : str
         Path to the Python file to be executed.
     """
+    script_path = Path(path)
+    code = script_path.read_text()
+    execute_python_code(code, script_path)
+    return [(None,)]
+
+
+def execute_python_code(code: str, script_path: str | Path) -> None:
+    """Execute Python code in the current viewer's context.
+
+    Store the executed cod variables in _DROPPED_SCRIPTS_NAMESPACE dict
+
+    Parameters
+    ----------
+    code: str
+        python code to be executed
+    script_path: str | Path
+        Path to the script file from which the code is executed.
+        Used to store the namespace in the _DROPPED_SCRIPTS_NAMESPACE.
+    """
     from napari.viewer import current_viewer
 
-    code = Path(path).read_text()
     with _patch_viewer_new():
         try:
             viewer = current_viewer()
-            exec(code, _DROPPED_SCRIPTS_NAMESPACE.setdefault(path, {}))
+            exec(code, _DROPPED_SCRIPTS_NAMESPACE.setdefault(script_path, {}))
             _add_dropped_scripts_to_console(
-                _DROPPED_SCRIPTS_NAMESPACE[path], viewer
+                _DROPPED_SCRIPTS_NAMESPACE[script_path], viewer
             )
         except BaseException as e:  # noqa: BLE001
             notification_manager.receive_error(type(e), e, e.__traceback__)
-    return [(None,)]
 
 
 def napari_get_py_reader(path: str) -> 'ReaderFunction | None':
