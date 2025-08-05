@@ -340,7 +340,7 @@ def _run() -> None:
             else:
                 warnings.warn(
                     trans._(
-                        'Startup script path is set to {script_path}, but this file does not exist or is not a file--ignoring.',
+                        'Startup script path is set to {script_path}. This path does not have a valid startup script. Please check the setting. napari will be launched without a startup script.',
                         deferred=True,
                         script_path=script_path,
                     )
