@@ -16,7 +16,7 @@ class StartupScriptStatusInfo:
 startup_script_status_info: StartupScriptStatusInfo | None = None
 
 
-def _maybe_run_startup_script():
+def _maybe_run_startup_script() -> None:
     from napari.settings import get_settings
 
     if not get_settings().application.startup_script:
