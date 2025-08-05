@@ -8,28 +8,17 @@ import logging
 import os
 import runpy
 import sys
-import time
 import warnings
 from ast import literal_eval
-from dataclasses import dataclass
 from itertools import chain, repeat
 from pathlib import Path
 from textwrap import wrap
 from typing import Any
 
 from napari.errors import ReaderPluginError
+from napari.utils._startup_script import _maybe_run_startup_script
 from napari.utils.misc import maybe_patch_conda_exe
 from napari.utils.translations import trans
-
-
-@dataclass
-class StartupScriptStatusInfo:
-    startup_time: float
-    script_path: Path
-    script_code: str
-
-
-startup_script_status_info: StartupScriptStatusInfo | None = None
 
 
 class InfoAction(argparse.Action):
@@ -341,41 +330,7 @@ def _run() -> None:
         # it will collect it and hang napari at start time.
         # in a way that is machine, os, time (and likely weather dependant).
         viewer = Viewer()
-        if get_settings().application.startup_script:
-            script_path = (
-                Path(get_settings().application.startup_script)
-                .expanduser()
-                .resolve()
-            )
-
-            if script_path.exists() and script_path.is_file():
-                global startup_script_status_info
-
-                from napari_builtins.io._read import (
-                    execute_python_code,
-                )
-
-                script_code = script_path.read_text()
-                start_time = time.time()
-
-                execute_python_code(script_code, script_path)
-
-                total_time = time.time() - start_time
-
-                startup_script_status_info = StartupScriptStatusInfo(
-                    startup_time=total_time,
-                    script_path=script_path,
-                    script_code=script_code,
-                )
-
-            else:
-                warnings.warn(
-                    trans._(
-                        'Startup script path is set to {script_path}. This path does not have a valid startup script. Please check the setting. napari will be launched without a startup script.',
-                        deferred=True,
-                        script_path=script_path,
-                    )
-                )
+        _maybe_run_startup_script()
 
         # For backwards compatibility
         # If the --stack option is provided without additional arguments

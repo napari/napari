@@ -149,16 +149,18 @@ def get_plugin_list() -> str:
 def startup_script() -> str:
     """Get information about the startup script if executed."""
 
-    from napari.__main__ import startup_script_status_info
+    from napari.utils._startup_script import startup_script_status_info
 
     if startup_script_status_info is None:
         return ''
+
+    code_html = startup_script_status_info.script_code.replace('\n', '<br>')
 
     return textwrap.dedent(f"""
     <br><b>Startup script:</b><br>
      - load time: {startup_script_status_info.startup_time}<br>
      - script path: {startup_script_status_info.script_path}<br>
-     - script code: {startup_script_status_info.script_code}<br>
+     - script code: {code_html}<br>
     """)
 
 
