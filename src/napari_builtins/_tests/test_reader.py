@@ -54,7 +54,7 @@ def test_animated_gif_reader(save_image):
 @pytest.mark.slow
 def test_reader_plugin_url():
     layer_data = npe2.read(
-        ['https://samples.fiji.sc/FakeTracks.tif'], stack=False
+        ['https://github.com/napari/napari/raw/main/src/napari/resources/logo.png'], stack=False
     )
     assert isinstance(layer_data, list)
     assert len(layer_data) == 1
