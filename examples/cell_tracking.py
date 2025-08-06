@@ -171,4 +171,7 @@ label_data = np.load(label_path)
 labels = label_data["masks"]
 
 viewer.add_labels(labels, name="Predicted Masks")
-napari.run()
+
+if __name__ == '__main__':
+    napari.run()
+   
