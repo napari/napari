@@ -555,6 +555,9 @@ def _patch_run():
 def filter_variables(variables: dict[str, Any]) -> dict[str, Any]:
     res = variables.copy()
     res.pop('viewer', None)
+    res.pop(
+        '__name__', None
+    )  # Remove the __name__ variable to not affect the console
     return res
 
 
@@ -588,11 +591,15 @@ def load_and_execute_python_code(path: str) -> list['LayerData']:
         try:
             viewer = current_viewer()
             script_namespace = _DROPPED_SCRIPTS_NAMESPACE.setdefault(path, {})
+            # The `__name__` variable is storing the name of the module.
+            # If a module is imported, it is set to the module name.
+            # If a module is executed with `python -m ...` or
+            # `python script.py` it is set to '__main__'.
+            # If code is executed with `exec(code, namespace)` it is set to `builtins` if
+            # `__name__` is not set in the namespace.
+            # So ww set it to `__main__` to execute `if __name__ == '__main__':` blocks
             script_namespace['__name__'] = '__main__'
             exec(code, script_namespace)
-            script_namespace.pop(
-                '__name__', None
-            )  # remove __name__ to avoid conflicts
             _add_dropped_scripts_to_console(
                 _DROPPED_SCRIPTS_NAMESPACE[path], viewer
             )
