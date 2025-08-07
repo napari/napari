@@ -576,21 +576,23 @@ def _add_dropped_scripts_to_console(
         console.push(variables)
 
 
-def load_and_execute_python_code(path: str) -> list['LayerData']:
+def load_and_execute_python_code(script_path: str) -> list['LayerData']:
     """Load and execute Python code from a file.
 
     Parameters
     ----------
-    path : str
+    script_path : str
         Path to the Python file to be executed.
     """
     from napari.viewer import current_viewer
 
-    code = Path(path).read_text()
+    code = Path(script_path).read_text()
     with _patch_viewer_new(), _patch_run():
         try:
             viewer = current_viewer()
-            script_namespace = _DROPPED_SCRIPTS_NAMESPACE.setdefault(path, {})
+            script_namespace = _DROPPED_SCRIPTS_NAMESPACE.setdefault(
+                script_path, {}
+            )
             # The `__name__` variable is storing the name of the module.
             # If a module is imported, it is set to the module name.
             # If a module is executed with `python -m ...` or
@@ -601,7 +603,7 @@ def load_and_execute_python_code(path: str) -> list['LayerData']:
             script_namespace['__name__'] = '__main__'
             exec(code, script_namespace)
             _add_dropped_scripts_to_console(
-                _DROPPED_SCRIPTS_NAMESPACE[path], viewer
+                _DROPPED_SCRIPTS_NAMESPACE[script_path], viewer
             )
         except BaseException as e:  # noqa: BLE001
             notification_manager.receive_error(type(e), e, e.__traceback__)
