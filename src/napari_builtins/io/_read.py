@@ -540,7 +540,7 @@ def _patch_run():
 
     def patched_ipython_check() -> bool:
         """A patched ipython_check that always returns True.
-        
+
         Drag and drop feature uses this to prevent running another event loop.
         """
         return True
