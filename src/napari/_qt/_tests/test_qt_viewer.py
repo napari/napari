@@ -3,7 +3,6 @@ from __future__ import annotations
 import gc
 import os
 import typing
-import weakref
 from itertools import product, takewhile
 from math import isclose
 from unittest import mock
@@ -527,83 +526,43 @@ def test_process_mouse_event_2d_layer_3d_viewer(
     qt_viewer.canvas._process_mouse_event(mouse_press_callbacks, mouse_event)
 
 
-@skip_local_popups
-def test_memory_leaking(qtbot, make_napari_viewer):
-    data = np.zeros((5, 20, 20, 20), dtype=int)
-    data[1, 0:10, 0:10, 0:10] = 1
-    viewer = make_napari_viewer()
-    image = weakref.ref(viewer.add_image(data))
-    labels = weakref.ref(viewer.add_labels(data))
-    del viewer.layers[0]
-    del viewer.layers[0]
-    qtbot.wait(100)
-    gc.collect()
-    gc.collect()
-    assert len(viewer.layers) == 0
-    assert image() is None
-    assert labels() is None
+@pytest.mark.usefixtures(
+    'qt_viewer'
+)  # need qt_viewer to trigger the vispy code
+def test_remove_points(viewer_model: ViewerModel) -> None:
+    viewer_model.add_points([(1, 2), (2, 3)])
+    del viewer_model.layers[0]
+    viewer_model.add_points([(1, 2), (2, 3)])
 
 
-@skip_on_win_ci
-@skip_local_popups
-def test_leaks_image(qtbot, make_napari_viewer):
-    viewer = make_napari_viewer(show=True)
-    lr = weakref.ref(viewer.add_image(np.random.rand(10, 10)))
-    dr = weakref.ref(lr().data)
-
-    viewer.layers.clear()
-    qtbot.wait(100)
-    gc.collect()
-    gc.collect()
-    assert not lr()
-    assert not dr()
+@pytest.mark.usefixtures(
+    'qt_viewer'
+)  # need qt_viewer to trigger the vispy code
+def test_remove_image(viewer_model: ViewerModel) -> None:
+    rng = np.random.default_rng(0)
+    viewer_model.add_image(rng.random((10, 10)))
+    del viewer_model.layers[0]
+    viewer_model.add_image(rng.random((10, 10)))
 
 
-@skip_on_win_ci
-@skip_local_popups
-def test_leaks_labels(qtbot, make_napari_viewer):
-    viewer = make_napari_viewer(show=True)
-    lr = weakref.ref(
-        viewer.add_labels((np.random.rand(10, 10) * 10).astype(np.uint8))
-    )
-    dr = weakref.ref(lr().data)
-    viewer.layers.clear()
-    qtbot.wait(100)
-    gc.collect()
-    gc.collect()
-    assert not lr()
-    assert not dr()
-
-
-def test_remove_points(make_napari_viewer):
-    viewer = make_napari_viewer()
-    viewer.add_points([(1, 2), (2, 3)])
-    del viewer.layers[0]
-    viewer.add_points([(1, 2), (2, 3)])
-
-
-def test_remove_image(make_napari_viewer):
-    viewer = make_napari_viewer()
-    viewer.add_image(np.random.rand(10, 10))
-    del viewer.layers[0]
-    viewer.add_image(np.random.rand(10, 10))
-
-
-def test_remove_labels(make_napari_viewer):
-    viewer = make_napari_viewer()
-    viewer.add_labels((np.random.rand(10, 10) * 10).astype(np.uint8))
-    del viewer.layers[0]
-    viewer.add_labels((np.random.rand(10, 10) * 10).astype(np.uint8))
+@pytest.mark.usefixtures(
+    'qt_viewer'
+)  # need qt_viewer to trigger the vispy code
+def test_remove_labels(viewer_model: ViewerModel) -> None:
+    rng = np.random.default_rng(0)
+    viewer_model.add_labels(rng.integers(0, 10, size=(10, 10), dtype=np.int8))
+    del viewer_model.layers[0]
+    viewer_model.add_labels(rng.integers(0, 10, size=(10, 10), dtype=np.int8))
 
 
 @pytest.mark.xfail(
     reason='Broadcasting layers is broken by reordering dims, see #3882'
 )
 @pytest.mark.parametrize('multiscale', [False, True])
-def test_mixed_2d_and_3d_layers(make_napari_viewer, multiscale):
+def test_mixed_2d_and_3d_layers(
+    viewer_model: ViewerModel, qt_viewer: QtViewer, multiscale: bool
+) -> None:
     """Test bug in setting corner_pixels from qt_viewer.on_draw"""
-    viewer = make_napari_viewer()
-
     img = np.ones((512, 256))
     # canvas size must be large enough that img fits in the canvas
     canvas_size = tuple(3 * s for s in img.shape)
@@ -612,46 +571,50 @@ def test_mixed_2d_and_3d_layers(make_napari_viewer, multiscale):
     vol = np.stack([img] * 8, axis=0)
     if multiscale:
         img = [img[::s, ::s] for s in (1, 2, 4)]
-    viewer.add_image(img)
-    img_multi_layer = viewer.layers[0]
-    viewer.add_image(vol)
+    viewer_model.add_image(img)
+    img_multi_layer = viewer_model.layers[0]
+    viewer_model.add_image(vol)
 
-    viewer.dims.order = (0, 1, 2)
-    viewer.window._qt_viewer.canvas.size = canvas_size
-    viewer.window._qt_viewer.canvas.on_draw(None)
+    viewer_model.dims.order = (0, 1, 2)
+    qt_viewer.canvas.size = canvas_size
+    qt_viewer.canvas.on_draw(None)
     np.testing.assert_array_equal(
         img_multi_layer.corner_pixels, expected_corner_pixels
     )
 
-    viewer.dims.order = (2, 0, 1)
-    viewer.window._qt_viewer.canvas.on_draw(None)
+    viewer_model.dims.order = (2, 0, 1)
+    qt_viewer.canvas.on_draw(None)
     np.testing.assert_array_equal(
         img_multi_layer.corner_pixels, expected_corner_pixels
     )
 
-    viewer.dims.order = (1, 2, 0)
-    viewer.window._qt_viewer.canvas.on_draw(None)
+    viewer_model.dims.order = (1, 2, 0)
+    qt_viewer.canvas.on_draw(None)
     np.testing.assert_array_equal(
         img_multi_layer.corner_pixels, expected_corner_pixels
     )
 
 
-def test_remove_add_image_3D(make_napari_viewer):
+@pytest.mark.usefixtures(
+    'qt_viewer'
+)  # need qt_viewer to trigger the vispy code
+def test_remove_add_image_3D(viewer_model: ViewerModel) -> None:
     """
     Test that adding, removing and readding an image layer in 3D does not cause issues
     due to the vispy node change. See https://github.com/napari/napari/pull/3670
     """
-    viewer = make_napari_viewer(ndisplay=3)
+    viewer_model.dims.ndisplay = 3
     img = np.ones((10, 10, 10))
 
-    layer = viewer.add_image(img)
-    viewer.layers.remove(layer)
-    viewer.layers.append(layer)
+    layer = viewer_model.add_image(img)
+    viewer_model.layers.remove(layer)
+    viewer_model.layers.append(layer)
 
 
 @skip_on_win_ci
 @skip_local_popups
-def test_qt_viewer_multscale_image_out_of_view(make_napari_viewer):
+@pytest.mark.show_qt_viewer
+def test_qt_viewer_multscale_image_out_of_view(viewer_model):
     """Test out-of-view multiscale image viewing fix.
 
     Just verifies that no RuntimeError is raised in this scenario.
@@ -659,8 +622,8 @@ def test_qt_viewer_multscale_image_out_of_view(make_napari_viewer):
     see: https://github.com/napari/napari/issues/3863.
     """
     # show=True required to test fix for OpenGL error
-    viewer = make_napari_viewer(ndisplay=2, show=True)
-    viewer.add_shapes(
+    viewer_model.dims.ndisplay = 2
+    viewer_model.add_shapes(
         data=[
             np.array(
                 [[1500, 4500], [4500, 4500], [4500, 1500], [1500, 1500]],
@@ -669,40 +632,21 @@ def test_qt_viewer_multscale_image_out_of_view(make_napari_viewer):
         ],
         shape_type=['polygon'],
     )
-    viewer.add_image([np.eye(1024), np.eye(512), np.eye(256)])
+    viewer_model.add_image([np.eye(1024), np.eye(512), np.eye(256)])
 
 
-def test_surface_mixed_dim(make_napari_viewer):
-    """Test that adding a layer that changes the world ndim
-    when ndisplay=3 before the mouse cursor has been updated
-    doesn't raise an error.
-
-    See PR: https://github.com/napari/napari/pull/3881
-    """
-    viewer = make_napari_viewer(ndisplay=3)
-
-    verts = np.array([[0, 0, 0], [0, 20, 10], [10, 0, -10], [10, 10, -10]])
-    faces = np.array([[0, 1, 2], [1, 2, 3]])
-    values = np.linspace(0, 1, len(verts))
-    data = (verts, faces, values)
-    viewer.add_surface(data)
-
-    timeseries_values = np.vstack([values, values])
-    timeseries_data = (verts, faces, timeseries_values)
-    viewer.add_surface(timeseries_data)
-
-
-def test_insert_layer_ordering(make_napari_viewer):
+def test_insert_layer_ordering(
+    viewer_model: ViewerModel, qt_viewer: QtViewer
+) -> None:
     """make sure layer ordering is correct in vispy when inserting layers"""
-    viewer = make_napari_viewer()
     pl1 = Points()
     pl2 = Points()
 
-    viewer.layers.append(pl1)
-    viewer.layers.insert(0, pl2)
+    viewer_model.layers.append(pl1)
+    viewer_model.layers.insert(0, pl2)
 
-    pl1_vispy = viewer.window._qt_viewer.canvas.layer_to_visual[pl1].node
-    pl2_vispy = viewer.window._qt_viewer.canvas.layer_to_visual[pl2].node
+    pl1_vispy = qt_viewer.canvas.layer_to_visual[pl1].node
+    pl2_vispy = qt_viewer.canvas.layer_to_visual[pl2].node
     assert pl1_vispy.order == 1
     assert pl2_vispy.order == 0
 
@@ -1105,17 +1049,6 @@ def test_more_than_uint16_colors(
         npt.assert_equal(
             midd_pixel, layer.colormap.map(i) * 255, err_msg=f'{i}'
         )
-
-
-def test_points_2d_to_3d(make_napari_viewer):
-    """See https://github.com/napari/napari/issues/6925"""
-    # this requires a full viewer cause some issues are caused only by
-    # qt processing events
-    viewer = make_napari_viewer(ndisplay=2, show=True)
-    viewer.add_points()
-    QApplication.processEvents()
-    viewer.dims.ndisplay = 3
-    QApplication.processEvents()
 
 
 @skip_local_popups

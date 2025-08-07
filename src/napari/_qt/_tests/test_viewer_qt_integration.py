@@ -1,5 +1,7 @@
 """Tests of the Viewer class that interact directly with the Qt code"""
 
+from __future__ import annotations
+
 import os
 import textwrap
 from unittest.mock import MagicMock
@@ -7,6 +9,7 @@ from unittest.mock import MagicMock
 import numpy as np
 import pytest
 from numpy import testing as npt
+from PyQt6.QtWidgets import QApplication
 from qtpy.QtCore import QEvent, Qt, QUrl
 from qtpy.QtGui import QGuiApplication, QKeyEvent
 
@@ -340,3 +343,34 @@ def test_shortcut_passing(make_napari_viewer):
         )
     )
     assert layer.mode == 'erase'
+
+
+def test_points_2d_to_3d(make_napari_viewer):
+    """See https://github.com/napari/napari/issues/6925"""
+    # this requires a full viewer cause some issues are caused only by
+    # qt processing events
+    viewer = make_napari_viewer(ndisplay=2, show=True)
+    viewer.add_points()
+    QApplication.processEvents()
+    viewer.dims.ndisplay = 3
+    QApplication.processEvents()
+
+
+def test_surface_mixed_dim(make_napari_viewer):
+    """Test that adding a layer that changes the world ndim
+    when ndisplay=3 before the mouse cursor has been updated
+    doesn't raise an error.
+
+    See PR: https://github.com/napari/napari/pull/3881
+    """
+    viewer = make_napari_viewer(ndisplay=3)
+
+    verts = np.array([[0, 0, 0], [0, 20, 10], [10, 0, -10], [10, 10, -10]])
+    faces = np.array([[0, 1, 2], [1, 2, 3]])
+    values = np.linspace(0, 1, len(verts))
+    data = (verts, faces, values)
+    viewer.add_surface(data)
+
+    timeseries_values = np.vstack([values, values])
+    timeseries_data = (verts, faces, timeseries_values)
+    viewer.add_surface(timeseries_data)
