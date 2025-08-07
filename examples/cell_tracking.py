@@ -175,4 +175,4 @@ viewer.add_labels(labels, name="Predicted Masks")
 
 if __name__ == '__main__':
     napari.run()
-   
+
