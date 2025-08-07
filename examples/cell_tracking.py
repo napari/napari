@@ -96,8 +96,7 @@ def load_tracks_data(data_dir, filename=""):
             print(f"Successfully loaded {len(tracks_data)} track points")
             print("Data reordered to [track_id, frame, y, x] format")
             return tracks_data
-        else:
-            print(f"CSV file has fewer than 4 columns: {len(df.columns)}")
+        print(f"CSV file has fewer than 4 columns: {len(df.columns)}")
         return None
 
     except (ValueError, FileNotFoundError) as e:
