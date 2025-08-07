@@ -1,4 +1,4 @@
-name: Actionlint
+name: action-lint
 # https://github.com/rhysd/actionlint
 
 on:

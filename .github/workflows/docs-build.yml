@@ -1,6 +1,6 @@
 # As much as possible, this file should be kept in sync with
 # https://github.com/napari/docs/blob/main/.github/workflows/build_and_deploy_docs.yml
-name: Build PR Docs
+name: docs-build PR
 
 on:
   push:
