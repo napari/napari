@@ -7,8 +7,8 @@ from unittest.mock import MagicMock
 import numpy as np
 import pytest
 from numpy import testing as npt
-from qtpy.QtCore import QUrl
-from qtpy.QtGui import QGuiApplication
+from qtpy.QtCore import QEvent, Qt, QUrl
+from qtpy.QtGui import QGuiApplication, QKeyEvent
 
 from napari._qt._tests.test_qt_viewer import qt_viewer
 from napari._tests.utils import skip_local_popups, skip_on_win_ci
@@ -318,3 +318,25 @@ def test_canvas_color(make_napari_viewer, theme):
     get_settings().appearance.theme = theme
     viewer = make_napari_viewer()
     assert viewer.theme == theme
+
+
+def test_shortcut_passing(make_napari_viewer):
+    viewer = make_napari_viewer(ndisplay=3)
+    layer = viewer.add_labels(
+        np.zeros((2, 2, 2), dtype=np.uint8), scale=(1, 2, 4)
+    )
+    layer.mode = 'fill'
+
+    qt_window = viewer.window._qt_window
+
+    qt_window.keyPressEvent(
+        QKeyEvent(
+            QEvent.Type.KeyPress, Qt.Key.Key_1, Qt.KeyboardModifier.NoModifier
+        )
+    )
+    qt_window.keyReleaseEvent(
+        QKeyEvent(
+            QEvent.Type.KeyPress, Qt.Key.Key_1, Qt.KeyboardModifier.NoModifier
+        )
+    )
+    assert layer.mode == 'erase'
