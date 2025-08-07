@@ -36,14 +36,16 @@ def test_cli_shows_plugins(monkeypatch, capsys, tmp_plugin):
 
 def test_cli_parses_unknowns(mock_run, monkeypatch, make_napari_viewer):
     """test that we can parse layer keyword arg variants"""
-    v = make_napari_viewer()  # our mock view_path will return this object
+    mocked_viewer = (
+        make_napari_viewer()
+    )  # our mock view_path will return this object
 
     def assert_kwargs(*args, **kwargs):
         assert ['file'] in args
         assert kwargs['contrast_limits'] == (0, 1)
 
     # testing all the variants of literal_evals
-    with mock.patch('napari.__main__.Viewer', return_value=v):
+    with mock.patch('napari.__main__.Viewer', return_value=mocked_viewer):
         monkeypatch.setattr(
             napari.components.viewer_model.ViewerModel, 'open', assert_kwargs
         )
@@ -159,7 +161,9 @@ def test_cli_passes_kwargs_stack(
 
 def test_cli_retains_viewer_ref(mock_run, monkeypatch, make_napari_viewer):
     """Test that napari.__main__ is retaining a reference to the viewer."""
-    v = make_napari_viewer()  # our mock view_path will return this object
+    mocked_viewer = (
+        make_napari_viewer()
+    )  # our mock view_path will return this object
     ref_count = None  # counter that will be updated before __main__._run()
 
     def _check_refs(**kwargs):
@@ -167,7 +171,7 @@ def test_cli_retains_viewer_ref(mock_run, monkeypatch, make_napari_viewer):
         # it forces garbage collection, and then makes sure that at least one
         # additional reference to our viewer exists.
         gc.collect()
-        if sys.getrefcount(v) <= ref_count:  # pragma: no cover
+        if sys.getrefcount(mocked_viewer) <= ref_count:  # pragma: no cover
             raise AssertionError(
                 'Reference to napari.viewer has been lost by '
                 'the time the event loop started in napari.__main__'
@@ -178,9 +182,11 @@ def test_cli_retains_viewer_ref(mock_run, monkeypatch, make_napari_viewer):
         m.setattr(sys, 'argv', ['napari', 'path/to/file.tif'])
         # return our local v
         with mock.patch(
-            'napari.__main__.Viewer', return_value=v
+            'napari.__main__.Viewer', return_value=mocked_viewer
         ) as mock_viewer:
-            ref_count = sys.getrefcount(v)  # count current references
+            ref_count = sys.getrefcount(
+                mocked_viewer
+            )  # count current references
             # mock gui open so we're not opening dialogs/throwing errors on fake path
             with mock.patch(
                 'napari._qt.qt_viewer.QtViewer._qt_open', return_value=None
