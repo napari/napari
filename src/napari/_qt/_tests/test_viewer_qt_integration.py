@@ -38,7 +38,8 @@ def test_drop_python_file(qapp_mock, make_napari_viewer, tmp_path):
     # Check that the file was executed
     assert viewer.layers[0].name == 'Dropped Image'
 
-    # Ensure that napari.run is stopped early and event loops are not running
+    # Ensure that napari.run is stopped early and event loops are not started
+    # by call napari.run() in the script.
     qapp_mock.assert_not_called()
 
     # Check that the console is updated with locals from the script
