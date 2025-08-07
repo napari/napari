@@ -3,7 +3,7 @@ Cell tracking example
 =====================
 
 This example demonstrates how the track layer is used
-for visualizing cell tracking data, by displaying 2D + time dataset 
+for visualizing cell tracking data, by displaying 2D + time dataset
 of cells with colored properties for track-id.
 
 Thanks to Dr. Alessia Ruggieri and Philipp Klein, Centre for Integrative Infectious
@@ -96,10 +96,11 @@ def load_tracks_data(data_dir, filename=""):
             print(f"Successfully loaded {len(tracks_data)} track points")
             print("Data reordered to [track_id, frame, y, x] format")
             return tracks_data
-        print(f"CSV file has fewer than 4 columns: {len(df.columns)}")
+        else:
+            print(f"CSV file has fewer than 4 columns: {len(df.columns)}")
         return None
 
-    except Exception as e:
+    except (ValueError, FileNotFoundError) as e:
         print(f"Error loading tracks file: {e}")
         return None
 
