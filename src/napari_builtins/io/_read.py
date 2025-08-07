@@ -536,17 +536,20 @@ def _patch_run():
     """Context manager to patch the run method of the viewer."""
     from napari._qt import qt_event_loop
 
-    original_ipython_check = qt_event_loop._ipython_has_eventloop
+    ipython_check = qt_event_loop._ipython_has_eventloop
 
     def patched_ipython_check() -> bool:
-        # Do not call the original run method
+        """A patched ipython_check that always returns True.
+        
+        Drag and drop feature uses this to prevent running another event loop.
+        """
         return True
 
     qt_event_loop._ipython_has_eventloop = patched_ipython_check
     try:
         yield
     finally:
-        qt_event_loop._ipython_has_eventloop = original_ipython_check
+        qt_event_loop._ipython_has_eventloop = ipython_check
 
 
 def filter_variables(variables: dict[str, Any]) -> dict[str, Any]:
