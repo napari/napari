@@ -17,7 +17,7 @@ authors:
   alias: tlambert03
 - given-names: Grzegorz
   family-names: Bokota
-  affiliation: University of Warsaw, Faculty of Mathematics, Informatics, and Mechanics
+  affiliation: napari; University of Warsaw, Faculty of Mathematics, Informatics, and Mechanics
   orcid: https://orcid.org/0000-0002-5470-1676
   alias: Czaki
 - given-names: Juan
@@ -80,6 +80,11 @@ authors:
   affiliation: University of Minnesota — Twin Cities
   orcid: https://orcid.org/0000-0003-4905-757X
   alias: TimMonko
+- given-names: Carol
+  family-names: Willing
+  affiliation: Willing Consulting
+  orcid: https://orcid.org/0000-0002-9817-8485
+  alias: willingc
 - given-names: Loic
   family-names: Royer
   affiliation: Chan Zuckerberg Biohub
@@ -93,6 +98,11 @@ authors:
   affiliation: Chan Zuckerberg Initiative
   orcid: https://orcid.org/0000-0002-7237-1973
   alias: kephale
+- given-names: Jacopo
+  family-names: Abramo
+  affiliation: Leibniz-IPHT, Jena, Germany
+  orcid: https://orcid.org/0000-0001-9293-2179
+  alias: jacopoabramo
 - given-names: Jannis
   family-names: Ahlers
   affiliation: Monash University
@@ -122,6 +132,11 @@ authors:
   family-names: Aronssohn
   orcid: https://orcid.org/0009-0008-5607-9463
   alias: cnstt
+- given-names: Filippo
+  family-names: Balzaretti
+  affiliation: University of California, Santa Cruz
+  orcid: https://orcid.org/0000-0002-4172-4676
+  alias: FilBalza
 - given-names: Peter
   family-names: Boone
   alias: boonepeter
@@ -140,6 +155,11 @@ authors:
     CNRS, Palaiseau, France
   orcid: https://orcid.org/0000-0002-9441-9173
   alias: ClementCaporal
+- given-names: Ian
+  family-names: Coccimiglio
+  affiliation: Unaffiliated
+  orcid: https://orcid.org/0000-0001-7194-7750
+  alias: ian-coccimiglio
 - given-names: Jan
   family-names: Eglinger
   affiliation: Friedrich Miescher Institute for Biomedical Research (FMI), Basel (Switzerland)
@@ -184,6 +204,11 @@ authors:
   family-names: Hutchings
   affiliation: University College London
   alias: katherine-hutchings
+- given-names: Robert
+  family-names: Kozar
+  affiliation: Naval Nuclear Laboratory
+  orcid: https://orcid.org/0009-0007-6114-8446
+  alias: rwkozar
 - given-names: Jessy
   family-names: Lauer
   affiliation: Swiss Federal Institute of Technology (EPFL), Lausanne, Switzerland
@@ -345,11 +370,6 @@ authors:
   affiliation: TU-Dresden / EPFL
   orcid: https://orcid.org/0000-0002-7780-9057
   alias: maweigert
-- given-names: Carol
-  family-names: Willing
-  affiliation: Willing Consulting
-  orcid: https://orcid.org/0000-0002-9817-8485
-  alias: willingc
 - given-names: Jonas
   family-names: Windhager
   affiliation: ETH Zurich / University of Zurich

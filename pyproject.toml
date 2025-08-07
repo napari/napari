@@ -152,6 +152,7 @@ testing = [
     "pytest-qt>=4.3.1",
     "pytest-pretty>=1.1.0",
     "pytest>=8.3.5",
+    "pytest-rerunfailures>=15.1",
     "tensorstore>=0.1.32",
     "virtualenv>=20.17",
     "xarray>=0.16.2",
@@ -256,7 +257,7 @@ napari_builtins = [
 
 [tool.setuptools_scm]
 write_to = "src/napari/_version.py"
-fallback_version = "0.6.0.nogit"
+fallback_version = "0.6.4.dev0"
 
 [tool.check-manifest]
 ignore = [
