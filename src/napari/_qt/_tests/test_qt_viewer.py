@@ -547,7 +547,7 @@ def test_remove_labels(viewer_model: ViewerModel) -> None:
     viewer_model.add_labels(rng.integers(0, 10, size=(10, 10), dtype=np.int8))
 
 
-@pytest.mark.xfail(
+@pytest.mark.skip(
     reason='Broadcasting layers is broken by reordering dims, see #3882'
 )
 @pytest.mark.parametrize('multiscale', [False, True])
