@@ -333,9 +333,19 @@ def test_export_rois(
     assert viewer_model.camera.zoom == camera_zoom
 
     test_dir = tmp_path / 'test_dir'
-    qt_viewer.export_rois(roi_shapes_data, paths=test_dir)
-    QApplication.processEvents()
-    qtbot.wait(1000)
+    refs = []
+    import gc
+
+    try:
+        res = qt_viewer.export_rois(roi_shapes_data, paths=test_dir)
+        refs.append(res)
+        gc.collect()
+        QApplication.processEvents()
+        qtbot.wait(1000)
+    finally:
+        res.clear()
+        gc.collect()
+
     assert all(
         (test_dir / f'roi_{i}.png').exists()
         for i in range(len(roi_shapes_data))
