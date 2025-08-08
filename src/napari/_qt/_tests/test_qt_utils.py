@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
 import pytest
+from qtpy import API_NAME
 from qtpy.QtCore import QByteArray, QObject, Signal
 from qtpy.QtGui import QColor
 from qtpy.QtWidgets import QColorDialog, QMainWindow
@@ -140,14 +141,24 @@ def _assert_eq(p1: Any, p2: Any, text: str = '') -> None:
         assert p1 == p2, text
 
 
+if API_NAME == 'PySide2':
+    DEFAULT_COLOR_HEX = '#000000'
+    DEFAULT_COLOR_ARRAY = np.asarray([0, 0, 0])
+    DEFAULT_COLOR_QCOLOR = QColor(0, 0, 0)
+else:
+    DEFAULT_COLOR_HEX = '#ffffff'
+    DEFAULT_COLOR_ARRAY = np.asarray([1, 1, 1])
+    DEFAULT_COLOR_QCOLOR = QColor(255, 255, 255)
+
+
 @pytest.mark.parametrize(
     ('color', 'mode', 'expected'),
     [
-        (None, 'hex', '#ffffff'),
+        (None, 'hex', DEFAULT_COLOR_HEX),
         ('#FF00FF', 'hex', '#ff00ff'),
-        (None, 'array', np.asarray([1, 1, 1])),
+        (None, 'array', DEFAULT_COLOR_ARRAY),
         (np.asarray([255, 0, 255]), 'array', np.asarray([1, 0, 1])),
-        (None, 'qcolor', QColor(255, 255, 255)),
+        (None, 'qcolor', DEFAULT_COLOR_QCOLOR),
     ],
 )
 def test_get_color(
