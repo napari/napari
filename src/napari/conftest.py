@@ -67,7 +67,7 @@ if TYPE_CHECKING:
     from napari.components import ViewerModel
 
 
-os.environ['QT_FATAL_WARNINGS'] = '1'  # Turn Qt warnings into fatal errors
+# os.environ['QT_FATAL_WARNINGS'] = '1'  # Turn Qt warnings into fatal errors
 os.environ['QT_LOGGING_RULES'] = (
     'qt.qpa.*.debug=true'  # Enable Qt platform debugging
 )
