@@ -1244,9 +1244,6 @@ def test_viewer_drag_to_zoom_with_cancel(
     """Test drag to zoom mouse binding."""
     canvas = qt_viewer.canvas
 
-    if os.getenv('CI'):
-        qt_viewer.show()
-
     def zoom_callback(event):
         """Mock zoom callback to check zoom box visibility."""
         data_positions = event.value
