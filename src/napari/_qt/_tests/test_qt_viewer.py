@@ -77,9 +77,7 @@ def test_add_layer(
 
 
 def test_new_labels(qt_viewer: QtViewer, viewer_model: ViewerModel) -> None:
-    """Test adding new labels layer."""
-    # Add labels to empty viewer
-
+    """Test adding new labels layer to empty viewer."""
     viewer_model._new_labels()
     assert np.max(viewer_model.layers[0].data) == 0
     assert len(viewer_model.layers) == 1
@@ -87,15 +85,14 @@ def test_new_labels(qt_viewer: QtViewer, viewer_model: ViewerModel) -> None:
 
     assert viewer_model.dims.ndim == 2
     assert qt_viewer.dims.nsliders == viewer_model.dims.ndim
-    assert np.sum(qt_viewer.dims._displayed_sliders) == 0
+    npt.assert_array_equal(qt_viewer.dims._displayed_sliders, False)
 
 
 def test_new_labels_to_image(
     qt_viewer: QtViewer, viewer_model: ViewerModel
 ) -> None:
-    # Add labels with image already present
-    rng = np.random.default_rng(0)
-    data = rng.random((10, 15))
+    """Test adding new labels layer to viewer with image."""
+    data = np.random.default_rng(0).random((10, 15))
     viewer_model.add_image(data)
     viewer_model._new_labels()
     assert np.max(viewer_model.layers[1].data) == 0
@@ -104,12 +101,11 @@ def test_new_labels_to_image(
 
     assert viewer_model.dims.ndim == 2
     assert qt_viewer.dims.nsliders == viewer_model.dims.ndim
-    assert np.sum(qt_viewer.dims._displayed_sliders) == 0
+    npt.assert_array_equal(qt_viewer.dims._displayed_sliders, False)
 
 
 def test_new_points(qt_viewer: QtViewer, viewer_model: ViewerModel) -> None:
-    """Test adding new points layer."""
-    # Add labels to empty viewer
+    """Test adding a new points layer to empty viewer."""
     viewer_model.add_points()
     assert len(viewer_model.layers[0].data) == 0
     assert len(viewer_model.layers) == 1
@@ -117,15 +113,14 @@ def test_new_points(qt_viewer: QtViewer, viewer_model: ViewerModel) -> None:
 
     assert viewer_model.dims.ndim == 2
     assert qt_viewer.dims.nsliders == viewer_model.dims.ndim
-    assert np.sum(qt_viewer.dims._displayed_sliders) == 0
+    npt.assert_array_equal(qt_viewer.dims._displayed_sliders, False)
 
 
 def test_new_points_to_image(
     qt_viewer: QtViewer, viewer_model: ViewerModel
 ) -> None:
-    # Add points with image already present
-    rng = np.random.default_rng(0)
-    data = rng.random((10, 15))
+    """Test adding new points layer to viewer with image."""
+    data = np.random.default_rng(0).random((10, 15))
     viewer_model.add_image(data)
     viewer_model.add_points()
     assert len(viewer_model.layers[1].data) == 0
@@ -134,14 +129,13 @@ def test_new_points_to_image(
 
     assert viewer_model.dims.ndim == 2
     assert qt_viewer.dims.nsliders == viewer_model.dims.ndim
-    assert np.sum(qt_viewer.dims._displayed_sliders) == 0
+    npt.assert_array_equal(qt_viewer.dims._displayed_sliders, False)
 
 
 def test_new_shapes_empty_viewer(
     qt_viewer: QtViewer, viewer_model: ViewerModel
 ) -> None:
-    """Test adding new shapes layer."""
-    # Add labels to empty viewer
+    """Test adding new shapes layer to empty viewer."""
     viewer_model.add_shapes()
     assert len(viewer_model.layers[0].data) == 0
     assert len(viewer_model.layers) == 1
@@ -149,15 +143,14 @@ def test_new_shapes_empty_viewer(
 
     assert viewer_model.dims.ndim == 2
     assert qt_viewer.dims.nsliders == viewer_model.dims.ndim
-    assert np.sum(qt_viewer.dims._displayed_sliders) == 0
+    npt.assert_array_equal(qt_viewer.dims._displayed_sliders, False)
 
 
 def test_new_shapes_to_image(
     qt_viewer: QtViewer, viewer_model: ViewerModel
 ) -> None:
-    # Add points with image already present
-    rng = np.random.default_rng(0)
-    data = rng.random((10, 15))
+    """Test adding new shapes layer to viewer with image."""
+    data = np.random.default_rng(0).random((10, 15))
     viewer_model.add_image(data)
     viewer_model.add_shapes()
     assert len(viewer_model.layers[1].data) == 0
@@ -166,7 +159,7 @@ def test_new_shapes_to_image(
 
     assert viewer_model.dims.ndim == 2
     assert qt_viewer.dims.nsliders == viewer_model.dims.ndim
-    assert np.sum(qt_viewer.dims._displayed_sliders) == 0
+    npt.assert_array_equal(qt_viewer.dims._displayed_sliders, False)
 
 
 def test_z_order_adding_removing_images(
