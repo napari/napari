@@ -707,8 +707,6 @@ def test_label_colors_matching_widget_auto(
 ) -> None:
     """Make sure the rendered label colors match the QtColorBox widget."""
 
-    # XXX TODO: this unstable! Seed = 0 fails, for example. This is due to numerical
-    #           imprecision in random colormap on gpu vs cpu
     rng = np.random.default_rng(0)
     data = np.ones((2, 2), dtype=dtype)
     layer = qt_viewer_with_controls.viewer.add_labels(data)
