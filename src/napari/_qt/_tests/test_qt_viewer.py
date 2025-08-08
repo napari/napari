@@ -220,7 +220,6 @@ def test_export_figure(
     tmp_path: Path,
     qtbot: QtBot,
 ) -> None:
-    np.random.seed(0)
     # Add image
     data = np.ones((250, 250))
     layer = viewer_model.add_image(data)
@@ -255,12 +254,12 @@ def test_export_figure_3d(
     tmp_path: Path,
     qtbot: QtBot,
 ) -> None:
-    np.random.seed(0)
+    rng = np.random.default_rng(0)
     # Add image, keep values low to contrast with white background
     viewer_model.dims.ndisplay = 3
     viewer_model.theme = 'light'
 
-    data = np.random.randint(50, 100, size=(10, 250, 250), dtype=np.uint8)
+    data = rng.integers(50, 100, size=(10, 250, 250), dtype=np.uint8)
     layer = viewer_model.add_image(data)
 
     # check the non-rotated data (angles = 0,0,90) are exported without any
@@ -391,25 +390,25 @@ def test_screenshot_dialog(
     viewer_model: ViewerModel, qt_viewer: QtViewer, tmp_path: Path
 ) -> None:
     """Test save screenshot functionality."""
-    np.random.seed(0)
+    rng = np.random.default_rng(0)
     # Add image
-    data = np.random.random((10, 15))
+    data = rng.random((10, 15))
     viewer_model.add_image(data)
 
     # Add labels
-    data = np.random.randint(20, size=(10, 15))
+    data = rng.integers(20, size=(10, 15))
     viewer_model.add_labels(data)
 
     # Add points
-    data = 20 * np.random.random((10, 2))
+    data = 20 * rng.random((10, 2))
     viewer_model.add_points(data)
 
     # Add vectors
-    data = 20 * np.random.random((10, 2, 2))
+    data = 20 * rng.random((10, 2, 2))
     viewer_model.add_vectors(data)
 
     # Add shapes
-    data = 20 * np.random.random((10, 4, 2))
+    data = 20 * rng.random((10, 4, 2))
     viewer_model.add_shapes(data)
 
     # Save screenshot
@@ -710,7 +709,7 @@ def test_label_colors_matching_widget_auto(
 
     # XXX TODO: this unstable! Seed = 0 fails, for example. This is due to numerical
     #           imprecision in random colormap on gpu vs cpu
-    np.random.seed(1)
+    rng = np.random.default_rng(0)
     data = np.ones((2, 2), dtype=dtype)
     layer = qt_viewer_with_controls.viewer.add_labels(data)
     layer.show_selected_label = use_selection
@@ -721,7 +720,7 @@ def test_label_colors_matching_widget_auto(
         (
             np.arange(1, 10, dtype=dtype),
             [n_c - 1, n_c, n_c + 1],
-            np.random.randint(
+            rng.integers(
                 1, min(2**20, np.iinfo(dtype).max), size=20, dtype=dtype
             ),
             [-1, -2, -10],
@@ -1196,7 +1195,7 @@ def test_viewer_drag_to_zoom(
     viewer_model._zoom_box.events.zoom.connect(zoom_callback)
 
     # Add an image layer
-    data = np.random.random((10, 20))
+    data = np.random.default_rng(0).random((10, 20))
     viewer_model.add_image(data)
 
     assert viewer_model._zoom_box.visible is False, (
@@ -1258,7 +1257,7 @@ def test_viewer_drag_to_zoom_with_cancel(
     viewer_model._zoom_box.events.zoom.connect(zoom_callback)
 
     # Add an image layer
-    data = np.random.random((10, 20))
+    data = np.random.default_rng(0).random((10, 20))
     viewer_model.add_image(data)
 
     assert viewer_model._zoom_box.visible is False, (
