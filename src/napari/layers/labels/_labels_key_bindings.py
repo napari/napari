@@ -91,7 +91,7 @@ def new_label(layer: Labels):
                 layer.selected_label = new_selected_label
             except WrongSelectedLabelError as e:
                 show_warning(
-                    f'{e.text}\nYou may convert the layer dtype in right click menu on layer list.'
+                    f'{e.text}\nYou can convert the layer dtype in the right-click contextual menu of the layer list.'
                 )
     else:
         show_info(
