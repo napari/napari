@@ -534,16 +534,16 @@ def _patch_viewer_new():
 @contextmanager
 def _patch_napari_run():
     """Context manager to patch napari.run to always be a no-op.
-    
+
     napari.run() executes the Qt event loop, *except* when napari
     is running in IPython and therefore IPython's Qt integration
     already has the event loop.
-    
+
     When running a script by dragging-and-dropping onto a
     running napari Viewer, we already have an event loop, so we
     should not start a new nested loop, even though we are not
     in IPython.
-    
+
     This context manager temporarily patches the IPython check
     to always return True, causing a fast exit from napari.run()
     without a new event loop.
