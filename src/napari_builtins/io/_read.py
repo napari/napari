@@ -532,16 +532,31 @@ def _patch_viewer_new():
 
 
 @contextmanager
-def _patch_run():
-    """Context manager to patch the run method of the viewer."""
+def _patch_napari_run():
+    """Context manager to patch napari.run to always be a no-op.
+    
+    napari.run() executes the Qt event loop, *except* when napari
+    is running in IPython and therefore IPython's Qt integration
+    already has the event loop.
+    
+    When running a script by dragging-and-dropping onto a
+    running napari Viewer, we already have an event loop, so we
+    should not start a new nested loop, even though we are not
+    in IPython.
+    
+    This context manager temporarily patches the IPython check
+    to always return True, causing a fast exit from napari.run()
+    without a new event loop.
+    """
     from napari._qt import qt_event_loop
 
-    ipython_check = qt_event_loop._ipython_has_eventloop
+    original_ipython_check = qt_event_loop._ipython_has_eventloop
 
     def patched_ipython_check() -> bool:
         """A patched ipython_check that always returns True.
 
-        Drag and drop feature uses this to prevent running another event loop.
+        napari's script running from drag-and-dropping a script
+        into a viewer uses this patch to prevent nested event loops.
         """
         return True
 
@@ -549,7 +564,7 @@ def _patch_run():
     try:
         yield
     finally:
-        qt_event_loop._ipython_has_eventloop = ipython_check
+        qt_event_loop._ipython_has_eventloop = original_ipython_check
 
 
 def filter_variables(variables: dict[str, Any]) -> dict[str, Any]:
@@ -587,7 +602,7 @@ def load_and_execute_python_code(script_path: str) -> list['LayerData']:
     from napari.viewer import current_viewer
 
     code = Path(script_path).read_text()
-    with _patch_viewer_new(), _patch_run():
+    with _patch_viewer_new(), _patch_napari_run():
         try:
             viewer = current_viewer()
             script_namespace = _DROPPED_SCRIPTS_NAMESPACE.setdefault(
