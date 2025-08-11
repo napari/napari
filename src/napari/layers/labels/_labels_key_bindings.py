@@ -13,6 +13,7 @@ from napari.utils.notifications import show_info, show_warning
 from napari.utils.translations import trans
 
 MIN_BRUSH_SIZE = 1
+CONVERT_TEXT = 'You can convert the layer dtype in the right-click contextual menu of the layer list.'
 
 
 def register_label_action(description: str, repeatable: bool = False):
@@ -90,9 +91,7 @@ def new_label(layer: Labels):
             try:
                 layer.selected_label = new_selected_label
             except WrongSelectedLabelError as e:
-                show_warning(
-                    f'{e.text}\nYou can convert the layer dtype in the right-click contextual menu of the layer list.'
-                )
+                show_warning(f'{e.text}\n{CONVERT_TEXT}')
     else:
         show_info(
             trans._(
@@ -116,9 +115,7 @@ def decrease_label_id(layer: Labels):
     try:
         layer.selected_label -= 1
     except WrongSelectedLabelError as e:
-        show_warning(
-            f'{e.text}\nYou may convert the layer dtype in right click menu on layer list.'
-        )
+        show_warning(f'{e.text}\n{CONVERT_TEXT}')
 
 
 @register_label_action(
@@ -128,9 +125,7 @@ def increase_label_id(layer: Labels):
     try:
         layer.selected_label += 1
     except WrongSelectedLabelError as e:
-        show_warning(
-            f'{e.text}\nYou may convert the layer dtype in right click menu on layer list.'
-        )
+        show_warning(f'{e.text}\n{CONVERT_TEXT}')
 
 
 @register_label_action(
