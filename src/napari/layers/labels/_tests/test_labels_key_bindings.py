@@ -1,8 +1,12 @@
+from unittest.mock import patch
+
 import numpy as np
 import pytest
 
 from napari.layers import Labels
 from napari.layers.labels._labels_key_bindings import (
+    decrease_label_id,
+    increase_label_id,
     new_label,
     swap_selected_and_background_labels,
 )
@@ -30,3 +34,21 @@ def test_swap_background_label(labels_data_4d):
     assert labels.selected_label == labels.colormap.background_value
     swap_selected_and_background_labels(labels)
     assert labels.selected_label == 10
+
+
+@patch('napari.layers.labels._labels_key_bindings.show_warning')
+def test_guard_for_out_of_range_selected_label(show_warning):
+    labels = Labels(np.zeros((10, 10), dtype=np.uint8))
+
+    labels.selected_label = 0
+    decrease_label_id(labels)
+    assert labels.selected_label == 0
+    show_warning.assert_called_once()
+    show_warning.call_args_list[0][0][0].startswith('The value -1')
+    show_warning.reset_mock()
+
+    labels.selected_label = 255
+    increase_label_id(labels)
+    assert labels.selected_label == 255
+    show_warning.assert_called_once()
+    show_warning.call_args_list[0][0][0].startswith('The value 256')
