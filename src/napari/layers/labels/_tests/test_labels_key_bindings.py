@@ -56,3 +56,21 @@ def test_guard_for_out_of_range_selected_label(monkeypatch):
     assert labels.selected_label == 255
     show_warning_mock.assert_called_once()
     show_warning_mock.call_args_list[0][0][0].startswith('The value 256')
+
+
+def test_label_overflow(monkeypatch):
+    show_warning_mock = Mock()
+    monkeypatch.setattr(
+        _labels_key_bindings, 'show_warning', show_warning_mock
+    )
+    data = np.zeros((10, 10), dtype=np.uint8)
+    labels = Labels(data)
+    new_label(labels)
+    assert labels.selected_label == 1
+    show_warning_mock.assert_not_called()
+
+    data[0, 0] = 255
+    new_label(labels)
+    assert labels.selected_label == 1
+    show_warning_mock.assert_called_once()
+    show_warning_mock.call_args_list[0][0][0].startswith('The value 256')

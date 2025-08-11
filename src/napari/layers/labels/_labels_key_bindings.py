@@ -78,7 +78,7 @@ labels_fun_to_mode = [
 def new_label(layer: Labels):
     """Set the currently selected label to the largest used label plus one."""
     if isinstance(layer.data, np.ndarray):
-        new_selected_label = np.max(layer.data) + 1
+        new_selected_label = int(np.max(layer.data)) + 1
         if layer.selected_label == new_selected_label:
             show_info(
                 trans._(
@@ -87,7 +87,12 @@ def new_label(layer: Labels):
                 )
             )
         else:
-            layer.selected_label = new_selected_label
+            try:
+                layer.selected_label = new_selected_label
+            except WrongSelectedLabelError as e:
+                show_warning(
+                    f'{e.text}\nYou may convert the layer dtype in right click menu on layer list.'
+                )
     else:
         show_info(
             trans._(
