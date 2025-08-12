@@ -39,6 +39,7 @@ def _run_configured_startup_script() -> None:
                 script_path=script_path,
             )
         )
+        return
 
     from napari_builtins.io._read import (
         execute_python_code,
