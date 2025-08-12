@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import inspect
+from typing import Any
+
 from psutil import virtual_memory
 
 from napari._pydantic_compat import Field, validator
@@ -277,6 +280,18 @@ class ApplicationSettings(EventedModel):
             'This can be used to customize the behavior of napari or load specific plugins automatically.'
         ),
     )
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        if name == 'startup_script' and value is not None:
+            # Ensure the script is a valid Python file
+            caller_frame = inspect.currentframe().f_back
+            if caller_frame is None or not caller_frame.f_globals.get(
+                '__name__', ''
+            ).startswith('napari.'):
+                raise ValueError(
+                    "The 'startup_script' setting can only be set by the napari application itself."
+                )
+        super().__setattr__(name, value)
 
     @validator('window_state', allow_reuse=True)
     def _validate_qbtye(cls, v: str) -> str:
