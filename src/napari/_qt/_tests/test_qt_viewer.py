@@ -337,6 +337,7 @@ def test_export_rois(
     import gc
 
     try:
+        qtbot.wait(1000)
         res = qt_viewer.export_rois(roi_shapes_data, paths=test_dir)
         refs.append(res)
         gc.collect()
