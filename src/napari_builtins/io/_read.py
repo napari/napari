@@ -7,10 +7,12 @@ from contextlib import contextmanager, suppress
 from glob import glob
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional, Union
+from urllib.parse import urlparse
 
 import dask.array as da
 import imageio.v3 as iio
 import numpy as np
+import requests
 from dask import delayed
 
 from napari.utils.misc import abspath_or_url
@@ -43,6 +45,50 @@ def _is_url(filename):
     Originally vendored from scikit-image/skimage/io/util.py
     """
     return isinstance(filename, str) and URL_REGEX.match(filename) is not None
+
+
+def _github_and_gitlab_to_raw_url(filename: str) -> str:
+    """Convert a GitHub URL to a raw file URL.
+
+    Parameters
+    ----------
+    filename : str
+        The GitHub URL to convert.
+
+    Returns
+    -------
+    str
+        The raw file URL.
+    """
+    parsed_url = urlparse(filename)
+
+    if 'gitlab' in parsed_url.netloc:
+        return filename.replace('blob/', 'raw/')
+
+    if parsed_url.netloc == 'gist.github.com':
+        # Handle gist URLs
+        # For gists, we need to append /raw to get the raw content
+        base_url = filename.replace(
+            'gist.github.com', 'gist.githubusercontent.com'
+        )
+        if not base_url.endswith('/raw'):
+            # If it doesn't already end with /raw, append it
+            # Handle cases where there might be a fragment or specific file
+            if '#' in base_url:
+                # Split at fragment and add /raw before it
+                parts = base_url.split('#')
+                base_url = f'{parts[0]}/raw' + (
+                    f'#{parts[1]}' if len(parts) > 1 else ''
+                )
+            else:
+                base_url += '/raw'
+        return base_url
+    if parsed_url.netloc == 'github.com':
+        # Handle regular GitHub repository URLs
+        return filename.replace(
+            'github.com', 'raw.githubusercontent.com'
+        ).replace('/blob/', r'/refs/heads/')
+    return filename
 
 
 def imread(filename: str) -> np.ndarray:
@@ -601,7 +647,14 @@ def load_and_execute_python_code(script_path: str) -> list['LayerData']:
     """
     from napari.viewer import current_viewer
 
-    code = Path(script_path).read_text()
+    if _is_url(script_path):
+        # download the script from the URL
+
+        response = requests.get(_github_and_gitlab_to_raw_url(script_path))
+        response.raise_for_status()
+        code = response.text
+    else:
+        code = Path(script_path).read_text()
     with _patch_viewer_new(), _patch_napari_run():
         try:
             viewer = current_viewer()
@@ -641,7 +694,7 @@ def napari_get_py_reader(path: str) -> 'ReaderFunction | None':
     callable
         A function that executes the Python code in the specified file.
     """
-    if not os.path.exists(path):
+    if not os.path.exists(path) and not _is_url(path):
         return None
     if os.path.splitext(path)[1] != '.py':
         return None
