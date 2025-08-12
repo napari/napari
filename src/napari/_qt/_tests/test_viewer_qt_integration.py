@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 import textwrap
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pytest
@@ -22,17 +22,20 @@ from napari.utils.theme import available_themes
 @pytest.mark.usefixtures('builtins')
 @pytest.mark.enable_console
 @pytest.mark.filterwarnings('ignore::DeprecationWarning:jupyter_client')
-def test_drop_python_file(make_napari_viewer, tmp_path):
+@patch('qtpy.QtWidgets.QApplication.topLevelWidgets')
+def test_drop_python_file(qapp_mock, make_napari_viewer, tmp_path):
     """Test dropping a python file on to the viewer."""
     viewer = make_napari_viewer()
     filename = tmp_path / 'image_to_drop.py'
     file_content = textwrap.dedent("""
     import numpy as np
-    from napari import Viewer
+    import napari
 
     data = np.zeros((10, 10))
-    viewer = Viewer()
+    viewer = napari.Viewer()
     viewer.add_image(data, name='Dropped Image')
+
+    napari.run()
     """)
     filename.write_text(file_content)
 
@@ -45,6 +48,10 @@ def test_drop_python_file(make_napari_viewer, tmp_path):
 
     # Check that the file was executed
     assert viewer.layers[0].name == 'Dropped Image'
+
+    # Ensure that napari.run is stopped early and event loops are not started
+    # by call napari.run() in the script.
+    qapp_mock.assert_not_called()
 
     # Check that the console is updated with locals from the script
     console = viewer.window._qt_viewer.console
