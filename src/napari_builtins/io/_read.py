@@ -531,9 +531,48 @@ def _patch_viewer_new():
         Viewer.__init__ = original_init
 
 
+@contextmanager
+def _patch_napari_run():
+    """Context manager to patch napari.run to always be a no-op.
+
+    napari.run() executes the Qt event loop, *except* when napari
+    is running in IPython and therefore IPython's Qt integration
+    already has the event loop.
+
+    When running a script by dragging-and-dropping onto a
+    running napari Viewer, we already have an event loop, so we
+    should not start a new nested loop, even though we are not
+    in IPython.
+
+    This context manager temporarily patches the IPython check
+    to always return True, causing a fast exit from napari.run()
+    without a new event loop.
+    """
+    from napari._qt import qt_event_loop
+
+    original_ipython_check = qt_event_loop._ipython_has_eventloop
+
+    def patched_ipython_check() -> bool:
+        """A patched ipython_check that always returns True.
+
+        napari's script running from drag-and-dropping a script
+        into a viewer uses this patch to prevent nested event loops.
+        """
+        return True
+
+    qt_event_loop._ipython_has_eventloop = patched_ipython_check
+    try:
+        yield
+    finally:
+        qt_event_loop._ipython_has_eventloop = original_ipython_check
+
+
 def filter_variables(variables: dict[str, Any]) -> dict[str, Any]:
     res = variables.copy()
     res.pop('viewer', None)
+    res.pop(
+        '__name__', None
+    )  # Remove the __name__ variable to not affect the console
     return res
 
 
@@ -552,23 +591,34 @@ def _add_dropped_scripts_to_console(
         console.push(variables)
 
 
-def load_and_execute_python_code(path: str) -> list['LayerData']:
+def load_and_execute_python_code(script_path: str) -> list['LayerData']:
     """Load and execute Python code from a file.
 
     Parameters
     ----------
-    path : str
+    script_path : str
         Path to the Python file to be executed.
     """
     from napari.viewer import current_viewer
 
-    code = Path(path).read_text()
-    with _patch_viewer_new():
+    code = Path(script_path).read_text()
+    with _patch_viewer_new(), _patch_napari_run():
         try:
             viewer = current_viewer()
-            exec(code, _DROPPED_SCRIPTS_NAMESPACE.setdefault(path, {}))
+            script_namespace = _DROPPED_SCRIPTS_NAMESPACE.setdefault(
+                script_path, {}
+            )
+            # The `__name__` variable is storing the name of the module.
+            # If a module is imported, it is set to the module name.
+            # If a module is executed with `python -m ...` or
+            # `python script.py` it is set to '__main__'.
+            # If code is executed with `exec(code, namespace)` it is set to `builtins` if
+            # `__name__` is not set in the namespace.
+            # So ww set it to `__main__` to execute `if __name__ == '__main__':` blocks
+            script_namespace['__name__'] = '__main__'
+            exec(code, script_namespace)
             _add_dropped_scripts_to_console(
-                _DROPPED_SCRIPTS_NAMESPACE[path], viewer
+                _DROPPED_SCRIPTS_NAMESPACE[script_path], viewer
             )
         except BaseException as e:  # noqa: BLE001
             notification_manager.receive_error(type(e), e, e.__traceback__)
