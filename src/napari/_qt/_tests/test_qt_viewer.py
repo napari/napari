@@ -1261,6 +1261,7 @@ def test_viewer_drag_to_zoom_with_cancel(
     assert viewer_model._zoom_box.visible is False, (
         'Zoom box should be hidden initially'
     )
+    qtbot.wait(10)
     # Simulate press to start zooming
     canvas._scene_canvas.events.mouse_press(
         pos=(0, 0), modifiers=('Alt',), button=0
