@@ -1,6 +1,6 @@
 magicgui
 mypy
-numpy
+numpy!=2.2.0,!=2.2.1,!=2.2.2,!=2.2.3
 npe2
 pydantic
 qtpy

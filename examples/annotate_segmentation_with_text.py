@@ -3,7 +3,9 @@ Annotate segmentation with text
 ===============================
 
 Perform a segmentation and annotate the results with
-bounding boxes and text
+bounding boxes and text.
+This example is fully explained in the following tutorial:
+https://napari.org/stable/tutorials/segmentation/annotate_segmentation.html
 
 .. tags:: analysis
 """
@@ -118,7 +120,8 @@ text_parameters = {
 }
 
 # initialise viewer with coins image
-viewer = napari.view_image(image, name='coins', rgb=False)
+viewer = napari.Viewer()
+layer = viewer.add_image(image, name='coins', rgb=False)
 
 # add the labels
 label_layer = viewer.add_labels(label_image, name='segmentation')

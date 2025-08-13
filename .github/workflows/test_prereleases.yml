@@ -19,7 +19,7 @@ env:
 jobs:
   test:
     name: ${{ matrix.platform }} py${{ matrix.python }} ${{ matrix.backend }} --pre
-    timeout-minutes: 40
+    timeout-minutes: 60
     runs-on: ${{ matrix.platform }}
     permissions:
       contents: read
@@ -29,23 +29,32 @@ jobs:
       fail-fast: false
       matrix:
         platform: [windows-latest, macos-latest, ubuntu-latest]
-        python: [3.12]
+        python: [3.12, 3.13]
         backend: [pyqt5, pyqt6]
+        include:
+          - platform: ubuntu-latest
+            python: 3.12
+            backend: pyqt6_no_numba
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Set up Python ${{ matrix.python }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-path: pyproject.toml
 
-      - uses: tlambert03/setup-qt-libs@v1
+      - uses: tlambert03/setup-qt-libs@19e4ef2d781d81f5f067182e228b54ec90d23b76 # v1.8
 
       - name: Setup Graphviz
-        uses: ts-graphviz/setup-graphviz@v2
+        uses: ts-graphviz/setup-graphviz@b1de5da23ed0a6d14e0aeee8ed52fdd87af2363c # v2.0.2
         continue-on-error: true
+
+      - name: Set Windows resolution
+        if: runner.os == 'Windows'
+        run: Set-DisplayResolution -Width 1920 -Height 1080 -Force
+        shell: powershell
 
       - name: Install Windows OpenGL
         if: runner.os == 'Windows'
@@ -60,22 +69,36 @@ jobs:
           pip install --upgrade pip
           pip install setuptools tox tox-gh-actions
 
-      - name: Test with tox
-        # run tests using pip install --pre
-        uses: aganders3/headless-gui@v2
+      - name: Test with tox (with retry)
+        uses: Wandalen/wretry.action@e68c23e6309f2871ca8ae4763e7629b9c258e1ea # v3.8.0
         with:
-          run: python -m tox -v --pre
+          attempt_limit: 2
+          attempt_delay: 30000 # 30s
+          retry_condition: github.ref_name == 'main'  # avoid restart in PR
+          action: aganders3/headless-gui@v2
+          with: |
+            run: python -m tox -v --pre  --recreate
         env:
           PLATFORM: ${{ matrix.platform }}
           BACKEND: ${{ matrix.backend }}
+          PYTHON: ${{ matrix.python }}
           COVERAGE: "no_cov"
           PYVISTA_OFF_SCREEN: True  # required for opengl on windows
           PIP_CONSTRAINT: resources/constraints/version_denylist.txt
+          PIP_EXTRA_INDEX_URL: https://www.riverbankcomputing.com/pypi/simple/
+          PIP_ONLY_BINARY: "PyQt5,PyQt6"
+
+      - name: Upload leaked viewer graph
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: leaked ${{ matrix.platform }} py ${{ matrix.python }} ${{ matrix.backend }}
+          path: ./*leak-backref-graph*.pdf
 
       # If something goes wrong, we can open an issue in the repo
       - name: Report Failures
         if: ${{ failure() && github.event_name == 'schedule' }}
-        uses: JasonEtco/create-an-issue@v2
+        uses: JasonEtco/create-an-issue@1b14a70e4d8dc185e5cc76d3bec9eab20257b2c5 # v2.9.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PLATFORM: ${{ matrix.platform }}
