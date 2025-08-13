@@ -59,6 +59,7 @@ def qt_viewer(
         qt_viewer_.show()
         qt_viewer_.resize(460, 460)
         QApplication.processEvents()
+        qtbot.wait_exposed(qt_viewer_)
     return qt_viewer_
 
 
