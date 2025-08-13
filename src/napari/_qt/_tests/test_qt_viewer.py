@@ -315,6 +315,7 @@ def test_export_rois(
         qt_viewer.export_rois(roi_shapes_data, paths=paths + ['fake'])
     # Export ROI to image path
     test_roi = qt_viewer.export_rois(roi_shapes_data, paths=paths)
+    qtbot.wait(1000)
 
     assert all(
         (tmp_path / f'roi_{i}.png').exists()
