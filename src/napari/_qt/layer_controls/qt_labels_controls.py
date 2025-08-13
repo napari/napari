@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 from qtpy.QtCore import Qt
-from qtpy.QtGui import QColor, QPainter
+from qtpy.QtGui import QColor, QIcon, QPainter, QPixmap
 from qtpy.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -103,9 +103,6 @@ class QtLabelsControls(QtLayerControls):
             self._on_iso_gradient_mode_change
         )
         self.layer.events.colormap.connect(self._on_colormap_change)
-        self.layer.events.selected_label.connect(
-            self._on_selected_label_change
-        )
         self.layer.events.brush_size.connect(self._on_brush_size_change)
         self.layer.events.contiguous.connect(self._on_contiguous_change)
         self.layer.events.n_edit_dimensions.connect(
@@ -118,16 +115,12 @@ class QtLabelsControls(QtLayerControls):
         self.layer.events.show_selected_label.connect(
             self._on_show_selected_label_change
         )
+        self.layer.events.predefined_labels.connect(
+            self._on_predefined_labels_change
+        )
         self.layer.events.data.connect(self._on_data_change)
 
-        # selection spinbox
-        self.selectionSpinBox = QLargeIntSpinBox()
         dtype_lims = get_dtype_limits(get_dtype(layer))
-        self.selectionSpinBox.setRange(*dtype_lims)
-        self.selectionSpinBox.setKeyboardTracking(False)
-        self.selectionSpinBox.valueChanged.connect(self.changeSelection)
-        self.selectionSpinBox.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._on_selected_label_change()
 
         sld = QLabeledSlider(Qt.Orientation.Horizontal)
         sld.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -265,15 +258,22 @@ class QtLabelsControls(QtLayerControls):
 
         self._on_ndisplay_changed()
 
-        color_layout = QHBoxLayout()
-        self.colorBox = QtColorBox(layer)
-        color_layout.addWidget(self.colorBox)
-        color_layout.addWidget(self.selectionSpinBox)
+        self.labelsSpinbox = QtLabelsSpinBox(layer, self)
+        self.labelsCombobox = QtLabelsCombobox(layer, self)
+
+        if layer.predefined_labels is None:
+            self.labelsCombobox.setVisible(False)
+            labels_selection_widget = self.labelsSpinbox
+        else:
+            self.labelsSpinbox.setVisible(False)
+            labels_selection_widget = self.labelsCombobox
+
+        labels_selection_widget.connect_to_layer()
 
         self.layout().addRow(self.button_grid)
         self.layout().addRow(self.opacityLabel, self.opacitySlider)
         self.layout().addRow(trans._('blending:'), self.blendComboBox)
-        self.layout().addRow(trans._('label:'), color_layout)
+        self.layout().addRow(trans._('label:'), labels_selection_widget)
         self.layout().addRow(trans._('brush size:'), self.brushSizeSlider)
         self.layout().addRow(self.renderLabel, self.renderComboBox)
         self.layout().addRow(self.isoGradientLabel, self.isoGradientComboBox)
@@ -333,7 +333,7 @@ class QtLabelsControls(QtLayerControls):
     def _on_data_change(self):
         """Update label selection spinbox min/max when data changes."""
         dtype_lims = get_dtype_limits(get_dtype(self.layer))
-        self.selectionSpinBox.setRange(*dtype_lims)
+        self.labelsSpinbox.selectionSpinBox.setRange(*dtype_lims)
 
     def changeRendering(self, rendering_mode: LabelsRendering):
         """Change rendering mode for image display.
@@ -372,18 +372,6 @@ class QtLabelsControls(QtLayerControls):
     def changeColor(self):
         """Change colormap of the label layer."""
         self.layer.new_colormap()
-
-    def changeSelection(self, value):
-        """Change currently selected label.
-
-        Parameters
-        ----------
-        value : int
-            Index of label to select.
-        """
-        self.layer.selected_label = value
-        self.selectionSpinBox.clearFocus()
-        self.setFocus()
 
     def toggle_selected_mode(self, state):
         """Toggle display of selected label only.
@@ -459,12 +447,6 @@ class QtLabelsControls(QtLayerControls):
             value = self.layer.contour
             self.contourSpinBox.setValue(value)
 
-    def _on_selected_label_change(self):
-        """Receive layer model label selection change event and update spinbox."""
-        with self.layer.events.selected_label.blocker():
-            value = self.layer.selected_label
-            self.selectionSpinBox.setValue(value)
-
     def _on_brush_size_change(self):
         """Receive layer model brush size change event and update the slider."""
         with self.layer.events.brush_size.blocker():
@@ -473,6 +455,29 @@ class QtLabelsControls(QtLayerControls):
             if value > self.brushSizeSlider.maximum():
                 self.brushSizeSlider.setMaximum(int(value))
             self.brushSizeSlider.setValue(value)
+
+    def _on_predefined_labels_change(self):
+        labels_combobox_activated = (
+            self.layout().indexOf(self.labelsCombobox) != -1
+        )
+        predefined_labels = self.layer.predefined_labels is not None
+
+        if not predefined_labels and labels_combobox_activated:
+            self.layout().replaceWidget(
+                self.labelsCombobox, self.labelsSpinbox
+            )
+            disconnect_events(self.layer.events, self.labelsCombobox)
+            self.labelsCombobox.setVisible(False)
+            self.labelsSpinbox.setVisible(True)
+            self.labelsSpinbox.connect_to_layer()
+        elif predefined_labels and not labels_combobox_activated:
+            self.layout().replaceWidget(
+                self.labelsSpinbox, self.labelsCombobox
+            )
+            disconnect_events(self.layer.events, self.labelsSpinbox)
+            self.labelsSpinbox.setVisible(False)
+            self.labelsCombobox.setVisible(True)
+            self.labelsCombobox.connect_to_layer()
 
     def _on_n_edit_dimensions_change(self):
         """Receive layer model n-dim mode change event and update the checkbox."""
@@ -541,8 +546,153 @@ class QtLabelsControls(QtLayerControls):
         )
 
     def deleteLater(self):
-        disconnect_events(self.layer.events, self.colorBox)
+        self.labelsSpinbox.deleteLater()
+        self.labelsCombobox.deleteLater()
         super().deleteLater()
+
+
+class QtLabelsSpinBox(QWidget):
+    def __init__(self, layer, parent=None) -> None:
+        super().__init__(parent=parent)
+
+        self.layer = layer
+        self.colorBox = QtColorBox()
+
+        dtype_lims = get_dtype_limits(get_dtype(layer))
+        self.selectionSpinBox = QLargeIntSpinBox()
+        self.selectionSpinBox.setRange(*dtype_lims)
+        self.selectionSpinBox.setKeyboardTracking(False)
+        self.selectionSpinBox.valueChanged.connect(self._on_selection_change)
+        self.selectionSpinBox.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        layout = QHBoxLayout()
+        layout.addWidget(self.colorBox)
+        layout.addWidget(self.selectionSpinBox)
+        layout.setContentsMargins(0, 0, 0, 0)
+
+        self.setLayout(layout)
+
+    def connect_to_layer(self):
+        self.layer.events.selected_label.connect(
+            self._on_selected_label_change
+        )
+        self.layer.events.colormap.connect(self._on_colormap_change)
+        self._on_selected_label_change()
+
+    def _on_selected_label_change(self):
+        """Receive layer model label selection change event and update spinbox."""
+        with self.layer.events.selected_label.blocker():
+            value = self.layer.selected_label
+            self.selectionSpinBox.setValue(value)
+        self.colorBox.set_color(self.layer._selected_color)
+
+    def _on_colormap_change(self):
+        """Receive label colormap change event & update colorbox."""
+        color = self.layer.get_color(self.layer.selected_label)
+        self.colorBox.set_color(color)
+
+    def _on_selection_change(self, value):
+        """Change currently selected label.
+
+        Parameters
+        ----------
+        value : int
+            Index of label to select.
+        """
+        self.layer.selected_label = value
+        self.selectionSpinBox.clearFocus()
+        if self.parent():
+            self.parent().setFocus()
+
+    def deleteLater(self):
+        disconnect_events(self.layer.events, self)
+        super().deleteLater()
+
+    def closeEvent(self, event):
+        """Disconnect events when widget is closing."""
+        disconnect_events(self.layer.events, self)
+        super().closeEvent(event)
+
+
+class QtLabelsCombobox(QComboBox):
+    def __init__(self, layer, parent=None) -> None:
+        super().__init__(parent=parent)
+
+        self.layer = layer
+        self._height = 24
+        self._labels_list = []
+        self.setFixedHeight(self._height)
+
+        self.currentIndexChanged.connect(self._on_current_index_changed)
+        self.activated.connect(self._on_activated)
+
+    def update_items(self):
+        if self.layer.predefined_labels is None:
+            return
+        self.blockSignals(True)
+        self._labels_list = sorted(self.layer.predefined_labels)
+        # Initialize color palette
+        self.layer.get_color(max(self._labels_list))
+
+        for i, label in enumerate(self._labels_list):
+            if i >= self.count():
+                self.addItem('')
+
+            color = self.layer.get_color(label)
+
+            color_pixmap = QPixmap(self._height, self._height)
+
+            if color is None:
+                paint_checkerboard(QPainter(color_pixmap), self._height)
+            else:
+                color = np.round(255 * color[:3]).astype(int)
+                color_pixmap.fill(QColor(*color.tolist()))
+
+            color_icon = QIcon(color_pixmap)
+            name = self.layer.get_label_name(label)
+            item_text = str(label) + (': ' + name if name else '')
+
+            self.setItemIcon(i, color_icon)
+            self.setItemText(i, item_text)
+
+        for _ in range(self.count() - len(self._labels_list)):
+            self.removeItem(self.count() - 1)
+
+        self.blockSignals(False)
+
+    def connect_to_layer(self):
+        self.layer.events.predefined_labels.connect(self.update_items)
+        self.layer.events.colormap.connect(self.update_items)
+        self.layer.events.selected_label.connect(
+            self._on_selected_label_change
+        )
+        self._on_selected_label_change()
+
+    def _on_selected_label_change(self):
+        if self.layer.selected_label not in self._labels_list:
+            self.update_items()
+
+        item_index = self._labels_list.index(self.layer.selected_label)
+        with self.layer.events.selected_label.blocker():
+            self.setCurrentIndex(item_index)
+
+    def _on_current_index_changed(self):
+        index = self.currentIndex()
+        self.layer.selected_label = self._labels_list[index]
+
+    def _on_activated(self):
+        self.clearFocus()
+        if self.parent():
+            self.parent().setFocus()
+
+    def deleteLater(self):
+        disconnect_events(self.layer.events, self)
+        super().deleteLater()
+
+    def closeEvent(self, event):
+        """Disconnect events when widget is closing."""
+        disconnect_events(self.layer.events, self)
+        super().closeEvent(event)
 
 
 class QtColorBox(QWidget):
@@ -550,39 +700,23 @@ class QtColorBox(QWidget):
 
     Parameters
     ----------
-    layer : napari.layers.Labels
-        An instance of a napari layer.
+    size : int
+        A size of the color box.
     """
 
-    def __init__(self, layer) -> None:
+    def __init__(self, size: int = 24) -> None:
         super().__init__()
 
-        self.layer = layer
-        self.layer.events.selected_label.connect(
-            self._on_selected_label_change
-        )
-        self.layer.events.opacity.connect(self._on_opacity_change)
-        self.layer.events.colormap.connect(self._on_colormap_change)
-
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
-
-        self._height = 24
+        self._height = size
         self.setFixedWidth(self._height)
         self.setFixedHeight(self._height)
         self.setToolTip(trans._('Selected label color'))
 
-        self.color = None
+        self._color = None
 
-    def _on_selected_label_change(self):
-        """Receive layer model label selection change event & update colorbox."""
-        self.update()
-
-    def _on_opacity_change(self):
-        """Receive layer model label selection change event & update colorbox."""
-        self.update()
-
-    def _on_colormap_change(self):
-        """Receive label colormap change event & update colorbox."""
+    def set_color(self, color):
+        self._color = color
         self.update()
 
     def paintEvent(self, event):
@@ -594,31 +728,22 @@ class QtColorBox(QWidget):
             Event from the Qt context.
         """
         painter = QPainter(self)
-        if self.layer._selected_color is None:
-            self.color = None
-            for i in range(self._height // 4):
-                for j in range(self._height // 4):
-                    if (i % 2 == 0 and j % 2 == 0) or (
-                        i % 2 == 1 and j % 2 == 1
-                    ):
-                        painter.setPen(QColor(230, 230, 230))
-                        painter.setBrush(QColor(230, 230, 230))
-                    else:
-                        painter.setPen(QColor(25, 25, 25))
-                        painter.setBrush(QColor(25, 25, 25))
-                    painter.drawRect(i * 4, j * 4, 5, 5)
+        if self._color is None:
+            paint_checkerboard(painter, self._height)
         else:
-            color = np.round(255 * self.layer._selected_color).astype(int)
+            color = np.round(255 * self._color).astype(int)
             painter.setPen(QColor(*list(color)))
             painter.setBrush(QColor(*list(color)))
             painter.drawRect(0, 0, self._height, self._height)
-            self.color = tuple(color)
 
-    def deleteLater(self):
-        disconnect_events(self.layer.events, self)
-        super().deleteLater()
 
-    def closeEvent(self, event):
-        """Disconnect events when widget is closing."""
-        disconnect_events(self.layer.events, self)
-        super().closeEvent(event)
+def paint_checkerboard(painter: QPainter, height: int) -> None:
+    for i in range(height // 4):
+        for j in range(height // 4):
+            if (i % 2 == 0 and j % 2 == 0) or (i % 2 == 1 and j % 2 == 1):
+                painter.setPen(QColor(230, 230, 230))
+                painter.setBrush(QColor(230, 230, 230))
+            else:
+                painter.setPen(QColor(25, 25, 25))
+                painter.setBrush(QColor(25, 25, 25))
+            painter.drawRect(i * 4, j * 4, 5, 5)
