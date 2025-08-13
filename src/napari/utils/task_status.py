@@ -3,7 +3,7 @@ import uuid
 from enum import auto
 from typing import Optional
 
-from napari.utils.misc import Callable, StringEnum, Tuple
+from napari.utils.misc import Callable, StringEnum
 
 
 class Status(StringEnum):
@@ -20,8 +20,8 @@ class TaskStatusItem:
         status: Status,
         description: str,
         cancel_callback: Optional[Callable] = None,
-    ):
-        self._id = uuid.uuid4()
+    ) -> None:
+        self.id: uuid.UUID = uuid.uuid4()
         self._provider = provider
         self._timestamp = [self._timestap()]
         self._status = [status]
@@ -32,9 +32,9 @@ class TaskStatusItem:
         return datetime.datetime.now().isoformat()
 
     def __str__(self) -> str:
-        return f'TaskStatusItem: ({self._provider}, {self._id}, {self._timestamp[-1]}, {self._status[-1]}, {self._description[-1]})'
+        return f'TaskStatusItem: ({self._provider}, {self.id}, {self._timestamp[-1]}, {self._status[-1]}, {self._description[-1]})'
 
-    def update(self, status: Status, description: str):
+    def update(self, status: Status, description: str) -> None:
         self._timestamp.append(self._timestap())
         self._status.append(status)
         self._description.append(description)
@@ -44,7 +44,7 @@ class TaskStatusItem:
             return self._cancel_callback()
         return False
 
-    def state(self) -> Tuple[str, Status, str]:
+    def state(self) -> tuple[str, str, Status, str]:
         return (
             self._provider,
             self._timestamp[-1],
@@ -66,7 +66,7 @@ class TaskStatusManager:
     _tasks: dict[uuid.UUID, TaskStatusItem]
 
     def __init__(self) -> None:
-        self._tasks: dict[uuid.UIID, TaskStatusItem] = {}
+        self._tasks: dict[uuid.UUID, TaskStatusItem] = {}
 
     def register_task_status(
         self,
@@ -85,7 +85,7 @@ class TaskStatusManager:
         self,
         status_id: uuid.UUID,
         task_status: Status,
-        description: Optional[str] = None,
+        description: str = '',
     ) -> bool:
         if status_id in self._tasks:
             item = self._tasks[status_id]
@@ -131,7 +131,7 @@ def register_task_status(
 def update_task_status(
     task_status_id: uuid.UUID,
     status: Status,
-    description: Optional[str] = None,
+    description: str = '',
 ) -> bool:
     """
     Update a long running task.
