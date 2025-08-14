@@ -13,7 +13,7 @@ import tifffile
 import zarr
 
 from napari_builtins.io._read import (
-    _github_and_gitlab_to_raw_url,
+    _git_provider_url_to_raw_url,
     _guess_layer_type_from_column_names,
     _guess_zarr_path,
     csv_to_layer_data,
@@ -360,4 +360,4 @@ def test_add_many_zarr_1d_array_is_ignored(tmp_path):
     ],
 )
 def test_github_and_gitlab_to_raw_url(url, expected):
-    assert _github_and_gitlab_to_raw_url(url) == expected
+    assert _git_provider_url_to_raw_url(url) == expected
