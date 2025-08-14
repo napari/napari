@@ -21,15 +21,15 @@ babel==2.17.0
     #   sphinx
 bermuda==0.1.5
     # via napari (pyproject.toml)
-build==1.2.2.post1
+build==1.3.0
     # via npe2
 cachey==0.2.1
     # via napari (pyproject.toml)
-certifi==2025.7.14
+certifi==2025.8.3
     # via
     #   napari (pyproject.toml)
     #   requests
-charset-normalizer==3.4.2
+charset-normalizer==3.4.3
     # via requests
 click==8.2.1
     # via
@@ -42,11 +42,11 @@ cloudpickle==3.1.1
     #   distributed
 colorspacious==1.1.2
     # via glasbey
-comm==0.2.2
+comm==0.2.3
     # via ipykernel
-contourpy==1.3.2
+contourpy==1.3.3
     # via matplotlib
-coverage==7.9.2
+coverage==7.10.3
     # via napari (pyproject.toml)
 crc32c==2.7.1
     # via numcodecs
@@ -56,7 +56,7 @@ dask==2025.7.0
     # via
     #   napari (pyproject.toml)
     #   distributed
-debugpy==1.8.15
+debugpy==1.8.16
     # via ipykernel
 decorator==5.2.1
     # via ipython
@@ -93,7 +93,7 @@ fsspec==2025.7.0
     #   torch
 glasbey==0.3.0
     # via napari (pyproject.toml)
-h5netcdf==1.6.3
+h5netcdf==1.6.4
     # via napari (pyproject.toml)
 h5py==3.14.0
     # via h5netcdf
@@ -101,7 +101,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.136.1
+hypothesis==6.138.0
     # via napari (pyproject.toml)
 idna==3.10
     # via requests
@@ -116,7 +116,7 @@ in-n-out==0.2.1
     # via app-model
 iniconfig==2.1.0
     # via pytest
-ipykernel==6.29.5
+ipykernel==6.30.1
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari-console
@@ -152,7 +152,7 @@ jupyter-core==5.8.1
     #   ipykernel
     #   jupyter-client
     #   qtconsole
-kiwisolver==1.4.8
+kiwisolver==1.4.9
     # via
     #   matplotlib
     #   vispy
@@ -175,11 +175,11 @@ lxml-html-clean==0.4.2
     # via lxml
 magicgui==0.10.1
     # via napari (pyproject.toml)
-markdown-it-py==3.0.0
+markdown-it-py==4.0.0
     # via rich
 markupsafe==3.0.2
     # via jinja2
-matplotlib==3.10.3
+matplotlib==3.10.5
     # via
     #   napari (pyproject.toml)
     #   glasbey
@@ -191,7 +191,7 @@ mdurl==0.1.2
     # via markdown-it-py
 meshio==5.3.5
     # via napari (pyproject.toml)
-ml-dtypes==0.5.1
+ml-dtypes==0.5.3
     # via tensorstore
 mouseinfo==0.1.3
     # via pyautogui
@@ -257,42 +257,42 @@ numpy==2.2.6
     #   zarr
 numpydoc==1.9.0
     # via napari (pyproject.toml)
-nvidia-cublas-cu12==12.6.4.1
+nvidia-cublas-cu12==12.8.4.1
     # via
     #   nvidia-cudnn-cu12
     #   nvidia-cusolver-cu12
     #   torch
-nvidia-cuda-cupti-cu12==12.6.80
+nvidia-cuda-cupti-cu12==12.8.90
     # via torch
-nvidia-cuda-nvrtc-cu12==12.6.77
+nvidia-cuda-nvrtc-cu12==12.8.93
     # via torch
-nvidia-cuda-runtime-cu12==12.6.77
+nvidia-cuda-runtime-cu12==12.8.90
     # via torch
-nvidia-cudnn-cu12==9.5.1.17
+nvidia-cudnn-cu12==9.10.2.21
     # via torch
-nvidia-cufft-cu12==11.3.0.4
+nvidia-cufft-cu12==11.3.3.83
     # via torch
-nvidia-cufile-cu12==1.11.1.6
+nvidia-cufile-cu12==1.13.1.3
     # via torch
-nvidia-curand-cu12==10.3.7.77
+nvidia-curand-cu12==10.3.9.90
     # via torch
-nvidia-cusolver-cu12==11.7.1.2
+nvidia-cusolver-cu12==11.7.3.90
     # via torch
-nvidia-cusparse-cu12==12.5.4.2
+nvidia-cusparse-cu12==12.5.8.93
     # via
     #   nvidia-cusolver-cu12
     #   torch
-nvidia-cusparselt-cu12==0.6.3
+nvidia-cusparselt-cu12==0.7.1
     # via torch
-nvidia-nccl-cu12==2.26.2
+nvidia-nccl-cu12==2.27.3
     # via torch
-nvidia-nvjitlink-cu12==12.6.85
+nvidia-nvjitlink-cu12==12.8.93
     # via
     #   nvidia-cufft-cu12
     #   nvidia-cusolver-cu12
     #   nvidia-cusparse-cu12
     #   torch
-nvidia-nvtx-cu12==12.6.77
+nvidia-nvtx-cu12==12.8.90
     # via torch
 packaging==25.0
     # via
@@ -308,6 +308,7 @@ packaging==25.0
     #   nilearn
     #   pooch
     #   pytest
+    #   pytest-rerunfailures
     #   qtconsole
     #   qtpy
     #   scikit-image
@@ -334,7 +335,7 @@ pillow==11.3.0
     #   scikit-image
 pint==0.24.4
     # via napari (pyproject.toml)
-pip==25.1.1
+pip==25.2
     # via napari-plugin-manager
 platformdirs==4.3.8
     # via
@@ -360,7 +361,7 @@ psutil==7.0.0
     #   napari (pyproject.toml)
     #   distributed
     #   ipykernel
-psygnal==0.14.0
+psygnal==0.14.1
     # via
     #   napari (pyproject.toml)
     #   app-model
@@ -434,6 +435,7 @@ pytest==8.4.1
     #   pytest-metadata
     #   pytest-pretty
     #   pytest-qt
+    #   pytest-rerunfailures
 pytest-json-report==1.5.0
     # via -r resources/constraints/version_denylist.txt
 pytest-metadata==3.1.1
@@ -441,6 +443,8 @@ pytest-metadata==3.1.1
 pytest-pretty==1.3.0
     # via napari (pyproject.toml)
 pytest-qt==4.5.0
+    # via napari (pyproject.toml)
+pytest-rerunfailures==15.1
     # via napari (pyproject.toml)
 python-dateutil==2.9.0.post0
     # via
@@ -462,7 +466,7 @@ pyyaml==6.0.2
     #   distributed
     #   donfig
     #   npe2
-pyzmq==27.0.0
+pyzmq==27.0.1
     # via
     #   ipykernel
     #   jupyter-client
@@ -488,7 +492,7 @@ requests==2.32.4
     #   pooch
     #   pyconify
     #   sphinx
-rich==14.0.0
+rich==14.1.0
     # via
     #   napari (pyproject.toml)
     #   meshio
@@ -497,7 +501,7 @@ rich==14.0.0
     #   typer
 roman-numerals-py==3.1.0
     # via sphinx
-rpds-py==0.26.0
+rpds-py==0.27.0
     # via
     #   jsonschema
     #   referencing
@@ -507,7 +511,7 @@ scikit-learn==1.7.1
     # via
     #   glasbey
     #   nilearn
-scipy==1.16.0
+scipy==1.16.1
     # via
     #   napari (pyproject.toml)
     #   nilearn
@@ -548,7 +552,7 @@ sphinxcontrib-serializinghtml==2.0.0
     # via sphinx
 stack-data==0.6.3
     # via ipython
-superqt==0.7.5
+superqt==0.7.6
     # via
     #   napari (pyproject.toml)
     #   magicgui
@@ -575,9 +579,9 @@ toolz==1.0.0
     #   dask
     #   distributed
     #   partd
-torch==2.7.1
+torch==2.8.0
     # via napari (pyproject.toml)
-tornado==6.5.1
+tornado==6.5.2
     # via
     #   distributed
     #   ipykernel
@@ -586,7 +590,6 @@ tqdm==4.67.1
     # via napari (pyproject.toml)
 traitlets==5.14.3
     # via
-    #   comm
     #   ipykernel
     #   ipython
     #   jupyter-client
@@ -595,7 +598,7 @@ traitlets==5.14.3
     #   qtconsole
 triangle==20250106
     # via napari (pyproject.toml)
-triton==3.3.1
+triton==3.4.0
     # via torch
 typer==0.16.0
     # via npe2
@@ -624,7 +627,7 @@ urllib3==2.5.0
     # via
     #   distributed
     #   requests
-virtualenv==20.32.0
+virtualenv==20.33.1
     # via napari (pyproject.toml)
 vispy==0.15.2
     # via
@@ -632,13 +635,13 @@ vispy==0.15.2
     #   napari-svg
 wcwidth==0.2.13
     # via prompt-toolkit
-wrapt==1.17.2
+wrapt==1.17.3
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
 xarray==2025.7.1
     # via napari (pyproject.toml)
-zarr==3.1.0
+zarr==3.1.1
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
