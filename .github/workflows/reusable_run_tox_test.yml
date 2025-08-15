@@ -94,14 +94,8 @@ jobs:
         run: Set-DisplayResolution -Width 1920 -Height 1080 -Force
         shell: powershell
 
-      # strategy borrowed from vispy for installing opengl libs on windows
       - name: Install Windows OpenGL
-        if: runner.os == 'Windows'
-        run: |
-          git clone --depth 1 https://github.com/pyvista/gl-ci-helpers.git
-          powershell gl-ci-helpers/appveyor/install_opengl.ps1
-          if (Test-Path -Path "C:\Windows\system32\opengl32.dll" -PathType Leaf) {Exit 0} else {Exit 1}
-        shell: powershell
+        uses: pyvista/setup-headless-display-action@v4.2
 
       - name: Disable ptrace security restrictions
         if: runner.os == 'Linux'
