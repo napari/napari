@@ -58,6 +58,8 @@ jobs:
         uses: pyvista/setup-headless-display-action@7d84ae825e6d9297a8e99bdbbae20d1b919a0b19 # v4.2
         with:
           qt: true
+          wm: herbstluftwm
+
 
       - name: Install dependencies
         run: |
@@ -70,9 +72,7 @@ jobs:
           attempt_limit: 2
           attempt_delay: 30000 # 30s
           retry_condition: github.ref_name == 'main'  # avoid restart in PR
-          action: aganders3/headless-gui@v2
-          with: |
-            run: python -m tox -v --pre  --recreate
+          command: python -m tox -v --pre  --recreate
         env:
           PLATFORM: ${{ matrix.platform }}
           BACKEND: ${{ matrix.backend }}

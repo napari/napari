@@ -96,6 +96,7 @@ jobs:
         uses: pyvista/setup-headless-display-action@7d84ae825e6d9297a8e99bdbbae20d1b919a0b19 # v4.2
         with:
           qt: true
+          wm: herbstluftwm
 
       - name: Disable ptrace security restrictions
         if: runner.os == 'Linux'
@@ -138,53 +139,45 @@ jobs:
 
       - name: Test with tox main
         timeout-minutes: ${{ inputs.timeout }}
-        uses: aganders3/headless-gui@f85dd6316993505dfc5f21839d520ae440c84816 # v2.2
-        with:
-          shell: bash
-          run: |
-            echo ${{ env.MAIN }}
-            tox --version
-            python -m tox run --installpkg ${{ env.WHEEL_PATH }} -- --basetemp=.pytest_tmp
-            rm -r .tox
+        shell: bash
+        run: |
+          echo ${{ env.MAIN }}
+          tox --version
+          python -m tox run --installpkg ${{ env.WHEEL_PATH }} -- --basetemp=.pytest_tmp
+          rm -r .tox
         env:
           BACKEND: ${{ env.MAIN }}
           TOX_WORK_DIR: .tox
 
       - name: Test with tox second
         timeout-minutes: ${{ inputs.timeout }}
-        uses: aganders3/headless-gui@f85dd6316993505dfc5f21839d520ae440c84816 # v2.2
         if : ${{ env.SECOND != 'none' }}
-        with:
-          shell: bash
-          run: |
-            python -m tox run --installpkg ${{ env.WHEEL_PATH }} -- --basetemp=.pytest_tmp
-            rm -r .tox
+        shell: bash
+        run: |
+          python -m tox run --installpkg ${{ env.WHEEL_PATH }} -- --basetemp=.pytest_tmp
+          rm -r .tox
         env:
           BACKEND: ${{ env.SECOND }}
           NAPARI_TEST_SUBSET: qt
 
       - name: Test with tox third
         timeout-minutes: ${{ inputs.timeout }}
-        uses: aganders3/headless-gui@f85dd6316993505dfc5f21839d520ae440c84816 # v2.2
         if : ${{ env.THIRD != 'none' }}
-        with:
-          shell: bash
-          run: |
-            python -m tox run --installpkg ${{ env.WHEEL_PATH }} -- --basetemp=.pytest_tmp
-            rm -r .tox
+        shell: bash
+        run: |
+          python -m tox run --installpkg ${{ env.WHEEL_PATH }} -- --basetemp=.pytest_tmp
+          rm -r .tox
         env:
           BACKEND: ${{ env.THIRD }}
           NAPARI_TEST_SUBSET: qt
 
       - name: Test with tox fourth
         timeout-minutes: ${{ inputs.timeout }}
-        uses: aganders3/headless-gui@f85dd6316993505dfc5f21839d520ae440c84816 # v2.2
         if: ${{ env.FOURTH != 'none' }}
-        with:
-          shell: bash
-          run: |
-            python -m tox run --installpkg ${{ env.WHEEL_PATH }} -- --basetemp=.pytest_tmp
-            rm -r .tox
+        shell: bash
+        run: |
+          python -m tox run --installpkg ${{ env.WHEEL_PATH }} -- --basetemp=.pytest_tmp
+          rm -r .tox
         env:
           BACKEND: ${{ env.FOURTH }}
           NAPARI_TEST_SUBSET: qt

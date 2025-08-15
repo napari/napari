@@ -24,6 +24,7 @@ jobs:
         uses: pyvista/setup-headless-display-action@7d84ae825e6d9297a8e99bdbbae20d1b919a0b19 # v4.2
         with:
           qt: true
+          wm: herbstluftwm
 
       - name: Build wheel
         run: |
@@ -50,11 +51,9 @@ jobs:
           pip uninstall -y numba
 
       - name: Test
-        uses: aganders3/headless-gui@f85dd6316993505dfc5f21839d520ae440c84816 # v2.2
-        with:
-          run: |
-            python -m pytest --pyargs napari --color=yes --basetemp=.pytest_tmp --config-file=napari-from-github/pyproject.toml
-            python -m pytest --pyargs napari_builtins --color=yes --basetemp=.pytest_tmp --config-file=napari-from-github/pyproject.toml
+        run: |
+          python -m pytest --pyargs napari --color=yes --basetemp=.pytest_tmp --config-file=napari-from-github/pyproject.toml
+          python -m pytest --pyargs napari_builtins --color=yes --basetemp=.pytest_tmp --config-file=napari-from-github/pyproject.toml
 
       - name: Upload test artifacts
         if: failure()
