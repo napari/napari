@@ -54,7 +54,7 @@ jobs:
         run: Set-DisplayResolution -Width 1920 -Height 1080 -Force
         shell: powershell
 
-      - name: Install Windows OpenGL
+      - name: Setup headless display
         uses: pyvista/setup-headless-display-action@7d84ae825e6d9297a8e99bdbbae20d1b919a0b19 # v4.2
         with:
           qt: true
