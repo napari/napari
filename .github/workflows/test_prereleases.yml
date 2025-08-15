@@ -45,8 +45,6 @@ jobs:
           python-version: ${{ matrix.python }}
           cache-dependency-path: pyproject.toml
 
-      - uses: tlambert03/setup-qt-libs@19e4ef2d781d81f5f067182e228b54ec90d23b76 # v1.8
-
       - name: Setup Graphviz
         uses: ts-graphviz/setup-graphviz@b1de5da23ed0a6d14e0aeee8ed52fdd87af2363c # v2.0.2
         continue-on-error: true
@@ -57,7 +55,7 @@ jobs:
         shell: powershell
 
       - name: Install Windows OpenGL
-        uses: pyvista/setup-headless-display-action@v4.2
+        uses: pyvista/setup-headless-display-action@7d84ae825e6d9297a8e99bdbbae20d1b919a0b19 # v4.2
 
       - name: Install dependencies
         run: |
