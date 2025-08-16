@@ -7,10 +7,12 @@ from contextlib import contextmanager, suppress
 from glob import glob
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional, Union
+from urllib.parse import urlparse
 
 import dask.array as da
 import imageio.v3 as iio
 import numpy as np
+import requests
 from dask import delayed
 
 from napari.utils.misc import abspath_or_url
@@ -43,6 +45,50 @@ def _is_url(filename):
     Originally vendored from scikit-image/skimage/io/util.py
     """
     return isinstance(filename, str) and URL_REGEX.match(filename) is not None
+
+
+def _git_provider_url_to_raw_url(filename: str) -> str:
+    """Convert a git provider's URL to a raw file URL.
+
+    A git provider could be GitHub URL, GitHub Gist URL, or GitLab URL.
+    Parameters
+    ----------
+    filename : str
+        The git provider URL to convert.
+    Returns
+    -------
+    str
+        The raw file URL.
+    """
+    parsed_url = urlparse(filename)
+    # For a GitLab file URL that contains `blob/` replace with `raw`
+    if 'gitlab' in parsed_url.netloc:
+        return filename.replace('blob/', 'raw/')
+    # For GitHub gists, we need to substitute `githubusercontent` and
+    # append `/raw` to get the raw content
+    if parsed_url.netloc == 'gist.github.com':
+        base_url = filename.replace(
+            'gist.github.com', 'gist.githubusercontent.com'
+        )
+        if not base_url.endswith('/raw'):
+            if '#' in base_url:
+                # Split at fragment and add /raw before it
+                parts = base_url.split('#')
+                base_url = f'{parts[0]}/raw' + (
+                    f'#{parts[1]}' if len(parts) > 1 else ''
+                )
+            else:
+                base_url += '/raw'
+        return base_url
+
+    # For GitHub repository URLs, substitute `raw.githubusercontent.com` and `r'/refs/heads/'`
+    if parsed_url.netloc == 'github.com':
+        return filename.replace(
+            'github.com', 'raw.githubusercontent.com'
+        ).replace('/blob/', r'/refs/heads/')
+
+    # Return filename if no match is found for a git provider
+    return filename
 
 
 def imread(filename: str) -> np.ndarray:
@@ -531,9 +577,48 @@ def _patch_viewer_new():
         Viewer.__init__ = original_init
 
 
+@contextmanager
+def _patch_napari_run():
+    """Context manager to patch napari.run to always be a no-op.
+
+    napari.run() executes the Qt event loop, *except* when napari
+    is running in IPython and therefore IPython's Qt integration
+    already has the event loop.
+
+    When running a script by dragging-and-dropping onto a
+    running napari Viewer, we already have an event loop, so we
+    should not start a new nested loop, even though we are not
+    in IPython.
+
+    This context manager temporarily patches the IPython check
+    to always return True, causing a fast exit from napari.run()
+    without a new event loop.
+    """
+    from napari._qt import qt_event_loop
+
+    original_ipython_check = qt_event_loop._ipython_has_eventloop
+
+    def patched_ipython_check() -> bool:
+        """A patched ipython_check that always returns True.
+
+        napari's script running from drag-and-dropping a script
+        into a viewer uses this patch to prevent nested event loops.
+        """
+        return True
+
+    qt_event_loop._ipython_has_eventloop = patched_ipython_check
+    try:
+        yield
+    finally:
+        qt_event_loop._ipython_has_eventloop = original_ipython_check
+
+
 def filter_variables(variables: dict[str, Any]) -> dict[str, Any]:
     res = variables.copy()
     res.pop('viewer', None)
+    res.pop(
+        '__name__', None
+    )  # Remove the __name__ variable to not affect the console
     return res
 
 
@@ -552,23 +637,41 @@ def _add_dropped_scripts_to_console(
         console.push(variables)
 
 
-def load_and_execute_python_code(path: str) -> list['LayerData']:
+def load_and_execute_python_code(script_path: str) -> list['LayerData']:
     """Load and execute Python code from a file.
 
     Parameters
     ----------
-    path : str
+    script_path : str
         Path to the Python file to be executed.
     """
     from napari.viewer import current_viewer
 
-    code = Path(path).read_text()
-    with _patch_viewer_new():
+    if _is_url(script_path):
+        # download the script from the URL
+
+        response = requests.get(_git_provider_url_to_raw_url(script_path))
+        response.raise_for_status()
+        code = response.text
+    else:
+        code = Path(script_path).read_text()
+    with _patch_viewer_new(), _patch_napari_run():
         try:
             viewer = current_viewer()
-            exec(code, _DROPPED_SCRIPTS_NAMESPACE.setdefault(path, {}))
+            script_namespace = _DROPPED_SCRIPTS_NAMESPACE.setdefault(
+                script_path, {}
+            )
+            # The `__name__` variable is storing the name of the module.
+            # If a module is imported, it is set to the module name.
+            # If a module is executed with `python -m ...` or
+            # `python script.py` it is set to '__main__'.
+            # If code is executed with `exec(code, namespace)` it is set to `builtins` if
+            # `__name__` is not set in the namespace.
+            # So ww set it to `__main__` to execute `if __name__ == '__main__':` blocks
+            script_namespace['__name__'] = '__main__'
+            exec(code, script_namespace)
             _add_dropped_scripts_to_console(
-                _DROPPED_SCRIPTS_NAMESPACE[path], viewer
+                _DROPPED_SCRIPTS_NAMESPACE[script_path], viewer
             )
         except BaseException as e:  # noqa: BLE001
             notification_manager.receive_error(type(e), e, e.__traceback__)
@@ -591,7 +694,7 @@ def napari_get_py_reader(path: str) -> 'ReaderFunction | None':
     callable
         A function that executes the Python code in the specified file.
     """
-    if not os.path.exists(path):
+    if not os.path.exists(path) and not _is_url(path):
         return None
     if os.path.splitext(path)[1] != '.py':
         return None

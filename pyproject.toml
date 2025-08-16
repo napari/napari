@@ -149,7 +149,8 @@ testing = [
     "docstring_parser>=0.15",
     "pretend>=1.0.9",
     "pyautogui>=0.9.54",
-    "pytest-qt>=4.3.1",
+    "pytest-qt >=4.4.0; python_version > '3.10'",
+    "pytest-qt ==4.4.0; python_version <= '3.10'",
     "pytest-pretty>=1.1.0",
     "pytest>=8.3.5",
     "pytest-rerunfailures>=15.1",
@@ -257,7 +258,7 @@ napari_builtins = [
 
 [tool.setuptools_scm]
 write_to = "src/napari/_version.py"
-fallback_version = "0.6.0.nogit"
+fallback_version = "0.6.4.dev0"
 
 [tool.check-manifest]
 ignore = [
