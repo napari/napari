@@ -7,10 +7,12 @@ from contextlib import contextmanager, suppress
 from glob import glob
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional, Union
+from urllib.parse import urlparse
 
 import dask.array as da
 import imageio.v3 as iio
 import numpy as np
+import requests
 from dask import delayed
 
 from napari.utils.misc import abspath_or_url
@@ -43,6 +45,50 @@ def _is_url(filename):
     Originally vendored from scikit-image/skimage/io/util.py
     """
     return isinstance(filename, str) and URL_REGEX.match(filename) is not None
+
+
+def _git_provider_url_to_raw_url(filename: str) -> str:
+    """Convert a git provider's URL to a raw file URL.
+
+    A git provider could be GitHub URL, GitHub Gist URL, or GitLab URL.
+    Parameters
+    ----------
+    filename : str
+        The git provider URL to convert.
+    Returns
+    -------
+    str
+        The raw file URL.
+    """
+    parsed_url = urlparse(filename)
+    # For a GitLab file URL that contains `blob/` replace with `raw`
+    if 'gitlab' in parsed_url.netloc:
+        return filename.replace('blob/', 'raw/')
+    # For GitHub gists, we need to substitute `githubusercontent` and
+    # append `/raw` to get the raw content
+    if parsed_url.netloc == 'gist.github.com':
+        base_url = filename.replace(
+            'gist.github.com', 'gist.githubusercontent.com'
+        )
+        if not base_url.endswith('/raw'):
+            if '#' in base_url:
+                # Split at fragment and add /raw before it
+                parts = base_url.split('#')
+                base_url = f'{parts[0]}/raw' + (
+                    f'#{parts[1]}' if len(parts) > 1 else ''
+                )
+            else:
+                base_url += '/raw'
+        return base_url
+
+    # For GitHub repository URLs, substitute `raw.githubusercontent.com` and `r'/refs/heads/'`
+    if parsed_url.netloc == 'github.com':
+        return filename.replace(
+            'github.com', 'raw.githubusercontent.com'
+        ).replace('/blob/', r'/refs/heads/')
+
+    # Return filename if no match is found for a git provider
+    return filename
 
 
 def imread(filename: str) -> np.ndarray:
@@ -599,7 +645,14 @@ def load_and_execute_python_code(script_path: str) -> list['LayerData']:
     script_path : str
         Path to the Python file to be executed.
     """
-    script_path = Path(script_path)
+    if _is_url(script_path):
+        # download the script from the URL
+
+        response = requests.get(_git_provider_url_to_raw_url(script_path))
+        response.raise_for_status()
+        code = response.text
+    else:
+        code = Path(script_path).read_text()
     code = script_path.read_text()
     execute_python_code(code, script_path)
     return [(None,)]
@@ -658,7 +711,7 @@ def napari_get_py_reader(path: str) -> 'ReaderFunction | None':
     callable
         A function that executes the Python code in the specified file.
     """
-    if not os.path.exists(path):
+    if not os.path.exists(path) and not _is_url(path):
         return None
     if os.path.splitext(path)[1] != '.py':
         return None

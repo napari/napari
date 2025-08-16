@@ -38,12 +38,17 @@ from napari.layers.labels._labels_mouse_bindings import (
 from napari.layers.labels._labels_utils import (
     expand_slice,
     get_contours,
+    get_dtype,
     indices_in_shape,
     interpolate_coordinates,
     sphere_indices,
 )
 from napari.layers.utils.layer_utils import _FeatureTable
-from napari.utils._dtype import normalize_dtype, vispy_texture_dtype
+from napari.utils._dtype import (
+    get_dtype_limits,
+    normalize_dtype,
+    vispy_texture_dtype,
+)
 from napari.utils._indexing import elements_in_slice, index_in_slice
 from napari.utils.colormaps import (
     direct_colormap,
@@ -719,6 +724,15 @@ class Labels(ScalarFieldBase):
             return
         # when setting the label to the background, store the previous
         # otherwise, clear it
+        layer_dtype = get_dtype(self)
+        dtype_lims = get_dtype_limits(layer_dtype)
+        if dtype_lims[0] > selected_label or dtype_lims[1] < selected_label:
+            raise WrongSelectedLabelError(
+                dtype=layer_dtype,
+                value=selected_label,
+                lower_bound=dtype_lims[0],
+                upper_bound=dtype_lims[1],
+            )
         if selected_label == self.colormap.background_value:
             self._prev_selected_label = self.selected_label
         else:
@@ -1619,3 +1633,25 @@ def _coerce_indices_for_vectorization(array, indices: list) -> tuple:
         else:
             return tuple(xr.DataArray(i) for i in indices)
     return tuple(indices)
+
+
+class WrongSelectedLabelError(ValueError):
+    """Raised when the selected label is not in the data array."""
+
+    def __init__(
+        self,
+        dtype: np.dtype,
+        value: int,
+        lower_bound: float,
+        upper_bound: float,
+        message: str = '',
+    ):
+        self.dtype = dtype
+        self.value = value
+        self.lower_bound = lower_bound
+        self.upper_bound = upper_bound
+        text = f'The value {value} is out of bounds for dtype {dtype} that allow for range [{int(lower_bound)}, {int(upper_bound)}].'
+        if message:
+            text = f'{message} {text}'
+        self.text = text
+        super().__init__(text)
