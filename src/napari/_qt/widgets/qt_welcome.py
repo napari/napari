@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from qtpy.QtCore import QSize, Qt, Signal
+from itertools import cycle
+from random import sample
+
+from qtpy.QtCore import QSize, Qt, QTimer, Signal
 from qtpy.QtGui import QKeySequence, QPainter
 from qtpy.QtWidgets import (
     QFormLayout,
@@ -16,6 +19,13 @@ from napari import __version__
 from napari.utils.action_manager import action_manager
 from napari.utils.interactions import Shortcut
 from napari.utils.translations import trans
+
+# TODO: make them respect settings?
+TIPS = [
+    'You can take a screenshot and copy it to your clipboard by pressing alt+C',
+    'You can change most shortcuts from the File->Preferences->Shortcuts menu',
+    'You can right click many components of the graphical interface to access advanced controls',
+]
 
 
 class QtWelcomeLabel(QLabel):
@@ -46,6 +56,12 @@ class QtWelcomeWidget(QWidget):
                 'Drag image(s) here to open\nor\nUse the menu shortcuts below:'
             )
         )
+        self._tip = QLabel()
+        self._tips = cycle(sample(TIPS, len(TIPS)))
+        self._tip_timer = QTimer()
+        self._tip_timer.setInterval(10000)
+        self._tip_timer.timeout.connect(self._next_tip)
+        self._next_tip()
 
         # Widget setup
         self.setAutoFillBackground(True)
@@ -53,6 +69,7 @@ class QtWelcomeWidget(QWidget):
         self._image.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._version_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._tip.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         # Layout
         text_layout = QVBoxLayout()
@@ -96,6 +113,7 @@ class QtWelcomeWidget(QWidget):
         layout.addWidget(self._image)
         layout.addLayout(text_layout)
         layout.addLayout(shortcut_layout)
+        layout.addWidget(self._tip)
         layout.addStretch()
 
         self.setLayout(layout)
@@ -192,6 +210,17 @@ class QtWelcomeWidget(QWidget):
             and self.parent().parent().parent() is not None
         ):
             self.parent().parent().parent().dropEvent(event)
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        self._tip_timer.start()
+
+    def hideEvent(self, event):
+        super().hideEvent(event)
+        self._tip_timer.stop()
+
+    def _next_tip(self, event=None):
+        self._tip.setText(f'Did You Know?\n{next(self._tips)}!')
 
 
 class QtWidgetOverlay(QStackedWidget):
