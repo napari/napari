@@ -217,7 +217,11 @@ jobs:
           python-version: 3.12
           cache-dependency-path: pyproject.toml
 
-      - uses: tlambert03/setup-qt-libs@19e4ef2d781d81f5f067182e228b54ec90d23b76 # v1.8
+      - name: Setup headless display
+        uses: pyvista/setup-headless-display-action@7d84ae825e6d9297a8e99bdbbae20d1b919a0b19 # v4.2
+        with:
+          qt: true
+          wm: herbstluftwm
 
       - uses: octokit/request-action@05a2312de9f8207044c4c9e41fe19703986acc13 # v2.x
         # here we get hash of the latest release commit to compare with PR
@@ -240,20 +244,16 @@ jobs:
         run: asv machine --yes
 
       - name: Run benchmarks PR
-        uses: aganders3/headless-gui@f85dd6316993505dfc5f21839d520ae440c84816 # v2.2
-        with:
-          run: |
-            asv run --show-stderr --quick  --attribute timeout=300 HEAD^!
+        run: |
+          asv run --show-stderr --quick  --attribute timeout=300 HEAD^!
         env:
           PR: 1 # prevents asv from running very compute-intensive benchmarks
           PIP_CONSTRAINT: ${{ github.workspace }}/resources/constraints/benchmark.txt
 
       - name: Run benchmarks latest release
         # here we check if the benchmark on the latest release is not broken
-        uses: aganders3/headless-gui@f85dd6316993505dfc5f21839d520ae440c84816 # v2.2
-        with:
-          run: |
-            asv run --show-stderr --quick  --attribute timeout=300  ${{ fromJSON(steps.latest_release.outputs.data).target_commitish }}^!
+        run: |
+          asv run --show-stderr --quick  --attribute timeout=300  ${{ fromJSON(steps.latest_release.outputs.data).target_commitish }}^!
         env:
           PR: 1  # prevents asv from running very compute-intensive benchmarks
           PIP_CONSTRAINT: ${{ github.workspace }}/resources/constraints/benchmark.txt
