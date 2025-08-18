@@ -95,14 +95,17 @@ class TaskStatusManager:
         return False
 
     def is_busy(self) -> bool:
-        return len(self._tasks) > 0
+        for task in self._tasks:
+            if task.state()[2] in [Status.PENDING, Status.BUSY]:
+                return True
+        return False
 
     def get_status(self) -> list[str]:
         messages = []
         for _, item in self._tasks.items():
             provider, ts, status, description = item.state()
             if status in [Status.PENDING, Status.BUSY]:
-                messages.append(f'{provider}: {ts} - {description}')
+                messages.append(f'{provider}: {description}')
 
         return messages
 

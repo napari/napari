@@ -625,6 +625,9 @@ class _QtMainWindow(QMainWindow):
             event.ignore()
             return
 
+        if task_status_manager.is_busy():
+            task_status_manager.cancel_all()
+
         self.status_thread.close_terminate()
         self.status_thread.wait()
 
