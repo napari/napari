@@ -95,8 +95,8 @@ class TaskStatusManager:
         return False
 
     def is_busy(self) -> bool:
-        for task in self._tasks:
-            if task.state()[2] in [Status.PENDING, Status.BUSY]:
+        for _, item in self._tasks.items():
+            if item.state()[2] in [Status.PENDING, Status.BUSY]:
                 return True
         return False
 
