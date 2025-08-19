@@ -106,10 +106,10 @@ class VispyPointsLayer(VispyBaseLayer):
                 )
             symbol = self.layer._view_symbol[self.layer._highlight_index]
         else:
-            data = np.zeros((1, self.layer._slice_input.ndisplay))
+            data = np.empty((0, self.layer._slice_input.ndisplay))
             size = 0
             symbol = ['o']
-            border_width = np.array([0])
+            border_width = np.empty(0)
 
         scale = self.layer.scale[-1]
         highlight_thickness = settings.appearance.highlight.highlight_thickness
