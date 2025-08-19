@@ -10,6 +10,7 @@ class Status(StringEnum):
     PENDING = auto()
     BUSY = auto()
     DONE = auto()
+    CANCELLED = auto()
     FAILED = auto()
 
 
@@ -40,6 +41,7 @@ class TaskStatusItem:
         self._description.append(description)
 
     def cancel(self) -> bool:
+        self.update(Status.CANCELLED, '')
         if self._cancel_callback is not None:
             return self._cancel_callback()
         return False
