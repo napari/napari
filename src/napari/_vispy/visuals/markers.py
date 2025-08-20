@@ -31,7 +31,7 @@ class Markers(BaseMarkers):
         if self._data is None:
             return None
         pos = self._data['a_position']
-        if pos is None:
+        if pos is None or pos.size == 0:
             return None
         if pos.shape[1] > axis:
             return (pos[:, axis].min(), pos[:, axis].max())
