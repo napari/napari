@@ -137,8 +137,11 @@ partsegcore = [
 all_optional = [
     "napari[optional,partsegcore]"
 ]
+
+
+[dependency-groups]
 testing = [
-    "napari[gallery]",
+    {include-group = "gallery"},
     "babel>=2.9.0",
     "fsspec>=2023.10.0",
     "hypothesis>=6.8.0",
@@ -179,7 +182,7 @@ gallery = [
 ]
 # needed to build docs
 docs = [
-    "napari[gallery]",
+    {include-group = "gallery"},
     "sphinx<8",
     "sphinx-autobuild",
     "sphinx-tabs",
@@ -218,11 +221,11 @@ dev = [
     "pydantic",
     "tox",
     "tox-min-req",
-    "napari[testing]",
+    {include-group = "testing"},
 ]
 build = [
     "ruff",
-    "pyqt5",
+    "pyqt6",
 ]
 
 [project.entry-points.pytest11]
