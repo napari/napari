@@ -31,7 +31,7 @@ jobs:
           name: Install napari-dev
           command: |
             . .venv/bin/activate
-            uv pip install -e "napari/[pyqt5]" --group docs
+            cd napari && uv pip install -e ".[pyqt5]" --group docs
           environment:
             UV_CONSTRAINT: napari/resources/constraints/constraints_py3.12_docs.txt
       - run:
