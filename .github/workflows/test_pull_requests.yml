@@ -112,8 +112,8 @@ jobs:
       fail-fast: false
       matrix:
         platform: [ ubuntu-latest ]
-        python: [ "3.11" ]
-        backend: [ "pyqt5,pyside6" ]
+        python: [ "3.13" ]
+        backend: [ "pyqt5,pyqt6" ]
         coverage: [ cov ]
         include:
           # Windows py310
@@ -131,7 +131,7 @@ jobs:
             coverage: no_cov
           - python: "3.13"
             platform: macos-latest
-            backend: pyqt5
+            backend: pyqt6
             coverage: no_cov
           # minimum specified requirements
           - python: "3.10"
@@ -141,7 +141,7 @@ jobs:
             coverage: cov
           - python: "3.12"
             platform: ubuntu-22.04
-            backend: pyqt5
+            backend: pyqt6
             coverage: cov
             tox_extras: "all_optional"
           # test without any Qt backends
@@ -149,6 +149,7 @@ jobs:
             platform: ubuntu-22.04
             backend: headless
             coverage: no_cov
+          # test with torch
           - python: "3.13"
             platform: ubuntu-latest
             backend: pyqt6
@@ -158,6 +159,11 @@ jobs:
           - python: "3.13"
             platform: ubuntu-latest
             backend: pyqt6_no_numba
+            coverage: cov
+          # pyside6 test
+          - python: "3.13"
+            platform: ubuntu-latest
+            backend: Pyside6
             coverage: cov
           # pyside2 test
           - python: "3.10"
