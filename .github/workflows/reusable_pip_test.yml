@@ -40,7 +40,8 @@ jobs:
 
       - name: Install napari from wheel
         run: |
-          pip install "${{ env.WHEEL_PATH }}[pyqt,testing]"
+          pip install "${{ env.WHEEL_PATH }}[pyqt]"
+          pip install --group napari-from-github/pyproject.toml:testing
         shell:
             bash
         env:
