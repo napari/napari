@@ -330,6 +330,9 @@ def make_napari_viewer(
         viewer = ViewerClass(*model_args, **model_kwargs)
         viewers.add(viewer)
 
+        if model_kwargs.get('show', False):
+            qtbot.wait_exposed(viewer.window._qt_window, timeout=5000)
+
         return viewer
 
     yield actual_factory
