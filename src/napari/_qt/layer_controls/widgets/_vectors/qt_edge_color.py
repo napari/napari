@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QComboBox, QWidget
 
@@ -52,13 +53,13 @@ class QtEdgeColorPropertyControl(QtWidgetControlsBase):
         self._layer.events.edge_color.connect(self._on_edge_color_change)
 
         # Setup widgets
-        # dropdown to select the property for mapping edge_color
-        color_properties = self._get_property_values()
+        # dropdown to select the feature for mapping edge_color
+        color_features = self._get_feature_values()
         self.color_prop_box = QComboBox(parent)
         self.color_prop_box.currentTextChanged.connect(
             self.change_edge_color_property
         )
-        self.color_prop_box.addItems(color_properties)
+        self.color_prop_box.addItems(color_features)
         self.edge_prop_label = QtWrappedLabel(trans._('edge property:'))
 
         # vector direct color mode adjustment and widget
@@ -155,21 +156,25 @@ class QtEdgeColorPropertyControl(QtWidgetControlsBase):
                 index = self.color_prop_box.findText(prop, Qt.MatchFixedString)
                 self.color_prop_box.setCurrentIndex(index)
 
-    def _get_property_values(self):
-        """Get the current property values from the Vectors layer
+    def _get_feature_values(self):
+        """Get the current feature values from the Vectors layer
 
         Returns
         -------
-        property_values : np.ndarray
-            array of all of the union of the property names (keys)
-            in Vectors.properties and Vectors.property_choices
+        feature_values : np.ndarray
+            array of all of the union of the property names (feature table columns)
+            in Vectors.features and Vectors.property_choices
 
         """
-        property_choices = [*self._layer.property_choices]
-        properties = [*self._layer.properties]
-        property_values = np.union1d(property_choices, properties)
+        feature_choices = [
+            choice
+            for choice, series in self._layer.features.items()
+            if isinstance(series.dtype, pd.CategoricalDtype)
+        ]
+        features = self._layer.features.columns.tolist()
+        feature_values = np.union1d(feature_choices, features)
 
-        return property_values
+        return feature_values
 
     def _update_edge_color_gui(self, mode: str):
         """Update the GUI element associated with edge_color.
