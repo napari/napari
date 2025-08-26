@@ -21,7 +21,11 @@ from qtpy.QtWidgets import (
 from superqt.sliders import QRangeSlider
 
 from napari._qt.layer_controls.qt_image_controls import QtImageControls
+from napari._qt.layer_controls.qt_image_controls_base import (
+    QtBaseImageControls,
+)
 from napari._qt.layer_controls.qt_labels_controls import QtLabelsControls
+from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
 from napari._qt.layer_controls.qt_layer_controls_container import (
     QtLayerControlsContainer,
     create_qt_layer_controls,
@@ -43,6 +47,10 @@ from napari.layers import (
     Surface,
     Tracks,
     Vectors,
+)
+from napari.utils._test_utils import (
+    validate_all_params_in_docstring,
+    validate_kwargs_sorted,
 )
 from napari.utils.colormaps import DirectLabelColormap
 from napari.utils.events.event import Event
@@ -157,6 +165,25 @@ def create_layer_controls(qtbot):
         return ctrl
 
     return _create_layer_controls
+
+
+@pytest.mark.parametrize(
+    'controls_class',
+    [
+        QtLayerControls,
+        QtBaseImageControls,
+        QtImageControls,
+        QtLabelsControls,
+        QtPointsControls,
+        QtShapesControls,
+        QtSurfaceControls,
+        QtTracksControls,
+        QtVectorsControls,
+    ],
+)
+def test_docstring(controls_class):
+    validate_all_params_in_docstring(controls_class)
+    validate_kwargs_sorted(controls_class)
 
 
 @pytest.mark.parametrize(
@@ -618,11 +645,11 @@ def test_text_set_visible_updates_checkbox(qtbot, layer_type_with_data):
     layer = layer_type_with_data.type(layer_type_with_data.data, text=text)
     ctrl = create_qt_layer_controls(layer)
     qtbot.addWidget(ctrl)
-    assert ctrl.textDispCheckBox.isChecked()
+    assert ctrl._text_visibility_control.text_disp_checkbox.isChecked()
 
     layer.text.visible = False
 
-    assert not ctrl.textDispCheckBox.isChecked()
+    assert not ctrl._text_visibility_control.text_disp_checkbox.isChecked()
 
 
 @pytest.mark.parametrize('layer_type_with_data', [_POINTS, _SHAPES])
@@ -636,11 +663,11 @@ def test_set_text_then_set_visible_updates_checkbox(
         'string': {'constant': 'another_test'},
         'visible': False,
     }
-    assert not ctrl.textDispCheckBox.isChecked()
+    assert not ctrl._text_visibility_control.text_disp_checkbox.isChecked()
 
     layer.text.visible = True
 
-    assert ctrl.textDispCheckBox.isChecked()
+    assert ctrl._text_visibility_control.text_disp_checkbox.isChecked()
 
 
 @pytest.mark.parametrize(('ndim', 'editable_after'), [(2, False), (3, True)])
