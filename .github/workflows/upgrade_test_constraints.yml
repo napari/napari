@@ -102,12 +102,12 @@ jobs:
           echo "FULL_NAME=${{ github.repository }}" >> "$GITHUB_ENV"
           echo "BRANCH=${{ github.ref_name }}" >> "$GITHUB_ENV"
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
 
       - name: Clone target repo (remote)
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         if: github.event_name == 'issue_comment'
         with:
           path: napari_repo  # place in a named directory
@@ -117,13 +117,13 @@ jobs:
 
       - name: Clone target repo (pull request)
         # we need separate step as passing empty token to actions/checkout@v4 will not work
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         if: github.event_name == 'pull_request'
         with:
           path: napari_repo  # place in a named directory
 
       - name: Clone target repo (main)
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         if: github.event_name != 'issue_comment' && github.event_name != 'pull_request'
         with:
           path: napari_repo  # place in a named directory
@@ -139,7 +139,7 @@ jobs:
           git remote -v
 
       # START PYTHON DEPENDENCIES
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: "3.12"
           cache: pip
@@ -151,7 +151,7 @@ jobs:
           set -x
           pip install -U uv
           cd napari_repo
-          flags=(--quiet --extra pyqt6 --extra pyside2 --extra pyside6_experimental --extra testing --extra testing_extra --extra optional)
+          flags=(--quiet --extra pyqt6 --extra pyside2 --extra pyside6 --extra testing --extra testing_extra --extra optional)
 
           # Explanation of below commands
           # uv pip compile --python-version 3.9 - call uv pip compile but ensure proper interpreter
@@ -177,7 +177,7 @@ jobs:
       # END PYTHON DEPENDENCIES
 
       - name: Upload constraints
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: constraints
           path: |
