@@ -68,6 +68,12 @@ class TaskStatusManager:
     _tasks: dict[uuid.UUID, TaskStatusItem]
 
     def __init__(self) -> None:
+        # Note: we are using a dict here that may not be thread-safe; however
+        # given the that the values from it are added/updated using an UUID
+        # collision chances are low and it should be ok as long as operations
+        # that require its iteration (`is_busy`, `get_status`, `cancel_all`)
+        # are done when no task status additions are scheduled (i.e when
+        # closing the application).
         self._tasks: dict[uuid.UUID, TaskStatusItem] = {}
 
     def register_task_status(
