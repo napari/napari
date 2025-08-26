@@ -4,25 +4,37 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+import numpy as np
 import pandas as pd
 from qtpy.QtCore import (
     QAbstractTableModel,
     QItemSelection,
     QItemSelectionModel,
     QModelIndex,
+    QSize,
     QSortFilterProxyModel,
     Qt,
     QTimer,
 )
 from qtpy.QtGui import (
+    QColor,
     QGuiApplication,
+    QIcon,
     QKeySequence,
+    QPainter,
+    QPixmap,
 )
+from qtpy.QtSvg import QSvgRenderer
 from qtpy.QtWidgets import (
     QAbstractItemView,
     QComboBox,
+    QDialog,
+    QDialogButtonBox,
     QFileDialog,
+    QHBoxLayout,
     QLabel,
+    QLineEdit,
+    QMessageBox,
     QPushButton,
     QStyledItemDelegate,
     QTableView,
@@ -405,16 +417,36 @@ class FeaturesTable(QWidget):
 
         self.info = QLabel('')
         self.toggle = QToggleSwitch('editable.')
-        self.save = QPushButton('Save as CSV...')
+        self.add_column = CustomIconPushButton(
+            tooltip='Add Column',
+            icon_path='src/napari/resources/icons/add.svg',
+            icon_color='green',
+        )
+        self.delete_column = CustomIconPushButton(
+            tooltip='Delete Column',
+            icon_path='src/napari/resources/icons/delete.svg',
+            icon_color='red',
+        )
+        self.save = CustomIconPushButton(
+            tooltip='Save as CSV',
+            icon_path='src/napari/resources/icons/save.svg',
+            icon_color='blue',
+        )
         self.table = PandasView()
         self.layout().addWidget(self.info)
-        self.layout().addWidget(self.toggle)
-        self.layout().addWidget(self.save)
+        button_layout = QHBoxLayout()
+        button_layout.addWidget(self.toggle)
+        button_layout.addWidget(self.add_column)
+        button_layout.addWidget(self.delete_column)
+        button_layout.addWidget(self.save)
+        self.layout().addLayout(button_layout)
         self.layout().addWidget(self.table)
         self.layout().addStretch()
 
         self.toggle.toggled.connect(self._on_editable_change)
         self.save.clicked.connect(self._on_save_clicked)
+        self.delete_column.clicked.connect(self._delete_column)
+        self.add_column.clicked.connect(self._add_column)
 
         self.table.selectionModel().selectionChanged.connect(
             self._on_table_selection_changed
@@ -460,10 +492,14 @@ class FeaturesTable(QWidget):
             self.toggle.setVisible(True)
             self.save.setVisible(True)
             self.table.setVisible(True)
+            self.add_column.setVisible(True)
+            self.delete_column.setVisible(True)
         else:
             self.toggle.setVisible(False)
             self.save.setVisible(False)
             self.table.setVisible(False)
+            self.add_column.setVisible(False)
+            self.delete_column.setVisible(False)
 
         if self._active_layer is None:
             self.info.setText('No layer selected.')
@@ -541,6 +577,91 @@ class FeaturesTable(QWidget):
         self._selection_blocked = True
         yield
         self._selection_blocked = False
+
+    def _add_column(self):
+        model = self.table.model().sourceModel()
+        df = model.df.copy()
+
+        base_name = 'new_column'
+        col_name = base_name
+        i = 1
+        while col_name in df.columns:
+            col_name = f'{base_name}_{i}'
+            i += 1
+
+        dialog = AddColumnDialog(self, default_name=col_name)
+        if dialog.exec_() != QDialog.Accepted:
+            return
+
+        col_name, expr, dtype = dialog.get_values()
+        if not col_name:
+            return
+
+        try:
+            if expr.strip() == '' or expr.strip().lower() == 'none':
+                value = None
+            else:
+                value = pd.eval(
+                    expr, local_dict={'df': df, 'pd': pd, 'np': np}
+                )
+            df[col_name] = value
+            if value:
+                df[col_name] = df[col_name].astype(dtype)
+
+        except (ValueError, TypeError, KeyError, SyntaxError) as e:
+            QMessageBox.warning(
+                self,
+                'Invalid Expression or Dtype',
+                f"Could not add column '{col_name}':\n\nExpression: {expr}\nDtype: {dtype}\n\nError:\n{e}\n\nFalling back to None.",
+            )
+            df[col_name] = None
+
+        self._active_layer.features = df
+        model.replace_data(df)
+
+    def _delete_column(self):
+        model = self.table.model().sourceModel()
+        df = model.df
+
+        selection_model = self.table.selectionModel()
+        selected_indexes = selection_model.selectedIndexes()
+
+        if not selected_indexes:
+            QMessageBox.information(
+                self, 'No Column Selected', 'Please select a column to delete.'
+            )
+            return
+
+        selected_cols = sorted(
+            {idx.column() for idx in selected_indexes if idx.column() > 0}
+        )
+        if not selected_cols:
+            QMessageBox.warning(
+                self, 'Invalid Selection', 'Index column cannot be deleted.'
+            )
+            return
+
+        col_names = [df.columns[col - 1] for col in selected_cols]
+
+        msg = (
+            f'Are you sure you want to delete {len(col_names)} column(s)?\n'
+            + ', '.join(col_names)
+        )
+        reply = QMessageBox.question(
+            self,
+            'Delete Column',
+            msg,
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+        )
+
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+
+        self._active_layer.features = self._active_layer.features.drop(
+            columns=col_names
+        )
+
+        model.replace_data(self._active_layer.features)
 
     def _on_save_clicked(self):
         dlg = QFileDialog()
@@ -623,3 +744,90 @@ class FeaturesTable(QWidget):
         # Remove invalid characters
         suggested_name = selected_layer_name.translate(translation_table)
         return suggested_name
+
+
+class CustomIconPushButton(QPushButton):
+    def __init__(
+        self,
+        button_name: str = '',
+        tooltip: str = '',
+        icon_path: str = '',
+        icon_color: str = 'white',
+        slot=None,
+    ):
+        super().__init__(button_name)
+
+        tooltip = tooltip or button_name
+        self.setToolTip(tooltip)
+
+        if icon_path != '':
+            icon = self._colored_svg_icon(icon_path, QColor(icon_color))
+            self.setIcon(icon)
+
+        if slot is not None:
+            self.clicked.connect(slot)
+
+    def _colored_svg_icon(self, path: str, color: QColor) -> QIcon:
+        size = QSize(28, 28)
+
+        svg_renderer = QSvgRenderer(path)
+        base_pixmap = QPixmap(size)
+        base_pixmap.fill(Qt.transparent)
+
+        painter = QPainter(base_pixmap)
+        svg_renderer.render(painter)
+        painter.end()
+
+        tinted_pixmap = QPixmap(size)
+        tinted_pixmap.fill(Qt.transparent)
+
+        painter = QPainter(tinted_pixmap)
+        painter.drawPixmap(0, 0, base_pixmap)
+        painter.setCompositionMode(QPainter.CompositionMode_SourceIn)
+        painter.fillRect(tinted_pixmap.rect(), color)
+        painter.end()
+
+        return QIcon(tinted_pixmap)
+
+
+class AddColumnDialog(QDialog):
+    def __init__(self, parent=None, default_name='new_column'):
+        super().__init__(parent)
+        self.setWindowTitle('Add Column')
+
+        self.col_name_input = QLineEdit(default_name)
+        self.expr_input = QLineEdit('None')
+        self.dtype_input = QComboBox()
+        self.dtype_input.setEditable(True)
+        self.dtype_input.addItems(
+            ['int', 'float', 'str', 'bool', 'object', 'category']
+        )
+
+        self._buttons = QDialogButtonBox(
+            QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+        )
+        self._buttons.accepted.connect(self.accept)
+        self._buttons.rejected.connect(self.reject)
+
+        layout = QVBoxLayout()
+        layout.addWidget(QLabel('Column Name:'))
+        layout.addWidget(self.col_name_input)
+
+        layout.addWidget(QLabel('Column Expression:'))
+        layout.addWidget(self.expr_input)
+
+        layout.addWidget(QLabel('Column Dtype:'))
+        layout.addWidget(self.dtype_input)
+
+        layout.addWidget(self._buttons)
+        self.setLayout(layout)
+
+        self.resize(350, 150)
+
+    def get_values(self):
+        """Return a tuple: (column_name, expression, dtype)"""
+        return (
+            self.col_name_input.text().strip(),
+            self.expr_input.text().strip(),
+            self.dtype_input.currentText().strip(),
+        )
