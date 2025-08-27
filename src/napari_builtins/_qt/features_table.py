@@ -252,6 +252,10 @@ class BoolFriendlyProxyModel(QSortFilterProxyModel):
         left_data = self.sourceModel().data(left, Qt.ItemDataRole.EditRole)
         right_data = self.sourceModel().data(right, Qt.ItemDataRole.EditRole)
 
+        # Compare Index column (0) as integers
+        if left.column() == 0 and right.column() == 0:
+            return int(left_data) < int(right_data)
+
         # ensure booleans compare as expected. Not sure what happens internally in qt
         # that doesn't work, but doing it ourselves in python works.
         # One thing that breaks it are numpy bools
