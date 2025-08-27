@@ -45,8 +45,6 @@ jobs:
           python-version: ${{ matrix.python }}
           cache-dependency-path: pyproject.toml
 
-      - uses: tlambert03/setup-qt-libs@19e4ef2d781d81f5f067182e228b54ec90d23b76 # v1.8
-
       - name: Setup Graphviz
         uses: ts-graphviz/setup-graphviz@b1de5da23ed0a6d14e0aeee8ed52fdd87af2363c # v2.0.2
         continue-on-error: true
@@ -56,13 +54,12 @@ jobs:
         run: Set-DisplayResolution -Width 1920 -Height 1080 -Force
         shell: powershell
 
-      - name: Install Windows OpenGL
-        if: runner.os == 'Windows'
-        run: |
-          git clone --depth 1 https://github.com/pyvista/gl-ci-helpers.git
-          powershell gl-ci-helpers/appveyor/install_opengl.ps1
-          if (Test-Path -Path "C:\Windows\system32\opengl32.dll" -PathType Leaf) {Exit 0} else {Exit 1}
-        shell: powershell
+      - name: Setup headless display
+        uses: pyvista/setup-headless-display-action@7d84ae825e6d9297a8e99bdbbae20d1b919a0b19 # v4.2
+        with:
+          qt: true
+          wm: herbstluftwm
+
 
       - name: Install dependencies
         run: |
@@ -75,9 +72,7 @@ jobs:
           attempt_limit: 2
           attempt_delay: 30000 # 30s
           retry_condition: github.ref_name == 'main'  # avoid restart in PR
-          action: aganders3/headless-gui@v2
-          with: |
-            run: python -m tox -v --pre  --recreate
+          command: python -m tox -v --pre  --recreate
         env:
           PLATFORM: ${{ matrix.platform }}
           BACKEND: ${{ matrix.backend }}
