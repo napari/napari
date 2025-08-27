@@ -427,8 +427,8 @@ class FeaturesTable(QWidget):
         self.setLayout(QVBoxLayout())
 
         self.info = QLabel('')
-        self.toggle = QToggleSwitch('editable.')
-        self.join_toggle = QToggleSwitch('common_columns.')
+        self.toggle = QToggleSwitch('editable')
+        self.join_toggle = QToggleSwitch('shared columns')
         self.save = QPushButton('Save as CSV...')
         self.table = PandasView()
         self.layout().addWidget(self.info)
