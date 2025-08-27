@@ -125,7 +125,7 @@ class PandasModel(QAbstractTableModel):
         # index and layer_name columns are read-only
 
         flags = Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled
-        if col == 0 or col == self.df.shape[1]:  # index or layer_name column
+        if col < 2:  # index or layer_name column
             return flags
 
         dtype = self.df.dtypes.iat[col - 1]
@@ -146,10 +146,8 @@ class PandasModel(QAbstractTableModel):
             return False
 
         col = index.column()
-        if col == 0:
-            return False  # index is read-only
-        if col == self.df.shape[1]:
-            return False  # layer_name column is read-only
+        if col < 2:
+            return False  # index and layer_name are read-only
 
         row = index.row()
         dtype = self.df.dtypes.iat[col - 1]
@@ -313,20 +311,8 @@ class PandasView(QTableView):
         map_func = proxy_model.mapToSource
 
         # determine selected block (excluding index and layer_name columns)
-        rows = sorted(
-            {
-                idx.row()
-                for idx in selection
-                if 0 < idx.column() < model.df.shape[1]
-            }
-        )
-        cols = sorted(
-            {
-                idx.column()
-                for idx in selection
-                if 0 < idx.column() < model.df.shape[1]
-            }
-        )
+        rows = sorted({idx.row() for idx in selection if idx.column() >= 2})
+        cols = sorted({idx.column() for idx in selection if idx.column() >= 2})
 
         if not rows or not cols:
             return  # pragma: no cover
@@ -354,9 +340,7 @@ class PandasView(QTableView):
             not clipboard
             or not sel
             or not model.editable
-            or any(
-                s.column() == 0 or s.column() == model.df.shape[1] for s in sel
-            )
+            or any(s.column() < 2 for s in sel)
         ):
             return  # pragma: no cover
 
@@ -379,8 +363,7 @@ class PandasView(QTableView):
                 if (
                     r >= df.shape[0]
                     or view_col >= model.columnCount()
-                    or view_col == 0
-                    or view_col == model.df.shape[1]
+                    or view_col < 2
                 ):  # skip index or layer_name columns
                     continue
                 val = data[i][j]
@@ -538,16 +521,19 @@ class FeaturesTable(QWidget):
         for layer in self._selected_layers:
             # All layers in self._selected_layers are guaranteed to have features
             if layer.features is not None:
-                if 'layer' not in layer.features.columns:
-                    layer.features['layer'] = layer.name
-                    layer.features['layer'] = layer.features['layer'].astype(
+                if 'Layer' not in layer.features.columns:
+                    layer.features['Layer'] = layer.name
+                    layer.features['Layer'] = layer.features['Layer'].astype(
                         'category'
                     )
                 df_list.append(layer.features)
         df = pd.concat(df_list, ignore_index=True, join=join)
-        # ensure 'layer' is the last column
-        layer_name_col = df.pop('layer')
-        df['layer'] = layer_name_col
+        # ensure 'Layer' is the first column (it will show up just after Index)
+        cols = list(df.columns)
+        if 'Layer' in cols:
+            cols.remove('Layer')
+            cols.insert(0, 'Layer')
+            df = df[cols]
         return df
 
     def _on_editable_change(self):
@@ -576,12 +562,12 @@ class FeaturesTable(QWidget):
             return
 
         # Calculate layer start indices for all layers once (most efficient)
-        layer_starts = df.groupby('layer', sort=False, observed=False).apply(
+        layer_starts = df.groupby('Layer', sort=False, observed=False).apply(
             lambda x: x.index[0], include_groups=False
         )
 
         # Get layer names for selected rows and convert to layer-specific indices
-        selected_layer_names = df['layer'].iloc[selected_global_rows]
+        selected_layer_names = df['Layer'].iloc[selected_global_rows]
         layer_start_indices = selected_layer_names.map(layer_starts).astype(
             int
         )
@@ -622,11 +608,11 @@ class FeaturesTable(QWidget):
         for layer in self._selected_layers:
             if hasattr(layer, 'selected_label'):
                 sel = layer.selected_label
-                layer_data_row_index = df[df['layer'] == layer.name].index
+                layer_data_row_index = df[df['Layer'] == layer.name].index
                 indices += [[layer_data_row_index[sel]]]
             elif hasattr(layer, 'selected_data'):
                 sel = layer.selected_data
-                layer_data_row_index = df[df['layer'] == layer.name].index
+                layer_data_row_index = df[df['Layer'] == layer.name].index
                 indices += [layer_data_row_index[list(sel)]]
             else:
                 continue
