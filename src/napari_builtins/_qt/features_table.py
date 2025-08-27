@@ -445,6 +445,24 @@ class FeaturesTable(QWidget):
         # Return None if layer doesn't have expected selection attributes
         return None
 
+    def _disconnect_layer_events(self, layers):
+        """Disconnect features and selection events from the update table callbacks."""
+        for layer in layers:
+            if hasattr(layer, 'events') and hasattr(layer.events, 'features'):
+                layer.events.features.disconnect(self._on_features_change)
+            selection_event = self._get_selection_event_for_layer(layer)
+            if selection_event is not None:
+                selection_event.disconnect(self._update_table_selected_cells)
+
+    def _connect_layer_events(self, layers):
+        """Connect features and selection events to the appropriate update table callbacks."""
+        for layer in layers:
+            if hasattr(layer, 'events') and hasattr(layer.events, 'features'):
+                layer.events.features.connect(self._on_features_change)
+            selection_event = self._get_selection_event_for_layer(layer)
+            if selection_event is not None:
+                selection_event.connect(self._update_table_selected_cells)
+
     def _on_layer_selection_change(self):
         """Update the table when the layer selection changes and handles event connections."""
         old_layer_list = self._selected_layers
@@ -456,30 +474,10 @@ class FeaturesTable(QWidget):
         ]
 
         if len(old_layer_list) > 0:
-            # disconnect events from old layers
-            for layer in old_layer_list:
-                # Only disconnect features event if it exists
-                if hasattr(layer, 'events') and hasattr(
-                    layer.events, 'features'
-                ):
-                    layer.events.features.disconnect(self._on_features_change)
-                selection_event = self._get_selection_event_for_layer(layer)
-                if selection_event is not None:
-                    selection_event.disconnect(
-                        self._update_table_selected_cells
-                    )
+            self._disconnect_layer_events(old_layer_list)
 
         if len(self._selected_layers) > 0:
-            # connect events to new layers (all have features by definition)
-            for layer in self._selected_layers:
-                # Only connect features event if it exists
-                if hasattr(layer, 'events') and hasattr(
-                    layer.events, 'features'
-                ):
-                    layer.events.features.connect(self._on_features_change)
-                selection_event = self._get_selection_event_for_layer(layer)
-                if selection_event is not None:
-                    selection_event.connect(self._update_table_selected_cells)
+            self._connect_layer_events(self._selected_layers)
 
             # Show widgets and update table
             self._on_features_change()
