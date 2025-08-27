@@ -1,9 +1,11 @@
 """
-Mouse event callbacks
-=====================
+Image warping with mouse event callbacks
+========================================
 
 Warp an image based on points moved by user using mouse event callbacks in
 napari.
+
+Derived from scikit-image example: https://scikit-image.org/docs/stable/auto_examples/transform/plot_tps_deformation.html
 
 This example is fully explained in the following tutorial:
 https://napari.org/napari-scipy2025-workshop/notebooks/image_warping.html
