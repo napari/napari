@@ -162,8 +162,8 @@ class QtEdgeColorPropertyControl(QtWidgetControlsBase):
         Returns
         -------
         feature_values : np.ndarray
-            array of all of the union of the property names (feature table columns)
-            in Vectors.features and Vectors.property_choices
+            array of all of the union of the property names and choices in
+            Vectors.features (columns in the layer features table)
 
         """
         feature_choices = [
