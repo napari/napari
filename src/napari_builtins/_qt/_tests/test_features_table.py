@@ -318,7 +318,7 @@ def test_features_tables_dtypes(
     layer = v.add_points(np.zeros((1, 2)), features=df)
     idx = proxy.index(
         0,
-        1,
+        2,
     )
     assert layer.features['a'].dtype == pandas_dtype(dtype)
     assert (
@@ -371,21 +371,21 @@ def test_features_table_change_active_layer(qtbot):
     assert len(layer1.selected_data.events.all) == 1
     assert len(layer2.events.features.callbacks) == 1
     assert len(layer2.events.selected_label.callbacks) == 1
-    assert w.info.text() == f'Features of "{layer1.name}"'
+    assert w.info.text() == f'Features of {[layer1.name]}'
 
     v.layers.selection.active = layer2
     assert len(layer1.events.features.callbacks) == 1
     assert len(layer1.selected_data.events.all) == 0
     assert len(layer2.events.features.callbacks) == 2
     assert len(layer2.events.selected_label.callbacks) == 2
-    assert w.info.text() == f'Features of "{layer2.name}"'
+    assert w.info.text() == f'Features of {[layer2.name]}'
 
     v.layers.selection.active = layer3
     assert len(layer1.events.features.callbacks) == 1
     assert len(layer1.selected_data.events.all) == 0
     assert len(layer2.events.features.callbacks) == 1
     assert len(layer2.events.selected_label.callbacks) == 1
-    assert 'has no features table' in w.info.text()
+    assert 'do not have features' in w.info.text()
 
     v.layers.selection.active = None
     assert len(layer1.events.features.callbacks) == 1
