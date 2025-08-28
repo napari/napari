@@ -252,8 +252,8 @@ def test_features_table_copy_paste(qtbot, qapp):
 
     layer = v.add_points(np.zeros((3, 2)), features=df.copy())
 
-    first_cell = proxy.index(1, 1)
-    last_cell = proxy.index(1, 2)
+    first_cell = proxy.index(1, 2)
+    last_cell = proxy.index(1, 3)
     selection = QItemSelection()
     selection.select(first_cell, last_cell)
 
@@ -269,8 +269,8 @@ def test_features_table_copy_paste(qtbot, qapp):
     # stip cause windows and linux otherwise differ
     assert qapp.clipboard().text().strip() == '2\t5'
 
-    first_cell = proxy.index(2, 1)
-    last_cell = proxy.index(2, 2)
+    first_cell = proxy.index(2, 2)
+    last_cell = proxy.index(2, 3)
     selection = QItemSelection()
     selection.select(first_cell, last_cell)
 
@@ -285,7 +285,7 @@ def test_features_table_copy_paste(qtbot, qapp):
     # cause issues when pasting and we just discard them
     qtbot.keyClick(w.table, 'v', Qt.KeyboardModifier.ControlModifier)
 
-    np.testing.assert_array_equal(layer.features.iloc[2], [3, 8])
+    np.testing.assert_array_equal(layer.features.iloc[2, 1:], [3, 8])
 
 
 @pytest.mark.parametrize(
