@@ -388,13 +388,10 @@ class PandasView(QTableView):
         for i in range(n_rows):
             for j in range(n_cols):
                 r = start_row + i
-                view_col = start_col + j  # view column index
-                c = view_col - 1  # dataframe column index (offset for index)
-                if (
-                    r >= df.shape[0]
-                    or view_col >= model.columnCount()
-                    or view_col < 2
-                ):  # skip index or layer_name columns
+                c = (
+                    start_col + j - 1
+                )  # dataframe column index (offset for index)
+                if r >= df.shape[0] or c >= df.shape[1]:
                     continue
                 val = data[i][j]
                 dtype = df.dtypes.iloc[c]
