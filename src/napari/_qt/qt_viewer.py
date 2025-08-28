@@ -527,6 +527,9 @@ class QtViewer(QSplitter):
             with warnings.catch_warnings():
                 warnings.filterwarnings('ignore')
                 console = QtConsole(self.viewer, style_sheet=self.styleSheet())
+                # Override actions shortcuts that collide with default napari shortcuts
+                # See napari/napari#8183
+                console.print_action.setShortcut('')
                 console.push(
                     {'napari': napari, 'action_manager': action_manager}
                 )
