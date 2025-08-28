@@ -25,7 +25,9 @@ def test_task_status():
 
     # Check task status update
     update_task_status(
-        task_status_id, Status.DONE, description='Register task status done'
+        task_status_id,
+        Status.COMPLETED,
+        description='Register task status completed',
     )
     assert not task_status_manager.is_busy()
     assert task_status_manager.get_status() == []

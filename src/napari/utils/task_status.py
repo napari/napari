@@ -9,9 +9,10 @@ from napari.utils.misc import Callable, StringEnum
 class Status(StringEnum):
     PENDING = auto()
     BUSY = auto()
-    DONE = auto()
+    COMPLETED = auto()
     CANCELLED = auto()
     FAILED = auto()
+    START_FAILED = auto()
 
 
 class TaskStatusItem:
@@ -132,7 +133,7 @@ def register_task_status(
     cancel_callback: Optional[Callable] = None,
 ) -> uuid.UUID:
     """
-    Register a long running task.
+    Register a long running task status.
     """
     return task_status_manager.register_task_status(
         provider, task_status, description, cancel_callback
@@ -145,7 +146,7 @@ def update_task_status(
     description: str = '',
 ) -> bool:
     """
-    Update a long running task.
+    Update a long running task status.
     """
     return task_status_manager.update_task_status(
         task_status_id, status, description
