@@ -206,7 +206,7 @@ def test_features_table_edit(qtbot):
 
     layer = v.add_points(np.zeros((2, 2)), features={'a': original_a})
 
-    idx = proxy.index(0, 1)
+    idx = proxy.index(0, 2)
     w.table.edit(idx)
     assert not w.table.isPersistentEditorOpen(idx)
 
