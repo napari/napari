@@ -554,14 +554,13 @@ class FeaturesTable(QWidget):
                     layer.features['Layer'] = layer.features['Layer'].astype(
                         'category'
                     )
+                    # Move 'Layer' to the first column
+                    cols = list(layer.features.columns)
+                    cols.remove('Layer')
+                    cols.insert(0, 'Layer')
+                    layer.features = layer.features[cols]
                 df_list.append(layer.features)
         df = pd.concat(df_list, ignore_index=True, join=join)
-        # ensure 'Layer' is the first column (it will show up just after Index)
-        cols = list(df.columns)
-        if 'Layer' in cols:
-            cols.remove('Layer')
-            cols.insert(0, 'Layer')
-            df = df[cols]
         return df
 
     def _on_editable_change(self):
