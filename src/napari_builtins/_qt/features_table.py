@@ -459,6 +459,11 @@ class FeaturesTable(QWidget):
             self._on_table_selection_changed
         )
 
+        # Connect to dataChanged to sync edits back to layers
+        self.table.model().sourceModel().dataChanged.connect(
+            self._on_table_data_changed
+        )
+
         self._on_layer_selection_change()
         self._on_editable_change()
 
@@ -669,6 +674,28 @@ class FeaturesTable(QWidget):
             )
 
         self.table.viewport().update()
+
+    def _on_table_data_changed(self, topLeft, bottomRight, roles=None):
+        """Sync edits in the table back to the correct layer.features DataFrame."""
+        model = self.table.model().sourceModel()
+        df = model.df
+        # For each edited cell
+        for row in range(topLeft.row(), bottomRight.row() + 1):
+            # Find corresponding layer and layer row index
+            layer_name = df.iloc[row]['Layer']
+            layer = next(
+                ly for ly in self._selected_layers if ly.name == layer_name
+            )
+            layer_rows = df[df['Layer'] == layer_name].index
+            layer_row_idx = list(layer_rows).index(row)
+            # Update the layer features DataFrame (except if index or layer columns)
+            for col in range(topLeft.column(), bottomRight.column() + 1):
+                if col == 0 or (model._has_layer_column and col == 1):
+                    continue
+                col_name = df.columns[col - 1]
+                layer.features.iloc[
+                    layer_row_idx, layer.features.columns.get_loc(col_name)
+                ] = df.iloc[row, col - 1]
 
     @contextmanager
     def _block_selection(self):
