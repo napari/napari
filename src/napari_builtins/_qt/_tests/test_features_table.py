@@ -237,6 +237,8 @@ def test_features_table_save_csv(qtbot, tmp_path, monkeypatch):
 
     w.save.click()
 
+    # add layer name column to df
+    df.insert(0, 'Layer', 'Points')
     pd.testing.assert_frame_equal(pd.read_csv(path, index_col=0), df)
 
 
