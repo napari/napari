@@ -1382,7 +1382,7 @@ class ShapeList:
     @_batch_dec
     def _update_z_order(self):
         """Updates the z order of the triangles given the z_index list"""
-        self._z_order = np.argsort(self._z_index)  # type: ignore[assignment]
+        self._z_order = np.argsort(self._z_index, kind='stable')  # type: ignore[assignment]
         if len(self._z_order) == 0:
             self._mesh.triangles_z_order = np.empty(0, dtype=ZOrderDtype)
         else:
