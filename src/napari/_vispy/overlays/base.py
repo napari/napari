@@ -72,8 +72,7 @@ class VispyCanvasOverlay(VispyBaseOverlay):
         self.overlay.events.position.connect(self._on_position_change)
 
     def _on_position_change(self, event=None):
-        # subclasses should set sizes correctly and adjust offsets to get
-        # the optimal positioning
+        # subclasses should set sizes correctly to get the optimal positioning
         if self.node.parent is None:
             return
         x_max, y_max = list(self.node.parent.size)

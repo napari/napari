@@ -1,6 +1,7 @@
 from vispy.scene.visuals import Text
 
 from napari._vispy.overlays.base import ViewerOverlayMixin, VispyCanvasOverlay
+from napari._vispy.utils.text import get_text_width_height
 from napari.components._viewer_constants import CanvasPosition
 
 
@@ -16,7 +17,6 @@ class VispyTextOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         )
 
         self.node.anchors = ('left', 'bottom')
-        self._vertices_size = (0, 0)
 
         self.overlay.events.text.connect(self._on_text_change)
         self.overlay.events.color.connect(self._on_color_change)
@@ -27,6 +27,11 @@ class VispyTextOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
     def _on_text_change(self):
         self.node.text = self.overlay.text
         self._on_position_change()
+
+    def _on_visible_change(self):
+        # ensure that dpi is updated when the scale bar is visible
+        self._on_text_change()
+        return super()._on_visible_change()
 
     def _on_color_change(self):
         self.node.color = self.overlay.color
@@ -50,25 +55,16 @@ class VispyTextOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self.node.anchors = anchors
         self.node.font_size = self.overlay.font_size
 
-        vert_buffer = self.node._vertices_data
-        if vert_buffer is not None:
-            pos = vert_buffer['a_position']
-            tl = pos.min(axis=0)
-            br = pos.max(axis=0)
-            self._vertices_size = (br[0] - tl[0]), (br[1] - tl[1])
-
-        self.x_size = (
-            self._vertices_size[0] * self.overlay.font_size * 1.3
-        )  # magic?
-        self.y_size = self._vertices_size[1] * self.overlay.font_size
+        self.x_size, self.y_size = get_text_width_height(self.node)
 
         x = y = 0
-        if 'right' in anchors:
+        if anchors[0] == 'right':
             x = self.x_size
-        elif 'center' in anchors:
+        elif anchors[0] == 'center':
             x = self.x_size / 2
-        if 'top' in anchors:
-            y = self.y_size / 2
+
+        if anchors[1] == 'top':
+            y = self.y_size
 
         self.node.pos = (x, y)
 

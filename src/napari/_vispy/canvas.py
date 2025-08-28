@@ -948,16 +948,20 @@ class VispyCanvas:
     def _update_overlay_canvas_positions(self, event=None):
         # TODO: make settable
         x_padding = y_padding = 10.0
-        x_offsets = dict.fromkeys(CanvasPosition, x_padding)
-        y_offsets = dict.fromkeys(CanvasPosition, y_padding)
+        x_offsets = {}
+        y_offsets = {}
         for (
             overlay,
             vispy_overlay,
             view,
         ) in self._get_ordered_visible_canvas_overlays():
             # TODO: these should be settable!
-            x_offsets.setdefault(view, dict.fromkeys(CanvasPosition, 0))
-            y_offsets.setdefault(view, dict.fromkeys(CanvasPosition, 0))
+            x_offsets.setdefault(
+                view, dict.fromkeys(CanvasPosition, x_padding)
+            )
+            y_offsets.setdefault(
+                view, dict.fromkeys(CanvasPosition, y_padding)
+            )
 
             if overlay.position in ('top_right', 'bottom_left'):
                 vispy_overlay.x_offset = x_offsets[view][overlay.position]
