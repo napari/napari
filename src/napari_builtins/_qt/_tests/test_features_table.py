@@ -98,30 +98,42 @@ def test_features_table(qtbot):
     assert proxy.columnCount() == 1  # 0 is index
     assert proxy.rowCount() == 0
 
-    original_a = (2, 0, 1)
+    original_a = (2, 0, 1, 3, 4, 5, 6, 7, 8, 9, 10)
 
-    layer = v.add_points(np.zeros((3, 2)), features={'a': original_a})
+    layer = v.add_points(np.zeros((11, 2)), features={'a': original_a})
     assert proxy.columnCount() == 3  # Index, Layer and 'a'
     assert (
         proxy.data(proxy.index(0, 1)) == 'Points'
     )  # first column has the layer name
-    assert proxy.rowCount() == 3
+    assert proxy.rowCount() == 11
 
-    layer.features['b'] = [True, False, True]
+    layer.features['b'] = [
+        True,
+        False,
+        True,
+        True,
+        True,
+        True,
+        True,
+        True,
+        True,
+        True,
+        True,
+    ]
     layer.events.features()
 
     assert proxy.columnCount() == 4
-    assert proxy.rowCount() == 3
+    assert proxy.rowCount() == 11
 
     # sorting should sort the proxy model but not the data
     w.table.sortByColumn(2, Qt.SortOrder.AscendingOrder)
-    for i in range(3):
+    for i in range(11):
         assert proxy.data(proxy.index(i, 2), Qt.ItemDataRole.EditRole) == i
         assert layer.features['a'][i] == original_a[i]
 
     # sorting bools should work
     w.table.sortByColumn(3, Qt.SortOrder.AscendingOrder)
-    for i in range(3):
+    for i in range(11):
         assert (
             proxy.data(
                 proxy.index(
@@ -132,6 +144,17 @@ def test_features_table(qtbot):
             )
             == sorted(layer.features['b'])[i]
         )
+
+    # sorting index should handle index as integers, not strings
+    w.table.sortByColumn(0, Qt.SortOrder.DescendingOrder)
+    for i in range(11):
+        assert proxy.data(
+            proxy.index(
+                i,
+                0,
+            ),
+            Qt.ItemDataRole.EditRole,
+        ) == str(10 - i)
 
     # test selection (with sorted rows)
     layer.selected_data = {1, 2}
