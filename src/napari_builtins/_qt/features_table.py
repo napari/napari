@@ -56,6 +56,10 @@ class PandasModel(QAbstractTableModel):
         super().__init__(parent)
         self.df = df if df is not None else pd.DataFrame()
         self.editable = False
+        # Detect if the first column is 'Layer' for multi-layer support
+        self._has_layer_column = (
+            self.df.shape[1] > 0 and self.df.columns[0] == 'Layer'
+        )
 
     # model methods necessary for qt
     def rowCount(self, parent=None):
@@ -122,10 +126,9 @@ class PandasModel(QAbstractTableModel):
             return Qt.ItemFlag.ItemIsEnabled
 
         col = index.column()
-        # index and layer_name columns are read-only
-
+        # index is always read-only; col 1 is also read-only if it's the 'Layer' column
         flags = Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled
-        if col < 2:  # index or layer_name column
+        if col == 0 or (self._has_layer_column and col == 1):
             return flags
 
         dtype = self.df.dtypes.iat[col - 1]
@@ -146,8 +149,9 @@ class PandasModel(QAbstractTableModel):
             return False
 
         col = index.column()
-        if col < 2:
-            return False  # index and layer_name are read-only
+        # index is always read-only; col 1 is also read-only if it's the 'Layer' column
+        if col == 0 or (self._has_layer_column and col == 1):
+            return False
 
         row = index.row()
         dtype = self.df.dtypes.iat[col - 1]
@@ -193,6 +197,10 @@ class PandasModel(QAbstractTableModel):
     def replace_data(self, df):
         with self.changing():
             self.df = df
+            # Update the flag if the new df has a 'Layer' column in col 0
+            self._has_layer_column = (
+                self.df.shape[1] > 0 and self.df.columns[0] == 'Layer'
+            )
 
 
 class DelegateCategorical(QStyledItemDelegate):
@@ -314,9 +322,24 @@ class PandasView(QTableView):
         model = proxy_model.sourceModel()
         map_func = proxy_model.mapToSource
 
-        # determine selected block (excluding index and layer_name columns)
-        rows = sorted({idx.row() for idx in selection if idx.column() >= 2})
-        cols = sorted({idx.column() for idx in selection if idx.column() >= 2})
+        # determine selected block (excluding index and Layer columns if present)
+        model = self.model().sourceModel()
+
+        has_layer_col = getattr(model, '_has_layer_column', False)
+        rows = sorted(
+            {
+                idx.row()
+                for idx in selection
+                if (idx.column() >= 2 if has_layer_col else idx.column() >= 1)
+            }
+        )
+        cols = sorted(
+            {
+                idx.column()
+                for idx in selection
+                if (idx.column() >= 2 if has_layer_col else idx.column() >= 1)
+            }
+        )
 
         if not rows or not cols:
             return  # pragma: no cover
@@ -338,13 +361,16 @@ class PandasView(QTableView):
 
         clipboard = QGuiApplication.clipboard().text()
         sel = self.selectedIndexes()
-
+        has_layer_col = getattr(model, '_has_layer_column', False)
         # if index or layer_name column is in the selection, just get out
         if (
             not clipboard
             or not sel
             or not model.editable
-            or any(s.column() < 2 for s in sel)
+            or any(
+                s.column() == 0 or (has_layer_col and s.column() == 1)
+                for s in sel
+            )
         ):
             return  # pragma: no cover
 
