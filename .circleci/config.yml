@@ -19,7 +19,7 @@ jobs:
           path: napari
       - restore_cache:
           keys:
-            - pooch-v1
+            - pooch
       - run:
           name: Clone docs repo into a subdirectory
           command: git clone git@github.com:napari/docs.git docs
@@ -51,7 +51,7 @@ jobs:
       - store_artifacts:
           path: docs/docs/_build/html/
       - save_cache:
-          key: pooch-v1
+          key: pooch
           paths:
             - ~/.cache/pooch
       - persist_to_workspace:
