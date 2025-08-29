@@ -22,6 +22,8 @@ jobs:
   build-and-upload:
     name: Build & Upload Artifact
     runs-on: ubuntu-latest
+    env:
+      XDG_CACHE_HOME: ${{ github.workspace }}/.cache
     steps:
       - name: Clone docs repo
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -41,6 +43,15 @@ jobs:
           python-version: "3.12"
           cache-dependency-path: |
             napari/pyproject.toml
+
+      - name: Cache pooch downloads
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4
+        with:
+          path: |
+            ${{ github.workspace }}/.cache/scikit-image
+            ${{ github.workspace }}/.cache/napari-*
+            ${{ github.workspace }}/.cache/pooch
+          key: pooch
 
       - name: Setup headless display
         uses: pyvista/setup-headless-display-action@7d84ae825e6d9297a8e99bdbbae20d1b919a0b19 # v4.2
