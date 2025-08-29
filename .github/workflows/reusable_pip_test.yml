@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 35
     env:
-      POOCH_HOME: ${{ github.workspace }}/.pooch
+      XDG_CACHE_HOME: ${{ github.workspace }}/.cache
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
@@ -17,7 +17,10 @@ jobs:
       - name: Cache pooch downloads
         uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4
         with:
-          path: ${{ env.POOCH_HOME }}
+          path: |
+            ${{ github.workspace }}/.cache/scikit-image
+            ${{ github.workspace }}/.cache/napari-*
+            ${{ github.workspace }}/.cache/pooch
           key: pooch
 
       - name: Set up Python 3.12

@@ -13,7 +13,7 @@ jobs:
       # A list of available CircleCI Docker convenience images are available here: https://circleci.com/developer/images/image/cimg/python
       - image: cimg/python:3.12.10
     environment:
-      POOCH_HOME: ~/.cache/pooch
+      XDG_CACHE_HOME: ~/.cache
     steps:
       - checkout:
           path: napari
@@ -53,6 +53,8 @@ jobs:
       - save_cache:
           key: pooch
           paths:
+            - ~/.cache/scikit-image
+            - ~/.cache/napari-*
             - ~/.cache/pooch
       - persist_to_workspace:
           root: .
