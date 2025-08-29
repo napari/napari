@@ -152,7 +152,7 @@ def create_worker(
         if isinstance(_progress, bool):
             _progress = {}
 
-        desc = _progress.get('desc', None)
+        desc = _progress.get('desc')
         total = int(_progress.get('total', 0))
         if isinstance(worker, FunctionWorker) and total != 0:
             warnings.warn(

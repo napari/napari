@@ -47,19 +47,6 @@ def extend_selection_to_layer_below(viewer: Viewer):
     viewer.layers.select_previous(shift=True)
 
 
-@register_viewer_action(trans._('Reset scroll'))
-def reset_scroll_progress(viewer: Viewer):
-    # on key press
-    viewer.dims._scroll_progress = 0
-    yield
-
-    # on key release
-    viewer.dims._scroll_progress = 0
-
-
-reset_scroll_progress.__doc__ = trans._('Reset dims scroll progress')
-
-
 @register_viewer_action(trans._('Toggle 2D/3D view'))
 def toggle_ndisplay(viewer: Viewer):
     if viewer.dims.ndisplay == 2:
@@ -195,6 +182,16 @@ def toggle_unselected_visibility(viewer: Viewer):
     for layer in viewer.layers:
         if layer not in viewer.layers.selection:
             layer.visible = not layer.visible
+
+
+@register_viewer_action(trans._('Select layer above'))
+def select_layer_above(viewer):
+    viewer.layers.select_next()
+
+
+@register_viewer_action(trans._('Select layer below'))
+def select_layer_below(viewer):
+    viewer.layers.select_previous()
 
 
 @register_viewer_action(trans._('Select and show only layer above'))

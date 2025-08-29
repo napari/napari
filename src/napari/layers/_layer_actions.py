@@ -38,7 +38,12 @@ def _split_stack(ll: LayerList, axis: int = 0) -> None:
     if not isinstance(layer, Image):
         return
     if layer.rgb:
-        images = stack_utils.split_rgb(layer)
+        # determine if image is rgb (3 channel) or rbga (4 channel)
+        with_alpha = False
+        if layer.data.shape[-1] == 4:
+            # set with_alpha option true for rgba image
+            with_alpha = True
+        images = stack_utils.split_rgb(layer, with_alpha=with_alpha)
     else:
         images = stack_utils.stack_to_images(layer, axis)
     ll.remove(layer)

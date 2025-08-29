@@ -39,6 +39,8 @@ class VispySelectionBoxOverlay(_VispyBoundingBoxOverlay):
         self.overlay.events.handles.connect(self._on_bounds_change)
         self.overlay.events.selected_handle.connect(self._on_bounds_change)
 
+        self.reset()
+
     def _on_bounds_change(self):
         if self.layer._slice_input.ndisplay == 2:
             top_left, bot_right = self.overlay.bounds
@@ -64,6 +66,8 @@ class VispyTransformBoxOverlay(_VispyBoundingBoxOverlay):
         self.layer.events.shear.connect(self._on_bounds_change)
         self.layer.events.affine.connect(self._on_bounds_change)
         self.overlay.events.selected_handle.connect(self._on_bounds_change)
+
+        self.reset()
 
     def _on_bounds_change(self):
         if self.layer._slice_input.ndisplay == 2:
