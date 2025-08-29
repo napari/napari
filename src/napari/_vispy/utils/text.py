@@ -74,7 +74,7 @@ def _has_visible_text(layer: Points | Shapes) -> bool:
     return len(layer._indices_view) != 0
 
 
-def get_text_width_height(text):
+def get_text_width_height(text: Text) -> tuple[float, float]:
     """Get the screen space width and height of a vispy text visual."""
     if text.text == '':
         return (0, 0)
@@ -93,7 +93,7 @@ def get_text_width_height(text):
     return (br[0] - tl[0]) * font_size * 1.3, (br[1] - tl[1]) * font_size * 1.2
 
 
-def get_text_font_size(text):
+def get_text_font_size(text: Text) -> float:
     """Get the logical font size of a text visual, rescaled by dpi."""
     # use 96 as the vispy reference dpi for historical reasons
     dpi_scale_factor = 96 / text.transforms.dpi if text.transforms.dpi else 1

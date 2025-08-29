@@ -56,7 +56,7 @@ class VispyTextOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
 
         self.x_size, self.y_size = get_text_width_height(self.node)
 
-        x = y = 0
+        x = y = 0.0
         if anchors[0] == 'right':
             x = self.x_size
         elif anchors[0] == 'center':
