@@ -812,6 +812,12 @@ class VispyCanvas:
         vispy_overlay = create_vispy_overlay(
             overlay=overlay, viewer=self.viewer, parent=parent
         )
+        if isinstance(overlay, CanvasOverlay):
+            self._connect_canvas_overlay_events(overlay)
+            overlay.events.gridded.connect(self._update_viewer_overlays)
+            vispy_overlay.canvas_position_callback = (
+                self._defer_overlay_position_update
+            )
         self._overlay_to_visual.setdefault(overlay, []).append(vispy_overlay)
 
     def _remove_viewer_overlays(self) -> None:
@@ -838,14 +844,11 @@ class VispyCanvas:
             else:
                 views = [self.view]
 
-            if isinstance(overlay, CanvasOverlay):
-                for view in views:
-                    self._add_viewer_overlay(overlay, view)
-                self._connect_canvas_overlay_events(overlay)
-                overlay.events.gridded.connect(self._update_viewer_overlays)
-            else:
-                for view in views:
-                    self._add_viewer_overlay(overlay, view.scene)
+            for view in views:
+                parent = (
+                    view if isinstance(overlay, CanvasOverlay) else view.scene
+                )
+                self._add_viewer_overlay(overlay, parent)
 
         self._defer_overlay_position_update()
 
@@ -858,6 +861,9 @@ class VispyCanvas:
         )
         if isinstance(overlay, CanvasOverlay):
             self._connect_canvas_overlay_events(overlay)
+            vispy_overlay.canvas_position_callback = (
+                self._defer_overlay_position_update
+            )
 
         self._layer_overlay_to_visual[layer][overlay] = vispy_overlay
 
@@ -948,16 +954,20 @@ class VispyCanvas:
     def _update_overlay_canvas_positions(self, event=None):
         # TODO: make settable
         x_padding = y_padding = 10.0
-        x_offsets = dict.fromkeys(CanvasPosition, x_padding)
-        y_offsets = dict.fromkeys(CanvasPosition, y_padding)
+        x_offsets = {}
+        y_offsets = {}
         for (
             overlay,
             vispy_overlay,
             view,
         ) in self._get_ordered_visible_canvas_overlays():
             # TODO: these should be settable!
-            x_offsets.setdefault(view, dict.fromkeys(CanvasPosition, 0))
-            y_offsets.setdefault(view, dict.fromkeys(CanvasPosition, 0))
+            x_offsets.setdefault(
+                view, dict.fromkeys(CanvasPosition, x_padding)
+            )
+            y_offsets.setdefault(
+                view, dict.fromkeys(CanvasPosition, y_padding)
+            )
 
             if overlay.position in ('top_right', 'bottom_left'):
                 vispy_overlay.x_offset = x_offsets[view][overlay.position]
