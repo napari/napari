@@ -440,7 +440,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             SelectionBoxOverlay,
             TransformBoxOverlay,
         )
-        from napari.components.overlays.layer_name import LayerNameOverlay
+        from napari.components.overlays.text import LayerNameOverlay
 
         self._overlays: EventedDict[str, Overlay] = EventedDict()
 
