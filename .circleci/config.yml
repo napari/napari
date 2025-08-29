@@ -13,7 +13,7 @@ jobs:
       # A list of available CircleCI Docker convenience images are available here: https://circleci.com/developer/images/image/cimg/python
       - image: cimg/python:3.12.10
     environment:
-      XDG_CACHE_HOME: ~/.cache
+      XDG_CACHE_HOME: /home/circleci/.cache
     steps:
       - checkout:
           path: napari
