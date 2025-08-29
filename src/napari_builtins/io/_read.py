@@ -653,7 +653,6 @@ def load_and_execute_python_code(script_path: str) -> list['LayerData']:
         code = response.text
     else:
         code = Path(script_path).read_text()
-    code = script_path.read_text()
     execute_python_code(code, script_path)
     return [(None,)]
 
