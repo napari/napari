@@ -284,7 +284,13 @@ class ApplicationSettings(EventedModel):
     def __setattr__(self, name: str, value: Any) -> None:
         if name == 'startup_script' and value is not None:
             # Ensure the script is a valid Python file
-            caller_frame = inspect.currentframe().f_back
+            frame = inspect.currentframe()
+            if frame is None:
+                raise ValueError(
+                    "The 'startup_script' setting can only be set by the napari application itself."
+                )
+
+            caller_frame = frame.f_back
             if caller_frame is None or not caller_frame.f_globals.get(
                 '__name__', ''
             ).startswith('napari.'):
