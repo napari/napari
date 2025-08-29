@@ -5,6 +5,8 @@ from typing import TYPE_CHECKING
 import numpy as np
 from vispy.scene import Axis, Image, Line, Node, STTransform
 
+from napari._vispy.utils.text import get_text_width_height
+
 if TYPE_CHECKING:
     from typing import Any
 
@@ -76,9 +78,8 @@ class Colormap(Node):
         self.box.transform.scale = size
         self.ticks.transform.scale = size
 
-    def set_ticks_and_get_text_width(
+    def set_ticks_and_get_text_size(
         self,
-        size: tuple[float, float],
         tick_length: float,
         font_size: int,
         clim: tuple[float, float],
@@ -94,23 +95,8 @@ class Colormap(Node):
         self.ticks.domain = clim
 
         text = self.ticks._text
-        if text.transforms.dpi:
-            # use 96 as the napari reference dpi for historical reasons
-            dpi_scale_factor = 96 / text.transforms.dpi
-        else:
-            dpi_scale_factor = 1
+        self.ticks._update_subvisuals()  # triggers computing of the tick labels
 
-        font_size *= dpi_scale_factor
+        width, height = get_text_width_height(text)
 
-        vert_buffer = text._vertices_data
-        if vert_buffer is not None:
-            pos = vert_buffer['a_position']
-            tl = pos.min(axis=0)
-            br = pos.max(axis=0)
-            self._text_vertices_size = (br[0] - tl[0]), (br[1] - tl[1])
-
-        text_width = self._text_vertices_size[0] * font_size * 1.3  # magic?
-        # fixed multiplier for height to avoid fluttering when zooming
-        text_height = font_size * 1.5
-
-        return text_width, text_height
+        return width + self.ticks.tick_label_margin, height

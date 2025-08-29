@@ -90,27 +90,20 @@ class VispyColormapOverlay(LayerOverlayMixin, VispyCanvasOverlay):
             color = np.subtract(1, background_color)
             color[-1] = background_color[-1]
 
-        if self.node.transforms.dpi:
-            # use 96 as the napari reference dpi for historical reasons
-            dpi_scale_factor = 96 / self.node.transforms.dpi
-        else:
-            dpi_scale_factor = 1
-
-        text_width, text_height = self.node.set_ticks_and_get_text_width(
-            size=self.overlay.size,
+        text_width, text_height = self.node.set_ticks_and_get_text_size(
             tick_length=self.overlay.tick_length,
-            font_size=self.overlay.font_size * dpi_scale_factor,
+            font_size=self.overlay.font_size,
             clim=_coerce_contrast_limits(
                 self.layer.contrast_limits
             ).contrast_limits,
             color=color,
         )
 
-        # 7 is the base, 0.8 is just a magic number to scale font size
+        # 7 is the base
         self.x_size = (
             self.overlay.size[0] + self.overlay.tick_length + text_width
         )
-        self.y_offset = 7 + text_height
+        self.y_size = text_height
 
         self._on_position_change()
 
