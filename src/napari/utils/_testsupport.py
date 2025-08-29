@@ -4,6 +4,7 @@ import sys
 import warnings
 from contextlib import suppress
 from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
 from typing import TYPE_CHECKING
 from unittest.mock import patch
@@ -166,6 +167,19 @@ def mock_app_model():
 
     from napari._app_model._app import NapariApplication, _napari_names
 
+    try:
+        from napari._qt._qapp_model.qactions import init_qactions
+        from napari.plugins import _initialize_plugins
+    except ImportError:
+
+        @lru_cache
+        def init_qactions():
+            pass
+
+        @lru_cache
+        def _initialize_plugins():
+            pass
+
     app = NapariApplication('test_app')
     app.injection_store.namespace = _napari_names
     with patch.object(NapariApplication, 'get_app_model', return_value=app):
@@ -173,6 +187,8 @@ def mock_app_model():
             yield app
         finally:
             Application.destroy('test_app')
+            _initialize_plugins.cache_clear()
+            init_qactions.cache_clear()
 
 
 @pytest.fixture
@@ -338,12 +354,11 @@ def make_napari_viewer(
     else:
         gc.collect(1)
 
-    if request.config.getoption(_SAVE_GRAPH_OPNAME):
-        fail_obj_graph(QtViewer)
-
     if request.node.rep_call.failed:
         # IF test failed do not check for leaks
         QtViewer._instances.clear()
+    elif request.config.getoption(_SAVE_GRAPH_OPNAME):
+        fail_obj_graph(QtViewer)
 
     _do_not_inline_below = len(QtViewer._instances)
 

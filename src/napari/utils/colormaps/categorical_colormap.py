@@ -56,7 +56,8 @@ class CategoricalColormap(EventedModel):
             new_prop_values = color_properties[np.logical_not(props_in_map)]
             indices_to_add = np.unique(new_prop_values, return_index=True)[1]
             props_to_add = [
-                new_prop_values[index] for index in sorted(indices_to_add)
+                new_prop_values[index]
+                for index in sorted(int(x) for x in indices_to_add)
             ]
             for prop in props_to_add:
                 new_color = next(self.fallback_color.cycle)

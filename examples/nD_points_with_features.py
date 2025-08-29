@@ -6,7 +6,7 @@ Display one points layer ontop of one 4-D image layer using the
 add_points and add_image APIs, where the markes are visible as nD objects
 across the dimensions, specified by their size
 
-.. tags:: visualization-nD
+.. tags:: visualization-nD, features-table
 """
 
 import numpy as np
@@ -17,7 +17,8 @@ import napari
 blobs = data.binary_blobs(
     length=100, blob_size_fraction=0.05, n_dim=3, volume_fraction=0.05
 )
-viewer = napari.view_image(blobs.astype(float))
+viewer = napari.Viewer()
+layer = viewer.add_image(blobs.astype(float))
 
 # create the points
 points = []

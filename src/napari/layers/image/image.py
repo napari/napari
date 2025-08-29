@@ -11,6 +11,7 @@ from scipy import ndimage as ndi
 
 from napari.layers._data_protocols import LayerDataProtocol
 from napari.layers._multiscale_data import MultiScaleData
+from napari.layers._scalar_field._slice import _ScalarFieldSliceResponse
 from napari.layers._scalar_field.scalar_field import ScalarFieldBase
 from napari.layers.image._image_constants import (
     ImageProjectionMode,
@@ -19,7 +20,6 @@ from napari.layers.image._image_constants import (
     InterpolationStr,
 )
 from napari.layers.image._image_utils import guess_rgb
-from napari.layers.image._slice import _ImageSliceResponse
 from napari.layers.intensity_mixin import IntensityVisualizationMixin
 from napari.layers.utils.layer_utils import calc_data_range
 from napari.utils._dtype import get_dtype_limits, normalize_dtype
@@ -389,12 +389,16 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         )
         return state
 
-    def _update_slice_response(self, response: _ImageSliceResponse) -> None:
+    def _update_slice_response(
+        self, response: _ScalarFieldSliceResponse
+    ) -> None:
         if self._keep_auto_contrast:
             data = response.image.raw
             input_data = data[-1] if self.multiscale else data
             self.contrast_limits = calc_data_range(
-                typing.cast(LayerDataProtocol, input_data), rgb=self.rgb
+                typing.cast(LayerDataProtocol, input_data),
+                rgb=self.rgb,
+                dtype=self.dtype,
             )
 
         super()._update_slice_response(response)
@@ -529,15 +533,16 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
             if image.shape[2] == 4:  # image is RGBA
                 colormapped = np.copy(downsampled)
                 colormapped[..., 3] = downsampled[..., 3] * self.opacity
-                if downsampled.dtype == np.uint8:
+                if self.dtype == np.uint8:
                     colormapped = colormapped.astype(np.uint8)
             else:  # image is RGB
-                if downsampled.dtype == np.uint8:
+                if self.dtype == np.uint8:
                     alpha = np.full(
                         downsampled.shape[:2] + (1,),
                         int(255 * self.opacity),
                         dtype=np.uint8,
                     )
+                    downsampled = downsampled.astype(np.uint8)
                 else:
                     alpha = np.full(downsampled.shape[:2] + (1,), self.opacity)
                 colormapped = np.concatenate([downsampled, alpha], axis=2)
@@ -569,8 +574,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         if mode == 'data':
             input_data = self.data[-1] if self.multiscale else self.data
         elif mode == 'slice':
-            data = self._slice.image.raw  # ugh
-            input_data = data[-1] if self.multiscale else data
+            input_data = self._slice.image.raw  # ugh
         else:
             raise ValueError(
                 trans._(
@@ -580,7 +584,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
                 )
             )
         return calc_data_range(
-            cast(LayerDataProtocol, input_data), rgb=self.rgb
+            cast(LayerDataProtocol, input_data), rgb=self.rgb, dtype=self.dtype
         )
 
     def _raw_to_displayed(self, raw: np.ndarray) -> np.ndarray:

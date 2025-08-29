@@ -2,11 +2,15 @@ from typing import Any
 
 from napari._pydantic_compat import Field
 from napari.settings._base import EventedSettings
+from napari.utils.colormap_backend import (
+    ColormapBackend,
+    set_backend as set_colormap_backend,
+)
 from napari.utils.events import Event
 from napari.utils.translations import trans
 from napari.utils.triangulation_backend import (
     TriangulationBackend,
-    set_backend,
+    set_backend as set_triangulation_backend,
 )
 
 
@@ -20,6 +24,8 @@ class ExperimentalSettings(EventedSettings):
             _update_triangulation_backend
         )
         self.events.triangulation_backend(value=self.triangulation_backend)
+        self.events.colormap_backend.connect(_update_colormap_backend)
+        self.events.colormap_backend(value=self.colormap_backend)
 
     async_: bool = Field(
         False,
@@ -89,6 +95,18 @@ class ExperimentalSettings(EventedSettings):
         ),
         env='napari_triangulation_backend',
     )
+    colormap_backend: ColormapBackend = Field(
+        ColormapBackend.fastest_available,
+        title=trans._('Colormap backend to use for Labels layer'),
+        description=trans._(
+            'Color mapping backend to use for Labels layer.\n'
+            "'partsegcore' requires the optional 'partsegcore-compiled-backend' package.\n"
+            "'numba' requires the optional 'numba' package.\n"
+            "'pure python' uses only NumPy and Python.\n"
+            "The 'fastest available' backend will select the fastest installed backend.\n"
+        ),
+        env='napari_colormap_backend',
+    )
 
     compiled_triangulation: bool = Field(
         default=False,
@@ -107,4 +125,10 @@ class ExperimentalSettings(EventedSettings):
 def _update_triangulation_backend(event: Event) -> None:
     experimental: ExperimentalSettings = event.source
 
-    set_backend(experimental.triangulation_backend)
+    set_triangulation_backend(experimental.triangulation_backend)
+
+
+def _update_colormap_backend(event: Event) -> None:
+    experimental: ExperimentalSettings = event.source
+
+    set_colormap_backend(experimental.colormap_backend)

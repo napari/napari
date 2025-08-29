@@ -3,6 +3,7 @@ from __future__ import annotations
 import sys
 from abc import ABC, abstractmethod
 from functools import cached_property
+from typing import Literal
 
 import numpy as np
 import numpy.typing as npt
@@ -120,6 +121,8 @@ class Shape(ABC):
     _use_face_vertices : bool
         Flag to use face vertices for mask generation.
     """
+
+    slice_key: np.ndarray[tuple[Literal[2], int], np.dtype[np.int64]]
 
     def __init__(
         self,
@@ -273,6 +276,36 @@ class Shape(ABC):
     @z_index.setter
     def z_index(self, z_index):
         self._z_index = z_index
+
+    @property
+    def vertices_count(self) -> int:
+        """int: Number of vertices in the shape."""
+        return self._edge_vertices.shape[0] + self._face_vertices.shape[0]
+
+    @property
+    def triangles_count(self) -> int:
+        """int: Number of triangles in the shape."""
+        return self._face_triangles.shape[0] + self._edge_triangles.shape[0]
+
+    @property
+    def face_triangles_count(self) -> int:
+        """int: Number of triangles in the face of the shape."""
+        return self._face_triangles.shape[0]
+
+    @property
+    def face_vertices_count(self) -> int:
+        """int: Number of vertices in the face of the shape."""
+        return self._face_vertices.shape[0]
+
+    @property
+    def edge_triangles_count(self) -> int:
+        """int: Number of triangles in the edge of the shape."""
+        return self._edge_triangles.shape[0]
+
+    @property
+    def edge_vertices_count(self) -> int:
+        """int: Number of vertices in the edge of the shape."""
+        return self._edge_vertices.shape[0]
 
     def _set_empty_edge(self) -> None:
         self._edge_vertices = np.empty((0, self.ndisplay), dtype=np.float32)
@@ -508,7 +541,7 @@ class Shape(ABC):
                 # axis-aligned plane. However in that situation data2d will be
                 # empty, is_collinear is True, and we will never get here. But
                 # we check anyway for mypy's sake
-                vertices = np.insert(vertices, axis, value, axis=1)  # type: ignore[assignment]
+                vertices = np.insert(vertices, axis, value, axis=1)
             if len(triangles) > 0:
                 self._face_vertices = vertices
                 self._face_triangles = triangles
@@ -574,7 +607,7 @@ class Shape(ABC):
                 # axis-aligned plane. However in that situation data2d will be
                 # empty, is_collinear is True, and we will never get here. But
                 # we check anyway for mypy's sake
-                vertices = np.insert(vertices, axis, value, axis=1)  # type: ignore[assignment]
+                vertices = np.insert(vertices, axis, value, axis=1)
             if len(triangles) > 0:
                 self._face_vertices = vertices
                 self._face_triangles = triangles
@@ -803,7 +836,7 @@ class Shape(ABC):
         else:
             data = self.data_displayed
 
-        data = data[:, -len(shape_plane) :]  # type: ignore[assignment]
+        data = data[:, -len(shape_plane) :]
 
         if self._filled:
             mask_p = poly_to_mask(shape_plane, (data - offset) * zoom_factor)

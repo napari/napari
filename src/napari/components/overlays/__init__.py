@@ -14,6 +14,7 @@ from napari.components.overlays.labels_polygon import LabelsPolygonOverlay
 from napari.components.overlays.layer_name import LayerNameOverlay
 from napari.components.overlays.scale_bar import ScaleBarOverlay
 from napari.components.overlays.text import TextOverlay
+from napari.components.overlays.zoom import ZoomOverlay
 
 __all__ = [
     'AxesOverlay',
@@ -28,4 +29,5 @@ __all__ = [
     'SelectionBoxOverlay',
     'TextOverlay',
     'TransformBoxOverlay',
+    'ZoomOverlay',
 ]
