@@ -70,6 +70,7 @@ class VispyCanvasOverlay(VispyBaseOverlay):
         self.y_offset = 0.0
         self.node.transform = STTransform()
         self.overlay.events.position.connect(self._on_position_change)
+        self.canvas_position_callback = lambda: None
 
     def _on_position_change(self, event=None):
         # subclasses should set sizes correctly to get the optimal positioning
@@ -97,6 +98,8 @@ class VispyCanvasOverlay(VispyBaseOverlay):
         self.node.transform.translate = transform
         scale = abs(self.node.transform.scale[0])
         self.node.transform.scale = [scale, 1, 1, 1]
+
+        self.canvas_position_callback()
 
     def reset(self) -> None:
         super().reset()

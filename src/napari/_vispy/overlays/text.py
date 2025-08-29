@@ -37,7 +37,6 @@ class VispyTextOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self.node.color = self.overlay.color
 
     def _on_position_change(self, event=None):
-        super()._on_position_change()
         position = self.overlay.position
         if position == CanvasPosition.TOP_LEFT:
             anchors = ('left', 'bottom')
@@ -67,6 +66,8 @@ class VispyTextOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
             y = self.y_size
 
         self.node.pos = (x, y)
+
+        super()._on_position_change()
 
     def reset(self):
         self._on_text_change()
