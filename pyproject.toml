@@ -225,7 +225,7 @@ dev = [
 ]
 build = [
     "ruff",
-    "pyqt6",
+    "pyqt5",
 ]
 
 [project.entry-points.pytest11]
