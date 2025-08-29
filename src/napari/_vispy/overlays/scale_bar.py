@@ -7,7 +7,7 @@ import pint
 
 from napari._vispy.overlays.base import ViewerOverlayMixin, VispyCanvasOverlay
 from napari._vispy.visuals.scale_bar import ScaleBar
-from napari.utils._units import PREFERRED_VALUES, get_unit_registry
+from napari.utils._units import PREFERRED_VALUES
 from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils.theme import get_theme
 
@@ -39,7 +39,7 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self.reset()
 
     def _on_unit_change(self):
-        self._unit = get_unit_registry()(self.overlay.unit)
+        self._unit = pint.get_application_registry()(self.overlay.unit)
         self._on_zoom_change(force=True)
 
     def _on_length_change(self):

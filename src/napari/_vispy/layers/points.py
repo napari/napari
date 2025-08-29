@@ -106,10 +106,10 @@ class VispyPointsLayer(VispyBaseLayer):
                 )
             symbol = self.layer._view_symbol[self.layer._highlight_index]
         else:
-            data = np.zeros((1, self.layer._slice_input.ndisplay))
+            data = np.empty((0, self.layer._slice_input.ndisplay))
             size = 0
             symbol = ['o']
-            border_width = np.array([0])
+            border_width = np.empty(0)
 
         scale = self.layer.scale[-1]
         highlight_thickness = settings.appearance.highlight.highlight_thickness
@@ -154,13 +154,9 @@ class VispyPointsLayer(VispyBaseLayer):
         update_node : bool
             If true, update the node after setting the properties
         """
-        update_text(node=self._get_text_node(), layer=self.layer)
+        update_text(node=self.node.text, layer=self.layer)
         if update_node:
             self.node.update()
-
-    def _get_text_node(self):
-        """Function to get the text node from the Compound visual"""
-        return self.node.text
 
     def _on_text_change(self, event=None):
         if event is not None:
@@ -173,12 +169,10 @@ class VispyPointsLayer(VispyBaseLayer):
 
     def _on_blending_change(self, event=None):
         """Function to set the blending mode"""
-        points_blending_kwargs = BLENDING_MODES[self.layer.blending]
-        self.node.set_gl_state(**points_blending_kwargs)
+        super()._on_blending_change()
 
-        text_node = self._get_text_node()
         text_blending_kwargs = BLENDING_MODES[self.layer.text.blending]
-        text_node.set_gl_state(**text_blending_kwargs)
+        self.node.text.set_gl_state(**text_blending_kwargs)
 
         # selection box is always without depth
         box_blending_kwargs = BLENDING_MODES['translucent_no_depth']
