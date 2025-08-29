@@ -127,3 +127,42 @@ def test_grid_mode(make_napari_viewer):
     for camera in (canvas.camera, *canvas.grid_cameras):
         np.testing.assert_allclose(camera.angles, angles)
         assert camera.zoom == zoom
+
+
+def test_tiling_canvas_overlays(make_napari_viewer, qtbot):
+    viewer = make_napari_viewer()
+    canvas = viewer.window._qt_viewer.canvas
+
+    viewer.scale_bar.visible = True
+    viewer.text_overlay.visible = True
+    viewer.text_overlay.text = 'test'
+
+    viewer.scale_bar.position = 'bottom_right'
+    viewer.text_overlay.position = 'bottom_right'
+
+    vispy_scale_bar = canvas._overlay_to_visual[viewer.scale_bar][0]
+    vispy_text_overlay = canvas._overlay_to_visual[viewer.text_overlay][0]
+
+    # force update of overlays
+    canvas._update_overlay_canvas_positions()
+
+    assert vispy_scale_bar.x_offset_tiling == 0
+    assert vispy_scale_bar.y_offset_tiling == 0
+    assert vispy_text_overlay.x_offset_tiling == 0
+    assert vispy_text_overlay.y_offset_tiling != 0
+
+    viewer.text_overlay.position = 'top_right'
+    canvas._update_overlay_canvas_positions()
+
+    assert vispy_scale_bar.x_offset_tiling == 0
+    assert vispy_scale_bar.y_offset_tiling == 0
+    assert vispy_text_overlay.x_offset_tiling == 0
+    assert vispy_text_overlay.y_offset_tiling == 0
+
+    viewer.scale_bar.position = 'top_right'
+    canvas._update_overlay_canvas_positions()
+
+    assert vispy_scale_bar.x_offset_tiling == 0
+    assert vispy_scale_bar.y_offset_tiling == 0
+    assert vispy_text_overlay.x_offset_tiling != 0
+    assert vispy_text_overlay.y_offset_tiling == 0

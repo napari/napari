@@ -5,6 +5,7 @@ from napari._vispy.overlays.base import (
     ViewerOverlayMixin,
     VispyCanvasOverlay,
 )
+from napari._vispy.utils.text import get_text_width_height
 from napari.components._viewer_constants import CanvasPosition
 
 
@@ -28,7 +29,6 @@ class _VispyBaseTextOverlay(VispyCanvasOverlay):
         self.node.font_size = self.overlay.font_size
 
     def _on_position_change(self, event=None):
-        super()._on_position_change()
         position = self.overlay.position
 
         if position == CanvasPosition.TOP_LEFT:
@@ -45,6 +45,22 @@ class _VispyBaseTextOverlay(VispyCanvasOverlay):
             anchors = ('center', 'top')
 
         self.node.anchors = anchors
+        self.node.font_size = self.overlay.font_size
+
+        self.x_size, self.y_size = get_text_width_height(self.node)
+
+        x = y = 0.0
+        if anchors[0] == 'right':
+            x = self.x_size
+        elif anchors[0] == 'center':
+            x = self.x_size / 2
+
+        if anchors[1] == 'top':
+            y = self.y_size
+
+        self.node.pos = (x, y)
+
+        super()._on_position_change()
 
     def reset(self):
         super().reset()
@@ -83,6 +99,7 @@ class VispyLayerNameOverlay(_VispyLayerTextOverlay):
 
     def _on_text_change(self):
         self.node.text = self.layer.name
+        self._on_position_change()
 
 
 class VispyDimsOverlay(_VispyViewerTextOverlay):
@@ -98,3 +115,4 @@ class VispyDimsOverlay(_VispyViewerTextOverlay):
             lines.append(f'{label} = {position:.5g}')
 
         self.node.text = '\n'.join(lines)
+        self._on_position_change()
