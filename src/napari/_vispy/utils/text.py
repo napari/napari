@@ -1,5 +1,6 @@
 import numpy as np
 from vispy.scene.visuals import Text
+from vispy.visuals.text.text import _text_to_vbo
 
 from napari.layers import Points, Shapes
 from napari.layers.utils.string_encoding import ConstantStringEncoding
@@ -71,3 +72,45 @@ def _has_visible_text(layer: Points | Shapes) -> bool:
     ):
         return False
     return len(layer._indices_view) != 0
+
+
+def get_text_width_height(text: Text) -> tuple[float, float]:
+    """Get the screen space width and height of a vispy text visual."""
+    if isinstance(text.text, str):
+        strings = [text.text]
+    elif isinstance(text.text, list):
+        strings = text.text
+    else:
+        raise TypeError('Text should either be a string or a list of strings')
+
+    top_left = []
+    bottom_right = []
+    for string in strings:
+        if string == '':
+            continue
+
+        buffer = _text_to_vbo(
+            string, text._font, *text._anchors, text._font._lowres_size
+        )
+
+        pos = buffer['a_position']
+        top_left.append(pos.min(axis=0))
+        bottom_right.append(pos.max(axis=0))
+
+    top_left = np.min(top_left, axis=0) if top_left else (0, 0)
+    bottom_right = np.max(bottom_right, axis=0) if bottom_right else (0, 0)
+
+    font_size = get_text_font_size(text)
+
+    # these magic numbers (1.2 and 1.3) are from trial and error
+    return (bottom_right[0] - top_left[0]) * font_size * 1.3, (
+        bottom_right[1] - top_left[1]
+    ) * font_size * 1.2
+
+
+def get_text_font_size(text: Text) -> float:
+    """Get the logical font size of a text visual, rescaled by dpi."""
+    # use 96 as the vispy reference dpi for historical reasons
+    dpi_scale_factor = 96 / text.transforms.dpi if text.transforms.dpi else 1
+
+    return text.font_size * dpi_scale_factor

@@ -31,8 +31,8 @@ class ScaleBarOverlay(CanvasOverlay):
         Background box color.
         See ``ColorValue.validate`` for supported values.
     unit : Optional[str]
-        Unit to be used by the scale bar. The value can be set
-        to `None` to display no units.
+        Unit to be used by the scale bar, equivalent to 1 pixel. Can be a quantity
+        such as "10 nm". The value can be set to `None` to display no units.
     length : Optional[float]
         Fixed length of the scale bar in physical units. If set to `None`,
         it is determined automatically based on zoom level.
