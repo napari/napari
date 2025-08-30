@@ -129,10 +129,12 @@ jobs:
             platform: macos-13
             backend: pyqt5
             coverage: no_cov
+            timeout-minutes: 60
           - python: "3.13"
             platform: macos-latest
             backend: pyqt6
             coverage: no_cov
+            timeout-minutes: 60
           # minimum specified requirements
           - python: "3.10"
             platform: ubuntu-22.04
@@ -177,6 +179,7 @@ jobs:
       min_req: ${{ matrix.MIN_REQ }}
       coverage: ${{ matrix.coverage }}
       tox_extras: ${{ matrix.tox_extras }}
+      timeout: ${{ matrix.timeout-minutes || 40 }}
 
 
   test_pip_install:
