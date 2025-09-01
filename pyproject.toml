@@ -225,7 +225,7 @@ build = [
     "pyqt5",
 ]
 
-
+# these need to be kept in sync with the equivalent optional-dependencies
 [dependency-groups]
 testing = [
     {include-group = "gallery"},
