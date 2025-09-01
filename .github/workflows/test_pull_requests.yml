@@ -165,7 +165,7 @@ jobs:
           # pyside6 test
           - python: "3.13"
             platform: ubuntu-latest
-            backend: Pyside6
+            backend: pyside6
             coverage: cov
           # pyside2 test
           - python: "3.10"
