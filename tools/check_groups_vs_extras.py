@@ -1,4 +1,12 @@
-""" """
+"""
+This script is called in pre-commit to ensure that certain extras in
+# pyproject.toml are kept in sync with dependency-groups.
+
+It is to provide a transition period while we migrate from extras to
+dependency-groups, and can be removed once the migration is complete.
+
+It is planned to remote these extras and this script in the 0.7.0 release.
+"""
 
 import sys
 from pathlib import Path
@@ -20,10 +28,10 @@ SYNC_GROUPS = (
 )
 
 
-def include_group_to_extras(dependecy: str | dict) -> str:
-    if isinstance(dependecy, str):
-        return dependecy
-    return f'napari[{dependecy["include-group"]}]'
+def include_group_to_extras(dependency: str | dict) -> str:
+    if isinstance(dependency, str):
+        return dependency
+    return f'napari[{dependency["include-group"]}]'
 
 
 def main():
