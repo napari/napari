@@ -35,11 +35,12 @@ class ScaleBar(Compound):
         # order matters (last is drawn on top)
         super().__init__([self.box, self.text, self.line])
 
-    def set_data(self, length, color, ticks, font_size):
+    def set_data(self, *, length, color, ticks, font_size):
         text_width, _ = get_text_width_height(self.text)
         # fixed multiplier for height to avoid fluttering when zooming
         text_height = get_text_font_size(self.text) * 1.5
 
+        # compute box width and height based on the size of the contents
         box_width = length + self._box_padding * 2
         box_width = max(box_width, text_width + self._box_padding * 2)
         box_height = (
@@ -47,13 +48,16 @@ class ScaleBar(Compound):
         )
 
         line_data = self._line_data if ticks else self._line_data[:2]
+
+        # set the line size based on the lenght, and position based on
+        # the box size and text size
         self.line.set_data(
-            line_data * (length / 2, self._tick_length / 2)
+            pos=line_data * (length / 2, self._tick_length / 2)
             + (
                 box_width / 2,
                 self._box_padding + text_height,
             ),
-            color,
+            color=color,
         )
 
         self.box.width = box_width

@@ -17,6 +17,8 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
 
     def __init__(self, *, viewer, overlay, parent=None) -> None:
         self._target_length = 150.0
+        self._current_length = 150.0
+        self._current_color = (1, 1, 1, 1)
         self._scale = 1
         self._unit = pint.Quantity('1 pixel')
 
@@ -25,25 +27,22 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         )
 
         self.overlay.events.box.connect(self._on_box_change)
-        self.overlay.events.box_color.connect(self._on_data_change)
-        self.overlay.events.color.connect(self._on_data_change)
-        self.overlay.events.colored.connect(self._on_data_change)
-        self.overlay.events.font_size.connect(self._on_text_change)
-        self.overlay.events.ticks.connect(self._on_data_change)
+        self.overlay.events.box_color.connect(self._on_rendering_change)
+        self.overlay.events.color.connect(self._on_rendering_change)
+        self.overlay.events.colored.connect(self._on_rendering_change)
+        self.overlay.events.font_size.connect(self._on_size_or_zoom_change())
+        self.overlay.events.ticks.connect(self._on_rendering_change)
         self.overlay.events.unit.connect(self._on_unit_change)
-        self.overlay.events.length.connect(self._on_length_change)
+        self.overlay.events.length.connect(self._on_size_or_zoom_change())
 
-        self.viewer.events.theme.connect(self._on_data_change)
-        self.viewer.camera.events.zoom.connect(self._on_zoom_change)
+        self.viewer.events.theme.connect(self._on_rendering_change)
+        self.viewer.camera.events.zoom.connect(self._on_size_or_zoom_change)
 
         self.reset()
 
     def _on_unit_change(self):
         self._unit = pint.get_application_registry()(self.overlay.unit)
-        self._on_zoom_change(force=True)
-
-    def _on_length_change(self):
-        self._on_zoom_change(force=True)
+        self._on_size_or_zoom_change(force=True)
 
     def _calculate_best_length(
         self, desired_length: float
@@ -98,8 +97,8 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         new_quantity = new_value * new_quantity.units
         return new_length, new_quantity
 
-    def _on_zoom_change(self, *, force: bool = False):
-        """Update axes length based on zoom scale."""
+    def _on_size_or_zoom_change(self, *, force: bool = False):
+        """Update length based on scale bar size and zoom."""
 
         # If scale has not changed, do not redraw
         scale = 1 / self.viewer.camera.zoom
@@ -125,19 +124,14 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
                 target_world_pixels_rounded / scale_canvas2world
             )
 
-        scale = target_canvas_pixels
+        self._current_length = target_canvas_pixels
 
         # Update scalebar and text
-        width, height = self.node.set_data(
-            scale, (1, 1, 1, 1), True, self.overlay.font_size
-        )
         self.node.text.text = f'{new_dim:g~#P}'
-        self.x_size = width
-        self.y_size = height
-        super()._on_position_change()
+        self._on_rendering_change()
+        self._on_position_change()
 
-    def _on_data_change(self):
-        """Change color and data of scale bar and box."""
+    def _get_colors(self):
         color = self.overlay.color
         box_color = self.overlay.box_color
 
@@ -164,27 +158,32 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
                 color = np.subtract(1, background_color)
                 color[-1] = background_color[-1]
 
-        # TODO: keep length
-        self.node.set_data(
-            10, color, self.overlay.ticks, self.overlay.font_size
+        return color, box_color
+
+    def _on_rendering_change(self):
+        """Change color and other rendering features of scale bar and box."""
+        color, box_color = self._get_colors()
+
+        width, height = self.node.set_data(
+            length=self._current_length,
+            color=color,
+            ticks=True,
+            font_size=self.overlay.font_size,
         )
         self.node.box.color = box_color
+
+        self.x_size = width
+        self.y_size = height
 
     def _on_box_change(self):
         self.node.box.visible = self.overlay.box
 
-    def _on_text_change(self):
-        self._on_zoom_change()
-
     def _on_visible_change(self):
         # ensure that dpi is updated when the scale bar is visible
-        self._on_text_change()
+        self._on_size_or_zoom_change()
         return super()._on_visible_change()
 
     def reset(self):
         super().reset()
-        self._on_unit_change()
-        self._on_data_change()
         self._on_box_change()
-        self._on_text_change()
-        self._on_length_change()
+        self._on_unit_change()

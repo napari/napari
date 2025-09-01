@@ -38,6 +38,7 @@ class VispyTextOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
 
     def _on_position_change(self, event=None):
         position = self.overlay.position
+        anchors = ('left', 'bottom')
         if position == CanvasPosition.TOP_LEFT:
             anchors = ('left', 'bottom')
         elif position == CanvasPosition.TOP_RIGHT:
@@ -56,6 +57,8 @@ class VispyTextOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
 
         self.x_size, self.y_size = get_text_width_height(self.node)
 
+        # depending on the canvas position, we need to change the position of the anchor itself
+        # to ensure the text aligns properly e.g. left when on the left, and right when on the right
         x = y = 0.0
         if anchors[0] == 'right':
             x = self.x_size
