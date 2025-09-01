@@ -137,6 +137,10 @@ partsegcore = [
 all_optional = [
     "napari[optional,partsegcore]"
 ]
+
+# the following extras need to match the dependency-groups below
+# they will be removed in napari 0.7.0
+
 testing = [
     "napari[gallery]",
     "babel>=2.9.0",
