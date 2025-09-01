@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import inspect
+from pathlib import Path
 from typing import Any
 
 from psutil import virtual_memory
@@ -272,13 +273,14 @@ class ApplicationSettings(EventedModel):
         ),
     )
 
-    startup_script: str = Field(
+    startup_script: Path = Field(
         default='',
         title=trans._('Full path to a startup script'),
         description=trans._(
             'Path to a Python script that will be executed on napari startup. '
-            'This can be used to customize the behavior of napari or load specific plugins automatically.'
+            'This can be used to customize the behavior of napari or load specific plugins automatically.',
         ),
+        json_schema_extra={'file_extension': 'py'},
     )
 
     def __setattr__(self, name: str, value: Any) -> None:
