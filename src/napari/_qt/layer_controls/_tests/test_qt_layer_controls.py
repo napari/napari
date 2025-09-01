@@ -282,6 +282,7 @@ skip_predicate = sys.version_info >= (3, 11) and (
 def test_create_layer_controls_spin(
     qtbot, create_layer_controls, layer_type_with_data, capsys
 ):
+    random.seed(0)
     # create layer controls widget
     ctrl = create_layer_controls(layer_type_with_data)
     # check create widget corresponds to the expected class for each type of layer
