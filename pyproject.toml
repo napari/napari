@@ -137,6 +137,93 @@ partsegcore = [
 all_optional = [
     "napari[optional,partsegcore]"
 ]
+testing = [
+    "napari[gallery]",
+    "babel>=2.9.0",
+    "fsspec>=2023.10.0",
+    "hypothesis>=6.8.0",
+    "lxml[html_clean]>5",
+    "matplotlib >= 3.6.1",
+    "pooch>=1.6.0",
+    "coverage>7",
+    "docstring_parser>=0.15",
+    "pretend>=1.0.9",
+    "pyautogui>=0.9.54",
+    "pytest-qt >=4.4.0; python_version > '3.10'",
+    "pytest-qt ==4.4.0; python_version <= '3.10'",
+    "pytest-pretty>=1.1.0",
+    "pytest>=8.3.5",
+    "pytest-rerunfailures>=15.1",
+    "tensorstore>=0.1.32",
+    "virtualenv>=20.17",
+    "xarray>=0.16.2",
+    "IPython>=7.25.0",
+    "qtconsole>=4.5.1",
+    "rich>=12.0.0",
+    "napari[optional-base]",
+]
+testing_extra = [
+    "torch>=1.10.2",
+]
+# needed for gallery examples
+gallery = [
+    "glasbey",
+    "zarr",
+    "dask[array,distributed]",
+    "matplotlib",
+    "pooch",
+    "nilearn",
+    "xarray",
+    "h5netcdf",
+    "meshio",
+]
+# needed to build docs
+docs = [
+    "napari[gallery]",
+    "sphinx<8",
+    "sphinx-autobuild",
+    "sphinx-tabs",
+    "sphinx-tags",
+    "sphinx-design",
+    "sphinx-external-toc",
+    "sphinx-favicon>=1.0",
+    "sphinx-copybutton",
+    "sphinx-gallery",
+    "sphinx_autodoc_typehints==1.12.0",
+    "sphinxcontrib-mermaid>=1.0.0",
+    "sphinxext-opengraph[social-cards]",
+    "myst-nb",
+    "napari-sphinx-theme>=0.3.0",
+    "matplotlib",
+    "lxml[html_clean]>5",
+    "imageio-ffmpeg",
+    "pydeps",
+    "seedir",
+    # triangle and bermuda needed for docs/guides/triangulation.md
+    "triangle",
+    "bermuda>=0.1.4",
+    "pytest",
+    "linkify-it-py",
+]
+release = [
+    "PyGithub>=1.46",
+    "twine>=3.1.1",
+    "gitpython>=3.1.0",
+    "requests-cache>=0.9.2",
+]
+dev = [
+    "ruff",
+    "check-manifest>=0.42",
+    "pre-commit>=2.9.0",
+    "pydantic",
+    "tox",
+    "tox-min-req",
+    "napari[testing]",
+]
+build = [
+    "ruff",
+    "pyqt5",
+]
 
 
 [dependency-groups]
