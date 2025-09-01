@@ -274,7 +274,7 @@ class ApplicationSettings(EventedModel):
     )
 
     startup_script: Path = Field(
-        default='',
+        default=Path(),
         title=trans._('Full path to a startup script'),
         description=trans._(
             'Path to a Python script that will be executed on napari startup. '

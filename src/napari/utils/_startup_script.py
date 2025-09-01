@@ -31,6 +31,10 @@ def _run_configured_startup_script() -> None:
         Path(get_settings().application.startup_script).expanduser().resolve()
     )
 
+    if script_path == Path().resolve():
+        # empty path
+        return
+
     if not (script_path.exists() and script_path.is_file()):
         warnings.warn(
             trans._(
