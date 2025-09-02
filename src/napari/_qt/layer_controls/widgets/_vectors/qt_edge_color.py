@@ -13,10 +13,10 @@ from napari.utils.events.event_utils import connect_setattr
 from napari.utils.translations import trans
 
 
-class QtEdgeColorPropertyControl(QtWidgetControlsBase):
+class QtEdgeColorFeatureControl(QtWidgetControlsBase):
     """
     Class that wraps the connection of events/signals between the current edge
-    color, color mode and color property selection from the layer attributes and
+    color, color mode and color feature selection from the layer attributes and
     Qt widgets.
 
     Parameters
@@ -83,8 +83,7 @@ class QtEdgeColorPropertyControl(QtWidgetControlsBase):
         self._on_edge_color_mode_change()
 
     def change_edge_color_feature(self, feature: str):
-        """Change edge_color_property of vectors on the layer model.
-        This property is the property the edge color is mapped to.
+        """Change edge_color feature of vectors on the layer model.
 
         Parameters
         ----------
