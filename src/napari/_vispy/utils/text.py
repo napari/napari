@@ -83,8 +83,8 @@ def get_text_width_height(text: Text) -> tuple[float, float]:
     else:
         raise TypeError('Text should either be a string or a list of strings')
 
-    top_left = []
-    bottom_right = []
+    top_left_corners = []
+    bottom_right_corners = []
     for string in strings:
         if string == '':
             continue
@@ -98,11 +98,15 @@ def get_text_width_height(text: Text) -> tuple[float, float]:
         )
 
         pos = buffer['a_position']
-        top_left.append(pos.min(axis=0))
-        bottom_right.append(pos.max(axis=0))
+        top_left_corners.append(pos.min(axis=0))
+        bottom_right_corners.append(pos.max(axis=0))
 
-    top_left = np.min(top_left, axis=0) if top_left else (0, 0)
-    bottom_right = np.max(bottom_right, axis=0) if bottom_right else (0, 0)
+    top_left = np.min(top_left_corners, axis=0) if top_left_corners else (0, 0)
+    bottom_right = (
+        np.max(bottom_right_corners, axis=0)
+        if bottom_right_corners
+        else (0, 0)
+    )
 
     font_size = get_text_font_size(text)
 
