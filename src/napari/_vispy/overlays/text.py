@@ -73,6 +73,6 @@ class VispyTextOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         super()._on_position_change()
 
     def reset(self):
-        self._on_text_change()
         super().reset()
+        self._on_text_change()
         self._on_color_change()
