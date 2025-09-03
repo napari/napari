@@ -10,6 +10,11 @@ from typing import (
 from superqt.utils import _qthreading
 
 from napari.utils.progress import progress
+from napari.utils.task_status import (
+    Status,
+    register_task_status,
+    update_task_status,
+)
 from napari.utils.translations import trans
 
 __all__ = [
@@ -180,6 +185,49 @@ def create_worker(
             worker.yielded.connect(pbar.increment_with_overflow)
 
         worker.pbar = pbar
+
+    # signals connection for status handling
+    worker_status_id = register_task_status(
+        'napari-worker',
+        Status.PENDING,
+        trans._('{func} execution pending', deferred=True, func=func),
+        cancel_callback=worker.quit,
+    )
+    worker.started.connect(
+        lambda: update_task_status(
+            worker_status_id,
+            Status.BUSY,
+            description=trans._('Executing {func}', deferred=True, func=func),
+        )
+    )
+    worker.errored.connect(
+        lambda: update_task_status(
+            worker_status_id,
+            Status.FAILED,
+            description=trans._(
+                '{func} execution failed', deferred=True, func=func
+            ),
+        )
+    )
+    worker.finished.connect(
+        lambda: update_task_status(
+            worker_status_id,
+            Status.COMPLETED,
+            description=trans._(
+                '{func} execution completed', deferred=True, func=func
+            ),
+        )
+    )
+    if hasattr(worker.signals, 'aborted'):
+        worker.aborted.connect(
+            lambda: update_task_status(
+                worker_status_id,
+                Status.CANCELLED,
+                description=trans._(
+                    '{func} execution cancelled', deferred=True, func=func
+                ),
+            )
+        )
 
     if _start_thread is None:
         _start_thread = _connect is not None
