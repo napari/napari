@@ -969,6 +969,9 @@ class VispyCanvas:
                 view, dict.fromkeys(CanvasPosition, y_padding)
             )
 
+            x_offset = x_offset_total[view][overlay.position]
+            y_offset = y_offset_total[view][overlay.position]
+
             # add offset to the following overlays based on tiling direction
             if overlay.position in ('top_right', 'bottom_left'):
                 x_offset_total[view][overlay.position] += (
@@ -982,8 +985,6 @@ class VispyCanvas:
             # position the overlay in the canvas
             y_max, x_max = self.size
             position = overlay.position
-            x_offset = x_offset_total[view][overlay.position]
-            y_offset = y_offset_total[view][overlay.position]
 
             x = y = 0
             if 'top' in position:
