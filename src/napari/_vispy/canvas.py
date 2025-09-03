@@ -612,7 +612,7 @@ class VispyCanvas:
         bottom_right = self._map_canvas2world(view.rect.size, view)
         return np.array([top_left, bottom_right])
 
-    def on_draw(self, event: DrawEvent) -> None:
+    def on_draw(self, event: DrawEvent | None = None) -> None:
         """Called whenever the canvas is drawn.
 
         This is triggered from vispy whenever new data is sent to the canvas or

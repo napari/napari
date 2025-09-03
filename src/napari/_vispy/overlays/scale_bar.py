@@ -167,7 +167,7 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         width, height = self.node.set_data(
             length=self._current_length,
             color=color,
-            ticks=True,
+            ticks=self.overlay.ticks,
             font_size=self.overlay.font_size,
         )
         self.node.box.color = box_color
