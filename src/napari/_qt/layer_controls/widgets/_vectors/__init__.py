@@ -1,5 +1,5 @@
 from napari._qt.layer_controls.widgets._vectors.qt_edge_color import (
-    QtEdgeColorPropertyControl,
+    QtEdgeColorFeatureControl,
 )
 from napari._qt.layer_controls.widgets._vectors.qt_line_dimension_spinbox import (
     QtLengthSpinBoxControl,
@@ -10,7 +10,7 @@ from napari._qt.layer_controls.widgets._vectors.qt_vector_style_combobox import 
 )
 
 __all__ = [
-    'QtEdgeColorPropertyControl',
+    'QtEdgeColorFeatureControl',
     'QtLengthSpinBoxControl',
     'QtVectorStyleComboBoxControl',
     'QtWidthSpinBoxControl',
