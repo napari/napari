@@ -1,5 +1,6 @@
 import os
 import random
+import re
 import sys
 from typing import NamedTuple
 from unittest.mock import Mock
@@ -21,7 +22,11 @@ from qtpy.QtWidgets import (
 from superqt.sliders import QRangeSlider
 
 from napari._qt.layer_controls.qt_image_controls import QtImageControls
+from napari._qt.layer_controls.qt_image_controls_base import (
+    QtBaseImageControls,
+)
 from napari._qt.layer_controls.qt_labels_controls import QtLabelsControls
+from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
 from napari._qt.layer_controls.qt_layer_controls_container import (
     QtLayerControlsContainer,
     create_qt_layer_controls,
@@ -44,8 +49,17 @@ from napari.layers import (
     Tracks,
     Vectors,
 )
+from napari.utils._test_utils import (
+    validate_all_params_in_docstring,
+    validate_kwargs_sorted,
+)
 from napari.utils.colormaps import DirectLabelColormap
 from napari.utils.events.event import Event
+
+
+def strip_ansi_codes(text: str) -> str:
+    """Remove ANSI color codes from text."""
+    return re.sub(r'\x1b\[[0-9;]*m', '', text)
 
 
 class LayerTypeWithData(NamedTuple):
@@ -160,6 +174,25 @@ def create_layer_controls(qtbot):
 
 
 @pytest.mark.parametrize(
+    'controls_class',
+    [
+        QtLayerControls,
+        QtBaseImageControls,
+        QtImageControls,
+        QtLabelsControls,
+        QtPointsControls,
+        QtShapesControls,
+        QtSurfaceControls,
+        QtTracksControls,
+        QtVectorsControls,
+    ],
+)
+def test_docstring(controls_class):
+    validate_all_params_in_docstring(controls_class)
+    validate_kwargs_sorted(controls_class)
+
+
+@pytest.mark.parametrize(
     'layer_type_with_data',
     [
         _LABELS_WITH_DIRECT_COLORMAP,
@@ -249,10 +282,9 @@ skip_predicate = sys.version_info >= (3, 11) and (
 def test_create_layer_controls_spin(
     qtbot, create_layer_controls, layer_type_with_data, capsys
 ):
+    random.seed(0)
     # create layer controls widget
     ctrl = create_layer_controls(layer_type_with_data)
-    qtbot.addWidget(ctrl)
-
     # check create widget corresponds to the expected class for each type of layer
     assert isinstance(ctrl, layer_type_with_data.expected_isinstance)
 
@@ -290,6 +322,7 @@ def test_create_layer_controls_spin(
             captured = capsys.readouterr()
             assert not captured.out
             if captured.err:
+                cleaned_err = strip_ansi_codes(captured.err)
                 # since an error was found check if it is associated with a known issue still open
                 expected_errors = [
                     'MemoryError: Unable to allocate',  # See https://github.com/napari/napari/issues/5798
@@ -299,7 +332,7 @@ def test_create_layer_controls_spin(
                     'RuntimeWarning: overflow encountered',  # See https://github.com/napari/napari/issues/4864
                 ]
                 assert any(
-                    expected_error in captured.err
+                    expected_error in cleaned_err
                     for expected_error in expected_errors
                 ), f'value: {value}, range {value_range}\nerr: {captured.err}'
 
@@ -618,11 +651,11 @@ def test_text_set_visible_updates_checkbox(qtbot, layer_type_with_data):
     layer = layer_type_with_data.type(layer_type_with_data.data, text=text)
     ctrl = create_qt_layer_controls(layer)
     qtbot.addWidget(ctrl)
-    assert ctrl.textDispCheckBox.isChecked()
+    assert ctrl._text_visibility_control.text_disp_checkbox.isChecked()
 
     layer.text.visible = False
 
-    assert not ctrl.textDispCheckBox.isChecked()
+    assert not ctrl._text_visibility_control.text_disp_checkbox.isChecked()
 
 
 @pytest.mark.parametrize('layer_type_with_data', [_POINTS, _SHAPES])
@@ -636,11 +669,11 @@ def test_set_text_then_set_visible_updates_checkbox(
         'string': {'constant': 'another_test'},
         'visible': False,
     }
-    assert not ctrl.textDispCheckBox.isChecked()
+    assert not ctrl._text_visibility_control.text_disp_checkbox.isChecked()
 
     layer.text.visible = True
 
-    assert ctrl.textDispCheckBox.isChecked()
+    assert ctrl._text_visibility_control.text_disp_checkbox.isChecked()
 
 
 @pytest.mark.parametrize(('ndim', 'editable_after'), [(2, False), (3, True)])

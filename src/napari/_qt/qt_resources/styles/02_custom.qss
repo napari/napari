@@ -191,6 +191,19 @@ QWidget[emphasized="true"] QDoubleSlider::handle:disabled {
     background: {{ primary }};
 }
 
+SliderLabel {
+  background-color: {{ darken(background, 15) }};
+  color: {{ text }};
+  min-height: 16px;
+  padding: 0px;
+  border-radius: 2px;
+  font-size: {{ decrease(font_size, 1) }};
+}
+
+QWidget[emphasized="true"] SliderLabel {
+  background-color: {{ background }};
+}
+
 QWidget[emphasized="true"] SliderLabel:disabled {
     color: {{ opacity(text, 50) }};
 }
@@ -725,6 +738,20 @@ QtLayerList::indicator:checked {
   image: url("theme_{{ id }}:/error.svg");
   min-height: 36px;
   min-width: 36px;
+}
+
+/* ------------- thick slicing dialog --------- */
+QPushButton#lockButton {
+  max-height: 15px;
+  max-width: 15px;
+}
+
+QPushButton#lockButton:checked {
+  image: url("theme_{{ id }}:/lock.svg");
+}
+
+QPushButton#lockButton:!checked {
+  image: url("theme_{{ id }}:/lock_open.svg");
 }
 
 /* ------------- Set size for dims sorter --------- */

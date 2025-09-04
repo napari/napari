@@ -67,6 +67,32 @@ class Viewer(ViewerModel):
         self._window = Window(self, show=show)
         self._instances.add(self)
 
+    def __new__(cls, *args, **kwargs):
+        """Overload __new__ to facilitate temporary monkey-patching.
+
+        This method simplifies scenarios where temporary patching of `__new__`
+        is needed—for example, to ensure only one viewer instance exists
+        when scripts are dropped into the viewer.
+
+        By default, Python implicitly calls `object.__new__(cls)` with only one argument (`cls`).
+        However, once `__new__` is explicitly overridden or patched, Python automatically
+        forwards all constructor arguments (`*args` and `**kwargs`) to it, causing signature mismatches.
+
+        Thus, directly assigning a patched function like this:
+
+        >>> old_new = Viewer.__new__
+        >>> Viewer.__new__ = lambda cls, *args, **kwargs: list(cls._instances)[0]
+        >>> # code creating a Viewer instance...
+        >>> Viewer.__new__ = old_new
+
+        may fail afterward because the restored original `__new__` (typically `object.__new__`)
+        doesn't accept extra arguments, raising a TypeError.
+
+        This explicit override accepts arbitrary arguments but intentionally discards them,
+        forwarding only the class to `object.__new__`, thus making temporary patching safe and convenient.
+        """
+        return super().__new__(cls)
+
     # Expose private window publicly. This is needed to keep window off pydantic model
     @property
     def window(self) -> 'Window':

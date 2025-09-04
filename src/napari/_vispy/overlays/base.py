@@ -33,13 +33,13 @@ class VispyBaseOverlay:
         if parent is not None:
             self.node.parent = parent
 
-    def _on_visible_change(self):
+    def _on_visible_change(self) -> None:
         self.node.visible = self.overlay.visible
 
-    def _on_opacity_change(self):
+    def _on_opacity_change(self) -> None:
         self.node.opacity = self.overlay.opacity
 
-    def _on_blending_change(self):
+    def _on_blending_change(self) -> None:
         self.node.set_gl_state(**BLENDING_MODES[self.overlay.blending])
         self.node.update()
 
@@ -48,7 +48,7 @@ class VispyBaseOverlay:
         self._on_opacity_change()
         self._on_blending_change()
 
-    def close(self):
+    def close(self) -> None:
         disconnect_events(self.overlay.events, self)
         self.node.transforms = MatrixTransform()
         self.node.parent = None
@@ -151,10 +151,10 @@ class LayerOverlayMixin:
         # always a child of the actual vispy node of the layer (eg, canvas overlays)
         self.layer.events.visible.connect(self._on_visible_change)
 
-    def _on_visible_change(self):
+    def _on_visible_change(self) -> None:
         self.node.visible = self.overlay.visible and self.layer.visible
 
-    def close(self):
+    def close(self) -> None:
         disconnect_events(self.layer.events, self)
         super().close()
 
@@ -168,6 +168,6 @@ class ViewerOverlayMixin:
         )
         self.viewer = viewer
 
-    def close(self):
+    def close(self) -> None:
         disconnect_events(self.viewer.events, self)
         super().close()
