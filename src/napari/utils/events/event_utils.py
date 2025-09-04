@@ -4,7 +4,7 @@ import weakref
 from typing import TYPE_CHECKING
 
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QCheckBox
+from qtpy.QtWidgets import QAbstractSpinBox, QCheckBox
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -37,11 +37,17 @@ def connect_setattr(emitter: Emitter, obj, attr: str, emitter_owner=None):
         if (ob := ref()) is None:
             emitter.disconnect(_cb)
             return
-        # Cast QCheckbox state to a bool
+        # Handle `QCheckbox` state to set a `bool`
         # See napari/napari#8154
         if len(value) == 1 and isinstance(emitter_owner, QCheckBox):
             value = (Qt.CheckState(value[0]) == Qt.CheckState.Checked,)
         setattr(ob, attr, value[0] if len(value) == 1 else value)
+        # Handle focus for SpinBox like widgets
+        # See napari/napari#8154 and napari/napari#500
+        if isinstance(emitter_owner, QAbstractSpinBox):
+            emitter_owner.clearFocus()
+            if emitter_owner.parent():
+                emitter_owner.parent().setFocus()
 
     emitter.connect(_cb)
     # There are scenarios where emitter is deleted before obj.

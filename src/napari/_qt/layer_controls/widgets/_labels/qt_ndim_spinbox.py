@@ -10,6 +10,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
 )
 from napari._qt.utils import qt_signals_blocked
 from napari.layers import Labels
+from napari.utils.events.event_utils import connect_setattr
 from napari.utils.translations import trans
 
 
@@ -45,7 +46,12 @@ class QtNdimSpinBoxControl(QtWidgetControlsBase):
         ndim_sb = QSpinBox()
         self.ndim_spinbox = ndim_sb
         ndim_sb.setToolTip(trans._('Number of dimensions for label editing'))
-        ndim_sb.valueChanged.connect(self.change_n_edit_dim)
+        connect_setattr(
+            ndim_sb.valueChanged,
+            layer,
+            'n_edit_dimensions',
+            emitter_owner=ndim_sb,
+        )
         ndim_sb.setMinimum(2)
         ndim_sb.setMaximum(self._layer.ndim)
         ndim_sb.setSingleStep(1)
@@ -53,20 +59,6 @@ class QtNdimSpinBoxControl(QtWidgetControlsBase):
         self._on_n_edit_dimensions_change()
 
         self.ndim_spinbox_label = QtWrappedLabel(trans._('n edit dim:'))
-
-    def change_n_edit_dim(self, value: int) -> None:
-        """Change the number of editable dimensions of label layer.
-
-        Parameters
-        ----------
-        value : int
-            The number of editable dimensions to set.
-        """
-        self._layer.n_edit_dimensions = value
-        self.ndim_spinbox.clearFocus()
-
-        # TODO: Check how to decouple this
-        self.parent().setFocus()
 
     def _on_n_edit_dimensions_change(self) -> None:
         """Receive layer model n-dim mode change event and update the checkbox."""

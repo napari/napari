@@ -16,6 +16,7 @@ from napari.layers import Labels
 from napari.layers.labels._labels_utils import get_dtype
 from napari.utils._dtype import get_dtype_limits
 from napari.utils.events import disconnect_events
+from napari.utils.events.event_utils import connect_setattr
 from napari.utils.translations import trans
 
 
@@ -139,7 +140,12 @@ class QtLabelControl(QtWidgetControlsBase):
         dtype_lims = get_dtype_limits(get_dtype(layer))
         self.selection_spinbox.setRange(*dtype_lims)
         self.selection_spinbox.setKeyboardTracking(False)
-        self.selection_spinbox.valueChanged.connect(self.change_selection)
+        connect_setattr(
+            self.selection_spinbox.valueChanged,
+            layer,
+            'selected_label',
+            emitter_owner=self.selection_spinbox,
+        )
         self.selection_spinbox.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._on_selected_label_change()
 
@@ -152,19 +158,6 @@ class QtLabelControl(QtWidgetControlsBase):
         color_layout.addWidget(self.colorbox)
         color_layout.addWidget(self.selection_spinbox)
         self.label_color.setLayout(color_layout)
-
-    def change_selection(self, value: int) -> None:
-        """Change currently selected label.
-
-        Parameters
-        ----------
-        value : int
-            Index of label to select.
-        """
-        self._layer.selected_label = value
-        self.selection_spinbox.clearFocus()
-        # TODO: decouple
-        self.parent().setFocus()
 
     def _on_selected_label_change(self) -> None:
         """Receive layer model label selection change event and update spinbox."""
