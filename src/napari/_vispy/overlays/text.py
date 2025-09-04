@@ -20,7 +20,15 @@ class _VispyBaseTextOverlay(VispyCanvasOverlay):
         self.overlay.events.font_size.connect(self._on_font_size_change)
 
     def _on_text_change(self):
-        pass
+        self.node.text = self.overlay.text
+        self._on_position_change()
+
+    def _on_visible_change(self):
+        # ensure that dpi is updated when the scale bar is visible
+        # this does not need to run _on_position_change because visibility
+        # is already connected to the canvas callback by the canvas itself
+        self._on_text_change()
+        return super()._on_visible_change()
 
     def _on_color_change(self):
         self.node.color = self.overlay.color
@@ -30,7 +38,7 @@ class _VispyBaseTextOverlay(VispyCanvasOverlay):
 
     def _on_position_change(self, event=None):
         position = self.overlay.position
-
+        anchors = ('left', 'bottom')
         if position == CanvasPosition.TOP_LEFT:
             anchors = ('left', 'bottom')
         elif position == CanvasPosition.TOP_RIGHT:
@@ -49,6 +57,8 @@ class _VispyBaseTextOverlay(VispyCanvasOverlay):
 
         self.x_size, self.y_size = get_text_width_height(self.node)
 
+        # depending on the canvas position, we need to change the position of the anchor itself
+        # to ensure the text aligns properly e.g. left when on the left, and right when on the right
         x = y = 0.0
         if anchors[0] == 'right':
             x = self.x_size

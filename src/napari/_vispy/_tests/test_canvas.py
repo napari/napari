@@ -137,32 +137,51 @@ def test_tiling_canvas_overlays(make_napari_viewer, qtbot):
     viewer.text_overlay.visible = True
     viewer.text_overlay.text = 'test'
 
-    viewer.scale_bar.position = 'bottom_right'
-    viewer.text_overlay.position = 'bottom_right'
-
     vispy_scale_bar = canvas._overlay_to_visual[viewer.scale_bar][0]
     vispy_text_overlay = canvas._overlay_to_visual[viewer.text_overlay][0]
 
-    # force update of overlays
+    padding = 10.0  # currently hardcoded
+    y_max, x_max = canvas.size
+
+    scale_bar_y_size = vispy_scale_bar.y_size + padding
+    scale_bar_x_size = vispy_scale_bar.x_size + padding
+
+    text_overlay_y_size = vispy_text_overlay.y_size + padding
+    text_overlay_x_size = vispy_text_overlay.x_size + padding
+
+    # check vertical tiling works on the bottom right
+    viewer.scale_bar.position = 'bottom_right'
+    viewer.text_overlay.position = 'bottom_right'
     canvas._update_overlay_canvas_positions()
 
-    assert vispy_scale_bar.x_offset_tiling == 0
-    assert vispy_scale_bar.y_offset_tiling == 0
-    assert vispy_text_overlay.x_offset_tiling == 0
-    assert vispy_text_overlay.y_offset_tiling != 0
+    np.testing.assert_almost_equal(
+        vispy_text_overlay.node.transform.translate[0],
+        x_max - text_overlay_x_size,
+    )
+    np.testing.assert_almost_equal(
+        vispy_text_overlay.node.transform.translate[1],
+        y_max - text_overlay_y_size - scale_bar_y_size,
+    )
 
-    viewer.text_overlay.position = 'top_right'
-    canvas._update_overlay_canvas_positions()
-
-    assert vispy_scale_bar.x_offset_tiling == 0
-    assert vispy_scale_bar.y_offset_tiling == 0
-    assert vispy_text_overlay.x_offset_tiling == 0
-    assert vispy_text_overlay.y_offset_tiling == 0
-
+    # move scale bar out of the way and check tiling is updated
     viewer.scale_bar.position = 'top_right'
     canvas._update_overlay_canvas_positions()
+    np.testing.assert_almost_equal(
+        vispy_text_overlay.node.transform.translate[0],
+        x_max - text_overlay_x_size,
+    )
+    np.testing.assert_almost_equal(
+        vispy_text_overlay.node.transform.translate[1],
+        y_max - text_overlay_y_size,
+    )
 
-    assert vispy_scale_bar.x_offset_tiling == 0
-    assert vispy_scale_bar.y_offset_tiling == 0
-    assert vispy_text_overlay.x_offset_tiling != 0
-    assert vispy_text_overlay.y_offset_tiling == 0
+    # check horizontal tiling works on the top right
+    viewer.text_overlay.position = 'top_right'
+    canvas._update_overlay_canvas_positions()
+    np.testing.assert_almost_equal(
+        vispy_text_overlay.node.transform.translate[0],
+        x_max - text_overlay_x_size - scale_bar_x_size,
+    )
+    np.testing.assert_almost_equal(
+        vispy_text_overlay.node.transform.translate[1], 0 + padding
+    )

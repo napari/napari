@@ -55,50 +55,22 @@ class VispyBaseOverlay:
 class VispyCanvasOverlay(VispyBaseOverlay):
     """
     Vispy overlay backend for overlays that live in canvas space.
+
+    NOTE: Subclasses should make sure to properly set their x_size and y_size
+    attribute when their size changes for proper tiling.
     """
 
     def __init__(self, *, overlay, node, parent=None) -> None:
         super().__init__(overlay=overlay, node=node, parent=parent)
-
-        # size is used to control fine positioning, and will depend
-        # on the subclass and visual that needs to be rendered
         self.x_size = 0.0
         self.y_size = 0.0
-        # tiling offsets shouldn't be touched and are only used by the canvas
-        # to tile overlays properly
-        self.x_offset = 0.0
-        self.y_offset = 0.0
         self.node.transform = STTransform()
         self.overlay.events.position.connect(self._on_position_change)
         self.canvas_position_callback = lambda: None
 
     def _on_position_change(self, event=None):
-        # subclasses should set sizes correctly to get the optimal positioning
-        if self.node.parent is None:
-            return
-        x_max, y_max = list(self.node.parent.size)
-        position = self.overlay.position
-
-        x_offset = 0
-        y_offset = 0
-        if 'top' in position:
-            y_offset = self.y_offset
-        elif 'bottom' in position:
-            y_offset = y_max - self.y_size - self.y_offset
-
-        if 'left' in position:
-            x_offset = self.x_offset
-        elif 'right' in position:
-            x_offset = x_max - self.x_size - self.x_offset
-        elif 'center' in position:
-            x_offset = x_max / 2 - self.x_size / 2
-
-        transform = [x_offset, y_offset, 0, 0]
-
-        self.node.transform.translate = transform
-        scale = abs(self.node.transform.scale[0])
-        self.node.transform.scale = [scale, 1, 1, 1]
-
+        # NOTE: when subclasses call this method, they should first ensure sizes
+        # (x_size, and y_size) are set correctly
         self.canvas_position_callback()
 
     def reset(self) -> None:
