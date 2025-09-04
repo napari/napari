@@ -46,8 +46,9 @@ def connect_setattr(emitter: Emitter, obj, attr: str, emitter_owner=None):
         # See napari/napari#8154 and napari/napari#500
         if isinstance(emitter_owner, QAbstractSpinBox):
             emitter_owner.clearFocus()
-            if emitter_owner.parent():
-                emitter_owner.parent().setFocus()
+            emitter_owner_parent = emitter_owner.parent()
+            if emitter_owner_parent is not None:
+                emitter_owner_parent.setFocus()
 
     emitter.connect(_cb)
     # There are scenarios where emitter is deleted before obj.
