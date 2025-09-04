@@ -1,3 +1,5 @@
+from typing import no_type_check
+
 import numpy as np
 from vispy.scene.visuals import Text
 
@@ -94,7 +96,7 @@ def get_text_width_height(text: Text) -> tuple[float, float]:
         # calculate the bounding box of the text as it would be when rendered
         buffer = _text_to_vbo(
             string, text._font, *text._anchors, text._font._lowres_size
-        )
+        )  # type: ignore
 
         pos = buffer['a_position']
         top_left_corners.append(pos.min(axis=0))
@@ -125,6 +127,7 @@ def get_text_font_size(text: Text) -> float:
 
 # vendored from vispy/visuals/text/text.py, but removing all lines referring to context flushing,
 # canvas and viewport which cause issues. We only need to calculate sizes anyways.
+@no_type_check
 def _text_to_vbo(text, font, anchor_x, anchor_y, lowres_size):
     """Convert text characters to VBO"""
     text_vtype = np.dtype(
