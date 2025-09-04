@@ -40,7 +40,7 @@ def connect_setattr(emitter: Emitter, obj, attr: str, emitter_owner=None):
         # Cast QCheckbox state to a bool
         # See napari/napari#8154
         if len(value) == 1 and isinstance(emitter_owner, QCheckBox):
-            value = [Qt.CheckState(value[0]) == Qt.CheckState.Checked]
+            value = (Qt.CheckState(value[0]) == Qt.CheckState.Checked,)
         setattr(ob, attr, value[0] if len(value) == 1 else value)
 
     emitter.connect(_cb)
