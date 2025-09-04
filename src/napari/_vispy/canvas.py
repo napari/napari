@@ -612,7 +612,7 @@ class VispyCanvas:
         bottom_right = self._map_canvas2world(view.rect.size, view)
         return np.array([top_left, bottom_right])
 
-    def on_draw(self, event: DrawEvent) -> None:
+    def on_draw(self, event: DrawEvent | None = None) -> None:
         """Called whenever the canvas is drawn.
 
         This is triggered from vispy whenever new data is sent to the canvas or
@@ -799,11 +799,11 @@ class VispyCanvas:
     def _defer_overlay_position_update(self):
         self._needs_overlay_position_update = True
 
-    def _connect_canvas_overlay_events(self, overlay):
+    def _connect_canvas_overlay_events(self, overlay: Overlay) -> None:
         overlay.events.position.connect(self._defer_overlay_position_update)
         overlay.events.visible.connect(self._defer_overlay_position_update)
 
-    def _disconnect_canvas_overlay_events(self, overlay):
+    def _disconnect_canvas_overlay_events(self, overlay: Overlay) -> None:
         overlay.events.position.disconnect(self._defer_overlay_position_update)
         overlay.events.visible.disconnect(self._defer_overlay_position_update)
 
@@ -954,34 +954,52 @@ class VispyCanvas:
     def _update_overlay_canvas_positions(self, event=None):
         # TODO: make settable
         x_padding = y_padding = 10.0
-        x_offsets = {}
-        y_offsets = {}
+        x_offset_total = {}
+        y_offset_total = {}
         for (
             overlay,
             vispy_overlay,
             view,
         ) in self._get_ordered_visible_canvas_overlays():
-            # TODO: these should be settable!
-            x_offsets.setdefault(
+            # TODO: vertical vs horizontal tiling should be settable!
+            x_offset_total.setdefault(
                 view, dict.fromkeys(CanvasPosition, x_padding)
             )
-            y_offsets.setdefault(
+            y_offset_total.setdefault(
                 view, dict.fromkeys(CanvasPosition, y_padding)
             )
 
+            x_offset = x_offset_total[view][overlay.position]
+            y_offset = y_offset_total[view][overlay.position]
+
+            # add offset to the following overlays based on tiling direction
             if overlay.position in ('top_right', 'bottom_left'):
-                vispy_overlay.x_offset = x_offsets[view][overlay.position]
-                x_offsets[view][overlay.position] += (
+                x_offset_total[view][overlay.position] += (
                     vispy_overlay.x_size + x_padding
                 )
-                vispy_overlay.y_offset = y_padding
             else:
-                vispy_overlay.y_offset = y_offsets[view][overlay.position]
-                y_offsets[view][overlay.position] += (
+                y_offset_total[view][overlay.position] += (
                     vispy_overlay.y_size + y_padding
                 )
-                vispy_overlay.x_offset = x_padding
-            vispy_overlay._on_position_change()
+
+            # position the overlay in the canvas
+            y_max, x_max = self.size
+            position = overlay.position
+
+            x = y = 0
+            if 'top' in position:
+                y = y_offset
+            elif 'bottom' in position:
+                y = y_max - vispy_overlay.y_size - y_offset
+
+            if 'left' in position:
+                x = x_offset
+            elif 'right' in position:
+                x = x_max - vispy_overlay.x_size - x_offset
+            elif 'center' in position:
+                x = x_max / 2 - vispy_overlay.x_size / 2
+
+            vispy_overlay.node.transform.translate = [x, y, 0, 0]
 
         self._needs_overlay_position_update = False
 

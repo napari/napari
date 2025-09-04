@@ -34,7 +34,7 @@ packaging==25.0
     #   qtpy
 pathspec==0.12.1
     # via mypy
-platformdirs==4.3.8
+platformdirs==4.4.0
     # via npe2
 psygnal==0.14.1
     # via
@@ -79,7 +79,7 @@ superqt==0.7.6
     # via magicgui
 tomli-w==1.2.0
     # via npe2
-typer==0.16.1
+typer==0.17.3
     # via npe2
 types-pyyaml==6.0.12.20250822
     # via -r resources/requirements_mypy.in
@@ -87,7 +87,7 @@ types-requests==2.32.4.20250809
     # via -r resources/requirements_mypy.in
 types-setuptools==80.9.0.20250822
     # via -r resources/requirements_mypy.in
-typing-extensions==4.14.1
+typing-extensions==4.15.0
     # via
     #   magicgui
     #   mypy

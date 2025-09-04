@@ -46,7 +46,7 @@ comm==0.2.3
     # via ipykernel
 contourpy==1.3.3
     # via matplotlib
-coverage==7.10.5
+coverage==7.10.6
     # via napari (pyproject.toml)
 crc32c==2.7.1
     # via numcodecs
@@ -82,7 +82,7 @@ flexcache==0.3
     # via pint
 flexparser==0.4
     # via pint
-fonttools==4.59.1
+fonttools==4.59.2
     # via matplotlib
 freetype-py==2.5.1
     # via vispy
@@ -101,7 +101,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.138.3
+hypothesis==6.138.11
     # via napari (pyproject.toml)
 idna==3.10
     # via requests
@@ -121,7 +121,7 @@ ipykernel==6.30.1
     #   -r resources/constraints/version_denylist.txt
     #   napari-console
     #   qtconsole
-ipython==9.4.0
+ipython==9.5.0
     # via
     #   napari (pyproject.toml)
     #   ipykernel
@@ -135,7 +135,7 @@ jinja2==3.1.6
     #   distributed
     #   sphinx
     #   torch
-joblib==1.5.1
+joblib==1.5.2
     # via
     #   nilearn
     #   scikit-learn
@@ -179,7 +179,7 @@ markdown-it-py==4.0.0
     # via rich
 markupsafe==3.0.2
     # via jinja2
-matplotlib==3.10.5
+matplotlib==3.10.6
     # via
     #   napari (pyproject.toml)
     #   glasbey
@@ -337,7 +337,7 @@ pint==0.25
     # via napari (pyproject.toml)
 pip==25.2
     # via napari-plugin-manager
-platformdirs==4.3.8
+platformdirs==4.4.0
     # via
     #   jupyter-core
     #   npe2
@@ -354,7 +354,7 @@ pooch==1.8.2
     #   scikit-image
 pretend==1.0.9
     # via napari (pyproject.toml)
-prompt-toolkit==3.0.51
+prompt-toolkit==3.0.52
     # via ipython
 psutil==7.0.0
     # via
@@ -420,11 +420,11 @@ pyrect==0.2.0
     # via pygetwindow
 pyscreeze==1.0.1
     # via pyautogui
-pyside6==6.9.1
+pyside6==6.9.2
     # via napari (pyproject.toml)
-pyside6-addons==6.9.1
+pyside6-addons==6.9.2
     # via pyside6
-pyside6-essentials==6.9.1
+pyside6-essentials==6.9.2
     # via
     #   pyside6
     #   pyside6-addons
@@ -444,7 +444,7 @@ pytest-pretty==1.3.0
     # via napari (pyproject.toml)
 pytest-qt==4.5.0
     # via napari (pyproject.toml)
-pytest-rerunfailures==15.1
+pytest-rerunfailures==16.0
     # via napari (pyproject.toml)
 python-dateutil==2.9.0.post0
     # via
@@ -501,7 +501,7 @@ rich==14.1.0
     #   typer
 roman-numerals-py==3.1.0
     # via sphinx
-rpds-py==0.27.0
+rpds-py==0.27.1
     # via
     #   jsonschema
     #   referencing
@@ -523,7 +523,7 @@ setuptools==80.9.0
     #   triton
 shellingham==1.5.4
     # via typer
-shiboken6==6.9.1
+shiboken6==6.9.2
     # via
     #   pyside6
     #   pyside6-addons
@@ -567,7 +567,7 @@ tensorstore==0.1.76
     #   napari (pyproject.toml)
 threadpoolctl==3.6.0
     # via scikit-learn
-tifffile==2025.6.11
+tifffile==2025.8.28
     # via
     #   napari (pyproject.toml)
     #   scikit-image
@@ -600,9 +600,9 @@ triangle==20250106
     # via napari (pyproject.toml)
 triton==3.4.0
     # via torch
-typer==0.16.1
+typer==0.17.3
     # via npe2
-typing-extensions==4.14.1
+typing-extensions==4.15.0
     # via
     #   napari (pyproject.toml)
     #   app-model
@@ -643,7 +643,7 @@ wrapt==1.17.3
     #   napari (pyproject.toml)
 xarray==2025.8.0
     # via napari (pyproject.toml)
-zarr==3.1.1
+zarr==3.1.2
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
