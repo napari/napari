@@ -49,7 +49,7 @@ class ScaleBar(Compound):
 
         line_data = self._line_data if ticks else self._line_data[:2]
 
-        # set the line size based on the lenght, and position based on
+        # set the line size based on the length, and position based on
         # the box size and text size
         self.line.set_data(
             pos=line_data * (length / 2, self._tick_length / 2)
