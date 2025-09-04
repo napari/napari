@@ -1,5 +1,6 @@
 import numpy as np
 from vispy.scene.visuals import Text
+# Use vispy private function for convenience when calculating bounding box. Consider its behavior when upgrading vispy version.
 from vispy.visuals.text.text import _text_to_vbo
 
 from napari.layers import Points, Shapes
