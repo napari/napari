@@ -3,6 +3,9 @@ from __future__ import annotations
 import weakref
 from typing import TYPE_CHECKING
 
+from qtpy.QtCore import Qt
+from qtpy.QtWidgets import QCheckBox
+
 if TYPE_CHECKING:
     from collections.abc import Callable
     from typing import Protocol
@@ -27,13 +30,17 @@ def disconnect_events(emitter, listener):
         em.disconnect(listener)
 
 
-def connect_setattr(emitter: Emitter, obj, attr: str):
+def connect_setattr(emitter: Emitter, obj, attr: str, emitter_owner=None):
     ref = weakref.ref(obj)
 
     def _cb(*value):
         if (ob := ref()) is None:
             emitter.disconnect(_cb)
             return
+        # Cast QCheckbox state to a bool
+        # See napari/napari#8154
+        if len(value) == 1 and isinstance(emitter_owner, QCheckBox):
+            value = [Qt.CheckState(value[0]) == Qt.CheckState.Checked]
         setattr(ob, attr, value[0] if len(value) == 1 else value)
 
     emitter.connect(_cb)

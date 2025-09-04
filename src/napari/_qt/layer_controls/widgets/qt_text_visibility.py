@@ -1,4 +1,3 @@
-from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QCheckBox, QWidget
 
 from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
@@ -8,6 +7,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
 from napari._qt.utils import qt_signals_blocked
 from napari.layers.base.base import Layer
 from napari.utils.events import disconnect_events
+from napari.utils.events.event_utils import connect_setattr
 from napari.utils.translations import trans
 
 
@@ -42,24 +42,14 @@ class QtTextVisibilityControl(QtWidgetControlsBase):
         text_disp_cb = QCheckBox()
         text_disp_cb.setToolTip(trans._('Toggle text visibility'))
         text_disp_cb.setChecked(self._layer.text.visible)
-        text_disp_cb.stateChanged.connect(self.change_text_visibility)
+        connect_setattr(
+            text_disp_cb.stateChanged,
+            layer.text,
+            'visible',
+            emitter_owner=text_disp_cb,
+        )
         self.text_disp_checkbox = text_disp_cb
         self.text_disp_label = QtWrappedLabel(trans._('display text:'))
-
-    def change_text_visibility(self, state: int) -> None:
-        """Toggle the visibility of the text.
-
-        Parameters
-        ----------
-        state : int
-            Integer value of Qt.CheckState that indicates the check state of text_disp_checkbox
-        """
-        with self._layer.text.events.visible.blocker(
-            self._on_text_visibility_change
-        ):
-            self._layer.text.visible = (
-                Qt.CheckState(state) == Qt.CheckState.Checked
-            )
 
     def _on_text_visibility_change(self) -> None:
         """Receive layer model text visibiltiy change change event and update checkbox."""
