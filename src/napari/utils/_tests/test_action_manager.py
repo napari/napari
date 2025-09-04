@@ -25,7 +25,7 @@ def test_unbind_non_existing_action(action_manager):
 
     We emit a warning but should not fail.
     """
-    with pytest.warns(UserWarning):
+    with pytest.warns(UserWarning, match='Attempting to unbind an action'):
         assert action_manager.unbind_shortcut('napari:foo_bar') is None
 
 

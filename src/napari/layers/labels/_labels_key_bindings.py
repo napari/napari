@@ -4,15 +4,16 @@ import numpy as np
 from app_model.types import KeyCode, KeyMod
 
 from napari.layers.labels._labels_constants import Mode
-from napari.layers.labels.labels import Labels
+from napari.layers.labels.labels import Labels, WrongSelectedLabelError
 from napari.layers.utils.layer_utils import (
     register_layer_action,
     register_layer_attr_action,
 )
-from napari.utils.notifications import show_info
+from napari.utils.notifications import show_info, show_warning
 from napari.utils.translations import trans
 
 MIN_BRUSH_SIZE = 1
+CONVERT_TEXT = 'You can convert the layer dtype in the right-click contextual menu of the layer list.'
 
 
 def register_label_action(description: str, repeatable: bool = False):
@@ -78,7 +79,7 @@ labels_fun_to_mode = [
 def new_label(layer: Labels):
     """Set the currently selected label to the largest used label plus one."""
     if isinstance(layer.data, np.ndarray):
-        new_selected_label = np.max(layer.data) + 1
+        new_selected_label = int(np.max(layer.data)) + 1
         if layer.selected_label == new_selected_label:
             show_info(
                 trans._(
@@ -87,7 +88,10 @@ def new_label(layer: Labels):
                 )
             )
         else:
-            layer.selected_label = new_selected_label
+            try:
+                layer.selected_label = new_selected_label
+            except WrongSelectedLabelError as e:
+                show_warning(f'{e.text}\n{CONVERT_TEXT}')
     else:
         show_info(
             trans._(
@@ -108,14 +112,20 @@ def swap_selected_and_background_labels(layer: Labels):
     trans._('Decrease the currently selected label by one'),
 )
 def decrease_label_id(layer: Labels):
-    layer.selected_label -= 1
+    try:
+        layer.selected_label -= 1
+    except WrongSelectedLabelError as e:
+        show_warning(f'{e.text}\n{CONVERT_TEXT}')
 
 
 @register_label_action(
     trans._('Increase the currently selected label by one'),
 )
 def increase_label_id(layer: Labels):
-    layer.selected_label += 1
+    try:
+        layer.selected_label += 1
+    except WrongSelectedLabelError as e:
+        show_warning(f'{e.text}\n{CONVERT_TEXT}')
 
 
 @register_label_action(

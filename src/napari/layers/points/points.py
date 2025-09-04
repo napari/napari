@@ -381,7 +381,7 @@ class Points(Layer):
         name=None,
         opacity=1.0,
         out_of_slice_display=False,
-        projection_mode='none',
+        projection_mode='all',
         properties=None,
         property_choices=None,
         rotate=None,
@@ -590,6 +590,7 @@ class Points(Layer):
         else:
             kwargs['action'] = ActionType.REMOVED
         self.events.data(**kwargs)
+        self.events.features()
 
     def _set_data(self, data: np.ndarray | None) -> None:
         """Set the .data array attribute, without emitting an event."""
@@ -627,16 +628,10 @@ class Points(Layer):
                 adding = len(data) - cur_npoints
                 size = np.repeat(self.current_size, adding, axis=0)
 
-                if len(self._border_width) > 0:
-                    new_border_width = copy(self._border_width[-1])
-                else:
-                    new_border_width = self.current_border_width
+                new_border_width = self.current_border_width
                 border_width = np.repeat([new_border_width], adding, axis=0)
 
-                if len(self._symbol) > 0:
-                    new_symbol = copy(self._symbol[-1])
-                else:
-                    new_symbol = self.current_symbol
+                new_symbol = self.current_symbol
                 symbol = np.repeat([new_symbol], adding, axis=0)
 
                 # Add new colors, updating the current property value before
@@ -1999,6 +1994,7 @@ class Points(Layer):
             vertex_indices=((),),
         )
         self.selected_data = set(np.arange(cur_points, len(self.data)))
+        self.events.features()
 
     def remove_selected(self) -> None:
         """Removes selected points if any."""
@@ -2044,6 +2040,7 @@ class Points(Layer):
                 vertex_indices=((),),
             )
             self.selected_data = set()
+            self.events.features()
 
     def _move(
         self,
@@ -2075,6 +2072,7 @@ class Points(Layer):
                 data_indices=tuple(selection_indices),
                 vertex_indices=((),),
             )
+            self.events.features()
 
     def _set_drag_start(
         self,

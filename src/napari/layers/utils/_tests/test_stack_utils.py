@@ -140,6 +140,22 @@ def test_images_to_stack_none_scale():
     assert list(stack.translate) == [0, 0, -1, 2]
 
 
+def test_images_to_stack_multiscale():
+    data = np.zeros((100, 100))
+    images = [
+        Image([data, data[::2, ::2]]),
+        Image([data, data[::2, ::2]]),
+    ]
+    assert images[0].multiscale is True
+    assert images[1].multiscale is True
+
+    stack = images_to_stack(images, 0, colormap='green')
+
+    assert isinstance(stack, Image)
+    assert stack.multiscale is True
+    assert stack.data.shape == (2, 100, 100)
+
+
 def test_split_and_merge_rgb():
     """Test merging 3 images with RGB colormaps into single RGB image."""
     # Make an RGB
@@ -156,6 +172,35 @@ def test_split_and_merge_rgb():
     # merge the 3 images back into an RGB
     rgb_image = merge_rgb(images)
     assert rgb_image.rgb is True
+
+
+def test_split_and_merge_rgba():
+    """Test splitting a rgba image into channels and then re-merging."""
+    data = np.random.randint(0, 100, (10, 128, 128, 4))
+    # set channels to distinct values to aid in confirming re-merging image
+    data[0] = 1
+    data[1] = 2
+    data[2] = 3
+    data[3] = 4
+    stack = Image(data)
+    assert stack.rgb is True
+
+    # split the rgb into 4 images
+    images = split_rgb(stack, with_alpha=True)
+    assert len(images) == 4
+    colormaps = {image.colormap.name for image in images}
+    # gray should be assigned to alpha channel
+    assert colormaps == {'red', 'green', 'blue', 'gray'}
+
+    # merge the 4 images back into a rgba image
+    rgb_image = merge_rgb(images)
+    assert rgb_image.rgb is True
+    assert rgb_image.data.shape[-1] == 4
+    # confirm that channel are assigned correctly
+    assert (rgb_image.data[0] == 1).all()
+    assert (rgb_image.data[1] == 2).all()
+    assert (rgb_image.data[2] == 3).all()
+    assert (rgb_image.data[3] == 4).all()
 
 
 @pytest.fixture(

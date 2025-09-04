@@ -10,6 +10,9 @@ on:
       - 'v*'
   workflow_dispatch:
   workflow_call:
+  pull_request:
+    paths:
+      - '.github/workflows/build_docs.yml'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -19,34 +22,49 @@ jobs:
   build-and-upload:
     name: Build & Upload Artifact
     runs-on: ubuntu-latest
+    env:
+      XDG_CACHE_HOME: ${{ github.workspace }}/.cache
     steps:
       - name: Clone docs repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           path: docs  # place in a named directory
           repository: napari/docs
 
       - name: Clone main repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           path: napari  # place in a named directory
           # ensure version metadata is proper
           fetch-depth: 0
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
-          python-version: "3.10"
+          python-version: "3.12"
           cache-dependency-path: |
             napari/pyproject.toml
 
-      - uses: tlambert03/setup-qt-libs@v1
+      - name: Cache pooch downloads
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4
+        with:
+          path: |
+            ${{ github.workspace }}/.cache/scikit-image
+            ${{ github.workspace }}/.cache/napari-*
+            ${{ github.workspace }}/.cache/pooch
+          key: pooch
+
+      - name: Setup headless display
+        uses: pyvista/setup-headless-display-action@7d84ae825e6d9297a8e99bdbbae20d1b919a0b19 # v4.2
+        with:
+          qt: true
+          wm: herbstluftwm
 
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
           python -m pip install "napari/[pyqt5, docs]"
         env:
-          PIP_CONSTRAINT: ${{ github.workspace }}/napari/resources/constraints/constraints_py3.10_docs.txt
+          PIP_CONSTRAINT: ${{ github.workspace }}/napari/resources/constraints/constraints_py3.12_docs.txt
 
       - name: Testing
         run: |
@@ -54,21 +72,14 @@ jobs:
           python -c 'import napari.layers; print(napari.layers.__doc__)'
 
       - name: Build Docs
-        uses: aganders3/headless-gui@v2
+        run: make -C docs html
         env:
           GOOGLE_CALENDAR_ID: ${{ secrets.GOOGLE_CALENDAR_ID }}
           GOOGLE_CALENDAR_API_KEY: ${{ secrets.GOOGLE_CALENDAR_API_KEY }}
-          PIP_CONSTRAINT: ${{ github.workspace }}/napari/resources/constraints/constraints_py3.10_docs.txt
-        with:
-          run:  make -C docs html
-          # skipping setup stops the action from running the default (tiling) window manager
-          # the window manager is not necessary for docs builds at this time and it was causing
-          # problems with screenshots (https://github.com/napari/docs/issues/285)
-          linux-setup: "echo 'skip setup'"
-          linux-teardown: "echo 'skip teardown'"
+          PIP_CONSTRAINT: ${{ github.workspace }}/napari/resources/constraints/constraints_py3.12_docs.txt
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: docs
           path: docs/docs/_build/html

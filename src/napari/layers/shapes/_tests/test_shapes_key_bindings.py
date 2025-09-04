@@ -92,6 +92,9 @@ def test_select_all():
     key_bindings.select_all_shapes(layer)
     assert len(layer.selected_data) == 3
 
+    key_bindings.select_all_shapes(layer)
+    assert len(layer.selected_data) == 0
+
 
 def test_delete():
     # Test on three four corner rectangle

@@ -9,7 +9,7 @@ import os
 import sys
 import time
 import warnings
-from collections.abc import MutableMapping, Sequence
+from collections.abc import Mapping, MutableMapping, Sequence
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
@@ -33,7 +33,7 @@ from qtpy.QtCore import (
     Qt,
     Slot,
 )
-from qtpy.QtGui import QHideEvent, QIcon, QShowEvent
+from qtpy.QtGui import QHideEvent, QIcon, QImage, QShowEvent
 from qtpy.QtWidgets import (
     QApplication,
     QDialog,
@@ -82,9 +82,8 @@ from napari.plugins import (
 from napari.plugins._npe2 import index_npe1_adapters
 from napari.settings import get_settings
 from napari.utils import perf
-from napari.utils._proxies import PublicOnlyProxy
+from napari.utils._proxies import MappingProxy, PublicOnlyProxy
 from napari.utils.events import Event
-from napari.utils.geometry import get_center_bbox
 from napari.utils.io import imsave
 from napari.utils.misc import (
     in_ipython,
@@ -696,7 +695,7 @@ class Window:
         qapp = get_qapp()
 
         # Dictionary holding dock widgets
-        self._dock_widgets: MutableMapping[str, QtViewerDockWidget] = (
+        self._wrapped_dock_widgets: MutableMapping[str, QtViewerDockWidget] = (
             WeakValueDictionary()
         )
         self._unnamed_dockwidget_count = 1
@@ -1090,15 +1089,14 @@ class Window:
         if not widget_name:
             # if widget_name wasn't provided, `get_widget` will have
             # ensured that there is a single widget available.
-            widget_name = next(iter(plugin_manager._dock_widgets[plugin_name]))
+            widget_name = next(
+                iter(plugin_manager._wrapped_dock_widgets[plugin_name])
+            )
 
         full_name = plugin_menu_item_template.format(plugin_name, widget_name)
-        if full_name in self._dock_widgets:
-            dock_widget = self._dock_widgets[full_name]
-            wdg = dock_widget.widget()
-            if hasattr(wdg, '_magic_widget'):
-                wdg = wdg._magic_widget
-            return dock_widget, wdg
+        if full_name in self._wrapped_dock_widgets:
+            dock_widget = self._wrapped_dock_widgets[full_name]
+            return dock_widget, dock_widget.inner_widget()
 
         wdg = _instantiate_dock_widget(
             widget_class, cast('Viewer', self._qt_viewer.viewer)
@@ -1124,7 +1122,7 @@ class Window:
             returned, otherwise a ValueError will be raised, by default None
         """
         full_name = plugin_menu_item_template.format(plugin_name, widget_name)
-        if full_name in self._dock_widgets:
+        if full_name in self._wrapped_dock_widgets:
             return None
 
         func = plugin_manager._function_widgets[plugin_name][widget_name]
@@ -1239,9 +1237,37 @@ class Window:
             layers_events.reordered.connect(widget.reset_choices)
 
         # Add dock widget to dictionary
-        self._dock_widgets[dock_widget.name] = dock_widget
+        self._wrapped_dock_widgets[dock_widget.name] = dock_widget
 
         return dock_widget
+
+    @property
+    def _dock_widgets(self) -> MutableMapping[str, QtViewerDockWidget]:
+        """Access `_wrapped_dock_widgets` with warning.
+
+        Before napari 0.6.2, ``_wrapped_dock_widgets`` was just
+        ``_dock_widgets``. Even though it was private, many
+        resources pointed to its use, as there was no public alternative.
+        Now that `dock_widgets` is provided, we want to make sure
+        that people stop using the private `_dock_widgets`.
+        """
+        # As many plugins uses `_dock_widget` to access one widget from the
+        # other widget we should keep this name for a longer period
+        warnings.warn(
+            'The `_dock_widgets` property is private and should not be used in any plugin code. '
+            'Please use the `dock_widgets` property instead.',
+            FutureWarning,
+            stacklevel=2,
+        )
+        return self._wrapped_dock_widgets
+
+    @property
+    def dock_widgets(self) -> Mapping[str, 'QWidget | Widget']:
+        """Read only mapping of widgets docked in napari window.
+
+        For wrapping QtViewerDockWidget use `dock_widgets` property.
+        """
+        return InnerWidgetMappingProxy(self._wrapped_dock_widgets)
 
     def _add_viewer_dock_widget(
         self,
@@ -1305,11 +1331,11 @@ class Window:
         dock_widget.setFloating(False)
 
     def _remove_dock_widget(self, event) -> None:
-        names = list(self._dock_widgets.keys())
+        names = list(self._wrapped_dock_widgets.keys())
         for widget_name in names:
             if event.value in widget_name:
                 # remove this widget
-                widget = self._dock_widgets[widget_name]
+                widget = self._wrapped_dock_widgets[widget_name]
                 self.remove_dock_widget(widget)
 
     def remove_dock_widget(self, widget: QWidget, menu=None):
@@ -1328,7 +1354,7 @@ class Window:
             from menu.
         """
         if widget == 'all':
-            for dw in list(self._dock_widgets.values()):
+            for dw in list(self._wrapped_dock_widgets.values()):
                 self.remove_dock_widget(dw)
             return
 
@@ -1356,7 +1382,7 @@ class Window:
             menu.removeAction(_dw.toggleViewAction())
 
         # Remove dock widget from dictionary
-        self._dock_widgets.pop(_dw.name, None)
+        self._wrapped_dock_widgets.pop(_dw.name, None)
 
         # Deleting the dock widget means any references to it will no longer
         # work but it's not really useful anyway, since the inner widget has
@@ -1670,13 +1696,6 @@ class Window:
         """
         from napari._qt.utils import add_flash_animation
 
-        canvas = self._qt_viewer.canvas
-        prev_size = canvas.size
-        camera = self._qt_viewer.viewer.camera
-        old_center = camera.center
-        old_zoom = camera.zoom
-        ndisplay = self._qt_viewer.viewer.dims.ndisplay
-
         # Part 1: validate incompatible parameters
         if not canvas_only and (
             fit_to_data_extent or size is not None or scale is not None
@@ -1688,59 +1707,15 @@ class Window:
                     deferred=True,
                 )
             )
-        if size is not None and len(size) != 2:
-            raise ValueError(
-                trans._(
-                    'screenshot size must be 2 values, got {len_size}',
-                    deferred=True,
-                    len_size=len(size),
-                )
-            )
 
-        # Part 2: compute canvas size and view based on parameters
-        if fit_to_data_extent:
-            # Use the same scene parameter calculations as in viewer_model.fit_to_view
-            extent, _, _, total_size = (
-                self._qt_viewer.viewer._get_scene_parameters()
-            )
-            extent_scale = min(
-                self._qt_viewer.viewer.layers.extent.step[-ndisplay:]
-            )
-
-            if ndisplay == 3:
-                total_size = self._qt_viewer.viewer._calculate_bounding_box(
-                    extent=extent,
-                    view_direction=self._qt_viewer.viewer.camera.view_direction,
-                    up_direction=self._qt_viewer.viewer.camera.up_direction,
-                )
-
-            # adjust size by the scale, to return the size in real pixels
-            size = np.ceil(total_size / extent_scale).astype(int)
-
-        if size is not None:
-            size = np.asarray(size) / self._qt_window.devicePixelRatio()
-        else:
-            size = np.asarray(prev_size)
-
-        if scale is not None:
-            # multiply canvas dimensions by the scale factor to get new size
-            size *= scale
-
-        # Part 3: take the screenshot
+        # Part 2: take the screenshot
         if canvas_only:
-            canvas.size = tuple(size.astype(int))
-            if fit_to_data_extent:
-                # tight view around data
-                self._qt_viewer.viewer.fit_to_view(margin=0)
-            try:
-                img = canvas.screenshot()
-                if flash:
-                    add_flash_animation(self._qt_viewer._welcome_widget)
-            finally:
-                # make sure we always go back to the right canvas size
-                canvas.size = prev_size
-                camera.center = old_center
-                camera.zoom = old_zoom
+            img = self._qt_viewer._screenshot(
+                flash=flash,
+                size=size,
+                scale=scale if scale is not None else 1.0,
+                fit_to_data_extent=fit_to_data_extent,
+            )
         else:
             img = self._qt_window.grab().toImage()
             if flash:
@@ -1778,30 +1753,13 @@ class Window:
             Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
             upper-left corner of the rendered region.
         """
-        if not isinstance(scale, float | int):
-            raise TypeError(
-                trans._(
-                    'Scale must be a float or an int.',
-                    deferred=True,
-                )
-            )
-        img = QImg2array(
-            self._screenshot(
-                scale=scale,
-                flash=flash,
-                canvas_only=True,
-                fit_to_data_extent=True,
-            )
-        )
-        if path is not None:
-            imsave(path, img)
-        return img
+        return self._qt_viewer.export_figure(path, scale, flash)
 
     def export_rois(
         self,
         rois: list[np.ndarray],
         paths: str | Path | list[str | Path] | None = None,
-        scale: float | None = None,
+        scale: float = 1.0,
     ):
         """Export the given rectangular rois to specified file paths.
 
@@ -1835,54 +1793,11 @@ class Window:
             The list with roi screenshots.
 
         """
-        if (
-            paths is not None
-            and isinstance(paths, list)
-            and len(paths) != len(rois)
-        ):
-            raise ValueError(
-                trans._(
-                    'The number of file paths does not match the number of ROI shapes',
-                    deferred=True,
-                )
-            )
-
-        if isinstance(paths, str | Path):
-            storage_dir = Path(paths).expanduser()
-            storage_dir.mkdir(parents=True, exist_ok=True)
-            paths = [storage_dir / f'roi_{n}.png' for n in range(len(rois))]
-
-        if self._qt_viewer.viewer.dims.ndisplay > 2:
-            raise NotImplementedError(
-                "'export_rois' is not implemented for 3D view."
-            )
-
-        screenshot_list = []
-        camera = self._qt_viewer.viewer.camera
-        start_camera_center = camera.center
-        start_camera_zoom = camera.zoom
-        canvas = self._qt_viewer.canvas
-        prev_size = canvas.size
-
-        visible_dims = list(self._qt_viewer.viewer.dims.displayed)
-        step = min(self._qt_viewer.viewer.layers.extent.step[visible_dims])
-
-        for index, roi in enumerate(rois):
-            center_coord, height, width = get_center_bbox(roi)
-            camera.center = center_coord
-            canvas.size = (int(height / step), int(width / step))
-
-            camera.zoom = 1 / step
-            path = paths[index] if paths is not None else None
-            screenshot_list.append(
-                self.screenshot(path=path, canvas_only=True, scale=scale)
-            )
-
-        canvas.size = prev_size
-        camera.center = start_camera_center
-        camera.zoom = start_camera_zoom
-
-        return screenshot_list
+        return self._qt_viewer.export_rois(
+            rois=rois,
+            paths=paths,
+            scale=scale,
+        )
 
     def screenshot(
         self, path=None, size=None, scale=None, flash=True, canvas_only=False
@@ -2019,3 +1934,27 @@ def _instantiate_dock_widget(wdg_cls, viewer: 'Viewer'):
 
     # instantiate the widget
     return wdg_cls(**kwargs)
+
+
+class InnerWidgetMappingProxy(MappingProxy):
+    """A proxy for the inner widget of a QDockWidget.
+
+    This is used to allow access to the inner widget of a QDockWidget
+    without exposing the QDockWidget itself.
+    """
+
+    def __getitem__(self, key, /) -> 'QWidget | Widget':
+        """Get the inner widget of the QDockWidget."""
+        return self._wrapped[key].inner_widget()
+
+    def __repr__(self) -> str:
+        """Return a dict-like mapping of widget names to widget class names."""
+        items = (
+            f'{k!r}: {v.inner_widget()!r}' for k, v in self._wrapped.items()
+        )
+        if items:
+            indent = '\n  '
+            return (
+                f'<{self.__class__.__name__} {{\n  {indent.join(items)}\n}}>'
+            )
+        return f'<{self.__class__.__name__} {{}}>'

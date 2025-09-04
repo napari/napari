@@ -500,7 +500,7 @@ def vertex_insert(layer: Shapes, event: MouseEvent) -> None:
             pass
         else:
             vertices = layer._data_view.displayed_vertices[
-                layer._data_view.displayed_index == index
+                layer._data_view.displayed_vertices_to_shape_num == index
             ]
             # Find which edge new vertex should inserted along
             closed = shape_type != Path
@@ -933,7 +933,19 @@ def _move_active_element_under_cursor(
         else:
             new_type = Polygon if shape_type == Rectangle else None
             vertices = layer._data_view.shapes[index].data
+            if (
+                layer._mode == Mode.DIRECT
+                and vertex in {0, len(vertices) - 1}
+                and np.array_equal(vertices[0], vertices[-1])
+            ):
+                # polygon added with same point at start and end
+                if vertex == 0:
+                    # If first vertex is moved, move last vertex too
+                    vertices[-1] = coordinates
+                else:
+                    vertices[0] = coordinates
             vertices[vertex] = coordinates
+
             layer._data_view.edit(index, vertices, new_type=new_type)
             shapes = layer.selected_data
             layer._selected_box = layer.interaction_box(shapes)
