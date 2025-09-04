@@ -30,6 +30,8 @@ class VispyTextOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
 
     def _on_visible_change(self):
         # ensure that dpi is updated when the scale bar is visible
+        # this does not need to run _on_position_change because visibility
+        # is already connected to the canvas callback by the canvas itself
         self._on_text_change()
         return super()._on_visible_change()
 

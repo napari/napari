@@ -55,13 +55,13 @@ class VispyBaseOverlay:
 class VispyCanvasOverlay(VispyBaseOverlay):
     """
     Vispy overlay backend for overlays that live in canvas space.
+
+    NOTE: Subclasses should make sure to properly set their x_size and y_size
+    attribute when their size changes for proper tiling.
     """
 
     def __init__(self, *, overlay, node, parent=None) -> None:
         super().__init__(overlay=overlay, node=node, parent=parent)
-
-        # size is used to control fine positioning, and will depend
-        # on the subclass and visual that needs to be rendered
         self.x_size = 0.0
         self.y_size = 0.0
         self.node.transform = STTransform()
@@ -69,7 +69,8 @@ class VispyCanvasOverlay(VispyBaseOverlay):
         self.canvas_position_callback = lambda: None
 
     def _on_position_change(self, event=None):
-        # NOTE: subclasses should set sizes correctly to get correct positioning!
+        # NOTE: when subclasses call this method, they should first ensure sizes
+        # (x_size, and y_size) are set correctly
         self.canvas_position_callback()
 
     def reset(self) -> None:

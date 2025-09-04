@@ -799,11 +799,11 @@ class VispyCanvas:
     def _defer_overlay_position_update(self):
         self._needs_overlay_position_update = True
 
-    def _connect_canvas_overlay_events(self, overlay):
+    def _connect_canvas_overlay_events(self, overlay: Overlay) -> None:
         overlay.events.position.connect(self._defer_overlay_position_update)
         overlay.events.visible.connect(self._defer_overlay_position_update)
 
-    def _disconnect_canvas_overlay_events(self, overlay):
+    def _disconnect_canvas_overlay_events(self, overlay: Overlay) -> None:
         overlay.events.position.disconnect(self._defer_overlay_position_update)
         overlay.events.visible.disconnect(self._defer_overlay_position_update)
 
