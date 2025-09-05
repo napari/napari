@@ -12,6 +12,7 @@ from napari._qt.utils import qt_signals_blocked
 from napari.layers import Labels
 from napari.layers.labels._labels_utils import get_dtype
 from napari.utils._dtype import get_dtype_limits
+from napari.utils.events.event_utils import connect_setattr
 from napari.utils.translations import trans
 
 
@@ -47,24 +48,17 @@ class QtContourSpinBoxControl(QtWidgetControlsBase):
         self.contour_spinbox.setToolTip(
             trans._('Set width of displayed label contours')
         )
-        self.contour_spinbox.valueChanged.connect(self.change_contour)
+        connect_setattr(
+            self.contour_spinbox.valueChanged,
+            layer,
+            'contour',
+            emitter_owner=self.contour_spinbox,
+        )
         self.contour_spinbox.setKeyboardTracking(False)
         self.contour_spinbox.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._on_contour_change()
 
         self.contour_spinbox_label = QtWrappedLabel(trans._('contour:'))
-
-    def change_contour(self, value: int) -> None:
-        """Change contour thickness.
-
-        Parameters
-        ----------
-        value : int
-            Thickness of contour.
-        """
-        self._layer.contour = value
-        self.contour_spinbox.clearFocus()
-        self.parent().setFocus()
 
     def _on_contour_change(self) -> None:
         """Receive layer model contour value change event and update spinbox."""

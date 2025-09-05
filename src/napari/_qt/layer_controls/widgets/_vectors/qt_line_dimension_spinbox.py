@@ -10,6 +10,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
 )
 from napari._qt.utils import qt_signals_blocked
 from napari.layers import Vectors
+from napari.utils.events.event_utils import connect_setattr
 from napari.utils.translations import trans
 
 
@@ -46,22 +47,14 @@ class QtWidthSpinBoxControl(QtWidgetControlsBase):
         self.width_spinbox.setMinimum(0.01)
         self.width_spinbox.setMaximum(np.inf)
         self.width_spinbox.setValue(self._layer.edge_width)
-        self.width_spinbox.valueChanged.connect(self.change_width)
+        connect_setattr(
+            self.width_spinbox.valueChanged,
+            layer,
+            'edge_width',
+            emitter_owner=self.width_spinbox,
+        )
 
         self.width_spinbox_label = QtWrappedLabel(trans._('width:'))
-
-    def change_width(self, value) -> None:
-        """Change edge line width of vectors on the layer model.
-
-        Parameters
-        ----------
-        value : float
-            Line width of vectors.
-        """
-        self._layer.edge_width = value
-        self.width_spinbox.clearFocus()
-        # TODO: Check other way to give focus without calling parent
-        self.parent().setFocus()
 
     def _on_edge_width_change(self) -> None:
         """Receive layer model width change event and update width spinbox."""
@@ -106,24 +99,14 @@ class QtLengthSpinBoxControl(QtWidgetControlsBase):
         self.length_spinbox.setValue(self._layer.length)
         self.length_spinbox.setMinimum(0.1)
         self.length_spinbox.setMaximum(np.inf)
-        self.length_spinbox.valueChanged.connect(self.change_length)
+        connect_setattr(
+            self.length_spinbox.valueChanged,
+            layer,
+            'length',
+            emitter_owner=self.length_spinbox,
+        )
 
         self.length_spinbox_label = QtWrappedLabel(trans._('length:'))
-
-    def change_length(self, value: float) -> None:
-        """Change length of vectors on the layer model.
-
-        Multiplicative factor on projections for length of all vectors.
-
-        Parameters
-        ----------
-        value : float
-            Length of vectors.
-        """
-        self._layer.length = value
-        self.length_spinbox.clearFocus()
-        # TODO: Check other way to give focus without calling parent
-        self.parent().setFocus()
 
     def _on_length_change(self) -> None:
         """Change length of vectors."""

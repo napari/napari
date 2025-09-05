@@ -1,4 +1,3 @@
-from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QCheckBox,
     QWidget,
@@ -10,6 +9,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
 )
 from napari._qt.utils import qt_signals_blocked
 from napari.layers.base.base import Layer
+from napari.utils.events.event_utils import connect_setattr
 from napari.utils.translations import trans
 
 
@@ -44,29 +44,16 @@ class QtOutSliceCheckBoxControl(QtWidgetControlsBase):
         self.out_of_slice_checkbox = QCheckBox()
         self.out_of_slice_checkbox.setToolTip(trans._('Out of slice display'))
         self.out_of_slice_checkbox.setChecked(self._layer.out_of_slice_display)
-        self.out_of_slice_checkbox.stateChanged.connect(
-            self.change_out_of_slice
+        connect_setattr(
+            self.out_of_slice_checkbox.stateChanged,
+            layer,
+            'out_of_slice_display',
+            emitter_owner=self.out_of_slice_checkbox,
         )
 
         self.out_of_slice_checkbox_label = QtWrappedLabel(
             trans._('out of slice:')
         )
-
-    def change_out_of_slice(self, state) -> None:
-        """Toggleout of slice display of points layer.
-
-        Parameters
-        ----------
-        state : Qt.CheckState
-            Checkbox indicating whether to render out of slice.
-        """
-        # needs cast to bool for Qt6
-        with self._layer.events.out_of_slice_display.blocker(
-            self._on_out_of_slice_display_change
-        ):
-            self._layer.out_of_slice_display = (
-                Qt.CheckState(state) == Qt.CheckState.Checked
-            )
 
     def _on_out_of_slice_display_change(self) -> None:
         """Receive layer model out_of_slice_display change event and update checkbox."""
