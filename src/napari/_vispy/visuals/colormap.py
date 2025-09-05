@@ -84,7 +84,7 @@ class Colormap(Node):
         font_size: int,
         clim: tuple[float, float],
         color: ColorValue,
-    ) -> float:
+    ) -> tuple[float, float]:
         self.box.set_data(color=color)
         self.ticks.axis_color = color
         self.ticks.text_color = color
