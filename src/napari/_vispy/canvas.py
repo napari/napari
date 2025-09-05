@@ -983,7 +983,11 @@ class VispyCanvas:
                 )
 
             # position the overlay in the canvas
-            y_max, x_max = self.size
+            # if the overlay is in a grid viewbox, use the viewbox size
+            if view is None:
+                y_max, x_max = self.size
+            else:
+                x_max, y_max = self._current_viewbox_size
             position = overlay.position
 
             x = y = 0

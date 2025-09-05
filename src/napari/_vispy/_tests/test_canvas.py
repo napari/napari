@@ -157,10 +157,12 @@ def test_tiling_canvas_overlays(make_napari_viewer, qtbot):
     np.testing.assert_almost_equal(
         vispy_text_overlay.node.transform.translate[0],
         x_max - text_overlay_x_size,
+        decimal=3,
     )
     np.testing.assert_almost_equal(
         vispy_text_overlay.node.transform.translate[1],
         y_max - text_overlay_y_size - scale_bar_y_size,
+        decimal=3,
     )
 
     # move scale bar out of the way and check tiling is updated
@@ -169,10 +171,12 @@ def test_tiling_canvas_overlays(make_napari_viewer, qtbot):
     np.testing.assert_almost_equal(
         vispy_text_overlay.node.transform.translate[0],
         x_max - text_overlay_x_size,
+        decimal=3,
     )
     np.testing.assert_almost_equal(
         vispy_text_overlay.node.transform.translate[1],
         y_max - text_overlay_y_size,
+        decimal=3,
     )
 
     # check horizontal tiling works on the top right
@@ -181,7 +185,10 @@ def test_tiling_canvas_overlays(make_napari_viewer, qtbot):
     np.testing.assert_almost_equal(
         vispy_text_overlay.node.transform.translate[0],
         x_max - text_overlay_x_size - scale_bar_x_size,
+        decimal=3,
     )
     np.testing.assert_almost_equal(
-        vispy_text_overlay.node.transform.translate[1], 0 + padding
+        vispy_text_overlay.node.transform.translate[1],
+        0 + padding,
+        decimal=3,
     )
