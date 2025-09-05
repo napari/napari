@@ -157,7 +157,7 @@ def moving_wave(
     The `run` checkbox can be disabled to stop sending values to the thread
     while changing parameters.
     """
-    if run:
+    if run and thread.is_running:
         thread.send((wave_id, frequency, angle, phase_shift, speed))
 
 
@@ -165,6 +165,11 @@ wdg = moving_wave()
 
 # add the widget to the window and run it once
 viewer.window.add_dock_widget(wdg, area='bottom')
+
+# wait a moment for the thread to start and yield its first value
+sleep(0.1)
+QApplication.processEvents()
+
 wdg()
 
 # wait for the layers to be added before running the viewer
@@ -172,7 +177,5 @@ wait_for_layers(viewer, ['wave 0'])
 
 if __name__ == '__main__':
     napari.run()
-
-thread.quit()
-FINISHED = True
-
+    thread.quit()
+    FINISHED = True
