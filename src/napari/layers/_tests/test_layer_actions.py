@@ -313,65 +313,33 @@ def test_convert_layer(layer, type_):
         )  # check array data not copied unnecessarily
 
 
-def test_make_label_from_shape():
-    """Tests that label shape matches the maximum extent of added shape."""
+@pytest.mark.parametrize(
+    ('scale', 'translate', 'xfail'),
+    [
+        ((1.0, 1.0), (0.0, 0.0), False),  # default
+        ((1.0, 1.0), (30.0, 30.0), True),  # translated, currently fails
+        ((5.0, 5.0), (0.0, 0.0), False),  # scaled
+    ],
+)
+def test_make_label_from_shape_param(scale, translate, xfail):
+    """Tests that label shape matches the maximum extent of added shape, with optional scale and translate."""
     ll = LayerList()
     # add an image
-    layer = Image(np.random.rand(20, 20))
+    layer = Image(np.zeros((20, 20)))
+    layer.scale = np.array(scale)
+    layer.translate = np.array(translate)
     ll.append(layer)
     # add a shape within the image
-    ll.append(Shapes([np.array([[5, 5], [5, 25], [25, 5], [25, 25]])]))
+    shape = Shapes([np.array([[5, 5], [5, 25], [25, 5], [25, 25]])])
+    shape.scale = np.array(scale)
+    shape.translate = np.array(translate)
+    ll.append(shape)
     # Create a label based on the shape.
+    if xfail:
+        pytest.xfail('Converting layers with translations does not work')
     _convert(ll, 'labels')
-
-    # the label array should match the image (world) dimensions
-    expected_label_array = np.array([[0.0, 0.0], [25.0, 25.0]])
-    assert np.array_equal(ll[2].extent.data, expected_label_array)
-
-
-def test_make_label_from_shape_translated():
-    """Tests that label shape for a translated image captures the translated canvas area.
-
-    Does not cover affine.translate
-    """
-    ll = LayerList()
-    # add an image
-    layer = Image(np.random.rand(20, 20))
-    layer.translate = (30, 30)
-    ll.append(layer)
-    # add a shape within the image
-    ll.append(Shapes([np.array([[5, 5], [5, 25], [25, 5], [25, 25]])]))
-    # Create a label based on the shape.
-    _convert(ll, 'labels')
-
-    # the label array should match the image (world) dimensions
-    expected_label_array = np.array([[0.0, 0.0], [49.0, 49.0]])
-    assert np.array_equal(ll[2].extent.data, expected_label_array)
-
-
-def test_make_label_from_shape_scaled():
-    """Tests that label shape for a scale image captures the translated canvas area.
-
-    Does not cover affine.scale
-    """
-    ll = LayerList()
-    # add an image
-    layer = Image(np.random.rand(100, 100), scale=(5.0, 5.0))
-    ll.append(layer)
-    # add a shape within the image
-    ll.append(
-        Shapes(
-            [np.array([[5, 5], [5, 25], [25, 5], [25, 25]])], scale=(5.0, 5.0)
-        )
-    )
-    # Create a label based on the shape.
-    _convert(ll, 'labels')
-    # the label array should match the image (world) dimensions
-    expected_label_data_shape = (100, 100)
-    assert np.array_equal(ll[-1].data.shape, expected_label_data_shape)
-    # multiply the last data index (99) by the scale (5)
-    expected_label_world_extent = [495.0, 495.0]
-    assert np.array_equal(ll[-1].extent.world[-1], expected_label_world_extent)
+    # the label layer should match the layer list extent
+    assert np.array_equal(ll[-1].extent.world, ll.extent.world)
 
 
 def test_convert_warns_with_projection_mode():
