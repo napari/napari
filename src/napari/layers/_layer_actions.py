@@ -56,10 +56,10 @@ def _convert(ll: LayerList, type_: str) -> None:
     for lay in list(ll.selection):
         idx = ll.index(lay)
         if isinstance(lay, Shapes) and type_ == 'labels':
-            ll_shape = ll._extent_world_augmented[1] - ll._extent_world_augmented[0]
-            data = lay.to_labels(
-                labels_shape=lay.world_to_data(ll_shape)
+            ll_shape = (
+                ll._extent_world_augmented[1] - ll._extent_world_augmented[0]
             )
+            data = lay.to_labels(labels_shape=lay.world_to_data(ll_shape))
             idx += 1
         elif (
             not np.issubdtype(lay.data.dtype, np.integer) and type_ == 'labels'
