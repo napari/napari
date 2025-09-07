@@ -174,6 +174,35 @@ def test_split_and_merge_rgb():
     assert rgb_image.rgb is True
 
 
+def test_split_and_merge_rgba():
+    """Test splitting a rgba image into channels and then re-merging."""
+    data = np.random.randint(0, 100, (10, 128, 128, 4))
+    # set channels to distinct values to aid in confirming re-merging image
+    data[0] = 1
+    data[1] = 2
+    data[2] = 3
+    data[3] = 4
+    stack = Image(data)
+    assert stack.rgb is True
+
+    # split the rgb into 4 images
+    images = split_rgb(stack, with_alpha=True)
+    assert len(images) == 4
+    colormaps = {image.colormap.name for image in images}
+    # gray should be assigned to alpha channel
+    assert colormaps == {'red', 'green', 'blue', 'gray'}
+
+    # merge the 4 images back into a rgba image
+    rgb_image = merge_rgb(images)
+    assert rgb_image.rgb is True
+    assert rgb_image.data.shape[-1] == 4
+    # confirm that channel are assigned correctly
+    assert (rgb_image.data[0] == 1).all()
+    assert (rgb_image.data[1] == 2).all()
+    assert (rgb_image.data[2] == 3).all()
+    assert (rgb_image.data[3] == 4).all()
+
+
 @pytest.fixture(
     params=[
         {

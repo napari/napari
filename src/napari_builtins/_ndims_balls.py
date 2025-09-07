@@ -10,9 +10,21 @@ def labeled_particles2d():
     )
 
     return [
-        (density, {'name': 'density', 'metadata': {'seed': seed}}, 'image'),
-        (labels, {'name': 'labels', 'metadata': {'seed': seed}}, 'labels'),
-        (points, {'name': 'points', 'metadata': {'seed': seed}}, 'points'),
+        (
+            density.copy(),
+            {'name': 'density', 'metadata': {'seed': seed}},
+            'image',
+        ),
+        (
+            labels.copy(),
+            {'name': 'labels', 'metadata': {'seed': seed}},
+            'labels',
+        ),
+        (
+            points.copy(),
+            {'name': 'points', 'metadata': {'seed': seed}},
+            'points',
+        ),
     ]
 
 
@@ -23,7 +35,19 @@ def labeled_particles3d():
     )
 
     return [
-        (density, {'name': 'density', 'metadata': {'seed': seed}}, 'image'),
-        (labels, {'name': 'labels', 'metadata': {'seed': seed}}, 'labels'),
-        (points, {'name': 'points', 'metadata': {'seed': seed}}, 'points'),
+        (
+            density.copy(),
+            {'name': 'density', 'metadata': {'seed': seed}},
+            'image',
+        ),
+        (
+            labels.copy(),
+            {'name': 'labels', 'metadata': {'seed': seed}},
+            'labels',
+        ),
+        (
+            points.copy(),
+            {'name': 'points', 'metadata': {'seed': seed}},
+            'points',
+        ),
     ]
