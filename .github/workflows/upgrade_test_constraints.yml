@@ -98,9 +98,11 @@ jobs:
       - name: Get repo info
         # when schedule or workflow_dispatch triggers workflow, then we need to get info about which branch to use
         if: github.event_name != 'issue_comment' && github.event_name != 'pull_request'
+        env:
+          REF_NAME: ${{ github.ref_name }}
         run: |
           echo "FULL_NAME=${{ github.repository }}" >> "$GITHUB_ENV"
-          echo "BRANCH=${{ github.ref_name }}" >> "$GITHUB_ENV"
+          echo "BRANCH=${REF_NAME}" >> "$GITHUB_ENV"
 
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:

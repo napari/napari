@@ -140,11 +140,13 @@ jobs:
         # THIRD=none
         # FOURTH=none
         shell: bash
+        env:
+          INPUT_QT_BACKEND: inputs.qt_backend
         run: |
-          python tools/split_qt_backend.py 0 ${{ inputs.qt_backend }} >> "$GITHUB_ENV"
-          python tools/split_qt_backend.py 1 ${{ inputs.qt_backend }} >> "$GITHUB_ENV"
-          python tools/split_qt_backend.py 2 ${{ inputs.qt_backend }} >> "$GITHUB_ENV"
-          python tools/split_qt_backend.py 3 ${{ inputs.qt_backend }} >> "$GITHUB_ENV"
+          python tools/split_qt_backend.py 0 ${INPUT_QT_BACKEND} >> "$GITHUB_ENV"
+          python tools/split_qt_backend.py 1 ${INPUT_QT_BACKEND} >> "$GITHUB_ENV"
+          python tools/split_qt_backend.py 2 ${INPUT_QT_BACKEND} >> "$GITHUB_ENV"
+          python tools/split_qt_backend.py 3 ${INPUT_QT_BACKEND} >> "$GITHUB_ENV"
 
       - name: Test with tox main
         timeout-minutes: ${{ inputs.timeout }}
