@@ -348,28 +348,32 @@ class Labels(ScalarFieldBase):
 
         data = self._ensure_int_labels(data)
 
-        super().__init__(
-            data,
-            affine=affine,
-            axis_labels=axis_labels,
-            blending=blending,
-            cache=cache,
-            depiction=depiction,
-            experimental_clipping_planes=experimental_clipping_planes,
-            rendering=rendering,
-            metadata=metadata,
-            multiscale=multiscale,
-            name=name,
-            scale=scale,
-            shear=shear,
-            plane=plane,
-            opacity=opacity,
-            projection_mode=projection_mode,
-            rotate=rotate,
-            translate=translate,
-            units=units,
-            visible=visible,
-        )
+        # prevent the default opacity change from triggering thumbnail update
+        # because depending on visibility and viewer.ndisplay,
+        # slicing may not be complete
+        with self.events.opacity.blocker():
+            super().__init__(
+                data,
+                affine=affine,
+                axis_labels=axis_labels,
+                blending=blending,
+                cache=cache,
+                depiction=depiction,
+                experimental_clipping_planes=experimental_clipping_planes,
+                rendering=rendering,
+                metadata=metadata,
+                multiscale=multiscale,
+                name=name,
+                scale=scale,
+                shear=shear,
+                plane=plane,
+                opacity=opacity,
+                projection_mode=projection_mode,
+                rotate=rotate,
+                translate=translate,
+                units=units,
+                visible=visible,
+            )
 
         self.events.add(
             brush_shape=Event,
@@ -416,6 +420,9 @@ class Labels(ScalarFieldBase):
 
         self._status = self.mode
         self._preserve_labels = False
+
+        # emit the opacity event, because it was blocked earlier
+        self.events.opacity()
 
     def _slice_dtype(self):
         """Calculate dtype of data view based on data dtype and current colormap"""
