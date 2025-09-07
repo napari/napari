@@ -22,37 +22,46 @@ import napari
 
 # Set up base image (to be warped) and points layers
 image = ski.data.checkerboard()
-src = np.array(
-    [
-        [ 66, 66],
-        [133,  66],
-        [ 66, 133],
-        [133, 133]
-    ]
-)
+src = np.array([[66, 66], [133, 66], [66, 133], [133, 133]])
 
 viewer = napari.Viewer()
 checkerboard_image_layer = viewer.add_image(image, name='checkerboard')
-source_points_layer = viewer.add_points(src, name='source_points', symbol='+', face_color='red', size=5)
+source_points_layer = viewer.add_points(
+    src, name='source_points', symbol='+', face_color='red', size=5
+)
 moving_points_layer = viewer.add_points(src.copy(), name='moving_points')
+
+# ensure moving_points layer is in Select mode
+moving_points_layer.mode = 'select'
 
 
 # Define a function to estimate the warping required to transform the destination points
 # into the source points, and then apply the warping to the original image data,
 # replacing the image layer data in-place.
-def warp(im_layer: 'napari.layers.Image', src: 'np.ndarray', dst: 'np.ndarray') -> None:
+def warp(
+    im_layer: 'napari.layers.Image',
+    original_image_data: 'np.ndarray',
+    src: 'np.ndarray',
+    dst: 'np.ndarray',
+) -> None:
     # Warp image using thin-plate spline transformation from skimage.
     tps = ski.transform.ThinPlateSplineTransform()
     tps.estimate(dst, src)
-    warped = ski.transform.warp(image, tps)
+    warped = ski.transform.warp(original_image_data, tps)
     # warped will be in 0..1 floats, so we need to
     # multiple by 255 to get it back to the same range
     # as the original data
-    im_layer.data = (warped * 255).astype(image.dtype)
+    im_layer.data = (warped * 255).astype(original_image_data.dtype)
+
 
 # Use partial to specify arguments for the warp function because the event
 # passes only one thing back
-warp_checkerboard = partial(warp, checkerboard_image_layer, src)
+warp_checkerboard = partial(
+    warp,  # the warping function
+    checkerboard_image_layer,  # im_layer argument
+    image,  # original_image_data argument
+    src,  # src argument
+)
 
 
 def warp_on_move(points_layer, event):
@@ -62,6 +71,9 @@ def warp_on_move(points_layer, event):
 
     # while the mouse is moving, we call our warp function
     while event.type == 'mouse_move':
+        # ensure a point is selected and we're in select mode
+        if not points_layer.selected_data or points_layer.mode != 'select':
+            return
         # find the index into the points data of the currently selected point
         # we use the last selected point as that's likely what the mouse is hovering
         # over
