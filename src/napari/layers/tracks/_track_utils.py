@@ -44,7 +44,9 @@ class TrackManager:
         Vertices for N points in D dimensions. T,(Z),Y,X
     track_connex : array (N,)
         Connection array specifying consecutive vertices that are linked to
-        form the tracks. Boolean
+        form the tracks. When hide_finished_tracks is enabled, this
+        array is modified to hide tracks that have finished before the current
+        time point.
     track_times : array (N,)
         Timestamp for each vertex in track_vertices.
     graph_vertices : array (N, D)
@@ -56,6 +58,16 @@ class TrackManager:
         Timestamp for each vertex in graph_vertices.
     track_ids : array (N,)
         Track ID for each vertex in track_vertices.
+    hide_finished_tracks : bool
+        Whether to hide track segments that have finished before the current
+        time point, regardless of tail_length value.
+    current_time : int, optional
+        Current time point for determining which tracks have finished. Required
+        when hide_finished_tracks is enabled.
+    track_end_times : array (M,)
+        Cached array of end times for each unique track ID, where M is the
+        number of unique tracks. Computed lazily and invalidated when track
+        data changes.
     """
 
     def __init__(self, data: np.ndarray) -> None:
