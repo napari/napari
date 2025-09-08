@@ -6,11 +6,11 @@ from napari._qt.layer_controls.widgets._tracks import (
     QtColorPropertiesComboBoxControl,
     QtGraphCheckBoxControl,
     QtHeadLengthSliderControl,
+    QtHideFinishedTracksCheckBoxControl,
     QtIdCheckBoxControl,
     QtTailDisplayCheckBoxControl,
     QtTailLengthSliderControl,
     QtTailWidthSliderControl,
-    QtHideFinishedTracksCheckBoxControl,
 )
 from napari.layers.base._base_constants import Mode
 

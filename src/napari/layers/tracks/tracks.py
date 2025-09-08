@@ -491,7 +491,7 @@ class Tracks(Layer):
         point are not displayed, regardless of the value of `tail_length`.
         """
         return self._hide_finished_tracks
-    
+
     @hide_finished_tracks.setter
     def hide_finished_tracks(self, hide_finished_tracks: bool) -> None:
         self._hide_finished_tracks: bool = hide_finished_tracks

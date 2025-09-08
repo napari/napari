@@ -37,12 +37,23 @@ class QtHideFinishedTracksCheckBoxControl(QtWidgetControlsBase):
 
         # Setup widgets
         self.hide_finished_tracks_checkbox = QCheckBox()
-        self.hide_finished_tracks_checkbox.stateChanged.connect(self.change_hide_finished_tracks)
+        self.hide_finished_tracks_checkbox.stateChanged.connect(
+            self.change_hide_finished_tracks
+        )
 
-        self.hide_finished_tracks_checkbox_label = QtWrappedLabel(trans._('hide finished tracks:'))
+        self.hide_finished_tracks_checkbox_label = QtWrappedLabel(
+            trans._('hide finished tracks:')
+        )
 
     def change_hide_finished_tracks(self, state) -> None:
-        self._layer.hide_finished_tracks = self.hide_finished_tracks_checkbox.isChecked()
+        self._layer.hide_finished_tracks = (
+            self.hide_finished_tracks_checkbox.isChecked()
+        )
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
-        return [(self.hide_finished_tracks_checkbox_label, self.hide_finished_tracks_checkbox)]
+        return [
+            (
+                self.hide_finished_tracks_checkbox_label,
+                self.hide_finished_tracks_checkbox,
+            )
+        ]

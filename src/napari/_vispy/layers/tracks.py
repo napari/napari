@@ -62,11 +62,15 @@ class VispyTracksLayer(VispyBaseLayer):
         self.node.tracks_filter.use_fade = self.layer.use_fade
         self.node.tracks_filter.tail_length = self.layer.tail_length
         self.node.tracks_filter.head_length = self.layer.head_length
-        self.node.tracks_filter.hide_finished_tracks = self.layer.hide_finished_tracks
+        self.node.tracks_filter.hide_finished_tracks = (
+            self.layer.hide_finished_tracks
+        )
         self.node.graph_filter.use_fade = self.layer.use_fade
         self.node.graph_filter.tail_length = self.layer.tail_length
         self.node.graph_filter.head_length = self.layer.head_length
-        self.node.graph_filter.hide_finished_tracks = self.layer.hide_finished_tracks
+        self.node.graph_filter.hide_finished_tracks = (
+            self.layer.hide_finished_tracks
+        )
 
         # set visibility of subvisuals
         self.node._subvisuals[0].visible = self.layer.display_tail
@@ -88,7 +92,9 @@ class VispyTracksLayer(VispyBaseLayer):
         self.node.tracks_filter.use_fade = self.layer.use_fade
         self.node.tracks_filter.tail_length = self.layer.tail_length
         self.node.tracks_filter.vertex_time = self.layer.track_times
-        self.node.tracks_filter.hide_finished_tracks = self.layer.hide_finished_tracks
+        self.node.tracks_filter.hide_finished_tracks = (
+            self.layer.hide_finished_tracks
+        )
 
         # change the data to the vispy line visual
         self.node._subvisuals[0].set_data(

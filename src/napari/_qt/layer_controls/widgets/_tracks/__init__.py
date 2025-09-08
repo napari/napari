@@ -10,6 +10,9 @@ from napari._qt.layer_controls.widgets._tracks.qt_graph_checkbox import (
 from napari._qt.layer_controls.widgets._tracks.qt_head_slider import (
     QtHeadLengthSliderControl,
 )
+from napari._qt.layer_controls.widgets._tracks.qt_hide_finished_tracks_checkbox import (
+    QtHideFinishedTracksCheckBoxControl,
+)
 from napari._qt.layer_controls.widgets._tracks.qt_id_checkbox import (
     QtIdCheckBoxControl,
 )
@@ -19,18 +22,14 @@ from napari._qt.layer_controls.widgets._tracks.qt_tail_control import (
     QtTailWidthSliderControl,
 )
 
-from napari._qt.layer_controls.widgets._tracks.qt_hide_finished_tracks_checkbox import (
-    QtHideFinishedTracksCheckBoxControl,
-)
-
 __all__ = [
     'QtColorPropertiesComboBoxControl',
     'QtColormapComboBoxControl',
     'QtGraphCheckBoxControl',
     'QtHeadLengthSliderControl',
+    'QtHideFinishedTracksCheckBoxControl',
     'QtIdCheckBoxControl',
     'QtTailDisplayCheckBoxControl',
     'QtTailLengthSliderControl',
     'QtTailWidthSliderControl',
-    'QtHideFinishedTracksCheckBoxControl',
 ]
