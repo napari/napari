@@ -19,6 +19,7 @@ class VispyTracksLayer(VispyBaseLayer):
         self.layer.events.display_id.connect(self._on_appearance_change)
         self.layer.events.display_tail.connect(self._on_appearance_change)
         self.layer.events.display_graph.connect(self._on_appearance_change)
+        self.layer.events.hide_finished_tracks.connect(self._on_tracks_change)
 
         self.layer.events.color_by.connect(self._on_appearance_change)
         self.layer.events.colormap.connect(self._on_appearance_change)
@@ -45,6 +46,11 @@ class VispyTracksLayer(VispyBaseLayer):
             self.node._subvisuals[1].text = labels_text
             self.node._subvisuals[1].pos = labels_pos
 
+        # If hide_finished_tracks is enabled, update track connections
+        # when the current time changes
+        if self.layer.hide_finished_tracks:
+            self._on_tracks_change()
+
         self.node.update()
         # Call to update order of translation values with new dims:
         self._on_matrix_change()
@@ -56,9 +62,11 @@ class VispyTracksLayer(VispyBaseLayer):
         self.node.tracks_filter.use_fade = self.layer.use_fade
         self.node.tracks_filter.tail_length = self.layer.tail_length
         self.node.tracks_filter.head_length = self.layer.head_length
+        self.node.tracks_filter.hide_finished_tracks = self.layer.hide_finished_tracks
         self.node.graph_filter.use_fade = self.layer.use_fade
         self.node.graph_filter.tail_length = self.layer.tail_length
         self.node.graph_filter.head_length = self.layer.head_length
+        self.node.graph_filter.hide_finished_tracks = self.layer.hide_finished_tracks
 
         # set visibility of subvisuals
         self.node._subvisuals[0].visible = self.layer.display_tail
@@ -80,6 +88,7 @@ class VispyTracksLayer(VispyBaseLayer):
         self.node.tracks_filter.use_fade = self.layer.use_fade
         self.node.tracks_filter.tail_length = self.layer.tail_length
         self.node.tracks_filter.vertex_time = self.layer.track_times
+        self.node.tracks_filter.hide_finished_tracks = self.layer.hide_finished_tracks
 
         # change the data to the vispy line visual
         self.node._subvisuals[0].set_data(

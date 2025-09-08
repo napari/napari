@@ -93,6 +93,9 @@ class Tracks(Layer):
         Length of the positive (backward in time) tails in units of time.
     tail_width : float
         Width of the track tails in pixels.
+    hide_finished_tracks : bool
+        If True, tracks that have finished before the current time point are not
+        displayed, regardless of the value of `tail_length`.
     translate : tuple of float
         Translation values for the layer.
     units : tuple of str or pint.Unit, optional
@@ -131,6 +134,7 @@ class Tracks(Layer):
         shear=None,
         tail_length: int = 30,
         tail_width: int = 2,
+        hide_finished_tracks: bool = False,
         translate=None,
         units=None,
         visible=True,
@@ -174,6 +178,7 @@ class Tracks(Layer):
             properties=Event,
             rebuild_tracks=Event,
             rebuild_graph=Event,
+            hide_finished_tracks=Event,
         )
 
         # track manager deals with data slicing, graph building and properties
@@ -195,6 +200,7 @@ class Tracks(Layer):
         self.tail_width = tail_width
         self.tail_length = tail_length
         self.head_length = head_length
+        self.hide_finished_tracks = hide_finished_tracks
         self.display_id = False
         self.display_tail = True
         self.display_graph = True
@@ -257,6 +263,7 @@ class Tracks(Layer):
                 'tail_length': self.tail_length,
                 'head_length': self.head_length,
                 'features': self.features,
+                'hide_finished_tracks': self.hide_finished_tracks,
             }
         )
         return state
@@ -479,6 +486,18 @@ class Tracks(Layer):
         self.events.tail_width()
 
     @property
+    def hide_finished_tracks(self) -> bool:
+        """bool: If True, tracks that have finished before the current time
+        point are not displayed, regardless of the value of `tail_length`.
+        """
+        return self._hide_finished_tracks
+    
+    @hide_finished_tracks.setter
+    def hide_finished_tracks(self, hide_finished_tracks: bool) -> None:
+        self._hide_finished_tracks: bool = hide_finished_tracks
+        self.events.hide_finished_tracks()
+
+    @property
     def tail_length(self) -> int:
         """float: Width for all vectors in pixels."""
         return self._tail_length
@@ -610,6 +629,9 @@ class Tracks(Layer):
     @property
     def track_connex(self) -> np.ndarray | None:
         """vertex connections for drawing track lines"""
+        # Update manager state before getting track_connex
+        self._manager.hide_finished_tracks = self._hide_finished_tracks
+        self._manager.current_time = self.current_time
         return self._manager.track_connex
 
     @property

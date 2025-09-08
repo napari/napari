@@ -77,6 +77,11 @@ class TrackManager:
         self._graph: dict[int, list[int]] | None = None
         self._graph_vertices = None
         self._graph_connex: npt.NDArray | None = None
+        
+        # Parameters for hide_finished_tracks functionality
+        self._hide_finished_tracks: bool = False
+        self._current_time: int | None = None
+        self._track_end_times: np.ndarray | None = None  # Cache for track end times (1D array ordered by unique_track_ids)
 
     @staticmethod
     def _fast_points_lookup(sorted_time: np.ndarray) -> dict[int, slice]:
@@ -139,6 +144,9 @@ class TrackManager:
                 (self.track_ids, np.arange(self.track_ids.size)),
             )
         ).tocsr()
+        
+        # Invalidate cached track end times when data changes
+        self._track_end_times = None
 
     @property
     def features(self) -> pd.DataFrame:
@@ -187,6 +195,26 @@ class TrackManager:
     def graph(self, graph: dict[int, int | list[int]]) -> None:
         """set the track graph"""
         self._graph = self._normalize_track_graph(graph)
+
+    @property
+    def hide_finished_tracks(self) -> bool:
+        """Whether to hide track segments that have finished before current time"""
+        return self._hide_finished_tracks
+
+    @hide_finished_tracks.setter
+    def hide_finished_tracks(self, value: bool) -> None:
+        """Set whether to hide finished tracks"""
+        self._hide_finished_tracks = value
+
+    @property
+    def current_time(self) -> int | None:
+        """Current time point for determining finished tracks"""
+        return self._current_time
+
+    @current_time.setter
+    def current_time(self, value: int | None) -> None:
+        """Set current time point"""
+        self._current_time = value
 
     @property
     def track_ids(self) -> npt.NDArray[np.uint32]:
@@ -290,6 +318,9 @@ class TrackManager:
         self._points_id = points_id
         self._track_vertices = track_vertices
         self._track_connex = track_connex
+        
+        # Invalidate cached track end times when tracks are rebuilt
+        self._track_end_times = None
 
     def build_graph(self) -> None:
         """build the track graph"""
@@ -364,6 +395,42 @@ class TrackManager:
         return None
 
     @property
+    def track_end_times(self) -> np.ndarray:
+        """Get cached track end times as 1D array ordered by unique_track_ids"""
+        if self._track_end_times is None:
+            self._track_end_times = self._compute_track_end_times()
+        return self._track_end_times
+
+    def _compute_track_end_times(self) -> np.ndarray:
+        """Compute the last timestamp for each track as 1D array (private method)"""
+        print("Computing track end times...")
+        unique_ids = self.unique_track_ids
+        track_end_times = np.zeros(len(unique_ids), dtype=float)
+        
+        for i, track_id in enumerate(unique_ids):
+            indices = self._vertex_indices_from_id(track_id)
+            track_end_times[i] = np.max(self.data[indices, 1])  # max time for this track
+            
+        return track_end_times
+
+    def _get_finished_tracks_mask(self) -> np.ndarray:
+        """Get boolean mask for vertices belonging to finished tracks - FULLY VECTORIZED!"""
+        if self._current_time is None:
+            return np.zeros(len(self.data), dtype=bool)
+        
+        # Get track end times as array and unique track IDs 
+        track_end_times = self.track_end_times
+        unique_ids = self.unique_track_ids
+        
+        # Create boolean mask for finished tracks (tracks that ended before current time)
+        finished_tracks_mask = track_end_times < self._current_time
+        
+        finished_track_ids = unique_ids[finished_tracks_mask]
+        vertices_mask = np.isin(self.data[:, 0], finished_track_ids)
+        
+        return vertices_mask
+
+    @property
     def track_vertices(self) -> np.ndarray | None:
         """return the track vertices"""
         return self._track_vertices
@@ -371,7 +438,21 @@ class TrackManager:
     @property
     def track_connex(self) -> np.ndarray | None:
         """vertex connections for drawing track lines"""
-        return self._track_connex
+        if self._track_connex is None:
+            return None
+            
+        # If hide_finished_tracks is disabled or no current time set, return original connex
+        if not self._hide_finished_tracks or self._current_time is None:
+            return self._track_connex
+            
+        # Create a copy to modify
+        connex = self._track_connex.copy()
+        finished_mask = self._get_finished_tracks_mask()
+
+        # Set all connections to False for vertices belonging to finished tracks
+        connex[finished_mask] = False
+                
+        return connex
 
     @property
     def graph_vertices(self) -> np.ndarray | None:
