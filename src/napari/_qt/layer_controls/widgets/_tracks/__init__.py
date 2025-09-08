@@ -19,6 +19,10 @@ from napari._qt.layer_controls.widgets._tracks.qt_tail_control import (
     QtTailWidthSliderControl,
 )
 
+from napari._qt.layer_controls.widgets._tracks.qt_hide_finished_tracks_checkbox import (
+    QtHideFinishedTracksCheckBoxControl,
+)
+
 __all__ = [
     'QtColorPropertiesComboBoxControl',
     'QtColormapComboBoxControl',
@@ -28,4 +32,5 @@ __all__ = [
     'QtTailDisplayCheckBoxControl',
     'QtTailLengthSliderControl',
     'QtTailWidthSliderControl',
+    'QtHideFinishedTracksCheckBoxControl',
 ]
