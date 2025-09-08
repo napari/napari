@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import logging
 import weakref
 from typing import TYPE_CHECKING
-from warnings import warn
 
 from napari.utils.translations import trans
 
@@ -14,6 +14,9 @@ if TYPE_CHECKING:
         def connect(self, callback: Callable): ...
 
         def disconnect(self, callback: Callable): ...
+
+
+_logger = logging.getLogger(__name__)
 
 
 def disconnect_events(emitter, listener):
@@ -56,7 +59,7 @@ def connect_setattr(emitter: Emitter, obj, attr: str, emitter_owner=None):
                     emitter_owner_parent.setFocus()
         except ImportError:
             # Qt bindings unavailable handling
-            warn(
+            _logger.warning(
                 trans._(
                     'Qt bindings unavailable. Logic to handle QCheckBox and '
                     'QAbstractSpinBox was unable to be applied',
