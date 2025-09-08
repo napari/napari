@@ -415,7 +415,6 @@ class TrackManager:
 
     def _compute_track_end_times(self) -> np.ndarray:
         """Compute the last timestamp for each track as 1D array (private method)"""
-        print("Computing track end times...")
         unique_ids = self.unique_track_ids
         track_end_times = np.zeros(len(unique_ids), dtype=float)
         
