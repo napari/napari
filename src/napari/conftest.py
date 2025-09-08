@@ -67,13 +67,6 @@ if TYPE_CHECKING:
     from napari.components import ViewerModel
 
 
-# os.environ['QT_FATAL_WARNINGS'] = '1'  # Turn Qt warnings into fatal errors
-os.environ['QT_LOGGING_RULES'] = (
-    'qt.qpa.*.debug=true'  # Enable Qt platform debugging
-)
-os.environ['QT_QPA_PLATFORM_PLUGIN_PATH'] = ''  # Reset Qt plugin path
-
-
 # touch ~/.Xauthority for Xlib support, must happen before importing pyautogui
 if os.getenv('CI') and sys.platform.startswith('linux'):
     xauth = Path('~/.Xauthority').expanduser()
