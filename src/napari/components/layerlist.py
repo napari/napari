@@ -371,7 +371,7 @@ class LayerList(SelectableEventedList[Layer]):
 
     @staticmethod
     def _convert_units(
-        array: np.ndarray,
+        array: np.ndarray[tuple[int], np.dtype[np.float32]],
         units: tuple[pint.Unit, ...],
         target_units: tuple[pint.Unit, ...],
     ) -> np.ndarray:
@@ -394,8 +394,10 @@ class LayerList(SelectableEventedList[Layer]):
         clipped_target_units = target_units[-len(units) :]
         return np.array(
             [
-                (array[i] * units[i]).to(clipped_target_units[i]).m
-                for i in range(len(array))
+                (s * u).to(cu).magnitude
+                for s, u, cu in zip(
+                    array, units, clipped_target_units, strict=False
+                )
             ]
         )
 
@@ -465,15 +467,25 @@ class LayerList(SelectableEventedList[Layer]):
             return reg.get_base_units(u1)[0] < reg.get_base_units(u2)[0]
 
         def update_u_dkt(units_t: tuple[pint.Unit, ...]) -> None:
+            """Update the dimensionality_to_unit dictionary with the smallest units.
+
+            Iterate over the units in units_t and for each dimensionality,
+            check if it is already in the dimensionality_to_unit dictionary.
+            If it is not, or if the current unit is 'smaller' than the existing
+            unit (as determined by the cmp function), update the dictionary.
+            """
             for u in units_t:
                 dim = u.dimensionality
-                if not (dim in u_dkt and cmp(u_dkt[dim], u)):
-                    u_dkt[dim] = u
+                if not (
+                    dim in dimensionality_to_unit
+                    and cmp(dimensionality_to_unit[dim], u)
+                ):
+                    dimensionality_to_unit[dim] = u
 
         units = ()
-        u_dkt = {}
-
-        update_u_dkt(units)
+        dimensionality_to_unit: dict[pint.util.UnitsContainer, pint.Unit] = {}
+        # for each dimensionality of units (time, length, mass, etc.)
+        # we will store the 'smallest' unit (e.g for nm and um, we will choose nm)
 
         for extent in layers_:
             if extent.units is None:
@@ -486,7 +498,7 @@ class LayerList(SelectableEventedList[Layer]):
                 units = extent.units
         if not units:
             return None
-        return tuple(u_dkt[u.dimensionality] for u in units)
+        return tuple(dimensionality_to_unit[u.dimensionality] for u in units)
 
     @cached_property
     def extent(self) -> LLExtent:
