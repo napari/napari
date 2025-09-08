@@ -141,7 +141,7 @@ jobs:
         # FOURTH=none
         shell: bash
         env:
-          INPUT_QT_BACKEND: inputs.qt_backend
+          INPUT_QT_BACKEND: ${{ inputs.qt_backend }}
         run: |
           python tools/split_qt_backend.py 0 ${INPUT_QT_BACKEND} >> "$GITHUB_ENV"
           python tools/split_qt_backend.py 1 ${INPUT_QT_BACKEND} >> "$GITHUB_ENV"
