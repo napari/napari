@@ -9,6 +9,7 @@ import skimage.data
 from qtpy import API_NAME
 
 import napari
+from napari._qt.dialogs.confirm_close_dialog import ConfirmCloseDialog
 from napari._qt.qt_main_window import Window
 from napari.utils.notifications import notification_manager
 
@@ -69,6 +70,11 @@ def _example_monkeypatch(monkeypatch):
         raise value
 
     monkeypatch.setattr(notification_manager, 'receive_error', raise_errors)
+    monkeypatch.setattr(
+        ConfirmCloseDialog,
+        'exec_',
+        lambda *args: ConfirmCloseDialog.DialogCode.Accepted,
+    )
 
 
 def _run_example(example_path):
