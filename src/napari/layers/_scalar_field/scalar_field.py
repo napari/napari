@@ -506,7 +506,7 @@ class ScalarFieldBase(Layer, ABC):
 
     def _make_slice_request(self, dims: Dims) -> _ScalarFieldSliceRequest:
         """Make an image slice request based on the given dims and this image."""
-        slice_input = self._make_slice_input(dims)
+        slice_input = self._layer_slicer.make_slice_input(dims)
         # For the existing sync slicing, indices is passed through
         # to avoid some performance issues related to the evaluation of the
         # data-to-world transform and its inverse. Async slicing currently
