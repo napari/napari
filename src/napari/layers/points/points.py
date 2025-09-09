@@ -2004,7 +2004,7 @@ class Points(Layer):
         indices : List[int]
             List of indices of points to remove from the layer.
         """
-        indices.sort()
+        indices = sorted(indices)
         if len(indices):
             self.events.data(
                 value=self.data,
