@@ -7,6 +7,9 @@ contributions:
     - id: napari.get_reader
       python_name: napari_builtins.io:napari_get_reader
       title: Builtin Reader
+    - id: napari.get_py_reader
+      python_name: napari_builtins.io:napari_get_py_reader
+      title: Builtin Python Reader
 
     # writers
     - id: napari.write_image
@@ -134,6 +137,12 @@ contributions:
       title: Features table widget
       python_name: napari_builtins._qt.features_table:FeaturesTable
 
+    # others
+    - id: napari.toggle_shape_measures
+      title: Toggle shape dimensions measurement
+      python_name: napari_builtins._measure_shapes:toggle_shape_measures
+      enablement: active_layer_type == 'shapes'
+
   readers:
     - command: napari.get_reader
       accepts_directories: true
@@ -166,6 +175,9 @@ contributions:
           '*.wdp', '*.webm', '*.webp', '*.wmf', '*.wmv', '*.xbm', '*.xpm',
           '*.zarr', '*.zif'
         ]
+    - command: napari.get_py_reader
+      filename_patterns:
+            ['*.py']
 
   writers:
     - command: napari.write_image
@@ -321,3 +333,5 @@ contributions:
   menus:
     napari/layers/visualize:
       - command: napari.widgets.features_table
+    napari/layers/measure:
+      - command: napari.toggle_shape_measures

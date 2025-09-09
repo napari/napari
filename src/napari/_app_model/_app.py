@@ -10,7 +10,7 @@ from napari._app_model.actions._layerlist_context_actions import (
     LAYERLIST_CONTEXT_ACTIONS,
     LAYERLIST_CONTEXT_SUBMENUS,
 )
-from napari._app_model.actions._view import VIEW_ACTIONS
+from napari._app_model.actions._view import VIEW_ACTIONS, VIEW_SUBMENUS
 
 APP_NAME = 'napari'
 
@@ -40,7 +40,7 @@ class NapariApplication(Application):
         self.register_actions(VIEW_ACTIONS)
         self.register_actions(FILE_ACTIONS)
         self.menus.append_menu_items(
-            chain(LAYERLIST_CONTEXT_SUBMENUS, FILE_SUBMENUS)
+            chain(LAYERLIST_CONTEXT_SUBMENUS, VIEW_SUBMENUS, FILE_SUBMENUS)
         )
 
     @classmethod
