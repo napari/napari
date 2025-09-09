@@ -124,7 +124,9 @@ def split_channels(
                     allow_none=True,
                 )
             )
-        elif key == 'affine' and isinstance(val, np.ndarray):
+        elif key in ['rotate', 'shear'] or (
+            key == 'affine' and isinstance(val, np.ndarray)
+        ):
             # affine may be Affine or np.ndarray object that is not
             # iterable, but it is not now a problem as we use it only to warning
             # if a provided object is a sequence and channel_axis is not provided
@@ -251,15 +253,22 @@ def stack_to_images(stack: Image, axis: int, **kwargs) -> list[Image]:
 
 
 def split_rgb(stack: Image, with_alpha=False) -> list[Image]:
-    """Variant of stack_to_images that splits an RGB with predefined cmap."""
+    """Split RGB image into separate channel images while preserving affine transforms."""
     if not stack.rgb:
         raise ValueError(
             trans._('Image must be RGB to use split_rgb', deferred=True)
         )
-    # representing alpha channel as gray
-    images = stack_to_images(
-        stack, -1, colormap=('red', 'green', 'blue', 'gray')
-    )
+
+    data, meta, _ = stack.as_layer_data_tuple()
+
+    meta['colormap'] = ('red', 'green', 'blue', 'gray')
+    meta.pop('rgb')
+
+    layerdata_list = split_channels(data, channel_axis=-1, **meta)
+
+    images = [
+        Image(image, **i_kwargs) for image, i_kwargs, _ in layerdata_list
+    ]
     return images if with_alpha else images[:3]
 
 
