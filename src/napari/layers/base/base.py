@@ -5,6 +5,7 @@ import inspect
 import itertools
 import logging
 import os.path
+import typing
 import uuid
 from abc import ABC, ABCMeta, abstractmethod
 from collections import defaultdict
@@ -75,6 +76,10 @@ if TYPE_CHECKING:
 logger = logging.getLogger('napari.layers.base.base')
 
 __all__ = ('Layer', 'LayerSlicer', 'no_op')
+
+
+CoordinateOrderArr = np.ndarray[tuple[int], np.dtype[np.integer]]
+CoordinateOrder = list[int] | CoordinateOrderArr
 
 
 def no_op(layer: Layer, event: Event) -> None:
@@ -159,37 +164,33 @@ class LayerSlicer(ABC):
 
     def make_slice_input(
         self,
-        dims: Dims | None,
+        dims: Dims,
     ) -> _SliceInput:
-        world_ndim: int = self.ndim if dims is None else dims.ndim
-        if dims is None:
-            # if no dims is given, "world" has same dimensionality of self
-            # this happens for example if a layer is not in a viewer
-            # in this case, we assume all dims are displayed dimensions
-            world_slice = _ThickNDSlice.make_full((np.nan,) * self.ndim)
-        else:
-            world_slice = _ThickNDSlice.from_dims(dims)
+        world_slice = _ThickNDSlice.from_dims(dims)
         order_array = (
-            np.arange(world_ndim)
+            np.arange(dims.ndim)
             if dims.order is None
             else np.asarray(dims.order)
         )
         order = tuple(
             self._world_to_layer_dims(
                 world_dims=order_array,
-                ndim_world=world_ndim,
+                ndim_world=dims.ndim,
             )
         )
 
         return _SliceInput(
             ndisplay=dims.ndisplay,
             world_slice=world_slice[-self.ndim :],
-            order=order[-self.ndim :],
+            order=typing.cast(tuple[int, ...], order[-self.ndim :]),
         )
 
     def _world_to_layer_dims(
-        self, *, world_dims: npt.NDArray, ndim_world: int
-    ) -> np.ndarray:
+        self,
+        *,
+        world_dims: Sequence[int] | CoordinateOrderArr,
+        ndim_world: int,
+    ) -> CoordinateOrderArr:
         """Map world dimensions to layer dimensions while maintaining order.
 
         This is used to map dimensions from the full world space defined by ``Dims``
@@ -253,8 +254,10 @@ class LayerSlicer(ABC):
 
     @staticmethod
     def _world_to_layer_dims_impl(
-        world_dims: npt.NDArray, ndim_world: int, ndim: int
-    ) -> npt.NDArray:
+        world_dims: Sequence[int] | CoordinateOrderArr,
+        ndim_world: int,
+        ndim: int,
+    ) -> CoordinateOrderArr:
         """
         Static for ease of testing
         """
@@ -1449,7 +1452,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         view_direction: npt.ArrayLike | None = None,
         dims_displayed: list[int] | None = None,
         world: bool = False,
-    ) -> tuple | None:
+    ) -> tuple[int, ...] | None:
         """Value of the data at a position.
 
         If the layer is not visible, return None.
@@ -1493,7 +1496,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
                 if len(dims_displayed) == 2 or self.ndim == 2:
                     value = self._get_value(position=tuple(position))
 
-                elif len(dims_displayed) == 3:
+                else:  # if len(dims_displayed) == 3:
                     view_direction = self._world_to_data_ray(view_direction)
                     start_point, end_point = self.get_ray_intersections(
                         position=position,
@@ -1667,7 +1670,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         if highlight:
             self._set_highlight(force=True)
 
-    def world_to_data(self, position: npt.ArrayLike) -> npt.NDArray:
+    def world_to_data(
+        self, position: npt.ArrayLike
+    ) -> np.ndarray[tuple[int], np.dtype[np.floating]]:
         """Convert from world coordinates to data coordinates.
 
         Parameters
@@ -1768,7 +1773,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         return normalized_vector
 
     def _world_to_displayed_data_ray(
-        self, vector_world: npt.ArrayLike, dims_displayed: list[int]
+        self, vector_world: npt.ArrayLike, dims_displayed: CoordinateOrder
     ) -> np.ndarray:
         """Convert an orientation from world to displayed data coordinates.
 

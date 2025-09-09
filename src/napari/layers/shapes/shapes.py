@@ -347,6 +347,7 @@ class Shapes(Layer):
         won't update during interactive events
     """
 
+    _mode: Mode
     _modeclass = Mode
     _colors = get_color_names()
     _vertex_size = 10
@@ -2857,7 +2858,7 @@ class Shapes(Layer):
             box[Box.HANDLE] = box[Box.TOP_CENTER] + r * handle_vec / cur_len
         self._selected_box = box + center
 
-    def _get_value(self, position):
+    def _get_value(self, position) -> tuple[int | None, int | None]:
         """Value of the data at a position in data coordinates.
 
         Parameters
@@ -2875,7 +2876,7 @@ class Shapes(Layer):
             if no vertex is found.
         """
         if self._slice_input.ndisplay == 3:
-            return (None, None)
+            return None, None
 
         if self._is_moving:
             return self._moving_value

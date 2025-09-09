@@ -301,12 +301,14 @@ class Vectors(Layer):
     @property
     def _view_data(
         self,
-    ) -> np.ndarray[tuple[int, Literal[2], Literal[2]], np.floating]:
+    ) -> np.ndarray[tuple[int, Literal[2], Literal[2]], np.dtype[np.floating]]:
         """(M, 2, 2) array: start point and projections of M vectors in 2D."""
         return self._layer_slicer._view_data
 
     @property
-    def _view_indices(self) -> np.ndarray[tuple[Literal[1], int], np.integer]:
+    def _view_indices(
+        self,
+    ) -> np.ndarray[tuple[Literal[1], int], np.dtype[np.integer]]:
         """(1, M) array: indices for the M in view vectors."""
         return self._layer_slicer._view_indices
 
