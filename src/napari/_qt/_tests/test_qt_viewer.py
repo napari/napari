@@ -482,11 +482,11 @@ def test_points_layer_display_correct_slice_on_scale(make_napari_viewer):
     viewer = make_napari_viewer()
     data = np.zeros((60, 60, 60))
     viewer.add_image(data, scale=[0.29, 0.26, 0.26])
-    pts = viewer.add_points(name='test', size=1, ndim=3)
+    pts: Points = viewer.add_points(name='test', size=1, ndim=3)
     pts.add((8.7, 0, 0))
     viewer.dims.set_point(0, 30 * 0.29)  # middle plane
 
-    request = pts._make_slice_request(viewer.dims)
+    request = pts._layer_slicer.make_slice_request(viewer.dims)
     response = request()
     np.testing.assert_equal(response.indices, [0])
 
