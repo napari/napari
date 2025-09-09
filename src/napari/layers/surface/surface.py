@@ -5,7 +5,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from napari.layers.base import Layer
+from napari.layers.base import Layer, LayerSlicer
 from napari.layers.intensity_mixin import IntensityVisualizationMixin
 from napari.layers.surface._surface_constants import Shading
 from napari.layers.surface._surface_utils import (
@@ -17,6 +17,7 @@ from napari.layers.utils.interactivity_utils import (
     nd_line_segment_to_displayed_data_ray,
 )
 from napari.layers.utils.layer_utils import _FeatureTable, calc_data_range
+from napari.types import LayerDataType
 from napari.utils.colormaps import AVAILABLE_COLORMAPS
 from napari.utils.events import Event
 from napari.utils.events.event_utils import connect_no_arg
@@ -819,3 +820,15 @@ class Surface(IntensityVisualizationMixin, Layer):
             meta=meta,
             layer_type=layer_type,
         )
+
+    def get_layer_slicer(
+        self, data: LayerDataType, cache: bool
+    ) -> 'SurfaceSlicer':
+        return SurfaceSlicer(layer=self, data=data, cache=cache)
+
+
+class SurfaceSlicer(LayerSlicer):
+    layer: Surface
+
+    def _set_view_slice(self):
+        pass

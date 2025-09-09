@@ -5,7 +5,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from napari.layers.base import Layer
+from napari.layers.base import Layer, LayerSlicer
 from napari.layers.utils._color_manager_constants import ColorMode
 from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
 from napari.layers.utils.color_manager import ColorManager
@@ -20,6 +20,7 @@ from napari.layers.vectors._vectors_constants import (
     VectorsProjectionMode,
     VectorStyle,
 )
+from napari.types import LayerDataType
 from napari.utils.colormaps import Colormap, ValidColormapArg
 from napari.utils.events import Event
 from napari.utils.events.custom_types import Array
@@ -805,3 +806,15 @@ class Vectors(Layer):
             Value of the data at the coord.
         """
         return
+
+    def get_layer_slicer(
+        self, data: LayerDataType, cache: bool
+    ) -> 'VectorsSlicer':
+        return VectorsSlicer(layer=self, data=data, cache=cache)
+
+
+class VectorsSlicer(LayerSlicer):
+    layer: Vectors
+
+    def _set_view_slice(self):
+        pass

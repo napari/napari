@@ -16,6 +16,7 @@ from napari.layers._scalar_field._slice import (
     _ScalarFieldSliceRequest,
     _ScalarFieldSliceResponse,
 )
+from napari.layers.base import LayerSlicer
 from napari.layers.image._image_constants import Interpolation, VolumeDepiction
 from napari.layers.image._image_mouse_bindings import (
     move_plane_along_normal as plane_drag_callback,
@@ -24,6 +25,7 @@ from napari.layers.image._image_mouse_bindings import (
 from napari.layers.image._image_utils import guess_multiscale
 from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
 from napari.layers.utils.plane import SlicingPlane
+from napari.types import LayerDataType
 from napari.utils._dask_utils import DaskIndexer
 from napari.utils.colormaps import AVAILABLE_COLORMAPS
 from napari.utils.events import Event
@@ -736,3 +738,15 @@ class ScalarFieldBase(Layer, ABC):
         bounding box of the data at the current level
         """
         return self._extent_level_data_augmented[:, dims_displayed].T
+
+    def get_layer_slicer(
+        self, data: LayerDataType, cache: bool
+    ) -> LayerSlicer:
+        return ScalarFieldSlicer(layer=self, data=data, cache=cache)
+
+
+class ScalarFieldSlicer(LayerSlicer):
+    layer: ScalarFieldBase
+
+    def _set_view_slice(self):
+        pass

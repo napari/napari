@@ -16,7 +16,7 @@ import pandas as pd
 from psygnal.containers import Selection
 from scipy.stats import gmean
 
-from napari.layers.base import Layer, no_op
+from napari.layers.base import Layer, LayerSlicer, no_op
 from napari.layers.base._base_constants import ActionType
 from napari.layers.base._base_mouse_bindings import (
     highlight_box_handles,
@@ -49,6 +49,7 @@ from napari.layers.utils.layer_utils import (
     _unique_element,
 )
 from napari.layers.utils.text_manager import TextManager
+from napari.types import LayerDataType
 from napari.utils.colormaps import Colormap, ValidColormapArg
 from napari.utils.colormaps.standardize_color import hex_to_name, rgb_to_hex
 from napari.utils.events import Event
@@ -2375,3 +2376,15 @@ class Points(Layer):
             and v[value] is not None
             and not (isinstance(v[value], float) and np.isnan(v[value]))
         ]
+
+    def get_layer_slicer(
+        self, data: LayerDataType, cache: bool
+    ) -> 'PointsSlicer':
+        return PointsSlicer(layer=self, data=data, cache=cache)
+
+
+class PointsSlicer(LayerSlicer):
+    layer: Points
+
+    def _set_view_slice(self):
+        pass

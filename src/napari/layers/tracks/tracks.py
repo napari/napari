@@ -8,8 +8,9 @@ from warnings import warn
 import numpy as np
 import pandas as pd
 
-from napari.layers.base import Layer
+from napari.layers.base import Layer, LayerSlicer
 from napari.layers.tracks._track_utils import TrackManager
+from napari.types import LayerDataType
 from napari.utils.colormaps import AVAILABLE_COLORMAPS, Colormap
 from napari.utils.events import Event
 from napari.utils.translations import trans
@@ -675,3 +676,15 @@ class Tracks(Layer):
             )
             self._color_by = 'track_id'
             self.events.color_by()
+
+    def get_layer_slicer(
+        self, data: LayerDataType, cache: bool
+    ) -> 'TracksSlicer':
+        return TracksSlicer(layer=self, data=data, cache=cache)
+
+
+class TracksSlicer(LayerSlicer):
+    layer: Tracks
+
+    def _set_view_slice(self) -> None:
+        pass

@@ -121,6 +121,8 @@ def configure_dask(data: Any, cache: bool = True) -> DaskIndexer:
     ----------
     data : Any
         data, as passed to a ``Layer.__init__`` method.
+    cache: bool
+        Whether to use the global dask cache.  If False, no cache will be used
 
     Returns
     -------
