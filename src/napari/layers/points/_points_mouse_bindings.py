@@ -1,3 +1,4 @@
+from collections.abc import Set as AbstractSet
 from typing import TYPE_CHECKING, TypeVar
 
 import numpy as np
@@ -32,7 +33,7 @@ def select(layer: 'Points', event):
 
     # Get value under the cursor, for points, this is the index of the highlighted
     # if any, or None.
-    value = layer.get_value(
+    value = layer._get_value_(
         position=event.position,
         view_direction=event.view_direction,
         dims_displayed=event.dims_displayed,
@@ -126,7 +127,6 @@ DRAG_DIST_THRESHOLD = 5
 def add(layer: 'Points', event):
     """Add a new point at the clicked position."""
     start_pos = event.pos
-    dist = 0
     yield
 
     while event.type == 'mouse_move':
@@ -152,7 +152,7 @@ def highlight(layer: 'Points', event):
 _T = TypeVar('_T')
 
 
-def _toggle_selected(selection: set[_T], value: _T) -> set[_T]:
+def _toggle_selected(selection: AbstractSet[_T], value: _T) -> set[_T]:
     """Add or remove value from the selection set.
 
     This function returns a copy of the existing selection.
@@ -233,13 +233,15 @@ def _select_points_from_drag(
     if len(layer._view_data) == 0:
         # if no data in view, there isn't any data to select
         layer.selected_data = set()
-
+    assert layer._drag_box is not None
     # if there is data in view, find the points in the drag box
     if n_display == 2:
         selection = points_in_box(
             layer._drag_box, layer._view_data, layer._view_size
         )
     else:
+        assert layer._drag_normal is not None
+        assert layer._drag_up is not None
         selection = _points_in_box_3d(
             layer._drag_box,
             layer._view_data,

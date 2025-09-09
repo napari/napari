@@ -1,6 +1,7 @@
 import numbers
+import typing
 import warnings
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Iterable, Sequence, Set as AbstractSet
 from copy import copy, deepcopy
 from itertools import cycle
 from typing import (
@@ -8,6 +9,7 @@ from typing import (
     Any,
     ClassVar,
     Literal,
+    Optional,
 )
 
 import numpy as np
@@ -422,16 +424,16 @@ class Points(Layer):
         self._mode = Mode.PAN_ZOOM
         self._status = self.mode
 
-        self._drag_start = None
-        self._drag_normal = None
-        self._drag_up = None
+        self._drag_start: Optional[np.ndarray] = None
+        self._drag_normal: Optional[np.ndarray] = None
+        self._drag_up: Optional[np.ndarray] = None
 
         # initialize view data
         self.__indices_view = np.empty(0, int)
         self._view_size_scale = []
 
-        self._drag_box = None
-        self._drag_box_stored = None
+        self._drag_box: Optional[np.ndarray] = None
+        self._drag_box_stored: Optional[np.ndarray] = None
         self._is_selecting = False
         self._clipboard = {}
 
@@ -1375,7 +1377,7 @@ class Points(Layer):
         return self._selected_data
 
     @selected_data.setter
-    def selected_data(self, selected_data: Sequence[int]) -> None:
+    def selected_data(self, selected_data: Iterable[int]) -> None:
         self._selected_data.clear()
         self._selected_data.update(set(selected_data))
         self._selected_view = list(
@@ -1628,6 +1630,25 @@ class Points(Layer):
         )
         # update highlight only if scale has changed, otherwise causes a cycle
         self._set_highlight(force=(prev_scale != self.scale_factor))
+
+    def _get_value_(
+        self,
+        position: npt.ArrayLike,
+        *,
+        view_direction: npt.ArrayLike | None = None,
+        dims_displayed: list[int] | None = None,
+        world: bool = False,
+    ) -> int | None:
+        """Workaround for incnsistency in rela return type of get_value"""
+        return typing.cast(
+            int,
+            self.get_value(
+                position,
+                view_direction=view_direction,
+                dims_displayed=dims_displayed,
+                world=world,
+            ),
+        )
 
     def _get_value(self, position) -> int | None:
         """Index of the point at a given 2D position in data coordinates.
@@ -1971,7 +1992,7 @@ class Points(Layer):
         colormapped[..., 3] *= self.opacity
         self.thumbnail = colormapped
 
-    def add(self, coords):
+    def add(self, coords: np.ndarray) -> None:
         """Adds points at coordinates.
 
         Parameters
@@ -2044,8 +2065,9 @@ class Points(Layer):
 
     def _move(
         self,
-        selection_indices: Sequence[int],
-        position: Sequence[int | float],
+        selection_indices: AbstractSet[int],
+        position: Sequence[float]
+        | np.ndarray[tuple[int], np.dtype[np.floating]],
     ) -> None:
         """Move points relative to drag start location.
 
@@ -2076,8 +2098,9 @@ class Points(Layer):
 
     def _set_drag_start(
         self,
-        selection_indices: Sequence[int],
-        position: Sequence[int | float],
+        selection_indices: AbstractSet[int],
+        position: Sequence[float]
+        | np.ndarray[tuple[int], np.dtype[np.floating]],
         center_by_data: bool = True,
     ) -> None:
         """Store the initial position at the start of a drag event.
