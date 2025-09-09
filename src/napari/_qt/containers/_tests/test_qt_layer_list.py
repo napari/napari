@@ -2,7 +2,7 @@ import threading
 
 import numpy as np
 from qtpy.QtCore import QModelIndex, QPoint, Qt
-from qtpy.QtWidgets import QLineEdit, QStyleOptionViewItem
+from qtpy.QtWidgets import QApplication, QLineEdit, QStyleOptionViewItem
 
 from napari._qt.containers import QtLayerList
 from napari._qt.containers._layer_delegate import LayerDelegate
@@ -222,9 +222,14 @@ def test_drag_and_drop_layers(qtbot):
     # drag and drop event simulation
     base_pos = view.mapToGlobal(view.rect().topLeft())
     start_pos = base_pos + QPoint(50, 10)
+    end_pos = base_pos + QPoint(100, 100)
+
+    if QApplication.primaryScreen().devicePixelRatio() > 1:
+        start_pos = base_pos + QPoint(150, 60)
+        end_pos = base_pos + QPoint(200, 150)
+
     start_x = start_pos.x()
     start_y = start_pos.y()
-    end_pos = base_pos + QPoint(100, 100)
     end_x = end_pos.x()
     end_y = end_pos.y()
 

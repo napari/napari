@@ -98,7 +98,7 @@ jobs:
 
       - name: Set Windows resolution
         if: runner.os == 'Windows'
-        run: Set-DisplayResolution -Width 1280 -Height 720 -Force
+        run: Set-DisplayResolution -Width 1920 -Height 1080 -Force
         shell: powershell
 
       - name: Setup headless display
