@@ -19,6 +19,7 @@ from scipy.fft import fft2, fftshift
 
 import napari
 from napari.qt.threading import thread_worker
+from napari.utils.task_status import task_status_manager
 
 IMAGE_SIZE = 100
 FPS = 20
@@ -169,6 +170,13 @@ wdg()
 
 # wait for the layers to be added before running the viewer
 wait_for_layers(viewer, ['wave 0'])
+
+# prevent showing `ConfirmCloseDialog` even when there are task being done
+# needed to prevent napari CI (tests and docs building) from getting stuck
+def no_status():
+    return []
+
+task_status_manager.get_status = no_status
 
 if __name__ == '__main__':
     napari.run()

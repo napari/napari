@@ -194,38 +194,58 @@ def create_worker(
         cancel_callback=worker.quit,
     )
     worker.started.connect(
-        lambda: update_task_status(
+        partial(
+            lambda task_status_id, function: update_task_status(
+                task_status_id,
+                Status.BUSY,
+                description=trans._(
+                    'Executing {func}', deferred=True, func=function
+                ),
+            ),
             worker_status_id,
-            Status.BUSY,
-            description=trans._('Executing {func}', deferred=True, func=func),
+            func,
         )
     )
     worker.errored.connect(
-        lambda: update_task_status(
-            worker_status_id,
-            Status.FAILED,
-            description=trans._(
-                '{func} execution failed', deferred=True, func=func
+        partial(
+            lambda task_status_id, function: update_task_status(
+                task_status_id,
+                Status.FAILED,
+                description=trans._(
+                    '{func} execution failed', deferred=True, func=function
+                ),
             ),
+            worker_status_id,
+            func,
         )
     )
     worker.finished.connect(
-        lambda: update_task_status(
-            worker_status_id,
-            Status.COMPLETED,
-            description=trans._(
-                '{func} execution completed', deferred=True, func=func
+        partial(
+            lambda task_status_id, function: update_task_status(
+                task_status_id,
+                Status.COMPLETED,
+                description=trans._(
+                    '{func} execution completed', deferred=True, func=function
+                ),
             ),
+            worker_status_id,
+            func,
         )
     )
     if hasattr(worker.signals, 'aborted'):
         worker.aborted.connect(
-            lambda: update_task_status(
-                worker_status_id,
-                Status.CANCELLED,
-                description=trans._(
-                    '{func} execution cancelled', deferred=True, func=func
+            partial(
+                lambda task_status_id, function: update_task_status(
+                    task_status_id,
+                    Status.CANCELLED,
+                    description=trans._(
+                        '{func} execution cancelled',
+                        deferred=True,
+                        func=function,
+                    ),
                 ),
+                worker_status_id,
+                func,
             )
         )
 
