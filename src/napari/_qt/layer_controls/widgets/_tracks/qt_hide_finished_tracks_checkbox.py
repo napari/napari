@@ -1,7 +1,3 @@
-from __future__ import annotations
-
-from typing import TYPE_CHECKING
-
 from qtpy.QtWidgets import (
     QCheckBox,
     QWidget,
@@ -11,10 +7,8 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,
 )
+from napari.layers import Tracks
 from napari.utils.translations import trans
-
-if TYPE_CHECKING:
-    from napari.layers import Tracks
 
 
 class QtHideFinishedTracksCheckBoxControl(QtWidgetControlsBase):
@@ -37,7 +31,7 @@ class QtHideFinishedTracksCheckBoxControl(QtWidgetControlsBase):
         Label for showing the option checkbox.
     """
 
-    def __init__(self, parent: QWidget, layer: 'Tracks') -> None:
+    def __init__(self, parent: QWidget, layer: Tracks) -> None:
         super().__init__(parent, layer)
         # Setup layer
 
