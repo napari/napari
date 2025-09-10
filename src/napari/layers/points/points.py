@@ -549,6 +549,7 @@ class Points(Layer):
 
         # Trigger generation of view slice and thumbnail
         self.refresh(extent=False)
+        self._slice_input.slice_done.connect(self._refresh_highlight)
 
     @property
     def data(self) -> np.ndarray:
@@ -2338,6 +2339,10 @@ class Points(Layer):
     def _set_view_slice(self):
         raise NotImplementedError
 
+    def _refresh_highlight(self):
+        with self.events.highlight.blocker():
+            self._set_highlight(force=True)
+
 
 class PointsSlicer(LayerSlicer):
     layer: Points
@@ -2361,6 +2366,7 @@ class PointsSlicer(LayerSlicer):
         )
         response = request()
         self._update_slice_response(response)
+        self.slice()
 
     def make_slice_request(self, dims: 'Dims') -> _PointSliceRequest:
         """Make a Points slice request based on the given dims and these data."""
@@ -2402,8 +2408,6 @@ class PointsSlicer(LayerSlicer):
         self._indices_view = np.array(indices, dtype=int)
         # get the selected points that are in view
         self.update_selected_view()
-        with self.layer.events.highlight.blocker():
-            self.layer._set_highlight(force=True)
 
     def update_selected_view(self):
         self._selected_view = list(

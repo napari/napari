@@ -72,6 +72,7 @@ if TYPE_CHECKING:
     from napari.components.overlays.base import Overlay
     from napari.layers._source import Source
 
+from psygnal import Signal
 
 logger = logging.getLogger('napari.layers.base.base')
 
@@ -118,6 +119,7 @@ class PostInit(ABCMeta):
 
 class LayerSlicer(ABC):
     layer: Layer
+    slice_done = Signal()
 
     def __init__(self, layer: Layer, data: LayerDataType, cache: bool):
         self.layer = layer
