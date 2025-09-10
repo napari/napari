@@ -37,7 +37,7 @@ class QtHideFinishedTracksCheckBoxControl(QtWidgetControlsBase):
         Label for showing the option checkbox.
     """
 
-    def __init__(self, parent: QWidget, layer: 'Tracks') -> None:
+    def __init__(self, parent: QWidget, layer: Tracks) -> None:
         super().__init__(parent, layer)
         # Setup layer
 
