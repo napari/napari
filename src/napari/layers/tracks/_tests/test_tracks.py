@@ -361,8 +361,8 @@ def test_hide_finished_tracks() -> None:
     track_0_indices = np.where(layer.data[:, 0] == 0)[0]
 
     # All connections for track 0 should be False when hide_finished_tracks is enabled
-    assert np.all(~ masked_connex[track_0_indices]) # all False
-    
+    assert np.all(~masked_connex[track_0_indices])  # all False
+
     # Track 1 and 2 should still have their original connections (not finished)
     track_1_indices = np.where(layer.data[:, 0] == 1)[0]
     track_2_indices = np.where(layer.data[:, 0] == 2)[0]
@@ -385,10 +385,10 @@ def test_hide_finished_tracks() -> None:
     masked_connex_6 = layer.track_connex
 
     # Track 0 and 1 should be masked
-    assert np.all(~ masked_connex_6[track_0_indices]) # all False
-    assert np.all(~ masked_connex_6[track_1_indices]) # all False
-    
-    # Track 2 should still have original connections  
+    assert np.all(~masked_connex_6[track_0_indices])  # all False
+    assert np.all(~masked_connex_6[track_1_indices])  # all False
+
+    # Track 2 should still have original connections
     np.testing.assert_array_equal(
         masked_connex_6[track_2_indices], original_connex[track_2_indices]
     )
@@ -403,8 +403,8 @@ def test_hide_finished_tracks() -> None:
     all_masked_connex = layer.track_connex
 
     # All tracks should be masked
-    assert np.all(~ all_masked_connex) # all False
-    
+    assert np.all(~all_masked_connex)  # all False
+
     # Test disabling hide_finished_tracks
     layer.hide_finished_tracks = False
     unmasked_connex = layer.track_connex
