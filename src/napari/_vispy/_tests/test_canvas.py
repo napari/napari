@@ -7,9 +7,9 @@ from napari.components.overlays import (
 )
 
 
-def test_viewer_overlays(make_napari_viewer):
-    viewer = make_napari_viewer()
-    canvas = viewer.window._qt_viewer.canvas
+def test_viewer_overlays(qt_viewer):
+    viewer = qt_viewer.viewer
+    canvas = qt_viewer.canvas
 
     for overlay in viewer._overlays.values():
         if isinstance(overlay, CanvasOverlay):
@@ -43,9 +43,9 @@ def test_viewer_overlays(make_napari_viewer):
     assert new_overlay_node not in canvas.view.children
 
 
-def test_layer_overlays(make_napari_viewer):
-    viewer = make_napari_viewer()
-    canvas = viewer.window._qt_viewer.canvas
+def test_layer_overlays(qt_viewer):
+    viewer = qt_viewer.viewer
+    canvas = qt_viewer.canvas
 
     view_children = len(canvas.view.children)
     scene_children = len(canvas.view.scene.children)
@@ -94,10 +94,11 @@ def test_layer_overlays(make_napari_viewer):
     assert len(canvas.view.scene.children) == scene_children
 
 
-def test_grid_mode(make_napari_viewer):
-    viewer = make_napari_viewer(ndisplay=3)
-    canvas = viewer.window._qt_viewer.canvas
+def test_grid_mode(qt_viewer):
+    viewer = qt_viewer.viewer
+    canvas = qt_viewer.canvas
 
+    viewer.dims.ndisplay = 3
     viewer.add_image(np.ones((10, 10, 10)))
 
     angles = 10, 20, 30  # just some nonzero stuff
@@ -129,9 +130,9 @@ def test_grid_mode(make_napari_viewer):
         assert camera.zoom == zoom
 
 
-def test_tiling_canvas_overlays(make_napari_viewer, qtbot):
-    viewer = make_napari_viewer()
-    canvas = viewer.window._qt_viewer.canvas
+def test_tiling_canvas_overlays(qt_viewer):
+    viewer = qt_viewer.viewer
+    canvas = qt_viewer.canvas
 
     viewer.scale_bar.visible = True
     viewer.text_overlay.visible = True
