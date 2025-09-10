@@ -66,6 +66,9 @@ class Tracks(Layer):
         See examples/tracks_3d_with_graph.py
     head_length : float
         Length of the positive (forward in time) tails in units of time.
+    hide_finished_tracks : bool
+        If True, tracks that have finished before the current time point are not
+        displayed, regardless of the value of `tail_length`.
     metadata : dict
         Layer metadata.
     name : str
@@ -93,9 +96,6 @@ class Tracks(Layer):
         Length of the positive (backward in time) tails in units of time.
     tail_width : float
         Width of the track tails in pixels.
-    hide_finished_tracks : bool
-        If True, tracks that have finished before the current time point are not
-        displayed, regardless of the value of `tail_length`.
     translate : tuple of float
         Translation values for the layer.
     units : tuple of str or pint.Unit, optional
@@ -124,6 +124,7 @@ class Tracks(Layer):
         features=None,
         graph=None,
         head_length: int = 0,
+        hide_finished_tracks: bool = False,
         metadata=None,
         name=None,
         opacity=1.0,
@@ -134,7 +135,6 @@ class Tracks(Layer):
         shear=None,
         tail_length: int = 30,
         tail_width: int = 2,
-        hide_finished_tracks: bool = False,
         translate=None,
         units=None,
         visible=True,
