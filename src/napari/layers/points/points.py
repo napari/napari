@@ -1639,7 +1639,7 @@ class Points(Layer):
         dims_displayed: list[int] | None = None,
         world: bool = False,
     ) -> int | None:
-        """Workaround for incnsistency in rela return type of get_value"""
+        """Workaround for inconsistency in real return type of get_value"""
         return typing.cast(
             int,
             self.get_value(
