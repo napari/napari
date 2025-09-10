@@ -460,14 +460,9 @@ class TrackManager:
         if not self._hide_finished_tracks or self._current_time is None:
             return self._track_connex
 
-        # Create a copy to modify
-        connex = self._track_connex.copy()
+        # Get mask for finished tracks and return logical AND with original connex
         finished_mask = self._get_finished_tracks_mask()
-
-        # Set all connections to False for vertices belonging to finished tracks
-        connex[finished_mask] = False
-
-        return connex
+        return np.logical_and(self._track_connex, ~finished_mask)
 
     @property
     def graph_vertices(self) -> np.ndarray | None:
