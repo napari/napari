@@ -122,7 +122,7 @@ jobs:
             backend: pyqt5 #,pyside2
             coverage: no_cov
           - python: "3.13"
-            platform: windows-latest
+            platform: windows-2022
             backend: pyqt6
             coverage: cov
           - python: "3.13"
