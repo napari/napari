@@ -312,12 +312,6 @@ class Surface(IntensityVisualizationMixin, Layer):
         self.colormap = colormap
         self.contrast_limits = self._contrast_limits
 
-        # Data containing vectors in the currently viewed slice
-        self._data_view = np.zeros((0, self._slice_input.ndisplay))
-        self._view_faces = np.zeros((0, 3), dtype=int)
-        self._view_vertex_values: list[Any] | np.ndarray = []
-        self._view_vertex_colors: list[Any] | np.ndarray = []
-
         # Trigger generation of view slice and thumbnail.
         # Use _update_dims instead of refresh here because _get_ndim is
         # dependent on vertex_values as well as vertices.
@@ -334,6 +328,25 @@ class Surface(IntensityVisualizationMixin, Layer):
 
         self.wireframe = wireframe
         self.normals = normals
+        self._layer_slicer.slice_done.connect(
+            self._maybe_reset_contrast_limits
+        )
+
+    @property
+    def _view_vertex_colors(self) -> list[Any] | np.ndarray:
+        return self._layer_slicer._view_vertex_colors
+
+    @property
+    def _view_vertex_values(self) -> list[Any] | np.ndarray:
+        return self._layer_slicer._view_vertex_values
+
+    @property
+    def _data_view(self) -> np.ndarray:
+        return self._layer_slicer._data_view
+
+    @property
+    def _view_faces(self) -> np.ndarray:
+        return self._layer_slicer._view_faces
 
     def _calc_data_range(self, mode='data'):
         return calc_data_range(self.vertex_values)
@@ -618,98 +631,9 @@ class Surface(IntensityVisualizationMixin, Layer):
         )
         return state
 
-    def _slice_associated_data(
-        self,
-        data: np.ndarray,
-        vertex_ndim: int,
-        dims: int = 1,
-    ) -> list[Any] | np.ndarray:
-        """Return associated layer data (e.g. vertex values, colors) within
-        the current slice.
-        """
-        if data is None:
-            return []
-
-        data_ndim = data.ndim - 1
-        if data_ndim >= dims:
-            # Get indices for axes corresponding to data dimensions
-            data_indices: tuple[int | slice, ...] = tuple(
-                slice(None) if np.isnan(idx) else int(np.round(idx))
-                for idx in self._data_slice.point[:-vertex_ndim]
-            )
-            data = data[data_indices]
-            if data.ndim > dims:
-                warnings.warn(
-                    trans._(
-                        'Assigning multiple data per vertex after slicing '
-                        'is not allowed. All dimensions corresponding to '
-                        'vertex data must be non-displayed dimensions. Data '
-                        'may not be visible.',
-                        deferred=True,
-                    ),
-                    category=UserWarning,
-                    stacklevel=2,
-                )
-                return []
-        return data
-
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""
-        N, vertex_ndim = self.vertices.shape
-        values_ndim = self.vertex_values.ndim - 1
-
-        self._view_vertex_values = self._slice_associated_data(
-            self.vertex_values,
-            vertex_ndim,
-        )
-
-        self._view_vertex_colors = self._slice_associated_data(
-            self.vertex_colors,
-            vertex_ndim,
-            dims=2,
-        )
-
-        if len(self._view_vertex_values) == 0:
-            self._data_view = np.zeros((0, self._slice_input.ndisplay))
-            self._view_faces = np.zeros((0, 3), dtype=int)
-            return
-
-        if values_ndim > 0:
-            indices = np.array(self._data_slice.point[-vertex_ndim:])
-            disp = [
-                d
-                for d in np.subtract(self._slice_input.displayed, values_ndim)
-                if d >= 0
-            ]
-            not_disp = [
-                d
-                for d in np.subtract(
-                    self._slice_input.not_displayed, values_ndim
-                )
-                if d >= 0
-            ]
-        else:
-            indices = np.array(self._data_slice.point)
-            not_disp = list(self._slice_input.not_displayed)
-            disp = list(self._slice_input.displayed)
-
-        self._data_view = self.vertices[:, disp]
-        if len(self.vertices) == 0:
-            self._view_faces = np.zeros((0, 3), dtype=int)
-        elif vertex_ndim > self._slice_input.ndisplay:
-            vertices = self.vertices[:, not_disp].astype('int')
-            triangles = vertices[self.faces]
-            matches = np.all(triangles == indices[not_disp], axis=(1, 2))
-            matches = np.where(matches)[0]
-            if len(matches) == 0:
-                self._view_faces = np.zeros((0, 3), dtype=int)
-            else:
-                self._view_faces = self.faces[matches]
-        else:
-            self._view_faces = self.faces
-
-        if self._keep_auto_contrast:
-            self.reset_contrast_limits()
+        raise NotImplementedError
 
     def _update_thumbnail(self) -> None:
         """Update thumbnail with current surface."""
@@ -826,9 +750,107 @@ class Surface(IntensityVisualizationMixin, Layer):
     ) -> 'SurfaceSlicer':
         return SurfaceSlicer(layer=self, data=data, cache=cache)
 
+    def _maybe_reset_contrast_limits(self) -> None:
+        if self._keep_auto_contrast:
+            self.reset_contrast_limits()
+
 
 class SurfaceSlicer(LayerSlicer):
     layer: Surface
 
+    def __init__(self, layer: Surface, data, cache: bool):
+        super().__init__(layer=layer, data=data, cache=cache)
+        # Data containing vectors in the currently viewed slice
+        self._data_view = np.zeros((0, self._slice_input.ndisplay))
+        self._view_faces = np.zeros((0, 3), dtype=int)
+        self._view_vertex_values: list[Any] | np.ndarray = []
+        self._view_vertex_colors: list[Any] | np.ndarray = []
+
+    def _slice_associated_data(
+        self,
+        data: np.ndarray,
+        vertex_ndim: int,
+        dims: int = 1,
+    ) -> list[Any] | np.ndarray:
+        """Return associated layer data (e.g. vertex values, colors) within
+        the current slice.
+        """
+        if data is None:
+            return []
+
+        data_ndim = data.ndim - 1
+        if data_ndim >= dims:
+            # Get indices for axes corresponding to data dimensions
+            data_indices: tuple[int | slice, ...] = tuple(
+                slice(None) if np.isnan(idx) else int(np.round(idx))
+                for idx in self.data_slice.point[:-vertex_ndim]
+            )
+            data = data[data_indices]
+            if data.ndim > dims:
+                warnings.warn(
+                    trans._(
+                        'Assigning multiple data per vertex after slicing '
+                        'is not allowed. All dimensions corresponding to '
+                        'vertex data must be non-displayed dimensions. Data '
+                        'may not be visible.',
+                        deferred=True,
+                    ),
+                    category=UserWarning,
+                    stacklevel=2,
+                )
+                return []
+        return data
+
     def _set_view_slice(self):
-        pass
+        _, vertex_ndim = self.layer.vertices.shape
+        values_ndim = self.layer.vertex_values.ndim - 1
+
+        self._view_vertex_values = self._slice_associated_data(
+            self.layer.vertex_values,
+            vertex_ndim,
+        )
+
+        self._view_vertex_colors = self._slice_associated_data(
+            self.layer.vertex_colors,
+            vertex_ndim,
+            dims=2,
+        )
+
+        if len(self._view_vertex_values) == 0:
+            self._data_view = np.zeros((0, self._slice_input.ndisplay))
+            self._view_faces = np.zeros((0, 3), dtype=int)
+            return
+
+        if values_ndim > 0:
+            indices = np.array(self.data_slice.point[-vertex_ndim:])
+            disp = [
+                d
+                for d in np.subtract(self._slice_input.displayed, values_ndim)
+                if d >= 0
+            ]
+            not_disp = [
+                d
+                for d in np.subtract(
+                    self._slice_input.not_displayed, values_ndim
+                )
+                if d >= 0
+            ]
+        else:
+            indices = np.array(self.data_slice.point)
+            not_disp = list(self._slice_input.not_displayed)
+            disp = list(self._slice_input.displayed)
+
+        self._data_view = self.layer.vertices[:, disp]
+        if len(self.layer.vertices) == 0:
+            self._view_faces = np.zeros((0, 3), dtype=int)
+        elif vertex_ndim > self._slice_input.ndisplay:
+            vertices = self.layer.vertices[:, not_disp].astype('int')
+            triangles = vertices[self.layer.faces]
+            matches = np.all(triangles == indices[not_disp], axis=(1, 2))
+            matches = np.where(matches)[0]
+            if len(matches) == 0:
+                self._view_faces = np.zeros((0, 3), dtype=int)
+            else:
+                self._view_faces = self.layer.faces[matches]
+        else:
+            self._view_faces = self.layer.faces
