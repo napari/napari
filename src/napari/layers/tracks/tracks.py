@@ -2,7 +2,7 @@
 # from napari.utils.events import Event
 # from napari.utils.colormaps import AVAILABLE_COLORMAPS
 
-from typing import Any
+from typing import Any, Optional
 from warnings import warn
 
 import numpy as np
@@ -106,6 +106,7 @@ class Tracks(Layer):
     # The max number of tracks that will ever be used to render the thumbnail
     # If more tracks are present then they are randomly subsampled
     _max_tracks_thumbnail = 1024
+    _layer_slicer: 'TracksSlicer'
 
     def __init__(
         self,
@@ -216,6 +217,8 @@ class Tracks(Layer):
 
         # reset the display before returning
         self._current_displayed_dims = None
+        self._layer_slicer.slice_done.connect(self.events.rebuild_tracks)
+        self._layer_slicer.slice_done.connect(self.events.rebuild_graph)
 
     @property
     def _extent_data(self) -> np.ndarray:
@@ -263,18 +266,7 @@ class Tracks(Layer):
         return state
 
     def _set_view_slice(self) -> None:
-        """Sets the view given the indices to slice with."""
-
-        # if the displayed dims have changed, update the shader data
-        dims_displayed = self._slice_input.displayed
-        if dims_displayed != self._current_displayed_dims:
-            # store the new dims
-            self._current_displayed_dims = dims_displayed
-            # fire the events to update the shaders
-            self.events.rebuild_tracks()
-            self.events.rebuild_graph()
-
-        return
+        raise NotImplementedError
 
     def _get_value(self, position) -> int | None:
         """Value of the data at a position in data coordinates.
@@ -346,26 +338,12 @@ class Tracks(Layer):
     @property
     def _view_data(self):
         """return a view of the data"""
-        return self._pad_display_data(self._manager.track_vertices)
+        return self._layer_slicer._view_data
 
     @property
     def _view_graph(self):
         """return a view of the graph"""
-        return self._pad_display_data(self._manager.graph_vertices)
-
-    def _pad_display_data(self, vertices):
-        """pad display data when moving between 2d and 3d"""
-        if vertices is None:
-            return None
-
-        data = vertices[:, self._slice_input.displayed]
-        # if we're only displaying two dimensions, then pad the display dim
-        # with zeros
-        if self._slice_input.ndisplay == 2:
-            data = np.pad(data, ((0, 0), (0, 1)), 'constant')
-            return data[:, (1, 0, 2)]  # y, x, z -> x, y, z
-
-        return data[:, (2, 1, 0)]  # z, y, x -> x, y, z
+        return self._layer_slicer._view_graph
 
     @property
     def current_time(self) -> int | None:
@@ -659,7 +637,7 @@ class Tracks(Layer):
         if not labels:
             return None, (None, None)
 
-        padded_positions = self._pad_display_data(positions)
+        padded_positions = self._layer_slicer._pad_display_data(positions)
         return labels, padded_positions
 
     def _check_color_by_in_features(self) -> None:
@@ -686,5 +664,41 @@ class Tracks(Layer):
 class TracksSlicer(LayerSlicer):
     layer: Tracks
 
+    def __init__(self, layer: Tracks, data: LayerDataType, cache: bool):
+        super().__init__(layer=layer, data=data, cache=cache)
+        self._current_displayed_dims: Optional[list[int]] = None
+
     def _set_view_slice(self) -> None:
-        pass
+        """Sets the view given the indices to slice with."""
+
+        # if the displayed dims have changed, update the shader data
+        dims_displayed = self._slice_input.displayed
+        if dims_displayed != self._current_displayed_dims:
+            # store the new dims
+            self._current_displayed_dims = dims_displayed
+            # fire the events to update the shaders
+            self.slice_done()
+
+    def _pad_display_data(self, vertices):
+        """pad display data when moving between 2d and 3d"""
+        if vertices is None:
+            return None
+
+        data = vertices[:, self._slice_input.displayed]
+        # if we're only displaying two dimensions, then pad the display dim
+        # with zeros
+        if self._slice_input.ndisplay == 2:
+            data = np.pad(data, ((0, 0), (0, 1)), 'constant')
+            return data[:, (1, 0, 2)]  # y, x, z -> x, y, z
+
+        return data[:, (2, 1, 0)]  # z, y, x -> x, y, z
+
+    @property
+    def _view_data(self):
+        """return a view of the data"""
+        return self._pad_display_data(self.layer._manager.track_vertices)
+
+    @property
+    def _view_graph(self):
+        """return a view of the graph"""
+        return self._pad_display_data(self.layer._manager.graph_vertices)
