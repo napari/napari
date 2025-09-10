@@ -78,8 +78,8 @@ if TYPE_CHECKING:
 logger = logging.getLogger('napari.layers.base.base')
 
 
-CoordinateOrderArr = np.ndarray[tuple[int], np.dtype[np.integer]]
-CoordinateOrder = list[int] | CoordinateOrderArr
+Array1dOfInts = np.ndarray[tuple[int], np.dtype[np.integer]]
+ListOrArrayOfInts = list[int] | Array1dOfInts
 
 
 def no_op(layer: Layer, event: Event) -> None:
@@ -1655,7 +1655,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         return normalized_vector
 
     def _world_to_displayed_data_ray(
-        self, vector_world: npt.ArrayLike, dims_displayed: CoordinateOrder
+        self, vector_world: npt.ArrayLike, dims_displayed: ListOrArrayOfInts
     ) -> np.ndarray:
         """Convert an orientation from world to displayed data coordinates.
 
