@@ -42,7 +42,7 @@ class QtHideFinishedTracksCheckBoxControl(QtWidgetControlsBase):
         )
 
         self.hide_finished_tracks_checkbox_label = QtWrappedLabel(
-            trans._('hide finished tracks:')
+            trans._('hide completed:')
         )
 
     def change_hide_finished_tracks(self, state) -> None:
