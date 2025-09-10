@@ -5,7 +5,7 @@ repos:
   hooks:
   - id: ruff-format
     exclude: examples
-  - id: ruff
+  - id: ruff-check
 #    args:
 #      - "--unsafe-fixes"
 - repo: https://github.com/seddonym/import-linter
