@@ -58,6 +58,9 @@ class VispyCanvasOverlay(VispyBaseOverlay):
 
     NOTE: Subclasses should make sure to properly set their x_size and y_size
     attribute when their size changes for proper tiling.
+
+    canvas_position_callback is set by the VispyCanvas object, and is responsible
+    to update the position of all canvas overlays whenever necessary
     """
 
     def __init__(self, *, overlay, node, parent=None) -> None:

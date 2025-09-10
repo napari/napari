@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import gc
+from collections.abc import Iterator
 from functools import partial
 from typing import TYPE_CHECKING
 from weakref import WeakSet
@@ -905,7 +906,9 @@ class VispyCanvas:
 
         self._defer_overlay_position_update()
 
-    def _get_ordered_visible_canvas_overlays(self):
+    def _get_ordered_visible_canvas_overlays(
+        self,
+    ) -> Iterator[tuple[CanvasOverlay, VispyBaseOverlay, Node | None]]:
         # note that some canvas overlays do no use CanvasPosition, but are instead
         # free-floating (such as the cursor overlay), so those are skipped
 
@@ -973,6 +976,8 @@ class VispyCanvas:
             y_offset = y_offset_total[view][overlay.position]
 
             # add offset to the following overlays based on tiling direction
+            # these are currently hardcoded, so we just tile horizontally or
+            # vertically depending on which corner we're on
             if overlay.position in ('top_right', 'bottom_left'):
                 x_offset_total[view][overlay.position] += (
                     vispy_overlay.x_size + x_padding
