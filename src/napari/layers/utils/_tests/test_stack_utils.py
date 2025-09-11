@@ -366,7 +366,13 @@ def test_slice_from_axis_different_array_types(
     axis, element = 1, 2
     expected_shape = (3, 4)
 
-    result = slice_from_axis(data, axis=axis, element=element)
+    if array_type == 'zarr':
+        with pytest.warns(
+            UserWarning, match='zarr array cannot be sliced lazily'
+        ):
+            result = slice_from_axis(data, axis=axis, element=element)
+    else:
+        result = slice_from_axis(data, axis=axis, element=element)
 
     # Check result type and shape
     assert isinstance(result, expected_result_type)
