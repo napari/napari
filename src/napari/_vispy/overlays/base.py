@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from vispy.visuals.transforms import MatrixTransform, STTransform
 
@@ -71,7 +71,7 @@ class VispyCanvasOverlay(VispyBaseOverlay):
         self.node.transform = STTransform()
         self.overlay.events.position.connect(self._on_position_change)
 
-    def _on_position_change(self, event=None):
+    def _on_position_change(self, event: Any = None):
         # subclasses should set sizes correctly and adjust offsets to get
         # the optimal positioning
         if self.node.parent is None:
