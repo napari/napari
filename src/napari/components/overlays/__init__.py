@@ -28,6 +28,6 @@ __all__ = [
     'SelectionBoxOverlay',
     'TextOverlay',
     'TransformBoxOverlay',
-    'ZoomOverlay',
     'ZYXAxesOverlay',
+    'ZoomOverlay',
 ]

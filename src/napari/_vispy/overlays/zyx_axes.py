@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.spatial.transform import Rotation as R
 from vispy.util import transforms
 from vispy.visuals.transforms import MatrixTransform
 
@@ -6,7 +7,6 @@ from napari._vispy.overlays.base import ViewerOverlayMixin, VispyCanvasOverlay
 from napari._vispy.visuals.axes import Axes
 from napari.components._viewer_constants import CanvasPosition
 from napari.utils.theme import get_theme
-from scipy.spatial.transform import Rotation as R
 
 
 class VispyZYXAxesOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
@@ -68,7 +68,7 @@ class VispyZYXAxesOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self.node.text.text = ['Z', 'Y', 'X']
 
     def _on_zoom_change(self, event=None):
-        """ Prevent the axes from zooming with the world. """
+        """Prevent the axes from zooming with the world."""
         scale = 1 / self.viewer.camera.zoom
 
         if abs(np.log10(self._scale) - np.log10(scale)) < 1e-4:
@@ -122,7 +122,9 @@ class VispyZYXAxesOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         #
 
         rx, ry, rz = self.viewer.camera.angles
-        rot = R.from_euler('zyx', [rz, ry, rx], degrees=True) # vispy uses zyx supposedly??
+        rot = R.from_euler(
+            'zyx', [rz, ry, rx], degrees=True
+        )  # vispy uses zyx supposedly??
         view_rot_3x3 = rot.as_matrix()
         camera_orientation_3x3 = view_rot_3x3.T
 
@@ -132,8 +134,10 @@ class VispyZYXAxesOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         #
         #   Scale
         #
- 
-        scale_matrix = transforms.scale([self._target_length, self._target_length, self._target_length])
+
+        scale_matrix = transforms.scale(
+            [self._target_length, self._target_length, self._target_length]
+        )
 
         # order is important!
         final_transform = scale_matrix @ rotation_matrix @ translation_matrix
