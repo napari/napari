@@ -44,11 +44,11 @@ def slice_from_axis(array, *, axis, element):
 
         array = da.from_zarr(array)
         warnings.warn(
-                    trans._(
-                        'zarr array cannot be sliced lazily, converted to dask array.',
-                        deferred=True,
-                    )
-                )
+            trans._(
+                'zarr array cannot be sliced lazily, converted to dask array.',
+                deferred=True,
+            )
+        )
 
     slices = [slice(None) for i in range(array.ndim)]
     slices[axis] = element
