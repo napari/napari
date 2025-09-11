@@ -6,19 +6,22 @@ from napari._vispy.overlays.base import ViewerOverlayMixin, VispyCanvasOverlay
 from napari._vispy.visuals.axes import Axes
 from napari.components._viewer_constants import CanvasPosition
 from napari.utils.theme import get_theme
+from scipy.spatial.transform import Rotation as R
 
 
 class VispyZYXAxesOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
     """Axes indicating camera orientation, pinned to a canvas corner."""
 
     def __init__(self, *, viewer, overlay, parent=None) -> None:
-        # The user specified a fixed size, not dependent on zoom.
-        # We'll use this scale value in the transform matrix.
-        self.scale = 50
+        self._scale = 1
+
+        # Target axes length in canvas pixels
+        self._target_length = 80
 
         # We have to create the node here so we can pass it to super(),
         # otherwise a default one would be created.
         node = Axes()
+        node.set_gl_state(depth_test=False, blend=True)
 
         super().__init__(
             node=node, viewer=viewer, overlay=overlay, parent=parent
@@ -34,6 +37,7 @@ class VispyZYXAxesOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self.overlay.events.arrows.connect(self._on_data_change)
 
         self.viewer.events.theme.connect(self._on_data_change)
+        self.viewer.camera.events.zoom.connect(self._on_zoom_change)
         self.viewer.camera.events.angles.connect(self._on_angles_change)
 
         # The parent class connects _on_position_change, which we are overriding
@@ -61,8 +65,18 @@ class VispyZYXAxesOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
     def _on_labels_change(self, event=None):
         """Update text labels."""
         self.node.text.visible = self.overlay.labels
-        # The labels are fixed to Z, Y, X for this overlay.
         self.node.text.text = ['Z', 'Y', 'X']
+
+    def _on_zoom_change(self, event=None):
+        """ Prevent the axes from zooming with the world. """
+        scale = 1 / self.viewer.camera.zoom
+
+        if abs(np.log10(self._scale) - np.log10(scale)) < 1e-4:
+            return
+
+        self._scale = scale
+        scale = self._target_length * self._scale
+        self.node.transform.scale = [scale, scale, scale, 1]
 
     def _on_angles_change(self, event=None):
         """Update rotation from camera angles."""
@@ -73,56 +87,59 @@ class VispyZYXAxesOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         if self.node.parent is None:
             return
 
-        # 1. Build the translation matrix to pin to a corner.
+        #
+        #   Translation
+        #
+
         x_max, y_max = list(self.node.parent.size)
         position = self.overlay.position
 
-        # The vispy Axes visual is centered at (0,0,0) and extends from -1 to 1
-        # along each axis. After scaling, it will extend from -self.scale to
-        # +self.scale. We use this size to calculate the offset needed to
-        # keep the visual fully in the canvas.
-        size = self.scale
+        size = self._target_length
         x_offset = self.x_offset + size
         y_offset = self.y_offset + size
+        z_offset = -1  # prevent z-fighting?
 
         if position == CanvasPosition.TOP_LEFT:
-            translate = [x_offset, y_offset, 0]
+            translate = [x_offset, y_offset, z_offset]
         elif position == CanvasPosition.TOP_CENTER:
-            translate = [x_max / 2, y_offset, 0]
+            translate = [x_max / 2, y_offset, z_offset]
         elif position == CanvasPosition.TOP_RIGHT:
-            translate = [x_max - x_offset, y_offset, 0]
+            translate = [x_max - x_offset, y_offset, z_offset]
         elif position == CanvasPosition.BOTTOM_LEFT:
-            translate = [x_offset, y_max - y_offset, 0]
+            translate = [x_offset, y_max - y_offset, z_offset]
         elif position == CanvasPosition.BOTTOM_CENTER:
-            translate = [x_max / 2, y_max - y_offset, 0]
+            translate = [x_max / 2, y_max - y_offset, z_offset]
         elif position == CanvasPosition.BOTTOM_RIGHT:
-            translate = [x_max - x_offset, y_max - y_offset, 0]
+            translate = [x_max - x_offset, y_max - y_offset, z_offset]
         else:
             # Default to bottom left
-            translate = [x_offset, y_max - y_offset, 0]
+            translate = [x_offset, y_max - y_offset, z_offset]
+
         translation_matrix = transforms.translate(translate)
 
-        # 2. Build the rotation matrix from the camera's orientation.
-        # The camera's view_matrix holds the world-to-camera transformation.
-        # The inverse of its rotation part aligns our axes with the camera.
-        view_rot_3x3 = self.viewer.camera.view_matrix[:3, :3]
+        #
+        #   Rotation
+        #
+
+        rx, ry, rz = self.viewer.camera.angles
+        rot = R.from_euler('zyx', [rz, ry, rx], degrees=True) # vispy uses zyx supposedly??
+        view_rot_3x3 = rot.as_matrix()
         camera_orientation_3x3 = view_rot_3x3.T
 
-        # Embed the 3x3 rotation in a 4x4 matrix.
         rotation_matrix = np.eye(4)
         rotation_matrix[:3, :3] = camera_orientation_3x3
 
-        # 3. Build the scale matrix.
-        scale_matrix = transforms.scale([self.scale, self.scale, self.scale])
+        #
+        #   Scale
+        #
+ 
+        scale_matrix = transforms.scale([self._target_length, self._target_length, self._target_length])
 
-        # 4. Combine matrices and set the node's transform.
-        # The order is important: scale, then rotate, then translate.
-        final_transform = translation_matrix @ rotation_matrix @ scale_matrix
+        # order is important!
+        final_transform = scale_matrix @ rotation_matrix @ translation_matrix
         self.node.transform.matrix = final_transform
-        self.node.update()
 
     def reset(self):
         super().reset()
         self._on_data_change()
-        # Set the initial orientation and position.
         self._on_angles_change()
