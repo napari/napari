@@ -49,13 +49,13 @@ def warp(
     tps.estimate(dst, src)
     warped = ski.transform.warp(original_image_data, tps)
     # warped will be in 0..1 floats, so we need to
-    # multiple by 255 to get it back to the same range
+    # multiply by 255 to get it back to the same range
     # as the original data
     im_layer.data = (warped * 255).astype(original_image_data.dtype)
 
 
 # Use partial to specify arguments for the warp function because the event
-# passes only one thing back
+# callback only has access to the moving `points_layer` and the `event` object itself
 warp_checkerboard = partial(
     warp,  # the warping function
     checkerboard_image_layer,  # im_layer argument
