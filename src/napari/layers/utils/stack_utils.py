@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import itertools
+import warnings
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -42,6 +43,12 @@ def slice_from_axis(array, *, axis, element):
         import dask.array as da
 
         array = da.from_zarr(array)
+        warnings.warn(
+                    trans._(
+                        'zarr array cannot be sliced lazily, converted to dask array.',
+                        deferred=True,
+                    )
+                )
 
     slices = [slice(None) for i in range(array.ndim)]
     slices[axis] = element
