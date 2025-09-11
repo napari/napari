@@ -36,6 +36,13 @@ def slice_from_axis(array, *, axis, element):
     sliced : NumPy or other array
         The sliced output array, which has one less dimension than the input.
     """
+    # Check if array is a zarr array and wrap it with dask
+    # to keep lazy behavior andavoid loading into memory
+    if hasattr(array, '__module__') and array.__module__.startswith('zarr'):
+        import dask.array as da
+
+        array = da.from_zarr(array)
+
     slices = [slice(None) for i in range(array.ndim)]
     slices[axis] = element
     return array[tuple(slices)]
