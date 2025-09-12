@@ -1,3 +1,4 @@
+import bisect
 import warnings
 from collections.abc import Callable, Iterable
 from contextlib import contextmanager
@@ -2784,7 +2785,17 @@ class Shapes(Layer):
             for ind in to_remove:
                 self._data_view.remove(ind)
 
-            self.selected_data = self.selected_data - set(indices)
+            if self.selected_data:
+                new_selected = set()
+                for idx in self.selected_data:
+                    # If the selected index was removed, skip it
+                    if idx in indices:
+                        continue
+                    # Count how many indicies have been removed prior
+                    shift = bisect.bisect_left(indices, idx)
+                    new_selected.add(idx - shift)
+                self.selected_data = new_selected
+
             self._feature_table.remove(indices)
             self.text.remove(indices)
             self._data_view._edge_color = np.delete(
