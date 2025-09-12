@@ -76,6 +76,7 @@ RUN apt-get update && \
         xpra \
         xvfb \
         menu-xdg \
+        xdg-utils \
         xterm \
         sshfs && \
     apt-get clean && \
