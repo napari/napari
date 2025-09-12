@@ -309,8 +309,8 @@ def test_track_coloring() -> None:
     assert np.array_equal(layer._track_colors, colors)
 
 
-def test_hide_finished_tracks() -> None:
-    """Test that hide_finished_tracks correctly masks track_connex for finished tracks."""
+def test_hide_completed_tracks() -> None:
+    """Test that hide_completed_tracks correctly masks track_connex for completed tracks."""
 
     # Create test data with multiple tracks that finish at different times
     # Track 0: time 0-2 (finishes at t=2)
@@ -337,16 +337,16 @@ def test_hide_finished_tracks() -> None:
 
     layer = Tracks(data)
 
-    # Test initial state - hide_finished_tracks should be False by default
-    assert layer.hide_finished_tracks is False
+    # Test initial state - hide_completed_tracks should be False by default
+    assert layer.hide_completed_tracks is False
 
     # Get original track_connex (should not be masked)
     original_connex = layer.track_connex.copy()
 
-    # Enable hide_finished_tracks
-    layer.hide_finished_tracks = True
+    # Enable hide_completed_tracks
+    layer.hide_completed_tracks = True
 
-    # Test at time point 4 (Track 0 finished at t=2, Track 1 and 2 still active)
+    # Test at time point 4 (Track 0 completed at t=2, Track 1 and 2 still active)
     # Need to explicitly set range to include time 4
     dims = Dims(
         ndim=layer.ndim,
@@ -357,13 +357,13 @@ def test_hide_finished_tracks() -> None:
 
     masked_connex = layer.track_connex
 
-    # Track 0 should be completely masked (finished before t=4)
+    # Track 0 should be completely masked (completed before t=4)
     track_0_indices = np.where(layer.data[:, 0] == 0)[0]
 
-    # All connections for track 0 should be False when hide_finished_tracks is enabled
+    # All connections for track 0 should be False when hide_completed_tracks is enabled
     assert np.all(~masked_connex[track_0_indices])  # all False
 
-    # Track 1 and 2 should still have their original connections (not finished)
+    # Track 1 and 2 should still have their original connections (not completed)
     track_1_indices = np.where(layer.data[:, 0] == 1)[0]
     track_2_indices = np.where(layer.data[:, 0] == 2)[0]
 
@@ -375,7 +375,7 @@ def test_hide_finished_tracks() -> None:
         masked_connex[track_2_indices], original_connex[track_2_indices]
     )
 
-    # Test at time point 6 (Track 0 and 1 finished, Track 2 still active)
+    # Test at time point 6 (Track 0 and 1 completed, Track 2 still active)
     dims = Dims(
         ndim=layer.ndim,
         point=(6, 0, 0),
@@ -393,7 +393,7 @@ def test_hide_finished_tracks() -> None:
         masked_connex_6[track_2_indices], original_connex[track_2_indices]
     )
 
-    # Test at time point 8 (all tracks finished)
+    # Test at time point 8 (all tracks completed)
     dims = Dims(
         ndim=layer.ndim,
         point=(8, 0, 0),
@@ -405,8 +405,8 @@ def test_hide_finished_tracks() -> None:
     # All tracks should be masked
     assert np.all(~all_masked_connex)  # all False
 
-    # Test disabling hide_finished_tracks
-    layer.hide_finished_tracks = False
+    # Test disabling hide_completed_tracks
+    layer.hide_completed_tracks = False
     unmasked_connex = layer.track_connex
 
     # Should return to original state

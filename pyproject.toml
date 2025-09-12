@@ -564,7 +564,7 @@ module = [
     'napari._qt.layer_controls.widgets._tracks.qt_id_checkbox',
     'napari._qt.layer_controls.widgets._tracks.qt_graph_checkbox',
     'napari._qt.layer_controls.widgets._tracks.qt_colormap_control',
-    'napari._qt.layer_controls.widgets._tracks.qt_hide_finished_tracks_checkbox',
+    'napari._qt.layer_controls.widgets._tracks.qt_hide_completed_tracks_checkbox',
     'napari._qt.menus._util',
     'napari._qt.menus.file_menu',
     'napari._qt.perf.qt_event_tracing',

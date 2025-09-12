@@ -44,8 +44,8 @@ class TrackManager:
         Vertices for N points in D dimensions. T,(Z),Y,X
     track_connex : array (N,)
         Connection array specifying consecutive vertices that are linked to
-        form the tracks. When hide_finished_tracks is enabled, this
-        array is modified to hide tracks that have finished before the current
+        form the tracks. When hide_completed_tracks is enabled, this
+        array is modified to hide tracks that have completed before the current
         time point.
     track_times : array (N,)
         Timestamp for each vertex in track_vertices.
@@ -58,12 +58,12 @@ class TrackManager:
         Timestamp for each vertex in graph_vertices.
     track_ids : array (N,)
         Track ID for each vertex in track_vertices.
-    hide_finished_tracks : bool
-        Whether to hide track segments that have finished before the current
+    hide_completed_tracks : bool
+        Whether to hide track segments that have completed before the current
         time point, regardless of tail_length value.
     current_time : int, optional
-        Current time point for determining which tracks have finished. Required
-        when hide_finished_tracks is enabled.
+        Current time point for determining which tracks have completed. Required
+        when hide_completed_tracks is enabled.
     track_end_times : array (M,)
         Cached array of end times for each unique track ID, where M is the
         number of unique tracks. Computed lazily and invalidated when track
@@ -90,8 +90,8 @@ class TrackManager:
         self._graph_vertices = None
         self._graph_connex: npt.NDArray | None = None
 
-        # Parameters for hide_finished_tracks functionality
-        self._hide_finished_tracks: bool = False
+        # Parameters for hide_completed_tracks functionality
+        self._hide_completed_tracks: bool = False
         self._current_time: int | None = None
         self._track_end_times: np.ndarray | None = (
             None  # Cache for track end times (1D array ordered by unique_track_ids)
@@ -211,18 +211,18 @@ class TrackManager:
         self._graph = self._normalize_track_graph(graph)
 
     @property
-    def hide_finished_tracks(self) -> bool:
-        """Whether to hide track segments that have finished before current time"""
-        return self._hide_finished_tracks
+    def hide_completed_tracks(self) -> bool:
+        """Whether to hide track segments that have completed before current time"""
+        return self._hide_completed_tracks
 
-    @hide_finished_tracks.setter
-    def hide_finished_tracks(self, value: bool) -> None:
-        """Set whether to hide finished tracks"""
-        self._hide_finished_tracks = value
+    @hide_completed_tracks.setter
+    def hide_completed_tracks(self, value: bool) -> None:
+        """Set whether to hide completed tracks"""
+        self._hide_completed_tracks = value
 
     @property
     def current_time(self) -> int | None:
-        """Current time point for determining finished tracks"""
+        """Current time point for determining completed tracks"""
         return self._current_time
 
     @current_time.setter
@@ -428,8 +428,8 @@ class TrackManager:
 
         return track_end_times
 
-    def _get_finished_tracks_mask(self) -> np.ndarray:
-        """Get boolean mask for vertices belonging to finished tracks - FULLY VECTORIZED!"""
+    def _get_completed_tracks_mask(self) -> np.ndarray:
+        """Get boolean mask for vertices belonging to completed tracks"""
         if self._current_time is None:
             return np.zeros(len(self.data), dtype=bool)
 
@@ -437,11 +437,11 @@ class TrackManager:
         track_end_times = self.track_end_times
         unique_ids = self.unique_track_ids
 
-        # Create boolean mask for finished tracks (tracks that ended before current time)
-        finished_tracks_mask = track_end_times < self._current_time
+        # Create boolean mask for completed tracks (tracks that ended before current time)
+        completed_tracks_mask = track_end_times < self._current_time
 
-        finished_track_ids = unique_ids[finished_tracks_mask]
-        vertices_mask = np.isin(self.data[:, 0], finished_track_ids)
+        completed_track_ids = unique_ids[completed_tracks_mask]
+        vertices_mask = np.isin(self.data[:, 0], completed_track_ids)
 
         return vertices_mask
 
@@ -456,13 +456,13 @@ class TrackManager:
         if self._track_connex is None:
             return None
 
-        # If hide_finished_tracks is disabled or no current time set, return original connex
-        if not self._hide_finished_tracks or self._current_time is None:
+        # If hide_completed_tracks is disabled or no current time set, return original connex
+        if not self._hide_completed_tracks or self._current_time is None:
             return self._track_connex
 
-        # Get mask for finished tracks and return logical AND with original connex
-        finished_mask = self._get_finished_tracks_mask()
-        return np.logical_and(self._track_connex, ~finished_mask)
+        # Get mask for completed tracks and return logical AND with original connex
+        completed_mask = self._get_completed_tracks_mask()
+        return np.logical_and(self._track_connex, ~completed_mask)
 
     @property
     def graph_vertices(self) -> np.ndarray | None:
