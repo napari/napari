@@ -1,20 +1,17 @@
 from __future__ import annotations
 
 from collections.abc import MutableSequence
-from typing import TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING
 
 from qtpy.QtWidgets import QTreeView
 
 from napari._qt.containers._base_item_view import _BaseEventedItemView
-from napari._qt.containers.qt_tree_model import QtNodeTreeModel
+from napari._qt.containers.qt_tree_model import NodeType, QtNodeTreeModel
 from napari.utils.tree import Group, Node
 
 if TYPE_CHECKING:
     from qtpy.QtCore import QModelIndex
-    from qtpy.QtWidgets import QWidget  # type: ignore[attr-defined]
-
-
-NodeType = TypeVar('NodeType', bound=Node)
+    from qtpy.QtWidgets import QWidget
 
 
 class QtNodeTreeView(_BaseEventedItemView[NodeType], QTreeView):
@@ -39,12 +36,15 @@ class QtNodeTreeView(_BaseEventedItemView[NodeType], QTreeView):
     ) -> None:
         super().__init__(parent)
         self.setHeaderHidden(True)
-        self.setDragDropMode(QTreeView.InternalMove)
+        self.setDragDropMode(QTreeView.DragDropMode.InternalMove)
         self.setDragDropOverwriteMode(False)
-        self.setSelectionMode(QTreeView.ExtendedSelection)
+        self.setSelectionMode(QTreeView.SelectionMode.ExtendedSelection)
         self.setRoot(root)
 
-    def setRoot(self, root: Group[Node]):
+    def setRoot(self, root: Group[Node]) -> None:
+        # TODO: JA: the typing for root is a bit convoluted;
+        # needs some thinking on what the expected types should be
+        # for tree and list views/models
         super().setRoot(root)
 
         # make tree look like a list if it contains no lists.
@@ -52,7 +52,7 @@ class QtNodeTreeView(_BaseEventedItemView[NodeType], QTreeView):
         self.model().rowsInserted.connect(self._redecorate_root)
         self._redecorate_root()
 
-    def _redecorate_root(self, parent: QModelIndex = None, *_):
+    def _redecorate_root(self, parent: QModelIndex | None = None, /) -> None:
         """Add a branch/arrow column only if there are Groups in the root.
 
         This makes the tree fall back to looking like a simple list if there
