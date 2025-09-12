@@ -1426,7 +1426,7 @@ def test_removing_all_shapes_empty_array():
 
 
 def test_removing_shapes():
-    """Test removing shapes."""
+    """Test removing shapes, including with selection."""
     np.random.seed(0)
     data = [
         20 * np.random.random((np.random.randint(2, 12), 2)).astype(np.float32)
@@ -1436,10 +1436,17 @@ def test_removing_shapes():
     layer = Shapes(data, shape_type=shape_type)
     layer.events.data = Mock()
     old_data = layer.data
+    # select some shapes
+    layer.selected_data = {1, 2, 4, 6}
 
     # Removing shapes by indices
     indices = [0, 2, 5]
     layer.remove(indices)
+
+    # check selection after removal
+    # one selected shape was removed, the other indexes need to be shifted
+    assert layer.selected_data == {0, 2, 3}
+
     assert layer.events.data.call_args_list[0][1] == {
         'value': old_data,
         'action': ActionType.REMOVING,
