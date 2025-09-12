@@ -1,3 +1,4 @@
+import bisect
 import numbers
 import warnings
 from collections.abc import Callable, Sequence
@@ -2036,6 +2037,18 @@ class Points(Layer):
                     self._value_stored -= offset
 
             self._set_data(np.delete(self.data, indices, axis=0))
+
+            if self.selected_data:
+                new_selected = set()
+                for idx in self.selected_data:
+                    # If the selected index was removed, skip it
+                    if idx in indices:
+                        continue
+                    # Count how many indicies have been removed prior
+                    shift = bisect.bisect_left(indices, idx)
+                    new_selected.add(idx - shift)
+                self.selected_data = new_selected
+
             self.events.data(
                 value=self.data,
                 action=ActionType.REMOVED,
@@ -2049,7 +2062,6 @@ class Points(Layer):
     def remove_selected(self) -> None:
         """Remove all selected points."""
         self.remove(list(self.selected_data))
-        self.selected_data = set()
 
     def _move(
         self,
