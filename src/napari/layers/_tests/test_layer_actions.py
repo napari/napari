@@ -20,6 +20,7 @@ from napari.layers._layer_actions import (
     _split_stack,
     _toggle_visibility,
 )
+from napari.utils.transforms import Affine
 
 REG = pint.get_application_registry()
 
@@ -37,18 +38,37 @@ def test_split_stack():
         assert layer_list[idx].data.shape == (8, 8)
 
 
-def test_split_rgb():
+@pytest.mark.parametrize(
+    ('scale', 'translate', 'affine'),
+    [
+        (None, None, None),
+        ([2.0, 2.0], None, None),
+        (None, [0, 4], None),
+        (None, None, Affine(translate=[0, 4])),
+    ],
+)
+def test_split_rgb(scale, translate, affine):
     layer_list = LayerList()
-    layer_list.append(Image(np.random.random((48, 48, 3))))
+    image = Image(
+        np.zeros((8, 8, 3)),
+        rgb=True,
+        affine=affine,
+        translate=translate,
+        scale=scale,
+    )
+    layer_list.append(image)
     assert len(layer_list) == 1
-    assert layer_list[0].rgb is True
+    assert layer_list[0].rgb
 
     layer_list.selection.active = layer_list[0]
     _split_rgb(layer_list)
     assert len(layer_list) == 3
 
     for idx in range(3):
-        assert layer_list[idx].data.shape == (48, 48)
+        assert layer_list[idx].data.shape == (8, 8)
+        np.testing.assert_allclose(
+            layer_list[idx].affine.affine_matrix, image.affine.affine_matrix
+        )
 
 
 def test_merge_stack():
