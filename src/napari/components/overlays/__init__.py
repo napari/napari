@@ -12,7 +12,11 @@ from napari.components.overlays.interaction_box import (
 )
 from napari.components.overlays.labels_polygon import LabelsPolygonOverlay
 from napari.components.overlays.scale_bar import ScaleBarOverlay
-from napari.components.overlays.text import TextOverlay
+from napari.components.overlays.text import (
+    DimsOverlay,
+    LayerNameOverlay,
+    TextOverlay,
+)
 from napari.components.overlays.zoom import ZoomOverlay
 
 __all__ = [
@@ -20,7 +24,9 @@ __all__ = [
     'BoundingBoxOverlay',
     'BrushCircleOverlay',
     'CanvasOverlay',
+    'DimsOverlay',
     'LabelsPolygonOverlay',
+    'LayerNameOverlay',
     'Overlay',
     'ScaleBarOverlay',
     'SceneOverlay',
