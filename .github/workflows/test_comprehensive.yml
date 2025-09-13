@@ -49,7 +49,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [ubuntu-latest, windows-latest]
+        platform: [ubuntu-latest, windows-2022]
         python: ["3.10", "3.11", "3.12", "3.13"]
         backend: [pyqt5, pyside2]
         include:
@@ -80,7 +80,7 @@ jobs:
             backend: pyside2
           - python: "3.13"
             backend: pyside2
-          - platform: windows-latest
+          - platform: windows-2022
             backend: pyside2
     with:
       python_version: ${{ matrix.python }}
