@@ -11,11 +11,7 @@ from collections import defaultdict
 from collections.abc import Callable, Generator, Hashable, Mapping, Sequence
 from contextlib import contextmanager
 from functools import cached_property
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    ClassVar,
-)
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import magicgui as mgui
 import numpy as np
@@ -45,6 +41,7 @@ from napari.layers.utils.layer_utils import (
 )
 from napari.layers.utils.plane import ClippingPlane, ClippingPlaneList
 from napari.settings import get_settings
+from napari.types import LayerDataType
 from napari.utils._dask_utils import configure_dask
 from napari.utils._magicgui import (
     add_layer_to_viewer,
@@ -77,6 +74,8 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger('napari.layers.base.base')
 
+__all__ = ('Layer', 'LayerSlicer', 'no_op')
+
 
 def no_op(layer: Layer, event: Event) -> None:
     """
@@ -97,7 +96,6 @@ def no_op(layer: Layer, event: Event) -> None:
     None
 
     """
-    return
 
 
 class PostInit(ABCMeta):
@@ -111,6 +109,22 @@ class PostInit(ABCMeta):
         obj = super().__call__(*args, **kwargs)
         obj._post_init()
         return obj
+
+
+class LayerSlicer(ABC):
+    layer: Layer
+
+    def __init__(self, layer: Layer, data: LayerDataType, cache: bool):
+        self.layer = layer
+        self.dask_optimized_slicing = configure_dask(data, cache)
+
+    def set_view_slice(self) -> None:
+        with self.dask_optimized_slicing():
+            self._set_view_slice()
+
+    @abstractmethod
+    def _set_view_slice(self):
+        raise NotImplementedError
 
 
 @mgui.register_type(choices=get_layers, return_callback=add_layer_to_viewer)
@@ -487,9 +501,17 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
                 'bounding_box': BoundingBoxOverlay(),
             }
         )
+        self._layer_slicer = self.get_layer_slicer(data, cache)
 
     def _post_init(self):
         """Post init hook for subclasses to use."""
+
+    @abstractmethod
+    def get_layer_slicer(
+        self, data: LayerDataType, cache: bool
+    ) -> LayerSlicer:
+        """Return a LayerSlicer instance appropriate for this layer."""
+        raise NotImplementedError
 
     def __str__(self) -> str:
         """Return self.name."""
