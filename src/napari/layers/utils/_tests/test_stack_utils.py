@@ -357,7 +357,7 @@ def test_images_to_stack_lazy_arrays(input_array, expected_type, multiscale):
 
     if multiscale:
         # Slicing zarr array returns numpy array, so we need to re-wrap in zarr
-        if input_array is zarr.zeros:
+        if isinstance(input_array, zarr.Array):
             data = [input_array, zarr.array(input_array[::2, ::2])]
         else:
             data = [input_array, input_array[::2, ::2]]
