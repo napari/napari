@@ -2038,7 +2038,7 @@ class Points(Layer):
             self._set_data(np.delete(self.data, indices, axis=0))
 
             if len(self.data) == 0 and self.selected_data:
-                self.selected_data = set()
+                self.selected_data.clear()
             elif self.selected_data:
                 selected_not_removed = self.selected_data - set(indices)
                 if selected_not_removed:
@@ -2048,7 +2048,7 @@ class Points(Layer):
                     new_selected_indices = remaining_selected - shifts
                     self.selected_data = set(new_selected_indices)
                 else:
-                    self.selected_data = set()
+                    self.selected_data.clear()
 
             self.events.data(
                 value=self.data,

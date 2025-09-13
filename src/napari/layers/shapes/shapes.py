@@ -1,4 +1,3 @@
-import bisect
 import warnings
 from collections.abc import Callable, Iterable
 from contextlib import contextmanager
@@ -2782,19 +2781,22 @@ class Shapes(Layer):
                 ),
                 vertex_indices=((),),
             )
+            # FIXME: this is really slow
             for ind in to_remove:
                 self._data_view.remove(ind)
 
-            if self.selected_data:
-                new_selected = set()
-                for idx in self.selected_data:
-                    # If the selected index was removed, skip it
-                    if idx in indices:
-                        continue
-                    # Count how many indicies have been removed prior
-                    shift = bisect.bisect_left(indices, idx)
-                    new_selected.add(idx - shift)
-                self.selected_data = new_selected
+            if len(self.data) == 0 and self.selected_data:
+                self.selected_data.clear()
+            elif self.selected_data:
+                selected_not_removed = self.selected_data - set(indices)
+                if selected_not_removed:
+                    indices_array = np.array(indices)
+                    remaining_selected = np.array(list(selected_not_removed))
+                    shifts = np.searchsorted(indices_array, remaining_selected)
+                    new_selected_indices = remaining_selected - shifts
+                    self.selected_data = set(new_selected_indices)
+                else:
+                    self.selected_data.clear()
 
             self._feature_table.remove(indices)
             self.text.remove(indices)
