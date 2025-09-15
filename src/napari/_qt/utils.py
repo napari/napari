@@ -15,6 +15,7 @@ import qtpy
 from qtpy.QtCore import (
     QByteArray,
     QCoreApplication,
+    QObject,
     QPropertyAnimation,
     QSocketNotifier,
     Qt,
@@ -459,3 +460,22 @@ def get_color(
                 / 255
             )
     return new_color
+
+
+def attr_to_settr(obj, name: str, q_object: QObject, setter: str) -> None:
+    qt_ref = weakref.ref(q_object)
+    obj_ref = weakref.ref(obj)
+
+    def callback(event):
+        obj_ = obj_ref()
+        if obj_ is None:
+            return
+
+        q_obj = qt_ref()
+        if q_obj is None:
+            getattr(obj.events, name).disconnect(callback)
+            return
+        with qt_signals_blocked(q_obj):
+            getattr(q_obj, setter)(getattr(obj, name))
+
+    getattr(obj.events, name).connect(callback)
