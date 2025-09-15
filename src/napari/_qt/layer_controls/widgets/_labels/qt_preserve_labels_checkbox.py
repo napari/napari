@@ -7,7 +7,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,
 )
-from napari._qt.utils import qt_signals_blocked
+from napari._qt.utils import checked_to_bool, qt_signals_blocked
 from napari.layers import Labels
 from napari.utils.events.event_utils import connect_setattr
 from napari.utils.translations import trans
@@ -49,7 +49,7 @@ class QtPreserveLabelsCheckBoxControl(QtWidgetControlsBase):
             preserve_labels_cb.stateChanged,
             layer,
             'preserve_labels',
-            emitter_owner=preserve_labels_cb,
+            convert_fun=checked_to_bool,
         )
         self.preserve_labels_checkbox = preserve_labels_cb
         self._on_preserve_labels_change()

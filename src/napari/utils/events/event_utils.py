@@ -2,9 +2,7 @@ from __future__ import annotations
 
 import logging
 import weakref
-from typing import TYPE_CHECKING
-
-from napari.utils.translations import trans
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -33,41 +31,30 @@ def disconnect_events(emitter, listener):
         em.disconnect(listener)
 
 
-def connect_setattr(emitter: Emitter, obj, attr: str, emitter_owner=None):
+def connect_setattr(
+    emitter: Emitter,
+    obj,
+    attr: str,
+    convert_fun: Callable[[Any], Any] | None = None,
+) -> None:
     ref = weakref.ref(obj)
+    if convert_fun:
 
-    def _cb(*value):
-        if (ob := ref()) is None:
-            emitter.disconnect(_cb)
-            return
-        try:
-            from qtpy.QtCore import Qt
-            from qtpy.QtWidgets import QAbstractSpinBox, QCheckBox
+        def _cb(*value):
+            if (ob := ref()) is None:
+                emitter.disconnect(_cb)
+                return
 
-            # Handle `QCheckbox` state to set a `bool`
-            # See napari/napari#8154
-            if len(value) == 1 and isinstance(emitter_owner, QCheckBox):
-                value = (Qt.CheckState(value[0]) == Qt.CheckState.Checked,)
-            # Handle focus for SpinBox like widgets
-            # See napari/napari#8154 and napari/napari#500
-            if isinstance(emitter_owner, QAbstractSpinBox):
-                emitter_owner.clearFocus()
-                emitter_owner_parent = emitter_owner.parent()
-                if emitter_owner_parent is not None and hasattr(
-                    emitter_owner_parent, 'setFocus'
-                ):
-                    emitter_owner_parent.setFocus()
-        except ImportError:
-            # Qt bindings unavailable handling
-            _logger.warning(
-                trans._(
-                    'Qt bindings unavailable. Logic to handle QCheckBox and '
-                    'QAbstractSpinBox was unable to be applied',
-                    deferred=True,
-                )
-            )
+            value = [convert_fun(x) for x in value]
+            setattr(ob, attr, value[0] if len(value) == 1 else value)
+    else:
 
-        setattr(ob, attr, value[0] if len(value) == 1 else value)
+        def _cb(*value):
+            if (ob := ref()) is None:
+                emitter.disconnect(_cb)
+                return
+
+            setattr(ob, attr, value[0] if len(value) == 1 else value)
 
     emitter.connect(_cb)
     # There are scenarios where emitter is deleted before obj.

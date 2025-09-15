@@ -4,7 +4,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,
 )
-from napari._qt.utils import qt_signals_blocked
+from napari._qt.utils import checked_to_bool, qt_signals_blocked
 from napari.layers.base.base import Layer
 from napari.utils.events import disconnect_events
 from napari.utils.events.event_utils import connect_setattr
@@ -46,7 +46,7 @@ class QtTextVisibilityControl(QtWidgetControlsBase):
             text_disp_cb.stateChanged,
             layer.text,
             'visible',
-            emitter_owner=text_disp_cb,
+            convert_fun=checked_to_bool,
         )
         self.text_disp_checkbox = text_disp_cb
         self.text_disp_label = QtWrappedLabel(trans._('display text:'))
