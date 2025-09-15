@@ -45,7 +45,7 @@ def connect_setattr(
                 emitter.disconnect(_cb)
                 return
 
-            value = [convert_fun(x) for x in value]
+            value = tuple(convert_fun(x) for x in value)
             setattr(ob, attr, value[0] if len(value) == 1 else value)
     else:
 
