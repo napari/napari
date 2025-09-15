@@ -52,7 +52,7 @@ crc32c==2.7.1
     # via numcodecs
 cycler==0.12.1
     # via matplotlib
-dask==2025.7.0
+dask==2025.9.0
     # via
     #   napari (pyproject.toml)
     #   distributed
@@ -62,7 +62,7 @@ decorator==5.2.1
     # via ipython
 distlib==0.4.0
     # via virtualenv
-distributed==2025.7.0
+distributed==2025.9.0
     # via dask
 docstring-parser==0.17.0
     # via
@@ -101,7 +101,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.138.15
+hypothesis==6.138.16
     # via napari (pyproject.toml)
 idna==3.10
     # via requests
@@ -127,7 +127,9 @@ ipython==9.5.0
     #   ipykernel
     #   napari-console
 ipython-pygments-lexers==1.1.1
-    # via ipython
+    # via
+    #   ipython
+    #   qtconsole
 jedi==0.19.2
     # via ipython
 jinja2==3.1.6
@@ -375,7 +377,7 @@ pyautogui==0.9.54
     # via napari (pyproject.toml)
 pyconify==0.2.1
     # via superqt
-pydantic==2.11.7
+pydantic==2.11.9
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
@@ -398,13 +400,13 @@ pygments==2.19.2
     #   rich
     #   sphinx
     #   superqt
-pymsgbox==1.0.9
+pymsgbox==2.0.1
     # via pyautogui
 pyopengl==3.1.10
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
-pyparsing==3.2.3
+pyparsing==3.2.4
     # via matplotlib
 pyperclip==1.9.0
     # via mouseinfo
@@ -466,11 +468,11 @@ pyyaml==6.0.2
     #   distributed
     #   donfig
     #   npe2
-pyzmq==27.0.2
+pyzmq==27.1.0
     # via
     #   ipykernel
     #   jupyter-client
-qtconsole==5.6.1
+qtconsole==5.7.0
     # via
     #   napari (pyproject.toml)
     #   napari-console
@@ -507,11 +509,11 @@ rpds-py==0.27.1
     #   referencing
 scikit-image==0.25.2
     # via napari (pyproject.toml)
-scikit-learn==1.7.1
+scikit-learn==1.7.2
     # via
     #   glasbey
     #   nilearn
-scipy==1.16.1
+scipy==1.16.2
     # via
     #   napari (pyproject.toml)
     #   nilearn
@@ -567,7 +569,7 @@ tensorstore==0.1.76
     #   napari (pyproject.toml)
 threadpoolctl==3.6.0
     # via scikit-learn
-tifffile==2025.8.28
+tifffile==2025.9.9
     # via
     #   napari (pyproject.toml)
     #   scikit-image
