@@ -39,7 +39,12 @@ def connect_setattr(
 ) -> None:
     ref = weakref.ref(obj)
     if convert_fun:
-
+        # Handle passed `convert_func` function to map emitted values to valid
+        # values accepted for the receiver object attribute.
+        # A `convert_func` is needed to, for example, map `Qt.CheckState`
+        # values to boolean ones when a `QCheckBox` value change is connected
+        # to a layer attribute.
+        # See napari/napari#8154
         def _cb(*value):
             if (ob := ref()) is None:
                 emitter.disconnect(_cb)
