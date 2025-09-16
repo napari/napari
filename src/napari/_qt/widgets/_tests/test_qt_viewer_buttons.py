@@ -37,7 +37,7 @@ def test_roll_dims_button_popup(qt_viewer_buttons, qtbot):
     Make sure the QtViewerButtons.rollDimsButton popup works.
     """
     # get viewer model and buttons
-    viewer, viewer_buttons = qt_viewer_buttons
+    viewer_buttons = qt_viewer_buttons[1]
     assert viewer_buttons.rollDimsButton
 
     # make dims order settings popup
