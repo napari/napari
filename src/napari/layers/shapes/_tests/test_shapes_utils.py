@@ -511,6 +511,8 @@ def test_triangulate_face_and_edges(poly_hole):
     faces, edges = triangulate_face_and_edges(
         poly_hole, triangulate_face_vispy
     )
+    assert len(faces[0]) == 10
+    assert len(edges[0]) == 20
 
 
 def test_save_failed_triangulation(tmp_path):

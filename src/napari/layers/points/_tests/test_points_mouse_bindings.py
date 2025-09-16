@@ -197,7 +197,7 @@ def test_drag_in_add_mode(create_known_points_layer_2d):
 
 def test_select_point(create_known_points_layer_2d):
     """Select a point by clicking on one in select mode."""
-    layer, n_points, _ = create_known_points_layer_2d
+    layer = create_known_points_layer_2d[0]
 
     layer.mode = 'select'
     position = tuple(layer.data[0])
@@ -217,7 +217,7 @@ def test_select_point(create_known_points_layer_2d):
 
 def test_select_point_3d(create_known_points_layer_3d):
     """Select a point by clicking on one in select mode in 3D mode."""
-    layer, n_points, _ = create_known_points_layer_3d
+    layer = create_known_points_layer_3d[0]
 
     layer.mode = 'select'
     position = tuple(layer.data[1])
@@ -242,7 +242,7 @@ def test_select_point_3d(create_known_points_layer_3d):
 
 def test_unselect_by_click_point_3d(create_known_points_layer_3d):
     """Select unselecting point by shift clicking on it again in 3D mode."""
-    layer, n_points, _ = create_known_points_layer_3d
+    layer = create_known_points_layer_3d[0]
 
     layer.mode = 'select'
     position = tuple(layer.data[1])
@@ -271,7 +271,7 @@ def test_unselect_by_click_point_3d(create_known_points_layer_3d):
 
 def test_select_by_shift_click_3d(create_known_points_layer_3d):
     """Select selecting point by shift clicking on an additional point in 3D"""
-    layer, n_points, _ = create_known_points_layer_3d
+    layer = create_known_points_layer_3d[0]
 
     layer.mode = 'select'
     position = tuple(layer.data[1])
@@ -300,7 +300,7 @@ def test_select_by_shift_click_3d(create_known_points_layer_3d):
 
 def test_unselect_by_click_empty_3d(create_known_points_layer_3d):
     """Select unselecting point by clicking in empty space"""
-    layer, n_points, known_not_point = create_known_points_layer_3d
+    layer, _n_points, known_not_point = create_known_points_layer_3d
 
     layer.mode = 'select'
 
@@ -367,7 +367,7 @@ def test_after_in_select_mode_point(create_known_points_layer_2d):
 
 def test_unselect_select_point(create_known_points_layer_2d):
     """Select a point by clicking on one in select mode."""
-    layer, n_points, _ = create_known_points_layer_2d
+    layer = create_known_points_layer_2d[0]
 
     layer.mode = 'select'
     position = tuple(layer.data[0])
@@ -388,7 +388,7 @@ def test_unselect_select_point(create_known_points_layer_2d):
 
 def test_add_select_point(create_known_points_layer_2d):
     """Add to a selection of points point by shift-clicking on one."""
-    layer, n_points, _ = create_known_points_layer_2d
+    layer = create_known_points_layer_2d[0]
 
     layer.mode = 'select'
     position = tuple(layer.data[0])
@@ -413,7 +413,7 @@ def test_add_select_point(create_known_points_layer_2d):
 
 def test_remove_select_point(create_known_points_layer_2d):
     """Remove from a selection of points point by shift-clicking on one."""
-    layer, n_points, _ = create_known_points_layer_2d
+    layer = create_known_points_layer_2d[0]
 
     layer.mode = 'select'
     position = tuple(layer.data[0])
@@ -438,7 +438,7 @@ def test_remove_select_point(create_known_points_layer_2d):
 
 def test_not_selecting_point(create_known_points_layer_2d):
     """Don't select a point by not clicking on one in select mode."""
-    layer, n_points, known_non_point = create_known_points_layer_2d
+    layer, _n_points, known_non_point = create_known_points_layer_2d
 
     layer.mode = 'select'
 
@@ -456,7 +456,7 @@ def test_not_selecting_point(create_known_points_layer_2d):
 
 def test_unselecting_points(create_known_points_layer_2d):
     """Unselect points by not clicking on one in select mode."""
-    layer, n_points, known_non_point = create_known_points_layer_2d
+    layer, _n_points, known_non_point = create_known_points_layer_2d
 
     layer.mode = 'select'
     layer.selected_data = {2, 3}
@@ -490,7 +490,7 @@ def test_unselecting_points(create_known_points_layer_2d):
 
 def test_selecting_all_points_with_drag_2d(create_known_points_layer_2d):
     """Select all points when drag box includes all of them."""
-    layer, n_points, known_non_point = create_known_points_layer_2d
+    layer, n_points, _known_non_point = create_known_points_layer_2d
 
     layer.mode = 'select'
 
@@ -526,7 +526,7 @@ def test_selecting_all_points_with_drag_2d(create_known_points_layer_2d):
 
 def test_selecting_no_points_with_drag_2d(create_known_points_layer_2d):
     """Select no points when drag box outside of all of them."""
-    layer, n_points, known_non_point = create_known_points_layer_2d
+    layer, _n_points, known_non_point = create_known_points_layer_2d
 
     layer.mode = 'select'
 
@@ -558,7 +558,7 @@ def test_selecting_no_points_with_drag_2d(create_known_points_layer_2d):
 
 def test_selecting_points_with_drag_3d(create_known_points_layer_3d):
     """Select all points when drag box includes all of them."""
-    layer, n_points, known_non_point = create_known_points_layer_3d
+    layer = create_known_points_layer_3d[0]
 
     layer.mode = 'select'
 
@@ -611,7 +611,7 @@ def test_selecting_points_with_drag_3d(create_known_points_layer_3d):
 
 def test_selecting_no_points_with_drag_3d(create_known_points_layer_3d):
     """Select no points when drag box outside of all of them."""
-    layer, n_points, known_non_point = create_known_points_layer_3d
+    layer = create_known_points_layer_3d[0]
 
     layer.mode = 'select'
 
@@ -687,7 +687,7 @@ def test_drag_start_selection(
     create_known_points_layer_2d, pre_selection, on_point, modifier
 ):
     """Check layer drag start and drag box behave as expected."""
-    layer, n_points, known_non_point = create_known_points_layer_2d
+    layer, n_points, _known_non_point = create_known_points_layer_2d
     layer.mode = 'select'
     layer.selected_data = pre_selection
 
@@ -846,7 +846,7 @@ def test_drag_start_selection(
 
 
 def test_drag_point_with_mouse(create_known_points_layer_2d):
-    layer, n_points, _ = create_known_points_layer_2d
+    layer = create_known_points_layer_2d[0]
     layer.events.data = MagicMock()
     layer.mode = 'select'
     old_data = (

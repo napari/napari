@@ -215,7 +215,7 @@ class _ManualStyleEncoding(
 
 
 class _DerivedStyleEncoding(
-    _StyleEncodingModel, Generic[StyleValue, StyleArray], ABC
+    _StyleEncodingModel, ABC, Generic[StyleValue, StyleArray]
 ):
     """Encodes style values by deriving them from feature values.
 
