@@ -96,7 +96,7 @@ def get_text_width_height(text: Text) -> tuple[float, float]:
         # calculate the bounding box of the text as it would be when rendered
         buffer = _text_to_vbo(
             string, text._font, *text._anchors, text._font._lowres_size
-        )  # type: ignore
+        )
 
         pos = buffer['a_position']
         top_left_corners.append(pos.min(axis=0))
