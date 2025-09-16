@@ -248,10 +248,9 @@ def test_properties_dataframe():
 
 def test_adding_properties():
     """test adding properties to a Vectors layer"""
-    shape = (10, 2)
-    np.random.seed(0)
+    rng = np.random.default_rng(0)
     shape = (10, 2, 2)
-    data = np.random.random(shape)
+    data = rng.random(shape)
     data[:, 0, :] = 20 * data[:, 0, :]
     properties = {'vector_type': np.array(['A', 'B'] * int(shape[0] / 2))}
     layer = Vectors(data)
@@ -273,9 +272,7 @@ def test_adding_properties():
 
     # adding properties with the wrong length should raise an exception
     bad_properties = {'vector_type': np.array(['A', 'B'])}
-    with pytest.raises(
-        ValueError, match='(does not match length)|(indices imply)'
-    ):
+    with pytest.raises(ValueError, match=r'does not match length'):
         layer.properties = bad_properties
 
 
@@ -558,24 +555,24 @@ def test_properties_color_mode_without_properties():
     """Test that switching to a colormode requiring
     properties without properties defined raises an exceptions
     """
-    np.random.seed(0)
+    rng = np.random.default_rng(0)
     shape = (10, 2, 2)
-    data = np.random.random(shape)
+    data = rng.random(shape)
     data[:, 0, :] = 20 * data[:, 0, :]
     layer = Vectors(data)
     assert layer.properties == {}
 
-    with pytest.raises(ValueError, match='must be a valid Points.properties'):
+    with pytest.raises(ValueError, match=r'must be a valid Points.properties'):
         layer.edge_color_mode = 'colormap'
 
-    with pytest.raises(ValueError, match='must be a valid Points.properties'):
+    with pytest.raises(ValueError, match=r'must be a valid Points.properties'):
         layer.edge_color_mode = 'cycle'
 
 
 def test_length():
     """Test setting length."""
-    np.random.seed(0)
-    data = np.random.random((10, 2, 2))
+    rng = np.random.default_rng(0)
+    data = rng.random((10, 2, 2))
     data[:, 0, :] = 20 * data[:, 0, :]
     layer = Vectors(data)
     assert layer.length == 1
