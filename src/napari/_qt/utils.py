@@ -4,7 +4,7 @@ import re
 import signal
 import socket
 import weakref
-from collections.abc import Iterable, Sequence
+from collections.abc import Callable, Iterable, Sequence
 from contextlib import contextmanager, suppress
 from enum import auto
 from functools import partial
@@ -462,7 +462,7 @@ def get_color(
     return new_color
 
 
-def attr_to_settr(obj, name: str, q_object: QObject, setter: str) -> None:
+def attr_to_settr(obj, name: str, q_object: QObject, setter: str) -> Callable:
     qt_ref = weakref.ref(q_object)
     obj_ref = weakref.ref(obj)
 
@@ -479,3 +479,5 @@ def attr_to_settr(obj, name: str, q_object: QObject, setter: str) -> None:
             getattr(q_obj, setter)(getattr(obj, name))
 
     getattr(obj.events, name).connect(callback)
+
+    return callback

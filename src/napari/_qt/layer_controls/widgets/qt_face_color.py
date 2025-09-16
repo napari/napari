@@ -48,21 +48,27 @@ class QtFaceColorControl(QtWidgetControlsBase):
             tooltip=tooltip,
         )
         self.face_color_label = QtWrappedLabel(trans._('face color:'))
-        # self._on_current_face_color_change()
         connect_setattr(
             self.face_color_edit.color_changed,
             self._layer,
             'current_face_color',
         )
-        attr_to_settr(
-            self._layer, 'current_face_color', self.face_color_edit, 'setColor'
-        )
-        if hasattr(self._layer, '_face'):
+        self._callbacks.append(
             attr_to_settr(
-                self._layer._face,
-                'current_color',
+                self._layer,
+                'current_face_color',
                 self.face_color_edit,
                 'setColor',
+            )
+        )
+        if hasattr(self._layer, '_face'):
+            self._callbacks.append(
+                attr_to_settr(
+                    self._layer._face,
+                    'current_color',
+                    self.face_color_edit,
+                    'setColor',
+                )
             )
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
