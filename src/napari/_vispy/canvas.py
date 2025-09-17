@@ -909,6 +909,13 @@ class VispyCanvas:
     def _get_ordered_visible_canvas_overlays(
         self,
     ) -> Iterator[tuple[CanvasOverlay, VispyBaseOverlay, Node | None]]:
+        """
+        Iterator over visible canvas overlays by grid viewbox, in tiling order.
+
+        Returns a tuple containing the overlay model, its matching visual, and
+        the index of the view in the grid where the overlay should be displayed.
+        The view `None` is special cased to refer to the base, non-gridded view.
+        """
         # note that some canvas overlays do no use CanvasPosition, but are instead
         # free-floating (such as the cursor overlay), so those are skipped
 
@@ -922,7 +929,8 @@ class VispyCanvas:
         def is_gridded(overlay):
             return overlay.gridded and self.viewer.grid.enabled
 
-        # first the base view (non-gridded viewer overlays)
+        # first the base view: non-gridded viewer overlays which appear
+        # "on top of" the main canvas
         for overlay, vispy_overlays in self._overlay_to_visual.items():
             if is_visible_tileable(overlay) and not is_gridded(overlay):
                 yield overlay, vispy_overlays[0], None
@@ -934,12 +942,17 @@ class VispyCanvas:
             if not layer_indices:
                 # last empty boxes of the grid
                 break
+
+            # if grid is disabled, this loop runs once and we put everything
+            # in the base (None) viewbox
             view = viewbox_idx if self.viewer.grid.enabled else None
 
             for overlay, vispy_overlays in self._overlay_to_visual.items():
                 if is_visible_tileable(overlay) and is_gridded(overlay):
                     yield overlay, vispy_overlays[viewbox_idx], view
 
+            # layer overlays are always "gridded"
+            # (they always appear in the same viewbox as the layer itself)
             for layer_idx in layer_indices:
                 layer = self.viewer.layers[layer_idx]
                 for (
