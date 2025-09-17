@@ -35,7 +35,9 @@ def register_viewer_action(description, repeatable=False, *, keybindings=None):
                 id=f'napari:viewer:{func.__name__}',
                 title=description,
                 callback=func,
-                keybindings=keybindings,
+                keybindings=[{'primary': keybindings[0]}]
+                if keybindings
+                else None,
             )
         )
         action_manager.register_action(
