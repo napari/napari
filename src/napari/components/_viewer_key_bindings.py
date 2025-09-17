@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+from collections.abc import Generator
 from typing import TYPE_CHECKING
 
 import numpy as np
+from app_model import Action
 from app_model.types import KeyCode, KeyMod
 
 from napari.components.viewer_model import ViewerModel
@@ -16,7 +18,10 @@ if TYPE_CHECKING:
     from napari.viewer import Viewer
 
 
-def register_viewer_action(description, repeatable=False):
+VIEWER_ACTION = []
+
+
+def register_viewer_action(description, repeatable=False, *, keybindings=None):
     """
     Convenient decorator to register an action with the current ViewerModel
 
@@ -25,6 +30,14 @@ def register_viewer_action(description, repeatable=False):
     """
 
     def _inner(func):
+        VIEWER_ACTION.append(
+            Action(
+                id=f'napari:viewer:{func.__name__}',
+                title=description,
+                callback=func,
+                keybindings=keybindings,
+            )
+        )
         action_manager.register_action(
             name=f'napari:{func.__name__}',
             command=func,
@@ -60,8 +73,11 @@ def toggle_ndisplay(viewer: Viewer):
 # ```
 # RuntimeError: wrapped C/C++ object of type CanvasBackendDesktop has been deleted
 # ```
-@register_viewer_action(trans._('Toggle current viewer theme'))
-def toggle_theme(viewer: ViewerModel):
+@register_viewer_action(
+    trans._('Toggle current viewer theme'),
+    keybindings=[KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KeyT],
+)
+def toggle_theme(viewer: ViewerModel) -> None:
     """Toggle theme for current viewer"""
     themes = available_themes()
     current_theme = viewer.theme
@@ -77,37 +93,56 @@ def toggle_theme(viewer: ViewerModel):
     viewer.theme = themes[idx]
 
 
-@register_viewer_action(trans._('Reset view to original state'))
-def reset_view(viewer: Viewer):
+@register_viewer_action(
+    trans._('Reset view to original state'),
+    keybindings=[KeyMod.CtrlCmd | KeyCode.KeyR],
+)
+def reset_view(viewer: ViewerModel) -> None:
     viewer.reset_view()
 
 
-@register_viewer_action(trans._('Delete selected layers'))
-def delete_selected_layers(viewer: Viewer):
+@register_viewer_action(
+    trans._('Delete selected layers'),
+    keybindings=[
+        KeyMod.CtrlCmd | KeyCode.Delete,
+        KeyMod.CtrlCmd | KeyCode.Backspace,
+    ],
+)
+def delete_selected_layers(viewer: ViewerModel) -> None:
     viewer.layers.remove_selected()
 
 
 @register_viewer_action(
-    trans._('Increment dimensions slider to the left'), repeatable=True
+    trans._('Increment dimensions slider to the left'),
+    repeatable=True,
+    keybindings=[KeyCode.LeftArrow],
 )
-def increment_dims_left(viewer: Viewer):
+def increment_dims_left(viewer: ViewerModel) -> None:
     viewer.dims._increment_dims_left()
 
 
 @register_viewer_action(
-    trans._('Increment dimensions slider to the right'), repeatable=True
+    trans._('Increment dimensions slider to the right'),
+    repeatable=True,
+    keybindings=[KeyCode.RightArrow],
 )
-def increment_dims_right(viewer: Viewer):
+def increment_dims_right(viewer: ViewerModel) -> None:
     viewer.dims._increment_dims_right()
 
 
-@register_viewer_action(trans._('Move focus of dimensions slider up'))
-def focus_axes_up(viewer: Viewer):
+@register_viewer_action(
+    trans._('Move focus of dimensions slider up'),
+    keybindings=[KeyMod.Alt | KeyCode.UpArrow],
+)
+def focus_axes_up(viewer: ViewerModel) -> None:
     viewer.dims._focus_up()
 
 
-@register_viewer_action(trans._('Move focus of dimensions slider down'))
-def focus_axes_down(viewer: Viewer):
+@register_viewer_action(
+    trans._('Move focus of dimensions slider down'),
+    keybindings=[KeyMod.Alt | KeyCode.DownArrow],
+)
+def focus_axes_down(viewer: ViewerModel) -> None:
     viewer.dims._focus_down()
 
 
@@ -116,8 +151,9 @@ def focus_axes_down(viewer: Viewer):
     trans._(
         'Change order of the visible axes, e.g.\u00a0[0,\u00a01,\u00a02]\u00a0\u2011>\u00a0[2,\u00a00,\u00a01]'
     ),
+    keybindings=[KeyMod.CtrlCmd | KeyCode.KeyE],
 )
-def roll_axes(viewer: Viewer):
+def roll_axes(viewer: ViewerModel) -> None:
     viewer.dims.roll()
 
 
@@ -126,13 +162,17 @@ def roll_axes(viewer: Viewer):
     trans._(
         'Transpose order of the last two visible axes, e.g.\u00a0[0,\u00a01]\u00a0\u2011>\u00a0[1,\u00a00]'
     ),
+    keybindings=[KeyMod.CtrlCmd | KeyCode.KeyT],
 )
-def transpose_axes(viewer: Viewer):
+def transpose_axes(viewer: ViewerModel) -> None:
     viewer.dims.transpose()
 
 
-@register_viewer_action(trans._('Rotate layers 90 degrees counter-clockwise'))
-def rotate_layers(viewer: Viewer):
+@register_viewer_action(
+    trans._('Rotate layers 90 degrees counter-clockwise'),
+    keybindings=[KeyMod.CtrlCmd | KeyMod.Alt | KeyCode.KeyT],
+)
+def rotate_layers(viewer: ViewerModel) -> None:
     if viewer.dims.ndisplay == 3:
         show_info(trans._('Rotating layers only works in 2D'))
         return
@@ -167,41 +207,61 @@ def rotate_layers(viewer: Viewer):
         layer.affine = layer.affine.replace_slice(visible_dims, new_affine)
 
 
-@register_viewer_action(trans._('Toggle grid mode'))
-def toggle_grid(viewer: Viewer):
+@register_viewer_action(
+    trans._('Toggle grid mode'), keybindings=[KeyMod.CtrlCmd | KeyCode.KeyG]
+)
+def toggle_grid(viewer: ViewerModel) -> None:
     viewer.grid.enabled = not viewer.grid.enabled
 
 
-@register_viewer_action(trans._('Toggle visibility of selected layers'))
-def toggle_selected_visibility(viewer: Viewer):
+@register_viewer_action(
+    trans._('Toggle visibility of selected layers'),
+    keybindings=[KeyCode.KeyV],
+)
+def toggle_selected_visibility(viewer: ViewerModel) -> None:
     viewer.layers.toggle_selected_visibility()
 
 
-@register_viewer_action(trans._('Toggle visibility of unselected layers'))
-def toggle_unselected_visibility(viewer: Viewer):
+@register_viewer_action(
+    trans._('Toggle visibility of unselected layers'),
+    keybindings=[KeyMod.Shift | KeyCode.KeyV],
+)
+def toggle_unselected_visibility(viewer: ViewerModel) -> None:
     for layer in viewer.layers:
         if layer not in viewer.layers.selection:
             layer.visible = not layer.visible
 
 
-@register_viewer_action(trans._('Select layer above'))
-def select_layer_above(viewer):
+@register_viewer_action(
+    trans._('Select layer above'),
+    keybindings=[KeyMod.CtrlCmd | KeyCode.UpArrow],
+)
+def select_layer_above(viewer: ViewerModel) -> None:
     viewer.layers.select_next()
 
 
-@register_viewer_action(trans._('Select layer below'))
-def select_layer_below(viewer):
+@register_viewer_action(
+    trans._('Select layer below'),
+    keybindings=[KeyMod.CtrlCmd | KeyCode.DownArrow],
+)
+def select_layer_below(viewer: ViewerModel) -> None:
     viewer.layers.select_previous()
 
 
-@register_viewer_action(trans._('Select and show only layer above'))
-def show_only_layer_above(viewer):
+@register_viewer_action(
+    trans._('Select and show only layer above'),
+    keybindings=[KeyMod.Shift | KeyMod.Alt | KeyCode.UpArrow],
+)
+def show_only_layer_above(viewer: ViewerModel) -> None:
     viewer.layers.select_next()
     _show_only_selected_layer(viewer)
 
 
-@register_viewer_action(trans._('Select and show only layer below'))
-def show_only_layer_below(viewer):
+@register_viewer_action(
+    trans._('Select and show only layer below'),
+    keybindings=[KeyMod.Shift | KeyMod.Alt | KeyCode.DownArrow],
+)
+def show_only_layer_below(viewer: ViewerModel) -> None:
     viewer.layers.select_previous()
     _show_only_selected_layer(viewer)
 
@@ -209,14 +269,17 @@ def show_only_layer_below(viewer):
 @register_viewer_action(
     trans._(
         'Show/Hide IPython console (only available when napari started as standalone application)'
-    )
+    ),
+    keybindings=[KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KeyC],
 )
-def toggle_console_visibility(viewer: Viewer):
+def toggle_console_visibility(viewer: Viewer) -> None:
     viewer.window._qt_viewer.toggle_console_visibility()
 
 
-@register_viewer_action(trans._('Press and hold for move camera mode'))
-def hold_for_pan_zoom(viewer: ViewerModel):
+@register_viewer_action(
+    trans._('Press and hold for move camera mode'), keybindings=[KeyCode.Space]
+)
+def hold_for_pan_zoom(viewer: ViewerModel) -> Generator[None, None, None]:
     selected_layer = viewer.layers.selection.active
     if selected_layer is None:
         yield
@@ -234,18 +297,19 @@ def hold_for_pan_zoom(viewer: ViewerModel):
         selected_layer.mode = previous_mode
 
 
-@register_viewer_action(trans._('Show all key bindings'))
-def show_shortcuts(viewer: Viewer):
+@register_viewer_action(
+    trans._('Show all key bindings'),
+    keybindings=[KeyMod.CtrlCmd | KeyMod.Alt | KeyCode.Slash],
+)
+def show_shortcuts(viewer: Viewer) -> None:
     pref_list = viewer.window._open_preferences_dialog()._list
     for i in range(pref_list.count()):
         if (item := pref_list.item(i)) and item.text() == 'Shortcuts':
             pref_list.setCurrentRow(i)
+            return
 
 
-def _show_only_selected_layer(viewer):
+def _show_only_selected_layer(viewer: ViewerModel) -> None:
     """Helper function to show only selected layer"""
     for layer in viewer.layers:
-        if layer not in viewer.layers.selection:
-            layer.visible = False
-        else:
-            layer.visible = True
+        layer.visible = layer in viewer.layers.selection
