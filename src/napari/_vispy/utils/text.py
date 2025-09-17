@@ -119,10 +119,7 @@ def get_text_width_height(text: Text) -> tuple[float, float]:
 
 def get_text_font_size(text: Text) -> float:
     """Get the logical font size of a text visual, rescaled by dpi."""
-    # use 96 as the vispy reference dpi for historical reasons
-    dpi_scale_factor = 96 / text.transforms.dpi if text.transforms.dpi else 1
-
-    return text.font_size * dpi_scale_factor
+    return text.font_size * getattr(text.canvas, 'pixel_size', 1)
 
 
 # vendored from vispy/visuals/text/text.py, but removing all lines referring to context flushing,
