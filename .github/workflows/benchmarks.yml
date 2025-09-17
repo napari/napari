@@ -61,7 +61,7 @@ jobs:
     steps:
       # We need the full repo to avoid this issue
       # https://github.com/actions/checkout/issues/23
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           fetch-depth: 0
 
@@ -71,7 +71,10 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
           cache-dependency-path: pyproject.toml
 
-      - uses: tlambert03/setup-qt-libs@19e4ef2d781d81f5f067182e228b54ec90d23b76 # v1.8
+      - name: Setup headless display
+        uses: pyvista/setup-headless-display-action@7d84ae825e6d9297a8e99bdbbae20d1b919a0b19 # v4.2
+        with:
+          qt: true
 
       - name: Setup asv
         run: python -m pip install "asv[virtualenv]"
@@ -201,7 +204,7 @@ jobs:
     if: always() && needs.benchmark.result != 'skipped'
     steps:
       - name: Download artifact
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
         with:
           pattern: asv-benchmark-results*
           path: asv_result

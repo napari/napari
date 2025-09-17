@@ -363,6 +363,8 @@ def run(
     """
     if _ipython_has_eventloop():
         # If %gui qt is active, we don't need to block again.
+        # We patch _ipython_has_eventloop() to return True when executing
+        # scripts on drag and drop to prevent running the next event loop.
         return
 
     app = QApplication.instance()
