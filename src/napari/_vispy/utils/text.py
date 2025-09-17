@@ -76,7 +76,7 @@ def _has_visible_text(layer: Points | Shapes) -> bool:
 
 
 def get_text_width_height(text: Text) -> tuple[float, float]:
-    """Get the screen space width and height of a vispy text visual."""
+    """Get the width and height of a vispy text visual in screen pixels."""
     if isinstance(text.text, str):
         strings = [text.text]
     elif isinstance(text.text, list):
