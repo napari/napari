@@ -142,9 +142,6 @@ class GridCanvas(EventedModel):
         indices : tuple of int
             Position of current layer in layer list.
         """
-        if not self.enabled:
-            return ()
-
         return tuple(
             i for i in range(nlayers) if self.position(i, nlayers) == position
         )
