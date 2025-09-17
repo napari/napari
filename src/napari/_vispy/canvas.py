@@ -912,14 +912,19 @@ class VispyCanvas:
         # note that some canvas overlays do no use CanvasPosition, but are instead
         # free-floating (such as the cursor overlay), so those are skipped
 
-        # first the base view (non-gridded viewer overlays)
-        for overlay, vispy_overlays in self._overlay_to_visual.items():
-            if (
+        def is_visible_tileable(overlay):
+            return (
                 overlay.visible
                 and isinstance(overlay, CanvasOverlay)
                 and overlay.position in list(CanvasPosition)
-                and not (overlay.gridded and self.viewer.grid.enabled)
-            ):
+            )
+
+        def is_gridded(overlay):
+            return overlay.gridded and self.viewer.grid.enabled
+
+        # first the base view (non-gridded viewer overlays)
+        for overlay, vispy_overlays in self._overlay_to_visual.items():
+            if is_visible_tileable(overlay) and not is_gridded(overlay):
                 yield overlay, vispy_overlays[0], None
 
         # then gridded viewer overlays and layer overlays, by viewbox, in order
@@ -932,12 +937,7 @@ class VispyCanvas:
             view = viewbox_idx if self.viewer.grid.enabled else None
 
             for overlay, vispy_overlays in self._overlay_to_visual.items():
-                if (
-                    overlay.visible
-                    and isinstance(overlay, CanvasOverlay)
-                    and overlay.position in list(CanvasPosition)
-                    and (overlay.gridded and self.viewer.grid.enabled)
-                ):
+                if is_visible_tileable(overlay) and is_gridded(overlay):
                     yield overlay, vispy_overlays[viewbox_idx], view
 
             for layer_idx in layer_indices:
@@ -946,12 +946,7 @@ class VispyCanvas:
                     overlay,
                     vispy_overlay,
                 ) in self._layer_overlay_to_visual.get(layer, {}).items():
-                    if (
-                        layer.visible
-                        and overlay.visible
-                        and isinstance(overlay, CanvasOverlay)
-                        and overlay.position in list(CanvasPosition)
-                    ):
+                    if layer.visible and is_visible_tileable(overlay):
                         yield overlay, vispy_overlay, view
 
     def _update_overlay_canvas_positions(self, event=None):
