@@ -31,7 +31,7 @@ babel==2.17.0
     #   sphinx
 beautifulsoup4==4.13.5
     # via pydata-sphinx-theme
-bermuda==0.1.5
+bermuda==0.1.6
     # via napari (pyproject.toml)
 build==1.3.0
     # via npe2
@@ -63,11 +63,11 @@ comm==0.2.3
     # via ipykernel
 contourpy==1.3.2
     # via matplotlib
-coverage==7.10.5
+coverage==7.10.6
     # via napari (pyproject.toml)
 cycler==0.12.1
     # via matplotlib
-dask==2025.7.0
+dask==2025.9.0
     # via
     #   napari (pyproject.toml)
     #   distributed
@@ -77,7 +77,7 @@ decorator==5.2.1
     # via ipython
 distlib==0.4.0
     # via virtualenv
-distributed==2025.7.0
+distributed==2025.9.0
     # via dask
 docstring-parser==0.17.0
     # via
@@ -95,7 +95,7 @@ exceptiongroup==1.3.0
     #   hypothesis
     #   ipython
     #   pytest
-executing==2.2.0
+executing==2.2.1
     # via stack-data
 fasteners==0.20
     # via zarr
@@ -109,11 +109,11 @@ flexcache==0.3
     # via pint
 flexparser==0.4
     # via pint
-fonttools==4.59.1
+fonttools==4.59.2
     # via matplotlib
 freetype-py==2.5.1
     # via vispy
-fsspec==2025.7.0
+fsspec==2025.9.0
     # via
     #   napari (pyproject.toml)
     #   dask
@@ -132,7 +132,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.138.3
+hypothesis==6.138.16
     # via napari (pyproject.toml)
 idna==3.10
     # via
@@ -171,6 +171,8 @@ ipython==8.37.0
     #   ipykernel
     #   myst-nb
     #   napari-console
+ipython-pygments-lexers==1.1.1
+    # via qtconsole
 jedi==0.19.2
     # via ipython
 jinja2==3.1.6
@@ -179,7 +181,7 @@ jinja2==3.1.6
     #   myst-parser
     #   sphinx
     #   torch
-joblib==1.5.1
+joblib==1.5.2
     # via
     #   nilearn
     #   scikit-learn
@@ -187,7 +189,7 @@ jsonschema==4.25.1
     # via
     #   napari (pyproject.toml)
     #   nbformat
-jsonschema-specifications==2025.4.1
+jsonschema-specifications==2025.9.1
     # via jsonschema
 jupyter-cache==1.0.1
     # via myst-nb
@@ -235,7 +237,7 @@ markdown-it-py==3.0.0
     #   rich
 markupsafe==3.0.2
     # via jinja2
-matplotlib==3.10.5
+matplotlib==3.10.6
     # via
     #   napari (pyproject.toml)
     #   glasbey
@@ -291,7 +293,7 @@ networkx==3.4.2
     #   torch
 nibabel==5.3.2
     # via nilearn
-nilearn==0.12.0
+nilearn==0.12.1
     # via napari (pyproject.toml)
 npe2==0.7.9
     # via
@@ -415,7 +417,7 @@ pint==0.24.4
     # via napari (pyproject.toml)
 pip==25.2
     # via napari-plugin-manager
-platformdirs==4.3.8
+platformdirs==4.4.0
     # via
     #   jupyter-core
     #   npe2
@@ -432,7 +434,7 @@ pooch==1.8.2
     #   scikit-image
 pretend==1.0.9
     # via napari (pyproject.toml)
-prompt-toolkit==3.0.51
+prompt-toolkit==3.0.52
     # via ipython
 psutil==7.0.0
     # via
@@ -453,7 +455,7 @@ pyautogui==0.9.54
     # via napari (pyproject.toml)
 pyconify==0.2.1
     # via superqt
-pydantic==2.11.7
+pydantic==2.11.9
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
@@ -475,6 +477,7 @@ pygments==2.19.2
     #   napari (pyproject.toml)
     #   accessible-pygments
     #   ipython
+    #   ipython-pygments-lexers
     #   pydata-sphinx-theme
     #   pytest
     #   qtconsole
@@ -482,13 +485,13 @@ pygments==2.19.2
     #   sphinx
     #   sphinx-tabs
     #   superqt
-pymsgbox==1.0.9
+pymsgbox==2.0.1
     # via pyautogui
 pyopengl==3.1.10
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
-pyparsing==3.2.3
+pyparsing==3.2.4
     # via matplotlib
 pyperclip==1.9.0
     # via mouseinfo
@@ -496,7 +499,7 @@ pyproject-hooks==1.2.0
     # via build
 pyqt6==6.9.1
     # via napari (pyproject.toml)
-pyqt6-qt6==6.9.1
+pyqt6-qt6==6.9.2
     # via pyqt6
 pyqt6-sip==13.10.2
     # via pyqt6
@@ -506,17 +509,17 @@ pyscreeze==1.0.1
     # via pyautogui
 pyside2==5.15.2.1
     # via napari (pyproject.toml)
-pyside6==6.9.1
+pyside6==6.9.2
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
-pyside6-addons==6.9.1
+pyside6-addons==6.9.2
     # via pyside6
-pyside6-essentials==6.9.1
+pyside6-essentials==6.9.2
     # via
     #   pyside6
     #   pyside6-addons
-pytest==8.4.1
+pytest==8.4.2
     # via
     #   napari (pyproject.toml)
     #   pytest-json-report
@@ -534,7 +537,7 @@ pytest-qt==4.4.0
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
-pytest-rerunfailures==15.1
+pytest-rerunfailures==16.0.1
     # via napari (pyproject.toml)
 python-dateutil==2.9.0.post0
     # via
@@ -560,11 +563,11 @@ pyyaml==6.0.2
     #   npe2
     #   sphinx-external-toc
     #   sphinxcontrib-mermaid
-pyzmq==27.0.2
+pyzmq==27.1.0
     # via
     #   ipykernel
     #   jupyter-client
-qtconsole==5.6.1
+qtconsole==5.7.0
     # via
     #   napari (pyproject.toml)
     #   napari-console
@@ -593,13 +596,13 @@ rich==14.1.0
     #   npe2
     #   pytest-pretty
     #   typer
-rpds-py==0.27.0
+rpds-py==0.27.1
     # via
     #   jsonschema
     #   referencing
 scikit-image==0.25.2
     # via napari (pyproject.toml)
-scikit-learn==1.7.1
+scikit-learn==1.7.2
     # via
     #   glasbey
     #   nilearn
@@ -617,7 +620,7 @@ shellingham==1.5.4
     # via typer
 shiboken2==5.15.2.1
     # via pyside2
-shiboken6==6.9.1
+shiboken6==6.9.2
     # via
     #   pyside6
     #   pyside6-addons
@@ -632,7 +635,7 @@ sortedcontainers==2.4.0
     # via
     #   distributed
     #   hypothesis
-soupsieve==2.7
+soupsieve==2.8
     # via beautifulsoup4
 sphinx==7.4.7
     # via
@@ -684,13 +687,13 @@ sphinxcontrib-qthelp==2.0.0
     # via sphinx
 sphinxcontrib-serializinghtml==2.0.0
     # via sphinx
-sphinxext-opengraph==0.12.0
+sphinxext-opengraph==0.13.0
     # via napari (pyproject.toml)
 sqlalchemy==2.0.43
     # via jupyter-cache
 stack-data==0.6.3
     # via ipython
-starlette==0.47.3
+starlette==0.48.0
     # via sphinx-autobuild
 stdlib-list==0.11.1
     # via pydeps
@@ -753,9 +756,9 @@ triangle==20250106
     # via napari (pyproject.toml)
 triton==3.4.0
     # via torch
-typer==0.16.1
+typer==0.17.4
     # via npe2
-typing-extensions==4.14.1
+typing-extensions==4.15.0
     # via
     #   napari (pyproject.toml)
     #   anyio
