@@ -1082,11 +1082,24 @@ def test_message():
 
 def test_thumbnail():
     """Test the image thumbnail for square data."""
-    np.random.seed(0)
-    data = np.random.randint(20, size=(30, 30))
+    rng = np.random.default_rng(0)
+    data = rng.integers(20, size=(30, 30))
     layer = Labels(data)
     layer._update_thumbnail()
     assert layer.thumbnail.shape == layer._thumbnail_shape
+
+
+@pytest.mark.parametrize('ndim', [2, 3, 4])
+@pytest.mark.parametrize('ndisplay', [2, 3])
+def test_thumbnail_non_visible(ndim, ndisplay):
+    """Test the image thumbnail is not updated when layer is not visible."""
+    dims = Dims(ndim=ndim, ndisplay=ndisplay)
+    rng = np.random.default_rng(0)
+    data = rng.integers(20, size=(30,) * ndim)
+    layer = Labels(data, visible=False)
+    layer._slice_dims(dims, force=False)
+    layer._update_thumbnail()
+    npt.assert_array_equal(layer.thumbnail[..., :3], 0)
 
 
 @pytest.mark.parametrize('value', [1, 10, 50, -2, -10])
