@@ -4,7 +4,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,
 )
-from napari._qt.utils import qt_signals_blocked
+from napari._qt.utils import attr_to_settr
 from napari._qt.widgets.qt_color_swatch import QColorSwatchEdit
 from napari.layers import Points
 from napari.utils.events.event_utils import connect_setattr
@@ -33,14 +33,6 @@ class QtBorderColorControl(QtWidgetControlsBase):
 
     def __init__(self, parent: QWidget, layer: Points) -> None:
         super().__init__(parent, layer)
-        # Setup layer
-        self._layer.events.current_border_color.connect(
-            self._on_current_border_color_change
-        )
-        self._layer._border.events.current_color.connect(
-            self._on_current_border_color_change
-        )
-
         # Setup widgets
         self.border_color_edit = QColorSwatchEdit(
             initial_color=self._layer.current_border_color,
@@ -53,13 +45,25 @@ class QtBorderColorControl(QtWidgetControlsBase):
             self._layer,
             'current_border_color',
         )
+        self._callbacks.append(
+            attr_to_settr(
+                self._layer,
+                'current_border_color',
+                self.border_color_edit,
+                'setColor',
+            )
+        )
+        if hasattr(self._layer, '_border'):
+            self._callbacks.append(
+                attr_to_settr(
+                    self._layer._border,
+                    'current_color',
+                    self.border_color_edit,
+                    'setColor',
+                )
+            )
 
         self.border_color_edit_label = QtWrappedLabel(trans._('border color:'))
-
-    def _on_current_border_color_change(self) -> None:
-        """Receive layer.current_border_color() change event and update view."""
-        with qt_signals_blocked(self.border_color_edit):
-            self.border_color_edit.setColor(self._layer.current_border_color)
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
         return [(self.border_color_edit_label, self.border_color_edit)]
