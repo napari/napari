@@ -14,6 +14,7 @@ authors = [
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Environment :: X11 Applications :: Qt",
+    "Framework :: napari",
     "Intended Audience :: Education",
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: BSD License",
