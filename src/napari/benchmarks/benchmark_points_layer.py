@@ -120,7 +120,7 @@ class PointsSlicingSuite:
 
     def time_slice_points(self, flatten_slice_axis):
         """Time to take one slice of points"""
-        self.layer._make_slice_request(self.dims)()
+        self.layer._layer_slicer.make_slice_request(self.dims)()
 
 
 class PointsToMaskSuite:

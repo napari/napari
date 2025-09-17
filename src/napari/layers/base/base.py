@@ -5,17 +5,14 @@ import inspect
 import itertools
 import logging
 import os.path
+import typing
 import uuid
 from abc import ABC, ABCMeta, abstractmethod
 from collections import defaultdict
 from collections.abc import Callable, Generator, Hashable, Mapping, Sequence
 from contextlib import contextmanager
 from functools import cached_property
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    ClassVar,
-)
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import magicgui as mgui
 import numpy as np
@@ -45,6 +42,7 @@ from napari.layers.utils.layer_utils import (
 )
 from napari.layers.utils.plane import ClippingPlane, ClippingPlaneList
 from napari.settings import get_settings
+from napari.types import LayerDataType
 from napari.utils._dask_utils import configure_dask
 from napari.utils._magicgui import (
     add_layer_to_viewer,
@@ -74,8 +72,15 @@ if TYPE_CHECKING:
     from napari.components.overlays.base import Overlay
     from napari.layers._source import Source
 
+from psygnal import Signal
 
 logger = logging.getLogger('napari.layers.base.base')
+
+__all__ = ('Layer', 'LayerSlicer', 'no_op')
+
+
+CoordinateOrderArr = np.ndarray[tuple[int], np.dtype[np.integer]]
+CoordinateOrder = list[int] | CoordinateOrderArr
 
 
 def no_op(layer: Layer, event: Event) -> None:
@@ -97,7 +102,6 @@ def no_op(layer: Layer, event: Event) -> None:
     None
 
     """
-    return
 
 
 class PostInit(ABCMeta):
@@ -111,6 +115,166 @@ class PostInit(ABCMeta):
         obj = super().__call__(*args, **kwargs)
         obj._post_init()
         return obj
+
+
+class LayerSlicer(ABC):
+    layer: Layer
+    slice_done = Signal()
+
+    def __init__(self, layer: Layer, data: LayerDataType, cache: bool):
+        self.layer = layer
+        self.dask_optimized_slicing = configure_dask(data, cache)
+        self._slice_input = _SliceInput(
+            ndisplay=2,
+            world_slice=_ThickNDSlice.make_full(ndim=self.ndim),
+            order=tuple(range(self.ndim)),
+        )
+
+    def set_view_slice(self) -> None:
+        with self.dask_optimized_slicing():
+            self._set_view_slice()
+
+    @property
+    def data_slice(self) -> _ThickNDSlice:
+        """Slice in data coordinates."""
+        if len(self._slice_input.not_displayed) == 0:
+            # all dims are displayed dimensions
+            # early return to avoid evaluating data_to_world.inverse
+            return _ThickNDSlice.make_full(point=(np.nan,) * self.ndim)
+
+        return self._slice_input.data_slice(
+            self.layer._data_to_world.inverse,
+        )
+
+    def update_dims(self):
+        self._slice_input = self._slice_input.with_ndim(self.ndim)
+
+    def set_slice_input_from_dims(self, dims: Dims) -> bool:
+        slice_input = self.make_slice_input(dims)
+        return self.set_slice_input(slice_input)
+
+    def set_slice_input(self, slice_input: _SliceInput) -> bool:
+        if self._slice_input == slice_input:
+            return False
+        self._slice_input = copy.deepcopy(slice_input)
+        self.set_view_slice()
+        return True
+
+    @property
+    def ndim(self) -> int:
+        return self.layer.ndim
+
+    def make_slice_input(
+        self,
+        dims: Dims,
+    ) -> _SliceInput:
+        world_slice = _ThickNDSlice.from_dims(dims)
+        order_array = (
+            np.arange(dims.ndim)
+            if dims.order is None
+            else np.asarray(dims.order)
+        )
+        order = tuple(
+            self._world_to_layer_dims(
+                world_dims=order_array,
+                ndim_world=dims.ndim,
+            )
+        )
+
+        return _SliceInput(
+            ndisplay=dims.ndisplay,
+            world_slice=world_slice[-self.ndim :],
+            order=typing.cast(tuple[int, ...], order[-self.ndim :]),
+        )
+
+    def _world_to_layer_dims(
+        self,
+        *,
+        world_dims: Sequence[int] | CoordinateOrderArr,
+        ndim_world: int,
+    ) -> CoordinateOrderArr:
+        """Map world dimensions to layer dimensions while maintaining order.
+
+        This is used to map dimensions from the full world space defined by ``Dims``
+        to the subspace that a layer inhabits, so that those can be used to index the
+        layer's data and associated coordinates.
+
+        For example a world ``Dims.order`` of [2, 1, 0, 3] would map to [0, 1] for a
+        layer with two dimensions and [1, 0, 2] for a layer with three dimensions
+        as those correspond to the relative order of the last two and three world dimensions
+        respectively.
+
+        Let's keep in mind a few facts:
+
+         - each dimension index is present exactly once.
+         - the lowest represented dimension index will be 0
+
+        That is to say both the `world_dims` input and return results are _some_
+        permutation of 0...N
+
+        Examples
+        --------
+
+        `[2, 1, 0, 3]`  sliced in N=2 dimensions.
+
+          - we want to keep the N=2 dimensions with the biggest index
+          - `[2, None, None, 3]`
+          - we filter the None
+          - `[2, 3]`
+          - reindex so that the lowest dimension is 0 by subtracting 2 from all indices
+          - `[0, 1]`
+
+          `[2, 1, 0, 3]`  sliced in N=3 dimensions.
+
+          - we want to keep the N=3 dimensions with the biggest index
+          - `[2, 1, None, 3]`
+          - we filter the None
+          - `[2, 1, 3]`
+          - reindex so that the lowest dimension is 0 by subtracting 1 from all indices
+          - `[1, 0, 2]`
+
+        Conveniently if the world (layer) dimension is bigger than our displayed
+        dims, we can return everything
+
+
+
+        Parameters
+        ----------
+        world_dims : ndarray
+            The world dimensions.
+        ndim_world : int
+            The number of dimensions in the world coordinate system.
+
+        Returns
+        -------
+        ndarray
+            The corresponding layer dimensions with the same ordering as the given world dimensions.
+        """
+        return self._world_to_layer_dims_impl(
+            world_dims, ndim_world, self.ndim
+        )
+
+    @staticmethod
+    def _world_to_layer_dims_impl(
+        world_dims: Sequence[int] | CoordinateOrderArr,
+        ndim_world: int,
+        ndim: int,
+    ) -> CoordinateOrderArr:
+        """
+        Static for ease of testing
+        """
+        offset = ndim_world - ndim
+        order = np.array(world_dims)
+        if offset == 0:
+            return order
+        if offset < 0:
+            return np.concatenate((np.arange(-offset), order - offset))
+
+        return order[order >= offset] - offset
+
+    @abstractmethod
+    def _set_view_slice(self):
+        raise NotImplementedError
 
 
 @mgui.register_type(choices=get_layers, return_callback=add_layer_to_viewer)
@@ -379,11 +543,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self._refresh_blocked = False
         self._ndim = ndim
 
-        self._slice_input = _SliceInput(
-            ndisplay=2,
-            world_slice=_ThickNDSlice.make_full(ndim=ndim),
-            order=tuple(range(ndim)),
-        )
         self._loaded: bool = True
         self._last_slice_id: int = -1
 
@@ -487,6 +646,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
                 'bounding_box': BoundingBoxOverlay(),
             }
         )
+        self._layer_slicer = self.get_layer_slicer(data, cache)
+
+    @property
+    def _slice_input(self):
+        return self._layer_slicer._slice_input
 
     def _post_init(self):
         """Post init hook for subclasses to use."""
@@ -931,9 +1095,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             new_axes = range(ndim - old_ndim)
             self._transforms = self._transforms.expand_dims(new_axes)
 
-        self._slice_input = self._slice_input.with_ndim(ndim)
-
         self._ndim = ndim
+        self._layer_slicer.update_dims()
 
         self.refresh()
 
@@ -1052,14 +1215,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     @property
     def _data_slice(self) -> _ThickNDSlice:
         """Slice in data coordinates."""
-        if len(self._slice_input.not_displayed) == 0:
-            # all dims are displayed dimensions
-            # early return to avoid evaluating data_to_world.inverse
-            return _ThickNDSlice.make_full(point=(np.nan,) * self.ndim)
-
-        return self._slice_input.data_slice(
-            self._data_to_world.inverse,
-        )
+        return self._layer_slicer.data_slice
 
     @abstractmethod
     def _get_ndim(self) -> int:
@@ -1233,8 +1389,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         return self._overlays['bounding_box']
 
     def set_view_slice(self) -> None:
-        with self.dask_optimized_slicing():
-            self._set_view_slice()
+        self._layer_slicer.set_view_slice()
 
     @abstractmethod
     def _set_view_slice(self):
@@ -1263,45 +1418,14 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             dims,
             force,
         )
-        slice_input = self._make_slice_input(dims)
-        if force or (self._slice_input != slice_input):
-            self._slice_input = slice_input
+        changed = self._layer_slicer.set_slice_input_from_dims(dims)
+        if force or changed:
             self._refresh_sync(
                 data_displayed=True,
                 thumbnail=True,
                 highlight=True,
                 extent=True,
             )
-
-    def _make_slice_input(
-        self,
-        dims: Dims,
-    ) -> _SliceInput:
-        world_ndim: int = self.ndim if dims is None else dims.ndim
-        if dims is None:
-            # if no dims is given, "world" has same dimensionality of self
-            # this happens for example if a layer is not in a viewer
-            # in this case, we assume all dims are displayed dimensions
-            world_slice = _ThickNDSlice.make_full((np.nan,) * self.ndim)
-        else:
-            world_slice = _ThickNDSlice.from_dims(dims)
-        order_array = (
-            np.arange(world_ndim)
-            if dims.order is None
-            else np.asarray(dims.order)
-        )
-        order = tuple(
-            self._world_to_layer_dims(
-                world_dims=order_array,
-                ndim_world=world_ndim,
-            )
-        )
-
-        return _SliceInput(
-            ndisplay=dims.ndisplay,
-            world_slice=world_slice[-self.ndim :],
-            order=order[-self.ndim :],
-        )
 
     @abstractmethod
     def _update_thumbnail(self):
@@ -1330,7 +1454,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         view_direction: npt.ArrayLike | None = None,
         dims_displayed: list[int] | None = None,
         world: bool = False,
-    ) -> tuple | None:
+    ) -> tuple[int, ...] | None:
         """Value of the data at a position.
 
         If the layer is not visible, return None.
@@ -1374,7 +1498,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
                 if len(dims_displayed) == 2 or self.ndim == 2:
                     value = self._get_value(position=tuple(position))
 
-                elif len(dims_displayed) == 3:
+                else:  # if len(dims_displayed) == 3:
                     view_direction = self._world_to_data_ray(view_direction)
                     start_point, end_point = self.get_ray_intersections(
                         position=position,
@@ -1548,7 +1672,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         if highlight:
             self._set_highlight(force=True)
 
-    def world_to_data(self, position: npt.ArrayLike) -> npt.NDArray:
+    def world_to_data(
+        self, position: npt.ArrayLike
+    ) -> np.ndarray[tuple[int], np.dtype[np.floating]]:
         """Convert from world coordinates to data coordinates.
 
         Parameters
@@ -1649,7 +1775,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         return normalized_vector
 
     def _world_to_displayed_data_ray(
-        self, vector_world: npt.ArrayLike, dims_displayed: list[int]
+        self, vector_world: npt.ArrayLike, dims_displayed: CoordinateOrder
     ) -> np.ndarray:
         """Convert an orientation from world to displayed data coordinates.
 
@@ -1710,86 +1836,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         transformed_vector /= np.linalg.norm(transformed_vector)
 
         return transformed_vector
-
-    def _world_to_layer_dims(
-        self, *, world_dims: npt.NDArray, ndim_world: int
-    ) -> np.ndarray:
-        """Map world dimensions to layer dimensions while maintaining order.
-
-        This is used to map dimensions from the full world space defined by ``Dims``
-        to the subspace that a layer inhabits, so that those can be used to index the
-        layer's data and associated coordinates.
-
-        For example a world ``Dims.order`` of [2, 1, 0, 3] would map to [0, 1] for a
-        layer with two dimensions and [1, 0, 2] for a layer with three dimensions
-        as those correspond to the relative order of the last two and three world dimensions
-        respectively.
-
-        Let's keep in mind a few facts:
-
-         - each dimension index is present exactly once.
-         - the lowest represented dimension index will be 0
-
-        That is to say both the `world_dims` input and return results are _some_
-        permutation of 0...N
-
-        Examples
-        --------
-
-        `[2, 1, 0, 3]`  sliced in N=2 dimensions.
-
-          - we want to keep the N=2 dimensions with the biggest index
-          - `[2, None, None, 3]`
-          - we filter the None
-          - `[2, 3]`
-          - reindex so that the lowest dimension is 0 by subtracting 2 from all indices
-          - `[0, 1]`
-
-          `[2, 1, 0, 3]`  sliced in N=3 dimensions.
-
-          - we want to keep the N=3 dimensions with the biggest index
-          - `[2, 1, None, 3]`
-          - we filter the None
-          - `[2, 1, 3]`
-          - reindex so that the lowest dimension is 0 by subtracting 1 from all indices
-          - `[1, 0, 2]`
-
-        Conveniently if the world (layer) dimension is bigger than our displayed
-        dims, we can return everything
-
-
-
-        Parameters
-        ----------
-        world_dims : ndarray
-            The world dimensions.
-        ndim_world : int
-            The number of dimensions in the world coordinate system.
-
-        Returns
-        -------
-        ndarray
-            The corresponding layer dimensions with the same ordering as the given world dimensions.
-        """
-        return self._world_to_layer_dims_impl(
-            world_dims, ndim_world, self.ndim
-        )
-
-    @staticmethod
-    def _world_to_layer_dims_impl(
-        world_dims: npt.NDArray, ndim_world: int, ndim: int
-    ) -> npt.NDArray:
-        """
-        Static for ease of testing
-        """
-        offset = ndim_world - ndim
-        order = np.array(world_dims)
-        if offset == 0:
-            return order
-        if offset < 0:
-            return np.concatenate((np.arange(-offset), order - offset))
-
-        return order[order >= offset] - offset
 
     def _display_bounding_box(self, dims_displayed: list[int]) -> npt.NDArray:
         """An axis aligned (ndisplay, 2) bounding box around the data"""
@@ -2345,6 +2391,13 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
                     layer_type=layer_type,
                 )
             ) from exc
+
+    @abstractmethod
+    def get_layer_slicer(
+        self, data: LayerDataType, cache: bool
+    ) -> LayerSlicer:
+        """Return a LayerSlicer instance appropriate for this layer."""
+        raise NotImplementedError
 
 
 mgui.register_type(type_=list[Layer], return_callback=add_layers_to_viewer)
