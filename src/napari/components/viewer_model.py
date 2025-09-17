@@ -36,6 +36,7 @@ from napari.components.layerlist import LayerList
 from napari.components.overlays import (
     AxesOverlay,
     BrushCircleOverlay,
+    CursorOverlay,
     Overlay,
     ScaleBarOverlay,
     TextOverlay,
@@ -122,6 +123,7 @@ DEFAULT_OVERLAYS = {
     'text': TextOverlay,
     'axes': AxesOverlay,
     'brush_circle': BrushCircleOverlay,
+    'cursor': CursorOverlay,
     'zoom': ZoomOverlay,
 }
 
