@@ -915,9 +915,10 @@ class VispyCanvas:
         Returns a tuple containing the overlay model, its matching visual, and
         the index of the view in the grid where the overlay should be displayed.
         The view `None` is special cased to refer to the base, non-gridded view.
+
+        Note that some canvas overlays do no use CanvasPosition, but are instead
+        free-floating (such as the cursor overlay), so those are skipped
         """
-        # note that some canvas overlays do no use CanvasPosition, but are instead
-        # free-floating (such as the cursor overlay), so those are skipped
 
         def is_visible_tileable(overlay):
             return (
