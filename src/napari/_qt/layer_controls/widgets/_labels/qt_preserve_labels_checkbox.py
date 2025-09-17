@@ -42,15 +42,15 @@ class QtPreserveLabelsCheckBoxControl(QtWidgetControlsBase):
         )
         preserve_labels_cb.setChecked(self._layer.preserve_labels)
         preserve_labels_cb.stateChanged.connect(self.change_preserve_labels)
-        self.preserve_labels_checkbox = preserve_labels_cb
         self._callbacks.append(
             attr_to_settr(
                 self._layer,
                 'preserve_labels',
-                self.preserve_labels_checkbox,
+                preserve_labels_cb,
                 'setChecked',
             )
         )
+        self.preserve_labels_checkbox = preserve_labels_cb
 
         self.preserve_labels_checkbox_label = QtWrappedLabel(
             trans._('preserve\nlabels:')

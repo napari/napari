@@ -8,7 +8,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,
 )
-from napari._qt.utils import qt_signals_blocked
+from napari._qt.utils import attr_to_settr
 from napari.layers import Labels
 from napari.layers.labels._labels_utils import get_dtype
 from napari.utils._dtype import get_dtype_limits
@@ -37,9 +37,6 @@ class QtContourSpinBoxControl(QtWidgetControlsBase):
 
     def __init__(self, parent: QWidget, layer: Labels) -> None:
         super().__init__(parent, layer)
-        # Setup layer
-        self._layer.events.contour.connect(self._on_contour_change)
-
         # Setup widgets
         self.contour_spinbox = QLargeIntSpinBox()
         dtype_lims = get_dtype_limits(get_dtype(layer))
@@ -47,10 +44,18 @@ class QtContourSpinBoxControl(QtWidgetControlsBase):
         self.contour_spinbox.setToolTip(
             trans._('Set width of displayed label contours')
         )
+        self.contour_spinbox.setValue(self._layer.contour)
         self.contour_spinbox.valueChanged.connect(self.change_contour)
         self.contour_spinbox.setKeyboardTracking(False)
         self.contour_spinbox.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._on_contour_change()
+        self._callbacks.append(
+            attr_to_settr(
+                self._layer,
+                'contour',
+                self.contour_spinbox,
+                'setValue',
+            )
+        )
 
         self.contour_spinbox_label = QtWrappedLabel(trans._('contour:'))
 
@@ -65,12 +70,6 @@ class QtContourSpinBoxControl(QtWidgetControlsBase):
         self._layer.contour = value
         self.contour_spinbox.clearFocus()
         self.parent().setFocus()
-
-    def _on_contour_change(self) -> None:
-        """Receive layer model contour value change event and update spinbox."""
-        with qt_signals_blocked(self.contour_spinbox):
-            value = self._layer.contour
-            self.contour_spinbox.setValue(value)
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
         return [(self.contour_spinbox_label, self.contour_spinbox)]
