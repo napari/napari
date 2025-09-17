@@ -67,6 +67,32 @@ class Viewer(ViewerModel):
         self._window = Window(self, show=show)
         self._instances.add(self)
 
+    def __new__(cls, *args, **kwargs):
+        """Overload __new__ to facilitate temporary monkey-patching.
+
+        This method simplifies scenarios where temporary patching of `__new__`
+        is needed—for example, to ensure only one viewer instance exists
+        when scripts are dropped into the viewer.
+
+        By default, Python implicitly calls `object.__new__(cls)` with only one argument (`cls`).
+        However, once `__new__` is explicitly overridden or patched, Python automatically
+        forwards all constructor arguments (`*args` and `**kwargs`) to it, causing signature mismatches.
+
+        Thus, directly assigning a patched function like this:
+
+        >>> old_new = Viewer.__new__
+        >>> Viewer.__new__ = lambda cls, *args, **kwargs: list(cls._instances)[0]
+        >>> # code creating a Viewer instance...
+        >>> Viewer.__new__ = old_new
+
+        may fail afterward because the restored original `__new__` (typically `object.__new__`)
+        doesn't accept extra arguments, raising a TypeError.
+
+        This explicit override accepts arbitrary arguments but intentionally discards them,
+        forwarding only the class to `object.__new__`, thus making temporary patching safe and convenient.
+        """
+        return super().__new__(cls)
+
     # Expose private window publicly. This is needed to keep window off pydantic model
     @property
     def window(self) -> 'Window':
@@ -147,7 +173,7 @@ class Viewer(ViewerModel):
         self,
         rois: list[np.ndarray],
         paths: str | Path | list[str | Path] | None = None,
-        scale: float | None = None,
+        scale: float = 1.0,
     ):
         """Export the given rectangular rois to specified file paths.
 
@@ -179,13 +205,7 @@ class Viewer(ViewerModel):
             The list containing all the screenshots.
         """
         # Check to see if roi has shape (n,2,2)
-        if any(roi.shape[-2:] != (4, 2) for roi in rois):
-            raise ValueError(
-                'ROI found with invalid shape, all rois must have shape (4, 2), i.e. have 4 corners defined in 2 '
-                'dimensions. 3D is not supported.'
-            )
-
-        screenshot_list = self.window.export_rois(
+        screenshot_list = self.window._qt_viewer.export_rois(
             rois, paths=paths, scale=scale
         )
 

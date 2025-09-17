@@ -20,6 +20,7 @@ from napari.components.dims import Dims
 from napari.layers import Labels
 from napari.layers.labels._labels_constants import LabelsRendering
 from napari.layers.labels._labels_utils import get_contours
+from napari.layers.labels.labels import WrongSelectedLabelError
 from napari.utils import Colormap
 from napari.utils._test_utils import (
     validate_all_params_in_docstring,
@@ -573,7 +574,7 @@ def test_contour(input_data, expected_data_view):
     np.testing.assert_array_equal(layer.data, input_data)
 
     np.testing.assert_array_equal(
-        layer._raw_to_displayed(input_data.astype(np.float32)),
+        layer._raw_to_displayed(input_data),
         layer._data_view,
     )
     data_view_before_contour = layer._data_view.copy()
@@ -713,6 +714,14 @@ def test_selecting_label():
     layer.selected_label = 1
     assert layer.selected_label == 1
     assert len(layer._selected_color) == 4
+
+
+def test_selecting_label_exception():
+    labels = Labels(np.zeros((10, 10), dtype=np.uint8))
+    with pytest.raises(WrongSelectedLabelError, match='The value 256'):
+        labels.selected_label = 256
+    with pytest.raises(WrongSelectedLabelError, match='The value -1'):
+        labels.selected_label = -1
 
 
 def test_label_color():

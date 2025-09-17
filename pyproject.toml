@@ -48,7 +48,7 @@ dependencies = [
     "napari-console>=0.1.1",
     "napari-plugin-engine>=0.1.9",
     "napari-svg>=0.1.8",
-    "npe2>=0.7.8",
+    "npe2>=0.7.9",
     "numpy>=1.24.2",
     "numpydoc>=1.0.0",
     "pandas>=1.3.3",
@@ -64,7 +64,7 @@ dependencies = [
     "qtpy>=2.3.1",
     "scikit-image[data]>=0.19.1",
     "scipy>=1.10.1",
-    "superqt>=0.7.3",
+    "superqt>=0.7.4",
     "tifffile>=2022.7.28",
     "toolz>=0.11.0",
     "tqdm>=4.56.0",
@@ -94,8 +94,8 @@ Documentation = "https://napari.org"
 pyside2 = [
     "PySide2>=5.15.1 ; python_version < '3.11' and platform_machine != 'arm64'",
 ]
-pyside6_experimental = [
-    "PySide6 < 6.5 ; python_version < '3.12'"
+pyside6 = [
+    "PySide6 > 6.7"
 ]
 pyqt6 = [
     "PyQt6 > 6.5",
@@ -149,9 +149,11 @@ testing = [
     "docstring_parser>=0.15",
     "pretend>=1.0.9",
     "pyautogui>=0.9.54",
-    "pytest-qt>=4.3.1",
+    "pytest-qt >=4.4.0; python_version > '3.10'",
+    "pytest-qt ==4.4.0; python_version <= '3.10'",
     "pytest-pretty>=1.1.0",
     "pytest>=8.3.5",
+    "pytest-rerunfailures>=15.1",
     "tensorstore>=0.1.32",
     "virtualenv>=20.17",
     "xarray>=0.16.2",
@@ -176,6 +178,7 @@ gallery = [
     "nilearn",
     "xarray",
     "h5netcdf",
+    "meshio",
 ]
 # needed to build docs
 docs = [
@@ -216,7 +219,6 @@ dev = [
     "check-manifest>=0.42",
     "pre-commit>=2.9.0",
     "pydantic",
-    "python-dotenv",
     "tox",
     "tox-min-req",
     "napari[reload]",
@@ -260,7 +262,7 @@ napari_builtins = [
 
 [tool.setuptools_scm]
 write_to = "src/napari/_version.py"
-fallback_version = "0.6.0.nogit"
+fallback_version = "0.6.4.dev0"
 
 [tool.check-manifest]
 ignore = [
@@ -348,7 +350,6 @@ ignore = [
     "A003", # flake8-builtins - we have class attributes violating these rule
     "COM812", # flake8-commas - we don't like adding comma on single line of arguments
     "COM819", # conflicts with ruff-format
-    "SIM117", # flake8-simplify - we some of merged with statements are not looking great with black, reanble after drop python 3.9
     "RET504", # not fixed yet https://github.com/charliermarsh/ruff/issues/2950
     "TRY003", # require implement multiple exception class
     "RUF005", # problem with numpy compatybility, see https://github.com/charliermarsh/ruff/issues/2142#issuecomment-1451038741
@@ -530,6 +531,43 @@ module = [
     'napari._qt.layer_controls.qt_surface_controls',
     'napari._qt.layer_controls.qt_tracks_controls',
     'napari._qt.layer_controls.qt_vectors_controls',
+    'napari._qt.layer_controls.widgets.qt_widget_controls_base',
+    'napari._qt.layer_controls.widgets.qt_face_color',
+    'napari._qt.layer_controls.widgets.qt_opacity_blending_controls',
+    'napari._qt.layer_controls.widgets.qt_text_visibility',
+    'napari._qt.layer_controls.widgets.qt_out_slice_checkbox',
+    'napari._qt.layer_controls.widgets.qt_projection_mode_control',
+    'napari._qt.layer_controls.widgets._shapes.qt_edge_color',
+    'napari._qt.layer_controls.widgets._shapes.qt_edge_width_slider',
+    'napari._qt.layer_controls.widgets._labels.qt_label_color',
+    'napari._qt.layer_controls.widgets._labels.qt_brush_size_slider',
+    'napari._qt.layer_controls.widgets._labels.qt_color_mode_combobox',
+    'napari._qt.layer_controls.widgets._labels.qt_contiguous_checkbox',
+    'napari._qt.layer_controls.widgets._labels.qt_ndim_spinbox',
+    'napari._qt.layer_controls.widgets._labels.qt_contour_spinbox',
+    'napari._qt.layer_controls.widgets._labels.qt_preserve_labels_checkbox',
+    'napari._qt.layer_controls.widgets._labels.qt_render_control',
+    'napari._qt.layer_controls.widgets._labels.qt_display_selected_label_checkbox',
+    'napari._qt.layer_controls.widgets._points.qt_current_size_slider',
+    'napari._qt.layer_controls.widgets._points.qt_symbol_combobox',
+    'napari._qt.layer_controls.widgets._points.qt_border_color',
+    'napari._qt.layer_controls.widgets.qt_colormap_control',
+    'napari._qt.layer_controls.widgets.qt_contrast_limits',
+    'napari._qt.layer_controls.widgets.qt_autoscale_control',
+    'napari._qt.layer_controls.widgets.qt_gamma_slider',
+    'napari._qt.layer_controls.widgets._surface.qt_shading_combobox',
+    'napari._qt.layer_controls.widgets._image.qt_interpolation_combobox',
+    'napari._qt.layer_controls.widgets._image.qt_render_control',
+    'napari._qt.layer_controls.widgets._image.qt_depiction_control',
+    'napari._qt.layer_controls.widgets._vectors.qt_edge_color',
+    'napari._qt.layer_controls.widgets._vectors.qt_vector_style_combobox',
+    'napari._qt.layer_controls.widgets._vectors.qt_line_dimension_spinbox',
+    'napari._qt.layer_controls.widgets._tracks.qt_color_properties_combobox',
+    'napari._qt.layer_controls.widgets._tracks.qt_head_slider',
+    'napari._qt.layer_controls.widgets._tracks.qt_tail_control',
+    'napari._qt.layer_controls.widgets._tracks.qt_id_checkbox',
+    'napari._qt.layer_controls.widgets._tracks.qt_graph_checkbox',
+    'napari._qt.layer_controls.widgets._tracks.qt_colormap_control',
     'napari._qt.menus._util',
     'napari._qt.menus.file_menu',
     'napari._qt.perf.qt_event_tracing',
@@ -798,7 +836,7 @@ module = [
     "napari._app_model.context._layerlist_context",
     "napari.components.overlays.labels_polygon",
     "napari.plugins.io",
-    "napari.utils.colormaps.vendored._cm_listed"
+    "napari.utils.colormaps.vendored._cm_listed",
 ]
 disallow_untyped_calls = false
 
