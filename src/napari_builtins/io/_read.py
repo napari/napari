@@ -134,6 +134,12 @@ def read_zarr_dataset(path: str):
     shape : tuple
         Shape of array or first array in list
     """
+
+    if _is_url(path):
+        image = da.from_zarr(path)
+        shape = image.shape
+        return image, shape
+
     path = Path(path)
     if (path / '.zarray').exists():
         # load zarr array
