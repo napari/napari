@@ -52,7 +52,6 @@ class QtWidthSpinBoxControl(QtWidgetControlsBase):
 
     def change_width(self, value) -> None:
         """Change edge line width of vectors on the layer model.
-
         Parameters
         ----------
         value : float
@@ -112,9 +111,7 @@ class QtLengthSpinBoxControl(QtWidgetControlsBase):
 
     def change_length(self, value: float) -> None:
         """Change length of vectors on the layer model.
-
         Multiplicative factor on projections for length of all vectors.
-
         Parameters
         ----------
         value : float

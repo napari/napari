@@ -56,7 +56,6 @@ class QtNdimSpinBoxControl(QtWidgetControlsBase):
 
     def change_n_edit_dim(self, value: int) -> None:
         """Change the number of editable dimensions of label layer.
-
         Parameters
         ----------
         value : int
