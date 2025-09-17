@@ -269,8 +269,9 @@ def combine_widgets(
     raise TypeError(
         trans._(
             '"widgets" must be a QWidget, a magicgui Widget or a sequence of '
-            'such types'
-        )
+            'such types (not "{widget_type}")',
+            widget_type=type(widgets),
+        ),
     )
 
 

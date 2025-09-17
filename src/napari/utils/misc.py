@@ -744,3 +744,27 @@ def argsort(values: Sequence[int]) -> list[int]:
     [1, 2, 0]
     """
     return sorted(range(len(values)), key=values.__getitem__)
+
+
+def is_installed(module: str) -> bool:
+    """Try to import module."""
+    import importlib.util
+
+    try:
+        loader = importlib.util.find_spec(module)
+    except ModuleNotFoundError:
+        return False
+    return loader is not None
+
+
+def validate_dev_modules(modules: list[str]) -> None:
+    """Validate that dev modules are installed."""
+    for module in modules:
+        if not is_installed(module):
+            warnings.warn(
+                trans._(
+                    'module {module} is not installed - it will not be watched and reloaded.',
+                    deferred=True,
+                    module=module,
+                )
+            )

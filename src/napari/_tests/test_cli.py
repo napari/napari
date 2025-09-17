@@ -6,6 +6,7 @@ import pytest
 
 import napari
 from napari import __main__
+from napari.utils.misc import is_installed
 
 
 @pytest.fixture
@@ -32,6 +33,19 @@ def test_cli_shows_plugins(monkeypatch, capsys, tmp_plugin):
     with pytest.raises(SystemExit):
         __main__._run()
     assert tmp_plugin.name in str(capsys.readouterr())
+
+
+@pytest.mark.skipif(
+    not is_installed('qtreload'), reason='qtreload not installed'
+)
+def test_cli_shows_dev(monkeypatch, capsys):
+    """Test the cli --info runs and shows plugins"""
+    monkeypatch.setattr(sys, 'argv', ['napari', '-h'])
+    with pytest.raises(SystemExit):
+        __main__._run()
+    outerr = str(capsys.readouterr())
+    assert '--dev' in outerr
+    assert '--dev_module' in outerr
 
 
 def test_cli_parses_unknowns(mock_run, monkeypatch, make_napari_viewer):

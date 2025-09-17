@@ -746,6 +746,14 @@ class Window:
                 self._qt_viewer.dockPerformance, menu=self.window_menu
             )
 
+        # create the QDev tool if it's available
+        if self._qt_viewer.dockQDev is not None:
+            # connect the stylesheet event to update the theme
+            self._qt_viewer._qdev.evt_stylesheet.connect(self._update_theme)
+            self._add_viewer_dock_widget(
+                self._qt_viewer.dockQDev, tabify=False, menu=self.window_menu
+            )
+
         viewer.events.help.connect(self._help_changed)
         viewer.events.title.connect(self._title_changed)
         viewer.events.theme.connect(self._update_theme)
