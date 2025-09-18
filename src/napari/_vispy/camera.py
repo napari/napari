@@ -1,7 +1,7 @@
 import numpy as np
+from scipy.spatial.transform import Rotation
 from vispy.scene import ArcballCamera, BaseCamera, PanZoomCamera
-
-from napari._vispy.utils.quaternion import quaternion2euler_degrees
+from vispy.util.quaternion import Quaternion
 
 # Note: the Vispy axis order is xyz, or horizontal, vertical, depth,
 # while the napari axis order is zyx / plane-row-column, or depth, vertical,
@@ -63,8 +63,12 @@ class VispyCamera:
 
         if isinstance(self._view.camera, MouseToggledArcballCamera):
             # Do conversion from quaternion representation to euler angles
-            return quaternion2euler_degrees(self._view.camera._quaternion)
-        return (0, 0, 90)
+            q = self._view.camera._quaternion
+            rotation = Rotation.from_quat([q.x, q.y, q.z, q.w])
+            euler = rotation.as_euler('yzx', degrees=True)
+            return tuple(euler)
+
+        return (0, 0, 0)
 
     @angles.setter
     def angles(self, angles):
@@ -74,11 +78,9 @@ class VispyCamera:
         # Only update angles if current camera is 3D camera
         if isinstance(self._view.camera, MouseToggledArcballCamera):
             # Create and set quaternion
-            quat = self._view.camera._quaternion.create_from_euler_angles(
-                *angles,
-                degrees=True,
-            )
-            self._view.camera._quaternion = quat
+            rotation = Rotation.from_euler('yzx', angles, degrees=True)
+            q = Quaternion(*rotation.as_quat(scalar_first=True))
+            self._view.camera._quaternion = q
             self._view.camera.view_changed()
 
     @property
