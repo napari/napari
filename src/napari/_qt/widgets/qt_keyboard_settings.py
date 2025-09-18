@@ -41,6 +41,23 @@ from napari.utils.interactions import Shortcut
 from napari.utils.translations import trans
 
 
+class AppShortcutEditor(QWidget):
+    """Widget to edit application-level keybindings for napari."""
+
+    valueChanged = Signal(dict)
+
+    def __init__(
+        self,
+        parent: QWidget = None,
+        description: str = '',
+        value: dict | None = None,
+    ) -> None:
+        super().__init__(parent=parent)
+
+    def setValue(self, state):
+        pass
+
+
 class ShortcutEditor(QWidget):
     """Widget to edit keybindings for napari."""
 

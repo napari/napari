@@ -4,6 +4,7 @@ from functools import lru_cache
 from itertools import chain
 
 from app_model import Application
+from app_model.types import KeyBinding
 
 from napari._app_model.actions._file import FILE_ACTIONS, FILE_SUBMENUS
 from napari._app_model.actions._layerlist_context_actions import (
@@ -53,6 +54,9 @@ class NapariApplication(Application):
         instance by name.
         """
         return Application.get_app(app_name) or cls()
+
+    def get_default_shortcuts(self) -> dict[str, list[KeyBinding]]:
+        return {}
 
 
 @lru_cache(maxsize=1)
