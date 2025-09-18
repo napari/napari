@@ -6,6 +6,7 @@ from napari._qt.layer_controls.widgets._tracks import (
     QtColorPropertiesComboBoxControl,
     QtGraphCheckBoxControl,
     QtHeadLengthSliderControl,
+    QtHideCompletedTracksCheckBoxControl,
     QtIdCheckBoxControl,
     QtTailDisplayCheckBoxControl,
     QtTailLengthSliderControl,
@@ -43,6 +44,8 @@ class QtTracksControls(QtLayerControls):
         Widget that wraps a slider controlling tail length of the layer.
     _tail_width_slider_control : napari._qt.layer_controls.widgets._tracks.QtTailWidthSliderControl
         Widget that wraps a slider controlling tail width of the layer.
+    _hide_completed_tracks_checkbox_control : napari._qt.layer_controls.widgets._tracks.QtHideCompletedTracksCheckBoxControl
+        Widget that wraps a checkbox controlling if completed tracks of the layer should be hidden.
     """
 
     layer: 'napari.layers.Tracks'
@@ -79,3 +82,7 @@ class QtTracksControls(QtLayerControls):
         self._add_widget_controls(self._id_checkbox_control)
         self._graph_checkbox_control = QtGraphCheckBoxControl(self, layer)
         self._add_widget_controls(self._graph_checkbox_control)
+        self._hide_completed_tracks_checkbox_control = (
+            QtHideCompletedTracksCheckBoxControl(self, layer)
+        )
+        self._add_widget_controls(self._hide_completed_tracks_checkbox_control)
