@@ -55,7 +55,7 @@ class NapariApplication(Application):
         """
         return Application.get_app(app_name) or cls()
 
-    def get_default_shortcuts(self) -> dict[str, list[KeyBinding]]:
+    def get_default_shortcuts(self) -> dict[str, dict[str, list[KeyBinding]]]:
         return {}
 
 

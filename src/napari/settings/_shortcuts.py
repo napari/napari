@@ -7,7 +7,7 @@ from napari.utils.shortcuts import default_shortcuts
 from napari.utils.translations import trans
 
 
-def get_app_default_shortcuts() -> dict[str, list[KeyBinding]]:
+def get_app_default_shortcuts() -> dict[str, dict[str, list[KeyBinding]]]:
     from napari._app_model import get_app_model
 
     return get_app_model().get_default_shortcuts()
@@ -21,7 +21,7 @@ class ShortcutsSettings(EventedModel):
             'Set keyboard shortcuts for actions.',
         ),
     )
-    app_shortcuts: dict[str, list[KeyBinding]] = Field(
+    app_shortcuts: dict[str, dict[str, list[KeyBinding]]] = Field(
         default_factory=get_app_default_shortcuts,
         title=trans._('app shortcuts'),
         description=trans._(
