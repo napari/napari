@@ -6,7 +6,7 @@ from qtpy import QtCore, QtGui, QtWidgets, QT_VERSION
 
 from ...._qt.widgets.qt_extension2reader import Extension2ReaderTable
 from ...._qt.widgets.qt_highlight_preview import QtHighlightPreviewWidget
-from ...._qt.widgets.qt_keyboard_settings import ShortcutEditor, AppShortcutEditor
+from ...._qt.widgets.qt_keyboard_settings import ShortcutEditor, AppModelShortcutEditor
 from ...._qt.widgets.qt_font_size import QtFontSizeWidget
 
 from .signal import Signal
@@ -611,7 +611,7 @@ class ShortcutsWidget(SchemaWidgetMixin, ShortcutEditor):
         self.opacity.setOpacity(1)
 
 
-class AppShortcutWidget(SchemaWidgetMixin, AppShortcutEditor):
+class AppShortcutWidget(SchemaWidgetMixin, AppModelShortcutEditor):
     @state_property
     def state(self) -> dict:
         return self.value()

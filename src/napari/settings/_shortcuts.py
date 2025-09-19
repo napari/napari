@@ -9,8 +9,10 @@ from napari.utils.translations import trans
 
 def get_app_default_shortcuts() -> dict[str, dict[str, list[KeyBinding]]]:
     from napari._app_model import get_app_model
+    from napari._qt._qapp_model.qactions import init_qactions
 
-    return get_app_model().get_default_shortcuts()
+    init_qactions()
+    return get_app_model().get_app_default_shortcuts()
 
 
 class ShortcutsSettings(EventedModel):
@@ -44,4 +46,23 @@ class ShortcutsSettings(EventedModel):
         return {
             name: [coerce_keybinding(kb) for kb in value]
             for name, value in v.items()
+        }
+
+    @validator('app_shortcuts', allow_reuse=True, pre=True)
+    def app_shortcut_validate(
+        cls, v: dict[str, dict[str, list[KeyBinding | str]]]
+    ) -> dict[str, dict[str, list[KeyBinding]]]:
+        for name, value in get_app_default_shortcuts().items():
+            if name not in v:
+                v[name] = value
+            for action, kb_list in value.items():
+                if action not in v[name]:
+                    v[name][action] = kb_list
+
+        return {
+            group_name: {
+                name: [coerce_keybinding(kb) for kb in value]
+                for name, value in group_value.items()
+            }
+            for group_name, group_value in v.items()
         }

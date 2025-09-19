@@ -1,7 +1,10 @@
+from __future__ import annotations
+
 import contextlib
 import itertools
 import sys
 from collections import OrderedDict
+from typing import TYPE_CHECKING
 
 from app_model.backends.qt import (
     qkeysequence2modelkeybinding,
@@ -25,6 +28,7 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
+from napari._app_model import get_app_model
 from napari._qt.widgets.qt_message_popup import WarnPopup
 from napari.layers import (
     Image,
@@ -40,8 +44,11 @@ from napari.utils.action_manager import action_manager
 from napari.utils.interactions import Shortcut
 from napari.utils.translations import trans
 
+if TYPE_CHECKING:
+    from app_model.types import KeyBinding
 
-class AppShortcutEditor(QWidget):
+
+class AppModelShortcutEditor(QWidget):
     """Widget to edit application-level keybindings for napari."""
 
     valueChanged = Signal(dict)
@@ -53,9 +60,128 @@ class AppShortcutEditor(QWidget):
         value: dict | None = None,
     ) -> None:
         super().__init__(parent=parent)
+        self._value: dict[str, dict[str, list[KeyBinding]]] = {}
+        self._row_id: dict[int, str] = {}
+        self._skip = False
 
-    def setValue(self, state):
+        # widgets
+        self.group_select = QComboBox(self)
+        self.group_select.currentTextChanged.connect(self._group_selected)
+        self._label = QLabel(self)
+        self._table = QTableWidget(self)
+        self._table.cellChanged.connect(self._set_keybinding)
+        self._table.setSelectionBehavior(
+            QAbstractItemView.SelectionBehavior.SelectItems
+        )
+        self._table.setSelectionMode(
+            QAbstractItemView.SelectionMode.SingleSelection
+        )
+        self._table.setShowGrid(False)
+        self._table.verticalHeader().setVisible(False)
+        self._restore_button = QPushButton(trans._('Restore All Keybindings'))
+
+        self._label.setText(trans._('Group'))
+        self._restore_button.clicked.connect(self.restore_defaults)
+
+        # layout
+        hlayout1 = QHBoxLayout()
+        hlayout1.addWidget(self._label)
+        hlayout1.addWidget(self.group_select)
+        hlayout1.setContentsMargins(0, 0, 0, 0)
+        hlayout1.setSpacing(20)
+        hlayout1.addStretch(0)
+
+        hlayout2 = QHBoxLayout()
+        hlayout2.addLayout(hlayout1)
+        hlayout2.addWidget(self._restore_button)
+
+        layout = QVBoxLayout()
+        layout.addLayout(hlayout2)
+        layout.addWidget(self._table)
+        layout.addWidget(
+            QLabel(
+                trans._(
+                    'To edit, double-click the keybinding. To unbind a shortcut, use Backspace or Delete. To set Backspace or Delete, first unbind.'
+                )
+            )
+        )
+
+        self.setLayout(layout)
+        self.setValue(value if value is not None else {})
+
+    def setValue(self, state: dict[str, dict[str, list[KeyBinding]]]):
+        selected_group = self.group_select.currentText()
+        groups = list(state)
+        self.group_select.clear()
+        self.group_select.addItems(groups)
+        self._value = state
+
+        if selected_group in groups:
+            self.group_select.setCurrentText(selected_group)
+        elif len(groups) > 0:
+            self.group_select.setCurrentIndex(0)
+            self._group_selected()
+
+    def _set_keybinding(self, row, col):
+        """Checks the new keybinding to determine if it can be set.
+
+        Parameters
+        ----------
+        row : int
+            Row in keybindings table that is being edited.
+        col : int
+            Column being edited (shortcut column).
+        """
+        if self._skip:
+            return
+
+        # col_count = self._table.columnCount()
+        # shortcuts_list = [self._table]
+
+        self.valueChanged.emit(self._value[self.group_select.currentText()])
+
+    def restore_defaults(self) -> None:
         pass
+
+    @property
+    def value(self) -> dict[str, dict[str, list[KeyBinding]]]:
+        return self._value
+
+    def _group_selected(self) -> None:
+        app = get_app_model()
+        group = self.group_select.currentText()
+        actions = self.value.get(group, {})
+        self._row_id = {}
+        self._table.clearContents()
+        header_strs = [trans._('Action'), trans._('Keybinding')]
+        if not actions:
+            self._table.setRowCount(1)
+            self._table.setColumnCount(len(header_strs))
+            self._table.setHorizontalHeaderLabels(header_strs)
+            return
+
+        short_count_max = max(len(x) for x in actions.values())
+        header_strs.extend(
+            [trans._('Alternative Keybinding')] * short_count_max
+        )
+        self._table.setRowCount(len(actions))
+        self._table.setColumnCount(len(header_strs))
+        self._table.setHorizontalHeaderLabels(header_strs)
+        self._table.setColumnWidth(0, 370)
+        for i in range(1, short_count_max + 2):
+            self._table.setItemDelegateForColumn(
+                i, ShortcutDelegate(self._table)
+            )
+            self._table.setColumnWidth(i, 165)
+
+        for row, (action_id, keybinds) in enumerate(actions.items()):
+            action = app.commands[action_id]
+            self._row_id[row] = action_id
+            item = QTableWidgetItem(action.title)
+            self._table.setItem(row, 0, item)
+            for col, keybind in enumerate(keybinds, start=1):
+                item = QTableWidgetItem(str(keybind))
+                self._table.setItem(row, col, item)
 
 
 class ShortcutEditor(QWidget):
