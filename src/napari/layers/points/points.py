@@ -2043,7 +2043,11 @@ class Points(Layer):
                 selected_not_removed = self.selected_data - set(indices)
                 if selected_not_removed:
                     indices_array = np.array(indices)
-                    remaining_selected = np.array(list(selected_not_removed))
+                    remaining_selected = np.fromiter(
+                        selected_not_removed,
+                        dtype=np.intp,
+                        count=len(selected_not_removed),
+                    )
                     shifts = np.searchsorted(indices_array, remaining_selected)
                     new_selected_indices = remaining_selected - shifts
                     self.selected_data = set(new_selected_indices)
