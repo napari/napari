@@ -1,6 +1,6 @@
 """
 This script is called in pre-commit to ensure that certain extras in
-# pyproject.toml are kept in sync with dependency-groups.
+pyproject.toml are kept in sync with dependency-groups.
 
 It is to provide a transition period while we migrate from extras to
 dependency-groups, and can be removed once the migration is complete.
