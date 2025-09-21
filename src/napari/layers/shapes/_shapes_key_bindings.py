@@ -174,9 +174,8 @@ def select_all_shapes(layer: Shapes) -> None:
         layer.selected_data = layer.selected_data | new_selected
         show_info(
             trans._(
-                'Selected {n_new} shapes in this slice. ({n_total} selected)',
+                'Selected {n_new} shapes in this slice.',
                 n_new=len(new_selected),
-                n_total=len(layer.selected_data),
                 deferred=True,
             )
         )
