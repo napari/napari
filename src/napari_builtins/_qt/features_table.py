@@ -620,7 +620,7 @@ class FeaturesTable(QWidget):
         # Replace data and configure immutable columns
         model = self.table.model().sourceModel()
         model.replace_data(df)
-        model.set_immutable_columns('Layer' if 'Layer' in df.columns else [])
+        model.set_immutable_columns(['Layer'] if 'Layer' in df.columns else [])
 
         self.table.resizeColumnsToContents()
         self._update_table_selected_cells()
