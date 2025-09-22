@@ -159,7 +159,6 @@ class QtLabelControl(QtWidgetControlsBase):
 
     def change_selection(self, value: int) -> None:
         """Change currently selected label.
-
         Parameters
         ----------
         value : int

@@ -1,4 +1,3 @@
-from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QCheckBox,
     QWidget,
@@ -8,8 +7,9 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,
 )
-from napari._qt.utils import attr_to_settr
+from napari._qt.utils import attr_to_settr, checked_to_bool
 from napari.layers import Labels
+from napari.utils.events.event_utils import connect_setattr
 from napari.utils.translations import trans
 
 
@@ -50,22 +50,16 @@ class QtDisplaySelectedLabelCheckBoxControl(QtWidgetControlsBase):
                 'setChecked',
             )
         )
+        connect_setattr(
+            selected_color_checkbox.stateChanged,
+            layer,
+            'show_selected_label',
+            convert_fun=checked_to_bool,
+        )
         self.selected_color_checkbox = selected_color_checkbox
 
         self.selected_color_checkbox_label = QtWrappedLabel(
             trans._('show\nselected:')
-        )
-
-    def toggle_selected_mode(self, state: int) -> None:
-        """Toggle display of selected label only.
-
-        Parameters
-        ----------
-        state : int
-            Integer value of Qt.CheckState that indicates the check state of selected_color_checkbox
-        """
-        self._layer.show_selected_label = (
-            Qt.CheckState(state) == Qt.CheckState.Checked
         )
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:

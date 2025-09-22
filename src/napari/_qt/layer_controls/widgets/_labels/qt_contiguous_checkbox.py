@@ -1,4 +1,3 @@
-from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QCheckBox,
     QWidget,
@@ -8,8 +7,9 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,
 )
-from napari._qt.utils import attr_to_settr
+from napari._qt.utils import attr_to_settr, checked_to_bool
 from napari.layers import Labels
+from napari.utils.events.event_utils import connect_setattr
 from napari.utils.translations import trans
 
 
@@ -47,19 +47,15 @@ class QtContiguousCheckBoxControl(QtWidgetControlsBase):
                 'setChecked',
             )
         )
+        connect_setattr(
+            contig_cb.stateChanged,
+            layer,
+            'contiguous',
+            convert_fun=checked_to_bool,
+        )
         self.contiguous_checkbox = contig_cb
 
         self.contiguous_checkbox_label = QtWrappedLabel(trans._('contiguous:'))
-
-    def change_contig(self, state: int) -> None:
-        """Toggle contiguous state of label layer.
-
-        Parameters
-        ----------
-        state : int
-            Integer value of Qt.CheckState that indicates the check state of contiguous_checkbox
-        """
-        self._layer.contiguous = Qt.CheckState(state) == Qt.CheckState.Checked
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
         return [(self.contiguous_checkbox_label, self.contiguous_checkbox)]

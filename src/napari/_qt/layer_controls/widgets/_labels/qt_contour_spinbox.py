@@ -61,7 +61,6 @@ class QtContourSpinBoxControl(QtWidgetControlsBase):
 
     def change_contour(self, value: int) -> None:
         """Change contour thickness.
-
         Parameters
         ----------
         value : int
