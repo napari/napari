@@ -6,10 +6,9 @@ on:
       - main
   schedule:
     - cron: "6 6 * * *" # every morning
-  pull_request:
 
-# permissions:
-#   pull-requests: write
+permissions:
+  pull-requests: write
 
 jobs:
   remove_label:
@@ -29,7 +28,7 @@ jobs:
               sort: 'updated',
               direction: 'desc',
             });
-            const labeledPulls = pulls.data.filter(pr => 
+            const labeledPulls = pulls.data.filter(pr =>
               pr.labels.some(label => label.name === 'ready to merge')
             );
             if (labeledPulls.length > 0) {
@@ -37,13 +36,13 @@ jobs:
               for (const pr of labeledPulls) {
                 console.log(`- #${pr.number}: ${pr.title}`);
                 try {
-                  /* await github.rest.issues.removeLabel({
+                  await github.rest.issues.removeLabel({
                     owner,
                     repo,
                     issue_number: pr.number,
                     name: 'ready to merge'
-                  }); */
-                  console.log(`  > Would remove 'ready to merge' label from #${pr.number}`);
+                  });
+                  console.log(`  > Removed 'ready to merge' label from #${pr.number}`);
                 } catch (error) {
                   console.error(`  > Failed to remove label from #${pr.number}: ${error.message}`);
                 }
