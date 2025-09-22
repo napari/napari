@@ -404,22 +404,22 @@ class PandasView(QTableView):
         model = proxy_model.sourceModel()
         map_func = proxy_model.mapToSource
 
-        # determine selected block (excluding index and Layer columns if present)
+        # determine selected block (excluding immutable columns)
         model = self.model().sourceModel()
 
-        has_layer_col = getattr(model, '_has_layer_column', False)
+        # Filter out immutable columns
         rows = sorted(
             {
                 idx.row()
                 for idx in selection
-                if (idx.column() >= 2 if has_layer_col else idx.column() >= 1)
+                if not model.is_column_immutable(idx.column())
             }
         )
         cols = sorted(
             {
                 idx.column()
                 for idx in selection
-                if (idx.column() >= 2 if has_layer_col else idx.column() >= 1)
+                if not model.is_column_immutable(idx.column())
             }
         )
 
@@ -428,7 +428,7 @@ class PandasView(QTableView):
 
         # convert proxy indices to actual row/column labels
         actual_rows = [map_func(proxy_model.index(r, 1)).row() for r in rows]
-        actual_cols = [c - 1 for c in cols]  # adjust for index
+        actual_cols = [c - 1 for c in cols]  # adjust for index, if pandas
 
         sub_df = model.df.iloc[actual_rows, actual_cols]
 
@@ -443,16 +443,12 @@ class PandasView(QTableView):
 
         clipboard = QGuiApplication.clipboard().text()
         sel = self.selectedIndexes()
-        has_layer_col = getattr(model, '_has_layer_column', False)
-        # if index or layer_name column is in the selection, just get out
+        # if any immutable column is in the selection, just get out
         if (
             not clipboard
             or not sel
             or not model.editable
-            or any(
-                s.column() == 0 or (has_layer_col and s.column() == 1)
-                for s in sel
-            )
+            or any(model.is_column_immutable(s.column()) for s in sel)
         ):
             return  # pragma: no cover
 
@@ -472,7 +468,7 @@ class PandasView(QTableView):
                 r = start_row + i
                 c = (
                     start_col + j - 1
-                )  # dataframe column index (offset for index)
+                )  # dataframe column index (offset for index) if pandas
                 if r >= df.shape[0] or c >= df.shape[1]:
                     continue
                 val = data[i][j]
