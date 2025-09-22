@@ -2,7 +2,6 @@ from collections.abc import Callable, Generator
 
 import numpy as np
 from app_model.types import KeyCode
-from psygnal.containers import Selection
 
 from napari.layers.shapes._shapes_constants import Box, Mode
 from napari.layers.shapes._shapes_mouse_bindings import (
@@ -165,7 +164,7 @@ def paste_shape(layer: Shapes) -> None:
 def select_all_shapes(layer: Shapes) -> None:
     """Select/Deselect all shapes in the current view slice."""
     if layer._mode in (Mode.DIRECT, Mode.SELECT):
-        new_selected = Selection(np.nonzero(layer._data_view._displayed)[0])
+        new_selected = set(np.nonzero(layer._data_view._displayed)[0])
 
         if new_selected & layer.selected_data == new_selected:
             # If all visible shapes are already selected, deselect them
