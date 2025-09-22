@@ -38,7 +38,7 @@ jobs:
                     issue_number: issue.number,
                     name: 'ready to merge'
                   });
-                  console.log(`  > Would remove 'ready to merge' label from #${issue.number}`);
+                  console.log(`  > Removed 'ready to merge' label from #${issue.number}`);
                 } catch (error) {
                   console.error(`  > Failed to remove label from #${issue.number}: ${error.message}`);
                 }
