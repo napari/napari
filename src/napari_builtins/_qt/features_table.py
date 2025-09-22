@@ -792,6 +792,8 @@ class FeaturesTable(QWidget):
                 if model.is_column_immutable(col):
                     continue
                 col_name = df.columns[col - 1]
+                if col_name not in layer.features.columns:
+                    continue  # do not update features if column not present
                 layer.features.iloc[
                     layer_row_idx, layer.features.columns.get_loc(col_name)
                 ] = df.iloc[row, col - 1]
