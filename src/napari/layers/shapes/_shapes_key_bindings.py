@@ -169,10 +169,10 @@ def select_all_shapes(layer: Shapes) -> None:
 
         if new_selected & layer.selected_data == new_selected:
             # If all visible shapes are already selected, deselect them
-            layer.selected_data = layer.selected_data - new_selected
+            layer.selected_data = list(layer.selected_data - new_selected)
         else:
             # If not all visible shapes are selected, select them
-            layer.selected_data = layer.selected_data | new_selected
+            layer.selected_data = list(layer.selected_data | new_selected)
         layer._set_highlight()
 
 
