@@ -615,9 +615,13 @@ class FeaturesTable(QWidget):
         """Update the table with the features of the currently selected layers."""
         # TODO: optimize for smaller changes?
         join_type = 'inner' if self.join_toggle.isChecked() else 'outer'
-        self.table.model().sourceModel().replace_data(
-            self._build_multilayer_features_table(join=join_type)
-        )
+        df = self._build_multilayer_features_table(join=join_type)
+
+        # Replace data and configure immutable columns
+        model = self.table.model().sourceModel()
+        model.replace_data(df)
+        model.set_immutable_columns('Layer' if 'Layer' in df.columns else [])
+
         self.table.resizeColumnsToContents()
         self._update_table_selected_cells()
 
@@ -629,17 +633,23 @@ class FeaturesTable(QWidget):
         for layer in self._selected_layers:
             # All layers in self._selected_layers are guaranteed to have features
             if layer.features is not None:
-                if 'Layer' not in layer.features.columns:
-                    layer.features['Layer'] = layer.name
-                    layer.features['Layer'] = layer.features['Layer'].astype(
-                        'category'
-                    )
-                    # Move 'Layer' to the first column
-                    cols = list(layer.features.columns)
-                    cols.remove('Layer')
-                    cols.insert(0, 'Layer')
-                    layer.features = layer.features[cols]
-                df_list.append(layer.features)
+                if isinstance(layer.features, pd.DataFrame):
+                    if 'Layer' not in layer.features.columns:
+                        layer.features['Layer'] = layer.name
+                        layer.features['Layer'] = layer.features[
+                            'Layer'
+                        ].astype('category')
+                        # Move 'Layer' to the first column
+                        cols = list(layer.features.columns)
+                        cols.remove('Layer')
+                        cols.insert(0, 'Layer')
+                        layer.features = layer.features[cols]
+                    df_list.append(layer.features)
+                else:
+                    # TODO: Handle non-pandas dataframe libraries here
+                    pass
+
+        # Combine all dataframes
         df = pd.concat(df_list, ignore_index=True, join=join)
         return df
 
@@ -713,13 +723,20 @@ class FeaturesTable(QWidget):
 
         indices = []
         for layer in self._selected_layers:
+            matching_rows = df[df['Layer'] == layer.name]
+
+            # Get indices of rows matching this layer in the combined dataframe
+            if isinstance(df, pd.DataFrame):
+                layer_data_row_index = matching_rows.index
+            else:
+                # TODO: Handle non-pandas dataframes here (no index attribute)
+                continue
+
             if hasattr(layer, 'selected_label'):
                 sel = layer.selected_label
-                layer_data_row_index = df[df['Layer'] == layer.name].index
                 indices += [[layer_data_row_index[sel]]]
             elif hasattr(layer, 'selected_data'):
                 sel = layer.selected_data
-                layer_data_row_index = df[df['Layer'] == layer.name].index
                 indices += [layer_data_row_index[list(sel)]]
             else:
                 continue
@@ -761,11 +778,18 @@ class FeaturesTable(QWidget):
             layer = next(
                 ly for ly in self._selected_layers if ly.name == layer_name
             )
-            layer_rows = df[df['Layer'] == layer_name].index
-            layer_row_idx = list(layer_rows).index(row)
-            # Update the layer features DataFrame (except if index or layer columns)
+            # Get indices of rows matching this layer name
+            matching_rows = df[df['Layer'] == layer_name]
+            # For pandas DataFrame, we can use .index
+            if isinstance(df, pd.DataFrame):
+                layer_rows = matching_rows.index
+                layer_row_idx = list(layer_rows).index(row)
+            else:
+                # TODO: Handle non-pandas dataframes here (no index attribute)
+                continue
+            # Update the layer features DataFrame (except if immutable columns)
             for col in range(topLeft.column(), bottomRight.column() + 1):
-                if col == 0 or (model._has_layer_column and col == 1):
+                if model.is_column_immutable(col):
                     continue
                 col_name = df.columns[col - 1]
                 layer.features.iloc[
