@@ -6,11 +6,13 @@ from itertools import cycle
 from typing import (
     Any,
     ClassVar,
+    Sequence
 )
 
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
+from psygnal.containers import Selection
 from vispy.color import get_color_names
 
 from napari.layers.base import Layer, no_op
@@ -553,7 +555,7 @@ class Shapes(Layer):
         self._value = (None, None)
         self._value_stored = (None, None)
         self._moving_value: tuple[int | None, int | None] = (None, None)
-        self._selected_data = set()
+        self._selected_data: Selection[int] = Selection()
         self._selected_data_stored = set()
         self._selected_data_history = set()
         self._selected_box = None
@@ -1259,14 +1261,15 @@ class Shapes(Layer):
             self._data_view.update_z_index(i, z_idx)
 
     @property
-    def selected_data(self):
+    def selected_data(self) -> Selection[int]:
         """set: set of currently selected shapes."""
         return self._selected_data
 
     @selected_data.setter
-    def selected_data(self, selected_data):
-        self._selected_data = set(selected_data)
-        self._selected_box = self.interaction_box(self._selected_data)
+    def selected_data(self, selected_data: Sequence[int]) -> None:
+        self._selected_data.clear()
+        self._selected_data.update(Selection(selected_data))
+        self._selected_box = self.interaction_box(list(self._selected_data))
 
         # Update properties based on selected shapes
         if len(selected_data) > 0:
@@ -2437,7 +2440,7 @@ class Shapes(Layer):
                 self.selected_data = set()
             self._data_view.slice_key = slice_key
 
-    def interaction_box(self, index: int | Iterable[int]) -> BoxArray | None:
+    def interaction_box(self, index: int | Iterable[int] | Selection) -> BoxArray | None:
         """Create the interaction box around a shape or list of shapes.
         If a single index is passed then the bounding box will be inherited
         from that shapes interaction box. If list of indices is passed it will
@@ -2445,7 +2448,7 @@ class Shapes(Layer):
 
         Parameters
         ----------
-        index : int | list
+        index : int | list | Selection
             Index of a single shape, or a list of shapes around which to
             construct the interaction box
 
@@ -2458,6 +2461,9 @@ class Shapes(Layer):
             the box, and the last point is the location of the rotation handle
             that can be used to rotate the box
         """
+        if isinstance(index, Selection):
+            index = list(index)
+
         if isinstance(index, list | np.ndarray | set):
             if len(index) == 0:
                 box = None
@@ -2646,7 +2652,7 @@ class Shapes(Layer):
             and np.array_equal(self._drag_box, self._drag_box_stored)
         ) and not force:
             return
-        self._selected_data_stored = copy(self.selected_data)
+        self._selected_data_stored = Selection(self._selected_data)
         self._value_stored = copy(self._value)
         self._drag_box_stored = copy(self._drag_box)
         self.events.highlight()

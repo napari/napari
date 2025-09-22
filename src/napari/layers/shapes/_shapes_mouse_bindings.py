@@ -16,6 +16,7 @@ from napari.layers.shapes._shapes_models import (
 )
 from napari.layers.shapes._shapes_utils import point_to_lines
 from napari.settings import get_settings
+from psygnal.containers import Selection
 
 if TYPE_CHECKING:
     from collections.abc import Generator
@@ -314,7 +315,7 @@ def initiate_polygon_draw(
     layer._is_creating = True
     data = np.array([coordinates, coordinates])
     layer.add(data, shape_type='path', gui=True)
-    layer.selected_data = {layer.nshapes - 1}
+    layer.selected_data = Selection({layer.nshapes - 1})
     layer._value = (layer.nshapes - 1, 1)
     layer._moving_value = copy(layer._value)
     layer._set_highlight()
