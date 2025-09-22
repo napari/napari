@@ -2437,7 +2437,7 @@ class Shapes(Layer):
             self._data_view.slice_key = slice_key
 
     def interaction_box(
-        self, index: int | Iterable[int] | Selection
+        self, index: int | Iterable[int]
     ) -> BoxArray | None:
         """Create the interaction box around a shape or list of shapes.
         If a single index is passed then the bounding box will be inherited
@@ -2446,7 +2446,7 @@ class Shapes(Layer):
 
         Parameters
         ----------
-        index : int | list | Selection
+        index : int or iterable of int
             Index of a single shape, list of shapes or Selection around which to
             construct the interaction box
 
@@ -2459,10 +2459,7 @@ class Shapes(Layer):
             the box, and the last point is the location of the rotation handle
             that can be used to rotate the box
         """
-        if isinstance(index, Selection):
-            index = list(index)
-
-        if isinstance(index, list | np.ndarray | set):
+        if isinstance(index, Iterable):
             if len(index) == 0:
                 box = None
             elif len(index) == 1:
