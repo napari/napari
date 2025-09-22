@@ -2446,7 +2446,7 @@ class Shapes(Layer):
 
         Parameters
         ----------
-        index : int | list | Selection
+        index : int or iterable of int
             Index of a single shape, list of shapes or Selection around which to
             construct the interaction box
 
