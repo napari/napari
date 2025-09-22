@@ -41,7 +41,6 @@ class QtDisplaySelectedLabelCheckBoxControl(QtWidgetControlsBase):
             trans._('Display only selected label')
         )
         selected_color_checkbox.setChecked(self._layer.show_selected_label)
-        selected_color_checkbox.stateChanged.connect(self.toggle_selected_mode)
         self._callbacks.append(
             attr_to_settr(
                 self._layer,
