@@ -126,7 +126,7 @@ jobs:
             backend: pyqt6
             coverage: cov
           - python: "3.13"
-            platform: macos-13
+            platform: macos-15-intel
             backend: pyqt5
             coverage: no_cov
             timeout-minutes: 60
