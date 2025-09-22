@@ -170,6 +170,9 @@ testing = [
 testing_extra = [
     "torch>=1.10.2",
 ]
+reload = [
+    "qtreload",
+]
 # needed for gallery examples
 gallery = [
     "glasbey",
@@ -223,6 +226,7 @@ dev = [
     "pydantic",
     "tox",
     "tox-min-req",
+    "napari[reload]",
     "napari[testing]",
 ]
 build = [

@@ -16,7 +16,11 @@ from typing import Any
 
 from napari import Viewer
 from napari.errors import ReaderPluginError
-from napari.utils.misc import maybe_patch_conda_exe
+from napari.utils.misc import (
+    is_installed,
+    maybe_patch_conda_exe,
+    validate_dev_modules,
+)
 from napari.utils.translations import trans
 
 
@@ -197,6 +201,22 @@ def parse_sys_argv():
         type=Path,
         help='use specific path to store and load settings.',
     )
+    # Allow --dev to activate qtreload development mode only if qtreload is installed.
+    # This is useful for napari developers to speed up development and prevent constant restarts.
+    # This is only available if qtreload is installed.
+    if is_installed('qtreload'):
+        parser.add_argument(
+            '--dev',
+            action='store_true',
+            help='activate qtreload development mode (if qtreload is installed).',
+        )
+        parser.add_argument(
+            '--dev_module',
+            action='append',
+            nargs='*',
+            default=[],
+            help='concatenate multiple modules that should be watched alongside `napari` and `napari_builtins`.',
+        )
 
     args, unknown = parser.parse_known_args()
     # this is a hack to allow using "=" as a key=value separator while also
@@ -224,6 +244,16 @@ def _run() -> None:
         format='%(asctime)s : %(levelname)s : %(threadName)s : %(message)s',
         datefmt='%H:%M:%S',
     )
+
+    # check whether Dev mode was requested
+    if args.dev:
+        os.environ['NAPARI_DEV'] = '1'
+    # check if additional dev modules were requested
+    if args.dev_module:
+        dev_module = list(args.dev_module)
+        # check whether the dev modules are valid
+        validate_dev_modules(dev_module)
+        os.environ['NAPARI_DEV_MODULES'] = ','.join(dev_module)
 
     if args.reset:
         if args.settings_path:

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import contextlib
 import logging
+import os
 import sys
 import traceback
 import warnings
@@ -52,7 +53,7 @@ from napari.utils.history import (
 )
 from napari.utils.io import imsave
 from napari.utils.key_bindings import KeymapHandler
-from napari.utils.misc import in_ipython, in_jupyter
+from napari.utils.misc import in_ipython, in_jupyter, is_installed
 from napari.utils.naming import CallerFrame
 from napari.utils.notifications import show_info
 from napari.utils.translations import trans
@@ -204,6 +205,9 @@ class QtViewer(QSplitter):
         self._dockLayerControls = None
         self._dockConsole = None
         self._dockPerformance = None
+        # QtReload widget for development purposes.
+        self._qdev = None
+        self._dockQDev = None
 
         # This dictionary holds the corresponding vispy visual for each layer
         self.canvas = canvas_class(
@@ -370,9 +374,17 @@ class QtViewer(QSplitter):
 
     @property
     def dockPerformance(self) -> QtViewerDockWidget:
+        """Dock widget for the performance metrics."""
         if self._dockPerformance is None:
             self._dockPerformance = self._create_performance_dock_widget()
         return self._dockPerformance
+
+    @property
+    def dockQDev(self) -> QtViewerDockWidget:
+        """Dock widget for the development tools."""
+        if self._dockQDev is None:
+            self._create_dev_tools()
+        return self._dockQDev
 
     @property
     def layer_to_visual(self):
@@ -410,6 +422,35 @@ class QtViewer(QSplitter):
                 area='bottom',
             )
         return None
+
+    def _create_dev_tools(self) -> None:
+        """Setup development tools."""
+        try:
+            if os.getenv('NAPARI_DEV', '0') == '1' and self._dockQDev is None:
+                from napari._qt.widgets.qt_dev import qdev
+
+                if not is_installed('qtreload'):
+                    logging.getLogger('napari').exception(
+                        trans._(
+                            'qtreload is not installed - please install using "pip install napari[reload]"'
+                        )
+                    )
+                    return
+
+                logging.getLogger('napari').setLevel(logging.DEBUG)
+                self._qdev = qdev()
+                self._dockQDev = QtViewerDockWidget(
+                    self,
+                    self._qdev,
+                    name=trans._('hot reload'),
+                    area='bottom',
+                    allowed_areas=['left', 'right', 'bottom'],
+                    object_name='QDev',
+                )
+        except Exception:
+            logging.getLogger('napari').exception(
+                trans._('Error setting up development tools.')
+            )
 
     def _weakref_if_possible(self, obj):
         """Create a weakref to obj.
@@ -1315,6 +1356,9 @@ class QtViewer(QSplitter):
         if self._console is not None:
             self.console.close()
         self.dockConsole.deleteLater()
+        if self._qdev is not None:
+            self._dockQDev.deleteLater()
+            self._qdev.close()
         event.accept()
 
     def export_rois(
