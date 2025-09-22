@@ -459,3 +459,7 @@ def get_color(
                 / 255
             )
     return new_color
+
+
+def checked_to_bool(value: Qt.CheckState) -> bool:
+    return Qt.CheckState(value) == Qt.CheckState.Checked
