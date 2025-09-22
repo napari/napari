@@ -6,9 +6,10 @@ on:
       - main
   schedule:
     - cron: "6 6 * * *" # every morning
+  pull_request:
 
-permissions:
-  pull-requests: write
+# permissions:
+#   pull-requests: write
 
 jobs:
   remove_label:
@@ -19,34 +20,30 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const {owner, repo} = context.repo;
-            const pulls = await github.rest.pulls.list({
-              owner,
-              repo,
+            const { data: issues } = await github.rest.issues.listForRepo({
+              ...context.repo,
               state: 'closed',
               per_page: 100,
               sort: 'updated',
               direction: 'desc',
+              labels: 'ready to merge',
             });
-            const labeledPulls = pulls.data.filter(pr =>
-              pr.labels.some(label => label.name === 'ready to merge')
-            );
-            if (labeledPulls.length > 0) {
-              console.log('Found the following closed PRs with the "ready to merge" label:');
-              for (const pr of labeledPulls) {
-                console.log(`- #${pr.number}: ${pr.title}`);
+            if (issues.length > 0) {
+              console.log('Found the following closed items with the "ready to merge" label:');
+              for (const issue of issues) {
+                console.log(`- #${issue.number}: ${issue.title}`);
                 try {
-                  await github.rest.issues.removeLabel({
+                  /* await github.rest.issues.removeLabel({
                     owner,
                     repo,
-                    issue_number: pr.number,
+                    issue_number: issue.number,
                     name: 'ready to merge'
-                  });
-                  console.log(`  > Removed 'ready to merge' label from #${pr.number}`);
+                  }); */
+                  console.log(`  > Would remove 'ready to merge' label from #${issue.number}`);
                 } catch (error) {
-                  console.error(`  > Failed to remove label from #${pr.number}: ${error.message}`);
+                  console.error(`  > Failed to remove label from #${issue.number}: ${error.message}`);
                 }
               }
             } else {
-              console.log('No closed PRs found with the "ready to merge" label.');
+              console.log('No closed items found with the "ready to merge" label.');
             }
