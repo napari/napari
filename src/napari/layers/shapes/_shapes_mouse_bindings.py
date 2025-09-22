@@ -4,6 +4,7 @@ from copy import copy
 from typing import TYPE_CHECKING
 
 import numpy as np
+from psygnal.containers import Selection
 
 from napari.layers.base._base_constants import ActionType
 from napari.layers.shapes._shapes_constants import Box, Mode
@@ -16,7 +17,6 @@ from napari.layers.shapes._shapes_models import (
 )
 from napari.layers.shapes._shapes_utils import point_to_lines
 from napari.settings import get_settings
-from psygnal.containers import Selection
 
 if TYPE_CHECKING:
     from collections.abc import Generator
