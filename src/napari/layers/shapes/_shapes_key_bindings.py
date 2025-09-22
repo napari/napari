@@ -13,6 +13,7 @@ from napari.layers.utils.layer_utils import (
     register_layer_attr_action,
 )
 from napari.utils.translations import trans
+from psygnal.containers import Selection
 
 
 @Shapes.bind_key(KeyCode.Shift, overwrite=True)
@@ -164,7 +165,7 @@ def paste_shape(layer: Shapes) -> None:
 def select_all_shapes(layer: Shapes) -> None:
     """Select/Deselect all shapes in the current view slice."""
     if layer._mode in (Mode.DIRECT, Mode.SELECT):
-        new_selected = set(np.nonzero(layer._data_view._displayed)[0])
+        new_selected = Selection(np.nonzero(layer._data_view._displayed)[0])
 
         if new_selected & layer.selected_data == new_selected:
             # If all visible shapes are already selected, deselect them
