@@ -1264,7 +1264,7 @@ class Shapes(Layer):
     @selected_data.setter
     def selected_data(self, selected_data: Sequence[int]) -> None:
         self._selected_data.clear()
-        self._selected_data.update(Selection(selected_data))
+        self._selected_data.update(selected_data)
         self._selected_box = self.interaction_box(list(self._selected_data))
 
         # Update properties based on selected shapes
@@ -2436,9 +2436,7 @@ class Shapes(Layer):
                 self.selected_data = set()
             self._data_view.slice_key = slice_key
 
-    def interaction_box(
-        self, index: int | Iterable[int]
-    ) -> BoxArray | None:
+    def interaction_box(self, index: int | Iterable[int]) -> BoxArray | None:
         """Create the interaction box around a shape or list of shapes.
         If a single index is passed then the bounding box will be inherited
         from that shapes interaction box. If list of indices is passed it will
