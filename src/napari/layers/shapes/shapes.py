@@ -1262,7 +1262,7 @@ class Shapes(Layer):
 
     @property
     def selected_data(self) -> Selection[int]:
-        """set: set of currently selected shapes."""
+        """Selection: set of currently selected shapes."""
         return self._selected_data
 
     @selected_data.setter
@@ -2449,7 +2449,7 @@ class Shapes(Layer):
         Parameters
         ----------
         index : int | list | Selection
-            Index of a single shape, or a list of shapes around which to
+            Index of a single shape, list of shapes or Selection around which to
             construct the interaction box
 
         Returns
