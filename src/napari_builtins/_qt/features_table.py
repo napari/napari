@@ -50,16 +50,32 @@ class PandasModel(QAbstractTableModel):
     It's designed to be used in conjunction with the BoolFriendlyProxyModel
     in order to properly sort, and with the DelegateCategorical in order to
     provide comboboxes for categoricals.
+
+    This model supports the concept of immutable columns identified by name, not position.
+    For pandas DataFrames, column 0 (representing the DataFrame index) is automatically
+    treated as immutable.
+
+    Parameters
+    ----------
+    df : pd.DataFrame, optional
+        The pandas DataFrame to wrap.
+    immutable_columns : list[str], optional
+        List of column names to be treated as immutable (read-only).
+    parent : QObject, optional
+        Parent Qt object.
     """
 
-    def __init__(self, df: pd.DataFrame | None = None, parent=None):
+    def __init__(
+        self,
+        df: pd.DataFrame | None = None,
+        immutable_columns: list[str] | None = None,
+        parent=None,
+    ):
         super().__init__(parent)
         self.df = df if df is not None else pd.DataFrame()
         self.editable = False
-        # Detect if the first column is 'Layer' for multi-layer support
-        self._has_layer_column = (
-            self.df.shape[1] > 0 and self.df.columns[0] == 'Layer'
-        )
+        self._immutable_columns = set(immutable_columns or [])
+        self._add_index_to_immutable()
 
     # model methods necessary for qt
     def rowCount(self, parent=None):
@@ -75,7 +91,8 @@ class PandasModel(QAbstractTableModel):
         row = index.row()
         col = index.column()
 
-        if col == 0:  # index
+        # Special handling for pandas DataFrame index column
+        if col == 0 and isinstance(self.df, pd.DataFrame):
             if role in {Qt.ItemDataRole.DisplayRole, Qt.ItemDataRole.EditRole}:
                 return str(self.df.index[row])
             return None
@@ -114,21 +131,26 @@ class PandasModel(QAbstractTableModel):
     ) -> Any:
         if role != Qt.ItemDataRole.DisplayRole:
             return None
-        if orientation == Qt.Orientation.Horizontal:
-            # special case for index
-            if section == 0:
-                return self.df.index.name or 'Index'
-            return self.df.columns[section - 1]
-        return self.df.index[section]
+
+        if isinstance(self.df, pd.DataFrame):
+            if orientation == Qt.Orientation.Horizontal:
+                # Special case for index column (first column)
+                if section == 0:
+                    return self.df.index.name or 'Index'
+                return self.df.columns[section - 1]
+            # Vertical header
+            return self.df.index[section]
+        # TODO: For non-pandas dataframes, implement appropriate header handling
+        return str(section)
 
     def flags(self, index: QModelIndex) -> Qt.ItemFlag:
         if not index.isValid():
             return Qt.ItemFlag.ItemIsEnabled
 
         col = index.column()
-        # index is always read-only; col 1 is also read-only if it's the 'Layer' column
+        # Check if this column is immutable
         flags = Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled
-        if col == 0 or (self._has_layer_column and col == 1):
+        if self.is_column_immutable(col):
             return flags
 
         dtype = self.df.dtypes.iat[col - 1]
@@ -149,8 +171,8 @@ class PandasModel(QAbstractTableModel):
             return False
 
         col = index.column()
-        # index is always read-only; col 1 is also read-only if it's the 'Layer' column
-        if col == 0 or (self._has_layer_column and col == 1):
+        # Check if this column is immutable
+        if self.is_column_immutable(col):
             return False
 
         row = index.row()
@@ -197,10 +219,66 @@ class PandasModel(QAbstractTableModel):
     def replace_data(self, df):
         with self.changing():
             self.df = df
-            # Update the flag if the new df has a 'Layer' column in col 0
-            self._has_layer_column = (
-                self.df.shape[1] > 0 and self.df.columns[0] == 'Layer'
-            )
+            self._add_index_to_immutable()
+
+    def set_immutable_columns(self, column_names: list[str]):
+        """Set columns that should be treated as immutable (read-only).
+
+        Parameters
+        ----------
+        column_names : list[str]
+            List of column names to mark as immutable. The index column (0)
+            is always immutable regardless of this setting.
+        """
+        self._immutable_columns = set(column_names)
+        self._add_index_to_immutable()
+
+    def get_immutable_columns(self) -> list[str]:
+        """Get the list of column names that are marked as immutable.
+
+        Returns
+        -------
+        list[str]
+            List of column names that are immutable (read-only).
+        """
+        return list(self._immutable_columns)
+
+    def _add_index_to_immutable(self):
+        """Add the index name (or 'Index') to the immutable columns if a pandas DataFrame."""
+        if isinstance(self.df, pd.DataFrame):
+            if self.df.index.name is not None:
+                self._immutable_columns.add(self.df.index.name)
+            else:
+                self._immutable_columns.add('Index')
+
+    def is_column_immutable(self, col_idx: int) -> bool:
+        """Check if a column is immutable based on its index.
+
+        For pandas DataFrames, column 0 (index) is automatically immutable.
+        For all dataframe types, columns with names in self._immutable_columns
+        are treated as immutable.
+
+        Parameters
+        ----------
+        col_idx : int
+            Column index to check
+
+        Returns
+        -------
+        bool
+            True if the column is immutable, False otherwise
+        """
+        # For pandas DataFrames, column 0 represents the index which is immutable
+        # For other dataframe libraries, rely solely on immutable_columns
+        if col_idx == 0 and isinstance(self.df, pd.DataFrame):
+            return True
+
+        # Check if this column name is in the immutable set
+        if col_idx - 1 < len(self.df.columns):
+            col_name = self.df.columns[col_idx - 1]
+            return col_name in self._immutable_columns
+
+        return False
 
 
 class DelegateCategorical(QStyledItemDelegate):
