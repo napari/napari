@@ -2437,7 +2437,7 @@ class Shapes(Layer):
             self._data_view.slice_key = slice_key
 
     def interaction_box(
-        self, index: int | Iterable[int] | Selection
+        self, index: int | Iterable[int]
     ) -> BoxArray | None:
         """Create the interaction box around a shape or list of shapes.
         If a single index is passed then the bounding box will be inherited
