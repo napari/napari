@@ -33,7 +33,7 @@ assignees: ''
 - [ ] Communicate in Zulip release thread that pre-release is approaching.
 - [ ] Create a draft of release notes and make PR to `napari/docs`.
   - [ ] Merge release notes to `napari/docs`
-- [ ] Tag pre-release with release notes file and push to `napari/napari`
+- [ ] Tag pre-release with release notes file and push to `napari/napari`. [See docs for details.](https://napari.org/dev/developers/coredev/release.html#tagging-the-new-release-candidate)
 - [ ] Announce release candidate on Zulip in Release (and General, for meso or larger releases) and [forum.image.sc](https://forum.image.sc/announcements)
 - [ ] Check for proper deployment
   - [ ] [PyPI](https://pypi.org/project/napari/#history)
@@ -50,8 +50,8 @@ assignees: ''
 ## Create Stable Release
 
 - [ ] Do a final build, push, and merge of release notes to `napari/docs`.
-- [ ] Ensure `napari/docs` successfully deploys
-- [ ] Checkout `napari/napari:main` and tag with release notes file.
+- [ ] Ensure `napari/docs` successfully deploys.
+- [ ] Checkout `napari/napari:main` and tag with release notes file. [See docs for details.](https://napari.org/dev/developers/coredev/release.html#tagging-the-new-release-candidate)
 - [ ] Push created tag to `napari/napari`. This triggers the deployment actions.
 - [ ] Check that deployment is successful
   - [ ] `napari/docs` and `napari/napari.github.io`
