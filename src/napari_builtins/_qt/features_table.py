@@ -332,15 +332,19 @@ class DelegateCategorical(QStyledItemDelegate):
 
 
 class BoolFriendlyProxyModel(QSortFilterProxyModel):
-    """Sort proxy model that handles booleans correctly."""
+    """Sort proxy model that handles booleans correctly and sorts immutable columns as integers if possible."""
 
     def lessThan(self, left: Any, right: Any) -> bool:
         left_data = self.sourceModel().data(left, Qt.ItemDataRole.EditRole)
         right_data = self.sourceModel().data(right, Qt.ItemDataRole.EditRole)
 
-        # Compare Index column (0) as integers
-        if left.column() == 0 and right.column() == 0:
-            return int(left_data) < int(right_data)
+        # For immutable columns (like index), compare as integers if possible
+        source_model = self.sourceModel()
+        if source_model.is_column_immutable(left.column()):
+            try:
+                return int(left_data) < int(right_data)
+            except (ValueError, TypeError):
+                return super().lessThan(left, right)
 
         # ensure booleans compare as expected. Not sure what happens internally in qt
         # that doesn't work, but doing it ourselves in python works.
