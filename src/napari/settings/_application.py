@@ -277,7 +277,7 @@ class ApplicationSettings(EventedModel):
         default=Path(),
         title=trans._('Full path to a startup script'),
         description=trans._(
-            'Path to a Python script that will be executed on napari startup. '
+            'Path to a Python script that will be executed on napari startup.\n'
             'This can be used to customize the behavior of napari or load specific plugins automatically.',
         ),
         json_schema_extra={'file_extension': 'py'},
