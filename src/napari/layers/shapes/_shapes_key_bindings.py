@@ -2,6 +2,7 @@ from collections.abc import Callable, Generator
 
 import numpy as np
 from app_model.types import KeyCode
+from psygnal.containers import Selection
 
 from napari.layers.shapes._shapes_constants import Box, Mode
 from napari.layers.shapes._shapes_mouse_bindings import (
@@ -13,7 +14,6 @@ from napari.layers.utils.layer_utils import (
     register_layer_attr_action,
 )
 from napari.utils.translations import trans
-from psygnal.containers import Selection
 
 
 @Shapes.bind_key(KeyCode.Shift, overwrite=True)
