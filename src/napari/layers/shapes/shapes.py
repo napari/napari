@@ -2459,10 +2459,7 @@ class Shapes(Layer):
             the box, and the last point is the location of the rotation handle
             that can be used to rotate the box
         """
-        if isinstance(index, Selection):
-            index = list(index)
-
-        if isinstance(index, list | np.ndarray | set):
+        if isinstance(index, Iterable):
             if len(index) == 0:
                 box = None
             elif len(index) == 1:
