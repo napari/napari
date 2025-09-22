@@ -24,7 +24,7 @@ assignees: ''
 
 - [ ] Triage the milestone throughout the release cycle.
   - [ ] Add PRs of interest to highlights. These help the manager keep track of important PRs that often require extra team attention.
-  - [ ] Move PRs and issues that won't make it in the current release to the next milestone. Add a note to PRs (and issues) from community members describing the actions the release manager is taking and provide actionable comments.
+  - [ ] Move PRs and issues that won't make it in the current release to the next milestone, or remove the milestone altogether. Add a note to PRs (and issues) from community members describing the actions the release manager is taking and provide actionable comments.
 
 ## Create Pre-release
 
@@ -35,7 +35,7 @@ assignees: ''
   - [ ] Merge release notes to `napari/docs`
 - [ ] Tag pre-release with release notes file and push to `napari/napari`. [See docs for details.](https://napari.org/dev/developers/coredev/release.html#tagging-the-new-release-candidate)
 - [ ] Announce release candidate on Zulip in Release (and General, for meso or larger releases) and [forum.image.sc](https://forum.image.sc/announcements)
-- [ ] Check for proper deployment
+- [ ] Check for proper deployment (~1 hour after tagging)
   - [ ] [PyPI](https://pypi.org/project/napari/#history)
   - [ ] [napari.org](https://napari.org/dev/)
 
@@ -44,8 +44,9 @@ assignees: ''
 - [ ] Make a PR requesting any new contributors add their information to [CITATION.cff](https://github.com/napari/napari/blob/main/CITATION.cff) ([PR example](https://github.com/napari/napari/pull/8138)).
 - [ ] Triage remaining PRs and Issues. At this stage, bug fixes and remaining (testable) features are prioritized.
 - [ ] Make new PR to `napari/docs` with changes to release notes.
+- [ ] Ensure releases are cut from other napari repos if needed. (e.g. `napari-plugin-manager`, triangulation libraries)
 - [ ] Ensure [`conda-recipe/recipe.yaml`](https://github.com/napari/packaging/blob/main/conda-recipe/recipe.yaml) in `napari/packaging` is up-to-date (e.g. `run` dependencies match `pyproject.toml` requirements).
-- [ ] Ensure that [`contraints`](https://github.com/napari/napari/tree/main/resources/constraints) files are up to date. Usually initiated by `@napari-bot` within a day of changes to dependencies and otherwise regularly scheduled.
+- [ ] Ensure that [`constraints`](https://github.com/napari/napari/tree/main/resources/constraints) files are up to date. Usually initiated by `@napari-bot` within a day of changes to dependencies and otherwise regularly scheduled.
 
 ## Create Stable Release
 
@@ -57,7 +58,7 @@ assignees: ''
   - [ ] `napari/docs` and `napari/napari.github.io`
   - [ ] [PyPI](https://pypi.org/project/napari/#history)
   - [ ] Conda-forge [`napari-feedstock`](https://github.com/conda-forge/napari-feedstock). *Note: Conda-forge bots will automatically make a PR, usually within 12 hours.*
-- [ ] Update symlink in `napari/napari.github.io` using the [action](https://github.com/napari/napari.github.io/actions/workflows/symlink-stable.yml).
+- [ ] Update symlink in `napari/napari.github.io` by manually triggering the [action](https://github.com/napari/napari.github.io/actions/workflows/symlink-stable.yml).
 - [ ] Update the `version_switcher.json` in `napari/docs`. (e.g. [this PR](https://github.com/napari/docs/pull/826))
 
 ### Announce new release
