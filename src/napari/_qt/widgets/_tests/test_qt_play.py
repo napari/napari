@@ -93,11 +93,11 @@ def test_animation_thread_variants(qtbot, nframes, fps, mode, rng, result):
 def test_animation_thread_once(qtbot):
     """Single shot animation should stop when it reaches the last frame"""
     nframes = 13
-    with make_worker(
-        qtbot, nframes=nframes, loop_mode=LoopMode.ONCE
-    ) as worker:
-        with qtbot.waitSignal(worker.finished, timeout=8000):
-            worker.start()
+    with (
+        make_worker(qtbot, nframes=nframes, loop_mode=LoopMode.ONCE) as worker,
+        qtbot.waitSignal(worker.finished, timeout=8000),
+    ):
+        worker.start()
     assert worker.current == worker.nz
 
 
@@ -153,7 +153,7 @@ def test_playing_hidden_slider_does_nothing(ref_view):
 
     view.dims.dims.events.current_step.connect(increment)
 
-    with pytest.warns(UserWarning):
+    with pytest.warns(UserWarning, match='Refusing to play a hidden axis'):
         view.dims.play(2, 20)
     view.dims.dims.events.current_step.disconnect(increment)
     assert not view.dims.is_playing

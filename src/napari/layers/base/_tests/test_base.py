@@ -1,6 +1,7 @@
 from unittest.mock import Mock
 
 import numpy as np
+import numpy.testing as npt
 import pint
 import pytest
 
@@ -145,3 +146,60 @@ def test_world_to_displayed_data_normal_4D():
     )
 
     assert np.allclose(transformed_vector, expected_transformed_vector)
+
+
+def test_invalidate_extent_scale():
+    """Test that the extent is invalidated when the data changes."""
+    layer = SampleLayer(np.empty((10, 10)))
+    npt.assert_array_equal(layer.extent.step, (1, 1))
+    with layer._block_refresh():
+        layer.scale = (2, 2)
+    npt.assert_array_equal(layer.extent.step, (2, 2))
+
+
+def test_invalidate_extent_units():
+    """Test that the extent is invalidated when the data changes."""
+    # commented lines required 7889 and should be uncomment later
+    layer = SampleLayer(np.empty((10, 10)))
+    # px = pint.get_application_registry().pixel
+    # mm = pint.get_application_registry().mm
+    # npt.assert_array_equal(layer.extent.units, (px, px))
+    with layer._block_refresh():
+        layer.units = ('mm', 'mm')
+    # npt.assert_array_equal(layer.extent.units, (mm, mm))
+
+
+def test_invalidate_extent_translate():
+    """Test that the extent is invalidated when the data changes."""
+    layer = SampleLayer(np.empty((10, 10)))
+    npt.assert_array_equal(layer.extent.world[0], (0, 0))
+    with layer._block_refresh():
+        layer.translate = (1, 1)
+    npt.assert_array_equal(layer.extent.world[0], (1, 1))
+
+
+def test_invalidate_extent_rotate():
+    """Test that the extent is invalidated when the data changes."""
+    layer = SampleLayer(np.empty((10, 20)))
+    npt.assert_array_equal(layer.extent.world, [[0, 0], [9, 19]])
+    with layer._block_refresh():
+        layer.rotate = 90
+    npt.assert_almost_equal(layer.extent.world, [[-19, 0], [0, 9]])
+
+
+def test_invalidate_extent_affine():
+    """Test that the extent is invalidated when the data changes."""
+    layer = SampleLayer(np.empty((10, 20)))
+    npt.assert_array_equal(layer.extent.world, [[0, 0], [9, 19]])
+    with layer._block_refresh():
+        layer.affine = [[2, 0, 0], [0, 2, 0], [0, 0, 1]]
+    npt.assert_array_equal(layer.extent.world, [[0, 0], [18, 38]])
+
+
+def test_invalidate_extent_shear():
+    """Test that the extent is invalidated when the data changes."""
+    layer = SampleLayer(np.empty((10, 20)))
+    npt.assert_array_equal(layer.extent.world, [[0, 0], [9, 19]])
+    with layer._block_refresh():
+        layer.shear = [1]
+    npt.assert_array_equal(layer.extent.world, [[0, 0], [28, 19]])

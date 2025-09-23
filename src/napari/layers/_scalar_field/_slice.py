@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 
 
 @dataclass(frozen=True)
-class _ImageView:
+class _ScalarFieldView:
     """A raw image and a potentially different viewable version of it.
 
     This is only needed for labels, and not other image layers, because sliced labels
@@ -46,28 +46,28 @@ class _ImageView:
     view: np.ndarray
 
     @classmethod
-    def from_view(cls, view: np.ndarray) -> '_ImageView':
+    def from_view(cls, view: np.ndarray) -> '_ScalarFieldView':
         """Makes an image view from the view where no conversion is needed."""
         return cls(raw=view, view=view)
 
     @classmethod
     def from_raw(
         cls, *, raw: np.ndarray, converter: Callable[[np.ndarray], np.ndarray]
-    ) -> '_ImageView':
+    ) -> '_ScalarFieldView':
         """Makes an image view from the raw image and a conversion function."""
         view = converter(raw)
         return cls(raw=raw, view=view)
 
 
 @dataclass(frozen=True)
-class _ImageSliceResponse:
+class _ScalarFieldSliceResponse:
     """Contains all the output data of slicing an image layer.
 
     Attributes
     ----------
-    image : _ImageView
+    image : _ScalarFieldView
         The sliced image data.
-    thumbnail: _ImageView
+    thumbnail: _ScalarFieldView
         The thumbnail image data. This may come from a different resolution to the sliced image
         data for multi-scale images. Otherwise, it's the same instance as data.
     tile_to_data: Affine
@@ -79,8 +79,8 @@ class _ImageSliceResponse:
         The identifier of the request from which this was generated.
     """
 
-    image: _ImageView = field(repr=False)
-    thumbnail: _ImageView = field(repr=False)
+    image: _ScalarFieldView = field(repr=False)
+    thumbnail: _ScalarFieldView = field(repr=False)
     tile_to_data: Affine = field(repr=False)
     slice_input: _SliceInput
     request_id: int
@@ -94,7 +94,7 @@ class _ImageSliceResponse:
         rgb: bool,
         request_id: int | None = None,
         dtype: 'DTypeLike' = np.uint8,
-    ) -> '_ImageSliceResponse':
+    ) -> '_ScalarFieldSliceResponse':
         """Returns an empty image slice response.
 
         An empty slice indicates that there is no valid slice data for an
@@ -113,7 +113,7 @@ class _ImageSliceResponse:
             The request id for which we are responding with an empty slice.
             If None, a new request id will be returned, which guarantees that
             the empty slice never appears as loaded. (Used for layer
-            initialisation before attempting data loading.)
+            initialization before attempting data loading.)
         dtype : np.dtype
             The dtype of the empty image slice.
             Must match expected view dtype.
@@ -122,14 +122,14 @@ class _ImageSliceResponse:
         if rgb:
             shape = shape + (3,)
         data = np.zeros(shape, dtype=normalize_dtype(dtype))
-        image = _ImageView.from_view(data)
+        image = _ScalarFieldView.from_view(data)
         ndim = slice_input.ndim
         tile_to_data = Affine(
             name='tile2data', linear_matrix=np.eye(ndim), ndim=ndim
         )
         if request_id is None:
             request_id = _next_request_id()
-        return _ImageSliceResponse(
+        return _ScalarFieldSliceResponse(
             image=image,
             thumbnail=image,
             tile_to_data=tile_to_data,
@@ -140,7 +140,7 @@ class _ImageSliceResponse:
 
     def to_displayed(
         self, converter: Callable[[np.ndarray], np.ndarray]
-    ) -> '_ImageSliceResponse':
+    ) -> '_ScalarFieldSliceResponse':
         """
         Returns a raw slice converted for display,
         which is needed for Labels and Image.
@@ -152,16 +152,18 @@ class _ImageSliceResponse:
 
         Returns
         -------
-        _ImageSliceResponse
+        _ScalarFieldSliceResponse
             Contains the converted image and thumbnail.
         """
-        image = _ImageView.from_raw(raw=self.image.raw, converter=converter)
+        image = _ScalarFieldView.from_raw(
+            raw=self.image.raw, converter=converter
+        )
         thumbnail = image
         if self.thumbnail is not self.image:
-            thumbnail = _ImageView.from_raw(
+            thumbnail = _ScalarFieldView.from_raw(
                 raw=self.thumbnail.raw, converter=converter
             )
-        return _ImageSliceResponse(
+        return _ScalarFieldSliceResponse(
             image=image,
             thumbnail=thumbnail,
             tile_to_data=self.tile_to_data,
@@ -172,7 +174,7 @@ class _ImageSliceResponse:
 
 
 @dataclass(frozen=True)
-class _ImageSliceRequest:
+class _ScalarFieldSliceRequest:
     """A callable that stores all the input data needed to slice an image layer.
 
     This should be treated a deeply immutable structure, even though some
@@ -210,9 +212,9 @@ class _ImageSliceRequest:
     downsample_factors: np.ndarray = field(repr=False)
     id: int = field(default_factory=_next_request_id)
 
-    def __call__(self) -> _ImageSliceResponse:
+    def __call__(self) -> _ScalarFieldSliceResponse:
         if self._slice_out_of_bounds():
-            return _ImageSliceResponse.make_empty(
+            return _ScalarFieldSliceResponse.make_empty(
                 slice_input=self.slice_input,
                 rgb=self.rgb,
                 request_id=self.id,
@@ -225,18 +227,18 @@ class _ImageSliceRequest:
                 else self._call_single_scale()
             )
 
-    def _call_single_scale(self) -> _ImageSliceResponse:
+    def _call_single_scale(self) -> _ScalarFieldSliceResponse:
         order = self._get_order()
         data = self._project_thick_slice(self.data, self.data_slice)
         data = np.transpose(data, order)
-        image = _ImageView.from_view(data)
+        image = _ScalarFieldView.from_view(data)
         # `Layer.multiscale` is mutable so we need to pass back the identity
         # transform to ensure `tile2data` is properly set on the layer.
         ndim = self.slice_input.ndim
         tile_to_data = Affine(
             name='tile2data', linear_matrix=np.eye(ndim), ndim=ndim
         )
-        return _ImageSliceResponse(
+        return _ScalarFieldSliceResponse(
             image=image,
             thumbnail=image,
             tile_to_data=tile_to_data,
@@ -244,7 +246,7 @@ class _ImageSliceRequest:
             request_id=self.id,
         )
 
-    def _call_multi_scale(self) -> _ImageSliceResponse:
+    def _call_multi_scale(self) -> _ScalarFieldSliceResponse:
         if self.slice_input.ndisplay == 3:
             level = len(self.data) - 1
         else:
@@ -286,16 +288,16 @@ class _ImageSliceRequest:
 
         order = self._get_order()
         data = np.transpose(data, order)
-        image = _ImageView.from_view(data)
+        image = _ScalarFieldView.from_view(data)
 
         thumbnail_data_slice = self._thick_slice_at_level(self.thumbnail_level)
         thumbnail_data = self._project_thick_slice(
             self.data[self.thumbnail_level], thumbnail_data_slice
         )
         thumbnail_data = np.transpose(thumbnail_data, order)
-        thumbnail = _ImageView.from_view(thumbnail_data)
+        thumbnail = _ScalarFieldView.from_view(thumbnail_data)
 
-        return _ImageSliceResponse(
+        return _ScalarFieldSliceResponse(
             image=image,
             thumbnail=thumbnail,
             tile_to_data=tile_to_data,

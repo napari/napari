@@ -33,22 +33,22 @@ class VispyBaseOverlay:
         if parent is not None:
             self.node.parent = parent
 
-    def _on_visible_change(self):
+    def _on_visible_change(self) -> None:
         self.node.visible = self.overlay.visible
 
-    def _on_opacity_change(self):
+    def _on_opacity_change(self) -> None:
         self.node.opacity = self.overlay.opacity
 
-    def _on_blending_change(self):
+    def _on_blending_change(self) -> None:
         self.node.set_gl_state(**BLENDING_MODES[self.overlay.blending])
         self.node.update()
 
-    def reset(self):
+    def reset(self) -> None:
         self._on_visible_change()
         self._on_opacity_change()
         self._on_blending_change()
 
-    def close(self):
+    def close(self) -> None:
         disconnect_events(self.overlay.events, self)
         self.node.transforms = MatrixTransform()
         self.node.parent = None
@@ -64,19 +64,19 @@ class VispyCanvasOverlay(VispyBaseOverlay):
 
         # offsets and size are used to control fine positioning, and will depend
         # on the subclass and visual that needs to be rendered
-        self.x_offset = 10
-        self.y_offset = 10
-        self.x_size = 0
-        self.y_size = 0
+        self.x_offset = 10.0
+        self.y_offset = 10.0
+        self.x_size = 0.0
+        self.y_size = 0.0
         self.node.transform = STTransform()
         self.overlay.events.position.connect(self._on_position_change)
 
     def _on_position_change(self, event=None):
         # subclasses should set sizes correctly and adjust offsets to get
         # the optimal positioning
-        if self.node.canvas is None:
+        if self.node.parent is None:
             return
-        x_max, y_max = list(self.node.canvas.size)
+        x_max, y_max = list(self.node.parent.size)
         position = self.overlay.position
 
         if position == CanvasPosition.TOP_LEFT:
@@ -124,7 +124,7 @@ class VispyCanvasOverlay(VispyBaseOverlay):
         scale = abs(self.node.transform.scale[0])
         self.node.transform.scale = [scale, 1, 1, 1]
 
-    def reset(self):
+    def reset(self) -> None:
         super().reset()
         self._on_position_change()
 
@@ -151,10 +151,10 @@ class LayerOverlayMixin:
         # always a child of the actual vispy node of the layer (eg, canvas overlays)
         self.layer.events.visible.connect(self._on_visible_change)
 
-    def _on_visible_change(self):
+    def _on_visible_change(self) -> None:
         self.node.visible = self.overlay.visible and self.layer.visible
 
-    def close(self):
+    def close(self) -> None:
         disconnect_events(self.layer.events, self)
         super().close()
 
@@ -168,6 +168,6 @@ class ViewerOverlayMixin:
         )
         self.viewer = viewer
 
-    def close(self):
+    def close(self) -> None:
         disconnect_events(self.viewer.events, self)
         super().close()

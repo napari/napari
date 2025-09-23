@@ -121,6 +121,13 @@ def project_slice(
     data: npt.NDArray, axis: tuple[int, ...], mode: ImageProjectionMode
 ) -> npt.NDArray:
     """Project a thick slice along axis based on mode."""
+    if all(data.shape[axis] == 1 for axis in axis):
+        # If all axes are of size 1, return the data as is
+        return data[
+            tuple(
+                slice(None) if i not in axis else 0 for i in range(data.ndim)
+            )
+        ]
     func: Callable
     if mode == ImageProjectionMode.SUM:
         func = np.sum

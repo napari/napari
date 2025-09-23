@@ -28,6 +28,8 @@ class NapariMouseEvent(MouseEvent):
         The dimensions displayed in the viewer.
     dims_point : list[float]
         The point in data coordinates that the mouse is over.
+    viewbox : tuple[int, int]
+        The coordinates of the grid viewbox containing the mouse.
     """
 
     def __init__(
@@ -39,6 +41,7 @@ class NapariMouseEvent(MouseEvent):
         position: tuple[float, float],
         dims_displayed: list[int],
         dims_point: list[float],
+        viewbox: tuple[int, int],
     ):
         public_attrs = {
             k: v for k, v in event.__dict__.items() if not k.startswith('_')
@@ -61,3 +64,4 @@ class NapariMouseEvent(MouseEvent):
         self.position = position
         self.dims_displayed = dims_displayed
         self.dims_point = dims_point
+        self.viewbox = viewbox

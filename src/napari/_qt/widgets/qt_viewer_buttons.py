@@ -16,6 +16,7 @@ from qtpy.QtWidgets import (
 )
 from superqt import QEnumComboBox, QLabeledDoubleSlider
 
+from napari._app_model.actions._file import add_new_points, add_new_shapes
 from napari._qt.dialogs.qt_modal import QtPopup
 from napari._qt.widgets.qt_dims_sorter import QtDimsSorter
 from napari._qt.widgets.qt_spinbox import QtSpinBox
@@ -37,20 +38,6 @@ if TYPE_CHECKING:
     from typing import Any
 
     from napari.viewer import ViewerModel
-
-
-def add_new_points(viewer):
-    viewer.add_points(
-        ndim=max(viewer.dims.ndim, 2),
-        scale=viewer.layers.extent.step,
-    )
-
-
-def add_new_shapes(viewer):
-    viewer.add_shapes(
-        ndim=max(viewer.dims.ndim, 2),
-        scale=viewer.layers.extent.step,
-    )
 
 
 class QtLayerButtons(QFrame):
@@ -121,8 +108,8 @@ def labeled_double_slider(
 ) -> QLabeledDoubleSlider:
     """Create a labeled double slider widget."""
     slider = QLabeledDoubleSlider(parent)
-    slider.setValue(value)
     slider.setRange(*value_range)
+    slider.setValue(value)
     slider.setDecimals(decimals)
     slider.valueChanged.connect(callback)
     return slider
@@ -562,18 +549,24 @@ class QtViewerButtons(QFrame):
         spacing_help_symbol = QtToolTipLabel(self)
 
         shape_help_msg = trans._(
-            'Number of rows and columns in the grid. A value of -1 for either or both of width and height will trigger an auto calculation of the necessary grid shape to appropriately fill all the layers at the appropriate stride. 0 is not a valid entry.'
+            'Number of rows and columns in the grid.\n'
+            'A value of -1 for either or both of width and height will trigger an\n'
+            'auto calculation of the necessary grid shape to appropriately fill\n'
+            'all the layers at the appropriate stride. 0 is not a valid entry.'
         )
 
         stride_help_msg = trans._(
-            'Number of layers to place in each grid square before moving on to the next square. The default ordering is to place the most visible layer in the top left corner of the grid. A negative stride will cause the order in which the layers are placed in the grid to be reversed. 0 is not a valid entry.'
+            'Number of layers to place in each grid viewbox before moving on to the next viewbox.\n'
+            'A negative stride will cause the order in which the layers are placed in the grid to be reversed.\n'
+            '0 is not a valid entry.'
         )
 
         spacing_help_msg = trans._(
-            'Proportional spacing between grid layers. 0 has the layers touching. Positive values will space the layers apart, and negative values will overlap the layers.'
+            'The amount of spacing between grid viewboxes.\n'
+            'If between 0 and 1, it is interpreted as a proportion of the size of the viewboxes.\n'
+            'If equal or greater than 1, it is interpreted as screen pixels.'
         )
 
-        # set up
         stride_min = self.viewer.grid.__fields__['stride'].type_.ge
         stride_max = self.viewer.grid.__fields__['stride'].type_.le
         stride_not = self.viewer.grid.__fields__['stride'].type_.ne
@@ -695,7 +688,6 @@ class QtViewerButtons(QFrame):
         value : float
             New grid spacing value.
         """
-
         self.viewer.grid.spacing = value
 
 

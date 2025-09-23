@@ -20,6 +20,7 @@ from napari.components.dims import Dims
 from napari.layers import Labels
 from napari.layers.labels._labels_constants import LabelsRendering
 from napari.layers.labels._labels_utils import get_contours
+from napari.layers.labels.labels import WrongSelectedLabelError
 from napari.utils import Colormap
 from napari.utils._test_utils import (
     validate_all_params_in_docstring,
@@ -573,7 +574,7 @@ def test_contour(input_data, expected_data_view):
     np.testing.assert_array_equal(layer.data, input_data)
 
     np.testing.assert_array_equal(
-        layer._raw_to_displayed(input_data.astype(np.float32)),
+        layer._raw_to_displayed(input_data),
         layer._data_view,
     )
     data_view_before_contour = layer._data_view.copy()
@@ -713,6 +714,14 @@ def test_selecting_label():
     layer.selected_label = 1
     assert layer.selected_label == 1
     assert len(layer._selected_color) == 4
+
+
+def test_selecting_label_exception():
+    labels = Labels(np.zeros((10, 10), dtype=np.uint8))
+    with pytest.raises(WrongSelectedLabelError, match='The value 256'):
+        labels.selected_label = 256
+    with pytest.raises(WrongSelectedLabelError, match='The value -1'):
+        labels.selected_label = -1
 
 
 def test_label_color():
@@ -1073,11 +1082,24 @@ def test_message():
 
 def test_thumbnail():
     """Test the image thumbnail for square data."""
-    np.random.seed(0)
-    data = np.random.randint(20, size=(30, 30))
+    rng = np.random.default_rng(0)
+    data = rng.integers(20, size=(30, 30))
     layer = Labels(data)
     layer._update_thumbnail()
     assert layer.thumbnail.shape == layer._thumbnail_shape
+
+
+@pytest.mark.parametrize('ndim', [2, 3, 4])
+@pytest.mark.parametrize('ndisplay', [2, 3])
+def test_thumbnail_non_visible(ndim, ndisplay):
+    """Test the image thumbnail is not updated when layer is not visible."""
+    dims = Dims(ndim=ndim, ndisplay=ndisplay)
+    rng = np.random.default_rng(0)
+    data = rng.integers(20, size=(30,) * ndim)
+    layer = Labels(data, visible=False)
+    layer._slice_dims(dims, force=False)
+    layer._update_thumbnail()
+    npt.assert_array_equal(layer.thumbnail[..., :3], 0)
 
 
 @pytest.mark.parametrize('value', [1, 10, 50, -2, -10])

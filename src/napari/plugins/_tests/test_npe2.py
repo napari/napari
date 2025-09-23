@@ -182,8 +182,9 @@ def test_plugin_actions(mock_pm: 'TestPluginManager', mock_app_model):
     from napari.plugins import _initialize_plugins
 
     app = get_app_model()
-    # nothing yet registered with this menu
-    assert 'napari/file/new_layer' not in app.menus
+    # default actions registered
+    assert 'napari/file/new_layer' in app.menus
+    assert len(list(app.menus.get_menu('napari/file/new_layer'))) == 3
     # menus_items1 = list(app.menus.get_menu('napari/file/new_layer'))
     # assert 'my-plugin.hello_world' not in app.commands
 
@@ -194,16 +195,17 @@ def test_plugin_actions(mock_pm: 'TestPluginManager', mock_app_model):
     menus_items2 = list(app.menus.get_menu('napari/file/new_layer'))
     assert 'my-plugin.hello_world' in app.commands
 
-    assert len(menus_items2) == 2
+    assert len(menus_items2) == 5
 
     # then disable and re-enable the plugin
 
     mock_pm.disable(PLUGIN_NAME)
 
-    assert 'napari/file/new_layer' not in app.menus
+    assert 'napari/file/new_layer' in app.menus
+    assert len(list(app.menus.get_menu('napari/file/new_layer'))) == 3
 
     mock_pm.enable(PLUGIN_NAME)
 
     menus_items4 = list(app.menus.get_menu('napari/file/new_layer'))
-    assert len(menus_items4) == 2
+    assert len(menus_items4) == 5
     assert 'my-plugin.hello_world' in app.commands
