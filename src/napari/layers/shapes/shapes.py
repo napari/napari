@@ -2458,6 +2458,8 @@ class Shapes(Layer):
             that can be used to rotate the box
         """
         if isinstance(index, Iterable):
+            if not isinstance(index, Sized):
+                index = list(index)
             if len(index) == 0:
                 box = None
             elif len(index) == 1:
