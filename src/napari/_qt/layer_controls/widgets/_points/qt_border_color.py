@@ -53,15 +53,14 @@ class QtBorderColorControl(QtWidgetControlsBase):
                 'setColor',
             )
         )
-        if hasattr(self._layer, '_border'):
-            self._callbacks.append(
-                attr_to_settr(
-                    self._layer._border,
-                    'current_color',
-                    self.border_color_edit,
-                    'setColor',
-                )
+        self._callbacks.append(
+            attr_to_settr(
+                self._layer._border,
+                'current_color',
+                self.border_color_edit,
+                'setColor',
             )
+        )
 
         self.border_color_edit_label = QtWrappedLabel(trans._('border color:'))
 

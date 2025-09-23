@@ -44,6 +44,8 @@ class QtWidgetControlsBase(QObject, ABC, metaclass=MetaWidgetControlsBase):
         super().__init__(parent)
         # Setup layer
         self._layer = layer
+        # Track registered callbacks (defined via `attr_to_settr` for example)
+        # so it is possible to disconnect them when the widget is being closed/deleted
         self._callbacks = []
 
     @abstractclassmethod
