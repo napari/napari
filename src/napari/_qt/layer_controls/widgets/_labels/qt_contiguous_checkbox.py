@@ -1,4 +1,3 @@
-from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QCheckBox,
     QWidget,
@@ -8,8 +7,9 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,
 )
-from napari._qt.utils import qt_signals_blocked
+from napari._qt.utils import checked_to_bool, qt_signals_blocked
 from napari.layers import Labels
+from napari.utils.events.event_utils import connect_setattr
 from napari.utils.translations import trans
 
 
@@ -41,21 +41,16 @@ class QtContiguousCheckBoxControl(QtWidgetControlsBase):
         # Setup widgets
         contig_cb = QCheckBox()
         contig_cb.setToolTip(trans._('Contiguous editing'))
-        contig_cb.stateChanged.connect(self.change_contig)
+        connect_setattr(
+            contig_cb.stateChanged,
+            layer,
+            'contiguous',
+            convert_fun=checked_to_bool,
+        )
         self.contiguous_checkbox = contig_cb
         self._on_contiguous_change()
 
         self.contiguous_checkbox_label = QtWrappedLabel(trans._('contiguous:'))
-
-    def change_contig(self, state: int) -> None:
-        """Toggle contiguous state of label layer.
-
-        Parameters
-        ----------
-        state : int
-            Integer value of Qt.CheckState that indicates the check state of contiguous_checkbox
-        """
-        self._layer.contiguous = Qt.CheckState(state) == Qt.CheckState.Checked
 
     def _on_contiguous_change(self) -> None:
         """Receive layer model contiguous change event and update the checkbox."""

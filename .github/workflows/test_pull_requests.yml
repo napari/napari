@@ -47,7 +47,7 @@ jobs:
       - name: Install Dependencies
         run: pip install --upgrade pip
       - name: Install Napari dev
-        run: pip install -e .[build]
+        run: pip install -e .  --group build
         env:
           PIP_CONSTRAINT: resources/constraints/constraints_py3.12.txt
       - name: Make Typestubs
@@ -126,7 +126,7 @@ jobs:
             backend: pyqt6
             coverage: cov
           - python: "3.13"
-            platform: macos-13
+            platform: macos-15-intel
             backend: pyqt5
             coverage: no_cov
             timeout-minutes: 60
