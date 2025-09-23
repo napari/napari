@@ -123,31 +123,31 @@ class TaskStatusManager:
             item.cancel()
 
 
-task_status_manager = TaskStatusManager()
+# task_status_manager = TaskStatusManager()
 
 
-def register_task_status(
-    provider: str,
-    task_status: Status,
-    description: str,
-    cancel_callback: Optional[Callable] = None,
-) -> uuid.UUID:
-    """
-    Register a long running task status.
-    """
-    return task_status_manager.register_task_status(
-        provider, task_status, description, cancel_callback
-    )
+# def register_task_status(
+#     provider: str,
+#     task_status: Status,
+#     description: str,
+#     cancel_callback: Optional[Callable] = None,
+# ) -> uuid.UUID:
+#     """
+#     Register a long running task status.
+#     """
+#     return task_status_manager.register_task_status(
+#         provider, task_status, description, cancel_callback
+#     )
 
 
-def update_task_status(
-    task_status_id: uuid.UUID,
-    status: Status,
-    description: str = '',
-) -> bool:
-    """
-    Update a long running task status.
-    """
-    return task_status_manager.update_task_status(
-        task_status_id, status, description
-    )
+# def update_task_status(
+#     task_status_id: uuid.UUID,
+#     status: Status,
+#     description: str = '',
+# ) -> bool:
+#     """
+#     Update a long running task status.
+#     """
+#     return task_status_manager.update_task_status(
+#         task_status_id, status, description
+#     )

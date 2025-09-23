@@ -8,8 +8,9 @@ import inspect
 import os
 import sys
 import time
+import uuid
 import warnings
-from collections.abc import Mapping, MutableMapping, Sequence
+from collections.abc import Callable, Mapping, MutableMapping, Sequence
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
@@ -92,7 +93,7 @@ from napari.utils.misc import (
     running_as_constructor_app,
 )
 from napari.utils.notifications import Notification
-from napari.utils.task_status import task_status_manager
+from napari.utils.task_status import Status, TaskStatusManager
 from napari.utils.theme import _themes, get_system_theme
 from napari.utils.translations import trans
 
@@ -605,7 +606,7 @@ class _QtMainWindow(QMainWindow):
 
         Regardless of whether cmd Q, cmd W, or the close button is used...
         """
-        task_status = task_status_manager.get_status()
+        task_status = self._window._task_status_manager.get_status()
         if (
             task_status
             and ConfirmCloseDialog(
@@ -625,8 +626,8 @@ class _QtMainWindow(QMainWindow):
             event.ignore()
             return
 
-        if task_status_manager.is_busy():
-            task_status_manager.cancel_all()
+        if self._window._task_status_manager.is_busy():
+            self._window._task_status_manager.cancel_all()
 
         self.status_thread.close_terminate()
         self.status_thread.wait()
@@ -718,6 +719,8 @@ class Window:
         self._unnamed_dockwidget_count = 1
 
         self._pref_dialog = None
+
+        self._task_status_manager = TaskStatusManager()
 
         # Connect the Viewer and create the Main Window
         self._qt_window = _QtMainWindow(viewer, self)
@@ -913,6 +916,33 @@ class Window:
     def _update_debug_menu_state(self):
         viewer_ctx = get_context(self._qt_window)
         self._debug_menu.update_from_context(viewer_ctx)
+
+    def _register_task_status(
+        self,
+        provider: str,
+        task_status: Status,
+        description: str,
+        cancel_callback: Optional[Callable] = None,
+    ) -> uuid.UUID:
+        """
+        Register a long running task status.
+        """
+        return self._task_status_manager.register_task_status(
+            provider, task_status, description, cancel_callback
+        )
+
+    def _update_task_status(
+        self,
+        task_status_id: uuid.UUID,
+        status: Status,
+        description: str = '',
+    ) -> bool:
+        """
+        Update a long running task status.
+        """
+        return self._task_status_manager.update_task_status(
+            task_status_id, status, description
+        )
 
     # TODO: Remove once npe1 deprecated
     def _setup_npe1_samples_menu(self):

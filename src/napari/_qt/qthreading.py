@@ -10,12 +10,9 @@ from typing import (
 from superqt.utils import _qthreading
 
 from napari.utils.progress import progress
-from napari.utils.task_status import (
-    Status,
-    register_task_status,
-    update_task_status,
-)
+from napari.utils.task_status import Status
 from napari.utils.translations import trans
+from napari.viewer import current_viewer
 
 __all__ = [
     'FunctionWorker',
@@ -69,6 +66,7 @@ def create_worker(
     _progress: bool | dict[str, int | bool | str] | None = None,
     _worker_class: type[GeneratorWorker] | type[FunctionWorker] | None = None,
     _ignore_errors: bool = False,
+    _track_status: bool = False,
     **kwargs,
 ) -> FunctionWorker | GeneratorWorker:
     """Convenience function to start a function in another thread.
@@ -104,6 +102,9 @@ def create_worker(
     _ignore_errors : bool, optional
         If ``False`` (the default), errors raised in the other thread will be
         reraised in the main thread (makes debugging significantly easier).
+    _track_status : bool, optional
+        If ``False`` (the default), no status will be tracked for the worker even if
+        there is a window available to do so.
     *args
         will be passed to ``func``
     **kwargs
@@ -187,59 +188,47 @@ def create_worker(
         worker.pbar = pbar
 
     # signals connection for status handling
-    worker_status_id = register_task_status(
-        'napari-worker',
-        Status.PENDING,
-        trans._('{func} execution pending', deferred=True, func=func),
-        cancel_callback=worker.quit,
-    )
-    worker.started.connect(
-        partial(
-            lambda task_status_id, function: update_task_status(
-                task_status_id,
-                Status.BUSY,
-                description=trans._(
-                    'Executing {func}', deferred=True, func=function
-                ),
-            ),
-            worker_status_id,
-            func,
+    if viewer := current_viewer() and _track_status:
+        window = viewer.window
+        worker_status_id = window._register_task_status(
+            'napari-worker',
+            Status.PENDING,
+            trans._('{func} execution pending', deferred=True, func=func),
+            cancel_callback=worker.quit,
         )
-    )
-    worker.errored.connect(
-        partial(
-            lambda task_status_id, function: update_task_status(
-                task_status_id,
-                Status.FAILED,
-                description=trans._(
-                    '{func} execution failed', deferred=True, func=function
-                ),
-            ),
-            worker_status_id,
-            func,
-        )
-    )
-    worker.finished.connect(
-        partial(
-            lambda task_status_id, function: update_task_status(
-                task_status_id,
-                Status.COMPLETED,
-                description=trans._(
-                    '{func} execution completed', deferred=True, func=function
-                ),
-            ),
-            worker_status_id,
-            func,
-        )
-    )
-    if hasattr(worker.signals, 'aborted'):
-        worker.aborted.connect(
+        worker.started.connect(
             partial(
-                lambda task_status_id, function: update_task_status(
+                lambda task_status_id, function: window._update_task_status(
                     task_status_id,
-                    Status.CANCELLED,
+                    Status.BUSY,
                     description=trans._(
-                        '{func} execution cancelled',
+                        'Executing {func}', deferred=True, func=function
+                    ),
+                ),
+                worker_status_id,
+                func,
+            )
+        )
+        worker.errored.connect(
+            partial(
+                lambda task_status_id, function: window._update_task_status(
+                    task_status_id,
+                    Status.FAILED,
+                    description=trans._(
+                        '{func} execution failed', deferred=True, func=function
+                    ),
+                ),
+                worker_status_id,
+                func,
+            )
+        )
+        worker.finished.connect(
+            partial(
+                lambda task_status_id, function: window._update_task_status(
+                    task_status_id,
+                    Status.COMPLETED,
+                    description=trans._(
+                        '{func} execution completed',
                         deferred=True,
                         func=function,
                     ),
@@ -248,6 +237,23 @@ def create_worker(
                 func,
             )
         )
+        if hasattr(worker.signals, 'aborted'):
+            worker.aborted.connect(
+                partial(
+                    lambda task_status_id,
+                    function: window._update_task_status(
+                        task_status_id,
+                        Status.CANCELLED,
+                        description=trans._(
+                            '{func} execution cancelled',
+                            deferred=True,
+                            func=function,
+                        ),
+                    ),
+                    worker_status_id,
+                    func,
+                )
+            )
 
     if _start_thread is None:
         _start_thread = _connect is not None
@@ -264,6 +270,7 @@ def thread_worker(
     progress: bool | dict[str, int | bool | str] | None = None,
     worker_class: type[FunctionWorker] | type[GeneratorWorker] | None = None,
     ignore_errors: bool = False,
+    track_status: bool = False,
 ):
     """Decorator that runs a function in a separate thread when called.
 
@@ -325,6 +332,9 @@ def thread_worker(
     ignore_errors : bool, optional
         If ``False`` (the default), errors raised in the other thread will be
         reraised in the main thread (makes debugging significantly easier).
+    track_status : bool, optional
+        If ``False`` (the default), no status will be tracked for the worker even if
+        there is a window available to do so.
 
     Returns
     -------
@@ -367,6 +377,8 @@ def thread_worker(
             kwargs['_ignore_errors'] = kwargs.get(
                 '_ignore_errors', ignore_errors
             )
+            kwargs['_track_status'] = kwargs.get('_track_status', track_status)
+
             return create_worker(
                 func,
                 *args,

@@ -3,7 +3,6 @@ import pytest
 from napari._qt import qthreading
 from napari._qt.dialogs.confirm_close_dialog import ConfirmCloseDialog
 from napari._qt.widgets.qt_progress_bar import QtLabeledProgressBar
-from napari.utils.task_status import task_status_manager
 
 pytest.importorskip(
     'qtpy', reason='Cannot test threading progress without qtpy.'
@@ -27,16 +26,11 @@ def test_worker_with_progress(qtbot):
         start_thread=False,
     )
     worker = thread_func()
-    assert task_status_manager.is_busy()
-    assert len(task_status_manager.get_status()) == 1
 
     with qtbot.waitSignals([worker.yielded, worker.finished]):
         worker.start()
-        assert task_status_manager.is_busy()
         assert worker.pbar.n == test_val[0]
     assert test_val[0] == 2
-    assert len(task_status_manager.get_status()) == 0
-    assert not task_status_manager.is_busy()
 
 
 def test_function_worker_nonzero_total_warns():
@@ -52,9 +46,6 @@ def test_function_worker_nonzero_total_warns():
         RuntimeWarning, match='worker is FunctionWorker and will not yield'
     ):
         thread_func()
-
-    assert task_status_manager.is_busy()
-    task_status_manager.cancel_all()
 
 
 def test_worker_may_exceed_total(qtbot):
@@ -78,15 +69,10 @@ def test_worker_may_exceed_total(qtbot):
     )
     worker = thread_func()
     worker.yielded.connect(test_yield)
-    assert task_status_manager.is_busy()
-    assert len(task_status_manager.get_status()) == 1
 
     with qtbot.waitSignals([worker.yielded, worker.finished]):
         worker.start()
-        assert task_status_manager.is_busy()
     assert test_val[0] == 2
-    assert len(task_status_manager.get_status()) == 0
-    assert not task_status_manager.is_busy()
 
 
 def test_generator_worker_with_description():
@@ -100,8 +86,6 @@ def test_generator_worker_with_description():
     )
     worker = thread_func()
     assert worker.pbar.desc == 'custom'
-    assert task_status_manager.is_busy()
-    task_status_manager.cancel_all()
 
 
 def test_function_worker_with_description():
@@ -116,8 +100,6 @@ def test_function_worker_with_description():
     )
     worker = thread_func()
     assert worker.pbar.desc == 'custom'
-    assert task_status_manager.is_busy()
-    task_status_manager.cancel_all()
 
 
 def test_generator_worker_with_no_total():
@@ -131,8 +113,6 @@ def test_generator_worker_with_no_total():
     )
     worker = thread_func()
     assert worker.pbar.total == 0
-    assert task_status_manager.is_busy()
-    task_status_manager.cancel_all()
 
 
 def test_function_worker_with_no_total():
@@ -147,8 +127,6 @@ def test_function_worker_with_no_total():
     )
     worker = thread_func()
     assert worker.pbar.total == 0
-    assert task_status_manager.is_busy()
-    task_status_manager.cancel_all()
 
 
 def test_function_worker_0_total():
@@ -163,8 +141,6 @@ def test_function_worker_0_total():
     )
     worker = thread_func()
     assert worker.pbar.total == 0
-    assert task_status_manager.is_busy()
-    task_status_manager.cancel_all()
 
 
 def test_unstarted_worker_no_widget(make_napari_viewer, monkeypatch):
@@ -183,6 +159,7 @@ def test_unstarted_worker_no_widget(make_napari_viewer, monkeypatch):
         func,
         progress={'total': 5},
         start_thread=False,
+        track_status=True,
     )
 
     thread_func()
@@ -191,4 +168,4 @@ def test_unstarted_worker_no_widget(make_napari_viewer, monkeypatch):
             QtLabeledProgressBar
         )
     )
-    assert task_status_manager.is_busy()
+    assert viewer.window._task_status_manager.is_busy()
