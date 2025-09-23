@@ -34,6 +34,7 @@ from superqt import QToggleSwitch
 
 from napari.utils.history import get_save_history
 from napari.utils.misc import in_ipython
+from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     import napari
@@ -136,7 +137,7 @@ class PandasModel(QAbstractTableModel):
             if orientation == Qt.Orientation.Horizontal:
                 # Special case for index column (first column)
                 if section == 0:
-                    return self.df.index.name or 'Index'
+                    return self.df.index.name or trans._('Index')
                 return self.df.columns[section - 1]
             # Vertical header
             return self.df.index[section]
@@ -249,7 +250,7 @@ class PandasModel(QAbstractTableModel):
             if self.df.index.name is not None:
                 self._immutable_columns.add(self.df.index.name)
             else:
-                self._immutable_columns.add('Index')
+                self._immutable_columns.add(trans._('Index'))
 
     def is_column_immutable(self, col_idx: int) -> bool:
         """Check if a column is immutable based on its index.
@@ -620,7 +621,9 @@ class FeaturesTable(QWidget):
         # Replace data and configure immutable columns
         model = self.table.model().sourceModel()
         model.replace_data(df)
-        model.set_immutable_columns(['Layer'] if 'Layer' in df.columns else [])
+        model.set_immutable_columns(
+            [trans._('Layer')] if trans._('Layer') in df.columns else []
+        )
 
         self.table.resizeColumnsToContents()
         self._update_table_selected_cells()
@@ -634,15 +637,15 @@ class FeaturesTable(QWidget):
             # All layers in self._selected_layers are guaranteed to have features
             if layer.features is not None:
                 if isinstance(layer.features, pd.DataFrame):
-                    if 'Layer' not in layer.features.columns:
-                        layer.features['Layer'] = layer.name
-                        layer.features['Layer'] = layer.features[
-                            'Layer'
+                    if trans._('Layer') not in layer.features.columns:
+                        layer.features[trans._('Layer')] = layer.name
+                        layer.features[trans._('Layer')] = layer.features[
+                            trans._('Layer')
                         ].astype('category')
                         # Move 'Layer' to the first column
                         cols = list(layer.features.columns)
-                        cols.remove('Layer')
-                        cols.insert(0, 'Layer')
+                        cols.remove(trans._('Layer'))
+                        cols.insert(0, trans._('Layer'))
                         layer.features = layer.features[cols]
                     df_list.append(layer.features)
                 else:
@@ -679,12 +682,12 @@ class FeaturesTable(QWidget):
             return
 
         # Calculate layer start indices for all layers once (most efficient)
-        layer_starts = df.groupby('Layer', sort=False, observed=False).apply(
-            lambda x: x.index[0], include_groups=False
-        )
+        layer_starts = df.groupby(
+            trans._('Layer'), sort=False, observed=False
+        ).apply(lambda x: x.index[0], include_groups=False)
 
         # Get layer names for selected rows and convert to layer-specific indices
-        selected_layer_names = df['Layer'].iloc[selected_global_rows]
+        selected_layer_names = df[trans._('Layer')].iloc[selected_global_rows]
         layer_start_indices = selected_layer_names.map(layer_starts).astype(
             int
         )
@@ -723,7 +726,7 @@ class FeaturesTable(QWidget):
 
         indices = []
         for layer in self._selected_layers:
-            matching_rows = df[df['Layer'] == layer.name]
+            matching_rows = df[df[trans._('Layer')] == layer.name]
 
             # Get indices of rows matching this layer in the combined dataframe
             if isinstance(df, pd.DataFrame):
@@ -774,12 +777,12 @@ class FeaturesTable(QWidget):
         # For each edited cell
         for row in range(topLeft.row(), bottomRight.row() + 1):
             # Find corresponding layer and layer row index
-            layer_name = df.iloc[row]['Layer']
+            layer_name = df.iloc[row][trans._('Layer')]
             layer = next(
                 ly for ly in self._selected_layers if ly.name == layer_name
             )
             # Get indices of rows matching this layer name
-            matching_rows = df[df['Layer'] == layer_name]
+            matching_rows = df[df[trans._('Layer')] == layer_name]
             # For pandas DataFrame, we can use .index
             if isinstance(df, pd.DataFrame):
                 layer_rows = matching_rows.index
