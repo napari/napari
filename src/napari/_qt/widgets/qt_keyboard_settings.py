@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import contextlib
 import itertools
+import logging
 import sys
 from collections import OrderedDict
 from typing import TYPE_CHECKING
@@ -48,6 +49,9 @@ if TYPE_CHECKING:
     from app_model.types import KeyBinding
 
 
+logger = logging.getLogger(__name__)
+
+
 class AppModelShortcutEditor(QWidget):
     """Widget to edit application-level keybindings for napari."""
 
@@ -60,12 +64,13 @@ class AppModelShortcutEditor(QWidget):
         value: dict | None = None,
     ) -> None:
         super().__init__(parent=parent)
-        self._value: dict[str, dict[str, list[KeyBinding]]] = {}
-        self._row_id: dict[int, str] = {}
+        self._value: dict[str, list[KeyBinding]] = {}
         self._skip = False
+        self._group_to_actions = self._get_shortcuts_values()
 
         # widgets
         self.group_select = QComboBox(self)
+        self.group_select.addItems(list(self._group_to_actions))
         self.group_select.currentTextChanged.connect(self._group_selected)
         self._label = QLabel(self)
         self._table = QTableWidget(self)
@@ -109,18 +114,9 @@ class AppModelShortcutEditor(QWidget):
         self.setLayout(layout)
         self.setValue(value if value is not None else {})
 
-    def setValue(self, state: dict[str, dict[str, list[KeyBinding]]]):
-        selected_group = self.group_select.currentText()
-        groups = list(state)
-        self.group_select.clear()
-        self.group_select.addItems(groups)
+    def setValue(self, state: dict[str, list[KeyBinding]]):
         self._value = state
-
-        if selected_group in groups:
-            self.group_select.setCurrentText(selected_group)
-        elif len(groups) > 0:
-            self.group_select.setCurrentIndex(0)
-            self._group_selected()
+        self._group_selected()
 
     def _set_keybinding(self, row, col):
         """Checks the new keybinding to determine if it can be set.
@@ -135,23 +131,57 @@ class AppModelShortcutEditor(QWidget):
         if self._skip:
             return
 
+        current_item = self._table.item(row, col)
+
+        logger.warning('row=%d, col=%d, val=%s', row, col, current_item.text())
+
         # col_count = self._table.columnCount()
         # shortcuts_list = [self._table]
 
-        self.valueChanged.emit(self._value[self.group_select.currentText()])
+        # self.valueChanged.emit(self._value[self.group_select.currentText()])
 
     def restore_defaults(self) -> None:
-        pass
+        """Launches dialog to confirm restore choice."""
+        prev = QApplication.instance().testAttribute(
+            Qt.ApplicationAttribute.AA_DontUseNativeDialogs
+        )
+        QApplication.instance().setAttribute(
+            Qt.ApplicationAttribute.AA_DontUseNativeDialogs, True
+        )
+        response = QMessageBox.question(
+            self,
+            trans._('Restore Shortcuts'),
+            trans._('Are you sure you want to restore default shortcuts?'),
+            QMessageBox.StandardButton.RestoreDefaults
+            | QMessageBox.StandardButton.Cancel,
+            QMessageBox.StandardButton.RestoreDefaults,
+        )
+        QApplication.instance().setAttribute(
+            Qt.ApplicationAttribute.AA_DontUseNativeDialogs, prev
+        )
+
+        if response == QMessageBox.StandardButton.RestoreDefaults:
+            self._reset_shortcuts()
+
+    def _reset_shortcuts(self) -> None:
+        raise NotImplementedError
 
     @property
-    def value(self) -> dict[str, dict[str, list[KeyBinding]]]:
+    def value(self) -> dict[str, list[KeyBinding]]:
         return self._value
 
     def _group_selected(self) -> None:
+        prev = self._skip
+        self._skip = True
+        try:
+            self._group_selected_()
+        finally:
+            self._skip = prev
+
+    def _group_selected_(self):
         app = get_app_model()
         group = self.group_select.currentText()
-        actions = self.value.get(group, {})
-        self._row_id = {}
+        actions = self._group_to_actions.get(group, [])
         self._table.clearContents()
         header_strs = [trans._('Action'), trans._('Keybinding')]
         if not actions:
@@ -159,8 +189,7 @@ class AppModelShortcutEditor(QWidget):
             self._table.setColumnCount(len(header_strs))
             self._table.setHorizontalHeaderLabels(header_strs)
             return
-
-        short_count_max = max(len(x) for x in actions.values())
+        short_count_max = max(len(self._value.get(x, [])) for x in actions)
         header_strs.extend(
             [trans._('Alternative Keybinding')] * short_count_max
         )
@@ -174,14 +203,36 @@ class AppModelShortcutEditor(QWidget):
             )
             self._table.setColumnWidth(i, 165)
 
-        for row, (action_id, keybinds) in enumerate(actions.items()):
+        for row, action_id in enumerate(actions):
             action = app.commands[action_id]
-            self._row_id[row] = action_id
+            keybinds = self._value.get(action_id, [])
             item = QTableWidgetItem(action.title)
+            item.setFlags(Qt.ItemFlag.ItemIsEnabled)
             self._table.setItem(row, 0, item)
             for col, keybind in enumerate(keybinds, start=1):
                 item = QTableWidgetItem(str(keybind))
                 self._table.setItem(row, col, item)
+
+    @staticmethod
+    def _get_shortcuts_values() -> dict[str, list[str]]:
+        raise NotImplementedError
+
+    @staticmethod
+    def _get_default_shortcuts() -> dict[str, list[KeyBinding]]:
+        raise NotImplementedError
+
+
+class BuiltinShortcutEditor(AppModelShortcutEditor):
+    @staticmethod
+    def _get_shortcuts_values() -> dict[str, list[str]]:
+        return get_app_model().get_app_default_shortcuts_groups()
+
+    @staticmethod
+    def _get_default_shortcuts() -> dict[str, list[KeyBinding]]:
+        return get_app_model().get_app_default_shortcuts()
+
+    def _reset_shortcuts(self) -> None:
+        get_settings().shortcuts.app_shortcuts = self._get_default_shortcuts()
 
 
 class ShortcutEditor(QWidget):
@@ -302,7 +353,7 @@ class ShortcutEditor(QWidget):
             Qt.ApplicationAttribute.AA_DontUseNativeDialogs, prev
         )
 
-        if response == QMessageBox.RestoreDefaults:
+        if response == QMessageBox.StandardButton.RestoreDefaults:
             self._reset_shortcuts()
 
     def _reset_shortcuts(self):

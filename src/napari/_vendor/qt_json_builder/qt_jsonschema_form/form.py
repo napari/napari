@@ -28,7 +28,7 @@ class WidgetBuilder:
             "enum": widgets.EnumSchemaWidget,
             "plugins": widgets.PluginWidget,
             "shortcuts": widgets.ShortcutsWidget,
-            "app_shortcuts": widgets.AppShortcutWidget,
+            "app_shortcuts": widgets.BuiltinShortcutWidget,
             "extension2reader": widgets.Extension2ReaderWidget,
             "highlight": widgets.HighlightPreviewWidget,
         },

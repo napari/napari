@@ -94,18 +94,30 @@ class NapariApplication(Application):
 
     def get_app_default_shortcuts(
         self,
-    ) -> dict[str, dict[str, list[KeyBinding]]]:
+    ) -> dict[str, list[KeyBinding]]:
         app_action = [
-            x for x in self._registered_actions if x.startswith(f'{APP_NAME}.')
+            x
+            for x in self._registered_actions
+            if x.startswith(f'{APP_NAME}.') and not x.endswith('dummy')
         ]
 
         return {
-            'Viewer': {
-                action: self.keybindings.get_default_shortcuts(action)
-                for action in app_action
-            },
-            'Image': {},
+            action: self.keybindings.get_default_shortcuts(action)
+            for action in app_action
         }
+
+    def get_app_default_shortcuts_groups(
+        self,
+    ) -> dict[str, list[str]]:
+        """Get the Napari Application default shortcut groups.
+
+        Returns
+        -------
+        dict[str, list[str]]
+            A dictionary where keys are group names and values are lists of
+            action names belonging to each group.
+        """
+        return {'Viewer': list(self.get_app_default_shortcuts()), 'Image': []}
 
 
 @lru_cache(maxsize=1)
