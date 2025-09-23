@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import inspect
+from pathlib import Path
 from typing import Any
 
 from psutil import virtual_memory
@@ -280,6 +282,34 @@ class ApplicationSettings(EventedModel):
             'Per-widget last saved position of plugin dock widgets. This setting is managed by the application.'
         ),
     )
+
+    startup_script: Path = Field(
+        default=Path(),
+        title=trans._('Full path to a startup script'),
+        description=trans._(
+            'Path to a Python script that will be executed on napari startup.\n'
+            'This can be used to customize the behavior of napari or load specific plugins automatically.',
+        ),
+        json_schema_extra={'file_extension': 'py'},
+    )
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        if name == 'startup_script' and value is not None:
+            # Ensure the script is a valid Python file
+            frame = inspect.currentframe()
+            if frame is None:
+                raise ValueError(
+                    "The 'startup_script' setting can only be set by the napari application itself."
+                )
+
+            caller_frame = frame.f_back
+            if caller_frame is None or not caller_frame.f_globals.get(
+                '__name__', ''
+            ).startswith('napari.'):
+                raise ValueError(
+                    "The 'startup_script' setting can only be set by the napari application itself."
+                )
+        super().__setattr__(name, value)
 
     @validator('window_state', allow_reuse=True)
     def _validate_qbtye(cls, v: str) -> str:
