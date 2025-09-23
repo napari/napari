@@ -4,10 +4,12 @@ import platform
 import re
 import subprocess
 import sys
+import textwrap
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 
 import napari
+from napari.settings import get_settings
 
 OS_RELEASE_PATH = '/etc/os-release'
 
@@ -143,6 +145,29 @@ def get_plugin_list() -> str:
         return '<br>'.join(res) + '<br>'
     except ImportError as e:  # pragma: no cover
         return f'Failed to load plugin information: <br> {e}'
+
+
+def startup_script() -> str:
+    """Get information about the startup script if executed."""
+
+    from napari.utils._startup_script import startup_script_status_info
+
+    if startup_script_status_info is None:
+        script_path = (
+            get_settings().application.startup_script.expanduser().resolve()
+        )
+        if not script_path.samefile(Path()):
+            return f'<br><b>Startup script:</b><br> - script path: {script_path}<br>'
+        return ''
+
+    code_html = startup_script_status_info.script_code.replace('\n', '<br>')
+
+    return textwrap.dedent(f"""
+    <br><b>Startup script:</b><br>
+     - load time: {startup_script_status_info.startup_time}<br>
+     - script path: {startup_script_status_info.script_path}<br>
+     - script code: {code_html}<br>
+    """)
 
 
 def sys_info(as_html: bool = False) -> str:
@@ -292,6 +317,7 @@ def sys_info(as_html: bool = False) -> str:
 
     text += '<br><b>Plugins:</b><br>'
     text += get_plugin_list()
+    text += startup_script()
 
     if not as_html:
         text = (

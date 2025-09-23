@@ -8,7 +8,7 @@ certifi==2025.8.3
     # via requests
 charset-normalizer==3.4.3
     # via requests
-click==8.2.1
+click==8.3.0
     # via typer
 docstring-parser==0.17.0
     # via magicgui
@@ -20,13 +20,13 @@ markdown-it-py==4.0.0
     # via rich
 mdurl==0.1.2
     # via markdown-it-py
-mypy==1.17.1
+mypy==1.18.2
     # via -r resources/requirements_mypy.in
 mypy-extensions==1.1.0
     # via mypy
 npe2==0.7.9
     # via -r resources/requirements_mypy.in
-numpy==2.3.2
+numpy==2.3.3
     # via -r resources/requirements_mypy.in
 packaging==25.0
     # via
@@ -42,7 +42,7 @@ psygnal==0.14.1
     #   npe2
 pyconify==0.2.1
     # via superqt
-pydantic==2.11.7
+pydantic==2.11.9
     # via
     #   -r resources/requirements_mypy.in
     #   npe2
@@ -79,11 +79,11 @@ superqt==0.7.6
     # via magicgui
 tomli-w==1.2.0
     # via npe2
-typer==0.17.4
+typer==0.19.1
     # via npe2
-types-pyyaml==6.0.12.20250822
+types-pyyaml==6.0.12.20250915
     # via -r resources/requirements_mypy.in
-types-requests==2.32.4.20250809
+types-requests==2.32.4.20250913
     # via -r resources/requirements_mypy.in
 types-setuptools==80.9.0.20250822
     # via -r resources/requirements_mypy.in
