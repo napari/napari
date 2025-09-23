@@ -1,5 +1,5 @@
 import warnings
-from collections.abc import Callable, Iterable, Sequence
+from collections.abc import Callable, Iterable, Sequence, Sized
 from contextlib import contextmanager
 from copy import copy, deepcopy
 from itertools import cycle
