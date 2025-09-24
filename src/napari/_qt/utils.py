@@ -463,6 +463,29 @@ def get_color(
 
 
 def attr_to_settr(obj, name: str, q_object: QObject, setter: str) -> Callable:
+    """
+    Helper function to connect object attributes changes to QObject attributes.
+
+    Parameters
+    ----------
+    obj : object
+        The object instance which attributes changes will trigger an event.
+        The instance should have an `events` attribute (`EmitterGroup`) with an
+        event related to the attribute.
+    name : str
+        Object attribute that emits changes.
+    q_object : QObject
+        `QObject` instance (usually a `QWidget`) which attribute will be changed.
+    setter : str
+        Name of the method that needs to be used to set the `q_object` attribute.
+
+    Returns
+    -------
+    Callable
+        The callback that was created to call the `QObject` setter when the event
+        gets triggered.
+
+    """
     qt_ref = weakref.ref(q_object)
     obj_ref = weakref.ref(obj)
 
