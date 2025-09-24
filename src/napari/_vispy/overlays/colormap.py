@@ -99,9 +99,11 @@ class VispyColormapOverlay(LayerOverlayMixin, VispyCanvasOverlay):
             color=color,
         )
 
-        # 7 is the base
+        # Calculate proper layout with explicit spacing constants
         self.x_size = (
-            self.overlay.size[0] + self.overlay.tick_length + text_width
+            self.overlay.size[0]  # Colorbar width
+            + self.overlay.tick_length  # Tick marks length
+            + text_width  # Text width with margins
         )
         self.y_size = text_height
 
