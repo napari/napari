@@ -38,7 +38,12 @@ def _split_stack(ll: LayerList, axis: int = 0) -> None:
     if not isinstance(layer, Image):
         return
     if layer.rgb:
-        images = stack_utils.split_rgb(layer)
+        # determine if image is rgb (3 channel) or rbga (4 channel)
+        with_alpha = False
+        if layer.data.shape[-1] == 4:
+            # set with_alpha option true for rgba image
+            with_alpha = True
+        images = stack_utils.split_rgb(layer, with_alpha=with_alpha)
     else:
         images = stack_utils.stack_to_images(layer, axis)
     ll.remove(layer)
@@ -56,7 +61,10 @@ def _convert(ll: LayerList, type_: str) -> None:
     for lay in list(ll.selection):
         idx = ll.index(lay)
         if isinstance(lay, Shapes) and type_ == 'labels':
-            data = lay.to_labels()
+            ll_shape = (
+                ll._extent_world_augmented[1] - ll._extent_world_augmented[0]
+            )
+            data = lay.to_labels(labels_shape=lay.world_to_data(ll_shape))
             idx += 1
         elif (
             not np.issubdtype(lay.data.dtype, np.integer) and type_ == 'labels'

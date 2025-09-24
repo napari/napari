@@ -1,5 +1,5 @@
 import warnings
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from contextlib import contextmanager
 from copy import copy, deepcopy
 from itertools import cycle
@@ -53,6 +53,7 @@ from napari.layers.shapes._shapes_utils import (
     rdp,
     validate_num_vertices,
 )
+from napari.layers.shapes.shape_types import BoxArray
 from napari.layers.utils.color_manager_utils import (
     guess_continuous,
     map_property,
@@ -891,8 +892,10 @@ class Shapes(Layer):
     def current_edge_width(self, edge_width):
         self._current_edge_width = edge_width
         if self._update_properties:
-            for i in self.selected_data:
-                self._data_view.update_edge_width(i, edge_width)
+            # To avoid performance cost of repeated update calls, we batch the updates
+            with self._data_view.batched_updates():
+                for i in self.selected_data:
+                    self._data_view.update_edge_width(i, edge_width)
         self.events.edge_width()
 
     @property
@@ -905,10 +908,11 @@ class Shapes(Layer):
     def current_edge_color(self, edge_color):
         self._current_edge_color = transform_color(edge_color)
         if self._update_properties:
-            indices = np.fromiter(self.selected_data, dtype=int)
-            self._data_view.update_edge_colors(
-                indices, self._current_edge_color
-            )
+            with self._data_view.batched_updates():
+                for i in self.selected_data:
+                    self._data_view.update_edge_color(
+                        i, self._current_edge_color
+                    )
             self.events.edge_color()
             self._update_thumbnail()
         self.events.current_edge_color()
@@ -1221,9 +1225,9 @@ class Shapes(Layer):
             widths = width
         else:
             widths = [width for _ in range(self.nshapes)]
-
-        for i, width in enumerate(widths):
-            self._data_view.update_edge_width(i, width)
+        with self._data_view.batched_updates():
+            for i, width in enumerate(widths):
+                self._data_view.update_edge_width(i, width)
 
     @property
     def z_index(self):
@@ -2433,7 +2437,7 @@ class Shapes(Layer):
                 self.selected_data = set()
             self._data_view.slice_key = slice_key
 
-    def interaction_box(self, index):
+    def interaction_box(self, index: int | Iterable[int]) -> BoxArray | None:
         """Create the interaction box around a shape or list of shapes.
         If a single index is passed then the bounding box will be inherited
         from that shapes interaction box. If list of indices is passed it will
@@ -2460,8 +2464,18 @@ class Shapes(Layer):
             elif len(index) == 1:
                 box = copy(self._data_view.shapes[next(iter(index))]._box)
             else:
-                indices = np.isin(self._data_view.displayed_index, list(index))
-                box = create_box(self._data_view.displayed_vertices[indices])
+                displayed_shape_indices = [
+                    i for i in index if self._data_view._displayed[i]
+                ]
+                vertices_range = np.r_[
+                    tuple(
+                        self._data_view._vertices_slice_available(i)
+                        for i in displayed_shape_indices
+                    )
+                ]
+                box = create_box(
+                    self._data_view.displayed_vertices[vertices_range]
+                )
         else:
             box = copy(self._data_view.shapes[index]._box)
 
@@ -2571,7 +2585,8 @@ class Shapes(Layer):
             ):
                 # If in one of these mode show the vertices of the shape itself
                 inds = np.isin(
-                    self._data_view.displayed_index, list(self.selected_data)
+                    self._data_view.displayed_vertices_to_shape_num,
+                    list(self.selected_data),
                 )
                 vertices = self._data_view.displayed_vertices[inds][:, ::-1]
                 # If currently adding path don't show box over last vertex
@@ -2957,8 +2972,13 @@ class Shapes(Layer):
                 [Mode.DIRECT, Mode.VERTEX_INSERT, Mode.VERTEX_REMOVE]
             ):
                 # Check if inside vertex of shape
-                inds = np.isin(self._data_view.displayed_index, selected_index)
-                vertices = self._data_view.displayed_vertices[inds]
+                selected_vertex_mask = np.isin(
+                    self._data_view.displayed_vertices_to_shape_num,
+                    selected_index,
+                )
+                vertices = self._data_view.displayed_vertices[
+                    selected_vertex_mask
+                ]
                 distances = abs(vertices - coord)
 
                 # Check if any matching vertices
@@ -2966,10 +2986,13 @@ class Shapes(Layer):
                     distances <= self._normalized_vertex_radius, axis=1
                 ).nonzero()[0]
                 if len(matches) > 0:
-                    index = inds.nonzero()[0][matches[-1]]
-                    shape = self._data_view.displayed_index[index]
+                    index = selected_vertex_mask.nonzero()[0][matches[-1]]
+                    shape = self._data_view.displayed_vertices_to_shape_num[
+                        index
+                    ]
                     vals, idx = np.unique(
-                        self._data_view.displayed_index, return_index=True
+                        self._data_view.displayed_vertices_to_shape_num,
+                        return_index=True,
                     )
                     shape_in_list = list(vals).index(shape)
                     value = (shape, index - idx[shape_in_list])

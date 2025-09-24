@@ -13,6 +13,7 @@ import tifffile
 import zarr
 
 from napari_builtins.io._read import (
+    _git_provider_url_to_raw_url,
     _guess_layer_type_from_column_names,
     _guess_zarr_path,
     csv_to_layer_data,
@@ -339,3 +340,24 @@ def test_add_many_zarr_1d_array_is_ignored(tmp_path):
         else:
             assert isinstance(out[0], da.Array), name
             assert out[0].ndim == int(name[0])
+
+
+@pytest.mark.parametrize(
+    ('url', 'expected'),
+    [
+        (
+            'https://github.com/napari/napari/blob/main/examples/add_labels.py',
+            'https://raw.githubusercontent.com/napari/napari/refs/heads/main/examples/add_labels.py',
+        ),
+        (
+            'https://gist.github.com/Czaki/532b38f23abb6806f63fbd7c048bbf63#file-saveimage_tiff-py',
+            'https://gist.githubusercontent.com/Czaki/532b38f23abb6806f63fbd7c048bbf63/raw#file-saveimage_tiff-py',
+        ),
+        (
+            'https://gitlab.mimuw.edu.pl/python-tools/testing/-/blob/master/code/test_conditional.py?ref_type=heads',
+            'https://gitlab.mimuw.edu.pl/python-tools/testing/-/raw/master/code/test_conditional.py?ref_type=heads',
+        ),
+    ],
+)
+def test_github_and_gitlab_to_raw_url(url, expected):
+    assert _git_provider_url_to_raw_url(url) == expected

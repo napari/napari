@@ -4,7 +4,7 @@ Xarray example
 
 Displays an xarray
 
-.. tags:: visualization-nD
+.. tags:: visualization-nD, xarray
 """
 
 try:

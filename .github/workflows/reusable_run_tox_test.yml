@@ -38,6 +38,10 @@ on:
         required: false
         type: string
         default: ""
+      artifacts_suffix:
+        required: false
+        type: string
+        default: ""
 
 jobs:
   test:
@@ -60,10 +64,19 @@ jobs:
       COVERAGE: ${{ inputs.coverage }}
       TOX_WORK_DIR: .tox
       TOX_EXTRAS: ${{ inputs.tox_extras }}
+      XDG_CACHE_HOME: ${{ github.workspace }}/.cache
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - name: Cache pooch downloads
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4
+        with:
+          path: |
+            ${{ github.workspace }}/.cache/scikit-image
+            ${{ github.workspace }}/.cache/napari-*
+            ${{ github.workspace }}/.cache/pooch
+          key: pooch
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
         with:
           name: wheel
           path: dist
@@ -73,16 +86,14 @@ jobs:
         shell: bash
 
       - name: Set up Python ${{ inputs.python_version }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: ${{ inputs.python_version }}
           cache: "pip"
           cache-dependency-path: pyproject.toml
 
-      - uses: tlambert03/setup-qt-libs@v1
-
       - name: Setup Graphviz
-        uses: ts-graphviz/setup-graphviz@v2
+        uses: ts-graphviz/setup-graphviz@b1de5da23ed0a6d14e0aeee8ed52fdd87af2363c # v2.0.2
         continue-on-error: true
 
       - name: Set Windows resolution
@@ -90,14 +101,11 @@ jobs:
         run: Set-DisplayResolution -Width 1920 -Height 1080 -Force
         shell: powershell
 
-      # strategy borrowed from vispy for installing opengl libs on windows
-      - name: Install Windows OpenGL
-        if: runner.os == 'Windows'
-        run: |
-          git clone --depth 1 https://github.com/pyvista/gl-ci-helpers.git
-          powershell gl-ci-helpers/appveyor/install_opengl.ps1
-          if (Test-Path -Path "C:\Windows\system32\opengl32.dll" -PathType Leaf) {Exit 0} else {Exit 1}
-        shell: powershell
+      - name: Setup headless display
+        uses: pyvista/setup-headless-display-action@7d84ae825e6d9297a8e99bdbbae20d1b919a0b19 # v4.2
+        with:
+          qt: true
+          wm: herbstluftwm
 
       - name: Disable ptrace security restrictions
         if: runner.os == 'Linux'
@@ -140,84 +148,76 @@ jobs:
 
       - name: Test with tox main
         timeout-minutes: ${{ inputs.timeout }}
-        uses: aganders3/headless-gui@v2
-        with:
-          shell: bash
-          run: |
-            echo ${{ env.MAIN }}
-            tox --version
-            python -m tox run --installpkg ${{ env.WHEEL_PATH }} -- --basetemp=.pytest_tmp
-            rm -r .tox
+        shell: bash
+        run: |
+          echo ${{ env.MAIN }}
+          tox --version
+          python -m tox run --installpkg ${{ env.WHEEL_PATH }} -- --basetemp=.pytest_tmp
+          rm -r .tox
         env:
           BACKEND: ${{ env.MAIN }}
           TOX_WORK_DIR: .tox
 
       - name: Test with tox second
         timeout-minutes: ${{ inputs.timeout }}
-        uses: aganders3/headless-gui@v2
         if : ${{ env.SECOND != 'none' }}
-        with:
-          shell: bash
-          run: |
-            python -m tox run --installpkg ${{ env.WHEEL_PATH }} -- --basetemp=.pytest_tmp
-            rm -r .tox
+        shell: bash
+        run: |
+          python -m tox run --installpkg ${{ env.WHEEL_PATH }} -- --basetemp=.pytest_tmp
+          rm -r .tox
         env:
           BACKEND: ${{ env.SECOND }}
           NAPARI_TEST_SUBSET: qt
 
       - name: Test with tox third
         timeout-minutes: ${{ inputs.timeout }}
-        uses: aganders3/headless-gui@v2
         if : ${{ env.THIRD != 'none' }}
-        with:
-          shell: bash
-          run: |
-            python -m tox run --installpkg ${{ env.WHEEL_PATH }} -- --basetemp=.pytest_tmp
-            rm -r .tox
+        shell: bash
+        run: |
+          python -m tox run --installpkg ${{ env.WHEEL_PATH }} -- --basetemp=.pytest_tmp
+          rm -r .tox
         env:
           BACKEND: ${{ env.THIRD }}
           NAPARI_TEST_SUBSET: qt
 
       - name: Test with tox fourth
         timeout-minutes: ${{ inputs.timeout }}
-        uses: aganders3/headless-gui@v2
         if: ${{ env.FOURTH != 'none' }}
-        with:
-          shell: bash
-          run: |
-            python -m tox run --installpkg ${{ env.WHEEL_PATH }} -- --basetemp=.pytest_tmp
-            rm -r .tox
+        shell: bash
+        run: |
+          python -m tox run --installpkg ${{ env.WHEEL_PATH }} -- --basetemp=.pytest_tmp
+          rm -r .tox
         env:
           BACKEND: ${{ env.FOURTH }}
           NAPARI_TEST_SUBSET: qt
 
       - name: Upload test artifacts
         if: failure()
-        uses: actions/upload-artifact@v4.4.0
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: test artifacts ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }}
+          name: test artifacts ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }} ${{ inputs.artifacts_suffix }}
           path: .pytest_tmp
           include-hidden-files: true
 
       - name: Upload leaked viewer graph
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: leaked ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }}
+          name: leaked ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }} ${{ inputs.artifacts_suffix }}
           path: ./*leak-backref-graph*.pdf
 
       - name: Upload pytest timing reports as json ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: upload pytest timing json ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }} ${{ inputs.tox_extras }}
+          name: upload pytest timing json ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }} ${{ inputs.tox_extras }} ${{ inputs.artifacts_suffix }}
           path: |
             ./report-*.json
 
       - name: Upload coverage data
-        uses: actions/upload-artifact@v4.4.0
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: ${{ inputs.coverage == 'cov' }}
         with:
-          name: coverage reports ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }}
+          name: coverage reports ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }} ${{ inputs.artifacts_suffix }}
           include-hidden-files: true
           path: |
             ./.coverage.*

@@ -16,7 +16,7 @@ from vispy.color import (
 )
 from vispy.color.colormap import LUT_len
 
-from napari.utils.colormaps._accelerated_cmap import minimum_dtype_for_labels
+from napari.utils.colormaps import _accelerated_cmap
 from napari.utils.colormaps.bop_colors import bopd
 from napari.utils.colormaps.colormap import (
     Colormap,
@@ -588,7 +588,7 @@ def shuffle_and_extend_colormap(
     """
     rng = np.random.default_rng(seed)
     n_colors_prev = len(colormap.colors)
-    dtype = minimum_dtype_for_labels(n_colors_prev)
+    dtype = _accelerated_cmap.minimum_dtype_for_labels(n_colors_prev)
     indices = np.arange(n_colors_prev)
     rng.shuffle(indices)
     shuffled_colors = colormap.colors[indices]
