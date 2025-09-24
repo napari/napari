@@ -76,7 +76,11 @@ def _has_visible_text(layer: Points | Shapes) -> bool:
 
 
 def get_text_width_height(text: Text) -> tuple[float, float]:
-    """Get the width and height of a vispy text visual in screen pixels."""
+    """Get the width and height of a vispy text visual in screen pixels.
+
+    If display scaling is not 1 (e.g. hidpi), this is already accounted for
+    by vispy.
+    """
     if isinstance(text.text, str):
         strings = [text.text]
     elif isinstance(text.text, list):
@@ -109,17 +113,10 @@ def get_text_width_height(text: Text) -> tuple[float, float]:
         else (0, 0)
     )
 
-    font_size = get_text_font_size(text)
-
     # these magic numbers (1.2 and 1.3) are from trial and error
-    return (bottom_right[0] - top_left[0]) * font_size * 1.3, (
+    return (bottom_right[0] - top_left[0]) * text.font_size * 1.3, (
         bottom_right[1] - top_left[1]
-    ) * font_size * 1.2
-
-
-def get_text_font_size(text: Text) -> float:
-    """Get the logical font size of a text visual, rescaled by dpi."""
-    return text.font_size * getattr(text.canvas, 'pixel_size', 1)
+    ) * text.font_size * 1.2
 
 
 # vendored from vispy/visuals/text/text.py, but removing all lines referring to context flushing,

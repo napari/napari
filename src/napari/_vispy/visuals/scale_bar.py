@@ -1,7 +1,7 @@
 import numpy as np
 from vispy.scene.visuals import Compound, Line, Rectangle, Text
 
-from napari._vispy.utils.text import get_text_font_size, get_text_width_height
+from napari._vispy.utils.text import get_text_width_height
 
 
 class ScaleBar(Compound):
@@ -38,7 +38,7 @@ class ScaleBar(Compound):
     def set_data(self, *, length, color, ticks, font_size):
         text_width, _ = get_text_width_height(self.text)
         # fixed multiplier for height to avoid fluttering when zooming
-        text_height = get_text_font_size(self.text) * 1.5
+        text_height = self.text.font_size * 1.5
 
         # compute box width and height based on the size of the contents
         box_width = length + self._box_padding * 2
