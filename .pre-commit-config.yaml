@@ -3,11 +3,11 @@ repos:
 - repo: https://github.com/astral-sh/ruff-pre-commit
   rev: v0.12.12
   hooks:
-  - id: ruff-format
-    exclude: examples
-  - id: ruff
+  - id: ruff-check
 #    args:
 #      - "--unsafe-fixes"
+  - id: ruff-format
+    exclude: examples
 - repo: https://github.com/seddonym/import-linter
   rev: v2.4
   hooks:
@@ -32,3 +32,10 @@ repos:
     exclude: .*\.py|.*\.md
   - id: mixed-line-ending
     exclude: .*\.py
+- repo: local
+  hooks:
+  - id: check-groups-vs-extras
+    name: check that all group names in pyproject.toml are in extras
+    language: python
+    entry: python tools/check_groups_vs_extras.py
+    files: ^pyproject.toml$
