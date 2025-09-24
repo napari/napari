@@ -43,7 +43,7 @@ certifi==2025.8.3
     #   requests
 charset-normalizer==3.4.3
     # via requests
-click==8.3.0
+click==8.2.1
     # via
     #   dask
     #   distributed
@@ -63,21 +63,21 @@ comm==0.2.3
     # via ipykernel
 contourpy==1.3.2
     # via matplotlib
-coverage==7.10.7
+coverage==7.10.6
     # via napari (pyproject.toml)
 cycler==0.12.1
     # via matplotlib
-dask==2025.9.1
+dask==2025.9.0
     # via
     #   napari (pyproject.toml)
     #   distributed
-debugpy==1.8.17
+debugpy==1.8.16
     # via ipykernel
 decorator==5.2.1
     # via ipython
 distlib==0.4.0
     # via virtualenv
-distributed==2025.9.1
+distributed==2025.9.0
     # via dask
 docstring-parser==0.17.0
     # via
@@ -109,7 +109,7 @@ flexcache==0.3
     # via pint
 flexparser==0.4
     # via pint
-fonttools==4.60.0
+fonttools==4.59.2
     # via matplotlib
 freetype-py==2.5.1
     # via vispy
@@ -132,7 +132,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.140.0
+hypothesis==6.138.16
     # via napari (pyproject.toml)
 idna==3.10
     # via
@@ -215,13 +215,13 @@ lazy-loader==0.4
     #   scikit-image
 linkify-it-py==2.0.3
     # via napari (pyproject.toml)
-llvmlite==0.45.0
+llvmlite==0.44.0
     # via numba
 locket==1.0.0
     # via
     #   distributed
     #   partd
-lxml==6.0.2
+lxml==6.0.1
     # via
     #   napari (pyproject.toml)
     #   lxml-html-clean
@@ -299,7 +299,7 @@ npe2==0.7.9
     # via
     #   napari (pyproject.toml)
     #   napari-plugin-manager
-numba==0.62.0
+numba==0.61.2
     # via
     #   napari (pyproject.toml)
     #   glasbey
@@ -436,7 +436,7 @@ pretend==1.0.9
     # via napari (pyproject.toml)
 prompt-toolkit==3.0.52
     # via ipython
-psutil==7.1.0
+psutil==7.0.0
     # via
     #   napari (pyproject.toml)
     #   distributed
@@ -491,9 +491,9 @@ pyopengl==3.1.10
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
-pyparsing==3.2.5
+pyparsing==3.2.4
     # via matplotlib
-pyperclip==1.10.0
+pyperclip==1.9.0
     # via mouseinfo
 pyproject-hooks==1.2.0
     # via build
@@ -708,7 +708,7 @@ tabulate==0.9.0
     # via jupyter-cache
 tblib==3.1.0
     # via distributed
-tensorstore==0.1.77
+tensorstore==0.1.76
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
@@ -756,7 +756,7 @@ triangle==20250106
     # via napari (pyproject.toml)
 triton==3.4.0
     # via torch
-typer==0.19.1
+typer==0.17.4
     # via npe2
 typing-extensions==4.15.0
     # via
@@ -794,7 +794,7 @@ urllib3==2.5.0
     # via
     #   distributed
     #   requests
-uvicorn==0.36.0
+uvicorn==0.35.0
     # via sphinx-autobuild
 virtualenv==20.34.0
     # via napari (pyproject.toml)
