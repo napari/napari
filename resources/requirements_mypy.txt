@@ -36,7 +36,7 @@ pathspec==0.12.1
     # via mypy
 platformdirs==4.4.0
     # via npe2
-psygnal==0.14.1
+psygnal==0.14.2
     # via
     #   magicgui
     #   npe2
@@ -79,7 +79,7 @@ superqt==0.7.6
     # via magicgui
 tomli-w==1.2.0
     # via npe2
-typer==0.19.1
+typer==0.19.2
     # via npe2
 types-pyyaml==6.0.12.20250915
     # via -r resources/requirements_mypy.in
