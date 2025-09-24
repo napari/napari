@@ -2815,7 +2815,6 @@ class Shapes(Layer):
                 'edge_color': None,
                 'face_color': None,
                 'z_index': None,
-                'properties': {},
                 'features': {},
             }
 
@@ -2826,16 +2825,7 @@ class Shapes(Layer):
             'edge_color': self.edge_color[index],
             'face_color': self.face_color[index],
             'z_index': self.z_index[index],
-            'properties': {
-                key: (val[index]) for key, val in self.properties.items()
-            }
-            if self.properties
-            else {},
-            'features': (
-                self.features.iloc[index].to_dict()
-                if hasattr(self, 'features') and self.features is not None
-                else {}
-            ),
+            'features': self.features.iloc[index].to_dict(),
         }
         return info
 

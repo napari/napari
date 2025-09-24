@@ -1475,6 +1475,9 @@ def test_removing_shapes():
         ]
     )
 
+    # removing nothing should work smoothly
+    layer.remove([])
+
 
 def test_removing_selected_shapes():
     """Test removing selected shapes."""
@@ -1533,7 +1536,7 @@ def test_removing_selected_shapes():
     )
 
 
-def test_poping_shapes():
+def test_popping_shapes():
     """Test popping shapes."""
     np.random.seed(0)
     data = [

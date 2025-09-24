@@ -1977,13 +1977,15 @@ class Points(Layer):
         colormapped[..., 3] *= self.opacity
         self.thumbnail = colormapped
 
-    def add(self, coords):
+    def add(self, coords, metadata=None):
         """Adds points at coordinates.
 
         Parameters
         ----------
         coords : array
             Point or points to add to the layer data.
+        metadata : list[dict]
+            Metadata associated with the given points, such as colors and features.
         """
         cur_points = len(self.data)
         self.events.data(
@@ -2074,7 +2076,6 @@ class Points(Layer):
         if not (0 <= index < len(self.data)):
             return {
                 'data': None,
-                'properties': {},
                 'features': {},
                 'face_color': None,
                 'border_color': None,
@@ -2085,16 +2086,7 @@ class Points(Layer):
 
         info = {
             'data': self.data[index],
-            'properties': {
-                key: (val[index]) for key, val in self.properties.items()
-            }
-            if self.properties
-            else {},
-            'features': (
-                self.features.iloc[index].to_dict()
-                if hasattr(self, 'features') and self.features is not None
-                else {}
-            ),
+            'features': self.features.iloc[index].to_dict(),
             'face_color': self.face_color[index],
             'border_color': self.border_color[index],
             'size': self.size[index],
