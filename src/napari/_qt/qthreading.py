@@ -188,7 +188,7 @@ def create_worker(
         worker.pbar = pbar
 
     # signals connection for status handling
-    if viewer := current_viewer() and _track_status:
+    if (viewer := current_viewer()) and _track_status:
         window = viewer.window
         worker_status_id = window._register_task_status(
             'napari-worker',
