@@ -608,7 +608,8 @@ class _QtMainWindow(QMainWindow):
         """
         task_status = self._window._task_status_manager.get_status()
         if (
-            task_status
+            event.spontaneous()
+            and task_status
             and ConfirmCloseDialog(
                 self,
                 close_app=False,
@@ -724,7 +725,6 @@ class Window:
 
         # Connect the Viewer and create the Main Window
         self._qt_window = _QtMainWindow(viewer, self)
-
         qapp.installEventFilter(self._qt_window)
 
         # connect theme events before collecting plugin-provided themes

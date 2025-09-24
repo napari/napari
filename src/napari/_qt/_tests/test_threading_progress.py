@@ -1,7 +1,6 @@
 import pytest
 
 from napari._qt import qthreading
-from napari._qt.dialogs.confirm_close_dialog import ConfirmCloseDialog
 from napari._qt.widgets.qt_progress_bar import QtLabeledProgressBar
 
 pytest.importorskip(
@@ -141,12 +140,7 @@ def test_function_worker_0_total():
     assert worker.pbar.total == 0
 
 
-def test_unstarted_worker_no_widget(make_napari_viewer, monkeypatch):
-    monkeypatch.setattr(
-        ConfirmCloseDialog,
-        'exec_',
-        lambda *args: ConfirmCloseDialog.DialogCode.Accepted,
-    )
+def test_unstarted_worker_no_widget(make_napari_viewer):
     viewer = make_napari_viewer()
 
     def func():
@@ -157,7 +151,6 @@ def test_unstarted_worker_no_widget(make_napari_viewer, monkeypatch):
         func,
         progress={'total': 5},
         start_thread=False,
-        track_status=True,
     )
 
     thread_func()

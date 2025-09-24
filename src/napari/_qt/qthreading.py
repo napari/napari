@@ -66,7 +66,6 @@ def create_worker(
     _progress: bool | dict[str, int | bool | str] | None = None,
     _worker_class: type[GeneratorWorker] | type[FunctionWorker] | None = None,
     _ignore_errors: bool = False,
-    _track_status: bool = False,
     **kwargs,
 ) -> FunctionWorker | GeneratorWorker:
     """Convenience function to start a function in another thread.
@@ -102,9 +101,6 @@ def create_worker(
     _ignore_errors : bool, optional
         If ``False`` (the default), errors raised in the other thread will be
         reraised in the main thread (makes debugging significantly easier).
-    _track_status : bool, optional
-        If ``False`` (the default), no status will be tracked for the worker even if
-        there is a window available to do so.
     *args
         will be passed to ``func``
     **kwargs
@@ -188,7 +184,7 @@ def create_worker(
         worker.pbar = pbar
 
     # signals connection for status handling
-    if (viewer := current_viewer()) and _track_status:
+    if viewer := current_viewer():
         window = viewer.window
         worker_status_id = window._register_task_status(
             'napari-worker',
@@ -270,7 +266,6 @@ def thread_worker(
     progress: bool | dict[str, int | bool | str] | None = None,
     worker_class: type[FunctionWorker] | type[GeneratorWorker] | None = None,
     ignore_errors: bool = False,
-    track_status: bool = False,
 ):
     """Decorator that runs a function in a separate thread when called.
 
@@ -332,9 +327,6 @@ def thread_worker(
     ignore_errors : bool, optional
         If ``False`` (the default), errors raised in the other thread will be
         reraised in the main thread (makes debugging significantly easier).
-    track_status : bool, optional
-        If ``False`` (the default), no status will be tracked for the worker even if
-        there is a window available to do so.
 
     Returns
     -------
@@ -377,7 +369,6 @@ def thread_worker(
             kwargs['_ignore_errors'] = kwargs.get(
                 '_ignore_errors', ignore_errors
             )
-            kwargs['_track_status'] = kwargs.get('_track_status', track_status)
 
             return create_worker(
                 func,
