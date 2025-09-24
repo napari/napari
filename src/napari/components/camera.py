@@ -92,6 +92,7 @@ class Camera(EventedModel):
         3-tuple. This direction is in 3D scene coordinates, the world coordinate
         system for three currently displayed dimensions.
         """
+        # see #8281 for why this is yzx. In short: longstanding vispy bug.
         rotation_matrix = R.from_euler(
             seq='yzx', angles=self.angles, degrees=True
         ).as_matrix()
@@ -171,6 +172,7 @@ class Camera(EventedModel):
 
         # construct rotation matrix, convert to euler angles
         rotation_matrix = np.column_stack((up_vector, view_vector, x_vector))
+        # see #8281 for why this is yzx. In short: longstanding vispy bug.
         euler_angles = R.from_matrix(rotation_matrix).as_euler(
             seq='yzx', degrees=True
         )
