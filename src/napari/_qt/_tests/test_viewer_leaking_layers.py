@@ -49,8 +49,8 @@ def test_leaks_image(
     qtbot.wait(100)
     gc.collect()
     gc.collect()
-    assert not lr()
-    assert not dr()
+    assert lr() is None
+    assert dr() is None
 
 
 @skip_on_win_ci
@@ -68,5 +68,5 @@ def test_leaks_labels(
     qtbot.wait(100)
     gc.collect()
     gc.collect()
-    assert not lr()
-    assert not dr()
+    assert lr() is None
+    assert dr() is None
