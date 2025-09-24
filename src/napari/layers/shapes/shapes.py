@@ -1263,8 +1263,7 @@ class Shapes(Layer):
 
     @selected_data.setter
     def selected_data(self, selected_data: Sequence[int]) -> None:
-        self._selected_data.clear()
-        self._selected_data.update(selected_data)
+        self._selected_data.replace_selection(selected_data)
         self._selected_box = self.interaction_box(self._selected_data)
 
         # Update properties based on selected shapes
