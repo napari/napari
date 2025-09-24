@@ -6,7 +6,7 @@ from napari._qt.layer_controls.widgets import (
     QtProjectionModeControl,
 )
 from napari._qt.layer_controls.widgets._vectors import (
-    QtEdgeColorPropertyControl,
+    QtEdgeColorFeatureControl,
     QtLengthSpinBoxControl,
     QtVectorStyleComboBoxControl,
     QtWidthSpinBoxControl,
@@ -27,8 +27,8 @@ class QtVectorsControls(QtLayerControls):
 
     Attributes
     ----------
-    _edge_color_property_control : napari._qt.layer_controls.widgets._vectors.QtEdgeColorPropertyControl
-        Widget that wraps the widgets used to select vectors edge color mode, property and color.
+    _edge_color_feature_control : napari._qt.layer_controls.widgets._vectors.QtEdgeColorFeatureControl
+        Widget that wraps the widgets used to select vectors edge color mode, feature and color.
     _length_spinbox_control : napari._qt.layer_controls.widgets._vectors.QtLengthSpinBoxControl
         Widget that wraps a spinbox widget controlling length of vectors.
     _out_slice_checkbox_control : napari._qt.layer_controls.widgets.QtOutSliceCheckBoxControl
@@ -59,10 +59,10 @@ class QtVectorsControls(QtLayerControls):
             self, layer
         )
         self._add_widget_controls(self._vector_style_combobox_control)
-        self._edge_color_property_control = QtEdgeColorPropertyControl(
+        self._edge_color_feature_control = QtEdgeColorFeatureControl(
             self, layer
         )
-        self._add_widget_controls(self._edge_color_property_control)
+        self._add_widget_controls(self._edge_color_feature_control)
         self._out_slice_checkbox_control = QtOutSliceCheckBoxControl(
             self, layer
         )
