@@ -1,4 +1,3 @@
-from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QCheckBox,
     QWidget,
@@ -8,8 +7,9 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,
 )
-from napari._qt.utils import qt_signals_blocked
+from napari._qt.utils import checked_to_bool, qt_signals_blocked
 from napari.layers import Labels
+from napari.utils.events.event_utils import connect_setattr
 from napari.utils.translations import trans
 
 
@@ -45,24 +45,17 @@ class QtPreserveLabelsCheckBoxControl(QtWidgetControlsBase):
         preserve_labels_cb.setToolTip(
             trans._('Preserve existing labels while painting')
         )
-        preserve_labels_cb.stateChanged.connect(self.change_preserve_labels)
+        connect_setattr(
+            preserve_labels_cb.stateChanged,
+            layer,
+            'preserve_labels',
+            convert_fun=checked_to_bool,
+        )
         self.preserve_labels_checkbox = preserve_labels_cb
         self._on_preserve_labels_change()
 
         self.preserve_labels_checkbox_label = QtWrappedLabel(
             trans._('preserve\nlabels:')
-        )
-
-    def change_preserve_labels(self, state) -> None:
-        """Toggle preserve_labels state of label layer.
-
-        Parameters
-        ----------
-        state : int
-            Integer value of Qt.CheckState that indicates the check state of preserve_labels_checkbox
-        """
-        self._layer.preserve_labels = (
-            Qt.CheckState(state) == Qt.CheckState.Checked
         )
 
     def _on_preserve_labels_change(self) -> None:
