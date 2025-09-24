@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import gc
+from collections.abc import Iterator
 from functools import partial
 from typing import TYPE_CHECKING
 from weakref import WeakSet
@@ -99,6 +100,8 @@ class VispyCanvas:
         was applied.
     _overlay_to_visual : dict(napari.components.overlays, list(napari._vispy.overlays))
         A mapping of the napari overlays that are part of the viewer and their corresponding Vispy counterparts.
+        The values are lists that may contain multiple elements when grid mode is enabled and overlay.gridded == True,
+        associating multiple vispy visual to a single overlay model.
     _layer_overlay_to_visual : dict(napari.layers.Layer, dict(napari.components.overlays, napari._vispy.overlays))
         A mapping from each layer in the layerlist to their mappings of napari overlay->vispy counterpart.
     _scene_canvas : napari._vispy.canvas.NapariSceneCanvas
@@ -137,7 +140,7 @@ class VispyCanvas:
         self.grid_views = []
         self.grid_cameras = []
 
-        self.layer_to_visual: dict[Layer, VispyBaseLayer] = {}
+        self.layer_to_visual: dict[Layer, VispyBaseLayer[Layer]] = {}
         self._overlay_to_visual: dict[Overlay, list[VispyBaseOverlay]] = {}
         self._layer_overlay_to_visual: dict[
             Layer, dict[Overlay, VispyBaseOverlay]
@@ -235,7 +238,7 @@ class VispyCanvas:
         return self._scene_canvas._backend.screen_changed
 
     @property
-    def background_color_override(self) -> str | None:
+    def background_color_override(self) -> str | npt.ArrayLike | None:
         """Background color of VispyCanvas.
 
         When not None, color is shown instead of VispyCanvas.bgcolor.
@@ -905,18 +908,34 @@ class VispyCanvas:
 
         self._defer_overlay_position_update()
 
-    def _get_ordered_visible_canvas_overlays(self):
-        # note that some canvas overlays do no use CanvasPosition, but are instead
-        # free-floating (such as the cursor overlay), so those are skipped
+    def _get_ordered_visible_canvas_overlays(
+        self,
+    ) -> Iterator[tuple[CanvasOverlay, VispyBaseOverlay, Node | None]]:
+        """
+        Iterator over visible canvas overlays by grid viewbox, in tiling order.
 
-        # first the base view (non-gridded viewer overlays)
-        for overlay, vispy_overlays in self._overlay_to_visual.items():
-            if (
+        Returns a tuple containing the overlay model, its matching visual, and
+        the index of the view in the grid where the overlay should be displayed.
+        The view `None` is special cased to refer to the base, non-gridded view.
+
+        Note that some canvas overlays do no use CanvasPosition, but are instead
+        free-floating (such as the cursor overlay), so those are skipped
+        """
+
+        def is_visible_tileable(overlay):
+            return (
                 overlay.visible
                 and isinstance(overlay, CanvasOverlay)
                 and overlay.position in list(CanvasPosition)
-                and not (overlay.gridded and self.viewer.grid.enabled)
-            ):
+            )
+
+        def is_gridded(overlay):
+            return overlay.gridded and self.viewer.grid.enabled
+
+        # first the base view: non-gridded viewer overlays which appear
+        # "on top of" the main canvas
+        for overlay, vispy_overlays in self._overlay_to_visual.items():
+            if is_visible_tileable(overlay) and not is_gridded(overlay):
                 yield overlay, vispy_overlays[0], None
 
         # then gridded viewer overlays and layer overlays, by viewbox, in order
@@ -926,29 +945,24 @@ class VispyCanvas:
             if not layer_indices:
                 # last empty boxes of the grid
                 break
+
+            # if grid is disabled, this loop runs once and we put everything
+            # in the base (None) viewbox
             view = viewbox_idx if self.viewer.grid.enabled else None
 
             for overlay, vispy_overlays in self._overlay_to_visual.items():
-                if (
-                    overlay.visible
-                    and isinstance(overlay, CanvasOverlay)
-                    and overlay.position in list(CanvasPosition)
-                    and (overlay.gridded and self.viewer.grid.enabled)
-                ):
+                if is_visible_tileable(overlay) and is_gridded(overlay):
                     yield overlay, vispy_overlays[viewbox_idx], view
 
+            # layer overlays are always "gridded"
+            # (they always appear in the same viewbox as the layer itself)
             for layer_idx in layer_indices:
                 layer = self.viewer.layers[layer_idx]
                 for (
                     overlay,
                     vispy_overlay,
                 ) in self._layer_overlay_to_visual.get(layer, {}).items():
-                    if (
-                        layer.visible
-                        and overlay.visible
-                        and isinstance(overlay, CanvasOverlay)
-                        and overlay.position in list(CanvasPosition)
-                    ):
+                    if layer.visible and is_visible_tileable(overlay):
                         yield overlay, vispy_overlay, view
 
     def _update_overlay_canvas_positions(self, event=None):
@@ -973,6 +987,8 @@ class VispyCanvas:
             y_offset = y_offset_total[view][overlay.position]
 
             # add offset to the following overlays based on tiling direction
+            # these are currently hardcoded, so we just tile horizontally or
+            # vertically depending on which corner we're on
             if overlay.position in ('top_right', 'bottom_left'):
                 x_offset_total[view][overlay.position] += (
                     vispy_overlay.x_size + x_padding

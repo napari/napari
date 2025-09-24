@@ -8,6 +8,7 @@ import pint
 from napari._vispy.overlays.base import ViewerOverlayMixin, VispyCanvasOverlay
 from napari._vispy.visuals.scale_bar import ScaleBar
 from napari.utils._units import PREFERRED_VALUES
+from napari.utils.color import ColorValue
 from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils.theme import get_theme
 
@@ -131,7 +132,8 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self._on_rendering_change()
         self._on_position_change()
 
-    def _get_colors(self):
+    def _get_colors(self) -> tuple[ColorValue, ColorValue]:
+        """Get the foreground and background colors for the visual."""
         color = self.overlay.color
         box_color = self.overlay.box_color
 
