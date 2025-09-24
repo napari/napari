@@ -355,3 +355,10 @@ def test_preferences_dialog_not_dismissed_by_keybind_confirm(
         12, shortcut_widget._shortcut_col
     ).text()
     assert shortcut == ''
+
+
+def test_startup_script_file_extension(pref):
+    startup_script_widget = (
+        pref._stack.widget(0).widget().widget.widgets['startup_script']
+    )
+    assert startup_script_widget.file_filter() == 'File (*.py)'

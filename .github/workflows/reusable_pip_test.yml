@@ -11,7 +11,7 @@ jobs:
     env:
       XDG_CACHE_HOME: ${{ github.workspace }}/.cache
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           path: napari-from-github
       - name: Cache pooch downloads
@@ -50,7 +50,8 @@ jobs:
 
       - name: Install napari from wheel
         run: |
-          pip install "${{ env.WHEEL_PATH }}[pyqt,testing]"
+          pip install "${{ env.WHEEL_PATH }}[pyqt]"
+          pip install --group napari-from-github/pyproject.toml:testing
         shell:
             bash
         env:
@@ -67,7 +68,7 @@ jobs:
 
       - name: Upload test artifacts
         if: failure()
-        uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: test artifacts pip install
           path: .pytest_tmp
