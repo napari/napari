@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum
+from pathlib import Path, PosixPath, WindowsPath
 from typing import TYPE_CHECKING
 
 from app_model.types import KeyBinding
@@ -46,6 +47,15 @@ YamlDumper.add_representer(
 )
 YamlDumper.add_representer(
     KeyBinding, lambda dumper, data: dumper.represent_str(str(data))
+)
+YamlDumper.add_representer(
+    Path, lambda dumper, data: dumper.represent_str(str(data))
+)
+YamlDumper.add_representer(
+    PosixPath, lambda dumper, data: dumper.represent_str(str(data))
+)
+YamlDumper.add_representer(
+    WindowsPath, lambda dumper, data: dumper.represent_str(str(data))
 )
 
 
