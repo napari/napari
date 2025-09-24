@@ -62,6 +62,7 @@ class QtFaceColorControl(QtWidgetControlsBase):
             )
         )
         if hasattr(self._layer, '_face'):
+            # Handle Points layer case
             self._callbacks.append(
                 attr_to_settr(
                     self._layer._face,
