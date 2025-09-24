@@ -43,19 +43,26 @@ class ScaleBar(Compound):
         # compute box width and height based on the size of the contents
         box_width = length + self._box_padding * 2
         box_width = max(box_width, text_width + self._box_padding * 2)
+        text_line_gap = 5  # gap between text bottom and line top
         box_height = (
-            self._tick_length / 2 + self._box_padding * 2 + text_height
+            self._tick_length
+            + self._box_padding * 2
+            + text_height
+            + text_line_gap
         )
 
         line_data = self._line_data if ticks else self._line_data[:2]
 
         # set the line size based on the length, and position based on
-        # the box size and text size
+        # the box size and text size with proper spacing
         self.line.set_data(
             pos=line_data * (length / 2, self._tick_length / 2)
             + (
                 box_width / 2,
-                self._box_padding + text_height,
+                self._box_padding
+                + text_height
+                + text_line_gap
+                + self._tick_length / 2,
             ),
             color=color,
         )
