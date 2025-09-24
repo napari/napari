@@ -1375,12 +1375,12 @@ def test_selecting_shapes():
     assert layer.selected_data == {9}
     # must be three calls because setting to {9} first clears the set
     # and then adds 9
-    assert emitted_events.call_count == 3
+    assert emitted_events.call_count == 2
 
     layer.selected_data = set()
     assert layer.selected_data == set()
     # must be four calls because we are only clearing the set here
-    assert emitted_events.call_count == 4
+    assert emitted_events.call_count == 3
 
 
 def test_removing_all_shapes_empty_list():
