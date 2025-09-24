@@ -100,6 +100,8 @@ class VispyCanvas:
         was applied.
     _overlay_to_visual : dict(napari.components.overlays, list(napari._vispy.overlays))
         A mapping of the napari overlays that are part of the viewer and their corresponding Vispy counterparts.
+        The values are lists that may contain multiple elements when grid mode is enabled and overlay.gridded == True,
+        associating multiple vispy visual to a single overlay model.
     _layer_overlay_to_visual : dict(napari.layers.Layer, dict(napari.components.overlays, napari._vispy.overlays))
         A mapping from each layer in the layerlist to their mappings of napari overlay->vispy counterpart.
     _scene_canvas : napari._vispy.canvas.NapariSceneCanvas
@@ -138,7 +140,7 @@ class VispyCanvas:
         self.grid_views = []
         self.grid_cameras = []
 
-        self.layer_to_visual: dict[Layer, VispyBaseLayer] = {}
+        self.layer_to_visual: dict[Layer, VispyBaseLayer[Layer]] = {}
         self._overlay_to_visual: dict[Overlay, list[VispyBaseOverlay]] = {}
         self._layer_overlay_to_visual: dict[
             Layer, dict[Overlay, VispyBaseOverlay]
@@ -236,7 +238,7 @@ class VispyCanvas:
         return self._scene_canvas._backend.screen_changed
 
     @property
-    def background_color_override(self) -> str | None:
+    def background_color_override(self) -> str | npt.ArrayLike | None:
         """Background color of VispyCanvas.
 
         When not None, color is shown instead of VispyCanvas.bgcolor.
