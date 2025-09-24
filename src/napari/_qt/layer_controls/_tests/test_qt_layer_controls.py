@@ -1,5 +1,6 @@
 import os
 import random
+import re
 import sys
 from typing import NamedTuple
 from unittest.mock import Mock
@@ -54,6 +55,11 @@ from napari.utils._test_utils import (
 )
 from napari.utils.colormaps import DirectLabelColormap
 from napari.utils.events.event import Event
+
+
+def strip_ansi_codes(text: str) -> str:
+    """Remove ANSI color codes from text."""
+    return re.sub(r'\x1b\[[0-9;]*m', '', text)
 
 
 class LayerTypeWithData(NamedTuple):
@@ -276,10 +282,9 @@ skip_predicate = sys.version_info >= (3, 11) and (
 def test_create_layer_controls_spin(
     qtbot, create_layer_controls, layer_type_with_data, capsys
 ):
+    random.seed(0)
     # create layer controls widget
     ctrl = create_layer_controls(layer_type_with_data)
-    qtbot.addWidget(ctrl)
-
     # check create widget corresponds to the expected class for each type of layer
     assert isinstance(ctrl, layer_type_with_data.expected_isinstance)
 
@@ -317,6 +322,7 @@ def test_create_layer_controls_spin(
             captured = capsys.readouterr()
             assert not captured.out
             if captured.err:
+                cleaned_err = strip_ansi_codes(captured.err)
                 # since an error was found check if it is associated with a known issue still open
                 expected_errors = [
                     'MemoryError: Unable to allocate',  # See https://github.com/napari/napari/issues/5798
@@ -326,7 +332,7 @@ def test_create_layer_controls_spin(
                     'RuntimeWarning: overflow encountered',  # See https://github.com/napari/napari/issues/4864
                 ]
                 assert any(
-                    expected_error in captured.err
+                    expected_error in cleaned_err
                     for expected_error in expected_errors
                 ), f'value: {value}, range {value_range}\nerr: {captured.err}'
 

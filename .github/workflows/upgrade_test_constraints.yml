@@ -102,12 +102,12 @@ jobs:
           echo "FULL_NAME=${{ github.repository }}" >> "$GITHUB_ENV"
           echo "BRANCH=${{ github.ref_name }}" >> "$GITHUB_ENV"
 
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           fetch-depth: 0
 
       - name: Clone target repo (remote)
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         if: github.event_name == 'issue_comment'
         with:
           path: napari_repo  # place in a named directory
@@ -117,13 +117,13 @@ jobs:
 
       - name: Clone target repo (pull request)
         # we need separate step as passing empty token to actions/checkout@v4 will not work
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         if: github.event_name == 'pull_request'
         with:
           path: napari_repo  # place in a named directory
 
       - name: Clone target repo (main)
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         if: github.event_name != 'issue_comment' && github.event_name != 'pull_request'
         with:
           path: napari_repo  # place in a named directory
@@ -151,7 +151,7 @@ jobs:
           set -x
           pip install -U uv
           cd napari_repo
-          flags=(--quiet --extra pyqt6 --extra pyside2 --extra pyside6 --extra testing --extra testing_extra --extra optional)
+          flags=(--quiet --extra pyqt6 --extra pyside2 --extra pyside6 --group testing --group testing_extra --extra all_optional)
 
           # Explanation of below commands
           # uv pip compile --python-version 3.9 - call uv pip compile but ensure proper interpreter
@@ -170,8 +170,8 @@ jobs:
 
 
           uv pip compile --python-version 3.12 --upgrade --output-file ${constraints}/constraints_py3.12_examples.txt ${pyproject_toml} ${constraints}/version_denylist.txt ${constraints}/version_denylist_examples.txt "${flags[@]}"
-          uv pip compile --python-version 3.10 --upgrade --output-file ${constraints}/constraints_py3.10_docs.txt ${pyproject_toml} ${constraints}/version_denylist.txt ${constraints}/version_denylist_examples.txt --extra docs "${flags[@]}"
-          uv pip compile --python-version 3.12 --upgrade --output-file ${constraints}/constraints_py3.12_docs.txt ${pyproject_toml} ${constraints}/version_denylist.txt ${constraints}/version_denylist_examples.txt --extra docs "${flags[@]}"
+          uv pip compile --python-version 3.10 --upgrade --output-file ${constraints}/constraints_py3.10_docs.txt ${pyproject_toml} ${constraints}/version_denylist.txt ${constraints}/version_denylist_examples.txt --group docs "${flags[@]}"
+          uv pip compile --python-version 3.12 --upgrade --output-file ${constraints}/constraints_py3.12_docs.txt ${pyproject_toml} ${constraints}/version_denylist.txt ${constraints}/version_denylist_examples.txt --group docs "${flags[@]}"
           uv pip compile --python-version 3.12 --upgrade --output-file resources/requirements_mypy.txt resources/requirements_mypy.in
 
       # END PYTHON DEPENDENCIES
