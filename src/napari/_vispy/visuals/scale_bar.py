@@ -18,7 +18,6 @@ class ScaleBar(Compound):
     def __init__(self) -> None:
         # Layout constants
         self.PADDING = 6  # Space around the entire scale bar
-        self.TEXT_LINE_GAP = 4  # Extra space between text and scale line
         self.TICK_LENGTH = 11  # Height of tick marks (odd numbers look better)
 
         # Line geometry: main line + optional tick marks
@@ -52,6 +51,8 @@ class ScaleBar(Compound):
         """Calculate all layout dimensions and positions."""
         # Text dimensions
         text_width, text_height = self.text.get_width_height()
+        # add some extra padding between the scale bar and text
+        text_height *= 1.1
 
         # Box dimensions
         box_width = max(
@@ -61,19 +62,13 @@ class ScaleBar(Compound):
         box_height = (
             self.PADDING  # Top padding
             + text_height  # Text height
-            + self.TEXT_LINE_GAP  # Gap between text and line
             + self.TICK_LENGTH  # Line + ticks height
             + self.PADDING  # Bottom padding
         )
 
         # Element positions (Y coordinates from top of box)
         text_y = self.PADDING
-        line_center_y = (
-            self.PADDING
-            + text_height
-            + self.TEXT_LINE_GAP
-            + (self.TICK_LENGTH / 2)
-        )
+        line_center_y = self.PADDING + text_height + (self.TICK_LENGTH / 2)
 
         return {
             'box_width': box_width,
