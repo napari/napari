@@ -1,0 +1,25 @@
+from vispy.scene.visuals import Text as BaseText
+
+from napari._vispy.utils.text import get_text_width_height
+
+
+class Text(BaseText):
+    def get_width_height(self):
+        width, height = get_text_width_height(self)
+        return width * self.dpi_ratio, height * self.dpi_ratio
+
+    @property
+    def font_size(self):
+        return self._font_size
+
+    @font_size.setter
+    def font_size(self, size):
+        adjusted_font_size = size / self.dpi_ratio
+        self._font_size = max(0.0, adjusted_font_size)
+        self.update()
+
+    @property
+    def dpi_ratio(self):
+        # adjust for dpi: 72 is the "base dpi" around which font sizes are defined
+        # TODO: but for some reason 96 seems to give the correct ratio for me?
+        return (self.transforms.dpi or 96) / 96
