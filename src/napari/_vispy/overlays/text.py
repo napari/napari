@@ -1,7 +1,5 @@
-from vispy.scene.visuals import Text
-
 from napari._vispy.overlays.base import ViewerOverlayMixin, VispyCanvasOverlay
-from napari._vispy.utils.text import get_text_width_height
+from napari._vispy.visuals.text import Text
 from napari.components._viewer_constants import CanvasPosition
 
 
@@ -57,7 +55,7 @@ class VispyTextOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self.node.anchors = anchors
         self.node.font_size = self.overlay.font_size
 
-        self.x_size, self.y_size = get_text_width_height(self.node)
+        self.x_size, self.y_size = self.node.get_width_height()
 
         # depending on the canvas position, we need to change the position of the anchor itself
         # to ensure the text aligns properly e.g. left when on the left, and right when on the right
