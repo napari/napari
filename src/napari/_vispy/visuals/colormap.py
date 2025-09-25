@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 from vispy.scene import Axis, Image, Line, Node, STTransform
 
-from napari._vispy.utils.text import get_text_width_height
+from napari._vispy.visuals.text import Text
 
 if TYPE_CHECKING:
     from typing import Any
@@ -32,10 +32,18 @@ class Colormap(Node):
         self.ticks = Axis(
             pos=self._box_data[2:4],
             tick_direction=(1, 0),
-            tick_width=1,
+            tick_width=2,
+            tick_label_margin=4,
             axis_width=0,
             parent=self,
         )
+        # override to use our class which works better with hidpi
+        self.ticks.remove_subvisual(self.ticks._text)
+        self.ticks._text = Text(
+            font_size=self.ticks.tick_font_size, color=self.ticks.text_color
+        )
+        self.ticks.add_subvisual(self.ticks._text)
+
         self.ticks.transform = STTransform()
         self.img = Image(parent=self)
         self.img.transform = STTransform()
@@ -97,5 +105,5 @@ class Colormap(Node):
         text = self.ticks._text
         self.ticks._update_subvisuals()  # triggers computing of the tick labels
 
-        width, height = get_text_width_height(text)
+        width, height = text.get_width_height()
         return width + self.ticks.tick_label_margin, height

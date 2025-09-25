@@ -21,5 +21,5 @@ class ColormapOverlay(CanvasOverlay):
     color: ColorValue | None = None
     size: tuple[float, float] = 25, 150
     tick_length: float = 5
-    font_size: float = 7
+    font_size: float = 10
     position: CanvasPosition = CanvasPosition.TOP_RIGHT
