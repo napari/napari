@@ -98,7 +98,6 @@ class Colormap(Node):
         self.ticks._update_subvisuals()  # triggers computing of the tick labels
 
         width, height = get_text_width_height(text)
-        width += (
-            self.ticks.tick_label_margin * 2
-        )  # account for margin on both sides of text
+        # account for margin on both sides of text
+        width += self.ticks.tick_label_margin * 2
         return width, height
