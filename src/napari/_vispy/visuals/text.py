@@ -6,7 +6,8 @@ from napari._vispy.utils.text import get_text_width_height
 class Text(BaseText):
     def get_width_height(self):
         width, height = get_text_width_height(self)
-        return width * self.dpi_ratio, height * self.dpi_ratio
+        # width is not quite right for some reason... magic number here we go
+        return width * self.dpi_ratio * 1.2, height * self.dpi_ratio
 
     @property
     def font_size(self):
