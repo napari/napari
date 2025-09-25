@@ -11,6 +11,7 @@ on:
   pull_request:
     paths:
       - '.github/workflows/build_docs.yml'
+      - 'resources/constraints/*docs*'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
