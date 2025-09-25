@@ -1,7 +1,7 @@
 import numpy as np
-from vispy.scene.visuals import Compound, Line, Rectangle, Text
+from vispy.scene.visuals import Compound, Line, Rectangle
 
-from napari._vispy.utils.text import get_text_width_height
+from napari._vispy.visuals.text import Text
 
 
 class ScaleBar(Compound):
@@ -51,7 +51,7 @@ class ScaleBar(Compound):
     def _calculate_layout(self, length: float) -> dict:
         """Calculate all layout dimensions and positions."""
         # Text dimensions
-        text_width, text_height = get_text_width_height(self.text)
+        text_width, text_height = self.text.get_width_height()
 
         # Box dimensions
         box_width = max(

@@ -114,9 +114,9 @@ def get_text_width_height(text: Text) -> tuple[float, float]:
     )
 
     # these magic numbers (1.2 and 1.3) are from trial and error
-    return (bottom_right[0] - top_left[0]) * text.font_size * 1.3, (
+    return (bottom_right[0] - top_left[0]) * text.font_size, (
         bottom_right[1] - top_left[1]
-    ) * text.font_size * 1.2
+    ) * text.font_size
 
 
 # vendored from vispy/visuals/text/text.py, but removing all lines referring to context flushing,
