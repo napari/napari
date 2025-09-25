@@ -51,7 +51,9 @@ class CanvasOverlay(Overlay):
         The overlay will be duplicated across all grid cells in gridded mode.
     """
 
-    position: CanvasPosition | tuple[int, int] = CanvasPosition.BOTTOM_RIGHT
+    position: CanvasPosition | tuple[int, int] | None = (
+        CanvasPosition.BOTTOM_RIGHT
+    )
     blending: Blending = Blending.TRANSLUCENT_NO_DEPTH
     gridded: bool = False
 
