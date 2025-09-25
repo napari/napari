@@ -262,7 +262,7 @@ def split_rgb(stack: Image, with_alpha=False) -> list[Image]:
     data, meta, _ = stack.as_layer_data_tuple()
 
     meta['colormap'] = ('red', 'green', 'blue', 'gray')
-    meta.pop('rgb')
+    meta['rgb'] = False
 
     layerdata_list = split_channels(data, channel_axis=-1, **meta)
 
