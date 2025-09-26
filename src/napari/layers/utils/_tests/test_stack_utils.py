@@ -1,10 +1,13 @@
+import dask.array as da
 import numpy as np
 import pytest
+import zarr
 
 from napari.layers import Image
 from napari.layers.utils.stack_utils import (
     images_to_stack,
     merge_rgb,
+    slice_from_axis,
     split_channels,
     split_rgb,
     stack_to_images,
@@ -338,3 +341,46 @@ def test_split_channels_multi_affine_napari(kwargs):
             meta['affine'].affine_matrix,
             Affine(scale=[idx + 1, idx + 1]).affine_matrix,
         )
+
+
+@pytest.mark.parametrize(
+    ('array_type', 'expected_result_type'),
+    [
+        ('numpy', np.ndarray),
+        ('dask', da.Array),
+        ('zarr', da.Array),
+    ],
+)
+def test_slice_from_axis_different_array_types(
+    array_type, expected_result_type
+):
+    """Test slice_from_axis with numpy, dask, and zarr arrays."""
+    # Create test data
+    if array_type == 'numpy':
+        data = np.zeros((3, 4, 4))
+    elif array_type == 'dask':
+        data = da.zeros((3, 4, 4))
+    elif array_type == 'zarr':
+        data = zarr.zeros((3, 4, 4))
+
+    axis, element = 1, 2
+    expected_shape = (3, 4)
+
+    if array_type == 'zarr':
+        with pytest.warns(
+            UserWarning, match='zarr array cannot be sliced lazily'
+        ):
+            result = slice_from_axis(data, axis=axis, element=element)
+    else:
+        result = slice_from_axis(data, axis=axis, element=element)
+
+    # Check result type and shape
+    assert isinstance(result, expected_result_type)
+    assert result.shape == expected_shape
+
+    # Check result values - compare with expected slice
+    result_computed = (
+        result.compute() if hasattr(result, 'compute') else result
+    )
+    expected = data[:, element, :]
+    np.testing.assert_array_equal(result_computed, expected)
