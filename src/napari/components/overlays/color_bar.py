@@ -3,8 +3,8 @@ from napari.components.overlays.base import CanvasOverlay
 from napari.utils.color import ColorValue
 
 
-class ColormapOverlay(CanvasOverlay):
-    """Colormap legend overlay.
+class ColorBarOverlay(CanvasOverlay):
+    """ColorBar legend overlay.
 
     Attributes
     ----------

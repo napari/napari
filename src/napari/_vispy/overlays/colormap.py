@@ -21,7 +21,7 @@ if TYPE_CHECKING:
     from napari.layers import Image, Surface
 
 
-class VispyColormapOverlay(LayerOverlayMixin, VispyCanvasOverlay):
+class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
     def __init__(
         self,
         *,
