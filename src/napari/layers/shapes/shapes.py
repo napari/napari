@@ -2781,10 +2781,27 @@ class Shapes(Layer):
                 ),
                 vertex_indices=((),),
             )
+            # FIXME: this is really slow
             for ind in to_remove:
                 self._data_view.remove(ind)
 
-            self.selected_data = self.selected_data - set(indices)
+            if len(self.data) == 0 and self.selected_data:
+                self.selected_data.clear()
+            elif self.selected_data:
+                selected_not_removed = self.selected_data - set(indices)
+                if selected_not_removed:
+                    indices_array = np.array(to_remove[::-1])
+                    remaining_selected = np.fromiter(
+                        selected_not_removed,
+                        dtype=np.intp,
+                        count=len(selected_not_removed),
+                    )
+                    shifts = np.searchsorted(indices_array, remaining_selected)
+                    new_selected_indices = remaining_selected - shifts
+                    self.selected_data = set(new_selected_indices)
+                else:
+                    self.selected_data.clear()
+
             self._feature_table.remove(indices)
             self.text.remove(indices)
             self._data_view._edge_color = np.delete(

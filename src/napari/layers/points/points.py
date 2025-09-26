@@ -1971,15 +1971,13 @@ class Points(Layer):
         colormapped[..., 3] *= self.opacity
         self.thumbnail = colormapped
 
-    def add(self, coords, metadata=None):
+    def add(self, coords):
         """Adds points at coordinates.
 
         Parameters
         ----------
         coords : array
             Point or points to add to the layer data.
-        metadata : list[dict]
-            Metadata associated with the given points, such as colors and features.
         """
         cur_points = len(self.data)
         self.events.data(
@@ -2006,7 +2004,7 @@ class Points(Layer):
         indices : List[int]
             List of indices of points to remove from the layer.
         """
-        indices.sort()
+        indices = sorted(indices)
         if len(indices):
             self.events.data(
                 value=self.data,
@@ -2038,6 +2036,24 @@ class Points(Layer):
                     self._value_stored -= offset
 
             self._set_data(np.delete(self.data, indices, axis=0))
+
+            if len(self.data) == 0 and self.selected_data:
+                self.selected_data.clear()
+            elif self.selected_data:
+                selected_not_removed = self.selected_data - set(indices)
+                if selected_not_removed:
+                    indices_array = np.array(indices)
+                    remaining_selected = np.fromiter(
+                        selected_not_removed,
+                        dtype=np.intp,
+                        count=len(selected_not_removed),
+                    )
+                    shifts = np.searchsorted(indices_array, remaining_selected)
+                    new_selected_indices = remaining_selected - shifts
+                    self.selected_data = set(new_selected_indices)
+                else:
+                    self.selected_data.clear()
+
             self.events.data(
                 value=self.data,
                 action=ActionType.REMOVED,
@@ -2047,11 +2063,6 @@ class Points(Layer):
                 vertex_indices=((),),
             )
             self.events.features()
-
-    def remove_selected(self) -> None:
-        """Remove all selected points."""
-        self.remove(list(self.selected_data))
-        self.selected_data = set()
 
     def get_point_info(self, index: int) -> dict:
         """
@@ -2107,6 +2118,10 @@ class Points(Layer):
         info = self.get_point_info(index)
         self.remove([index])
         return info
+
+    def remove_selected(self) -> None:
+        """Remove all selected points."""
+        self.remove(list(self.selected_data))
 
     def _move(
         self,

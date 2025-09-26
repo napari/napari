@@ -435,20 +435,22 @@ def test_adding_points_to_empty():
 
 
 def test_removing_points():
-    """Test removing points."""
+    """Test removing points, including with selection."""
     shape = (10, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
+    # select some points
+    layer.selected_data = {1, 2, 4, 6}
 
     # Remove points by index
     layer.remove([0, 2, 5])
     assert len(layer.data) == shape[0] - 3
     assert np.array_equal(layer.data, data[[1, 3, 4, 6, 7, 8, 9]])
 
-    # Remove another point by index
-    layer.remove([3])
-    assert len(layer.data) == shape[0] - 4
+    # check selection after removal
+    # one selected point was removed, the other indexes need to be shifted
+    assert layer.selected_data == {0, 2, 3}
 
     # removing nothing should work smoothly
     layer.remove([])
