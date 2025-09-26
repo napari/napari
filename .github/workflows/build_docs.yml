@@ -19,7 +19,7 @@ concurrency:
 
 jobs:
   build_docs:
-    uses: napari/shared-workflows/.github/workflows/build_docs.yml@build_docs
+    uses: napari/shared-workflows/.github/workflows/build_docs.yml@main
     secrets: inherit
     with:
       main-repo: ${{ github.repository }}
