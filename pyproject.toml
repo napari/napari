@@ -120,6 +120,7 @@ all = [
 ]
 optional-base = [
     "zarr>=2.12.0", # needed by `builtins` (dask.array.from_zarr) to open zarr
+    "aiohttp", # needed to open remote files by zarr, relace by extras once https://github.com/zarr-developers/zarr-python/issues/3453 is done
     "napari-plugin-manager >=0.1.3, <0.2.0",
 ]
 optional-numba = [
@@ -538,6 +539,7 @@ markers = [
     # mark slow tests, so they can be skipped using: pytest -m "not slow"
     "slow: mark a test as slow",
     "key_bindings: Test of keybindings",
+    "show_qt_viewer: Show the QtViewer in this Test",
 ]
 
 [tool.mypy]

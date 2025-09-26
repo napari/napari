@@ -60,6 +60,11 @@ authors:
   affiliation: Quansight
   orcid: https://orcid.org/0000-0002-3212-402X
   alias: melissawm
+- given-names: Jaime
+  family-names: Rodríguez-Guerra
+  affiliation: Quansight Labs
+  orcid: https://orcid.org/0000-0001-8974-1566
+  alias: jaimergp
 - given-names: Lucy
   family-names: Liu
   affiliation: Quansight
@@ -310,11 +315,6 @@ authors:
 - given-names: David
   family-names: Pinto
   alias: MarchisLost
-- given-names: Jaime
-  family-names: Rodríguez-Guerra
-  affiliation: Quansight Labs
-  orcid: https://orcid.org/0000-0001-8974-1566
-  alias: jaimergp
 - given-names: David
   family-names: Ross
   affiliation: NanoString Technologies, Inc.
