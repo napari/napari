@@ -1365,14 +1365,22 @@ def test_selecting_shapes():
     data = 20 * np.random.random((10, 4, 2))
     np.random.seed(0)
     layer = Shapes(data)
+    emitted_events = Mock()
+    layer.selected_data.events.items_changed.connect(emitted_events)
     layer.selected_data = {0, 1}
     assert layer.selected_data == {0, 1}
+    assert emitted_events.call_count == 1
 
     layer.selected_data = {9}
     assert layer.selected_data == {9}
+    # must be three calls because setting to {9} first clears the set
+    # and then adds 9
+    assert emitted_events.call_count == 2
 
     layer.selected_data = set()
     assert layer.selected_data == set()
+    # must be four calls because we are only clearing the set here
+    assert emitted_events.call_count == 3
 
 
 def test_removing_all_shapes_empty_list():
