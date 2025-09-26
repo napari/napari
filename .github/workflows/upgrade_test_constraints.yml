@@ -151,7 +151,7 @@ jobs:
           set -x
           pip install -U uv
           cd napari_repo
-          flags=(--quiet --extra pyqt6 --extra pyside2 --extra pyside6 --group testing --group testing_extra --extra all_optional)
+          flags=(--quiet --extra pyqt6 --extra pyside2 --extra pyside6 --extra testing --group testing_extra --extra all_optional)
 
           # Explanation of below commands
           # uv pip compile --python-version 3.9 - call uv pip compile but ensure proper interpreter

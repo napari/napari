@@ -539,6 +539,7 @@ markers = [
     # mark slow tests, so they can be skipped using: pytest -m "not slow"
     "slow: mark a test as slow",
     "key_bindings: Test of keybindings",
+    "show_qt_viewer: Show the QtViewer in this Test",
 ]
 
 [tool.mypy]
