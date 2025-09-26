@@ -399,3 +399,64 @@ def test_update_edge_color(shape_li, new_color):
 def test_multi_layer_data(shape_li_3d):
     shape_li_3d.slice_key = (1,)
     assert shape_li_3d._mesh.displayed_triangles_colors.shape[0] == 20
+
+
+LAYER_COUNT = 16
+
+
+@pytest.fixture
+def multi_z_rectangles() -> list[Rectangle]:
+    width = 6
+    edge = width - 2
+    return [  # create 256 boxes in a grid
+        Rectangle(
+            np.array(
+                [
+                    [z, y * width, x * width],
+                    [z, y * width + edge, x * width],
+                    [z, y * width + edge, x * width + edge],
+                    [z, y * width, x * width + edge],
+                ]
+            )
+        )
+        for x in range(4)
+        for y in range(4)
+        for z in range(LAYER_COUNT)
+    ]
+
+
+@pytest.fixture
+def simple_rectangle():
+    return Rectangle([(0, 0), (6, 0), (6, 6), (0, 6)])
+
+
+@pytest.fixture
+def triangles_slice(simple_rectangle):
+    triang = np.concatenate(
+        [
+            simple_rectangle._face_triangles,
+            simple_rectangle._edge_triangles
+            + simple_rectangle.face_vertices_count,
+        ]
+    )
+
+    return np.concatenate(
+        [
+            triang + i * simple_rectangle.vertices_count
+            for i in range(0, 16 * LAYER_COUNT, LAYER_COUNT)
+        ]
+    )
+
+
+@pytest.mark.parametrize('slice_', list(range(LAYER_COUNT)))
+def test_proper_shape_position(
+    multi_z_rectangles, slice_, triangles_slice, simple_rectangle
+):
+    sl = ShapeList(multi_z_rectangles)
+    sl.ndisplay = 2
+    sl.slice_key = (slice_,)
+    assert sl._mesh.displayed_triangles_colors.shape[0] == 160
+    npt.assert_array_equal(
+        sl._mesh.displayed_triangles,
+        triangles_slice + slice_ * simple_rectangle.vertices_count,
+    )
