@@ -91,15 +91,14 @@ class PandasModel(QAbstractTableModel):
 
         row = index.row()
         col = index.column()
-
         # Special handling for pandas DataFrame index column
         if col == 0 and isinstance(self.df, pd.DataFrame):
-            if role in {Qt.ItemDataRole.DisplayRole, Qt.ItemDataRole.EditRole}:
-                return str(self.df.index[row])
-            return None
-
-        value = self.df.iat[row, col - 1]
-        dtype = self.df.dtypes.iat[col - 1]
+            value = self.df.index[row]
+            dtype = np.dtype(type(value))
+        else:
+            value = self.df.iat[row, col - 1]
+            # Get dtype from cell value, needed for columns with mixed types (e.g. bool and NaN)
+            dtype = np.dtype(type(value))
 
         # show booleans as respective checkboxes
         if (
@@ -148,13 +147,19 @@ class PandasModel(QAbstractTableModel):
         if not index.isValid():
             return Qt.ItemFlag.ItemIsEnabled
 
+        row = index.row()
         col = index.column()
+        if col == 0 and isinstance(self.df, pd.DataFrame):
+            value = self.df.index[row]
+            dtype = np.dtype(type(value))
+        else:
+            value = self.df.iat[row, col - 1]
+            dtype = np.dtype(type(value))
+
         # Check if this column is immutable
         flags = Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled
         if self.is_column_immutable(col):
             return flags
-
-        dtype = self.df.dtypes.iat[col - 1]
 
         if self.editable:
             # make boolean columns checkable
@@ -177,7 +182,7 @@ class PandasModel(QAbstractTableModel):
             return False
 
         row = index.row()
-        dtype = self.df.dtypes.iat[col - 1]
+        dtype = np.dtype(type(self.df.iat[row, col - 1]))
 
         # checkboxes
         if (
@@ -291,8 +296,12 @@ class DelegateCategorical(QStyledItemDelegate):
         source_index = proxy_model.mapToSource(index)
         col = source_index.column()
 
-        dtype = source_model.df.dtypes.iat[col - 1]
-
+        # Get value via proxy_model for EditRole
+        value = proxy_model.data(index, Qt.ItemDataRole.EditRole)
+        dtype = np.dtype(type(value))
+        # If bool dtype or value is bool, let Qt use default checkbox editor
+        if pd.api.types.is_bool_dtype(dtype) or isinstance(value, bool):
+            return None
         if isinstance(dtype, pd.CategoricalDtype):
             editor = QComboBox(parent)
             categories = source_model.df.iloc[:, col - 1].cat.categories
@@ -303,6 +312,7 @@ class DelegateCategorical(QStyledItemDelegate):
             # force editor to open on first click, otherwise we need 2 clicks
             QTimer.singleShot(0, editor.showPopup)
             return editor
+        # If float, use spinbox
         if pd.api.types.is_float_dtype(dtype):
             editor = super().createEditor(parent, option, index)
             editor.setDecimals(10)
@@ -338,14 +348,6 @@ class BoolFriendlyProxyModel(QSortFilterProxyModel):
     def lessThan(self, left: Any, right: Any) -> bool:
         left_data = self.sourceModel().data(left, Qt.ItemDataRole.EditRole)
         right_data = self.sourceModel().data(right, Qt.ItemDataRole.EditRole)
-
-        # For immutable columns (like index), compare as integers if possible
-        source_model = self.sourceModel()
-        if source_model.is_column_immutable(left.column()):
-            try:
-                return int(left_data) < int(right_data)
-            except (ValueError, TypeError):
-                return super().lessThan(left, right)
 
         # ensure booleans compare as expected. Not sure what happens internally in qt
         # that doesn't work, but doing it ourselves in python works.
