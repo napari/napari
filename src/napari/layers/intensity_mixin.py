@@ -53,7 +53,7 @@ class IntensityVisualizationMixin:
         # circular import
         from napari.components.overlays import ColorBarOverlay
 
-        self._overlays.update({'color_bar': ColorBarOverlay()})
+        self._overlays.update({'colorbar': ColorBarOverlay()})
 
     def reset_contrast_limits(self: 'ScalarFieldBase', mode=None):
         """Scale contrast limits to data range"""
@@ -95,9 +95,9 @@ class IntensityVisualizationMixin:
         return tuple(self._colormaps.keys())
 
     @property
-    def color_bar(self):
+    def colorbar(self):
         """Color Bar overlay."""
-        return self._overlays['color_bar']
+        return self._overlays['colorbar']
 
     @property
     def contrast_limits(self):
