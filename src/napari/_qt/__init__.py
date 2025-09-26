@@ -27,10 +27,12 @@ except Exception as e:
                   $ pip install -U 'napari[all]'  # default choice
                   $ pip install -U 'napari[pyqt5]'
                   $ pip install -U 'napari[pyqt6]'
+                  $ pip install -U 'napari[pyside6]'
                   $ pip install -U 'napari[pyside2]'
 
                 With conda, you need to do:
                   $ conda install -c conda-forge pyqt
+                  $ conda install -c conda-forge pyside6
                   $ conda install -c conda-forge pyside2
 
                 Our heuristics suggest you are using '{tool}' to manage your packages.
