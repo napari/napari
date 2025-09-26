@@ -33,8 +33,7 @@ jobs:
                 console.log(`- #${issue.number}: ${issue.title}`);
                 try {
                   await github.rest.issues.removeLabel({
-                    owner,
-                    repo,
+                    ...context.repo,
                     issue_number: issue.number,
                     name: 'ready to merge'
                   });
