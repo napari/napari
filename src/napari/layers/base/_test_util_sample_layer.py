@@ -3,6 +3,15 @@ from typing import Any
 import numpy as np
 
 from napari.layers import Layer
+from napari.layers.base import LayerSlicer
+from napari.types import LayerDataType
+
+
+class SampleLayerSlicer(LayerSlicer):
+    layer: 'SampleLayer'
+
+    def _set_view_slice(self) -> None:
+        pass
 
 
 class SampleLayer(Layer):
@@ -88,3 +97,8 @@ class SampleLayer(Layer):
 
     def _post_init(self) -> None:
         self.a = 1
+
+    def get_layer_slicer(
+        self, data: LayerDataType, cache: bool
+    ) -> LayerSlicer:
+        return SampleLayerSlicer(self, data, cache)
