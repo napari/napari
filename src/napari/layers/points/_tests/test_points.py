@@ -2757,3 +2757,15 @@ def test_docstring():
     validate_all_params_in_docstring(Points)
     validate_kwargs_sorted(Points)
     validate_docstring_parent_class_consistency(Points)
+
+
+def test_points_layer_display_correct_slice_on_scale(viewer_model):
+    data = np.zeros((60, 60, 60))
+    viewer_model.add_image(data, scale=[0.29, 0.26, 0.26])
+    pts = viewer_model.add_points(name='test', size=1, ndim=3)
+    pts.add((8.7, 0, 0))
+    viewer_model.dims.set_point(0, 30 * 0.29)  # middle plane
+
+    request = pts._make_slice_request(viewer_model.dims)
+    response = request()
+    np.testing.assert_equal(response.indices, [0])
