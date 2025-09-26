@@ -44,6 +44,9 @@ class QtWidgetControlsBase(QObject, ABC, metaclass=MetaWidgetControlsBase):
         super().__init__(parent)
         # Setup layer
         self._layer = layer
+        # Track registered callbacks (defined via `attr_to_settr` for example)
+        # so it is possible to disconnect them when the widget is being closed/deleted
+        self._callbacks = []
 
     @abstractclassmethod
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
@@ -62,6 +65,8 @@ class QtWidgetControlsBase(QObject, ABC, metaclass=MetaWidgetControlsBase):
         Disconnect layer from widget controls.
         """
         disconnect_events(self._layer.events, self)
+        for callback in self._callbacks:
+            disconnect_events(self._layer.events, callback)
 
     def deleteLater(self) -> None:
         self.disconnect_widget_controls()
