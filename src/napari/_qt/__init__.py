@@ -11,9 +11,7 @@ except Exception as e:
     if 'No Qt bindings could be found' in str(e):
         from inspect import cleandoc
 
-        installed_with_conda = list(
-            Path(sys.prefix, 'conda-meta').glob('napari-*.json')
-        )
+        from napari.utils._env_detection import detect_environment
 
         raise ImportError(
             trans._(
@@ -39,7 +37,7 @@ except Exception as e:
                 """
                 ),
                 deferred=True,
-                tool='conda' if installed_with_conda else 'pip',
+                tool=detect_environment().value,
             )
         ) from e
     raise
