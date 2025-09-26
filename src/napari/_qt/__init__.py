@@ -9,6 +9,7 @@ try:
     from qtpy import API_NAME, QT_VERSION, QtCore
 except Exception as e:
     if 'No Qt bindings could be found' in str(e):
+        from importlib.metadata import version
         from inspect import cleandoc
 
         from napari.utils._env_detection import detect_environment
@@ -17,7 +18,7 @@ except Exception as e:
             trans._(
                 cleandoc(
                     """
-                No Qt bindings could be found.
+                No Qt bindings could be found for napari=={version}.
 
                 napari requires either PyQt5 (default), PyQt6 or PySide2 to be installed in the environment.
 
@@ -38,6 +39,7 @@ except Exception as e:
                 ),
                 deferred=True,
                 tool=detect_environment().value,
+                version=version('napari'),
             )
         ) from e
     raise
