@@ -17,6 +17,7 @@ from napari.layers.utils.interactivity_utils import (
     nd_line_segment_to_displayed_data_ray,
 )
 from napari.layers.utils.layer_utils import _FeatureTable, calc_data_range
+from napari.utils._dtype import normalize_dtype
 from napari.utils.colormaps import AVAILABLE_COLORMAPS
 from napari.utils.events import Event
 from napari.utils.events.event_utils import connect_no_arg
@@ -339,7 +340,7 @@ class Surface(IntensityVisualizationMixin, Layer):
 
     @property
     def dtype(self) -> np.dtype:
-        return self.vertex_values.dtype
+        return normalize_dtype(self.vertex_values.dtype)
 
     @property
     def data(self):

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 from vispy.visuals.transforms import MatrixTransform, STTransform
@@ -7,6 +9,7 @@ from napari.utils.events import disconnect_events
 
 if TYPE_CHECKING:
     from napari.layers import Layer
+    from napari.utils.events import Event
 
 
 class VispyBaseOverlay:
@@ -71,7 +74,7 @@ class VispyCanvasOverlay(VispyBaseOverlay):
         self.overlay.events.position.connect(self._on_position_change)
         self.canvas_position_callback = lambda: None
 
-    def _on_position_change(self, event=None):
+    def _on_position_change(self, event: Event | None = None) -> None:
         # NOTE: when subclasses call this method, they should first ensure sizes
         # (x_size, and y_size) are set correctly
         self.canvas_position_callback()
@@ -92,7 +95,7 @@ class VispySceneOverlay(VispyBaseOverlay):
 
 
 class LayerOverlayMixin:
-    def __init__(self, *, layer: 'Layer', overlay, node, parent=None) -> None:
+    def __init__(self, *, layer: Layer, overlay, node, parent=None) -> None:
         super().__init__(
             node=node,
             overlay=overlay,
