@@ -655,7 +655,7 @@ class Surface(IntensityVisualizationMixin, Layer):
 
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""
-        N, vertex_ndim = self.vertices.shape
+        _N, vertex_ndim = self.vertices.shape
         values_ndim = self.vertex_values.ndim - 1
 
         self._view_vertex_values = self._slice_associated_data(
@@ -814,7 +814,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         If you change this method, validate if memory benchmarks are still
         working properly.
         """
-        data, meta, layer_type = self.as_layer_data_tuple()
+        _data, meta, layer_type = self.as_layer_data_tuple()
         return self.create(
             tuple(copy.copy(x) for x in self.data),
             meta=meta,

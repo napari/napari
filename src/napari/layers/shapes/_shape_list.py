@@ -190,7 +190,7 @@ def _preallocate_arrays(
         Dictionary containing preallocated arrays
     """
     n_shapes = len(shapes)
-    n_vertices, n_indices, n_mesh_vertices, n_face_tri, n_edge_tri = sizes
+    n_vertices, _n_indices, n_mesh_vertices, n_face_tri, n_edge_tri = sizes
 
     # Determine the displayed dimensionality from the first shape
     # All shapes in a batch will have the same dimensionality
