@@ -38,7 +38,7 @@ def slice_from_axis(array, *, axis, element):
         The sliced output array, which has one less dimension than the input.
     """
     # Check if array is a zarr array and wrap it with dask
-    # to keep lazy behavior andavoid loading into memory
+    # to keep lazy behavior and avoid loading into memory
     if hasattr(array, '__module__') and array.__module__.startswith('zarr'):
         import dask.array as da
 
