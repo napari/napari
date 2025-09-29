@@ -78,6 +78,10 @@ if TYPE_CHECKING:
 logger = logging.getLogger('napari.layers.base.base')
 
 
+Array1dOfInts = np.ndarray[tuple[int], np.dtype[np.integer]]
+ListOrArrayOfInts = list[int] | Array1dOfInts
+
+
 def no_op(layer: Layer, event: Event) -> None:
     """
     A convenient no-op event for the layer mouse binding.
@@ -479,6 +483,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         )
         self.name = name
         self.mode = mode
+        self.projection_mode = projection_mode
         self._overlays.update(
             {
                 'transform_box': TransformBoxOverlay(),
@@ -1329,7 +1334,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         view_direction: npt.ArrayLike | None = None,
         dims_displayed: list[int] | None = None,
         world: bool = False,
-    ) -> tuple | None:
+    ) -> tuple[int, ...] | None:
         """Value of the data at a position.
 
         If the layer is not visible, return None.
@@ -1373,7 +1378,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
                 if len(dims_displayed) == 2 or self.ndim == 2:
                     value = self._get_value(position=tuple(position))
 
-                elif len(dims_displayed) == 3:
+                else:  # if len(dims_displayed) == 3:
                     view_direction = self._world_to_data_ray(view_direction)
                     start_point, end_point = self.get_ray_intersections(
                         position=position,
@@ -1547,7 +1552,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         if highlight:
             self._set_highlight(force=True)
 
-    def world_to_data(self, position: npt.ArrayLike) -> npt.NDArray:
+    def world_to_data(
+        self, position: npt.ArrayLike
+    ) -> np.ndarray[tuple[int], np.dtype[np.floating]]:
         """Convert from world coordinates to data coordinates.
 
         Parameters
@@ -1648,7 +1655,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         return normalized_vector
 
     def _world_to_displayed_data_ray(
-        self, vector_world: npt.ArrayLike, dims_displayed: list[int]
+        self, vector_world: npt.ArrayLike, dims_displayed: ListOrArrayOfInts
     ) -> np.ndarray:
         """Convert an orientation from world to displayed data coordinates.
 

@@ -1,10 +1,13 @@
-from unittest.mock import patch
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
 import pytest
-from qtpy.QtCore import QObject, Signal
+from qtpy import API_NAME
+from qtpy.QtCore import QByteArray, QObject, Signal
 from qtpy.QtGui import QColor
-from qtpy.QtWidgets import QApplication, QColorDialog, QMainWindow
+from qtpy.QtWidgets import QColorDialog, QMainWindow
 
 from napari._qt.utils import (
     QBYTE_FLAG,
@@ -18,6 +21,9 @@ from napari._qt.utils import (
 )
 from napari.utils._proxies import PublicOnlyProxy
 
+if TYPE_CHECKING:
+    from pytestqt.qtbot import QtBot
+
 
 class Emitter(QObject):
     test_signal = Signal()
@@ -28,7 +34,6 @@ class Emitter(QObject):
 
 def test_signal_blocker(qtbot):
     """make sure context manager signal blocker works"""
-    import pytestqt.exceptions
 
     obj = Emitter()
 
@@ -39,22 +44,25 @@ def test_signal_blocker(qtbot):
     # make sure blocker works
     with (
         qt_signals_blocked(obj),
-        pytest.raises(pytestqt.exceptions.TimeoutError),
-        qtbot.waitSignal(obj.test_signal, timeout=500),
+        qtbot.assert_not_emitted(obj.test_signal, wait=500),
     ):
         obj.go()
+    obj.deleteLater()
 
 
 def test_is_qbyte_valid():
-    is_qbyte(QBYTE_FLAG)
-    is_qbyte(
+    assert is_qbyte(QBYTE_FLAG)
+    assert is_qbyte(
         '!QBYTE_AAAA/wAAAAD9AAAAAgAAAAAAAAECAAACePwCAAAAAvsAAAAcAGwAYQB5AGUAcgAgAGMAbwBuAHQAcgBvAGwAcwEAAAAAAAABFwAAARcAAAEX+wAAABQAbABhAHkAZQByACAAbABpAHMAdAEAAAEXAAABYQAAALcA////AAAAAwAAAAAAAAAA/AEAAAAB+wAAAA4AYwBvAG4AcwBvAGwAZQAAAAAA/////wAAADIA////AAADPAAAAngAAAAEAAAABAAAAAgAAAAI/AAAAAA='
     )
 
 
 def test_str_to_qbytearray_valid():
-    str_to_qbytearray(
-        '!QBYTE_AAAA/wAAAAD9AAAAAgAAAAAAAAECAAACePwCAAAAAvsAAAAcAGwAYQB5AGUAcgAgAGMAbwBuAHQAcgBvAGwAcwEAAAAAAAABFwAAARcAAAEX+wAAABQAbABhAHkAZQByACAAbABpAHMAdAEAAAEXAAABYQAAALcA////AAAAAwAAAAAAAAAA/AEAAAAB+wAAAA4AYwBvAG4AcwBvAGwAZQAAAAAA/////wAAADIA////AAADPAAAAngAAAAEAAAABAAAAAgAAAAI/AAAAAA='
+    assert isinstance(
+        str_to_qbytearray(
+            '!QBYTE_AAAA/wAAAAD9AAAAAgAAAAAAAAECAAACePwCAAAAAvsAAAAcAGwAYQB5AGUAcgAgAGMAbwBuAHQAcgBvAGwAcwEAAAAAAAABFwAAARcAAAEX+wAAABQAbABhAHkAZQByACAAbABpAHMAdAEAAAEXAAABYQAAALcA////AAAAAwAAAAAAAAAA/AEAAAAB+wAAAA4AYwBvAG4AcwBvAGwAZQAAAAAA/////wAAADIA////AAADPAAAAngAAAAEAAAABAAAAAgAAAAI/AAAAAA='
+        ),
+        QByteArray,
     )
 
 
@@ -100,14 +108,14 @@ def test_add_flash_animation(qtbot):
     assert not hasattr(widget, '_flash_animation')
 
 
-def test_qt_might_be_rich_text(qtbot):
-    widget = QMainWindow()
-    qtbot.addWidget(widget)
+@pytest.mark.usefixtures('qapp')
+def test_qt_might_be_rich_text():
     assert qt_might_be_rich_text('<b>rich text</b>')
     assert not qt_might_be_rich_text('plain text')
 
 
-def test_thread_proxy_guard(monkeypatch, qapp, single_threaded_executor):
+@pytest.mark.usefixtures('qapp')
+def test_thread_proxy_guard(monkeypatch, single_threaded_executor):
     class X:
         a = 1
 
@@ -126,48 +134,83 @@ def test_thread_proxy_guard(monkeypatch, qapp, single_threaded_executor):
     assert x.a == 2
 
 
-def test_get_color(qtbot):
+def _assert_eq(p1: Any, p2: Any, text: str = '') -> None:
+    if isinstance(p2, np.ndarray):
+        np.testing.assert_array_equal(p1, p2, err_msg=text)
+    else:
+        assert p1 == p2, text
+
+
+if API_NAME == 'PySide2':
+    DEFAULT_COLOR_HEX = '#000000'
+    DEFAULT_COLOR_ARRAY = np.asarray([0, 0, 0])
+    DEFAULT_COLOR_QCOLOR = QColor(0, 0, 0)
+else:
+    DEFAULT_COLOR_HEX = '#ffffff'
+    DEFAULT_COLOR_ARRAY = np.asarray([1, 1, 1])
+    DEFAULT_COLOR_QCOLOR = QColor(255, 255, 255)
+
+
+@pytest.mark.parametrize(
+    ('color', 'mode', 'expected'),
+    [
+        (None, 'hex', DEFAULT_COLOR_HEX),
+        ('#FF00FF', 'hex', '#ff00ff'),
+        (None, 'array', DEFAULT_COLOR_ARRAY),
+        (np.asarray([255, 0, 255]), 'array', np.asarray([1, 0, 1])),
+        (None, 'qcolor', DEFAULT_COLOR_QCOLOR),
+    ],
+)
+def test_get_color(
+    qtbot: QtBot,
+    color: str | np.ndarray | None,
+    mode: Literal['hex', 'array', 'qcolor'],
+    expected: str | np.ndarray | QColor,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Test the get_color utility function."""
+
+    def _mock_exec_(self):
+        """Mock exec_ method to always return Accepted."""
+        qtbot.addWidget(self)
+        return QColorDialog.DialogCode.Accepted
+
     widget = QMainWindow()
     qtbot.addWidget(widget)
 
-    with patch.object(QColorDialog, 'exec_') as mock:
-        mock.return_value = QColorDialog.Accepted
-        color = get_color(None, 'hex')
-        assert isinstance(color, str), 'Expected string color'
+    monkeypatch.setattr(QColorDialog, 'exec_', _mock_exec_)
 
-    with patch.object(QColorDialog, 'exec_') as mock:
-        mock.return_value = QColorDialog.Accepted
-        color = get_color('#FF00FF', 'hex')
-        assert isinstance(color, str), 'Expected string color'
-        assert color == '#ff00ff', 'Expected color to be #FF00FF'
+    color_ = get_color(color, mode)
+    _assert_eq(color_, expected, f'Expected color to be {expected}')
 
-    with patch.object(QColorDialog, 'exec_') as mock:
-        mock.return_value = QColorDialog.Accepted
-        color = get_color(None, 'array')
-        assert not isinstance(color, str), 'Expected array color'
-        assert isinstance(color, np.ndarray), 'Expected numpy array color'
 
-    with patch.object(QColorDialog, 'exec_') as mock:
-        mock.return_value = QColorDialog.Accepted
-        color = get_color(np.asarray([255, 0, 255]), 'array')
-        assert not isinstance(color, str), 'Expected array color'
-        assert isinstance(color, np.ndarray), 'Expected numpy array color'
-        np.testing.assert_array_equal(color, np.asarray([1, 0, 1]))
+@pytest.mark.parametrize(
+    ('color', 'mode'),
+    [
+        (None, 'hex'),
+        ('#FF00FF', 'hex'),
+        (None, 'array'),
+        (np.asarray([255, 0, 255]), 'array'),
+        (None, 'qcolor'),
+    ],
+)
+def test_get_color_reject(
+    qtbot: QtBot,
+    color: str | np.ndarray | None,
+    mode: Literal['hex', 'array', 'qcolor'],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Test the get_color utility function."""
 
-    with patch.object(QColorDialog, 'exec_') as mock:
-        mock.return_value = QColorDialog.Accepted
-        color = get_color(None, 'qcolor')
-        assert not isinstance(color, np.ndarray), 'Expected QColor color'
-        assert isinstance(color, QColor), 'Expected QColor color'
+    def _mock_exec_(self):
+        """Mock exec_ method to always return Accepted."""
+        qtbot.addWidget(self)
+        return QColorDialog.DialogCode.Rejected
 
-    with patch.object(QColorDialog, 'exec_') as mock:
-        mock.return_value = QColorDialog.Rejected
-        color = get_color(None, 'qcolor')
-        assert color is None, 'Expected None color'
+    widget = QMainWindow()
+    qtbot.addWidget(widget)
 
-    # close still open popup widgets
-    for widget in QApplication.topLevelWidgets():
-        if isinstance(widget, QColorDialog):
-            widget.accept()
-            widget.close()
+    monkeypatch.setattr(QColorDialog, 'exec_', _mock_exec_)
+
+    color_ = get_color(color, mode)
+    assert color_ is None, 'Expected color to be None when dialog is rejected'

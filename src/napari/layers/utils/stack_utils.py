@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import itertools
+import warnings
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -36,6 +37,19 @@ def slice_from_axis(array, *, axis, element):
     sliced : NumPy or other array
         The sliced output array, which has one less dimension than the input.
     """
+    # Check if array is a zarr array and wrap it with dask
+    # to keep lazy behavior andavoid loading into memory
+    if hasattr(array, '__module__') and array.__module__.startswith('zarr'):
+        import dask.array as da
+
+        array = da.from_zarr(array)
+        warnings.warn(
+            trans._(
+                'zarr array cannot be sliced lazily, converted to dask array.',
+                deferred=True,
+            )
+        )
+
     slices = [slice(None) for i in range(array.ndim)]
     slices[axis] = element
     return array[tuple(slices)]
@@ -124,7 +138,9 @@ def split_channels(
                     allow_none=True,
                 )
             )
-        elif key == 'affine' and isinstance(val, np.ndarray):
+        elif key in ['rotate', 'shear'] or (
+            key == 'affine' and isinstance(val, np.ndarray)
+        ):
             # affine may be Affine or np.ndarray object that is not
             # iterable, but it is not now a problem as we use it only to warning
             # if a provided object is a sequence and channel_axis is not provided
@@ -251,13 +267,22 @@ def stack_to_images(stack: Image, axis: int, **kwargs) -> list[Image]:
 
 
 def split_rgb(stack: Image, with_alpha=False) -> list[Image]:
-    """Variant of stack_to_images that splits an RGB with predefined cmap."""
+    """Split RGB image into separate channel images while preserving affine transforms."""
     if not stack.rgb:
         raise ValueError(
             trans._('Image must be RGB to use split_rgb', deferred=True)
         )
 
-    images = stack_to_images(stack, -1, colormap=('red', 'green', 'blue'))
+    data, meta, _ = stack.as_layer_data_tuple()
+
+    meta['colormap'] = ('red', 'green', 'blue', 'gray')
+    meta['rgb'] = False
+
+    layerdata_list = split_channels(data, channel_axis=-1, **meta)
+
+    images = [
+        Image(image, **i_kwargs) for image, i_kwargs, _ in layerdata_list
+    ]
     return images if with_alpha else images[:3]
 
 
@@ -353,10 +378,13 @@ def images_to_stack(images: list[Image], axis: int = 0, **kwargs) -> Image:
 
 def merge_rgb(images: list[Image]) -> Image:
     """Variant of images_to_stack that makes an RGB from 3 images."""
-    if not (len(images) == 3 and all(isinstance(x, Image) for x in images)):
+    if not (
+        len(images) in [3, 4] and all(isinstance(x, Image) for x in images)
+    ):
         raise ValueError(
             trans._(
-                'Merging to RGB requires exactly 3 Image layers', deferred=True
+                'Merging to RGB requires either 3 or 4 Image layers',
+                deferred=True,
             )
         )
     if not all(image.data.shape == images[0].data.shape for image in images):
@@ -372,11 +400,16 @@ def merge_rgb(images: list[Image]) -> Image:
     # we will check for the presence of R G B colormaps to determine how to merge
     colormaps = {image.colormap.name for image in images}
     r_g_b = ['red', 'green', 'blue']
+    # if image is rgba, add gray colormap to represent alpha channel
+    if len(colormaps) == 4:
+        r_g_b.append('gray')
     if colormaps != set(r_g_b):
         missing_colormaps = set(r_g_b) - colormaps
         raise ValueError(
             trans._(
-                'Missing colormap(s): {missing_colormaps}! To merge layers to RGB, ensure you have red, green, and blue as layer colormaps.',
+                'Missing colormap(s): {missing_colormaps}! To merge layers to '
+                f'{"RGB" if len(r_g_b) == 3 else "RGBA"}, ensure you have '
+                f'{", ".join(r_g_b[:-1])}, and {r_g_b[-1]} as layer colormaps.',
                 missing_colormaps=missing_colormaps,
                 deferred=True,
             )

@@ -4,6 +4,7 @@ from copy import copy
 from typing import TYPE_CHECKING
 
 import numpy as np
+from psygnal.containers import Selection
 
 from napari.layers.base._base_constants import ActionType
 from napari.layers.shapes._shapes_constants import Box, Mode
@@ -314,7 +315,7 @@ def initiate_polygon_draw(
     layer._is_creating = True
     data = np.array([coordinates, coordinates])
     layer.add(data, shape_type='path', gui=True)
-    layer.selected_data = {layer.nshapes - 1}
+    layer.selected_data = Selection({layer.nshapes - 1})
     layer._value = (layer.nshapes - 1, 1)
     layer._moving_value = copy(layer._value)
     layer._set_highlight()
@@ -500,7 +501,7 @@ def vertex_insert(layer: Shapes, event: MouseEvent) -> None:
             pass
         else:
             vertices = layer._data_view.displayed_vertices[
-                layer._data_view.displayed_index == index
+                layer._data_view.displayed_vertices_to_shape_num == index
             ]
             # Find which edge new vertex should inserted along
             closed = shape_type != Path
