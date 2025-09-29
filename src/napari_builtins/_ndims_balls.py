@@ -1,8 +1,7 @@
 from napari.benchmarks.utils import labeled_particles
 
 
-def labeled_particles2d():
-    seed = 275961054812084171
+def labeled_particles2d(seed: int | None = 20180812):
     labels, density, points = labeled_particles(
         (1024, 1024), seed=seed, return_density=True
     )
@@ -26,8 +25,7 @@ def labeled_particles2d():
     ]
 
 
-def labeled_particles3d():
-    seed = 275961054812084171
+def labeled_particles3d(seed: int | None = 20180812):
     labels, density, points = labeled_particles(
         (256, 512, 512), seed=seed, return_density=True
     )
