@@ -1,9 +1,11 @@
 from napari.benchmarks.utils import labeled_particles
 
 
-def labeled_particles2d(seed: int | None = 20180812):
+def labeled_particles2d(
+    shape: tuple[int, int] = (1024, 1024), seed: int | None = 20180812
+):
     labels, density, points = labeled_particles(
-        (1024, 1024), seed=seed, return_density=True
+        shape=shape, seed=seed, return_density=True
     )
 
     return [
@@ -25,9 +27,11 @@ def labeled_particles2d(seed: int | None = 20180812):
     ]
 
 
-def labeled_particles3d(seed: int | None = 20180812):
+def labeled_particles3d(
+    shape: tuple[int, int, int] = (256, 512, 512), seed: int | None = 20180812
+):
     labels, density, points = labeled_particles(
-        (256, 512, 512), seed=seed, return_density=True
+        shape=shape, seed=seed, return_density=True
     )
 
     return [
