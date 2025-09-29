@@ -49,6 +49,8 @@ def _load_skimage_data(name, **kwargs):
         kwargs.setdefault('rng', 1)
         name = 'binary_blobs'
     if name == 'binary_blobs':
+        kwargs.setdefault('length', 512)
+        kwargs.setdefault('volume_fraction', 0.5)
         kwargs.setdefault('rng', 1)
         name = 'binary_blobs'
 
