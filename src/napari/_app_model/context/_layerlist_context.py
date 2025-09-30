@@ -66,6 +66,10 @@ def _n_selected_imgs(s: LayerSel) -> int:
     return sum(x._type_string == 'image' for x in s)
 
 
+def _only_image(s: LayerSel) -> bool:
+    return bool(s and all(x._type_string == 'image' for x in s))
+
+
 def _only_labels(s: LayerSel) -> bool:
     return bool(s and all(x._type_string == 'labels' for x in s))
 
@@ -84,6 +88,10 @@ def _n_selected_points(s: LayerSel) -> int:
 
 def _only_shapes(s: LayerSel) -> bool:
     return bool(s and all(x._type_string == 'shapes' for x in s))
+
+
+def _only_surfaces(s: LayerSel) -> bool:
+    return bool(s and all(x._type_string == 'surface' for x in s))
 
 
 def _n_selected_shapes(s: LayerSel) -> int:
@@ -288,6 +296,11 @@ class LayerListSelectionContextKeys(ContextNamespace['LayerSel']):
         trans._('True when all selected layers are of the same type.'),
         _same_type,
     )
+    all_selected_layers_image = ContextKey(
+        False,
+        trans._('True when all selected layers are labels.'),
+        _only_image,
+    )
     all_selected_layers_labels = ContextKey(
         False,
         trans._('True when all selected layers are labels.'),
@@ -297,6 +310,11 @@ class LayerListSelectionContextKeys(ContextNamespace['LayerSel']):
         False,
         trans._('True when all selected layers are shapes.'),
         _only_shapes,
+    )
+    all_selected_layers_surfaces = ContextKey(
+        False,
+        trans._('True when all selected layers are shapes.'),
+        _only_surfaces,
     )
     selected_empty_shapes_layer = ContextKey(
         False,

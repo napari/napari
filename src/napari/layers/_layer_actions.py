@@ -12,7 +12,7 @@ import numpy as np
 import numpy.typing as npt
 
 from napari import layers
-from napari.layers import Image, Labels, Layer
+from napari.layers import Image, Labels, Layer, Surface
 from napari.layers._source import layer_source
 from napari.layers.utils import stack_utils
 from napari.layers.utils._link_layers import get_linked_layers
@@ -248,3 +248,23 @@ def _project(ll: LayerList, axis: int = 0, mode: str = 'max') -> None:
     )
 
     ll.append(new)
+
+
+def _toogle_bounding_box(ll: LayerList) -> None:
+    if not (layer := ll.selection.active):
+        return
+    layer.bounding_box.visible = not layer.bounding_box.visible
+
+
+def _toggle_colorbar(ll: LayerList) -> None:
+    if not (layer := ll.selection.active):
+        return
+
+    if not isinstance(layer, Image | Surface):
+        raise NotImplementedError(
+            trans._(
+                'Colorbar is only implemented for Images and Surfaces',
+                deferred=True,
+            )
+        )
+    layer.colorbar.visible = not layer.colorbar.visible
