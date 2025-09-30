@@ -192,6 +192,10 @@ def _active_supports_features(s: LayerSel) -> bool:
     return hasattr(s.active, 'features')
 
 
+def _all_support_colorbar(s: LayerSel) -> bool:
+    return bool(s and all(hasattr(x, 'colorbar') for x in s))
+
+
 class LayerListSelectionContextKeys(ContextNamespace['LayerSel']):
     """Available context keys relating to the selection in a LayerList.
 
@@ -315,6 +319,11 @@ class LayerListSelectionContextKeys(ContextNamespace['LayerSel']):
         False,
         trans._('True when all selected layers are shapes.'),
         _only_surfaces,
+    )
+    all_selected_layers_support_colorbar = ContextKey(
+        False,
+        trans._('True when all selected layers are shapes.'),
+        _all_support_colorbar,
     )
     selected_empty_shapes_layer = ContextKey(
         False,

@@ -250,21 +250,18 @@ def _project(ll: LayerList, axis: int = 0, mode: str = 'max') -> None:
     ll.append(new)
 
 
-def _toogle_bounding_box(ll: LayerList) -> None:
-    if not (layer := ll.selection.active):
-        return
-    layer.bounding_box.visible = not layer.bounding_box.visible
+def _toggle_bounding_box(ll: LayerList) -> None:
+    for layer in ll.selection:
+        layer.bounding_box.visible = not layer.bounding_box.visible
 
 
 def _toggle_colorbar(ll: LayerList) -> None:
-    if not (layer := ll.selection.active):
-        return
-
-    if not isinstance(layer, Image | Surface):
-        raise NotImplementedError(
-            trans._(
-                'Colorbar is only implemented for Images and Surfaces',
-                deferred=True,
+    for layer in ll.selection:
+        if not isinstance(layer, Image | Surface):
+            raise NotImplementedError(
+                trans._(
+                    'Colorbar is only implemented for Images and Surfaces',
+                    deferred=True,
+                )
             )
-        )
-    layer.colorbar.visible = not layer.colorbar.visible
+        layer.colorbar.visible = not layer.colorbar.visible
