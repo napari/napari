@@ -317,12 +317,12 @@ class LayerListSelectionContextKeys(ContextNamespace['LayerSel']):
     )
     all_selected_layers_surfaces = ContextKey(
         False,
-        trans._('True when all selected layers are shapes.'),
+        trans._('True when all selected layers are surfaces.'),
         _only_surfaces,
     )
     all_selected_layers_support_colorbar = ContextKey(
         False,
-        trans._('True when all selected layers are shapes.'),
+        trans._('True when all selected layers support a colorbar.'),
         _all_support_colorbar,
     )
     selected_empty_shapes_layer = ContextKey(
