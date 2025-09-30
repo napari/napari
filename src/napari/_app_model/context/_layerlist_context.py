@@ -302,7 +302,7 @@ class LayerListSelectionContextKeys(ContextNamespace['LayerSel']):
     )
     all_selected_layers_image = ContextKey(
         False,
-        trans._('True when all selected layers are labels.'),
+        trans._('True when all selected layers are images.'),
         _only_image,
     )
     all_selected_layers_labels = ContextKey(
