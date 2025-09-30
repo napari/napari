@@ -169,7 +169,10 @@ def rotate_layers(viewer: Viewer):
 
 @register_viewer_action(trans._('Toggle grid mode'))
 def toggle_grid(viewer: Viewer):
-    if 1 < len(viewer.layers) < abs(viewer.grid.stride):
+    if (
+        1 < len(viewer.layers) < abs(viewer.grid.stride)
+        and not viewer.grid.enabled
+    ):
         show_warning(
             'Grid stride is too large for number of layers. Will render as 1x1 grid.'
         )
