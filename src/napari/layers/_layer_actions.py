@@ -12,7 +12,7 @@ import numpy as np
 import numpy.typing as npt
 
 from napari import layers
-from napari.layers import Image, Labels, Layer, Surface
+from napari.layers import Image, Labels, Layer
 from napari.layers._source import layer_source
 from napari.layers.utils import stack_utils
 from napari.layers.utils._link_layers import get_linked_layers
@@ -257,7 +257,7 @@ def _toggle_bounding_box(ll: LayerList) -> None:
 
 def _toggle_colorbar(ll: LayerList) -> None:
     for layer in ll.selection:
-        if not isinstance(layer, Image | Surface):
+        if not hasattr(layer, 'colorbar'):
             raise NotImplementedError(
                 trans._(
                     'Colorbar is only implemented for Images and Surfaces',
