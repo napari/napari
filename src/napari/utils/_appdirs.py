@@ -54,36 +54,42 @@ user_log_dir: Callable[[], str] = partial(
 )
 
 
-def _maybe_migrate_uvx_settings():
-    """If we are in a uv environment, and there are no settings in the
+def _maybe_migrate_uvx_settings() -> bool:
+    """If we are in an uv environment, and there are no settings in the
     current config dir, but there are settings in the uvx config dir,
     move them over.
+
+    Returns
+    -------
+    bool
+        Whether or not a migration was performed.
     """
     if not environment_marker.startswith('uvx'):
-        return  # only migrate if we are in an uvx environment
+        return False  # only migrate if we are in an uvx environment
 
     config_path = Path(user_config_dir())
     if config_path.exists():
-        return  # nothing to do, the current config path already exists
+        return False  # nothing to do, the current config path already exists
 
     base_config_path = config_path.parent
 
     if not base_config_path.exists():
-        return  # nothing to do, the base config path doesn't exist
+        return False  # nothing to do, the base config path doesn't exist
 
     napari_version = parse_version(version('napari'))
     older_versions = []
 
-    for fname in base_config_path.listdir():
+    for fname in base_config_path.iterdir():
         try:
-            dir_version = parse_version(fname)
+            dir_version = parse_version(fname.name)
         except InvalidVersion:
             continue
         if dir_version < napari_version:
             older_versions.append((dir_version, fname))
 
     if not older_versions:
-        return  # nothing to do, there are no older versions
+        return False  # nothing to do, there are no older versions
 
     # get the latest version that is older than the current version
-    shutil.copy(base_config_path / max(older_versions)[1], config_path)
+    shutil.copytree(max(older_versions)[1], config_path)
+    return True
