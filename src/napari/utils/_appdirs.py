@@ -3,8 +3,10 @@ import os
 import sys
 from collections.abc import Callable
 from functools import partial
+from importlib.metadata import version
 
 import appdirs
+from packaging.version import parse as parse_version
 
 __all__ = (
     'user_cache_dir',
@@ -19,7 +21,9 @@ PREFIX_PATH = os.path.realpath(sys.prefix)
 UV_POSSIBLE_PATH = appdirs.user_cache_dir('uv')
 
 if PREFIX_PATH.startswith(UV_POSSIBLE_PATH):
-    environment_marker = 'uvx'
+    environment_marker = os.path.join(
+        'uvx', parse_version(version('napari')).base_version
+    )
 else:
     environment_marker = f'{os.path.basename(PREFIX_PATH)}_{hashlib.sha1(PREFIX_PATH.encode()).hexdigest()}'
 
