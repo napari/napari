@@ -19,7 +19,7 @@ PREFIX_PATH = os.path.realpath(sys.prefix)
 UV_POSSIBLE_PATH = appdirs.user_cache_dir('uv')
 
 if PREFIX_PATH.startswith(UV_POSSIBLE_PATH):
-    environment_marker = 'napari_uv'
+    environment_marker = 'uvx'
 else:
     environment_marker = f'{os.path.basename(PREFIX_PATH)}_{hashlib.sha1(PREFIX_PATH.encode()).hexdigest()}'
 
