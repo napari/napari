@@ -1,12 +1,14 @@
 import hashlib
 import os
+import shutil
 import sys
 from collections.abc import Callable
 from functools import partial
 from importlib.metadata import version
+from pathlib import Path
 
 import appdirs
-from packaging.version import parse as parse_version
+from packaging.version import InvalidVersion, parse as parse_version
 
 __all__ = (
     'user_cache_dir',
@@ -50,3 +52,38 @@ user_state_dir: Callable[[], str] = partial(
 user_log_dir: Callable[[], str] = partial(
     appdirs.user_log_dir, _appname, _appauthor
 )
+
+
+def _maybe_migrate_uvx_settings():
+    """If we are in a uv environment, and there are no settings in the
+    current config dir, but there are settings in the uvx config dir,
+    move them over.
+    """
+    if not environment_marker.startswith('uvx'):
+        return  # only migrate if we are in an uvx environment
+
+    config_path = Path(user_config_dir())
+    if config_path.exists():
+        return  # nothing to do, the current config path already exists
+
+    base_config_path = config_path.parent
+
+    if not base_config_path.exists():
+        return  # nothing to do, the base config path doesn't exist
+
+    napari_version = parse_version(version('napari'))
+    older_versions = []
+
+    for fname in base_config_path.listdir():
+        try:
+            dir_version = parse_version(fname)
+        except InvalidVersion:
+            continue
+        if dir_version < napari_version:
+            older_versions.append((dir_version, fname))
+
+    if not older_versions:
+        return  # nothing to do, there are no older versions
+
+    # get the latest version that is older than the current version
+    shutil.copy(base_config_path / max(older_versions)[1], config_path)
