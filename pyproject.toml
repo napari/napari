@@ -56,7 +56,7 @@ dependencies = [
     "Pillow>=9.0",
     "pint>=0.17",
     "psutil>=5.9.0",
-    "psygnal>=0.10.0",
+    "psygnal>=0.14.2",
     "pydantic>=2.2.0",
     "pygments>=2.6.0",
     "PyOpenGL>=3.1.5",
@@ -120,7 +120,7 @@ all = [
 ]
 optional-base = [
     "zarr>=2.12.0", # needed by `builtins` (dask.array.from_zarr) to open zarr
-    "aiohttp", # needed to open remote files by zarr, relace by extras once https://github.com/zarr-developers/zarr-python/issues/3453 is done
+    "aiohttp", # needed to open remote files by zarr, replace by extras once https://github.com/zarr-developers/zarr-python/issues/3453 is done
     "napari-plugin-manager >=0.1.3, <0.2.0",
 ]
 optional-numba = [
@@ -661,6 +661,7 @@ module = [
     'napari._qt.layer_controls.widgets._tracks.qt_id_checkbox',
     'napari._qt.layer_controls.widgets._tracks.qt_graph_checkbox',
     'napari._qt.layer_controls.widgets._tracks.qt_colormap_control',
+    'napari._qt.layer_controls.widgets._tracks.qt_hide_completed_tracks_checkbox',
     'napari._qt.menus._util',
     'napari._qt.menus.file_menu',
     'napari._qt.perf.qt_event_tracing',
@@ -927,6 +928,7 @@ disallow_untyped_defs = false
 [[tool.mypy.overrides]]
 module = [
     "napari._app_model.context._layerlist_context",
+    "napari._vispy.overlays.colormap",
     "napari.components.overlays.labels_polygon",
     "napari.plugins.io",
     "napari.utils.colormaps.vendored._cm_listed",

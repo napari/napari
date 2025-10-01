@@ -1365,14 +1365,22 @@ def test_selecting_shapes():
     data = 20 * np.random.random((10, 4, 2))
     np.random.seed(0)
     layer = Shapes(data)
+    emitted_events = Mock()
+    layer.selected_data.events.items_changed.connect(emitted_events)
     layer.selected_data = {0, 1}
     assert layer.selected_data == {0, 1}
+    assert emitted_events.call_count == 1
 
     layer.selected_data = {9}
     assert layer.selected_data == {9}
+    # must be three calls because setting to {9} first clears the set
+    # and then adds 9
+    assert emitted_events.call_count == 2
 
     layer.selected_data = set()
     assert layer.selected_data == set()
+    # must be four calls because we are only clearing the set here
+    assert emitted_events.call_count == 3
 
 
 def test_removing_all_shapes_empty_list():
@@ -1482,6 +1490,9 @@ def test_removing_shapes():
         ]
     )
 
+    # removing nothing should work smoothly
+    layer.remove([])
+
 
 def test_removing_selected_shapes():
     """Test removing selected shapes."""
@@ -1538,6 +1549,41 @@ def test_removing_selected_shapes():
             for s, so in zip(layer.shape_type, shape_type_keep, strict=False)
         ]
     )
+
+
+def test_popping_shapes():
+    """Test popping shapes."""
+    np.random.seed(0)
+    data = [
+        20 * np.random.random((np.random.randint(2, 12), 2)).astype(np.float32)
+        for i in range(5)
+    ] + list(np.random.random((5, 4, 2)).astype(np.float32))
+    shape_type = ['polygon'] * 5 + ['rectangle'] * 3 + ['ellipse'] * 2
+    layer = Shapes(data, shape_type=shape_type)
+    layer.events.data = Mock()
+    old_data = layer.data
+
+    # Pop a single shape
+    popped_shape = layer.pop()
+    popped_index = {9}
+    assert layer.events.data.call_args_list[0][1] == {
+        'value': old_data,
+        'action': ActionType.REMOVING,
+        'data_indices': tuple(
+            popped_index,
+        ),
+        'vertex_indices': ((),),
+    }
+    assert layer.events.data.call_args_list[1][1] == {
+        'value': layer.data,
+        'action': ActionType.REMOVED,
+        'data_indices': tuple(
+            popped_index,
+        ),
+        'vertex_indices': ((),),
+    }
+    assert len(layer.data) == len(data) - 1
+    assert np.array_equal(popped_shape['data'], old_data[-1])
 
 
 def test_changing_modes():

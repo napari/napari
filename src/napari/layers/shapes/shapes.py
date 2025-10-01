@@ -1,16 +1,14 @@
 import warnings
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Collection, Iterable, Sized
 from contextlib import contextmanager
 from copy import copy, deepcopy
 from itertools import cycle
-from typing import (
-    Any,
-    ClassVar,
-)
+from typing import Any, ClassVar
 
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
+from psygnal.containers import Selection
 from vispy.color import get_color_names
 
 from napari.layers.base import Layer, no_op
@@ -554,7 +552,7 @@ class Shapes(Layer):
         self._value = (None, None)
         self._value_stored = (None, None)
         self._moving_value: tuple[int | None, int | None] = (None, None)
-        self._selected_data = set()
+        self._selected_data: Selection[int] = Selection()
         self._selected_data_stored = set()
         self._selected_data_history = set()
         self._selected_box = None
@@ -1260,13 +1258,13 @@ class Shapes(Layer):
             self._data_view.update_z_index(i, z_idx)
 
     @property
-    def selected_data(self):
-        """set: set of currently selected shapes."""
+    def selected_data(self) -> Selection[int]:
+        """Selection: set of currently selected shapes."""
         return self._selected_data
 
     @selected_data.setter
-    def selected_data(self, selected_data):
-        self._selected_data = set(selected_data)
+    def selected_data(self, selected_data: Collection[int]) -> None:
+        self._selected_data.replace_selection(selected_data)
         self._selected_box = self.interaction_box(self._selected_data)
 
         # Update properties based on selected shapes
@@ -2446,8 +2444,8 @@ class Shapes(Layer):
 
         Parameters
         ----------
-        index : int | list
-            Index of a single shape, or a list of shapes around which to
+        index : int or iterable of int
+            Index of a single shape, list of shapes or Selection around which to
             construct the interaction box
 
         Returns
@@ -2459,7 +2457,9 @@ class Shapes(Layer):
             the box, and the last point is the location of the rotation handle
             that can be used to rotate the box
         """
-        if isinstance(index, list | np.ndarray | set):
+        if isinstance(index, Iterable):
+            if not isinstance(index, Sized):
+                index = list(index)
             if len(index) == 0:
                 box = None
             elif len(index) == 1:
@@ -2647,7 +2647,7 @@ class Shapes(Layer):
             and np.array_equal(self._drag_box, self._drag_box_stored)
         ) and not force:
             return
-        self._selected_data_stored = copy(self.selected_data)
+        self._selected_data_stored = set(self._selected_data)
         self._value_stored = copy(self._value)
         self._drag_box_stored = copy(self._drag_box)
         self.events.highlight()
@@ -2825,6 +2825,62 @@ class Shapes(Layer):
     def remove_selected(self) -> None:
         """Remove any selected shapes."""
         self.remove(list(self.selected_data))
+
+    def get_shape_info(self, index: int) -> dict[str, Any]:
+        """Retrieve all available information for the shape at the given index.
+
+        Parameters
+        ----------
+        index : int
+            Index of the shape.
+
+        Returns
+        -------
+        info : dict
+            A dictionary containing all relevant details of the shape.
+        """
+
+        if not (0 <= index < len(self.data)):
+            return {
+                'data': None,
+                'shape_type': None,
+                'edge_width': None,
+                'edge_color': None,
+                'face_color': None,
+                'z_index': None,
+                'features': {},
+            }
+
+        info = {
+            'data': self.data[index],
+            'shape_type': self.shape_type[index],
+            'edge_width': self.edge_width[index],
+            'edge_color': self.edge_color[index],
+            'face_color': self.face_color[index],
+            'z_index': self.z_index[index],
+            'features': self.features.iloc[index].to_dict(),
+        }
+        return info
+
+    def pop(self, index=-1) -> dict[str, Any]:
+        """Remove and return the shape at the given index.
+
+        Parameters
+        ----------
+        index : int
+            Index of the shape to remove and return. Defaults to -1, which
+            removes the last shape.
+
+        Returns
+        -------
+        dict[str, Any]
+            Dictionary containing the removed shape's data.
+        """
+        if index == -1:
+            index = len(self.data) - 1
+        info = self.get_shape_info(index)
+        self.remove([index])
+        return info
 
     def _rotate_box(self, angle, center=(0, 0)):
         """Perform a rotation on the selected box.
