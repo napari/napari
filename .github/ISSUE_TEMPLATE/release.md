@@ -55,10 +55,10 @@ assignees: ''
 - [ ] Checkout `napari/napari:main` and tag with release notes file. [See docs for details.](https://napari.org/dev/developers/coredev/release.html#tagging-the-new-release-candidate)
 - [ ] Push created tag to `napari/napari`. This triggers the deployment actions.
 - [ ] Check that docs deployment is successful on `napari/docs` and `napari/napari.github.io`
-- [ ] ensure [PyPI](https://pypi.org/project/napari/#history) releae is out
-- [ ] Once PyPI is out, manually trigger the update of our Conda-forge [`napari-feedstock`](https://github.com/conda-forge/napari-feedstock) by creating an issue with title [@conda-forge-admin, please update version](https://github.com/conda-forge/napari-feedstock/issues/new?template=2-bot-commands.yml). Alternatively, conda-forge bots will automatically make a PR, usually within 12 hours.
-- [ ] ensure [conda-forge release](https://anaconda.org/conda-forge/napari) is out (should be minutes after merging the feedstock PR).
-- [ ] Update symlink in `napari/napari.github.io` by manually triggering the [action](https://github.com/napari/napari.github.io/actions/workflows/symlink-stable.yml).
+- [ ] ensure [PyPI](https://pypi.org/project/napari/#history) release is out
+- [ ] Once PyPI is out, manually trigger the update of our Conda-forge [`napari-feedstock`](https://github.com/conda-forge/napari-feedstock) by creating an issue with title [@conda-forge-admin, please update version](https://github.com/conda-forge/napari-feedstock/issues/new?template=2-bot-commands.yml). (Alternatively, conda-forge bots will automatically make a PR, usually within 12 hours).
+- [ ] ensure [conda-forge release](https://anaconda.org/conda-forge/napari) is out (should be minutes after merging the feedstock PR created above).
+- [ ] Update symlink in `napari/napari.github.io` by manually triggering the [action](https://github.com/napari/napari.github.io/actions/workflows/symlink-stable.yml) (entering the new version in the field, without `v`).
 - [ ] Update the `version_switcher.json` in `napari/docs`. (e.g. [this PR](https://github.com/napari/docs/pull/826))
 
 ### Announce new release
