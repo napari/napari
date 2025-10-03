@@ -51,14 +51,15 @@ class QtHistogramWidget(QWidget):
 
         # Create VisPy canvas
         self.canvas = SceneCanvas(
-            size=(400, 150),
+            size=(400, 120),
             bgcolor='black',
             keys=None,
         )
         # Set the Qt parent after creation
         self.canvas.native.setParent(self)
-        self.canvas.native.setMinimumHeight(150)
-        self.canvas.native.setMaximumHeight(200)
+        # Set reasonable height constraints
+        self.canvas.native.setMinimumHeight(100)
+        self.canvas.native.setMaximumHeight(150)
 
         # Create view
         self.view = ViewBox(parent=self.canvas.scene)
@@ -100,11 +101,14 @@ class QtHistogramWidget(QWidget):
                     data_range=clim_range,  # type: ignore[arg-type]
                 )
 
-                # Update camera view
-                if clim_range[0] != clim_range[1]:
+                # Update camera view to show full histogram
+                if clim_range[0] != clim_range[1] and self.histogram._counts is not None:
+                    # Get the max count for Y range
+                    max_count = self.histogram._counts.max() if len(self.histogram._counts) > 0 else 1
                     self.view.camera.set_range(  # type: ignore[attr-defined]
                         x=clim_range,
-                        margin=0.02,
+                        y=(0, max_count * 1.05),  # Add 5% margin at top
+                        margin=0,
                     )
 
                 # Update contrast limit lines

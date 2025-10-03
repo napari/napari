@@ -86,12 +86,12 @@ class QContrastLimitsPopup(QRangeSliderPopup):
         vlayout.setContentsMargins(0, 0, 0, 0)
         vlayout.setSpacing(5)
 
-        # Add histogram widget
+        # Add slider first
+        vlayout.addWidget(self.slider)
+
+        # Add histogram widget below slider
         self.histogram_widget = QtHistogramWidget(layer, self)
         vlayout.addWidget(self.histogram_widget)
-
-        # Add slider back
-        vlayout.addWidget(self.slider)
 
         # Replace horizontal layout with vertical
         self._layout.addLayout(vlayout)
