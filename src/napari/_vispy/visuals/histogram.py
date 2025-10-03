@@ -103,12 +103,22 @@ class HistogramVisual:
         self.log_scale = log_scale
         self._bin_edges: np.ndarray | None = None
         self._counts: np.ndarray | None = None
+        self._gamma: float = 1.0
+        self._clims: tuple[float, float] | None = None
 
         # Create mesh for histogram bars
         self.mesh = Mesh(color=color)
         if parent is not None:
             self.mesh.parent = parent
         self.mesh.order = 0  # Draw first (behind)
+
+        # Create gamma curve line connecting the contrast limits
+        self.gamma_line = Line(color='cyan', width=2, connect='strip')
+        if parent is not None:
+            self.gamma_line.parent = parent
+        self.gamma_line.order = 9  # Draw above histogram, below clim lines
+        self.gamma_line.set_gl_state('translucent', depth_test=False)
+        self.gamma_line.visible = False
 
         # Create lines for contrast limit indicators
         self.clim_lines = Line(color='yellow', width=2, connect='segments')
@@ -171,18 +181,28 @@ class HistogramVisual:
         self.mesh.set_data(vertices=vertices, faces=faces)
         self.mesh.visible = True
 
-    def set_clims(self, clims: tuple[float, float]) -> None:
-        """Set contrast limit indicator lines.
+    def set_clims(self, clims: tuple[float, float], gamma: float = 1.0, log_scale: bool = False) -> None:
+        """Set contrast limit indicator lines and gamma curve.
 
         Parameters
         ----------
         clims : tuple of float
             (min, max) contrast limits to display
+        gamma : float, optional
+            Gamma value for the curve connecting clims (default: 1.0)
+        log_scale : bool, optional
+            Whether histogram is in log scale mode (affects line height)
         """
         if self._counts is None or self._bin_edges is None:
             return
 
+        self._clims = clims
+        self._gamma = gamma
+
+        # Calculate max count for display (accounting for log scale)
         max_count = self._counts.max() if len(self._counts) > 0 else 1
+        if log_scale:
+            max_count = np.log10(max_count + 1)
 
         if self.orientation == 'vertical':
             # Vertical lines at clim positions with z-offset to render in front
@@ -203,6 +223,44 @@ class HistogramVisual:
         self.clim_lines.set_data(pos=pos)
         self.clim_lines.visible = True
 
+        # Update gamma curve
+        self._update_gamma_curve()
+
+    def _update_gamma_curve(self) -> None:
+        """Update the gamma curve line connecting the contrast limits."""
+        if self._clims is None or self._counts is None:
+            return
+
+        clim_min, clim_max = self._clims
+        
+        # Calculate max count for display (accounting for log scale)
+        max_count = self._counts.max() if len(self._counts) > 0 else 1
+        if self.log_scale:
+            max_count = np.log10(max_count + 1)
+
+        # Generate points along the gamma curve
+        n_points = 50
+        x_values = np.linspace(clim_min, clim_max, n_points)
+        
+        # Normalize to 0-1 range
+        if clim_max > clim_min:
+            normalized = (x_values - clim_min) / (clim_max - clim_min)
+            # Apply gamma curve
+            y_normalized = normalized ** self._gamma
+            # Scale to histogram height
+            y_values = y_normalized * max_count
+        else:
+            y_values = np.zeros(n_points)
+
+        if self.orientation == 'vertical':
+            # Points from left clim to right clim following gamma curve
+            pos = np.column_stack([x_values, y_values, np.full(n_points, 0.05)])
+        else:  # horizontal
+            pos = np.column_stack([y_values, x_values, np.full(n_points, 0.05)])
+
+        self.gamma_line.set_data(pos=pos.astype(np.float32))
+        self.gamma_line.visible = True
+
     @property
     def visible(self) -> bool:
         """Return visibility of the histogram."""
@@ -213,6 +271,7 @@ class HistogramVisual:
         """Set visibility of the histogram."""
         self.mesh.visible = value
         self.clim_lines.visible = value
+        self.gamma_line.visible = value
 
     def set_log_scale(self, enabled: bool) -> None:
         """Enable or disable logarithmic scaling.
@@ -235,3 +294,7 @@ class HistogramVisual:
                     counts_to_display, self._bin_edges, self.orientation
                 )
                 self.mesh.set_data(vertices=vertices, faces=faces)
+                
+                # Update clim lines and gamma curve with new scaling
+                if self._clims is not None:
+                    self.set_clims(self._clims, self._gamma, self.log_scale)

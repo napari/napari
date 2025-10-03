@@ -73,13 +73,34 @@ class QtHistogramWidget(QWidget):
             orientation='vertical',
         )
 
-        # Set up camera
+        # Set up camera - use PanZoomCamera but disable interaction
+        # This allows rendering but prevents panning
         self.view.camera = 'panzoom'
         # Type ignore since camera is set as string but becomes camera object
+        self.view.camera.interactive = False  # type: ignore[attr-defined]
         self.view.camera.set_range(x=(0, 1), y=(0, 1))  # type: ignore[attr-defined]
 
         # Add canvas to layout
         layout.addWidget(self.canvas.native)
+
+        # Setup mouse interaction for gamma adjustment
+        self._dragging_gamma = False
+        # Use canvas.connect decorator for vispy events
+        @self.canvas.connect
+        def on_mouse_press(event):
+            """Handle mouse press to start gamma dragging."""
+            if hasattr(self.layer, 'gamma'):
+                self._dragging_gamma = True
+
+        @self.canvas.connect
+        def on_mouse_move(event):
+            """Handle mouse move to adjust gamma."""
+            self._on_mouse_move_impl(event)
+
+        @self.canvas.connect
+        def on_mouse_release(event):
+            """Handle mouse release to stop gamma dragging."""
+            self._dragging_gamma = False
 
         # Add log scale checkbox
         controls_layout = QHBoxLayout()
@@ -91,8 +112,50 @@ class QtHistogramWidget(QWidget):
         controls_layout.addStretch()
         layout.addLayout(controls_layout)
 
+        # Connect to layer gamma changes if available
+        if hasattr(layer, 'events') and hasattr(layer.events, 'gamma'):
+            layer.events.gamma.connect(self._on_gamma_change)
+
         # Update histogram with layer data
         self.update_histogram()
+
+    def _on_mouse_move_impl(self, event) -> None:
+        """Handle mouse move to adjust gamma."""
+        if not self._dragging_gamma or not hasattr(self.layer, 'gamma'):
+            return
+
+        # Get mouse position in data coordinates
+        try:
+            tr = self.view.scene.transform
+            pos = tr.imap(event.pos)[:2]
+            
+            if self.histogram._clims is not None:
+                clim_min, clim_max = self.histogram._clims
+                max_count = self.histogram._counts.max() if self.histogram._counts is not None else 1
+                
+                # Normalize mouse position
+                if clim_max > clim_min and max_count > 0:
+                    x_norm = (pos[0] - clim_min) / (clim_max - clim_min)
+                    y_norm = pos[1] / max_count
+                    
+                    # Clamp to valid range
+                    x_norm = np.clip(x_norm, 0.01, 0.99)
+                    y_norm = np.clip(y_norm, 0.01, 0.99)
+                    
+                    # Calculate gamma from the position
+                    # gamma curve: y = x^gamma, so gamma = log(y) / log(x)
+                    if x_norm > 0.01 and y_norm > 0.01:
+                        gamma = np.log(y_norm) / np.log(x_norm)
+                        # Clamp gamma to reasonable range
+                        gamma = np.clip(gamma, 0.1, 10.0)
+                        self.layer.gamma = gamma  # type: ignore[attr-defined]
+        except (AttributeError, ValueError, ZeroDivisionError):
+            # If anything goes wrong, just ignore
+            pass
+
+    def _on_gamma_change(self) -> None:
+        """Handle gamma change event from layer."""
+        self.update_clim_lines()
 
     def _on_log_scale_toggled(self, checked: bool) -> None:
         """Handle log scale checkbox toggle."""
@@ -118,18 +181,19 @@ class QtHistogramWidget(QWidget):
                     data_range=clim_range,  # type: ignore[arg-type]
                 )
 
-                # Update camera view to show full histogram
+                # Update camera view to show full histogram with fixed bounds
                 if clim_range[0] != clim_range[1] and self.histogram._counts is not None:
                     # Get the max count for Y range (accounting for log scale)
                     max_count = self.histogram._counts.max() if len(self.histogram._counts) > 0 else 1
                     if self.histogram.log_scale:
                         # Use log scale for display
                         max_count = np.log10(max_count + 1)
-                    self.view.camera.set_range(  # type: ignore[attr-defined]
-                        x=clim_range,
-                        y=(0, max_count * 1.05),  # Add 5% margin at top
-                        margin=0,
-                    )
+
+                    # Set camera rect to fix the view bounds
+                    # rect = (x, y, width, height)
+                    width = float(clim_range[1]) - float(clim_range[0])  # type: ignore[arg-type]
+                    height = max_count * 1.05  # Add 5% margin at top
+                    self.view.camera.rect = (clim_range[0], 0, width, height)  # type: ignore[attr-defined]
 
                 # Update contrast limit lines
                 self.update_clim_lines()
@@ -139,9 +203,11 @@ class QtHistogramWidget(QWidget):
                 pass
 
     def update_clim_lines(self) -> None:
-        """Update the contrast limit indicator lines."""
+        """Update the contrast limit indicator lines and gamma curve."""
         try:
             clims = tuple(self.layer.contrast_limits)  # type: ignore[arg-type]
-            self.histogram.set_clims(clims)  # type: ignore[arg-type]
+            # Get gamma from layer if it has it
+            gamma = getattr(self.layer, 'gamma', 1.0)
+            self.histogram.set_clims(clims, gamma, self.histogram.log_scale)  # type: ignore[arg-type]
         except (AttributeError, TypeError):
             pass
