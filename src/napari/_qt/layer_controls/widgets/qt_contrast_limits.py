@@ -282,6 +282,9 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
                 self.clim_popup.slider.setRange(
                     *self._layer.contrast_limits_range
                 )
+            # Update histogram when range changes
+            if hasattr(self.clim_popup, 'histogram_widget'):
+                self.clim_popup.histogram_widget.update_histogram()
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
         return [

@@ -120,6 +120,10 @@ class QtHistogramWidget(QWidget):
         # Connect to layer gamma changes if available
         if hasattr(layer, 'events') and hasattr(layer.events, 'gamma'):
             layer.events.gamma.connect(self._on_gamma_change)
+        
+        # Connect to contrast_limits_range changes to recalculate histogram
+        if hasattr(layer, 'events') and hasattr(layer.events, 'contrast_limits_range'):
+            layer.events.contrast_limits_range.connect(self._on_range_change)
 
         # Update histogram with layer data
         self.update_histogram()
@@ -165,6 +169,10 @@ class QtHistogramWidget(QWidget):
     def _on_gamma_change(self) -> None:
         """Handle gamma change event from layer."""
         self.update_clim_lines()
+
+    def _on_range_change(self) -> None:
+        """Handle contrast_limits_range change event from layer."""
+        self.update_histogram()
 
     def _on_log_scale_toggled(self, checked: bool) -> None:
         """Handle log scale checkbox toggle."""
