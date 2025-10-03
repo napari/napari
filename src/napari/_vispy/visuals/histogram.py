@@ -9,7 +9,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import numpy as np
-from vispy.scene.visuals import Line, Mesh
+from vispy.scene.visuals import Line, Markers, Mesh
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -119,6 +119,21 @@ class HistogramVisual:
         self.gamma_line.order = 9  # Draw above histogram, below clim lines
         self.gamma_line.set_gl_state('translucent', depth_test=False)
         self.gamma_line.visible = False
+
+        # Create gamma handle marker (draggable indicator)
+        self.gamma_handle = Markers()
+        self.gamma_handle.set_data(
+            pos=np.array([[0, 0, 0.06]]),  # z slightly above gamma line
+            size=8,
+            edge_width=1.5,
+            edge_color='cyan',
+            face_color='black',
+        )
+        if parent is not None:
+            self.gamma_handle.parent = parent
+        self.gamma_handle.order = 11  # Draw on top of everything
+        self.gamma_handle.set_gl_state('translucent', depth_test=False)
+        self.gamma_handle.visible = False
 
         # Create lines for contrast limit indicators
         self.clim_lines = Line(color='yellow', width=2, connect='segments')
@@ -255,11 +270,21 @@ class HistogramVisual:
         if self.orientation == 'vertical':
             # Points from left clim to right clim following gamma curve
             pos = np.column_stack([x_values, y_values, np.full(n_points, 0.05)])
+            # Position handle at midpoint of gamma curve
+            mid_idx = n_points // 2
+            handle_pos = np.array([[x_values[mid_idx], y_values[mid_idx], 0.06]])
         else:  # horizontal
             pos = np.column_stack([y_values, x_values, np.full(n_points, 0.05)])
+            # Position handle at midpoint of gamma curve
+            mid_idx = n_points // 2
+            handle_pos = np.array([[y_values[mid_idx], x_values[mid_idx], 0.06]])
 
         self.gamma_line.set_data(pos=pos.astype(np.float32))
         self.gamma_line.visible = True
+        
+        # Update gamma handle position
+        self.gamma_handle.set_data(pos=handle_pos.astype(np.float32))
+        self.gamma_handle.visible = True
 
     @property
     def visible(self) -> bool:
@@ -272,6 +297,7 @@ class HistogramVisual:
         self.mesh.visible = value
         self.clim_lines.visible = value
         self.gamma_line.visible = value
+        self.gamma_handle.visible = value
 
     def set_log_scale(self, enabled: bool) -> None:
         """Enable or disable logarithmic scaling.
