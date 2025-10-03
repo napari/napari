@@ -2,9 +2,12 @@ from typing import Optional
 
 import numpy as np
 from qtpy.QtCore import Qt, Signal
-from qtpy.QtWidgets import QHBoxLayout, QPushButton, QWidget
+from qtpy.QtWidgets import QHBoxLayout, QPushButton, QVBoxLayout, QWidget
 from superqt import QDoubleRangeSlider
 
+from napari._qt.layer_controls.widgets.qt_histogram_widget import (
+    QtHistogramWidget,
+)
 from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,
@@ -74,13 +77,38 @@ class QContrastLimitsPopup(QRangeSliderPopup):
     ) -> None:
         super().__init__(parent)
 
+        # Update layout to vertical to stack histogram above slider
+        # Remove existing slider from horizontal layout
+        self._layout.removeWidget(self.slider)
+
+        # Create vertical layout
+        vlayout = QVBoxLayout()
+        vlayout.setContentsMargins(0, 0, 0, 0)
+        vlayout.setSpacing(5)
+
+        # Add histogram widget
+        self.histogram_widget = QtHistogramWidget(layer, self)
+        vlayout.addWidget(self.histogram_widget)
+
+        # Add slider back
+        vlayout.addWidget(self.slider)
+
+        # Replace horizontal layout with vertical
+        self._layout.addLayout(vlayout)
+
         decimals = range_to_decimals(layer.contrast_limits_range, layer.dtype)
         self.slider.setRange(*layer.contrast_limits_range)
         self.slider.setDecimals(decimals)
         self.slider.setSingleStep(10**-decimals)
         self.slider.setValue(layer.contrast_limits)
 
+        # Connect slider changes to update histogram
+        def update_histogram_clims():
+            self.histogram_widget.update_clim_lines()
+
         connect_setattr(self.slider.valueChanged, layer, 'contrast_limits')
+        self.slider.valueChanged.connect(update_histogram_clims)
+
         connect_setattr(
             self.slider.rangeChanged, layer, 'contrast_limits_range'
         )
@@ -93,6 +121,8 @@ class QContrastLimitsPopup(QRangeSliderPopup):
             )
             self.slider.setDecimals(decimals_)
             self.slider.setSingleStep(10**-decimals_)
+            # Update histogram after reset
+            self.histogram_widget.update_histogram()
 
         reset_btn = QPushButton('reset')
         reset_btn.setObjectName('reset_clims_button')
