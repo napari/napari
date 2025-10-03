@@ -106,12 +106,15 @@ class HistogramVisual:
         self.mesh = Mesh(color=color)
         if parent is not None:
             self.mesh.parent = parent
+        self.mesh.order = 0  # Draw first (behind)
 
         # Create lines for contrast limit indicators
         self.clim_lines = Line(color='yellow', width=2, connect='segments')
         if parent is not None:
             self.clim_lines.parent = parent
-        self.clim_lines.order = 1  # Draw on top
+        self.clim_lines.order = 10  # Draw on top (higher value = on top)
+        # Disable depth test so lines always render on top
+        self.clim_lines.set_gl_state('translucent', depth_test=False)
 
     def set_data(
         self,
@@ -174,19 +177,19 @@ class HistogramVisual:
         max_count = self._counts.max() if len(self._counts) > 0 else 1
 
         if self.orientation == 'vertical':
-            # Vertical lines at clim positions
+            # Vertical lines at clim positions with z-offset to render in front
             pos = np.array([
-                [clims[0], 0, 0],
-                [clims[0], max_count, 0],
-                [clims[1], 0, 0],
-                [clims[1], max_count, 0],
+                [clims[0], 0, 0.1],
+                [clims[0], max_count, 0.1],
+                [clims[1], 0, 0.1],
+                [clims[1], max_count, 0.1],
             ], dtype=np.float32)
         else:  # horizontal
             pos = np.array([
-                [0, clims[0], 0],
-                [max_count, clims[0], 0],
-                [0, clims[1], 0],
-                [max_count, clims[1], 0],
+                [0, clims[0], 0.1],
+                [max_count, clims[0], 0.1],
+                [0, clims[1], 0.1],
+                [max_count, clims[1], 0.1],
             ], dtype=np.float32)
 
         self.clim_lines.set_data(pos=pos)
