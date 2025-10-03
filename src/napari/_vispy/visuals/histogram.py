@@ -97,8 +97,10 @@ class HistogramVisual:
         parent=None,
         color: str | tuple = '#888888',
         orientation: str = 'vertical',
+        log_scale: bool = False,
     ) -> None:
         self.orientation = orientation
+        self.log_scale = log_scale
         self._bin_edges: np.ndarray | None = None
         self._counts: np.ndarray | None = None
 
@@ -155,9 +157,15 @@ class HistogramVisual:
 
         self._counts, self._bin_edges = np.histogram(data, bins=bins, range=data_range)
 
+        # Apply log scaling if enabled
+        counts_to_display = self._counts.copy()
+        if self.log_scale:
+            # Use log(counts + 1) to handle zero counts gracefully
+            counts_to_display = np.log10(counts_to_display + 1)
+
         # Convert to mesh
         vertices, faces = _hist_counts_to_mesh(
-            self._counts, self._bin_edges, self.orientation
+            counts_to_display, self._bin_edges, self.orientation
         )
 
         self.mesh.set_data(vertices=vertices, faces=faces)
@@ -205,3 +213,25 @@ class HistogramVisual:
         """Set visibility of the histogram."""
         self.mesh.visible = value
         self.clim_lines.visible = value
+
+    def set_log_scale(self, enabled: bool) -> None:
+        """Enable or disable logarithmic scaling.
+
+        Parameters
+        ----------
+        enabled : bool
+            If True, use log10(counts + 1) for display.
+            If False, use linear counts.
+        """
+        if self.log_scale != enabled:
+            self.log_scale = enabled
+            # Re-compute the mesh with new scaling
+            if self._counts is not None and self._bin_edges is not None:
+                counts_to_display = self._counts.copy()
+                if self.log_scale:
+                    counts_to_display = np.log10(counts_to_display + 1)
+
+                vertices, faces = _hist_counts_to_mesh(
+                    counts_to_display, self._bin_edges, self.orientation
+                )
+                self.mesh.set_data(vertices=vertices, faces=faces)

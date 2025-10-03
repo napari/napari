@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from qtpy.QtWidgets import QVBoxLayout, QWidget
+import numpy as np
+from qtpy.QtWidgets import QCheckBox, QHBoxLayout, QVBoxLayout, QWidget
 from vispy.scene import SceneCanvas, ViewBox
 
 from napari._vispy.visuals.histogram import HistogramVisual
@@ -80,7 +81,23 @@ class QtHistogramWidget(QWidget):
         # Add canvas to layout
         layout.addWidget(self.canvas.native)
 
+        # Add log scale checkbox
+        controls_layout = QHBoxLayout()
+        controls_layout.setContentsMargins(0, 2, 0, 0)
+        self.log_checkbox = QCheckBox('Log scale')
+        self.log_checkbox.setChecked(False)
+        self.log_checkbox.toggled.connect(self._on_log_scale_toggled)
+        controls_layout.addWidget(self.log_checkbox)
+        controls_layout.addStretch()
+        layout.addLayout(controls_layout)
+
         # Update histogram with layer data
+        self.update_histogram()
+
+    def _on_log_scale_toggled(self, checked: bool) -> None:
+        """Handle log scale checkbox toggle."""
+        self.histogram.set_log_scale(checked)
+        # Update camera range for log scale
         self.update_histogram()
 
     def update_histogram(self) -> None:
@@ -103,8 +120,11 @@ class QtHistogramWidget(QWidget):
 
                 # Update camera view to show full histogram
                 if clim_range[0] != clim_range[1] and self.histogram._counts is not None:
-                    # Get the max count for Y range
+                    # Get the max count for Y range (accounting for log scale)
                     max_count = self.histogram._counts.max() if len(self.histogram._counts) > 0 else 1
+                    if self.histogram.log_scale:
+                        # Use log scale for display
+                        max_count = np.log10(max_count + 1)
                     self.view.camera.set_range(  # type: ignore[attr-defined]
                         x=clim_range,
                         y=(0, max_count * 1.05),  # Add 5% margin at top
