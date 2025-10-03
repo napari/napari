@@ -209,8 +209,9 @@ class QtHistogramWidget(QWidget):
                     # Set camera rect to fix the view bounds
                     # rect = (x, y, width, height)
                     width = float(clim_range[1]) - float(clim_range[0])  # type: ignore[arg-type]
+                    padding = width * 0.001 # 0.1% padding on each side to visualize the lines
                     height = max_count * 1.05  # Add 5% margin at top
-                    self.view.camera.rect = (clim_range[0], 0, width, height)  # type: ignore[attr-defined]
+                    self.view.camera.rect = (clim_range[0] - padding, 0, width + 2 * padding, height)  # type: ignore[attr-defined]
                     
                     # Ensure viewbox stays non-interactive after camera update
                     self.view.interactive = False
