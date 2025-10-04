@@ -68,7 +68,7 @@ def select(layer: Shapes, event: MouseEvent) -> Generator[None, None, None]:
     value = layer.get_value(event.position, world=True)
     layer._moving_value = copy(value)
     shape_under_cursor, vertex_under_cursor = value
-    if vertex_under_cursor is None:
+    if vertex_under_cursor is None or layer.mode == Mode.SELECT:
         if shift and shape_under_cursor is not None:
             if shape_under_cursor in layer.selected_data:
                 layer.selected_data.remove(shape_under_cursor)
