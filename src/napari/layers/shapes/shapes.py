@@ -2556,7 +2556,7 @@ class Shapes(Layer):
             Width of the box edge
         """
         if self._highlight_visible and len(self.selected_data) > 0:
-            if self._mode == Mode.SELECT:
+            if self._mode == Mode.SELECT and self._selected_box is not None:
                 # If in select mode just show the interaction bounding box
                 # including its vertices and the rotation handle
                 box = self._selected_box[Box.WITH_HANDLE]
@@ -2975,7 +2975,7 @@ class Shapes(Layer):
             # - scale, because vertex sizes are not affected by scale (unlike in Points)
             # - 2, because the radius is what we need
 
-            if self._mode == Mode.SELECT:
+            if self._mode == Mode.SELECT and self._selected_box is not None:
                 # Check if inside vertex of interaction box or rotation handle
                 box = self._selected_box[Box.WITH_HANDLE]
                 distances = abs(box - coord)
