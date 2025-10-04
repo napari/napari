@@ -553,6 +553,9 @@ class Shapes(Layer):
         self._value_stored = (None, None)
         self._moving_value: tuple[int | None, int | None] = (None, None)
         self._selected_data: Selection[int] = Selection()
+        self._selected_data.events.items_changed.connect(
+            self._on_selection_changed
+        )
         self._selected_data_stored = set()
         self._selected_data_history = set()
         self._selected_box = None
@@ -1265,11 +1268,13 @@ class Shapes(Layer):
     @selected_data.setter
     def selected_data(self, selected_data: Collection[int]) -> None:
         self._selected_data.replace_selection(selected_data)
-        self._selected_box = self.interaction_box(self._selected_data)
+
+    def _on_selection_changed(self, added, removed):
+        self._selected_box = self.interaction_box(self.selected_data)
 
         # Update properties based on selected shapes
-        if len(selected_data) > 0:
-            selected_data_indices = list(selected_data)
+        if len(self.selected_data) > 0:
+            selected_data_indices = list(self.selected_data)
             selected_face_colors = self._data_view._face_color[
                 selected_data_indices
             ]
@@ -1292,7 +1297,7 @@ class Shapes(Layer):
                 np.array(
                     [
                         self._data_view.shapes[i].edge_width
-                        for i in selected_data
+                        for i in self.selected_data
                     ]
                 )
             )
