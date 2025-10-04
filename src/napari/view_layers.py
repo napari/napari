@@ -17,8 +17,6 @@ import inspect
 import warnings
 from typing import Any
 
-from docstring_parser import parse as parse_docstring
-
 from napari.components.dims import Dims
 from napari.layers import Image
 from napari.viewer import Viewer
@@ -46,51 +44,43 @@ viewer : :class:`napari.Viewer`
 """
 
 
-def _format_params_as_numpydoc(parsed_doc):
-    """Convert docstring_parser params to numpydoc-style format."""
-    if not parsed_doc or not parsed_doc.params:
-        return []
+def _extract_params_section(docstring):
+    """Extract the Parameters section from a numpydoc-formatted docstring."""
+    if not docstring:
+        return ''
 
-    lines = ['Parameters', '----------']
-    for param in parsed_doc.params:
-        # Format: "param_name : type"
-        param_line = param.arg_name
-        if param.type_name:
-            param_line += f' : {param.type_name}'
-        lines.append(param_line)
+    # Find the Parameters section
+    import re
 
-        # Add description with proper indentation
-        if param.description:
-            for desc_line in param.description.split('\n'):
-                lines.append(f'    {desc_line}')
+    pattern = (
+        r'Parameters\s*\n\s*-+\s*\n(.*?)(?=\n\s*\n\s*[A-Z][a-z]+\s*\n\s*-+|\Z)'
+    )
+    match = re.search(pattern, docstring, re.DOTALL)
 
-    return lines
+    if match:
+        return match.group(1).rstrip()
+    return ''
 
 
-_VIEW_DOC = parse_docstring(Viewer.__doc__ or '')
-_VIEW_PARAMS_LINES = _format_params_as_numpydoc(_VIEW_DOC)
-# Skip "Parameters" and "----------" headers
-_VIEW_PARAMS = (
-    '    ' + '\n'.join(_VIEW_PARAMS_LINES[2:])
-    if len(_VIEW_PARAMS_LINES) > 2
-    else ''
-)
+_VIEW_PARAMS = _extract_params_section(Viewer.__doc__ or '')
 
 
 def _merge_docstrings(add_method, layer_string):
     # create combined docstring with parameters from add_* and Viewer methods
-    import textwrap
 
-    add_method_doc = parse_docstring(add_method.__doc__ or '')
+    add_method_params = _extract_params_section(add_method.__doc__ or '')
 
-    # Format add_method parameters
-    lines = _format_params_as_numpydoc(add_method_doc)
+    # Combine parameters
+    params_header = 'Parameters\n----------'
+    if add_method_params and _VIEW_PARAMS:
+        params = f'{params_header}\n{add_method_params}\n{_VIEW_PARAMS}'
+    elif add_method_params:
+        params = f'{params_header}\n{add_method_params}'
+    elif _VIEW_PARAMS:
+        params = f'{params_header}\n{_VIEW_PARAMS}'
+    else:
+        params = ''
 
-    # this ugliness is because the indentation of the parsed docstring
-    # is different for the first parameter :(
-    if len(lines) > 2:
-        lines = lines[:3] + textwrap.dedent('\n'.join(lines[3:])).splitlines()
-    params = '\n'.join(lines) + '\n' + textwrap.dedent(_VIEW_PARAMS)
     n = 'n' if layer_string.startswith(tuple('aeiou')) else ''
     return _doc_template.format(n=n, layer_string=layer_string, params=params)
 

@@ -4,7 +4,7 @@ import sys
 import warnings
 from typing import TYPE_CHECKING
 
-from docstring_parser import parse as parse_docstring
+from docstring_parser.numpydoc import parse as parse_docstring
 
 from napari.utils.key_bindings import (
     KeyBindingLike,
