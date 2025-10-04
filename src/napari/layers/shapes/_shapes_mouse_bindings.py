@@ -391,7 +391,6 @@ def add_vertex_to_path(
     layer._value = (value[0], value[1] + 1)
     layer._moving_value = copy(layer._value)
     layer._data_view.edit(index, vertices, new_type=new_type)
-    layer._selected_box = layer.interaction_box(layer.selected_data)
     layer._last_cursor_position = np.array(event.pos)
 
 
@@ -557,7 +556,6 @@ def vertex_insert(layer: Shapes, event: MouseEvent) -> None:
     vertices = np.insert(vertices, ind, [coordinates], axis=0)
     with layer.events.set_data.blocker():
         layer._data_view.edit(index, vertices, new_type=new_type)
-        layer._selected_box = layer.interaction_box(layer.selected_data)
     layer.events.data(
         value=layer.data,
         action=ActionType.CHANGED,
@@ -606,8 +604,6 @@ def vertex_remove(layer: Shapes, event: MouseEvent) -> None:
             if shape_under_cursor in layer.selected_data:
                 layer.selected_data.remove(shape_under_cursor)
             layer._data_view.remove(shape_under_cursor)
-            shapes = layer.selected_data
-            layer._selected_box = layer.interaction_box(shapes)
     else:
         if shape_type == Rectangle:  # noqa SIM108
             # Deleting vertex from a rectangle creates a polygon
@@ -620,8 +616,6 @@ def vertex_remove(layer: Shapes, event: MouseEvent) -> None:
             layer._data_view.edit(
                 shape_under_cursor, vertices, new_type=new_type
             )
-            shapes = layer.selected_data
-            layer._selected_box = layer.interaction_box(shapes)
     layer.events.data(
         value=layer.data,
         action=ActionType.CHANGED,
@@ -948,8 +942,6 @@ def _move_active_element_under_cursor(
             vertices[vertex] = coordinates
 
             layer._data_view.edit(index, vertices, new_type=new_type)
-            shapes = layer.selected_data
-            layer._selected_box = layer.interaction_box(shapes)
             layer.refresh()
 
 
