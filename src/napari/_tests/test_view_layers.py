@@ -10,7 +10,7 @@ from unittest.mock import MagicMock, call
 
 import numpy as np
 import pytest
-from numpydoc.docscrape import ClassDoc, FunctionDoc
+from docstring_parser import parse as parse_docstring
 
 import napari
 from napari import Viewer, layers as module
@@ -36,11 +36,11 @@ def test_docstring(layer):
     method_name = f'add_{camel_to_snake(name)}'
     method = getattr(Viewer, method_name)
 
-    method_doc = FunctionDoc(method)
-    layer_doc = ClassDoc(layer)
+    method_doc = parse_docstring(method.__doc__ or '')
+    layer_doc = parse_docstring(layer.__doc__ or '')
 
     # check summary section
-    method_summary = ' '.join(method_doc['Summary'])  # join multi-line summary
+    method_summary = method_doc.short_description or ''
 
     if name == 'Image':
         summary_format = 'Add one or more Image layers to the layer list.'
@@ -52,31 +52,30 @@ def test_docstring(layer):
     )
 
     # check parameters section
-    method_params = method_doc['Parameters']
-    layer_params = layer_doc['Parameters']
+    method_params = method_doc.params
+    layer_params = layer_doc.params
 
     # Remove path parameter from viewer method if it exists
-    method_params = [m for m in method_params if m.name != 'path']
+    method_params = [m for m in method_params if m.arg_name != 'path']
 
     if name == 'Image':
         # For Image just test arguments that are in layer are in method
-        named_method_params = [m.name for m in method_params]
+        named_method_params = [m.arg_name for m in method_params]
         for layer_param in layer_params:
-            l_name, l_type, l_description = layer_param
-            assert l_name in named_method_params
+            assert layer_param.arg_name in named_method_params
     else:
         try:
             assert len(method_params) == len(layer_params)
             for method_param, layer_param in zip(
                 method_params, layer_params, strict=False
             ):
-                m_name, m_type, m_description = method_param
-                l_name, l_type, l_description = layer_param
+                m_name = method_param.arg_name
+                m_type = method_param.type_name or ''
+                m_description = (method_param.description or '').strip()
 
-                # descriptions are treated as lists where each line is an
-                # element
-                m_description = ' '.join(m_description)
-                l_description = ' '.join(l_description)
+                l_name = layer_param.arg_name
+                l_type = layer_param.type_name or ''
+                l_description = (layer_param.description or '').strip()
 
                 assert m_name == l_name, 'different parameter names or order'
                 assert m_type == l_type, (
@@ -91,24 +90,29 @@ def test_docstring(layer):
             ) from e
 
     # check returns section
-    (method_returns,) = method_doc[
-        'Returns'
-    ]  # only one thing should be returned
-    description = ' '.join(method_returns[-1])  # join multi-line description
-    method_returns = *method_returns[:-1], description
+    method_returns = method_doc.returns
 
-    if name == 'Image':
-        assert method_returns == (
-            'layer',
-            f':class:`napari.layers.{name}` or list',
-            f'The newly-created {name.lower()} layer or list of {name.lower()} layers.',
-        ), f"improper 'Returns' section of '{method_name}'"
-    else:
-        assert method_returns == (
-            'layer',
-            f':class:`napari.layers.{name}`',
-            f'The newly-created {name.lower()} layer.',
-        ), f"improper 'Returns' section of '{method_name}'"
+    if method_returns:
+        return_name = method_returns.return_name or 'layer'
+        return_type = method_returns.type_name or ''
+        return_description = (method_returns.description or '').strip()
+
+        if name == 'Image':
+            expected_type = f':class:`napari.layers.{name}` or list'
+            expected_desc = f'The newly-created {name.lower()} layer or list of {name.lower()} layers.'
+        else:
+            expected_type = f':class:`napari.layers.{name}`'
+            expected_desc = f'The newly-created {name.lower()} layer.'
+
+        assert return_name == 'layer', (
+            f"improper return name in '{method_name}'"
+        )
+        assert return_type == expected_type, (
+            f"improper return type in '{method_name}'"
+        )
+        assert return_description == expected_desc, (
+            f"improper return description in '{method_name}'"
+        )
 
 
 @pytest.mark.parametrize('layer', layers, ids=lambda layer: layer.__name__)

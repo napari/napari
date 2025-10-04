@@ -1,7 +1,7 @@
 import inspect
 
 import pytest
-from numpydoc.docscrape import FunctionDoc
+from docstring_parser import parse as parse_docstring
 
 from napari.plugins import hook_specifications
 
@@ -71,9 +71,9 @@ def test_annotation_on_hook_specification(name, func):
 @pytest.mark.parametrize(('name', 'func'), HOOK_SPECIFICATIONS)
 def test_docs_match_signature(name, func):
     sig = inspect.signature(func)
-    docs = FunctionDoc(func)
+    docs = parse_docstring(func.__doc__ or '')
     sig_params = set(sig.parameters)
-    doc_params = {p.name for p in docs.get('Parameters')}
+    doc_params = {p.arg_name for p in docs.params}
     assert sig_params == doc_params, (
         f"Signature parameters for hook specification '{name}' do "
         'not match the parameters listed in the docstring:\n'

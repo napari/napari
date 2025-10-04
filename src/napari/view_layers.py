@@ -17,7 +17,7 @@ import inspect
 import warnings
 from typing import Any
 
-from numpydoc.docscrape import NumpyDocString as _NumpyDocString
+from docstring_parser import parse as parse_docstring
 
 from napari.components.dims import Dims
 from napari.layers import Image
@@ -45,20 +45,51 @@ viewer : :class:`napari.Viewer`
     The newly-created viewer.
 """
 
-_VIEW_DOC = _NumpyDocString(Viewer.__doc__)
-_VIEW_PARAMS = '    ' + '\n'.join(_VIEW_DOC._str_param_list('Parameters')[2:])
+
+def _format_params_as_numpydoc(parsed_doc):
+    """Convert docstring_parser params to numpydoc-style format."""
+    if not parsed_doc or not parsed_doc.params:
+        return []
+
+    lines = ['Parameters', '----------']
+    for param in parsed_doc.params:
+        # Format: "param_name : type"
+        param_line = param.arg_name
+        if param.type_name:
+            param_line += f' : {param.type_name}'
+        lines.append(param_line)
+
+        # Add description with proper indentation
+        if param.description:
+            for desc_line in param.description.split('\n'):
+                lines.append(f'    {desc_line}')
+
+    return lines
+
+
+_VIEW_DOC = parse_docstring(Viewer.__doc__ or '')
+_VIEW_PARAMS_LINES = _format_params_as_numpydoc(_VIEW_DOC)
+# Skip "Parameters" and "----------" headers
+_VIEW_PARAMS = (
+    '    ' + '\n'.join(_VIEW_PARAMS_LINES[2:])
+    if len(_VIEW_PARAMS_LINES) > 2
+    else ''
+)
 
 
 def _merge_docstrings(add_method, layer_string):
     # create combined docstring with parameters from add_* and Viewer methods
     import textwrap
 
-    add_method_doc = _NumpyDocString(add_method.__doc__)
+    add_method_doc = parse_docstring(add_method.__doc__ or '')
 
-    # this ugliness is because the indentation of the parsed numpydocstring
+    # Format add_method parameters
+    lines = _format_params_as_numpydoc(add_method_doc)
+
+    # this ugliness is because the indentation of the parsed docstring
     # is different for the first parameter :(
-    lines = add_method_doc._str_param_list('Parameters')
-    lines = lines[:3] + textwrap.dedent('\n'.join(lines[3:])).splitlines()
+    if len(lines) > 2:
+        lines = lines[:3] + textwrap.dedent('\n'.join(lines[3:])).splitlines()
     params = '\n'.join(lines) + '\n' + textwrap.dedent(_VIEW_PARAMS)
     n = 'n' if layer_string.startswith(tuple('aeiou')) else ''
     return _doc_template.format(n=n, layer_string=layer_string, params=params)
