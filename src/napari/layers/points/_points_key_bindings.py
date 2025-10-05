@@ -70,6 +70,7 @@ def paste(layer: Points) -> None:
     trans._('Select/Deselect all points in the current view slice'),
 )
 def select_all_in_slice(layer: Points) -> None:
+    """Select only the points in the current view slice, don't append."""
     new_selected = set(layer._indices_view[: len(layer._view_data)])
 
     # If all visible points are already selected, deselect the visible points
@@ -77,7 +78,38 @@ def select_all_in_slice(layer: Points) -> None:
         layer.selected_data = layer.selected_data - new_selected
         show_info(
             trans._(
-                'Deselected all points in this slice, use Shift-A to deselect all points on the layer. ({n_total} selected)',
+                'Deselected all points in this slice, use Ctrl/Cmd-A to deselect all points on the layer. ({n_total} selected)',
+                n_total=len(layer.selected_data),
+                deferred=True,
+            )
+        )
+
+    # If visible points are not already selected, select just the visible points
+    else:
+        layer.selected_data = new_selected
+        show_info(
+            trans._(
+                'Selected {n_new} points in this slice only, use Shift-A to append to existing selection. ({n_total} selected)',
+                n_new=len(new_selected),
+                n_total=len(layer.selected_data),
+                deferred=True,
+            )
+        )
+
+
+@register_points_action(
+    trans._('Select/Deselect all points in the current view slice'),
+)
+def select_append_all_in_slice(layer: Points) -> None:
+    """Select all points in the current view slice, appending to existing selection"""
+    new_selected = set(layer._indices_view[: len(layer._view_data)])
+
+    # If all visible points are already selected, deselect the visible points
+    if new_selected & layer.selected_data == new_selected:
+        layer.selected_data = layer.selected_data - new_selected
+        show_info(
+            trans._(
+                'Deselected all points in this slice, use Ctrl/Cmd-A to deselect all points on the layer. ({n_total} selected)',
                 n_total=len(layer.selected_data),
                 deferred=True,
             )
@@ -88,7 +120,7 @@ def select_all_in_slice(layer: Points) -> None:
         layer.selected_data = layer.selected_data | new_selected
         show_info(
             trans._(
-                'Selected {n_new} points in this slice, use Shift-A to select all points on the layer. ({n_total} selected)',
+                'Appended {n_new} points in this slice to the selection, use Ctrl/Cmd-A to select all points on the layer. ({n_total} selected)',
                 n_new=len(new_selected),
                 n_total=len(layer.selected_data),
                 deferred=True,
