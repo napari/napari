@@ -77,7 +77,7 @@ class QtHistogramWidget(QWidget):
         self.view.camera = 'panzoom'
         # Type ignore since camera is set as string but becomes camera object
         self.view.camera.set_range(x=(0, 1), y=(0, 1))  # type: ignore[attr-defined]
-        
+
         # Disable viewbox interaction to prevent panning/zooming
         # but keep canvas events for our custom handlers
         self.view.interactive = False
@@ -92,7 +92,9 @@ class QtHistogramWidget(QWidget):
         @self.canvas.connect
         def on_mouse_press(event):
             """Handle mouse press to start gamma dragging."""
-            if hasattr(self.layer, 'gamma') and event.button == 1:  # Left click only
+            if (
+                hasattr(self.layer, 'gamma') and event.button == 1
+            ):  # Left click only
                 self._dragging_gamma = True
 
         @self.canvas.connect
@@ -120,9 +122,11 @@ class QtHistogramWidget(QWidget):
         # Connect to layer gamma changes if available
         if hasattr(layer, 'events') and hasattr(layer.events, 'gamma'):
             layer.events.gamma.connect(self._on_gamma_change)
-        
+
         # Connect to contrast_limits_range changes to recalculate histogram
-        if hasattr(layer, 'events') and hasattr(layer.events, 'contrast_limits_range'):
+        if hasattr(layer, 'events') and hasattr(
+            layer.events, 'contrast_limits_range'
+        ):
             layer.events.contrast_limits_range.connect(self._on_range_change)
 
         # Update histogram with layer data
@@ -140,8 +144,12 @@ class QtHistogramWidget(QWidget):
 
             if self.histogram._clims is not None:
                 clim_min, clim_max = self.histogram._clims
-                max_count = self.histogram._counts.max() if self.histogram._counts is not None else 1
-                
+                max_count = (
+                    self.histogram._counts.max()
+                    if self.histogram._counts is not None
+                    else 1
+                )
+
                 # Account for log scale in display height
                 if self.histogram.log_scale:
                     max_count = np.log10(max_count + 1)
@@ -199,9 +207,16 @@ class QtHistogramWidget(QWidget):
                 )
 
                 # Update camera view to show full histogram with fixed bounds
-                if clim_range[0] != clim_range[1] and self.histogram._counts is not None:
+                if (
+                    clim_range[0] != clim_range[1]
+                    and self.histogram._counts is not None
+                ):
                     # Get the max count for Y range (accounting for log scale)
-                    max_count = self.histogram._counts.max() if len(self.histogram._counts) > 0 else 1
+                    max_count = (
+                        self.histogram._counts.max()
+                        if len(self.histogram._counts) > 0
+                        else 1
+                    )
                     if self.histogram.log_scale:
                         # Use log scale for display
                         max_count = np.log10(max_count + 1)
@@ -209,10 +224,17 @@ class QtHistogramWidget(QWidget):
                     # Set camera rect to fix the view bounds
                     # rect = (x, y, width, height)
                     width = float(clim_range[1]) - float(clim_range[0])  # type: ignore[arg-type]
-                    padding = width * 0.001 # 0.1% padding on each side to visualize the lines
+                    padding = (
+                        width * 0.001
+                    )  # 0.1% padding on each side to visualize the lines
                     height = max_count * 1.05  # Add 5% margin at top
-                    self.view.camera.rect = (clim_range[0] - padding, 0, width + 2 * padding, height)  # type: ignore[attr-defined]
-                    
+                    self.view.camera.rect = (
+                        clim_range[0] - padding,
+                        0,
+                        width + 2 * padding,
+                        height,
+                    )  # type: ignore[attr-defined]
+
                     # Ensure viewbox stays non-interactive after camera update
                     self.view.interactive = False
 

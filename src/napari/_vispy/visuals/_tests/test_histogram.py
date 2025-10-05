@@ -2,7 +2,10 @@
 
 import numpy as np
 
-from napari._vispy.visuals.histogram import HistogramVisual, _hist_counts_to_mesh
+from napari._vispy.visuals.histogram import (
+    HistogramVisual,
+    _hist_counts_to_mesh,
+)
 
 
 def test_hist_counts_to_mesh():
@@ -10,7 +13,9 @@ def test_hist_counts_to_mesh():
     counts = np.array([10, 20, 15, 5])
     bin_edges = np.array([0, 1, 2, 3, 4])
 
-    vertices, faces = _hist_counts_to_mesh(counts, bin_edges, orientation='vertical')
+    vertices, faces = _hist_counts_to_mesh(
+        counts, bin_edges, orientation='vertical'
+    )
 
     # Should have 4 vertices per bin (4 bins = 16 vertices)
     assert vertices.shape == (16, 3)
@@ -56,4 +61,3 @@ if __name__ == '__main__':
     test_hist_counts_to_mesh()
     test_histogram_visual_basic()
     test_histogram_clims()
-

@@ -180,7 +180,9 @@ class HistogramVisual:
             self.mesh.visible = False
             return
 
-        self._counts, self._bin_edges = np.histogram(data, bins=bins, range=data_range)
+        self._counts, self._bin_edges = np.histogram(
+            data, bins=bins, range=data_range
+        )
 
         # Apply log scaling if enabled
         counts_to_display = self._counts.copy()
@@ -196,7 +198,12 @@ class HistogramVisual:
         self.mesh.set_data(vertices=vertices, faces=faces)
         self.mesh.visible = True
 
-    def set_clims(self, clims: tuple[float, float], gamma: float = 1.0, log_scale: bool = False) -> None:
+    def set_clims(
+        self,
+        clims: tuple[float, float],
+        gamma: float = 1.0,
+        log_scale: bool = False,
+    ) -> None:
         """Set contrast limit indicator lines and gamma curve.
 
         Parameters
@@ -221,19 +228,25 @@ class HistogramVisual:
 
         if self.orientation == 'vertical':
             # Vertical lines at clim positions with z-offset to render in front
-            pos = np.array([
-                [clims[0], 0, 0.1],
-                [clims[0], max_count, 0.1],
-                [clims[1], 0, 0.1],
-                [clims[1], max_count, 0.1],
-            ], dtype=np.float32)
+            pos = np.array(
+                [
+                    [clims[0], 0, 0.1],
+                    [clims[0], max_count, 0.1],
+                    [clims[1], 0, 0.1],
+                    [clims[1], max_count, 0.1],
+                ],
+                dtype=np.float32,
+            )
         else:  # horizontal
-            pos = np.array([
-                [0, clims[0], 0.1],
-                [max_count, clims[0], 0.1],
-                [0, clims[1], 0.1],
-                [max_count, clims[1], 0.1],
-            ], dtype=np.float32)
+            pos = np.array(
+                [
+                    [0, clims[0], 0.1],
+                    [max_count, clims[0], 0.1],
+                    [0, clims[1], 0.1],
+                    [max_count, clims[1], 0.1],
+                ],
+                dtype=np.float32,
+            )
 
         self.clim_lines.set_data(pos=pos)
         self.clim_lines.visible = True
@@ -247,7 +260,7 @@ class HistogramVisual:
             return
 
         clim_min, clim_max = self._clims
-        
+
         # Calculate max count for display (accounting for log scale)
         max_count = self._counts.max() if len(self._counts) > 0 else 1
         if self.log_scale:
@@ -256,12 +269,12 @@ class HistogramVisual:
         # Generate points along the gamma curve
         n_points = 50
         x_values = np.linspace(clim_min, clim_max, n_points)
-        
+
         # Normalize to 0-1 range
         if clim_max > clim_min:
             normalized = (x_values - clim_min) / (clim_max - clim_min)
             # Apply gamma curve
-            y_normalized = normalized ** self._gamma
+            y_normalized = normalized**self._gamma
             # Scale to histogram height
             y_values = y_normalized * max_count
         else:
@@ -269,19 +282,27 @@ class HistogramVisual:
 
         if self.orientation == 'vertical':
             # Points from left clim to right clim following gamma curve
-            pos = np.column_stack([x_values, y_values, np.full(n_points, 0.05)])
+            pos = np.column_stack(
+                [x_values, y_values, np.full(n_points, 0.05)]
+            )
             # Position handle at midpoint of gamma curve
             mid_idx = n_points // 2
-            handle_pos = np.array([[x_values[mid_idx], y_values[mid_idx], 0.06]])
+            handle_pos = np.array(
+                [[x_values[mid_idx], y_values[mid_idx], 0.06]]
+            )
         else:  # horizontal
-            pos = np.column_stack([y_values, x_values, np.full(n_points, 0.05)])
+            pos = np.column_stack(
+                [y_values, x_values, np.full(n_points, 0.05)]
+            )
             # Position handle at midpoint of gamma curve
             mid_idx = n_points // 2
-            handle_pos = np.array([[y_values[mid_idx], x_values[mid_idx], 0.06]])
+            handle_pos = np.array(
+                [[y_values[mid_idx], x_values[mid_idx], 0.06]]
+            )
 
         self.gamma_line.set_data(pos=pos.astype(np.float32))
         self.gamma_line.visible = True
-        
+
         # Update gamma handle position
         self.gamma_handle.set_data(pos=handle_pos.astype(np.float32))
         self.gamma_handle.visible = True
@@ -320,7 +341,7 @@ class HistogramVisual:
                     counts_to_display, self._bin_edges, self.orientation
                 )
                 self.mesh.set_data(vertices=vertices, faces=faces)
-                
+
                 # Update clim lines and gamma curve with new scaling
                 if self._clims is not None:
                     self.set_clims(self._clims, self._gamma, self.log_scale)
