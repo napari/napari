@@ -2468,15 +2468,15 @@ class Shapes(Layer):
                 displayed_shape_indices = [
                     i for i in index if self._data_view._displayed[i]
                 ]
-                vertices_range = np.r_[
-                    tuple(
-                        self._data_view._vertices_slice_available(i)
-                        for i in displayed_shape_indices
+                if not displayed_shape_indices:
+                    box = None
+                else:
+                    mask = np.isin(
+                        self._data_view.displayed_vertices_to_shape_num,
+                        displayed_shape_indices,
                     )
-                ]
-                box = create_box(
-                    self._data_view.displayed_vertices[vertices_range]
-                )
+                    verts = self._data_view.displayed_vertices[mask]
+                    box = create_box(verts)
         else:
             box = copy(self._data_view.shapes[index]._box)
 
