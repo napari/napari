@@ -42,7 +42,6 @@ dependencies = [
     "cachey>=0.2.1",
     "certifi>=2018.1.18",
     "dask[array]>=2021.10.0",
-    "docstring_parser>=0.15",
     "imageio>=2.20,!=2.22.1",
     "jsonschema>=3.2.0",
     "lazy_loader>=0.3",
@@ -146,6 +145,7 @@ all_optional = [
 testing = [
     "napari[gallery]",
     "babel>=2.9.0",
+    "docstring_parser>=0.15",
     "fsspec>=2023.10.0",
     "hypothesis>=6.8.0",
     "lxml[html_clean]>5",
@@ -236,6 +236,7 @@ build = [
 testing = [
     {include-group = "gallery"},
     "babel>=2.9.0",
+    "docstring_parser>=0.15",
     "fsspec>=2023.10.0",
     "hypothesis>=6.8.0",
     "lxml[html_clean]>5",
