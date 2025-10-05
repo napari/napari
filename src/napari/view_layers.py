@@ -17,6 +17,8 @@ import inspect
 import warnings
 from typing import Any
 
+from docstring_parser.numpydoc import parse as parse_docstring
+
 from napari.components.dims import Dims
 from napari.layers import Image
 from napari.viewer import Viewer
@@ -44,31 +46,35 @@ viewer : :class:`napari.Viewer`
 """
 
 
-def _extract_params_section(docstring):
-    """Extract the Parameters section from a numpydoc-formatted docstring."""
-    if not docstring:
+def _format_params_from_parsed_doc(parsed_doc):
+    """Format parameters from parsed docstring into numpydoc text format."""
+    if not parsed_doc or not parsed_doc.params:
         return ''
 
-    # Find the Parameters section
-    import re
+    lines = []
+    for param in parsed_doc.params:
+        # Format: "param_name : type"
+        param_line = param.arg_name
+        if param.type_name:
+            param_line += f' : {param.type_name}'
+        lines.append(param_line)
 
-    pattern = (
-        r'Parameters\s*\n\s*-+\s*\n(.*?)(?=\n\s*\n\s*[A-Z][a-z]+\s*\n\s*-+|\Z)'
-    )
-    match = re.search(pattern, docstring, re.DOTALL)
+        # Add description with proper indentation
+        if param.description:
+            for desc_line in param.description.split('\n'):
+                lines.append(f'    {desc_line}')
 
-    if match:
-        return match.group(1).rstrip()
-    return ''
+    return '\n'.join(lines)
 
 
-_VIEW_PARAMS = _extract_params_section(Viewer.__doc__ or '')
+_VIEW_DOC = parse_docstring(Viewer.__doc__ or '')
+_VIEW_PARAMS = _format_params_from_parsed_doc(_VIEW_DOC)
 
 
 def _merge_docstrings(add_method, layer_string):
     # create combined docstring with parameters from add_* and Viewer methods
-
-    add_method_params = _extract_params_section(add_method.__doc__ or '')
+    add_method_doc = parse_docstring(add_method.__doc__ or '')
+    add_method_params = _format_params_from_parsed_doc(add_method_doc)
 
     # Combine parameters
     params_header = 'Parameters\n----------'
