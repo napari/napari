@@ -1,4 +1,6 @@
-from typing import TYPE_CHECKING, Optional
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Literal
 
 import numpy as np
 from scipy.spatial.transform import Rotation as R
@@ -180,7 +182,7 @@ class Camera(EventedModel):
 
     def calculate_nd_view_direction(
         self, ndim: int, dims_displayed: tuple[int, ...]
-    ) -> Optional['npt.NDArray[np.float64]']:
+    ) -> npt.NDArray[np.float64] | None:
         """Calculate the nD view direction vector of the camera.
 
         Parameters
@@ -271,7 +273,12 @@ class Camera(EventedModel):
         rot = R.from_euler('yzx', angles, degrees=True)
         # rotate 90 degrees to get neutral position at 0, 0, 0
         rot = rot * R.from_euler('x', -90, degrees=True)
-        return rot.as_euler('zyx', degrees=True)
+        angles = rot.as_euler('zyx', degrees=True)
+        # flip angles where orientation is flipped relative to default, so the
+        # resulting rotation is always right-handed (i.e: CCW when facing the plane)
+        return tuple(
+            angles * np.where(self._vispy_flipped_axes(ndisplay=3), -1, 1)
+        )
 
     def new_to_old(
         self, angles: tuple[float, float, float]
@@ -281,11 +288,45 @@ class Camera(EventedModel):
         Vispy (and previously napari) uses YZX ordering, but in napari we use ZYX.
         Rotations are extrinsic.
         """
+        # flip angles where orientation is flipped relative to default, so the
+        # resulting rotation is always right-handed (i.e: CCW when facing the plane)
+        flipped_angles = angles * np.where(
+            self._vispy_flipped_axes(ndisplay=3), -1, 1
+        )
         # see #8281 for why this is yzx. In short: longstanding vispy bug.
         # we use xyz and not zyx because what we care about is the order,
         # not the names we give to the axes
-        rot = R.from_euler('zyx', angles, degrees=True)
+        rot = R.from_euler('zyx', flipped_angles, degrees=True)
+        # flip angles so handedness of rotation is always right
         rot = rot * R.from_euler('x', 90, degrees=True)
-        return rot.as_euler('yzx', degrees=True)
-        # TODO: account for camera orientation. Right now the rotation handedness is
-        #       basically arbitrary (e.g: by default, last axis is lefthanded)
+        return tuple(rot.as_euler('yzx', degrees=True))
+
+    def _vispy_flipped_axes(
+        self, ndisplay: Literal[2, 3] = 2
+    ) -> tuple[bool, bool, bool]:
+        # Note: the Vispy axis order is xyz, or horizontal, vertical, depth,
+        # while the napari axis order is zyx / plane-row-column, or depth, vertical,
+        # horizontal — i.e. it is exactly inverted. This switch happens when data
+        # is passed from napari to Vispy, usually with a transposition. In the camera
+        # models, this means that the order of these orientations appear in the
+        # opposite order to that in napari.components.Camera.
+        #
+        # Note that the default Vispy camera orientations come from Vispy, not from us.
+        vispy_default_orientation = (
+            ('right', 'up', 'towards')
+            if ndisplay == 2
+            else ('right', 'down', 'away')
+        )
+
+        # Vispy uses xyz coordinates; napari uses zyx coordinates. We therefore
+        # start by inverting the order of coordinates coming from the napari
+        # camera model:
+        orientation_xyz = self.orientation[::-1]
+        # The Vispy camera flip is a tuple of three ints in {0, 1}, indicating
+        # whether they are flipped relative to the Vispy default.
+        return tuple(
+            int(ori != default_ori)
+            for ori, default_ori in zip(
+                orientation_xyz, vispy_default_orientation, strict=True
+            )
+        )
