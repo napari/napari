@@ -228,10 +228,9 @@ def test_data_setter():
 
 def test_properties_dataframe():
     """test if properties can be provided as a DataFrame"""
-    shape = (10, 2)
     np.random.seed(0)
     shape = (10, 2, 2)
-    data = np.random.random(shape)
+    data = np.random.default_rng(0).random(shape)
     data[:, 0, :] = 20 * data[:, 0, :]
     properties = {'vector_type': np.array(['A', 'B'] * int(shape[0] / 2))}
     properties_df = pd.DataFrame(properties)
