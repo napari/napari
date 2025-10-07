@@ -51,7 +51,7 @@ class Camera(EventedModel):
         0.0,
     )
     zoom: float = 1.0
-    angles: tuple[float, float, float] = (0.0, 0.0, 90.0)
+    angles: tuple[float, float, float] = (0.0, 0.0, 0.0)
     perspective: float = 0
     mouse_pan: bool = True
     mouse_zoom: bool = True
@@ -256,3 +256,36 @@ class Camera(EventedModel):
         if sum(diffs) % 2 != 0:
             return Handedness.LEFT
         return Handedness.RIGHT
+
+    def old_to_new(
+        self, angles: tuple[float, float, float]
+    ) -> tuple[float, float, float]:
+        """Convert camera angles from vispy convention (legacy behaviour) to napari.
+
+        Vispy (and previously napari) uses YZX ordering, but in napari we use ZYX.
+        Rotations are extrinsic.
+        """
+        # see #8281 for why this is yzx. In short: longstanding vispy bug.
+        # we use xyz and not zyx because what we care about is the order,
+        # not the names we give to the axes
+        rot = R.from_euler('yzx', angles, degrees=True)
+        # rotate 90 degrees to get neutral position at 0, 0, 0
+        rot = rot * R.from_euler('x', -90, degrees=True)
+        return rot.as_euler('zyx', degrees=True)
+
+    def new_to_old(
+        self, angles: tuple[float, float, float]
+    ) -> tuple[float, float, float]:
+        """Convert camera angles to napari convention to vispy (legacy behaviour).
+
+        Vispy (and previously napari) uses YZX ordering, but in napari we use ZYX.
+        Rotations are extrinsic.
+        """
+        # see #8281 for why this is yzx. In short: longstanding vispy bug.
+        # we use xyz and not zyx because what we care about is the order,
+        # not the names we give to the axes
+        rot = R.from_euler('zyx', angles, degrees=True)
+        rot = rot * R.from_euler('x', 90, degrees=True)
+        return rot.as_euler('yzx', degrees=True)
+        # TODO: account for camera orientation. Right now the rotation handedness is
+        #       basically arbitrary (e.g: by default, last axis is lefthanded)

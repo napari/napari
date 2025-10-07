@@ -17,9 +17,13 @@ def test_camera(make_napari_viewer):
     # updated
     assert viewer.dims.ndisplay == 2
 
-    np.testing.assert_almost_equal(viewer.camera.angles, (0, 0, 90))
+    np.testing.assert_almost_equal(
+        viewer.camera.angles, viewer.camera.old_to_new((0, 0, 90))
+    )
     np.testing.assert_almost_equal(viewer.camera.center, (0, 5.0, 5.0))
-    np.testing.assert_almost_equal(viewer.camera.angles, vispy_camera.angles)
+    np.testing.assert_almost_equal(
+        viewer.camera.angles, viewer.camera.old_to_new(vispy_camera.angles)
+    )
     np.testing.assert_almost_equal(viewer.camera.center, vispy_camera.center)
     np.testing.assert_almost_equal(viewer.camera.zoom, vispy_camera.zoom)
 
