@@ -303,7 +303,7 @@ class Camera(EventedModel):
 
     def _vispy_flipped_axes(
         self, ndisplay: Literal[2, 3] = 2
-    ) -> tuple[bool, bool, bool]:
+    ) -> tuple[int, int, int]:
         # Note: the Vispy axis order is xyz, or horizontal, vertical, depth,
         # while the napari axis order is zyx / plane-row-column, or depth, vertical,
         # horizontal — i.e. it is exactly inverted. This switch happens when data
