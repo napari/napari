@@ -1043,7 +1043,9 @@ def test_points_errors():
     annotations = {'point_type': np.array(['A', 'B'])}
 
     # try adding properties with the wrong number of properties
-    with pytest.raises(ValueError, match='does not match length'):
+    with pytest.raises(
+        ValueError, match=r'does not match length|indices imply'
+    ):
         Points(data, properties=copy(annotations))
 
 
@@ -2394,7 +2396,9 @@ def test_set_properties_with_invalid_shape_errors_safely():
     np.testing.assert_equal(points.properties, properties)
     np.testing.assert_array_equal(points.text.values, ['A', 'B', 'C'])
 
-    with pytest.raises(ValueError, match='does not match length'):
+    with pytest.raises(
+        ValueError, match=r'does not match length|indices imply'
+    ):
         points.properties = {'class': np.array(['D', 'E'])}
 
     np.testing.assert_equal(points.properties, properties)
