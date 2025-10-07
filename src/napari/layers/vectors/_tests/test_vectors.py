@@ -272,7 +272,9 @@ def test_adding_properties():
 
     # adding properties with the wrong length should raise an exception
     bad_properties = {'vector_type': np.array(['A', 'B'])}
-    with pytest.raises(ValueError, match=r'does not match length'):
+    with pytest.raises(
+        ValueError, match=r'does not match length|indices imply'
+    ):
         layer.properties = bad_properties
 
 
