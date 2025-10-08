@@ -7,7 +7,7 @@ jobs:
   test_pip_install:
     name: ubuntu-latest 3.12 pip install
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 60
     env:
       XDG_CACHE_HOME: ${{ github.workspace }}/.cache
     steps:
@@ -62,6 +62,7 @@ jobs:
           pip uninstall -y numba
 
       - name: Test
+        timeout-minutes: 35
         run: |
           python -m pytest --pyargs napari --color=yes --basetemp=.pytest_tmp --config-file=napari-from-github/pyproject.toml
           python -m pytest --pyargs napari_builtins --color=yes --basetemp=.pytest_tmp --config-file=napari-from-github/pyproject.toml
