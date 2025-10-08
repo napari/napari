@@ -17,6 +17,7 @@
 [![DOI](https://zenodo.org/badge/144513571.svg)](https://zenodo.org/badge/latestdoi/144513571)
 [![SPEC 0 — Minimum Supported Dependencies](https://img.shields.io/badge/SPEC-0%20(aspiring!)-green?labelColor=%23004811&color=%235CA038)](https://scientific-python.org/specs/spec-0000/)
 [![EffVer Versioning](https://img.shields.io/badge/version_scheme-EffVer-0097a7)](https://jacobtomlinson.dev/effver)
+[![Sponsor our Project](https://img.shields.io/badge/donate-to%20napari-blueviolet)](https://numfocus.org/donate-to-napari)
 
 **napari** is a fast, interactive, multi-dimensional image viewer for Python. It's designed for browsing, annotating, and analyzing large multi-dimensional images. It's built on top of Qt (for the GUI), vispy (for performant GPU-based rendering), and the scientific Python stack (numpy, scipy).
 
