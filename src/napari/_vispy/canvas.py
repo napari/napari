@@ -81,8 +81,19 @@ class NapariSceneCanvas(SceneCanvas_):
                 # hiding the actual source of the problem. They are never really
                 # informative, so we can safely ignore them.
                 pass
-            else:
-                raise
+            elif 'Shader compilation error' in error_msg:
+                raise RuntimeError(
+                    'Shader compilation failed. Unless you are working with custom shader code,\n'
+                    'this is likely a bug in napari.\n'
+                    'Please open an issue on the repository and provide this *full* stack trace.'
+                ) from e
+            elif 'Cannot SIZE object' in error_msg:
+                raise RuntimeError(
+                    'The above error may be caused by a version mismatch between vispy and napari.\n'
+                    'Try recreating a fresh environment and reinstalling. If that does not work,\n'
+                    'please open an issue on the repository and provide this *full* stack trace.'
+                ) from e
+            raise
 
 
 class VispyCanvas:
