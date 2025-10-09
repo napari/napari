@@ -40,7 +40,7 @@ def test_alt_click_to_show_single_layer(qtbot):
         image1,
         image2,
         image3,
-        layers,
+        _layers,
         view,
         delegate,
     ) = make_qt_layer_list_with_delegate(qtbot)
@@ -79,7 +79,7 @@ def test_second_alt_click_to_show_different_layer(qtbot):
         image1,
         image2,
         image3,
-        layers,
+        _layers,
         view,
         delegate,
     ) = make_qt_layer_list_with_delegate(qtbot)
@@ -115,7 +115,7 @@ def test_second_alt_click_to_restore_layer_state(qtbot):
     (
         image1,
         image2,
-        image3,
+        _image3,
         layers,
         view,
         delegate,

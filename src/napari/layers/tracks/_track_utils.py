@@ -387,8 +387,8 @@ class TrackManager:
         # query can return indices to points that do not exist, trim that here
         # then prune to only those in the current frame/time
         # NOTE(arl): I don't like this!!!
-        d, idx = self._kdtree.query(coords, k=10)
-        idx = [i for i in idx if i >= 0 and i < self._points.shape[0]]
+        _d, idx = self._kdtree.query(coords, k=10)
+        idx = [i for i in idx if 0 <= i < self._points.shape[0]]
         pruned = [i for i in idx if self._points[i, 0] == coords[0]]
 
         # if we have found a point, return it
