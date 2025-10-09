@@ -5,10 +5,12 @@ from __future__ import annotations
 import gc
 from collections.abc import Iterator
 from functools import partial
+from time import perf_counter
 from typing import TYPE_CHECKING
 from weakref import WeakSet
 
 import numpy as np
+from qtpy.QtCore import QTimer
 from superqt.utils import qthrottled
 from vispy.scene import SceneCanvas as SceneCanvas_, ViewBox, Widget
 
@@ -149,6 +151,22 @@ class VispyCanvas:
         self._instances.add(self)
 
         self._overlay_callbacks = {}
+
+        # Simple inertia state and tunable parameters
+        self._inertia_last_pos = None
+        self._inertia_last_time = None
+        self._inertia_velocity = None
+        self._inertia_timer = QTimer()
+        self._inertia_timer.timeout.connect(self._inertia_step)
+
+        # Tunable inertia parameters
+        self._inertia_friction = 8.0  # decay per second (higher = stops faster)
+        self._inertia_damping = 0.6  # fraction of velocity to apply (0-1)
+        self._inertia_max_speed = 500.0  # maximum velocity in world units/sec
+        self._inertia_min_speed = 2.0  # minimum speed to trigger inertia
+        self._inertia_stop_speed = 1.0  # speed threshold to stop animation
+        self._inertia_max_dt = 0.1  # max time between last move and release (seconds)
+
         self._last_viewbox_size = np.array((0, 0))
         self._needs_overlay_position_update = False
 
@@ -506,6 +524,60 @@ class VispyCanvas:
         read_only_event = ReadOnlyWrapper(
             napari_event, exceptions=('handled',)
         )
+
+        # Simple inertia tracking
+        is_dragging = bool(getattr(napari_event, 'is_dragging', False))
+
+        if event.type == 'mouse_press':
+            # Cancel any ongoing inertia
+            if self._inertia_timer.isActive():
+                self._inertia_timer.stop()
+            self._inertia_velocity = None
+            self._inertia_last_pos = None
+            self._inertia_last_time = None
+
+        elif event.type == 'mouse_move' and is_dragging:
+            # Track position for velocity calculation
+            try:
+                pos = np.array(self.viewer.camera.center)
+                now = perf_counter()
+                self._inertia_last_pos = pos
+                self._inertia_last_time = now
+            except (AttributeError, TypeError, ValueError):
+                pass
+
+        elif event.type == 'mouse_release':
+            # Start inertia if we have tracking data
+            if self._inertia_last_pos is not None and self._inertia_last_time is not None:
+                try:
+                    current_pos = np.array(self.viewer.camera.center)
+                    current_time = perf_counter()
+                    dt = current_time - self._inertia_last_time
+
+                    # Only start inertia if the release is recent
+                    if 0.001 < dt < self._inertia_max_dt:
+                        velocity = (current_pos - self._inertia_last_pos) / dt
+                        speed = np.linalg.norm(velocity)
+
+                        # Apply damping factor to reduce initial velocity
+                        velocity = velocity * self._inertia_damping
+
+                        # Cap the maximum velocity to prevent excessive speed
+                        speed = np.linalg.norm(velocity)
+                        if speed > self._inertia_max_speed:
+                            velocity = velocity * (self._inertia_max_speed / speed)
+                            speed = self._inertia_max_speed
+
+                        # Only apply inertia if moving fast enough
+                        if speed > self._inertia_min_speed:
+                            self._inertia_velocity = velocity
+                            self._inertia_last_time = current_time
+                            self._inertia_timer.start(16)  # ~60 FPS
+                except (AttributeError, TypeError, ValueError):
+                    pass
+
+            self._inertia_last_pos = None
+
         mouse_callbacks(self.viewer, read_only_event)
 
         layer = self.viewer.layers.selection.active
@@ -594,6 +666,39 @@ class VispyCanvas:
         None
         """
         self._process_mouse_event(mouse_wheel_callbacks, event)
+
+    def _inertia_step(self) -> None:
+        """Apply one step of inertia animation with friction."""
+        if self._inertia_velocity is None:
+            self._inertia_timer.stop()
+            return
+
+        try:
+            now = perf_counter()
+            if self._inertia_last_time is not None:
+                dt = now - self._inertia_last_time
+            else:
+                dt = 0.0
+            self._inertia_last_time = now
+
+            # Apply friction (exponential decay)
+            decay = np.exp(-self._inertia_friction * dt)
+            self._inertia_velocity *= decay
+
+            # Apply displacement
+            displacement = self._inertia_velocity * dt
+            center = np.array(self.viewer.camera.center)
+            center = center + displacement
+            self.viewer.camera.center = tuple(center)
+
+            # Stop if velocity is too small
+            if np.linalg.norm(self._inertia_velocity) < self._inertia_stop_speed:
+                self._inertia_timer.stop()
+                self._inertia_velocity = None
+
+        except (AttributeError, TypeError, ValueError):
+            self._inertia_timer.stop()
+            self._inertia_velocity = None
 
     @property
     def _viewbox_corners_in_world(self) -> npt.NDArray:
