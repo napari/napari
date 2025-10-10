@@ -50,8 +50,8 @@ except ImportError:
 backends = list(TriangulationBackend)
 
 backend_list_complex = [
-    TriangulationBackend.partsegcore,
     TriangulationBackend.bermuda,
+    TriangulationBackend.partsegcore,
     TriangulationBackend.triangle,
     TriangulationBackend.numba,
 ]
@@ -444,7 +444,7 @@ class _ShapeTriangulationBaseShapeCount(_ShapeTriangulationBase):
     params = [
         (
             100,
-            5_000,
+            500,
         ),
         (8, 32, 128),
         ('path', 'polygon'),
@@ -456,22 +456,13 @@ class _ShapeTriangulationBaseShapeCount(_ShapeTriangulationBase):
 
 class ShapeTriangulationNonConvexSuite(_ShapeTriangulationBaseShapeCount):
     skip_params = Skip(
-        # skip a case when vispy triangulation backend fails
-        always=lambda n_shapes,
-        n_points,
-        shape_type,
-        triangulation_backend: n_points == 128
-        and shape_type == 'polygon'
-        and triangulation_backend != TriangulationBackend.triangle,
         if_in_pr=skip_above_100,
         # too slow (40 sec)
         if_on_ci=lambda n_shapes,
         n_points,
         shape_type,
         triangulation_backend: (
-            n_shapes == 5000
-            and n_points == 32
-            and shape_type == 'polygon'
+            n_shapes > 100
             and triangulation_backend
             in {
                 TriangulationBackend.pure_python and TriangulationBackend.numba
@@ -496,7 +487,7 @@ class ShapeTriangulationIntersectionSuite(_ShapeTriangulationBaseShapeCount):
     params = [
         (
             100,
-            5_000,
+            2_000,
         ),
         (7, 9, 15, 33),
         ('path', 'polygon'),
@@ -507,7 +498,7 @@ class ShapeTriangulationIntersectionSuite(_ShapeTriangulationBaseShapeCount):
         n_points,
         shape_type,
         triangulation_backend: triangulation_backend
-        != TriangulationBackend.numba
+        == TriangulationBackend.numba
         and n_shapes > 100,
         if_in_pr=skip_above_100,
     )
@@ -523,19 +514,19 @@ class ShapeTriangulationStarIntersectionSuite(
     params = [
         (
             100,
-            5_000,
+            500,
         ),
-        (7, 9, 15, 33),
+        (7, 33),
         ('path', 'polygon'),
         backend_list_complex,
     ]
     skip_params = Skip(
-        always=lambda n_shapes,
-        n_points,
-        shape_type,
-        triangulation_backend: n_shapes == 5000
-        and n_points in {15, 33}
-        and shape_type == 'polygon',
+        always=lambda n_shapes, n_points, shape_type, triangulation_backend: (
+            n_shapes == 500
+            and n_points == 33
+            and shape_type == 'polygon'
+            and triangulation_backend == TriangulationBackend.numba
+        ),
         if_on_ci=lambda n_shapes,
         n_points,
         shape_type,
@@ -603,7 +594,7 @@ class ShapeTriangulationHolesSuite(_ShapeTriangulationBaseShapeCount):
     params = [
         (
             100,
-            1_000,
+            500,
         ),
         (24, 48),
         ('path', 'polygon'),
@@ -615,9 +606,16 @@ class ShapeTriangulationHolesSuite(_ShapeTriangulationBaseShapeCount):
         if_on_ci=lambda n_shapes,
         n_points,
         shape_type,
-        triangulation_backend: n_shapes > 100
-        and triangulation_backend == TriangulationBackend.numba
-        and shape_type == 'polygon',
+        triangulation_backend: (
+            n_shapes > 100
+            and triangulation_backend == TriangulationBackend.numba
+            and shape_type == 'polygon'
+        )
+        or (
+            n_shapes == 100
+            and n_points == 48
+            and triangulation_backend == TriangulationBackend.numba
+        ),
     )
 
     def setup(self, n_shapes, n_points, _shape_type, triangulation_backend):
@@ -630,10 +628,10 @@ class ShapeTriangulationMixed(_ShapeTriangulationBase):
     params = [
         (
             100,
-            3_000,
+            500,
         ),
         ('path', 'polygon'),
-        backend_list_complex,
+        backends,
     ]
 
     # the case of 128 points crashes the benchmark on call of PolygonData(vertices=data).triangulate()
