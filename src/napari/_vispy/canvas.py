@@ -5,16 +5,15 @@ from __future__ import annotations
 import gc
 from collections.abc import Iterator
 from functools import partial
-from time import perf_counter
 from typing import TYPE_CHECKING
 from weakref import WeakSet
 
 import numpy as np
-from qtpy.QtCore import QTimer
 from superqt.utils import qthrottled
 from vispy.scene import SceneCanvas as SceneCanvas_, ViewBox, Widget
 
 from napari._vispy.camera import VispyCamera
+from napari._vispy.camera_inertia import CameraInertia
 from napari._vispy.mouse_event import NapariMouseEvent
 from napari._vispy.utils.cursor import QtCursorVisual
 from napari._vispy.utils.gl import get_max_texture_sizes
@@ -152,34 +151,8 @@ class VispyCanvas:
 
         self._overlay_callbacks = {}
 
-        # Inertia state for panning and rotation
-        self._inertia_last_pos = None  # camera.center
-        self._inertia_last_angles = None  # camera.angles (for 3D rotation)
-        self._inertia_last_time = None
-        self._inertia_velocity = None  # linear velocity
-        self._inertia_angular_velocity = None  # angular velocity (degrees/sec)
-        self._inertia_timer = QTimer()
-        self._inertia_timer.timeout.connect(self._inertia_step)
-
-        # Tunable inertia parameters
-        self._inertia_friction = (
-            5.0  # decay per second (higher = stops faster)
-        )
-        self._inertia_damping = 0.6  # fraction of velocity to apply (0-1)
-        self._inertia_max_speed = 200.0  # maximum velocity in world units/sec
-        self._inertia_min_speed = 4.0  # minimum speed to trigger inertia
-        self._inertia_stop_speed = 2.5  # speed threshold to stop animation
-        self._inertia_max_dt = (
-            0.1  # max time between last move and release (seconds)
-        )
-        # Rotation-specific parameters
-        self._inertia_rotation_damping = (
-            0.5  # rotation is usually more sensitive
-        )
-        self._inertia_max_angular_speed = 120.0  # degrees per second
-        self._inertia_min_angular_speed = (
-            1.5  # minimum to trigger rotation inertia
-        )
+        # Initialize camera inertia system
+        self._inertia = CameraInertia(self.viewer)
 
         self._last_viewbox_size = np.array((0, 0))
         self._needs_overlay_position_update = False
@@ -539,101 +512,15 @@ class VispyCanvas:
             napari_event, exceptions=('handled',)
         )
 
-        # Simple inertia tracking
+        # Handle camera inertia tracking
         is_dragging = bool(getattr(napari_event, 'is_dragging', False))
 
         if event.type == 'mouse_press':
-            # Cancel any ongoing inertia
-            if self._inertia_timer.isActive():
-                self._inertia_timer.stop()
-            self._inertia_velocity = None
-            self._inertia_angular_velocity = None
-            self._inertia_last_pos = None
-            self._inertia_last_angles = None
-            self._inertia_last_time = None
-
+            self._inertia.on_press()
         elif event.type == 'mouse_move' and is_dragging:
-            # Track position and angles during drag for inertia calculation
-            try:
-                pos = np.array(self.viewer.camera.center)
-                angles = np.array(self.viewer.camera.angles)  # For 3D rotation
-                now = perf_counter()
-                self._inertia_last_pos = pos
-                self._inertia_last_angles = angles
-                self._inertia_last_time = now
-            except (AttributeError, TypeError, ValueError):
-                pass
-
+            self._inertia.on_drag()
         elif event.type == 'mouse_release':
-            # Start inertia if we have tracking data
-            if (
-                self._inertia_last_pos is not None
-                and self._inertia_last_time is not None
-            ):
-                try:
-                    current_pos = np.array(self.viewer.camera.center)
-                    current_angles = np.array(self.viewer.camera.angles)
-                    current_time = perf_counter()
-                    dt = current_time - self._inertia_last_time
-
-                    # Only start inertia if the release is recent
-                    if 0.001 < dt < self._inertia_max_dt:
-                        # Calculate linear velocity for panning
-                        velocity = (current_pos - self._inertia_last_pos) / dt
-                        speed = np.linalg.norm(velocity)
-
-                        # Apply damping and capping for linear velocity
-                        velocity = velocity * self._inertia_damping
-                        speed = np.linalg.norm(velocity)
-                        if speed > self._inertia_max_speed:
-                            velocity = velocity * (
-                                self._inertia_max_speed / speed
-                            )
-                            speed = self._inertia_max_speed
-
-                        # Calculate angular velocity for rotation (3D only)
-                        angular_velocity = None
-                        if self._inertia_last_angles is not None:
-                            angular_velocity = (
-                                current_angles - self._inertia_last_angles
-                            ) / dt
-                            angular_speed = np.linalg.norm(angular_velocity)
-
-                            # Apply rotation-specific damping and capping
-                            angular_velocity = (
-                                angular_velocity
-                                * self._inertia_rotation_damping
-                            )
-                            angular_speed = np.linalg.norm(angular_velocity)
-                            if angular_speed > self._inertia_max_angular_speed:
-                                angular_velocity = angular_velocity * (
-                                    self._inertia_max_angular_speed
-                                    / angular_speed
-                                )
-                                angular_speed = self._inertia_max_angular_speed
-
-                            # Check if angular velocity is significant enough
-                            if angular_speed < self._inertia_min_angular_speed:
-                                angular_velocity = None
-
-                        # Start timer if either velocity is significant
-                        if (
-                            speed > self._inertia_min_speed
-                            or angular_velocity is not None
-                        ):
-                            self._inertia_velocity = (
-                                velocity
-                                if speed > self._inertia_min_speed
-                                else None
-                            )
-                            self._inertia_angular_velocity = angular_velocity
-                            self._inertia_last_time = current_time
-                            self._inertia_timer.start(16)  # ~60 FPS
-                except (AttributeError, TypeError, ValueError):
-                    pass
-
-            self._inertia_last_pos = None
-            self._inertia_last_angles = None
+            self._inertia.on_release()
 
         mouse_callbacks(self.viewer, read_only_event)
 
@@ -723,69 +610,6 @@ class VispyCanvas:
         None
         """
         self._process_mouse_event(mouse_wheel_callbacks, event)
-
-    def _inertia_step(self) -> None:
-        """Apply one step of inertia animation with friction."""
-        # Check if we have any active velocity
-        if (
-            self._inertia_velocity is None
-            and self._inertia_angular_velocity is None
-        ):
-            self._inertia_timer.stop()
-            return
-
-        try:
-            now = perf_counter()
-            if self._inertia_last_time is not None:
-                dt = now - self._inertia_last_time
-            else:
-                dt = 0.0
-            self._inertia_last_time = now
-
-            # Apply friction (exponential decay)
-            decay = np.exp(-self._inertia_friction * dt)
-
-            # Apply linear velocity (panning)
-            if self._inertia_velocity is not None:
-                self._inertia_velocity *= decay
-                displacement = self._inertia_velocity * dt
-                center = np.array(self.viewer.camera.center)
-                center = center + displacement
-                self.viewer.camera.center = tuple(center)
-
-                # Stop linear velocity if too small
-                if (
-                    np.linalg.norm(self._inertia_velocity)
-                    < self._inertia_stop_speed
-                ):
-                    self._inertia_velocity = None
-
-            # Apply angular velocity (rotation, 3D only)
-            if self._inertia_angular_velocity is not None:
-                self._inertia_angular_velocity *= decay
-                angular_displacement = self._inertia_angular_velocity * dt
-                angles = np.array(self.viewer.camera.angles)
-                angles = angles + angular_displacement
-                self.viewer.camera.angles = tuple(angles)
-
-                # Stop angular velocity if too small
-                if (
-                    np.linalg.norm(self._inertia_angular_velocity)
-                    < self._inertia_min_angular_speed
-                ):
-                    self._inertia_angular_velocity = None
-
-            # Stop timer if both velocities are done
-            if (
-                self._inertia_velocity is None
-                and self._inertia_angular_velocity is None
-            ):
-                self._inertia_timer.stop()
-
-        except (AttributeError, TypeError, ValueError):
-            self._inertia_timer.stop()
-            self._inertia_velocity = None
-            self._inertia_angular_velocity = None
 
     @property
     def _viewbox_corners_in_world(self) -> npt.NDArray:
