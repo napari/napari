@@ -17,7 +17,6 @@ classifiers = [
     "Framework :: napari",
     "Intended Audience :: Education",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: BSD License",
     "Programming Language :: C",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3 :: Only",
@@ -36,6 +35,10 @@ classifiers = [
     "Operating System :: MacOS",
 ]
 requires-python = ">=3.10"
+license = "BSD-3-Clause"
+license-files = [
+    "LICENSE",
+]
 dependencies = [
     "appdirs>=1.4.4",
     "app-model>=0.4.0,<0.5.0",
@@ -76,9 +79,6 @@ dependencies = [
 dynamic = [
     "version",
 ]
-
-[project.license]
-text = "BSD 3-Clause"
 
 [project.readme]
 file = "README.md"
@@ -333,9 +333,6 @@ napari = "napari.__main__:main"
 [tool.setuptools]
 zip-safe = false
 include-package-data = true
-license-files = [
-    "LICENSE",
-]
 
 [tool.setuptools.packages.find]
 where = [
