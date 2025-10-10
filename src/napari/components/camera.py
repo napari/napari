@@ -17,7 +17,6 @@ from napari.utils.camera_orientations import (
 )
 from napari.utils.events import EventedModel
 from napari.utils.misc import ensure_n_tuple
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     import numpy.typing as npt
@@ -76,15 +75,12 @@ class Camera(EventedModel):
         3-tuple. This direction is in 3D scene coordinates, the world coordinate
         system for three currently displayed dimensions.
         """
-        ang = np.deg2rad(self.angles)
-        view_direction = (
-            # z has a negative sign for the right-handed reference frame
-            # flip (#7488)
-            -np.sin(ang[2]) * np.cos(ang[1]),
-            np.cos(ang[2]) * np.cos(ang[1]),
-            -np.sin(ang[1]),
-        )
-        return view_direction
+        # once we're in scene-land, we pretend to be in xyz space (axes names don't
+        # mean anything after all...) which simplifies the logic a lot.
+        rotation = R.from_euler('xyz', self.angles, degrees=True)
+        # view direction is given by the z component, but flipping the sign.
+        # This is because the default view direction at angles (0, 0, 0) is (-1, 0, 0)
+        return tuple(-rotation.as_matrix()[0])
 
     @property
     def up_direction(self) -> tuple[float, float, float]:
@@ -94,17 +90,12 @@ class Camera(EventedModel):
         3-tuple. This direction is in 3D scene coordinates, the world coordinate
         system for three currently displayed dimensions.
         """
-        # see #8281 for why this is yzx. In short: longstanding vispy bug.
-        rotation_matrix = R.from_euler(
-            seq='yzx', angles=self.angles, degrees=True
-        ).as_matrix()
-        return (
-            # z has a negative sign for the right-handed reference frame
-            # flip (#7488)
-            -rotation_matrix[2, 2],
-            rotation_matrix[1, 2],
-            rotation_matrix[0, 2],
-        )
+        # once we're in scene-land, we pretend to be in xyz space (axes names don't
+        # mean anything after all...) which simplifies the logic a lot.
+        rotation = R.from_euler('xyz', self.angles, degrees=True)
+        # up direction is given by the y component, but flipping the sign.
+        # This is because the default up direction at angles (0, 0, 0) is (0, -1, 0)
+        return tuple(-rotation.as_matrix()[1])
 
     def set_view_direction(
         self,
@@ -132,53 +123,21 @@ class Camera(EventedModel):
             to (0, -1, 0) unless the view direction is parallel to the y-axis,
             in which case will default to (-1, 0, 0).
         """
-        # default behaviour of up direction
-        view_direction_along_y_axis = (
-            view_direction[0],
-            view_direction[2],
-        ) == (0, 0)
-        up_direction_along_y_axis = (up_direction[0], up_direction[2]) == (
-            0,
-            0,
+        # project up onto view so we can remove the parallel component
+        projection = np.dot(up_direction, view_direction) * np.array(
+            view_direction
         )
-        if view_direction_along_y_axis and up_direction_along_y_axis:
-            up_direction = (1, 0, 0)  # align up direction along z axis
+        up_direction = up_direction - projection
 
-        # xyz ordering for vispy
-        view_vector = np.array(view_direction, dtype=float, copy=True)[::-1]
-        # flip z axis for right-handed frame
-        view_vector *= [1, 1, -1]
-        # normalise vector for rotation matrix
-        view_vector /= np.linalg.norm(view_vector)
+        view_direction = view_direction / np.linalg.norm(view_direction)
+        up_direction = up_direction / np.linalg.norm(up_direction)
+        right_direction = np.cross(up_direction, view_direction)
 
-        # xyz ordering for vispy
-        up_vector = np.array(up_direction, dtype=float, copy=True)[::-1]
-        # flip z axis for right-handed frame
-        up_vector *= [1, 1, -1]
-        # ??? why a cross product here?
-        up_vector = np.cross(view_vector, up_vector)
-        # normalise vector for rotation matrix
-        up_vector /= np.linalg.norm(up_vector)
-
-        # explicit check for parallel view direction and up direction
-        if np.allclose(np.cross(view_vector, up_vector), 0):
-            raise ValueError(
-                trans._(
-                    'view direction and up direction are parallel',
-                    deferred=True,
-                )
-            )
-
-        x_vector = np.cross(up_vector, view_vector)
-        x_vector /= np.linalg.norm(x_vector)
-
-        # construct rotation matrix, convert to euler angles
-        rotation_matrix = np.column_stack((up_vector, view_vector, x_vector))
-        # see #8281 for why this is yzx. In short: longstanding vispy bug.
-        euler_angles = R.from_matrix(rotation_matrix).as_euler(
-            seq='yzx', degrees=True
-        )
-        self.angles = euler_angles
+        # once we're in scene-land, we pretend to be in xyz space (axes names don't
+        # mean anything after all...) which simplifies the logic a lot. We also
+        # flip all signs (see explanations in self.view_direction, and self.up_direction)
+        matrix = -np.array((view_direction, up_direction, right_direction))
+        self.angles = R.from_matrix(matrix).as_euler('xyz', degrees=True)
 
     def calculate_nd_view_direction(
         self, ndim: int, dims_displayed: tuple[int, ...]
@@ -268,8 +227,6 @@ class Camera(EventedModel):
         Rotations are extrinsic.
         """
         # see #8281 for why this is yzx. In short: longstanding vispy bug.
-        # we use xyz and not zyx because what we care about is the order,
-        # not the names we give to the axes
         rot = R.from_euler('yzx', angles, degrees=True)
         # rotate 90 degrees to get neutral position at 0, 0, 0
         rot = rot * R.from_euler('x', -90, degrees=True)
@@ -294,8 +251,6 @@ class Camera(EventedModel):
             self._vispy_flipped_axes(ndisplay=3), -1, 1
         )
         # see #8281 for why this is yzx. In short: longstanding vispy bug.
-        # we use xyz and not zyx because what we care about is the order,
-        # not the names we give to the axes
         rot = R.from_euler('zyx', flipped_angles, degrees=True)
         # flip angles so handedness of rotation is always right
         rot = rot * R.from_euler('x', 90, degrees=True)
