@@ -162,16 +162,24 @@ class VispyCanvas:
         self._inertia_timer.timeout.connect(self._inertia_step)
 
         # Tunable inertia parameters
-        self._inertia_friction = 8.0  # decay per second (higher = stops faster)
+        self._inertia_friction = (
+            5.0  # decay per second (higher = stops faster)
+        )
         self._inertia_damping = 0.6  # fraction of velocity to apply (0-1)
-        self._inertia_max_speed = 500.0  # maximum velocity in world units/sec
-        self._inertia_min_speed = 2.0  # minimum speed to trigger inertia
-        self._inertia_stop_speed = 1.0  # speed threshold to stop animation
-        self._inertia_max_dt = 0.1  # max time between last move and release (seconds)
+        self._inertia_max_speed = 200.0  # maximum velocity in world units/sec
+        self._inertia_min_speed = 4.0  # minimum speed to trigger inertia
+        self._inertia_stop_speed = 2.5  # speed threshold to stop animation
+        self._inertia_max_dt = (
+            0.1  # max time between last move and release (seconds)
+        )
         # Rotation-specific parameters
-        self._inertia_rotation_damping = 0.4  # rotation is usually more sensitive
-        self._inertia_max_angular_speed = 180.0  # degrees per second
-        self._inertia_min_angular_speed = 1.0  # minimum to trigger rotation inertia
+        self._inertia_rotation_damping = (
+            0.5  # rotation is usually more sensitive
+        )
+        self._inertia_max_angular_speed = 120.0  # degrees per second
+        self._inertia_min_angular_speed = (
+            1.5  # minimum to trigger rotation inertia
+        )
 
         self._last_viewbox_size = np.array((0, 0))
         self._needs_overlay_position_update = False
@@ -558,7 +566,10 @@ class VispyCanvas:
 
         elif event.type == 'mouse_release':
             # Start inertia if we have tracking data
-            if self._inertia_last_pos is not None and self._inertia_last_time is not None:
+            if (
+                self._inertia_last_pos is not None
+                and self._inertia_last_time is not None
+            ):
                 try:
                     current_pos = np.array(self.viewer.camera.center)
                     current_angles = np.array(self.viewer.camera.angles)
@@ -575,20 +586,30 @@ class VispyCanvas:
                         velocity = velocity * self._inertia_damping
                         speed = np.linalg.norm(velocity)
                         if speed > self._inertia_max_speed:
-                            velocity = velocity * (self._inertia_max_speed / speed)
+                            velocity = velocity * (
+                                self._inertia_max_speed / speed
+                            )
                             speed = self._inertia_max_speed
 
                         # Calculate angular velocity for rotation (3D only)
                         angular_velocity = None
                         if self._inertia_last_angles is not None:
-                            angular_velocity = (current_angles - self._inertia_last_angles) / dt
+                            angular_velocity = (
+                                current_angles - self._inertia_last_angles
+                            ) / dt
                             angular_speed = np.linalg.norm(angular_velocity)
 
                             # Apply rotation-specific damping and capping
-                            angular_velocity = angular_velocity * self._inertia_rotation_damping
+                            angular_velocity = (
+                                angular_velocity
+                                * self._inertia_rotation_damping
+                            )
                             angular_speed = np.linalg.norm(angular_velocity)
                             if angular_speed > self._inertia_max_angular_speed:
-                                angular_velocity = angular_velocity * (self._inertia_max_angular_speed / angular_speed)
+                                angular_velocity = angular_velocity * (
+                                    self._inertia_max_angular_speed
+                                    / angular_speed
+                                )
                                 angular_speed = self._inertia_max_angular_speed
 
                             # Check if angular velocity is significant enough
@@ -596,8 +617,15 @@ class VispyCanvas:
                                 angular_velocity = None
 
                         # Start timer if either velocity is significant
-                        if speed > self._inertia_min_speed or angular_velocity is not None:
-                            self._inertia_velocity = velocity if speed > self._inertia_min_speed else None
+                        if (
+                            speed > self._inertia_min_speed
+                            or angular_velocity is not None
+                        ):
+                            self._inertia_velocity = (
+                                velocity
+                                if speed > self._inertia_min_speed
+                                else None
+                            )
                             self._inertia_angular_velocity = angular_velocity
                             self._inertia_last_time = current_time
                             self._inertia_timer.start(16)  # ~60 FPS
@@ -699,7 +727,10 @@ class VispyCanvas:
     def _inertia_step(self) -> None:
         """Apply one step of inertia animation with friction."""
         # Check if we have any active velocity
-        if self._inertia_velocity is None and self._inertia_angular_velocity is None:
+        if (
+            self._inertia_velocity is None
+            and self._inertia_angular_velocity is None
+        ):
             self._inertia_timer.stop()
             return
 
@@ -723,7 +754,10 @@ class VispyCanvas:
                 self.viewer.camera.center = tuple(center)
 
                 # Stop linear velocity if too small
-                if np.linalg.norm(self._inertia_velocity) < self._inertia_stop_speed:
+                if (
+                    np.linalg.norm(self._inertia_velocity)
+                    < self._inertia_stop_speed
+                ):
                     self._inertia_velocity = None
 
             # Apply angular velocity (rotation, 3D only)
@@ -735,11 +769,17 @@ class VispyCanvas:
                 self.viewer.camera.angles = tuple(angles)
 
                 # Stop angular velocity if too small
-                if np.linalg.norm(self._inertia_angular_velocity) < self._inertia_min_angular_speed:
+                if (
+                    np.linalg.norm(self._inertia_angular_velocity)
+                    < self._inertia_min_angular_speed
+                ):
                     self._inertia_angular_velocity = None
 
             # Stop timer if both velocities are done
-            if self._inertia_velocity is None and self._inertia_angular_velocity is None:
+            if (
+                self._inertia_velocity is None
+                and self._inertia_angular_velocity is None
+            ):
                 self._inertia_timer.stop()
 
         except (AttributeError, TypeError, ValueError):
