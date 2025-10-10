@@ -203,6 +203,9 @@ class VispyCanvas:
         self.viewer.camera.events.mouse_pan.connect(self._on_interactive)
         self.viewer.camera.events.mouse_zoom.connect(self._on_interactive)
         self.viewer.camera.events.zoom.connect(self._on_cursor)
+        self.viewer.camera.events.inertia.connect(
+            self._on_inertia_enabled_change
+        )
 
         self.viewer._zoom_box.events.zoom.connect(self._on_boxzoom)
         self.viewer.layers.events.reordered.connect(self._update_scenegraph)
@@ -375,6 +378,10 @@ class VispyCanvas:
         else:
             self.view.interactive = interactive
             self.grid.interactive = False
+
+    def _on_inertia_enabled_change(self) -> None:
+        """Update inertia system when camera.inertia_enabled changes."""
+        self._inertia.enabled = self.viewer.camera.inertia
 
     def _on_boxzoom(self, event):
         """Update zoom level."""

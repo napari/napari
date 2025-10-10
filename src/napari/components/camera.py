@@ -42,6 +42,9 @@ class Camera(EventedModel):
         If the camera interactive panning with the mouse is enabled or not.
     mouse_zoom : bool
         If the camera interactive zooming with the mouse is enabled or not.
+    inertia : bool
+        If the camera inertia animation is enabled or not. When enabled, the
+        camera will smoothly decelerate after panning or rotating.
     """
 
     # fields
@@ -55,6 +58,7 @@ class Camera(EventedModel):
     perspective: float = 0
     mouse_pan: bool = True
     mouse_zoom: bool = True
+    inertia: bool = True
     orientation: tuple[
         DepthAxisOrientation,
         VerticalAxisOrientation,
