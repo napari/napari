@@ -30,8 +30,8 @@ class InertiaConfig:
 
     Parameters
     ----------
-    friction : float
-        Decay rate per second. Higher values cause faster deceleration.
+    pan_friction : float
+        Pan decay rate per second. Higher values cause faster deceleration.
         Default: 5.0
     pan_damping : float
         Fraction of velocity to apply for panning motion (0-1).
@@ -42,10 +42,9 @@ class InertiaConfig:
         Minimum pan speed to trigger inertia animation. Default: 4.0
     pan_stop_speed : float
         Pan speed threshold below which animation stops. Default: 2.5
-    max_dt : float
-        Maximum time (seconds) between last movement and release
-        to trigger inertia. Prevents stale velocity from being used.
-        Default: 0.1
+    rotate_friction : float
+        Rotation decay rate per second. Higher values cause faster deceleration.
+        Default: 7.0 (slightly faster than pan for less dizziness)
     rotate_damping : float
         Fraction of velocity to apply for rotation (0-1).
         Rotation is usually more sensitive than panning. Default: 0.4
@@ -53,35 +52,51 @@ class InertiaConfig:
         Maximum rotation velocity in degrees per second. Default: 120.0
     rotate_min_speed : float
         Minimum rotation speed to trigger rotation inertia. Default: 1.5
+    rotate_stop_speed : float
+        Rotation speed threshold below which animation stops. Default: 1.0
+    max_dt : float
+        Maximum time (seconds) between last movement and release
+        to trigger inertia. Prevents stale velocity from being used.
+        Default: 0.1
     timer_interval_ms : int
         Interval in milliseconds for animation timer (~60 FPS). Default: 16
     """
 
-    friction: float = 5.0
+    pan_friction: float = 5.0
     pan_damping: float = 0.6
     pan_max_speed: float = 200.0
     pan_min_speed: float = 4.0
     pan_stop_speed: float = 2.5
-    max_dt: float = 0.1
+    rotate_friction: float = 7.0
     rotate_damping: float = 0.4
     rotate_max_speed: float = 120.0
     rotate_min_speed: float = 1.5
+    rotate_stop_speed: float = 1.0
+    max_dt: float = 0.1
     timer_interval_ms: int = 16
 
     def __post_init__(self):
         """Validate configuration parameters."""
-        if self.friction < 0:
-            raise ValueError('friction must be non-negative')
+        if self.pan_friction < 0:
+            raise ValueError('pan_friction must be non-negative')
+        if self.rotate_friction < 0:
+            raise ValueError('rotate_friction must be non-negative')
         if not 0 <= self.pan_damping <= 1:
             raise ValueError('pan_damping must be between 0 and 1')
         if not 0 <= self.rotate_damping <= 1:
             raise ValueError('rotate_damping must be between 0 and 1')
         if self.pan_max_speed <= 0:
             raise ValueError('pan_max_speed must be positive')
+        if self.rotate_max_speed <= 0:
+            raise ValueError('rotate_max_speed must be positive')
         if self.pan_min_speed < 0:
             raise ValueError('pan_min_speed must be non-negative')
+        if self.rotate_min_speed < 0:
+            raise ValueError('rotate_min_speed must be non-negative')
         if self.pan_stop_speed < 0:
             raise ValueError('pan_stop_speed must be non-negative')
+        if self.rotate_stop_speed < 0:
+            raise ValueError('rotate_stop_speed must be non-negative')
         if self.max_dt <= 0:
             raise ValueError('max_dt must be positive')
         if self.timer_interval_ms <= 0:
@@ -161,20 +176,14 @@ class CameraInertia:
         if not self.enabled:
             return
 
-        try:
-            pos = np.array(self._viewer.camera.center, dtype=np.float64)
-            angles = np.array(self._viewer.camera.angles, dtype=np.float64)
-            now = perf_counter()
+        pos = np.array(self._viewer.camera.center, dtype=np.float64)
+        angles = np.array(self._viewer.camera.angles, dtype=np.float64)
+        now = perf_counter()
 
-            self._last_pos = pos
-            self._last_angles = angles
-            self._last_time = now
-            self._state = InertiaState.TRACKING
-
-        except (AttributeError, TypeError):
-            # If camera properties aren't available, just skip tracking
-            # This can happen during viewer initialization
-            self._reset_tracking()
+        self._last_pos = pos
+        self._last_angles = angles
+        self._last_time = now
+        self._state = InertiaState.TRACKING
 
     def on_release(self) -> None:
         """Handle mouse release event.
@@ -190,41 +199,30 @@ class CameraInertia:
             self._reset_tracking()
             return
 
-        try:
-            current_pos = np.array(
-                self._viewer.camera.center, dtype=np.float64
-            )
-            current_angles = np.array(
-                self._viewer.camera.angles, dtype=np.float64
-            )
-            current_time = perf_counter()
-            dt = current_time - self._last_time
+        current_pos = np.array(self._viewer.camera.center, dtype=np.float64)
+        current_angles = np.array(self._viewer.camera.angles, dtype=np.float64)
+        current_time = perf_counter()
+        dt = current_time - self._last_time
 
-            # Only start inertia if the release is recent enough
-            if not (0.001 < dt < self._config.max_dt):
-                self._reset_tracking()
-                return
+        # Only start inertia if the release is recent enough
+        if not (0.001 < dt < self._config.max_dt):
+            self._reset_tracking()
+            return
 
-            # Calculate and apply pan velocity
-            pan_velocity = self._calculate_pan_velocity(current_pos, dt)
+        # Calculate and apply pan velocity
+        pan_velocity = self._calculate_pan_velocity(current_pos, dt)
 
-            # Calculate and apply rotation velocity (3D only)
-            rotate_velocity = self._calculate_rotate_velocity(
-                current_angles, dt
-            )
+        # Calculate and apply rotation velocity (3D only)
+        rotate_velocity = self._calculate_rotate_velocity(current_angles, dt)
 
-            # Start animation if either velocity is significant
-            if pan_velocity is not None or rotate_velocity is not None:
-                self._pan_velocity = pan_velocity
-                self._rotate_velocity = rotate_velocity
-                self._last_time = current_time
-                self._state = InertiaState.ANIMATING
-                self._timer.start(self._config.timer_interval_ms)
-            else:
-                self._reset_tracking()
-
-        except (AttributeError, TypeError):
-            # If camera properties aren't available, just reset
+        # Start animation if either velocity is significant
+        if pan_velocity is not None or rotate_velocity is not None:
+            self._pan_velocity = pan_velocity
+            self._rotate_velocity = rotate_velocity
+            self._last_time = current_time
+            self._state = InertiaState.ANIMATING
+            self._timer.start(self._config.timer_interval_ms)
+        else:
             self._reset_tracking()
 
     def stop(self) -> None:
@@ -328,44 +326,38 @@ class CameraInertia:
             self.stop()
             return
 
-        try:
-            now = perf_counter()
-            dt = now - self._last_time if self._last_time is not None else 0.0
-            self._last_time = now
+        now = perf_counter()
+        dt = now - self._last_time if self._last_time is not None else 0.0
+        self._last_time = now
 
-            # Apply friction (exponential decay)
-            decay = np.exp(-self._config.friction * dt)
+        # Apply pan velocity with pan-specific friction
+        if self._pan_velocity is not None:
+            pan_decay = np.exp(-self._config.pan_friction * dt)
+            self._pan_velocity = self._pan_velocity * pan_decay
+            displacement = self._pan_velocity * dt
+            center = np.array(self._viewer.camera.center, dtype=np.float64)
+            center = center + displacement
+            self._viewer.camera.center = tuple(center)
 
-            # Apply pan velocity
-            if self._pan_velocity is not None:
-                self._pan_velocity = self._pan_velocity * decay
-                displacement = self._pan_velocity * dt
-                center = np.array(self._viewer.camera.center, dtype=np.float64)
-                center = center + displacement
-                self._viewer.camera.center = tuple(center)
+            # Stop pan velocity if too small
+            pan_speed = np.linalg.norm(self._pan_velocity)
+            if pan_speed < self._config.pan_stop_speed:
+                self._pan_velocity = None
 
-                # Stop pan velocity if too small
-                pan_speed = np.linalg.norm(self._pan_velocity)
-                if pan_speed < self._config.pan_stop_speed:
-                    self._pan_velocity = None
+        # Apply rotation velocity with rotation-specific friction (3D only)
+        if self._rotate_velocity is not None:
+            rotate_decay = np.exp(-self._config.rotate_friction * dt)
+            self._rotate_velocity = self._rotate_velocity * rotate_decay
+            angular_displacement = self._rotate_velocity * dt
+            angles = np.array(self._viewer.camera.angles, dtype=np.float64)
+            angles = angles + angular_displacement
+            self._viewer.camera.angles = tuple(angles)
 
-            # Apply rotation velocity (3D only)
-            if self._rotate_velocity is not None:
-                self._rotate_velocity = self._rotate_velocity * decay
-                angular_displacement = self._rotate_velocity * dt
-                angles = np.array(self._viewer.camera.angles, dtype=np.float64)
-                angles = angles + angular_displacement
-                self._viewer.camera.angles = tuple(angles)
+            # Stop rotation velocity if too small
+            rotate_speed = np.linalg.norm(self._rotate_velocity)
+            if rotate_speed < self._config.rotate_stop_speed:
+                self._rotate_velocity = None
 
-                # Stop rotation velocity if too small
-                rotate_speed = np.linalg.norm(self._rotate_velocity)
-                if rotate_speed < self._config.rotate_min_speed:
-                    self._rotate_velocity = None
-
-            # Stop timer if both velocities are done
-            if self._pan_velocity is None and self._rotate_velocity is None:
-                self.stop()
-
-        except (AttributeError, TypeError):
-            # If we can't access camera properties, stop animation
+        # Stop timer if both velocities are done
+        if self._pan_velocity is None and self._rotate_velocity is None:
             self.stop()
