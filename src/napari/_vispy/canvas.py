@@ -152,7 +152,7 @@ class VispyCanvas:
         self._overlay_callbacks = {}
 
         # Initialize camera inertia system
-        self._inertia = CameraInertia(self.viewer)
+        self._inertia = CameraInertia(self.viewer.camera, self.viewer.dims)
 
         self._last_viewbox_size = np.array((0, 0))
         self._needs_overlay_position_update = False

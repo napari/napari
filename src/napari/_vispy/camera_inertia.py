@@ -13,7 +13,7 @@ from qtpy.QtCore import QTimer
 if TYPE_CHECKING:
     import numpy.typing as npt
 
-    from napari.components import ViewerModel
+    from napari.components import Camera, Dims
 
 
 class InertiaState(Enum):
@@ -112,8 +112,10 @@ class CameraInertia:
 
     Parameters
     ----------
-    viewer : ViewerModel
-        The napari viewer instance.
+    camera : Camera
+        The napari camera model.
+    dims : Dims
+        The napari dims model.
     config : InertiaConfig, optional
         Configuration for inertia behavior. If None, uses defaults.
 
@@ -124,9 +126,10 @@ class CameraInertia:
     """
 
     def __init__(
-        self, viewer: ViewerModel, config: InertiaConfig | None = None
+        self, camera: Camera, dims: Dims, config: InertiaConfig | None = None
     ) -> None:
-        self._viewer = viewer
+        self._camera = camera
+        self._dims = dims
         self._config = config or InertiaConfig()
         self._state = InertiaState.IDLE
 
@@ -176,13 +179,19 @@ class CameraInertia:
         if not self.enabled:
             return
 
-        pos = np.array(self._viewer.camera.center, dtype=np.float64)
-        angles = np.array(self._viewer.camera.angles, dtype=np.float64)
+        pos = np.array(self._camera.center, dtype=np.float64)
         now = perf_counter()
 
         self._last_pos = pos
-        self._last_angles = angles
         self._last_time = now
+
+        # Only track rotation in 3D mode
+        if self._dims.ndisplay == 3:
+            angles = np.array(self._camera.angles, dtype=np.float64)
+            self._last_angles = angles
+        else:
+            self._last_angles = None
+
         self._state = InertiaState.TRACKING
 
     def on_release(self) -> None:
@@ -199,8 +208,7 @@ class CameraInertia:
             self._reset_tracking()
             return
 
-        current_pos = np.array(self._viewer.camera.center, dtype=np.float64)
-        current_angles = np.array(self._viewer.camera.angles, dtype=np.float64)
+        current_pos = np.array(self._camera.center, dtype=np.float64)
         current_time = perf_counter()
         dt = current_time - self._last_time
 
@@ -212,8 +220,13 @@ class CameraInertia:
         # Calculate and apply pan velocity
         pan_velocity = self._calculate_pan_velocity(current_pos, dt)
 
-        # Calculate and apply rotation velocity (3D only)
-        rotate_velocity = self._calculate_rotate_velocity(current_angles, dt)
+        # Calculate rotation velocity only in 3D mode
+        rotate_velocity = None
+        if self._dims.ndisplay == 3:
+            current_angles = np.array(self._camera.angles, dtype=np.float64)
+            rotate_velocity = self._calculate_rotate_velocity(
+                current_angles, dt
+            )
 
         # Start animation if either velocity is significant
         if pan_velocity is not None or rotate_velocity is not None:
@@ -335,9 +348,9 @@ class CameraInertia:
             pan_decay = np.exp(-self._config.pan_friction * dt)
             self._pan_velocity = self._pan_velocity * pan_decay
             displacement = self._pan_velocity * dt
-            center = np.array(self._viewer.camera.center, dtype=np.float64)
+            center = np.array(self._camera.center, dtype=np.float64)
             center = center + displacement
-            self._viewer.camera.center = tuple(center)
+            self._camera.center = tuple(center)
 
             # Stop pan velocity if too small
             pan_speed = np.linalg.norm(self._pan_velocity)
@@ -345,13 +358,13 @@ class CameraInertia:
                 self._pan_velocity = None
 
         # Apply rotation velocity with rotation-specific friction (3D only)
-        if self._rotate_velocity is not None:
+        if self._rotate_velocity is not None and self._dims.ndisplay == 3:
             rotate_decay = np.exp(-self._config.rotate_friction * dt)
             self._rotate_velocity = self._rotate_velocity * rotate_decay
             angular_displacement = self._rotate_velocity * dt
-            angles = np.array(self._viewer.camera.angles, dtype=np.float64)
+            angles = np.array(self._camera.angles, dtype=np.float64)
             angles = angles + angular_displacement
-            self._viewer.camera.angles = tuple(angles)
+            self._camera.angles = tuple(angles)
 
             # Stop rotation velocity if too small
             rotate_speed = np.linalg.norm(self._rotate_velocity)
