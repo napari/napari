@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 
 from napari._vispy.camera_inertia import InertiaConfig
+from napari.components import Camera
 
 
 def test_inertia_default_config():
@@ -39,24 +40,23 @@ def test_inertia_config_validation():
         InertiaConfig(pan_damping=1.5)
 
 
-def test_camera_inertia_enabled_default(make_napari_viewer):
+def test_camera_inertia_enabled_default():
     """Test that camera inertia is enabled by default."""
-    viewer = make_napari_viewer()
+    camera = Camera()
+    assert camera.inertia is True
 
-    assert viewer.camera.inertia is True
 
-
-def test_camera_inertia_toggle(make_napari_viewer):
+def test_camera_inertia_toggle():
     """Test toggling camera inertia on and off."""
-    viewer = make_napari_viewer()
+    camera = Camera()
 
     # Disable inertia
-    viewer.camera.inertia = False
-    assert viewer.camera.inertia is False
+    camera.inertia = False
+    assert camera.inertia is False
 
     # Re-enable inertia
-    viewer.camera.inertia = True
-    assert viewer.camera.inertia is True
+    camera.inertia = True
+    assert camera.inertia is True
 
 
 def test_camera_inertia_syncs_with_canvas(make_napari_viewer):
