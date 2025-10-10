@@ -14,7 +14,7 @@ class ZoomOverlay(CanvasOverlay):
 
     Attributes
     ----------
-    canvas_positions : 2-tuple of 2-tuples
+    position : 2-tuple of 2-tuples
         Corners at the top left and bottom right in canvas coordinates.
     visible : bool
         If the overlay is visible or not.
@@ -24,7 +24,7 @@ class ZoomOverlay(CanvasOverlay):
         The rendering order of the overlay: lower numbers get rendered first.
     """
 
-    canvas_positions: tuple[tuple[float, float], tuple[float, float]] = (
+    position: tuple[tuple[float, float], tuple[float, float]] = (
         (0, 0),
         (0, 0),
     )
@@ -33,7 +33,7 @@ class ZoomOverlay(CanvasOverlay):
         super().__init__(**kwargs)
         self.events.add(zoom=Event)
 
-    @validator('canvas_positions', pre=True, always=True, allow_reuse=True)
+    @validator('position', pre=True, always=True, allow_reuse=True)
     def _validate_bounds(
         cls, v: tuple[tuple[float, ...], tuple[float, ...]]
     ) -> tuple[tuple[float, float], tuple[float, float]]:
