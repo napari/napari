@@ -46,7 +46,8 @@ class NotebookScreenshot:
     >>> from napari.utils import nbscreenshot
     >>> from skimage.data import chelsea
 
-    >>> viewer = napari.view_image(chelsea(), name='chelsea-the-cat')
+    >>> viewer = napari.Viewer()
+    >>> viewer.add_image(chelsea(), name='chelsea-the-cat')
     >>> nbscreenshot(viewer)
     # screenshot just the canvas without the napari viewer framing it
     >>> nbscreenshot(viewer, canvas_only=True)
