@@ -564,6 +564,80 @@ def test_select_shape(mode, create_known_shapes_layer):
     assert layer.selected_data == {0}
 
 
+def test_shift_click_multiselection(
+    create_known_shapes_layer,
+):
+    """Check multiselection of shapes using shift-click."""
+    layer, n_shapes, _ = create_known_shapes_layer
+    layer.mode = 'select'
+
+    # Check that initially nothing is selected and there is no box
+    assert len(layer.selected_data) == 0
+    assert layer._selected_box is None
+
+    # Simulate shift-click on the first shape
+    position_1 = tuple(layer.data[0][0])
+    event = read_only_mouse_event(
+        type='mouse_press', position=position_1, modifiers=['Shift']
+    )
+    mouse_press_callbacks(layer, event)
+    event = read_only_mouse_event(
+        type='mouse_release', position=position_1, modifiers=['Shift']
+    )
+    mouse_release_callbacks(layer, event)
+
+    # Check that the first shape is selected and a box is created
+    assert set(layer.selected_data) == {0}
+    assert layer._selected_box is not None
+    box_1 = layer._selected_box.copy()
+
+    # Simulate shift-click on the second shape
+    position_2 = tuple(layer.data[1][0])
+    event = read_only_mouse_event(
+        type='mouse_press', position=position_2, modifiers=['Shift']
+    )
+    mouse_press_callbacks(layer, event)
+    event = read_only_mouse_event(
+        type='mouse_release', position=position_2, modifiers=['Shift']
+    )
+    mouse_release_callbacks(layer, event)
+
+    # Check that both shapes are selected and the box has changed
+    assert set(layer.selected_data) == {0, 1}
+    assert layer._selected_box is not None
+    assert not np.array_equal(layer._selected_box, box_1)
+    box_2 = layer._selected_box.copy()
+
+    # Simulate shift-click on the first shape again to deselect it
+    event = read_only_mouse_event(
+        type='mouse_press', position=position_1, modifiers=['Shift']
+    )
+    mouse_press_callbacks(layer, event)
+    event = read_only_mouse_event(
+        type='mouse_release', position=position_1, modifiers=['Shift']
+    )
+    mouse_release_callbacks(layer, event)
+
+    # Check that only the second shape is selected and the box has changed
+    assert set(layer.selected_data) == {1}
+    assert layer._selected_box is not None
+    assert not np.array_equal(layer._selected_box, box_2)
+
+    # Simulate shift-click on the second shape again to deselect all
+    event = read_only_mouse_event(
+        type='mouse_press', position=position_2, modifiers=['Shift']
+    )
+    mouse_press_callbacks(layer, event)
+    event = read_only_mouse_event(
+        type='mouse_release', position=position_2, modifiers=['Shift']
+    )
+    mouse_release_callbacks(layer, event)
+
+    # Check that no shapes are selected and the box is gone
+    assert len(layer.selected_data) == 0
+    assert layer._selected_box is None
+
+
 def test_drag_shape(create_known_shapes_layer):
     """Select and drag vertex."""
     layer, n_shapes, _ = create_known_shapes_layer
