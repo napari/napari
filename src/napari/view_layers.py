@@ -17,7 +17,7 @@ import inspect
 import warnings
 from typing import Any
 
-from numpydoc.docscrape import NumpyDocString as _NumpyDocString
+from docstring_parser.numpydoc import parse as parse_docstring
 
 from napari.components.dims import Dims
 from napari.layers import Image
@@ -45,21 +45,48 @@ viewer : :class:`napari.Viewer`
     The newly-created viewer.
 """
 
-_VIEW_DOC = _NumpyDocString(Viewer.__doc__)
-_VIEW_PARAMS = '    ' + '\n'.join(_VIEW_DOC._str_param_list('Parameters')[2:])
+
+def _format_params_from_parsed_doc(parsed_doc):
+    """Format parameters from parsed docstring into numpydoc text format."""
+    if not parsed_doc or not parsed_doc.params:
+        return ''
+
+    lines = []
+    for param in parsed_doc.params:
+        # Format: "param_name : type"
+        param_line = param.arg_name
+        if param.type_name:
+            param_line += f' : {param.type_name}'
+        lines.append(param_line)
+
+        # Add description with proper indentation
+        if param.description:
+            for desc_line in param.description.split('\n'):
+                lines.append(f'    {desc_line}')
+
+    return '\n'.join(lines)
+
+
+_VIEW_DOC = parse_docstring(Viewer.__doc__ or '')
+_VIEW_PARAMS = _format_params_from_parsed_doc(_VIEW_DOC)
 
 
 def _merge_docstrings(add_method, layer_string):
     # create combined docstring with parameters from add_* and Viewer methods
-    import textwrap
+    add_method_doc = parse_docstring(add_method.__doc__ or '')
+    add_method_params = _format_params_from_parsed_doc(add_method_doc)
 
-    add_method_doc = _NumpyDocString(add_method.__doc__)
+    # Combine parameters
+    params_header = 'Parameters\n----------'
+    if add_method_params and _VIEW_PARAMS:
+        params = f'{params_header}\n{add_method_params}\n{_VIEW_PARAMS}'
+    elif add_method_params:
+        params = f'{params_header}\n{add_method_params}'
+    elif _VIEW_PARAMS:
+        params = f'{params_header}\n{_VIEW_PARAMS}'
+    else:
+        params = ''
 
-    # this ugliness is because the indentation of the parsed numpydocstring
-    # is different for the first parameter :(
-    lines = add_method_doc._str_param_list('Parameters')
-    lines = lines[:3] + textwrap.dedent('\n'.join(lines[3:])).splitlines()
-    params = '\n'.join(lines) + '\n' + textwrap.dedent(_VIEW_PARAMS)
     n = 'n' if layer_string.startswith(tuple('aeiou')) else ''
     return _doc_template.format(n=n, layer_string=layer_string, params=params)
 
