@@ -181,6 +181,7 @@ gallery = [
     "nilearn",
     "xarray",
     "h5netcdf",
+    "tifffile[codecs]",
     "meshio",
 ]
 # needed to build docs
