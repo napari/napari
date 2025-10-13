@@ -11,7 +11,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,
 )
-from napari._qt.utils import qt_signals_blocked
+from napari._qt.utils import attr_to_settr, qt_signals_blocked
 from napari.layers import Labels
 from napari.layers.labels._labels_utils import get_dtype
 from napari.utils._dtype import get_dtype_limits
@@ -129,9 +129,6 @@ class QtLabelControl(QtWidgetControlsBase):
     def __init__(self, parent: QWidget, layer: Labels) -> None:
         super().__init__(parent, layer)
         # Setup layer
-        self._layer.events.selected_label.connect(
-            self._on_selected_label_change
-        )
         self._layer.events.data.connect(self._on_data_change)
 
         # Setup widgets
@@ -141,7 +138,14 @@ class QtLabelControl(QtWidgetControlsBase):
         self.selection_spinbox.setKeyboardTracking(False)
         self.selection_spinbox.valueChanged.connect(self.change_selection)
         self.selection_spinbox.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._on_selected_label_change()
+        self._callbacks.append(
+            attr_to_settr(
+                self._layer,
+                'selected_label',
+                self.selection_spinbox,
+                'setValue',
+            )
+        )
 
         self.label_color_label = QtWrappedLabel(trans._('label:'))
         self.label_color = QWidget()
@@ -164,12 +168,6 @@ class QtLabelControl(QtWidgetControlsBase):
         self.selection_spinbox.clearFocus()
         # TODO: decouple
         self.parent().setFocus()
-
-    def _on_selected_label_change(self) -> None:
-        """Receive layer model label selection change event and update spinbox."""
-        with qt_signals_blocked(self.selection_spinbox):
-            value = self._layer.selected_label
-            self.selection_spinbox.setValue(value)
 
     def _on_data_change(self) -> None:
         """Update label selection spinbox min/max when data changes."""
