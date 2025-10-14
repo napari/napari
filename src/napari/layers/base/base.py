@@ -880,7 +880,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self.events.translate()
 
     @property
-    def rotate(self) -> npt.NDArray:
+    def rotate(self) -> np.ndarray[tuple[int, int], np.dtype[np.float64]]:
         """array: Rotation matrix in world coordinates."""
         return self._transforms['data2physical'].rotate
 
