@@ -66,6 +66,35 @@ class NapariSceneCanvas(SceneCanvas_):
             return
         super()._process_mouse_event(event)
 
+    def draw_visual(self, visual, event=None):
+        try:
+            super().draw_visual(visual, event=event)
+        except RuntimeError as e:
+            error_msg = e.args[0] if e.args else ''
+            to_ignore = (
+                'Cannot draw program if code has not been set',
+                'Cannot set uniform when program has no code',
+            )
+            if any(msg in error_msg for msg in to_ignore):
+                # these always happens after another (real) error is raised, and
+                # they flood the traceback because they are fired on each event,
+                # hiding the actual source of the problem. They are never really
+                # informative, so we can safely ignore them.
+                return
+            if 'Shader compilation error' in error_msg:
+                raise RuntimeError(
+                    'Shader compilation failed. Unless you are working with custom shader code,\n'
+                    'this is likely a bug in napari.\n'
+                    'Please open an issue on the repository and provide this *full* stack trace.'
+                ) from e
+            if 'Cannot SIZE object' in error_msg:
+                raise RuntimeError(
+                    'The above error may be caused by a version mismatch between vispy and napari.\n'
+                    'Try recreating a fresh environment and reinstalling. If that does not work,\n'
+                    'please open an issue on the repository and provide this *full* stack trace.'
+                ) from e
+            raise
+
 
 class VispyCanvas:
     """Class for our QtViewer class to interact with Vispy SceneCanvas. Also
