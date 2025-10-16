@@ -86,9 +86,7 @@ _submod_attrs = {
     'plugins.io': ['save_layers'],
     'utils': ['sys_info'],
     'utils.notifications': ['notification_manager'],
-    'view_layers': [
-        'imshow',
-    ],
+    'view_layers': ['imshow'],
     'viewer': ['Viewer', 'current_viewer'],
 }
 
