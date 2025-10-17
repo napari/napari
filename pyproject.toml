@@ -54,7 +54,6 @@ dependencies = [
     "napari-svg>=0.1.8",
     "npe2>=0.7.9",
     "numpy>=1.24.2",
-    "numpydoc>=1.0.0",
     "pandas>=1.3.3",
     "Pillow>=9.0",
     "pint>=0.17",
@@ -146,13 +145,13 @@ all_optional = [
 testing = [
     "napari[gallery]",
     "babel>=2.9.0",
+    "docstring_parser>=0.15",
     "fsspec>=2023.10.0",
     "hypothesis>=6.8.0",
     "lxml[html_clean]>5",
     "matplotlib >= 3.6.1",
     "pooch>=1.6.0",
     "coverage>7",
-    "docstring_parser>=0.15",
     "pretend>=1.0.9",
     "pyautogui>=0.9.54",
     "pytest-qt >=4.4.0; python_version > '3.10'",
@@ -186,6 +185,7 @@ gallery = [
 # needed to build docs
 docs = [
     "napari[gallery]",
+    "numpydoc>=1.0.0",
     "sphinx<8",
     "sphinx-autobuild",
     "sphinx-tabs",
@@ -236,13 +236,13 @@ build = [
 testing = [
     {include-group = "gallery"},
     "babel>=2.9.0",
+    "docstring_parser>=0.15",
     "fsspec>=2023.10.0",
     "hypothesis>=6.8.0",
     "lxml[html_clean]>5",
     "matplotlib >= 3.6.1",
     "pooch>=1.6.0",
     "coverage>7",
-    "docstring_parser>=0.15",
     "pretend>=1.0.9",
     "pyautogui>=0.9.54",
     "pytest-qt >=4.4.0; python_version > '3.10'",
@@ -276,6 +276,7 @@ gallery = [
 # needed to build docs
 docs = [
     {include-group = "gallery"},
+    "numpydoc>=1.0.0",
     "sphinx<8",
     "sphinx-autobuild",
     "sphinx-tabs",
