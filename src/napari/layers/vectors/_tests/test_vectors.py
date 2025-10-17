@@ -44,6 +44,12 @@ def test_random_vectors_image():
 
 
 def test_sparse_vectors_image_coordinates():
+    """Prior to [1]_, vector images were incorrectly converted to coordinates.
+
+    This was due to an incorrect call to `np.meshgrid`.
+
+    [1]: https://forum.image.sc/t/missing-something-about-vectors-in-napari/117092
+    """
     shape = (20, 10)
     data = np.zeros(shape + (2,))
     i, j = np.random.randint(shape)
