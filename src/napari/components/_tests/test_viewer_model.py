@@ -703,17 +703,17 @@ def test_camera():
 
     assert viewer.dims.ndisplay == 2
     assert viewer.camera.center == (0, 7, 9.5)
-    assert viewer.camera.angles == (0, 0, 90)
+    assert viewer.camera.angles == (0, 0, 0)
 
     viewer.dims.ndisplay = 3
     assert viewer.dims.ndisplay == 3
     assert viewer.camera.center == (4.5, 7, 9.5)
-    assert viewer.camera.angles == (0, 0, 90)
+    assert viewer.camera.angles == (0, 0, 0)
 
     viewer.dims.ndisplay = 2
     assert viewer.dims.ndisplay == 2
     assert viewer.camera.center == (0, 7, 9.5)
-    assert viewer.camera.angles == (0, 0, 90)
+    assert viewer.camera.angles == (0, 0, 0)
 
 
 def test_update_scale():
@@ -1070,7 +1070,7 @@ def test_reset_view():
     viewer.add_image(np.random.random((10, 10, 10)))
     viewer.camera.angles = (45, 30, 60)
     viewer.reset_view()
-    assert viewer.camera.angles == (0, 0, 90)
+    assert viewer.camera.angles == (0, 0, 0)
 
     viewer.camera.angles = (45, 30, 60)
     viewer.reset_view(reset_camera_angle=False)
@@ -1140,5 +1140,5 @@ def test_fit_to_view_handles_no_layers():
     viewer.fit_to_view()
     # Default values should be set
     np.testing.assert_allclose(viewer.camera.center, (0, 255.5, 255.5))
-    np.testing.assert_allclose(viewer.camera.angles, (0, 0, 90))
+    np.testing.assert_allclose(viewer.camera.angles, (0, 0, 0))
     assert viewer.camera.zoom > 0
