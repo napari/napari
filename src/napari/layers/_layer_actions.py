@@ -6,10 +6,12 @@ on a layer in the LayerList.
 from __future__ import annotations
 
 import warnings
-from typing import TYPE_CHECKING, cast
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Protocol, cast
 
 import numpy as np
 import numpy.typing as npt
+import pint
 
 from napari import layers
 from napari.layers import Image, Labels, Layer
@@ -265,3 +267,74 @@ def _toggle_colorbar(ll: LayerList) -> None:
                 )
             )
         layer.colorbar.visible = not layer.colorbar.visible
+
+
+class LayerCreate(Protocol):
+    def __call__(
+        self,
+        *,
+        name: str,
+        ndim: int,
+        scale: Sequence[float],
+        translate: Sequence[float],
+        rotate: np.ndarray[tuple[int, int], np.dtype[np.float64]],
+        shear: Sequence[float],
+        units: Sequence[pint.Unit],
+        affine: np.ndarray[tuple[int, int], np.dtype[np.float64]],
+    ) -> Layer: ...
+
+
+def _annotate_with_layer(
+    ll: LayerList, layer_class: type[Layer], suffix: str
+) -> None:
+    """For each layer of selection add to layer list an instance of layer_class.
+
+    Parameters
+    ----------
+    ll : LayerList
+        The layer list containing the layers to annotate.
+    layer_class : type[Layer]
+        The class of the layer to add as annotation.
+    """
+    for layer in list(ll.selection):
+        layer_name_base = f'{layer.name} {suffix}'
+        layer_name = layer_name_base
+        idx = 1
+        while layer_name in ll:
+            layer_name = f'{layer_name_base} ({idx})'
+            idx += 1
+
+        new_layer = layer_class(
+            name=layer_name,
+            ndim=layer.ndim,
+            scale=layer.scale,
+            translate=layer.translate,
+            rotate=layer.rotate,
+            shear=layer.shear,
+            units=layer.units,
+            affine=layer.affine.affine_matrix,
+        )
+        layer_index = ll.index(layer)
+        ll.insert(layer_index + 1, new_layer)
+
+
+def _annotate_with_points(ll: LayerList) -> None:
+    """For each layer of selection add to layer list a Points layer.
+
+    Parameters
+    ----------
+    ll : LayerList
+        The layer list containing the layers to annotate.
+    """
+    _annotate_with_layer(ll, layers.Points, 'points')
+
+
+def _annotate_with_shapes(ll: LayerList) -> None:
+    """For each layer of selection add to layer list a Shapes layer.
+
+    Parameters
+    ----------
+    ll : LayerList
+        The layer list containing the layers to annotate.
+    """
+    _annotate_with_layer(ll, layers.Shapes, 'shapes')
