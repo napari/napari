@@ -200,14 +200,16 @@ jobs:
 
   coverage_report:
     if: ${{ always() }}
+    secrets: inherit
     needs:
       - test
       - test_examples
-    permissions:
-      id-token: write  # Required for OIDC authentication
-      contents: read    # Required for code checkout
-    uses: ./.github/workflows/reusable_coverage_upload.yml
-    secrets: inherit
+    uses: napari/shared-workflows/.github/workflows/upload_coverage.yml@coverage_upload
+#    permissions:
+#      id-token: write  # Required for OIDC authentication
+#      contents: read    # Required for code checkout
+#    uses: ./.github/workflows/reusable_coverage_upload.yml
+#    secrets: inherit
 
   test_benchmarks:
     name: test benchmarks
