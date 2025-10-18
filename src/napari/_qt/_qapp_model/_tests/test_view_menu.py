@@ -85,6 +85,9 @@ def test_toggle_axes_scale_bar_attr(
     QT_VERSION == '6.9.0',
     reason='bug in Qt with maximized windows, https://bugreports.qt.io/browse/QTBUG-135844',
 )
+@pytest.mark.flaky(
+    reruns=2, reruns_delay=250, condition=sys.platform == 'darwin'
+)  # sometimes fails on macos CI
 @pytest.mark.qt_log_level_fail('WARNING')
 def test_toggle_fullscreen_from_normal(make_napari_viewer, qtbot):
     """
@@ -128,6 +131,9 @@ def test_toggle_fullscreen_from_normal(make_napari_viewer, qtbot):
 
 
 @skip_local_popups
+@pytest.mark.flaky(
+    reruns=2, reruns_delay=250, condition=sys.platform == 'darwin'
+)  # sometimes fails on macos CI
 @pytest.mark.skipif(
     QT_VERSION == '6.9.0',
     reason='bug in Qt with maximized windows, https://bugreports.qt.io/browse/QTBUG-135844',

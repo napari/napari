@@ -960,6 +960,24 @@ def test_thick_slice():
     )
 
 
+def test_thick_slice_maintains_contrast_limits():
+    data = np.ones((5, 5, 5)) * np.arange(5).reshape(-1, 1, 1)
+    layer = Image(data.astype(np.uint8))
+    layer._slice_dims(
+        Dims(
+            ndim=3,
+            point=(0, 0, 0),
+            margin_left=(1, 0, 0),
+            margin_right=(1, 0, 0),
+        )
+    )
+
+    layer.projection_mode = 'mean'
+    layer.reset_contrast_limits()
+    assert layer.contrast_limits == [0, 255]
+    np.testing.assert_array_equal(layer.thumbnail[..., -1], 255)
+
+
 def test_adjust_contrast_out_of_range():
     arr = np.linspace(1, 9, 5 * 5, dtype=np.float64).reshape((5, 5))
     img_lay = Image(arr)

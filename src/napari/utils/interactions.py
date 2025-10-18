@@ -4,8 +4,6 @@ import sys
 import warnings
 from typing import TYPE_CHECKING
 
-from numpydoc.docscrape import FunctionDoc
-
 from napari.utils.key_bindings import (
     KeyBindingLike,
     KeyCode,
@@ -369,12 +367,3 @@ def get_key_bindings_summary(keymap, col='rgb(134, 142, 147)'):
         )
     key_bindings_strs.append('</table>')
     return ''.join(key_bindings_strs)
-
-
-def get_function_summary(func):
-    """Get summary of doc string of function."""
-    doc = FunctionDoc(func)
-    summary = ''
-    for s in doc['Summary']:
-        summary += s
-    return summary.rstrip('.')

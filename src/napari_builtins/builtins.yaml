@@ -7,6 +7,9 @@ contributions:
     - id: napari.get_reader
       python_name: napari_builtins.io:napari_get_reader
       title: Builtin Reader
+    - id: napari.get_py_reader
+      python_name: napari_builtins.io:napari_get_py_reader
+      title: Builtin Python Reader
 
     # writers
     - id: napari.write_image
@@ -170,8 +173,11 @@ contributions:
           '*.sti', '*.stk', '*.svs', '*.swf', '*.targa', '*.tf2', '*.tf8',
           '*.tga', '*.tif', '*.tiff', '*.vtk', '*.wap', '*.wbm', '*.wbmp',
           '*.wdp', '*.webm', '*.webp', '*.wmf', '*.wmv', '*.xbm', '*.xpm',
-          '*.zarr', '*.zif'
+          '*.zarr', '*.zarr/*', '*.zif'
         ]
+    - command: napari.get_py_reader
+      filename_patterns:
+            ['*.py']
 
   writers:
     - command: napari.write_image

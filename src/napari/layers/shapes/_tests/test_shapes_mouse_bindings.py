@@ -72,7 +72,7 @@ def test_add_simple_shape(shape_type, create_known_shapes_layer):
     layer, n_shapes, known_non_shape = create_known_shapes_layer
 
     # Add shape at location where non exists
-    layer.mode = 'add_' + shape_type
+    layer.mode = f'add_{shape_type}'
 
     # Simulate click
     event = read_only_mouse_event(
@@ -159,7 +159,7 @@ def test_line_fixed_angles(create_known_shapes_layer):
 
 
 def test_path_tablet(create_known_shapes_layer):
-    layer, n_shapes, known_non_shape = create_known_shapes_layer
+    layer, n_shapes, _ = create_known_shapes_layer
     desired_shape = np.array([[20, 30], [10, 50], [60, 40], [80, 20]])
 
     layer.mode = 'add_path'
@@ -201,7 +201,7 @@ def test_path_tablet(create_known_shapes_layer):
 
 
 def test_polyline_mouse(create_known_shapes_layer):
-    layer, n_shapes, known_non_shape = create_known_shapes_layer
+    layer, n_shapes, _known_non_shape = create_known_shapes_layer
     desired_shape = np.array([[20, 30], [10, 50], [60, 40], [80, 20]])
 
     layer.mode = 'add_path'
@@ -241,7 +241,7 @@ def test_polyline_mouse(create_known_shapes_layer):
 
 def test_polygon_lasso_tablet(create_known_shapes_layer):
     """Draw polygon with tablet simulated by mouse drag event."""
-    layer, n_shapes, known_non_shape = create_known_shapes_layer
+    layer, n_shapes, _known_non_shape = create_known_shapes_layer
     desired_shape = np.array([[20, 30], [10, 50], [60, 40], [80, 20]])
 
     get_settings().experimental.rdp_epsilon = 0
@@ -286,7 +286,7 @@ def test_polygon_lasso_tablet(create_known_shapes_layer):
 
 def test_polygon_lasso_mouse(create_known_shapes_layer):
     """Draw polygon with mouse. Events in sequence are mouse press, release, move, press, release"""
-    layer, n_shapes, known_non_shape = create_known_shapes_layer
+    layer, n_shapes, _known_non_shape = create_known_shapes_layer
     desired_shape = np.array([[20, 30], [10, 50], [60, 40], [80, 20]])
 
     get_settings().experimental.rdp_epsilon = 0
@@ -327,7 +327,7 @@ def test_polygon_lasso_mouse(create_known_shapes_layer):
 
 def test_distance_polygon_creating(create_known_shapes_layer):
     """Test that distance threshold in polygon creating works as intended"""
-    layer, n_shapes, known_non_shape = create_known_shapes_layer
+    layer = create_known_shapes_layer[0]
 
     # While drawing only 2 of the vertices should be added to shape data because distance threshold is 10
     vertices = [[x, 0] for x in range(11)]
@@ -353,11 +353,11 @@ def test_distance_polygon_creating(create_known_shapes_layer):
 @pytest.mark.parametrize('shape_type', ['polyline', 'polygon'])
 def test_add_complex_shape(shape_type, create_known_shapes_layer):
     """Add simple shape by clicking in add mode."""
-    layer, n_shapes, known_non_shape = create_known_shapes_layer
+    layer, n_shapes, _known_non_shape = create_known_shapes_layer
 
     desired_shape = [[20, 30], [10, 50], [60, 40], [80, 20]]
     # Add shape at location where non exists
-    layer.mode = 'add_' + shape_type
+    layer.mode = f'add_{shape_type}'
 
     for coord in desired_shape:
         # Simulate move, click, and release
@@ -409,7 +409,7 @@ def test_add_complex_shape(shape_type, create_known_shapes_layer):
 )
 def test_add_invalid_shape(shape_type_vertices, create_known_shapes_layer):
     """Check invalid shape clicking behavior in add polygon mode."""
-    layer, n_shapes, known_non_shape = create_known_shapes_layer
+    layer, n_shapes, _known_non_shape = create_known_shapes_layer
 
     # Add shape at location where non exists
     shape_type, shape_vertices = shape_type_vertices
@@ -502,7 +502,7 @@ def test_vertex_insert(create_known_shapes_layer):
 
 def test_vertex_remove(create_known_shapes_layer):
     """Remove vertex from shape."""
-    layer, n_shapes, known_non_shape = create_known_shapes_layer
+    layer, n_shapes, _known_non_shape = create_known_shapes_layer
     old_data = layer.data
     layer.events.data = Mock()
     n_coord = len(layer.data[0])
@@ -540,7 +540,7 @@ def test_vertex_remove(create_known_shapes_layer):
 @pytest.mark.parametrize('mode', ['select', 'direct'])
 def test_select_shape(mode, create_known_shapes_layer):
     """Select a shape by clicking on one in select mode."""
-    layer, n_shapes, _ = create_known_shapes_layer
+    layer = create_known_shapes_layer[0]
 
     layer.mode = mode
     position = tuple(layer.data[0][0])
@@ -566,7 +566,7 @@ def test_select_shape(mode, create_known_shapes_layer):
 
 def test_drag_shape(create_known_shapes_layer):
     """Select and drag vertex."""
-    layer, n_shapes, _ = create_known_shapes_layer
+    layer = create_known_shapes_layer[0]
     layer.events.data = Mock()
 
     old_data = layer.data
@@ -651,7 +651,7 @@ def test_drag_shape(create_known_shapes_layer):
 
 def test_rotate_shape(create_known_shapes_layer):
     """Select and drag handle to rotate shape."""
-    layer, n_shapes, _ = create_known_shapes_layer
+    layer = create_known_shapes_layer[0]
 
     layer.mode = 'select'
     layer.selected_data = {1}
@@ -698,7 +698,7 @@ def test_rotate_shape(create_known_shapes_layer):
 
 def test_drag_vertex(create_known_shapes_layer):
     """Select and drag vertex."""
-    layer, n_shapes, _ = create_known_shapes_layer
+    layer, _n_shapes, _ = create_known_shapes_layer
     layer.events.data = Mock()
     layer.mode = 'direct'
     layer.selected_data = {0}
@@ -794,7 +794,7 @@ def test_after_in_add_mode_shape(mode, create_known_shapes_layer):
 def test_clicking_the_same_point_is_not_crashing(
     mode, create_known_shapes_layer
 ):
-    layer, n_shapes, _ = create_known_shapes_layer
+    layer, _n_shapes, _ = create_known_shapes_layer
 
     layer.mode = mode
     position = tuple(layer.data[0][0])
@@ -818,7 +818,7 @@ def test_clicking_the_same_point_is_not_crashing(
     ],
 )
 def test_is_creating_is_false_on_creation(mode, create_known_shapes_layer):
-    layer, n_shapes, _ = create_known_shapes_layer
+    layer, _n_shapes, _ = create_known_shapes_layer
 
     layer.mode = mode
     position = tuple(layer.data[0][0])
@@ -856,7 +856,7 @@ def test_is_creating_is_false_on_creation(mode, create_known_shapes_layer):
 @pytest.mark.parametrize('mode', ['select', 'direct'])
 def test_unselect_select_shape(mode, create_known_shapes_layer):
     """Select a shape by clicking on one in select mode."""
-    layer, n_shapes, _ = create_known_shapes_layer
+    layer, _n_shapes, _ = create_known_shapes_layer
 
     layer.mode = mode
     position = tuple(layer.data[0][0])
@@ -884,7 +884,7 @@ def test_unselect_select_shape(mode, create_known_shapes_layer):
 @pytest.mark.parametrize('mode', ['select', 'direct'])
 def test_not_selecting_shape(mode, create_known_shapes_layer):
     """Don't select a shape by not clicking on one in select mode."""
-    layer, n_shapes, known_non_shape = create_known_shapes_layer
+    layer, _n_shapes, known_non_shape = create_known_shapes_layer
 
     layer.mode = mode
 
@@ -909,7 +909,7 @@ def test_not_selecting_shape(mode, create_known_shapes_layer):
 @pytest.mark.parametrize('mode', ['select', 'direct'])
 def test_unselecting_shapes(mode, create_known_shapes_layer):
     """Unselect shapes by not clicking on one in select mode."""
-    layer, n_shapes, known_non_shape = create_known_shapes_layer
+    layer, _n_shapes, known_non_shape = create_known_shapes_layer
 
     layer.mode = mode
     layer.selected_data = {0, 1}
@@ -973,7 +973,7 @@ def test_selecting_shapes_with_drag(mode, create_known_shapes_layer):
 @pytest.mark.parametrize('mode', ['select', 'direct'])
 def test_selecting_no_shapes_with_drag(mode, create_known_shapes_layer):
     """Select all shapes when drag box includes all of them."""
-    layer, n_shapes, known_non_shape = create_known_shapes_layer
+    layer, _n_shapes, known_non_shape = create_known_shapes_layer
 
     layer.mode = mode
 
