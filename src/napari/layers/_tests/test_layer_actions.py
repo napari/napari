@@ -20,6 +20,7 @@ from napari.layers._layer_actions import (
     _split_stack,
     _toggle_visibility,
 )
+from napari.utils.transforms import Affine
 
 REG = pint.get_application_registry()
 
@@ -37,18 +38,37 @@ def test_split_stack():
         assert layer_list[idx].data.shape == (8, 8)
 
 
-def test_split_rgb():
+@pytest.mark.parametrize(
+    ('scale', 'translate', 'affine'),
+    [
+        (None, None, None),
+        ([2.0, 2.0], None, None),
+        (None, [0, 4], None),
+        (None, None, Affine(translate=[0, 4])),
+    ],
+)
+def test_split_rgb(scale, translate, affine):
     layer_list = LayerList()
-    layer_list.append(Image(np.random.random((48, 48, 3))))
+    image = Image(
+        np.zeros((8, 8, 3)),
+        rgb=True,
+        affine=affine,
+        translate=translate,
+        scale=scale,
+    )
+    layer_list.append(image)
     assert len(layer_list) == 1
-    assert layer_list[0].rgb is True
+    assert layer_list[0].rgb
 
     layer_list.selection.active = layer_list[0]
     _split_rgb(layer_list)
     assert len(layer_list) == 3
 
     for idx in range(3):
-        assert layer_list[idx].data.shape == (48, 48)
+        assert layer_list[idx].data.shape == (8, 8)
+        np.testing.assert_allclose(
+            layer_list[idx].affine.affine_matrix, image.affine.affine_matrix
+        )
 
 
 def test_merge_stack():
@@ -313,7 +333,36 @@ def test_convert_layer(layer, type_):
         )  # check array data not copied unnecessarily
 
 
-def test_convert_warns_with_projecton_mode():
+@pytest.mark.parametrize(
+    ('scale', 'translate', 'xfail'),
+    [
+        ((1.0, 1.0), (0.0, 0.0), False),  # default
+        ((1.0, 1.0), (30.0, 30.0), True),  # translated, currently fails
+        ((5.0, 5.0), (0.0, 0.0), False),  # scaled
+    ],
+)
+def test_make_label_from_shape_param(scale, translate, xfail):
+    """Tests that label shape matches the maximum extent of added shape, with optional scale and translate."""
+    ll = LayerList()
+    # add an image
+    layer = Image(np.zeros((20, 20)))
+    layer.scale = np.array(scale)
+    layer.translate = np.array(translate)
+    ll.append(layer)
+    # add a shape within the image
+    shape = Shapes([np.array([[5, 5], [5, 25], [25, 5], [25, 25]])])
+    shape.scale = np.array(scale)
+    shape.translate = np.array(translate)
+    ll.append(shape)
+    # Create a label based on the shape.
+    if xfail:
+        pytest.xfail('Converting layers with translations does not work')
+    _convert(ll, 'labels')
+    # the label layer should match the layer list extent
+    assert np.array_equal(ll[-1].extent.world, ll.extent.world)
+
+
+def test_convert_warns_with_projection_mode():
     # inplace
     ll = LayerList(
         [Image(np.random.rand(10, 10).astype(int), projection_mode='mean')]

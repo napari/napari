@@ -50,6 +50,11 @@ class IntensityVisualizationMixin:
         self._auto_contrast_source = 'slice'
         self._keep_auto_contrast = False
 
+        # circular import
+        from napari.components.overlays import ColorBarOverlay
+
+        self._overlays.update({'colorbar': ColorBarOverlay()})
+
     def reset_contrast_limits(self: 'ScalarFieldBase', mode=None):
         """Scale contrast limits to data range"""
         mode = mode or self._auto_contrast_source
@@ -88,6 +93,11 @@ class IntensityVisualizationMixin:
     def colormaps(self):
         """tuple of str: names of available colormaps."""
         return tuple(self._colormaps.keys())
+
+    @property
+    def colorbar(self):
+        """Color Bar overlay."""
+        return self._overlays['colorbar']
 
     @property
     def contrast_limits(self):
