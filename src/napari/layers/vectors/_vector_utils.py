@@ -29,7 +29,11 @@ def convert_image_to_coordinates(vectors: npt.NDArray) -> npt.NDArray:
     grid = np.meshgrid(*spacing, indexing='ij')
     coordinates = np.stack([np.reshape(idx, -1) for idx in grid], axis=-1)
 
-    # the corresponding projections are just given by the data
+    # the corresponding projections come directly from the given vectors data
+    # TODO: consider whether it might be good to check for sparsity and
+    # only include nonzero vectors. This can have up-front performance cost but may
+    # lead to (significant) performance and memory savings
+    projections = np.reshape(vectors, (nvect, ndim))
     # TODO: consider whether it might be good to check for sparsity and
     # only include nonzero vectors. Up front performance cost but can
     # lead to (significant) performance and memory savings
