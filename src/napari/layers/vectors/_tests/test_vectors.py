@@ -45,7 +45,7 @@ def test_random_vectors_image():
 
 def test_sparse_vectors_image_coordinates():
     """Test if vector images are correctly converted to coordinates.
-    
+
     Prior to [1]_, vector images were incorrectly converted to coordinates.
 
     This was due to an incorrect call to `np.meshgrid`.
