@@ -344,6 +344,67 @@ def test_split_channels_multi_affine_napari(kwargs):
 
 
 @pytest.mark.parametrize(
+    ('input_array', 'expected_type'),
+    [
+        (np.zeros((10, 20)), np.ndarray),
+        (da.zeros((10, 20)), da.Array),
+        (zarr.zeros((10, 20)), da.Array),
+    ],
+    ids=['numpy', 'dask', 'zarr'],
+)
+def test_images_to_stack_lazy_arrays(input_array, expected_type):
+    """Test that images_to_stack handles numpy, dask, and zarr arrays correctly."""
+    data = input_array
+    images = [Image(data) for _ in range(3)]
+
+    if isinstance(input_array, zarr.Array):
+        with pytest.warns(
+            UserWarning,
+            match='zarr array cannot be stacked lazily, using dask array to stack.',
+        ):
+            stack = images_to_stack(images)
+    else:
+        stack = images_to_stack(images)
+
+    assert not stack.multiscale
+    assert isinstance(stack.data, expected_type)
+    assert stack.data.shape[1:] == input_array.shape
+
+
+@pytest.mark.parametrize(
+    ('input_array', 'expected_type'),
+    [
+        (np.zeros((10, 20)), np.ndarray),
+        (da.zeros((10, 20)), da.Array),
+        (zarr.zeros((10, 20)), da.Array),
+    ],
+    ids=['numpy', 'dask', 'zarr'],
+)
+def test_images_to_stack_lazy_multiscale_arrays(input_array, expected_type):
+    """Test stacking of multiscale numpy, dask, and zarr arrays."""
+    # Slicing zarr array returns numpy array, so we need to re-wrap in zarr
+    if isinstance(input_array, zarr.Array):
+        data = [input_array, zarr.array(input_array[::2, ::2])]
+    else:
+        data = [input_array, input_array[::2, ::2]]
+
+    images = [Image(data) for _ in range(3)]
+
+    if isinstance(input_array, zarr.Array):
+        with pytest.warns(
+            UserWarning,
+            match='zarr array cannot be stacked lazily, using dask array to stack.',
+        ):
+            stack = images_to_stack(images)
+    else:
+        stack = images_to_stack(images)
+
+    assert stack.multiscale
+    assert isinstance(stack.data[0], expected_type)
+    assert stack.data[0].shape[1:] == input_array.shape
+
+
+@pytest.mark.parametrize(
     ('array_type', 'expected_result_type'),
     [
         ('numpy', np.ndarray),

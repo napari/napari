@@ -38,7 +38,7 @@ def slice_from_axis(array, *, axis, element):
         The sliced output array, which has one less dimension than the input.
     """
     # Check if array is a zarr array and wrap it with dask
-    # to keep lazy behavior andavoid loading into memory
+    # to keep lazy behavior and avoid loading into memory
     if hasattr(array, '__module__') and array.__module__.startswith('zarr'):
         import dask.array as da
 
@@ -346,6 +346,7 @@ def images_to_stack(images: list[Image], axis: int = 0, **kwargs) -> Image:
                 deferred=True,
             )
         )
+
     if all(multiscale_flags):
         # Check that all multiscale images have the same number of levels
         n_scales_list = [len(image.data) for image in images]
@@ -357,13 +358,38 @@ def images_to_stack(images: list[Image], axis: int = 0, **kwargs) -> Image:
                     n_scales_list=n_scales_list,
                 )
             )
-        n_scales = n_scales_list[0]
+        arrays_to_check = [img.data[0] for img in images]
+    else:
+        arrays_to_check = [img.data for img in images]
+
+    # check if any of the data arrays are zarr arrays
+    # zarr doesn't have a stack method, so we will use dask.array.stack
+    is_zarr = any(
+        hasattr(arr, '__module__') and arr.__module__.startswith('zarr')
+        for arr in arrays_to_check
+    )
+
+    if is_zarr:
+        import dask.array as da
+
+        stacker = da.stack
+        warnings.warn(
+            trans._(
+                'zarr array cannot be stacked lazily, using dask array to stack.',
+                deferred=True,
+            )
+        )
+    else:
+        stacker = np.stack
+
+    if all(multiscale_flags):
+        n_scales = len(images[0].data)
         new_data = [
-            np.stack([image.data[level] for image in images], axis=axis)
+            stacker([image.data[level] for image in images], axis=axis)
             for level in range(n_scales)
         ]
     else:
-        new_data = np.stack([image.data for image in images], axis=axis)
+        new_data = stacker([image.data for image in images], axis=axis)
 
     # RGB images do not need extra dimensions inserted into metadata
     # They can use the meta dict from one of the source image layers
