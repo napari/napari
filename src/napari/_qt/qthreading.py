@@ -10,7 +10,9 @@ from typing import (
 from superqt.utils import _qthreading
 
 from napari.utils.progress import progress
+from napari.utils.task_status import Status
 from napari.utils.translations import trans
+from napari.viewer import current_viewer
 
 __all__ = [
     'FunctionWorker',
@@ -181,6 +183,74 @@ def create_worker(
 
         worker.pbar = pbar
 
+    # signals connection for status handling
+    if viewer := current_viewer():
+        window = viewer.window
+        worker_status_id = window._register_task_status(
+            'napari-worker',
+            Status.PENDING,
+            trans._('{func} execution pending', deferred=True, func=func),
+            cancel_callback=worker.quit,
+        )
+        worker.started.connect(
+            partial(
+                lambda task_status_id, function: window._update_task_status(
+                    task_status_id,
+                    Status.BUSY,
+                    description=trans._(
+                        'Executing {func}', deferred=True, func=function
+                    ),
+                ),
+                worker_status_id,
+                func,
+            )
+        )
+        worker.errored.connect(
+            partial(
+                lambda task_status_id, function: window._update_task_status(
+                    task_status_id,
+                    Status.FAILED,
+                    description=trans._(
+                        '{func} execution failed', deferred=True, func=function
+                    ),
+                ),
+                worker_status_id,
+                func,
+            )
+        )
+        worker.finished.connect(
+            partial(
+                lambda task_status_id, function: window._update_task_status(
+                    task_status_id,
+                    Status.COMPLETED,
+                    description=trans._(
+                        '{func} execution completed',
+                        deferred=True,
+                        func=function,
+                    ),
+                ),
+                worker_status_id,
+                func,
+            )
+        )
+        if hasattr(worker.signals, 'aborted'):
+            worker.aborted.connect(
+                partial(
+                    lambda task_status_id,
+                    function: window._update_task_status(
+                        task_status_id,
+                        Status.CANCELLED,
+                        description=trans._(
+                            '{func} execution cancelled',
+                            deferred=True,
+                            func=function,
+                        ),
+                    ),
+                    worker_status_id,
+                    func,
+                )
+            )
+
     if _start_thread is None:
         _start_thread = _connect is not None
 
@@ -299,6 +369,7 @@ def thread_worker(
             kwargs['_ignore_errors'] = kwargs.get(
                 '_ignore_errors', ignore_errors
             )
+
             return create_worker(
                 func,
                 *args,

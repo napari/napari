@@ -15,9 +15,9 @@ def test_zoom():
 def test_zoom_values():
     """Test creating zoom object"""
     zoom = ZoomOverlay()
-    # validate canvas_positions
-    zoom.canvas_positions = ((0, 0), (300, 200))
+    # validate position
+    zoom.position = ((0, 0), (300, 200))
 
     # data_positions must be 2-D
     with pytest.raises(ValidationError):
-        zoom.canvas_positions = ((0, 0, 0), (300, 200, 100))
+        zoom.position = ((0, 0, 0), (300, 200, 100))

@@ -96,7 +96,7 @@ def shift_plane_along_normal(viewer, event):
     volume_layer = viewer.layers['volume']
 
     # Calculate intersection of click with data bounding box
-    near_point, far_point = volume_layer.get_ray_intersections(
+    near_point, _far_point = volume_layer.get_ray_intersections(
         event.position,
         event.view_direction,
         event.dims_displayed,
