@@ -19,15 +19,15 @@ jobs:
     if: github.repository == 'napari/napari'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       - name: Checkout docs
-        uses: actions/checkout@v4
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           repository: napari/docs
           path: docs
 
       - name: Install Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
         with:
           python-version: 3.12
           cache-dependency-path: pyproject.toml
@@ -54,7 +54,7 @@ jobs:
           ls docs/docs/release
 
       - name: Create Release
-        uses: "softprops/action-gh-release@v2"
+        uses: softprops/action-gh-release@6cbd405e2c4e67a21c47fa9e383d020e4e28b836 # v2.3.3
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
         with:
           tag_name: ${{ github.ref }}
@@ -68,4 +68,4 @@ jobs:
             dist/*
       - name: Publish PyPI Package
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
-        uses: pypa/gh-action-pypi-publish@release/v1
+        uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # v1.13.0

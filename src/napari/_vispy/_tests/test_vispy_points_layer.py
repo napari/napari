@@ -19,13 +19,12 @@ def test_remove_selected_with_derived_text():
     properties = {'class': np.array(['A', 'B', 'C'])}
     layer = Points(points, text='class', properties=properties)
     vispy_layer = VispyPointsLayer(layer)
-    text_node = vispy_layer._get_text_node()
-    np.testing.assert_array_equal(text_node.text, ['A', 'B', 'C'])
+    np.testing.assert_array_equal(vispy_layer.node.text.text, ['A', 'B', 'C'])
 
     layer.selected_data = {1}
     layer.remove_selected()
 
-    np.testing.assert_array_equal(text_node.text, ['A', 'C'])
+    np.testing.assert_array_equal(vispy_layer.node.text.text, ['A', 'C'])
 
 
 def test_change_text_updates_node_string():
@@ -36,12 +35,15 @@ def test_change_text_updates_node_string():
     }
     layer = Points(points, text='class', properties=properties)
     vispy_layer = VispyPointsLayer(layer)
-    text_node = vispy_layer._get_text_node()
-    np.testing.assert_array_equal(text_node.text, properties['class'])
+    np.testing.assert_array_equal(
+        vispy_layer.node.text.text, properties['class']
+    )
 
     layer.text = 'name'
 
-    np.testing.assert_array_equal(text_node.text, properties['name'])
+    np.testing.assert_array_equal(
+        vispy_layer.node.text.text, properties['name']
+    )
 
 
 def test_change_text_color_updates_node_color():
@@ -50,12 +52,11 @@ def test_change_text_color_updates_node_color():
     text = {'string': 'class', 'color': [1, 0, 0]}
     layer = Points(points, text=text, properties=properties)
     vispy_layer = VispyPointsLayer(layer)
-    text_node = vispy_layer._get_text_node()
-    np.testing.assert_array_equal(text_node.color.rgb, [[1, 0, 0]])
+    np.testing.assert_array_equal(vispy_layer.node.text.color.rgb, [[1, 0, 0]])
 
     layer.text.color = [0, 0, 1]
 
-    np.testing.assert_array_equal(text_node.color.rgb, [[0, 0, 1]])
+    np.testing.assert_array_equal(vispy_layer.node.text.color.rgb, [[0, 0, 1]])
 
 
 def test_change_properties_updates_node_strings():
@@ -63,12 +64,11 @@ def test_change_properties_updates_node_strings():
     properties = {'class': np.array(['A', 'B', 'C'])}
     layer = Points(points, properties=properties, text='class')
     vispy_layer = VispyPointsLayer(layer)
-    text_node = vispy_layer._get_text_node()
-    np.testing.assert_array_equal(text_node.text, ['A', 'B', 'C'])
+    np.testing.assert_array_equal(vispy_layer.node.text.text, ['A', 'B', 'C'])
 
     layer.properties = {'class': np.array(['D', 'E', 'F'])}
 
-    np.testing.assert_array_equal(text_node.text, ['D', 'E', 'F'])
+    np.testing.assert_array_equal(vispy_layer.node.text.text, ['D', 'E', 'F'])
 
 
 def test_update_property_value_then_refresh_text_updates_node_strings():
@@ -76,13 +76,12 @@ def test_update_property_value_then_refresh_text_updates_node_strings():
     properties = {'class': np.array(['A', 'B', 'C'])}
     layer = Points(points, properties=properties, text='class')
     vispy_layer = VispyPointsLayer(layer)
-    text_node = vispy_layer._get_text_node()
-    np.testing.assert_array_equal(text_node.text, ['A', 'B', 'C'])
+    np.testing.assert_array_equal(vispy_layer.node.text.text, ['A', 'B', 'C'])
 
     layer.properties['class'][1] = 'D'
     layer.refresh_text()
 
-    np.testing.assert_array_equal(text_node.text, ['A', 'D', 'C'])
+    np.testing.assert_array_equal(vispy_layer.node.text.text, ['A', 'D', 'C'])
 
 
 def test_change_canvas_size_limits():
@@ -102,16 +101,15 @@ def test_text_with_non_empty_constant_string():
 
     vispy_layer = VispyPointsLayer(layer)
 
-    text_node = vispy_layer._get_text_node()
     # Vispy cannot broadcast a constant string and assert_array_equal
     # automatically broadcasts, so explicitly check length.
-    assert len(text_node.text) == 3
-    np.testing.assert_array_equal(text_node.text, ['a', 'a', 'a'])
+    assert len(vispy_layer.node.text.text) == 3
+    np.testing.assert_array_equal(vispy_layer.node.text.text, ['a', 'a', 'a'])
 
     # Ensure we do position calculation for constants.
     # See https://github.com/napari/napari/issues/5378
     # We want row, column coordinates so drop 3rd dimension and flip.
-    actual_position = text_node.pos[:, 1::-1]
+    actual_position = vispy_layer.node.text.pos[:, 1::-1]
     np.testing.assert_allclose(actual_position, points)
 
 

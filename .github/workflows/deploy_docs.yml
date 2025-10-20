@@ -30,12 +30,14 @@ jobs:
           VER="${VER/post*/}"  # remove post identifier
 
           if [[ "$REF" == "refs/tags/v"* ]]; then
-            echo "branch_name=$VER" >> "$GITHUB_ENV"
+            echo "branch_name=$REF" >> "$GITHUB_ENV"
+            echo "target_directory=$VER" >> "$GITHUB_ENV"
           else
-            echo "branch_name=dev" >> "$GITHUB_ENV"
+            echo "branch_name=main" >> "$GITHUB_ENV"
+            echo "target_directory=dev" >> "$GITHUB_ENV"
           fi
       - name: Trigger workflow and wait
-        uses: convictional/trigger-workflow-and-wait@v1.6.5
+        uses: convictional/trigger-workflow-and-wait@f69fa9eedd3c62a599220f4d5745230e237904be # v1.6.5
         with:
           owner: napari
           repo: docs
@@ -43,4 +45,4 @@ jobs:
           workflow_file_name: build_and_deploy.yml
           trigger_workflow: true
           wait_workflow: true
-          client_payload: '{"target_directory": "${{ env.branch_name }}"}'
+          client_payload: '{"target_directory": "${{ env.target_directory }}", "napari_ref": "${{ env.branch_name }}", "docs_ref": "main"}'

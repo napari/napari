@@ -1,6 +1,7 @@
 import numbers
+import typing
 import warnings
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Iterable, Sequence, Set as AbstractSet
 from copy import copy, deepcopy
 from itertools import cycle
 from typing import (
@@ -8,6 +9,7 @@ from typing import (
     Any,
     ClassVar,
     Literal,
+    Optional,
 )
 
 import numpy as np
@@ -381,7 +383,7 @@ class Points(Layer):
         name=None,
         opacity=1.0,
         out_of_slice_display=False,
-        projection_mode='none',
+        projection_mode='all',
         properties=None,
         property_choices=None,
         rotate=None,
@@ -422,16 +424,16 @@ class Points(Layer):
         self._mode = Mode.PAN_ZOOM
         self._status = self.mode
 
-        self._drag_start = None
-        self._drag_normal = None
-        self._drag_up = None
+        self._drag_start: Optional[np.ndarray] = None
+        self._drag_normal: Optional[np.ndarray] = None
+        self._drag_up: Optional[np.ndarray] = None
 
         # initialize view data
         self.__indices_view = np.empty(0, int)
         self._view_size_scale = []
 
-        self._drag_box = None
-        self._drag_box_stored = None
+        self._drag_box: Optional[np.ndarray] = None
+        self._drag_box_stored: Optional[np.ndarray] = None
         self._is_selecting = False
         self._clipboard = {}
 
@@ -628,16 +630,10 @@ class Points(Layer):
                 adding = len(data) - cur_npoints
                 size = np.repeat(self.current_size, adding, axis=0)
 
-                if len(self._border_width) > 0:
-                    new_border_width = copy(self._border_width[-1])
-                else:
-                    new_border_width = self.current_border_width
+                new_border_width = self.current_border_width
                 border_width = np.repeat([new_border_width], adding, axis=0)
 
-                if len(self._symbol) > 0:
-                    new_symbol = copy(self._symbol[-1])
-                else:
-                    new_symbol = self.current_symbol
+                new_symbol = self.current_symbol
                 symbol = np.repeat([new_symbol], adding, axis=0)
 
                 # Add new colors, updating the current property value before
@@ -1381,7 +1377,7 @@ class Points(Layer):
         return self._selected_data
 
     @selected_data.setter
-    def selected_data(self, selected_data: Sequence[int]) -> None:
+    def selected_data(self, selected_data: Iterable[int]) -> None:
         self._selected_data.clear()
         self._selected_data.update(set(selected_data))
         self._selected_view = list(
@@ -1634,6 +1630,25 @@ class Points(Layer):
         )
         # update highlight only if scale has changed, otherwise causes a cycle
         self._set_highlight(force=(prev_scale != self.scale_factor))
+
+    def _get_value_(
+        self,
+        position: npt.ArrayLike,
+        *,
+        view_direction: npt.ArrayLike | None = None,
+        dims_displayed: list[int] | None = None,
+        world: bool = False,
+    ) -> int | None:
+        """Workaround for inconsistency in real return type of get_value"""
+        return typing.cast(
+            int,
+            self.get_value(
+                position,
+                view_direction=view_direction,
+                dims_displayed=dims_displayed,
+                world=world,
+            ),
+        )
 
     def _get_value(self, position) -> int | None:
         """Index of the point at a given 2D position in data coordinates.
@@ -1977,7 +1992,7 @@ class Points(Layer):
         colormapped[..., 3] *= self.opacity
         self.thumbnail = colormapped
 
-    def add(self, coords):
+    def add(self, coords: np.ndarray) -> None:
         """Adds points at coordinates.
 
         Parameters
@@ -2002,56 +2017,138 @@ class Points(Layer):
         self.selected_data = set(np.arange(cur_points, len(self.data)))
         self.events.features()
 
-    def remove_selected(self) -> None:
-        """Removes selected points if any."""
-        index = list(self.selected_data)
-        index.sort()
-        if len(index):
+    def remove(self, indices: list[int]) -> None:
+        """Removes any points at the given indices.
+
+        Parameters
+        ----------
+        indices : List[int]
+            List of indices of points to remove from the layer.
+        """
+        indices = sorted(indices)
+        if len(indices):
             self.events.data(
                 value=self.data,
                 action=ActionType.REMOVING,
                 data_indices=tuple(
-                    self.selected_data,
+                    indices,
                 ),
                 vertex_indices=((),),
             )
-            self._shown = np.delete(self._shown, index, axis=0)
-            self._size = np.delete(self._size, index, axis=0)
-            self._symbol = np.delete(self._symbol, index, axis=0)
-            self._border_width = np.delete(self._border_width, index, axis=0)
+            self._shown = np.delete(self._shown, indices, axis=0)
+            self._size = np.delete(self._size, indices, axis=0)
+            self._symbol = np.delete(self._symbol, indices, axis=0)
+            self._border_width = np.delete(self._border_width, indices, axis=0)
             with self._border.events.blocker_all():
-                self._border._remove(indices_to_remove=index)
+                self._border._remove(indices_to_remove=indices)
             with self._face.events.blocker_all():
-                self._face._remove(indices_to_remove=index)
-            self._feature_table.remove(index)
-            self.text.remove(index)
-            if self._value in self.selected_data:
+                self._face._remove(indices_to_remove=indices)
+            self._feature_table.remove(indices)
+            self.text.remove(indices)
+            if self._value in indices:
                 self._value = None
             else:
                 if self._value is not None:
                     # update the index of self._value to account for the
                     # data being removed
-                    indices_removed = np.array(index) < self._value
+                    indices_removed = np.array(indices) < self._value
                     offset = np.sum(indices_removed)
                     self._value -= offset
                     self._value_stored -= offset
 
-            self._set_data(np.delete(self.data, index, axis=0))
+            self._set_data(np.delete(self.data, indices, axis=0))
+
+            if len(self.data) == 0 and self.selected_data:
+                self.selected_data.clear()
+            elif self.selected_data:
+                selected_not_removed = self.selected_data - set(indices)
+                if selected_not_removed:
+                    indices_array = np.array(indices)
+                    remaining_selected = np.fromiter(
+                        selected_not_removed,
+                        dtype=np.intp,
+                        count=len(selected_not_removed),
+                    )
+                    shifts = np.searchsorted(indices_array, remaining_selected)
+                    new_selected_indices = remaining_selected - shifts
+                    self.selected_data = set(new_selected_indices)
+                else:
+                    self.selected_data.clear()
+
             self.events.data(
                 value=self.data,
                 action=ActionType.REMOVED,
                 data_indices=tuple(
-                    self.selected_data,
+                    indices,
                 ),
                 vertex_indices=((),),
             )
-            self.selected_data = set()
             self.events.features()
+
+    def get_point_info(self, index: int) -> dict:
+        """
+        Retrieve all available information about a point at the given index.
+
+        Parameters
+        ----------
+        index : int
+            Index of the point.
+
+        Returns
+        -------
+        dict
+            A dictionary containing all relevant details of the point.
+        """
+        if not (0 <= index < len(self.data)):
+            return {
+                'data': None,
+                'features': {},
+                'face_color': None,
+                'border_color': None,
+                'size': None,
+                'symbol': None,
+                'border_width': None,
+            }
+
+        info = {
+            'data': self.data[index],
+            'features': self.features.iloc[index].to_dict(),
+            'face_color': self.face_color[index],
+            'border_color': self.border_color[index],
+            'size': self.size[index],
+            'symbol': self.symbol[index],
+            'border_width': self.border_width[index],
+        }
+        return info
+
+    def pop(self, index=-1) -> dict[str, Any]:
+        """Remove and return the point at the given index.
+
+        Parameters
+        ----------
+        index : int, optional
+            Index of the point to remove. Default is -1, which removes the last point.
+
+        Returns
+        -------
+        dict[str, Any]
+            Dictionary containing the removed point's data.
+        """
+        if index == -1:
+            index = len(self.data) - 1
+        info = self.get_point_info(index)
+        self.remove([index])
+        return info
+
+    def remove_selected(self) -> None:
+        """Remove all selected points."""
+        self.remove(list(self.selected_data))
 
     def _move(
         self,
-        selection_indices: Sequence[int],
-        position: Sequence[int | float],
+        selection_indices: AbstractSet[int],
+        position: Sequence[float]
+        | np.ndarray[tuple[int], np.dtype[np.floating]],
     ) -> None:
         """Move points relative to drag start location.
 
@@ -2082,8 +2179,9 @@ class Points(Layer):
 
     def _set_drag_start(
         self,
-        selection_indices: Sequence[int],
-        position: Sequence[int | float],
+        selection_indices: AbstractSet[int],
+        position: Sequence[float]
+        | np.ndarray[tuple[int], np.dtype[np.floating]],
         center_by_data: bool = True,
     ) -> None:
         """Store the initial position at the start of a drag event.

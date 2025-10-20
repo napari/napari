@@ -8,8 +8,9 @@ import inspect
 import os
 import sys
 import time
+import uuid
 import warnings
-from collections.abc import Mapping, MutableMapping, Sequence
+from collections.abc import Callable, Mapping, MutableMapping, Sequence
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
@@ -33,7 +34,7 @@ from qtpy.QtCore import (
     Qt,
     Slot,
 )
-from qtpy.QtGui import QHideEvent, QIcon, QShowEvent
+from qtpy.QtGui import QHideEvent, QIcon, QImage, QShowEvent
 from qtpy.QtWidgets import (
     QApplication,
     QDialog,
@@ -84,7 +85,6 @@ from napari.settings import get_settings
 from napari.utils import perf
 from napari.utils._proxies import MappingProxy, PublicOnlyProxy
 from napari.utils.events import Event
-from napari.utils.geometry import get_center_bbox
 from napari.utils.io import imsave
 from napari.utils.misc import (
     in_ipython,
@@ -93,6 +93,7 @@ from napari.utils.misc import (
     running_as_constructor_app,
 )
 from napari.utils.notifications import Notification
+from napari.utils.task_status import Status, TaskStatusManager
 from napari.utils.theme import _themes, get_system_theme
 from napari.utils.translations import trans
 
@@ -136,6 +137,7 @@ class _QtMainWindow(QMainWindow):
         super().__init__(parent)
         self._ev = None
         self._window = window
+        self._plugin_manager_dialog = None
         self._qt_viewer = QtViewer(viewer, show_welcome_screen=True)
         self._quit_app = False
 
@@ -491,8 +493,9 @@ class _QtMainWindow(QMainWindow):
             return super().close()
         confirm_need_local = confirm_need and self._is_close_dialog[quit_app]
         self._is_close_dialog[quit_app] = False
+
         # here we save information that we could request confirmation on close
-        # So fi function `close` is called again, we don't ask again but just close
+        # So if function `close` is called again, we don't ask again but just close
         if (
             not confirm_need_local
             or not get_settings().application.confirm_close_window
@@ -603,14 +606,29 @@ class _QtMainWindow(QMainWindow):
 
         Regardless of whether cmd Q, cmd W, or the close button is used...
         """
+        task_status = self._window._task_status_manager.get_status()
         if (
+            event.spontaneous()
+            and task_status
+            and ConfirmCloseDialog(
+                self,
+                close_app=False,
+                extra_info='\n'.join(task_status),
+                display_checkbox=False,
+            ).exec_()
+            != QDialog.Accepted
+        ) or (
             event.spontaneous()
             and get_settings().application.confirm_close_window
             and self._qt_viewer.viewer.layers
-            and ConfirmCloseDialog(self, False).exec_() != QDialog.Accepted
+            and ConfirmCloseDialog(self, close_app=False).exec_()
+            != QDialog.Accepted
         ):
             event.ignore()
             return
+
+        if self._window._task_status_manager.is_busy():
+            self._window._task_status_manager.cancel_all()
 
         self.status_thread.close_terminate()
         self.status_thread.wait()
@@ -702,6 +720,8 @@ class Window:
         self._unnamed_dockwidget_count = 1
 
         self._pref_dialog = None
+
+        self._task_status_manager = TaskStatusManager()
 
         # Connect the Viewer and create the Main Window
         self._qt_window = _QtMainWindow(viewer, self)
@@ -896,6 +916,33 @@ class Window:
     def _update_debug_menu_state(self):
         viewer_ctx = get_context(self._qt_window)
         self._debug_menu.update_from_context(viewer_ctx)
+
+    def _register_task_status(
+        self,
+        provider: str,
+        task_status: Status,
+        description: str,
+        cancel_callback: Optional[Callable] = None,
+    ) -> uuid.UUID:
+        """
+        Register a long running task status.
+        """
+        return self._task_status_manager.register_task_status(
+            provider, task_status, description, cancel_callback
+        )
+
+    def _update_task_status(
+        self,
+        task_status_id: uuid.UUID,
+        status: Status,
+        description: str = '',
+    ) -> bool:
+        """
+        Update a long running task status.
+        """
+        return self._task_status_manager.update_task_status(
+            task_status_id, status, description
+        )
 
     # TODO: Remove once npe1 deprecated
     def _setup_npe1_samples_menu(self):
@@ -1697,13 +1744,6 @@ class Window:
         """
         from napari._qt.utils import add_flash_animation
 
-        canvas = self._qt_viewer.canvas
-        prev_size = canvas.size
-        camera = self._qt_viewer.viewer.camera
-        old_center = camera.center
-        old_zoom = camera.zoom
-        ndisplay = self._qt_viewer.viewer.dims.ndisplay
-
         # Part 1: validate incompatible parameters
         if not canvas_only and (
             fit_to_data_extent or size is not None or scale is not None
@@ -1715,65 +1755,15 @@ class Window:
                     deferred=True,
                 )
             )
-        if size is not None and len(size) != 2:
-            raise ValueError(
-                trans._(
-                    'screenshot size must be 2 values, got {len_size}',
-                    deferred=True,
-                    len_size=len(size),
-                )
-            )
 
-        # Part 2: compute canvas size and view based on parameters
-        if fit_to_data_extent:
-            # Use the same scene parameter calculations as in viewer_model.fit_to_view
-            extent, scene_size, _ = (
-                self._qt_viewer.viewer._get_scene_parameters()
-            )
-            extent_scale = min(
-                self._qt_viewer.viewer.layers.extent.step[-ndisplay:]
-            )
-
-            if ndisplay == 3:
-                scene_size = self._qt_viewer.viewer._calculate_bounding_box(
-                    extent=extent,
-                    view_direction=self._qt_viewer.viewer.camera.view_direction,
-                    up_direction=self._qt_viewer.viewer.camera.up_direction,
-                )
-
-            # adjust size by the scale, to return the size in real pixels
-            size = np.ceil(scene_size / extent_scale).astype(int)
-
-        if size is not None:
-            size = np.asarray(size) / self._qt_window.devicePixelRatio()
-        else:
-            size = np.asarray(prev_size)
-
-        if scale is not None:
-            # multiply canvas dimensions by the scale factor to get new size
-            size *= scale
-
-        # Part 3: take the screenshot
+        # Part 2: take the screenshot
         if canvas_only:
-            if fit_to_data_extent:
-                grid_shape = self._qt_viewer.viewer.grid.actual_shape(
-                    len(self._qt_viewer.viewer.layers)
-                )
-                canvas.size = tuple((size * grid_shape).astype(int))
-                # tight view around data
-                self._qt_viewer.viewer.fit_to_view(margin=0)
-            else:
-                canvas.size = tuple(size.astype(int))
-
-            try:
-                img = canvas.screenshot()
-                if flash:
-                    add_flash_animation(self._qt_viewer._welcome_widget)
-            finally:
-                # make sure we always go back to the right canvas size
-                canvas.size = prev_size
-                camera.center = old_center
-                camera.zoom = old_zoom
+            img = self._qt_viewer._screenshot(
+                flash=flash,
+                size=size,
+                scale=scale if scale is not None else 1.0,
+                fit_to_data_extent=fit_to_data_extent,
+            )
         else:
             img = self._qt_window.grab().toImage()
             if flash:
@@ -1811,30 +1801,13 @@ class Window:
             Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
             upper-left corner of the rendered region.
         """
-        if not isinstance(scale, float | int):
-            raise TypeError(
-                trans._(
-                    'Scale must be a float or an int.',
-                    deferred=True,
-                )
-            )
-        img = QImg2array(
-            self._screenshot(
-                scale=scale,
-                flash=flash,
-                canvas_only=True,
-                fit_to_data_extent=True,
-            )
-        )
-        if path is not None:
-            imsave(path, img)
-        return img
+        return self._qt_viewer.export_figure(path, scale, flash)
 
     def export_rois(
         self,
         rois: list[np.ndarray],
         paths: str | Path | list[str | Path] | None = None,
-        scale: float | None = None,
+        scale: float = 1.0,
     ):
         """Export the given rectangular rois to specified file paths.
 
@@ -1868,54 +1841,11 @@ class Window:
             The list with roi screenshots.
 
         """
-        if (
-            paths is not None
-            and isinstance(paths, list)
-            and len(paths) != len(rois)
-        ):
-            raise ValueError(
-                trans._(
-                    'The number of file paths does not match the number of ROI shapes',
-                    deferred=True,
-                )
-            )
-
-        if isinstance(paths, str | Path):
-            storage_dir = Path(paths).expanduser()
-            storage_dir.mkdir(parents=True, exist_ok=True)
-            paths = [storage_dir / f'roi_{n}.png' for n in range(len(rois))]
-
-        if self._qt_viewer.viewer.dims.ndisplay > 2:
-            raise NotImplementedError(
-                "'export_rois' is not implemented for 3D view."
-            )
-
-        screenshot_list = []
-        camera = self._qt_viewer.viewer.camera
-        start_camera_center = camera.center
-        start_camera_zoom = camera.zoom
-        canvas = self._qt_viewer.canvas
-        prev_size = canvas.size
-
-        visible_dims = list(self._qt_viewer.viewer.dims.displayed)
-        step = min(self._qt_viewer.viewer.layers.extent.step[visible_dims])
-
-        for index, roi in enumerate(rois):
-            center_coord, height, width = get_center_bbox(roi)
-            camera.center = center_coord
-            canvas.size = (int(height / step), int(width / step))
-
-            camera.zoom = 1 / step
-            path = paths[index] if paths is not None else None
-            screenshot_list.append(
-                self.screenshot(path=path, canvas_only=True, scale=scale)
-            )
-
-        canvas.size = prev_size
-        camera.center = start_camera_center
-        camera.zoom = start_camera_zoom
-
-        return screenshot_list
+        return self._qt_viewer.export_rois(
+            rois=rois,
+            paths=paths,
+            scale=scale,
+        )
 
     def screenshot(
         self, path=None, size=None, scale=None, flash=True, canvas_only=False

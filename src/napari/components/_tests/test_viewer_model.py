@@ -929,11 +929,13 @@ def test_open_or_get_error_no_prefered_plugin_many_available(
 
     get_settings().plugins.extension2reader = {'*.fake': 'not-a-plugin'}
 
-    with pytest.warns(RuntimeWarning, match="Can't find not-a-plugin plugin"):
-        with pytest.raises(
+    with (
+        pytest.warns(RuntimeWarning, match="Can't find not-a-plugin plugin"),
+        pytest.raises(
             MultipleReaderError, match='Multiple plugins found capable'
-        ):
-            viewer._open_or_raise_error(['my_file.fake'])
+        ),
+    ):
+        viewer._open_or_raise_error(['my_file.fake'])
 
 
 def test_open_or_get_error_preferred_fails(builtins, tmp_path):
@@ -943,7 +945,7 @@ def test_open_or_get_error_preferred_fails(builtins, tmp_path):
     get_settings().plugins.extension2reader = {'*.npy': builtins.name}
 
     with pytest.raises(
-        ReaderPluginError, match='Tried opening with napari, but failed.'
+        ReaderPluginError, match='Tried opening with napari, but failed'
     ):
         viewer._open_or_raise_error([str(pth)])
 
@@ -972,7 +974,7 @@ def test_open_sample_null_layer_sentinel(tmp_plugin):
 
     with pytest.raises(
         ValueError,
-        match='Sample "return_null_layer" from plugin "tmp_plugin" did not return any valid layer data tuples.',
+        match='Sample "return_null_layer" from plugin "tmp_plugin" did not return any valid layer data tuples',
     ):
         viewer.open_sample('tmp_plugin', 'return_null_layer')
 

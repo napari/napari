@@ -12,16 +12,20 @@ from numpy import typing as npt
 from napari.layers import Layer
 from napari.layers._data_protocols import LayerDataProtocol
 from napari.layers._multiscale_data import MultiScaleData
+from napari.layers._scalar_field._slice import (
+    _ScalarFieldSliceRequest,
+    _ScalarFieldSliceResponse,
+)
 from napari.layers.image._image_constants import Interpolation, VolumeDepiction
 from napari.layers.image._image_mouse_bindings import (
     move_plane_along_normal as plane_drag_callback,
     set_plane_position as plane_double_click_callback,
 )
 from napari.layers.image._image_utils import guess_multiscale
-from napari.layers.image._slice import _ImageSliceRequest, _ImageSliceResponse
 from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
 from napari.layers.utils.plane import SlicingPlane
 from napari.utils._dask_utils import DaskIndexer
+from napari.utils._dtype import normalize_dtype
 from napari.utils.colormaps import AVAILABLE_COLORMAPS
 from napari.utils.events import Event
 from napari.utils.events.event import WarningEmitter
@@ -286,7 +290,7 @@ class ScalarFieldBase(Layer, ABC):
             np.array(self.level_shapes)[self._data_level][displayed_axes] - 1
         )
 
-        self._slice = _ImageSliceResponse.make_empty(
+        self._slice = _ScalarFieldSliceResponse.make_empty(
             slice_input=self._slice_input,
             rgb=len(self.data.shape) != self.ndim,
             dtype=self._slice_dtype(),
@@ -326,7 +330,7 @@ class ScalarFieldBase(Layer, ABC):
 
     @property
     def dtype(self):
-        return self._data.dtype
+        return normalize_dtype(self._data.dtype)
 
     @property
     def data_raw(
@@ -499,7 +503,7 @@ class ScalarFieldBase(Layer, ABC):
         response = request()
         self._update_slice_response(response)
 
-    def _make_slice_request(self, dims: Dims) -> _ImageSliceRequest:
+    def _make_slice_request(self, dims: Dims) -> _ScalarFieldSliceRequest:
         """Make an image slice request based on the given dims and this image."""
         slice_input = self._make_slice_input(dims)
         # For the existing sync slicing, indices is passed through
@@ -521,14 +525,14 @@ class ScalarFieldBase(Layer, ABC):
         slice_input: _SliceInput,
         data_slice: _ThickNDSlice,
         dask_indexer: DaskIndexer,
-    ) -> _ImageSliceRequest:
+    ) -> _ScalarFieldSliceRequest:
         """Needed to support old-style sync slicing through _slice_dims and
         _set_view_slice.
 
         This is temporary scaffolding that should go away once we have completed
         the async slicing project: https://github.com/napari/napari/issues/4795
         """
-        return _ImageSliceRequest(
+        return _ScalarFieldSliceRequest(
             slice_input=slice_input,
             data=self.data,
             dask_indexer=dask_indexer,
@@ -543,7 +547,9 @@ class ScalarFieldBase(Layer, ABC):
             downsample_factors=self.downsample_factors,
         )
 
-    def _update_slice_response(self, response: _ImageSliceResponse) -> None:
+    def _update_slice_response(
+        self, response: _ScalarFieldSliceResponse
+    ) -> None:
         """Update the slice output state currently on the layer. Currently used
         for both sync and async slicing.
         """

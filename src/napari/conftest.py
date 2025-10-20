@@ -37,26 +37,21 @@ import sys
 import threading
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import suppress
+from datetime import timedelta
 from functools import partial
 from itertools import chain
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
+from time import perf_counter
 from typing import TYPE_CHECKING
 from weakref import WeakKeyDictionary
-
-from npe2 import PackageMetadata
-
-with suppress(ModuleNotFoundError):
-    __import__('dotenv').load_dotenv()
-
-from datetime import timedelta
-from time import perf_counter
 
 import dask.threaded
 import numpy as np
 import pytest
 from _pytest.pathlib import bestrelpath
 from IPython.core.history import HistoryManager
+from npe2 import PackageMetadata
 from packaging.version import parse as parse_version
 from pytest_pretty import CustomTerminalReporter
 
@@ -66,6 +61,11 @@ from napari.utils.misc import ROOT_DIR
 
 if TYPE_CHECKING:
     from npe2._pytest_plugin import TestPluginManager
+    from pytestqt.qtbot import QtBot
+
+    from napari._qt.qt_viewer import QtViewer
+    from napari.components import ViewerModel
+
 
 # touch ~/.Xauthority for Xlib support, must happen before importing pyautogui
 if os.getenv('CI') and sys.platform.startswith('linux'):
@@ -304,26 +304,28 @@ def tmp_plugin(npe2pm_: TestPluginManager):
 
 
 @pytest.fixture
-def viewer_model():
+def viewer_model() -> ViewerModel:
     from napari.components import ViewerModel
 
     return ViewerModel()
 
 
 @pytest.fixture
-def qt_viewer_(qtbot, viewer_model, monkeypatch):
+def qt_viewer_(
+    qtbot: QtBot, viewer_model: ViewerModel, monkeypatch: pytest.MonkeyPatch
+) -> QtViewer:
     from napari._qt.qt_viewer import QtViewer
 
     viewer = QtViewer(viewer_model)
 
-    original_controls = viewer.__class__.controls.fget
-    original_layers = viewer.__class__.layers.fget
-    original_layer_buttons = viewer.__class__.layerButtons.fget
-    original_viewer_buttons = viewer.__class__.viewerButtons.fget
-    original_dock_layer_list = viewer.__class__.dockLayerList.fget
-    original_dock_layer_controls = viewer.__class__.dockLayerControls.fget
-    original_dock_console = viewer.__class__.dockConsole.fget
-    original_dock_performance = viewer.__class__.dockPerformance.fget
+    original_controls = viewer.__class__.controls.fget  # type: ignore[attr-defined]
+    original_layers = viewer.__class__.layers.fget  # type: ignore[attr-defined]
+    original_layer_buttons = viewer.__class__.layerButtons.fget  # type: ignore[attr-defined]
+    original_viewer_buttons = viewer.__class__.viewerButtons.fget  # type: ignore[attr-defined]
+    original_dock_layer_list = viewer.__class__.dockLayerList.fget  # type: ignore[attr-defined]
+    original_dock_layer_controls = viewer.__class__.dockLayerControls.fget  # type: ignore[attr-defined]
+    original_dock_console = viewer.__class__.dockConsole.fget  # type: ignore[attr-defined]
+    original_dock_performance = viewer.__class__.dockPerformance.fget  # type: ignore[attr-defined]
 
     def hide_widget(widget):
         widget.hide()
@@ -414,11 +416,15 @@ def qt_viewer_(qtbot, viewer_model, monkeypatch):
 
 
 @pytest.fixture
-def qt_viewer(qt_viewer_):
+def qt_viewer(
+    qt_viewer_: QtViewer, request: pytest.FixtureRequest
+) -> QtViewer:
     """We created `qt_viewer_` fixture to allow modifying qt_viewer
     if module-level-specific modifications are necessary.
     For example, in `test_qt_viewer.py`.
     """
+    if 'show_qt_viewer' in request.keywords:
+        qt_viewer_.show()
     return qt_viewer_
 
 

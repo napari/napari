@@ -19,7 +19,8 @@ PERFMON_SCRIPT = """
 import napari
 from qtpy.QtCore import QTimer
 
-v = napari.view_points()
+v = napari.Viewer()
+v.add_points()
 QTimer.singleShot(100, napari._qt.qt_event_loop.quit_app)
 napari.run()
 """

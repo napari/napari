@@ -55,6 +55,15 @@ LAYERLIST_CONTEXT_SUBMENUS = [
             enablement=(LLSCK.num_selected_layers == 1),
         ),
     ),
+    (
+        MenuId.LAYERLIST_CONTEXT,
+        SubmenuItem(
+            submenu=MenuId.LAYERS_CONTEXT_VISUALIZATION,
+            title=trans._('Visualization'),
+            group=MenuGroup.LAYERLIST_CONTEXT.COPY_SPATIAL,
+            order=None,
+        ),
+    ),
 ]
 
 # The following dicts define groups to which menu items in the layer list context menu can belong
@@ -100,7 +109,10 @@ LAYERLIST_CONTEXT_ACTIONS: list[Action] = [
         title=trans._('Merge to RGB'),
         callback=partial(_layer_actions._merge_stack, rgb=True),
         enablement=(
-            (LLSCK.num_selected_layers == 3)
+            (
+                (LLSCK.num_selected_layers == 3)
+                | (LLSCK.num_selected_layers == 4)
+            )
             & (LLSCK.num_selected_image_layers == LLSCK.num_selected_layers)
             & LLSCK.all_selected_layers_same_shape
         ),
@@ -218,6 +230,31 @@ LAYERLIST_CONTEXT_ACTIONS: list[Action] = [
                 'group': MenuGroup.NAVIGATION,
             }
         ],
+    ),
+    Action(
+        id='napari.layer.bounding_box',
+        title=trans._('Bounding Box'),
+        callback=_layer_actions._toggle_bounding_box,
+        menus=[
+            {
+                'id': MenuId.LAYERS_CONTEXT_VISUALIZATION,
+            }
+        ],
+        enablement=LLSCK.num_selected_layers > 0,
+    ),
+    Action(
+        id='napari.layer.colorbar',
+        title=trans._('Colorbar'),
+        callback=_layer_actions._toggle_colorbar,
+        menus=[
+            {
+                'id': MenuId.LAYERS_CONTEXT_VISUALIZATION,
+            }
+        ],
+        enablement=(
+            (LLSCK.num_selected_layers > 0)
+            & LLSCK.all_selected_layers_support_colorbar
+        ),
     ),
 ]
 

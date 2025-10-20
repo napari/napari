@@ -7,9 +7,9 @@ from napari.components.overlays import (
 )
 
 
-def test_viewer_overlays(make_napari_viewer):
-    viewer = make_napari_viewer()
-    canvas = viewer.window._qt_viewer.canvas
+def test_viewer_overlays(qt_viewer):
+    viewer = qt_viewer.viewer
+    canvas = qt_viewer.canvas
 
     for overlay in viewer._overlays.values():
         if isinstance(overlay, CanvasOverlay):
@@ -43,9 +43,9 @@ def test_viewer_overlays(make_napari_viewer):
     assert new_overlay_node not in canvas.view.children
 
 
-def test_layer_overlays(make_napari_viewer):
-    viewer = make_napari_viewer()
-    canvas = viewer.window._qt_viewer.canvas
+def test_layer_overlays(qt_viewer):
+    viewer = qt_viewer.viewer
+    canvas = qt_viewer.canvas
 
     view_children = len(canvas.view.children)
     scene_children = len(canvas.view.scene.children)
@@ -94,10 +94,11 @@ def test_layer_overlays(make_napari_viewer):
     assert len(canvas.view.scene.children) == scene_children
 
 
-def test_grid_mode(make_napari_viewer):
-    viewer = make_napari_viewer(ndisplay=3)
-    canvas = viewer.window._qt_viewer.canvas
+def test_grid_mode(qt_viewer):
+    viewer = qt_viewer.viewer
+    canvas = qt_viewer.canvas
 
+    viewer.dims.ndisplay = 3
     viewer.add_image(np.ones((10, 10, 10)))
 
     angles = 10, 20, 30  # just some nonzero stuff
@@ -127,3 +128,68 @@ def test_grid_mode(make_napari_viewer):
     for camera in (canvas.camera, *canvas.grid_cameras):
         np.testing.assert_allclose(camera.angles, angles)
         assert camera.zoom == zoom
+
+
+def test_tiling_canvas_overlays(qt_viewer):
+    viewer = qt_viewer.viewer
+    canvas = qt_viewer.canvas
+
+    viewer.scale_bar.visible = True
+    viewer.text_overlay.visible = True
+    viewer.text_overlay.text = 'test'
+
+    vispy_scale_bar = canvas._overlay_to_visual[viewer.scale_bar][0]
+    vispy_text_overlay = canvas._overlay_to_visual[viewer.text_overlay][0]
+
+    padding = 10.0  # currently hardcoded
+    y_max, x_max = canvas.size
+
+    scale_bar_y_size = vispy_scale_bar.y_size + padding
+    scale_bar_x_size = vispy_scale_bar.x_size + padding
+
+    text_overlay_y_size = vispy_text_overlay.y_size + padding
+    text_overlay_x_size = vispy_text_overlay.x_size + padding
+
+    # check vertical tiling works on the bottom right
+    viewer.scale_bar.position = 'bottom_right'
+    viewer.text_overlay.position = 'bottom_right'
+    canvas._update_overlay_canvas_positions()
+
+    np.testing.assert_almost_equal(
+        vispy_text_overlay.node.transform.translate[0],
+        x_max - text_overlay_x_size,
+        decimal=3,
+    )
+    np.testing.assert_almost_equal(
+        vispy_text_overlay.node.transform.translate[1],
+        y_max - text_overlay_y_size - scale_bar_y_size,
+        decimal=3,
+    )
+
+    # move scale bar out of the way and check tiling is updated
+    viewer.scale_bar.position = 'top_right'
+    canvas._update_overlay_canvas_positions()
+    np.testing.assert_almost_equal(
+        vispy_text_overlay.node.transform.translate[0],
+        x_max - text_overlay_x_size,
+        decimal=3,
+    )
+    np.testing.assert_almost_equal(
+        vispy_text_overlay.node.transform.translate[1],
+        y_max - text_overlay_y_size,
+        decimal=3,
+    )
+
+    # check horizontal tiling works on the top right
+    viewer.text_overlay.position = 'top_right'
+    canvas._update_overlay_canvas_positions()
+    np.testing.assert_almost_equal(
+        vispy_text_overlay.node.transform.translate[0],
+        x_max - text_overlay_x_size - scale_bar_x_size,
+        decimal=3,
+    )
+    np.testing.assert_almost_equal(
+        vispy_text_overlay.node.transform.translate[1],
+        0 + padding,
+        decimal=3,
+    )

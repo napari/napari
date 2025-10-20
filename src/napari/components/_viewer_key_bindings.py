@@ -7,7 +7,7 @@ from app_model.types import KeyCode, KeyMod
 
 from napari.components.viewer_model import ViewerModel
 from napari.utils.action_manager import action_manager
-from napari.utils.notifications import show_info
+from napari.utils.notifications import show_info, show_warning
 from napari.utils.theme import available_themes, get_system_theme
 from napari.utils.transforms import Affine
 from napari.utils.translations import trans
@@ -169,6 +169,13 @@ def rotate_layers(viewer: Viewer):
 
 @register_viewer_action(trans._('Toggle grid mode'))
 def toggle_grid(viewer: Viewer):
+    if (
+        1 < len(viewer.layers) <= abs(viewer.grid.stride)
+        and not viewer.grid.enabled
+    ):
+        show_warning(
+            'Grid stride is too large for number of layers. Will render as 1x1 grid.'
+        )
     viewer.grid.enabled = not viewer.grid.enabled
 
 
@@ -182,6 +189,16 @@ def toggle_unselected_visibility(viewer: Viewer):
     for layer in viewer.layers:
         if layer not in viewer.layers.selection:
             layer.visible = not layer.visible
+
+
+@register_viewer_action(trans._('Select layer above'))
+def select_layer_above(viewer):
+    viewer.layers.select_next()
+
+
+@register_viewer_action(trans._('Select layer below'))
+def select_layer_below(viewer):
+    viewer.layers.select_previous()
 
 
 @register_viewer_action(trans._('Select and show only layer above'))
