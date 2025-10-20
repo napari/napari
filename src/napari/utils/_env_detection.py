@@ -36,8 +36,8 @@ def get_conda_path() -> Path | None:
     return Path(conda) if conda else None
 
 
-def chek_if_uv_venv() -> bool:
-    """Check if we are in a uv virtual environment.
+def check_if_uv_env() -> bool:
+    """Check if we are in a uv environment.
 
     Returns
     -------
@@ -69,9 +69,9 @@ def check_if_pixi_env() -> bool:
 
 
 def detect_environment() -> Environment:
-    """Detect the current environment."""
+    """Detect the current isolated environment."""
     if get_venv_path() is not None:
-        if chek_if_uv_venv():
+        if check_if_uv_env():
             return Environment.uv
         return Environment.pip
     if get_conda_path() is not None:
