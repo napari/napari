@@ -43,6 +43,26 @@ def test_random_vectors_image():
     assert layer._view_data.shape[2] == 2
 
 
+def test_sparse_vectors_image_coordinates():
+    """Test if vector images are correctly converted to coordinates.
+
+    Prior to [1]_, vector images were incorrectly converted to coordinates.
+
+    This was due to an incorrect call to `np.meshgrid`.
+
+    [1]: https://forum.image.sc/t/missing-something-about-vectors-in-napari/117092
+    """
+    shape = (20, 10)
+    data = np.zeros(shape + (2,))
+    i, j = np.random.randint(shape)
+    data[i, j] = np.random.random((2,))
+    layer = Vectors(data)
+    coord_data = layer.data
+    non_zero_vectors = ~np.all(coord_data[:, 1] == 0, axis=-1)
+    non_zero_coords = coord_data[non_zero_vectors, 0, :][0]
+    np.testing.assert_equal(non_zero_coords, (i, j))
+
+
 def test_no_args_vectors():
     """Test instantiating Vectors layer with no arguments"""
     layer = Vectors()
