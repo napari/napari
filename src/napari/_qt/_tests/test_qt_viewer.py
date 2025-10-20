@@ -1227,7 +1227,7 @@ def test_viewer_drag_to_zoom(
     assert viewer_model._zoom_box.visible is True, (
         'Zoom box should remain visible during drag'
     )
-    assert viewer_model._zoom_box.canvas_positions == ((0, 0), (100, 100)), (
+    assert viewer_model._zoom_box.position == ((0, 0), (100, 100)), (
         'Zoom box canvas positions should match the drag coordinates'
     )
 
@@ -1287,6 +1287,6 @@ def test_viewer_drag_to_zoom_with_cancel(
     assert viewer_model._zoom_box.visible is False, (
         'Zoom box should remain visible during drag'
     )
-    assert viewer_model._zoom_box.canvas_positions == ((0, 0), (0, 0)), (
+    assert viewer_model._zoom_box.position == ((0, 0), (0, 0)), (
         'Zoom box canvas positions should match the drag coordinates'
     )
