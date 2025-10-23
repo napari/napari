@@ -154,7 +154,7 @@ class ClippingPlane(Plane):
     enabled: bool = True
 
 
-class ClippingPlaneList(SelectableEventedList):
+class ClippingPlaneList(SelectableEventedList[ClippingPlane]):
     """A list of planes with some utility methods."""
 
     def as_array(self) -> npt.NDArray:

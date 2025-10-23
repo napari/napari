@@ -15,12 +15,15 @@ from typing import (
     TYPE_CHECKING,
     Any,
     ClassVar,
+    TypedDict,
 )
 
 import magicgui as mgui
 import numpy as np
 import pint
 from npe2 import plugin_manager as pm
+from psygnal import Signal, SignalGroup
+from psygnal.containers import EventedDict as PsygnalEventedDict
 
 from napari.layers.base._base_constants import (
     BaseProjectionMode,
@@ -115,6 +118,46 @@ class PostInit(ABCMeta):
         obj = super().__call__(*args, **kwargs)
         obj._post_init()
         return obj
+
+
+class LayerEventGroup(SignalGroup):
+    axis_labels = Signal()
+    data = Signal()
+    metadata = Signal()
+    affine = Signal()
+    blending = Signal()
+    cursor = Signal(str)
+    cursor_size = Signal(int)
+    editable = Signal()
+    extent = Signal()
+    help = Signal(str)
+    loaded = Signal()
+    mode = Signal()
+    mouse_pan = Signal(bool)
+    mouse_zoom = Signal(bool)
+    name = Signal()
+    opacity = Signal()
+    projection_mode = Signal()
+    refresh = Signal()
+    reload = Signal()
+    rotate = Signal()
+    scale = Signal()
+    scale_factor = Signal()
+    set_data = Signal()
+    shear = Signal()
+    status = Signal()
+    thumbnail = Signal()
+    translate = Signal()
+    units = Signal()
+    visible = Signal()
+    _extent_augmented = Signal()
+    _overlays = Signal()
+
+
+class ClippingPlaneDict(TypedDict, total=False):
+    position: tuple[float, float, float]
+    normal: tuple[float, float, float]
+    enabled: bool
 
 
 @mgui.register_type(choices=get_layers, return_callback=add_layer_to_viewer)
@@ -316,30 +359,36 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         Mode.TRANSFORM: 'standard',
     }
     events: EmitterGroup
+    signals: LayerEventGroup
 
     def __init__(
         self,
-        data,
-        ndim,
+        data: npt.NDArray | list[npt.NDArray],
+        ndim: int,
         *,
-        affine=None,
-        axis_labels=None,
-        blending='translucent',
-        cache=True,  # this should move to future "data source" object.
-        experimental_clipping_planes=None,
-        metadata=None,
-        mode='pan_zoom',
-        multiscale=False,
-        name=None,
-        opacity=1.0,
-        projection_mode='none',
-        rotate=None,
-        scale=None,
-        shear=None,
-        translate=None,
-        units=None,
-        visible=True,
-    ):
+        affine: npt.ArrayLike | Affine | None = None,
+        axis_labels: tuple[str] | None = None,
+        blending: Blending = Blending.TRANSLUCENT,
+        cache: bool = True,  # this should move to future "data source" object.
+        experimental_clipping_planes: ClippingPlane
+        | list[ClippingPlane]
+        | ClippingPlaneList
+        | ClippingPlaneDict
+        | list[ClippingPlaneDict]
+        | None = None,
+        metadata: dict[str, Any] | None = None,
+        mode: str = 'pan_zoom',
+        multiscale: bool = False,
+        name: str | None = None,
+        opacity: float = 1.0,
+        projection_mode: str = 'none',
+        rotate: float | tuple[float, float, float] | npt.NDArray | None = None,
+        scale: tuple[float, ...] | None = None,
+        shear: npt.NDArray | None = None,
+        translate: tuple[float, ...] | None = None,
+        units: tuple[pint.Unit, ...] | None = None,
+        visible: bool = True,
+    ) -> None:
         super().__init__()
 
         if name is None and data is not None:
@@ -404,10 +453,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         #   sample spacing.
         # 3. `physical2world`: An extra transform applied in world-coordinates that
         #   typically aligns this layer with another.
+
         if scale is None:
-            scale = [1] * ndim
+            scale = tuple([1.0 for _ in range(ndim)])
         if translate is None:
-            translate = [0] * ndim
+            translate = tuple([0.0 for _ in range(ndim)])
         self._initial_affine = coerce_affine(
             affine, ndim=ndim, name='physical2world'
         )
@@ -433,9 +483,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self._array_like = False
 
         self._thumbnail_shape = (32, 32, 4)
-        self._thumbnail = np.zeros(self._thumbnail_shape, dtype=np.uint8)
+        self._thumbnail: npt.NDArray[np.uint8] = np.zeros(
+            self._thumbnail_shape, dtype=np.uint8
+        )
         self._update_properties = True
-        self._name = ''
+        self._name = name or ''
+
         self.experimental_clipping_planes = experimental_clipping_planes
 
         # circular import
@@ -481,7 +534,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             _extent_augmented=Event,
             _overlays=Event,
         )
-        self.name = name
+        self.signals = LayerEventGroup(instance=self)
+        self.name = self._name
         self.mode = mode
         self.projection_mode = projection_mode
         self._overlays.update(
@@ -490,6 +544,15 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
                 'selection_box': SelectionBoxOverlay(),
                 'bounding_box': BoundingBoxOverlay(),
             }
+        )
+        self._overlays_psygnal: PsygnalEventedDict[str, Overlay] = (
+            PsygnalEventedDict(
+                {
+                    'transform_box': TransformBoxOverlay(),
+                    'selection_box': SelectionBoxOverlay(),
+                    'bounding_box': BoundingBoxOverlay(),
+                }
+            )
         )
 
     def _post_init(self):
@@ -1052,6 +1115,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         if '_extent_augmented' in self.__dict__:
             del self._extent_augmented
         self.events._extent_augmented()
+        self.signals._extent_augmented()
 
     @property
     def _data_slice(self) -> _ThickNDSlice:
@@ -1080,13 +1144,23 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         dict of str to Any
             Dictionary of attributes on base layer.
         """
+        planes_dict: list[ClippingPlaneDict] = []
+        for plane in self.experimental_clipping_planes:
+            if isinstance(plane, ClippingPlane):
+                planes_dict.append(plane.dict())
+            elif isinstance(plane, dict):
+                planes_dict.append(plane)
+            elif isinstance(plane, ClippingPlaneList | list[ClippingPlane]):
+                planes_dict.extend([p.dict() for p in plane])
+            else:
+                # TODO: what to do if plane is Any or tuple[str, Any]?
+                ...
+
         base_dict = {
             'affine': self.affine.affine_matrix,
             'axis_labels': self.axis_labels,
             'blending': self.blending,
-            'experimental_clipping_planes': [
-                plane.dict() for plane in self.experimental_clipping_planes
-            ],
+            'experimental_clipping_planes': planes_dict,
             'metadata': self.metadata,
             'name': self.name,
             'opacity': self.opacity,
@@ -1123,7 +1197,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         return self._thumbnail
 
     @thumbnail.setter
-    def thumbnail(self, thumbnail: npt.NDArray) -> None:
+    def thumbnail(self, thumbnail: npt.NDArray[Any]) -> None:
         if 0 in thumbnail.shape:
             thumbnail = np.zeros(self._thumbnail_shape, dtype=np.uint8)
         if thumbnail.dtype != np.uint8:
@@ -1143,6 +1217,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
         self._thumbnail = thumbnail.astype(np.uint8)
         self.events.thumbnail()
+        self.signals.thumbnail()
 
     @property
     def ndim(self) -> int:
@@ -1160,6 +1235,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             return
         self._help = help_text
         self.events.help(help=help_text)
+        self.signals.help(help_text)
 
     @property
     def mouse_pan(self) -> bool:
@@ -1172,6 +1248,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             return
         self._mouse_pan = mouse_pan
         self.events.mouse_pan(mouse_pan=mouse_pan)
+        self.signals.mouse_pan(mouse_pan)
 
     @property
     def mouse_zoom(self) -> bool:
@@ -1184,6 +1261,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             return
         self._mouse_zoom = mouse_zoom
         self.events.mouse_zoom(mouse_zoom=mouse_zoom)
+        self.signals.mouse_zoom(mouse_zoom)
 
     @property
     def cursor(self) -> str:
@@ -1196,6 +1274,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             return
         self._cursor = cursor
         self.events.cursor(cursor=cursor)
+        self.signals.cursor(cursor)
 
     @property
     def cursor_size(self) -> int:
@@ -1208,18 +1287,27 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             return
         self._cursor_size = cursor_size
         self.events.cursor_size(cursor_size=cursor_size)
+        self.signals.cursor_size(cursor_size)
 
     @property
-    def experimental_clipping_planes(self) -> ClippingPlaneList:
+    def experimental_clipping_planes(
+        self,
+    ) -> (
+        ClippingPlaneList
+        | ClippingPlane
+        | ClippingPlaneDict
+        | list[ClippingPlane | ClippingPlaneDict]
+    ):
         return self._experimental_clipping_planes
 
     @experimental_clipping_planes.setter
     def experimental_clipping_planes(
         self,
-        value: dict
+        value: ClippingPlaneList
         | ClippingPlane
-        | list[ClippingPlane | dict]
-        | ClippingPlaneList,
+        | ClippingPlaneDict
+        | list[ClippingPlane | ClippingPlaneDict]
+        | None,
     ) -> None:
         self._experimental_clipping_planes.clear()
         if value is None:
