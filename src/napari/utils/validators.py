@@ -8,7 +8,7 @@ from napari.utils.translations import trans
 if TYPE_CHECKING:
     from collections.abc import MutableSequence
 
-T = TypeVar('T', bound=int | float)
+T = TypeVar('T')
 
 
 # TODO: this should be generalizable to
