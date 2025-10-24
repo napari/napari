@@ -11,7 +11,13 @@ from collections import defaultdict
 from collections.abc import Callable, Generator, Hashable, Mapping, Sequence
 from contextlib import contextmanager
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, ClassVar, TypeAlias, TypedDict, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    ClassVar,
+    TypeAlias,
+    TypedDict,
+)
 
 import magicgui as mgui
 import numpy as np
@@ -150,9 +156,9 @@ class LayerEventGroup(SignalGroup):
     _overlays = Signal()
 
 
-class ClippingPlaneDict(TypedDict, total=False):
-    position: tuple[float, float, float]
-    normal: tuple[float, float, float]
+class ClippingPlaneDict(TypedDict):
+    position: list[float]
+    normal: list[float]
     enabled: bool
 
 
@@ -835,9 +841,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         return str(self._blending)
 
     @blending.setter
-    def blending(self, blending):
+    def blending(self, blending: str) -> None:
         self._blending = Blending(blending)
         self.events.blending()
+        self.signals.blending()
 
     @property
     def visible(self) -> bool:
@@ -854,6 +861,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             self.refresh(extent=False)
         self._on_visible_changed()
         self.events.visible()
+        self.signals.visible()
 
     def _on_visible_changed(self) -> None:
         """Execute side-effects on this layer related to changes of the visible state."""
@@ -875,6 +883,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self._editable = editable
         self._on_editable_changed()
         self.events.editable()
+        self.signals.editable()
 
     def _reset_editable(self) -> None:
         """Reset this layer's editable state based on layer properties."""
@@ -895,6 +904,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self._transforms['data2physical'].axis_labels = axis_labels  # type: ignore[assignment]
         if self._transforms['data2physical'].axis_labels != prev:
             self.events.axis_labels()
+            self.signals.axis_labels()
 
     @property
     def units(self) -> tuple[pint.Unit, ...]:
@@ -910,6 +920,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             self._clear_extent()
             self.refresh(extent=False)
             self.events.units()
+            self.signals.units()
 
     @property
     def scale(self) -> npt.NDArray:
@@ -925,6 +936,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self.refresh(extent=False)
         # self.refresh()
         self.events.scale()
+        self.signals.scale()
 
     @property
     def scale_factor(self):
@@ -936,6 +948,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         if self._scale_factor != scale_factor:
             self._scale_factor = scale_factor
             self.events.scale_factor()
+            self.signals.scale_factor()
 
     @property
     def translate(self) -> npt.NDArray:
@@ -948,6 +961,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self._clear_extent()
         self.refresh(extent=False)
         self.events.translate()
+        self.signals.translate()
 
     @property
     def rotate(self) -> npt.NDArray:
@@ -960,6 +974,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self._clear_extent()
         self.refresh(extent=False)
         self.events.rotate()
+        self.signals.rotate()
 
     @property
     def shear(self) -> npt.NDArray:
@@ -972,6 +987,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self._clear_extent()
         self.refresh(extent=False)
         self.events.shear()
+        self.signals.shear()
 
     @property
     def affine(self) -> Affine:
@@ -989,6 +1005,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self._clear_extent()
         self.refresh(extent=False)
         self.events.affine()
+        self.signals.affine()
 
     def _reset_affine(self) -> None:
         self.affine = self._initial_affine
@@ -1024,7 +1041,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
     @property
     @abstractmethod
-    def _extent_data(self) -> np.ndarray:
+    def _extent_data(self) -> npt.NDArray:
         """Extent of layer in data coordinates.
 
         Returns
@@ -1034,7 +1051,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         raise NotImplementedError
 
     @property
-    def _extent_data_augmented(self) -> np.ndarray:
+    def _extent_data_augmented(self) -> npt.NDArray:
         """Extent of layer in data coordinates.
 
         Differently from Layer._extent_data, this also includes the "size" of
@@ -1047,7 +1064,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         return self._extent_data
 
     @property
-    def _extent_world(self) -> np.ndarray:
+    def _extent_world(self) -> npt.NDArray:
         """Range of layer in world coordinates.
 
         Returns
@@ -1058,7 +1075,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         return get_extent_world(self._extent_data, self._data_to_world)
 
     @property
-    def _extent_world_augmented(self) -> np.ndarray:
+    def _extent_world_augmented(self) -> npt.NDArray:
         """Range of layer in world coordinates.
 
         Differently from Layer._extent_world, this also includes the "size" of
@@ -1152,16 +1169,24 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             Dictionary of attributes on base layer.
         """
         planes_dict: list[ClippingPlaneDict] = []
-        for plane in self.experimental_clipping_planes:
-            if isinstance(plane, ClippingPlane):
-                planes_dict.append(cast(ClippingPlaneDict, plane.dict()))
-            elif isinstance(plane, dict):
-                planes_dict.append(plane)
-            elif isinstance(plane, (list, ClippingPlaneList)):
-                planes_dict.extend([p.dict() for p in plane])
-            else:
-                # TODO: what to do if plane is Any or tuple[str, Any]?
-                ...
+        clipping_planes = self.experimental_clipping_planes
+        # ClippingPlane.dict() returns a dict[str, Any];
+        # would be nice to override that signature to be more specific
+        # to our ClippingPlaneDict type so to remove the type: ignore comments;
+        # it's also curious that pydantic doesn't support
+        # inferring a model's dict() return type.
+        p: ClippingPlaneDict
+        if isinstance(clipping_planes, Sequence):
+            for plane in clipping_planes:
+                p = plane.dict() if isinstance(plane, ClippingPlane) else plane  # type: ignore[assignment]
+                planes_dict.append(p)
+        else:
+            p = (
+                clipping_planes.dict()  # type: ignore[assignment]
+                if isinstance(clipping_planes, ClippingPlane)
+                else clipping_planes
+            )
+            planes_dict.append(p)
 
         base_dict = {
             'affine': self.affine.affine_matrix,
@@ -1312,8 +1337,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             if not isinstance(value, Sequence):
                 new_value: list[ClippingPlane | ClippingPlaneDict] = [value]
             for new_plane in new_value:
-                plane = ClippingPlane(**new_plane) if isinstance(new_plane, dict) else new_plane
-                self._experimental_clipping_planes.append(plane)
+                plane = (
+                    ClippingPlane.parse_obj(new_plane)
+                    if isinstance(new_plane, dict)
+                    else new_plane
+                )
+                self._experimental_clipping_planes.append(plane)  # type: ignore[arg-type]
         else:
             return
 
@@ -1326,7 +1355,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             self._set_view_slice()
 
     @abstractmethod
-    def _set_view_slice(self):
+    def _set_view_slice(self) -> None:
         raise NotImplementedError
 
     def _slice_dims(
@@ -2279,7 +2308,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self,
         position: npt.NDArray,
         *,
-        view_direction: np.ndarray | None = None,
+        view_direction: npt.NDArray | None = None,
         dims_displayed: list[int] | None = None,
         world: bool = False,
     ) -> str:
