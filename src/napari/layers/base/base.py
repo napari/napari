@@ -11,12 +11,7 @@ from collections import defaultdict
 from collections.abc import Callable, Generator, Hashable, Mapping, Sequence
 from contextlib import contextmanager
 from functools import cached_property
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    ClassVar,
-    TypedDict,
-)
+from typing import TYPE_CHECKING, Any, ClassVar, TypeAlias, TypedDict, cast
 
 import magicgui as mgui
 import numpy as np
@@ -72,6 +67,7 @@ from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     import numpy.typing as npt
+    from typing_extensions import Self
 
     from napari.components.dims import Dims
     from napari.components.overlays.base import Overlay
@@ -158,6 +154,15 @@ class ClippingPlaneDict(TypedDict, total=False):
     position: tuple[float, float, float]
     normal: tuple[float, float, float]
     enabled: bool
+
+
+ClippingPlaneType: TypeAlias = (
+    ClippingPlane
+    | list[ClippingPlane]
+    | ClippingPlaneList
+    | ClippingPlaneDict
+    | list[ClippingPlaneDict]
+)
 
 
 @mgui.register_type(choices=get_layers, return_callback=add_layer_to_viewer)
@@ -370,12 +375,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         axis_labels: tuple[str] | None = None,
         blending: Blending = Blending.TRANSLUCENT,
         cache: bool = True,  # this should move to future "data source" object.
-        experimental_clipping_planes: ClippingPlane
-        | list[ClippingPlane]
-        | ClippingPlaneList
-        | ClippingPlaneDict
-        | list[ClippingPlaneDict]
-        | None = None,
+        experimental_clipping_planes: ClippingPlaneType | None = None,
         metadata: dict[str, Any] | None = None,
         mode: str = 'pan_zoom',
         multiscale: bool = False,
@@ -489,6 +489,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self._update_properties = True
         self._name = name or ''
 
+        if experimental_clipping_planes is None:
+            experimental_clipping_planes = self._experimental_clipping_planes
         self.experimental_clipping_planes = experimental_clipping_planes
 
         # circular import
@@ -1147,10 +1149,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         planes_dict: list[ClippingPlaneDict] = []
         for plane in self.experimental_clipping_planes:
             if isinstance(plane, ClippingPlane):
-                planes_dict.append(plane.dict())
+                planes_dict.append(cast(ClippingPlaneDict, plane.dict()))
             elif isinstance(plane, dict):
                 planes_dict.append(plane)
-            elif isinstance(plane, ClippingPlaneList | list[ClippingPlane]):
+            elif isinstance(plane, (list, ClippingPlaneList)):
                 planes_dict.extend([p.dict() for p in plane])
             else:
                 # TODO: what to do if plane is Any or tuple[str, Any]?
@@ -1292,33 +1294,23 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     @property
     def experimental_clipping_planes(
         self,
-    ) -> (
-        ClippingPlaneList
-        | ClippingPlane
-        | ClippingPlaneDict
-        | list[ClippingPlane | ClippingPlaneDict]
-    ):
+    ) -> ClippingPlaneType:
         return self._experimental_clipping_planes
 
     @experimental_clipping_planes.setter
     def experimental_clipping_planes(
         self,
-        value: ClippingPlaneList
-        | ClippingPlane
-        | ClippingPlaneDict
-        | list[ClippingPlane | ClippingPlaneDict]
-        | None,
+        value: ClippingPlaneType | None,
     ) -> None:
         self._experimental_clipping_planes.clear()
-        if value is None:
+        if value is not None:
+            if not isinstance(value, Sequence):
+                new_value: list[ClippingPlane | ClippingPlaneDict] = [value]
+            for new_plane in new_value:
+                plane = ClippingPlane(**new_plane) if isinstance(new_plane, dict) else new_plane
+                self._experimental_clipping_planes.append(plane)
+        else:
             return
-
-        if isinstance(value, ClippingPlane | dict):
-            value = [value]
-        for new_plane in value:
-            plane = ClippingPlane()
-            plane.update(new_plane)
-            self._experimental_clipping_planes.append(plane)
 
     @property
     def bounding_box(self) -> Overlay:
@@ -2333,7 +2325,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
         return save_layers(path, [self], plugin=plugin)
 
-    def __copy__(self):
+    def __copy__(self) -> Self:
         """Create a copy of this layer.
 
         Returns
@@ -2362,7 +2354,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         data: Any,
         meta: Mapping | None = None,
         layer_type: str | None = None,
-    ) -> Layer:
+    ) -> Self:
         """Create layer from `data` of type `layer_type`.
 
         Primarily intended for usage by reader plugin hooks and creating a
