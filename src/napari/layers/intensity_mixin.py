@@ -16,14 +16,14 @@ if TYPE_CHECKING:
     from typing import Literal, Protocol
 
     import numpy.typing as npt
-    from psygnal import Signal, SignalGroup
+    from psygnal import Signal
 
     from napari.components.overlays import ColorBarOverlay
     from napari.utils.colormaps.colormap import Colormap
     from napari.utils.colormaps.colormap_utils import ValidColormapArg
     from napari.utils.events import EmitterGroup, EventedDict
 
-    class IVMSignalGroup(SignalGroup, Protocol):
+    class IVMSignalGroup(Protocol):
         contrast_limits: Signal
         contrast_limits_range: Signal
         gamma: Signal
