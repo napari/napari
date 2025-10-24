@@ -407,6 +407,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         # Needs to be imported here to avoid circular import in _source
         from napari.layers._source import current_source
 
+        # to trigger events at layer creation,
+        # we first define the internal private variables
+        # marked as `_<property name>` to dummy values;
+        # afterwards we compute the actual values
+        # and rely on the property setters to trigger events.
         self._highlight_visible = True
         self._unique_id = None
         self._source = current_source()
