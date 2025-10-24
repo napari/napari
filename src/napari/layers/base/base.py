@@ -1939,7 +1939,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         click_position: npt.ArrayLike,
         view_direction: npt.ArrayLike,
         dims_displayed: list[int],
-    ) -> tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[npt.NDArray, npt.NDArray]:
         """Calculate a (point, normal) plane parallel to the canvas in data
         coordinates, centered on the centre of rotation of the camera.
 
@@ -2025,10 +2025,13 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         """Adjust position for offset between viewer and data coordinates."""
         return np.asarray(position)
 
+    # TODO: bounding_box type should be
+    # specialized in its shape to (2, 3);
+    # how to do that?
     def _get_ray_intersections(
         self,
         position: npt.NDArray,
-        view_direction: np.ndarray,
+        view_direction: npt.NDArray,
         dims_displayed: list[int],
         bounding_box: npt.NDArray,
         world: bool = True,
@@ -2038,7 +2041,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
         Parameters
         ----------
-        position
+        position: np.ndarray
             the position of the point in nD coordinates. World vs. data
             is set by the world keyword argument.
         view_direction : np.ndarray
