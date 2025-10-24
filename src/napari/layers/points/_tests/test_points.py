@@ -452,6 +452,9 @@ def test_removing_points():
     # one selected point was removed, the other indexes need to be shifted
     assert layer.selected_data == {0, 2, 3}
 
+    # removing nothing should work smoothly
+    layer.remove([])
+
 
 def test_removing_selected_points():
     """Test removing selected points."""
@@ -477,6 +480,26 @@ def test_removing_selected_points():
     layer.selected_data = {4}
     layer.remove_selected()
     assert len(layer.data) == shape[0] - 3
+
+
+def test_popping_points():
+    """Test popping points."""
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    layer = Points(data)
+
+    # Pop point by default index
+    popped = layer.pop()
+    assert len(layer.data) == shape[0] - 1
+    assert np.array_equal(popped['data'], data[-1])
+    assert np.array_equal(layer.data, data[:-1])
+
+    # Pop a point by index at 3
+    popped = layer.pop(3)
+    assert len(layer.data) == shape[0] - 2
+    assert np.array_equal(popped['data'], data[3])
+    assert np.array_equal(layer.data, data[[0, 1, 2, 4, 5, 6, 7, 8]])
 
 
 def test_deleting_selected_value_changes():
@@ -1021,7 +1044,7 @@ def test_points_errors():
 
     # try adding properties with the wrong number of properties
     with pytest.raises(
-        ValueError, match='(does not match length)|(indices imply)'
+        ValueError, match=r'does not match length|indices imply'
     ):
         Points(data, properties=copy(annotations))
 
@@ -1201,7 +1224,7 @@ def test_colormap_without_properties(attribute):
     data = 20 * np.random.random(shape)
     layer = Points(data)
 
-    with pytest.raises(ValueError, match='must be a valid Points.properties'):
+    with pytest.raises(ValueError, match=r'must be a valid Points.properties'):
         setattr(layer, f'{attribute}_color_mode', 'colormap')
 
 
@@ -1217,7 +1240,7 @@ def test_colormap_with_categorical_properties(attribute):
     with (
         pytest.raises(
             TypeError,
-            match='selected property must be numeric to use ColorMode.COLORMAP',
+            match=r'selected property must be numeric to use ColorMode.COLORMAP',
         ),
         pytest.warns(
             UserWarning,
@@ -2365,12 +2388,16 @@ def test_set_properties_with_invalid_shape_errors_safely():
     properties = {
         'class': np.array(['A', 'B', 'C']),
     }
-    points = Points(np.random.rand(3, 2), text='class', properties=properties)
+    points = Points(
+        np.random.default_rng(0).random((3, 2)),
+        text='class',
+        properties=properties,
+    )
     np.testing.assert_equal(points.properties, properties)
     np.testing.assert_array_equal(points.text.values, ['A', 'B', 'C'])
 
     with pytest.raises(
-        ValueError, match='(does not match length)|(indices imply)'
+        ValueError, match=r'does not match length|indices imply'
     ):
         points.properties = {'class': np.array(['D', 'E'])}
 

@@ -248,3 +248,20 @@ def _project(ll: LayerList, axis: int = 0, mode: str = 'max') -> None:
     )
 
     ll.append(new)
+
+
+def _toggle_bounding_box(ll: LayerList) -> None:
+    for layer in ll.selection:
+        layer.bounding_box.visible = not layer.bounding_box.visible
+
+
+def _toggle_colorbar(ll: LayerList) -> None:
+    for layer in ll.selection:
+        if not hasattr(layer, 'colorbar'):
+            raise NotImplementedError(
+                trans._(
+                    'Colorbar is only implemented for Images and Surfaces',
+                    deferred=True,
+                )
+            )
+        layer.colorbar.visible = not layer.colorbar.visible

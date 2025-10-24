@@ -9,6 +9,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,
 )
+from napari._qt.utils import attr_to_settr
 from napari.layers.base._base_constants import BLENDING_TRANSLATIONS, Blending
 from napari.layers.base.base import Layer
 from napari.utils.events.event_utils import connect_setattr
@@ -46,7 +47,6 @@ class QtOpacityBlendingControls(QtWidgetControlsBase):
         super().__init__(parent, layer)
         # Setup layer
         self._layer.events.blending.connect(self._on_blending_change)
-        self._layer.events.opacity.connect(self._on_opacity_change)
 
         # Setup widgets
         sld = QLabeledDoubleSlider(Qt.Orientation.Horizontal, parent=parent)
@@ -54,12 +54,17 @@ class QtOpacityBlendingControls(QtWidgetControlsBase):
         sld.setMinimum(0)
         sld.setMaximum(1)
         sld.setSingleStep(0.01)
+        sld.setValue(self._layer.opacity)
         self.opacity_slider = sld
         connect_setattr(
             self.opacity_slider.valueChanged, self._layer, 'opacity'
         )
+        self._callbacks.append(
+            attr_to_settr(
+                self._layer, 'opacity', self.opacity_slider, 'setValue'
+            )
+        )
         self.opacity_label = QtWrappedLabel(trans._('opacity:'))
-        self._on_opacity_change()
 
         blend_combobox = QComboBox(parent)
         for index, (data, text) in enumerate(BLENDING_TRANSLATIONS.items()):
@@ -104,13 +109,6 @@ class QtOpacityBlendingControls(QtWidgetControlsBase):
             )
         self.blend_combobox.setToolTip(blending_tooltip)
         self._layer.help = blending_tooltip
-
-    def _on_opacity_change(self) -> None:
-        """
-        Receive layer model opacity change event and update opacity slider.
-        """
-        with self._layer.events.opacity.blocker():
-            self.opacity_slider.setValue(self._layer.opacity)
 
     def _on_blending_change(self) -> None:
         """Receive layer model blending mode change event and update slider."""

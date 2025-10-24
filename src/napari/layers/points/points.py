@@ -2085,6 +2085,61 @@ class Points(Layer):
             )
             self.events.features()
 
+    def get_point_info(self, index: int) -> dict:
+        """
+        Retrieve all available information about a point at the given index.
+
+        Parameters
+        ----------
+        index : int
+            Index of the point.
+
+        Returns
+        -------
+        dict
+            A dictionary containing all relevant details of the point.
+        """
+        if not (0 <= index < len(self.data)):
+            return {
+                'data': None,
+                'features': {},
+                'face_color': None,
+                'border_color': None,
+                'size': None,
+                'symbol': None,
+                'border_width': None,
+            }
+
+        info = {
+            'data': self.data[index],
+            'features': self.features.iloc[index].to_dict(),
+            'face_color': self.face_color[index],
+            'border_color': self.border_color[index],
+            'size': self.size[index],
+            'symbol': self.symbol[index],
+            'border_width': self.border_width[index],
+        }
+        return info
+
+    def pop(self, index=-1) -> dict[str, Any]:
+        """Remove and return the point at the given index.
+
+        Parameters
+        ----------
+        index : int, optional
+            Index of the point to remove. Default is -1, which removes the last point.
+
+        Returns
+        -------
+        dict[str, Any]
+            Dictionary containing the removed point's data.
+        """
+        if index == -1:
+            index = len(self.data) - 1
+        info = self.get_point_info(index)
+        self.remove([index])
+        return info
+
     def remove_selected(self) -> None:
         """Remove all selected points."""
         self.remove(list(self.selected_data))
