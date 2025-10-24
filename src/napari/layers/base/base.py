@@ -378,7 +378,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         ndim: int,
         *,
         affine: npt.ArrayLike | Affine | None = None,
-        axis_labels: tuple[str] | None = None,
+        axis_labels: tuple[str, ...] | None = None,
         blending: Blending = Blending.TRANSLUCENT,
         cache: bool = True,  # this should move to future "data source" object.
         experimental_clipping_planes: ClippingPlaneType | None = None,
@@ -395,6 +395,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         units: tuple[pint.Unit, ...] | None = None,
         visible: bool = True,
     ) -> None:
+        # TODO: is this needed?
+        # should it maybe be made explicit
+        # i.e. super(KeymapProvider, self).__init__()
         super().__init__()
 
         if name is None and data is not None:
