@@ -1,91 +1,34 @@
-from collections.abc import Collection, Generator, Iterable
+from __future__ import annotations
+
 from itertools import tee
+from typing import TYPE_CHECKING, TypeGuard, TypeVar
 
 from napari.utils.translations import trans
 
+if TYPE_CHECKING:
+    from collections.abc import MutableSequence
 
-def validate_n_seq(n: int, dtype=None):
-    """Creates a function to validate a sequence of len == N and type == dtype.
+T = TypeVar('T', bound=int | float)
 
-    Currently does **not** validate generators (will always validate true).
 
-    Parameters
-    ----------
-    n : int
-        Desired length of the sequence
-    dtype : type, optional
-        If provided each item in the sequence must match dtype, by default None
+# TODO: this should be generalizable to
+# other mutable sequence types (e.g., tuple)
+def check_list(
+    values: list[T | None], n: int
+) -> TypeGuard[list[T]]:
+    """
+    Check that all elements in the list are not None,
+    and that the length of the iterable is n.
 
     Returns
     -------
-    function
-        Function that can be called on an object to validate that is a sequence
-        of len `n` and (optionally) each item in the sequence has type `dtype`
-
-    Examples
-    --------
-    >>> validate = validate_N_seq(2)
-    >>> validate(8)  # raises TypeError
-    >>> validate([1, 2, 3])  # raises ValueError
-    >>> validate([4, 5])  # just fine, thank you very much
+    bool
+        True if all elements are not None and length is n, False otherwise.
     """
-
-    def func(obj):
-        """Function that validates whether an object is a sequence of len `n`.
-
-        Parameters
-        ----------
-        obj : any
-            the object to be validated
-
-        Raises
-        ------
-        TypeError
-            If the object is not an indexable collection.
-        ValueError
-            If the object does not have length `n`
-        TypeError
-            If `dtype` was provided to the wrapper function and all items in
-            the sequence are not of type `dtype`.
-        """
-
-        if isinstance(obj, Generator):
-            return
-        if not (isinstance(obj, Collection) and hasattr(obj, '__getitem__')):
-            raise TypeError(
-                trans._(
-                    "object '{obj}' is not an indexable collection (list, tuple, or np.array), of length {number}",
-                    deferred=True,
-                    obj=obj,
-                    number=n,
-                )
-            )
-        if len(obj) != n:
-            raise ValueError(
-                trans._(
-                    'object must have length {number}, got {obj_len}',
-                    deferred=True,
-                    number=n,
-                    obj_len=len(obj),
-                )
-            )
-        if dtype is not None:
-            for item in obj:
-                if not isinstance(item, dtype):
-                    raise TypeError(
-                        trans._(
-                            'Every item in the sequence must be of type {dtype}, but {item} is of type {item_type}',
-                            deferred=True,
-                            dtype=dtype,
-                            item=item,
-                            item_type=type(item),
-                        )
-                    )
-
-    return func
+    return all(item is not None for item in values) and len(values) == n
 
 
-def _pairwise(iterable: Iterable):
+def _pairwise(iterable: MutableSequence[T]) -> zip[tuple[T, T]]:
     """Convert iterable to a zip object containing tuples of pairs along the
     sequence.
 
@@ -105,15 +48,15 @@ def _pairwise(iterable: Iterable):
     return zip(a, b, strict=False)
 
 
-def _validate_increasing(values: Iterable) -> None:
+def validate_increasing(values: list[T]) -> None:
     """Ensure that values in an iterable are monotocially increasing.
 
     Examples
     --------
-    >>> _validate_increasing([1, 2, 3, 4])
+    >>> validate_increasing([1, 2, 3, 4])
     None
 
-    >>> _validate_increasing([1, 4, 3, 4])
+    >>> validate_increasing([1, 4, 3, 4])
     ValueError: Sequence [1, 4, 3, 4] must be monotonically increasing.
 
     Raises
