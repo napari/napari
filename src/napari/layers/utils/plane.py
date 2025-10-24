@@ -1,4 +1,6 @@
-from typing import Any, TypeAlias, cast
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, TypeAlias, cast
 
 import numpy as np
 import numpy.typing as npt
@@ -7,6 +9,15 @@ from napari._pydantic_compat import validator
 from napari.utils.events import EventedModel, SelectableEventedList
 from napari.utils.geometry import intersect_line_with_plane_3d
 from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    from typing import TypedDict
+
+    class SlicingPlaneDict(TypedDict):
+        """Typed dictionary equivalent of SlicingPlane."""
+        position: tuple[float, float, float]
+        normal: tuple[float, float, float]
+        thickness: float
 
 Point3D: TypeAlias = tuple[float, float, float]
 
@@ -64,7 +75,7 @@ class Plane(EventedModel):
         b: npt.NDArray,
         c: npt.NDArray,
         enabled: bool = True,
-    ) -> 'Plane':
+    ) -> Plane:
         """Derive a Plane from three points.
 
         Parameters
@@ -102,7 +113,7 @@ class Plane(EventedModel):
         return np.stack([self.position, self.normal])
 
     @classmethod
-    def from_array(cls, array: npt.NDArray, enabled: bool = True) -> 'Plane':
+    def from_array(cls, array: npt.NDArray, enabled: bool = True) -> Plane:
         """Construct a plane from a (2, 3) array.
 
         [0, :] : plane position
@@ -174,7 +185,7 @@ class ClippingPlaneList(SelectableEventedList[ClippingPlane]):
     @classmethod
     def from_array(
         cls, array: npt.NDArray, enabled: bool = True
-    ) -> 'ClippingPlaneList':
+    ) -> ClippingPlaneList:
         """Construct the PlaneList from an (N, 2, 3) array.
 
         [i, 0, :] : ith plane position
@@ -197,7 +208,7 @@ class ClippingPlaneList(SelectableEventedList[ClippingPlane]):
     @classmethod
     def from_bounding_box(
         cls, center: Point3D, dimensions: Point3D, enabled: bool = True
-    ) -> 'ClippingPlaneList':
+    ) -> ClippingPlaneList:
         """
         generate 6 planes positioned to form a bounding box, with normals towards the center
 

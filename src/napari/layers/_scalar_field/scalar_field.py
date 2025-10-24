@@ -16,7 +16,12 @@ from napari.layers._scalar_field._slice import (
     _ScalarFieldSliceRequest,
     _ScalarFieldSliceResponse,
 )
-from napari.layers.image._image_constants import Interpolation, VolumeDepiction
+from napari.layers.base._base_constants import Blending
+from napari.layers.image._image_constants import (
+    ImageProjectionMode,
+    Interpolation,
+    VolumeDepiction,
+)
 from napari.layers.image._image_mouse_bindings import (
     move_plane_along_normal as plane_drag_callback,
     set_plane_position as plane_double_click_callback,
@@ -35,7 +40,13 @@ from napari.utils.naming import magic_name
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
+    from typing import Any
+
+    import pint
+
     from napari.components import Dims
+    from napari.layers.utils.plane import ClippingPlaneList, SlicingPlaneDict
+    from napari.utils.transforms import Affine
 
 
 __all__ = ('ScalarFieldBase',)
@@ -180,30 +191,30 @@ class ScalarFieldBase(Layer, ABC):
 
     def __init__(
         self,
-        data,
+        data: npt.NDArray | list[npt.NDArray],
         *,
-        affine=None,
-        axis_labels=None,
-        blending='translucent',
-        cache=True,
-        custom_interpolation_kernel_2d=None,
-        depiction='volume',
-        experimental_clipping_planes=None,
-        metadata=None,
-        multiscale=None,
-        name=None,
-        ndim=None,
-        opacity=1.0,
-        plane=None,
-        projection_mode='none',
-        rendering='mip',
-        rotate=None,
-        scale=None,
-        shear=None,
-        translate=None,
-        units=None,
-        visible=True,
-    ):
+        affine: npt.NDArray | Affine | None = None,
+        axis_labels: tuple[str, ...] | None = None,
+        blending: str | Blending = Blending.TRANSLUCENT,
+        cache: bool = True,
+        custom_interpolation_kernel_2d: npt.NDArray | None = None,
+        depiction: str ='volume',
+        experimental_clipping_planes: ClippingPlaneList | None = None,
+        metadata: dict[str, Any] | None = None,
+        multiscale: bool | None = None,
+        name: str | None = None,
+        ndim: int | None = None,
+        opacity: float = 1.0,
+        plane: SlicingPlane | SlicingPlaneDict | None = None,
+        projection_mode: ImageProjectionMode | str = ImageProjectionMode.NONE,
+        rendering: str = 'mip',
+        rotate: float | tuple[float, float, float] | npt.NDArray | None = None,
+        scale: tuple[float, ...] | None = None,
+        shear: npt.NDArray | None = None,
+        translate: tuple[float, ...] | None = None,
+        units: pint.Unit | None = None,
+        visible: bool = True,
+    ) -> None:
         if name is None and data is not None:
             name = magic_name(data)
 
