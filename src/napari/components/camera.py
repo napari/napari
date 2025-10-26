@@ -222,7 +222,7 @@ class Camera(EventedModel):
             return Handedness.LEFT
         return Handedness.RIGHT
 
-    def old_to_new(
+    def from_legacy_angles(
         self, angles: tuple[float, float, float]
     ) -> tuple[float, float, float]:
         """Convert camera angles from vispy convention (legacy behaviour) to napari.
@@ -242,7 +242,7 @@ class Camera(EventedModel):
         )
         return cast(tuple[float, float, float], tuple(flipped))
 
-    def new_to_old(
+    def to_legacy_angles(
         self, angles: tuple[float, float, float]
     ) -> tuple[float, float, float]:
         """Convert camera angles to napari convention to vispy (legacy behaviour).
