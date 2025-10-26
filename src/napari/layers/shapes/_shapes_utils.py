@@ -300,7 +300,7 @@ def vectorized_lines_intersect(
     # Test general case
     intersects = (o1 != o2) & (o3 != o4)
 
-    # Test spacial cases
+    # Test special cases
     # p1, q1 and p2 are collinear and p2 lies on segment p1q1
     intersects |= (o1 == 0) & on_segment(p1, p2, q1)
 
