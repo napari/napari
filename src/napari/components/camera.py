@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Literal, cast
 
 import numpy as np
 from scipy.spatial.transform import Rotation as R
@@ -127,16 +127,16 @@ class Camera(EventedModel):
         projection = np.dot(up_direction, view_direction) * np.array(
             view_direction
         )
-        up_direction = up_direction - projection
+        up_direction_arr = np.asarray(up_direction) - projection
 
-        view_direction = view_direction / np.linalg.norm(view_direction)
-        up_direction = up_direction / np.linalg.norm(up_direction)
-        right_direction = np.cross(up_direction, view_direction)
+        view_direction_arr = np.asarray(view_direction) / np.linalg.norm(view_direction)
+        up_direction_arr = up_direction_arr / np.linalg.norm(up_direction_arr)
+        right_direction = np.cross(up_direction_arr, view_direction_arr)
 
         # once we're in scene-land, we pretend to be in xyz space (axes names don't
         # mean anything after all...) which simplifies the logic a lot. We also
         # flip all signs (see explanations in self.view_direction, and self.up_direction)
-        matrix = -np.array((view_direction, up_direction, right_direction))
+        matrix = -np.array((view_direction_arr, up_direction_arr, right_direction))
         self.angles = R.from_matrix(matrix).as_euler('xyz', degrees=True)
 
     def calculate_nd_view_direction(
@@ -233,9 +233,8 @@ class Camera(EventedModel):
         angles = rot.as_euler('zyx', degrees=True)
         # flip angles where orientation is flipped relative to default, so the
         # resulting rotation is always right-handed (i.e: CCW when facing the plane)
-        return tuple(
-            angles * np.where(self._vispy_flipped_axes(ndisplay=3), -1, 1)
-        )
+        flipped = angles * np.where(self._vispy_flipped_axes(ndisplay=3), -1, 1)
+        return cast(tuple[float, float, float], tuple(flipped))
 
     def new_to_old(
         self, angles: tuple[float, float, float]
@@ -254,7 +253,7 @@ class Camera(EventedModel):
         rot = R.from_euler('zyx', flipped_angles, degrees=True)
         # flip angles so handedness of rotation is always right
         rot = rot * R.from_euler('x', 90, degrees=True)
-        return tuple(rot.as_euler('yzx', degrees=True))
+        return cast(tuple[float, float, float], tuple(rot.as_euler('yzx', degrees=True)))
 
     def _vispy_flipped_axes(
         self, ndisplay: Literal[2, 3] = 2
@@ -279,9 +278,12 @@ class Camera(EventedModel):
         orientation_xyz = self.orientation[::-1]
         # The Vispy camera flip is a tuple of three ints in {0, 1}, indicating
         # whether they are flipped relative to the Vispy default.
-        return tuple(
-            int(ori != default_ori)
-            for ori, default_ori in zip(
-                orientation_xyz, vispy_default_orientation, strict=True
-            )
+        return cast(
+            tuple[int, int, int],
+            tuple(
+                int(ori != default_ori)
+                for ori, default_ori in zip(
+                    orientation_xyz, vispy_default_orientation, strict=True
+                )
+            ),
         )
