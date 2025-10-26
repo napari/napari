@@ -1718,7 +1718,7 @@ class ShapeList:
 
         return centers, offsets, triangles
 
-    def shapes_in_box(self, corners):
+    def shapes_in_box(self, corners: npt.NDArray) -> list:
         """Determines which shapes, if any, are inside an axis aligned box.
 
         Looks only at displayed shapes

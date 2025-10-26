@@ -482,7 +482,9 @@ def orientation(p: np.ndarray, q: np.ndarray, r: np.ndarray) -> np.ndarray:
     return val
 
 
-def vectorized_orientation(p, q, r):
+def vectorized_orientation(
+    p: npt.NDArray, q: npt.NDArray, r: npt.NDArray
+) -> npt.NDArray:
     """Determines orientation of ordered triplet(s) (p, q, r).
 
     This implementation is vectorized and works for arrays of points.
@@ -510,7 +512,7 @@ def vectorized_orientation(p, q, r):
     return np.sign(val).astype(np.int8)
 
 
-def cross_2d(a, b):
+def cross_2d(a: npt.NDArray, b: npt.NDArray) -> npt.NDArray:
     """Calculate the magnitude of the cross product of two 2D vectors.
 
     This is the explicit implementation of the 2D cross product magnitude,

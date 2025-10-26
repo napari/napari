@@ -198,7 +198,9 @@ def triangle_vertices_inside_box(triangles, corners):
     return inside
 
 
-def triangle_edges_intersect_box(triangles, corners):
+def triangle_edges_intersect_box(
+    triangles: npt.NDArray, corners: npt.NDArray
+) -> npt.NDArray:
     """Determines which triangles have edges that intersect the edges of an
     axis aligned box.
 
@@ -260,7 +262,9 @@ def lines_intersect(p1, q1, p2, q2):
     return vectorized_lines_intersect(p1_arr, q1_arr, p2, q2)[0]
 
 
-def vectorized_lines_intersect(p1, q1, p2, q2):
+def vectorized_lines_intersect(
+    p1: npt.NDArray, q1: npt.NDArray, p2: npt.NDArray, q2: npt.NDArray
+) -> npt.NDArray:
     """Determines if a set of N line segments intersects with a single line segment.
 
     This implementation is vectorized to be fast for many segments. It uses
@@ -312,7 +316,7 @@ def vectorized_lines_intersect(p1, q1, p2, q2):
     return intersects
 
 
-def on_segment(p, q, r):
+def on_segment(p: npt.NDArray, q: npt.NDArray, r: npt.NDArray) -> npt.NDArray:
     """Check if point(s) q are on the segment(s) from p to r.
 
     This function is vectorized and assumes that the points are already
