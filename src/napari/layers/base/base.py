@@ -82,6 +82,10 @@ Array1dOfInts = np.ndarray[tuple[int], np.dtype[np.integer]]
 ListOrArrayOfInts = list[int] | Array1dOfInts
 
 
+Array1dOfInts = np.ndarray[tuple[int], np.dtype[np.integer]]
+ListOrArrayOfInts = list[int] | Array1dOfInts
+
+
 def no_op(layer: Layer, event: Event) -> None:
     """
     A convenient no-op event for the layer mouse binding.
