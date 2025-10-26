@@ -2782,9 +2782,7 @@ class Shapes(Layer):
                 ),
                 vertex_indices=((),),
             )
-            # FIXME: this is really slow
-            for ind in to_remove:
-                self._data_view.remove(ind)
+            self._data_view.remove_multiple(to_remove)
 
             if len(self.data) == 0 and self.selected_data:
                 self.selected_data.clear()
