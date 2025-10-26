@@ -112,7 +112,7 @@ class TaskStatusManager:
     def get_status(self) -> list[str]:
         messages = []
         for _, item in self._tasks.items():
-            provider, ts, status, description = item.state()
+            provider, _ts, status, description = item.state()
             if status in {Status.PENDING, Status.BUSY}:
                 messages.append(f'{provider}: {description}')
 
