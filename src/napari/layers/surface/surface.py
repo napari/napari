@@ -18,6 +18,7 @@ from napari.layers.utils.interactivity_utils import (
 )
 from napari.layers.utils.layer_utils import _FeatureTable, calc_data_range
 from napari.types import LayerDataType
+from napari.utils._dtype import normalize_dtype
 from napari.utils.colormaps import AVAILABLE_COLORMAPS
 from napari.utils.events import Event
 from napari.utils.events.event_utils import connect_no_arg
@@ -353,7 +354,7 @@ class Surface(IntensityVisualizationMixin, Layer):
 
     @property
     def dtype(self) -> np.dtype:
-        return self.vertex_values.dtype
+        return normalize_dtype(self.vertex_values.dtype)
 
     @property
     def data(self):
@@ -738,7 +739,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         If you change this method, validate if memory benchmarks are still
         working properly.
         """
-        data, meta, layer_type = self.as_layer_data_tuple()
+        _data, meta, layer_type = self.as_layer_data_tuple()
         return self.create(
             tuple(copy.copy(x) for x in self.data),
             meta=meta,

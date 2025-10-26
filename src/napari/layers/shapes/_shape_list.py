@@ -190,7 +190,7 @@ def _preallocate_arrays(
         Dictionary containing preallocated arrays
     """
     n_shapes = len(shapes)
-    n_vertices, n_indices, n_mesh_vertices, n_face_tri, n_edge_tri = sizes
+    n_vertices, _n_indices, n_mesh_vertices, n_face_tri, n_edge_tri = sizes
 
     # Determine the displayed dimensionality from the first shape
     # All shapes in a batch will have the same dimensionality
@@ -794,14 +794,16 @@ class ShapeList:
             triangle_ranges = self._mesh_triangles_range_seq(disp_indices)
             vertices_range = self._vertices_range_seq(disp_indices)
 
-        self._mesh.displayed_triangles = self._mesh.triangles[z_order][
-            triangle_ranges
+        z_order_selected = np.argsort(z_order[triangle_ranges])
+
+        self._mesh.displayed_triangles = self._mesh.triangles[triangle_ranges][
+            z_order_selected
         ]
         self._update_displayed_triangles_to_shape_index(disp_indices)
 
         self._mesh.displayed_triangles_colors = self._mesh.triangles_colors[
-            z_order
-        ][triangle_ranges]
+            triangle_ranges
+        ][z_order_selected]
 
         self.displayed_vertices = self._vertices[vertices_range]
         self._update_displayed_vertices_to_shape_num(disp_indices)
@@ -1382,7 +1384,7 @@ class ShapeList:
     @_batch_dec
     def _update_z_order(self):
         """Updates the z order of the triangles given the z_index list"""
-        self._z_order = np.argsort(self._z_index)  # type: ignore[assignment]
+        self._z_order = np.argsort(self._z_index, kind='stable')  # type: ignore[assignment]
         if len(self._z_order) == 0:
             self._mesh.triangles_z_order = np.empty(0, dtype=ZOrderDtype)
         else:

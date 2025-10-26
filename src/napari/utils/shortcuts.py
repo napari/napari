@@ -82,7 +82,7 @@ _default_shortcuts = {
     'napari:paste_shape': [KeyMod.CtrlCmd | KeyCode.KeyV],
     'napari:move_shapes_selection_to_front': [KeyCode.KeyF],
     'napari:move_shapes_selection_to_back': [KeyCode.KeyB],
-    'napari:select_all_shapes': [
+    'napari:select_shapes_in_slice': [
         KeyCode.KeyA,
         KeyMod.CtrlCmd | KeyCode.KeyA,
     ],

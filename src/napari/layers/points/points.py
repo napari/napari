@@ -549,7 +549,7 @@ class Points(Layer):
 
         # Trigger generation of view slice and thumbnail
         self.refresh(extent=False)
-        self._slice_input.slice_done.connect(self._refresh_highlight)
+        self._layer_slicer.slice_done.connect(self._refresh_highlight)
 
     @property
     def data(self) -> np.ndarray:
@@ -1632,7 +1632,7 @@ class Points(Layer):
         dims_displayed: list[int] | None = None,
         world: bool = False,
     ) -> int | None:
-        """Workaround for incnsistency in rela return type of get_value"""
+        """Workaround for inconsistency in real return type of get_value"""
         return typing.cast(
             int,
             self.get_value(
@@ -1949,51 +1949,132 @@ class Points(Layer):
         self.selected_data = set(np.arange(cur_points, len(self.data)))
         self.events.features()
 
-    def remove_selected(self) -> None:
-        """Removes selected points if any."""
-        index = list(self.selected_data)
-        index.sort()
-        if len(index):
+    def remove(self, indices: list[int]) -> None:
+        """Removes any points at the given indices.
+
+        Parameters
+        ----------
+        indices : List[int]
+            List of indices of points to remove from the layer.
+        """
+        indices = sorted(indices)
+        if len(indices):
             self.events.data(
                 value=self.data,
                 action=ActionType.REMOVING,
                 data_indices=tuple(
-                    self.selected_data,
+                    indices,
                 ),
                 vertex_indices=((),),
             )
-            self._shown = np.delete(self._shown, index, axis=0)
-            self._size = np.delete(self._size, index, axis=0)
-            self._symbol = np.delete(self._symbol, index, axis=0)
-            self._border_width = np.delete(self._border_width, index, axis=0)
+            self._shown = np.delete(self._shown, indices, axis=0)
+            self._size = np.delete(self._size, indices, axis=0)
+            self._symbol = np.delete(self._symbol, indices, axis=0)
+            self._border_width = np.delete(self._border_width, indices, axis=0)
             with self._border.events.blocker_all():
-                self._border._remove(indices_to_remove=index)
+                self._border._remove(indices_to_remove=indices)
             with self._face.events.blocker_all():
-                self._face._remove(indices_to_remove=index)
-            self._feature_table.remove(index)
-            self.text.remove(index)
-            if self._value in self.selected_data:
+                self._face._remove(indices_to_remove=indices)
+            self._feature_table.remove(indices)
+            self.text.remove(indices)
+            if self._value in indices:
                 self._value = None
             else:
                 if self._value is not None:
                     # update the index of self._value to account for the
                     # data being removed
-                    indices_removed = np.array(index) < self._value
+                    indices_removed = np.array(indices) < self._value
                     offset = np.sum(indices_removed)
                     self._value -= offset
                     self._value_stored -= offset
 
-            self._set_data(np.delete(self.data, index, axis=0))
+            self._set_data(np.delete(self.data, indices, axis=0))
+
+            if len(self.data) == 0 and self.selected_data:
+                self.selected_data.clear()
+            elif self.selected_data:
+                selected_not_removed = self.selected_data - set(indices)
+                if selected_not_removed:
+                    indices_array = np.array(indices)
+                    remaining_selected = np.fromiter(
+                        selected_not_removed,
+                        dtype=np.intp,
+                        count=len(selected_not_removed),
+                    )
+                    shifts = np.searchsorted(indices_array, remaining_selected)
+                    new_selected_indices = remaining_selected - shifts
+                    self.selected_data = set(new_selected_indices)
+                else:
+                    self.selected_data.clear()
+
             self.events.data(
                 value=self.data,
                 action=ActionType.REMOVED,
                 data_indices=tuple(
-                    self.selected_data,
+                    indices,
                 ),
                 vertex_indices=((),),
             )
-            self.selected_data = set()
             self.events.features()
+
+    def get_point_info(self, index: int) -> dict:
+        """
+        Retrieve all available information about a point at the given index.
+
+        Parameters
+        ----------
+        index : int
+            Index of the point.
+
+        Returns
+        -------
+        dict
+            A dictionary containing all relevant details of the point.
+        """
+        if not (0 <= index < len(self.data)):
+            return {
+                'data': None,
+                'features': {},
+                'face_color': None,
+                'border_color': None,
+                'size': None,
+                'symbol': None,
+                'border_width': None,
+            }
+
+        info = {
+            'data': self.data[index],
+            'features': self.features.iloc[index].to_dict(),
+            'face_color': self.face_color[index],
+            'border_color': self.border_color[index],
+            'size': self.size[index],
+            'symbol': self.symbol[index],
+            'border_width': self.border_width[index],
+        }
+        return info
+
+    def pop(self, index=-1) -> dict[str, Any]:
+        """Remove and return the point at the given index.
+
+        Parameters
+        ----------
+        index : int, optional
+            Index of the point to remove. Default is -1, which removes the last point.
+
+        Returns
+        -------
+        dict[str, Any]
+            Dictionary containing the removed point's data.
+        """
+        if index == -1:
+            index = len(self.data) - 1
+        info = self.get_point_info(index)
+        self.remove([index])
+        return info
+
+    def remove_selected(self) -> None:
+        """Remove all selected points."""
+        self.remove(list(self.selected_data))
 
     def _move(
         self,
@@ -2366,7 +2447,6 @@ class PointsSlicer(LayerSlicer):
         )
         response = request()
         self._update_slice_response(response)
-        self.slice()
 
     def make_slice_request(self, dims: 'Dims') -> _PointSliceRequest:
         """Make a Points slice request based on the given dims and these data."""

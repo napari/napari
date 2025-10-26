@@ -78,9 +78,8 @@ logger = logging.getLogger('napari.layers.base.base')
 
 __all__ = ('Layer', 'LayerSlicer', 'no_op')
 
-
-CoordinateOrderArr = np.ndarray[tuple[int], np.dtype[np.integer]]
-CoordinateOrder = list[int] | CoordinateOrderArr
+Array1dOfInts = np.ndarray[tuple[int], np.dtype[np.integer]]
+ListOrArrayOfInts = list[int] | Array1dOfInts
 
 
 def no_op(layer: Layer, event: Event) -> None:
@@ -190,9 +189,9 @@ class LayerSlicer(ABC):
     def _world_to_layer_dims(
         self,
         *,
-        world_dims: Sequence[int] | CoordinateOrderArr,
+        world_dims: Sequence[int] | Array1dOfInts,
         ndim_world: int,
-    ) -> CoordinateOrderArr:
+    ) -> Array1dOfInts:
         """Map world dimensions to layer dimensions while maintaining order.
 
         This is used to map dimensions from the full world space defined by ``Dims``
@@ -256,10 +255,10 @@ class LayerSlicer(ABC):
 
     @staticmethod
     def _world_to_layer_dims_impl(
-        world_dims: Sequence[int] | CoordinateOrderArr,
+        world_dims: Sequence[int] | Array1dOfInts,
         ndim_world: int,
         ndim: int,
-    ) -> CoordinateOrderArr:
+    ) -> Array1dOfInts:
         """
         Static for ease of testing
         """
@@ -1775,7 +1774,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         return normalized_vector
 
     def _world_to_displayed_data_ray(
-        self, vector_world: npt.ArrayLike, dims_displayed: CoordinateOrder
+        self, vector_world: npt.ArrayLike, dims_displayed: ListOrArrayOfInts
     ) -> np.ndarray:
         """Convert an orientation from world to displayed data coordinates.
 

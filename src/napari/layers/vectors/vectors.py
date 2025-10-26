@@ -798,7 +798,6 @@ class VectorsSlicer(LayerSlicer):
         )
         response = request()
         self._update_slice_response(response)
-        self.slice()
 
     def make_slice_request(self, dims) -> _VectorSliceRequest:
         """Make a Vectors slice request based on the given dims and these data."""

@@ -27,6 +27,7 @@ from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
 from napari.layers.utils.plane import SlicingPlane
 from napari.types import LayerDataType
 from napari.utils._dask_utils import DaskIndexer
+from napari.utils._dtype import normalize_dtype
 from napari.utils.colormaps import AVAILABLE_COLORMAPS
 from napari.utils.events import Event
 from napari.utils.events.event import WarningEmitter
@@ -331,7 +332,7 @@ class ScalarFieldBase(Layer, ABC):
 
     @property
     def dtype(self):
-        return self._data.dtype
+        return normalize_dtype(self._data.dtype)
 
     @property
     def data_raw(
