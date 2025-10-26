@@ -288,10 +288,10 @@ def vectorized_lines_intersect(p1, q1, p2, q2):
         the single line segment.
     """
     # Determine four orientations
-    o1 = orientation(p1, q1, p2)
-    o2 = orientation(p1, q1, q2)
-    o3 = orientation(p2, q2, p1)
-    o4 = orientation(p2, q2, q1)
+    o1 = _triangulate_py.vectorized_orientation(p1, q1, p2)
+    o2 = _triangulate_py.vectorized_orientation(p1, q1, q2)
+    o3 = _triangulate_py.vectorized_orientation(p2, q2, p1)
+    o4 = _triangulate_py.vectorized_orientation(p2, q2, q1)
 
     # Test general case
     intersects = (o1 != o2) & (o3 != o4)
@@ -338,57 +338,6 @@ def on_segment(p, q, r):
         & (q[..., 1] <= np.maximum(p[..., 1], r[..., 1]))
         & (q[..., 1] >= np.minimum(p[..., 1], r[..., 1]))
     )
-
-
-def cross_2d(a, b):
-    """Calculate the magnitude of the cross product of two 2D vectors.
-
-    This is the explicit implementation of the 2D cross product magnitude,
-    which is recommended by numpy developers to avoid a NumPy 2.0 deprecation warning.
-
-    See this issue for details: https://github.com/numpy/numpy/issues/26620#issuecomment-2150748569
-
-    Parameters
-    ----------
-    a : (..., 2) array
-        An array of 2D vectors.
-    b : (..., 2) array
-        An array of 2D vectors.
-
-    Returns
-    -------
-    cross_product : (...) array
-        The magnitude of the cross product.
-    """
-    return a[..., 0] * b[..., 1] - a[..., 1] * b[..., 0]
-
-
-def orientation(p, q, r):
-    """Determines orientation of ordered triplet(s) (p, q, r).
-
-    This implementation is vectorized and works for arrays of points.
-
-    Parameters
-    ----------
-    p : (..., 2) array
-        Array of first points of triplets.
-    q : (..., 2) array
-        Array of second points of triplets.
-    r : (..., 2) array
-        Array of third points of triplets.
-
-    Returns
-    -------
-    val : (...) array of int
-        An array of values, one for each triplet. 0 if p, q, r are collinear,
-        1 if clockwise, and -1 if counterclockwise. (These definitions assume
-        napari's default reference frame, in which the 0th axis is y pointing
-        down, and the 1st axis is x, pointing right.)
-    """
-    # The orientation is calculated as the sign of the cross product
-    # of the vectors (q - p) and (r - p).
-    val = cross_2d(q - p, r - p)
-    return np.sign(val).astype(np.int8)
 
 
 def is_collinear(points: npt.NDArray) -> bool:
