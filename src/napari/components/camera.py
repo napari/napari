@@ -129,14 +129,18 @@ class Camera(EventedModel):
         )
         up_direction_arr = np.asarray(up_direction) - projection
 
-        view_direction_arr = np.asarray(view_direction) / np.linalg.norm(view_direction)
+        view_direction_arr = np.asarray(view_direction) / np.linalg.norm(
+            view_direction
+        )
         up_direction_arr = up_direction_arr / np.linalg.norm(up_direction_arr)
         right_direction = np.cross(up_direction_arr, view_direction_arr)
 
         # once we're in scene-land, we pretend to be in xyz space (axes names don't
         # mean anything after all...) which simplifies the logic a lot. We also
         # flip all signs (see explanations in self.view_direction, and self.up_direction)
-        matrix = -np.array((view_direction_arr, up_direction_arr, right_direction))
+        matrix = -np.array(
+            (view_direction_arr, up_direction_arr, right_direction)
+        )
         self.angles = R.from_matrix(matrix).as_euler('xyz', degrees=True)
 
     def calculate_nd_view_direction(
@@ -233,7 +237,9 @@ class Camera(EventedModel):
         angles = rot.as_euler('zyx', degrees=True)
         # flip angles where orientation is flipped relative to default, so the
         # resulting rotation is always right-handed (i.e: CCW when facing the plane)
-        flipped = angles * np.where(self._vispy_flipped_axes(ndisplay=3), -1, 1)
+        flipped = angles * np.where(
+            self._vispy_flipped_axes(ndisplay=3), -1, 1
+        )
         return cast(tuple[float, float, float], tuple(flipped))
 
     def new_to_old(
@@ -253,7 +259,10 @@ class Camera(EventedModel):
         rot = R.from_euler('zyx', flipped_angles, degrees=True)
         # flip angles so handedness of rotation is always right
         rot = rot * R.from_euler('x', 90, degrees=True)
-        return cast(tuple[float, float, float], tuple(rot.as_euler('yzx', degrees=True)))
+        return cast(
+            tuple[float, float, float],
+            tuple(rot.as_euler('yzx', degrees=True)),
+        )
 
     def _vispy_flipped_axes(
         self, ndisplay: Literal[2, 3] = 2
