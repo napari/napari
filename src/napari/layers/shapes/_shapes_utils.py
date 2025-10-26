@@ -217,7 +217,7 @@ def triangle_edges_intersect_box(triangles, corners):
     """
     box = create_box(corners)[[0, 2, 4, 6]]
 
-    intersects = np.zeros([len(triangles), 12], dtype=bool)
+    all_intersects = np.zeros(len(triangles), dtype=bool)
     for i in range(3):
         # check if each triangle edge
         p1 = triangles[:, i, :]
@@ -226,12 +226,12 @@ def triangle_edges_intersect_box(triangles, corners):
         for j in range(4):
             # Check the four edges of the box
             p2 = box[j]
-            q2 = box[(j + 1) % 3]
-            intersects[:, i * 3 + j] = [
-                lines_intersect(p1[k], q1[k], p2, q2) for k in range(len(p1))
-            ]
+            q2 = box[(j + 1) % 4]
 
-    return np.any(intersects, axis=1)
+            intersects = vectorized_lines_intersect(p1, q1, p2, q2)
+            all_intersects |= intersects
+
+    return all_intersects
 
 
 def lines_intersect(p1, q1, p2, q2):
@@ -253,62 +253,142 @@ def lines_intersect(p1, q1, p2, q2):
     intersects : bool
         Bool indicating if line segment p1q1 intersects line segment p2q2
     """
-    # Determine four orientations
-    o1 = _triangulate_py.orientation(p1, q1, p2)
-    o2 = _triangulate_py.orientation(p1, q1, q2)
-    o3 = _triangulate_py.orientation(p2, q2, p1)
-    o4 = _triangulate_py.orientation(p2, q2, q1)
+    # Wrap inputs into (1, 2) arrays to use the vectorized function
+    p1_arr = np.array([p1])
+    q1_arr = np.array([q1])
 
-    # Test general case
-    if (o1 != o2) and (o3 != o4):
-        return True
-
-    # Test special cases
-    # p1, q1 and p2 are collinear and p2 lies on segment p1q1
-    if o1 == 0 and on_segment(p1, p2, q1):
-        return True
-
-    # p1, q1 and q2 are collinear and q2 lies on segment p1q1
-    if o2 == 0 and on_segment(p1, q2, q1):
-        return True
-
-    # p2, q2 and p1 are collinear and p1 lies on segment p2q2
-    if o3 == 0 and on_segment(p2, p1, q2):
-        return True
-
-    # p2, q2 and q1 are collinear and q1 lies on segment p2q2
-    if o4 == 0 and on_segment(p2, q1, q2):  # noqa: SIM103
-        return True
-
-    # Doesn't fall into any special cases
-    return False
+    return vectorized_lines_intersect(p1_arr, q1_arr, p2, q2)[0]
 
 
-def on_segment(p, q, r):
-    """Checks if q is on the segment from p to r
+def vectorized_lines_intersect(p1, q1, p2, q2):
+    """Determines if a set of N line segments intersects with a single line segment.
+
+    This implementation is vectorized to be fast for many segments. It uses
+    the 'orientation' method, which is a vectorized version of the algorithm
+    used elsewhere in this codebase, making it easier to review and maintain.
+
+    The algorithm is based on checking if the endpoints of each segment lie on
+    opposite sides of the other segment.
 
     Parameters
     ----------
-    p : (2,) array
-        Array of first point of segment
-    q : (2,) array
-        Array of point to check if on segment
-    r : (2,) array
-        Array of second point of segment
+    p1 : (N, 2) array
+        Array of first points of N line segments.
+    q1 : (N, 2) array
+        Array of second points of N line segments.
+    p2 : (2,) array
+        First point of the single line segment.
+    q2 : (2,) array
+        Second point of the single line segment.
 
     Returns
     -------
-    on : bool
-        Bool indicating if q is on segment from p to r
+    intersects : (N,) array of bool
+        Array with `True` values for line segments in the set that intersect
+        the single line segment.
     """
-    if max(p[0], r[0]) >= q[0] >= min(p[0], r[0]) and max(p[1], r[1]) >= q[
-        1
-    ] >= min(p[1], r[1]):
-        on = True
-    else:
-        on = False
+    # Determine four orientations
+    o1 = orientation(p1, q1, p2)
+    o2 = orientation(p1, q1, q2)
+    o3 = orientation(p2, q2, p1)
+    o4 = orientation(p2, q2, q1)
 
-    return on
+    # Test general case
+    intersects = (o1 != o2) & (o3 != o4)
+
+    # Test spacial cases
+    # p1, q1 and p2 are collinear and p2 lies on segment p1q1
+    intersects |= (o1 == 0) & on_segment(p1, p2, q1)
+
+    # p1, q1 and q2 are collinear and q2 lies on segment p1q1
+    intersects |= (o2 == 0) & on_segment(p1, q2, q1)
+
+    # p2, q2 and p1 are collinear and p1 lies on segment p2q2
+    intersects |= (o3 == 0) & on_segment(p2, p1, q2)
+
+    # p2, q2 and q1 are collinear and q1 lies on segment p2q2
+    intersects |= (o4 == 0) & on_segment(p2, q1, q2)
+
+    return intersects
+
+
+def on_segment(p, q, r):
+    """Check if point(s) q are on the segment(s) from p to r.
+
+    This function is vectorized and assumes that the points are already
+    known to be collinear.
+
+    Parameters
+    ----------
+    p : (..., 2) array
+        Array of first points of segments.
+    q : (..., 2) array
+        Array of points to check.
+    r : (..., 2) array
+        Array of second points of segments.
+
+    Returns
+    -------
+    on : (...) array of bool
+        Array of booleans with `True` if q is on pr.
+    """
+    return (
+        (q[..., 0] <= np.maximum(p[..., 0], r[..., 0]))
+        & (q[..., 0] >= np.minimum(p[..., 0], r[..., 0]))
+        & (q[..., 1] <= np.maximum(p[..., 1], r[..., 1]))
+        & (q[..., 1] >= np.minimum(p[..., 1], r[..., 1]))
+    )
+
+
+def cross_2d(a, b):
+    """Calculate the magnitude of the cross product of two 2D vectors.
+
+    This is the explicit implementation of the 2D cross product magnitude,
+    which is recommended by numpy developers to avoid a NumPy 2.0 deprecation warning.
+
+    See this issue for details: https://github.com/numpy/numpy/issues/26620#issuecomment-2150748569
+
+    Parameters
+    ----------
+    a : (..., 2) array
+        An array of 2D vectors.
+    b : (..., 2) array
+        An array of 2D vectors.
+
+    Returns
+    -------
+    cross_product : (...) array
+        The magnitude of the cross product.
+    """
+    return a[..., 0] * b[..., 1] - a[..., 1] * b[..., 0]
+
+
+def orientation(p, q, r):
+    """Determines orientation of ordered triplet(s) (p, q, r).
+
+    This implementation is vectorized and works for arrays of points.
+
+    Parameters
+    ----------
+    p : (..., 2) array
+        Array of first points of triplets.
+    q : (..., 2) array
+        Array of second points of triplets.
+    r : (..., 2) array
+        Array of third points of triplets.
+
+    Returns
+    -------
+    val : (...) array of int
+        An array of values, one for each triplet. 0 if p, q, r are collinear,
+        1 if clockwise, and -1 if counterclockwise. (These definitions assume
+        napari's default reference frame, in which the 0th axis is y pointing
+        down, and the 1st axis is x, pointing right.)
+    """
+    # The orientation is calculated as the sign of the cross product
+    # of the vectors (q - p) and (r - p).
+    val = cross_2d(q - p, r - p)
+    return np.sign(val).astype(np.int8)
 
 
 def is_collinear(points: npt.NDArray) -> bool:

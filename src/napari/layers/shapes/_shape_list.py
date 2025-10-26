@@ -1735,12 +1735,67 @@ class ShapeList:
             List of shapes that are inside the box.
         """
 
-        triangles = self._mesh.vertices[self._mesh.displayed_triangles]
-        intersects = triangles_intersect_box(triangles, corners)
-        shapes = self._mesh.displayed_triangles_to_shape_index[intersects]
-        shapes = np.unique(shapes).tolist()
+        displayed_indices = np.where(self._displayed)[0]
+        if not displayed_indices.any():
+            return []
 
-        return shapes
+        # Get bounding boxes of all displayed shapes
+        selection_min = np.min(corners, axis=0)
+        selection_max = np.max(corners, axis=0)
+        bounding_boxes = np.array(
+            [self.shapes[i].bounding_box for i in displayed_indices]
+        )
+        shape_mins = bounding_boxes[:, 0, :]
+        shape_maxs = bounding_boxes[:, 1, :]
+
+        # If the box encompasses all shapes, just get them directly
+        layer_min = np.min(shape_mins, axis=0)
+        layer_max = np.max(shape_maxs, axis=0)
+        if np.all(selection_min <= layer_min) and np.all(
+            selection_max >= layer_max
+        ):
+            return displayed_indices.tolist()
+
+        # Get shapes with bounding boxes intersecting the selection box
+        intersects_mask = np.all(shape_maxs >= selection_min, axis=1) & np.all(
+            shape_mins <= selection_max, axis=1
+        )
+
+        intersecting_indices = displayed_indices[intersects_mask]
+
+        if len(intersecting_indices) == 0:
+            return []
+
+        # For all intersecting shapes, check triangle intersection
+        slices = [self._mesh_triangles_slice(i) for i in intersecting_indices]
+
+        if not slices:
+            return []
+
+        triangle_indices_for_shapes = np.concatenate(
+            [np.arange(s.start, s.stop) for s in slices]
+        )
+
+        if triangle_indices_for_shapes.size == 0:
+            return []
+
+        triangle_vertex_indices = self._mesh.triangles[
+            triangle_indices_for_shapes
+        ]
+        triangles = self._mesh.vertices[triangle_vertex_indices]
+
+        intersects = triangles_intersect_box(triangles, corners)
+
+        if not np.any(intersects):
+            return []
+
+        # Map the intersecting triangles back to their original shape indices
+        counts = np.array([s.stop - s.start for s in slices])
+        shape_for_each_triangle = np.repeat(intersecting_indices, counts)
+
+        intersecting_triangles_shapes = shape_for_each_triangle[intersects]
+
+        return np.unique(intersecting_triangles_shapes).tolist()
 
     @cached_property
     def _visible_shapes(self):
