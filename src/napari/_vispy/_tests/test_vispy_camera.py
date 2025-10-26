@@ -19,7 +19,7 @@ def test_camera(make_napari_viewer):
 
     np.testing.assert_almost_equal(viewer.camera.angles, (0, 0, 0))
     np.testing.assert_almost_equal(
-        viewer.camera.angles, viewer.camera.old_to_new((0, 0, 90))
+        viewer.camera.angles, viewer.camera.from_legacy_angles((0, 0, 90))
     )
     np.testing.assert_almost_equal(viewer.camera.center, (0, 5.0, 5.0))
     np.testing.assert_almost_equal(viewer.camera.angles, vispy_camera.angles)
