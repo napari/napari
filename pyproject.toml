@@ -489,14 +489,50 @@ xarray = "xr"
 [tool.pytest.ini_options]
 # These follow standard library warnings filters syntax.  See more here:
 # https://docs.python.org/3/library/warnings.html#describing-warning-filters
-addopts = ["--maxfail=5",  "--durations=10",  "-ra", "--strict-markers", "--strict-config"]
+addopts = [
+    "--maxfail=5",
+    "--durations=10",
+    "-ra",
+    "--strict-markers",
+    "--strict-config"
+]
 console_output_style = "count"
 minversion = "8"
-# log_cli_level = "INFO"
+testpaths = [
+    "src/napari/_app_model/_tests",
+    "src/napari/_qt/_qappmodel/_tests",
+    "src/napari/_qt/_tests",
+    "src/napari/_qt/containers/_tests",
+    "src/napari/_qt/dialogs/_tests",
+    "src/napari/_qt/layer_controls/_tests",
+    "src/napari/_qt/perf/_tests",
+    "src/napari/_qt/qt_resources/_tests",
+    "src/napari/_qt/widgets/_tests",
+    "src/napari/_tests",
+    "src/napari/_vispy/_tests",
+    "src/napari/components/_tests",
+    "src/napari/layers/_tests",
+    "src/napari/layers/_scalar_field/_tests",
+    "src/napari/layers/base/_tests",
+    "src/napari/layers/image/_tests",
+    "src/napari/layers/labels/_tests",
+    "src/napari/layers/points/_tests",
+    "src/napari/layers/shapes/_tests",
+    "src/napari/layers/shapes/_shapes_models/_tests",
+    "src/napari/layers/surface/_tests",
+    "src/napari/layers/tracks/_tests",
+    "src/napari/layers/utils/_tests",
+    "src/napari/layers/vectors/_tests",
+    "src/napari/plugins/_tests",
+    "src/napari/settings/_tests",
+    "src/napari/utils/_tests",
+    "src/napari/utils/colormaps/_tests",
+    "src/napari/utils/events/_tests",
+    "src/napari/utils/tree/_tests",
+    "src/napari_builtins/_qt/_tests",
+    "src/napari_builtins/_tests"
+]
 xfail_strict = true
-testpaths = ["napari", "napari_builtins"]
-#pythonpath = "src"
-
 
 # NOTE: only put things that will never change in here.
 # napari deprecation and future warnings should NOT go in here.
