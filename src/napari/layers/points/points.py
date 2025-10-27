@@ -2498,6 +2498,10 @@ class PointsSlicer(LayerSlicer):
             )[2]
         )
 
+        # WARNING This wil lbe removed in future
+        with self.layer.events.highlight.blocker():
+            self.layer._set_highlight(force=True)
+
     @property
     def _indices_view(self):
         return self.__indices_view

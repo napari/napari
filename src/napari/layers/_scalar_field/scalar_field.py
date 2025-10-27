@@ -324,7 +324,7 @@ class ScalarFieldBase(Layer, ABC):
     @property
     def _data_view(self) -> np.ndarray:
         """Viewable image for the current slice. (compatibility)"""
-        return self._layer_slicer._slice.image.view
+        return self._slice.image.view
 
     @property
     def _slice(self) -> _ScalarFieldSliceResponse:

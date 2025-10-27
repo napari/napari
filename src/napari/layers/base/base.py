@@ -160,6 +160,7 @@ class LayerSlicer(ABC):
             return False
         self._slice_input = copy.deepcopy(slice_input)
         if self.layer.visible and not force:
+            # We check if layer is visible to not trigger obsolete access to data
             self.set_view_slice()
         return True
 
