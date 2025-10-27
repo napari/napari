@@ -108,8 +108,9 @@ class VispyScalarFieldBaseLayer(VispyBaseLayer[ScalarFieldBase]):
 
         # Check if data exceeds MAX_TEXTURE_SIZE and downsample
         if self.MAX_TEXTURE_SIZE_2D is not None and ndisplay == 2:
-            self.node = TiledImageLayerNode(data, self.MAX_TEXTURE_SIZE_2D)
-            node = self.node
+            if np.any(np.greater(data.shape, self.MAX_TEXTURE_SIZE_2D)):
+                self.node = TiledImageLayerNode(data, self.MAX_TEXTURE_SIZE_2D)
+                node = self.node
         elif self.MAX_TEXTURE_SIZE_3D is not None and ndisplay == 3:
             data = self.downsample_texture(data, self.MAX_TEXTURE_SIZE_3D)
 
@@ -120,6 +121,7 @@ class VispyScalarFieldBaseLayer(VispyBaseLayer[ScalarFieldBase]):
         ):
             self._on_display_change(data)
         else:
+            #if not  isinstance(node, TiledImageLayerNode):
             node.set_data(data)
             node.visible = not self.layer._slice.empty and self.layer.visible
 
