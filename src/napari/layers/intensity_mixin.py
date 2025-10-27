@@ -49,6 +49,14 @@ class IntensityVisualizationMixin:
     _overlays: EventedDict
     dtype: npt.DTypeLike
     _colormaps: dict[str, Colormap]
+
+    # TODO: when declaring a protocol like this,
+    # mypy WILL complain because it does not understand that
+    # both the ScalarFieldBase, IntensityVisualizationMixin and
+    # Image classes will have this attribute which has to be extended
+    # with the appropriate signals... how to fix this? The nice thing
+    # about the current event system is that it relies on dynamic
+    # attributes setting, so we don't have to declare them all the time.
     signals: IVMSignalGroup
 
     def __init__(self) -> None:
@@ -159,6 +167,8 @@ class IntensityVisualizationMixin:
         self.events.contrast_limits()
         self.signals.contrast_limits()
 
+    # TODO: this kind of typing is confusing,
+    # although I understand the reasoining
     @property
     def contrast_limits_range(self) -> list[float | None]:
         """The current valid range of the contrast limits."""
