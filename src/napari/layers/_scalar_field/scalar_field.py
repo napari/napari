@@ -758,5 +758,8 @@ class ScalarFieldSlicer(LayerSlicer):
         # are outside the range of supported by vispy, then data view is
         # rescaled to fit within the range.
         self._slice_input = response.slice_input
+        # this is the temporary patch
+        self.layer._transforms[0] = response.tile_to_data
+        #
         self.transforms = response.tile_to_data
         self._slice = response
