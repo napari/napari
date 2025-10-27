@@ -1643,14 +1643,15 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             self.events.reload(layer=self)
         # Otherwise, slice immediately on the calling thread.
         else:
-            self.set_view_slice()
-            self._refresh_sync(
-                thumbnail=thumbnail,
-                data_displayed=data_displayed,
-                highlight=highlight,
-                extent=extent,
-                force=force,
-            )
+            if self.visible:
+                self.set_view_slice()
+                self._refresh_sync(
+                    thumbnail=thumbnail,
+                    data_displayed=data_displayed,
+                    highlight=highlight,
+                    extent=extent,
+                    force=force,
+                )
 
     def _refresh_sync(
         self,
