@@ -1433,6 +1433,20 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
                 extent=True,
             )
 
+    def _world_to_layer_dims(
+        self,
+        *,
+        world_dims: Sequence[int] | Array1dOfInts,
+        ndim_world: int,
+    ) -> Array1dOfInts:
+        """For docs to build
+
+        Remove after clean guides/rendering notebook
+        """
+        return self._layer_slicer._world_to_layer_dims(
+            world_dims=world_dims, ndim_world=ndim_world
+        )
+
     @abstractmethod
     def _update_thumbnail(self):
         raise NotImplementedError
