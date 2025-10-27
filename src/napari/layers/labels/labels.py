@@ -1,7 +1,7 @@
 import typing
 import warnings
 from collections import deque
-from collections.abc import Callable, Generator, Sequence
+from collections.abc import Callable, Generator, Sequence, Iterable
 from contextlib import contextmanager
 from typing import (
     Any,
@@ -11,6 +11,7 @@ from typing import (
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
+from psygnal.containers import Selection
 from scipy import ndimage as ndi
 from skimage.draw import polygon2mask
 
@@ -405,11 +406,11 @@ class Labels(ScalarFieldBase):
 
         self._iso_gradient_mode = IsoCategoricalGradientMode(iso_gradient_mode)
 
-        self._selected_label = 1
-        self.colormap.selection = self._selected_label
+        self._selected_data: Selection[int] = Selection([1])
+        self.colormap.selection = self.selected_label
         self.colormap.use_selection = self._show_selected_label
         self._prev_selected_label = None
-        self._selected_color = self.get_color(self._selected_label)
+        self._selected_color = self.get_color(self.selected_label)
         self._updated_slice = None
         if colormap is not None:
             self._set_colormap(colormap)
@@ -716,10 +717,14 @@ class Labels(ScalarFieldBase):
     @property
     def selected_label(self):
         """int: Index of selected label."""
-        return self._selected_label
+        active_label = self._selected_data.active
+        if active_label is not None:
+            return active_label
+        else:
+            return 0
 
     @selected_label.setter
-    def selected_label(self, selected_label):
+    def selected_label(self, selected_label: int):
         if selected_label == self.selected_label:
             return
         # when setting the label to the background, store the previous
@@ -738,13 +743,23 @@ class Labels(ScalarFieldBase):
         else:
             self._prev_selected_label = None
         self.colormap.selection = selected_label
-        self._selected_label = selected_label
+        self.selected_data = [selected_label]
         self._selected_color = self.get_color(selected_label)
 
         self.events.selected_label()
 
         if self.show_selected_label:
             self.refresh(extent=False)
+
+    @property
+    def selected_data(self) -> Selection[int]:
+        return self._selected_data
+
+    @selected_data.setter
+    def selected_data(self, selected_data: Iterable[int]) -> None:
+        self._selected_data.clear()
+        self._selected_data.update(set(selected_data))
+
 
     def swap_selected_and_background_labels(self):
         """Swap between the selected label and the background label."""
