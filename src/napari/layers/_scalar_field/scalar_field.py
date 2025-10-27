@@ -674,7 +674,7 @@ class ScalarFieldBase(Layer, ABC):
 
     def get_layer_slicer(
         self, data: LayerDataType, cache: bool
-    ) -> LayerSlicer:
+    ) -> ScalarFieldSlicer:
         return ScalarFieldSlicer(layer=self, data=data, cache=cache)
 
 

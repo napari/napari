@@ -12,7 +12,10 @@ from scipy import ndimage as ndi
 from napari.layers._data_protocols import LayerDataProtocol
 from napari.layers._multiscale_data import MultiScaleData
 from napari.layers._scalar_field._slice import _ScalarFieldSliceResponse
-from napari.layers._scalar_field.scalar_field import ScalarFieldBase
+from napari.layers._scalar_field.scalar_field import (
+    ScalarFieldBase,
+    ScalarFieldSlicer,
+)
 from napari.layers.image._image_constants import (
     ImageProjectionMode,
     ImageRendering,
@@ -22,6 +25,7 @@ from napari.layers.image._image_constants import (
 from napari.layers.image._image_utils import guess_rgb
 from napari.layers.intensity_mixin import IntensityVisualizationMixin
 from napari.layers.utils.layer_utils import calc_data_range
+from napari.types import LayerDataType
 from napari.utils._dtype import get_dtype_limits, normalize_dtype
 from napari.utils.colormaps import ensure_colormap
 from napari.utils.colormaps.colormap_utils import _coerce_contrast_limits
@@ -676,3 +680,36 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         raise RuntimeError(  # pragma: no cover
             f'ray value calculation not implemented for {self.rendering}'
         )
+
+    def get_layer_slicer(
+        self, data: LayerDataType, cache: bool
+    ) -> ImageSlicer:
+        return ImageSlicer(self, data, cache)
+
+
+class ImageSlicer(ScalarFieldSlicer):
+    layer: Image
+
+    def _update_slice_response(
+        self, response: _ScalarFieldSliceResponse
+    ) -> None:
+        """Restore the original contrast limits after slicing.
+
+        WARNING: This is a hack.
+        Will be removed as we want to go into multi canvas mode.
+        """
+        if self.layer._keep_auto_contrast:
+            data = response.image.raw
+            input_data = data[-1] if self.layer.multiscale else data
+            self.layer.contrast_limits = calc_data_range(
+                typing.cast(LayerDataProtocol, input_data),
+                rgb=self.layer.rgb,
+                dtype=self.layer.dtype,
+            )
+        super()._update_slice_response(response)
+        if self.layer._should_calc_clims:
+            self.layer.reset_contrast_limits_range()
+            self.layer.reset_contrast_limits()
+            self.layer._should_calc_clims = False
+        elif self.layer._keep_auto_contrast:
+            self.layer.reset_contrast_limits()

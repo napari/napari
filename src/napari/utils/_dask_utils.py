@@ -145,6 +145,8 @@ def configure_dask(data: Any, cache: bool = True) -> DaskIndexer:
     def dask_optimized_slicing(
         memfrac: float = 0.5,
     ) -> Iterator[tuple[Any, Any]]:
+        # For debug from where the delayed slicer is called
+        # add "scheduler": "synchronous" to opts
         opts = {'optimization.fuse.active': False}
         with dask.config.set(opts) as cfg, _cache as c:
             yield cfg, c

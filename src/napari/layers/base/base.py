@@ -148,15 +148,15 @@ class LayerSlicer(ABC):
     def update_dims(self):
         self._slice_input = self._slice_input.with_ndim(self.ndim)
 
-    def set_slice_input_from_dims(self, dims: Dims) -> bool:
+    def set_slice_input_from_dims(self, dims: Dims, force: bool) -> bool:
         slice_input = self.make_slice_input(dims)
-        return self.set_slice_input(slice_input)
+        return self.set_slice_input(slice_input, force)
 
-    def set_slice_input(self, slice_input: _SliceInput) -> bool:
-        if self._slice_input == slice_input:
+    def set_slice_input(self, slice_input: _SliceInput, force: bool) -> bool:
+        if self._slice_input == slice_input and not force:
             return False
         self._slice_input = copy.deepcopy(slice_input)
-        if self.layer.visible:
+        if self.layer.visible and not force:
             self.set_view_slice()
         return True
 
@@ -1418,7 +1418,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             dims,
             force,
         )
-        changed = self._layer_slicer.set_slice_input_from_dims(dims)
+        changed = self._layer_slicer.set_slice_input_from_dims(dims, force)
         if force or changed:
             self._refresh_sync(
                 data_displayed=True,
@@ -1642,6 +1642,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             self.events.reload(layer=self)
         # Otherwise, slice immediately on the calling thread.
         else:
+            self.set_view_slice()
             self._refresh_sync(
                 thumbnail=thumbnail,
                 data_displayed=data_displayed,
@@ -1665,7 +1666,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         if extent:
             self._clear_extent()
         if data_displayed:
-            self.set_view_slice()
+            # self.set_view_slice()
             self.events.set_data()
         if thumbnail:
             self._update_thumbnail()
