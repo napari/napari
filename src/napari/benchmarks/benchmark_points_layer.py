@@ -39,7 +39,7 @@ class Points2DSuite:
 
     def time_set_view_slice(self, n):
         """Time to set view slice."""
-        self.layer._set_view_slice()
+        self.layer._layer_slicer._set_view_slice()
 
     def time_update_thumbnail(self, n):
         """Time to update thumbnail."""
@@ -83,7 +83,7 @@ class Points3DSuite:
 
     def time_set_view_slice(self, n):
         """Time to set view slice."""
-        self.layer._set_view_slice()
+        self.layer._layer_slicer._set_view_slice()
 
     def time_update_thumbnail(self, n):
         """Time to update thumbnail."""

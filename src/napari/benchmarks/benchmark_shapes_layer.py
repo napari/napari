@@ -207,7 +207,7 @@ class Shapes2DSuite(_BackendSelection):
 
     def time_set_view_slice(self, *_):
         """Time to set view slice."""
-        self.layer._set_view_slice()
+        self.layer._layer_slicer._set_view_slice()
 
     def time_update_thumbnail(self, *_):
         """Time to update thumbnail."""
@@ -281,7 +281,7 @@ class Shapes3DSuite:
 
     def time_set_view_slice(self, _n):
         """Time to set view slice."""
-        self.layer._set_view_slice()
+        self.layer._layer_slicer._set_view_slice()
 
     def time_update_thumbnail(self, _n):
         """Time to update thumbnail."""
