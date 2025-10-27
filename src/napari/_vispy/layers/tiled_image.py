@@ -21,6 +21,8 @@ class TiledImageLayerNode(Node):
         tiles = make_tiles(data, self.tile_size)
 
         self.data = data
+        for child in self.adopted_children:
+            child.parent = None
         self.adopted_children = [Image(data=dat, parent=self, transforms=STTransform(translate=offset + (0,))) for offset, dat in tiles]
         self.offsets = [of for of, _ in tiles]
 
@@ -30,13 +32,13 @@ class TiledImageLayerNode(Node):
             child.transform = STTransform(translate=offset + (0, ))
 
     def __getattr__(self, name):
-        if name in ['cmap', 'clim', 'events'] and len(self.adopted_children) > 0:
+        if name in ['cmap', 'clim', 'opacity', 'events'] and len(self.adopted_children) > 0:
             return getattr(self.adopted_children[0], name)
         else:
             return self.__getattribute__(name)
 
     def __setattr__(self, name, value):
-        if name in ['cmap', 'clim']:
+        if name in ['cmap', 'clim', 'opacity']:
             for child in self.adopted_children:
                 setattr(child, name, value)
         else:
