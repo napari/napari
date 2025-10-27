@@ -457,19 +457,20 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase[ImageProjectionMode]):
         self.signals.attenuation()
 
     @property
-    def data(self) -> LayerDataProtocol | MultiScaleData:
+    def data(self) -> LayerDataProtocol:
         """Data, possibly in multiscale wrapper. Obeys LayerDataProtocol."""
         return self._data
 
     @data.setter
-    def data(self, data: LayerDataProtocol | MultiScaleData) -> None:
-        self._data_raw = data
+    def data(self, data: LayerDataProtocol) -> None:
+        self._data_raw = MultiScaleData(data)
         # note, we don't support changing multiscale in an Image instance
-        self._data = MultiScaleData(data) if self.multiscale else data  # type: ignore
+        self._data = MultiScaleData(data) if self.multiscale else data
         self._update_dims()
         if self._keep_auto_contrast:
             self.reset_contrast_limits()
-        self.events.data(value=self.data)
+        self.events.data(value=self._data)
+        self.signals.data(self._data)
         self._reset_editable()
 
     @property

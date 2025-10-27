@@ -79,6 +79,7 @@ if TYPE_CHECKING:
 
     from napari.components.dims import Dims
     from napari.components.overlays.base import Overlay
+    from napari.layers._data_protocols import LayerDataProtocol
     from napari.layers._multiscale_data import MultiScaleData
     from napari.layers._source import Source
     from napari.layers.image._image_constants import ImageProjectionMode
@@ -134,7 +135,7 @@ class LayerEventGroup(SignalGroup):
     """Layer signals."""
 
     axis_labels = Signal()
-    data = Signal()
+    data = Signal(object) # LayerDataProtocol | MultiScaleData; there should be only one type though...
     metadata = Signal()
     affine = Signal()
     blending = Signal()
@@ -1083,7 +1084,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, Generic[TProj], metaclass=Pos
 
     @property
     @abstractmethod
-    def data(self) -> MultiScaleData:
+    def data(self) -> LayerDataProtocol:
         # user writes own docstring
         raise NotImplementedError
 
@@ -1092,7 +1093,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, Generic[TProj], metaclass=Pos
     # should be rethought
     @data.setter
     @abstractmethod
-    def data(self, data: MultiScaleData) -> None:
+    def data(self, data: LayerDataProtocol) -> None:
         raise NotImplementedError
 
     @property
