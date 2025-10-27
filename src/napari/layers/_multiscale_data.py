@@ -34,7 +34,9 @@ class MultiScaleData(Sequence[LayerDataProtocol]):
     # TODO: max_size handling is missing
     def __init__(
         self,
-        data: LayerDataProtocol | Sequence[LayerDataProtocol] | list[LayerDataProtocol],
+        data: LayerDataProtocol
+        | Sequence[LayerDataProtocol]
+        | list[LayerDataProtocol],
     ) -> None:
         if not data:
             raise ValueError(

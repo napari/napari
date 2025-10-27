@@ -38,12 +38,15 @@ if TYPE_CHECKING:
             but this is still an open question:
             https://github.com/pyapp-kit/psygnal/pull/304
         """
+
         contrast_limits: SignalInstance
         contrast_limits_range: SignalInstance
         gamma: SignalInstance
         colormap: SignalInstance
 
+
 T = TypeVar('T')
+
 
 class IVMSignalGroup(SignalGroup):
     """IntensityVisualizationMixin signals.
@@ -52,6 +55,7 @@ class IVMSignalGroup(SignalGroup):
     These should be created in the final Layer class that
     uses the IntensityVisualizationMixin.
     """
+
     contrast_limits = Signal()
     contrast_limits_range = Signal()
     gamma = Signal()
@@ -70,6 +74,7 @@ class IntensityVisualizationMixin:
     Note: `contrast_limits_range` is range extent available on the widget,
     and `contrast_limits` is the visible range (the set values on the widget)
     """
+
     events: EmitterGroup
     _colormap: Colormap
     _overlays: EventedDict
@@ -91,7 +96,6 @@ class IntensityVisualizationMixin:
     # but mypy seems to be complaining if they are not present,
     # so we have to add them to "digest" any extra arguments
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-
         # this super().__init__() call
         # is necessary given the mixin nature of this class
         super().__init__()
@@ -115,7 +119,9 @@ class IntensityVisualizationMixin:
 
         self._overlays.update({'colorbar': ColorBarOverlay()})
 
-    def reset_contrast_limits(self, mode: Literal['data', 'slice'] | None = None) -> None:
+    def reset_contrast_limits(
+        self, mode: Literal['data', 'slice'] | None = None
+    ) -> None:
         """Scale contrast limits to data range"""
         mode = mode or self._auto_contrast_source
         self._contrast_limits = self._calc_data_range(mode)
@@ -126,7 +132,9 @@ class IntensityVisualizationMixin:
     ) -> tuple[float, float]:
         raise NotImplementedError
 
-    def reset_contrast_limits_range(self, mode: Literal['data', 'slice'] | None = None) -> None:
+    def reset_contrast_limits_range(
+        self, mode: Literal['data', 'slice'] | None = None
+    ) -> None:
         """Scale contrast limits range to data type if dtype is an integer,
         or use the current maximum data range otherwise.
         """
@@ -174,18 +182,16 @@ class IntensityVisualizationMixin:
     def contrast_limits(self, value: list[float | None]) -> None:
         if not check_list(value, 2):
             raise ValueError(
-            trans._(
-                'Sequence {sequence} must be of length {n} and contain no None values.',
-                deferred=True,
-                sequence=value,
-                n=2
+                trans._(
+                    'Sequence {sequence} must be of length {n} and contain no None values.',
+                    deferred=True,
+                    sequence=value,
+                    n=2,
+                )
             )
-        )
 
         self._contrast_limits_msg = (
-            format_float(value[0])
-            + ', '
-            + format_float(value[1])
+            format_float(value[0]) + ', ' + format_float(value[1])
         )
         self._contrast_limits = (value[0], value[1])
         # make sure range slider is big enough to fit range
@@ -220,13 +226,13 @@ class IntensityVisualizationMixin:
             # be made so that if one element is None,
             # it'll preserve the current range for that element
             raise ValueError(
-            trans._(
-                'Sequence {sequence} must be of length {n} and contain no None values.',
-                deferred=True,
-                sequence=value,
-                n=2
+                trans._(
+                    'Sequence {sequence} must be of length {n} and contain no None values.',
+                    deferred=True,
+                    sequence=value,
+                    n=2,
+                )
             )
-        )
         if list(value) == self.contrast_limits_range:
             return
 

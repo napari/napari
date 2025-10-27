@@ -1,4 +1,5 @@
 """guess_rgb, guess_multiscale, guess_labels."""
+
 from __future__ import annotations
 
 import itertools
@@ -77,7 +78,11 @@ def guess_multiscale(
         # pyramid with only one level, unwrap
         return False, MultiScaleData(data[0])
 
-    sizes = [data.size] if isinstance(data, LayerDataProtocol) else [d.size for d in data]
+    sizes = (
+        [data.size]
+        if isinstance(data, LayerDataProtocol)
+        else [d.size for d in data]
+    )
     if len(sizes) <= 1:
         return False, MultiScaleData(data)
 
@@ -100,7 +105,11 @@ def guess_multiscale(
                 sizes=sizes,
             )
         )
-    ret = MultiScaleData([data]) if isinstance(data, LayerDataProtocol) else MultiScaleData(data)
+    ret = (
+        MultiScaleData([data])
+        if isinstance(data, LayerDataProtocol)
+        else MultiScaleData(data)
+    )
     return True, ret
 
 

@@ -66,15 +66,17 @@ if TYPE_CHECKING:
             but this is still an open question:
             https://github.com/pyapp-kit/psygnal/pull/304
         """
+
         attenuation: SignalInstance
         custom_interpolation_kernel_2d: SignalInstance
         depiction: SignalInstance
-        interpolation: SignalInstance # str
-        interpolation2d: SignalInstance # str
-        interpolation3d: SignalInstance # str
-        iso_threshold: SignalInstance # float
+        interpolation: SignalInstance  # str
+        interpolation2d: SignalInstance  # str
+        interpolation3d: SignalInstance  # str
+        iso_threshold: SignalInstance  # float
         plane: SignalInstance
         rendering: SignalInstance
+
 
 class ScalarFieldEventGroup(LayerEventGroup):
     """ScalarField layer events.
@@ -245,7 +247,7 @@ class ScalarFieldBase(Layer[TProj], ABC):
         blending: str | Blending = Blending.TRANSLUCENT,
         cache: bool = True,
         custom_interpolation_kernel_2d: npt.NDArray | None = None,
-        depiction: str ='volume',
+        depiction: str = 'volume',
         experimental_clipping_planes: ClippingPlaneList | None = None,
         metadata: dict[str, Any] | None = None,
         multiscale: bool | None = None,
@@ -253,7 +255,7 @@ class ScalarFieldBase(Layer[TProj], ABC):
         ndim: int | None = None,
         opacity: float = 1.0,
         plane: SlicingPlane | SlicingPlaneDict | None = None,
-        projection_mode: str | ImageProjectionMode = "none",
+        projection_mode: str | ImageProjectionMode = 'none',
         rendering: str = 'mip',
         rotate: float | tuple[float, float, float] | npt.NDArray | None = None,
         scale: tuple[float, ...] | None = None,

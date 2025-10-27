@@ -15,9 +15,11 @@ if TYPE_CHECKING:
 
     class SlicingPlaneDict(TypedDict):
         """Typed dictionary equivalent of SlicingPlane."""
+
         position: tuple[float, float, float]
         normal: tuple[float, float, float]
         thickness: float
+
 
 Point3D: TypeAlias = tuple[float, float, float]
 

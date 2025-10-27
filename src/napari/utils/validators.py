@@ -13,9 +13,7 @@ T = TypeVar('T')
 
 # TODO: this should be generalizable to
 # other mutable sequence types (e.g., tuple)
-def check_list(
-    values: list[T | None], n: int
-) -> TypeGuard[list[T]]:
+def check_list(values: list[T | None], n: int) -> TypeGuard[list[T]]:
     """
     Check that all elements in the list are not None,
     and that the length of the iterable is n.

@@ -290,7 +290,11 @@ def calc_data_range(
     return (float(min_val), float(max_val))
 
 
-def segment_normal(a: npt.NDArray[Any], b: npt.NDArray[Any], p: tuple[int, int, int] = (0, 0, 1)) -> np.ndarray:
+def segment_normal(
+    a: npt.NDArray[Any],
+    b: npt.NDArray[Any],
+    p: tuple[int, int, int] = (0, 0, 1),
+) -> np.ndarray:
     """Determines the unit normal of the vector from a to b.
 
     Parameters

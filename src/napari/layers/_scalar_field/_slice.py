@@ -18,6 +18,7 @@ from napari.utils.transforms import Affine
 if TYPE_CHECKING:
     from numpy.typing import DTypeLike
 
+
 # TODO: this protocol shouldn't go in this module,
 # but somewhere more easily accessible to the rest of the code
 class ProjectionProtocol(Protocol):
@@ -30,17 +31,14 @@ class ProjectionProtocol(Protocol):
 
     NONE: str
 
-    def __call__(self, value: str | Self) -> Self:
-        ...
+    def __call__(self, value: str | Self) -> Self: ...
 
-    def __str__(self) -> str:
-        ...
+    def __str__(self) -> str: ...
 
-    def __eq__(self, other: object) -> bool:
-        ...
+    def __eq__(self, other: object) -> bool: ...
 
-    def __ne__(self, value: object) -> bool:
-        ...
+    def __ne__(self, value: object) -> bool: ...
+
 
 TProj = TypeVar('TProj', bound=ProjectionProtocol)
 

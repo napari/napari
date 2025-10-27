@@ -99,6 +99,7 @@ if TYPE_CHECKING:
             but this is still an open question:
             https://github.com/pyapp-kit/psygnal/pull/304
         """
+
         axis_labels: SignalInstance
         data: SignalInstance
         metadata: SignalInstance
@@ -131,11 +132,14 @@ if TYPE_CHECKING:
         _extent_augmented: SignalInstance
         _overlays: SignalInstance
 
+
 class LayerEventGroup(SignalGroup):
     """Layer signals."""
 
     axis_labels = Signal()
-    data = Signal(object) # LayerDataProtocol | MultiScaleData; there should be only one type though...
+    data = Signal(
+        object
+    )  # LayerDataProtocol | MultiScaleData; there should be only one type though...
     metadata = Signal()
     affine = Signal()
     blending = Signal()
@@ -165,6 +169,7 @@ class LayerEventGroup(SignalGroup):
     visible = Signal()
     _extent_augmented = Signal()
     _overlays = Signal()
+
 
 logger = logging.getLogger('napari.layers.base.base')
 
@@ -207,6 +212,7 @@ class PostInit(ABCMeta):
         obj._post_init()
         return obj
 
+
 class ClippingPlaneDict(TypedDict):
     position: list[float]
     normal: list[float]
@@ -223,7 +229,9 @@ ClippingPlaneType: TypeAlias = (
 
 
 @mgui.register_type(choices=get_layers, return_callback=add_layer_to_viewer)
-class Layer(KeymapProvider, MousemapProvider, ABC, Generic[TProj], metaclass=PostInit):
+class Layer(
+    KeymapProvider, MousemapProvider, ABC, Generic[TProj], metaclass=PostInit
+):
     """Base layer class.
 
     Parameters
