@@ -1,11 +1,11 @@
 from collections import OrderedDict
 from enum import IntEnum, auto
 
-from napari.utils.misc import StringEnum
+from napari.utils.compat import StrEnum
 from napari.utils.translations import trans
 
 
-class Blending(StringEnum):
+class Blending(StrEnum):
     """BLENDING: Blending mode for the layer.
 
     Selects a preset blending mode in vispy that determines how
@@ -57,7 +57,7 @@ BLENDING_TRANSLATIONS = OrderedDict(
 )
 
 
-class Mode(StringEnum):
+class Mode(StrEnum):
     """
     Mode: Interactive mode. The normal, default mode is PAN_ZOOM, which
     allows for normal interactivity with the canvas.
@@ -129,7 +129,7 @@ class InteractionBoxHandle(IntEnum):
         )
 
 
-class ActionType(StringEnum):
+class ActionType(StrEnum):
     """
     Action types for layer.events.data of Shapes and Points layer.
     """
@@ -142,7 +142,7 @@ class ActionType(StringEnum):
     CHANGED = auto()
 
 
-class BaseProjectionMode(StringEnum):
+class BaseProjectionMode(StrEnum):
     """
     Projection mode for aggregating a thick nD slice onto displayed dimensions.
 

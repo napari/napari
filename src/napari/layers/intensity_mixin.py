@@ -4,6 +4,7 @@ from abc import abstractmethod
 from typing import TYPE_CHECKING, TypeVar
 
 import numpy as np
+from psygnal import Signal, SignalGroup
 
 from napari.utils._dtype import normalize_dtype
 from napari.utils.colormaps import ensure_colormap
@@ -13,23 +14,48 @@ from napari.utils.translations import trans
 from napari.utils.validators import check_list
 
 if TYPE_CHECKING:
-    from typing import Literal, Protocol
+    from typing import Any, Literal, Protocol
 
     import numpy.typing as npt
-    from psygnal import Signal
+    from psygnal import SignalInstance
 
     from napari.components.overlays import ColorBarOverlay
     from napari.utils.colormaps.colormap import Colormap
     from napari.utils.colormaps.colormap_utils import ValidColormapArg
     from napari.utils.events import EmitterGroup, EventedDict
 
-    class IVMSignalGroup(Protocol):
-        contrast_limits: Signal
-        contrast_limits_range: Signal
-        gamma: Signal
-        colormap: Signal
+    class IVMSignalGroupProtocol(Protocol):
+        """Protocol for IntensityVisualizationMixin signals.
+
+        These signals cannot be declared as `psygnal.Signal` as
+        this is simply the descriptor protocol implementation
+        of the actual signal. Instead, we want the instance type
+        that is created in the descriptor, which is `psygnal.SignalInstance`.
+
+        .. note::
+            The protocol is only for type-checking purposes; it should be type
+            hinted as a generic so to describe the actual data it transports
+            but this is still an open question:
+            https://github.com/pyapp-kit/psygnal/pull/304
+        """
+        contrast_limits: SignalInstance
+        contrast_limits_range: SignalInstance
+        gamma: SignalInstance
+        colormap: SignalInstance
 
 T = TypeVar('T')
+
+class IVMSignalGroup(SignalGroup):
+    """IntensityVisualizationMixin signals.
+
+    The actual signals instances created by the descriptor.
+    These should be created in the final Layer class that
+    uses the IntensityVisualizationMixin.
+    """
+    contrast_limits = Signal()
+    contrast_limits_range = Signal()
+    gamma = Signal()
+    colormap = Signal()
 
 
 class IntensityVisualizationMixin:
@@ -57,12 +83,17 @@ class IntensityVisualizationMixin:
     # with the appropriate signals... how to fix this? The nice thing
     # about the current event system is that it relies on dynamic
     # attributes setting, so we don't have to declare them all the time.
-    signals: IVMSignalGroup
+    # TODO: a possible solution is to declare these signals as protocol,
+    # and then have the final layer class implementing the actual signals?
+    signals: IVMSignalGroupProtocol
 
-    def __init__(self) -> None:
+    # TODO: these *args and **kwargs are useless here,
+    # but mypy seems to be complaining if they are not present,
+    # so we have to add them to "digest" any extra arguments
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
 
-        # TODO: why? this class does
-        # not inherit from anything
+        # this super().__init__() call
+        # is necessary given the mixin nature of this class
         super().__init__()
 
         self.events.add(

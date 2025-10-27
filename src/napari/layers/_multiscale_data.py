@@ -18,7 +18,7 @@ class MultiScaleData(Sequence[LayerDataProtocol]):
 
     Parameters
     ----------
-    data : Sequence[LayerDataProtocol]
+    data : LayerDataProtocol | Sequence[LayerDataProtocol]
         Levels of multiscale data, from larger to smaller.
     max_size : Sequence[int], optional
         Maximum size of a displayed tile in pixels, by default`data[-1].shape`
@@ -31,15 +31,16 @@ class MultiScaleData(Sequence[LayerDataProtocol]):
         If any of the items in `data` don't provide `LayerDataProtocol`.
     """
 
+    # TODO: max_size handling is missing
     def __init__(
         self,
-        data: Sequence[LayerDataProtocol],
+        data: LayerDataProtocol | Sequence[LayerDataProtocol] | list[LayerDataProtocol],
     ) -> None:
-        self._data: list[LayerDataProtocol] = list(data)
-        if not self._data:
+        if not data:
             raise ValueError(
                 trans._('Multiscale data must be a (non-empty) sequence')
             )
+        self._data: list[LayerDataProtocol] = list(data)
         for d in self._data:
             assert_protocol(d)
 

@@ -2,30 +2,12 @@ from collections import OrderedDict
 from enum import auto
 from typing import Literal
 
-from napari.utils.misc import StringEnum
+from napari.layers._scalar_field._slice import ProjectionProtocol
+from napari.utils.compat import StrEnum
 from napari.utils.translations import trans
 
-InterpolationStr = Literal[
-    'bessel',
-    'cubic',
-    'linear',
-    'blackman',
-    'catrom',
-    'gaussian',
-    'hamming',
-    'hanning',
-    'hermite',
-    'kaiser',
-    'lanczos',
-    'mitchell',
-    'nearest',
-    'spline16',
-    'spline36',
-    'custom',
-]
 
-
-class Interpolation(StringEnum):
+class Interpolation(StrEnum):
     """INTERPOLATION: Vispy interpolation mode.
 
     The spatial filters used for interpolation are from vispy's
@@ -51,8 +33,6 @@ class Interpolation(StringEnum):
     SPLINE36 = auto()
     CUSTOM = auto()
 
-    value: InterpolationStr
-
     @classmethod
     def view_subset(
         cls,
@@ -71,11 +51,8 @@ class Interpolation(StringEnum):
             cls.SPLINE36,
         )
 
-    def __str__(self) -> InterpolationStr:
-        return self.value
 
-
-class ImageRendering(StringEnum):
+class ImageRendering(StrEnum):
     """Rendering: Rendering mode for the layer.
 
     Selects a preset rendering mode in vispy
@@ -119,7 +96,7 @@ ImageRenderingStr = Literal[
 ]
 
 
-class VolumeDepiction(StringEnum):
+class VolumeDepiction(StrEnum):
     """Depiction: 3D depiction mode for images.
 
     Selects a preset depiction mode in vispy
@@ -139,7 +116,7 @@ VOLUME_DEPICTION_TRANSLATION = OrderedDict(
 )
 
 
-class ImageProjectionMode(StringEnum):
+class ImageProjectionMode(ProjectionProtocol, StrEnum):
     """
     Projection mode for aggregating a thick nD slice onto displayed dimensions.
 

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import typing
 import warnings
+from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, Literal, cast
 
 import numpy as np
@@ -12,16 +13,21 @@ from scipy import ndimage as ndi
 from napari.layers._data_protocols import LayerDataProtocol
 from napari.layers._multiscale_data import MultiScaleData
 from napari.layers._scalar_field._slice import _ScalarFieldSliceResponse
-from napari.layers._scalar_field.scalar_field import ScalarFieldBase
+from napari.layers._scalar_field.scalar_field import (
+    ScalarFieldBase,
+    ScalarFieldEventGroup,
+)
 from napari.layers.base._base_constants import Blending
 from napari.layers.image._image_constants import (
     ImageProjectionMode,
     ImageRendering,
     Interpolation,
-    InterpolationStr,
 )
 from napari.layers.image._image_utils import guess_rgb
-from napari.layers.intensity_mixin import IntensityVisualizationMixin
+from napari.layers.intensity_mixin import (
+    IntensityVisualizationMixin,
+    IVMSignalGroup,
+)
 from napari.layers.utils.layer_utils import calc_data_range
 from napari.utils._dtype import get_dtype_limits, normalize_dtype
 from napari.utils.colormaps import ensure_colormap
@@ -43,7 +49,11 @@ if TYPE_CHECKING:
 __all__ = ('Image',)
 
 
-class Image(IntensityVisualizationMixin, ScalarFieldBase):
+class ImageEventGroup(IVMSignalGroup, ScalarFieldEventGroup):
+    """Image layer events."""
+
+
+class Image(IntensityVisualizationMixin, ScalarFieldBase[ImageProjectionMode]):
     """Image layer.
 
     Parameters
@@ -233,14 +243,14 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         `True`.
     """
 
-    _projectionclass = ImageProjectionMode
+    signals: ImageEventGroup
 
     # TODO: check the list of per-parameter TODO questions
     # TODO: contrast_limits: should be a tuple of floats
     # TODO: rendering: is there an enum of acceptable values?
     def __init__(
         self,
-        data: npt.NDArray | list[npt.NDArray],
+        data: LayerDataProtocol | Sequence[LayerDataProtocol],
         *,
         affine: npt.ArrayLike | Affine | None = None,
         attenuation: float = 0.05,
@@ -248,13 +258,13 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         blending: Blending = Blending.TRANSLUCENT,
         cache: bool = True,
         colormap: ValidColormapArg = 'gray',
-        contrast_limits: list[tuple] | None =None,
+        contrast_limits: list[tuple] | None = None,
         custom_interpolation_kernel_2d: npt.NDArray | None = None,
-        depiction: str ='volume',
+        depiction: str = 'volume',
         experimental_clipping_planes: ClippingPlaneList | None = None,
         gamma: float = 1.0,
-        interpolation2d: Interpolation | str = Interpolation.NEAREST,
-        interpolation3d: Interpolation | str = Interpolation.LINEAR,
+        interpolation2d: str | Interpolation = Interpolation.NEAREST,
+        interpolation3d: str | Interpolation = Interpolation.LINEAR,
         iso_threshold: float | None = None,
         metadata: dict[str, Any] | None = None,
         multiscale: bool | None = None,
@@ -272,7 +282,9 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         visible: bool = True,
     ) -> None:
         # Determine if rgb
-        data_shape = data.shape if isinstance(data, np.ndarray) else data[0].shape
+        data_shape = (
+            data.shape if isinstance(data, np.ndarray) else data[0].shape
+        )
         if rgb and not guess_rgb(data_shape, min_side_len=0):
             raise ValueError(
                 trans._(
@@ -283,9 +295,10 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
             rgb = guess_rgb(data_shape)
 
         self.rgb = rgb
+        self.signals = ImageEventGroup()
 
-        # TODO: should it maybe be made explicit
-        # i.e. super(ScalarFieldBase, self).__init__()
+        # this calls first IntensityVisualizationMixin.__init__,
+        # then ScalarFieldBase.__init__, following the MRO
         super().__init__(
             data,
             affine=affine,
@@ -378,6 +391,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
     def rendering(self, rendering):
         self._rendering = ImageRendering(rendering)
         self.events.rendering()
+        self.signals.rendering()
 
     def _get_state(self) -> dict[str, Any]:
         """Get dictionary of layer state.
@@ -440,6 +454,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         self._attenuation = value
         self._update_thumbnail()
         self.events.attenuation()
+        self.signals.attenuation()
 
     @property
     def data(self) -> LayerDataProtocol | MultiScaleData:
@@ -458,11 +473,11 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         self._reset_editable()
 
     @property
-    def interpolation2d(self) -> InterpolationStr:
-        return cast(InterpolationStr, str(self._interpolation2d))
+    def interpolation2d(self) -> str:
+        return str(self._interpolation2d)
 
     @interpolation2d.setter
-    def interpolation2d(self, value: InterpolationStr | Interpolation) -> None:
+    def interpolation2d(self, value: str) -> None:
         if value == 'bilinear':
             raise ValueError(
                 trans._(
@@ -479,13 +494,15 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         self._interpolation2d = Interpolation(value)
         self.events.interpolation2d(value=self._interpolation2d)
         self.events.interpolation(value=self._interpolation2d)
+        self.signals.interpolation2d(str(self._interpolation2d))
+        self.signals.interpolation(str(self._interpolation2d))
 
     @property
-    def interpolation3d(self) -> InterpolationStr:
-        return cast(InterpolationStr, str(self._interpolation3d))
+    def interpolation3d(self) -> str:
+        return str(self._interpolation3d)
 
     @interpolation3d.setter
-    def interpolation3d(self, value: InterpolationStr | Interpolation) -> None:
+    def interpolation3d(self, value: str) -> None:
         if value == 'custom':
             raise NotImplementedError(
                 'custom interpolation is not implemented yet for 3D rendering'
@@ -500,6 +517,8 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         self._interpolation3d = Interpolation(value)
         self.events.interpolation3d(value=self._interpolation3d)
         self.events.interpolation(value=self._interpolation3d)
+        self.signals.interpolation3d(str(self._interpolation3d))
+        self.signals.interpolation(str(self._interpolation3d))
 
     @property
     def iso_threshold(self) -> float:
@@ -511,6 +530,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         self._iso_threshold = value
         self._update_thumbnail()
         self.events.iso_threshold()
+        self.signals.iso_threshold(self._iso_threshold)
 
     def _get_level_shapes(self):
         shapes = super()._get_level_shapes()

@@ -8,13 +8,15 @@ import os.path
 import uuid
 from abc import ABC, ABCMeta, abstractmethod
 from collections import defaultdict
-from collections.abc import Callable, Generator, Hashable, Mapping, Sequence
+from collections.abc import Generator, Hashable, Mapping, Sequence
 from contextlib import contextmanager
 from functools import cached_property
 from typing import (
     TYPE_CHECKING,
     Any,
     ClassVar,
+    Generic,
+    Protocol,
     TypeAlias,
     TypedDict,
 )
@@ -26,8 +28,8 @@ from npe2 import plugin_manager as pm
 from psygnal import Signal, SignalGroup
 from psygnal.containers import EventedDict as PsygnalEventedDict
 
+from napari.layers._scalar_field._slice import TProj
 from napari.layers.base._base_constants import (
-    BaseProjectionMode,
     Blending,
     Mode,
 )
@@ -62,7 +64,6 @@ from napari.utils.geometry import (
 )
 from napari.utils.key_bindings import KeymapProvider
 from napari.utils.migrations import _DeprecatingDict
-from napari.utils.misc import StringEnum
 from napari.utils.mouse_bindings import MousemapProvider
 from napari.utils.naming import magic_name
 from napari.utils.status_messages import (
@@ -73,12 +74,96 @@ from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     import numpy.typing as npt
+    from psygnal import SignalInstance
     from typing_extensions import Self
 
     from napari.components.dims import Dims
     from napari.components.overlays.base import Overlay
+    from napari.layers._multiscale_data import MultiScaleData
     from napari.layers._source import Source
+    from napari.layers.image._image_constants import ImageProjectionMode
+    from napari.utils.mouse_bindings import ModeCallable
 
+    class LayerEventGroupProtocol(Protocol):
+        """Protocol for IntensityVisualizationMixin signals.
+
+        These signals cannot be declared as `psygnal.Signal` as
+        this is simply the descriptor protocol implementation
+        of the actual signal. Instead, we want the instance type
+        that is created in the descriptor, which is `psygnal.SignalInstance`.
+
+        .. note::
+            The protocol is only for type-checking purposes; it should be type
+            hinted as a generic so to describe the actual data it transports
+            but this is still an open question:
+            https://github.com/pyapp-kit/psygnal/pull/304
+        """
+        axis_labels: SignalInstance
+        data: SignalInstance
+        metadata: SignalInstance
+        affine: SignalInstance
+        blending: SignalInstance
+        cursor: SignalInstance
+        cursor_size: SignalInstance
+        editable: SignalInstance
+        extent: SignalInstance
+        help: SignalInstance
+        loaded: SignalInstance
+        mode: SignalInstance
+        mouse_pan: SignalInstance
+        mouse_zoom: SignalInstance
+        name: SignalInstance
+        opacity: SignalInstance
+        projection_mode: SignalInstance
+        refresh: SignalInstance
+        reload: SignalInstance
+        rotate: SignalInstance
+        scale: SignalInstance
+        scale_factor: SignalInstance
+        set_data: SignalInstance
+        shear: SignalInstance
+        status: SignalInstance
+        thumbnail: SignalInstance
+        translate: SignalInstance
+        units: SignalInstance
+        visible: SignalInstance
+        _extent_augmented: SignalInstance
+        _overlays: SignalInstance
+
+class LayerEventGroup(SignalGroup):
+    """Layer signals."""
+
+    axis_labels = Signal()
+    data = Signal()
+    metadata = Signal()
+    affine = Signal()
+    blending = Signal()
+    cursor = Signal()
+    cursor_size = Signal()
+    editable = Signal()
+    extent = Signal()
+    help = Signal()
+    loaded = Signal()
+    mode = Signal()
+    mouse_pan = Signal()
+    mouse_zoom = Signal()
+    name = Signal()
+    opacity = Signal()
+    projection_mode = Signal()
+    refresh = Signal()
+    reload = Signal()
+    rotate = Signal()
+    scale = Signal()
+    scale_factor = Signal()
+    set_data = Signal()
+    shear = Signal()
+    status = Signal()
+    thumbnail = Signal()
+    translate = Signal()
+    units = Signal()
+    visible = Signal()
+    _extent_augmented = Signal()
+    _overlays = Signal()
 
 logger = logging.getLogger('napari.layers.base.base')
 
@@ -121,41 +206,6 @@ class PostInit(ABCMeta):
         obj._post_init()
         return obj
 
-
-class LayerEventGroup(SignalGroup):
-    axis_labels = Signal()
-    data = Signal()
-    metadata = Signal()
-    affine = Signal()
-    blending = Signal()
-    cursor = Signal(str)
-    cursor_size = Signal(int)
-    editable = Signal()
-    extent = Signal()
-    help = Signal(str)
-    loaded = Signal()
-    mode = Signal()
-    mouse_pan = Signal(bool)
-    mouse_zoom = Signal(bool)
-    name = Signal()
-    opacity = Signal()
-    projection_mode = Signal()
-    refresh = Signal()
-    reload = Signal()
-    rotate = Signal()
-    scale = Signal()
-    scale_factor = Signal()
-    set_data = Signal()
-    shear = Signal()
-    status = Signal()
-    thumbnail = Signal()
-    translate = Signal()
-    units = Signal()
-    visible = Signal()
-    _extent_augmented = Signal()
-    _overlays = Signal()
-
-
 class ClippingPlaneDict(TypedDict):
     position: list[float]
     normal: list[float]
@@ -172,7 +222,7 @@ ClippingPlaneType: TypeAlias = (
 
 
 @mgui.register_type(choices=get_layers, return_callback=add_layer_to_viewer)
-class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
+class Layer(KeymapProvider, MousemapProvider, ABC, Generic[TProj], metaclass=PostInit):
     """Base layer class.
 
     Parameters
@@ -349,37 +399,33 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     * `_basename()`: base/default name of the layer
     """
 
-    _modeclass: type[StringEnum] = Mode
-    _projectionclass: type[StringEnum] = BaseProjectionMode
+    _modeclass: ClassVar[type[Mode]] = Mode
+    _projectionclass: ClassVar[TProj]
 
-    ModeCallable = Callable[
-        ['Layer', Event], None | Generator[None, None, None]
-    ]
-
-    _drag_modes: ClassVar[dict[StringEnum, ModeCallable]] = {
+    _drag_modes: ClassVar[dict[Mode, ModeCallable]] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: transform_with_box,
     }
 
-    _move_modes: ClassVar[dict[StringEnum, ModeCallable]] = {
+    _move_modes: ClassVar[dict[Mode, ModeCallable]] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: highlight_box_handles,
     }
-    _cursor_modes: ClassVar[dict[StringEnum, str]] = {
+    _cursor_modes: ClassVar[dict[Mode, str]] = {
         Mode.PAN_ZOOM: 'standard',
         Mode.TRANSFORM: 'standard',
     }
     events: EmitterGroup
-    signals: LayerEventGroup
+    signals: LayerEventGroupProtocol
 
     def __init__(
         self,
-        data: npt.NDArray | list[npt.NDArray],
+        data: MultiScaleData,
         ndim: int,
         *,
         affine: npt.ArrayLike | Affine | None = None,
         axis_labels: tuple[str, ...] | None = None,
-        blending: Blending = Blending.TRANSLUCENT,
+        blending: str | Blending = Blending.TRANSLUCENT,
         cache: bool = True,  # this should move to future "data source" object.
         experimental_clipping_planes: ClippingPlaneType | None = None,
         metadata: dict[str, Any] | None = None,
@@ -387,7 +433,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         multiscale: bool = False,
         name: str | None = None,
         opacity: float = 1.0,
-        projection_mode: str = 'none',
+        projection_mode: str | ImageProjectionMode = 'none',
         rotate: float | tuple[float, float, float] | npt.NDArray | None = None,
         scale: tuple[float, ...] | None = None,
         shear: npt.NDArray | None = None,
@@ -422,14 +468,14 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         # afterwards we compute the actual values
         # and rely on the property setters to trigger events.
         self._highlight_visible = True
-        self._unique_id = None
+        self._unique_id: uuid.UUID | None = None
         self._source = current_source()
         self.dask_optimized_slicing = configure_dask(data, cache)
         self._metadata = dict(metadata or {})
         self._opacity = opacity
         self._blending = Blending(blending)
         self._visible = visible
-        self._visible_mode = None
+        self._visible_mode: str | None = None
         self._freeze = False
         self._status = 'Ready'
         self._help = ''
@@ -550,7 +596,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             _extent_augmented=Event,
             _overlays=Event,
         )
-        self.signals = LayerEventGroup(instance=self)
+        # the signal group should be
+        # created ONLY in the final layer class,
+        # when all mixins have been composed.
         self.name = self._name
         self.mode = mode
         self.projection_mode = projection_mode
@@ -582,7 +630,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         cls = type(self)
         return f'<{cls.__name__} layer {self.name!r} at {hex(id(self))}>'
 
-    def _mode_setter_helper(self, mode_in: Mode | str) -> StringEnum:
+    def _mode_setter_helper(self, mode_in: Mode | str) -> Mode:
         """
         Helper to manage callbacks in multiple layers
 
@@ -679,23 +727,25 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self._mode = mode_enum
 
         self.events.mode(mode=str(mode_enum))
+        self.signals.mode(str(mode_enum))
 
     @property
-    def projection_mode(self):
+    def projection_mode(self) -> str:
         """Mode of projection of the thick slice onto the viewed dimensions.
 
         The sliced data is described by an n-dimensional bounding box ("thick slice"),
         which needs to be projected onto the visible dimensions to be visible.
         The projection mode controls the projection logic.
         """
-        return self._projection_mode
+        return str(self._projection_mode)
 
     @projection_mode.setter
-    def projection_mode(self, mode):
-        mode = self._projectionclass(str(mode))
-        if self._projection_mode != mode:
-            self._projection_mode = mode
+    def projection_mode(self, mode: str) -> None:
+        new_mode = self._projectionclass(str(mode))
+        if self._projection_mode != new_mode:
+            self._projection_mode = new_mode
             self.events.projection_mode()
+            self.signals.projection_mode()
             self.refresh(extent=False)
 
     @property
@@ -1033,13 +1083,16 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
     @property
     @abstractmethod
-    def data(self):
+    def data(self) -> MultiScaleData:
         # user writes own docstring
         raise NotImplementedError
 
+    # TODO: this setter is maybe wrong...
+    # the whole multi scale data protocol
+    # should be rethought
     @data.setter
     @abstractmethod
-    def data(self, data):
+    def data(self, data: MultiScaleData) -> None:
         raise NotImplementedError
 
     @property

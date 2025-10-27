@@ -1,8 +1,9 @@
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Generic, Protocol, TypeVar
 
 import numpy as np
+from typing_extensions import Self
 
 from napari.layers.base._slice import _next_request_id
 from napari.layers.image._image_constants import ImageProjectionMode
@@ -16,6 +17,32 @@ from napari.utils.transforms import Affine
 
 if TYPE_CHECKING:
     from numpy.typing import DTypeLike
+
+# TODO: this protocol shouldn't go in this module,
+# but somewhere more easily accessible to the rest of the code
+class ProjectionProtocol(Protocol):
+    """Helper protocol to be bound to TProj.
+
+    The expecation is that any subclass of Layer that is generic
+    in TProj will have a _projectionclass that abides to this protocol
+    (a.k.a. one of the enumerators must be NONE = "none", or NONE = auto())
+    """
+
+    NONE: str
+
+    def __call__(self, value: str | Self) -> Self:
+        ...
+
+    def __str__(self) -> str:
+        ...
+
+    def __eq__(self, other: object) -> bool:
+        ...
+
+    def __ne__(self, value: object) -> bool:
+        ...
+
+TProj = TypeVar('TProj', bound=ProjectionProtocol)
 
 
 @dataclass(frozen=True)
@@ -60,7 +87,7 @@ class _ScalarFieldView:
 
 
 @dataclass(frozen=True)
-class _ScalarFieldSliceResponse:
+class _ScalarFieldSliceResponse(Generic[TProj]):
     """Contains all the output data of slicing an image layer.
 
     Attributes

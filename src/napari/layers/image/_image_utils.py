@@ -1,4 +1,5 @@
 """guess_rgb, guess_multiscale, guess_labels."""
+from __future__ import annotations
 
 import itertools
 from collections.abc import Callable, Sequence
@@ -41,8 +42,8 @@ def guess_rgb(shape: tuple[int, ...], min_side_len: int = 30) -> bool:
 
 
 def guess_multiscale(
-    data: MultiScaleData | list | tuple,
-) -> tuple[bool, LayerDataProtocol | Sequence[LayerDataProtocol]]:
+    data: MultiScaleData | LayerDataProtocol | Sequence[LayerDataProtocol],
+) -> tuple[bool, MultiScaleData]:
     """Guess whether the passed data is multiscale, process it accordingly.
 
     If shape of arrays along first axis is strictly decreasing, the data is
@@ -52,15 +53,15 @@ def guess_multiscale(
 
     Parameters
     ----------
-    data : array or list of array
-        Data that should be checked.
+    data: MultiScaleData | LayerDataProtocol | Sequence[LayerDataProtocol]
+        Array-like or sequence of array-likes to be checked.
 
     Returns
     -------
-    multiscale : bool
-        True if the data is thought to be multiscale, False otherwise.
-    data : list or array
-        The input data, perhaps with the leading axis removed.
+    tuple[bool, MultiScaleData]
+        A tuple with two elements:
+        - boolean indicating whether the data is multiscale or not;
+        - the data itself, wrapped in MultiScaleData.
     """
     # If the data has ndim and is not one-dimensional then cannot be multiscale
     # If data is a zarr array, this check ensure that subsets of it are not
@@ -69,16 +70,16 @@ def guess_multiscale(
     if isinstance(data, MultiScaleData):
         return True, data
 
-    if hasattr(data, 'ndim') and data.ndim > 1:
-        return False, data
+    if isinstance(data, LayerDataProtocol) and data.ndim > 1:
+        return False, MultiScaleData(data)
 
-    if isinstance(data, list | tuple) and len(data) == 1:
+    if isinstance(data, Sequence) and len(data) == 1:
         # pyramid with only one level, unwrap
-        return False, data[0]
+        return False, MultiScaleData(data[0])
 
-    sizes = [d.size for d in data]
+    sizes = [data.size] if isinstance(data, LayerDataProtocol) else [d.size for d in data]
     if len(sizes) <= 1:
-        return False, data
+        return False, MultiScaleData(data)
 
     consistent = all(s1 > s2 for s1, s2 in itertools.pairwise(sizes))
     if all(s == sizes[0] for s in sizes):
@@ -99,8 +100,8 @@ def guess_multiscale(
                 sizes=sizes,
             )
         )
-
-    return True, MultiScaleData(data)
+    ret = MultiScaleData([data]) if isinstance(data, LayerDataProtocol) else MultiScaleData(data)
+    return True, ret
 
 
 def guess_labels(data: Any) -> Literal['labels', 'image']:
