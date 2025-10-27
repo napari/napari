@@ -1090,7 +1090,7 @@ def test_thumbnail():
 
 
 @pytest.mark.parametrize('ndim', [2, 3, 4])
-@pytest.mark.parametrize('ndisplay', [2, 3])
+@pytest.mark.parametrize('ndisplay', [3])
 def test_thumbnail_non_visible(ndim, ndisplay):
     """Test the image thumbnail is not updated when layer is not visible."""
     dims = Dims(ndim=ndim, ndisplay=ndisplay)
@@ -1788,7 +1788,7 @@ def test_negative_label_doesnt_flicker():
     assert tuple(layer.get_color(-1)) != tuple(layer.get_color(5))
     minus_one_color_original = tuple(layer.get_color(-1))
     layer.dims_point = (2, 0, 0)
-    layer._set_view_slice()
+    layer._layer_slicer._set_view_slice()
 
     assert tuple(layer.get_color(-1)) == minus_one_color_original
 

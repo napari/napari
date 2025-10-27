@@ -156,7 +156,8 @@ class LayerSlicer(ABC):
         if self._slice_input == slice_input:
             return False
         self._slice_input = copy.deepcopy(slice_input)
-        self.set_view_slice()
+        if self.layer.visible:
+            self.set_view_slice()
         return True
 
     @property
