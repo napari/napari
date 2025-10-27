@@ -119,6 +119,7 @@ class PostInit(ABCMeta):
 class LayerSlicer(ABC):
     layer: Layer
     slice_done = Signal()
+    loaded_data = Signal()
 
     def __init__(self, layer: Layer, data: LayerDataType, cache: bool):
         self.layer = layer
@@ -128,6 +129,8 @@ class LayerSlicer(ABC):
             world_slice=_ThickNDSlice.make_full(ndim=self.ndim),
             order=tuple(range(self.ndim)),
         )
+        self._loaded: bool = True
+        self._last_slice_id: int = -1
 
     def set_view_slice(self) -> None:
         with self.dask_optimized_slicing():
@@ -275,6 +278,40 @@ class LayerSlicer(ABC):
     @abstractmethod
     def _set_view_slice(self):
         raise NotImplementedError
+
+    @property
+    def loaded(self) -> bool:
+        """True if this layer is fully loaded in memory, False otherwise.
+
+        Layers that only support sync slicing are always fully loaded.
+        Layers that support async slicing can be temporarily not loaded
+        while slicing is occurring.
+        """
+        return self._loaded
+
+    def _set_loaded(self, loaded: bool) -> None:
+        """Set the loaded state and notify a change with the loaded event."""
+        if self._loaded != loaded:
+            self._loaded = loaded
+            self.loaded_data.emit()
+
+    def _set_unloaded_slice_id(self, slice_id: int) -> None:
+        """Set this layer to be unloaded and associated with a pending slice ID.
+
+        This is private but accessed externally because it is related to slice
+        state, which is intended to be moved off the layer in the future.
+        """
+        self._last_slice_id = slice_id
+        self._set_loaded(False)
+
+    def _update_loaded_slice_id(self, slice_id: int) -> None:
+        """Potentially update the loaded state based on the given completed slice ID.
+
+        This is private but accessed externally because it is related to slice
+        state, which is intended to be moved off the layer in the future.
+        """
+        if self._last_slice_id == slice_id:
+            self._set_loaded(True)
 
 
 @mgui.register_type(choices=get_layers, return_callback=add_layer_to_viewer)
@@ -542,9 +579,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self._projection_mode = self._projectionclass(str(projection_mode))
         self._refresh_blocked = False
         self._ndim = ndim
-
-        self._loaded: bool = True
-        self._last_slice_id: int = -1
 
         # Create a transform chain consisting of four transforms:
         # 1. `tile2data`: An initial transform only needed to display tiles
@@ -838,40 +872,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
                 f'Tried to set source on layer {self.name} when source is already set to {self._source}'
             )
         self._source = source
-
-    @property
-    def loaded(self) -> bool:
-        """True if this layer is fully loaded in memory, False otherwise.
-
-        Layers that only support sync slicing are always fully loaded.
-        Layers that support async slicing can be temporarily not loaded
-        while slicing is occurring.
-        """
-        return self._loaded
-
-    def _set_loaded(self, loaded: bool) -> None:
-        """Set the loaded state and notify a change with the loaded event."""
-        if self._loaded != loaded:
-            self._loaded = loaded
-            self.events.loaded()
-
-    def _set_unloaded_slice_id(self, slice_id: int) -> None:
-        """Set this layer to be unloaded and associated with a pending slice ID.
-
-        This is private but accessed externally because it is related to slice
-        state, which is intended to be moved off the layer in the future.
-        """
-        self._last_slice_id = slice_id
-        self._set_loaded(False)
-
-    def _update_loaded_slice_id(self, slice_id: int) -> None:
-        """Potentially update the loaded state based on the given completed slice ID.
-
-        This is private but accessed externally because it is related to slice
-        state, which is intended to be moved off the layer in the future.
-        """
-        if self._last_slice_id == slice_id:
-            self._set_loaded(True)
 
     @property
     def opacity(self) -> float:

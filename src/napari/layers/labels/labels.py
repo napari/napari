@@ -974,7 +974,7 @@ class Labels(ScalarFieldBase):
         like adjusting gamma or changing the data based on the contrast
         limits.
         """
-        if not self.loaded or self._slice.empty:
+        if not self._layer_slicer.loaded or self._slice.empty:
             # ASYNC_TODO: Do not compute the thumbnail until we are loaded.
             # Is there a nicer way to prevent this from getting called?
             return

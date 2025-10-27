@@ -2793,6 +2793,6 @@ def test_points_layer_display_correct_slice_on_scale(viewer_model):
     pts.add((8.7, 0, 0))
     viewer_model.dims.set_point(0, 30 * 0.29)  # middle plane
 
-    request = pts._layer_slicer.make_slice_request(viewer_model.dims)
+    request = pts._layer_slicer._make_slice_request(viewer_model.dims)
     response = request()
     np.testing.assert_equal(response.indices, [0])

@@ -2448,7 +2448,7 @@ class PointsSlicer(LayerSlicer):
         response = request()
         self._update_slice_response(response)
 
-    def make_slice_request(self, dims: 'Dims') -> _PointSliceRequest:
+    def _make_slice_request(self, dims: 'Dims') -> _PointSliceRequest:
         """Make a Points slice request based on the given dims and these data."""
         slice_input = self.make_slice_input(dims)
         # See Image._make_slice_request to understand why we evaluate this here
