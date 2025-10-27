@@ -16,7 +16,6 @@ from skimage.draw import polygon2mask
 
 from napari.layers._data_protocols import LayerDataProtocol
 from napari.layers._multiscale_data import MultiScaleData
-from napari.layers._scalar_field._slice import _ScalarFieldSliceResponse
 from napari.layers._scalar_field.scalar_field import (
     ScalarFieldBase,
 )
@@ -844,13 +843,6 @@ class Labels(ScalarFieldBase):
         see https://github.com/napari/napari/issues/6084).
         """
         return vispy_texture_dtype(data)
-
-    def _update_slice_response(
-        self, response: _ScalarFieldSliceResponse
-    ) -> None:
-        """Override to convert raw slice data to displayed label colors."""
-        response = response.to_displayed(self._raw_to_displayed)
-        super()._update_slice_response(response)
 
     def _partial_labels_refresh(self):
         """Prepares and displays only an updated part of the labels."""
