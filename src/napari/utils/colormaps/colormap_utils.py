@@ -718,7 +718,7 @@ AVAILABLE_COLORMAPS_LOCK = Lock()
 # blending of multiple channels.
 MAGENTA_GREEN = ['magenta', 'green']
 RGB = ['red', 'green', 'blue']
-CYMRGB = ['cyan', 'yellow', 'magenta', 'red', 'green', 'blue']
+CMYBGR = ['cyan', 'magenta', 'yellow', 'blue', 'green', 'red']
 
 
 AVAILABLE_LABELS_COLORMAPS = {

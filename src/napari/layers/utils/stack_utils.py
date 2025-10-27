@@ -9,7 +9,7 @@ import pint
 
 from napari.layers import Image
 from napari.layers.image._image_utils import guess_multiscale
-from napari.utils.colormaps import CYMRGB, MAGENTA_GREEN, Colormap
+from napari.utils.colormaps import CMYBGR, MAGENTA_GREEN, Colormap
 from napari.utils.misc import ensure_iterable, ensure_sequence_of_iterables
 from napari.utils.translations import trans
 
@@ -122,7 +122,7 @@ def split_channels(
             elif n_channels == 2:
                 kwargs[key] = iter(MAGENTA_GREEN)
             else:
-                kwargs[key] = itertools.cycle(CYMRGB)
+                kwargs[key] = itertools.cycle(CMYBGR)
 
         # make sure that iterable_kwargs are a *sequence* of iterables
         # for the multichannel case.  For example: if scale == (1, 2) &

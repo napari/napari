@@ -8,7 +8,7 @@ from napari.utils.colormaps.colormap import (
 from napari.utils.colormaps.colormap_utils import (
     ALL_COLORMAPS,
     AVAILABLE_COLORMAPS,
-    CYMRGB,
+    CMYBGR,
     INVERSE_COLORMAPS,
     MAGENTA_GREEN,
     RGB,
@@ -26,7 +26,7 @@ from napari.utils.colormaps.colormap_utils import (
 __all__ = (
     'ALL_COLORMAPS',
     'AVAILABLE_COLORMAPS',
-    'CYMRGB',
+    'CMYBGR',
     'INVERSE_COLORMAPS',
     'MAGENTA_GREEN',
     'RGB',
