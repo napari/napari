@@ -285,10 +285,10 @@ def split_rgb(stack: Image, with_alpha=False) -> list[Image]:
     ]
 
     # first (red) channel blending is inherited from RGB stack
-    # others set to additive
+    # green and blue are set to additive to maintain appearance of unsplit RGB
+    # if rgba, set alpha channel blending to multiplicative
     for img in images[1:]:
         img.blending = 'additive'
-    # if rgba, set alpha channel blending to multiplicative
     if with_alpha:
         images[-1].blending = 'multiplicative'
 
