@@ -875,6 +875,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self._source = source
 
     @property
+    def loaded(self) -> bool:
+        """bool: Whether the layer has been loaded into memory."""
+        return self._layer_slicer.loaded
+
+    @property
     def opacity(self) -> float:
         """float: Opacity value between 0.0 and 1.0."""
         return self._opacity
