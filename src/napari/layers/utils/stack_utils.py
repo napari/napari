@@ -284,7 +284,7 @@ def split_rgb(stack: Image, with_alpha=False) -> list[Image]:
         Image(image, **i_kwargs) for image, i_kwargs, _ in layerdata_list
     ]
 
-    # first (blue) channel blending is inherited from RGB stack
+    # first (red) channel blending is inherited from RGB stack
     # others set to additive
     for img in images[1:]:
         img.blending = 'additive'
