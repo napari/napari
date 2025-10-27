@@ -3288,4 +3288,4 @@ class ShapesSlicer(LayerSlicer):
     layer: Shapes
 
     def _set_view_slice(self):
-        pass
+        self.layer._set_view_slice()
