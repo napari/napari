@@ -65,7 +65,7 @@ def split_channels(
     Keyword arguments will override any parameters altered or set in this
     function. Colormap, blending, or multiscale are set as follows if not
     overridden by a keyword:
-    - colormap : (magenta, green) for 2 channels, (CYMRGB) for more than 2
+    - colormap : (magenta, green) for 2 channels, (CMYBGR) for more than 2
     - blending : translucent for first channel, additive for others
     - multiscale : determined by layers.image._image_utils.guess_multiscale.
 
