@@ -160,6 +160,14 @@ def test_change_label_selector_range(make_labels_controls):
     assert qtctrl._label_control.selection_spinbox.maximum() == 127
 
 
+def test_initial_label_selector_value(make_labels_controls):
+    """Initializing the label selector spinbox to an initial value."""
+    layer, qtctrl = make_labels_controls()
+    assert (
+        qtctrl._label_control.selection_spinbox.value() == layer.selected_label
+    )
+
+
 def test_change_iso_gradient_mode(make_labels_controls):
     """Changing the iso gradient mode should update the layer and vice versa."""
     layer, qtctrl = make_labels_controls()
