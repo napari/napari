@@ -29,6 +29,9 @@ class InertiaState(Enum):
 class InertiaConfig(EventedModel):
     """Configuration for camera inertia behavior.
 
+    All speed/velocity parameters are in canvas/screen space (pixels) to ensure
+    consistent behavior regardless of data size or zoom level.
+
     Attributes
     ----------
     pan_friction : float
@@ -38,11 +41,11 @@ class InertiaConfig(EventedModel):
         Fraction of velocity to apply for panning motion (0-1).
         Lower values reduce initial velocity. Default: 0.6
     pan_max_speed : float
-        Maximum pan velocity in world units/second. Default: 200.0
+        Maximum pan velocity in canvas pixels/second. Default: 200.0
     pan_min_speed : float
-        Minimum pan speed to trigger inertia animation. Default: 4.0
+        Minimum pan speed (canvas pixels/sec) to trigger inertia animation. Default: 4.0
     pan_stop_speed : float
-        Pan speed threshold below which animation stops. Default: 2.5
+        Pan speed threshold (canvas pixels/sec) below which animation stops. Default: 2.5
     rotate_friction : float
         Rotation decay rate per second. Higher values cause faster deceleration.
         Default: 7.0 (slightly faster than pan for less dizziness)
@@ -77,17 +80,17 @@ class InertiaConfig(EventedModel):
     pan_max_speed: float = Field(
         200.0,
         gt=0.0,
-        description='Maximum pan velocity in world units/second.',
+        description='Maximum pan velocity in canvas pixels/second.',
     )
     pan_min_speed: float = Field(
         4.0,
         ge=0.0,
-        description='Minimum pan speed to trigger inertia animation.',
+        description='Minimum pan speed (canvas pixels/sec) to trigger inertia animation.',
     )
     pan_stop_speed: float = Field(
         2.5,
         ge=0.0,
-        description='Pan speed threshold below which animation stops.',
+        description='Pan speed threshold (canvas pixels/sec) below which animation stops.',
     )
     rotate_friction: float = Field(
         7.0,
@@ -203,7 +206,9 @@ class CameraInertia:
         if not self.enabled:
             return
 
-        pos = np.array(self._camera.center, dtype=np.float64)
+        # Store position in canvas/screen space (zoom-independent)
+        # to ensure consistent feel regardless of data size or zoom level
+        pos = np.array(self._camera.center, dtype=np.float64) * self._camera.zoom
         now = perf_counter()
 
         self._last_pos = pos
@@ -232,7 +237,8 @@ class CameraInertia:
             self._reset_tracking()
             return
 
-        current_pos = np.array(self._camera.center, dtype=np.float64)
+        # Current position in canvas/screen space (zoom-independent)
+        current_pos = np.array(self._camera.center, dtype=np.float64) * self._camera.zoom
         current_time = perf_counter()
         dt = current_time - self._last_time
 
@@ -241,7 +247,7 @@ class CameraInertia:
             self._reset_tracking()
             return
 
-        # Calculate and apply pan velocity
+        # Calculate and apply pan velocity (in canvas space)
         pan_velocity = self._calculate_pan_velocity(current_pos, dt)
 
         # Calculate rotation velocity only in 3D mode
@@ -285,21 +291,25 @@ class CameraInertia:
     ) -> npt.NDArray[np.floating] | None:
         """Calculate pan velocity for camera panning.
 
+        Velocity is calculated in canvas/screen space (pixels/sec) to ensure
+        consistent feel regardless of data size or zoom level.
+
         Parameters
         ----------
         current_pos : np.ndarray
-            Current camera center position.
+            Current camera center position in canvas space (pos * zoom).
         dt : float
             Time delta since last tracked position.
 
         Returns
         -------
         np.ndarray or None
-            Pan velocity vector, or None if below threshold.
+            Pan velocity vector in canvas space, or None if below threshold.
         """
         if self._last_pos is None:
             return None
 
+        # Velocity in canvas/screen space (pixels per second)
         velocity = (current_pos - self._last_pos) / dt
 
         # Apply damping
@@ -371,9 +381,13 @@ class CameraInertia:
         if self._pan_velocity is not None:
             pan_decay = np.exp(-self._config.pan_friction * dt)
             self._pan_velocity = self._pan_velocity * pan_decay
-            displacement = self._pan_velocity * dt
+
+            # Convert canvas-space velocity to world-space displacement
+            # displacement is in canvas pixels, convert to world units
+            displacement_world = self._pan_velocity * dt / self._camera.zoom
+
             center = np.array(self._camera.center, dtype=np.float64)
-            center = center + displacement
+            center = center + displacement_world
             self._camera.center = tuple(center)
 
             # Stop pan velocity if too small
