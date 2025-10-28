@@ -115,15 +115,6 @@ class VispyScalarFieldBaseLayer(VispyBaseLayer[ScalarFieldBase]):
         if ndisplay > data.ndim:
             data = data.reshape((1,) * (ndisplay - data.ndim) + data.shape)
 
-        # Check if data exceeds MAX_TEXTURE_SIZE and downsample
-        """if self.MAX_TEXTURE_SIZE_2D is not None and ndisplay == 2:
-            None
-            if np.any(np.greater(data.shape, self.MAX_TEXTURE_SIZE_2D)):
-                parent = self.node.parent
-                self.node = TiledImageLayerNode(data, self.MAX_TEXTURE_SIZE_2D)
-                self.node.parent = parent
-                node = self.node"""
-
         if self.MAX_TEXTURE_SIZE_3D is not None and ndisplay == 3:
             data = self.downsample_texture(data, self.MAX_TEXTURE_SIZE_3D)
 
