@@ -245,7 +245,7 @@ class CameraInertia:
         )
         current_time = perf_counter()
         dt = current_time - self._last_time
-        
+
         # Only start inertia if the release is recent enough
         if not (0.001 < dt < self._config.max_dt):
             self._reset_tracking()
