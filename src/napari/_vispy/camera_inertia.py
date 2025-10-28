@@ -67,23 +67,23 @@ class InertiaConfig(EventedModel):
     """
 
     pan_friction: float = Field(
-        5.0,
+        4.5,
         ge=0.0,
         description='Pan decay rate per second. Higher values cause faster deceleration.',
     )
     pan_damping: float = Field(
-        0.6,
+        0.7,
         ge=0.0,
         le=1.0,
         description='Fraction of velocity to apply for panning motion (0-1). Lower values reduce initial velocity.',
     )
     pan_max_speed: float = Field(
-        200.0,
+        800.0,
         gt=0.0,
         description='Maximum pan velocity in canvas pixels/second.',
     )
     pan_min_speed: float = Field(
-        4.0,
+        5.0,
         ge=0.0,
         description='Minimum pan speed (canvas pixels/sec) to trigger inertia animation.',
     )
@@ -93,33 +93,33 @@ class InertiaConfig(EventedModel):
         description='Pan speed threshold (canvas pixels/sec) below which animation stops.',
     )
     rotate_friction: float = Field(
-        7.0,
+        6.0,
         ge=0.0,
         description='Rotation decay rate per second. Higher values cause faster deceleration.',
     )
     rotate_damping: float = Field(
-        0.4,
+        0.5,
         ge=0.0,
         le=1.0,
         description='Fraction of velocity to apply for rotation (0-1). Rotation is usually more sensitive than panning.',
     )
     rotate_max_speed: float = Field(
-        120.0,
+        180.0,
         gt=0.0,
         description='Maximum rotation velocity in degrees per second.',
     )
     rotate_min_speed: float = Field(
-        1.5,
+        3.0,
         ge=0.0,
         description='Minimum rotation speed to trigger rotation inertia.',
     )
     rotate_stop_speed: float = Field(
-        1.0,
+        3.0,
         ge=0.0,
         description='Rotation speed threshold below which animation stops.',
     )
     max_dt: float = Field(
-        0.1,
+        0.06,
         gt=0.0,
         description='Maximum time (seconds) between last movement and release to trigger inertia.',
     )
@@ -241,7 +241,7 @@ class CameraInertia:
         current_pos = np.array(self._camera.center, dtype=np.float64) * self._camera.zoom
         current_time = perf_counter()
         dt = current_time - self._last_time
-
+        
         # Only start inertia if the release is recent enough
         if not (0.001 < dt < self._config.max_dt):
             self._reset_tracking()
