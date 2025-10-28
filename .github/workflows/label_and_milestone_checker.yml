@@ -79,6 +79,7 @@ jobs:
       - name: Verify PR author exists in CITATION.cff
         env:
           PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          PR_AFFILIATION: ${{ github.event.pull_request.user.company }}
         run: |
           echo "PR author: $PR_AUTHOR"
           if grep -Ei "^[[:space:]]*alias:[[:space:]]*${PR_AUTHOR}[[:space:]]*$" CITATION.cff; then
@@ -90,8 +91,8 @@ jobs:
             echo "Citation format example:
             echo "- given-names: <first name>
             echo "  family-names: <last name>
-            echo "  alias: $PR_AUTHOR
-            echo "  affiliation:
-            echo "  orcid: (optional)
+            echo "  alias: ${PR_AUTHOR}
+            echo "  affiliation: <required> (ex. ${PR_AFFILIATION})
+            echo "  orcid: <optional>
             exit 1
           fi
