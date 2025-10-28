@@ -347,7 +347,13 @@ class CameraInertia:
         if self._last_angles is None:
             return None
 
-        rotate_velocity = (current_angles - self._last_angles) / dt
+        # Calculate angle difference, handling wrapping (shortest path)
+        # This prevents issues when angles cross 0°/360° boundary
+        angle_diff = current_angles - self._last_angles
+        # Normalize to [-180, 180] range for each angle component
+        angle_diff = (angle_diff + 180) % 360 - 180
+
+        rotate_velocity = angle_diff / dt
 
         # Apply rotation-specific damping
         rotate_velocity = rotate_velocity * self._config.rotate_damping
