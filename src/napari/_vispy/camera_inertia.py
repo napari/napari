@@ -208,7 +208,9 @@ class CameraInertia:
 
         # Store position in canvas/screen space (zoom-independent)
         # to ensure consistent feel regardless of data size or zoom level
-        pos = np.array(self._camera.center, dtype=np.float64) * self._camera.zoom
+        pos = (
+            np.array(self._camera.center, dtype=np.float64) * self._camera.zoom
+        )
         now = perf_counter()
 
         self._last_pos = pos
@@ -238,7 +240,9 @@ class CameraInertia:
             return
 
         # Current position in canvas/screen space (zoom-independent)
-        current_pos = np.array(self._camera.center, dtype=np.float64) * self._camera.zoom
+        current_pos = (
+            np.array(self._camera.center, dtype=np.float64) * self._camera.zoom
+        )
         current_time = perf_counter()
         dt = current_time - self._last_time
         
