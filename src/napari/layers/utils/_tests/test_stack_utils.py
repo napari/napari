@@ -227,7 +227,7 @@ def test_split_rgb_blending(stack_blending):
     'stack_blending', [blending.value for blending in Blending]
 )
 def test_split_rgba_blending(stack_blending):
-    """Test blending settings on splitted RGBA image."""
+    """Test blending settings on a split RGBA image."""
     # Make an RGBA
     data = np.random.randint(0, 100, (10, 128, 128, 4))
     stack = Image(data)
