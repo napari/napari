@@ -8,11 +8,11 @@ from vispy.scene import Node
 from vispy.visuals import ImageVisual
 
 from napari._vispy.layers.base import VispyBaseLayer
+from napari._vispy.layers.tiled_image import TiledImageLayerNode
 from napari._vispy.utils.gl import fix_data_dtype
 from napari._vispy.visuals.volume import Volume as VolumeNode
 from napari.layers._scalar_field.scalar_field import ScalarFieldBase
 from napari.utils.translations import trans
-from napari._vispy.layers.tiled_image import TiledImageLayerNode
 
 
 class ScalarFieldLayerNode(ABC):
@@ -107,21 +107,28 @@ class VispyScalarFieldBaseLayer(VispyBaseLayer[ScalarFieldBase]):
             data = data.reshape((1,) * (ndisplay - data.ndim) + data.shape)
 
         # Check if data exceeds MAX_TEXTURE_SIZE and downsample
-        if self.MAX_TEXTURE_SIZE_2D is not None and ndisplay == 2:
+        """if self.MAX_TEXTURE_SIZE_2D is not None and ndisplay == 2:
+            None
             if np.any(np.greater(data.shape, self.MAX_TEXTURE_SIZE_2D)):
+                parent = self.node.parent
                 self.node = TiledImageLayerNode(data, self.MAX_TEXTURE_SIZE_2D)
-                node = self.node
-        elif self.MAX_TEXTURE_SIZE_3D is not None and ndisplay == 3:
+                self.node.parent = parent
+                node = self.node"""
+
+        if self.MAX_TEXTURE_SIZE_3D is not None and ndisplay == 3:
             data = self.downsample_texture(data, self.MAX_TEXTURE_SIZE_3D)
 
         # Check if ndisplay has changed current node type needs updating
         if (ndisplay == 3 and not isinstance(node, VolumeNode)) or (
-            (ndisplay == 2 and not isinstance(node, (ImageVisual, TiledImageLayerNode)))
+            (
+                ndisplay == 2
+                and not isinstance(node, (ImageVisual, TiledImageLayerNode))
+            )
             or node != self.node
         ):
             self._on_display_change(data)
         else:
-            #if not  isinstance(node, TiledImageLayerNode):
+            # if not  isinstance(node, TiledImageLayerNode):
             node.set_data(data)
             node.visible = not self.layer._slice.empty and self.layer.visible
 
