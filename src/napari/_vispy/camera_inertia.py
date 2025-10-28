@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from enum import Enum, auto
 from time import perf_counter
 from typing import TYPE_CHECKING
 
 import numpy as np
 from qtpy.QtCore import QTimer
+
+from napari._pydantic_compat import Field
+from napari.utils.events.evented_model import EventedModel
 
 if TYPE_CHECKING:
     import numpy.typing as npt
@@ -24,11 +26,10 @@ class InertiaState(Enum):
     ANIMATING = auto()  # Playing animation after release
 
 
-@dataclass
-class InertiaConfig:
+class InertiaConfig(EventedModel):
     """Configuration for camera inertia behavior.
 
-    Parameters
+    Attributes
     ----------
     pan_friction : float
         Pan decay rate per second. Higher values cause faster deceleration.
@@ -62,45 +63,68 @@ class InertiaConfig:
         Interval in milliseconds for animation timer (~60 FPS). Default: 16
     """
 
-    pan_friction: float = 5.0
-    pan_damping: float = 0.6
-    pan_max_speed: float = 200.0
-    pan_min_speed: float = 4.0
-    pan_stop_speed: float = 2.5
-    rotate_friction: float = 7.0
-    rotate_damping: float = 0.4
-    rotate_max_speed: float = 120.0
-    rotate_min_speed: float = 1.5
-    rotate_stop_speed: float = 1.0
-    max_dt: float = 0.1
-    timer_interval_ms: int = 16
-
-    def __post_init__(self):
-        """Validate configuration parameters."""
-        if self.pan_friction < 0:
-            raise ValueError('pan_friction must be non-negative')
-        if self.rotate_friction < 0:
-            raise ValueError('rotate_friction must be non-negative')
-        if not 0 <= self.pan_damping <= 1:
-            raise ValueError('pan_damping must be between 0 and 1')
-        if not 0 <= self.rotate_damping <= 1:
-            raise ValueError('rotate_damping must be between 0 and 1')
-        if self.pan_max_speed <= 0:
-            raise ValueError('pan_max_speed must be positive')
-        if self.rotate_max_speed <= 0:
-            raise ValueError('rotate_max_speed must be positive')
-        if self.pan_min_speed < 0:
-            raise ValueError('pan_min_speed must be non-negative')
-        if self.rotate_min_speed < 0:
-            raise ValueError('rotate_min_speed must be non-negative')
-        if self.pan_stop_speed < 0:
-            raise ValueError('pan_stop_speed must be non-negative')
-        if self.rotate_stop_speed < 0:
-            raise ValueError('rotate_stop_speed must be non-negative')
-        if self.max_dt <= 0:
-            raise ValueError('max_dt must be positive')
-        if self.timer_interval_ms <= 0:
-            raise ValueError('timer_interval_ms must be positive')
+    pan_friction: float = Field(
+        5.0,
+        ge=0.0,
+        description='Pan decay rate per second. Higher values cause faster deceleration.',
+    )
+    pan_damping: float = Field(
+        0.6,
+        ge=0.0,
+        le=1.0,
+        description='Fraction of velocity to apply for panning motion (0-1). Lower values reduce initial velocity.',
+    )
+    pan_max_speed: float = Field(
+        200.0,
+        gt=0.0,
+        description='Maximum pan velocity in world units/second.',
+    )
+    pan_min_speed: float = Field(
+        4.0,
+        ge=0.0,
+        description='Minimum pan speed to trigger inertia animation.',
+    )
+    pan_stop_speed: float = Field(
+        2.5,
+        ge=0.0,
+        description='Pan speed threshold below which animation stops.',
+    )
+    rotate_friction: float = Field(
+        7.0,
+        ge=0.0,
+        description='Rotation decay rate per second. Higher values cause faster deceleration.',
+    )
+    rotate_damping: float = Field(
+        0.4,
+        ge=0.0,
+        le=1.0,
+        description='Fraction of velocity to apply for rotation (0-1). Rotation is usually more sensitive than panning.',
+    )
+    rotate_max_speed: float = Field(
+        120.0,
+        gt=0.0,
+        description='Maximum rotation velocity in degrees per second.',
+    )
+    rotate_min_speed: float = Field(
+        1.5,
+        ge=0.0,
+        description='Minimum rotation speed to trigger rotation inertia.',
+    )
+    rotate_stop_speed: float = Field(
+        1.0,
+        ge=0.0,
+        description='Rotation speed threshold below which animation stops.',
+    )
+    max_dt: float = Field(
+        0.1,
+        gt=0.0,
+        description='Maximum time (seconds) between last movement and release to trigger inertia.',
+    )
+    timer_interval_ms: int = Field(
+        16,
+        gt=0,
+        description='Interval in milliseconds for animation timer (~60 FPS).',
+    )
 
 
 class CameraInertia:
