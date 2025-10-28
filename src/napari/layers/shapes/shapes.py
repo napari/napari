@@ -11,7 +11,7 @@ import pandas as pd
 from psygnal.containers import Selection
 from vispy.color import get_color_names
 
-from napari.layers.base import Layer, LayerSlicer, no_op
+from napari.layers.base import Layer, _LayerSlicingState, no_op
 from napari.layers.base._base_constants import ActionType
 from napari.layers.base._base_mouse_bindings import (
     highlight_box_handles,
@@ -3278,13 +3278,13 @@ class Shapes(Layer):
 
         return labels
 
-    def get_layer_slicer(
+    def _get_layer_slicer(
         self, data: LayerDataType, cache: bool
-    ) -> 'ShapesSlicer':
-        return ShapesSlicer(layer=self, data=data, cache=cache)
+    ) -> '_ShapesSlicingState':
+        return _ShapesSlicingState(layer=self, data=data, cache=cache)
 
 
-class ShapesSlicer(LayerSlicer):
+class _ShapesSlicingState(_LayerSlicingState):
     layer: Shapes
 
     def _set_view_slice(self):

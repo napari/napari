@@ -16,7 +16,7 @@ from napari.layers._scalar_field._slice import (
     _ScalarFieldSliceRequest,
     _ScalarFieldSliceResponse,
 )
-from napari.layers.base import LayerSlicer
+from napari.layers.base import _LayerSlicingState
 from napari.layers.image._image_constants import Interpolation, VolumeDepiction
 from napari.layers.image._image_mouse_bindings import (
     move_plane_along_normal as plane_drag_callback,
@@ -672,13 +672,13 @@ class ScalarFieldBase(Layer, ABC):
         """
         return self._extent_level_data_augmented[:, dims_displayed].T
 
-    def get_layer_slicer(
+    def _get_layer_slicer(
         self, data: LayerDataType, cache: bool
-    ) -> ScalarFieldSlicer:
-        return ScalarFieldSlicer(layer=self, data=data, cache=cache)
+    ) -> ScalarFieldSlicingState:
+        return ScalarFieldSlicingState(layer=self, data=data, cache=cache)
 
 
-class ScalarFieldSlicer(LayerSlicer):
+class ScalarFieldSlicingState(_LayerSlicingState):
     layer: ScalarFieldBase
 
     def __init__(

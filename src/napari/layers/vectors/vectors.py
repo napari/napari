@@ -5,7 +5,7 @@ from typing import Any, Literal
 import numpy as np
 import pandas as pd
 
-from napari.layers.base import Layer, LayerSlicer
+from napari.layers.base import Layer, _LayerSlicingState
 from napari.layers.utils._color_manager_constants import ColorMode
 from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
 from napari.layers.utils.color_manager import ColorManager
@@ -775,13 +775,13 @@ class Vectors(Layer):
         """
         return
 
-    def get_layer_slicer(
+    def _get_layer_slicer(
         self, data: LayerDataType, cache: bool
-    ) -> 'VectorsSlicer':
-        return VectorsSlicer(layer=self, data=data, cache=cache)
+    ) -> '_VectorsSlicingState':
+        return _VectorsSlicingState(layer=self, data=data, cache=cache)
 
 
-class VectorsSlicer(LayerSlicer):
+class _VectorsSlicingState(_LayerSlicingState):
     layer: Vectors
 
     def __init__(self, layer: Layer, data: LayerDataType, cache: bool):

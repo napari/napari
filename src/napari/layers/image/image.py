@@ -14,7 +14,7 @@ from napari.layers._multiscale_data import MultiScaleData
 from napari.layers._scalar_field._slice import _ScalarFieldSliceResponse
 from napari.layers._scalar_field.scalar_field import (
     ScalarFieldBase,
-    ScalarFieldSlicer,
+    ScalarFieldSlicingState,
 )
 from napari.layers.image._image_constants import (
     ImageProjectionMode,
@@ -660,13 +660,13 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
             f'ray value calculation not implemented for {self.rendering}'
         )
 
-    def get_layer_slicer(
+    def _get_layer_slicer(
         self, data: LayerDataType, cache: bool
-    ) -> ImageSlicer:
-        return ImageSlicer(self, data, cache)
+    ) -> _ImageSlicer:
+        return _ImageSlicer(self, data, cache)
 
 
-class ImageSlicer(ScalarFieldSlicer):
+class _ImageSlicer(ScalarFieldSlicingState):
     layer: Image
 
     def _update_slice_response(

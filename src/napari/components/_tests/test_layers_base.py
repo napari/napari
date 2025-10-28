@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 from numpy import array
 
-from napari.layers.base import LayerSlicer
+from napari.layers.base import _LayerSlicingState
 
 
 @pytest.mark.parametrize(
@@ -17,6 +17,8 @@ from napari.layers.base import LayerSlicer
 )
 def test_world_to_layer(dims, nworld, nshape, expected):
     assert np.array_equal(
-        LayerSlicer._world_to_layer_dims_impl(array(dims), nworld, nshape),
+        _LayerSlicingState._world_to_layer_dims_impl(
+            array(dims), nworld, nshape
+        ),
         expected,
     )

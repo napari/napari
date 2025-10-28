@@ -18,7 +18,7 @@ import pandas as pd
 from psygnal.containers import Selection
 from scipy.stats import gmean
 
-from napari.layers.base import Layer, LayerSlicer, no_op
+from napari.layers.base import Layer, _LayerSlicingState, no_op
 from napari.layers.base._base_constants import ActionType
 from napari.layers.base._base_mouse_bindings import (
     highlight_box_handles,
@@ -326,7 +326,7 @@ class Points(Layer):
         None after dragging is done.
     """
 
-    _layer_slicer: 'PointsSlicer'
+    _layer_slicer: '_PointsSlicingState'
 
     _modeclass = Mode
     _projectionclass = PointsProjectionMode
@@ -2412,10 +2412,10 @@ class Points(Layer):
             and not (isinstance(v[value], float) and np.isnan(v[value]))
         ]
 
-    def get_layer_slicer(
+    def _get_layer_slicer(
         self, data: LayerDataType, cache: bool
-    ) -> 'PointsSlicer':
-        return PointsSlicer(layer=self, data=data, cache=cache)
+    ) -> '_PointsSlicingState':
+        return _PointsSlicingState(layer=self, data=data, cache=cache)
 
     def _set_view_slice(self):
         raise NotImplementedError
@@ -2425,7 +2425,7 @@ class Points(Layer):
             self._set_highlight(force=True)
 
 
-class PointsSlicer(LayerSlicer):
+class _PointsSlicingState(_LayerSlicingState):
     layer: Points
 
     def __init__(self, layer: Layer, data: LayerDataType, cache: bool):

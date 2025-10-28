@@ -8,7 +8,7 @@ from warnings import warn
 import numpy as np
 import pandas as pd
 
-from napari.layers.base import Layer, LayerSlicer
+from napari.layers.base import Layer, _LayerSlicingState
 from napari.layers.tracks._track_utils import TrackManager
 from napari.types import LayerDataType
 from napari.utils.colormaps import AVAILABLE_COLORMAPS, Colormap
@@ -109,7 +109,7 @@ class Tracks(Layer):
     # The max number of tracks that will ever be used to render the thumbnail
     # If more tracks are present then they are randomly subsampled
     _max_tracks_thumbnail = 1024
-    _layer_slicer: 'TracksSlicer'
+    _layer_slicer: '_TracksSlicingState'
 
     def __init__(
         self,
@@ -677,13 +677,13 @@ class Tracks(Layer):
             self._color_by = 'track_id'
             self.events.color_by()
 
-    def get_layer_slicer(
+    def _get_layer_slicer(
         self, data: LayerDataType, cache: bool
-    ) -> 'TracksSlicer':
-        return TracksSlicer(layer=self, data=data, cache=cache)
+    ) -> '_TracksSlicingState':
+        return _TracksSlicingState(layer=self, data=data, cache=cache)
 
 
-class TracksSlicer(LayerSlicer):
+class _TracksSlicingState(_LayerSlicingState):
     layer: Tracks
 
     def __init__(self, layer: Tracks, data: LayerDataType, cache: bool):

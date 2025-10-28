@@ -5,7 +5,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from napari.layers.base import Layer, LayerSlicer
+from napari.layers.base import Layer, _LayerSlicingState
 from napari.layers.intensity_mixin import IntensityVisualizationMixin
 from napari.layers.surface._surface_constants import Shading
 from napari.layers.surface._surface_utils import (
@@ -746,17 +746,17 @@ class Surface(IntensityVisualizationMixin, Layer):
             layer_type=layer_type,
         )
 
-    def get_layer_slicer(
+    def _get_layer_slicer(
         self, data: LayerDataType, cache: bool
-    ) -> 'SurfaceSlicer':
-        return SurfaceSlicer(layer=self, data=data, cache=cache)
+    ) -> '_SurfaceSlicingState':
+        return _SurfaceSlicingState(layer=self, data=data, cache=cache)
 
     def _maybe_reset_contrast_limits(self) -> None:
         if self._keep_auto_contrast:
             self.reset_contrast_limits()
 
 
-class SurfaceSlicer(LayerSlicer):
+class _SurfaceSlicingState(_LayerSlicingState):
     layer: Surface
 
     def __init__(self, layer: Surface, data, cache: bool):

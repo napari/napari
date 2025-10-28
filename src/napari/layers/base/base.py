@@ -76,7 +76,7 @@ from psygnal import Signal
 
 logger = logging.getLogger('napari.layers.base.base')
 
-__all__ = ('Layer', 'LayerSlicer', 'no_op')
+__all__ = ('Layer', '_LayerSlicingState', 'no_op')
 
 Array1dOfInts = np.ndarray[tuple[int], np.dtype[np.integer]]
 ListOrArrayOfInts = list[int] | Array1dOfInts
@@ -116,7 +116,7 @@ class PostInit(ABCMeta):
         return obj
 
 
-class LayerSlicer(ABC):
+class _LayerSlicingState(ABC):
     layer: Layer
     slice_done = Signal()
     loaded_data = Signal()
@@ -681,7 +681,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
                 'bounding_box': BoundingBoxOverlay(),
             }
         )
-        self._layer_slicer = self.get_layer_slicer(data, cache)
+        self._layer_slicer = self._get_layer_slicer(data, cache)
 
     @property
     def _slice_input(self):
@@ -2415,9 +2415,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             ) from exc
 
     @abstractmethod
-    def get_layer_slicer(
+    def _get_layer_slicer(
         self, data: LayerDataType, cache: bool
-    ) -> LayerSlicer:
+    ) -> _LayerSlicingState:
         """Return a LayerSlicer instance appropriate for this layer."""
         raise NotImplementedError
 
