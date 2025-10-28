@@ -211,7 +211,7 @@ def test_split_and_merge_rgba():
     'stack_blending', [blending.value for blending in Blending]
 )
 def test_split_rgb_blending(stack_blending):
-    """Test blending settings on splitted RGB image."""
+    """Test blending settings on a split RGB image."""
     # Make an RGB
     data = np.random.randint(0, 100, (10, 128, 128, 3))
     stack = Image(data)
