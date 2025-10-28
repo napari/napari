@@ -81,7 +81,7 @@ jobs:
           PR_AUTHOR: ${{ github.event.pull_request.user.login }}
         run: |
           echo "PR author: $PR_AUTHOR"
-          if grep -Ei "^[[:space:]]*alias:[[:space:]]*$PR_AUTHOR[[:space:]]*$" CITATION.cff; then
+          if grep -Ei "^[[:space:]]*alias:[[:space:]]*${PR_AUTHOR}[[:space:]]*$" CITATION.cff; then
             echo "Found alias '$PR_AUTHOR' in CITATION.cff."
           else
             echo "ERROR: GitHub username '$PR_AUTHOR' not found as an alias in CITATION.cff under authors."
