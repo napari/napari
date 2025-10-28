@@ -142,7 +142,7 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
 
     def _update_color(self):
         layer = self.layer
-        if layer._selected_label == layer.colormap.background_value:
+        if layer.selected_label == layer.colormap.background_value:
             self._set_color((1, 0, 0, 0))
         else:
             self._set_color(

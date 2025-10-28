@@ -757,6 +757,7 @@ class Labels(ScalarFieldBase):
 
     @selected_data.setter
     def selected_data(self, selected_data: Iterable[int]) -> None:
+        #TODO: validate the selected_data values?
         self._selected_data.clear()
         self._selected_data.update(set(selected_data))
 
