@@ -23,7 +23,12 @@ class ScalarFieldLayerNode(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def get_node(self, ndisplay: int, dtype: np.dtype | None = None) -> Node:
+    def get_node(
+        self,
+        ndisplay: int,
+        dtype: np.dtype | None = None,
+        shape: tuple | None = None,
+    ) -> Node:
         """Return the appropriate node for the given ndisplay and dtype."""
         raise NotImplementedError
 
@@ -74,7 +79,9 @@ class VispyScalarFieldBaseLayer(VispyBaseLayer[ScalarFieldBase]):
         self.node.parent = None
         ndisplay = self.layer._slice_input.ndisplay
         self.node = self._layer_node.get_node(
-            ndisplay, getattr(data, 'dtype', None)
+            ndisplay,
+            getattr(data, 'dtype', None),
+            getattr(data, 'shape', None),
         )
 
         if data is None:
@@ -100,7 +107,9 @@ class VispyScalarFieldBaseLayer(VispyBaseLayer[ScalarFieldBase]):
         ndisplay = self.layer._slice_input.ndisplay
 
         node = self._layer_node.get_node(
-            ndisplay, getattr(data, 'dtype', None)
+            ndisplay,
+            getattr(data, 'dtype', None),
+            getattr(data, 'shape', None),
         )
 
         if ndisplay > data.ndim:
