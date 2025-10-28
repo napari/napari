@@ -68,3 +68,23 @@ jobs:
             echo "and re-add it when all earlier milestones are completed."
             exit 1
           fi
+
+  check_user_citation_cff:
+    name: Check PR author is in CITATION.cff
+    if: (github.event_name == 'pull_request')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+      - name: Verify PR author exists in CITATION.cff
+        env:
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+        run: |
+          echo "PR author: $PR_AUTHOR"
+          if grep -Ei "^[[:space:]]*alias:[[:space:]]*$PR_AUTHOR[[:space:]]*$" CITATION.cff; then
+            echo "Found alias '$PR_AUTHOR' in CITATION.cff."
+          else
+            echo "ERROR: GitHub username '$PR_AUTHOR' not found as an alias in CITATION.cff under authors."
+            echo "Please add your GitHub alias to the authors list in CITATION.cff (e.g., 'alias: $PR_AUTHOR')."
+            exit 1
+          fi
