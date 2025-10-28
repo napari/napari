@@ -85,6 +85,13 @@ jobs:
             echo "Found alias '$PR_AUTHOR' in CITATION.cff."
           else
             echo "ERROR: GitHub username '$PR_AUTHOR' not found as an alias in CITATION.cff under authors."
-            echo "Please add your GitHub alias to the authors list in CITATION.cff (e.g., 'alias: $PR_AUTHOR')."
+            echo "You are welcome to modify this PR to include your authorship in CITATION.cff."
+            echo "Otherwise, a napari core team member will request this information from you."
+            echo "Citation format example:
+            echo "- given-names: <first name>
+            echo "  family-names: <last name>
+            echo "  alias: $PR_AUTHOR
+            echo "  affiliation:
+            echo "  orcid: (optional)
             exit 1
           fi
