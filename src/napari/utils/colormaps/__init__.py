@@ -8,8 +8,8 @@ from napari.utils.colormaps.colormap import (
 from napari.utils.colormaps.colormap_utils import (
     ALL_COLORMAPS,
     AVAILABLE_COLORMAPS,
-    CYMRGB,
     CMYBGR,
+    CYMRGB,
     INVERSE_COLORMAPS,
     MAGENTA_GREEN,
     RGB,
