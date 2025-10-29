@@ -11,8 +11,8 @@ class HistogramVisual(Compound):
     Visual for rendering histogram data.
 
     This visual renders a histogram as a bar chart using a mesh,
-    with optional overlay elements like gamma curves and contrast
-    limit indicators.
+    with a unified LUT line overlay that combines clim indicators
+    and gamma curve into a single path.
 
     The histogram is rendered in normalized coordinates:
     - X axis: 0 to 1 (bin positions normalized to data range)
@@ -20,6 +20,12 @@ class HistogramVisual(Compound):
 
     Actual positioning and sizing in screen space is handled by
     the VispyHistogramOverlay class via transforms.
+
+    Design Philosophy:
+    - Unified LUT line (inspired by ndv) combining clims + gamma curve
+    - Single connected path: left clim + gamma curve + right clim
+    - View-only visualization (no interactive dragging)
+    - Y-axis locked by default for consistent view
     """
 
     def __init__(self) -> None:
@@ -29,32 +35,28 @@ class HistogramVisual(Compound):
         self._counts = np.array([])
         self._log_scale = False
         self._bar_color = (0.8, 0.8, 0.8, 0.8)
-        self._gamma_color = (1.0, 1.0, 0.0, 0.9)  # Yellow for gamma curve
-        self._clim_color = (1.0, 1.0, 0.0, 0.9)  # Yellow for contrast limits
+        self._lut_color = (1.0, 1.0, 0.0, 0.9)  # Yellow for unified LUT line
         self._axes_color = (0.5, 0.5, 0.5, 1.0)
 
         # Create sub-visuals
         self._bars = Mesh()
-        self._gamma_line = Line(method='gl', antialias=True)
-        self._clim_lines = Line(method='gl', antialias=True)
+        self._lut_line = Line(method='gl', antialias=True)  # Unified LUT line
         self._axes = Line(method='gl', antialias=True)
         self._text = Text(color='white', font_size=8, anchor_x='left')
 
         # Initialize lines with dummy 2D data (vispy requires proper shape)
         # Use a simple line that won't be visible
         dummy_line = np.array([[0, 0], [0, 0]], dtype=np.float32)
-        self._gamma_line.set_data(pos=dummy_line)
-        self._clim_lines.set_data(pos=dummy_line)
+        self._lut_line.set_data(pos=dummy_line)
         self._axes.set_data(pos=dummy_line)
 
         # Combine into compound visual - order matters for rendering!
-        # Draw bars and axes first, then gamma/clims on top
+        # Draw bars and axes first, then LUT line on top
         super().__init__(
             [
                 self._axes,
                 self._bars,
-                self._gamma_line,
-                self._clim_lines,
+                self._lut_line,
                 self._text,
             ]
         )
@@ -65,14 +67,9 @@ class HistogramVisual(Compound):
         return self._bars
 
     @property
-    def gamma_line(self) -> Line:
-        """Get the line visual for gamma curve."""
-        return self._gamma_line
-
-    @property
-    def clim_lines(self) -> Line:
-        """Get the line visual for contrast limit indicators."""
-        return self._clim_lines
+    def lut_line(self) -> Line:
+        """Get the unified LUT line visual (clims + gamma curve)."""
+        return self._lut_line
 
     @property
     def axes(self) -> Line:
@@ -131,24 +128,19 @@ class HistogramVisual(Compound):
         # Update axes
         self._update_axes()
 
-        # Always update gamma curve (even when gamma=1.0, shows straight line)
-        self._update_gamma_curve(gamma)
-
-        # Update contrast limit indicators if provided
+        # Update unified LUT line (combines clims and gamma curve)
         if clims is not None and data_range is not None:
-            self._update_clim_lines(clims, data_range)
+            self._update_lut_line(clims, gamma, data_range)
         else:
             # Use dummy line instead of empty array
-            self._clim_lines.set_data(
-                pos=np.array([[0, 0], [0, 0]], dtype=np.float32)
-            )
+            dummy_line = np.array([[0, 0], [0, 0]], dtype=np.float32)
+            self._lut_line.set_data(pos=dummy_line)
 
     def _clear(self) -> None:
         """Clear all visual elements."""
         dummy_line = np.array([[0, 0], [0, 0]], dtype=np.float32)
         self._bars.set_data(vertices=np.array([]), faces=np.array([]))
-        self._gamma_line.set_data(pos=dummy_line)
-        self._clim_lines.set_data(pos=dummy_line)
+        self._lut_line.set_data(pos=dummy_line)
         self._axes.set_data(pos=dummy_line)
 
     def _update_bars(self) -> None:
@@ -235,40 +227,35 @@ class HistogramVisual(Compound):
             width=1.0,
         )
 
-    def _update_gamma_curve(self, gamma: float) -> None:
-        """
-        Draw gamma correction curve overlay.
-
-        Parameters
-        ----------
-        gamma : float
-            Gamma correction value.
-        """
-        # Generate gamma curve: y = x^gamma
-        x = np.linspace(0, 1, 100)
-        y = np.power(x, gamma)
-
-        # Create line positions
-        pos = np.column_stack([x, y, np.zeros_like(x)]).astype(np.float32)
-
-        self._gamma_line.set_data(
-            pos=pos,
-            color=self._gamma_color,
-            width=2.0,
-        )
-
-    def _update_clim_lines(
-        self, clims: tuple[float, float], data_range: tuple[float, float]
+    def _update_lut_line(
+        self,
+        clims: tuple[float, float],
+        gamma: float,
+        data_range: tuple[float, float],
+        npoints: int = 256,
     ) -> None:
         """
-        Draw vertical lines indicating contrast limits.
+        Draw unified LUT line combining clim indicators and gamma curve.
+
+        This creates a single connected line path following the pattern:
+        1. Bottom-left clim (vertical line from 0 to 1)
+        2. Top-left clim
+        3. Gamma curve (npoints from clim_min to clim_max)
+        4. Top-right clim
+        5. Bottom-right clim (vertical line from 1 to 0)
+
+        Total vertices: npoints + 4
 
         Parameters
         ----------
         clims : tuple[float, float]
-            Contrast limits (min, max).
+            Contrast limits (min, max) in data coordinates.
+        gamma : float
+            Gamma correction value for the curve.
         data_range : tuple[float, float]
             Full data range (min, max) for normalization.
+        npoints : int, default: 256
+            Number of points for the gamma curve.
         """
         clim_min, clim_max = clims
         data_min, data_max = data_range
@@ -284,31 +271,46 @@ class HistogramVisual(Compound):
         x_min = np.clip(x_min, 0, 1)
         x_max = np.clip(x_max, 0, 1)
 
-        # Create vertical lines at clim positions
-        pos = np.array(
-            [
-                [x_min, 0, 0],
-                [x_min, 1, 0],
-                [x_max, 0, 0],
-                [x_max, 1, 0],
-            ],
-            dtype=np.float32,
-        )
+        # Build the unified LUT line path:
+        # Start with left clim vertical line (bottom to top)
+        x_coords = [x_min, x_min]
+        y_coords = [0.0, 1.0]
 
-        connect = np.array([[0, 1], [2, 3]], dtype=np.uint32)
+        # Add gamma curve points
+        if x_max > x_min:
+            x_gamma = np.linspace(x_min, x_max, npoints)
+            # Normalize to 0-1 for gamma calculation
+            x_norm = (x_gamma - x_min) / (x_max - x_min)
+            # Apply gamma: y = x^gamma
+            y_gamma = np.power(x_norm, gamma)
+            x_coords.extend(x_gamma.tolist())
+            y_coords.extend(y_gamma.tolist())
+        else:
+            # If clims are equal or inverted, just draw vertical line
+            x_coords.append(x_min)
+            y_coords.append(0.5)
 
-        self._clim_lines.set_data(
+        # End with right clim vertical line (top to bottom)
+        x_coords.extend([x_max, x_max])
+        y_coords.extend([1.0, 0.0])
+
+        # Combine into 3D positions (Z=0 for all points)
+        pos = np.column_stack(
+            [x_coords, y_coords, np.zeros(len(x_coords))]
+        ).astype(np.float32)
+
+        # Set line data with strip connection (all points connected in sequence)
+        # Use solid color - no gradient/pattern
+        self._lut_line.set_data(
             pos=pos,
-            connect=connect,
-            color=self._clim_color,
+            color=self._lut_color,
             width=2.0,
         )
 
     def set_colors(
         self,
         bar_color: tuple[float, float, float, float] | None = None,
-        gamma_color: tuple[float, float, float, float] | None = None,
-        clim_color: tuple[float, float, float, float] | None = None,
+        lut_color: tuple[float, float, float, float] | None = None,
         axes_color: tuple[float, float, float, float] | None = None,
     ) -> None:
         """
@@ -318,19 +320,15 @@ class HistogramVisual(Compound):
         ----------
         bar_color : tuple, optional
             RGBA color for histogram bars.
-        gamma_color : tuple, optional
-            RGBA color for gamma curve.
-        clim_color : tuple, optional
-            RGBA color for contrast limit lines.
+        lut_color : tuple, optional
+            RGBA color for unified LUT line (clims + gamma curve).
         axes_color : tuple, optional
             RGBA color for axes.
         """
         if bar_color is not None:
             self._bar_color = bar_color
-        if gamma_color is not None:
-            self._gamma_color = gamma_color
-        if clim_color is not None:
-            self._clim_color = clim_color
+        if lut_color is not None:
+            self._lut_color = lut_color
         if axes_color is not None:
             self._axes_color = axes_color
 
