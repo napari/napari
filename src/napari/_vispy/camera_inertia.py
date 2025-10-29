@@ -98,7 +98,7 @@ class InertiaConfig(EventedModel):
         description='Rotation decay rate per second. Higher values cause faster deceleration.',
     )
     rotate_damping: float = Field(
-        0.5,
+        0.6,
         ge=0.0,
         le=1.0,
         description='Fraction of velocity to apply for rotation (0-1). Rotation is usually more sensitive than panning.',
@@ -109,12 +109,12 @@ class InertiaConfig(EventedModel):
         description='Maximum rotation velocity in degrees per second.',
     )
     rotate_min_speed: float = Field(
-        3.0,
+        2.0,
         ge=0.0,
         description='Minimum rotation speed to trigger rotation inertia.',
     )
     rotate_stop_speed: float = Field(
-        3.0,
+        1.0,
         ge=0.0,
         description='Rotation speed threshold below which animation stops.',
     )
