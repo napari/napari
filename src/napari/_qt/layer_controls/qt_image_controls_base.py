@@ -8,7 +8,7 @@ from napari._qt.layer_controls.widgets import (
     QtContrastLimitsControl,
     QtGammaSliderControl,
 )
-from napari._qt.layer_controls.widgets._image.qt_histogram_control import (
+from napari._qt.layer_controls.widgets.qt_histogram_control import (
     QtHistogramControl,
 )
 

@@ -13,9 +13,7 @@ from qtpy.QtWidgets import (
 from superqt import QDoubleRangeSlider
 
 from napari._qt.dialogs.qt_modal import QtPopup
-from napari._qt.layer_controls.widgets._image.qt_histogram_widget import (
-    QtHistogramWidget,
-)
+from napari._qt.widgets.qt_histogram_widget import QtHistogramWidget
 from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,

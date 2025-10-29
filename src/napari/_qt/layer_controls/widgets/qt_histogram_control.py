@@ -14,9 +14,7 @@ from qtpy.QtWidgets import (
 )
 from superqt import QCollapsible
 
-from napari._qt.layer_controls.widgets._image.qt_histogram_widget import (
-    QtHistogramWidget,
-)
+from napari._qt.widgets.qt_histogram_widget import QtHistogramWidget
 from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,

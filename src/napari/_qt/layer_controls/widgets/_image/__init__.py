@@ -1,12 +1,10 @@
 from napari._qt.layer_controls.widgets._image.qt_depiction_control import (
     QtDepictionControl,
 )
-from napari._qt.layer_controls.widgets._image.qt_histogram_control import (
+from napari._qt.layer_controls.widgets.qt_histogram_control import (
     QtHistogramControl,
 )
-from napari._qt.layer_controls.widgets._image.qt_histogram_widget import (
-    QtHistogramWidget,
-)
+from napari._qt.widgets.qt_histogram_widget import QtHistogramWidget
 from napari._qt.layer_controls.widgets._image.qt_interpolation_combobox import (
     QtInterpolationComboBoxControl,
 )
