@@ -4,6 +4,7 @@ import pytest
 import zarr
 
 from napari.layers import Image
+from napari.layers.base._base_constants import Blending
 from napari.layers.utils.stack_utils import (
     images_to_stack,
     merge_rgb,
@@ -204,6 +205,44 @@ def test_split_and_merge_rgba():
     assert (rgb_image.data[1] == 2).all()
     assert (rgb_image.data[2] == 3).all()
     assert (rgb_image.data[3] == 4).all()
+
+
+@pytest.mark.parametrize(
+    'stack_blending', [blending.value for blending in Blending]
+)
+def test_split_rgb_blending(stack_blending):
+    """Test blending settings on a split RGB image."""
+    # Make an RGB
+    data = np.random.randint(0, 100, (10, 128, 128, 3))
+    stack = Image(data)
+    stack.blending = stack_blending
+
+    # split the RGB into 3 images
+    images = split_rgb(stack)
+    blendings = [image.blending for image in images]
+    assert blendings == [stack_blending, 'additive', 'additive']
+
+
+@pytest.mark.parametrize(
+    'stack_blending', [blending.value for blending in Blending]
+)
+def test_split_rgba_blending(stack_blending):
+    """Test blending settings on a split RGBA image."""
+    # Make an RGBA
+    data = np.random.randint(0, 100, (10, 128, 128, 4))
+    stack = Image(data)
+    stack.blending = stack_blending
+
+    # split the rgb into 4 images
+    images = split_rgb(stack, with_alpha=True)
+    blendings = [image.blending for image in images]
+    # multiplicative should be assigned to alpha channel
+    assert blendings == [
+        stack_blending,
+        'additive',
+        'additive',
+        'multiplicative',
+    ]
 
 
 @pytest.fixture(

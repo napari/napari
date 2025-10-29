@@ -718,8 +718,8 @@ AVAILABLE_COLORMAPS_LOCK = Lock()
 # blending of multiple channels.
 MAGENTA_GREEN = ['magenta', 'green']
 RGB = ['red', 'green', 'blue']
+CMYBGR = ['cyan', 'magenta', 'yellow', 'blue', 'green', 'red']
 CYMRGB = ['cyan', 'yellow', 'magenta', 'red', 'green', 'blue']
-
 
 AVAILABLE_LABELS_COLORMAPS = {
     'lodisc-50': label_colormap(50),
