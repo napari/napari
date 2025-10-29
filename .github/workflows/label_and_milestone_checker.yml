@@ -69,7 +69,7 @@ jobs:
             exit 1
           fi
 
-  check_user_citation_cff:
+  check_citation_cff_for_pr_author:
     name: Check PR author is in CITATION.cff
     if: (github.event_name == 'pull_request')
     runs-on: ubuntu-latest
