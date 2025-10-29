@@ -20,12 +20,6 @@ class HistogramVisual(Compound):
 
     Actual positioning and sizing in screen space is handled by
     the VispyHistogramOverlay class via transforms.
-
-    Design Philosophy:
-    - Unified LUT line (inspired by ndv) combining clims + gamma curve
-    - Single connected path: left clim + gamma curve + right clim
-    - View-only visualization (no interactive dragging)
-    - Y-axis locked by default for consistent view
     """
 
     def __init__(self) -> None:
@@ -44,6 +38,15 @@ class HistogramVisual(Compound):
         self._axes = Line(method='gl', antialias=True)
         self._text = Text(color='white', font_size=8, anchor_x='left')
 
+        # Set rendering order (higher = on top)
+        self._bars.order = 0  # Draw first (behind everything)
+        self._axes.order = 1  # Draw above bars
+        self._lut_line.order = 10  # Draw on top of histogram
+        self._text.order = 20  # Draw on top of everything
+
+        # Disable depth test for LUT line to ensure it renders on top
+        self._lut_line.set_gl_state('translucent', depth_test=False)
+
         # Initialize lines with dummy 2D data (vispy requires proper shape)
         # Use a simple line that won't be visible
         dummy_line = np.array([[0, 0], [0, 0]], dtype=np.float32)
@@ -54,8 +57,8 @@ class HistogramVisual(Compound):
         # Draw bars and axes first, then LUT line on top
         super().__init__(
             [
-                self._axes,
                 self._bars,
+                self._axes,
                 self._lut_line,
                 self._text,
             ]
