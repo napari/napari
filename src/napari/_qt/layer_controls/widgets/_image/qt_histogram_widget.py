@@ -59,6 +59,7 @@ class QtHistogramWidget(QWidget):
 
         # Create view - use ViewBox and add_widget pattern from working PR
         from vispy.scene import ViewBox
+
         self.view = ViewBox(parent=self.canvas.scene)
         self.canvas.central_widget.add_widget(self.view)
 
@@ -136,9 +137,15 @@ class QtHistogramWidget(QWidget):
     def cleanup(self) -> None:
         """Disconnect event handlers and clean up resources."""
         if hasattr(self.layer, 'histogram'):
-            self.layer.histogram.events.bins.disconnect(self._on_histogram_change)
-            self.layer.histogram.events.counts.disconnect(self._on_histogram_change)
-            self.layer.histogram.events.log_scale.disconnect(self._on_histogram_change)
+            self.layer.histogram.events.bins.disconnect(
+                self._on_histogram_change
+            )
+            self.layer.histogram.events.counts.disconnect(
+                self._on_histogram_change
+            )
+            self.layer.histogram.events.log_scale.disconnect(
+                self._on_histogram_change
+            )
         if hasattr(self.layer, 'events'):
             self.layer.events.gamma.disconnect(self._on_gamma_change)
             self.layer.events.contrast_limits.disconnect(self._on_clims_change)
