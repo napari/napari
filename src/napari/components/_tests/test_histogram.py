@@ -17,7 +17,7 @@ class TestHistogramModel:
 
         assert isinstance(hist, HistogramModel)
         assert hist.n_bins == 256
-        assert hist.mode == 'slice'
+        assert hist.mode == 'displayed'
         assert hist.log_scale is False
         assert hist.enabled is True
 
@@ -106,22 +106,22 @@ class TestHistogramModel:
         assert len(hist.counts) == 128
         assert len(hist.bins) == 129
 
-    def test_histogram_mode_slice_vs_volume(self):
-        """Test slice mode vs volume mode."""
+    def test_histogram_mode_displayed_vs_full(self):
+        """Test displayed mode vs full mode."""
         data = np.random.random((10, 100, 100))
         layer = Image(data)
         hist = layer.histogram
 
-        # Default is slice mode
-        assert hist.mode == 'slice'
+        # Default is displayed mode
+        assert hist.mode == 'displayed'
 
-        # Change to volume mode
-        hist.mode = 'volume'
-        counts_volume = hist.counts
+        # Change to full mode
+        hist.mode = 'full'
+        counts_full = hist.counts
 
-        # Volume should have more data points
+        # Full should have more data points
         # (though counts sum depends on binning)
-        assert counts_volume is not None
+        assert counts_full is not None
 
     def test_histogram_sampling_large_data(self):
         """Test that large data is sampled."""
@@ -207,13 +207,13 @@ class TestHistogramModel:
 
         hist.n_bins = 128
         hist.log_scale = True
-        hist.mode = 'volume'
+        hist.mode = 'full'
 
         hist.reset()
 
         assert hist.n_bins == 256
         assert hist.log_scale is False
-        assert hist.mode == 'slice'
+        assert hist.mode == 'displayed'
 
     def test_histogram_events(self):
         """Test that histogram events fire correctly."""

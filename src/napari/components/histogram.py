@@ -27,8 +27,8 @@ class HistogramModel(EventedModel):
         The layer to compute histogram for.
     n_bins : int, default: 256
         Number of histogram bins.
-    mode : {'slice', 'volume'}, default: 'slice'
-        Whether to compute histogram on current slice or full volume.
+    mode : {'displayed', 'full'}, default: 'displayed'
+        Whether to compute histogram from displayed data or full volume.
     log_scale : bool, default: False
         Use logarithmic scale for histogram counts.
     enabled : bool, default: True
@@ -59,7 +59,7 @@ class HistogramModel(EventedModel):
 
     # Evented properties
     n_bins: int = 256
-    mode: Literal['slice', 'volume'] = 'slice'
+    mode: Literal['displayed', 'full'] = 'displayed'
     log_scale: bool = False
     enabled: bool = True
 
@@ -75,7 +75,7 @@ class HistogramModel(EventedModel):
         self,
         layer: Image,
         n_bins: int = 256,
-        mode: Literal['slice', 'volume'] = 'slice',
+        mode: Literal['displayed', 'full'] = 'displayed',
         log_scale: bool = False,
         enabled: bool = True,
     ):
@@ -87,8 +87,8 @@ class HistogramModel(EventedModel):
             The layer to compute histogram for.
         n_bins : int, default: 256
             Number of histogram bins.
-        mode : {'slice', 'volume'}, default: 'slice'
-            Whether to compute histogram on current slice or full volume.
+        mode : {'displayed', 'full'}, default: 'displayed'
+            Whether to compute histogram from displayed data or full volume.
         log_scale : bool, default: False
             Use logarithmic scale for histogram counts.
         enabled : bool, default: True
@@ -151,7 +151,7 @@ class HistogramModel(EventedModel):
         """Compute histogram from layer data.
 
         This method extracts data from the layer based on the current mode
-        (slice or volume), samples if necessary, and computes the histogram.
+        (displayed or full), samples if necessary, and computes the histogram.
         """
         # Get data based on mode
         data = self._get_data()
@@ -204,15 +204,15 @@ class HistogramModel(EventedModel):
         np.ndarray | None
             Data array to compute histogram from.
         """
-        if self.mode == 'slice':
-            return self._get_slice_data()
-        return self._get_volume_data()
+        if self.mode == 'displayed':
+            return self._get_displayed_data()
+        return self._get_full_data()
 
-    def _get_slice_data(self) -> Optional[np.ndarray]:
+    def _get_displayed_data(self) -> Optional[np.ndarray]:
         """Get data from currently displayed dimensions.
 
-        In 'slice' mode, the histogram is computed from the visible data via
-        _layer._slice_input.displayed dimensions.
+        In 'displayed' mode, the histogram is computed from the visible data
+        via _layer._slice_input.displayed dimensions.
 
         This provides a histogram of what the user is actually seeing,
         which is most useful for adjusting contrast limits.
@@ -266,7 +266,7 @@ class HistogramModel(EventedModel):
         slice_data = data[tuple(slices)]
         return np.asarray(slice_data)
 
-    def _get_volume_data(self) -> Optional[np.ndarray]:
+    def _get_full_data(self) -> Optional[np.ndarray]:
         """Get full volume data.
 
         Returns
@@ -322,10 +322,10 @@ class HistogramModel(EventedModel):
     def _on_slice_change(self) -> None:
         """Called when the displayed slice changes (slice navigation or 2D/3D toggle).
 
-        This is important for 'slice' mode where we only compute histogram
+        This is important for 'displayed' mode where we only compute histogram
         on the currently visible data.
         """
-        if self.mode == 'slice':
+        if self.mode == 'displayed':
             self._mark_dirty()
 
     def _on_params_change(self) -> None:
@@ -353,5 +353,5 @@ class HistogramModel(EventedModel):
         """Reset histogram to default settings."""
         self.n_bins = 256
         self.log_scale = False
-        self.mode = 'slice'
+        self.mode = 'displayed'
         self.compute()

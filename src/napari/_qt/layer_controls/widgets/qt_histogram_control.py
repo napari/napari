@@ -107,10 +107,10 @@ class QtHistogramControl(QtWidgetControlsBase):
         # Mode combobox
         mode_label = QtWrappedLabel(trans._('Mode:'))
         self.mode_combobox = QComboBox()
-        self.mode_combobox.addItems(['slice', 'volume'])
+        self.mode_combobox.addItems(['displayed', 'full'])
         self.mode_combobox.setCurrentText(layer.histogram.mode)
         self.mode_combobox.setToolTip(
-            trans._('Compute histogram from current slice or full volume')
+            trans._('Compute histogram from displayed data or full volume')
         )
         self.mode_combobox.currentTextChanged.connect(self._on_mode_change)
         settings_layout.addWidget(mode_label)
