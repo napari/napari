@@ -182,6 +182,11 @@ QtLayerControls > QComboBox, QtLayerControls > QLabel, QtLayerControls, QtPlaneC
   color: {{ text }};
 }
 
+/* Histogram collapsible control - use ID selector to be specific */
+QCollapsible {
+  background-color: {{ foreground }};
+}
+
 QLabeledRangeSlider > QAbstractSpinBox {
   font-size: {{ font_size }};
   color: {{ secondary }};
