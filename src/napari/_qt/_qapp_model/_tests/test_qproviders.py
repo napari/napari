@@ -58,7 +58,7 @@ def test_publicproxy_provide_viewer(capsys, make_napari_viewer):
 def test_provide_viewer_or_raise(make_napari_viewer):
     """Check `_provide_viewer_or_raise` raises or returns correct `Viewer`."""
     # raises when no viewer
-    with pytest.raises(RuntimeError, match='No current `Viewer` found. test'):
+    with pytest.raises(RuntimeError, match=r'No current `Viewer` found. test'):
         _provide_viewer_or_raise(msg='test')
 
     # create viewer
@@ -74,7 +74,7 @@ def test_provide_qt_viewer_or_raise(make_napari_viewer):
     """Check `_provide_qt_viewer_or_raise` raises or returns `QtViewer`."""
     # raises when no QtViewer
     with pytest.raises(
-        RuntimeError, match='No current `QtViewer` found. test'
+        RuntimeError, match=r'No current `QtViewer` found. test'
     ):
         _provide_qt_viewer_or_raise(msg='test')
 
@@ -87,7 +87,7 @@ def test_provide_qt_viewer_or_raise(make_napari_viewer):
 def test_provide_window_or_raise(make_napari_viewer):
     """Check `_provide_window_or_raise` raises or returns `Window`."""
     # raises when no Window
-    with pytest.raises(RuntimeError, match='No current `Window` found. test'):
+    with pytest.raises(RuntimeError, match=r'No current `Window` found. test'):
         _provide_window_or_raise(msg='test')
 
     # create viewer (and Window)
