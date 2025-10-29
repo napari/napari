@@ -2,15 +2,25 @@ from typing import Optional
 
 import numpy as np
 from qtpy.QtCore import Qt, Signal
-from qtpy.QtWidgets import QHBoxLayout, QPushButton, QWidget
+from qtpy.QtWidgets import (
+    QCheckBox,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QSlider,
+    QWidget,
+)
 from superqt import QDoubleRangeSlider
 
+from napari._qt.dialogs.qt_modal import QtPopup
+from napari._qt.layer_controls.widgets._image.qt_histogram_widget import (
+    QtHistogramWidget,
+)
 from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,
 )
 from napari._qt.utils import qt_signals_blocked
-from napari._qt.widgets.qt_range_slider_popup import QRangeSliderPopup
 from napari.layers import Image, Surface
 from napari.utils._dtype import normalize_dtype
 from napari.utils.events.event_utils import connect_no_arg, connect_setattr
@@ -68,11 +78,34 @@ class _QDoubleRangeSlider(QDoubleRangeSlider):
             super().mousePressEvent(event)
 
 
-class QContrastLimitsPopup(QRangeSliderPopup):
+class QContrastLimitsPopup(QtPopup):
+    """Popup for contrast limits with histogram visualization.
+
+    Unlike the simple QRangeSliderPopup, this uses a vertical layout
+    to stack the slider, histogram, and controls vertically.
+    """
+
     def __init__(
         self, layer: Image | Surface, parent: Optional[QWidget] = None
     ) -> None:
         super().__init__(parent)
+
+        # Create vertical layout for stacking widgets
+        from qtpy.QtWidgets import QApplication, QVBoxLayout
+        from superqt import QLabeledDoubleRangeSlider
+
+        self._layout = QVBoxLayout()
+        self._layout.setContentsMargins(10, 10, 10, 10)
+        self._layout.setSpacing(5)
+        self.frame.setLayout(self._layout)
+
+        # Create slider
+        self.slider = QLabeledDoubleRangeSlider(
+            Qt.Orientation.Horizontal, parent
+        )
+        self.slider.label_shift_x = 2
+        self.slider.label_shift_y = 2
+        self.slider.setFocus()
 
         decimals = range_to_decimals(layer.contrast_limits_range, layer.dtype)
         self.slider.setRange(*layer.contrast_limits_range)
@@ -80,10 +113,68 @@ class QContrastLimitsPopup(QRangeSliderPopup):
         self.slider.setSingleStep(10**-decimals)
         self.slider.setValue(layer.contrast_limits)
 
+        # Add slider to layout
+        self._layout.addWidget(self.slider)
+        QApplication.processEvents()
+        self.slider._reposition_labels()
+
         connect_setattr(self.slider.valueChanged, layer, 'contrast_limits')
         connect_setattr(
             self.slider.rangeChanged, layer, 'contrast_limits_range'
         )
+
+        # Add histogram widget for Image layers, Surface layers not yet implemented
+        self.histogram_widget = None
+        if isinstance(layer, Image) and hasattr(layer, 'histogram'):
+            # Create histogram widget
+            self.histogram_widget = QtHistogramWidget(layer)
+
+            # Add histogram below the slider (slider is at index 0)
+            # The layout is already a QVBoxLayout from QRangeSliderPopup
+            self._layout.insertWidget(1, self.histogram_widget)
+
+            # Create controls layout below histogram
+            controls_layout = QHBoxLayout()
+            controls_layout.setContentsMargins(0, 5, 0, 5)
+            controls_layout.setSpacing(10)
+
+            # Add log scale checkbox
+            self.log_checkbox = QCheckBox('Log scale')
+            self.log_checkbox.setChecked(layer.histogram.log_scale)
+            self.log_checkbox.toggled.connect(self._on_log_scale_toggled)
+            controls_layout.addWidget(self.log_checkbox)
+
+            # Add gamma slider with label
+            if hasattr(layer, 'gamma'):
+                gamma_label = QLabel('gamma:')
+                controls_layout.addWidget(gamma_label)
+
+                self.gamma_slider = QSlider(Qt.Orientation.Horizontal)
+                self.gamma_slider.setMinimum(1)  # 0.1
+                self.gamma_slider.setMaximum(20)  # 2.0
+                self.gamma_slider.setValue(int(layer.gamma * 10))
+                self.gamma_slider.setFixedWidth(150)
+                self.gamma_slider.setToolTip(
+                    trans._('Adjust gamma correction (0.1 - 2.0)')
+                )
+                self.gamma_slider.valueChanged.connect(
+                    self._on_gamma_slider_changed
+                )
+                controls_layout.addWidget(self.gamma_slider)
+
+                self.gamma_value_label = QLabel(f'{layer.gamma:.2f}')
+                self.gamma_value_label.setFixedWidth(35)
+                controls_layout.addWidget(self.gamma_value_label)
+
+                # Connect layer gamma changes to update slider
+                layer.events.gamma.connect(self._on_layer_gamma_changed)
+
+            controls_layout.addStretch()
+
+            # Add controls layout to main layout below histogram
+            self._layout.insertWidget(
+                2, self._create_widget_from_layout(controls_layout)
+            )
 
         def reset():
             layer.reset_contrast_limits()
@@ -93,6 +184,9 @@ class QContrastLimitsPopup(QRangeSliderPopup):
             )
             self.slider.setDecimals(decimals_)
             self.slider.setSingleStep(10**-decimals_)
+            # Update histogram after reset
+            if self.histogram_widget is not None:
+                layer.histogram.compute()
 
         reset_btn = QPushButton('reset')
         reset_btn.setObjectName('reset_clims_button')
@@ -117,6 +211,44 @@ class QContrastLimitsPopup(QRangeSliderPopup):
             self._layout.addWidget(
                 range_btn, alignment=Qt.AlignmentFlag.AlignBottom
             )
+
+    def keyPressEvent(self, event):
+        """On key press lose focus of the lineEdits."""
+        if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
+            self.slider.setFocus()
+            return
+        super().keyPressEvent(event)
+
+    def _create_widget_from_layout(self, layout: QHBoxLayout) -> QWidget:
+        """Helper to wrap a layout in a widget."""
+        widget = QWidget()
+        widget.setLayout(layout)
+        return widget
+
+    def _on_log_scale_toggled(self, checked: bool) -> None:
+        """Handle log scale checkbox toggle."""
+        if self.histogram_widget is not None:
+            self.histogram_widget.layer.histogram.log_scale = checked
+
+    def _on_gamma_slider_changed(self, value: int) -> None:
+        """Handle gamma slider value change."""
+        gamma = (
+            value / 10.0
+        )  # Convert slider value (10-100) to gamma (0.1-10.0)
+        if self.histogram_widget is not None and hasattr(
+            self.histogram_widget.layer, 'gamma'
+        ):
+            self.histogram_widget.layer.gamma = gamma
+            self.gamma_value_label.setText(f'{gamma:.2f}')
+
+    def _on_layer_gamma_changed(self, event=None) -> None:
+        """Update gamma slider when layer gamma changes externally."""
+        if hasattr(self, 'gamma_slider') and self.histogram_widget is not None:
+            layer = self.histogram_widget.layer
+            if hasattr(layer, 'gamma'):
+                with qt_signals_blocked(self.gamma_slider):
+                    self.gamma_slider.setValue(int(layer.gamma * 10))
+                self.gamma_value_label.setText(f'{layer.gamma:.2f}')
 
 
 class AutoScaleButtons(QWidget):
