@@ -85,19 +85,18 @@ class PandasModel(QAbstractTableModel):
         ):
             return Qt.CheckState.Checked if value else Qt.CheckState.Unchecked
 
-        if role in {Qt.ItemDataRole.DisplayRole, Qt.ItemDataRole.EditRole}:
-            # format based on dtype
+        if role in (Qt.ItemDataRole.DisplayRole, Qt.ItemDataRole.EditRole):
             if pd.api.types.is_float_dtype(dtype):
-                return f'{value:.6g}'
+                return float(value)
             if pd.api.types.is_integer_dtype(dtype):
-                return f'{value:d}'
+                return int(value)
             if pd.api.types.is_datetime64_any_dtype(dtype):
                 return value.strftime('%Y-%m-%d')
             if pd.api.types.is_bool_dtype(dtype):
                 if role == Qt.ItemDataRole.DisplayRole:
                     return ''  # do not show True/False text
                 if role == Qt.ItemDataRole.EditRole:
-                    return value  # needed for proper sorting
+                    return bool(value)  # needed for proper sorting
             return str(value)
 
         return None
@@ -215,6 +214,10 @@ class DelegateCategorical(QStyledItemDelegate):
 
             # force editor to open on first click, otherwise we need 2 clicks
             QTimer.singleShot(0, editor.showPopup)
+            return editor
+        if pd.api.types.is_float_dtype(dtype):
+            editor = super().createEditor(parent, option, index)
+            editor.setDecimals(10)
             return editor
 
         return super().createEditor(parent, option, index)
@@ -425,7 +428,11 @@ class FeaturesTable(QWidget):
         if hasattr(layer, 'selected_label'):
             return layer.events.selected_label
         if hasattr(layer, 'selected_data'):
-            return layer.selected_data.events
+            # Points layer has selected_data.events, but Shapes layer uses highlight event
+            if hasattr(layer.selected_data, 'events'):
+                return layer.selected_data.events
+            if hasattr(layer.events, 'highlight'):
+                return layer.events.highlight
         raise RuntimeError(  # pragma: no cover
             "Layer with features must have either 'selected_label' or 'selected_data'."
         )

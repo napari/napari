@@ -1,7 +1,6 @@
 """Units utilities."""
 
 from decimal import Decimal
-from functools import lru_cache
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -29,7 +28,6 @@ PREFERRED_VALUES = [
 ]
 
 
-@lru_cache(maxsize=1)
 def get_unit_registry() -> 'pint.UnitRegistry':
     """Get pint's UnitRegistry.
 
@@ -43,7 +41,7 @@ def get_unit_registry() -> 'pint.UnitRegistry':
     """
     import pint
 
-    return pint.UnitRegistry()
+    return pint.get_application_registry()
 
 
 PREFERRED_TICK_VALUES = [1, 1.5, 2, 2.5, 3, 4, 5, 7.5]

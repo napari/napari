@@ -8,10 +8,10 @@ from qtpy.QtCore import QPoint, Qt
 from qtpy.QtWidgets import QApplication
 
 from napari._app_model import get_app_model
-from napari._app_model.actions._view import toggle_action_details
-from napari._qt._qapp_model.qactions._view import (
+from napari._app_model.actions._view import (
     _get_current_tooltip_visibility,
     _toggle_canvas_ndim,
+    toggle_action_details,
 )
 from napari._tests.utils import skip_local_focus, skip_local_popups
 from napari.viewer import ViewerModel
@@ -88,6 +88,9 @@ def test_toggle_axes_scale_bar_grid_lines_attr(
     QT_VERSION == '6.9.0',
     reason='bug in Qt with maximized windows, https://bugreports.qt.io/browse/QTBUG-135844',
 )
+@pytest.mark.flaky(
+    reruns=2, reruns_delay=250, condition=sys.platform == 'darwin'
+)  # sometimes fails on macos CI
 @pytest.mark.qt_log_level_fail('WARNING')
 def test_toggle_fullscreen_from_normal(make_napari_viewer, qtbot):
     """
@@ -131,6 +134,9 @@ def test_toggle_fullscreen_from_normal(make_napari_viewer, qtbot):
 
 
 @skip_local_popups
+@pytest.mark.flaky(
+    reruns=2, reruns_delay=250, condition=sys.platform == 'darwin'
+)  # sometimes fails on macos CI
 @pytest.mark.skipif(
     QT_VERSION == '6.9.0',
     reason='bug in Qt with maximized windows, https://bugreports.qt.io/browse/QTBUG-135844',

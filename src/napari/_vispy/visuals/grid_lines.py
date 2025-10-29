@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
@@ -24,8 +26,8 @@ class GridLines3D(Node):
         self.color: ColorValue | str = 'white'
         self.scale = (1, 1, 1)
         self._opacity = 1.0
-        self.grids: list[GridLines] = []
 
+        self.grids: list[GridLines] = []
         self.reset_grids()
 
     def reset_grids(self) -> None:

@@ -5,7 +5,6 @@ _default_shortcuts = {
     'napari:toggle_console_visibility': [
         KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KeyC
     ],
-    'napari:reset_scroll_progress': [KeyCode.Ctrl],
     'napari:toggle_ndisplay': [KeyMod.CtrlCmd | KeyCode.KeyY],
     'napari:toggle_theme': [KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KeyT],
     'napari:reset_view': [KeyMod.CtrlCmd | KeyCode.KeyR],
@@ -24,6 +23,8 @@ _default_shortcuts = {
     'napari:toggle_grid': [KeyMod.CtrlCmd | KeyCode.KeyG],
     'napari:toggle_selected_visibility': [KeyCode.KeyV],
     'napari:toggle_unselected_visibility': [KeyMod.Shift | KeyCode.KeyV],
+    'napari:select_layer_above': [KeyMod.CtrlCmd | KeyCode.UpArrow],
+    'napari:select_layer_below': [KeyMod.CtrlCmd | KeyCode.DownArrow],
     'napari:show_only_layer_above': [
         KeyMod.Shift | KeyMod.Alt | KeyCode.UpArrow
     ],
@@ -81,7 +82,7 @@ _default_shortcuts = {
     'napari:paste_shape': [KeyMod.CtrlCmd | KeyCode.KeyV],
     'napari:move_shapes_selection_to_front': [KeyCode.KeyF],
     'napari:move_shapes_selection_to_back': [KeyCode.KeyB],
-    'napari:select_all_shapes': [
+    'napari:select_shapes_in_slice': [
         KeyCode.KeyA,
         KeyMod.CtrlCmd | KeyCode.KeyA,
     ],

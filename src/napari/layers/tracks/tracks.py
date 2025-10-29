@@ -66,6 +66,9 @@ class Tracks(Layer):
         See examples/tracks_3d_with_graph.py
     head_length : float
         Length of the positive (forward in time) tails in units of time.
+    hide_completed_tracks : bool
+        If True, tracks that have completed before the current time point are not
+        displayed, regardless of the value of `tail_length`.
     metadata : dict
         Layer metadata.
     name : str
@@ -121,6 +124,7 @@ class Tracks(Layer):
         features=None,
         graph=None,
         head_length: int = 0,
+        hide_completed_tracks: bool = False,
         metadata=None,
         name=None,
         opacity=1.0,
@@ -174,6 +178,7 @@ class Tracks(Layer):
             properties=Event,
             rebuild_tracks=Event,
             rebuild_graph=Event,
+            hide_completed_tracks=Event,
         )
 
         # track manager deals with data slicing, graph building and properties
@@ -181,7 +186,7 @@ class Tracks(Layer):
 
         self._track_colors: np.ndarray | None = None
         self._colormaps_dict = colormaps_dict or {}  # additional colormaps
-        self._color_by = color_by  # default color by ID
+        self._color_by = 'track_id'  # default color by ID
         self._colormap = colormap
 
         # use this to update shaders when the displayed dims change
@@ -195,12 +200,14 @@ class Tracks(Layer):
         self.tail_width = tail_width
         self.tail_length = tail_length
         self.head_length = head_length
+        self.hide_completed_tracks = hide_completed_tracks
         self.display_id = False
         self.display_tail = True
         self.display_graph = True
 
         # set the data, features, and graph
         self.data = data
+        self._color_by = color_by
         if properties is not None:
             self.properties = properties
         else:
@@ -256,6 +263,7 @@ class Tracks(Layer):
                 'tail_length': self.tail_length,
                 'head_length': self.head_length,
                 'features': self.features,
+                'hide_completed_tracks': self.hide_completed_tracks,
             }
         )
         return state
@@ -478,6 +486,18 @@ class Tracks(Layer):
         self.events.tail_width()
 
     @property
+    def hide_completed_tracks(self) -> bool:
+        """bool: If True, tracks that have completed before the current time
+        point are not displayed, regardless of the value of `tail_length`.
+        """
+        return self._hide_completed_tracks
+
+    @hide_completed_tracks.setter
+    def hide_completed_tracks(self, hide_completed_tracks: bool) -> None:
+        self._hide_completed_tracks: bool = hide_completed_tracks
+        self.events.hide_completed_tracks()
+
+    @property
     def tail_length(self) -> int:
         """float: Width for all vectors in pixels."""
         return self._tail_length
@@ -609,6 +629,9 @@ class Tracks(Layer):
     @property
     def track_connex(self) -> np.ndarray | None:
         """vertex connections for drawing track lines"""
+        # Update manager state before getting track_connex
+        self._manager.hide_completed_tracks = self._hide_completed_tracks
+        self._manager.current_time = self.current_time
         return self._manager.track_connex
 
     @property

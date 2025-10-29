@@ -9,10 +9,11 @@ import pytest
 
 from napari._pydantic_compat import ValidationError
 from napari.utils.color import ColorArray
-from napari.utils.colormaps import Colormap, _accelerated_cmap, colormap
-from napari.utils.colormaps._accelerated_cmap import (
-    MAPPING_OF_UNKNOWN_VALUE,
-    _labels_raw_to_texture_direct_numpy,
+from napari.utils.colormap_backend import ColormapBackend, set_backend
+from napari.utils.colormaps import (
+    Colormap,
+    _accelerated_cmap,
+    colormap,
 )
 from napari.utils.colormaps.colormap import (
     CyclicLabelColormap,
@@ -21,6 +22,22 @@ from napari.utils.colormaps.colormap import (
     _normalize_label_colormap,
 )
 from napari.utils.colormaps.colormap_utils import label_colormap
+
+backends = [ColormapBackend.pure_python]
+if _accelerated_cmap.numba is not None:
+    backends.append(ColormapBackend.numba)
+if _accelerated_cmap.partsegcore_mapping is not None:
+    backends.append(ColormapBackend.partsegcore)
+
+
+@pytest.fixture(autouse=True, params=backends)
+def colormap_backend(request):
+    """Fixture to set the colormap backend for each test."""
+    backend = request.param
+    set_backend(backend)
+    yield backend
+    # Reset the backend after the test
+    set_backend(ColormapBackend.fastest_available)
 
 
 def test_linear_colormap():
@@ -73,7 +90,7 @@ def test_wrong_start_control_point():
     """Test wrong start of control points raises an error."""
     colors = np.array([[0, 0, 0, 1], [0, 1, 0, 1], [0, 0, 1, 1]])
     with pytest.raises(
-        ValidationError, match='must start with 0.0 and end with 1.0'
+        ValidationError, match=r'must start with 0.0 and end with 1.0'
     ):
         Colormap(colors, name='testing', controls=[0.1, 0.75, 1])
 
@@ -82,7 +99,7 @@ def test_wrong_end_control_point():
     """Test wrong end of control points raises an error."""
     colors = np.array([[0, 0, 0, 1], [0, 1, 0, 1], [0, 0, 1, 1]])
     with pytest.raises(
-        ValidationError, match='must start with 0.0 and end with 1.0'
+        ValidationError, match=r'must start with 0.0 and end with 1.0'
     ):
         Colormap(colors, name='testing', controls=[0, 0.75, 0.9])
 
@@ -156,6 +173,7 @@ def _disable_jit(monkeypatch):
     no class definitions, only functions.
     """
     pytest.importorskip('numba')
+
     with patch('numba.core.config.DISABLE_JIT', True):
         importlib.reload(_accelerated_cmap)
         yield
@@ -204,7 +222,7 @@ def test_direct_label_colormap_simple(direct_label_colormap):
 
     assert len(label_mapping) == 6
     assert len(color_dict) == 5
-    assert label_mapping[None] == MAPPING_OF_UNKNOWN_VALUE
+    assert label_mapping[None] == _accelerated_cmap.MAPPING_OF_UNKNOWN_VALUE
     assert label_mapping[12] == label_mapping[3]
     np.testing.assert_array_equal(
         color_dict[label_mapping[0]], direct_label_colormap.color_dict[0]
@@ -250,17 +268,17 @@ def test_cast_direct_labels_to_minimum_type(direct_label_colormap):
                 label_mapping[1],
                 label_mapping[2],
                 label_mapping[3],
-                MAPPING_OF_UNKNOWN_VALUE,
-                MAPPING_OF_UNKNOWN_VALUE,
-                MAPPING_OF_UNKNOWN_VALUE,
-                MAPPING_OF_UNKNOWN_VALUE,
-                MAPPING_OF_UNKNOWN_VALUE,
-                MAPPING_OF_UNKNOWN_VALUE,
-                MAPPING_OF_UNKNOWN_VALUE,
-                MAPPING_OF_UNKNOWN_VALUE,
+                _accelerated_cmap.MAPPING_OF_UNKNOWN_VALUE,
+                _accelerated_cmap.MAPPING_OF_UNKNOWN_VALUE,
+                _accelerated_cmap.MAPPING_OF_UNKNOWN_VALUE,
+                _accelerated_cmap.MAPPING_OF_UNKNOWN_VALUE,
+                _accelerated_cmap.MAPPING_OF_UNKNOWN_VALUE,
+                _accelerated_cmap.MAPPING_OF_UNKNOWN_VALUE,
+                _accelerated_cmap.MAPPING_OF_UNKNOWN_VALUE,
+                _accelerated_cmap.MAPPING_OF_UNKNOWN_VALUE,
                 label_mapping[3],
-                MAPPING_OF_UNKNOWN_VALUE,
-                MAPPING_OF_UNKNOWN_VALUE,
+                _accelerated_cmap.MAPPING_OF_UNKNOWN_VALUE,
+                _accelerated_cmap.MAPPING_OF_UNKNOWN_VALUE,
             ]
         ),
     )
@@ -291,11 +309,22 @@ def test_test_cast_direct_labels_to_minimum_type_no_jit(num, dtype):
     assert cast.dtype == dtype
 
 
-def test_zero_preserving_modulo_naive():
+def test_zero_preserving_modulo_naive_vs_numba():
     pytest.importorskip('numba')
+
     data = np.arange(1000, dtype=np.uint32)
     res1 = _accelerated_cmap.zero_preserving_modulo_numpy(data, 49, np.uint8)
     res2 = _accelerated_cmap.zero_preserving_modulo(data, 49, np.uint8)
+    npt.assert_array_equal(res1, res2)
+
+
+def test_zero_preserving_modulo_naive_vs_partseg():
+    pytest.importorskip('PartSegCore_compiled_backend.napari_mapping')
+    data = np.arange(1000, dtype=np.uint32)
+    res1 = _accelerated_cmap.zero_preserving_modulo_numpy(data, 49, np.uint8)
+    res2 = _accelerated_cmap.zero_preserving_modulo_partsegcore(
+        data, 49, np.uint8
+    )
     npt.assert_array_equal(res1, res2)
 
 
@@ -514,7 +543,7 @@ def test_direct_colormap_negative_values_numpy():
     }
     cmap = DirectLabelColormap(color_dict=color_dict)
 
-    res = _labels_raw_to_texture_direct_numpy(
+    res = _accelerated_cmap._labels_raw_to_texture_direct_numpy(
         np.array([-1, -2, 5], dtype=np.int8), cmap
     )
     npt.assert_array_equal(res, [1, 2, 0])
@@ -522,7 +551,7 @@ def test_direct_colormap_negative_values_numpy():
     cmap.selection = -2
     cmap.use_selection = True
 
-    res = _labels_raw_to_texture_direct_numpy(
+    res = _accelerated_cmap._labels_raw_to_texture_direct_numpy(
         np.array([-1, -2, 5], dtype=np.int8), cmap
     )
     npt.assert_array_equal(res, [0, 1, 0])

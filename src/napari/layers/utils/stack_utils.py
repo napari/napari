@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import itertools
+import warnings
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -8,7 +9,7 @@ import pint
 
 from napari.layers import Image
 from napari.layers.image._image_utils import guess_multiscale
-from napari.utils.colormaps import CYMRGB, MAGENTA_GREEN, Colormap
+from napari.utils.colormaps import CMYBGR, MAGENTA_GREEN, Colormap
 from napari.utils.misc import ensure_iterable, ensure_sequence_of_iterables
 from napari.utils.translations import trans
 
@@ -36,6 +37,19 @@ def slice_from_axis(array, *, axis, element):
     sliced : NumPy or other array
         The sliced output array, which has one less dimension than the input.
     """
+    # Check if array is a zarr array and wrap it with dask
+    # to keep lazy behavior and avoid loading into memory
+    if hasattr(array, '__module__') and array.__module__.startswith('zarr'):
+        import dask.array as da
+
+        array = da.from_zarr(array)
+        warnings.warn(
+            trans._(
+                'zarr array cannot be sliced lazily, converted to dask array.',
+                deferred=True,
+            )
+        )
+
     slices = [slice(None) for i in range(array.ndim)]
     slices[axis] = element
     return array[tuple(slices)]
@@ -51,7 +65,7 @@ def split_channels(
     Keyword arguments will override any parameters altered or set in this
     function. Colormap, blending, or multiscale are set as follows if not
     overridden by a keyword:
-    - colormap : (magenta, green) for 2 channels, (CYMRGB) for more than 2
+    - colormap : (magenta, green) for 2 channels, (CMYBGR) for more than 2
     - blending : translucent for first channel, additive for others
     - multiscale : determined by layers.image._image_utils.guess_multiscale.
 
@@ -108,7 +122,7 @@ def split_channels(
             elif n_channels == 2:
                 kwargs[key] = iter(MAGENTA_GREEN)
             else:
-                kwargs[key] = itertools.cycle(CYMRGB)
+                kwargs[key] = itertools.cycle(CMYBGR)
 
         # make sure that iterable_kwargs are a *sequence* of iterables
         # for the multichannel case.  For example: if scale == (1, 2) &
@@ -124,7 +138,9 @@ def split_channels(
                     allow_none=True,
                 )
             )
-        elif key == 'affine' and isinstance(val, np.ndarray):
+        elif key in ['rotate', 'shear'] or (
+            key == 'affine' and isinstance(val, np.ndarray)
+        ):
             # affine may be Affine or np.ndarray object that is not
             # iterable, but it is not now a problem as we use it only to warning
             # if a provided object is a sequence and channel_axis is not provided
@@ -251,13 +267,31 @@ def stack_to_images(stack: Image, axis: int, **kwargs) -> list[Image]:
 
 
 def split_rgb(stack: Image, with_alpha=False) -> list[Image]:
-    """Variant of stack_to_images that splits an RGB with predefined cmap."""
+    """Split RGB image into separate channel images while preserving affine transforms."""
     if not stack.rgb:
         raise ValueError(
             trans._('Image must be RGB to use split_rgb', deferred=True)
         )
 
-    images = stack_to_images(stack, -1, colormap=('red', 'green', 'blue'))
+    data, meta, _ = stack.as_layer_data_tuple()
+
+    meta['colormap'] = ('red', 'green', 'blue', 'gray')
+    meta['rgb'] = False
+
+    layerdata_list = split_channels(data, channel_axis=-1, **meta)
+
+    images = [
+        Image(image, **i_kwargs) for image, i_kwargs, _ in layerdata_list
+    ]
+
+    # first (red) channel blending is inherited from RGB stack
+    # green and blue are set to additive to maintain appearance of unsplit RGB
+    # if rgba, set alpha channel blending to multiplicative
+    for img in images[1:]:
+        img.blending = 'additive'
+    if with_alpha:
+        images[-1].blending = 'multiplicative'
+
     return images if with_alpha else images[:3]
 
 
@@ -308,7 +342,63 @@ def images_to_stack(images: list[Image], axis: int = 0, **kwargs) -> Image:
         kwargs.setdefault('translate', np.insert(meta['translate'], axis, 0))
 
     meta.update(kwargs)
-    new_data = np.stack([image.data for image in images], axis=axis)
+
+    # Check if input images are either all multiscale or not
+    multiscale_flags = [
+        getattr(image, 'multiscale', False) for image in images
+    ]
+    if not all(multiscale_flags) and any(multiscale_flags):
+        raise ValueError(
+            trans._(
+                'All images must have the same multiscale status (all True or all False) to be stacked.\nGot: {multiscale_flags}',
+                multiscale_flags=multiscale_flags[::-1],
+                deferred=True,
+            )
+        )
+
+    if all(multiscale_flags):
+        # Check that all multiscale images have the same number of levels
+        n_scales_list = [len(image.data) for image in images]
+        if len(set(n_scales_list)) != 1:
+            raise ValueError(
+                trans._(
+                    'All multiscale images must have the same number of levels to be stacked.\nGot: {n_scales_list}',
+                    deferred=True,
+                    n_scales_list=n_scales_list,
+                )
+            )
+        arrays_to_check = [img.data[0] for img in images]
+    else:
+        arrays_to_check = [img.data for img in images]
+
+    # check if any of the data arrays are zarr arrays
+    # zarr doesn't have a stack method, so we will use dask.array.stack
+    is_zarr = any(
+        hasattr(arr, '__module__') and arr.__module__.startswith('zarr')
+        for arr in arrays_to_check
+    )
+
+    if is_zarr:
+        import dask.array as da
+
+        stacker = da.stack
+        warnings.warn(
+            trans._(
+                'zarr array cannot be stacked lazily, using dask array to stack.',
+                deferred=True,
+            )
+        )
+    else:
+        stacker = np.stack
+
+    if all(multiscale_flags):
+        n_scales = len(images[0].data)
+        new_data = [
+            stacker([image.data[level] for image in images], axis=axis)
+            for level in range(n_scales)
+        ]
+    else:
+        new_data = stacker([image.data for image in images], axis=axis)
 
     # RGB images do not need extra dimensions inserted into metadata
     # They can use the meta dict from one of the source image layers
@@ -323,10 +413,13 @@ def images_to_stack(images: list[Image], axis: int = 0, **kwargs) -> Image:
 
 def merge_rgb(images: list[Image]) -> Image:
     """Variant of images_to_stack that makes an RGB from 3 images."""
-    if not (len(images) == 3 and all(isinstance(x, Image) for x in images)):
+    if not (
+        len(images) in [3, 4] and all(isinstance(x, Image) for x in images)
+    ):
         raise ValueError(
             trans._(
-                'Merging to RGB requires exactly 3 Image layers', deferred=True
+                'Merging to RGB requires either 3 or 4 Image layers',
+                deferred=True,
             )
         )
     if not all(image.data.shape == images[0].data.shape for image in images):
@@ -342,11 +435,16 @@ def merge_rgb(images: list[Image]) -> Image:
     # we will check for the presence of R G B colormaps to determine how to merge
     colormaps = {image.colormap.name for image in images}
     r_g_b = ['red', 'green', 'blue']
+    # if image is rgba, add gray colormap to represent alpha channel
+    if len(colormaps) == 4:
+        r_g_b.append('gray')
     if colormaps != set(r_g_b):
         missing_colormaps = set(r_g_b) - colormaps
         raise ValueError(
             trans._(
-                'Missing colormap(s): {missing_colormaps}! To merge layers to RGB, ensure you have red, green, and blue as layer colormaps.',
+                'Missing colormap(s): {missing_colormaps}! To merge layers to '
+                f'{"RGB" if len(r_g_b) == 3 else "RGBA"}, ensure you have '
+                f'{", ".join(r_g_b[:-1])}, and {r_g_b[-1]} as layer colormaps.',
                 missing_colormaps=missing_colormaps,
                 deferred=True,
             )
