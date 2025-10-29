@@ -152,6 +152,11 @@ class VispyImageLayer(VispyScalarFieldBaseLayer):
 
     def _on_colormap_change(self, event=None) -> None:
         self.node.cmap = _napari_cmap_to_vispy(self.layer.colormap)
+        for ch in self.node.children:
+            try:
+                ch.cmap = self.node.cmap
+            except:  # noqa
+                None
 
     def _update_mip_minip_cutoff(self) -> None:
         # discard fragments beyond contrast limits, but only with translucent blending
@@ -170,6 +175,11 @@ class VispyImageLayer(VispyScalarFieldBaseLayer):
         self.node.clim = _coerce_contrast_limits(
             self.layer.contrast_limits
         ).contrast_limits
+        for ch in self.node.children:
+            try:
+                ch.clim = self.node.clim
+            except:  # noqa
+                None
         # cutoffs must be updated after clims, so we can set them to the new values
         self._update_mip_minip_cutoff()
         # iso also may depend on contrast limit values

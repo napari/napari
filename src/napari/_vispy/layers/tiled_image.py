@@ -19,6 +19,12 @@ class TiledImageLayerNode(Node):
         tiles = make_tiles(data, self.tile_size)
         self.offsets = [of for of, _ in tiles]
 
+        print('SETTING DATA')  # noqa
+        cmap = None
+        clim = None
+        if len(self.adopted_children) > 0:
+            cmap = self.adopted_children[0].cmap
+            clim = self.adopted_children[0].clim
         self.data = data
         for child in self.adopted_children:
             child.parent = None
@@ -34,6 +40,9 @@ class TiledImageLayerNode(Node):
             self.adopted_children, self.offsets, strict=True
         ):
             ch.transform = STTransform(translate=offset + (0,))
+            if cmap is not None:
+                ch.cmap = cmap
+                ch.clim = clim
 
     def set_gl_state(self, *args, **kwargs):
         for child in self.adopted_children:
@@ -50,6 +59,9 @@ class TiledImageLayerNode(Node):
     def __setattr__(self, name, value):
         if name in ['cmap', 'clim', 'opacity']:
             for child in self.adopted_children:
+                print(f'{child=}')  # noqa
+                print(f'{name=}')  # noqa
+                print(f'{value=}')  # noqa
                 setattr(child, name, value)
         else:
             super().__setattr__(name, value)
