@@ -176,6 +176,11 @@ class QContrastLimitsPopup(QtPopup):
                 2, self._create_widget_from_layout(controls_layout)
             )
 
+        # Create button row for reset and full range buttons
+        button_layout = QHBoxLayout()
+        button_layout.setContentsMargins(0, 5, 0, 0)
+        button_layout.setSpacing(5)
+
         def reset():
             layer.reset_contrast_limits()
             layer.contrast_limits_range = layer.contrast_limits
@@ -193,9 +198,7 @@ class QContrastLimitsPopup(QtPopup):
         reset_btn.setToolTip(trans._('Autoscale contrast to data range'))
         reset_btn.setFixedWidth(45)
         reset_btn.clicked.connect(reset)
-        self._layout.addWidget(
-            reset_btn, alignment=Qt.AlignmentFlag.AlignBottom
-        )
+        button_layout.addWidget(reset_btn)
 
         # the "full range" button doesn't do anything if it's not an
         # unsigned integer type (it's unclear what range should be set)
@@ -208,9 +211,12 @@ class QContrastLimitsPopup(QtPopup):
             )
             range_btn.setFixedWidth(75)
             range_btn.clicked.connect(layer.reset_contrast_limits_range)
-            self._layout.addWidget(
-                range_btn, alignment=Qt.AlignmentFlag.AlignBottom
-            )
+            button_layout.addWidget(range_btn)
+
+        button_layout.addStretch()
+
+        # Add button row to main layout
+        self._layout.addWidget(self._create_widget_from_layout(button_layout))
 
     def keyPressEvent(self, event):
         """On key press lose focus of the lineEdits."""
