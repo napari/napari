@@ -61,7 +61,6 @@ class QtHistogramControl(QtWidgetControlsBase):
 
         # Create collapsible container
         self.collapsible = QCollapsible(trans._('Histogram'), parent)
-        self.collapsible.collapse()  # Start collapsed
 
         # Create content widget
         content = QWidget()
@@ -129,6 +128,10 @@ class QtHistogramControl(QtWidgetControlsBase):
 
         # Connect collapsible expand/collapse to enable/disable histogram
         self.collapsible.toggled.connect(self._on_collapsible_toggled)
+
+        # Set to collapsed state without animation
+        # Must be done AFTER all event connections to avoid triggering compute
+        self.collapsible.collapse(animate=False)
 
     def _on_log_scale_change(self, event=None) -> None:
         """Update checkbox when log_scale changes in the model."""
