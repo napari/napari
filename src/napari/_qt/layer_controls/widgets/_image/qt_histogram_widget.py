@@ -49,29 +49,34 @@ class QtHistogramWidget(QWidget):
         self.canvas = SceneCanvas(
             size=(self._target_width, self._target_height),
             bgcolor='black',
-            parent=self,
+            keys=None,
         )
+        # Set parent after creation
+        self.canvas.native.setParent(self)
+        # Set reasonable height constraints
+        self.canvas.native.setMinimumHeight(100)
+        self.canvas.native.setMaximumHeight(150)
 
-        # Create view and add histogram visual
-        self.view = self.canvas.central_widget.add_view()
-        self.view.camera = 'panzoom'
-        self.view.camera.set_range(x=(0, 1), y=(0, 1))
-        self.view.camera.aspect = 1.0
+        # Create view - use ViewBox and add_widget pattern from working PR
+        from vispy.scene import ViewBox
+        self.view = ViewBox(parent=self.canvas.scene)
+        self.canvas.central_widget.add_widget(self.view)
 
-        # Create histogram visual
+        # Create histogram visual and add to view's scene
         self.histogram_visual = HistogramVisual()
-        self.view.add(self.histogram_visual)
+        self.histogram_visual.parent = self.view.scene
 
-        # Set fixed size for the canvas
-        self.canvas.native.setFixedSize(
-            self._target_width, self._target_height
-        )
+        # Set up camera
+        self.view.camera = 'panzoom'
+        self.view.camera.set_range(x=(0, 1), y=(0, 1))  # type: ignore[attr-defined]
+        # Disable viewbox interaction to prevent accidental pan/zoom
+        self.view.interactive = False
 
         # Layout
-        layout = QVBoxLayout()
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.addWidget(self.canvas.native)
-        self.setLayout(layout)
+        main_layout = QVBoxLayout()
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.addWidget(self.canvas.native)
+        self.setLayout(main_layout)
 
         # Connect to layer histogram events
         if hasattr(layer, 'histogram'):
@@ -131,7 +136,9 @@ class QtHistogramWidget(QWidget):
     def cleanup(self) -> None:
         """Disconnect event handlers and clean up resources."""
         if hasattr(self.layer, 'histogram'):
-            self.layer.histogram.events.disconnect(self)
+            self.layer.histogram.events.bins.disconnect(self._on_histogram_change)
+            self.layer.histogram.events.counts.disconnect(self._on_histogram_change)
+            self.layer.histogram.events.log_scale.disconnect(self._on_histogram_change)
         if hasattr(self.layer, 'events'):
             self.layer.events.gamma.disconnect(self._on_gamma_change)
             self.layer.events.contrast_limits.disconnect(self._on_clims_change)
