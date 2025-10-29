@@ -107,7 +107,12 @@ class QtViewerImageSuite:
 
     def time_set_view_slice(self, n):
         """Time to set view slice."""
-        self.viewer.layers[0]._layer_slicer._set_view_slice()
+        layer = self.viewer.layers[0]
+        if hasattr(layer, '_layer_slicer'):
+            layer._layer_slicer._set_view_slice()
+        else:
+            # before https://github.com/napari/napari/pull/8254
+            layer._set_view_slice()
 
     def time_update_thumbnail(self, n):
         """Time to update thumbnail."""

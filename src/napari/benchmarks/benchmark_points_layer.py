@@ -128,7 +128,11 @@ class PointsSlicingSuite:
 
     def time_slice_points(self, flatten_slice_axis):
         """Time to take one slice of points"""
-        self.layer._layer_slicer._make_slice_request(self.dims)()
+        if hasattr(self.layer, '_layer_slicer'):
+            self.layer._layer_slicer._make_slice_request(self.dims)()
+        else:
+            # before https://github.com/napari/napari/pull/8254
+            self.layer._make_slice_request(self.dims)()
 
 
 class PointsToMaskSuite:
