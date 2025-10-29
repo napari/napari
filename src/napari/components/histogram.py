@@ -222,10 +222,6 @@ class HistogramModel(EventedModel):
         np.ndarray | None
             Data from displayed dimensions only.
         """
-        # Get the slice input which tells us which dimensions are displayed
-        slice_input = self._layer._slice_input
-        displayed_dims = slice_input.displayed
-
         # Get the data slice position for non-displayed dimensions
         data_slice = self._layer._data_slice
 
@@ -235,20 +231,36 @@ class HistogramModel(EventedModel):
         if isinstance(data, list | tuple):
             data = data[0]
 
+        # For RGB images, data_slice.point doesn't include the RGB channel dimension
+        # We need to account for this when building slices
+        is_rgb = getattr(self._layer, 'rgb', False)
+
         # Build the slice to extract only displayed dimensions
         # Use the current slice point for non-displayed dimensions
         slices = []
+        point_idx = 0  # Index into data_slice.point tuple
+
         for dim_idx in range(data.ndim):
-            if dim_idx in displayed_dims:
-                # Include all data along displayed dimensions
+            # For RGB images, the last dimension is the color channel
+            # and should always be included (not sliced)
+            if is_rgb and dim_idx == data.ndim - 1:
+                slices.append(slice(None))
+                continue
+
+            # Check if this dimension is displayed (has np.nan in point)
+            point = data_slice.point[point_idx]
+            if np.isnan(point):
+                # This is a displayed dimension - include all data
                 slices.append(slice(None))
             else:
                 # Use the current position for this non-displayed dimension
                 # data_slice.point is in data coordinates
-                point_val = int(np.round(data_slice.point[dim_idx]))
+                point_val = int(np.round(point))
                 # Clamp to valid range
                 point_val = np.clip(point_val, 0, data.shape[dim_idx] - 1)
                 slices.append(point_val)
+
+            point_idx += 1
 
         # Extract and return the slice
         slice_data = data[tuple(slices)]
