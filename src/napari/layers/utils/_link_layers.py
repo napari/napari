@@ -89,7 +89,8 @@ def link_layers(
     Examples
     --------
     >>> data = np.random.rand(3, 64, 64)
-    >>> viewer = napari.view_image(data, channel_axis=0)
+    >>> viewer = napari.Viewer()
+    >>> viewer.add_image(data, channel_axis=0)
     >>> link_layers(viewer.layers)  # doctest: +SKIP
     """
 

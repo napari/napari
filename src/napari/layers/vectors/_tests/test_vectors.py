@@ -43,6 +43,26 @@ def test_random_vectors_image():
     assert layer._view_data.shape[2] == 2
 
 
+def test_sparse_vectors_image_coordinates():
+    """Test if vector images are correctly converted to coordinates.
+
+    Prior to [1]_, vector images were incorrectly converted to coordinates.
+
+    This was due to an incorrect call to `np.meshgrid`.
+
+    [1]: https://forum.image.sc/t/missing-something-about-vectors-in-napari/117092
+    """
+    shape = (20, 10)
+    data = np.zeros(shape + (2,))
+    i, j = np.random.randint(shape)
+    data[i, j] = np.random.random((2,))
+    layer = Vectors(data)
+    coord_data = layer.data
+    non_zero_vectors = ~np.all(coord_data[:, 1] == 0, axis=-1)
+    non_zero_coords = coord_data[non_zero_vectors, 0, :][0]
+    np.testing.assert_equal(non_zero_coords, (i, j))
+
+
 def test_no_args_vectors():
     """Test instantiating Vectors layer with no arguments"""
     layer = Vectors()
@@ -228,10 +248,9 @@ def test_data_setter():
 
 def test_properties_dataframe():
     """test if properties can be provided as a DataFrame"""
-    shape = (10, 2)
     np.random.seed(0)
     shape = (10, 2, 2)
-    data = np.random.random(shape)
+    data = np.random.default_rng(0).random(shape)
     data[:, 0, :] = 20 * data[:, 0, :]
     properties = {'vector_type': np.array(['A', 'B'] * int(shape[0] / 2))}
     properties_df = pd.DataFrame(properties)
@@ -248,10 +267,9 @@ def test_properties_dataframe():
 
 def test_adding_properties():
     """test adding properties to a Vectors layer"""
-    shape = (10, 2)
-    np.random.seed(0)
+    rng = np.random.default_rng(0)
     shape = (10, 2, 2)
-    data = np.random.random(shape)
+    data = rng.random(shape)
     data[:, 0, :] = 20 * data[:, 0, :]
     properties = {'vector_type': np.array(['A', 'B'] * int(shape[0] / 2))}
     layer = Vectors(data)
@@ -274,7 +292,7 @@ def test_adding_properties():
     # adding properties with the wrong length should raise an exception
     bad_properties = {'vector_type': np.array(['A', 'B'])}
     with pytest.raises(
-        ValueError, match='(does not match length)|(indices imply)'
+        ValueError, match=r'does not match length|indices imply'
     ):
         layer.properties = bad_properties
 
@@ -558,24 +576,24 @@ def test_properties_color_mode_without_properties():
     """Test that switching to a colormode requiring
     properties without properties defined raises an exceptions
     """
-    np.random.seed(0)
+    rng = np.random.default_rng(0)
     shape = (10, 2, 2)
-    data = np.random.random(shape)
+    data = rng.random(shape)
     data[:, 0, :] = 20 * data[:, 0, :]
     layer = Vectors(data)
     assert layer.properties == {}
 
-    with pytest.raises(ValueError, match='must be a valid Points.properties'):
+    with pytest.raises(ValueError, match=r'must be a valid Points.properties'):
         layer.edge_color_mode = 'colormap'
 
-    with pytest.raises(ValueError, match='must be a valid Points.properties'):
+    with pytest.raises(ValueError, match=r'must be a valid Points.properties'):
         layer.edge_color_mode = 'cycle'
 
 
 def test_length():
     """Test setting length."""
-    np.random.seed(0)
-    data = np.random.random((10, 2, 2))
+    rng = np.random.default_rng(0)
+    data = rng.random((10, 2, 2))
     data[:, 0, :] = 20 * data[:, 0, :]
     layer = Vectors(data)
     assert layer.length == 1
