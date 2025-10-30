@@ -16,7 +16,7 @@ jobs:
       XDG_CACHE_HOME: /home/circleci/.cache
     steps:
       - checkout:
-          method: blobless
+          method: full
           path: napari
       - restore_cache:
           keys:
