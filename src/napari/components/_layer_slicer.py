@@ -216,15 +216,15 @@ class _LayerSlicer:
             # Further development should allow us to remove this special case
             # by making the sync and async slicing code paths almost identical.
             if (
-                isinstance(layer, _AsyncSliceable)
+                isinstance(layer._layer_slicer, _AsyncSliceable)
                 and not self._force_sync
                 and layer.visible
             ):
                 logger.debug('Making async slice request for %s', layer)
-                request = layer._make_slice_request(dims)
+                request = layer._layer_slicer._make_slice_request(dims)
                 weak_layer = weakref.ref(layer)
                 requests[weak_layer] = request
-                layer._set_unloaded_slice_id(request.id)
+                layer._layer_slicer._set_unloaded_slice_id(request.id)
             else:
                 logger.debug('Sync slicing for %s', layer)
                 sync_layers.append(layer)
