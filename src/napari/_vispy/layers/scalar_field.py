@@ -8,7 +8,7 @@ from vispy.scene import Node
 from vispy.visuals import ImageVisual
 
 from napari._vispy.layers.base import VispyBaseLayer
-from napari._vispy.layers.tiled_image import TiledImageLayerNode
+from napari._vispy.layers.tiled_image import TiledImageNode
 from napari._vispy.utils.gl import fix_data_dtype
 from napari._vispy.visuals.volume import Volume as VolumeNode
 from napari.layers._scalar_field.scalar_field import ScalarFieldBase
@@ -70,7 +70,7 @@ class VispyScalarFieldBaseLayer(VispyBaseLayer[ScalarFieldBase]):
         # self.reset(). This means that we have to call it manually. Also,
         # it must be called before reset in order to set the appropriate node
         # first
-        self._on_display_change()
+        self._on_display_change(fix_data_dtype(self.layer._data_view))
         self.reset()
         self._on_data_change()
 
@@ -136,13 +136,13 @@ class VispyScalarFieldBaseLayer(VispyBaseLayer[ScalarFieldBase]):
         if (ndisplay == 3 and not isinstance(node, VolumeNode)) or (
             (
                 ndisplay == 2
-                and not isinstance(node, (ImageVisual, TiledImageLayerNode))
+                and not isinstance(node, (ImageVisual, TiledImageNode))
             )
             or node != self.node
         ):
             self._on_display_change(data)
         else:
-            # if not  isinstance(node, TiledImageLayerNode):
+            # if not  isinstance(node, TiledImageNode):
             node.set_data(data)
             node.visible = not self.layer._slice.empty and self.layer.visible
 

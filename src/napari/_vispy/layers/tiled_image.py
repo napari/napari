@@ -4,7 +4,7 @@ from vispy.scene.visuals import Image
 from vispy.visuals.transforms.linear import STTransform
 
 
-class TiledImageLayerNode(Node):
+class TiledImageNode(Node):
     def __init__(
         self, data: np.ndarray, tile_size=int, texture_format=None
     ) -> None:

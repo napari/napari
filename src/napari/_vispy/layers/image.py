@@ -8,7 +8,7 @@ from napari._vispy.layers.scalar_field import (
     ScalarFieldLayerNode,
     VispyScalarFieldBaseLayer,
 )
-from napari._vispy.layers.tiled_image import TiledImageLayerNode
+from napari._vispy.layers.tiled_image import TiledImageNode
 from napari._vispy.utils.gl import get_gl_extensions, get_max_texture_sizes
 from napari._vispy.visuals.image import Image as ImageNode
 from napari._vispy.visuals.volume import Volume as VolumeNode
@@ -50,7 +50,7 @@ class ImageLayerNode(ScalarFieldLayerNode):
             method='auto',
             texture_format=texture_format,
         )
-        self._tiled_node = TiledImageLayerNode(
+        self._tiledimage_node = TiledImageNode(
             np.array([[0.0]], dtype=np.float32),
             tile_size=self.MAX_TEXTURE_SIZE_2D,
             texture_format=texture_format,
@@ -75,7 +75,7 @@ class ImageLayerNode(ScalarFieldLayerNode):
         if ndisplay == 2:
             if shape is not None:
                 if np.any(np.greater(shape, self.MAX_TEXTURE_SIZE_2D)):
-                    res = self._tiled_node
+                    res = self._tiledimage_node
                 else:
                     res = self._image_node
             else:
@@ -155,6 +155,7 @@ class VispyImageLayer(VispyScalarFieldBaseLayer):
         for ch in self.node.children:
             try:
                 ch.cmap = self.node.cmap
+                print(f'{ch=}')  # noqa
             except:  # noqa
                 None
 
