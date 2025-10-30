@@ -2487,7 +2487,10 @@ class _PointsSlicingState(_LayerSlicingState):
 
         self._indices_view = np.array(indices, dtype=int)
         # get the selected points that are in view
-        self.update_selected_view()
+
+        # WARNING This `with` will be removed in future
+        with self.layer.events.highlight.blocker():
+            self.update_selected_view()
 
     def update_selected_view(self):
         self._selected_view = list(
@@ -2497,10 +2500,8 @@ class _PointsSlicingState(_LayerSlicingState):
                 return_indices=True,
             )[2]
         )
-
-        # WARNING This wil lbe removed in future
-        with self.layer.events.highlight.blocker():
-            self.layer._set_highlight(force=True)
+        # WARNING This will be removed in future
+        self.layer._set_highlight(force=True)
 
     @property
     def _indices_view(self):
