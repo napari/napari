@@ -41,17 +41,8 @@ class QtGammaSliderControl(QtWidgetControlsBase):
         # Track histogram visibility state
         self.histogram_visible = False
 
-        # Create slider container with button
-        self.slider_container = QWidget(parent)
-        container_layout = QHBoxLayout()
-        container_layout.setContentsMargins(0, 0, 0, 0)
-        container_layout.setSpacing(4)
-
-        # Setup gamma slider - use parent as parent for proper QSS inheritance
-        sld = QLabeledDoubleSlider(
-            Qt.Orientation.Horizontal,
-            parent=parent
-        )
+        # Setup gamma slider
+        sld = QLabeledDoubleSlider(Qt.Orientation.Horizontal, parent=parent)
         sld.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         sld.setMinimum(0.2)
         sld.setMaximum(2)
@@ -63,7 +54,7 @@ class QtGammaSliderControl(QtWidgetControlsBase):
         )
         self.gamma_slider = sld
 
-        # Create histogram button - pass layer as first argument
+        # Create histogram button
         self.histogram_button = QtModePushButton(
             layer,
             button_name='histogram',
@@ -74,15 +65,25 @@ class QtGammaSliderControl(QtWidgetControlsBase):
             )
         )
         self.histogram_button.setCheckable(True)
+        self.histogram_button.setParent(parent)
         # Install event filter for right-click handling
         self.histogram_button.installEventFilter(self)
 
-        # Add widgets to container layout
-        container_layout.addWidget(sld)
-        container_layout.addWidget(self.histogram_button)
-        self.slider_container.setLayout(container_layout)
+        # Create container widget that combines slider and button
+        self.slider_container = self._create_slider_with_button(parent)
 
         self.gamma_slider_label = QtWrappedLabel(trans._('gamma:'))
+
+    def _create_slider_with_button(self, parent: QWidget) -> QWidget:
+        """Create a widget containing the slider and histogram button side-by-side."""
+        container = QWidget(parent)
+        layout = QHBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(4)
+        layout.addWidget(self.gamma_slider)
+        layout.addWidget(self.histogram_button)
+        container.setLayout(layout)
+        return container
 
     def eventFilter(self, obj, event):
         """Handle right-click on histogram button to show popup.

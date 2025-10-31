@@ -187,6 +187,12 @@ QCollapsible {
   background-color: {{ foreground }};
 }
 
+/* QLabeledDoubleSlider styling for gamma and opacity sliders */
+QtLayerControls QLabeledDoubleSlider > QAbstractSpinBox {
+  font-size: {{ font_size }};
+  color: {{ secondary }};
+}
+
 QLabeledRangeSlider > QAbstractSpinBox {
   font-size: {{ font_size }};
   color: {{ secondary }};
