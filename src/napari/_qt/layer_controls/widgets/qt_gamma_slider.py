@@ -64,12 +64,12 @@ class QtGammaSliderControl(QtWidgetControlsBase):
             tooltip=(
                 'Left click to toggle histogram in layer controls.\n'
                 'Right click to open histogram popup.'
-            )
+            ),
         )
         self.histogram_button.setCheckable(True)
         # Install event filter for right-click handling
         self.histogram_button.installEventFilter(self)
-        
+
         # Add button directly to slider's layout
         sld.layout().addWidget(self.histogram_button)
 
@@ -105,19 +105,21 @@ class QtGammaSliderControl(QtWidgetControlsBase):
 
         # Get the layout (QFormLayout)
         layout = parent.layout()
-        
+
         if self.histogram_visible:
             # Remove histogram widget from layout
-            label_item = layout.labelForField(parent._histogram_control.content_widget)
+            label_item = layout.labelForField(
+                parent._histogram_control.content_widget
+            )
             if label_item is not None:
                 layout.removeWidget(label_item)
                 label_item.hide()
             layout.removeWidget(parent._histogram_control.content_widget)
             parent._histogram_control.content_widget.hide()
-            
+
             # Disable histogram computation
             self._layer.histogram.enabled = False
-            
+
             self.histogram_visible = False
             self.histogram_button.setChecked(False)
         else:
@@ -126,18 +128,20 @@ class QtGammaSliderControl(QtWidgetControlsBase):
             gamma_row = -1
             for i in range(layout.rowCount()):
                 if layout.itemAt(i, layout.ItemRole.FieldRole):
-                    widget = layout.itemAt(i, layout.ItemRole.FieldRole).widget()
+                    widget = layout.itemAt(
+                        i, layout.ItemRole.FieldRole
+                    ).widget()
                     if widget == self.gamma_slider:
                         gamma_row = i
                         break
-            
+
             if gamma_row >= 0:
                 # Insert histogram widget right after gamma slider
                 histogram_label = QtWrappedLabel(trans._('histogram:'))
                 layout.insertRow(
                     gamma_row + 1,
                     histogram_label,
-                    parent._histogram_control.content_widget
+                    parent._histogram_control.content_widget,
                 )
                 parent._histogram_control.content_widget.show()
                 # Enable histogram computation and force update
@@ -158,5 +162,7 @@ class QtGammaSliderControl(QtWidgetControlsBase):
         if hasattr(parent, '_contrast_limits_control'):
             parent._contrast_limits_control.show_clim_popup()
 
-    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QLabeledDoubleSlider]]:
+    def get_widget_controls(
+        self,
+    ) -> list[tuple[QtWrappedLabel, QLabeledDoubleSlider]]:
         return [(self.gamma_slider_label, self.gamma_slider)]

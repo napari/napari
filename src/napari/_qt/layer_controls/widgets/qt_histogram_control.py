@@ -65,7 +65,9 @@ class QtHistogramControl(QtWidgetControlsBase):
         content_layout.setSpacing(4)
 
         # Create histogram visualization widget
-        self.histogram_widget = QtHistogramWidget(layer, parent=self.content_widget)
+        self.histogram_widget = QtHistogramWidget(
+            layer, parent=self.content_widget
+        )
         content_layout.addWidget(self.histogram_widget)
 
         # Create settings controls
