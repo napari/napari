@@ -1,5 +1,5 @@
-from qtpy.QtCore import Qt, Signal
-from qtpy.QtWidgets import QHBoxLayout, QPushButton, QWidget
+from qtpy.QtCore import Qt
+from qtpy.QtWidgets import QHBoxLayout, QWidget
 from superqt import QLabeledDoubleSlider
 
 from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
@@ -7,30 +7,10 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWrappedLabel,
 )
 from napari._qt.utils import attr_to_settr
+from napari._qt.widgets.qt_mode_buttons import QtModePushButton
 from napari.layers.base.base import Layer
 from napari.utils.events.event_utils import connect_setattr
 from napari.utils.translations import trans
-
-
-class _QLabeledDoubleSlider(QLabeledDoubleSlider):
-    """Custom slider with right-click support to show histogram popup."""
-
-    show_histogram_popup = Signal()
-
-    def mousePressEvent(self, event):
-        """Handle mouse press events.
-
-        Right-click opens the histogram popup.
-
-        Parameters
-        ----------
-        event : QMouseEvent
-            The mouse event.
-        """
-        if event.button() == Qt.MouseButton.RightButton:
-            self.show_histogram_popup.emit()
-        else:
-            super().mousePressEvent(event)
 
 
 class QtGammaSliderControl(QtWidgetControlsBase):
@@ -63,42 +43,38 @@ class QtGammaSliderControl(QtWidgetControlsBase):
 
         # Create slider container with button
         self.slider_container = QWidget(parent)
-        # Set transparent background to avoid dark background
-        self.slider_container.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, False)
         container_layout = QHBoxLayout()
         container_layout.setContentsMargins(0, 0, 0, 0)
         container_layout.setSpacing(4)
 
-        # Setup gamma slider with right-click support
-        sld = _QLabeledDoubleSlider(Qt.Orientation.Horizontal, self.slider_container)
+        # Setup gamma slider - use parent as parent for proper QSS inheritance
+        sld = QLabeledDoubleSlider(
+            Qt.Orientation.Horizontal,
+            parent=parent
+        )
+        sld.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         sld.setMinimum(0.2)
         sld.setMaximum(2)
         sld.setSingleStep(0.02)
         sld.setValue(self._layer.gamma)
-        sld.setToolTip(
-            trans._('Adjust gamma.\nRight click for histogram popup with contrast controls.')
-        )
         connect_setattr(sld.valueChanged, self._layer, 'gamma')
         self._callbacks.append(
             attr_to_settr(self._layer, 'gamma', sld, 'setValue')
         )
         self.gamma_slider = sld
 
-        # Connect right-click signal
-        sld.show_histogram_popup.connect(self.show_histogram_popup)
-
-        # Create histogram button
-        self.histogram_button = QPushButton(self.slider_container)
-        self.histogram_button.setProperty('mode', 'histogram')
-        self.histogram_button.setCheckable(True)
-        self.histogram_button.setMaximumWidth(28)
-        self.histogram_button.setToolTip(
-            trans._(
+        # Create histogram button - pass layer as first argument
+        self.histogram_button = QtModePushButton(
+            layer,
+            button_name='histogram',
+            slot=self._on_histogram_button_clicked,
+            tooltip=(
                 'Left click to toggle histogram in layer controls.\n'
                 'Right click to open histogram popup.'
             )
         )
-        self.histogram_button.clicked.connect(self._on_histogram_button_clicked)
+        self.histogram_button.setCheckable(True)
+        # Install event filter for right-click handling
         self.histogram_button.installEventFilter(self)
 
         # Add widgets to container layout
@@ -175,16 +151,19 @@ class QtGammaSliderControl(QtWidgetControlsBase):
                     parent._histogram_control.content_widget
                 )
                 parent._histogram_control.content_widget.show()
-                
                 # Enable histogram computation and force update
                 self._layer.histogram.enabled = True
                 self._layer.histogram.compute()
-                
                 self.histogram_visible = True
                 self.histogram_button.setChecked(True)
 
     def show_histogram_popup(self):
         """Show the histogram popup widget."""
+        # Enable histogram if not already enabled
+        if not self._layer.histogram.enabled:
+            self._layer.histogram.enabled = True
+            self._layer.histogram.compute()
+
         # Access the parent's contrast limits control to show the popup
         parent = self.parent()
         if hasattr(parent, '_contrast_limits_control'):

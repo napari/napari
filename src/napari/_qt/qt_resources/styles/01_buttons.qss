@@ -219,13 +219,8 @@ QWidget[emphasized="true"] QtModePushButton[mode="delete_shape"]:pressed {
   background-color: {{ error }};
 }
 
-QPushButton[mode="histogram"] {
+QtModePushButton[mode="histogram"] {
    image: url("theme_{{ id }}:/histogram.svg");
-   min-width: 28px;
-   max-width: 28px;
-   min-height: 28px;
-   max-height: 28px;
-   padding: 0px;
 }
 
 
