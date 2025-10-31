@@ -323,6 +323,9 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         else:
             self._iso_threshold = iso_threshold
 
+        # Initialize histogram (lazy)
+        self._histogram = None
+
     @property
     def rendering(self):
         """Return current rendering mode.
@@ -421,6 +424,35 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         self._attenuation = value
         self._update_thumbnail()
         self.events.attenuation()
+
+    @property
+    def histogram(self):
+        """Histogram model for this layer.
+
+        The histogram model computes and stores histogram data for the layer,
+        responding to changes in layer data, contrast limits, and gamma.
+
+        Returns
+        -------
+        HistogramModel
+            Histogram model instance for this layer.
+
+        Examples
+        --------
+        >>> import napari
+        >>> import numpy as np
+        >>> data = np.random.random((512, 512))
+        >>> layer = napari.layers.Image(data)
+        >>> hist = layer.histogram
+        >>> print(hist.counts)  # Get histogram counts
+        >>> hist.log_scale = True  # Enable log scale
+        >>> hist.n_bins = 512  # Change number of bins
+        """
+        if self._histogram is None:
+            from napari.components.histogram import HistogramModel
+
+            self._histogram = HistogramModel(self)
+        return self._histogram
 
     @property
     def data(self) -> LayerDataProtocol | MultiScaleData:
