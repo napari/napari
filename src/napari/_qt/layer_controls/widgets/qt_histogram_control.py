@@ -1,4 +1,4 @@
-"""Collapsible histogram control for layer controls panel."""
+"""Histogram control for layer controls panel."""
 
 from __future__ import annotations
 
@@ -12,7 +12,6 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from superqt import QCollapsible
 
 from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
@@ -30,10 +29,10 @@ if TYPE_CHECKING:
 
 class QtHistogramControl(QtWidgetControlsBase):
     """
-    Collapsible histogram control widget for Image layers.
+    Histogram control widget for Image layers.
 
-    This widget provides a collapsible section in the layer controls
-    that shows a histogram visualization along with settings controls.
+    This widget provides a histogram visualization along with settings controls
+    that can be shown/hidden via the histogram button on the gamma slider.
 
     Parameters
     ----------
@@ -44,8 +43,8 @@ class QtHistogramControl(QtWidgetControlsBase):
 
     Attributes
     ----------
-    collapsible : QCollapsible
-        The collapsible container widget.
+    content_widget : QWidget
+        The main content widget containing histogram and controls.
     histogram_widget : QtHistogramWidget
         The vispy-based histogram visualization widget.
     log_scale_checkbox : QCheckBox
@@ -59,17 +58,14 @@ class QtHistogramControl(QtWidgetControlsBase):
     def __init__(self, parent: QWidget, layer: Image) -> None:
         super().__init__(parent, layer)
 
-        # Create collapsible container
-        self.collapsible = QCollapsible(trans._('Histogram'), parent)
-
         # Create content widget
-        content = QWidget()
+        self.content_widget = QWidget()
         content_layout = QVBoxLayout()
         content_layout.setContentsMargins(4, 4, 4, 4)
         content_layout.setSpacing(4)
 
         # Create histogram visualization widget
-        self.histogram_widget = QtHistogramWidget(layer, parent=content)
+        self.histogram_widget = QtHistogramWidget(layer, parent=self.content_widget)
         content_layout.addWidget(self.histogram_widget)
 
         # Create settings controls
@@ -118,20 +114,15 @@ class QtHistogramControl(QtWidgetControlsBase):
         settings_layout.addStretch()
         content_layout.addLayout(settings_layout)
 
-        content.setLayout(content_layout)
-        self.collapsible.addWidget(content)
+        self.content_widget.setLayout(content_layout)
 
         # Connect layer events
         layer.histogram.events.log_scale.connect(self._on_log_scale_change)
         layer.histogram.events.n_bins.connect(self._on_n_bins_change)
         layer.histogram.events.mode.connect(self._on_mode_change_from_model)
 
-        # Connect collapsible expand/collapse to enable/disable histogram
-        self.collapsible.toggled.connect(self._on_collapsible_toggled)
-
-        # Set to collapsed state without animation
-        # Must be done AFTER all event connections to avoid triggering compute
-        self.collapsible.collapse(animate=False)
+        # Start with histogram disabled (will be enabled when button is clicked)
+        layer.histogram.enabled = False
 
     def _on_log_scale_change(self, event=None) -> None:
         """Update checkbox when log_scale changes in the model."""
@@ -152,25 +143,19 @@ class QtHistogramControl(QtWidgetControlsBase):
         with qt_signals_blocked(self.mode_combobox):
             self.mode_combobox.setCurrentText(self._layer.histogram.mode)
 
-    def _on_collapsible_toggled(self, expanded: bool) -> None:
-        """Enable/disable histogram computation when expanded/collapsed."""
-        self._layer.histogram.enabled = expanded
-        if expanded:
-            # Force recomputation when expanded
-            self._layer.histogram.compute()
-
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
         """
-        Return the collapsible widget for adding to layer controls.
+        Return an empty list since this widget is dynamically added/removed.
+
+        The histogram widget is controlled by the histogram button on the
+        gamma slider and should not be added to the layer controls by default.
 
         Returns
         -------
         list
-            List containing a tuple of (None, collapsible widget).
-            We return None for the label since the collapsible has its own title.
+            Empty list - widget is not added to controls by default.
         """
-        # Return empty label since collapsible has its own title
-        return [(QtWrappedLabel(''), self.collapsible)]
+        return []
 
     def disconnect_widget_controls(self) -> None:
         """Disconnect event handlers and clean up."""

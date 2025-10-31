@@ -142,14 +142,20 @@ class HistogramVisual(Compound):
     def _clear(self) -> None:
         """Clear all visual elements."""
         dummy_line = np.array([[0, 0], [0, 0]], dtype=np.float32)
-        self._bars.set_data(vertices=np.array([]), faces=np.array([]))
+        # Use minimal valid mesh instead of empty arrays to avoid vispy errors
+        dummy_vertices = np.array([[0, 0, 0]], dtype=np.float32)
+        dummy_faces = np.array([[0, 0, 0]], dtype=np.uint32)
+        self._bars.set_data(vertices=dummy_vertices, faces=dummy_faces)
         self._lut_line.set_data(pos=dummy_line)
         self._axes.set_data(pos=dummy_line)
 
     def _update_bars(self) -> None:
         """Update the bar chart mesh from bins and counts."""
         if len(self._bins) < 2 or len(self._counts) == 0:
-            self._bars.set_data(vertices=np.array([]), faces=np.array([]))
+            # Use minimal valid mesh instead of empty arrays to avoid vispy errors
+            dummy_vertices = np.array([[0, 0, 0]], dtype=np.float32)
+            dummy_faces = np.array([[0, 0, 0]], dtype=np.uint32)
+            self._bars.set_data(vertices=dummy_vertices, faces=dummy_faces)
             return
 
         # Normalize data to [0, 1] range
