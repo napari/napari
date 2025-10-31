@@ -1,5 +1,4 @@
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QHBoxLayout, QWidget
 from superqt import QLabeledDoubleSlider
 
 from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
@@ -31,17 +30,19 @@ class QtGammaSliderControl(QtWidgetControlsBase):
         Gamma adjustment slider widget.
     gamma_slider_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for the gamma chooser widget.
+    histogram_button : QtModePushButton
+        Button to toggle histogram widget.
     histogram_visible : bool
         Whether the histogram widget is currently visible.
     """
 
-    def __init__(self, parent: QWidget, layer: Layer) -> None:
+    def __init__(self, parent, layer: Layer) -> None:
         super().__init__(parent, layer)
 
         # Track histogram visibility state
         self.histogram_visible = False
 
-        # Setup gamma slider
+        # Setup gamma slider - exactly like opacity slider
         sld = QLabeledDoubleSlider(Qt.Orientation.Horizontal, parent=parent)
         sld.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         sld.setMinimum(0.2)
@@ -53,8 +54,9 @@ class QtGammaSliderControl(QtWidgetControlsBase):
             attr_to_settr(self._layer, 'gamma', sld, 'setValue')
         )
         self.gamma_slider = sld
+        self.gamma_slider_label = QtWrappedLabel(trans._('gamma:'))
 
-        # Create histogram button
+        # Create histogram button on same row by appending to slider's layout
         self.histogram_button = QtModePushButton(
             layer,
             button_name='histogram',
@@ -65,25 +67,11 @@ class QtGammaSliderControl(QtWidgetControlsBase):
             )
         )
         self.histogram_button.setCheckable(True)
-        self.histogram_button.setParent(parent)
         # Install event filter for right-click handling
         self.histogram_button.installEventFilter(self)
-
-        # Create container widget that combines slider and button
-        self.slider_container = self._create_slider_with_button(parent)
-
-        self.gamma_slider_label = QtWrappedLabel(trans._('gamma:'))
-
-    def _create_slider_with_button(self, parent: QWidget) -> QWidget:
-        """Create a widget containing the slider and histogram button side-by-side."""
-        container = QWidget(parent)
-        layout = QHBoxLayout()
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(4)
-        layout.addWidget(self.gamma_slider)
-        layout.addWidget(self.histogram_button)
-        container.setLayout(layout)
-        return container
+        
+        # Add button directly to slider's layout
+        sld.layout().addWidget(self.histogram_button)
 
     def eventFilter(self, obj, event):
         """Handle right-click on histogram button to show popup.
@@ -139,7 +127,7 @@ class QtGammaSliderControl(QtWidgetControlsBase):
             for i in range(layout.rowCount()):
                 if layout.itemAt(i, layout.ItemRole.FieldRole):
                     widget = layout.itemAt(i, layout.ItemRole.FieldRole).widget()
-                    if widget == self.slider_container:
+                    if widget == self.gamma_slider:
                         gamma_row = i
                         break
             
@@ -170,5 +158,5 @@ class QtGammaSliderControl(QtWidgetControlsBase):
         if hasattr(parent, '_contrast_limits_control'):
             parent._contrast_limits_control.show_clim_popup()
 
-    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
-        return [(self.gamma_slider_label, self.slider_container)]
+    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QLabeledDoubleSlider]]:
+        return [(self.gamma_slider_label, self.gamma_slider)]
