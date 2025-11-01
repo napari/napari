@@ -229,6 +229,11 @@ class Camera(EventedModel):
 
         Vispy (and previously napari) uses YZX ordering, but in napari we use ZYX.
         Rotations are extrinsic.
+
+        Prior to napari 0.7.0, we didn't account for Vispy's ZYX ordering, so our
+        camera angles updated the rotation around the wrong axes. See:
+
+        https://github.com/napari/napari/pull/8281
         """
         # see #8281 for why this is yzx. In short: longstanding vispy bug.
         rot = R.from_euler('yzx', angles, degrees=True)
