@@ -76,7 +76,7 @@ jobs:
             ${{ github.workspace }}/.cache/pooch
           key: pooch
 
-      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
+      - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
         with:
           name: wheel
           path: dist
@@ -193,7 +193,7 @@ jobs:
 
       - name: Upload test artifacts
         if: failure()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
         with:
           name: test artifacts ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }} ${{ inputs.artifacts_suffix }}
           path: .pytest_tmp
@@ -201,20 +201,20 @@ jobs:
 
       - name: Upload leaked viewer graph
         if: failure()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
         with:
           name: leaked ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }} ${{ inputs.artifacts_suffix }}
           path: ./*leak-backref-graph*.pdf
 
       - name: Upload pytest timing reports as json ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }}
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
         with:
           name: upload pytest timing json ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }} ${{ inputs.tox_extras }} ${{ inputs.artifacts_suffix }}
           path: |
             ./report-*.json
 
       - name: Upload coverage data
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
         if: ${{ inputs.coverage == 'cov' }}
         with:
           name: coverage reports ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }} ${{ inputs.artifacts_suffix }}
