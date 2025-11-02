@@ -9,7 +9,7 @@ import pint
 
 from napari.layers import Image
 from napari.layers.image._image_utils import guess_multiscale
-from napari.utils.colormaps import CYMRGB, MAGENTA_GREEN, Colormap
+from napari.utils.colormaps import CMYBGR, MAGENTA_GREEN, Colormap
 from napari.utils.misc import ensure_iterable, ensure_sequence_of_iterables
 from napari.utils.translations import trans
 
@@ -65,7 +65,7 @@ def split_channels(
     Keyword arguments will override any parameters altered or set in this
     function. Colormap, blending, or multiscale are set as follows if not
     overridden by a keyword:
-    - colormap : (magenta, green) for 2 channels, (CYMRGB) for more than 2
+    - colormap : (magenta, green) for 2 channels, (CMYBGR) for more than 2
     - blending : translucent for first channel, additive for others
     - multiscale : determined by layers.image._image_utils.guess_multiscale.
 
@@ -122,7 +122,7 @@ def split_channels(
             elif n_channels == 2:
                 kwargs[key] = iter(MAGENTA_GREEN)
             else:
-                kwargs[key] = itertools.cycle(CYMRGB)
+                kwargs[key] = itertools.cycle(CMYBGR)
 
         # make sure that iterable_kwargs are a *sequence* of iterables
         # for the multichannel case.  For example: if scale == (1, 2) &
@@ -283,6 +283,15 @@ def split_rgb(stack: Image, with_alpha=False) -> list[Image]:
     images = [
         Image(image, **i_kwargs) for image, i_kwargs, _ in layerdata_list
     ]
+
+    # first (red) channel blending is inherited from RGB stack
+    # green and blue are set to additive to maintain appearance of unsplit RGB
+    # if rgba, set alpha channel blending to multiplicative
+    for img in images[1:]:
+        img.blending = 'additive'
+    if with_alpha:
+        images[-1].blending = 'multiplicative'
+
     return images if with_alpha else images[:3]
 
 
