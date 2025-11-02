@@ -568,7 +568,7 @@ def test_shift_click_multiselection(
     create_known_shapes_layer,
 ):
     """Check multiselection of shapes using shift-click."""
-    layer, n_shapes, _ = create_known_shapes_layer
+    layer, _, _ = create_known_shapes_layer
     layer.mode = 'select'
 
     # Check that initially nothing is selected and there is no box
