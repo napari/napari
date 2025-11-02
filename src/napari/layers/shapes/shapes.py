@@ -1768,7 +1768,7 @@ class Shapes(Layer):
         super()._update_draw(
             scale_factor, corner_pixels_displayed, shape_threshold
         )
-        if prev_scale != self.scale_factor:
+        if prev_scale != self.scale_factor and self.selected_data:
             if len(self.selected_data) < 1000:
                 self._set_highlight(force=True)
 
