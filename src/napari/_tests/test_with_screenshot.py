@@ -227,6 +227,17 @@ def test_changing_image_gamma(make_napari_viewer):
 @skip_on_win_ci
 @skip_local_popups
 def test_grid_mode(make_napari_viewer):
+    # CMYBGR is the default color order when adding multichannel images.
+    # See `napari.layers.utils.stack_utils.split_channels`.
+    color = [
+        [0, 255, 255, 255],
+        [255, 0, 255, 255],
+        [255, 255, 0, 255],
+        [0, 0, 255, 255],
+        [0, 255, 0, 255],
+        [255, 0, 0, 255],
+    ]
+
     viewer = make_napari_viewer(show=True)
 
     # Add images
@@ -240,7 +251,7 @@ def test_grid_mode(make_napari_viewer):
     # check screenshot
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
     center = tuple(np.round(np.divide(screenshot.shape[:2], 2)).astype(int))
-    np.testing.assert_almost_equal(screenshot[center], [0, 0, 255, 255])
+    np.testing.assert_almost_equal(screenshot[center], color[-1])
 
     # enter grid view
     viewer.grid.enabled = True
@@ -259,15 +270,6 @@ def test_grid_mode(make_napari_viewer):
         (3 / 4, 3 / 6),
         (3 / 4, 5 / 6),
     ]
-    # CYMRGB color order
-    color = [
-        [0, 255, 255, 255],
-        [255, 255, 0, 255],
-        [255, 0, 255, 255],
-        [255, 0, 0, 255],
-        [0, 255, 0, 255],
-        [0, 0, 255, 255],
-    ]
     for c, p in zip(color, pos, strict=False):
         coord = tuple(
             np.round(np.multiply(screenshot.shape[:2], p)).astype(int)
@@ -277,18 +279,11 @@ def test_grid_mode(make_napari_viewer):
     # reorder layers, swapping 0 and 5
     viewer.layers.move(5, 0)
     viewer.layers.move(1, 6)
+    # swapping the expected colors
+    color = np.array(color)[[5, 1, 2, 3, 4, 0]]
 
     # check screenshot
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
-    # CGRMYB color order
-    color = [
-        [0, 0, 255, 255],
-        [255, 255, 0, 255],
-        [255, 0, 255, 255],
-        [255, 0, 0, 255],
-        [0, 255, 0, 255],
-        [0, 255, 255, 255],
-    ]
     for c, p in zip(color, pos, strict=False):
         coord = tuple(
             np.round(np.multiply(screenshot.shape[:2], p)).astype(int)
