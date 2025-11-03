@@ -1,7 +1,7 @@
 import typing
 import warnings
 from collections import deque
-from collections.abc import Callable, Generator, Sequence, Iterable
+from collections.abc import Callable, Generator, Sequence
 from contextlib import contextmanager
 from typing import (
     Any,
@@ -406,7 +406,7 @@ class Labels(ScalarFieldBase):
 
         self._iso_gradient_mode = IsoCategoricalGradientMode(iso_gradient_mode)
 
-        self._selected_data: Selection[int] = Selection([1])
+        self._selected_labels: Selection[int] = Selection([1])
         self.colormap.selection = self.selected_label
         self.colormap.use_selection = self._show_selected_label
         self._prev_selected_label = None
@@ -717,15 +717,15 @@ class Labels(ScalarFieldBase):
     @property
     def selected_label(self):
         """int: Index of selected label."""
-        active_label = self._selected_data.active
-        if active_label is not None:
-            return active_label
-        else:
-            return 0
+        # TODO update the implementation by next(reversed(self._selected_data))
+        # once https://github.com/pyapp-kit/psygnal/pull/395 is accepted
+        # There is no length check here because self._selected_labels
+        # always contains at least one label.
+        return list(self._selected_labels)[-1]
 
     @selected_label.setter
     def selected_label(self, selected_label: int):
-        if selected_label == self.selected_label:
+        if selected_label in self._selected_labels:
             return
         # when setting the label to the background, store the previous
         # otherwise, clear it
@@ -752,14 +752,15 @@ class Labels(ScalarFieldBase):
             self.refresh(extent=False)
 
     @property
-    def selected_data(self) -> Selection[int]:
-        return self._selected_data
+    def selected_labels(self) -> Selection[int]:
+        return self._selected_labels
 
-    @selected_data.setter
-    def selected_data(self, selected_data: Iterable[int]) -> None:
-        #TODO: validate the selected_data values?
-        self._selected_data.clear()
-        self._selected_data.update(set(selected_data))
+    @selected_labels.setter
+    def _set_selected_labels(self, selected_data: Sequence[int]) -> None:
+        if len(selected_data) == 0:
+            raise ValueError('At least one label must be selected.')
+        self._selected_labels.clear()
+        self._selected_labels.update(selected_data)
 
 
     def swap_selected_and_background_labels(self):
