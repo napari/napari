@@ -386,6 +386,7 @@ class Labels(ScalarFieldBase):
             preserve_labels=Event,
             properties=Event,
             selected_label=Event,
+            selected_labels=Event,
             show_selected_label=Event,
         )
 
@@ -743,7 +744,7 @@ class Labels(ScalarFieldBase):
         else:
             self._prev_selected_label = None
         self.colormap.selection = selected_label
-        self.selected_data = [selected_label]
+        self.selected_labels = [selected_label]
         self._selected_color = self.get_color(selected_label)
 
         self.events.selected_label()
@@ -756,7 +757,7 @@ class Labels(ScalarFieldBase):
         return self._selected_labels
 
     @selected_labels.setter
-    def _set_selected_labels(self, selected_data: Sequence[int]) -> None:
+    def selected_labels(self, selected_data: Sequence[int]) -> None:
         if len(selected_data) == 0:
             raise ValueError('At least one label must be selected.')
         self._selected_labels.clear()
