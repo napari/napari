@@ -385,7 +385,7 @@ class Labels(ScalarFieldBase):
             paint=Event,
             preserve_labels=Event,
             properties=Event,
-            selected_label=Event,
+            #selected_label=Event,
             selected_labels=Event,
             show_selected_label=Event,
         )
@@ -575,7 +575,7 @@ class Labels(ScalarFieldBase):
         self._selected_color = self.get_color(self.selected_label)
         self._color_mode = color_mode
         self.events.colormap()  # Will update the LabelVispyColormap shader
-        self.events.selected_label()
+        self.events.selected_labels()
         self.refresh(extent=False)
 
     @property
@@ -747,7 +747,7 @@ class Labels(ScalarFieldBase):
         self.selected_labels = [selected_label]
         self._selected_color = self.get_color(selected_label)
 
-        self.events.selected_label()
+        self.events.selected_labels()
 
         if self.show_selected_label:
             self.refresh(extent=False)

@@ -72,7 +72,7 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
         self.overlay.events.points.connect(self._on_points_change)
         self.overlay.events.enabled.connect(self._on_enabled_change)
 
-        self.layer.events.selected_label.connect(self._update_color)
+        self.layer.events.selected_labels.connect(self._update_color)
         self.layer.events.colormap.connect(self._update_color)
         self.layer.events.opacity.connect(self._update_color)
 
