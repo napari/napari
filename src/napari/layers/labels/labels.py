@@ -385,7 +385,7 @@ class Labels(ScalarFieldBase):
             paint=Event,
             preserve_labels=Event,
             properties=Event,
-            #selected_label=Event,
+            selected_label=Event,
             selected_labels=Event,
             show_selected_label=Event,
         )
