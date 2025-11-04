@@ -763,7 +763,6 @@ class Labels(ScalarFieldBase):
         self._selected_labels.clear()
         self._selected_labels.update(selected_data)
 
-
     def swap_selected_and_background_labels(self):
         """Swap between the selected label and the background label."""
         if self.selected_label != self.colormap.background_value:
