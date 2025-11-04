@@ -135,6 +135,7 @@ class QtLabelControl(QtWidgetControlsBase):
         self.selection_spinbox = QLargeIntSpinBox()
         dtype_lims = get_dtype_limits(get_dtype(layer))
         self.selection_spinbox.setRange(*dtype_lims)
+        self.selection_spinbox.setValue(self._layer.selected_label)
         self.selection_spinbox.setKeyboardTracking(False)
         self.selection_spinbox.valueChanged.connect(self.change_selection)
         self.selection_spinbox.setAlignment(Qt.AlignmentFlag.AlignCenter)
