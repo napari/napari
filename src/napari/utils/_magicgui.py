@@ -432,7 +432,11 @@ def get_layers(gui: CategoricalWidget) -> list[Layer]:
 
     """
     if viewer := find_viewer_ancestor(gui.native):
-        return [x for x in viewer.layers if isinstance(x, gui.annotation)]
+        layers = [x for x in viewer.layers if isinstance(x, gui.annotation)]
+        for layer in layers:
+            layer.events.name.connect(gui.reset_choices)
+
+        return layers
     return []
 
 
@@ -467,7 +471,7 @@ def get_layers_data(gui: CategoricalWidget) -> list[tuple[str, Any]]:
     from napari import layers
 
     if not (viewer := find_viewer_ancestor(gui.native)):
-        return ()
+        return []
 
     layer_type_name = gui.annotation.__name__.replace('Data', '').title()
     layer_type = getattr(layers, layer_type_name)
@@ -476,6 +480,7 @@ def get_layers_data(gui: CategoricalWidget) -> list[tuple[str, Any]]:
         choice_key = f'{layer.name} (data)'
         choices.append((choice_key, layer.data))
         layer.events.data.connect(_make_choice_data_setter(gui, choice_key))
+        layer.events.name.connect(gui.reset_choices)
 
     return choices
 
