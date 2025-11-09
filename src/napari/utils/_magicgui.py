@@ -454,8 +454,8 @@ def get_layers_data(gui: CategoricalWidget) -> list[tuple[str, Any]]:
 
     Returns
     -------
-    tuple
-        Tuple of layer.data from layers of type ``gui.annotation``
+    list
+        list of tuples of name and layer.data from layers of type ``gui.annotation``
 
     Examples
     --------
