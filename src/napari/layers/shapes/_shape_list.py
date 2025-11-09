@@ -2001,7 +2001,7 @@ class ShapeList:
         colors = np.zeros((*colors_shape, 4), dtype=float)
         colors[..., 3] = 1
 
-        z_order = self._z_order[::-1]
+        z_order = self._z_order
         shapes_in_view = np.argwhere(self._displayed)
         z_order_in_view_mask = np.isin(z_order, shapes_in_view)
         z_order_in_view = z_order[z_order_in_view_mask]
@@ -2009,7 +2009,7 @@ class ShapeList:
         # If there are too many shapes to render responsively, just render
         # the top max_shapes shapes
         if max_shapes is not None and len(z_order_in_view) > max_shapes:
-            z_order_in_view = z_order_in_view[:max_shapes]
+            z_order_in_view = z_order_in_view[-max_shapes:]
 
         for ind in z_order_in_view:
             mask = self.shapes[ind].to_mask(
