@@ -71,7 +71,7 @@ def test_rendering_combobox(make_labels_controls):
     rendering_options = {'TRANSLUCENT', 'ISO CATEGORICAL'}
     assert opts == rendering_options
     # programmatically updating rendering mode updates the combobox
-    new_mode = 'iso_categorical'
+    new_mode = 'ISO CATEGORICAL'
     layer.rendering = new_mode
     assert combo.findText(new_mode) == combo.currentIndex()
 
@@ -200,7 +200,7 @@ def test_iso_gradient_mode_with_rendering(make_labels_controls):
     assert layer.rendering == LabelsRendering.ISO_CATEGORICAL
     assert (
         qtctrl._render_control.iso_gradient_combobox.currentText()
-        == IsoCategoricalGradientMode.FAST.lower()
+        == IsoCategoricalGradientMode.FAST.upper()
     )
     assert qtctrl._render_control.iso_gradient_combobox.isEnabled()
     layer.rendering = LabelsRendering.TRANSLUCENT
