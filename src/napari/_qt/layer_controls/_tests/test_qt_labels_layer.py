@@ -71,7 +71,7 @@ def test_rendering_combobox(make_labels_controls):
     rendering_options = {'TRANSLUCENT', 'ISO CATEGORICAL'}
     assert opts == rendering_options
     # programmatically updating rendering mode updates the combobox
-    new_mode = 'ISO CATEGORICAL'
+    new_mode = 'ISO_CATEGORICAL'
     layer.rendering = new_mode
     assert combo.findText(new_mode) == combo.currentIndex()
 
