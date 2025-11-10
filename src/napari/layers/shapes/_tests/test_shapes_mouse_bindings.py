@@ -1023,7 +1023,9 @@ def test_all_modes_covered(attr):
     Test that all dictionaries modes have all the keys, this simplify the handling logic
     As we do not need to test whether a key is in a dict or not.
     """
-    mode_dict: dict[Mode, Callable[[Shapes, Event], Any]] = getattr(Shapes, attr)
+    mode_dict: dict[Mode, Callable[[Shapes, Event], Any]] = getattr(
+        Shapes, attr
+    )
     assert {k.name for k in mode_dict} == {e.name for e in Mode}
 
 
