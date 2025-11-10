@@ -595,10 +595,12 @@ class QtViewer(QSplitter):
             if layer := weak_layer():
                 # Update the layer slice state to temporarily support behavior
                 # that depends on it.
-                layer._update_slice_response(response)
+                layer._layer_slicer._update_slice_response(response)
                 # Update the layer's loaded state before everything else,
                 # because they may rely on its updated value.
-                layer._update_loaded_slice_id(response.request_id)
+                layer._layer_slicer._update_loaded_slice_id(
+                    response.request_id
+                )
                 # The rest of `Layer.refresh` after `set_view_slice`, where
                 # `set_data` notifies the corresponding vispy layer of the new
                 # slice.
