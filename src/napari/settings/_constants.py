@@ -1,10 +1,9 @@
 from enum import auto
 
-from napari.utils.compat import StrEnum
-from napari.utils.misc import StringEnum
+from napari.utils.compat import StrEnum as StringEnum
 
 
-class LabelDTypes(StrEnum):
+class LabelDTypes(StringEnum):
     uint8 = 'uint8'
     int8 = 'int8'
     uint16 = 'uint16'
@@ -36,7 +35,7 @@ class LoopMode(StringEnum):
     BACK_AND_FORTH = auto()
 
 
-class BrushSizeOnMouseModifiers(StrEnum):
+class BrushSizeOnMouseModifiers(StringEnum):
     ALT = 'Alt'
     CTRL = 'Control'
     CTRL_ALT = 'Control+Alt'

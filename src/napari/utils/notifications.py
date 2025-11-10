@@ -10,8 +10,8 @@ from datetime import datetime
 from enum import auto
 from types import TracebackType
 
+from napari.utils.compat import StrEnum as StringEnum
 from napari.utils.events import Event, EventEmitter
-from napari.utils.misc import StringEnum
 
 name2num = {
     'error': 40,

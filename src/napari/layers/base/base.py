@@ -51,6 +51,7 @@ from napari.utils._magicgui import (
     add_layers_to_viewer,
     get_layers,
 )
+from napari.utils.compat import StrEnum as StringEnum
 from napari.utils.events import EmitterGroup, Event, EventedDict
 from napari.utils.geometry import (
     find_front_back_face,
@@ -58,7 +59,6 @@ from napari.utils.geometry import (
 )
 from napari.utils.key_bindings import KeymapProvider
 from napari.utils.migrations import _DeprecatingDict
-from napari.utils.misc import StringEnum
 from napari.utils.mouse_bindings import MousemapProvider
 from napari.utils.naming import magic_name
 from napari.utils.status_messages import (
