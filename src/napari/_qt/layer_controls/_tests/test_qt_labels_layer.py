@@ -68,10 +68,10 @@ def test_rendering_combobox(make_labels_controls):
     layer, qtctrl = make_labels_controls()
     combo = qtctrl._render_control.render_combobox
     opts = {combo.itemText(i) for i in range(combo.count())}
-    rendering_options = {'TRANSLUCENT', 'ISO CATEGORICAL'}
+    rendering_options = {'translucent', 'iso_categorical'}
     assert opts == rendering_options
     # programmatically updating rendering mode updates the combobox
-    new_mode = 'ISO_CATEGORICAL'
+    new_mode = 'iso_categorical'
     layer.rendering = new_mode
     assert combo.findText(new_mode) == combo.currentIndex()
 

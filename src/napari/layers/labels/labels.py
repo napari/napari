@@ -453,7 +453,7 @@ class Labels(ScalarFieldBase):
 
     @rendering.setter
     def rendering(self, rendering):
-        self._rendering = LabelsRendering(rendering)
+        self._rendering = LabelsRendering[rendering]
         self.events.rendering()
 
     @property
