@@ -109,7 +109,7 @@ class Welcome(Node):
         self.transform.scale = (scale, scale, 0, 0)
 
         for text in (self.version, self.shortcuts, self.tip):
-            text.font_size = max(scale * 10, 10)
+            text.font_size = max(scale * 8, 10)
 
     def set_gl_state(self, *args: Any, **kwargs: Any) -> None:
         for node in self.children:

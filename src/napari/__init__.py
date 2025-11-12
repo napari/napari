@@ -1,4 +1,6 @@
 import os
+import tempfile
+from importlib import resources
 
 from lazy_loader import attach as _attach
 
@@ -12,6 +14,15 @@ except ImportError:
 # Allows us to use pydata/sparse arrays as layer data
 os.environ.setdefault('SPARSE_AUTO_DENSIFY', '1')
 limit_numpy1x_threads_on_macos_arm()
+
+
+# TODO: probably move this elsewhere
+font_dir = resources.files(__package__).joinpath('resources', 'fonts')
+conf_dir = tempfile.mkdtemp()
+conf_path = os.path.join(conf_dir, 'fonts.conf')
+with open(conf_path, 'w') as f:
+    f.write(f'<fontconfig><dir>{font_dir}</dir></fontconfig>')
+os.environ['FONTCONFIG_PATH'] = conf_dir
 
 
 def _check_installation_path():  # pragma: no cover
