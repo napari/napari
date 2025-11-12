@@ -18,22 +18,27 @@ class TiledImageNode(Node):
     def set_data(self, data):
         tiles = make_tiles(data, self.tile_size)
         self.offsets = [of for of, _ in tiles]
-
         self.data = data
-        for child in self.adopted_children:
-            child.parent = None
-        self.adopted_children = [
-            Image(
-                data=dat,
-                parent=self,
-                texture_format=self.texture_format,
-            )
-            for _, dat in tiles
-        ]
-        for ch, offset in zip(
-            self.adopted_children, self.offsets, strict=True
-        ):
-            ch.transform = STTransform(translate=offset + (0,))
+        # if the correct number of tiles already exist, just update their data
+        # otherwise, delete all existing tiles and create new ones
+        if len(self.adopted_children) == len(tiles):
+            for ch, (_, dat) in zip(self.adopted_children, tiles, strict=True):
+                ch.set_data(dat)
+        else:
+            for child in self.adopted_children:
+                child.parent = None
+            self.adopted_children = [
+                Image(
+                    data=dat,
+                    parent=self,
+                    texture_format=self.texture_format,
+                )
+                for _, dat in tiles
+            ]
+            for ch, offset in zip(
+                self.adopted_children, self.offsets, strict=True
+            ):
+                ch.transform = STTransform(translate=offset + (0,))
 
     def set_gl_state(self, *args, **kwargs):
         for child in self.adopted_children:
@@ -41,14 +46,14 @@ class TiledImageNode(Node):
 
     def __getattr__(self, name):
         if (
-            name in ['cmap', 'clim', 'opacity', 'events']
+            name in ['cmap', 'clim', 'opacity', 'gamma', 'events']
             and len(self.adopted_children) > 0
         ):
             return getattr(self.adopted_children[0], name)
         return self.__getattribute__(name)
 
     def __setattr__(self, name, value):
-        if name in ['cmap', 'clim', 'opacity']:
+        if name in ['cmap', 'clim', 'opacity', 'gamma']:
             for child in self.adopted_children:
                 setattr(child, name, value)
         else:
