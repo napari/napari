@@ -1,6 +1,6 @@
 [build-system]
 requires = [
-  "setuptools >= 69",
+  "setuptools >= 77.0.1",
   "setuptools_scm[toml]>=8"
 ]
 build-backend = "setuptools.build_meta"
@@ -12,11 +12,11 @@ authors = [
     { name = "napari team", email = "napari-steering-council@googlegroups.com" },
 ]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Environment :: X11 Applications :: Qt",
+    "Framework :: napari",
     "Intended Audience :: Education",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: BSD License",
     "Programming Language :: C",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3 :: Only",
@@ -35,6 +35,10 @@ classifiers = [
     "Operating System :: MacOS",
 ]
 requires-python = ">=3.10"
+license = "BSD-3-Clause"
+license-files = [
+    "LICENSE",
+]
 dependencies = [
     "appdirs>=1.4.4",
     "app-model>=0.4.0,<0.5.0",
@@ -45,17 +49,16 @@ dependencies = [
     "jsonschema>=3.2.0",
     "lazy_loader>=0.3",
     "magicgui>=0.7.0",
-    "napari-console>=0.1.1",
+    "napari-console>=0.1.4",
     "napari-plugin-engine>=0.1.9",
     "napari-svg>=0.1.8",
     "npe2>=0.7.9",
     "numpy>=1.24.2",
-    "numpydoc>=1.0.0",
     "pandas>=1.3.3",
     "Pillow>=9.0",
     "pint>=0.17",
     "psutil>=5.9.0",
-    "psygnal>=0.10.0",
+    "psygnal>=0.14.2",
     "pydantic>=2.2.0",
     "pygments>=2.6.0",
     "PyOpenGL>=3.1.5",
@@ -75,9 +78,6 @@ dependencies = [
 dynamic = [
     "version",
 ]
-
-[project.license]
-text = "BSD 3-Clause"
 
 [project.readme]
 file = "README.md"
@@ -119,6 +119,7 @@ all = [
 ]
 optional-base = [
     "zarr>=2.12.0", # needed by `builtins` (dask.array.from_zarr) to open zarr
+    "aiohttp", # needed to open remote files by zarr, replace by extras once https://github.com/zarr-developers/zarr-python/issues/3453 is done
     "napari-plugin-manager >=0.1.3, <0.2.0",
 ]
 optional-numba = [
@@ -137,16 +138,20 @@ partsegcore = [
 all_optional = [
     "napari[optional,partsegcore]"
 ]
+
+# the following extras need to match the dependency-groups below
+# they will be removed in napari 0.7.0
+
 testing = [
     "napari[gallery]",
     "babel>=2.9.0",
+    "docstring_parser>=0.15",
     "fsspec>=2023.10.0",
     "hypothesis>=6.8.0",
     "lxml[html_clean]>5",
     "matplotlib >= 3.6.1",
     "pooch>=1.6.0",
     "coverage>7",
-    "docstring_parser>=0.15",
     "pretend>=1.0.9",
     "pyautogui>=0.9.54",
     "pytest-qt >=4.4.0; python_version > '3.10'",
@@ -180,6 +185,7 @@ gallery = [
 # needed to build docs
 docs = [
     "napari[gallery]",
+    "numpydoc>=1.0.0",
     "sphinx<8",
     "sphinx-autobuild",
     "sphinx-tabs",
@@ -193,7 +199,7 @@ docs = [
     "sphinxcontrib-mermaid>=1.0.0",
     "sphinxext-opengraph[social-cards]",
     "myst-nb",
-    "napari-sphinx-theme>=0.3.0",
+    "napari-sphinx-theme>=1.0.0",
     "matplotlib",
     "lxml[html_clean]>5",
     "imageio-ffmpeg",
@@ -225,6 +231,97 @@ build = [
     "pyqt5",
 ]
 
+# these need to be kept in sync with the equivalent optional-dependencies
+[dependency-groups]
+testing = [
+    {include-group = "gallery"},
+    "babel>=2.9.0",
+    "docstring_parser>=0.15",
+    "fsspec>=2023.10.0",
+    "hypothesis>=6.8.0",
+    "lxml[html_clean]>5",
+    "matplotlib >= 3.6.1",
+    "pooch>=1.6.0",
+    "coverage>7",
+    "pretend>=1.0.9",
+    "pyautogui>=0.9.54",
+    "pytest-qt >=4.4.0; python_version > '3.10'",
+    "pytest-qt ==4.4.0; python_version <= '3.10'",
+    "pytest-pretty>=1.1.0",
+    "pytest>=8.3.5",
+    "pytest-rerunfailures>=15.1",
+    "tensorstore>=0.1.32",
+    "virtualenv>=20.17",
+    "xarray>=0.16.2",
+    "IPython>=7.25.0",
+    "qtconsole>=4.5.1",
+    "rich>=12.0.0",
+    "napari[optional-base]",
+]
+testing_extra = [
+    "torch>=1.10.2",
+]
+# needed for gallery examples
+gallery = [
+    "glasbey",
+    "zarr",
+    "dask[array,distributed]",
+    "matplotlib",
+    "pooch",
+    "nilearn",
+    "xarray",
+    "h5netcdf",
+    "meshio",
+]
+# needed to build docs
+docs = [
+    {include-group = "gallery"},
+    "numpydoc>=1.0.0",
+    "sphinx<8",
+    "sphinx-autobuild",
+    "sphinx-tabs",
+    "sphinx-tags",
+    "sphinx-design",
+    "sphinx-external-toc",
+    "sphinx-favicon>=1.0",
+    "sphinx-copybutton",
+    "sphinx-gallery",
+    "sphinx_autodoc_typehints==1.12.0",
+    "sphinxcontrib-mermaid>=1.0.0",
+    "sphinxext-opengraph[social-cards]",
+    "myst-nb",
+    "napari-sphinx-theme>=1.0.0",
+    "matplotlib",
+    "lxml[html_clean]>5",
+    "imageio-ffmpeg",
+    "pydeps",
+    "seedir",
+    # triangle and bermuda needed for docs/guides/triangulation.md
+    "triangle",
+    "bermuda>=0.1.4",
+    "pytest",
+    "linkify-it-py",
+]
+release = [
+    "PyGithub>=1.46",
+    "twine>=3.1.1",
+    "gitpython>=3.1.0",
+    "requests-cache>=0.9.2",
+]
+dev = [
+    "ruff",
+    "check-manifest>=0.42",
+    "pre-commit>=2.9.0",
+    "pydantic",
+    "tox",
+    "tox-min-req",
+    {include-group = "testing"},
+]
+build = [
+    "ruff",
+    "pyqt5",
+]
+
 [project.entry-points.pytest11]
 napari = "napari.utils._testsupport"
 
@@ -237,9 +334,6 @@ napari = "napari.__main__:main"
 [tool.setuptools]
 zip-safe = false
 include-package-data = true
-license-files = [
-    "LICENSE",
-]
 
 [tool.setuptools.packages.find]
 where = [
@@ -443,6 +537,7 @@ markers = [
     # mark slow tests, so they can be skipped using: pytest -m "not slow"
     "slow: mark a test as slow",
     "key_bindings: Test of keybindings",
+    "show_qt_viewer: Show the QtViewer in this Test",
 ]
 
 [tool.mypy]
@@ -564,6 +659,7 @@ module = [
     'napari._qt.layer_controls.widgets._tracks.qt_id_checkbox',
     'napari._qt.layer_controls.widgets._tracks.qt_graph_checkbox',
     'napari._qt.layer_controls.widgets._tracks.qt_colormap_control',
+    'napari._qt.layer_controls.widgets._tracks.qt_hide_completed_tracks_checkbox',
     'napari._qt.menus._util',
     'napari._qt.menus.file_menu',
     'napari._qt.perf.qt_event_tracing',
@@ -830,6 +926,7 @@ disallow_untyped_defs = false
 [[tool.mypy.overrides]]
 module = [
     "napari._app_model.context._layerlist_context",
+    "napari._vispy.overlays.colormap",
     "napari.components.overlays.labels_polygon",
     "napari.plugins.io",
     "napari.utils.colormaps.vendored._cm_listed",

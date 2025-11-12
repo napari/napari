@@ -1,14 +1,15 @@
-from typing import TYPE_CHECKING, Any
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 from vispy.visuals.transforms import MatrixTransform, STTransform
 
 from napari._vispy.utils.gl import BLENDING_MODES
-from napari.components._viewer_constants import CanvasPosition
 from napari.utils.events import disconnect_events
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from napari.layers import Layer
+    from napari.utils.events import Event
 
 
 class VispyBaseOverlay:
@@ -57,72 +58,31 @@ class VispyBaseOverlay:
 class VispyCanvasOverlay(VispyBaseOverlay):
     """
     Vispy overlay backend for overlays that live in canvas space.
+
+    NOTE: Subclasses must follow some rules:
+    - ensure that when `_on_position_change` is called, the x_size and y_size
+      attributes are already updated depending on the overlay size, to ensure
+      proper tiling. Alternatively, override this method if the overlay is
+      *not* supposed to be tiled
+    - ensure that the napari Overlay model uses the `position` field correctly
+      (must be a CanvasPosition enum if tileable, or anything else if "free")
+
+    canvas_position_callback is set by the VispyCanvas object, and is responsible
+    to update the position of all canvas overlays whenever necessary
     """
 
     def __init__(self, *, overlay, node, parent=None) -> None:
         super().__init__(overlay=overlay, node=node, parent=parent)
-
-        # offsets and size are used to control fine positioning, and will depend
-        # on the subclass and visual that needs to be rendered
-        self.x_offset = 10.0
-        self.y_offset = 10.0
         self.x_size = 0.0
         self.y_size = 0.0
         self.node.transform = STTransform()
         self.overlay.events.position.connect(self._on_position_change)
+        self.canvas_position_callback = lambda: None
 
-    def _on_position_change(self, event: Any = None):
-        # subclasses should set sizes correctly and adjust offsets to get
-        # the optimal positioning
-        if self.node.parent is None:
-            return
-        x_max, y_max = list(self.node.parent.size)
-        position = self.overlay.position
-
-        if position == CanvasPosition.TOP_LEFT:
-            transform = [self.x_offset, self.y_offset, 0, 0]
-        elif position == CanvasPosition.TOP_CENTER:
-            transform = [x_max / 2 - self.x_size / 2, self.y_offset, 0, 0]
-        elif position == CanvasPosition.TOP_RIGHT:
-            transform = [
-                x_max - self.x_size - self.x_offset,
-                self.y_offset,
-                0,
-                0,
-            ]
-        elif position == CanvasPosition.BOTTOM_LEFT:
-            transform = [
-                self.x_offset,
-                y_max - self.y_size - self.y_offset,
-                0,
-                0,
-            ]
-        elif position == CanvasPosition.BOTTOM_CENTER:
-            transform = [
-                x_max / 2 - self.x_size / 2,
-                y_max - self.y_size - self.y_offset,
-                0,
-                0,
-            ]
-        elif position == CanvasPosition.BOTTOM_RIGHT:
-            transform = [
-                x_max - self.x_size - self.x_offset,
-                y_max - self.y_size - self.y_offset,
-                0,
-                0,
-            ]
-        else:
-            raise ValueError(
-                trans._(
-                    'Position {position} not recognized.',
-                    deferred=True,
-                    position=position,
-                )
-            )
-
-        self.node.transform.translate = transform
-        scale = abs(self.node.transform.scale[0])
-        self.node.transform.scale = [scale, 1, 1, 1]
+    def _on_position_change(self, event: Event | None = None) -> None:
+        # NOTE: when subclasses call this method, they should first ensure sizes
+        # (x_size, and y_size) are set correctly
+        self.canvas_position_callback()
 
     def reset(self) -> None:
         super().reset()
@@ -140,7 +100,7 @@ class VispySceneOverlay(VispyBaseOverlay):
 
 
 class LayerOverlayMixin:
-    def __init__(self, *, layer: 'Layer', overlay, node, parent=None) -> None:
+    def __init__(self, *, layer: Layer, overlay, node, parent=None) -> None:
         super().__init__(
             node=node,
             overlay=overlay,
