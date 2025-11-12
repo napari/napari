@@ -1,6 +1,7 @@
 import numpy as np
-from vispy.scene.visuals import Compound, Line, Mesh, Text
+from vispy.scene.visuals import Compound, Line, Mesh
 
+from napari._vispy.visuals.text import Text
 from napari.layers.shapes._shapes_utils import triangulate_ellipse
 from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils.translations import trans

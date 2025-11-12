@@ -5,11 +5,12 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 from vispy.scene.node import Node
-from vispy.scene.visuals import Polygon, Text
+from vispy.scene.visuals import Polygon
 from vispy.util.svg import Document
 from vispy.visuals.transforms import STTransform
 
 from napari._app_model import get_app_model
+from napari._vispy.visuals.text import Text
 from napari.resources import get_icon_path
 from napari.utils.interactions import Shortcut
 
