@@ -8,6 +8,7 @@ import pint
 from napari._vispy.overlays.base import ViewerOverlayMixin, VispyCanvasOverlay
 from napari._vispy.visuals.scale_bar import ScaleBar
 from napari.utils._units import PREFERRED_VALUES
+from napari.utils.color import ColorValue
 from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils.theme import get_theme
 
@@ -30,7 +31,7 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self.overlay.events.box_color.connect(self._on_rendering_change)
         self.overlay.events.color.connect(self._on_rendering_change)
         self.overlay.events.colored.connect(self._on_rendering_change)
-        self.overlay.events.font_size.connect(self._on_size_or_zoom_change)
+        self.overlay.events.font_size.connect(self._on_font_size_change)
         self.overlay.events.ticks.connect(self._on_rendering_change)
         self.overlay.events.unit.connect(self._on_unit_change)
         self.overlay.events.length.connect(self._on_size_or_zoom_change)
@@ -42,6 +43,9 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
 
     def _on_unit_change(self):
         self._unit = pint.get_application_registry()(self.overlay.unit)
+        self._on_size_or_zoom_change(force=True)
+
+    def _on_font_size_change(self):
         self._on_size_or_zoom_change(force=True)
 
     def _calculate_best_length(
@@ -131,7 +135,8 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self._on_rendering_change()
         self._on_position_change()
 
-    def _get_colors(self):
+    def _get_colors(self) -> tuple[ColorValue, ColorValue]:
+        """Get the foreground and background colors for the visual."""
         color = self.overlay.color
         box_color = self.overlay.box_color
 
