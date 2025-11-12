@@ -1,12 +1,18 @@
-from typing import TypeVar
+from __future__ import annotations
+
+from collections.abc import Set as AbstractSet
+from typing import TYPE_CHECKING, TypeVar
 
 import numpy as np
 
 from napari.layers.base import ActionType
 from napari.layers.points._points_utils import _points_in_box_3d, points_in_box
 
+if TYPE_CHECKING:
+    from napari.layers.points.points import Points
 
-def select(layer, event):
+
+def select(layer: Points, event):
     """Select points.
 
     Clicking on a point will select that point. If holding shift while clicking
@@ -29,7 +35,7 @@ def select(layer, event):
 
     # Get value under the cursor, for points, this is the index of the highlighted
     # if any, or None.
-    value = layer.get_value(
+    value = layer._get_value_(
         position=event.position,
         view_direction=event.view_direction,
         dims_displayed=event.dims_displayed,
@@ -120,10 +126,9 @@ def select(layer, event):
 DRAG_DIST_THRESHOLD = 5
 
 
-def add(layer, event):
+def add(layer: Points, event):
     """Add a new point at the clicked position."""
     start_pos = event.pos
-    dist = 0
     yield
 
     while event.type == 'mouse_move':
@@ -141,7 +146,7 @@ def add(layer, event):
         layer.add(coordinates)
 
 
-def highlight(layer, event):
+def highlight(layer: Points, event):
     """Highlight hovered points."""
     layer._set_highlight()
 
@@ -149,7 +154,7 @@ def highlight(layer, event):
 _T = TypeVar('_T')
 
 
-def _toggle_selected(selection: set[_T], value: _T) -> set[_T]:
+def _toggle_selected(selection: AbstractSet[_T], value: _T) -> set[_T]:
     """Add or remove value from the selection set.
 
     This function returns a copy of the existing selection.
@@ -174,7 +179,7 @@ def _toggle_selected(selection: set[_T], value: _T) -> set[_T]:
     return selection
 
 
-def _update_drag_vectors_from_event(layer, event):
+def _update_drag_vectors_from_event(layer: Points, event):
     """Update the drag normal and up vectors on layer from a mouse event.
 
     Note that in 2D mode, the layer._drag_normal and layer._drag_up
@@ -212,7 +217,9 @@ def _update_drag_vectors_from_event(layer, event):
         layer._drag_up = None
 
 
-def _select_points_from_drag(layer, modify_selection: bool, n_display: int):
+def _select_points_from_drag(
+    layer: Points, modify_selection: bool, n_display: int
+):
     """Select points on a Points layer after a drag event.
 
     Parameters
@@ -228,13 +235,15 @@ def _select_points_from_drag(layer, modify_selection: bool, n_display: int):
     if len(layer._view_data) == 0:
         # if no data in view, there isn't any data to select
         layer.selected_data = set()
-
+    assert layer._drag_box is not None
     # if there is data in view, find the points in the drag box
     if n_display == 2:
         selection = points_in_box(
             layer._drag_box, layer._view_data, layer._view_size
         )
     else:
+        assert layer._drag_normal is not None
+        assert layer._drag_up is not None
         selection = _points_in_box_3d(
             layer._drag_box,
             layer._view_data,

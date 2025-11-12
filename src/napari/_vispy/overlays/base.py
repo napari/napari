@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 from vispy.visuals.transforms import MatrixTransform, STTransform
@@ -7,6 +9,7 @@ from napari.utils.events import disconnect_events
 
 if TYPE_CHECKING:
     from napari.layers import Layer
+    from napari.utils.events import Event
 
 
 class VispyBaseOverlay:
@@ -56,8 +59,13 @@ class VispyCanvasOverlay(VispyBaseOverlay):
     """
     Vispy overlay backend for overlays that live in canvas space.
 
-    NOTE: Subclasses should make sure to properly set their x_size and y_size
-    attribute when their size changes for proper tiling.
+    NOTE: Subclasses must follow some rules:
+    - ensure that when `_on_position_change` is called, the x_size and y_size
+      attributes are already updated depending on the overlay size, to ensure
+      proper tiling. Alternatively, override this method if the overlay is
+      *not* supposed to be tiled
+    - ensure that the napari Overlay model uses the `position` field correctly
+      (must be a CanvasPosition enum if tileable, or anything else if "free")
 
     canvas_position_callback is set by the VispyCanvas object, and is responsible
     to update the position of all canvas overlays whenever necessary
@@ -71,7 +79,7 @@ class VispyCanvasOverlay(VispyBaseOverlay):
         self.overlay.events.position.connect(self._on_position_change)
         self.canvas_position_callback = lambda: None
 
-    def _on_position_change(self, event=None):
+    def _on_position_change(self, event: Event | None = None) -> None:
         # NOTE: when subclasses call this method, they should first ensure sizes
         # (x_size, and y_size) are set correctly
         self.canvas_position_callback()
@@ -92,7 +100,7 @@ class VispySceneOverlay(VispyBaseOverlay):
 
 
 class LayerOverlayMixin:
-    def __init__(self, *, layer: 'Layer', overlay, node, parent=None) -> None:
+    def __init__(self, *, layer: Layer, overlay, node, parent=None) -> None:
         super().__init__(
             node=node,
             overlay=overlay,

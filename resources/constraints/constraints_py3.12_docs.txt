@@ -256,13 +256,13 @@ myst-nb==1.3.0
     # via napari (pyproject.toml)
 myst-parser==4.0.1
     # via myst-nb
-napari-console==0.1.3
+napari-console==0.1.4
     # via napari (pyproject.toml)
 napari-plugin-engine==0.2.0
     # via napari (pyproject.toml)
 napari-plugin-manager==0.1.6
     # via napari (pyproject.toml)
-napari-sphinx-theme==0.7.0
+napari-sphinx-theme==1.0.0
     # via napari (pyproject.toml)
 napari-svg==0.2.1
     # via napari (pyproject.toml)
@@ -433,7 +433,7 @@ psutil==7.0.0
     #   napari (pyproject.toml)
     #   distributed
     #   ipykernel
-psygnal==0.14.1
+psygnal==0.14.2
     # via
     #   napari (pyproject.toml)
     #   app-model

@@ -14,7 +14,7 @@ class _VispyBaseTextOverlay(VispyCanvasOverlay):
         super().__init__(**kwargs)
 
         self.node.font_size = self.overlay.font_size
-        self.node.anchors = ('left', 'top')
+        self.node.anchors = ('left', 'bottom')
 
         self.overlay.events.color.connect(self._on_color_change)
         self.overlay.events.font_size.connect(self._on_font_size_change)
