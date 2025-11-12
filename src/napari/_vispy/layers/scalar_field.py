@@ -104,18 +104,7 @@ class VispyScalarFieldBaseLayer(VispyBaseLayer[ScalarFieldBase]):
                 child.parent = self.node
         self.reset()
 
-    @staticmethod
-    def is_same_array(arr1, arr2):
-        return (
-            arr1.data == arr2.data
-            and arr1.size == arr2.size
-            and arr1.strides == arr2.strides
-        )
-
     def _on_data_change(self) -> None:
-        # checking this prevents adjusting clim, cmap etc.
-        if self.is_same_array(self.layer._data_view, self._data):
-            return
         self._data = self.layer._data_view
 
         data = fix_data_dtype(self.layer._data_view)
