@@ -100,9 +100,8 @@ class VispyScalarFieldBaseLayer(VispyBaseLayer[ScalarFieldBase]):
         self.node.order = self.order
         # reattach overlays to new node
         for child in children:
-            for child in children:
-                if not isinstance(child.parent, TiledImageNode):
-                    child.parent = self.node
+            if not isinstance(child.parent, TiledImageNode):
+                child.parent = self.node
         self.reset()
 
     @staticmethod
