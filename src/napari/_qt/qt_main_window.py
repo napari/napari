@@ -201,6 +201,12 @@ class _QtMainWindow(QMainWindow):
         # were defined somewhere in the `_qt` module and imported in init_qactions
         init_qactions()
 
+        # only after qaction are initialized we can get all shortcuts, so we have
+        # to force update the welcome screen here. TODO: UGLYYYY
+        self._qt_viewer.canvas._overlay_to_visual[
+            self._qt_viewer.viewer.welcome_screen
+        ][0].reset()
+
         with contextlib.suppress(IndexError):
             viewer.cursor.events.position.disconnect(
                 viewer.update_status_from_cursor

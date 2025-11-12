@@ -7,7 +7,9 @@ import traceback
 import warnings
 import weakref
 from collections.abc import Sequence
+from itertools import cycle
 from pathlib import Path
+from random import sample
 from types import FrameType, MethodType
 from typing import (
     TYPE_CHECKING,
@@ -17,7 +19,7 @@ from typing import (
 from weakref import WeakSet, ref
 
 import numpy as np
-from qtpy.QtCore import QCoreApplication, QObject, Qt, QUrl
+from qtpy.QtCore import QCoreApplication, QObject, Qt, QTimer, QUrl
 from qtpy.QtGui import QGuiApplication, QImage
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 from superqt import ensure_main_thread
@@ -135,6 +137,14 @@ def _extension_string_for_layers(
     return ext_str, []
 
 
+# TODO: these should live somewhere nicer to contribute
+TIPS = [
+    'You can take a screenshot and copy it to your clipboard by pressing {napari.window.file.copy_canvas_screenshot}!',
+    'You can change most shortcuts from the File->Preferences->Shortcuts menu!',
+    'You can right click many components of the graphical interface to access advanced controls!',
+]
+
+
 class QtViewer(QSplitter):
     """Qt view for the napari Viewer model.
 
@@ -179,8 +189,6 @@ class QtViewer(QSplitter):
         super().__init__()
         self._instances.add(self)
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
-
-        viewer.welcome_screen.visible = show_welcome_screen
 
         QCoreApplication.setAttribute(
             Qt.AA_UseStyleSheetPropagationInWidgetStyles, True
@@ -271,6 +279,18 @@ class QtViewer(QSplitter):
 
         for layer in self.viewer.layers:
             self._add_layer(layer)
+
+        # set up welcome screen tips
+        viewer.welcome_screen.visible = show_welcome_screen
+        self._tips = cycle(sample(TIPS, len(TIPS)))
+        self._tip_timer = QTimer()
+        self._tip_timer.setInterval(10000)
+        self._tip_timer.timeout.connect(self._next_tip)
+        self._tip_timer.start()
+        self._next_tip()
+
+    def _next_tip(self, event=None):
+        self.viewer.welcome_screen.tip = next(self._tips)
 
     @staticmethod
     def _update_dask_cache_settings(

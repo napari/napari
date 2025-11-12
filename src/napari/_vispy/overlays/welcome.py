@@ -26,6 +26,10 @@ class VispyWelcomeOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self.viewer.events.theme.connect(self._on_theme_change)
         self.viewer.layers.events.connect(self._on_visible_change)
 
+        self.overlay.events.version.connect(self._on_version_change)
+        self.overlay.events.shortcuts.connect(self._on_shortcuts_change)
+        self.overlay.events.tip.connect(self._on_tip_change)
+
         self.node.canvas.native.resized.connect(self._on_position_change)
 
         self.reset()
@@ -49,10 +53,18 @@ class VispyWelcomeOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
     def _on_visible_change(self) -> None:
         self.node.visible = self.overlay.visible and not self.viewer.layers
 
-    def _on_text_change(self) -> None:
-        self.node.set_text()
+    def _on_version_change(self) -> None:
+        self.node.set_version(self.overlay.version)
+
+    def _on_shortcuts_change(self) -> None:
+        self.node.set_shortcuts(self.overlay.shortcuts)
+
+    def _on_tip_change(self) -> None:
+        self.node.set_tip(self.overlay.tip)
 
     def reset(self) -> None:
         super().reset()
         self._on_theme_change()
-        self._on_text_change()
+        self._on_version_change()
+        self._on_shortcuts_change()
+        self._on_tip_change()

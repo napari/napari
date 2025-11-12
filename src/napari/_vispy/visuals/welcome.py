@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
@@ -8,8 +9,9 @@ from vispy.scene.visuals import Polygon, Text
 from vispy.util.svg import Document
 from vispy.visuals.transforms import STTransform
 
-from napari import __version__
+from napari._app_model import get_app_model
 from napari.resources import get_icon_path
+from napari.utils.interactions import Shortcut
 
 if TYPE_CHECKING:
     from napari.utils.color import ColorValue
@@ -49,7 +51,7 @@ class Welcome(Node):
             method='gpu',
             parent=self,
         )
-        self.tips = Text(
+        self.tip = Text(
             text='',
             pos=[0, 180],
             anchor_x='center',
@@ -65,34 +67,49 @@ class Welcome(Node):
         self.logo.border_color = color
         self.version.color = color
         self.shortcuts.color = color
-        self.tips.color = color
+        self.tip.color = color
 
-    def set_text(self) -> None:
-        self.version.text = f'napari {__version__}'
+    def set_version(self, version) -> None:
+        self.version.text = f'napari {version}'
+
+    def set_shortcuts(self, commands) -> None:
+        app = get_app_model()
+        shortcuts = {}
+        for command_id in commands:
+            keybinding = app.keybindings.get_keybinding(command_id)
+            # this can be none at launch (not yet initialized), will be updated after
+            if keybinding is not None:
+                shortcut = Shortcut(keybinding.keybinding)
+                command = app.commands[command_id].title
+                shortcuts[shortcut] = command
+
         self.shortcuts.text = (
-            'Drag image(s) here to open or use the shortcuts below:\n\n'
-            # TODO: these need to be system specific
-            'Ctrl+N: New Image from Clipboard\n'
-            'Ctrl+O: Open image(s)\n'
-            'Ctrl+Shift+P: Show Command Palette\n'
+            'Drag file(s) here to open, or use the shortcuts below:\n\n'
+            + '\n'.join(
+                f'{shortcut}: {command}'
+                for shortcut, command in shortcuts.items()
+            )
         )
-        self.tips.text = 'This is a tip'
+
+    def set_tip(self, tip) -> None:
+        # this should use template strings in the future
+        for match in re.finditer(r'{(.*?)}', tip):
+            command_id = match.group(1)
+            app = get_app_model()
+            keybinding = app.keybindings.get_keybinding(command_id)
+            # this can be none at launch (not yet initialized), will be updated after
+            if keybinding is not None:
+                shortcut = Shortcut(keybinding.keybinding)
+                tip = re.sub(match.group(), str(shortcut), tip)
+        self.tip.text = 'Did you know?\n' + tip
 
     def set_scale_and_position(self, x: float, y: float) -> None:
         self.transform.translate = (x / 2, y / 2, 0, 0)
         scale = min(x, y) * 0.002  # magic number
         self.transform.scale = (scale, scale, 0, 0)
 
-        # update the dpi scale factor to account for screen dpi
-        # because vispy scales pixel height of text by screen dpi
-        if self.transforms.dpi:
-            # use 96 as the napari reference dpi for historical reasons
-            dpi_scale_factor = 96 / self.transforms.dpi
-        else:
-            dpi_scale_factor = 1
-
-        for text in (self.version, self.shortcuts, self.tips):
-            text.font_size = max(scale * 10 * dpi_scale_factor, 10)
+        for text in (self.version, self.shortcuts, self.tip):
+            text.font_size = max(scale * 10, 10)
 
     def set_gl_state(self, *args: Any, **kwargs: Any) -> None:
         for node in self.children:
