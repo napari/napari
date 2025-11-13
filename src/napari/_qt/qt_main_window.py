@@ -654,6 +654,10 @@ class _QtMainWindow(QMainWindow):
 
         self._qt_viewer.dims.stop()
 
+        # Block emitting layer removal events, which trigger
+        # expensive scenegraph updates
+        self._qt_viewer.viewer.layers.events.removed.block()
+
         if self._quit_app:
             quit_app_()
 
