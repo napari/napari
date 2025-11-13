@@ -34,7 +34,7 @@ from qtpy.QtCore import (
     Qt,
     Slot,
 )
-from qtpy.QtGui import QHideEvent, QIcon, QImage, QShowEvent
+from qtpy.QtGui import QFontDatabase, QHideEvent, QIcon, QImage, QShowEvent
 from qtpy.QtWidgets import (
     QApplication,
     QDialog,
@@ -1658,6 +1658,10 @@ class Window:
                 extra_variables.update(
                     {'font_size': f'{settings.appearance.font_size}pt'}
                 )
+            if extra_variables['font'] is None:
+                extra_variables['font'] = QFontDatabase.systemFont(
+                    QFontDatabase.GeneralFont
+                ).family()
 
             # set the style sheet with the theme name and extra_variables
             style_sheet = get_stylesheet(

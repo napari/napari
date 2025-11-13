@@ -381,7 +381,7 @@ DARK = Theme(
     # Console background. HEX: #121212
     console='rgb(18, 18, 18)',
     canvas='black',
-    font='InconsAlata',
+    font=None,
     font_size='12pt' if sys.platform == 'darwin' else '9pt',
 )
 LIGHT = Theme(
@@ -400,7 +400,7 @@ LIGHT = Theme(
     syntax_style='default',
     console='rgb(255, 255, 255)',
     canvas='white',
-    font='InconsAlata',
+    font=None,
     font_size='12pt' if sys.platform == 'darwin' else '9pt',
 )
 

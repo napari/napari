@@ -33,8 +33,8 @@ class AppearanceSettings(EventedModel):
         description=trans._('Select the user interface theme.'),
         env='napari_theme',
     )
-    font: str = Field(
-        'InconsAlata',
+    font: str | None = Field(
+        None,
         title=trans._('Font'),
         description=trans._('Select the user interface font face.'),
     )
