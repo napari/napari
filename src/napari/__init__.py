@@ -19,9 +19,17 @@ limit_numpy1x_threads_on_macos_arm()
 # TODO: probably move this elsewhere
 font_dir = resources.files(__package__).joinpath('resources', 'fonts')
 conf_dir = tempfile.mkdtemp()
-conf_path = os.path.join(conf_dir, 'fonts.conf')
+conf_path = os.path.join(
+    conf_dir, '10-fonts.conf'
+)  # prefix 10 is crucial so we don't override
+conf_contents = f"""<?xml version="1.0"?>
+<!DOCTYPE fontconfig SYSTEM "fonts.dtd">
+<fontconfig>
+  <dir>{font_dir}</dir>
+</fontconfig>
+"""
 with open(conf_path, 'w') as f:
-    f.write(f'<fontconfig><dir>{font_dir}</dir></fontconfig>')
+    f.write(conf_contents)
 os.environ['FONTCONFIG_PATH'] = conf_dir
 
 
