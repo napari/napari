@@ -138,10 +138,13 @@ def _extension_string_for_layers(
 
 
 # TODO: these should live somewhere nicer to contribute
+# TODO: query mouse binding as well somehow?
 TIPS = [
     'You can take a screenshot and copy it to your clipboard by pressing {napari.window.file.copy_canvas_screenshot}!',
-    'You can change most shortcuts from the File->Preferences->Shortcuts menu!',
+    'You can change most shortcuts from the File→Preferences→Shortcuts menu!',
     'You can right click many components of the graphical interface to access advanced controls!',
+    'If you select multiple layers in the layer list, and Right-Click→Link-Layers, their parameters will be synced!',
+    'You can press Ctrl/Cmd and scroll the mouse wheel to move the dimension sliders!',
 ]
 
 
