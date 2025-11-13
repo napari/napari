@@ -750,6 +750,7 @@ class Window:
         self._update_theme()
         self._update_theme_font_size()
         get_settings().appearance.events.theme.connect(self._update_theme)
+        get_settings().appearance.events.font.connect(self._update_theme_font)
         get_settings().appearance.events.font_size.connect(
             self._update_theme_font_size
         )
@@ -1626,6 +1627,12 @@ class Window:
     def _update_theme_no_event(self):
         self._update_theme()
 
+    def _update_theme_font(self, event=None):
+        settings = get_settings()
+        font = event.value if event else settings.appearance.font
+        extra_variables = {'font': font}
+        self._update_theme(extra_variables=extra_variables)
+
     def _update_theme_font_size(self, event=None):
         settings = get_settings()
         font_size = event.value if event else settings.appearance.font_size
@@ -1644,11 +1651,14 @@ class Window:
             if value == 'system':
                 # system isn't a theme, so get the name
                 actual_theme_name = get_system_theme()
-            # check `font_size` value is always passed when updating style
+            # check `font` and `font_size` value is always passed when updating style
+            if 'font' not in extra_variables:
+                extra_variables.update({'font': settings.appearance.font})
             if 'font_size' not in extra_variables:
                 extra_variables.update(
                     {'font_size': f'{settings.appearance.font_size}pt'}
                 )
+
             # set the style sheet with the theme name and extra_variables
             style_sheet = get_stylesheet(
                 actual_theme_name, extra_variables=extra_variables
