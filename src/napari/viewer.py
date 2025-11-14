@@ -267,7 +267,9 @@ class Viewer(ViewerModel):
         # to avoid any unnecessary slicing.
         disconnect_events(self.dims.events, self)
         # Remove all the layers from the viewer
-        self.layers.clear()
+        # Use the quitting context manager to skip expensive operations
+        with self.window._qt_viewer.canvas.quitting():
+            self.layers.clear()
         # Close the main window
         self.window.close()
 

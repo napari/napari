@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import gc
 from collections.abc import Iterator
 from functools import partial
@@ -175,6 +176,7 @@ class VispyCanvas:
             Layer, dict[Overlay, VispyBaseOverlay]
         ] = {}
         self._key_map_handler = key_map_handler
+        self._is_quitting = False
         self._instances.add(self)
 
         self._overlay_callbacks = {}
@@ -386,6 +388,19 @@ class VispyCanvas:
     def delete(self) -> None:
         """Schedules the native widget for deletion"""
         self.native.deleteLater()
+
+    @contextlib.contextmanager
+    def quitting(self):
+        """Context manager to signal that napari is quitting.
+
+        The `_is_quitting` attribute will be used by _remove_layer to
+        skip expensive operations that are unneeded during shutdown.
+        """
+        self._is_quitting = True
+        try:
+            yield
+        finally:
+            self._is_quitting = False
 
     def _on_interactive(self) -> None:
         """Link interactive attributes of view and viewer."""
@@ -773,6 +788,10 @@ class VispyCanvas:
 
         self._remove_layer_overlays(layer)
         del self._layer_overlay_to_visual[layer]
+
+        # Skip expensive, unneeded operations when quitting
+        if self._is_quitting:
+            return
 
         # Critical two-step fix for Windows OpenGL access violation bug
         # This prevents the race condition where scenegraph updates occur while
