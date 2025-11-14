@@ -47,6 +47,7 @@ class Welcome(Node):
         )
         self.shortcuts = Text(
             text='',
+            line_height=2,
             pos=[0, 40],
             anchor_x='center',
             anchor_y='bottom',
@@ -55,6 +56,7 @@ class Welcome(Node):
         )
         self.tip = Text(
             text='',
+            line_height=2,
             pos=[0, 180],
             anchor_x='center',
             anchor_y='bottom',
@@ -87,10 +89,11 @@ class Welcome(Node):
 
         self.shortcuts.text = (
             'Drag file(s) here to open, or use the shortcuts below:\n\n'
-            + '\n\n'.join(
+            + '\n'.join(
                 f'{shortcut}: {command}'
                 for shortcut, command in shortcuts.items()
             )
+            + '\n⌘+X this is a fake keybinding'
         )
 
     def set_tip(self, tip) -> None:
@@ -105,7 +108,7 @@ class Welcome(Node):
                 tip = re.sub(match.group(), str(shortcut), tip)
 
         # wrap tip so it's not clipped
-        self.tip.text = 'Did you know?\n\n' + '\n'.join(
+        self.tip.text = 'Did you know?\n' + '\n'.join(
             textwrap.wrap(tip, break_on_hyphens=False)
         )
 
