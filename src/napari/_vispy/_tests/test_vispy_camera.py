@@ -17,7 +17,10 @@ def test_camera(make_napari_viewer):
     # updated
     assert viewer.dims.ndisplay == 2
 
-    np.testing.assert_almost_equal(viewer.camera.angles, (0, 0, 90))
+    np.testing.assert_almost_equal(viewer.camera.angles, (0, 0, 0))
+    np.testing.assert_almost_equal(
+        viewer.camera.angles, viewer.camera.from_legacy_angles((0, 0, 90))
+    )
     np.testing.assert_almost_equal(viewer.camera.center, (0, 5.0, 5.0))
     np.testing.assert_almost_equal(viewer.camera.angles, vispy_camera.angles)
     np.testing.assert_almost_equal(viewer.camera.center, vispy_camera.center)
@@ -41,7 +44,7 @@ def test_vispy_camera_update_from_model(make_napari_viewer):
     viewer.camera.center = (11, 12)
     viewer.camera.zoom = 4
 
-    np.testing.assert_almost_equal(viewer.camera.angles, (0, 0, 90))
+    np.testing.assert_almost_equal(viewer.camera.angles, (0, 0, 0))
     np.testing.assert_almost_equal(viewer.camera.center, (0, 11, 12))
     np.testing.assert_almost_equal(viewer.camera.zoom, 4)
     np.testing.assert_almost_equal(viewer.camera.angles, vispy_camera.angles)
@@ -69,7 +72,7 @@ def test_camera_model_update_from_vispy(make_napari_viewer):
     vispy_camera.zoom = 4
     vispy_camera.on_draw(None)
 
-    np.testing.assert_almost_equal(viewer.camera.angles, (0, 0, 90))
+    np.testing.assert_almost_equal(viewer.camera.angles, (0, 0, 0))
     np.testing.assert_almost_equal(viewer.camera.center, (0, 11, 12))
     np.testing.assert_almost_equal(viewer.camera.zoom, 4)
     np.testing.assert_almost_equal(viewer.camera.angles, vispy_camera.angles)
@@ -89,7 +92,7 @@ def test_3D_camera(make_napari_viewer):
     viewer.dims.ndisplay = 3
 
     # Test camera values have updated
-    np.testing.assert_almost_equal(viewer.camera.angles, (0, 0, 90))
+    np.testing.assert_almost_equal(viewer.camera.angles, (0, 0, 0))
     np.testing.assert_almost_equal(viewer.camera.center, (5.0, 5.0, 5.0))
     np.testing.assert_almost_equal(viewer.camera.angles, vispy_camera.angles)
     np.testing.assert_almost_equal(viewer.camera.center, vispy_camera.center)
@@ -156,7 +159,7 @@ def test_switching_ndisplay_maintains_3D_angles(make_napari_viewer):
     viewer.add_image(data)
 
     angles_3D = (24, 12, -19)
-    angles_2D = (0, 0, 90)
+    angles_2D = (0, 0, 0)
 
     viewer.dims.ndisplay = 3
     viewer.camera.angles = angles_3D

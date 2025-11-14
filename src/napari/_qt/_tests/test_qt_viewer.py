@@ -271,7 +271,7 @@ def test_export_figure_3d(
     # shape is greater than the original data shape
     viewer_model.camera.angles = (45, 45, 45)
     img = qt_viewer.export_figure(flash=False)
-    np.testing.assert_allclose(img.shape, (171, 339, 4), atol=1)
+    np.testing.assert_allclose(img.shape, (255, 258, 4), atol=1)
 
     # FIXME: Changes introduced in #7870 slightly changed the timing and result in a blank canvas.
     # Probably related to #8033. Because canvass size is still correct, we know it would look alright
