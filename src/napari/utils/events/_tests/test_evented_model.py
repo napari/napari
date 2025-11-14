@@ -12,9 +12,9 @@ from dask import delayed
 from dask.delayed import Delayed
 
 from napari._pydantic_compat import Field, ValidationError
+from napari.utils.compat import StrEnum as StringEnum
 from napari.utils.events import EmitterGroup, EventedModel
 from napari.utils.events.custom_types import Array
-from napari.utils.misc import StringEnum
 
 
 def test_creating_empty_evented_model():
