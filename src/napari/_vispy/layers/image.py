@@ -8,7 +8,8 @@ from napari._vispy.layers.scalar_field import (
     ScalarFieldLayerNode,
     VispyScalarFieldBaseLayer,
 )
-from napari._vispy.utils.gl import get_gl_extensions
+from napari._vispy.layers.tiled_image import TiledImageNode
+from napari._vispy.utils.gl import get_gl_extensions, get_max_texture_sizes
 from napari._vispy.visuals.image import Image as ImageNode
 from napari._vispy.visuals.volume import Volume as VolumeNode
 from napari.layers.base._base_constants import Blending
@@ -34,6 +35,12 @@ class ImageLayerNode(ScalarFieldLayerNode):
             texture_format = None
 
         self._custom_node = custom_node
+
+        (
+            self.MAX_TEXTURE_SIZE_2D,
+            self.MAX_TEXTURE_SIZE_3D,
+        ) = get_max_texture_sizes()
+
         self._image_node = ImageNode(
             (
                 None
@@ -43,19 +50,38 @@ class ImageLayerNode(ScalarFieldLayerNode):
             method='auto',
             texture_format=texture_format,
         )
+        self._tiledimage_node = TiledImageNode(
+            np.array([[0.0]], dtype=np.float32),
+            tile_size=self.MAX_TEXTURE_SIZE_2D,
+            texture_format=texture_format,
+        )
         self._volume_node = VolumeNode(
             np.zeros((1, 1, 1), dtype=np.float32),
             clim=[0, 1],
             texture_format=texture_format,
         )
 
-    def get_node(self, ndisplay: int, dtype: np.dtype | None = None) -> Node:
+    def get_node(
+        self,
+        ndisplay: int,
+        dtype: np.dtype | None = None,
+        shape: tuple | None = None,
+    ) -> Node:
         # Return custom node if we have one.
         if self._custom_node is not None:
             return self._custom_node
 
         # Return Image or Volume node based on 2D or 3D.
-        res = self._image_node if ndisplay == 2 else self._volume_node
+        if ndisplay == 2:
+            if shape is not None:
+                if np.any(np.greater(shape, self.MAX_TEXTURE_SIZE_2D)):
+                    res = self._tiledimage_node
+                else:
+                    res = self._image_node
+            else:
+                res = self._image_node
+        else:
+            res = self._volume_node
         if (
             res.texture_format not in {'auto', None}
             and dtype is not None
