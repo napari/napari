@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import textwrap
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
@@ -46,8 +47,8 @@ class Welcome(Node):
         )
         self.shortcuts = Text(
             text='',
-            pos=[-240, 50],
-            anchor_x='left',
+            pos=[0, 40],
+            anchor_x='center',
             anchor_y='bottom',
             method='gpu',
             parent=self,
@@ -86,14 +87,14 @@ class Welcome(Node):
 
         self.shortcuts.text = (
             'Drag file(s) here to open, or use the shortcuts below:\n\n'
-            + '\n'.join(
+            + '\n\n'.join(
                 f'{shortcut}: {command}'
                 for shortcut, command in shortcuts.items()
             )
         )
 
     def set_tip(self, tip) -> None:
-        # this should use template strings in the future
+        # TODO: this should use template strings in the future
         for match in re.finditer(r'{(.*?)}', tip):
             command_id = match.group(1)
             app = get_app_model()
@@ -102,7 +103,11 @@ class Welcome(Node):
             if keybinding is not None:
                 shortcut = Shortcut(keybinding.keybinding)
                 tip = re.sub(match.group(), str(shortcut), tip)
-        self.tip.text = 'Did you know?\n' + tip
+
+        # wrap tip so it's not clipped
+        self.tip.text = 'Did you know?\n\n' + '\n'.join(
+            textwrap.wrap(tip, break_on_hyphens=False)
+        )
 
     def set_scale_and_position(self, x: float, y: float) -> None:
         self.transform.translate = (x / 2, y / 2, 0, 0)
@@ -110,7 +115,7 @@ class Welcome(Node):
         self.transform.scale = (scale, scale, 0, 0)
 
         for text in (self.version, self.shortcuts, self.tip):
-            text.font_size = max(scale * 8, 10)
+            text.font_size = max(scale * 10, 10)
 
     def set_gl_state(self, *args: Any, **kwargs: Any) -> None:
         for node in self.children:
