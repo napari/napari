@@ -314,7 +314,9 @@ def test_qt_viewer_clipboard_without_flash(make_napari_viewer):
 
     # ensure the flash effect is not applied
     assert viewer.window._qt_window.graphicsEffect() is None
-    assert not hasattr(viewer.window._qt_window, '_flash_animation')
+    assert not hasattr(
+        viewer.window._qt_viewer._welcome_widget, '_flash_animation'
+    )
 
 
 @pytest.mark.parametrize('theme', available_themes())
