@@ -13,6 +13,8 @@ from vispy.visuals.transforms import STTransform
 from napari._app_model import get_app_model
 from napari._vispy.visuals.text import Text
 from napari.resources import get_icon_path
+from napari.settings import get_settings
+from napari.utils.action_manager import action_manager
 from napari.utils.interactions import Shortcut
 
 if TYPE_CHECKING:
@@ -37,7 +39,7 @@ class Welcome(Node):
         self.logo = Polygon(
             self.logo_coords, border_method='agg', border_width=2, parent=self
         )
-        self.version = Text(
+        self.header = Text(
             text='',
             pos=[0, 0],
             anchor_x='center',
@@ -45,11 +47,20 @@ class Welcome(Node):
             method='gpu',
             parent=self,
         )
-        self.shortcuts = Text(
+        self.shortcut_keybindings = Text(
             text='',
             line_height=2,
-            pos=[0, 40],
-            anchor_x='center',
+            pos=[-50, 70],
+            anchor_x='right',
+            anchor_y='bottom',
+            method='gpu',
+            parent=self,
+        )
+        self.shortcut_descriptions = Text(
+            text='',
+            line_height=2,
+            pos=[-30, 70],
+            anchor_x='left',
             anchor_y='bottom',
             method='gpu',
             parent=self,
@@ -69,32 +80,39 @@ class Welcome(Node):
     def set_color(self, color: ColorValue) -> None:
         self.logo.color = color
         self.logo.border_color = color
-        self.version.color = color
-        self.shortcuts.color = color
+        self.header.color = color
+        self.shortcut_keybindings.color = color
+        self.shortcut_descriptions.color = color
         self.tip.color = color
 
     def set_version(self, version) -> None:
-        self.version.text = f'napari {version}'
+        self.header.text = (
+            f'napari {version}\n\n'
+            'Drag file(s) here to open, or use the shortcuts below:'
+        )
 
     def set_shortcuts(self, commands) -> None:
-        app = get_app_model()
         shortcuts = {}
+        app = get_app_model()
+        all_shortcuts = get_settings().shortcuts.shortcuts
         for command_id in commands:
             keybinding = app.keybindings.get_keybinding(command_id)
-            # this can be none at launch (not yet initialized), will be updated after
             if keybinding is not None:
-                shortcut = Shortcut(keybinding.keybinding)
+                shortcut = Shortcut(keybinding.keybinding).platform
                 command = app.commands[command_id].title
-                shortcuts[shortcut] = command
+            else:
+                # might be an action_manager action
+                keybinding = all_shortcuts.get(command_id, [None])[0]
+                if keybinding is not None:
+                    shortcut = Shortcut(keybinding).platform
+                    command = action_manager._actions[command_id].description
+                else:
+                    continue
 
-        self.shortcuts.text = (
-            'Drag file(s) here to open, or use the shortcuts below:\n\n'
-            + '\n'.join(
-                f'{shortcut}: {command}'
-                for shortcut, command in shortcuts.items()
-            )
-            + '\n⌘+X this is a fake keybinding'
-        )
+            shortcuts[shortcut] = command
+
+        self.shortcut_keybindings.text = '\n'.join(shortcuts.keys())
+        self.shortcut_descriptions.text = '\n'.join(shortcuts.values())
 
     def set_tip(self, tip) -> None:
         # TODO: this should use template strings in the future
@@ -117,7 +135,12 @@ class Welcome(Node):
         scale = min(x, y) * 0.002  # magic number
         self.transform.scale = (scale, scale, 0, 0)
 
-        for text in (self.version, self.shortcuts, self.tip):
+        for text in (
+            self.header,
+            self.shortcut_keybindings,
+            self.shortcut_descriptions,
+            self.tip,
+        ):
             text.font_size = max(scale * 10, 10)
 
     def set_gl_state(self, *args: Any, **kwargs: Any) -> None:
