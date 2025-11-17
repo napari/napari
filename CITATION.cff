@@ -173,7 +173,7 @@ authors:
 - given-names: Zuzana
   family-names: Čočková
   affiliation: Imaging Methods Core Facility at Biocev, Charles University
-  orcid: 0000-0002-7623-5848
+  orcid: https://orcid.org/0000-0002-7623-5848
   alias: cockovaz
 - given-names: Jan
   family-names: Eglinger
@@ -192,7 +192,7 @@ authors:
 - given-names: Yohsuke
   family-names: Fukai T.
   affiliation: Pioneering Research Institute, RIKEN
-  orcid: 0000-0002-8860-7178
+  orcid: https://orcid.org/0000-0002-8860-7178
   alias: yfukai
 - given-names: Christoph
   family-names: Gohlke
@@ -317,7 +317,7 @@ authors:
 - given-names: Rensu Petrus
   family-names: Theart
   affiliation: Department of Electrical and Electronic Engineering, Stellenbosch University
-  orcid: 0000-0003-0508-1690
+  orcid: https://orcid.org/0000-0003-0508-1690
   alias: rensutheart
 - given-names: Kim
   family-names: Pevey
