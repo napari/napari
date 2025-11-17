@@ -6,10 +6,13 @@ from vispy.visuals.transforms.linear import STTransform
 
 class TiledImageNode(Node):
     def __init__(
-        self, data: np.ndarray, tile_size=int, texture_format=None
+        self,
+        data: np.ndarray,
+        tile_size: int,
+        texture_format: str | None = None,
     ) -> None:
         self.texture_format = texture_format
-        self.adopted_children = []
+        self.adopted_children: list[Image] = []
         self.tile_size = tile_size
         super().__init__()
 
