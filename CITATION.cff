@@ -149,6 +149,11 @@ authors:
   family-names: Bragantini
   affiliation: Chan Zuckerberg Biohub
   alias: JoOkuma
+- given-names: David
+  family-names: Bunten
+  affiliation: University of Colorado Anschutz
+  orcid: https://orcid.org/0000-0001-6041-3665
+  alias: d33bs
 - given-names: Matthias
   family-names: Bussonnier
   affiliation: Quansight Labs
