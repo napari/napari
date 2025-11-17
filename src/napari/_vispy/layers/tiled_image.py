@@ -18,7 +18,7 @@ class TiledImageNode(Node):
 
         self.set_data(data)
 
-    def set_data(self, data):
+    def set_data(self, data: np.ndarray) -> None:
         tiles = make_tiles(data, self.tile_size)
         self.offsets = [of for of, _ in tiles]
         self.data = data
@@ -47,7 +47,7 @@ class TiledImageNode(Node):
         for child in self.adopted_children:
             child.set_gl_state(*args, **kwargs)
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str):
         if (
             name in ['cmap', 'clim', 'opacity', 'gamma', 'events']
             and len(self.adopted_children) > 0
@@ -55,7 +55,7 @@ class TiledImageNode(Node):
             return getattr(self.adopted_children[0], name)
         return self.__getattribute__(name)
 
-    def __setattr__(self, name, value):
+    def __setattr__(self, name: str, value: any) -> None:
         if name in ['cmap', 'clim', 'opacity', 'gamma']:
             for child in self.adopted_children:
                 setattr(child, name, value)
@@ -63,7 +63,9 @@ class TiledImageNode(Node):
             super().__setattr__(name, value)
 
 
-def make_tiles(image, tile_size):
+def make_tiles(
+    image: np.ndarray, tile_size: int
+) -> list[tuple[tuple[int, int], np.ndarray]]:
     """
     Splits a large image (grayscale or RGB) into tiles and creates Image visuals for each tile.
     Supports input shapes (H, W) for grayscale or (H, W, 3) for RGB.
