@@ -184,6 +184,11 @@ authors:
   family-names: Freeman
   affiliation: Chan Zuckerberg Initiative
   alias: freeman-lab
+- given-names: Yohsuke
+  family-names: Fukai T.
+  affiliation: Pioneering Research Institute, RIKEN
+  orcid: 0000-0002-8860-7178
+  alias: yfukai
 - given-names: Christoph
   family-names: Gohlke
   affiliation: University of California, Irvine
