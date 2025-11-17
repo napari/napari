@@ -1,3 +1,5 @@
+from typing import Any
+
 import numpy as np
 from vispy.scene.node import Node
 from vispy.scene.visuals import Image
@@ -43,11 +45,11 @@ class TiledImageNode(Node):
             ):
                 ch.transform = STTransform(translate=offset + (0,))
 
-    def set_gl_state(self, *args, **kwargs):
+    def set_gl_state(self, *args: Any, **kwargs: Any) -> None:
         for child in self.adopted_children:
             child.set_gl_state(*args, **kwargs)
 
-    def __getattr__(self, name: str):
+    def __getattr__(self, name: str) -> Any:
         if (
             name in ['cmap', 'clim', 'opacity', 'gamma', 'events']
             and len(self.adopted_children) > 0
@@ -55,7 +57,7 @@ class TiledImageNode(Node):
             return getattr(self.adopted_children[0], name)
         return self.__getattribute__(name)
 
-    def __setattr__(self, name: str, value: any) -> None:
+    def __setattr__(self, name: str, value: Any) -> None:
         if name in ['cmap', 'clim', 'opacity', 'gamma']:
             for child in self.adopted_children:
                 setattr(child, name, value)
