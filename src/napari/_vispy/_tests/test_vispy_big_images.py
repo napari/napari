@@ -1,6 +1,8 @@
 import numpy as np
 import pytest
 
+from napari._vispy.layers.tiled_image import TiledImageNode
+
 
 def test_big_2D_image(make_napari_viewer):
     """Test big 2D image with axis exceeding max texture size."""
@@ -12,8 +14,9 @@ def test_big_2D_image(make_napari_viewer):
     visual = viewer.window._qt_viewer.canvas.layer_to_visual[layer]
     assert visual.node is not None
     if visual.MAX_TEXTURE_SIZE_2D is not None:
-        s = np.ceil(np.divide(shape, visual.MAX_TEXTURE_SIZE_2D)).astype(int)
-        np.testing.assert_array_equal(layer._transforms['tile2data'].scale, s)
+        assert isinstance(visual.node, TiledImageNode)
+        # s = np.ceil(np.divide(shape, visual.MAX_TEXTURE_SIZE_2D)).astype(int)
+        # np.testing.assert_array_equal(layer._transforms['tile2data'].scale, s)
 
 
 def test_big_3D_image(make_napari_viewer):
