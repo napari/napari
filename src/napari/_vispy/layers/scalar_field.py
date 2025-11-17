@@ -70,7 +70,7 @@ class VispyScalarFieldBaseLayer(VispyBaseLayer[ScalarFieldBase]):
         # self.reset(). This means that we have to call it manually. Also,
         # it must be called before reset in order to set the appropriate node
         # first
-        self._on_display_change(fix_data_dtype(self.layer._data_view))
+        self._on_display_change()
         self.reset()
         self._on_data_change()
 
