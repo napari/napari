@@ -165,6 +165,11 @@ authors:
   affiliation: Unaffiliated
   orcid: https://orcid.org/0000-0001-7194-7750
   alias: ian-coccimiglio
+- given-names: Zuzana
+  family-names: Čočková
+  affiliation: Imaging Methods Core Facility at Biocev, Charles University
+  orcid: 0000-0002-7623-5848
+  alias: cockovaz
 - given-names: Jan
   family-names: Eglinger
   affiliation: Friedrich Miescher Institute for Biomedical Research (FMI), Basel (Switzerland)
