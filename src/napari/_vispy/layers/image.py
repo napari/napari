@@ -73,13 +73,12 @@ class ImageLayerNode(ScalarFieldLayerNode):
 
         # Return Image or Volume node based on 2D or 3D.
         if ndisplay == 2:
-            if shape is not None:
-                if np.any(np.greater(shape, self.MAX_TEXTURE_SIZE_2D)):
-                    res = self._tiledimage_node
-                else:
-                    res = self._image_node
-            else:
+            if shape is None or not np.any(
+                np.greater(shape, self.MAX_TEXTURE_SIZE_2D)
+            ):
                 res = self._image_node
+            else:
+                res = self._tiledimage_node
         else:
             res = self._volume_node
         if (
