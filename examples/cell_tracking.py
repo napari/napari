@@ -73,15 +73,8 @@ print(f"mask shape is {masks.shape}")
 tif_folder = tmp_dir/ "01"
 
 # Extract raw images
-with tarfile.open(tif_path, 'r:gz') as tar:
-    clean_members = []
-    for member in tar.getmembers():
-        path_parts = Path(member.name).parts
-        # Skip cached apple double compression files (for mac users) 
-        if not any(part.startswith('._') or part == '__MACOSX' for part in path_parts):
-            clean_members.append(member)
-    
-    tar.extractall(path=tif_folder, members=clean_members)
+with tarfile.open(tif_path, 'r:gz') as tar: 
+    tar.extractall(path=tif_folder)
 
 # Sort through images and stack them
 imgs = [f for f in sorted((tif_folder).rglob ("*.tif"))
