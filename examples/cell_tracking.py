@@ -77,10 +77,10 @@ with tarfile.open(tif_path, 'r:gz') as tar:
     clean_members = []
     for member in tar.getmembers():
         path_parts = Path(member.name).parts
-        # Skip cached apple double compression files (for mac users) 
+        # Skip cached apple double compression files (for mac users)
         if not any(part.startswith('._') or part == '__MACOSX' for part in path_parts):
             clean_members.append(member)
-    
+
     tar.extractall(path=tif_folder, members=clean_members)
 
 # Sort through images and stack them
