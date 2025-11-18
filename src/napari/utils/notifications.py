@@ -10,8 +10,8 @@ from datetime import datetime
 from enum import auto
 from types import TracebackType
 
+from napari.utils.compat import StrEnum as StringEnum
 from napari.utils.events import Event, EventEmitter
-from napari.utils.misc import StringEnum
 
 name2num = {
     'error': 40,
@@ -99,7 +99,11 @@ class Notification(Event):
         actions: ActionSequence = (),
         **kwargs,
     ) -> None:
-        self.severity = NotificationSeverity(severity)
+        self.severity = (
+            NotificationSeverity[severity.upper()]
+            if isinstance(severity, str)
+            else severity
+        )
         super().__init__(type_name=str(self.severity).lower(), **kwargs)
         self._message = message
         self.actions = actions
