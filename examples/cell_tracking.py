@@ -46,11 +46,6 @@ if not gt_folder.exists():
 else:
     print(f"Using cached ground truth at {gt_folder}")
 
-# Show content of extractions for validation/dubugging
-print("Contents of tmp_dir after extraction:")
-for p in tmp_dir.rglob("*"):
-    print(f"Extracted {p} files to {tmp_dir}")
-
 # Extract data for trackastra based silver truth
 st_url = "https://zenodo.org/records/15852284/files/masks_pred.npz?download=1"
 st_path = pooch.retrieve(
@@ -61,16 +56,13 @@ st_path = pooch.retrieve(
 )
 
 # Extract raw tif files for trackastra
-tif_url = "https://zenodo.org/records/17267522/files/01.tar.gz?download=1"
+tif_url = "https://zenodo.org/records/17643282/files/01(1).zip?download=1"
 tif_path = pooch.retrieve(
     url=tif_url,
-    fname="01.tar.gz",
+    fname="01(1).zip",
     known_hash=None,
     path=pooch.os_cache("napari_cell_tracking_example")
 )
-
-print(f"loading predicted masks from {st_path}")
-print(f"Loading raw images from {tif_path}")
 
 # Load the downloaded masks
 masks_npz = np.load(st_path)
@@ -82,14 +74,7 @@ tif_folder = tmp_dir/ "01"
 
 # Extract raw images 
 with tarfile.open(tif_path, 'r:gz') as tar:
-    clean_members = []
-    for member in tar.getmembers():
-        path_parts = Path(member.name).parts
-        # Skip cached apple double compression files (for mac users) 
-        if not any(part.startswith('._') or part == '__MACOSX' for part in path_parts):
-            clean_members.append(member)
-    
-    tar.extractall(path=tif_folder, members=clean_members)
+    tar.extractall(path=tif_folder)
 
 # Sort through images and stack them 
 imgs = [f for f in sorted((tif_folder).rglob ("*.tif"))
