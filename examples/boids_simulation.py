@@ -7,7 +7,7 @@ from within napari.  The basis of the compute-intensive simulation in this
 example is a 3D implementation of Boids [1]_ which is accelerated by using
 multiple CPU cores either on a single machine (e.g. a laptop) via the
 multiprocessing [2]_ module from the Python Standard Library or across
-multiple nodes (e.g. a Linux cluster or even a HPE/Cray supercomputer) via
+multiple nodes (e.g. a Linux cluster or even a supercomputer) via
 Dragon [3]_ which plugs into standard multiprocessing to extend it to
 execute across multiple nodes.
 
