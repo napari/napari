@@ -144,7 +144,7 @@ TIPS = [
     'You can change most shortcuts from the File→Preferences→Shortcuts menu!',
     'You can right click many components of the graphical interface to access advanced controls!',
     'If you select multiple layers in the layer list, and Right-Click→Link-Layers, their parameters will be synced!',
-    'You can press Ctrl/Cmd and scroll the mouse wheel to move the dimension sliders!',
+    'You can press Ctrl and scroll the mouse wheel to move the dimension sliders!',
 ]
 
 
