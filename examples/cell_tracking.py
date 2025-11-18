@@ -12,17 +12,17 @@ You can find the data on: https://doi.org/10.5281/zenodo.15597019
 
 .. tags:: visualization-advanced, colored 2D tracks
 """
+import tarfile
 import zipfile
 from pathlib import Path
 
 import numpy as np
-import pandas as pd
 import pooch
 import tifffile
-import napari
-import tarfile
 from trackastra.model import Trackastra
-from trackastra.tracking import graph_to_ctc, ctc_to_napari_tracks
+from trackastra.tracking import ctc_to_napari_tracks, graph_to_ctc
+
+import napari
 
 # Create temporary directory
 tmp_dir = Path(pooch.os_cache('napari-cell-tracking-example'))
@@ -38,7 +38,7 @@ gt_path = pooch.retrieve(url=gt_url,
 # Make ground truth sub directory
 gt_folder = tmp_dir / "TRA"
 
-# Extract compressed ground truth data 
+# Extract compressed ground truth data
 if not gt_folder.exists():
     print(f"Extracting {gt_path} to {gt_folder}")
     with zipfile.ZipFile(gt_path, 'r') as zip_ref:
@@ -50,8 +50,8 @@ else:
 st_url = "https://zenodo.org/records/15852284/files/masks_pred.npz?download=1"
 st_path = pooch.retrieve(
     url=st_url,
-    fname="masks_pred.npz",  
-    known_hash=None,  
+    fname="masks_pred.npz",
+    known_hash=None,
     path=pooch.os_cache("napari cell tracking example")
 )
 
@@ -72,11 +72,18 @@ print(f"mask shape is {masks.shape}")
 # Make raw tif sub directory
 tif_folder = tmp_dir/ "01"
 
-# Extract raw images 
+# Extract raw images
 with tarfile.open(tif_path, 'r:gz') as tar:
-    tar.extractall(path=tif_folder)
+    clean_members = []
+    for member in tar.getmembers():
+        path_parts = Path(member.name).parts
+        # Skip cached apple double compression files (for mac users) 
+        if not any(part.startswith('._') or part == '__MACOSX' for part in path_parts):
+            clean_members.append(member)
+    
+    tar.extractall(path=tif_folder, members=clean_members)
 
-# Sort through images and stack them 
+# Sort through images and stack them
 imgs = [f for f in sorted((tif_folder).rglob ("*.tif"))
         if not f.name.startswith("._")]
 
@@ -85,7 +92,7 @@ valid_files = []
 for f in imgs:
     try:
         with tifffile.TiffFile(f) as tif:
-            tif.pages[0]  
+            tif.pages[0]
         valid_files.append(f)
     except Exception as e:
         print(f"Skipping {f.name} — not a valid TIFF ({e})")
@@ -102,7 +109,7 @@ if images.shape[0] != masks.shape[0]:
 
 if len(masks_npz.files) > 0:
     first_key = masks_npz.files[0]
-    masks = masks_npz['masks']  
+    masks = masks_npz['masks']
     print(f"Loaded masks from key '{first_key}' with shape: {masks.shape}")
 else:
     raise ValueError("No arrays found in npz file")
@@ -114,7 +121,7 @@ model = Trackastra.from_pretrained("general_2d", device='cpu')
 graph, *_ = model.track(imgs=images, masks=masks, mode='greedy')
 tracks_df, tracked_masks = graph_to_ctc(graph=graph, masks_original=masks)
 
-napari_tracks, napari_graph = ctc_to_napari_tracks(segmentation=tracked_masks, man_track=tracks_df) 
+napari_tracks, napari_graph = ctc_to_napari_tracks(segmentation=tracked_masks, man_track=tracks_df)
 
 # Quick check to see if everything looks ok
 print(f"DataFrame columns: {tracks_df.columns.tolist()}")
