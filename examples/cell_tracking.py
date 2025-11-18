@@ -73,7 +73,7 @@ print(f"mask shape is {masks.shape}")
 tif_folder = tmp_dir/ "01"
 
 # Extract raw images
-with tarfile.open(tif_path, 'r:gz') as tar: 
+with tarfile.open(tif_path, 'r:gz') as tar:
     tar.extractall(path=tif_folder)
 
 # Sort through images and stack them
