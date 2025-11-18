@@ -10,6 +10,7 @@ from vispy.visuals import ImageVisual
 from napari._vispy.layers.base import VispyBaseLayer
 from napari._vispy.layers.tiled_image import TiledImageNode
 from napari._vispy.utils.gl import fix_data_dtype
+from napari._vispy.visuals.labels import LabelNode
 from napari._vispy.visuals.volume import Volume as VolumeNode
 from napari.layers._scalar_field.scalar_field import ScalarFieldBase
 from napari.utils.translations import trans
@@ -119,6 +120,12 @@ class VispyScalarFieldBaseLayer(VispyBaseLayer[ScalarFieldBase]):
         if ndisplay > data.ndim:
             data = data.reshape((1,) * (ndisplay - data.ndim) + data.shape)
 
+        if (
+            self.MAX_TEXTURE_SIZE_2D is not None
+            and ndisplay == 2
+            and isinstance(node, LabelNode)
+        ):
+            data = self.downsample_texture(data, self.MAX_TEXTURE_SIZE_2D)
         if self.MAX_TEXTURE_SIZE_3D is not None and ndisplay == 3:
             data = self.downsample_texture(data, self.MAX_TEXTURE_SIZE_3D)
 
