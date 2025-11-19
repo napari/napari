@@ -96,9 +96,21 @@ class TiledImageNode(Node):
 def make_tiles(
     image: np.ndarray, tile_size: int
 ) -> list[tuple[tuple[int, int], np.ndarray]]:
-    """
-    Splits a large image (grayscale or RGB) into tiles and creates Image visuals for each tile.
+    """Split a large image into a list of tiles and offsets.
+
     Supports input shapes (H, W) for grayscale or (H, W, 3) for RGB.
+    
+    Parameters
+    ----------
+    image : np.ndarray, shape (H, W[, 3])
+        The input image.
+    tile_size : int
+        The maximum size of any tile along any axis.
+        
+    Returns
+    -------
+    tile_list : list[tuple[tuple[int, int], np.ndarray]]
+        List of x, y offsets and corresponding array tiles.
     """
     if image.ndim == 2:
         h, w = image.shape
