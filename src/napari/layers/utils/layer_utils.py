@@ -290,7 +290,11 @@ def calc_data_range(
     return (float(min_val), float(max_val))
 
 
-def segment_normal(a, b, p=(0, 0, 1)) -> np.ndarray:
+def segment_normal(
+    a: npt.NDArray[Any],
+    b: npt.NDArray[Any],
+    p: tuple[int, int, int] = (0, 0, 1),
+) -> np.ndarray:
     """Determines the unit normal of the vector from a to b.
 
     Parameters
@@ -329,7 +333,7 @@ def segment_normal(a, b, p=(0, 0, 1)) -> np.ndarray:
     return normal / norm
 
 
-def convert_to_uint8(data: np.ndarray) -> np.ndarray:
+def convert_to_uint8(data: npt.NDArray[Any]) -> npt.NDArray[np.uint8]:
     """
     Convert array content to uint8, always returning a copy.
 
@@ -603,7 +607,7 @@ def compute_multiscale_level_and_corners(
 
 
 def coerce_affine(
-    affine: npt.ArrayLike | Affine,
+    affine: npt.ArrayLike | Affine | None,
     *,
     ndim: int,
     name: str | None = None,
@@ -616,7 +620,7 @@ def coerce_affine(
 
     Parameters
     ----------
-    affine : array-like or napari.utils.transforms.Affine
+    affine : array-like or napari.utils.transforms.Affine, optional
         An existing affine transform object or an array-like that is its transform matrix.
     ndim : int
         The desired dimensionality of the transform. Ignored is affine is an Affine transform object.

@@ -1,15 +1,23 @@
+from __future__ import annotations
+
 from collections.abc import Iterable
+from typing import TYPE_CHECKING
 
 import numpy as np
 import numpy.typing as npt
 
+if TYPE_CHECKING:
+    from typing import Any
 
-def format_float(value):
+    import numpy.typing as npt
+
+
+def format_float(value: float) -> str:
     """Nice float formatting into strings."""
     return f'{value:0.3g}'
 
 
-def status_format(value):
+def status_format(value: str | Iterable[Any] | float | np.ndarray) -> str:
     """Return a "nice" string representation of a value.
 
     Parameters
