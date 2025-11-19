@@ -112,10 +112,7 @@ def make_tiles(
     tile_list : list[tuple[tuple[int, int], np.ndarray]]
         List of x, y offsets and corresponding array tiles.
     """
-    if image.ndim == 2:
-        h, w = image.shape
-    elif image.ndim == 3 and image.shape[2] == 3:
-        h, w, _ = image.shape
+    h, w, *_ = image.shape
 
     # Calculate number of tiles needed
     tiles_y = int(np.ceil(h / tile_size))
