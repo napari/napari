@@ -67,6 +67,25 @@ class ImageLayerNode(ScalarFieldLayerNode):
         dtype: np.dtype | None = None,
         shape: tuple | None = None,
     ) -> Node:
+    """Return the relevant Vispy VisualNode for current visualization.
+    
+    - For small 2D images, this is an Image node.
+    - For large 2D images, this is our custom TiledImage node.
+    - For 3D images, this is a Volume node.
+    
+    Parameters
+    ----------
+    ndisplay : {2, 3}
+        The current number of displayed dimensions.
+    dtype : np.dtype
+        The dtype of the current data.
+    shape : tuple[int, ...]
+        The shape of the current data slice.
+        
+    Returns:
+    node : vispy.scene.Node
+        The Node instance to use to display the data.
+    """
         # Return custom node if we have one.
         if self._custom_node is not None:
             return self._custom_node
