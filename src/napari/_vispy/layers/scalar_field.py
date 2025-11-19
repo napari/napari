@@ -139,7 +139,6 @@ class VispyScalarFieldBaseLayer(VispyBaseLayer[ScalarFieldBase]):
         ):
             self._on_display_change(data)
         else:
-            # if not  isinstance(node, TiledImageNode):
             node.set_data(data)
             node.visible = not self.layer._slice.empty and self.layer.visible
 
