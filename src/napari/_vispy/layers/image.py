@@ -72,15 +72,17 @@ class ImageLayerNode(ScalarFieldLayerNode):
             return self._custom_node
 
         # Return Image or Volume node based on 2D or 3D.
-        if ndisplay == 2:
-            if shape is None or not np.any(
-                np.greater(shape, self.MAX_TEXTURE_SIZE_2D)
-            ):
-                res = self._image_node
-            else:
+        M2D = self.MAX_TEXTURE_SIZE_2D
+        match ndisplay, shape:
+            # 2D grayscale or RGB w/ any dimension exceeding max texture size
+            case 2, (s0, s1, *_) if s0 > M2D or s1 > M2D:
                 res = self._tiledimage_node
-        else:
-            res = self._volume_node
+            # any other 2D
+            case 2, _:
+                res = self._image_node
+            # 3D
+            case _:
+                res = self._volume_node
         if (
             res.texture_format not in {'auto', None}
             and dtype is not None
