@@ -1283,6 +1283,7 @@ class Window:
             layers_events.inserted.connect(widget.reset_choices)
             layers_events.removed.connect(widget.reset_choices)
             layers_events.reordered.connect(widget.reset_choices)
+            layers_events.renamed.connect(widget.reset_choices)
 
         # Add dock widget to dictionary
         self._wrapped_dock_widgets[dock_widget.name] = dock_widget
