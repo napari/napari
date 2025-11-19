@@ -114,28 +114,13 @@ def make_tiles(
     """
     h, w, *_ = image.shape
 
-    # Calculate number of tiles needed
-    tiles_y = int(np.ceil(h / tile_size))
-    tiles_x = int(np.ceil(w / tile_size))
-
-    # Create a separate Image visual for each tile
-    tile_list = []
-    for ty in range(tiles_y):
-        for tx in range(tiles_x):
-            # Calculate tile position and size
-            x = tx * tile_size
-            y = ty * tile_size
-
-            w_tile = min(tile_size, w - x)
-            h_tile = min(tile_size, h - y)
-
-            # Skip if tile is empty
-            if w_tile <= 0 or h_tile <= 0:
-                continue
-
-            # Extract tile data
-            tile_data = image[y : y + h_tile, x : x + w_tile]
-
-            tile_list.append(((x, y), tile_data))
+    tile_list = [
+        # note: vispy space is transposed (y, x -> x, y) compared to NumPy
+        # indexing space; we want the vispy offsets so we swap them here.
+        ((x, y), image[y : y + tile_size, x : x + tile_size])
+        for y, x in itertools.product(
+            range(0, h, tile_size), range(0, w, tile_size)
+        )
+    ]
 
     return tile_list
