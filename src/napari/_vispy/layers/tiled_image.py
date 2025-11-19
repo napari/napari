@@ -99,14 +99,14 @@ def make_tiles(
     """Split a large image into a list of tiles and offsets.
 
     Supports input shapes (H, W) for grayscale or (H, W, 3) for RGB.
-    
+
     Parameters
     ----------
     image : np.ndarray, shape (H, W[, 3])
         The input image.
     tile_size : int
         The maximum size of any tile along any axis.
-        
+
     Returns
     -------
     tile_list : list[tuple[tuple[int, int], np.ndarray]]
