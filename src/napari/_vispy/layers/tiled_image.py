@@ -7,6 +7,34 @@ from vispy.visuals.transforms.linear import STTransform
 
 
 class TiledImageNode(Node):
+    """Custom Vispy scenegraph Node to display large images.
+
+    Vispy 2D rendering works by drawing images as 2D OpenGL textures.
+    OpenGL has a texture size limit (driver and hardware dependent), which
+    means that some images are too large to be displayed by a single
+    texture. This class automatically split those images into tiles not
+    exceeding the texture size, and displays each tile as a texture, offset
+    by the appropriate amount in visual space.
+
+    Attributes such as colormap and contrast limits are passed through to
+    the child nodes using setattr.
+
+    Attributes
+    ----------
+    data : np.ndarray
+        The data to be displayed.
+    texture_format : str
+        The texture format (uint8, uint16, float32).
+    tile_size : int
+        The maximum tile size, used to split the image.
+    adopted_children : list[Image]
+        The child Image nodes containing the component tiles of the image.
+        Note: we use the term "adopted children" because "children" is a
+        protected attribute of the Node class, and contains other VisualNodes.
+    offsets : list[tuple[int, int]]
+        The x/y offset of each tile (in the same order as `adopted_children`).
+    """
+
     def __init__(
         self,
         data: np.ndarray,
