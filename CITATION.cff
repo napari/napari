@@ -384,5 +384,10 @@ authors:
   affiliation: Chinese Academy of Sciences - SIAT, Shenzhen, China
   orcid: https://orcid.org/0009-0005-8264-5682
   alias: BeanLi
+- given-names: Guillaume
+  family-names: Witz
+  affiliation: Data Science Lab, University of Bern, Switzerland
+  orcid: https://orcid.org/0000-0003-1562-4265
+  alias: guiwitz
 repository-code: https://github.com/napari/napari
 license: BSD-3-Clause
