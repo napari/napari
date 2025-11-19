@@ -1,3 +1,4 @@
+import itertools
 from typing import Any
 
 import numpy as np
@@ -12,7 +13,7 @@ class TiledImageNode(Node):
     Vispy 2D rendering works by drawing images as 2D OpenGL textures.
     OpenGL has a texture size limit (driver and hardware dependent), which
     means that some images are too large to be displayed by a single
-    texture. This class automatically split those images into tiles not
+    texture. This class automatically splits those images into tiles not
     exceeding the texture size, and displays each tile as a texture, offset
     by the appropriate amount in visual space.
 
