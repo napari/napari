@@ -1154,6 +1154,7 @@ class VispyCanvas:
                 napari_layer = self.viewer.layers[idx]
                 vispy_layer = self.layer_to_visual[napari_layer]
                 vispy_layer.node.parent = view.scene
+                self._update_layer_overlays(napari_layer)
 
     @property
     def _current_viewbox_size(self):
