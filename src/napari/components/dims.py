@@ -217,6 +217,8 @@ class Dims(EventedModel):
                 updated['axis_labels'] = (
                     tuple(map(str, range(ndim - labels_ndim))) + axis_labels
                 )
+        elif labels_ndim > ndim:
+            updated['axis_labels'] = axis_labels[-ndim:]
 
         # Check the rollable axes tuple has same number of elements as ndim
         updated['rollable'] = ensure_len(values['rollable'], ndim, True)
