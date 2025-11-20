@@ -457,3 +457,13 @@ def test_negative_translate(make_napari_viewer, qtbot):
     viewer = make_napari_viewer()
     _ = viewer.add_image(data, translate=(-1, 0, 0))
     assert viewer.dims.range[2].start == -1
+
+
+def test_extra_axis_dims(make_napari_viewer, qtbot):
+    """
+    Check that > 2 axis dimension names persist.
+    """
+    data = np.random.random((10, 12, 12))
+    viewer = make_napari_viewer(axis_labels=('z', 'y', 'x'))
+    _ = viewer.add_image(data)
+    assert viewer.dims.axis_labels == ('z', 'y', 'x')
