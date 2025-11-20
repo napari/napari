@@ -61,23 +61,33 @@ for t in range(n_timepoints):
     mag = np.linalg.norm(displacement, axis=1)
     all_magnitudes.append(mag)
 
+    # Build vector data in napari's expected format: (N vectors, 2, D)
+    # For 3D+T data: N vectors, 2 points (start + displacement), D=4 dimensions (t,z,y,x)
+    # Shape for this timepoint: (n_particles, 2, 4)
+    vectors_t = np.stack([
+        np.column_stack([np.full(n_particles, t), positions]),  # Start: (t, z, y, x)
+        np.column_stack([np.zeros(n_particles), displacement])  # Displacement: (0, dz, dy, dx)
+    ], axis=1)
+
     # Store current state
     all_positions.append(positions.copy())
-    all_vectors.append(
-        np.stack([
-            np.column_stack([np.full(n_particles, t), positions]),
-            np.column_stack([np.zeros(n_particles), displacement])
-        ], axis=1)
-    )
+    all_vectors.append(vectors_t)
 
     # Update positions by taking just part of the displacement for each timepoint
     # otherwise, something like a tracks layer would be more useful!
     positions += displacement * 0.1
 
-# Combine all timepoints
+# Combine all timepoints into final arrays
+# Points: shape (n_particles * n_timepoints, 4) with (t, z, y, x)
 points = np.vstack([np.column_stack([np.full(n_particles, t), pos])
                     for t, pos in enumerate(all_positions)])
+
+# Vectors: shape (n_particles * n_timepoints, 2, 4)
+# First column [N vectors, 0, :] = starting positions (t, z, y, x)
+# Second column [N vectors, 1, :] = displacement vectors (0, dz, dy, dx)
 vectors = np.vstack(all_vectors)
+
+# Magnitudes for coloring: shape (n_particles * n_timepoints,)
 magnitudes = np.concatenate(all_magnitudes)
 
 # Create viewer and add layers
