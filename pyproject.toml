@@ -1032,3 +1032,40 @@ ignore_imports = [
     # TODO: remove once npe1 deprecated
     "napari._qt.qt_main_window -> napari._qt._qplugins",
 ]
+
+[tool.pixi.workspace]
+channels = ["conda-forge"]
+platforms = ["win-64"]
+
+[tool.pixi.dependencies]
+python = ">=3.10,<3.14"
+
+[tool.pixi.pypi-dependencies]
+napari = { path = ".", editable = true }
+
+[tool.pixi.environments]
+default = { features = ["pyqt", "optional"] }
+all = { features = ["all"] }
+all-optional = { features = ["all_optional"] }
+bermuda = { features = ["bermuda"] }
+build = { features = ["build"] }
+dev = { features = ["dev"] }
+docs = { features = ["docs"] }
+gallery = { features = ["gallery"] }
+optional = { features = ["optional"] }
+optional-base = { features = ["optional-base"] }
+optional-numba = { features = ["optional-numba"] }
+partsegcore = { features = ["partsegcore"] }
+pyqt = { features = ["pyqt"] }
+pyqt5 = { features = ["pyqt5"] }
+pyqt6 = { features = ["pyqt6"] }
+pyqt6-optional = { features = ["pyqt6", "optional"] }
+# pyside = { features = ["pyside"] } - not supported on Windows
+# pyside2 = { features = ["pyside2"] } - not supported on Windows
+pyside6 = { features = ["pyside6"] }
+qt = { features = ["qt"] }
+release = { features = ["release"] }
+testing = { features = ["testing"] }
+testing-extra = { features = ["testing_extra"] }
+
+[tool.pixi.tasks]
