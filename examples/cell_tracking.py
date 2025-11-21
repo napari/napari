@@ -12,7 +12,6 @@ You can find the data on: https://doi.org/10.5281/zenodo.15597019
 
 .. tags:: visualization-advanced, colored 2D tracks
 """
-import tarfile
 import zipfile
 from pathlib import Path
 
@@ -54,7 +53,7 @@ masks = masks_npz['masks']
 tif_folder = tmp_dir/ "01"
 
 # Extract raw images
-with zipfile.ZipFile(tif_path, 'r') as zip: 
+with zipfile.ZipFile(tif_path, 'r') as zip:
     zip.extractall(path=tif_folder)
 
 # Sort through images and stack them
