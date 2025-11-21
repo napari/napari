@@ -22,6 +22,7 @@ from napari.resources._icons import _theme_path
 from napari.settings import get_settings
 from napari.utils import config, perf
 from napari.utils._logging import register_logger_to_napari_handler
+from napari.utils.logo import get_logo_path
 from napari.utils.notifications import (
     notification_manager,
     show_console_notification,
@@ -33,8 +34,10 @@ from napari.utils.translations import trans
 if TYPE_CHECKING:
     from IPython import InteractiveShell
 
-NAPARI_ICON_PATH = os.path.join(
-    os.path.dirname(__file__), '..', 'resources', 'logo.png'
+NAPARI_ICON_PATH = str(
+    get_logo_path(
+        get_settings().appearance.logo, get_settings().appearance.theme
+    )
 )
 NAPARI_APP_ID = f'napari.napari.viewer.{__version__}'
 
