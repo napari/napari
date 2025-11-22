@@ -82,7 +82,7 @@ jobs:
           PR_AFFILIATION: ${{ github.event.pull_request.user.company }}
         run: |
           echo "PR author: $PR_AUTHOR"
-          if [ "$PR_AUTHOR" = "napari-bot" ] || [ "$PR_AUTHOR" = "pre-commit-ci" ] || [ "$PR_AUTHOR" = "dependabot" ]; then
+          if [[ "$PR_AUTHOR" == *"[bot]" || "$PR_AUTHOR" == "napari-bot" ]]; then
             echo "Bot author '$PR_AUTHOR' detected. Skipping CITATION.cff check."
             exit 0
           fi

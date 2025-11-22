@@ -1150,9 +1150,8 @@ class VispyCanvas:
         self.on_draw(None)
 
     def _setup_single_view(self):
-        for napari_layer, vispy_layer in self.layer_to_visual.items():
+        for vispy_layer in self.layer_to_visual.values():
             vispy_layer.node.parent = self.view.scene
-            self._update_layer_overlays(napari_layer)
 
     def _setup_layer_views_in_grid(self):
         for (row, col), layer_indices in self.viewer.grid.iter_viewboxes(
@@ -1174,7 +1173,6 @@ class VispyCanvas:
                 napari_layer = self.viewer.layers[idx]
                 vispy_layer = self.layer_to_visual[napari_layer]
                 vispy_layer.node.parent = view.scene
-                self._update_layer_overlays(napari_layer)
 
     @property
     def _current_viewbox_size(self):
