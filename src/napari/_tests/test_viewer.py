@@ -1,5 +1,5 @@
 import os
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import numpy as np
 import pytest
@@ -457,3 +457,23 @@ def test_negative_translate(make_napari_viewer, qtbot):
     viewer = make_napari_viewer()
     _ = viewer.add_image(data, translate=(-1, 0, 0))
     assert viewer.dims.range[2].start == -1
+
+
+def test_quitting_remove_layer(make_napari_viewer):
+    """Check that expensive layer removal steps are skipped when quitting."""
+    viewer = make_napari_viewer()
+    viewer.add_image(np.zeros([10, 10]))
+
+    canvas = viewer.window._qt_viewer.canvas
+
+    with (
+        patch('gc.collect') as mock_gc_collect,
+        patch.object(canvas._scene_canvas.context, 'finish') as mock_finish,
+        patch.object(canvas, '_update_scenegraph') as mock_update_scenegraph,
+    ):
+        with viewer.window._qt_viewer.canvas.quitting():
+            viewer.layers.clear()
+
+        mock_gc_collect.assert_not_called()
+        mock_finish.assert_not_called()
+        mock_update_scenegraph.assert_not_called()
