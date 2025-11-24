@@ -740,8 +740,6 @@ class VispyCanvas:
         self._overlay_callbacks[napari_layer] = overlay_callback
         self.viewer.camera.events.angles.connect(vispy_layer._on_camera_move)
 
-        # create overlay visuals for this layer
-        self._update_layer_overlays(napari_layer)
         # we need to trigger _on_matrix_change once after adding the overlays so that
         # all children nodes are assigned the correct transforms
         vispy_layer._on_matrix_change()
@@ -892,7 +890,6 @@ class VispyCanvas:
                         )
 
                 else:
-                    # TODO: check if this is noop when parent is the same
                     vispy_overlay.node.parent = parent
 
         self._defer_overlay_position_update()
@@ -944,7 +941,6 @@ class VispyCanvas:
                         self._defer_overlay_position_update
                     )
             else:
-                # TODO: check if this is noop when parent is the same
                 vispy_overlay.node.parent = parent
 
         self._defer_overlay_position_update()
