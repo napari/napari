@@ -1122,19 +1122,40 @@ class VispyCanvas:
         """Enable playing of animation. False if awaiting a draw event"""
         self.viewer.dims._play_ready = True
 
+    def _init_or_update_grid(self) -> None:
+        # grid are really not designed to be reset, so we have to replace it
+        # when necessary (every time the grid shape changes)
+        if self.grid.grid_size == self.viewer.grid.actual_shape(
+            len(self.viewer.layers)
+        ):
+            return
+
+        for camera in self.grid_cameras:
+            self._scene_canvas.events.draw.disconnect(camera.on_draw)
+            camera._2D_camera.parent = None
+            camera._3D_camera.parent = None
+        self.grid_cameras.clear()
+        self.grid_views.clear()
+        self.grid.parent = None
+
+        self.grid = self.central_widget.add_grid(border_width=0)
+
+        for (row, col), _ in self.viewer.grid.iter_viewboxes(
+            len(self.viewer.layers)
+        ):
+            view = self.grid[row, col]
+            # any border_color != None will add a padding of +1
+            # see https://github.com/vispy/vispy/issues/1492
+            view.border_width = 0
+            view.border_color = None
+
+            camera = VispyCamera(view, self.viewer.camera, self.viewer.dims)
+            self.grid_views.append(view)
+            self.grid_cameras.append(camera)
+
     def _update_scenegraph(self, event=None):
         with self._scene_canvas.events.draw.blocker():
-            for camera in self.grid_cameras:
-                camera._2D_camera.parent = None
-                camera._3D_camera.parent = None
-                self._scene_canvas.events.draw.disconnect(camera.on_draw)
-            self.grid_cameras.clear()
-            self.grid_views.clear()
-            # grid are really not designed to be reset, so it's easier to replace it
-            self.grid.parent = None
-
             if self.viewer.grid.enabled:
-                self.grid = self.central_widget.add_grid(border_width=0)
                 self._setup_layer_views_in_grid()
                 self._update_grid_spacing()
             else:
@@ -1155,17 +1176,7 @@ class VispyCanvas:
         for (row, col), layer_indices in self.viewer.grid.iter_viewboxes(
             len(self.viewer.layers)
         ):
-            if not layer_indices:
-                continue
             view = self.grid[row, col]
-            # any border_color != None will add a padding of +1
-            # see https://github.com/vispy/vispy/issues/1492
-            view.border_width = 0
-            view.border_color = None
-
-            camera = VispyCamera(view, self.viewer.camera, self.viewer.dims)
-            self.grid_views.append(view)
-            self.grid_cameras.append(camera)
 
             for idx in layer_indices:
                 napari_layer = self.viewer.layers[idx]
