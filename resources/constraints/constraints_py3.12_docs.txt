@@ -228,7 +228,7 @@ lazy-loader==0.4
     #   scikit-image
 linkify-it-py==2.0.3
     # via napari (pyproject.toml:docs)
-llvmlite==0.45.1
+llvmlite==0.44.0
     # via numba
 locket==1.0.0
     # via
@@ -322,7 +322,7 @@ npe2==0.7.9
     # via
     #   napari (pyproject.toml)
     #   napari-plugin-manager
-numba==0.62.1
+numba==0.61.2
     # via
     #   napari (pyproject.toml)
     #   glasbey
