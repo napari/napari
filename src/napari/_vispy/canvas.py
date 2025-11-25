@@ -1159,6 +1159,8 @@ class VispyCanvas:
 
     def _update_scenegraph(self, event=None):
         with self._scene_canvas.events.draw.blocker():
+            self._init_or_update_grid()
+
             if self.viewer.grid.enabled:
                 self._setup_layer_views_in_grid()
                 self._update_grid_spacing()
