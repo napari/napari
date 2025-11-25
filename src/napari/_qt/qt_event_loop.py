@@ -258,7 +258,7 @@ def get_qapp(
 def quit_app():
     """Close all windows and quit the QApplication if napari started it."""
     for v in list(Viewer._instances):
-        v.close()
+        v.close(_is_quitting=True)
     QApplication.closeAllWindows()
     # if we started the application then the app will be named 'napari'.
     if (
