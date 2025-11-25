@@ -328,7 +328,7 @@ numba==0.61.2
     #   glasbey
 numcodecs==0.16.5
     # via zarr
-numpy==2.3.5
+numpy==2.2.6
     # via
     #   napari (pyproject.toml)
     #   bermuda
