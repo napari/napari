@@ -915,6 +915,13 @@ class VispyCanvas:
             vispy_overlay.close()
 
         for overlay in layer._overlays.values():
+            # only create overlays when they are visible. If not, we connect the visible
+            # event of this overlay to this method until it's finally visible
+            if not overlay.visible:
+                overlay.events.visible.connect(self._overlay_callbacks[layer])
+                continue
+            overlay.events.visible.disconnect(self._overlay_callbacks[layer])
+
             vispy_overlay = overlay_to_visual.get(overlay, None)
 
             if isinstance(overlay, CanvasOverlay):
