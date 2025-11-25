@@ -903,7 +903,7 @@ class VispyCanvas:
         overlay_to_visual = self._layer_overlay_to_visual.setdefault(layer, {})
 
         # delete outdated overlays
-        if layer not in self.layer_to_visual:
+        if layer not in self.viewer.layers:
             to_remove = layer._overlays
         else:
             to_remove = set(overlay_to_visual) - set(layer._overlays)
@@ -911,8 +911,12 @@ class VispyCanvas:
         for overlay in to_remove:
             if isinstance(overlay, CanvasOverlay):
                 self._disconnect_canvas_overlay_events(overlay)
-            vispy_overlay = overlay_to_visual.pop(overlay)
-            vispy_overlay.close()
+            if vispy_overlay := overlay_to_visual.pop(overlay, None):
+                vispy_overlay.close()
+
+        if layer not in self.viewer.layers:
+            # we're just removing all the overlays of this layer, so we're done here
+            return
 
         for overlay in layer._overlays.values():
             # only create overlays when they are visible. If not, we connect the visible
