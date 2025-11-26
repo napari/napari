@@ -119,7 +119,7 @@ jobs:
           # Windows py310
           - python: "3.11"
             platform: windows-2022
-            backend: pyqt5 #,pyside2
+            backend: pyqt5
             coverage: no_cov
           - python: "3.13"
             platform: windows-2022
@@ -167,11 +167,6 @@ jobs:
             platform: ubuntu-latest
             backend: pyside6
             coverage: cov
-          # pyside2 test
-          - python: "3.10"
-            platform: ubuntu-latest
-            backend: pyside2
-            coverage: no_cov
     with:
       python_version: ${{ matrix.python }}
       platform: ${{ matrix.platform }}

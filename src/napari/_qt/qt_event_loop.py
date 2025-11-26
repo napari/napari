@@ -168,7 +168,7 @@ def get_qapp(
     else:
         # automatically determine monitor DPI.
         # Note: this MUST be set before the QApplication is instantiated. Also, this
-        # attributes need to be applied only to Qt5 bindings (PyQt5 and PySide2)
+        # attributes need to be applied only to Qt5 bindings (PyQt5)
         # since the High DPI scaling attributes are deactivated by default while on Qt6
         # they are deprecated and activated by default. For more info see:
         # https://doc.qt.io/qtforpython-6/gettingstarted/porting_from2.html#class-function-deprecations
