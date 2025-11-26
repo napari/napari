@@ -467,3 +467,11 @@ def test_extra_axis_dims(make_napari_viewer, qtbot):
     viewer = make_napari_viewer(axis_labels=('z', 'y', 'x'))
     _ = viewer.add_image(data)
     assert viewer.dims.axis_labels == ('z', 'y', 'x')
+
+
+def test_single_axis_name(make_napari_viewer, qtbot):
+    """
+    Check that an extra axis name is added if only one axis name is provided.
+    """
+    viewer = make_napari_viewer(axis_labels=('x',))
+    assert viewer.dims.axis_labels == ('0', 'x')
