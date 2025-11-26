@@ -475,3 +475,28 @@ def test_single_axis_name(make_napari_viewer, qtbot):
     """
     viewer = make_napari_viewer(axis_labels=('x',))
     assert viewer.dims.axis_labels == ('0', 'x')
+
+
+def test_axis_labels_after_data(make_napari_viewer, qtbot):
+    """
+    Check that axis labels persist after adding data in different ways.
+    """
+    original_labels = ('z', 'y', 'x')
+    viewer = make_napari_viewer(axis_labels=original_labels)
+    assert viewer.dims.ndim == 3
+    assert viewer.dims.axis_labels == original_labels
+
+    # Add data with same dimensionality as viewer
+    _ = viewer.add_image(np.random.random((10, 12, 12)))
+    assert viewer.dims.axis_labels == original_labels
+
+    # Add data with lower dimensionality than viewer
+    _ = viewer.add_image(np.random.random((10, 12)))
+    assert viewer.dims.axis_labels == original_labels
+
+    # Add data with lower dimensionality than viewer,
+    # with different axis labels
+    data_labels = ('i', 'j')
+    assert data_labels != original_labels
+    _ = viewer.add_image(np.random.random((10, 12)), axis_labels=data_labels)
+    assert viewer.dims.axis_labels == original_labels
