@@ -1004,9 +1004,8 @@ include_external_packages = true
 name = "Forbid import PyQt and PySide"
 type = "forbidden"
 source_modules = "napari"
-forbidden_modules = ["PyQt5", "PySide2", "PyQt6", "PySide6"]
+forbidden_modules = ["PyQt5", "PyQt6", "PySide6"]
 ignore_imports = [
-    "napari._qt -> PySide2",
     "napari.plugins._npe2 -> napari._qt._qplugins",
 ]
 
