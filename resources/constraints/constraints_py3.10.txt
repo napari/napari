@@ -447,13 +447,13 @@ pyscreeze==1.0.1
     # via pyautogui
 pyside2==5.15.2.1
     # via napari (pyproject.toml)
-pyside6==6.10.1
+pyside6==6.9.2
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
-pyside6-addons==6.10.1
+pyside6-addons==6.9.2
     # via pyside6
-pyside6-essentials==6.10.1
+pyside6-essentials==6.9.2
     # via
     #   pyside6
     #   pyside6-addons
@@ -548,7 +548,7 @@ shellingham==1.5.4
     # via typer
 shiboken2==5.15.2.1
     # via pyside2
-shiboken6==6.10.1
+shiboken6==6.9.2
     # via
     #   pyside6
     #   pyside6-addons
