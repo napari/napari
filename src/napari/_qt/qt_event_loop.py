@@ -5,7 +5,7 @@ import sys
 from typing import TYPE_CHECKING
 from warnings import warn
 
-from qtpy import PYQT5, PYSIDE2
+from qtpy import PYQT5
 from qtpy.QtCore import QDir, Qt
 from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import QApplication, QWidget
@@ -172,7 +172,7 @@ def get_qapp(
         # since the High DPI scaling attributes are deactivated by default while on Qt6
         # they are deprecated and activated by default. For more info see:
         # https://doc.qt.io/qtforpython-6/gettingstarted/porting_from2.html#class-function-deprecations
-        if PYQT5 or PYSIDE2:
+        if PYQT5:
             QApplication.setAttribute(
                 Qt.ApplicationAttribute.AA_EnableHighDpiScaling
             )
