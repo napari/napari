@@ -4,11 +4,11 @@ annotated-types==0.7.0
     # via pydantic
 build==1.3.0
     # via npe2
-certifi==2025.10.5
+certifi==2025.11.12
     # via requests
 charset-normalizer==3.4.4
     # via requests
-click==8.3.0
+click==8.3.1
     # via typer
 docstring-parser==0.17.0
     # via magicgui
@@ -26,7 +26,7 @@ mypy-extensions==1.1.0
     # via mypy
 npe2==0.7.9
     # via -r resources/requirements_mypy.in
-numpy==2.3.4
+numpy==2.3.5
     # via -r resources/requirements_mypy.in
 packaging==25.0
     # via
@@ -42,11 +42,11 @@ psygnal==0.15.0
     #   npe2
 pyconify==0.2.1
     # via superqt
-pydantic==2.12.3
+pydantic==2.12.4
     # via
     #   -r resources/requirements_mypy.in
     #   npe2
-pydantic-core==2.41.4
+pydantic-core==2.41.5
     # via pydantic
 pygments==2.19.2
     # via

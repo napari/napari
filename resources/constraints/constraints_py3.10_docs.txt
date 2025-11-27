@@ -22,14 +22,13 @@ appdirs==1.4.4
     # via napari (pyproject.toml)
 asciitree==0.3.3
     # via zarr
-asttokens==3.0.0
+asttokens==3.0.1
     # via stack-data
 async-timeout==5.0.1
     # via aiohttp
 attrs==25.4.0
     # via
     #   aiohttp
-    #   hypothesis
     #   jsonschema
     #   jupyter-cache
     #   referencing
@@ -48,13 +47,13 @@ build==1.3.0
     # via npe2
 cachey==0.2.1
     # via napari (pyproject.toml)
-certifi==2025.10.5
+certifi==2025.11.12
     # via
     #   napari (pyproject.toml)
     #   requests
 charset-normalizer==3.4.4
     # via requests
-click==8.3.0
+click==8.3.1
     # via
     #   dask
     #   distributed
@@ -62,7 +61,7 @@ click==8.3.0
     #   sphinx-external-toc
     #   typer
     #   uvicorn
-cloudpickle==3.1.1
+cloudpickle==3.1.2
     # via
     #   dask
     #   distributed
@@ -74,11 +73,11 @@ comm==0.2.3
     # via ipykernel
 contourpy==1.3.2
     # via matplotlib
-coverage==7.11.0
+coverage==7.12.0
     # via napari (pyproject.toml)
 cycler==0.12.1
     # via matplotlib
-dask==2025.10.0
+dask==2025.11.0
     # via
     #   napari (pyproject.toml)
     #   napari (pyproject.toml:docs)
@@ -89,7 +88,7 @@ decorator==5.2.1
     # via ipython
 distlib==0.4.0
     # via virtualenv
-distributed==2025.10.0
+distributed==2025.11.0
     # via dask
 docstring-parser==0.17.0
     # via
@@ -104,7 +103,7 @@ docutils==0.21.2
     #   sphinx-tabs
 docutils-stubs==0.0.22
     # via napari-sphinx-theme
-exceptiongroup==1.3.0
+exceptiongroup==1.3.1
     # via
     #   anyio
     #   hypothesis
@@ -155,14 +154,14 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.142.5
+hypothesis==6.148.1
     # via napari (pyproject.toml)
 idna==3.11
     # via
     #   anyio
     #   requests
     #   yarl
-imageio==2.37.0
+imageio==2.37.2
     # via
     #   napari (pyproject.toml)
     #   napari-svg
@@ -280,7 +279,7 @@ meshio==5.3.5
     # via
     #   napari (pyproject.toml)
     #   napari (pyproject.toml:docs)
-ml-dtypes==0.5.3
+ml-dtypes==0.5.4
     # via tensorstore
 mouseinfo==0.1.3
     # via pyautogui
@@ -480,7 +479,7 @@ propcache==0.4.1
     # via
     #   aiohttp
     #   yarl
-psutil==7.1.2
+psutil==7.1.3
     # via
     #   napari (pyproject.toml)
     #   distributed
@@ -499,7 +498,7 @@ pyautogui==0.9.54
     # via napari (pyproject.toml)
 pyconify==0.2.1
     # via superqt
-pydantic==2.12.3
+pydantic==2.12.4
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
@@ -508,7 +507,7 @@ pydantic==2.12.3
     #   pydantic-compat
 pydantic-compat==0.1.2
     # via app-model
-pydantic-core==2.41.4
+pydantic-core==2.41.5
     # via pydantic
 pydata-sphinx-theme==0.16.1
     # via napari-sphinx-theme
@@ -553,17 +552,17 @@ pyscreeze==1.0.1
     # via pyautogui
 pyside2==5.15.2.1
     # via napari (pyproject.toml)
-pyside6==6.10.0
+pyside6==6.10.1
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
-pyside6-addons==6.10.0
+pyside6-addons==6.10.1
     # via pyside6
-pyside6-essentials==6.10.0
+pyside6-essentials==6.10.1
     # via
     #   pyside6
     #   pyside6-addons
-pytest==8.4.2
+pytest==9.0.1
     # via
     #   napari (pyproject.toml)
     #   napari (pyproject.toml:docs)
@@ -641,7 +640,7 @@ rich==14.2.0
     #   npe2
     #   pytest-pretty
     #   typer
-rpds-py==0.28.0
+rpds-py==0.29.0
     # via
     #   jsonschema
     #   referencing
@@ -663,7 +662,7 @@ shellingham==1.5.4
     # via typer
 shiboken2==5.15.2.1
     # via pyside2
-shiboken6==6.10.0
+shiboken6==6.10.1
     # via
     #   pyside6
     #   pyside6-addons
@@ -724,7 +723,7 @@ sphinxcontrib-htmlhelp==2.1.0
     # via sphinx
 sphinxcontrib-jsmath==1.0.1
     # via sphinx
-sphinxcontrib-mermaid==1.0.0
+sphinxcontrib-mermaid==1.2.2
     # via napari (pyproject.toml:docs)
 sphinxcontrib-qthelp==2.0.0
     # via sphinx
@@ -736,7 +735,7 @@ sqlalchemy==2.0.44
     # via jupyter-cache
 stack-data==0.6.3
     # via ipython
-starlette==0.49.1
+starlette==0.50.0
     # via sphinx-autobuild
 stdlib-list==0.12.0
     # via pydeps
@@ -749,7 +748,7 @@ sympy==1.14.0
     # via torch
 tabulate==0.9.0
     # via jupyter-cache
-tblib==3.2.1
+tblib==3.2.2
     # via distributed
 tensorstore==0.1.78
     # via
@@ -776,7 +775,7 @@ toolz==1.1.0
     #   dask
     #   distributed
     #   partd
-torch==2.9.0
+torch==2.9.1
     # via napari (pyproject.toml:testing-extra)
 tornado==6.5.2
     # via
@@ -799,7 +798,7 @@ triangle==20250106
     # via
     #   napari (pyproject.toml)
     #   napari (pyproject.toml:docs)
-triton==3.5.0
+triton==3.5.1
     # via torch
 typer==0.20.0
     # via npe2
@@ -807,7 +806,7 @@ types-docutils==0.21.0.20250728
     # via
     #   napari-sphinx-theme
     #   types-pygments
-types-pygments==2.19.0.20250809
+types-pygments==2.19.0.20251121
     # via napari-sphinx-theme
 typing-extensions==4.15.0
     # via
@@ -861,7 +860,7 @@ wcwidth==0.2.14
     # via prompt-toolkit
 websockets==15.0.1
     # via sphinx-autobuild
-wrapt==2.0.0
+wrapt==2.0.1
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
