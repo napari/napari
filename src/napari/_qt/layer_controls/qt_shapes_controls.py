@@ -146,7 +146,6 @@ class QtShapesControls(QtLayerControls):
         self.move_front_button = QtModePushButton(
             layer,
             'move_front',
-            slot=self.layer.move_to_front,
             tooltip=trans._('Move to front'),
         )
         action_manager.bind_button(
@@ -155,7 +154,6 @@ class QtShapesControls(QtLayerControls):
         self.move_back_button = QtModePushButton(
             layer,
             'move_back',
-            slot=self.layer.move_to_back,
             tooltip=trans._('Move to back'),
         )
         action_manager.bind_button(
