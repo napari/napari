@@ -52,10 +52,6 @@ from napari._app_model.context import create_context, get_context
 from napari._qt._qapp_model import build_qmodel_menu
 from napari._qt._qapp_model.qactions import add_dummy_actions, init_qactions
 from napari._qt._qapp_model.qactions._debug import _is_set_trace_active
-from napari._qt._qplugins import (
-    _rebuild_npe1_plugins_menu,
-    _rebuild_npe1_samples_menu,
-)
 from napari._qt.dialogs.confirm_close_dialog import ConfirmCloseDialog
 from napari._qt.dialogs.preferences_dialog import PreferencesDialog
 from napari._qt.dialogs.qt_activity_dialog import QtActivityDialog
@@ -916,25 +912,6 @@ class Window:
             task_status_id, status, description
         )
 
-    # TODO: Remove once npe1 deprecated
-    def _setup_npe1_samples_menu(self):
-        """Register npe1 sample data, build menu and connect to events."""
-        plugin_manager.discover_sample_data()
-        plugin_manager.events.enabled.connect(_rebuild_npe1_samples_menu)
-        plugin_manager.events.disabled.connect(_rebuild_npe1_samples_menu)
-        plugin_manager.events.registered.connect(_rebuild_npe1_samples_menu)
-        plugin_manager.events.unregistered.connect(_rebuild_npe1_samples_menu)
-        _rebuild_npe1_samples_menu()
-
-    # TODO: Remove once npe1 deprecated
-    def _setup_npe1_plugins_menu(self):
-        """Register npe1 widgets, build menu and connect to events"""
-        plugin_manager.discover_widgets()
-        plugin_manager.events.registered.connect(_rebuild_npe1_plugins_menu)
-        plugin_manager.events.disabled.connect(_rebuild_npe1_plugins_menu)
-        plugin_manager.events.unregistered.connect(_rebuild_npe1_plugins_menu)
-        _rebuild_npe1_plugins_menu()
-
     def _handle_trace_file_on_start(self):
         """Start trace of `trace_file_on_start` config set."""
         from napari._qt._qapp_model.qactions._debug import _start_trace
@@ -969,7 +946,6 @@ class Window:
         self.file_menu = build_qmodel_menu(
             MenuId.MENUBAR_FILE, title=trans._('&File'), parent=self._qt_window
         )
-        self._setup_npe1_samples_menu()
         self.file_menu.aboutToShow.connect(
             self._update_file_menu_state,
         )
@@ -998,7 +974,6 @@ class Window:
             title=trans._('&Plugins'),
             parent=self._qt_window,
         )
-        self._setup_npe1_plugins_menu()
         self.plugins_menu.aboutToShow.connect(
             self._update_plugins_menu_state,
         )
