@@ -457,3 +457,46 @@ def test_negative_translate(make_napari_viewer, qtbot):
     viewer = make_napari_viewer()
     _ = viewer.add_image(data, translate=(-1, 0, 0))
     assert viewer.dims.range[2].start == -1
+
+
+def test_extra_axis_dims(make_napari_viewer, qtbot):
+    """
+    Check that > 2 axis dimension names persist.
+    """
+    data = np.random.random((10, 12, 12))
+    viewer = make_napari_viewer(axis_labels=('z', 'y', 'x'))
+    _ = viewer.add_image(data)
+    assert viewer.dims.axis_labels == ('z', 'y', 'x')
+
+
+def test_single_axis_name(make_napari_viewer, qtbot):
+    """
+    Check that an extra axis name is added if only one axis name is provided.
+    """
+    viewer = make_napari_viewer(axis_labels=('x',))
+    assert viewer.dims.axis_labels == ('0', 'x')
+
+
+def test_axis_labels_after_data(make_napari_viewer, qtbot):
+    """
+    Check that axis labels persist after adding data in different ways.
+    """
+    original_labels = ('z', 'y', 'x')
+    viewer = make_napari_viewer(axis_labels=original_labels)
+    assert viewer.dims.ndim == 3
+    assert viewer.dims.axis_labels == original_labels
+
+    # Add data with same dimensionality as viewer
+    _ = viewer.add_image(np.random.random((10, 12, 12)))
+    assert viewer.dims.axis_labels == original_labels
+
+    # Add data with lower dimensionality than viewer
+    _ = viewer.add_image(np.random.random((10, 12)))
+    assert viewer.dims.axis_labels == original_labels
+
+    # Add data with lower dimensionality than viewer,
+    # with different axis labels
+    data_labels = ('i', 'j')
+    assert data_labels != original_labels
+    _ = viewer.add_image(np.random.random((10, 12)), axis_labels=data_labels)
+    assert viewer.dims.axis_labels == original_labels
