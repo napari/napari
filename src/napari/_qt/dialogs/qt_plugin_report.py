@@ -149,10 +149,10 @@ class QtPluginErrReporter(QDialog):
         """
         self.github_button.hide()
         self.clipboard_button.hide()
-        with contextlib.suppress(RuntimeError, TypeError, SystemError):
+        with contextlib.suppress(TypeError, SystemError):
             self.github_button.clicked.disconnect()
             # when disconnecting a non-existent signal
-            # PySide2 raises runtimeError, PyQt5 raises TypeError, PySide6 raises SystemError
+            # PyQt raises TypeError, PySide6 raises SystemError
 
         if not plugin or (plugin == self.NULL_OPTION):
             self.plugin_meta.setText('')
