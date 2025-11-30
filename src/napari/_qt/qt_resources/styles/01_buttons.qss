@@ -219,6 +219,10 @@ QWidget[emphasized="true"] QtModePushButton[mode="delete_shape"]:pressed {
   background-color: {{ error }};
 }
 
+QtModePushButton[mode="histogram"] {
+   image: url("theme_{{ id }}:/histogram.svg");
+}
+
 
 QtCopyToClipboardButton {
    background-color: {{ background }};
