@@ -6,8 +6,9 @@ from typing import TYPE_CHECKING
 from warnings import warn
 
 from qtpy import PYQT5
-from qtpy.QtCore import QDir, Qt
-from qtpy.QtGui import QIcon
+from qtpy.QtCore import QDir, QRectF, QSize, Qt
+from qtpy.QtGui import QIcon, QPainter, QPixmap
+from qtpy.QtSvg import QSvgRenderer
 from qtpy.QtWidgets import QApplication, QWidget
 
 from napari import Viewer, __version__
@@ -47,6 +48,20 @@ def set_app_id(app_id):
         import ctypes
 
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(app_id)
+
+
+def _svg_path_to_icon(path):
+    renderer = QSvgRenderer(str(path))
+    icon = QIcon()
+
+    for s in (16, 32, 48, 64, 128):
+        pixmap = QPixmap(QSize(s, s))
+        pixmap.fill(Qt.transparent)
+        painter = QPainter(pixmap)
+        renderer.render(painter, QRectF(0, 0, s, s))
+        painter.end()
+        icon.addPixmap(pixmap)
+    return icon
 
 
 _defaults = {
@@ -212,7 +227,7 @@ def get_qapp(
         app.installEventFilter(QtToolTipEventFilter())
 
     if app.windowIcon().isNull():
-        app.setWindowIcon(QIcon(kwargs.get('icon')))
+        app.setWindowIcon(_svg_path_to_icon(kwargs.get('icon')))
 
     if ipy_interactive is None:
         ipy_interactive = get_settings().application.ipy_interactive

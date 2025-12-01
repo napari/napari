@@ -753,6 +753,8 @@ class Window:
         get_settings().appearance.events.font_size.connect(
             self._update_theme_font_size
         )
+        get_settings().appearance.events.theme.connect(self._update_logo)
+        get_settings().appearance.events.logo.connect(self._update_logo)
 
         self._add_viewer_dock_widget(self._qt_viewer.dockConsole, tabify=False)
         self._add_viewer_dock_widget(
@@ -1657,6 +1659,16 @@ class Window:
             self._qt_viewer.setStyleSheet(style_sheet)
             if self._qt_viewer._console:
                 self._qt_viewer._console._update_theme(style_sheet=style_sheet)
+
+    def _update_logo(self):
+        from napari._qt.qt_event_loop import _svg_path_to_icon
+        from napari.utils.logo import get_logo_path
+
+        path = get_logo_path(
+            get_settings().appearance.logo, get_settings().appearance.theme
+        )
+        icon = _svg_path_to_icon(path)
+        get_qapp().setWindowIcon(icon)
 
     def _status_changed(self, event):
         """Update status bar.
