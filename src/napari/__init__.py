@@ -2,6 +2,7 @@ import os
 import sys
 import tempfile
 from importlib import resources
+from pathlib import Path
 
 from lazy_loader import attach as _attach
 
@@ -16,38 +17,77 @@ except ImportError:
 os.environ.setdefault('SPARSE_AUTO_DENSIFY', '1')
 limit_numpy1x_threads_on_macos_arm()
 
-# TODO: probably move this elsewhere
-font_dir = resources.files(__package__).joinpath('resources', 'fonts')
-conf_dir = tempfile.mkdtemp()
-conf_path = os.path.join(conf_dir, 'fonts.conf')
 
-system_fonts = {}
-if sys.platform.startswith('linux'):
-    system_fonts = """
-    <include ignore_missing="yes">/etc/fonts/fonts.conf</include>
-    <include ignore_missing="yes" prefix="xdg">fonts.conf</include>
-    <include ignore_missing="yes" prefix="xdg">conf.d</include>
+# TODO: probably move this elsewhere
+def register_napari_font():
+    import os  # TODO: WTF why do I need this here???
+
+    font_dir = Path(
+        resources.files(__package__).joinpath('resources', 'fonts')
+    )
+
+    if sys.platform == 'darwin':
+        from ctypes import POINTER, c_bool, c_char_p, c_uint32, c_void_p
+
+        from vispy.ext.cocoapy import cf, ct
+
+        # following vispy's implementation in vispy.ext.cocoapy
+        # and vispy.utils.fonts._quartz.py
+        cf.CFURLCreateFromFileSystemRepresentation.restype = c_void_p
+        cf.CFURLCreateFromFileSystemRepresentation.argtypes = [
+            c_void_p,
+            c_char_p,
+            c_uint32,
+            c_bool,
+        ]
+
+        ct.CTFontManagerRegisterFontsForURL.restype = c_bool
+        ct.CTFontManagerRegisterFontsForURL.argtypes = [
+            c_void_p,
+            c_uint32,
+            POINTER(c_void_p),
+        ]
+
+        # vispy/qt use quartz for font discovery on mac
+        for font_file in font_dir.glob('*.ttf'):
+            path = str(font_file).encode('utf-8')
+            url = cf.CFURLCreateFromFileSystemRepresentation(
+                None, path, len(path), False
+            )
+            _ok = ct.CTFontManagerRegisterFontsForURL(
+                url, 2, None
+            )  # 2 = scope user
+            cf.CFRelease(url)
+        return
+
+    # windows and linux use freetype
+    conf_dir = tempfile.mkdtemp()
+    conf_path = os.path.join(conf_dir, 'fonts.conf')
+
+    system_fonts = {}
+    if sys.platform.startswith('linux'):
+        system_fonts = """
+        <include ignore_missing="yes">/etc/fonts/fonts.conf</include>
+        <include ignore_missing="yes" prefix="xdg">fonts.conf</include>
+        <include ignore_missing="yes" prefix="xdg">conf.d</include>
+        """
+    elif sys.platform == 'win32':
+        system_fonts = """
+        <dir>C:\\Windows\\Fonts</dir>
+        """
+    conf_contents = f"""<?xml version="1.0"?>
+    <!DOCTYPE fontconfig SYSTEM "fonts.dtd">
+    <fontconfig>
+        {system_fonts}
+        <dir>{font_dir}</dir>
+    </fontconfig>
     """
-elif sys.platform == 'darwin':
-    system_fonts = """
-    <include ignore_missing="yes">/System/Library/Fonts</include>
-    <include ignore_missing="yes">/Library/Fonts</include>
-    <include ignore_missing="yes">~/Library/Fonts</include>
-    """
-elif sys.platform == 'win32':
-    system_fonts = """
-    <dir>C:\\Windows\\Fonts</dir>
-    """
-conf_contents = f"""<?xml version="1.0"?>
-<!DOCTYPE fontconfig SYSTEM "fonts.dtd">
-<fontconfig>
-    {system_fonts}
-    <dir>{font_dir}</dir>
-</fontconfig>
-"""
-with open(conf_path, 'w') as f:
-    f.write(conf_contents)
-os.environ['FONTCONFIG_PATH'] = conf_dir
+    with open(conf_path, 'w') as f:
+        f.write(conf_contents)
+    os.environ['FONTCONFIG_PATH'] = conf_dir
+
+
+register_napari_font()
 
 
 def _check_installation_path():  # pragma: no cover
