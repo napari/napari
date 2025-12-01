@@ -20,6 +20,10 @@ QtLayerButtons, QtViewerButtons, QtLayerList {
   min-width: 242px;
 }
 
+QLabel#logo_silhouette {
+  image: url("theme_{{ id }}:/logo_silhouette.svg");
+}
+
 /* ------------- QMainWindow --------- */
 /* QDockWidgets will use the MainWindow styles
 as long as they are docked (though they use the
