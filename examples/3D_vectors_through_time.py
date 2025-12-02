@@ -3,7 +3,7 @@
 ================================================
 
 This example is from a mechanical test on a granular material, where multiple 3D volume have been acquired using x-ray tomography during axial loading.
-We have used (spam)[https://www.spam-project.dev/] to label individual particles (with a watershed + tidying up manually), and these particles are tracked through time with 3D "discrete" volume correlation *incrementally*:
+We have used [`spam`](https://www.spam-project.dev/) to label individual particles (with watershed and some tidying up manually), and these particles are tracked through time with 3D "discrete" volume correlation *incrementally*:
 t0 → t1 and then t1 → t2.
 Although we're also measuring rotations (and strains), but here we're interested to visualise the displacement field on top of the image to spot tracking errors.
 
