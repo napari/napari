@@ -36,7 +36,7 @@ class IntensityVisualizationMixin:
             gamma=Event,
             colormap=Event,
         )
-        self._gamma = 1
+        self._gamma = 1.0
         self._colormap_name = ''
         self._contrast_limits_msg = ''
         self._contrast_limits: tuple[float | None, float | None] = (
@@ -63,7 +63,7 @@ class IntensityVisualizationMixin:
     def _calc_data_range(self, mode):
         raise NotImplementedError
 
-    def reset_contrast_limits_range(self, mode=None):
+    def reset_contrast_limits_range(self, mode=None) -> None:
         """Scale contrast limits range to data type if dtype is an integer,
         or use the current maximum data range otherwise.
         """

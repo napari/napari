@@ -915,7 +915,6 @@ warn_unused_ignores = false
 module = [
     "napari.__main__",
     "napari.utils.colormaps.vendored.colors",
-    "napari.layers.image.image",
     "napari.layers._scalar_field.scalar_field",
 ]
 check_untyped_defs = false
