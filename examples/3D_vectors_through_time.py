@@ -12,15 +12,16 @@ Although we're also measuring rotations (and strains), but here we're interested
 .. tags:: visualization-nD
 """
 
+import numpy
 import pooch
 import tifffile
-import numpy
+
 import napari
 
 ###############################################################################
 # Input data
 # -----------
-# 
+#
 # Input data are therefore:
 #   - A series of 3D greyscale images
 #   - A series of measured transformations between subsequent pairs of images
