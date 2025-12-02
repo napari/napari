@@ -27,7 +27,7 @@ import napari
 #
 # Let's download it!
 
-greyFiles = sorted(pooch.retrieve(
+grey_files = sorted(pooch.retrieve(
     "doi:10.5281/zenodo.17668709/grey.zip",
     known_hash="md5:760be2bad68366872111410776563760",
     processor=pooch.Unzip(),
@@ -36,10 +36,10 @@ greyFiles = sorted(pooch.retrieve(
 
 # Load individual 3D images as a 4D with a list comprehension, skipping last one
 # result is a T, Z, Y, X 16-bit array
-greys = numpy.array([tifffile.imread(greyFile) for greyFile in greyFiles[0:-1]])
+greys = numpy.array([tifffile.imread(grey_file) for grey_file in grey_files[0:-1]])
 
 # load incremental TSV tracking files from spam-ddic, [::2] is to skip VTK files also in folder
-trackingFiles = sorted(pooch.retrieve(
+tracking_files = sorted(pooch.retrieve(
     "doi:10.5281/zenodo.17668709/ddic.zip",
     known_hash="md5:2d7c6a052f53b4a827ff4e4585644fac",
     processor=pooch.Unzip(),
@@ -57,13 +57,13 @@ coords_all = []
 disps_all = []
 lengths_all = []
 
-for t, trackingFile in enumerate(trackingFiles):
+for t, tracking_file in enumerate(tracking_files):
     # load the indicator for convergence
-    returnStatus = numpy.genfromtxt(trackingFile, skip_header=1, usecols=(19))
+    returnStatus = numpy.genfromtxt(tracking_file, skip_header=1, usecols=(19))
 
     # Load coords and displacements, keeping only converged results (returnStatus==2)
-    coords = numpy.genfromtxt(trackingFile, skip_header=1, usecols=(1,2,3))[returnStatus==2]
-    disps = numpy.genfromtxt(trackingFile, skip_header=1, usecols=(4,5,6))[returnStatus==2]
+    coords = numpy.genfromtxt(tracking_file, skip_header=1, usecols=(1,2,3))[returnStatus==2]
+    disps = numpy.genfromtxt(tracking_file, skip_header=1, usecols=(4,5,6))[returnStatus==2]
 
     # Compute lengths in order to colour vectors
     lengths = numpy.linalg.norm(disps, axis=1)
@@ -84,16 +84,16 @@ disps_all = numpy.concatenate(disps_all)
 lengths_all = numpy.concatenate(lengths_all)
 
 
-v = napari.Viewer(ndisplay=3)
+viewer = napari.Viewer(ndisplay=3)
 
-v.add_image(
+viewer.add_image(
     greys,
     contrast_limits=[15000, 50000],
     rendering="attenuated_mip",
     attenuation=0.333
 )
 
-v.add_vectors(
+viewer.add_vectors(
   numpy.stack([coords_all, disps_all], axis=1),
   vector_style='arrow',
   length=1,
@@ -103,9 +103,9 @@ v.add_vectors(
   out_of_slice_display=True,
 )
 
-v.camera.angles = (2,-11,-23.5)
-v.camera.orientation = ('away','up','right')
-v.dims.current_step = (11,199, 124, 124)
+viewer.camera.angles = (2,-11,-23.5)
+viewer.camera.orientation = ('away','up','right')
+viewer.dims.current_step = (11,199, 124, 124)
 
 
 if __name__ == '__main__':
