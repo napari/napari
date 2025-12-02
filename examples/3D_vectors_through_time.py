@@ -7,8 +7,6 @@ We have used [`spam`](https://www.spam-project.dev/) to label individual particl
 t0 → t1 and then t1 → t2.
 Although we're also measuring rotations (and strains), but here we're interested to visualise the displacement field on top of the image to spot tracking errors.
 
-
-
 .. tags:: visualization-nD
 """
 
