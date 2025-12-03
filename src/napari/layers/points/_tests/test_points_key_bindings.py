@@ -79,7 +79,7 @@ def test_select_append_all_in_slice_3d_data():
     data = [[0, 1, 3], [0, 8, 4], [0, 10, 10], [1, 15, 4]]
     layer = Points(data, size=1)
     layer.mode = 'select'
-    layer._set_view_slice()
+    layer._layer_slicer._set_view_slice()
 
     assert len(layer.data) == 4
     assert len(layer.selected_data) == 0
