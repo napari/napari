@@ -128,6 +128,11 @@ authors:
   affiliation: Chan Zuckerberg Initiative
   orcid: https://orcid.org/0000-0002-3841-8344
   alias: aganders3
+- given-names: Edward
+  family-names: Andò
+  affiliation: EPFL Center for Imaging
+  orcid: https://orcid.org/0000-0001-5509-5287
+  alias: edwardando
 - given-names: Andrew
   family-names: Annex
   affiliation: SETI Institute/NASA ARC
@@ -384,10 +389,5 @@ authors:
   affiliation: Chinese Academy of Sciences - SIAT, Shenzhen, China
   orcid: https://orcid.org/0009-0005-8264-5682
   alias: BeanLi
-- given-names: Edward
-  family-names: Andò
-  alias: edwardando
-  affiliation: EPFL Center for Imaging
-  orcid: 0000-0001-5509-5287
 repository-code: https://github.com/napari/napari
 license: BSD-3-Clause
