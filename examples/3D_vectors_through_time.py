@@ -78,7 +78,7 @@ for t, tracking_file in enumerate(tracking_files):
     disps_all.append(disps)
     lengths_all.append(lengths)
 
-# Flatten and make arrays
+# Concatenate into arrays
 coords_all = numpy.concatenate(coords_all)
 disps_all = numpy.concatenate(disps_all)
 lengths_all = numpy.concatenate(lengths_all)
