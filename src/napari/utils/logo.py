@@ -10,7 +10,7 @@ def available_logos():
     for logo in Path(logo_dir).glob('*.svg'):
         if match := re.match(r'(.*)-plain-light', logo.stem):
             variants.append(match.group(1))
-    return variants
+    return sorted(variants) 
 
 
 def _get_seasonal_logo(today=None, theme='dark'):
@@ -47,7 +47,7 @@ def _get_seasonal_logo(today=None, theme='dark'):
 
 def get_logo_path(logo, theme, today=None):
     logo_dir = Path(resources.files('napari').joinpath('resources', 'logos'))
-    if theme not in ('dark', 'light'):
+    if theme not in {'dark', 'light'}:
         theme = 'dark'
 
     if logo == 'auto':

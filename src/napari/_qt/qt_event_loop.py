@@ -50,7 +50,11 @@ def set_app_id(app_id):
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(app_id)
 
 
-def _svg_path_to_icon(path):
+def _svg_path_to_icon(path: str | pathlib.Path) -> QIcon:
+   """Generate QIcon object from svg file. 
+   
+   Generate icon with resolutions  16x16, 32x32, 48x48, 64x64 and 128x128
+   """
     renderer = QSvgRenderer(str(path))
     icon = QIcon()
 
@@ -227,7 +231,7 @@ def get_qapp(
         app.installEventFilter(QtToolTipEventFilter())
 
     if app.windowIcon().isNull():
-        app.setWindowIcon(_svg_path_to_icon(kwargs.get('icon')))
+        app.setWindowIcon(_svg_path_to_icon(kwargs['icon']))
 
     if ipy_interactive is None:
         ipy_interactive = get_settings().application.ipy_interactive
