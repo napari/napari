@@ -393,7 +393,7 @@ class Labels(ScalarFieldBase):
             LabelsPolygonOverlay,
         )
 
-        self._overlays.update({'polygon': LabelsPolygonOverlay()})
+        self._overlays.update({'polygon': LabelsPolygonOverlay(visible=True)})
 
         self._feature_table = _FeatureTable.from_layer(
             features=features, properties=properties

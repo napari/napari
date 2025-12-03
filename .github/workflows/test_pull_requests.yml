@@ -119,7 +119,7 @@ jobs:
           # Windows py310
           - python: "3.11"
             platform: windows-2022
-            backend: pyqt5 #,pyside2
+            backend: pyqt5
             coverage: no_cov
           - python: "3.13"
             platform: windows-2022
@@ -167,11 +167,6 @@ jobs:
             platform: ubuntu-latest
             backend: pyside6
             coverage: cov
-          # pyside2 test
-          - python: "3.10"
-            platform: ubuntu-latest
-            backend: pyside2
-            coverage: no_cov
     with:
       python_version: ${{ matrix.python }}
       platform: ${{ matrix.platform }}
@@ -200,14 +195,14 @@ jobs:
 
   coverage_report:
     if: ${{ always() }}
+    secrets: inherit
     needs:
       - test
       - test_examples
-    permissions:
-      id-token: write  # Required for OIDC authentication
-      contents: read    # Required for code checkout
-    uses: ./.github/workflows/reusable_coverage_upload.yml
-    secrets: inherit
+    uses: napari/shared-workflows/.github/workflows/upload_coverage.yml@main
+    with:
+      artifact-pattern: 'coverage reports*'
+
 
   test_benchmarks:
     name: test benchmarks

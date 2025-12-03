@@ -82,6 +82,10 @@ jobs:
           PR_AFFILIATION: ${{ github.event.pull_request.user.company }}
         run: |
           echo "PR author: $PR_AUTHOR"
+          if [[ "$PR_AUTHOR" == *"[bot]" || "$PR_AUTHOR" == "napari-bot" ]]; then
+            echo "Bot author '$PR_AUTHOR' detected. Skipping CITATION.cff check."
+            exit 0
+          fi
           if grep -Ei "^[[:space:]]*alias:[[:space:]]*${PR_AUTHOR}[[:space:]]*$" CITATION.cff; then
             echo "Found alias '$PR_AUTHOR' in CITATION.cff."
           else
