@@ -68,9 +68,9 @@ for t, tracking_file in enumerate(tracking_files):
     # Compute lengths in order to colour vectors
     lengths = numpy.linalg.norm(disps, axis=1)
 
-    # Add an extra dimension to coordinates to place them in time, and fill it with t
+    # Prepend an extra dimension to coordinates to place them in time, and fill it with the incremental t
     coords = numpy.hstack([numpy.ones((coords.shape[0],1))*t, coords])
-    # Add an extra time dimension of zeros for the "end" of the vector
+    # Preprend zeros to the displacements (the "end" of the vector), since they do not displace through time
     disps = numpy.hstack([numpy.zeros((disps.shape[0],1)), disps])
 
     # Add to lists
