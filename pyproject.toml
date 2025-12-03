@@ -91,9 +91,6 @@ Documentation = "https://napari.org"
 "Source Code" = "https://github.com/napari/napari"
 
 [project.optional-dependencies]
-pyside2 = [
-    "PySide2>=5.15.1 ; python_version < '3.11' and platform_machine != 'arm64'",
-]
 pyside6 = [
     "PySide6 > 6.7"
 ]
@@ -102,7 +99,7 @@ pyqt6 = [
     "PyQt6 != 6.6.1 ; platform_system == 'Darwin'"
 ]
 pyside = [
-    "napari[pyside2]"
+    "napari[pyside6]"
 ]
 pyqt5 = [
     "PyQt5>=5.15.8",
@@ -565,7 +562,7 @@ disable_error_code = [
 ]
 # see `$ qtpy mypy-args` and qtpy readme. This will be used by `tox -e mypy`
 # to properly infer with PyQt6 installed
-always_false=['PYSIDE6', 'PYSIDE2', 'PYQT5']
+always_false=['PYSIDE6', 'PYQT5']
 always_true=['PYQT6']
 
 
@@ -995,9 +992,8 @@ include_external_packages = true
 name = "Forbid import PyQt and PySide"
 type = "forbidden"
 source_modules = "napari"
-forbidden_modules = ["PyQt5", "PySide2", "PyQt6", "PySide6"]
+forbidden_modules = ["PyQt5", "PyQt6", "PySide6"]
 ignore_imports = [
-    "napari._qt -> PySide2",
     "napari.plugins._npe2 -> napari._qt._qplugins",
 ]
 
