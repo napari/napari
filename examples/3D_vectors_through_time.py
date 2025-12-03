@@ -1,6 +1,6 @@
 """
-3D vector field and image evolving through time
-================================================
+3D vector field and image across time
+=====================================
 
 This example is from a mechanical test on a granular material, where multiple 3D volume have been acquired using x-ray tomography during axial loading.
 We have used [`spam`](https://www.spam-project.dev/) to label individual particles (with watershed and some tidying up manually), and these particles are tracked through time with 3D "discrete" volume correlation *incrementally*:
