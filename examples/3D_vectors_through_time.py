@@ -10,7 +10,7 @@ Although we're also measuring rotations (and strains), but here we're interested
 .. tags:: visualization-nD
 """
 
-import numpy
+import numpy as np
 import pooch
 import tifffile
 
@@ -36,7 +36,7 @@ grey_files = sorted(pooch.retrieve(
 
 # Load individual 3D images as a 4D with a list comprehension, skipping last one
 # result is a T, Z, Y, X 16-bit array
-greys = numpy.array([tifffile.imread(grey_file) for grey_file in grey_files[0:-1]])
+greys = np.array([tifffile.imread(grey_file) for grey_file in grey_files[0:-1]])
 
 # load incremental TSV tracking files from spam-ddic, [::2] is to skip VTK files also in folder
 tracking_files = sorted(pooch.retrieve(
@@ -59,19 +59,19 @@ lengths_all = []
 
 for t, tracking_file in enumerate(tracking_files):
     # load the indicator for convergence
-    returnStatus = numpy.genfromtxt(tracking_file, skip_header=1, usecols=(19))
+    returnStatus = np.genfromtxt(tracking_file, skip_header=1, usecols=(19))
 
     # Load coords and displacements, keeping only converged results (returnStatus==2)
-    coords = numpy.genfromtxt(tracking_file, skip_header=1, usecols=(1,2,3))[returnStatus==2]
-    disps = numpy.genfromtxt(tracking_file, skip_header=1, usecols=(4,5,6))[returnStatus==2]
+    coords = np.genfromtxt(tracking_file, skip_header=1, usecols=(1,2,3))[returnStatus==2]
+    disps = np.genfromtxt(tracking_file, skip_header=1, usecols=(4,5,6))[returnStatus==2]
 
     # Compute lengths in order to colour vectors
-    lengths = numpy.linalg.norm(disps, axis=1)
+    lengths = np.linalg.norm(disps, axis=1)
 
     # Prepend an extra dimension to coordinates to place them in time, and fill it with the incremental t
-    coords = numpy.hstack([numpy.ones((coords.shape[0],1))*t, coords])
+    coords = np.hstack([np.ones((coords.shape[0],1))*t, coords])
     # Preprend zeros to the displacements (the "end" of the vector), since they do not displace through time
-    disps = numpy.hstack([numpy.zeros((disps.shape[0],1)), disps])
+    disps = np.hstack([np.zeros((disps.shape[0],1)), disps])
 
     # Add to lists
     coords_all.append(coords)
@@ -79,10 +79,11 @@ for t, tracking_file in enumerate(tracking_files):
     lengths_all.append(lengths)
 
 # Concatenate into arrays
-coords_all = numpy.concatenate(coords_all)
-disps_all = numpy.concatenate(disps_all)
-lengths_all = numpy.concatenate(lengths_all)
-
+coords_all = np.concatenate(coords_all)
+disps_all = np.concatenate(disps_all)
+lengths_all = np.concatenate(lengths_all)
+# Stack this into an array of size N (individual points) x 2 (vector start and length) x 4 (tzyx)
+coords_displacements_all = np.stack([coords_all, disps_all], axis=1)
 
 viewer = napari.Viewer(ndisplay=3)
 
@@ -94,7 +95,7 @@ viewer.add_image(
 )
 
 viewer.add_vectors(
-  numpy.stack([coords_all, disps_all], axis=1),
+  coords_displacements_all,
   vector_style='arrow',
   length=1,
   properties={'disp_norm': lengths_all},
