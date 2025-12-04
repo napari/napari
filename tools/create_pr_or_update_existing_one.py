@@ -187,12 +187,16 @@ def update_own_pr(pr_number: int, access_token: str, base_branch: str, repo):
             break
 
 
-def list_pr_for_branch(branch_name: str, access_token: str, repo=''):
+def list_pr_for_branch(
+    branch_name: str,
+    access_token: str,
+    repo: str = 'napari/napari',
+    user: str = 'napari-bot',
+):
     """
     check if PR for branch exists
     """
-    org_name = repo.split('/')[0]
-    url = f'{BASE_URL}/repos/{repo}/pulls?state=open&head={org_name}:{branch_name}'
+    url = f'{BASE_URL}/repos/{repo}/pulls?state=open&head={user}:{branch_name}'
     response = requests.get(url)
     response.raise_for_status()
     if response.json():
