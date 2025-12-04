@@ -223,8 +223,8 @@ class Tracks(Layer):
 
         # reset the display before returning
         self._current_displayed_dims = None
-        self._layer_slicer.slice_done.connect(self.events.rebuild_tracks)
-        self._layer_slicer.slice_done.connect(self.events.rebuild_graph)
+        self._slicing_state.slice_done.connect(self.events.rebuild_tracks)
+        self._slicing_state.slice_done.connect(self.events.rebuild_graph)
 
     @property
     def _extent_data(self) -> np.ndarray:
@@ -659,7 +659,7 @@ class Tracks(Layer):
         if not labels:
             return None, (None, None)
 
-        padded_positions = self._layer_slicer._pad_display_data(positions)
+        padded_positions = self._slicing_state._pad_display_data(positions)
         return labels, padded_positions
 
     def _check_color_by_in_features(self) -> None:
