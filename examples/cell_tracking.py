@@ -12,7 +12,6 @@ You can find the data on: https://doi.org/10.5281/zenodo.15597019
 
 .. tags:: visualization-advanced, colored 2D tracks
 """
-import zipfile
 from pathlib import Path
 
 import numpy as np
