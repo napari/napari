@@ -38,26 +38,20 @@ st_path = pooch.retrieve(
 
 # Extract raw tif files for trackastra
 tif_url = "https://zenodo.org/records/17643282/files/01(1).zip?download=1"
-tif_path = pooch.retrieve(
+tif_file = pooch.retrieve(
     url=tif_url,
     fname="01(1).zip",
     known_hash=None,
-    path=pooch.os_cache("napari_cell_tracking_example")
+    path=pooch.os_cache("napari_cell_tracking_example"),
+    processor=pooch.Unzip(),
 )
 
 # Load the downloaded masks
 masks_npz = np.load(st_path)
 masks = masks_npz['masks']
 
-# Make raw tif sub directory
-tif_folder = tmp_dir/ "01"
-
-# Extract raw images
-with zipfile.ZipFile(tif_path, 'r') as zip:
-    zip.extractall(path=tif_folder)
-
 # Sort through images and stack them
-imgs = sorted(tif_folder.rglob("*.tif"))
+imgs = sorted(tif_file.rglob("*.tif"))
 
 images = np.stack([
         tifffile.imread(fn) for fn in imgs
