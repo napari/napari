@@ -26,9 +26,9 @@ jobs:
     name: Check Manifest
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
       - name: "Set up Python 3.12"
-        uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
+        uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v6.1.0
         with:
           python-version: "3.12"
       - name: Install dependencies
@@ -51,7 +51,7 @@ jobs:
       matrix:
         platform: [ubuntu-latest, windows-2022]
         python: ["3.10", "3.11", "3.12", "3.13"]
-        backend: [pyqt5, pyside2]
+        backend: [pyqt5]
         include:
           - python: "3.11"
             platform: macos-latest
@@ -73,15 +73,7 @@ jobs:
             platform: ubuntu-latest
             backend: pyside6
             tox_extras: "testing_extra"
-        exclude:
-          - python: "3.11"
-          - backend: pyside2
-          - python: "3.12"
-            backend: pyside2
-          - python: "3.13"
-            backend: pyside2
-          - platform: windows-2022
-            backend: pyside2
+
     with:
       python_version: ${{ matrix.python }}
       platform: ${{ matrix.platform }}
@@ -107,14 +99,13 @@ jobs:
 
   coverage_report:
     if: ${{ always() }}
+    secrets: inherit
     needs:
       - test
       - test_examples
-    permissions:
-      id-token: write  # Required for OIDC
-      contents: read    # Required for checkout
-    uses: ./.github/workflows/reusable_coverage_upload.yml
-    secrets: inherit
+    uses: napari/shared-workflows/.github/workflows/upload_coverage.yml@coverage_upload
+    with:
+      artifact-pattern: 'coverage reports*'
 
   synchronize_bot_repository:
     name: Synchronize bot repository
@@ -124,7 +115,7 @@ jobs:
       contents: read
       issues: write
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           token: ${{ secrets.GHA_TOKEN_BOT_REPO_WORKFLOW }}
       - name: Synchronize bot repository
