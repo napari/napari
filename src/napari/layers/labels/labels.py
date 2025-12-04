@@ -11,6 +11,7 @@ from typing import (
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
+from psygnal.containers import Selection
 from scipy import ndimage as ndi
 from skimage.draw import polygon2mask
 
@@ -385,6 +386,7 @@ class Labels(ScalarFieldBase):
             preserve_labels=Event,
             properties=Event,
             selected_label=Event,
+            selected_labels=Event,
             show_selected_label=Event,
         )
 
@@ -405,11 +407,11 @@ class Labels(ScalarFieldBase):
 
         self._iso_gradient_mode = IsoCategoricalGradientMode(iso_gradient_mode)
 
-        self._selected_label = 1
-        self.colormap.selection = self._selected_label
+        self._selected_labels: Selection[int] = Selection([1])
+        self.colormap.selection = self.selected_label
         self.colormap.use_selection = self._show_selected_label
         self._prev_selected_label = None
-        self._selected_color = self.get_color(self._selected_label)
+        self._selected_color = self.get_color(self.selected_label)
         self._updated_slice = None
         if colormap is not None:
             self._set_colormap(colormap)
@@ -573,7 +575,7 @@ class Labels(ScalarFieldBase):
         self._selected_color = self.get_color(self.selected_label)
         self._color_mode = color_mode
         self.events.colormap()  # Will update the LabelVispyColormap shader
-        self.events.selected_label()
+        self.events.selected_labels()
         self.refresh(extent=False)
 
     @property
@@ -716,11 +718,15 @@ class Labels(ScalarFieldBase):
     @property
     def selected_label(self):
         """int: Index of selected label."""
-        return self._selected_label
+        # TODO update the implementation by next(reversed(self._selected_data))
+        # once https://github.com/pyapp-kit/psygnal/pull/395 is accepted
+        # There is no length check here because self._selected_labels
+        # always contains at least one label.
+        return list(self._selected_labels)[-1]
 
     @selected_label.setter
-    def selected_label(self, selected_label):
-        if selected_label == self.selected_label:
+    def selected_label(self, selected_label: int):
+        if selected_label in self._selected_labels:
             return
         # when setting the label to the background, store the previous
         # otherwise, clear it
@@ -738,13 +744,24 @@ class Labels(ScalarFieldBase):
         else:
             self._prev_selected_label = None
         self.colormap.selection = selected_label
-        self._selected_label = selected_label
+        self.selected_labels = [selected_label]
         self._selected_color = self.get_color(selected_label)
 
-        self.events.selected_label()
+        self.events.selected_labels()
 
         if self.show_selected_label:
             self.refresh(extent=False)
+
+    @property
+    def selected_labels(self) -> Selection[int]:
+        return self._selected_labels
+
+    @selected_labels.setter
+    def selected_labels(self, selected_data: Sequence[int]) -> None:
+        if len(selected_data) == 0:
+            raise ValueError('At least one label must be selected.')
+        self._selected_labels.clear()
+        self._selected_labels.update(selected_data)
 
     def swap_selected_and_background_labels(self):
         """Swap between the selected label and the background label."""

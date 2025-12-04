@@ -32,7 +32,7 @@ class QtColorBox(QWidget):
         super().__init__()
 
         self._layer = layer
-        self._layer.events.selected_label.connect(
+        self._layer.events.selected_labels.connect(
             self._on_selected_label_change
         )
         self._layer.events.opacity.connect(self._on_opacity_change)
