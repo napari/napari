@@ -459,22 +459,27 @@ def test_negative_translate(make_napari_viewer, qtbot):
     assert viewer.dims.range[2].start == -1
 
 
-def test_extra_axis_dims(make_napari_viewer, qtbot):
+@pytest.mark.parametrize(
+    ('axis_labels', 'expected_labels'),
+    [
+        ((), ('0', '1')),
+        (('x',), ('0', 'x')),
+        (('y', 'x'), ('y', 'x')),
+        (('z', 'y', 'x'), ('z', 'y', 'x')),
+        (('t', 'z', 'y', 'x'), ('t', 'z', 'y', 'x')),
+    ],
+)
+def test_axis_labels(
+    make_napari_viewer,
+    qtbot,
+    axis_labels: tuple[str, ...],
+    expected_labels: tuple[str, ...],
+):
     """
-    Check that > 2 axis dimension names persist.
+    Check that axis labels are set properly.
     """
-    data = np.random.random((10, 12, 12))
-    viewer = make_napari_viewer(axis_labels=('z', 'y', 'x'))
-    _ = viewer.add_image(data)
-    assert viewer.dims.axis_labels == ('z', 'y', 'x')
-
-
-def test_single_axis_name(make_napari_viewer, qtbot):
-    """
-    Check that an extra axis name is added if only one axis name is provided.
-    """
-    viewer = make_napari_viewer(axis_labels=('x',))
-    assert viewer.dims.axis_labels == ('0', 'x')
+    viewer = make_napari_viewer(axis_labels=axis_labels)
+    assert viewer.dims.axis_labels == expected_labels
 
 
 def test_axis_labels_after_data(make_napari_viewer, qtbot):
