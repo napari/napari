@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import typing
 import warnings
-from typing import Any, Literal, cast
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 import numpy as np
 from scipy import ndimage as ndi
@@ -12,25 +13,47 @@ from scipy import ndimage as ndi
 from napari.layers._data_protocols import LayerDataProtocol
 from napari.layers._multiscale_data import MultiScaleData
 from napari.layers._scalar_field._slice import _ScalarFieldSliceResponse
-from napari.layers._scalar_field.scalar_field import ScalarFieldBase
+from napari.layers._scalar_field.scalar_field import (
+    ScalarFieldBase,
+    ScalarFieldEventGroup,
+)
+from napari.layers.base._base_constants import Blending
 from napari.layers.image._image_constants import (
     ImageProjectionMode,
     ImageRendering,
     Interpolation,
-    InterpolationStr,
 )
 from napari.layers.image._image_utils import guess_rgb
-from napari.layers.intensity_mixin import IntensityVisualizationMixin
+from napari.layers.intensity_mixin import (
+    IntensityVisualizationMixin,
+    IVMSignalGroup,
+)
 from napari.layers.utils.layer_utils import calc_data_range
 from napari.utils._dtype import get_dtype_limits, normalize_dtype
 from napari.utils.colormaps import ensure_colormap
 from napari.utils.colormaps.colormap_utils import _coerce_contrast_limits
 from napari.utils.translations import trans
 
+if TYPE_CHECKING:
+    import numpy.typing as npt
+    import pint
+
+    from napari.layers.utils.plane import (
+        ClippingPlaneList,
+        SlicingPlane,
+        SlicingPlaneDict,
+    )
+    from napari.utils.colormaps.colormap_utils import ValidColormapArg
+    from napari.utils.transforms import Affine
+
 __all__ = ('Image',)
 
 
-class Image(IntensityVisualizationMixin, ScalarFieldBase):
+class ImageEventGroup(IVMSignalGroup, ScalarFieldEventGroup):
+    """Image layer events."""
+
+
+class Image(IntensityVisualizationMixin, ScalarFieldBase[ImageProjectionMode]):
     """Image layer.
 
     Parameters
@@ -220,43 +243,48 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         `True`.
     """
 
-    _projectionclass = ImageProjectionMode
+    signals: ImageEventGroup
 
+    # TODO: check the list of per-parameter TODO questions
+    # TODO: contrast_limits: should be a tuple of floats
+    # TODO: rendering: is there an enum of acceptable values?
     def __init__(
         self,
-        data,
+        data: LayerDataProtocol | Sequence[LayerDataProtocol],
         *,
-        affine=None,
-        attenuation=0.05,
-        axis_labels=None,
-        blending='translucent',
-        cache=True,
-        colormap='gray',
-        contrast_limits=None,
-        custom_interpolation_kernel_2d=None,
-        depiction='volume',
-        experimental_clipping_planes=None,
-        gamma=1.0,
-        interpolation2d='nearest',
-        interpolation3d='linear',
-        iso_threshold=None,
-        metadata=None,
-        multiscale=None,
-        name=None,
-        opacity=1.0,
-        plane=None,
-        projection_mode='mean',
-        rendering='mip',
-        rgb=None,
-        rotate=None,
-        scale=None,
-        shear=None,
-        translate=None,
-        units=None,
-        visible=True,
-    ):
+        affine: npt.ArrayLike | Affine | None = None,
+        attenuation: float = 0.05,
+        axis_labels: tuple[str, ...] | None = None,
+        blending: Blending = Blending.TRANSLUCENT,
+        cache: bool = True,
+        colormap: ValidColormapArg = 'gray',
+        contrast_limits: list[tuple] | None = None,
+        custom_interpolation_kernel_2d: npt.NDArray | None = None,
+        depiction: str = 'volume',
+        experimental_clipping_planes: ClippingPlaneList | None = None,
+        gamma: float = 1.0,
+        interpolation2d: str | Interpolation = Interpolation.NEAREST,
+        interpolation3d: str | Interpolation = Interpolation.LINEAR,
+        iso_threshold: float | None = None,
+        metadata: dict[str, Any] | None = None,
+        multiscale: bool | None = None,
+        name: str | None = None,
+        opacity: float = 1.0,
+        plane: SlicingPlane | SlicingPlaneDict | None = None,
+        projection_mode: ImageProjectionMode | str = ImageProjectionMode.MEAN,
+        rendering: str = 'mip',
+        rgb: bool | None = None,
+        rotate: float | tuple[float, float, float] | npt.NDArray | None = None,
+        scale: tuple[float, ...] | None = None,
+        shear: npt.NDArray | None = None,
+        translate: tuple[float, ...] | None = None,
+        units: pint.Unit | None = None,
+        visible: bool = True,
+    ) -> None:
         # Determine if rgb
-        data_shape = data.shape if hasattr(data, 'shape') else data[0].shape
+        data_shape = (
+            data.shape if isinstance(data, np.ndarray) else data[0].shape
+        )
         if rgb and not guess_rgb(data_shape, min_side_len=0):
             raise ValueError(
                 trans._(
@@ -267,6 +295,10 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
             rgb = guess_rgb(data_shape)
 
         self.rgb = rgb
+        self.signals = ImageEventGroup()
+
+        # this calls first IntensityVisualizationMixin.__init__,
+        # then ScalarFieldBase.__init__, following the MRO
         super().__init__(
             data,
             affine=affine,
@@ -359,6 +391,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
     def rendering(self, rendering):
         self._rendering = ImageRendering(rendering)
         self.events.rendering()
+        self.signals.rendering()
 
     def _get_state(self) -> dict[str, Any]:
         """Get dictionary of layer state.
@@ -421,29 +454,31 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         self._attenuation = value
         self._update_thumbnail()
         self.events.attenuation()
+        self.signals.attenuation()
 
     @property
-    def data(self) -> LayerDataProtocol | MultiScaleData:
+    def data(self) -> LayerDataProtocol:
         """Data, possibly in multiscale wrapper. Obeys LayerDataProtocol."""
         return self._data
 
     @data.setter
-    def data(self, data: LayerDataProtocol | MultiScaleData) -> None:
-        self._data_raw = data
+    def data(self, data: LayerDataProtocol) -> None:
+        self._data_raw = MultiScaleData(data)
         # note, we don't support changing multiscale in an Image instance
-        self._data = MultiScaleData(data) if self.multiscale else data  # type: ignore
+        self._data = MultiScaleData(data) if self.multiscale else data
         self._update_dims()
         if self._keep_auto_contrast:
             self.reset_contrast_limits()
-        self.events.data(value=self.data)
+        self.events.data(value=self._data)
+        self.signals.data(self._data)
         self._reset_editable()
 
     @property
-    def interpolation2d(self) -> InterpolationStr:
-        return cast(InterpolationStr, str(self._interpolation2d))
+    def interpolation2d(self) -> str:
+        return str(self._interpolation2d)
 
     @interpolation2d.setter
-    def interpolation2d(self, value: InterpolationStr | Interpolation) -> None:
+    def interpolation2d(self, value: str) -> None:
         if value == 'bilinear':
             raise ValueError(
                 trans._(
@@ -460,13 +495,15 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         self._interpolation2d = Interpolation(value)
         self.events.interpolation2d(value=self._interpolation2d)
         self.events.interpolation(value=self._interpolation2d)
+        self.signals.interpolation2d(str(self._interpolation2d))
+        self.signals.interpolation(str(self._interpolation2d))
 
     @property
-    def interpolation3d(self) -> InterpolationStr:
-        return cast(InterpolationStr, str(self._interpolation3d))
+    def interpolation3d(self) -> str:
+        return str(self._interpolation3d)
 
     @interpolation3d.setter
-    def interpolation3d(self, value: InterpolationStr | Interpolation) -> None:
+    def interpolation3d(self, value: str) -> None:
         if value == 'custom':
             raise NotImplementedError(
                 'custom interpolation is not implemented yet for 3D rendering'
@@ -481,6 +518,8 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         self._interpolation3d = Interpolation(value)
         self.events.interpolation3d(value=self._interpolation3d)
         self.events.interpolation(value=self._interpolation3d)
+        self.signals.interpolation3d(str(self._interpolation3d))
+        self.signals.interpolation(str(self._interpolation3d))
 
     @property
     def iso_threshold(self) -> float:
@@ -492,6 +531,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         self._iso_threshold = value
         self._update_thumbnail()
         self.events.iso_threshold()
+        self.signals.iso_threshold(self._iso_threshold)
 
     def _get_level_shapes(self):
         shapes = super()._get_level_shapes()

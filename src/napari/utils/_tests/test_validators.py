@@ -4,19 +4,17 @@ from napari.utils import validators
 
 
 def test_sequence_validator():
-    validate = validators.validate_n_seq(2, int)
+    correct_float_source = [1.0, 2.0]
+    correct_int_source = [1, 2]
+    incorrect_sources = [
+        [1, None],
+        [None, 2.0],
+    ]
 
-    # this should work
-    validate([4, 5])
-
-    with pytest.raises(TypeError):
-        validate(8)  # raises TypeError
-
-    with pytest.raises(ValueError, match='must have length'):
-        validate([1, 2, 3])  # raises ValueError
-
-    with pytest.raises(TypeError):
-        validate([1.4, 5])  # raises TypeError
+    assert validators.check_sequence(correct_float_source, 2)
+    assert validators.check_sequence(correct_int_source, 2)
+    for source in incorrect_sources:
+        assert not validators.check_sequence(source, 2)
 
 
 def test_pairwise():
@@ -27,11 +25,11 @@ def test_pairwise():
 
 def test_validate_increasing():
     valid_source = [1, 2, 3]
-    validators._validate_increasing(valid_source)
+    validators.validate_increasing(valid_source)
 
     invalid_sources = [[3, 2, 1], [1, 1, 2]]
     for source in invalid_sources:
         with pytest.raises(
             ValueError, match='must be monotonically increasing'
         ):
-            validators._validate_increasing(source)
+            validators.validate_increasing(source)
