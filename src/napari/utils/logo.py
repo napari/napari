@@ -1,15 +1,15 @@
-import re
 from datetime import date
+from functools import lru_cache
 from importlib import resources
 from pathlib import Path
 
 
+@lru_cache
 def available_logos():
     logo_dir = Path(resources.files('napari').joinpath('resources', 'logos'))
     variants = ['auto']
-    for logo in Path(logo_dir).glob('*.svg'):
-        if match := re.match(r'(.*)-plain-light', logo.stem):
-            variants.append(match.group(1))
+    for logo in Path(logo_dir).glob('*-plain-light.svg'):
+        variants.append(logo.stem.rsplit('-', 2)[0])
     return sorted(variants)
 
 
