@@ -3278,7 +3278,7 @@ class Shapes(Layer):
 
         return labels
 
-    def _get_layer_slicer(
+    def _get_layer_slicing_state(
         self, data: LayerDataType, cache: bool
     ) -> '_ShapesSlicingState':
         return _ShapesSlicingState(layer=self, data=data, cache=cache)

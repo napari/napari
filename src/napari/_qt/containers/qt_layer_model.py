@@ -20,7 +20,7 @@ class QtLayerListModel(QtListModel[Layer]):
             return None
         layer = self.getItem(index)
         viewer = current_viewer()
-        layer_loaded = layer._layer_slicer.loaded
+        layer_loaded = layer._slicing_state.loaded
         # Playback with async slicing causes flickering between the thumbnail
         # and loading animation in some cases due quick changes in the loaded
         # state, so report as unloaded in that case to avoid that.

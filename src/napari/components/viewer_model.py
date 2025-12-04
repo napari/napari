@@ -721,7 +721,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         if (
             self.tooltip.visible
             and active is not None
-            and active._layer_slicer._loaded
+            and active._slicing_state._loaded
         ):
             tooltip_text = active._get_tooltip_text(
                 np.asarray(self.cursor.position),
@@ -734,7 +734,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         # Then return the status and the tooltip.
         if (
             active is not None
-            and active._layer_slicer._loaded
+            and active._slicing_state._loaded
             and len(selection) < 2
         ):
             status = active.get_status(
@@ -751,7 +751,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             if (
                 not layer.visible
                 or layer.opacity == 0
-                or not layer._layer_slicer._loaded
+                or not layer._slicing_state._loaded
                 or (layer not in selection and not self.grid.enabled)
             ):
                 continue

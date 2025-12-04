@@ -98,7 +98,7 @@ class SampleLayer(Layer):
     def _post_init(self) -> None:
         self.a = 1
 
-    def _get_layer_slicer(
+    def _get_layer_slicing_state(
         self, data: LayerDataType, cache: bool
     ) -> _LayerSlicingState:
         return SampleLayerSlicingState(self, data, cache)

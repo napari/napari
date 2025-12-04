@@ -109,7 +109,7 @@ class Tracks(Layer):
     # The max number of tracks that will ever be used to render the thumbnail
     # If more tracks are present then they are randomly subsampled
     _max_tracks_thumbnail = 1024
-    _layer_slicer: '_TracksSlicingState'
+    _slicing_state: '_TracksSlicingState'
 
     def __init__(
         self,
@@ -677,7 +677,7 @@ class Tracks(Layer):
             self._color_by = 'track_id'
             self.events.color_by()
 
-    def _get_layer_slicer(
+    def _get_layer_slicing_state(
         self, data: LayerDataType, cache: bool
     ) -> '_TracksSlicingState':
         return _TracksSlicingState(layer=self, data=data, cache=cache)

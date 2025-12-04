@@ -681,11 +681,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
                 'bounding_box': BoundingBoxOverlay(),
             }
         )
-        self._layer_slicer = self._get_layer_slicer(data, cache)
+        self._slicing_state = self._get_layer_slicing_state(data, cache)
 
     @property
     def _slice_input(self):
-        return self._layer_slicer._slice_input
+        return self._slicing_state._slice_input
 
     def _post_init(self):
         """Post init hook for subclasses to use."""
@@ -877,7 +877,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     @property
     def loaded(self) -> bool:
         """bool: Whether the layer has been loaded into memory."""
-        return self._layer_slicer.loaded
+        return self._slicing_state.loaded
 
     @property
     def opacity(self) -> float:
@@ -1102,7 +1102,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             self._transforms = self._transforms.expand_dims(new_axes)
 
         self._ndim = ndim
-        self._layer_slicer.update_dims()
+        self._slicing_state.update_dims()
 
         self.refresh()
 
@@ -1221,7 +1221,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     @property
     def _data_slice(self) -> _ThickNDSlice:
         """Slice in data coordinates."""
-        return self._layer_slicer.data_slice
+        return self._slicing_state.data_slice
 
     @abstractmethod
     def _get_ndim(self) -> int:
@@ -1395,7 +1395,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         return self._overlays['bounding_box']
 
     def set_view_slice(self) -> None:
-        self._layer_slicer.set_view_slice()
+        self._slicing_state.set_view_slice()
 
     @abstractmethod
     def _set_view_slice(self):
@@ -1424,7 +1424,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             dims,
             force,
         )
-        changed = self._layer_slicer.set_slice_input_from_dims(dims, force)
+        changed = self._slicing_state.set_slice_input_from_dims(dims, force)
         if force or changed:
             self._refresh_sync(
                 data_displayed=True,
@@ -1443,7 +1443,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
         Remove after clean guides/rendering notebook
         """
-        return self._layer_slicer._world_to_layer_dims(
+        return self._slicing_state._world_to_layer_dims(
             world_dims=world_dims, ndim_world=ndim_world
         )
 
@@ -1687,7 +1687,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         if extent:
             self._clear_extent()
         if data_displayed:
-            # self.set_view_slice()
             self.events.set_data()
         if thumbnail:
             self._update_thumbnail()
@@ -2415,7 +2414,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             ) from exc
 
     @abstractmethod
-    def _get_layer_slicer(
+    def _get_layer_slicing_state(
         self, data: LayerDataType, cache: bool
     ) -> _LayerSlicingState:
         """Return a LayerSlicer instance appropriate for this layer."""

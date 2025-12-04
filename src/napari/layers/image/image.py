@@ -660,13 +660,13 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
             f'ray value calculation not implemented for {self.rendering}'
         )
 
-    def _get_layer_slicer(
+    def _get_layer_slicing_state(
         self, data: LayerDataType, cache: bool
-    ) -> _ImageSlicer:
-        return _ImageSlicer(self, data, cache)
+    ) -> _ImageSlicingState:
+        return _ImageSlicingState(self, data, cache)
 
 
-class _ImageSlicer(ScalarFieldSlicingState):
+class _ImageSlicingState(ScalarFieldSlicingState):
     layer: Image
 
     def _update_slice_response(

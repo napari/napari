@@ -42,7 +42,7 @@ class Labels2DSuite:
     def time_set_view_slice(self, *_):
         """Time to set view slice."""
         if hasattr(self.layer, '_layer_slicer'):
-            self.layer._layer_slicer._set_view_slice()
+            self.layer._slicing_state._set_view_slice()
         else:
             # before https://github.com/napari/napari/pull/8254
             self.layer._set_view_slice()
@@ -182,7 +182,7 @@ class Labels3DSuite:
     def time_set_view_slice(self, *_):
         """Time to set view slice."""
         if hasattr(self.layer, '_layer_slicer'):
-            self.layer._layer_slicer._set_view_slice()
+            self.layer._slicing_state._set_view_slice()
         else:
             # before https://github.com/napari/napari/pull/8254
             self.layer._set_view_slice()

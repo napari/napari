@@ -303,19 +303,19 @@ class Vectors(Layer):
         self,
     ) -> np.ndarray[tuple[int, Literal[2], Literal[2]], np.dtype[np.floating]]:
         """(M, 2, 2) array: start point and projections of M vectors in 2D."""
-        return self._layer_slicer._view_data
+        return self._slicing_state._view_data
 
     @property
     def _view_indices(
         self,
     ) -> np.ndarray[tuple[Literal[1], int], np.dtype[np.integer]]:
         """(1, M) array: indices for the M in view vectors."""
-        return self._layer_slicer._view_indices
+        return self._slicing_state._view_indices
 
     @property
     def _view_alphas(self) -> float | np.ndarray:
         """(M,) or float: relative opacity for the M in view vectors."""
-        return self._layer_slicer._view_alphas
+        return self._slicing_state._view_alphas
 
     @property
     def data(self) -> np.ndarray:
@@ -775,7 +775,7 @@ class Vectors(Layer):
         """
         return
 
-    def _get_layer_slicer(
+    def _get_layer_slicing_state(
         self, data: LayerDataType, cache: bool
     ) -> '_VectorsSlicingState':
         return _VectorsSlicingState(layer=self, data=data, cache=cache)

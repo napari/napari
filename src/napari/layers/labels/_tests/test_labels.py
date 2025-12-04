@@ -1788,7 +1788,7 @@ def test_negative_label_doesnt_flicker():
     assert tuple(layer.get_color(-1)) != tuple(layer.get_color(5))
     minus_one_color_original = tuple(layer.get_color(-1))
     layer.dims_point = (2, 0, 0)
-    layer._layer_slicer._set_view_slice()
+    layer._slicing_state._set_view_slice()
 
     assert tuple(layer.get_color(-1)) == minus_one_color_original
 

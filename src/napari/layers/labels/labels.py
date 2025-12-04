@@ -847,7 +847,7 @@ class Labels(ScalarFieldBase):
     def _partial_labels_refresh(self):
         """Prepares and displays only an updated part of the labels."""
 
-        if self._updated_slice is None or not self._layer_slicer.loaded:
+        if self._updated_slice is None or not self._slicing_state.loaded:
             return
 
         dims_displayed = self._slice_input.displayed
@@ -966,7 +966,7 @@ class Labels(ScalarFieldBase):
         like adjusting gamma or changing the data based on the contrast
         limits.
         """
-        if not self._layer_slicer.loaded or self._slice.empty:
+        if not self._slicing_state.loaded or self._slice.empty:
             # ASYNC_TODO: Do not compute the thumbnail until we are loaded.
             # Is there a nicer way to prevent this from getting called?
             return

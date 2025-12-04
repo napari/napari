@@ -328,7 +328,7 @@ class ScalarFieldBase(Layer, ABC):
 
     @property
     def _slice(self) -> _ScalarFieldSliceResponse:
-        return self._layer_slicer._slice
+        return self._slicing_state._slice
 
     @property
     def dtype(self):
@@ -672,7 +672,7 @@ class ScalarFieldBase(Layer, ABC):
         """
         return self._extent_level_data_augmented[:, dims_displayed].T
 
-    def _get_layer_slicer(
+    def _get_layer_slicing_state(
         self, data: LayerDataType, cache: bool
     ) -> ScalarFieldSlicingState:
         return ScalarFieldSlicingState(layer=self, data=data, cache=cache)

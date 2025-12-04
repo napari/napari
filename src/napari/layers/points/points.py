@@ -326,7 +326,7 @@ class Points(Layer):
         None after dragging is done.
     """
 
-    _layer_slicer: '_PointsSlicingState'
+    _slicing_state: '_PointsSlicingState'
 
     _modeclass = Mode
     _projectionclass = PointsProjectionMode
@@ -2412,7 +2412,7 @@ class Points(Layer):
             and not (isinstance(v[value], float) and np.isnan(v[value]))
         ]
 
-    def _get_layer_slicer(
+    def _get_layer_slicing_state(
         self, data: LayerDataType, cache: bool
     ) -> '_PointsSlicingState':
         return _PointsSlicingState(layer=self, data=data, cache=cache)

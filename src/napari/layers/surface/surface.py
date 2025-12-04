@@ -329,25 +329,25 @@ class Surface(IntensityVisualizationMixin, Layer):
 
         self.wireframe = wireframe
         self.normals = normals
-        self._layer_slicer.slice_done.connect(
+        self._slicing_state.slice_done.connect(
             self._maybe_reset_contrast_limits
         )
 
     @property
     def _view_vertex_colors(self) -> list[Any] | np.ndarray:
-        return self._layer_slicer._view_vertex_colors
+        return self._slicing_state._view_vertex_colors
 
     @property
     def _view_vertex_values(self) -> list[Any] | np.ndarray:
-        return self._layer_slicer._view_vertex_values
+        return self._slicing_state._view_vertex_values
 
     @property
     def _data_view(self) -> np.ndarray:
-        return self._layer_slicer._data_view
+        return self._slicing_state._data_view
 
     @property
     def _view_faces(self) -> np.ndarray:
-        return self._layer_slicer._view_faces
+        return self._slicing_state._view_faces
 
     def _calc_data_range(self, mode='data'):
         return calc_data_range(self.vertex_values)
@@ -746,7 +746,7 @@ class Surface(IntensityVisualizationMixin, Layer):
             layer_type=layer_type,
         )
 
-    def _get_layer_slicer(
+    def _get_layer_slicing_state(
         self, data: LayerDataType, cache: bool
     ) -> '_SurfaceSlicingState':
         return _SurfaceSlicingState(layer=self, data=data, cache=cache)
