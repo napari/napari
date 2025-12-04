@@ -46,6 +46,12 @@ def _load_skimage_data(name, **kwargs):
         kwargs['n_dim'] = 3
         kwargs.setdefault('length', 128)
         kwargs.setdefault('volume_fraction', 0.25)
+        kwargs.setdefault('rng', 1)
+        name = 'binary_blobs'
+    if name == 'binary_blobs':
+        kwargs.setdefault('length', 512)
+        kwargs.setdefault('volume_fraction', 0.5)
+        kwargs.setdefault('rng', 1)
         name = 'binary_blobs'
 
     return [(getattr(skimage.data, name)(**kwargs), {'name': name})]
