@@ -56,6 +56,8 @@ def test_layer_overlays(qt_viewer):
     layer_node = canvas.layer_to_visual[layer].node
 
     for overlay in layer._overlays.values():
+        # vispy overlays only exist if they are visible at least once
+        overlay.visible = True
         if isinstance(overlay, CanvasOverlay):
             assert (
                 canvas._layer_overlay_to_visual[layer][overlay].node
@@ -69,7 +71,7 @@ def test_layer_overlays(qt_viewer):
 
     old_vispy_overlays = {**canvas._layer_overlay_to_visual[layer]}
 
-    new_overlay = BoundingBoxOverlay()
+    new_overlay = BoundingBoxOverlay(visible=True)
     layer._overlays['test'] = new_overlay
 
     assert new_overlay in canvas._layer_overlay_to_visual[layer]

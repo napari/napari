@@ -80,6 +80,11 @@ authors:
     Germany
   orcid: https://orcid.org/0000-0003-1666-5421
   alias: melonora
+- given-names: Ashley
+  family-names: Anderson
+  affiliation: Chan Zuckerberg Initiative
+  orcid: https://orcid.org/0000-0002-3841-8344
+  alias: aganders3
 - given-names: Timothy
   family-names: Monko
   affiliation: University of Minnesota — Twin Cities
@@ -123,11 +128,6 @@ authors:
   affiliation: Harvard Medical School, BIDMC
   orcid: https://orcid.org/0000-0002-8070-0378
   alias: orena1
-- given-names: Ashley
-  family-names: Anderson
-  affiliation: Chan Zuckerberg Initiative
-  orcid: https://orcid.org/0000-0002-3841-8344
-  alias: aganders3
 - given-names: Andrew
   family-names: Annex
   affiliation: SETI Institute/NASA ARC

@@ -1,12 +1,9 @@
-import os
-import sys
-from pathlib import Path
 from warnings import warn
 
 from napari.utils.translations import trans
 
 try:
-    from qtpy import API_NAME, QT_VERSION, QtCore
+    from qtpy import API_NAME, QtCore
 except Exception as e:
     if 'No Qt bindings could be found' in str(e):
         from importlib.metadata import version
@@ -20,19 +17,17 @@ except Exception as e:
                     """
                 No Qt bindings could be found for napari=={version}.
 
-                napari requires either PyQt5 (default), PyQt6 or PySide2 to be installed in the environment.
+                napari requires either PyQt5 (default), PyQt6 or PySide6 to be installed in the environment.
 
                 With pip, you can install either with:
                   $ pip install -U 'napari[all]'  # default choice
                   $ pip install -U 'napari[pyqt5]'
                   $ pip install -U 'napari[pyqt6]'
                   $ pip install -U 'napari[pyside6]'
-                  $ pip install -U 'napari[pyside2]'
 
                 With conda, you need to do:
                   $ conda install -c conda-forge pyqt
                   $ conda install -c conda-forge pyside6
-                  $ conda install -c conda-forge pyside2
 
                 Our heuristics suggest you are using '{tool}' to manage your packages.
                 """
@@ -43,29 +38,6 @@ except Exception as e:
             )
         ) from e
     raise
-
-
-if API_NAME == 'PySide2':
-    # Set plugin path appropriately if using PySide2. This is a bug fix
-    # for when both PyQt5 and Pyside2 are installed
-    import PySide2
-
-    os.environ['QT_PLUGIN_PATH'] = str(
-        Path(PySide2.__file__).parent / 'Qt' / 'plugins'
-    )
-
-if API_NAME == 'PySide6' and sys.version_info[:2] < (3, 10):
-    from packaging import version
-
-    assert isinstance(QT_VERSION, str)
-
-    if version.parse(QT_VERSION) > version.parse('6.3.1'):
-        raise RuntimeError(
-            trans._(
-                'Napari is not expected to work with PySide6 >= 6.3.2 on Python < 3.10',
-                deferred=True,
-            )
-        )
 
 
 # When QT is not the specific version, we raise a warning:
