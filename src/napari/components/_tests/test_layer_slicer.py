@@ -59,7 +59,7 @@ class FakeAsyncLayer:
         self._last_slice_id = slice_id
 
     @property
-    def _layer_slicer(self):
+    def _slicing_state(self):
         return self
 
 
@@ -72,7 +72,7 @@ class FakeSyncLayer:
         self.slice_count += 1
 
     @property
-    def _layer_slicer(self):
+    def _slicing_state(self):
         return self
 
 

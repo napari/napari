@@ -549,7 +549,7 @@ class Points(Layer):
 
         # Trigger generation of view slice and thumbnail
         self.refresh(extent=False)
-        self._layer_slicer.slice_done.connect(self._refresh_highlight)
+        self._slicing_state.slice_done.connect(self._refresh_highlight)
 
     @property
     def data(self) -> np.ndarray:
@@ -1378,7 +1378,7 @@ class Points(Layer):
     def selected_data(self, selected_data: Iterable[int]) -> None:
         self._selected_data.clear()
         self._selected_data.update(set(selected_data))
-        self._layer_slicer.update_selected_view()
+        self._slicing_state.update_selected_view()
 
         # Update properties based on selected points
         if not len(self._selected_data):
@@ -1473,15 +1473,15 @@ class Points(Layer):
 
     @property
     def _indices_view(self):
-        return self._layer_slicer._indices_view
+        return self._slicing_state._indices_view
 
     @property
     def _selected_view(self):
-        return self._layer_slicer._selected_view
+        return self._slicing_state._selected_view
 
     @property
     def _view_size_scale(self):
-        return self._layer_slicer._view_size_scale
+        return self._slicing_state._view_size_scale
 
     @property
     def _view_data(self) -> np.ndarray:
@@ -2184,7 +2184,7 @@ class Points(Layer):
                 ),
             )
 
-            self._layer_slicer._selected_view = list(
+            self._slicing_state._selected_view = list(
                 range(npoints, npoints + len(self._clipboard['data']))
             )
             self._selected_data.update(

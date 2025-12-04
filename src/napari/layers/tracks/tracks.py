@@ -345,12 +345,12 @@ class Tracks(Layer):
     @property
     def _view_data(self):
         """return a view of the data"""
-        return self._layer_slicer._view_data
+        return self._slicing_state._view_data
 
     @property
     def _view_graph(self):
         """return a view of the graph"""
-        return self._layer_slicer._view_graph
+        return self._slicing_state._view_graph
 
     @property
     def current_time(self) -> int | None:

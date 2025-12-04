@@ -1795,7 +1795,7 @@ def test_message_3d():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
-    layer._layer_slicer._slice_input = _SliceInput(
+    layer._slicing_state._slice_input = _SliceInput(
         ndisplay=3,
         world_slice=_ThickNDSlice.make_full(ndim=2),
         order=(0, 1, 2),
@@ -2610,7 +2610,7 @@ def test_point_slice_request_response(dims_indices, target_indices):
 
     data_slice = _ThickNDSlice.make_full(point=dims_indices)
 
-    request = layer._layer_slicer.make_slice_request_internal(
+    request = layer._slicing_state.make_slice_request_internal(
         layer._slice_input, data_slice
     )
     response = request()
@@ -2793,6 +2793,6 @@ def test_points_layer_display_correct_slice_on_scale(viewer_model):
     pts.add((8.7, 0, 0))
     viewer_model.dims.set_point(0, 30 * 0.29)  # middle plane
 
-    request = pts._layer_slicer._make_slice_request(viewer_model.dims)
+    request = pts._slicing_state._make_slice_request(viewer_model.dims)
     response = request()
     np.testing.assert_equal(response.indices, [0])

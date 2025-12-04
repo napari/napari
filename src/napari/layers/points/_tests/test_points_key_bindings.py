@@ -40,7 +40,7 @@ def test_select_all_in_slice():
     data = [[1, 3], [8, 4], [10, 10], [15, 4]]
     layer = Points(data, size=1)
     layer.mode = 'select'
-    layer._layer_slicer.set_view_slice()
+    layer._slicing_state.set_view_slice()
 
     assert len(layer.data) == 4
     assert len(layer.selected_data) == 0
@@ -57,7 +57,7 @@ def test_select_all_in_slice_3d_data():
     data = [[0, 1, 3], [0, 8, 4], [0, 10, 10], [1, 15, 4]]
     layer = Points(data, size=1)
     layer.mode = 'select'
-    layer._layer_slicer.set_view_slice()
+    layer._slicing_state.set_view_slice()
 
     assert len(layer.data) == 4
     assert len(layer.selected_data) == 0
@@ -79,7 +79,7 @@ def test_select_append_all_in_slice_3d_data():
     data = [[0, 1, 3], [0, 8, 4], [0, 10, 10], [1, 15, 4]]
     layer = Points(data, size=1)
     layer.mode = 'select'
-    layer._layer_slicer._set_view_slice()
+    layer._slicing_state._set_view_slice()
 
     assert len(layer.data) == 4
     assert len(layer.selected_data) == 0
@@ -102,7 +102,7 @@ def test_select_all_data():
     data = [[1, 3], [8, 4], [10, 10], [15, 4]]
     layer = Points(data, size=1)
     layer.mode = 'select'
-    layer._layer_slicer.set_view_slice()
+    layer._slicing_state.set_view_slice()
 
     assert len(layer.data) == 4
     assert len(layer.selected_data) == 0
@@ -119,7 +119,7 @@ def test_select_all_data_3d_data():
     data = [[0, 1, 3], [0, 8, 4], [0, 10, 10], [1, 15, 4]]
     layer = Points(data, size=1)
     layer.mode = 'select'
-    layer._layer_slicer.set_view_slice()
+    layer._slicing_state.set_view_slice()
 
     assert len(layer.data) == 4
     assert len(layer.selected_data) == 0
@@ -135,7 +135,7 @@ def test_select_all_mixed():
     data = [[0, 1, 3], [0, 8, 4], [0, 10, 10], [1, 15, 4]]
     layer = Points(data, size=1)
     layer.mode = 'select'
-    layer._layer_slicer.set_view_slice()
+    layer._slicing_state.set_view_slice()
 
     assert len(layer.data) == 4
     assert len(layer.selected_data) == 0
