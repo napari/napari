@@ -396,11 +396,12 @@ class VispyCanvas:
         The `_is_quitting` attribute will be used by _remove_layer to
         skip expensive operations that are unneeded during shutdown.
         """
+        prev = self._is_quitting
         self._is_quitting = True
         try:
             yield
         finally:
-            self._is_quitting = False
+            self._is_quitting = prev
 
     def _on_interactive(self) -> None:
         """Link interactive attributes of view and viewer."""
