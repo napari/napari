@@ -794,16 +794,15 @@ class ShapeList:
             triangle_ranges = self._mesh_triangles_range_seq(disp_indices)
             vertices_range = self._vertices_range_seq(disp_indices)
 
-        z_order_selected = np.argsort(z_order[triangle_ranges])
-
-        self._mesh.displayed_triangles = self._mesh.triangles[triangle_ranges][
-            z_order_selected
+        self._mesh.displayed_triangles = self._mesh.triangles[
+            z_order[triangle_ranges]
         ]
+
         self._update_displayed_triangles_to_shape_index(disp_indices)
 
         self._mesh.displayed_triangles_colors = self._mesh.triangles_colors[
-            triangle_ranges
-        ][z_order_selected]
+            z_order[triangle_ranges]
+        ]
 
         self.displayed_vertices = self._vertices[vertices_range]
         self._update_displayed_vertices_to_shape_num(disp_indices)
