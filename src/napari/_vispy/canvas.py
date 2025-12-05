@@ -151,6 +151,7 @@ class VispyCanvas:
         # Since the base class is frozen we must create this attribute
         # before calling super().__init__().
         self._pause_scene_graph = False
+        self._need_gc_collect = False
         self.max_texture_sizes = None
         self._last_theme_color = None
         self._background_color_override = None
@@ -779,7 +780,11 @@ class VispyCanvas:
 
         self._update_layer_overlays(layer)
         del self._layer_overlay_to_visual[layer]
+        if self._pause_scene_graph:
+            return
+        self._clean_and_update_scenegraph()
 
+    def _clean_and_update_scenegraph(self):
         # Critical two-step fix for Windows OpenGL access violation bug
         # This prevents the race condition where scenegraph updates occur while
         # GPU resources from the removed layer are still being processed/deleted.
@@ -789,8 +794,7 @@ class VispyCanvas:
         # buffers, etc.) for deletion, but Python's garbage collector may not run
         # immediately. On some Windows OpenGL drivers (especially NVIDIA cards),
         # this can leave "dangling" OpenGL resource references.
-        if not self._pause_scene_graph:
-            gc.collect()
+        gc.collect()
 
         # Step 2: Synchronize the OpenGL command queue
         # Layer removal involves deleting GPU textures, buffers, and shader programs/
@@ -1258,5 +1262,4 @@ class VispyCanvas:
 
     def _resume_scene_graph_update(self):
         self._pause_scene_graph = False
-        gc.collect()
-        self._update_scenegraph()
+        self._clean_and_update_scenegraph()
