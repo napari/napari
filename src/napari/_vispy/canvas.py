@@ -846,7 +846,7 @@ class VispyCanvas:
         """
         # delete outdated overlays
         for overlay in set(self._overlay_to_visual) - set(
-            self.viewer._overlays
+            self.viewer._overlays.values()
         ):
             if isinstance(overlay, CanvasOverlay):
                 self._disconnect_canvas_overlay_events(overlay)
