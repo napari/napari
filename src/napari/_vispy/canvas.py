@@ -151,7 +151,6 @@ class VispyCanvas:
         # Since the base class is frozen we must create this attribute
         # before calling super().__init__().
         self._pause_scene_graph = False
-        self._need_gc_collect = False
         self.max_texture_sizes = None
         self._last_theme_color = None
         self._background_color_override = None
