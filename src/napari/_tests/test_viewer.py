@@ -1,5 +1,5 @@
 import os
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import numpy as np
 import pytest
@@ -457,3 +457,37 @@ def test_negative_translate(make_napari_viewer, qtbot):
     viewer = make_napari_viewer()
     _ = viewer.add_image(data, translate=(-1, 0, 0))
     assert viewer.dims.range[2].start == -1
+
+
+@pytest.mark.parametrize(
+    'is_quitting',
+    [
+        (True),
+        (False),
+    ],
+)
+def test_viewer_close_is_quitting_flag(make_napari_viewer, is_quitting):
+    """Check that viewer.close() uses the _is_quitting flag correctly.
+
+    Expensive operations in canvas._remove_layer should be skipped when
+    _is_quitting is True.
+    """
+    viewer = make_napari_viewer()
+    viewer.add_image(np.zeros([10, 10]))
+    canvas = viewer.window._qt_viewer.canvas
+
+    with (
+        patch('gc.collect') as mock_gc_collect,
+        patch.object(canvas._scene_canvas.context, 'finish') as mock_finish,
+        patch.object(canvas, '_update_scenegraph') as mock_update_scenegraph,
+    ):
+        viewer.close(_is_quitting=is_quitting)
+
+    if is_quitting:
+        mock_gc_collect.assert_not_called()
+        mock_finish.assert_not_called()
+        mock_update_scenegraph.assert_not_called()
+    else:
+        mock_gc_collect.assert_called()
+        mock_finish.assert_called()
+        mock_update_scenegraph.assert_called()
