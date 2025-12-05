@@ -103,7 +103,7 @@ jobs:
     needs:
       - test
       - test_examples
-    uses: napari/shared-workflows/.github/workflows/upload_coverage.yml@coverage_upload
+    uses: napari/shared-workflows/.github/workflows/upload_coverage.yml@main
     with:
       artifact-pattern: 'coverage reports*'
 
