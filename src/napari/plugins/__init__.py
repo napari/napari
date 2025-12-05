@@ -38,7 +38,7 @@ def _initialize_plugins() -> None:
         _npe2.on_plugin_enablement_change
     )
     _npe2pm.events.plugins_registered.connect(_npe2.on_plugins_registered)
-    _npe2pm.discover(include_npe1=settings.plugins.use_npe2_adaptor)
+    _npe2pm.discover(include_npe1=True)
 
     # Disable plugins listed as disabled in settings, or detected in npe2
     _from_npe2 = {m.name for m in _npe2pm.iter_manifests()}
@@ -47,11 +47,8 @@ def _initialize_plugins() -> None:
     plugin_manager._skip_packages = _from_npe2
     plugin_manager._blocked.update(settings.plugins.disabled_plugins)
 
-    if settings.plugins.use_npe2_adaptor:
-        # prevent npe1 plugin_manager discovery
-        # (this doesn't prevent manual registration)
-        plugin_manager.discover = lambda *a, **k: None
-    else:
-        plugin_manager._initialize()
+    # prevent npe1 plugin_manager discovery
+    # (this doesn't prevent manual registration)
+    plugin_manager.discover = lambda *a, **k: None
 
     _install_npe2_themes()
