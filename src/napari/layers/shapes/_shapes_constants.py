@@ -9,7 +9,7 @@ from napari.layers.shapes._shapes_models import (
     Polygon,
     Rectangle,
 )
-from napari.utils.misc import StringEnum
+from napari.utils.compat import StrEnum as StringEnum
 
 
 class Mode(StringEnum):
