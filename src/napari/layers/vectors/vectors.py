@@ -1,11 +1,11 @@
 import warnings
 from copy import copy
-from typing import Any
+from typing import Any, Literal
 
 import numpy as np
 import pandas as pd
 
-from napari.layers.base import Layer
+from napari.layers.base import Layer, _LayerSlicingState
 from napari.layers.utils._color_manager_constants import ColorMode
 from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
 from napari.layers.utils.color_manager import ColorManager
@@ -20,6 +20,7 @@ from napari.layers.vectors._vectors_constants import (
     VectorsProjectionMode,
     VectorStyle,
 )
+from napari.types import LayerDataType
 from napari.utils.colormaps import Colormap, ValidColormapArg
 from napari.utils.events import Event
 from napari.utils.events.custom_types import Array
@@ -293,14 +294,28 @@ class Vectors(Layer):
             ),
         )
 
-        # Data containing vectors in the currently viewed slice
-        self._view_data = np.empty((0, 2, 2))
-        self._view_indices = np.array([], dtype=int)
-        self._view_alphas: float | np.ndarray = 1.0
-
         # now that everything is set up, make the layer visible (if set to visible)
         self.refresh()
         self.visible = visible
+
+    @property
+    def _view_data(
+        self,
+    ) -> np.ndarray[tuple[int, Literal[2], Literal[2]], np.dtype[np.floating]]:
+        """(M, 2, 2) array: start point and projections of M vectors in 2D."""
+        return self._slicing_state._view_data
+
+    @property
+    def _view_indices(
+        self,
+    ) -> np.ndarray[tuple[Literal[1], int], np.dtype[np.integer]]:
+        """(1, M) array: indices for the M in view vectors."""
+        return self._slicing_state._view_indices
+
+    @property
+    def _view_alphas(self) -> float | np.ndarray:
+        """(M,) or float: relative opacity for the M in view vectors."""
+        return self._slicing_state._view_alphas
 
     @property
     def data(self) -> np.ndarray:
@@ -690,53 +705,7 @@ class Vectors(Layer):
         return face_color
 
     def _set_view_slice(self):
-        """Sets the view given the indices to slice with."""
-
-        # The new slicing code makes a request from the existing state and
-        # executes the request on the calling thread directly.
-        # For async slicing, the calling thread will not be the main thread.
-        request = self._make_slice_request_internal(
-            self._slice_input, self._data_slice
-        )
-        response = request()
-        self._update_slice_response(response)
-
-    def _make_slice_request(self, dims) -> _VectorSliceRequest:
-        """Make a Vectors slice request based on the given dims and these data."""
-        slice_input = self._make_slice_input(dims)
-        # TODO: [see Image]
-        #   For the existing sync slicing, slice_indices is passed through
-        # to avoid some performance issues related to the evaluation of the
-        # data-to-world transform and its inverse. Async slicing currently
-        # absorbs these performance issues here, but we can likely improve
-        # things either by caching the world-to-data transform on the layer
-        # or by lazily evaluating it in the slice task itself.
-        slice_indices = slice_input.data_slice(self._data_to_world.inverse)
-        return self._make_slice_request_internal(slice_input, slice_indices)
-
-    def _make_slice_request_internal(
-        self, slice_input: _SliceInput, data_slice: _ThickNDSlice
-    ):
-        return _VectorSliceRequest(
-            slice_input=slice_input,
-            data=self.data,
-            data_slice=data_slice,
-            projection_mode=self.projection_mode,
-            out_of_slice_display=self.out_of_slice_display,
-            length=self.length,
-        )
-
-    def _update_slice_response(self, response: _VectorSliceResponse):
-        """Handle a slicing response."""
-        self._slice_input = response.slice_input
-        indices = response.indices
-        alphas = response.alphas
-
-        disp = self._slice_input.displayed
-
-        self._view_indices = indices
-        self._view_alphas = alphas
-        self._view_data = self.data[np.ix_(list(indices), [0, 1], disp)]
+        raise NotImplementedError
 
     def _update_thumbnail(self):
         """Update thumbnail with current vectors and colors."""
@@ -805,3 +774,66 @@ class Vectors(Layer):
             Value of the data at the coord.
         """
         return
+
+    def _get_layer_slicing_state(
+        self, data: LayerDataType, cache: bool
+    ) -> '_VectorsSlicingState':
+        return _VectorsSlicingState(layer=self, data=data, cache=cache)
+
+
+class _VectorsSlicingState(_LayerSlicingState):
+    layer: Vectors
+
+    def __init__(self, layer: Layer, data: LayerDataType, cache: bool):
+        super().__init__(layer, data, cache)
+
+        # Data containing vectors in the currently viewed slice
+        self._view_data = np.empty((0, 2, 2))
+        self._view_indices = np.array([], dtype=int)
+        self._view_alphas: float | np.ndarray = 1.0
+
+    def _set_view_slice(self):
+        request = self.make_slice_request_internal(
+            self.layer._slice_input, self.layer._data_slice
+        )
+        response = request()
+        self._update_slice_response(response)
+
+    def make_slice_request(self, dims) -> _VectorSliceRequest:
+        """Make a Vectors slice request based on the given dims and these data."""
+        slice_input = self.make_slice_input(dims)
+        # TODO: [see Image]
+        #   For the existing sync slicing, slice_indices is passed through
+        # to avoid some performance issues related to the evaluation of the
+        # data-to-world transform and its inverse. Async slicing currently
+        # absorbs these performance issues here, but we can likely improve
+        # things either by caching the world-to-data transform on the layer
+        # or by lazily evaluating it in the slice task itself.
+        slice_indices = slice_input.data_slice(
+            self.layer._data_to_world.inverse
+        )
+        return self.make_slice_request_internal(slice_input, slice_indices)
+
+    def make_slice_request_internal(
+        self, slice_input: _SliceInput, data_slice: _ThickNDSlice
+    ):
+        return _VectorSliceRequest(
+            slice_input=slice_input,
+            data=self.layer.data,
+            data_slice=data_slice,
+            projection_mode=self.layer.projection_mode,
+            out_of_slice_display=self.layer.out_of_slice_display,
+            length=self.layer.length,
+        )
+
+    def _update_slice_response(self, response: _VectorSliceResponse):
+        """Handle a slicing response."""
+        self._slice_input = response.slice_input
+        indices = response.indices
+        alphas = response.alphas
+
+        disp = self._slice_input.displayed
+
+        self._view_indices = indices
+        self._view_alphas = alphas
+        self._view_data = self.layer.data[np.ix_(list(indices), [0, 1], disp)]
