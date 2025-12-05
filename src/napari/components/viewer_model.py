@@ -222,7 +222,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         super().__init__(
             title=title,
             dims={
-                'ndim': max(2, len(axis_labels)),
+                'ndim': max(2, len(axis_labels), ndisplay, len(order)),
                 'axis_labels': axis_labels,
                 'ndisplay': ndisplay,
                 'order': order,
