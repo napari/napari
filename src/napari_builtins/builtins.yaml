@@ -136,6 +136,9 @@ contributions:
     - id: napari.widgets.features_table
       title: Features table widget
       python_name: napari_builtins._qt.features_table:FeaturesTable
+    - id: napari.widgets.clipping_planes_controls
+      title: Controls for clipping planes
+      python_name: napari_builtins._qt.clipping_planes:ClippingPlanesControls
 
     # others
     - id: napari.toggle_shape_measures
@@ -329,9 +332,12 @@ contributions:
   widgets:
     - command: napari.widgets.features_table
       display_name: Features table widget
+    - command: napari.widgets.clipping_planes_controls
+      display_name: Clipping planes controls
 
   menus:
     napari/layers/visualize:
       - command: napari.widgets.features_table
+      - command: napari.widgets.clipping_planes_controls
     napari/layers/measure:
       - command: napari.toggle_shape_measures
