@@ -150,6 +150,7 @@ class VispyCanvas:
     ) -> None:
         # Since the base class is frozen we must create this attribute
         # before calling super().__init__().
+        self._pause_scene_graph = False
         self.max_texture_sizes = None
         self._last_theme_color = None
         self._background_color_override = None
@@ -232,6 +233,12 @@ class VispyCanvas:
         self.viewer._zoom_box.events.zoom.connect(self._on_boxzoom)
         self.viewer.layers.events.reordered.connect(self._update_scenegraph)
         self.viewer.layers.events.removed.connect(self._remove_layer)
+        self.viewer.layers.events.begin_batch.connect(
+            self._pause_scene_graph_update
+        )
+        self.viewer.layers.events.end_batch.connect(
+            self._resume_scene_graph_update
+        )
         self.viewer.grid.events.stride.connect(self._update_scenegraph)
         self.viewer.grid.events.shape.connect(self._update_scenegraph)
         self.viewer.grid.events.enabled.connect(self._update_scenegraph)
@@ -782,7 +789,8 @@ class VispyCanvas:
         # buffers, etc.) for deletion, but Python's garbage collector may not run
         # immediately. On some Windows OpenGL drivers (especially NVIDIA cards),
         # this can leave "dangling" OpenGL resource references.
-        gc.collect()
+        if not self._pause_scene_graph:
+            gc.collect()
 
         # Step 2: Synchronize the OpenGL command queue
         # Layer removal involves deleting GPU textures, buffers, and shader programs/
@@ -1160,6 +1168,8 @@ class VispyCanvas:
             self.grid_cameras.append(camera)
 
     def _update_scenegraph(self, event=None):
+        if self._pause_scene_graph:
+            return
         with self._scene_canvas.events.draw.blocker():
             if self.viewer.grid.enabled:
                 self._init_or_update_grid()
@@ -1242,3 +1252,11 @@ class VispyCanvas:
             self.viewer.grid.spacing = safe_spacing
 
         self.grid.spacing = safe_spacing
+
+    def _pause_scene_graph_update(self):
+        self._pause_scene_graph = True
+
+    def _resume_scene_graph_update(self):
+        self._pause_scene_graph = False
+        gc.collect()
+        self._update_scenegraph()
