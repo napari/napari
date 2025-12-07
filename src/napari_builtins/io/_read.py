@@ -202,6 +202,7 @@ def read_zarr_dataset(path: str):
                 )
             )
     else:
+        # the store consists of a single group, so open it
         group = store
 
     array_keys = sorted(group.array_keys())
