@@ -164,7 +164,7 @@ def read_zarr_dataset(path: str):
         image = da.from_zarr(store)
         return image, image.shape
 
-	# if we're here, it means the path wasn't a valid array, so we check if it's a valid group
+    # if we're here, it means the path wasn't a valid array, so we check if it's a valid group
     if not isinstance(store, zarr.Group):
         raise TypeError(
             trans._(
