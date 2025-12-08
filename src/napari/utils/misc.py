@@ -473,8 +473,6 @@ def pick_equality_operator(obj: Any) -> Callable[[Any, Any], bool]:
         'xarray.DataArray': _quiet_array_equal,  # xarray.core.dataarray.DataArray
         'pandas.DataFrame': _pandas_dataframe_equal,  # pandas.DataFrame.equals
     }
-    if hasattr(obj, 'events'):
-        return operator.is_
 
     for name in _arraylike_short_names(obj):
         func = _known_arrays.get(name)

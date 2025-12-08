@@ -5,7 +5,6 @@ from collections.abc import Mapping, Sequence
 from napari.utils.events.containers._dict import _K, _T, TypedMutableMapping
 from napari.utils.events.event import EmitterGroup, Event
 from napari.utils.events.types import SupportsEvents
-from napari.utils.misc import pick_equality_operator
 
 
 class EventedDict(TypedMutableMapping[_K, _T]):
@@ -71,8 +70,7 @@ class EventedDict(TypedMutableMapping[_K, _T]):
 
     def __setitem__(self, key: _K, value: _T) -> None:
         old = self._dict.get(key)
-        eq_op = pick_equality_operator(value)
-        if eq_op(old, value):
+        if value is old or value == old:
             return
         if old is None:
             self.events.adding(key=key)
