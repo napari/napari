@@ -50,7 +50,7 @@ class VispyBaseOverlay:
         self._on_blending_change()
 
     def close(self) -> None:
-        disconnect_events(self.overlay.events, self)
+        # disconnect_events(self.overlay.events, self)
         self.node.transforms = MatrixTransform()
         self.node.parent = None
 

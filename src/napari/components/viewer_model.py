@@ -296,23 +296,23 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     # simple properties exposing overlays for backward compatibility
     @property
-    def axes(self):
+    def axes(self) -> AxesOverlay:
         return self._overlays['axes']
 
     @property
-    def scale_bar(self):
+    def scale_bar(self) -> ScaleBarOverlay:
         return self._overlays['scale_bar']
 
     @property
-    def text_overlay(self):
+    def text_overlay(self) -> TextOverlay:
         return self._overlays['text']
 
     @property
-    def _zoom_box(self):
+    def _zoom_box(self) -> ZoomOverlay:
         return self._overlays['zoom']
 
     @property
-    def _brush_circle_overlay(self):
+    def _brush_circle_overlay(self) -> BrushCircleOverlay:
         return self._overlays['brush_circle']
 
     def _tooltip_visible_update(self, event):

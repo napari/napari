@@ -2,6 +2,8 @@
 
 from collections.abc import Mapping, Sequence
 
+from psygnal import EmissionInfo, EventedModel as PsygnalModel
+
 from napari.utils.events.containers._dict import _K, _T, TypedMutableMapping
 from napari.utils.events.event import EmitterGroup, Event
 from napari.utils.events.types import SupportsEvents
@@ -96,6 +98,17 @@ class EventedDict(TypedMutableMapping[_K, _T]):
         # re-emit with this object's EventEmitter
         self.events(event)
 
+    def _reemit_chile_event_psygnal(self, event: EmissionInfo) -> None:
+        source = event.signal.instance
+        if event.path:
+            key = f'{self.key(source)}.{event.path}'
+        else:
+            key = self.key(source)
+        event = Event(value=event.args, key=key, type_name='')
+        event._push_source(source)
+
+        self.events(event)
+
     def _disconnect_child_emitters(self, child: _T) -> None:
         """Disconnect all events from the child from the re-emitter."""
         if isinstance(child, SupportsEvents):
@@ -103,7 +116,9 @@ class EventedDict(TypedMutableMapping[_K, _T]):
 
     def _connect_child_emitters(self, child: _T) -> None:
         """Connect all events from the child to be re-emitted."""
-        if isinstance(child, SupportsEvents):
+        if isinstance(child, PsygnalModel):
+            child.events.connect(self._reemit_chile_event_psygnal)
+        elif isinstance(child, SupportsEvents):
             # make sure the event source has been set on the child
             if child.events.source is None:
                 child.events.source = child
