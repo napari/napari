@@ -23,22 +23,27 @@ def test_viewer_overlays(qt_viewer):
                 for visual in canvas._overlay_to_visual[overlay]
             )
 
-    old_vispy_overlays = list(canvas._overlay_to_visual.values())
+    old_scale_bar_overlay = viewer._overlays['scale_bar']
+    old_scale_bar_overlay_node = canvas._overlay_to_visual[
+        old_scale_bar_overlay
+    ][0].node
+
+    assert old_scale_bar_overlay_node not in canvas.view.scene.children
+    assert old_scale_bar_overlay_node in canvas.view.children
 
     new_overlay = ScaleBarOverlay()
-    viewer._overlays['test'] = new_overlay
+    viewer._overlays['scale_bar'] = new_overlay
 
     assert new_overlay in canvas._overlay_to_visual
+    assert old_scale_bar_overlay not in canvas._overlay_to_visual
     new_overlay_node = canvas._overlay_to_visual[new_overlay][0].node
     assert new_overlay_node not in canvas.view.scene.children
     assert new_overlay_node in canvas.view.children
 
-    # old visuals should be removed, as everything was recreated
-    for old_ov in old_vispy_overlays:
-        assert old_ov[0].node not in canvas.view.scene.children
-        assert old_ov[0].node not in canvas.view.children
+    assert old_scale_bar_overlay_node not in canvas.view.scene.children
+    assert old_scale_bar_overlay_node not in canvas.view.children
 
-    viewer._overlays.pop('test')
+    viewer._overlays.pop('scale_bar')
     assert new_overlay not in canvas._overlay_to_visual
     assert new_overlay_node not in canvas.view.children
 
