@@ -1,7 +1,7 @@
 exclude: _vendor|vendored
 repos:
 - repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: v0.14.1
+  rev: v0.14.7
   hooks:
   - id: ruff-check
 #    args:
@@ -9,12 +9,12 @@ repos:
   - id: ruff-format
     exclude: examples
 - repo: https://github.com/seddonym/import-linter
-  rev: v2.5.2
+  rev: v2.7
   hooks:
   - id: import-linter
     stages: [manual]
 - repo: https://github.com/python-jsonschema/check-jsonschema
-  rev: 0.34.1
+  rev: 0.35.0
   hooks:
   - id: check-github-workflows
 - repo: https://github.com/pre-commit/pre-commit-hooks
