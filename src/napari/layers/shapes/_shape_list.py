@@ -1206,9 +1206,11 @@ class ShapeList:
             self._mesh.triangles[face_slice] = (
                 shape._face_triangles + triangle_shift
             )
+            self._mesh.triangles_colors[face_slice] = self._face_color[index]
             self._mesh.triangles[edge_slice] = shape._edge_triangles + (
                 triangle_shift + shape.face_vertices_count
             )
+            self._mesh.triangles_colors[edge_slice] = self._edge_color[index]
             if new_triangle_count < current_triangles_count:
                 padding_slice = slice(
                     triangles_slice.start + shape.triangles_count,
