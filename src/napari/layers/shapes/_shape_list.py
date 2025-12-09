@@ -1326,12 +1326,17 @@ class ShapeList:
             shape_slice = self._mesh_vertices_slice_available(index)
             current_range = shape_slice.stop - shape_slice.start
             if current_range < shape.vertices_count:
+                # account for edge width
+                edge_vertices_with_width = (
+                    shape._edge_vertices
+                    + shape.edge_width * shape._edge_offsets
+                )
                 # need to allocate_more space
                 self._mesh.vertices = np.concatenate(
                     [
                         self._mesh.vertices[: shape_slice.start],
                         shape._face_vertices,
-                        shape._edge_vertices,
+                        edge_vertices_with_width,
                         self._mesh.vertices[shape_slice.stop :],
                     ]
                 )
