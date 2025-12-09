@@ -874,7 +874,6 @@ module = [
     "napari.components.dims",
     "napari.conftest",
     "napari.layers.labels._labels_utils",
-    "napari.layers.points._points_mouse_bindings",
     "napari.utils.colormaps.colormap",
     "napari.utils.notifications",
 ]
