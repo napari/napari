@@ -1234,7 +1234,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
     @property
     def bounding_box(self) -> BoundingBoxOverlay:
-        return self._overlays['bounding_box']
+        return self._overlays['bounding_box']  # type: ignore[return-value]
 
     def set_view_slice(self) -> None:
         with self.dask_optimized_slicing():
