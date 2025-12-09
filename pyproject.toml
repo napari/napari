@@ -691,7 +691,6 @@ module = [
     'napari.layers._multiscale_data',
     'napari.layers.intensity_mixin',
     'napari.layers.points._points_key_bindings',
-    'napari.layers.points._points_utils',
     'napari.layers.points.points',
     'napari.layers.shapes._shapes_mouse_bindings',
     'napari.layers.shapes.shapes',
