@@ -58,3 +58,20 @@ class Array(np.ndarray):
         ):
             result = result.reshape(shape)
         return result
+
+
+class NotEqual:
+    def __init__(self, ne):
+        self.ne = ne
+
+    def __get_pydantic_core_schema__(
+        self, source, handler: GetCoreSchemaHandler
+    ):
+        return core_schema.no_info_after_validator_function(
+            self._validate, handler(source)
+        )
+
+    def _validate(self, v):
+        if v == self.ne:
+            raise ValueError(f'value must not be equal to {self.ne}')
+        return v
