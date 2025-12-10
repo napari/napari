@@ -14,7 +14,6 @@ from napari._pydantic_compat import (
     BaseSettings,
     SettingsError,
     ValidationError,
-    display_errors,
 )
 from napari.settings._yaml import PydanticYamlMixin
 from napari.utils.events import EmitterGroup, EventedModel
@@ -448,8 +447,9 @@ def config_file_settings_source(
         msg = trans._(
             'Validation errors in config file(s).\nThe following fields have been reset to the default value:\n\n{errors}\n',
             deferred=True,
-            errors=display_errors(errors),
+            errors=errors,
         )
+        # TODO: is this good enough?
         with contextlib.suppress(Exception):
             # we're about to nuke some settings, so just in case... try backup
             backup_path = path_.parent / f'{path_.stem}.BAK{path_.suffix}'

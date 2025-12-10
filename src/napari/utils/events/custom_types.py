@@ -2,10 +2,11 @@ from collections.abc import Callable, Generator
 from typing import (
     TYPE_CHECKING,
     Any,
-    Union,
 )
 
 import numpy as np
+from pydantic import GetCoreSchemaHandler
+from pydantic_core import core_schema
 
 from napari._pydantic_compat import errors, types
 
@@ -14,7 +15,7 @@ if TYPE_CHECKING:
 
     from napari._pydantic_compat import ModelField
 
-    Number = Union[int, float, Decimal]
+    Number = int | float | Decimal
 
 # In numpy 2, the semantics of the copy argument in np.array changed
 # so that copy=False errors if a copy is needed:
@@ -38,8 +39,12 @@ class Array(np.ndarray):
         return type('Array', (Array,), {'__dtype__': t})
 
     @classmethod
-    def __get_validators__(cls):
-        yield cls.validate_type
+    def __get_pydantic_core_schema__(
+        cls, source, handler: GetCoreSchemaHandler
+    ):
+        return core_schema.no_info_after_validator_function(
+            cls.validate_type, core_schema.any_schema()
+        )
 
     @classmethod
     def validate_type(cls, val):

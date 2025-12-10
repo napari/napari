@@ -1,15 +1,7 @@
-"""
-This module provides compatibility between pydantic v1 and v2.
+from collections.abc import Callable
 
-Keep using this compatibility module until we stop using any pydantic v1 API functionality.
-This can be removed when everything has been migrated to pydantic v2.
-"""
-
-# The Pydantic V2 package can access the Pydantic V1 API by importing through `pydantic.v1`.
-# See https://docs.pydantic.dev/latest/migration/#continue-using-pydantic-v1-features
-from pydantic.v1 import (
+from pydantic import (
     BaseModel,
-    BaseSettings,
     Extra,
     Field,
     FilePath,
@@ -26,42 +18,38 @@ from pydantic.v1 import (
     utils,
     validator,
 )
-from pydantic.v1.env_settings import (
+from pydantic.fields import FieldInfo
+from pydantic.generics import GenericModel
+from pydantic.utils import ROOT_KEY, sequence_like
+from pydantic_settings import (
+    BaseSettings,
     EnvSettingsSource,
     SettingsError,
-    SettingsSourceCallable,
 )
-from pydantic.v1.error_wrappers import ErrorWrapper, display_errors
-from pydantic.v1.fields import SHAPE_LIST, ModelField
-from pydantic.v1.generics import GenericModel
-from pydantic.v1.main import ClassAttribute, ModelMetaclass
-from pydantic.v1.utils import ROOT_KEY, sequence_like
+from pydantic_settings.sources import PydanticBaseSettingsSource
 
 Color = color.Color
 
+SettingsSourceCallable = PydanticBaseSettingsSource | Callable
+
 __all__ = (
     'ROOT_KEY',
-    'SHAPE_LIST',
     'BaseModel',
     'BaseSettings',
-    'ClassAttribute',
     'Color',
     'EnvSettingsSource',
-    'ErrorWrapper',
     'Extra',
     'Field',
+    'FieldInfo',
     'FilePath',
     'GenericModel',
-    'ModelField',
-    'ModelMetaclass',
     'PrivateAttr',
+    'PydanticBaseSettingsSource',
     'SettingsError',
-    'SettingsSourceCallable',
     'ValidationError',
     'color',
     'conlist',
     'constr',
-    'display_errors',
     'errors',
     'main',
     'parse_obj_as',
