@@ -386,7 +386,7 @@ class Labels(ScalarFieldBase):
             preserve_labels=Event,
             properties=Event,
             selected_label=Event,
-            selected_labels=Event, # Left here for backwards compatibility, the same as self.selected_labels
+            selected_labels=Event,  # Left here for backwards compatibility, the same as self.selected_labels
             show_selected_label=Event,
         )
 
