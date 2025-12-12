@@ -735,12 +735,8 @@ class Labels(ScalarFieldBase):
         else:
             self._prev_selected_label = None
         self.selected_labels = [selected_label]
-        self._selected_color = self.get_color(selected_label)
 
         self.events.selected_label()
-
-        if self.show_selected_label:
-            self.refresh(extent=False)
 
     @property
     def selected_labels(self) -> Selection[int]:
@@ -751,14 +747,16 @@ class Labels(ScalarFieldBase):
         if len(selected_labels) == 0:
             raise ValueError('At least one label must be selected.')
         
-        
         layer_dtype = get_dtype(self)
         dtype_lims = get_dtype_limits(layer_dtype)
-        if dtype_lims[0] > min(selected_labels) or dtype_lims[1] < max(selected_labels):
+        min_val = min(selected_labels)
+        max_val = max(selected_labels)
+        
+        if dtype_lims[0] > min_val or dtype_lims[1] < max_val:
             raise WrongSelectedLabelError(
                 dtype=layer_dtype,
-                lower_value=min(selected_labels),
-                upper_value=max(selected_labels),
+                lower_value=min_val,
+                upper_value=max_val,
                 lower_bound=dtype_lims[0],
                 upper_bound=dtype_lims[1],
             )
@@ -766,7 +764,10 @@ class Labels(ScalarFieldBase):
         self._selected_labels.clear()
         self._selected_labels.update(selected_labels)
         self.colormap.selection = self.selected_label
+        self._selected_color = self.get_color(self.selected_label)
         self.events.selected_labels()
+        if self.show_selected_label:
+            self.refresh(extent=False)
 
     def swap_selected_and_background_labels(self):
         """Swap between the selected label and the background label."""
