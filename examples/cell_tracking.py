@@ -50,7 +50,7 @@ masks_npz = np.load(st_path)
 masks = masks_npz['masks']
 
 # Sort through images and stack them
-imgs = sorted(tif_file.rglob("*.tif"))
+imgs = sorted(tif_file)
 
 images = np.stack([
         tifffile.imread(fn) for fn in imgs
@@ -67,6 +67,7 @@ napari_tracks, napari_graph = ctc_to_napari_tracks(segmentation=tracked_masks, m
 
 # Add Napari viewer
 viewer = napari.Viewer()
+viewer.add_image(images, name='Images')
 viewer.add_labels(masks, name='Predicted Masks')
 viewer.add_tracks(napari_tracks, graph=napari_graph, name="Tracks")
 
