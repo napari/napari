@@ -2,7 +2,7 @@ import sys
 from collections import OrderedDict
 from enum import auto
 
-from napari.utils.misc import StringEnum
+from napari.utils.compat import StrEnum as StringEnum
 from napari.utils.translations import trans
 
 
