@@ -425,7 +425,7 @@ class FeaturesTable(QWidget):
 
     @staticmethod
     def _get_selection_event_for_layer(layer):
-        if hasattr(layer, 'selected_label'):
+        if hasattr(layer, 'selected_labels'):
             return layer.events.selected_labels
         if hasattr(layer, 'selected_data'):
             # Points layer has selected_data.events, but Shapes layer uses highlight event
