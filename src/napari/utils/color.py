@@ -52,7 +52,8 @@ class ColorValue(np.ndarray):
                 [
                     core_schema.is_instance_schema(cls),
                     validate_schema,
-                ]
+                ],
+                mode='left_to_right',
             ),
             serialization=serialize_schema,
         )

@@ -36,7 +36,7 @@ class ZoomOverlay(CanvasOverlay):
     def __init__(self, **kwargs: Any):
         super().__init__(**kwargs)
 
-    @field_validator('position', 'zoom_area', mode='after')
+    @field_validator('position', 'zoom_area', mode='before')
     @classmethod
     def _validate_bounds(
         cls, v: tuple[tuple[float, ...], tuple[float, ...]]
