@@ -726,7 +726,10 @@ class Labels(ScalarFieldBase):
 
     @selected_label.setter
     def selected_label(self, selected_label: int):
-        if selected_label in self._selected_labels and len(self._selected_labels) == 1:
+        if (
+            selected_label in self._selected_labels
+            and len(self._selected_labels) == 1
+        ):
             return
         # when setting the label to the background, store the previous
         # otherwise, clear it
@@ -746,7 +749,6 @@ class Labels(ScalarFieldBase):
     def selected_labels(self, selected_labels: Sequence[int]) -> None:
         if len(selected_labels) == 0:
             raise ValueError('At least one label must be selected.')
-        
         layer_dtype = get_dtype(self)
         dtype_lims = get_dtype_limits(layer_dtype)
         min_val = min(selected_labels)
@@ -760,7 +762,6 @@ class Labels(ScalarFieldBase):
                 lower_bound=dtype_lims[0],
                 upper_bound=dtype_lims[1],
             )
-            
         self._selected_labels.clear()
         self._selected_labels.update(selected_labels)
         self.colormap.selection = self.selected_label
@@ -1675,11 +1676,7 @@ class WrongSelectedLabelError(ValueError):
         self.upper_value = upper_value
         self.lower_bound = lower_bound
         self.upper_bound = upper_bound
-        wrong_value = (
-            lower_value
-            if lower_value < lower_bound 
-            else upper_value
-        )
+        wrong_value = lower_value if lower_value < lower_bound else upper_value
         text = f'The value {wrong_value} is out of bounds for dtype {dtype} that allow for range [{int(lower_bound)}, {int(upper_bound)}].'
         if message:
             text = f'{message} {text}'
