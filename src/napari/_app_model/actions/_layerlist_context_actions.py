@@ -64,6 +64,15 @@ LAYERLIST_CONTEXT_SUBMENUS = [
             order=None,
         ),
     ),
+    (
+        MenuId.LAYERLIST_CONTEXT,
+        SubmenuItem(
+            submenu=MenuId.LAYERS_CONTEXT_ANNOTATE,
+            title=trans._('Annotate'),
+            group=MenuGroup.LAYERLIST_CONTEXT.COPY_SPATIAL,
+            order=None,
+        ),
+    ),
 ]
 
 # The following dicts define groups to which menu items in the layer list context menu can belong
@@ -255,6 +264,28 @@ LAYERLIST_CONTEXT_ACTIONS: list[Action] = [
             (LLSCK.num_selected_layers > 0)
             & LLSCK.all_selected_layers_support_colorbar
         ),
+    ),
+    Action(
+        id='napari.layer.annotate_with_points',
+        title=trans._('Annotate with Points'),
+        callback=_layer_actions._annotate_with_points,
+        menus=[
+            {
+                'id': MenuId.LAYERS_CONTEXT_ANNOTATE,
+            }
+        ],
+        enablement=LLSCK.num_selected_layers > 0,
+    ),
+    Action(
+        id='napari.layer.annotate_with_shapes',
+        title=trans._('Annotate with Shapes'),
+        callback=_layer_actions._annotate_with_shapes,
+        menus=[
+            {
+                'id': MenuId.LAYERS_CONTEXT_ANNOTATE,
+            }
+        ],
+        enablement=LLSCK.num_selected_layers > 0,
     ),
 ]
 
