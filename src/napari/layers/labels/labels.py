@@ -726,19 +726,10 @@ class Labels(ScalarFieldBase):
 
     @selected_label.setter
     def selected_label(self, selected_label: int):
-        if selected_label in self._selected_labels:
+        if selected_label in self._selected_labels and len(self._selected_labels) == 1:
             return
         # when setting the label to the background, store the previous
         # otherwise, clear it
-        layer_dtype = get_dtype(self)
-        dtype_lims = get_dtype_limits(layer_dtype)
-        if dtype_lims[0] > selected_label or dtype_lims[1] < selected_label:
-            raise WrongSelectedLabelError(
-                dtype=layer_dtype,
-                value=selected_label,
-                lower_bound=dtype_lims[0],
-                upper_bound=dtype_lims[1],
-            )
         if selected_label == self.colormap.background_value:
             self._prev_selected_label = self.selected_label
         else:
@@ -746,7 +737,7 @@ class Labels(ScalarFieldBase):
         self.selected_labels = [selected_label]
         self._selected_color = self.get_color(selected_label)
 
-        self.events.selected_labels()
+        self.events.selected_label()
 
         if self.show_selected_label:
             self.refresh(extent=False)
@@ -756,12 +747,26 @@ class Labels(ScalarFieldBase):
         return self._selected_labels
 
     @selected_labels.setter
-    def selected_labels(self, selected_data: Sequence[int]) -> None:
-        if len(selected_data) == 0:
+    def selected_labels(self, selected_labels: Sequence[int]) -> None:
+        if len(selected_labels) == 0:
             raise ValueError('At least one label must be selected.')
+        
+        
+        layer_dtype = get_dtype(self)
+        dtype_lims = get_dtype_limits(layer_dtype)
+        if dtype_lims[0] > min(selected_labels) or dtype_lims[1] < max(selected_labels):
+            raise WrongSelectedLabelError(
+                dtype=layer_dtype,
+                lower_value=min(selected_labels),
+                upper_value=max(selected_labels),
+                lower_bound=dtype_lims[0],
+                upper_bound=dtype_lims[1],
+            )
+            
         self._selected_labels.clear()
-        self._selected_labels.update(selected_data)
+        self._selected_labels.update(selected_labels)
         self.colormap.selection = self.selected_label
+        self.events.selected_labels()
 
     def swap_selected_and_background_labels(self):
         """Swap between the selected label and the background label."""
@@ -1658,16 +1663,23 @@ class WrongSelectedLabelError(ValueError):
     def __init__(
         self,
         dtype: np.dtype,
-        value: int,
+        lower_value: int,
+        upper_value: int,
         lower_bound: float,
         upper_bound: float,
         message: str = '',
     ):
         self.dtype = dtype
-        self.value = value
+        self.lower_value = lower_value
+        self.upper_value = upper_value
         self.lower_bound = lower_bound
         self.upper_bound = upper_bound
-        text = f'The value {value} is out of bounds for dtype {dtype} that allow for range [{int(lower_bound)}, {int(upper_bound)}].'
+        wrong_value = (
+            lower_value
+            if lower_value < lower_bound 
+            else upper_value
+        )
+        text = f'The value {wrong_value} is out of bounds for dtype {dtype} that allow for range [{int(lower_bound)}, {int(upper_bound)}].'
         if message:
             text = f'{message} {text}'
         self.text = text
