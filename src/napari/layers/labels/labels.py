@@ -756,7 +756,7 @@ class Labels(ScalarFieldBase):
         dtype_lims = get_dtype_limits(layer_dtype)
         min_val = min(selected_labels)
         max_val = max(selected_labels)
-        
+
         if dtype_lims[0] > min_val or dtype_lims[1] < max_val:
             raise WrongSelectedLabelError(
                 dtype=layer_dtype,
