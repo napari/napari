@@ -43,7 +43,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
 
       # Login against a Docker registry except on PR
       # https://github.com/docker/login-action
@@ -60,7 +60,7 @@ jobs:
       # https://github.com/docker/build-push-action/blob/master/docs/advanced/tags-labels.md
       - name: Extract Docker metadata
         id: meta
-        uses: docker/metadata-action@c1e51972afc2121e065aed6d45c65596fe445f3f # v5.8.0
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5.10.0
         with:
           # list of Docker images to use as base name for tags
           images: ${{ env.REGISTRY }}/${{ matrix.image-name }}
