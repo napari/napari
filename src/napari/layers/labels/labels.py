@@ -746,7 +746,7 @@ class Labels(ScalarFieldBase):
         if self.show_selected_label:
             self.refresh(extent=False)
 
-    def swap_selected_and_background_labels(self):
+    def swap_selected_and_background_labels(self) -> None:
         """Swap between the selected label and the background label."""
         if self.selected_label != self.colormap.background_value:
             self.selected_label = self.colormap.background_value
@@ -1107,12 +1107,12 @@ class Labels(ScalarFieldBase):
 
         self.refresh()
 
-    def undo(self):
+    def undo(self) -> None:
         self._load_history(
             self._undo_history, self._redo_history, undoing=True
         )
 
-    def redo(self):
+    def redo(self) -> None:
         self._load_history(
             self._redo_history, self._undo_history, undoing=False
         )
