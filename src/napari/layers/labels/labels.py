@@ -408,6 +408,9 @@ class Labels(ScalarFieldBase):
         self._iso_gradient_mode = IsoCategoricalGradientMode(iso_gradient_mode)
 
         self._selected_labels: Selection[int] = Selection([1])
+        self._selected_labels.events.changed.connect(
+            self.events.selected_labels
+        )
         self.colormap.selection = self.selected_label
         self.colormap.use_selection = self._show_selected_label
         self._prev_selected_label = None
@@ -762,11 +765,11 @@ class Labels(ScalarFieldBase):
                 lower_bound=dtype_lims[0],
                 upper_bound=dtype_lims[1],
             )
-        self._selected_labels.clear()
-        self._selected_labels.update(selected_labels)
+        self._selected_labels.replace_selection(selected_labels)
+        # Note: the event 'selected_labels' is emitted by the Selection
+        # container when it is changed. 
         self.colormap.selection = self.selected_label
         self._selected_color = self.get_color(self.selected_label)
-        self.events.selected_labels()
         if self.show_selected_label:
             self.refresh(extent=False)
 
