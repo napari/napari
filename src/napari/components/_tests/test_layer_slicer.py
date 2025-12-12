@@ -58,6 +58,10 @@ class FakeAsyncLayer:
     def _set_unloaded_slice_id(self, slice_id: int) -> None:
         self._last_slice_id = slice_id
 
+    @property
+    def _slicing_state(self):
+        return self
+
 
 class FakeSyncLayer:
     def __init__(self) -> None:
@@ -66,6 +70,10 @@ class FakeSyncLayer:
 
     def _slice_dims(self, *args, **kwargs) -> None:
         self.slice_count += 1
+
+    @property
+    def _slicing_state(self):
+        return self
 
 
 @pytest.fixture
