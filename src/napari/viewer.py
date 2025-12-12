@@ -259,15 +259,27 @@ class Viewer(ViewerModel):
         """Resize, show, and raise the viewer window."""
         self.window.show(block=block)
 
-    def close(self):
-        """Close the viewer window."""
+    def close(self, *, _is_quitting: bool = False):
+        """Close the viewer window.
+
+        Parameters
+        ----------
+        _is_quitting : bool
+            Whether napari is quitting or not. When quitting, use the canvas
+            context manager to skip expensive operations in _remove_layers.
+        """
         # Shutdown the slicer first to avoid processing any more tasks.
         self._layer_slicer.shutdown()
         # Disconnect changes to dims before removing layers one-by-one
         # to avoid any unnecessary slicing.
         disconnect_events(self.dims.events, self)
         # Remove all the layers from the viewer
-        self.layers.clear()
+        # Use the quitting context manager to skip expensive operations
+        if _is_quitting:
+            with self.window._qt_viewer.canvas.quitting():
+                self.layers.clear()
+        else:
+            self.layers.clear()
         # Close the main window
         self.window.close()
 
