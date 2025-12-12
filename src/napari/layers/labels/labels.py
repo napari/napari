@@ -767,7 +767,7 @@ class Labels(ScalarFieldBase):
             )
         self._selected_labels.replace_selection(selected_labels)
         # Note: the event 'selected_labels' is emitted by the Selection
-        # container when it is changed. 
+        # container when it is changed.
         self.colormap.selection = self.selected_label
         self._selected_color = self.get_color(self.selected_label)
         if self.show_selected_label:
