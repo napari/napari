@@ -766,7 +766,7 @@ class Labels(ScalarFieldBase):
                 upper_bound=dtype_lims[1],
             )
         # Note: the event 'selected_labels' is emitted by the Selection
-        # container when it is changed. 
+        # container when it is changed.
         self._selected_labels.replace_selection(selected_labels)
         # container when it is changed.
         self.colormap.selection = self.selected_label
