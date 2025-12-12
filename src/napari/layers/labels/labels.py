@@ -409,7 +409,7 @@ class Labels(ScalarFieldBase):
 
         self._selected_labels: Selection[int] = Selection([1])
         self._selected_labels.events.items_changed.connect(
-            self.events.selected_labels
+            lambda _: self.events.selected_labels()
         )
         self.colormap.selection = self.selected_label
         self.colormap.use_selection = self._show_selected_label
@@ -766,7 +766,7 @@ class Labels(ScalarFieldBase):
                 upper_bound=dtype_lims[1],
             )
         # Note: the event 'selected_labels' is emitted by the Selection
-        # container when it is changed. 
+        # container when it is changed.
         self._selected_labels.replace_selection(selected_labels)
         # container when it is changed.
         self.colormap.selection = self.selected_label
