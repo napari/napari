@@ -7,8 +7,10 @@ import traceback
 import warnings
 import weakref
 from collections.abc import Sequence
+from itertools import cycle
 from pathlib import Path
-from types import FrameType
+from random import sample
+from types import FrameType, MethodType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -17,7 +19,7 @@ from typing import (
 from weakref import WeakSet, ref
 
 import numpy as np
-from qtpy.QtCore import QCoreApplication, QObject, Qt, QUrl
+from qtpy.QtCore import QCoreApplication, QObject, Qt, QTimer, QUrl
 from qtpy.QtGui import QGuiApplication, QImage
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 from superqt import ensure_main_thread
@@ -33,7 +35,6 @@ from napari._qt.widgets.qt_viewer_buttons import (
     QtViewerButtons,
 )
 from napari._qt.widgets.qt_viewer_dock_widget import QtViewerDockWidget
-from napari._qt.widgets.qt_welcome import QtWidgetOverlay
 from napari.components.camera import Camera
 from napari.components.layerlist import LayerList
 from napari.errors import MultipleReaderError, ReaderPluginError
@@ -136,6 +137,17 @@ def _extension_string_for_layers(
     return ext_str, []
 
 
+# TODO: these should live somewhere nicer to contribute
+# TODO: query mouse binding as well somehow?
+TIPS = [
+    'You can take a screenshot and copy it to your clipboard by pressing {napari.window.file.copy_canvas_screenshot}!',
+    'You can change most shortcuts from the File→Preferences→Shortcuts menu!',
+    'You can right click many components of the graphical interface to access advanced controls!',
+    'If you select multiple layers in the layer list, and Right-Click→Link-Layers, their parameters will be synced!',
+    'You can press Ctrl and scroll the mouse wheel to move the dimension sliders!',
+]
+
+
 class QtViewer(QSplitter):
     """Qt view for the napari Viewer model.
 
@@ -143,12 +155,12 @@ class QtViewer(QSplitter):
     ----------
     viewer : napari.components.ViewerModel
         Napari viewer containing the rendered scene, layers, and controls.
-    show_welcome_screen : bool, optional
-        Flag to show a welcome message when no layers are present in the
-        canvas. Default is `False`.
     canvas_class : napari._vispy.canvas.VispyCanvas
         The VispyCanvas class providing the Vispy SceneCanvas. Users can also
         have a custom canvas here.
+    show_welcome_screen : bool, optional
+        Flag to show a welcome message when no layers are present in the
+        canvas. Default is `False`.
 
     Attributes
     ----------
@@ -167,8 +179,6 @@ class QtViewer(QSplitter):
         A QtPoll object required for the monitor.
     _remote_manager : napari.components.experimental.remote.RemoteManager
         A remote manager processing commands from remote clients and sending out messages when polled.
-    _welcome_widget : napari._qt.widgets.qt_welcome.QtWidgetOverlay
-        QtWidgetOverlay providing the stacked widgets for the welcome page.
     """
 
     _instances = WeakSet()
@@ -182,8 +192,6 @@ class QtViewer(QSplitter):
         super().__init__()
         self._instances.add(self)
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
-
-        self._show_welcome_screen = show_welcome_screen
 
         QCoreApplication.setAttribute(
             Qt.AA_UseStyleSheetPropagationInWidgetStyles, True
@@ -214,16 +222,25 @@ class QtViewer(QSplitter):
             autoswap=get_settings().experimental.autoswap_buffers,  # see #5734
         )
 
-        # Stacked widget to provide a welcome page
-        self._welcome_widget = QtWidgetOverlay(self, self.canvas.native)
-        self._welcome_widget.set_welcome_visible(show_welcome_screen)
-        self._welcome_widget.leave.connect(self._leave_canvas)
-        self._welcome_widget.enter.connect(self._enter_canvas)
+        # we cannot subclass this, so we just overload the enter/leaave methods
+        def enterEvent(self_, event):
+            self._enter_canvas()
+            super(type(self_), self_).enterEvent(event)
+
+        def leaveEvent(self_, event):
+            self._leave_canvas()
+            super(type(self_), self_).leaveEvent(event)
+
+        self.canvas.native.enterEvent = MethodType(
+            enterEvent, self.canvas.native
+        )
+        self.canvas.native.leaveEvent = MethodType(
+            leaveEvent, self.canvas.native
+        )
 
         main_widget = QWidget()
         main_layout = QVBoxLayout()
         main_layout.setContentsMargins(0, 2, 0, 2)
-        main_layout.addWidget(self._welcome_widget)
         main_layout.addWidget(self.dims)
         main_layout.setSpacing(0)
         main_widget.setLayout(main_layout)
@@ -237,8 +254,6 @@ class QtViewer(QSplitter):
         self.viewer.layers.events.inserted.connect(self._update_camera_depth)
         self.viewer.layers.events.removed.connect(self._update_camera_depth)
         self.viewer.dims.events.ndisplay.connect(self._update_camera_depth)
-        self.viewer.layers.events.inserted.connect(self._update_welcome_screen)
-        self.viewer.layers.events.removed.connect(self._update_welcome_screen)
         self.viewer.layers.selection.events.active.connect(
             self._on_active_change
         )
@@ -267,6 +282,18 @@ class QtViewer(QSplitter):
 
         for layer in self.viewer.layers:
             self._add_layer(layer)
+
+        # set up welcome screen tips
+        viewer.welcome_screen.visible = show_welcome_screen
+        self._tips = cycle(sample(TIPS, len(TIPS)))
+        self._tip_timer = QTimer()
+        self._tip_timer.setInterval(10000)
+        self._tip_timer.timeout.connect(self._next_tip)
+        self._tip_timer.start()
+        self._next_tip()
+
+    def _next_tip(self, event=None):
+        self.viewer.welcome_screen.tip = next(self._tips)
 
     @staticmethod
     def _update_dask_cache_settings(
@@ -827,11 +854,6 @@ class QtViewer(QSplitter):
 
             update_save_history(saved[0])
 
-    def _update_welcome_screen(self):
-        """Update welcome screen display based on layer count."""
-        if self._show_welcome_screen:
-            self._welcome_widget.set_welcome_visible(not self.viewer.layers)
-
     def screenshot(
         self,
         path: str | None = None,
@@ -876,14 +898,6 @@ class QtViewer(QSplitter):
         if path is not None:
             imsave(path, img)
 
-        if flash:
-            from napari._qt.utils import add_flash_animation
-
-            # Here we are actually applying the effect to the `_welcome_widget`
-            # and not # the `native` widget because it does not work on the
-            # `native` widget. It's probably because the widget is in a stack
-            # with the `QtWelcomeWidget`.
-            add_flash_animation(self._welcome_widget)
         return img
 
     def _screenshot(
@@ -958,11 +972,7 @@ class QtViewer(QSplitter):
             if flash:
                 from napari._qt.utils import add_flash_animation
 
-                # Here we are actually applying the effect to the `_welcome_widget`
-                # and not # the `native` widget because it does not work on the
-                # `native` widget. It's probably because the widget is in a stack
-                # with the `QtWelcomeWidget`.
-                add_flash_animation(self._welcome_widget)
+                add_flash_animation(self)
 
             return img
 
@@ -1156,11 +1166,6 @@ class QtViewer(QSplitter):
         self.viewerButtons.consoleButton.style().polish(
             self.viewerButtons.consoleButton
         )
-
-    def set_welcome_visible(self, visible):
-        """Show welcome screen widget."""
-        self._show_welcome_screen = visible
-        self._welcome_widget.set_welcome_visible(visible)
 
     def keyPressEvent(self, event):
         """Called whenever a key is pressed.
