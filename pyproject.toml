@@ -715,7 +715,6 @@ module = [
     'napari.utils.interactions',
     'napari.utils.key_bindings',
     'napari.utils.mouse_bindings',
-    'napari.utils.progress',
     'napari.utils.shortcuts',
     'napari.utils.stubgen',
     'napari.utils.transforms.transforms',
