@@ -743,7 +743,6 @@ class Labels(ScalarFieldBase):
             self._prev_selected_label = self.selected_label
         else:
             self._prev_selected_label = None
-        self.colormap.selection = selected_label
         self.selected_labels = [selected_label]
         self._selected_color = self.get_color(selected_label)
 
@@ -762,6 +761,7 @@ class Labels(ScalarFieldBase):
             raise ValueError('At least one label must be selected.')
         self._selected_labels.clear()
         self._selected_labels.update(selected_data)
+        self.colormap.selection = self.selected_label
 
     def swap_selected_and_background_labels(self):
         """Swap between the selected label and the background label."""
