@@ -207,7 +207,7 @@ docs = [
     "bermuda>=0.1.4",
     "pytest",
     "linkify-it-py",
-    "numba!=0.62.1",
+    "numba!=0.62.1,!=0.62.0",
 ]
 release = [
     "PyGithub>=1.46",
@@ -299,7 +299,7 @@ docs = [
     "bermuda>=0.1.4",
     "pytest",
     "linkify-it-py",
-    "numba!=0.62.1",
+    "numba!=0.62.1,!=0.62.0",
 ]
 release = [
     "PyGithub>=1.46",
