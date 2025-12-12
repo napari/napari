@@ -177,7 +177,9 @@ gallery = [
     "nilearn",
     "xarray",
     "h5netcdf",
+    "tifffile[codecs]",
     "meshio",
+    "trackastra",
 ]
 # needed to build docs
 docs = [
@@ -269,7 +271,9 @@ gallery = [
     "nilearn",
     "xarray",
     "h5netcdf",
+    "tifffile[codecs]",
     "meshio",
+    "trackastra",
 ]
 # needed to build docs
 docs = [
