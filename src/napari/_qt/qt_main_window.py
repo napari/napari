@@ -1325,7 +1325,7 @@ class Window:
         If you need to control the dock widget itself (for example, to show or
         raise a docked widget tab), access the wrapper via the Qt parent:
 
-        >>> name = "My widget (my_plugin)"
+        >>> name = "My widget"
         >>> widget = viewer.window.dock_widgets[name]
         >>> qt_widget = widget.native if hasattr(widget, "native") else widget
         >>> dock_widget = qt_widget.parent()  # QtViewerDockWidget / QDockWidget
