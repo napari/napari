@@ -1303,8 +1303,9 @@ class Window:
         # other widget we should keep this name for a longer period
         warnings.warn(
             'The `_dock_widgets` property is private and should not be used in any plugin code. '
-            'Use the `dock_widgets` property instead. If you need the dock wrapper, get it '
-            'via `dock_widgets[name].parent()` (or `.native.parent()` for magicgui widgets).',
+            'To return the inner widget, use the `dock_widgets` property instead.'
+            'If you need the dock wrapper, return it via `dock_widgets[name].parent()`'
+            '(or `dock_widgets[name].native.parent()` for magicgui widgets).',
             FutureWarning,
             stacklevel=2,
         )
