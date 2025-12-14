@@ -343,7 +343,7 @@ class TypedMutableSequence(MutableSequence[_T]):
         return new
 
     def copy(self) -> 'TypedMutableSequence[_T]':
-        """Return a shsrc/napari/utils/events/__init__.pyallow copy of the list."""
+        """Return a shallow copy of the list."""
         return self.__newlike__(self)
 
     def __add__(self, other: Iterable[_T]) -> 'TypedMutableSequence[_T]':
