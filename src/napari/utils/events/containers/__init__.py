@@ -1,7 +1,8 @@
-from psygnal.containers import EventedList as EventedList_
+from psygnal.containers import (
+    EventedDict as EventedDict_,
+    EventedList as EventedList_,
+)
 
-from napari.utils.events.containers._dict import TypedMutableMapping
-from napari.utils.events.containers._evented_dict import EventedDict
 from napari.utils.events.containers._nested_list import NestableEventedList
 from napari.utils.events.containers._selectable_list import (
     SelectableEventedList,
@@ -10,12 +11,16 @@ from napari.utils.events.containers._selectable_list import (
 from napari.utils.events.containers._selection import Selectable, Selection
 from napari.utils.events.containers._set import EventedSet
 from napari.utils.events.containers._typed import (
-    TypedMutableSequence,
-    TypedSequenceMixin,
+    TypedLookupSequenceMixin,
+    TypedMappingMixin,
 )
 
 
-class EventedList(TypedSequenceMixin, EventedList_):
+class EventedList(TypedLookupSequenceMixin, EventedList_):
+    pass
+
+
+class EventedDict(TypedMappingMixin, EventedDict_):
     pass
 
 
@@ -28,6 +33,4 @@ __all__ = [
     'SelectableEventedList',
     'SelectableNestableEventedList',
     'Selection',
-    'TypedMutableMapping',
-    'TypedMutableSequence',
 ]
