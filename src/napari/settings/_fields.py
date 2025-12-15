@@ -3,6 +3,9 @@ from dataclasses import dataclass
 from functools import total_ordering
 from typing import Any, SupportsInt
 
+from pydantic import GetCoreSchemaHandler
+from pydantic_core import CoreSchema, core_schema
+
 from napari.utils.theme import available_themes, is_theme_available
 from napari.utils.translations import _load_language, get_language_packs, trans
 
@@ -21,10 +24,16 @@ class Theme(str):
         yield cls.validate
 
     @classmethod
-    def __modify_schema__(cls, field_schema):
-        # TODO: Provide a way to handle keys so we can display human readable
-        # option in the preferences dropdown
-        field_schema.update(enum=available_themes())
+    def __get_pydantic_core_schema__(
+        cls, source_type: Any, handler: GetCoreSchemaHandler
+    ) -> CoreSchema:
+        return core_schema.no_info_plain_validator_function(cls.validate)
+
+    @classmethod
+    def __get_pydantic_json_schema__(cls, core_schema, handler):
+        json_schema = handler(core_schema)
+        json_schema.update(enum=available_themes())
+        return json_schema
 
     @classmethod
     def validate(cls, v):
@@ -59,11 +68,17 @@ class Language(str):
         yield cls.validate
 
     @classmethod
-    def __modify_schema__(cls, field_schema):
-        # TODO: Provide a way to handle keys so we can display human readable
-        # option in the preferences dropdown
+    def __get_pydantic_core_schema__(
+        cls, source_type: Any, handler: GetCoreSchemaHandler
+    ) -> CoreSchema:
+        return core_schema.no_info_plain_validator_function(cls.validate)
+
+    @classmethod
+    def __get_pydantic_json_schema__(cls, core_schema, handler):
+        json_schema = handler(core_schema)
         language_packs = list(get_language_packs(_load_language()).keys())
-        field_schema.update(enum=language_packs)
+        json_schema.update(enum=language_packs)
+        return json_schema
 
     @classmethod
     def validate(cls, v):
@@ -194,6 +209,12 @@ class Version:
     @classmethod
     def __get_validators__(cls):
         yield cls.validate
+
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls, source_type: Any, handler: GetCoreSchemaHandler
+    ) -> CoreSchema:
+        return core_schema.no_info_plain_validator_function(cls.validate)
 
     @classmethod
     def validate(cls, v):

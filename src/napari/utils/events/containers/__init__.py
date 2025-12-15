@@ -2,8 +2,8 @@ from collections.abc import Iterable
 from typing import Any, Generic, TypeVar
 
 from psygnal.containers import (
-    EventedDict as EventedDict_,
-    EventedList as EventedList_,
+    EventedDict as _EventedDict,
+    EventedList as _EventedList,
     EventedSet,
     Selection,
 )
@@ -17,11 +17,11 @@ _T = TypeVar('_T')
 _K = TypeVar('_K')
 
 
-class EventedList(TypedLookupSequenceMixin[_T], EventedList_[_T]):
+class EventedList(TypedLookupSequenceMixin[_T], _EventedList[_T]):
     pass
 
 
-class EventedDict(TypedMappingMixin[_K, _T], EventedDict_[_K, _T]):
+class EventedDict(TypedMappingMixin[_K, _T], _EventedDict[_K, _T]):
     pass
 
 

@@ -16,7 +16,7 @@ from napari.resources._icons import (
     build_theme_svgs,
 )
 from napari.utils.events import EventedModel
-from napari.utils.events.containers._evented_dict import EventedDict
+from napari.utils.events.containers import EventedDict
 from napari.utils.translations import trans
 
 try:

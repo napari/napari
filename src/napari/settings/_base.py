@@ -47,10 +47,7 @@ class EventedSettings(BaseSettings, EventedModel):
     fields not passed as keyword arguments by reading from the environment.
     """
 
-    # provide config_path=None to prevent reading from disk.
-
-    class Config(EventedModel.Config):
-        pass
+    # provide config_path=None to model_config to prevent reading from disk.
 
     def __init__(self, **values: Any) -> None:
         super().__init__(**values)

@@ -21,7 +21,7 @@ from pydantic import (
 from pydantic.fields import FieldInfo
 from pydantic.generics import GenericModel
 from pydantic.utils import ROOT_KEY, sequence_like
-from pydantic_extra_types import Color
+from pydantic_extra_types.color import Color
 from pydantic_settings import (
     BaseSettings,
     EnvSettingsSource,
