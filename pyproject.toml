@@ -207,7 +207,7 @@ docs = [
     "bermuda>=0.1.4",
     "pytest",
     "linkify-it-py",
-    "numba!=0.62.1",
+    "numba!=0.62.1,!=0.62.0",
 ]
 release = [
     "PyGithub>=1.46",
@@ -299,7 +299,7 @@ docs = [
     "bermuda>=0.1.4",
     "pytest",
     "linkify-it-py",
-    "numba!=0.62.1",
+    "numba!=0.62.1,!=0.62.0",
 ]
 release = [
     "PyGithub>=1.46",
@@ -373,24 +373,7 @@ ignore = [
 
 [tool.ruff]
 line-length = 79
-exclude = [
-    ".bzr",
-    ".direnv",
-    ".eggs",
-    ".git",
-    ".mypy_cache",
-    ".pants.d",
-    ".ruff_cache",
-    ".svn",
-    ".tox",
-    ".venv",
-    "__pypackages__",
-    "_build",
-    "buck-out",
-    "build",
-    "dist",
-    "node_modules",
-    "venv",
+extend-exclude = [
     "*vendored*",
     "*_vendor*",
 ]
@@ -732,7 +715,6 @@ module = [
     'napari.utils.interactions',
     'napari.utils.key_bindings',
     'napari.utils.mouse_bindings',
-    'napari.utils.progress',
     'napari.utils.shortcuts',
     'napari.utils.stubgen',
     'napari.utils.transforms.transforms',
