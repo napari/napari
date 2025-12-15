@@ -21,14 +21,13 @@ from pydantic import (
 from pydantic.fields import FieldInfo
 from pydantic.generics import GenericModel
 from pydantic.utils import ROOT_KEY, sequence_like
+from pydantic_extra_types import Color
 from pydantic_settings import (
     BaseSettings,
     EnvSettingsSource,
     SettingsError,
 )
 from pydantic_settings.sources import PydanticBaseSettingsSource
-
-Color = color.Color
 
 SettingsSourceCallable = PydanticBaseSettingsSource | Callable
 
