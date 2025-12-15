@@ -199,7 +199,7 @@ class LabelColormapBase(Colormap):
     )
     _cache_other: dict[str, Any] = PrivateAttr(default={})
 
-    class Config(Colormap.Config):
+    class Config:
         # this config is to avoid deepcopy of cached_property
         # see https://github.com/pydantic/pydantic/issues/2763
         # it is required until we drop Pydantic 1 or Python 3.11 and older

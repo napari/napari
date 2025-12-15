@@ -1,8 +1,3 @@
-"""Nestable MutableSequence that emits events when altered.
-
-see module docstring of evented_list.py for more details
-"""
-
 from __future__ import annotations
 
 import contextlib
@@ -12,19 +7,19 @@ from collections.abc import Generator, Iterable, MutableSequence
 from typing import (
     NewType,
     TypeVar,
-    Union,
     cast,
     overload,
 )
 
-from napari.utils.events.containers._evented_list import EventedList, Index
+from napari.utils.events.containers import EventedList
 from napari.utils.events.event import Event
 from napari.utils.translations import trans
 
 logger = logging.getLogger(__name__)
 
+Index = str | slice
 NestedIndex = tuple[Index, ...]
-MaybeNestedIndex = Union[Index, NestedIndex]
+MaybeNestedIndex = Index | NestedIndex
 ParentIndex = NewType('ParentIndex', tuple[int, ...])
 _T = TypeVar('_T')
 
