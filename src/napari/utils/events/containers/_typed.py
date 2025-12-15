@@ -126,9 +126,12 @@ class TypedLookupSequenceMixin(Generic[_T]):
     def __newlike__(
         self, iterable: Iterable[_T]
     ) -> TypedLookupSequenceMixin[_T]:
-        return super().__newlike__(
-            iterable, basetype=self._basetypes, lookup=self._lookup
-        )
+        new = self.__class__()
+        # separating this allows subclasses to omit these from their `__init__`
+        new._basetypes = self._basetypes
+        new._lookup = self._lookup.copy()
+        new.extend(iterable)
+        return new
 
     def index(self, value: _L, start: int = 0, stop: int | None = None) -> int:
         """Return first index of value.
@@ -220,4 +223,8 @@ class TypedMappingMixin(Generic[_K, _T]):
     def __newlike__(
         self, iterable: TypedMappingMixin[_K, _T]
     ) -> TypedMappingMixin[_K, _T]:
-        return super().__newlike__(iterable, basetype=self._basetypes)
+        new = self.__class__()
+        # separating this allows subclasses to omit these from their `__init__`
+        new._basetypes = self._basetypes
+        new.update(iterable)
+        return new
