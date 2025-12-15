@@ -39,8 +39,8 @@ class Points2DSuite:
 
     def time_set_view_slice(self, n):
         """Time to set view slice."""
-        if hasattr(self.layer, '__slicing_state'):
-            self.layer._layer_slicer._set_view_slice()
+        if hasattr(self.layer, '_slicing_state'):
+            self.layer._slicing_state._set_view_slice()
         else:
             # before https://github.com/napari/napari/pull/8254
             self.layer._set_view_slice()
@@ -87,8 +87,8 @@ class Points3DSuite:
 
     def time_set_view_slice(self, n):
         """Time to set view slice."""
-        if hasattr(self.layer, '__slicing_state'):
-            self.layer._layer_slicer._set_view_slice()
+        if hasattr(self.layer, '_slicing_state'):
+            self.layer._slicing_state._set_view_slice()
         else:
             # before https://github.com/napari/napari/pull/8254
             self.layer._set_view_slice()
@@ -128,8 +128,8 @@ class PointsSlicingSuite:
 
     def time_slice_points(self, flatten_slice_axis):
         """Time to take one slice of points"""
-        if hasattr(self.layer, '__slicing_state'):
-            self.layer._layer_slicer._make_slice_request(self.dims)()
+        if hasattr(self.layer, '_slicing_state'):
+            self.layer._slicing_state._make_slice_request(self.dims)()
         else:
             # before https://github.com/napari/napari/pull/8254
             self.layer._make_slice_request(self.dims)()
