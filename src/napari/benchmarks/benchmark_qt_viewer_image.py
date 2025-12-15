@@ -108,7 +108,7 @@ class QtViewerImageSuite:
     def time_set_view_slice(self, n):
         """Time to set view slice."""
         layer = self.viewer.layers[0]
-        if hasattr(layer, '_layer_slicer'):
+        if hasattr(layer, '_slicing_state'):
             layer._slicing_state._set_view_slice()
         else:
             # before https://github.com/napari/napari/pull/8254
@@ -169,7 +169,7 @@ class QtViewerSingleImageSuite:
 
     def time_set_view_slice(self):
         """Time to set view slice."""
-        if hasattr(self.layer, '_layer_slicer'):
+        if hasattr(self.layer, '_slicing_state'):
             self.layer._slicing_state._set_view_slice()
         else:
             # before https://github.com/napari/napari/pull/8254
@@ -234,7 +234,7 @@ class QtViewerSingleInvisbleImageSuite:
 
     def time_set_view_slice(self):
         """Time to set view slice."""
-        if hasattr(self.layer, '_layer_slicer'):
+        if hasattr(self.layer, '_slicing_state'):
             self.layer._slicing_state._set_view_slice()
         else:
             # before https://github.com/napari/napari/pull/8254
