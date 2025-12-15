@@ -833,8 +833,12 @@ class VispyCanvas:
         self._needs_overlay_position_update = True
 
     def _connect_canvas_overlay_events(self, overlay: Overlay) -> None:
-        overlay.events.position.connect(self._defer_overlay_position_update)
-        overlay.events.visible.connect(self._defer_overlay_position_update)
+        overlay.events.position.connect(
+            self._defer_overlay_position_update, unique=True
+        )
+        overlay.events.visible.connect(
+            self._defer_overlay_position_update, unique=True
+        )
 
     def _disconnect_canvas_overlay_events(self, overlay: Overlay) -> None:
         overlay.events.position.disconnect(self._defer_overlay_position_update)
@@ -862,7 +866,9 @@ class VispyCanvas:
             # connect position callbacks
             if isinstance(overlay, CanvasOverlay):
                 self._connect_canvas_overlay_events(overlay)
-                overlay.events.gridded.connect(self._update_viewer_overlays)
+                overlay.events.gridded.connect(
+                    self._update_viewer_overlays, unique=True
+                )
 
             if self.viewer.grid.enabled and getattr(overlay, 'gridded', True):
                 views = self.grid_views
@@ -926,7 +932,9 @@ class VispyCanvas:
             # only create overlays when they are visible. If not, we connect the visible
             # event of this overlay to this method until it's finally visible
             if not overlay.visible:
-                overlay.events.visible.connect(self._overlay_callbacks[layer])
+                overlay.events.visible.connect(
+                    self._overlay_callbacks[layer], unique=True
+                )
                 continue
             overlay.events.visible.disconnect(self._overlay_callbacks[layer])
 
