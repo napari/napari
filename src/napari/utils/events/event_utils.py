@@ -4,6 +4,8 @@ import logging
 import weakref
 from typing import TYPE_CHECKING, Any
 
+from psygnal.utils import iter_signal_instances
+
 if TYPE_CHECKING:
     from collections.abc import Callable
     from typing import Protocol
@@ -15,6 +17,15 @@ if TYPE_CHECKING:
 
 
 _logger = logging.getLogger(__name__)
+
+
+def iter_signal_and_event_instances(obj, include_private_attrs=False):
+    yield from iter_signal_instances(
+        obj, include_private_attrs=include_private_attrs
+    )
+
+    if hasattr(obj, 'events'):
+        yield from obj.events.emitters.values()
 
 
 def disconnect_events(emitter, listener):
