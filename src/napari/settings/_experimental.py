@@ -6,7 +6,6 @@ from napari.utils.colormap_backend import (
     ColormapBackend,
     set_backend as set_colormap_backend,
 )
-from napari.utils.events import Event
 from napari.utils.translations import trans
 from napari.utils.triangulation_backend import (
     TriangulationBackend,
@@ -23,9 +22,9 @@ class ExperimentalSettings(EventedSettings):
         self.events.triangulation_backend.connect(
             _update_triangulation_backend
         )
-        self.events.triangulation_backend(value=self.triangulation_backend)
+        self.events.triangulation_backend(self.triangulation_backend)
         self.events.colormap_backend.connect(_update_colormap_backend)
-        self.events.colormap_backend(value=self.colormap_backend)
+        self.events.colormap_backend(self.colormap_backend)
 
     async_: bool = Field(
         False,
@@ -122,13 +121,9 @@ class ExperimentalSettings(EventedSettings):
         preferences_exclude = ('schema_version', 'compiled_triangulation')
 
 
-def _update_triangulation_backend(event: Event) -> None:
-    experimental: ExperimentalSettings = event.source
-
-    set_triangulation_backend(experimental.triangulation_backend)
+def _update_triangulation_backend(backend: TriangulationBackend) -> None:
+    set_triangulation_backend(backend)
 
 
-def _update_colormap_backend(event: Event) -> None:
-    experimental: ExperimentalSettings = event.source
-
-    set_colormap_backend(experimental.colormap_backend)
+def _update_colormap_backend(backend) -> None:
+    set_colormap_backend(backend)

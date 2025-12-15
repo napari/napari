@@ -21,7 +21,7 @@ import numpy as np
 from app_model.expressions import Context
 
 from napari import layers
-from napari._pydantic_compat import Extra, Field, PrivateAttr, validator
+from napari._pydantic_compat import Field, PrivateAttr, validator
 from napari.components._layer_slicer import _LayerSlicer
 from napari.components._viewer_mouse_bindings import (
     dims_scroll,
@@ -218,7 +218,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         # elsewhere.  The app should know about the ViewerModel, but not vice versa.
         self._ctx = create_context(self, max_depth=0)
         # allow extra attributes during model initialization, useful for mixins
-        self.__config__.extra = Extra.allow
+        self.model_config['extra'] = 'allow'
         super().__init__(
             title=title,
             dims={
@@ -227,7 +227,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 'order': order,
             },
         )
-        self.__config__.extra = Extra.ignore
+        self.model_config['extra'] = 'ignore'
 
         settings = get_settings()
         self.tooltip.visible = settings.appearance.layer_tooltip_visibility

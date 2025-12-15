@@ -28,17 +28,10 @@ class ColorValue(np.ndarray):
     def __get_pydantic_core_schema__(
         cls, source_type: Any, handler: GetCoreSchemaHandler
     ) -> CoreSchema:
-        # Implemented using gemmini AI
-        # 1. Validation Logic
-        # We use a plain validator because the input can be a string, list, tuple, etc.
-        # handler(list) is removed because it would reject strings like 'red'
         validate_schema = core_schema.no_info_plain_validator_function(
             cls.validate
         )
 
-        # 2. Serialization Logic
-        # We explicitly tell Pydantic how to serialize this type (ndarray -> list)
-        # This resolves the "Expected list[any] but got ColorValue" warning.
         serialize_schema = core_schema.plain_serializer_function_ser_schema(
             lambda x: x.tolist(),
             when_used='json',  # Only convert to list for JSON; keep as array for Python
@@ -128,17 +121,10 @@ class ColorArray(np.ndarray):
     def __get_pydantic_core_schema__(
         cls, source_type: Any, handler: GetCoreSchemaHandler
     ) -> CoreSchema:
-        # Implemented using gemmini AI
-        # 1. Validation Logic
-        # We use a plain validator because the input can be a string, list, tuple, etc.
-        # handler(list) is removed because it would reject strings like 'red'
         validate_schema = core_schema.no_info_plain_validator_function(
             cls.validate
         )
 
-        # 2. Serialization Logic
-        # We explicitly tell Pydantic how to serialize this type (ndarray -> list)
-        # This resolves the "Expected list[any] but got ColorValue" warning.
         serialize_schema = core_schema.plain_serializer_function_ser_schema(
             lambda x: x.tolist(),
             when_used='json',  # Only convert to list for JSON; keep as array for Python

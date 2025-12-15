@@ -143,7 +143,7 @@ class LayerList(SelectableEventedList[Layer]):
             self.events.removed.connect(self._ctx_keys.update)
 
             self._selection_ctx_keys = LayerListSelectionContextKeys(self._ctx)
-            self.selection.events.changed.connect(
+            self.selection.events.items_changed.connect(
                 self._selection_ctx_keys.update
             )
 

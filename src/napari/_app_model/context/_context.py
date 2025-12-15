@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import collections.abc
-from typing import TYPE_CHECKING, Any, Final
+from typing import Any, Final
 
 from app_model.expressions import (
     Context,
@@ -10,9 +10,6 @@ from app_model.expressions import (
 )
 
 from napari.utils.translations import trans
-
-if TYPE_CHECKING:
-    from napari.utils.events import Event
 
 __all__ = ['Context', 'SettingsAwareContext', 'create_context', 'get_context']
 
@@ -69,13 +66,6 @@ class SettingsAwareContext(Context):
         from napari.settings import get_settings
 
         self._settings = get_settings()
-        self._settings.events.changed.connect(self._update_key)
-
-    def _update_key(self, event: Event):
-        self.changed.emit({f'{self._PREFIX}{event.key}'})
-
-    def __del__(self):
-        self._settings.events.changed.disconnect(self._update_key)
 
     def __missing__(self, key: str) -> Any:
         if key.startswith(self._PREFIX):

@@ -30,7 +30,6 @@ if TYPE_CHECKING:
         EnvSettingsSource,
         SettingsSourceCallable,
     )
-    from napari.utils.events import Event
 
     IntStr = Union[int, str]
     AbstractSetIntStr = AbstractSet[IntStr]
@@ -51,15 +50,15 @@ class EventedSettings(BaseSettings, EventedModel):
 
     def __init__(self, **values: Any) -> None:
         super().__init__(**values)
-        self.events.add(changed=None)
 
         # re-emit subfield
-        for name, field in self.__fields__.items():
+        for name, field_info in self.__fields__.items():
             attr = getattr(self, name)
             if isinstance(getattr(attr, 'events', None), EmitterGroup):
                 attr.events.connect(partial(self._on_sub_event, field=name))
 
-            if field.field_info.extra.get('requires_restart'):
+            extra = getattr(field_info, 'json_schema_extra', None)
+            if extra is not None and extra.get('requires_restart', False):
                 emitter = getattr(self.events, name)
 
                 @emitter.connect
@@ -70,13 +69,6 @@ class EventedSettings(BaseSettings, EventedModel):
                             deferred=True,
                         )
                     )
-
-    def _on_sub_event(self, event: Event, field=None):
-        """emit the field.attr name and new value"""
-        if field:
-            field += '.'
-        value = getattr(event, 'value', None)
-        self.events.changed(key=f'{field}{event._type}', value=value)
 
 
 _NOT_SET = object()
@@ -114,10 +106,6 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
     def _maybe_save(self):
         if self._save_on_change and self.config_path:
             self.save()
-
-    def _on_sub_event(self, event, field=None):
-        super()._on_sub_event(event, field)
-        self._maybe_save()
 
     @property
     def config_path(self):
@@ -189,7 +177,7 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
         if str(path).endswith(('.yaml', '.yml')):
             _data = self._yaml_dump(data)
         elif str(path).endswith('.json'):
-            json_dumps = self.__config__.json_dumps
+            json_dumps = self.model_config.json_dumps
             _data = json_dumps(data, default=self.__json_encoder__)
         else:
             raise NotImplementedError(
@@ -204,7 +192,7 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
 
     def env_settings(self) -> Dict[str, Any]:
         """Get a dict of fields that were provided as environment vars."""
-        env_settings = getattr(self.__config__, '_env_settings', {})
+        env_settings = getattr(self.model_config, '_env_settings', {})
         if callable(env_settings):
             env_settings = env_settings(self)
         return env_settings
@@ -292,7 +280,7 @@ def nested_env_settings(
         d = super_eset(settings)
         env_val: str | dict | None
 
-        if settings.__config__.case_sensitive:
+        if settings.model_config.case_sensitive:
             env_vars: Mapping[str, str | None] = os.environ
         else:
             env_vars = {k.lower(): v for k, v in os.environ.items()}
@@ -323,7 +311,7 @@ def nested_env_settings(
                     )
                     if env_val is not None and is_complex:
                         try:
-                            env_val = settings.__config__.json_loads(env_val)
+                            env_val = settings.model_config.json_loads(env_val)
                         except ValueError as e:
                             if not all_json_fail:
                                 msg = trans._(
@@ -356,7 +344,7 @@ def config_file_settings_source(
 
     The two important values are the `settings._config_path`
     attribute, which is the main config file (if present), and
-    `settings.__config__.source`, which is an optional list of additional files
+    `settings.model_config.source`, which is an optional list of additional files
     to read. (files later in the list take precedence and `_config_path` takes
     precedence over all)
 
@@ -377,7 +365,7 @@ def config_file_settings_source(
     default_cfg = getattr(default_cfg, 'default', None)
 
     # if the config has a `sources` list, read those too and merge.
-    sources: list[str] = list(getattr(settings.__config__, 'sources', []))
+    sources: list[str] = list(getattr(settings.model_config, 'sources', []))
     if config_path:
         sources.append(config_path)
     if not sources:
@@ -436,7 +424,7 @@ def config_file_settings_source(
         # back to this point again.
         type(settings)(config_path=None, **data)
     except ValidationError as err:
-        if getattr(settings.__config__, 'strict_config_check', False):
+        if getattr(settings.model_config, 'strict_config_check', False):
             raise
 
         # if errors occur, we still want to boot, so we just remove bad keys
