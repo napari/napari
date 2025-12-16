@@ -120,7 +120,8 @@ optional-base = [
     "napari-plugin-manager >=0.1.3, <0.2.0",
 ]
 optional-numba = [
-    "numba>=0.57.1",
+    "numba>=0.57.1,<0.62.1 ; platform_system == 'Darwin' and platform_machine == 'x86_64'",
+    "numba>=0.57.1 ; platform_system != 'Darwin' or platform_machine != 'x86_64'",
 ]
 optional = [
     "napari[optional-base,optional-numba,bermuda]",
@@ -140,7 +141,6 @@ all_optional = [
 # they will be removed in napari 0.7.0
 
 testing = [
-    "napari[gallery]",
     "babel>=2.9.0",
     "docstring_parser>=0.15",
     "fsspec>=2023.10.0",
@@ -232,7 +232,6 @@ build = [
 # these need to be kept in sync with the equivalent optional-dependencies
 [dependency-groups]
 testing = [
-    {include-group = "gallery"},
     "babel>=2.9.0",
     "docstring_parser>=0.15",
     "fsspec>=2023.10.0",
