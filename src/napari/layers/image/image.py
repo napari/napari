@@ -32,6 +32,7 @@ if typing.TYPE_CHECKING:
     import numpy.typing as npt
     import pint
 
+    from napari.types import ArrayLike
     from napari.utils.transforms import Affine
 
 __all__ = ('Image',)
@@ -231,7 +232,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
 
     def __init__(
         self,
-        data: npt.NDArray | Sequence[npt.NDArray],
+        data: ArrayLike | Sequence[ArrayLike],
         *,
         affine: npt.ArrayLike | Affine | None = None,
         attenuation: float = 0.05,
