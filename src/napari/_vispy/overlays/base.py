@@ -88,6 +88,10 @@ class VispyCanvasOverlay(VispyBaseOverlay):
         super().reset()
         self._on_position_change()
 
+    def close(self) -> None:
+        super().close()
+        self.canvas_position_callback = lambda: None
+
 
 class VispySceneOverlay(VispyBaseOverlay):
     """
