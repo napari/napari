@@ -85,13 +85,13 @@ class Welcome(Node):
         self.shortcut_descriptions.color = color
         self.tip.color = color
 
-    def set_version(self, version) -> None:
+    def set_version(self, version: str) -> None:
         self.header.text = (
             f'napari {version}\n\n'
             'Drag file(s) here to open, or use the shortcuts below:'
         )
 
-    def set_shortcuts(self, commands) -> None:
+    def set_shortcuts(self, commands: tuple[str, ...]) -> None:
         shortcuts = {}
         app = get_app_model()
         all_shortcuts = get_settings().shortcuts.shortcuts
@@ -114,7 +114,7 @@ class Welcome(Node):
         self.shortcut_keybindings.text = '\n'.join(shortcuts.keys())
         self.shortcut_descriptions.text = '\n'.join(shortcuts.values())
 
-    def set_tip(self, tip) -> None:
+    def set_tip(self, tip: str) -> None:
         # TODO: this should use template strings in the future
         for match in re.finditer(r'{(.*?)}', tip):
             command_id = match.group(1)
