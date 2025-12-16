@@ -7,7 +7,7 @@ from contextlib import nullcontext
 from typing import TYPE_CHECKING, cast
 
 import numpy as np
-from numpy import typing as npt
+from psygnal import Signal
 
 from napari.layers import Layer
 from napari.layers._data_protocols import LayerDataProtocol
@@ -16,7 +16,12 @@ from napari.layers._scalar_field._slice import (
     _ScalarFieldSliceRequest,
     _ScalarFieldSliceResponse,
 )
-from napari.layers.image._image_constants import Interpolation, VolumeDepiction
+from napari.layers.base._base_constants import Blending
+from napari.layers.base.base import LayerEventGroup, TProj
+from napari.layers.image._image_constants import (
+    Interpolation,
+    VolumeDepiction,
+)
 from napari.layers.image._image_mouse_bindings import (
     move_plane_along_normal as plane_drag_callback,
     set_plane_position as plane_double_click_callback,
@@ -35,7 +40,61 @@ from napari.utils.naming import magic_name
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
+    from typing import Any, Protocol
+
+    import numpy.typing as npt
+    import pint
+    from psygnal import SignalInstance
+
     from napari.components import Dims
+    from napari.layers.base.base import LayerEventGroupProtocol
+    from napari.layers.image._image_constants import ImageProjectionMode
+    from napari.layers.utils.plane import ClippingPlaneList, SlicingPlaneDict
+    from napari.utils.transforms import Affine
+
+    class ScalarFieldEventsProtocol(LayerEventGroupProtocol, Protocol):
+        """Protocol for ScalarFieldBase signals.
+
+        These signals cannot be declared as `psygnal.Signal` as
+        this is simply the descriptor protocol implementation
+        of the actual signal. Instead, we want the instance type
+        that is created in the descriptor, which is `psygnal.SignalInstance`.
+
+        .. note::
+            The protocol is only for type-checking purposes; it should be type
+            hinted as a generic so to describe the actual data it transports
+            but this is still an open question:
+            https://github.com/pyapp-kit/psygnal/pull/304
+        """
+
+        attenuation: SignalInstance
+        custom_interpolation_kernel_2d: SignalInstance
+        depiction: SignalInstance
+        interpolation: SignalInstance  # str
+        interpolation2d: SignalInstance  # str
+        interpolation3d: SignalInstance  # str
+        iso_threshold: SignalInstance  # float
+        plane: SignalInstance
+        rendering: SignalInstance
+
+
+class ScalarFieldEventGroup(LayerEventGroup):
+    """ScalarField layer events.
+
+    The actual signals instances created by the descriptor.
+    These should be created in the final Layer class that
+    uses the ScalarFieldBase.
+    """
+
+    attenuation = Signal()
+    custom_interpolation_kernel_2d = Signal()
+    depiction = Signal()
+    interpolation = Signal(str)
+    interpolation2d = Signal(str)
+    interpolation3d = Signal(str)
+    iso_threshold = Signal(float)
+    plane = Signal()
+    rendering = Signal()
 
 
 __all__ = ('ScalarFieldBase',)
@@ -44,7 +103,7 @@ __all__ = ('ScalarFieldBase',)
 # It is important to contain at least one abstractmethod to properly exclude this class
 # in creating NAMES set inside of napari.layers.__init__
 # Mixin must come before Layer
-class ScalarFieldBase(Layer, ABC):
+class ScalarFieldBase(Layer[TProj], ABC):
     """Base class for volumetric layers.
 
     Parameters
@@ -177,57 +236,58 @@ class ScalarFieldBase(Layer, ABC):
     _colormaps = AVAILABLE_COLORMAPS
     _interpolation2d: Interpolation
     _interpolation3d: Interpolation
+    signals: ScalarFieldEventsProtocol
 
     def __init__(
         self,
-        data,
+        data: MultiScaleData | LayerDataProtocol | Sequence[LayerDataProtocol],
         *,
-        affine=None,
-        axis_labels=None,
-        blending='translucent',
-        cache=True,
-        custom_interpolation_kernel_2d=None,
-        depiction='volume',
-        experimental_clipping_planes=None,
-        metadata=None,
-        multiscale=None,
-        name=None,
-        ndim=None,
-        opacity=1.0,
-        plane=None,
-        projection_mode='none',
-        rendering='mip',
-        rotate=None,
-        scale=None,
-        shear=None,
-        translate=None,
-        units=None,
-        visible=True,
-    ):
+        affine: npt.NDArray | Affine | None = None,
+        axis_labels: tuple[str, ...] | None = None,
+        blending: str | Blending = Blending.TRANSLUCENT,
+        cache: bool = True,
+        custom_interpolation_kernel_2d: npt.NDArray | None = None,
+        depiction: str = 'volume',
+        experimental_clipping_planes: ClippingPlaneList | None = None,
+        metadata: dict[str, Any] | None = None,
+        multiscale: bool | None = None,
+        name: str | None = None,
+        ndim: int | None = None,
+        opacity: float = 1.0,
+        plane: SlicingPlane | SlicingPlaneDict | None = None,
+        projection_mode: str | ImageProjectionMode = 'none',
+        rendering: str = 'mip',
+        rotate: float | tuple[float, float, float] | npt.NDArray | None = None,
+        scale: tuple[float, ...] | None = None,
+        shear: npt.NDArray | None = None,
+        translate: tuple[float, ...] | None = None,
+        units: tuple[pint.Unit, ...] | None = None,
+        visible: bool = True,
+    ) -> None:
         if name is None and data is not None:
             name = magic_name(data)
 
         if isinstance(data, types.GeneratorType):
-            data = list(data)
+            data = MultiScaleData(list(data))
 
         if getattr(data, 'ndim', 2) < 2:
             raise ValueError(
                 trans._('Image data must have at least 2 dimensions.')
             )
 
+        self._data_raw: MultiScaleData
+
         # Determine if data is a multiscale
-        self._data_raw = data
         if multiscale is None:
-            multiscale, data = guess_multiscale(data)
+            multiscale, self._data_raw = guess_multiscale(data)
         elif multiscale and not isinstance(data, MultiScaleData):
-            data = MultiScaleData(data)
+            self._data_raw = MultiScaleData(data)
 
         # Determine dimensionality of the data
-        if ndim is None:
-            ndim = len(data.shape)
+        ndim = ndim or len(self._data_raw.shape)
 
         super().__init__(
-            data,
+            self._data_raw,
             ndim,
             affine=affine,
             axis_labels=axis_labels,
@@ -268,15 +328,15 @@ class ScalarFieldBase(Layer, ABC):
         self._array_like = True
 
         # Set data
-        self._data = data
-        if isinstance(data, MultiScaleData):
-            self._data_level = len(data) - 1
+        self._data = self._data_raw
+        if multiscale:
+            self._data_level = len(self._data) - 1
             # Determine which level of the multiscale to use for the thumbnail.
             # Pick the smallest level with at least one axis >= 64. This is
             # done to prevent the thumbnail from being from one of the very
             # low resolution layers and therefore being very blurred.
             big_enough_levels = [
-                np.any(np.greater_equal(p.shape, 64)) for p in data
+                np.any(np.greater_equal(p.shape, 64)) for p in self._data
             ]
             if np.any(big_enough_levels):
                 self._thumbnail_level = np.where(big_enough_levels)[0][-1]
@@ -292,7 +352,7 @@ class ScalarFieldBase(Layer, ABC):
 
         self._slice = _ScalarFieldSliceResponse.make_empty(
             slice_input=self._slice_input,
-            rgb=len(self.data.shape) != self.ndim,
+            rgb=len(self._data.shape) != self.ndim,
             dtype=self._slice_dtype(),
         )
 
@@ -306,8 +366,11 @@ class ScalarFieldBase(Layer, ABC):
         # triggered (self.refresh(), below).
         self.rendering = rendering
         self.depiction = depiction
-        if plane is not None:
-            self.plane = plane
+        if plane is not None or isinstance(plane, dict):
+            self.plane = SlicingPlane.parse_obj(plane)
+        # TODO: plane is a pydantic model; psygnal provides
+        # its own version of evented models. question is:
+        # how to replace this line?
         connect_no_arg(self.plane.events, self.events, 'plane')
         self.custom_interpolation_kernel_2d = custom_interpolation_kernel_2d
 
@@ -335,9 +398,9 @@ class ScalarFieldBase(Layer, ABC):
     @property
     def data_raw(
         self,
-    ) -> LayerDataProtocol | Sequence[LayerDataProtocol]:
+    ) -> list[LayerDataProtocol]:
         """Data, exactly as provided by the user."""
-        return self._data_raw
+        return self._data_raw._data
 
     def _get_ndim(self) -> int:
         """Determine number of dimensions of the layer."""
@@ -387,10 +450,10 @@ class ScalarFieldBase(Layer, ABC):
         self._data_level = level
         self.refresh(extent=False)
 
-    def _get_level_shapes(self):
+    def _get_level_shapes(self) -> list[tuple[int, ...]]:
         data = self.data
         if isinstance(data, MultiScaleData):
-            shapes = data.shapes
+            shapes = list(data.shapes)
         else:
             shapes = [self.data.shape]
         return shapes
@@ -423,6 +486,7 @@ class ScalarFieldBase(Layer, ABC):
         self._depiction = VolumeDepiction(depiction)
         self._update_plane_callbacks()
         self.events.depiction()
+        self.signals.depiction()
 
     def _reset_plane_parameters(self):
         """Set plane attributes to something valid."""
@@ -453,24 +517,28 @@ class ScalarFieldBase(Layer, ABC):
                 )
 
     @property
-    def plane(self):
+    def plane(self) -> SlicingPlane:
         return self._plane
 
     @plane.setter
-    def plane(self, value: dict | SlicingPlane) -> None:
+    def plane(self, value: SlicingPlane) -> None:
+        if isinstance(value, dict):
+            value = SlicingPlane.parse_obj(value)
         self._plane.update(value)
         self.events.plane()
+        self.signals.plane()
 
     @property
-    def custom_interpolation_kernel_2d(self):
+    def custom_interpolation_kernel_2d(self) -> npt.NDArray:
         return self._custom_interpolation_kernel_2d
 
     @custom_interpolation_kernel_2d.setter
-    def custom_interpolation_kernel_2d(self, value):
+    def custom_interpolation_kernel_2d(self, value: npt.NDArray) -> None:
         if value is None:
             value = [[1]]
         self._custom_interpolation_kernel_2d = np.array(value, np.float32)
         self.events.custom_interpolation_kernel_2d()
+        self.signals.custom_interpolation_kernel_2d()
 
     @abstractmethod
     def _raw_to_displayed(self, raw: np.ndarray) -> np.ndarray:
@@ -537,7 +605,7 @@ class ScalarFieldBase(Layer, ABC):
             data=self.data,
             dask_indexer=dask_indexer,
             data_slice=data_slice,
-            projection_mode=self.projection_mode,
+            projection_mode=self._projection_mode,
             multiscale=self.multiscale,
             corner_pixels=self.corner_pixels,
             rgb=len(self.data.shape) != self.ndim,
