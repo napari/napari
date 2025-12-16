@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import itertools
 import typing
 import warnings
@@ -12,6 +13,7 @@ import numpy as np
 from napari.components.dims import RangeTuple
 from napari.layers import Layer
 from napari.layers.utils.layer_utils import Extent
+from napari.utils.events import Event
 from napari.utils.events.containers import SelectableEventedList
 from napari.utils.naming import inc_name_count
 from napari.utils.translations import trans
@@ -114,6 +116,10 @@ class LayerList(SelectableEventedList[Layer]):
             data=data,
             basetype=Layer,
             lookup={str: get_name},
+        )
+        self.events.add(
+            begin_batch=Event,
+            end_batch=Event,
         )
         self._create_contexts()
 
@@ -237,7 +243,8 @@ class LayerList(SelectableEventedList[Layer]):
         if not self.selection:
             return
         self.unlink_layers(self.selection)
-        super().remove_selected()
+        with self.batched_update():
+            super().remove_selected()
 
     def toggle_selected_visibility(self):
         """Toggle visibility of selected layers"""
@@ -541,3 +548,16 @@ class LayerList(SelectableEventedList[Layer]):
             return []
 
         return save_layers(path, layers, plugin=plugin, _writer=_writer)
+
+    def clear(self):
+        """Remove all layers from viewer."""
+        with self.batched_update():
+            super().clear()
+
+    @contextlib.contextmanager
+    def batched_update(self):
+        try:
+            self.events.begin_batch()
+            yield
+        finally:
+            self.events.end_batch()
