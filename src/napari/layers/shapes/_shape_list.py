@@ -1206,9 +1206,11 @@ class ShapeList:
             self._mesh.triangles[face_slice] = (
                 shape._face_triangles + triangle_shift
             )
+            self._mesh.triangles_colors[face_slice] = self._face_color[index]
             self._mesh.triangles[edge_slice] = shape._edge_triangles + (
                 triangle_shift + shape.face_vertices_count
             )
+            self._mesh.triangles_colors[edge_slice] = self._edge_color[index]
             if new_triangle_count < current_triangles_count:
                 padding_slice = slice(
                     triangles_slice.start + shape.triangles_count,
@@ -1324,12 +1326,17 @@ class ShapeList:
             shape_slice = self._mesh_vertices_slice_available(index)
             current_range = shape_slice.stop - shape_slice.start
             if current_range < shape.vertices_count:
+                # account for edge width
+                edge_vertices_with_width = (
+                    shape._edge_vertices
+                    + shape.edge_width * shape._edge_offsets
+                )
                 # need to allocate_more space
                 self._mesh.vertices = np.concatenate(
                     [
                         self._mesh.vertices[: shape_slice.start],
                         shape._face_vertices,
-                        shape._edge_vertices,
+                        edge_vertices_with_width,
                         self._mesh.vertices[shape_slice.stop :],
                     ]
                 )
@@ -2001,7 +2008,7 @@ class ShapeList:
         colors = np.zeros((*colors_shape, 4), dtype=float)
         colors[..., 3] = 1
 
-        z_order = self._z_order[::-1]
+        z_order = self._z_order
         shapes_in_view = np.argwhere(self._displayed)
         z_order_in_view_mask = np.isin(z_order, shapes_in_view)
         z_order_in_view = z_order[z_order_in_view_mask]
@@ -2009,7 +2016,7 @@ class ShapeList:
         # If there are too many shapes to render responsively, just render
         # the top max_shapes shapes
         if max_shapes is not None and len(z_order_in_view) > max_shapes:
-            z_order_in_view = z_order_in_view[:max_shapes]
+            z_order_in_view = z_order_in_view[-max_shapes:]
 
         for ind in z_order_in_view:
             mask = self.shapes[ind].to_mask(
