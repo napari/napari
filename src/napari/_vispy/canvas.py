@@ -16,6 +16,7 @@ from napari._vispy.camera import VispyCamera
 from napari._vispy.mouse_event import NapariMouseEvent
 from napari._vispy.utils.cursor import QtCursorVisual
 from napari._vispy.utils.gl import get_max_texture_sizes
+from napari._vispy.utils.text import register_napari_font
 from napari._vispy.utils.visual import create_vispy_overlay
 from napari.components._viewer_constants import CanvasPosition
 from napari.components.overlays import CanvasOverlay
@@ -147,6 +148,8 @@ class VispyCanvas:
         *args,
         **kwargs,
     ) -> None:
+        # register the napari font so vispy can see it
+        register_napari_font()
         # Since the base class is frozen we must create this attribute
         # before calling super().__init__().
         self.max_texture_sizes = None
