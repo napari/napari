@@ -250,7 +250,7 @@ def _text_to_vbo(text, font, anchor_x, anchor_y, lowres_size):
     return vertices
 
 
-def _register_napari_font_macos(font_dir):
+def _register_napari_font_macos(font_dir: Path) -> None:
     from ctypes import POINTER, c_bool, c_char_p, c_uint32, c_void_p
 
     from vispy.ext.cocoapy import cf, ct
@@ -286,12 +286,12 @@ def _register_napari_font_macos(font_dir):
         cf.CFRelease(url)
 
 
-def _register_napari_font_linux_windows(font_dir):
+def _register_napari_font_linux_windows(font_dir: Path) -> None:
     # windows and linux use freetype
     conf_dir = tempfile.mkdtemp()
     conf_path = os.path.join(conf_dir, 'fonts.conf')
 
-    system_fonts = {}
+    system_fonts = ''
     if sys.platform.startswith('linux'):
         system_fonts = """
         <include ignore_missing="yes">/etc/fonts/fonts.conf</include>
@@ -316,7 +316,9 @@ def _register_napari_font_linux_windows(font_dir):
 
 @lru_cache
 def register_napari_font():
-    font_dir = Path(resources.files('napari').joinpath('resources', 'fonts'))
+    font_dir = Path(
+        str(resources.files('napari').joinpath('resources', 'fonts'))
+    )
 
     if sys.platform == 'darwin':
         _register_napari_font_macos(font_dir)
