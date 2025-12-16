@@ -1,7 +1,7 @@
 import numbers
 import typing
 import warnings
-from collections.abc import Callable, Sequence, Set as AbstractSet
+from collections.abc import Callable, Iterable, Sequence, Set as AbstractSet
 from copy import copy, deepcopy
 from itertools import cycle
 from typing import (
@@ -1377,7 +1377,7 @@ class Points(Layer):
         return self._selected_data
 
     @selected_data.setter
-    def selected_data(self, selected_data: Sequence[int]) -> None:
+    def selected_data(self, selected_data: Iterable[int]) -> None:
         # Previously selected points not present in the selection are dropped
         # and newly selected points are added to the sequence. Reusing the same
         # Selection object maintains Event signal connections. Only changes are
