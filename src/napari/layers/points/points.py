@@ -1382,8 +1382,7 @@ class Points(Layer):
         # and newly selected points are added to the sequence. Reusing the same
         # Selection object maintains Event signal connections. Only changes are
         # emitted in events, retained selections are not reported.
-        self._selected_data.intersection_update(selected_data)
-        self._selected_data.update(selected_data)
+        self._selected_data.replace_selection(selected_data)
 
         self._selected_view = list(
             np.intersect1d(
