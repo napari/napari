@@ -141,17 +141,11 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
     def _update_color(self):
         layer = self.layer
         if layer.selected_label == layer.colormap.background_value:
-            color = (1, 0, 0, 0)
+            self._set_color((1, 0, 0, 0))
         else:
-            # use a fresh color lookup so we don't depend on the order in which
-            # the layer updates its internal `_selected_color` attribute.
-            selected_color = layer.get_color(layer.selected_label)
-            if selected_color is None:
-                color = (1, 0, 0, 0)
-            else:
-                color = selected_color.tolist()[:3] + [layer.opacity]
-
-        self._set_color(color)
+            self._set_color(
+                layer._selected_color.tolist()[:3] + [layer.opacity]
+            )
 
     @_only_when_enabled
     def _on_mouse_move(self, layer, event):

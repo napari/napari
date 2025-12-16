@@ -408,9 +408,6 @@ class Labels(ScalarFieldBase):
         self._iso_gradient_mode = IsoCategoricalGradientMode(iso_gradient_mode)
 
         self._selected_labels: Selection[int] = Selection([1])
-        self._selected_labels.events.items_changed.connect(
-            lambda _: self.events.selected_labels()
-        )
         self.colormap.selection = self.selected_label
         self.colormap.use_selection = self._show_selected_label
         self._prev_selected_label = None
@@ -721,7 +718,7 @@ class Labels(ScalarFieldBase):
     @property
     def selected_label(self):
         """int: Index of selected label."""
-        # TODO update the implementation by next(reversed(self._selected_data))
+        # TODO update the implementation by next(reversed(self._selected_labels))
         # once https://github.com/pyapp-kit/psygnal/pull/395 is accepted
         # There is no length check here because self._selected_labels
         # always contains at least one label.
@@ -765,14 +762,13 @@ class Labels(ScalarFieldBase):
                 lower_bound=dtype_lims[0],
                 upper_bound=dtype_lims[1],
             )
-        # Note: the event 'selected_labels' is emitted by the Selection
-        # container when it is changed.
         self._selected_labels.replace_selection(selected_labels)
         # container when it is changed.
         self.colormap.selection = self.selected_label
         self._selected_color = self.get_color(self.selected_label)
         if self.show_selected_label:
             self.refresh(extent=False)
+        self.events.selected_labels()
 
     def swap_selected_and_background_labels(self):
         """Swap between the selected label and the background label."""
