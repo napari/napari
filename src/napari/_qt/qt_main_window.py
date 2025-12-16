@@ -76,6 +76,7 @@ from napari._qt.widgets.qt_viewer_dock_widget import (
     QtViewerDockWidget,
 )
 from napari._qt.widgets.qt_viewer_status_bar import ViewerStatusBar
+from napari._vispy.utils.text import register_napari_font
 from napari.plugins import (
     menu_item_template as plugin_menu_item_template,
     plugin_manager,
@@ -138,6 +139,9 @@ class _QtMainWindow(QMainWindow):
         self._ev = None
         self._window = window
         self._plugin_manager_dialog = None
+        # register the napari font so vispy can see it. Needs to happen before
+        # initializing the first QtViewer.
+        register_napari_font()
         self._qt_viewer = QtViewer(viewer, show_welcome_screen=True)
         self._quit_app = False
 

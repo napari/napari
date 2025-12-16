@@ -250,48 +250,43 @@ def _text_to_vbo(text, font, anchor_x, anchor_y, lowres_size):
     return vertices
 
 
-@lru_cache
-def register_napari_font():
-    font_dir = Path(
-        resources.files(__package__).joinpath('resources', 'fonts')
-    )
+def _register_napari_font_macos(font_dir):
+    from ctypes import POINTER, c_bool, c_char_p, c_uint32, c_void_p
 
-    if sys.platform == 'darwin':
-        from ctypes import POINTER, c_bool, c_char_p, c_uint32, c_void_p
+    from vispy.ext.cocoapy import cf, ct
 
-        from vispy.ext.cocoapy import cf, ct
+    # following vispy's implementation in vispy.ext.cocoapy
+    # and vispy.utils.fonts._quartz.py
+    cf.CFURLCreateFromFileSystemRepresentation.restype = c_void_p
+    cf.CFURLCreateFromFileSystemRepresentation.argtypes = [
+        c_void_p,
+        c_char_p,
+        c_uint32,
+        c_bool,
+    ]
 
-        # following vispy's implementation in vispy.ext.cocoapy
-        # and vispy.utils.fonts._quartz.py
-        cf.CFURLCreateFromFileSystemRepresentation.restype = c_void_p
-        cf.CFURLCreateFromFileSystemRepresentation.argtypes = [
-            c_void_p,
-            c_char_p,
-            c_uint32,
-            c_bool,
-        ]
+    ct.CTFontManagerRegisterFontsForURL.restype = c_bool
+    ct.CTFontManagerRegisterFontsForURL.argtypes = [
+        c_void_p,
+        c_uint32,
+        POINTER(c_void_p),
+    ]
 
-        ct.CTFontManagerRegisterFontsForURL.restype = c_bool
-        ct.CTFontManagerRegisterFontsForURL.argtypes = [
-            c_void_p,
-            c_uint32,
-            POINTER(c_void_p),
-        ]
+    # vispy/qt use quartz for font discovery on mac
+    for font_file in font_dir.glob('*/*.ttf'):
+        path = str(font_file).encode('utf-8')
+        url = cf.CFURLCreateFromFileSystemRepresentation(
+            None, path, len(path), False
+        )
+        ok = ct.CTFontManagerRegisterFontsForURL(
+            url, 1, None
+        )  # 1 = scope process
+        if not ok:
+            logger.error('Failed to register custom fonts.')
+        cf.CFRelease(url)
 
-        # vispy/qt use quartz for font discovery on mac
-        for font_file in font_dir.glob('*/*.ttf'):
-            path = str(font_file).encode('utf-8')
-            url = cf.CFURLCreateFromFileSystemRepresentation(
-                None, path, len(path), False
-            )
-            ok = ct.CTFontManagerRegisterFontsForURL(
-                url, 1, None
-            )  # 1 = scope process
-            if not ok:
-                logger.error('Failed to register custom fonts.')
-            cf.CFRelease(url)
-        return
 
+def _register_napari_font_linux_windows(font_dir):
     # windows and linux use freetype
     conf_dir = tempfile.mkdtemp()
     conf_path = os.path.join(conf_dir, 'fonts.conf')
@@ -317,3 +312,15 @@ def register_napari_font():
     with open(conf_path, 'w') as f:
         f.write(conf_contents)
     os.environ['FONTCONFIG_PATH'] = conf_dir
+
+
+@lru_cache
+def register_napari_font():
+    font_dir = Path(resources.files('napari').joinpath('resources', 'fonts'))
+
+    if sys.platform == 'darwin':
+        _register_napari_font_macos(font_dir)
+    elif sys.platform.startswith('linux') or sys.platform.startswith('win'):
+        _register_napari_font_linux_windows(font_dir)
+    else:
+        logger.error('Platform not supported for custom fonts.')
