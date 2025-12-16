@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import itertools
 import typing
 import warnings
@@ -119,7 +120,7 @@ class LayerList(SelectableEventedList[Layer]):
             basetype=Layer,
             lookup={str: get_name},
         )
-        self.events.add(renamed=Event)
+        self.events.add(begin_batch=Event, end_batch=Event, renamed=Event)
         self.events.inserted.connect(self._on_layer_inserted)
         self.events.removed.connect(self._on_layer_removed)
         self._create_contexts()
@@ -260,7 +261,8 @@ class LayerList(SelectableEventedList[Layer]):
         if not self.selection:
             return
         self.unlink_layers(self.selection)
-        super().remove_selected()
+        with self.batched_update():
+            super().remove_selected()
 
     def toggle_selected_visibility(self):
         """Toggle visibility of selected layers"""
@@ -564,3 +566,16 @@ class LayerList(SelectableEventedList[Layer]):
             return []
 
         return save_layers(path, layers, plugin=plugin, _writer=_writer)
+
+    def clear(self):
+        """Remove all layers from viewer."""
+        with self.batched_update():
+            super().clear()
+
+    @contextlib.contextmanager
+    def batched_update(self):
+        try:
+            self.events.begin_batch()
+            yield
+        finally:
+            self.events.end_batch()
