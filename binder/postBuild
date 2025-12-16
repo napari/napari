@@ -8,6 +8,3 @@ cp -r binder/Desktop ${HOME}/Desktop
 mkdir -p ${HOME}/.config/xfce4/xfconf/xfce-perchannel-xml
 cp binder/xsettings.xml ${HOME}/.config/xfce4/xfconf/xfce-perchannel-xml/
 cp binder/xfce4-panel.xml ${HOME}/.config/xfce4/xfconf/xfce-perchannel-xml/
-
-# Install napari
-pip install ${HOME}/ --no-deps

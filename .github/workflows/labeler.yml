@@ -1,15 +1,15 @@
 # https://github.com/marketplace/actions/labeler
-name: "Pull Request Labeler"
+name: Add labels
 on:
 - pull_request_target
 
 jobs:
-  triage:
+  labeler:
     permissions:
       contents: read
       pull-requests: write
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/labeler@v5
+    - uses: actions/labeler@634933edcd8ababfe52f92936142cc22ac488b1b # v6.0.1
       with:
         repo-token: "${{ secrets.GITHUB_TOKEN }}"

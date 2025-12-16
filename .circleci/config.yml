@@ -6,45 +6,57 @@ version: 2.1
 # Orbs are reusable packages of CircleCI configuration that you may share across projects.
 # See: https://circleci.com/docs/2.1/orb-intro/
 orbs:
-  python: circleci/python@1.5.0
+  python: circleci/python@3.1.0
 jobs:
   build-docs:
     docker:
       # A list of available CircleCI Docker convenience images are available here: https://circleci.com/developer/images/image/cimg/python
-      - image: cimg/python:3.10.13
+      - image: cimg/python:3.12.10
+    environment:
+      XDG_CACHE_HOME: /home/circleci/.cache
     steps:
       - checkout:
+          method: full
           path: napari
+      - restore_cache:
+          keys:
+            - pooch
       - run:
           name: Clone docs repo into a subdirectory
-          command: git clone git@github.com:napari/docs.git docs
+          command: git clone --depth=1 git@github.com:napari/docs.git docs
       - run:
           name: Install qt libs + xvfb
           command: sudo apt-get update && sudo apt-get install -y xvfb libegl1 libdbus-1-3 libxkbcommon-x11-0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 libxcb-xinerama0 libxcb-xinput0 libxcb-xfixes0 x11-utils
       - run:
           name: Setup virtual environment
           command: |
-            python -m venv venv
-            . venv/bin/activate
-            python -m pip install --upgrade pip
+            uv venv
+            . .venv/bin/activate
 
       - run:
           name: Install napari-dev
           command: |
-            . venv/bin/activate
-            python -m pip install -e "napari/[pyside,dev]"
+            . .venv/bin/activate
+            uv pip install -e "napari/[pyqt5]" --group napari/pyproject.toml:docs
           environment:
-            PIP_CONSTRAINT: napari/resources/constraints/constraints_py3.10_docs.txt
+            UV_CONSTRAINT: napari/resources/constraints/constraints_py3.12_docs.txt
       - run:
           name: Build docs
           command: |
-            . venv/bin/activate
+            . .venv/bin/activate
             cd docs
-            xvfb-run --auto-servernum make docs
+            xvfb-run --auto-servernum make html
           environment:
-            PIP_CONSTRAINT: ../napari/resources/constraints/constraints_py3.10_docs.txt
+            UV_CONSTRAINT: ../napari/resources/constraints/constraints_py3.12_docs.txt
+          no_output_timeout: 30m
       - store_artifacts:
           path: docs/docs/_build/html/
+      - save_cache:
+          key: pooch
+          paths:
+            - ~/.cache/scikit-image
+            - ~/.cache/napari-*
+            - ~/.cache/pooch
       - persist_to_workspace:
           root: .
           paths:

@@ -22,7 +22,8 @@ from skimage import data
 
 import napari
 
-viewer = napari.view_image(data.astronaut(), rgb=True, interpolation='custom')
+viewer = napari.Viewer()
+layer = viewer.add_image(data.astronaut(), rgb=True, interpolation2d='custom')
 
 
 def gaussian_kernel(size, sigma):

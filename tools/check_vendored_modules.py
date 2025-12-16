@@ -6,6 +6,7 @@ import shutil
 import sys
 from pathlib import Path
 from subprocess import check_output
+from typing import List
 
 
 TOOLS_PATH = Path(__file__).parent
@@ -36,10 +37,10 @@ def _clone(org, reponame, tag):
 
 
 def check_vendored_files(
-    org: str, reponame: str, tag: str, source_paths: Path, target_path: Path
+    org: str, reponame: str, tag: str, source_paths: List[Path], target_path: Path
 ) -> str:
     repo_path = _clone(org, reponame, tag)
-    vendor_path = REPO_ROOT_PATH / NAPARI_FOLDER / target_path
+    vendor_path = REPO_ROOT_PATH / 'src' / NAPARI_FOLDER / target_path
     for s in source_paths:
         shutil.copy(repo_path / s, vendor_path)
     return check_output(["git", "diff"], cwd=vendor_path).decode("utf-8")
@@ -66,7 +67,7 @@ def check_vendored_module(org: str, reponame: str, tag: str) -> str:
     """
     repo_path = _clone(org, reponame, tag)
 
-    vendor_path = REPO_ROOT_PATH / NAPARI_FOLDER / VENDOR_FOLDER / reponame
+    vendor_path = REPO_ROOT_PATH / 'src' / NAPARI_FOLDER / VENDOR_FOLDER / reponame
     if vendor_path.is_dir():
         shutil.rmtree(vendor_path)
 
@@ -80,12 +81,13 @@ def check_vendored_module(org: str, reponame: str, tag: str) -> str:
 def main():
     CI = '--ci' in sys.argv
     print("\n\nChecking vendored modules\n")
+    vendored_modules = []
     for org, reponame, tag, source, target in [
         ("albertosottile", "darkdetect", "master", None, None),
         (
             "matplotlib",
             "matplotlib",
-            "v3.2.1",
+            "main",
             [
                 # this file seem to be post 3.0.3 but pre 3.1
                 # plus there may have been custom changes.
@@ -94,7 +96,7 @@ def main():
                 # this file seem much more recent, but is touched much more rarely.
                 # it is at least from 3.2.1 as the turbo colormap is present and
                 # was added in matplotlib in 3.2.1
-                #'lib/matplotlib/_cm_listed.py'
+                'lib/matplotlib/_cm_listed.py'
             ],
             'utils/colormaps/vendored/',
         ),
@@ -107,15 +109,18 @@ def main():
                 org, reponame, tag, [Path(s) for s in source], Path(target)
             )
 
-        if CI:
-            print(f"::set-output name=vendored::{org}/{reponame}")
-            sys.exit(0)
         if diff:
-            print(diff)
-            print(
-                f"\n * '{org}/{reponame}' vendor code seems to not be up to date!!!\n"
-            )
-            sys.exit(1)
+            vendored_modules.append((org, reponame, diff))
+
+    if CI:
+        with open(TOOLS_PATH / "vendored_modules.txt", "w") as f:
+            f.write(" ".join(f"{org}/{reponame}" for org, reponame, _ in vendored_modules))
+        sys.exit(0)
+    if vendored_modules:
+        print("\n\nThe following vendored modules are not up to date:\n")
+        for org, reponame, _diff in vendored_modules:
+            print(f"\n * {org}/{reponame}\n")
+        sys,exit(1)
 
 
 if __name__ == "__main__":

@@ -26,11 +26,11 @@ jobs:
     name: Check Manifest
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: "Set up Python 3.11"
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      - name: "Set up Python 3.12"
+        uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v6.1.0
         with:
-          python-version: "3.11"
+          python-version: "3.12"
       - name: Install dependencies
         run: |
           pip install --upgrade pip
@@ -49,23 +49,23 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [ubuntu-latest, windows-latest]
-        python: ["3.9", "3.10", "3.11", "3.12"]
-        backend: [pyqt5, pyside2]
+        platform: [ubuntu-latest, windows-2022]
+        python: ["3.10", "3.11", "3.12", "3.13"]
+        backend: [pyqt5]
         include:
-          - python: "3.10"
+          - python: "3.11"
             platform: macos-latest
             backend: pyqt5
           # test with minimum specified requirements
-          - python: "3.9"
-            platform: ubuntu-20.04
+          - python: "3.10"
+            platform: ubuntu-22.04
             backend: pyqt5
             MIN_REQ: 1
           # test without any Qt backends
-          - python: "3.9"
-            platform: ubuntu-20.04
+          - python: "3.10"
+            platform: ubuntu-22.04
             backend: headless
-          - python: "3.12"
+          - python: "3.13"
             platform: ubuntu-latest
             backend: pyqt6
             tox_extras: "testing_extra"
@@ -73,13 +73,7 @@ jobs:
             platform: ubuntu-latest
             backend: pyside6
             tox_extras: "testing_extra"
-        exclude:
-          - python: "3.11"
-            backend: pyside2
-          - python: "3.12"
-            backend: pyside2
-          - platform: windows-latest
-            backend: pyside2
+
     with:
       python_version: ${{ matrix.python }}
       platform: ${{ matrix.platform }}
@@ -97,20 +91,21 @@ jobs:
     uses: ./.github/workflows/reusable_run_tox_test.yml
     needs: build_wheel
     with:
-        toxenv: py39-linux-pyside2-examples-cov
+        toxenv: py312-linux-pyqt6-examples-cov
         timeout: 60
-        python_version: 3.9
+        python_version: 3.12
         constraints_suffix: _examples
         coverage: cov
 
   coverage_report:
     if: ${{ always() }}
+    secrets: inherit
     needs:
       - test
       - test_examples
-    uses: ./.github/workflows/reusable_coverage_upload.yml
-    secrets:
-      codecov_token: ${{ secrets.CODECOV_TOKEN }}
+    uses: napari/shared-workflows/.github/workflows/upload_coverage.yml@main
+    with:
+      artifact-pattern: 'coverage reports*'
 
   synchronize_bot_repository:
     name: Synchronize bot repository
@@ -120,7 +115,7 @@ jobs:
       contents: read
       issues: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           token: ${{ secrets.GHA_TOKEN_BOT_REPO_WORKFLOW }}
       - name: Synchronize bot repository
@@ -131,7 +126,7 @@ jobs:
       - name: Report Failures
 
         if: ${{ failure() }}
-        uses: JasonEtco/create-an-issue@v2
+        uses: JasonEtco/create-an-issue@1b14a70e4d8dc185e5cc76d3bec9eab20257b2c5 # v2.9.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RUN_ID: ${{ github.run_id }}

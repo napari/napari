@@ -7,7 +7,6 @@ import re
 import subprocess  # nosec
 import sys
 from pathlib import Path
-from typing import Optional
 
 from tomllib import loads
 
@@ -142,8 +141,7 @@ def calc_only_direct_updates(
         metadata['dependencies']
         + optional_dependencies['pyqt5']
         + optional_dependencies['pyqt6']
-        + optional_dependencies['pyside2']
-        + optional_dependencies['pyside6_experimental']
+        + optional_dependencies['pyside6']
         + optional_dependencies['testing']
         + optional_dependencies['all']
     )
@@ -159,7 +157,7 @@ def get_changed_dependencies(
     base_branch: str,
     all_packages=False,
     python_version='3.10',
-    src_dir: Optional[Path] = None,
+    src_dir: Path | None = None,
 ):
     """
     Get the changed dependencies.

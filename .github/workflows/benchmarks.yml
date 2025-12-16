@@ -37,6 +37,8 @@ jobs:
     if: ${{ github.event.label.name == 'run-benchmarks' && github.event_name == 'pull_request' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
     name: ${{ matrix.benchmark-name }}
     runs-on: ${{ matrix.runs-on }}
+    env:
+      PYTHON_VERSION: "3.12"
     permissions:
       contents: read
       issues: write
@@ -59,24 +61,27 @@ jobs:
     steps:
       # We need the full repo to avoid this issue
       # https://github.com/actions/checkout/issues/23
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v6.1.0
         name: Install Python
         with:
-          python-version: "3.11"
+          python-version: ${{ env.PYTHON_VERSION }}
           cache-dependency-path: pyproject.toml
 
-      - uses: tlambert03/setup-qt-libs@v1
+      - name: Setup headless display
+        uses: pyvista/setup-headless-display-action@7d84ae825e6d9297a8e99bdbbae20d1b919a0b19 # v4.2
+        with:
+          qt: true
 
       - name: Setup asv
         run: python -m pip install "asv[virtualenv]"
         env:
           PIP_CONSTRAINT: resources/constraints/benchmark.txt
 
-      - uses: octokit/request-action@v2.x
+      - uses: octokit/request-action@05a2312de9f8207044c4c9e41fe19703986acc13 # v2.x
         id: latest_release
         with:
           route: GET /repos/{owner}/{repo}/releases/latest
@@ -93,8 +98,11 @@ jobs:
           GIT_LFS_SKIP_SMUDGE: 1
           HEAD_LABEL: ${{ github.event.pull_request.head.label }}
           PIP_CONSTRAINT: ${{ github.workspace }}/resources/constraints/benchmark.txt
+          TMPDIR: ${{ github.workspace }}/tmp
         run: |
           set -euxo pipefail
+          mkdir -p "${TMPDIR}"
+          touch "${TMPDIR}/empty"
           read -ra cmd_options <<< "$ASV_OPTIONS"
 
           # ID this runner
@@ -136,17 +144,28 @@ jobs:
 
       - name: Report Failures as Issue
         if: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && failure() }}
-        uses: JasonEtco/create-an-issue@v2
+        uses: JasonEtco/create-an-issue@1b14a70e4d8dc185e5cc76d3bec9eab20257b2c5 # v2.9.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PLATFORM: ${{ matrix.runs-on }}
-          PYTHON: "3.9"
+          PYTHON: ${{ env.PYTHON_VERSION }}
           BACKEND: ${{ matrix.benchmark-name }}
           RUN_ID: ${{ github.run_id }}
           TITLE: "[test-bot] Benchmark tests failing"
         with:
           filename: .github/TEST_FAIL_TEMPLATE.md
           update_existing: true
+
+      - name: Upload additional information about failure
+#         upload the tmp directory to the artifact
+#         this is where our code stores the dumped
+#         structures that crash triangulation
+        if: failure()
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        with:
+          path: ${{ github.workspace }}/tmp
+          include-hidden-files: true
+          name: tmp-${{ matrix.benchmark-name }}
 
       - name: Add more info to artifact
         if: always()
@@ -168,9 +187,12 @@ jobs:
           "[CI logs and artifacts](||BENCHMARK_CI_LOGS_URL||) for further details." \
           > .asv/results/message_${{ matrix.benchmark-name }}.txt
 
+          awk  '/Benchmark.*Parameter/,/SOME BENCHMARKS HAVE CHANGED SIGNIFICANTLY/' asv_continuous.log \
+          >> .asv/results/message_${{ matrix.benchmark-name }}.txt
+
           fi
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
         if: always()
         with:
           name: asv-benchmark-results-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}-${{ matrix.benchmark-name }}
@@ -179,16 +201,16 @@ jobs:
   combine-artifacts:
     runs-on: ubuntu-latest
     needs: benchmark
-    if: always()
+    if: always() && needs.benchmark.result != 'skipped'
     steps:
       - name: Download artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
         with:
           pattern: asv-benchmark-results*
           path: asv_result
           merge-multiple: true
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
         with:
           name: asv-benchmark-results-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}
           path: asv_result

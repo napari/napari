@@ -1,6 +1,6 @@
 [build-system]
 requires = [
-  "setuptools >= 69",
+  "setuptools >= 77.0.1",
   "setuptools_scm[toml]>=8"
 ]
 build-backend = "setuptools.build_meta"
@@ -12,18 +12,18 @@ authors = [
     { name = "napari team", email = "napari-steering-council@googlegroups.com" },
 ]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Environment :: X11 Applications :: Qt",
+    "Framework :: napari",
     "Intended Audience :: Education",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: BSD License",
     "Programming Language :: C",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Scientific/Engineering",
     "Topic :: Scientific/Engineering :: Visualization",
     "Topic :: Scientific/Engineering :: Information Analysis",
@@ -34,50 +34,50 @@ classifiers = [
     "Operating System :: Unix",
     "Operating System :: MacOS",
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
+license = "BSD-3-Clause"
+license-files = [
+    "LICENSE",
+]
 dependencies = [
     "appdirs>=1.4.4",
-    "app-model>=0.2.5,<0.3.0",
+    "app-model>=0.4.0,<0.5.0",
     "cachey>=0.2.1",
     "certifi>=2018.1.18",
     "dask[array]>=2021.10.0",
     "imageio>=2.20,!=2.22.1",
     "jsonschema>=3.2.0",
-    "lazy_loader>=0.2",
+    "lazy_loader>=0.3",
     "magicgui>=0.7.0",
-    "napari-console>=0.0.9",
+    "napari-console>=0.1.4",
     "napari-plugin-engine>=0.1.9",
     "napari-svg>=0.1.8",
-    "npe2>=0.7.6",
-    "numpy>=1.22.2 ; python_version >= '3.10'",
-    "numpy >=1.22.2, <2 ; python_version < '3.10'",
-    "numpydoc>=0.9.2",
-    "pandas>=1.3.0",
+    "npe2>=0.7.9",
+    "numpy>=1.24.2",
+    "pandas>=1.3.3",
     "Pillow>=9.0",
     "pint>=0.17",
-    "psutil>=5.0",
-    "psygnal>=0.5.0",
-    "pydantic>=1.9.0",
+    "psutil>=5.9.0",
+    "psygnal>=0.14.2",
+    "pydantic>=2.2.0",
     "pygments>=2.6.0",
-    "PyOpenGL>=3.1.0",
-    "PyYAML>=5.1",
-    "qtpy>=1.10.0",
+    "PyOpenGL>=3.1.5",
+    "pywin32 ; platform_system == 'Windows'",
+    "PyYAML>=6.0",
+    "qtpy>=2.3.1",
     "scikit-image[data]>=0.19.1",
-    "scipy>=1.5.4",
-    "superqt>=0.6.7",
-    "tifffile>=2022.4.8",
-    "toolz>=0.10.0",
+    "scipy>=1.10.1",
+    "superqt>=0.7.4",
+    "tifffile>=2022.7.28",
+    "toolz>=0.11.0",
     "tqdm>=4.56.0",
-    "typing_extensions>=4.2.0",
-    "vispy>=0.14.1,<0.15",
-    "wrapt>=1.11.1",
+    "typing_extensions>=4.12",
+    "vispy>=0.15.2,<0.16",
+    "wrapt>=1.13.3",
 ]
 dynamic = [
     "version",
 ]
-
-[project.license]
-text = "BSD 3-Clause"
 
 [project.readme]
 file = "README.md"
@@ -91,21 +91,19 @@ Documentation = "https://napari.org"
 "Source Code" = "https://github.com/napari/napari"
 
 [project.optional-dependencies]
-pyside2 = [
-    "PySide2>=5.13.2,!=5.15.0 ; python_version < '3.11' and platform_machine != 'arm64'",
-]
-pyside6_experimental = [
-    "PySide6 < 6.5 ; python_version < '3.12'"
+pyside6 = [
+    "PySide6 > 6.7"
 ]
 pyqt6 = [
     "PyQt6 > 6.5",
     "PyQt6 != 6.6.1 ; platform_system == 'Darwin'"
 ]
 pyside = [
-    "napari[pyside2]"
+    "napari[pyside6]"
 ]
 pyqt5 = [
-    "PyQt5>=5.12.3,!=5.15.0",
+    "PyQt5>=5.15.8",
+    "pyqt5-qt5<=5.15.2; sys_platform == 'Windows'",  # 5.15.2 is latest to build on Windows, required for `uv add` compatability as of uv 0.6.9
 ]
 pyqt = [
     "napari[pyqt5]"
@@ -114,43 +112,105 @@ qt = [
     "napari[pyqt]"
 ]
 all = [
-    "napari[pyqt,optional]",
-    "napari-plugin-manager >=0.1.0a1, <0.2.0",
+    "napari[pyqt,optional]"
+]
+optional-base = [
+    "zarr>=2.12.0", # needed by `builtins` (dask.array.from_zarr) to open zarr
+    "aiohttp", # needed to open remote files by zarr, replace by extras once https://github.com/zarr-developers/zarr-python/issues/3453 is done
+    "napari-plugin-manager >=0.1.3, <0.2.0",
+]
+optional-numba = [
+    "numba>=0.57.1",
 ]
 optional = [
-    "triangle ; platform_machine != 'arm64'",
-    "numba>=0.57.1",
-    "zarr>=2.12.0", # needed by `builtins` (dask.array.from_zarr) to open zarr
+    "napari[optional-base,optional-numba,bermuda]",
+    "triangle",
 ]
+bermuda = [
+    "bermuda>=0.1.5",
+]
+partsegcore = [
+    "PartSegCore-compiled-backend>=0.15.11",
+]
+all_optional = [
+    "napari[optional,partsegcore]"
+]
+
+# the following extras need to match the dependency-groups below
+# they will be removed in napari 0.7.0
+
 testing = [
+    "napari[gallery]",
     "babel>=2.9.0",
+    "docstring_parser>=0.15",
     "fsspec>=2023.10.0",
     "hypothesis>=6.8.0",
     "lxml[html_clean]>5",
     "matplotlib >= 3.6.1",
-    "numba>=0.57.1",
     "pooch>=1.6.0",
     "coverage>7",
-    "docstring_parser>=0.15",
     "pretend>=1.0.9",
     "pyautogui>=0.9.54",
-    "pytest-qt>=4.3.1",
+    "pytest-qt >=4.4.0; python_version > '3.10'",
+    "pytest-qt ==4.4.0; python_version <= '3.10'",
     "pytest-pretty>=1.1.0",
-    "pytest>=8.1.0",
-    "tensorstore>=0.1.13",
+    "pytest>=8.3.5",
+    "pytest-rerunfailures>=15.1",
+    "tensorstore>=0.1.32",
     "virtualenv>=20.17",
     "xarray>=0.16.2",
-    "zarr>=2.12.0",
     "IPython>=7.25.0",
     "qtconsole>=4.5.1",
     "rich>=12.0.0",
-    "napari-plugin-manager >=0.1.0a2, <0.2.0",
+    "napari[optional-base]",
 ]
 testing_extra = [
-    "torch>=1.7",
+    "torch>=1.10.2",
+]
+# needed for gallery examples
+gallery = [
+    "glasbey",
+    "zarr",
+    "dask[array,distributed]",
+    "matplotlib",
+    "pooch",
+    "nilearn",
+    "xarray",
+    "h5netcdf",
+    "meshio",
+]
+# needed to build docs
+docs = [
+    "napari[gallery]",
+    "numpydoc>=1.0.0",
+    "sphinx<8",
+    "sphinx-autobuild",
+    "sphinx-tabs",
+    "sphinx-tags",
+    "sphinx-design",
+    "sphinx-external-toc",
+    "sphinx-favicon>=1.0",
+    "sphinx-copybutton",
+    "sphinx-gallery",
+    "sphinx_autodoc_typehints==1.12.0",
+    "sphinxcontrib-mermaid>=1.0.0",
+    "sphinxext-opengraph[social-cards]",
+    "myst-nb",
+    "napari-sphinx-theme>=1.0.0",
+    "matplotlib",
+    "lxml[html_clean]>5",
+    "imageio-ffmpeg",
+    "pydeps",
+    "seedir",
+    # triangle and bermuda needed for docs/guides/triangulation.md
+    "triangle",
+    "bermuda>=0.1.4",
+    "pytest",
+    "linkify-it-py",
+    "numba!=0.62.1,!=0.62.0",
 ]
 release = [
-    "PyGithub>=1.44.1",
+    "PyGithub>=1.46",
     "twine>=3.1.1",
     "gitpython>=3.1.0",
     "requests-cache>=0.9.2",
@@ -159,8 +219,102 @@ dev = [
     "ruff",
     "check-manifest>=0.42",
     "pre-commit>=2.9.0",
-    "pydantic[dotenv]",
+    "pydantic",
+    "tox",
+    "tox-min-req",
     "napari[testing]",
+]
+build = [
+    "ruff",
+    "pyqt5",
+]
+
+# these need to be kept in sync with the equivalent optional-dependencies
+[dependency-groups]
+testing = [
+    {include-group = "gallery"},
+    "babel>=2.9.0",
+    "docstring_parser>=0.15",
+    "fsspec>=2023.10.0",
+    "hypothesis>=6.8.0",
+    "lxml[html_clean]>5",
+    "matplotlib >= 3.6.1",
+    "pooch>=1.6.0",
+    "coverage>7",
+    "pretend>=1.0.9",
+    "pyautogui>=0.9.54",
+    "pytest-qt >=4.4.0; python_version > '3.10'",
+    "pytest-qt ==4.4.0; python_version <= '3.10'",
+    "pytest-pretty>=1.1.0",
+    "pytest>=8.3.5",
+    "pytest-rerunfailures>=15.1",
+    "tensorstore>=0.1.32",
+    "virtualenv>=20.17",
+    "xarray>=0.16.2",
+    "IPython>=7.25.0",
+    "qtconsole>=4.5.1",
+    "rich>=12.0.0",
+    "napari[optional-base]",
+]
+testing_extra = [
+    "torch>=1.10.2",
+]
+# needed for gallery examples
+gallery = [
+    "glasbey",
+    "zarr",
+    "dask[array,distributed]",
+    "matplotlib",
+    "pooch",
+    "nilearn",
+    "xarray",
+    "h5netcdf",
+    "meshio",
+]
+# needed to build docs
+docs = [
+    {include-group = "gallery"},
+    "numpydoc>=1.0.0",
+    "sphinx<8",
+    "sphinx-autobuild",
+    "sphinx-tabs",
+    "sphinx-tags",
+    "sphinx-design",
+    "sphinx-external-toc",
+    "sphinx-favicon>=1.0",
+    "sphinx-copybutton",
+    "sphinx-gallery",
+    "sphinx_autodoc_typehints==1.12.0",
+    "sphinxcontrib-mermaid>=1.0.0",
+    "sphinxext-opengraph[social-cards]",
+    "myst-nb",
+    "napari-sphinx-theme>=1.0.0",
+    "matplotlib",
+    "lxml[html_clean]>5",
+    "imageio-ffmpeg",
+    "pydeps",
+    "seedir",
+    # triangle and bermuda needed for docs/guides/triangulation.md
+    "triangle",
+    "bermuda>=0.1.4",
+    "pytest",
+    "linkify-it-py",
+    "numba!=0.62.1,!=0.62.0",
+]
+release = [
+    "PyGithub>=1.46",
+    "twine>=3.1.1",
+    "gitpython>=3.1.0",
+    "requests-cache>=0.9.2",
+]
+dev = [
+    "ruff",
+    "check-manifest>=0.42",
+    "pre-commit>=2.9.0",
+    "pydantic",
+    "tox",
+    "tox-min-req",
+    {include-group = "testing"},
 ]
 build = [
     "ruff",
@@ -179,11 +333,11 @@ napari = "napari.__main__:main"
 [tool.setuptools]
 zip-safe = false
 include-package-data = true
-license-files = [
-    "LICENSE",
-]
 
 [tool.setuptools.packages.find]
+where = [
+    "src",
+]
 namespaces = false
 
 [tool.setuptools.package-data]
@@ -196,7 +350,8 @@ napari_builtins = [
 
 
 [tool.setuptools_scm]
-write_to = "napari/_version.py"
+write_to = "src/napari/_version.py"
+fallback_version = "0.6.4.dev0"
 
 [tool.check-manifest]
 ignore = [
@@ -205,37 +360,20 @@ ignore = [
   "asv.conf.json",
   "codecov.yml",
   "Makefile",
-  "napari/_version.py",  # added during build by setuptools_scm
+  "src/napari/_version.py",  # added during build by setuptools_scm
   "tools/minreq.py",
   "tox.ini",
-  "napari/_qt/qt_resources/_qt_resources_*.py",
+  "src/napari/_qt/qt_resources/_qt_resources_*.py",
   "*.pyi",  # added by make typestubs
   "binder/*",
   ".env_sample",
   ".devcontainer/*",
-  "napari/resources/icons/_themes/*/*.svg"
+  "src/napari/resources/icons/_themes/*/*.svg"
 ]
 
 [tool.ruff]
 line-length = 79
-exclude = [
-    ".bzr",
-    ".direnv",
-    ".eggs",
-    ".git",
-    ".mypy_cache",
-    ".pants.d",
-    ".ruff_cache",
-    ".svn",
-    ".tox",
-    ".venv",
-    "__pypackages__",
-    "_build",
-    "buck-out",
-    "build",
-    "dist",
-    "node_modules",
-    "venv",
+extend-exclude = [
     "*vendored*",
     "*_vendor*",
 ]
@@ -251,7 +389,7 @@ select = [
     "UP", # pyupgrade
     "I", # isort
     "YTT", #flake8-2020
-    "TCH", # flake8-type-checing
+    "TC", # flake8-type-checing
     "BLE", # flake8-blind-exception
     "B", # flake8-bugbear
     "A", # flake8-builtins
@@ -280,28 +418,33 @@ select = [
     "T20", # flake8-print
 ]
 ignore = [
-    "E501", "TCH001", "TCH002", "TCH003",
+    "E501", "TC001", "TC002", "TC003",
     "A003", # flake8-builtins - we have class attributes violating these rule
     "COM812", # flake8-commas - we don't like adding comma on single line of arguments
     "COM819", # conflicts with ruff-format
-    "SIM117", # flake8-simplify - we some of merged with statements are not looking great with black, reanble after drop python 3.9
     "RET504", # not fixed yet https://github.com/charliermarsh/ruff/issues/2950
     "TRY003", # require implement multiple exception class
     "RUF005", # problem with numpy compatybility, see https://github.com/charliermarsh/ruff/issues/2142#issuecomment-1451038741
     "B028", # need to be fixed
     "PYI015", # it produces bad looking files (@jni opinion)
     "W191", "Q000", "Q001", "Q002", "Q003", "ISC001", # https://docs.astral.sh/ruff/formatter/#conflicting-lint-rules
+    "UP007", # temporary disable migrtion form Union[X, Y] to X | Y
+    "UP045", # temporary disable migrtion from Optional[X] to X | None
+    "TC006", # put types in quotes in typing.cast
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"napari/_vispy/__init__.py" = ["E402"]
+"src/napari/_vispy/__init__.py" = ["E402"]
 "**/_tests/*.py" = ["B011", "INP001", "TRY301", "B018", "RUF012"]
-"napari/utils/_testsupport.py" = ["B011"]
+"src/napari/utils/_testsupport.py" = ["B011"]
 "tools/validate_strings.py" = ["F401"]
-"tools/**" = ["INP001", "T20"]
-"examples/**" = ["ICN001", "INP001", "T20"]
+"tools/**" = ["INP001", "T20", "LOG015"]
+"examples/**" = ["ICN001", "INP001", "T20", "LOG015"]
 "**/vendored/**" = ["TID"]
-"napari/benchmarks/**" = ["RUF012", "TID252"]
+"src/napari/benchmarks/**" = ["RUF012", "TID252"]
+
+[tool.ruff.lint.flake8-builtins]
+builtins-allowed-modules = ["io", "types", "threading"]
 
 [tool.ruff.lint.pyupgrade]
 keep-runtime-typing = true
@@ -334,6 +477,7 @@ minversion = "8"
 # log_cli_level = "INFO"
 xfail_strict = true
 testpaths = ["napari", "napari_builtins"]
+#pythonpath = "src"
 
 
 # NOTE: only put things that will never change in here.
@@ -361,6 +505,9 @@ filterwarnings = [
   # https://github.com/pydata/xarray/blame/b1f3fea467f9387ed35c221205a70524f4caa18b/pyproject.toml#L333-L334
   # https://github.com/pydata/xarray/pull/8939
   "ignore:__array__ implementation doesn't accept a copy keyword, so passing copy=False failed.",
+  "ignore:pkg_resources is deprecated",
+  "ignore:Deprecated call to `pkg_resources.declare_namespace",
+  "ignore:Use Group.create_array instead."
 ]
 markers = [
     "examples: Test of examples",
@@ -369,14 +516,18 @@ markers = [
     "disable_qtimer_start: Disable timer start in this Test",
     "disable_qanimation_start: Disable animation start in this Test",
     "enable_console: Don't mock the IPython console (in QtConsole) in this Test",
+    # mark slow tests, so they can be skipped using: pytest -m "not slow"
+    "slow: mark a test as slow",
+    "key_bindings: Test of keybindings",
+    "show_qt_viewer: Show the QtViewer in this Test",
 ]
 
 [tool.mypy]
 files = "napari"
 # This file triggers an internal mypy error, so exclude collection
 # TODO: fix this
-exclude = "napari/utils/events/_tests/test_evented_model\\.py"
-plugins =  "numpy.typing.mypy_plugin, pydantic.mypy"
+exclude = "src/napari/utils/events/_tests/test_evented_model\\.py"
+plugins =  "pydantic.mypy"
 ignore_missing_imports = true
 hide_error_codes = false
 warn_redundant_casts = true
@@ -394,7 +545,7 @@ disable_error_code = [
 ]
 # see `$ qtpy mypy-args` and qtpy readme. This will be used by `tox -e mypy`
 # to properly infer with PyQt6 installed
-always_false=['PYSIDE6', 'PYSIDE2', 'PYQT5']
+always_false=['PYSIDE6', 'PYQT5']
 always_true=['PYQT6']
 
 
@@ -453,6 +604,44 @@ module = [
     'napari._qt.layer_controls.qt_surface_controls',
     'napari._qt.layer_controls.qt_tracks_controls',
     'napari._qt.layer_controls.qt_vectors_controls',
+    'napari._qt.layer_controls.widgets.qt_widget_controls_base',
+    'napari._qt.layer_controls.widgets.qt_face_color',
+    'napari._qt.layer_controls.widgets.qt_opacity_blending_controls',
+    'napari._qt.layer_controls.widgets.qt_text_visibility',
+    'napari._qt.layer_controls.widgets.qt_out_slice_checkbox',
+    'napari._qt.layer_controls.widgets.qt_projection_mode_control',
+    'napari._qt.layer_controls.widgets._shapes.qt_edge_color',
+    'napari._qt.layer_controls.widgets._shapes.qt_edge_width_slider',
+    'napari._qt.layer_controls.widgets._labels.qt_label_color',
+    'napari._qt.layer_controls.widgets._labels.qt_brush_size_slider',
+    'napari._qt.layer_controls.widgets._labels.qt_color_mode_combobox',
+    'napari._qt.layer_controls.widgets._labels.qt_contiguous_checkbox',
+    'napari._qt.layer_controls.widgets._labels.qt_ndim_spinbox',
+    'napari._qt.layer_controls.widgets._labels.qt_contour_spinbox',
+    'napari._qt.layer_controls.widgets._labels.qt_preserve_labels_checkbox',
+    'napari._qt.layer_controls.widgets._labels.qt_render_control',
+    'napari._qt.layer_controls.widgets._labels.qt_display_selected_label_checkbox',
+    'napari._qt.layer_controls.widgets._points.qt_current_size_slider',
+    'napari._qt.layer_controls.widgets._points.qt_symbol_combobox',
+    'napari._qt.layer_controls.widgets._points.qt_border_color',
+    'napari._qt.layer_controls.widgets.qt_colormap_control',
+    'napari._qt.layer_controls.widgets.qt_contrast_limits',
+    'napari._qt.layer_controls.widgets.qt_autoscale_control',
+    'napari._qt.layer_controls.widgets.qt_gamma_slider',
+    'napari._qt.layer_controls.widgets._surface.qt_shading_combobox',
+    'napari._qt.layer_controls.widgets._image.qt_interpolation_combobox',
+    'napari._qt.layer_controls.widgets._image.qt_render_control',
+    'napari._qt.layer_controls.widgets._image.qt_depiction_control',
+    'napari._qt.layer_controls.widgets._vectors.qt_edge_color',
+    'napari._qt.layer_controls.widgets._vectors.qt_vector_style_combobox',
+    'napari._qt.layer_controls.widgets._vectors.qt_line_dimension_spinbox',
+    'napari._qt.layer_controls.widgets._tracks.qt_color_properties_combobox',
+    'napari._qt.layer_controls.widgets._tracks.qt_head_slider',
+    'napari._qt.layer_controls.widgets._tracks.qt_tail_control',
+    'napari._qt.layer_controls.widgets._tracks.qt_id_checkbox',
+    'napari._qt.layer_controls.widgets._tracks.qt_graph_checkbox',
+    'napari._qt.layer_controls.widgets._tracks.qt_colormap_control',
+    'napari._qt.layer_controls.widgets._tracks.qt_hide_completed_tracks_checkbox',
     'napari._qt.menus._util',
     'napari._qt.menus.file_menu',
     'napari._qt.perf.qt_event_tracing',
@@ -474,6 +663,7 @@ module = [
     'napari._qt.widgets.qt_font_size',
     'napari._qt.widgets.qt_highlight_preview',
     'napari._qt.widgets.qt_keyboard_settings',
+    'napari._qt.widgets.qt_logger',
     'napari._qt.widgets.qt_message_popup',
     'napari._qt.widgets.qt_mode_buttons',
     'napari._qt.widgets.qt_plugin_sorter',
@@ -525,7 +715,6 @@ module = [
     'napari.utils.interactions',
     'napari.utils.key_bindings',
     'napari.utils.mouse_bindings',
-    'napari.utils.progress',
     'napari.utils.shortcuts',
     'napari.utils.stubgen',
     'napari.utils.transforms.transforms',
@@ -549,7 +738,7 @@ module = [
     "napari._vispy.visuals.surface",
     "napari.layers.shapes._shapes_models.path",
     "napari.layers.shapes._shapes_models.polygon",
-    "napari.layers.shapes._shapes_models._polgyon_base",
+    "napari.layers.shapes._shapes_models._polygon_base",
     "napari.layers.shapes._shapes_models.ellipse",
     "napari.layers.shapes._shapes_models.line",
     "napari.layers.shapes._shapes_models.rectangle",
@@ -607,7 +796,6 @@ module = [
     "napari._vispy.overlays.scale_bar",
     "napari._vispy.overlays.text",
     "napari.layers.labels._labels_key_bindings",
-    "napari.layers.tracks._tracks_key_bindings",
     "napari.layers.utils._slice_input",
     "napari.utils._register",
     "napari.utils.colormaps.categorical_colormap",
@@ -688,7 +876,6 @@ module = [
     "napari.conftest",
     "napari.layers.labels._labels_utils",
     "napari.layers.points._points_mouse_bindings",
-    "napari.layers.tracks._track_utils",
     "napari.utils.colormaps.colormap",
     "napari.utils.notifications",
 ]
@@ -720,9 +907,10 @@ disallow_untyped_defs = false
 [[tool.mypy.overrides]]
 module = [
     "napari._app_model.context._layerlist_context",
+    "napari._vispy.overlays.colormap",
     "napari.components.overlays.labels_polygon",
     "napari.plugins.io",
-    "napari.utils.colormaps.vendored._cm_listed"
+    "napari.utils.colormaps.vendored._cm_listed",
 ]
 disallow_untyped_calls = false
 
@@ -756,37 +944,26 @@ ignore_errors = true
 exclude_lines = [
     "pragma: no cover",
     "if TYPE_CHECKING:",
+    "if typing.TYPE_CHECKING:",
     "raise NotImplementedError()",
     "except ImportError:",
     "^ +\\.\\.\\.$",
 ]
 
 [tool.coverage.run]
-parallel = true
 omit = [
     "*/_vendor/*",
     "*/_version.py",
     "*/benchmarks/*",
     "napari/utils/indexing.py",
-    "**/add_layer.py_tmpl"
+    "**/add_layer.py_tmpl",
+    "*/.pytest_tmp/**",
 ]
 source = [
+    "src/napari",
+    "src/napari_builtins",
     "napari",
     "napari_builtins",
-]
-
-[tool.coverage.paths]
-source = [
-    "napari/",
-    "D:\\a\\napari\\napari\\napari",
-    "/home/runner/work/napari/napari/napari",
-    "/Users/runner/work/napari/napari/napari",
-]
-builtins = [
-    "napari_builtins/",
-    "D:\\a\\napari\\napari\\napari_builtins",
-    "/home/runner/work/napari/napari/napari_builtins",
-    "/Users/runner/work/napari/napari/napari_builtins",
 ]
 
 [tool.importlinter]
@@ -797,9 +974,8 @@ include_external_packages = true
 name = "Forbid import PyQt and PySide"
 type = "forbidden"
 source_modules = "napari"
-forbidden_modules = ["PyQt5", "PySide2", "PyQt6", "PySide6"]
+forbidden_modules = ["PyQt5", "PyQt6", "PySide6"]
 ignore_imports = [
-    "napari._qt -> PySide2",
     "napari.plugins._npe2 -> napari._qt._qplugins",
 ]
 
