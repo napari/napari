@@ -179,7 +179,7 @@ gallery = [
     "h5netcdf",
     "tifffile[codecs]",
     "meshio",
-    "trackastra",
+    "trackastra>=0.4.2",
 ]
 # needed to build docs
 docs = [
@@ -273,7 +273,7 @@ gallery = [
     "h5netcdf",
     "tifffile[codecs]",
     "meshio",
-    "trackastra",
+    "trackastra>=0.4.2",
 ]
 # needed to build docs
 docs = [
