@@ -127,9 +127,7 @@ fsspec==2025.12.0
     #   dask
     #   torch
 glasbey==0.3.0
-    # via
-    #   napari (pyproject.toml)
-    #   napari (pyproject.toml:docs)
+    # via napari (pyproject.toml:docs)
 google-crc32c==1.8.0
     # via zarr
 greenlet==3.3.0
@@ -137,9 +135,7 @@ greenlet==3.3.0
 h11==0.16.0
     # via uvicorn
 h5netcdf==1.7.3
-    # via
-    #   napari (pyproject.toml)
-    #   napari (pyproject.toml:docs)
+    # via napari (pyproject.toml:docs)
 h5py==3.15.1
     # via h5netcdf
 heapdict==1.0.1
@@ -266,9 +262,7 @@ mdit-py-plugins==0.5.0
 mdurl==0.1.2
     # via markdown-it-py
 meshio==5.3.5
-    # via
-    #   napari (pyproject.toml)
-    #   napari (pyproject.toml:docs)
+    # via napari (pyproject.toml:docs)
 ml-dtypes==0.5.4
     # via tensorstore
 mouseinfo==0.1.3
@@ -315,9 +309,7 @@ networkx==3.6.1
 nibabel==5.3.3
     # via nilearn
 nilearn==0.12.1
-    # via
-    #   napari (pyproject.toml)
-    #   napari (pyproject.toml:docs)
+    # via napari (pyproject.toml:docs)
 npe2==0.7.9
     # via
     #   napari (pyproject.toml)

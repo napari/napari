@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import typing
 import warnings
+from collections.abc import Sequence
 from typing import Any, Literal, cast
 
 import numpy as np
@@ -26,6 +27,13 @@ from napari.utils._dtype import get_dtype_limits, normalize_dtype
 from napari.utils.colormaps import ensure_colormap
 from napari.utils.colormaps.colormap_utils import _coerce_contrast_limits
 from napari.utils.translations import trans
+
+if typing.TYPE_CHECKING:
+    import numpy.typing as npt
+    import pint
+
+    from napari.types import ArrayLike
+    from napari.utils.transforms import Affine
 
 __all__ = ('Image',)
 
@@ -224,36 +232,36 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
 
     def __init__(
         self,
-        data,
+        data: ArrayLike | Sequence[ArrayLike],
         *,
-        affine=None,
-        attenuation=0.05,
-        axis_labels=None,
-        blending='translucent',
-        cache=True,
-        colormap='gray',
-        contrast_limits=None,
-        custom_interpolation_kernel_2d=None,
-        depiction='volume',
-        experimental_clipping_planes=None,
-        gamma=1.0,
-        interpolation2d='nearest',
-        interpolation3d='linear',
-        iso_threshold=None,
-        metadata=None,
-        multiscale=None,
-        name=None,
-        opacity=1.0,
-        plane=None,
-        projection_mode='mean',
-        rendering='mip',
-        rgb=None,
-        rotate=None,
-        scale=None,
-        shear=None,
-        translate=None,
-        units=None,
-        visible=True,
+        affine: npt.ArrayLike | Affine | None = None,
+        attenuation: float = 0.05,
+        axis_labels: Sequence[str] | None = None,
+        blending: str = 'translucent',
+        cache: bool = True,
+        colormap: str = 'gray',
+        contrast_limits: tuple[float, float] | None = None,
+        custom_interpolation_kernel_2d: npt.NDArray | None = None,
+        depiction: str = 'volume',
+        experimental_clipping_planes: dict | None = None,
+        gamma: float = 1.0,
+        interpolation2d: InterpolationStr = 'nearest',
+        interpolation3d: InterpolationStr = 'linear',
+        iso_threshold: float | None = None,
+        metadata: dict | None = None,
+        multiscale: bool | None = None,
+        name: str | None = None,
+        opacity: float = 1.0,
+        plane: dict | None = None,
+        projection_mode: str = 'mean',
+        rendering: str = 'mip',
+        rgb: bool | None = None,
+        rotate: float | Sequence[float] | npt.NDArray | None = None,
+        scale: Sequence[float] | None = None,
+        shear: Sequence[float] | npt.NDArray | None = None,
+        translate: Sequence[float] | None = None,
+        units: Sequence[str | pint.Unit] | None = None,
+        visible: bool = True,
     ):
         # Determine if rgb
         data_shape = data.shape if hasattr(data, 'shape') else data[0].shape
@@ -324,7 +332,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
             self._iso_threshold = iso_threshold
 
     @property
-    def rendering(self):
+    def rendering(self) -> str:
         """Return current rendering mode.
 
         Selects a preset rendering mode in vispy that determines how
@@ -356,7 +364,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         return str(self._rendering)
 
     @rendering.setter
-    def rendering(self, rendering):
+    def rendering(self, rendering: str) -> None:
         self._rendering = ImageRendering(rendering)
         self.events.rendering()
 
@@ -493,13 +501,13 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         self._update_thumbnail()
         self.events.iso_threshold()
 
-    def _get_level_shapes(self):
+    def _get_level_shapes(self) -> Sequence[tuple[int, ...]]:
         shapes = super()._get_level_shapes()
         if self.rgb:
             shapes = [s[:-1] for s in shapes]
         return shapes
 
-    def _update_thumbnail(self):
+    def _update_thumbnail(self) -> None:
         """Update thumbnail with current image data and colormap."""
         # don't bother updating thumbnail if we don't have any data
         # this also avoids possible dtype mismatch issues below
@@ -615,8 +623,8 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         return fixed_contrast_info.coerce_data(raw)
 
     @IntensityVisualizationMixin.contrast_limits.setter  # type: ignore [attr-defined]
-    def contrast_limits(self, contrast_limits):
-        IntensityVisualizationMixin.contrast_limits.fset(self, contrast_limits)
+    def contrast_limits(self, contrast_limits: tuple[float, float]) -> None:
+        IntensityVisualizationMixin.contrast_limits.fset(self, contrast_limits)  # type: ignore [attr-defined]
         if not np.allclose(
             _coerce_contrast_limits(self.contrast_limits).contrast_limits,
             self.contrast_limits,
@@ -628,7 +636,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
             finally:
                 self._keep_auto_contrast = prev
 
-    def _calculate_value_from_ray(self, values):
+    def _calculate_value_from_ray(self, values: npt.NDArray) -> None | float:
         # translucent is special: just return the first value, no matter what
         if self.rendering == ImageRendering.TRANSLUCENT:
             return np.ravel(values)[0]
