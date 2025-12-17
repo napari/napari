@@ -4,6 +4,7 @@ import logging
 import os
 import sys
 import tempfile
+from ctypes import cdll, util
 from functools import lru_cache
 from importlib import resources
 from pathlib import Path
@@ -326,3 +327,8 @@ def register_napari_font():
         _register_napari_font_linux_windows(font_dir)
     else:
         logger.error('Platform not supported for custom fonts.')
+
+    # refresh font cache, as sometimes this is needed (see #8117)
+    if fc := util.find_library('fontconfig'):
+        fontconfig = cdll.LoadLibrary(fc)
+        fontconfig.FcInitReinitialize()
