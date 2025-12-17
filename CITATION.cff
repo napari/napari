@@ -388,6 +388,11 @@ authors:
   family-names: Winston
   affiliation: Tobeva Software
   alias: pwinston
+- given-names: Qin
+  family-names: Yu
+  affiliation: European Molecular Biology Laboratory (EMBL)
+  orcid: https://orcid.org/0000-0002-4652-0795
+  alias: qin-yu
 - given-names: Rubin
   family-names: Zhao
   affiliation: Chinese Academy of Sciences - SIAT, Shenzhen, China
