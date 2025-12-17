@@ -30,11 +30,11 @@ class VispyZoomOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
             parent=parent,
         )
 
-        self.overlay.events.canvas_positions.connect(self._on_positions_change)
+        self.overlay.events.position.connect(self._on_position_change)
 
         self._on_visible_change()
 
-    def _on_positions_change(self, _evt: Optional[Event] = None) -> None:
+    def _on_position_change(self, _evt: Optional[Event] = None) -> None:
         """Change position."""
         settings = get_settings()
         self.node._highlight_width = (
@@ -42,7 +42,7 @@ class VispyZoomOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         )
         self.node._edge_color = settings.appearance.highlight.highlight_color
 
-        top_left, bot_right = self.overlay.canvas_positions
+        top_left, bot_right = self.overlay.position
         self.node.set_data(
             # invert axes for vispy
             top_left[::-1],

@@ -1,16 +1,14 @@
 import warnings
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Collection, Iterable, Sized
 from contextlib import contextmanager
 from copy import copy, deepcopy
 from itertools import cycle
-from typing import (
-    Any,
-    ClassVar,
-)
+from typing import Any, ClassVar
 
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
+from psygnal.containers import Selection
 from vispy.color import get_color_names
 
 from napari.layers.base import Layer, no_op
@@ -346,6 +344,7 @@ class Shapes(Layer):
         won't update during interactive events
     """
 
+    _mode: Mode
     _modeclass = Mode
     _colors = get_color_names()
     _vertex_size = 10
@@ -553,7 +552,7 @@ class Shapes(Layer):
         self._value = (None, None)
         self._value_stored = (None, None)
         self._moving_value: tuple[int | None, int | None] = (None, None)
-        self._selected_data = set()
+        self._selected_data: Selection[int] = Selection()
         self._selected_data_stored = set()
         self._selected_data_history = set()
         self._selected_box = None
@@ -867,16 +866,14 @@ class Shapes(Layer):
         extent_data : array, shape (2, D)
         """
         if len(self.data) == 0:
-            extrema = np.full((2, self.ndim), np.nan)
-        else:
-            maxs = np.max(
-                [d._bounding_box[1] for d in self._data_view.shapes], axis=0
-            )
-            mins = np.min(
-                [d._bounding_box[0] for d in self._data_view.shapes], axis=0
-            )
-            extrema = np.vstack([mins, maxs])
-        return extrema
+            return np.full((2, self.ndim), np.nan)
+
+        bounding_boxes = np.array(
+            [d._bounding_box for d in self._data_view.shapes]
+        )
+        mins = np.min(bounding_boxes[:, 0, :], axis=0)
+        maxs = np.max(bounding_boxes[:, 1, :], axis=0)
+        return np.vstack([mins, maxs])
 
     @property
     def nshapes(self):
@@ -1259,13 +1256,13 @@ class Shapes(Layer):
             self._data_view.update_z_index(i, z_idx)
 
     @property
-    def selected_data(self):
-        """set: set of currently selected shapes."""
+    def selected_data(self) -> Selection[int]:
+        """Selection: set of currently selected shapes."""
         return self._selected_data
 
     @selected_data.setter
-    def selected_data(self, selected_data):
-        self._selected_data = set(selected_data)
+    def selected_data(self, selected_data: Collection[int]) -> None:
+        self._selected_data.replace_selection(selected_data)
         self._selected_box = self.interaction_box(self._selected_data)
 
         # Update properties based on selected shapes
@@ -2445,8 +2442,8 @@ class Shapes(Layer):
 
         Parameters
         ----------
-        index : int | list
-            Index of a single shape, or a list of shapes around which to
+        index : int or iterable of int
+            Index of a single shape, list of shapes or Selection around which to
             construct the interaction box
 
         Returns
@@ -2458,7 +2455,9 @@ class Shapes(Layer):
             the box, and the last point is the location of the rotation handle
             that can be used to rotate the box
         """
-        if isinstance(index, list | np.ndarray | set):
+        if isinstance(index, Iterable):
+            if not isinstance(index, Sized):
+                index = list(index)
             if len(index) == 0:
                 box = None
             elif len(index) == 1:
@@ -2467,15 +2466,15 @@ class Shapes(Layer):
                 displayed_shape_indices = [
                     i for i in index if self._data_view._displayed[i]
                 ]
-                vertices_range = np.r_[
-                    tuple(
-                        self._data_view._vertices_slice_available(i)
-                        for i in displayed_shape_indices
+                if not displayed_shape_indices:
+                    box = None
+                else:
+                    mask = np.isin(
+                        self._data_view.displayed_vertices_to_shape_num,
+                        displayed_shape_indices,
                     )
-                ]
-                box = create_box(
-                    self._data_view.displayed_vertices[vertices_range]
-                )
+                    verts = self._data_view.displayed_vertices[mask]
+                    box = create_box(verts)
         else:
             box = copy(self._data_view.shapes[index]._box)
 
@@ -2555,7 +2554,7 @@ class Shapes(Layer):
             Width of the box edge
         """
         if self._highlight_visible and len(self.selected_data) > 0:
-            if self._mode == Mode.SELECT:
+            if self._mode == Mode.SELECT and self._selected_box is not None:
                 # If in select mode just show the interaction bounding box
                 # including its vertices and the rotation handle
                 box = self._selected_box[Box.WITH_HANDLE]
@@ -2646,7 +2645,7 @@ class Shapes(Layer):
             and np.array_equal(self._drag_box, self._drag_box_stored)
         ) and not force:
             return
-        self._selected_data_stored = copy(self.selected_data)
+        self._selected_data_stored = set(self._selected_data)
         self._value_stored = copy(self._value)
         self._drag_box_stored = copy(self._drag_box)
         self.events.highlight()
@@ -2762,42 +2761,124 @@ class Shapes(Layer):
 
             self.thumbnail = colormapped
 
-    def remove_selected(self) -> None:
-        """Remove any selected shapes."""
-        index = list(self.selected_data)
-        to_remove = sorted(index, reverse=True)
+    def remove(self, indices: list[int]) -> None:
+        """Remove any shapes at the given indices.
 
-        if len(index) > 0:
+        Parameters
+        ----------
+        indices : List[int]
+            List of indices of shapes to remove from the layer.
+        """
+        to_remove = sorted(indices, reverse=True)
+
+        if len(indices) > 0:
             self.events.data(
                 value=self.data,
                 action=ActionType.REMOVING,
                 data_indices=tuple(
-                    index,
+                    indices,
                 ),
                 vertex_indices=((),),
             )
+            # FIXME: this is really slow
             for ind in to_remove:
                 self._data_view.remove(ind)
 
-            self._feature_table.remove(index)
-            self.text.remove(index)
+            if len(self.data) == 0 and self.selected_data:
+                self.selected_data.clear()
+            elif self.selected_data:
+                selected_not_removed = self.selected_data - set(indices)
+                if selected_not_removed:
+                    indices_array = np.array(to_remove[::-1])
+                    remaining_selected = np.fromiter(
+                        selected_not_removed,
+                        dtype=np.intp,
+                        count=len(selected_not_removed),
+                    )
+                    shifts = np.searchsorted(indices_array, remaining_selected)
+                    new_selected_indices = remaining_selected - shifts
+                    self.selected_data = set(new_selected_indices)
+                else:
+                    self.selected_data.clear()
+
+            self._feature_table.remove(indices)
+            self.text.remove(indices)
             self._data_view._edge_color = np.delete(
-                self._data_view._edge_color, index, axis=0
+                self._data_view._edge_color, indices, axis=0
             )
             self._data_view._face_color = np.delete(
-                self._data_view._face_color, index, axis=0
+                self._data_view._face_color, indices, axis=0
             )
             self.events.data(
                 value=self.data,
                 action=ActionType.REMOVED,
                 data_indices=tuple(
-                    index,
+                    indices,
                 ),
                 vertex_indices=((),),
             )
             self.events.features()
-        self.selected_data.clear()
         self._finish_drawing()
+
+    def remove_selected(self) -> None:
+        """Remove any selected shapes."""
+        self.remove(list(self.selected_data))
+
+    def get_shape_info(self, index: int) -> dict[str, Any]:
+        """Retrieve all available information for the shape at the given index.
+
+        Parameters
+        ----------
+        index : int
+            Index of the shape.
+
+        Returns
+        -------
+        info : dict
+            A dictionary containing all relevant details of the shape.
+        """
+
+        if not (0 <= index < len(self.data)):
+            return {
+                'data': None,
+                'shape_type': None,
+                'edge_width': None,
+                'edge_color': None,
+                'face_color': None,
+                'z_index': None,
+                'features': {},
+            }
+
+        info = {
+            'data': self.data[index],
+            'shape_type': self.shape_type[index],
+            'edge_width': self.edge_width[index],
+            'edge_color': self.edge_color[index],
+            'face_color': self.face_color[index],
+            'z_index': self.z_index[index],
+            'features': self.features.iloc[index].to_dict(),
+        }
+        return info
+
+    def pop(self, index=-1) -> dict[str, Any]:
+        """Remove and return the shape at the given index.
+
+        Parameters
+        ----------
+        index : int
+            Index of the shape to remove and return. Defaults to -1, which
+            removes the last shape.
+
+        Returns
+        -------
+        dict[str, Any]
+            Dictionary containing the removed shape's data.
+        """
+        if index == -1:
+            index = len(self.data) - 1
+        info = self.get_shape_info(index)
+        self.remove([index])
+        return info
 
     def _rotate_box(self, angle, center=(0, 0)):
         """Perform a rotation on the selected box.
@@ -2856,7 +2937,7 @@ class Shapes(Layer):
             box[Box.HANDLE] = box[Box.TOP_CENTER] + r * handle_vec / cur_len
         self._selected_box = box + center
 
-    def _get_value(self, position):
+    def _get_value(self, position) -> tuple[int | None, int | None]:
         """Value of the data at a position in data coordinates.
 
         Parameters
@@ -2874,7 +2955,7 @@ class Shapes(Layer):
             if no vertex is found.
         """
         if self._slice_input.ndisplay == 3:
-            return (None, None)
+            return None, None
 
         if self._is_moving:
             return self._moving_value
@@ -2892,7 +2973,7 @@ class Shapes(Layer):
             # - scale, because vertex sizes are not affected by scale (unlike in Points)
             # - 2, because the radius is what we need
 
-            if self._mode == Mode.SELECT:
+            if self._mode == Mode.SELECT and self._selected_box is not None:
                 # Check if inside vertex of interaction box or rotation handle
                 box = self._selected_box[Box.WITH_HANDLE]
                 distances = abs(box - coord)

@@ -20,9 +20,9 @@ jobs:
     timeout-minutes: 5
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
       - name: Set up Python 3.12
-        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v6.1.0
         with:
           python-version: 3.12
       - name: Install dependencies
@@ -38,8 +38,8 @@ jobs:
     timeout-minutes: 15
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      - uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v6.1.0
         with:
           python-version: "3.12"
           cache-dependency-path: pyproject.toml
@@ -47,7 +47,7 @@ jobs:
       - name: Install Dependencies
         run: pip install --upgrade pip
       - name: Install Napari dev
-        run: pip install -e .[build]
+        run: pip install -e .  --group build
         env:
           PIP_CONSTRAINT: resources/constraints/constraints_py3.12.txt
       - name: Make Typestubs
@@ -63,8 +63,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      - uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v6.1.0
         with:
           python-version: "3.x"
       - name: Check localization formatting
@@ -112,27 +112,29 @@ jobs:
       fail-fast: false
       matrix:
         platform: [ ubuntu-latest ]
-        python: [ "3.11" ]
-        backend: [ "pyqt5,pyside6" ]
+        python: [ "3.13" ]
+        backend: [ "pyqt5,pyqt6" ]
         coverage: [ cov ]
         include:
           # Windows py310
           - python: "3.11"
-            platform: windows-latest
-            backend: pyqt5 #,pyside2
+            platform: windows-2022
+            backend: pyqt5
             coverage: no_cov
           - python: "3.13"
-            platform: windows-latest
+            platform: windows-2022
             backend: pyqt6
             coverage: cov
           - python: "3.13"
-            platform: macos-13
-            backend: pyqt5
+            platform: macos-15-intel
+            backend: pyqt5_no_numba
             coverage: no_cov
+            timeout-minutes: 60
           - python: "3.13"
             platform: macos-latest
-            backend: pyqt5
+            backend: pyqt6
             coverage: no_cov
+            timeout-minutes: 60
           # minimum specified requirements
           - python: "3.10"
             platform: ubuntu-22.04
@@ -141,7 +143,7 @@ jobs:
             coverage: cov
           - python: "3.12"
             platform: ubuntu-22.04
-            backend: pyqt5
+            backend: pyqt6
             coverage: cov
             tox_extras: "all_optional"
           # test without any Qt backends
@@ -149,6 +151,7 @@ jobs:
             platform: ubuntu-22.04
             backend: headless
             coverage: no_cov
+          # test with torch
           - python: "3.13"
             platform: ubuntu-latest
             backend: pyqt6
@@ -159,11 +162,11 @@ jobs:
             platform: ubuntu-latest
             backend: pyqt6_no_numba
             coverage: cov
-          # pyside2 test
-          - python: "3.10"
+          # pyside6 test
+          - python: "3.13"
             platform: ubuntu-latest
-            backend: pyside2
-            coverage: no_cov
+            backend: pyside6
+            coverage: cov
     with:
       python_version: ${{ matrix.python }}
       platform: ${{ matrix.platform }}
@@ -171,6 +174,7 @@ jobs:
       min_req: ${{ matrix.MIN_REQ }}
       coverage: ${{ matrix.coverage }}
       tox_extras: ${{ matrix.tox_extras }}
+      timeout: ${{ matrix.timeout-minutes || 40 }}
 
 
   test_pip_install:
@@ -191,14 +195,14 @@ jobs:
 
   coverage_report:
     if: ${{ always() }}
+    secrets: inherit
     needs:
       - test
       - test_examples
-    permissions:
-      id-token: write  # Required for OIDC authentication
-      contents: read    # Required for code checkout
-    uses: ./.github/workflows/reusable_coverage_upload.yml
-    secrets: inherit
+    uses: napari/shared-workflows/.github/workflows/upload_coverage.yml@main
+    with:
+      artifact-pattern: 'coverage reports*'
+
 
   test_benchmarks:
     name: test benchmarks
@@ -208,11 +212,11 @@ jobs:
     env:
       GIT_LFS_SKIP_SMUDGE: 1
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+      - uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v6.1.0
         with:
           python-version: 3.12
           cache-dependency-path: pyproject.toml

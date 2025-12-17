@@ -60,7 +60,7 @@ def drag_to_zoom(viewer, event):
         viewer._zoom_box.visible = True
         press_pos = event.pos[::-1]
         press_position = event.position
-        viewer._zoom_box.canvas_positions = (press_pos, press_pos)
+        viewer._zoom_box.position = (press_pos, press_pos)
         yield
         event.handled = True
 
@@ -73,7 +73,7 @@ def drag_to_zoom(viewer, event):
             continue
         if 'Alt' in event.modifiers:
             move_pos = event.pos[::-1]
-            viewer._zoom_box.canvas_positions = (press_pos, move_pos)
+            viewer._zoom_box.position = (press_pos, move_pos)
             move_position = event.position
         else:
             # if Alt is released, cancel the zoom box
