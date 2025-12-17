@@ -1,3 +1,5 @@
+from typing import Any
+
 from napari.components._viewer_constants import CanvasPosition
 from napari.layers.base._base_constants import Blending
 from napari.utils.events import EventedModel
@@ -51,7 +53,7 @@ class CanvasOverlay(Overlay):
         The overlay will be duplicated across all grid cells in gridded mode.
     """
 
-    position: CanvasPosition | tuple[int, int] = CanvasPosition.BOTTOM_RIGHT
+    position: CanvasPosition | Any = CanvasPosition.BOTTOM_RIGHT
     blending: Blending = Blending.TRANSLUCENT_NO_DEPTH
     gridded: bool = False
 

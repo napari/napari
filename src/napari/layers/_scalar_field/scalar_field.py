@@ -25,6 +25,7 @@ from napari.layers.image._image_utils import guess_multiscale
 from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
 from napari.layers.utils.plane import SlicingPlane
 from napari.utils._dask_utils import DaskIndexer
+from napari.utils._dtype import normalize_dtype
 from napari.utils.colormaps import AVAILABLE_COLORMAPS
 from napari.utils.events import Event
 from napari.utils.events.event import WarningEmitter
@@ -329,7 +330,7 @@ class ScalarFieldBase(Layer, ABC):
 
     @property
     def dtype(self):
-        return self._data.dtype
+        return normalize_dtype(self._data.dtype)
 
     @property
     def data_raw(
@@ -386,13 +387,11 @@ class ScalarFieldBase(Layer, ABC):
         self._data_level = level
         self.refresh(extent=False)
 
-    def _get_level_shapes(self):
+    def _get_level_shapes(self) -> Sequence[tuple[int, ...]]:
         data = self.data
         if isinstance(data, MultiScaleData):
-            shapes = data.shapes
-        else:
-            shapes = [self.data.shape]
-        return shapes
+            return data.shapes
+        return [self.data.shape]
 
     @property
     def level_shapes(self) -> np.ndarray:

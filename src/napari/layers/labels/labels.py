@@ -392,7 +392,7 @@ class Labels(ScalarFieldBase):
             LabelsPolygonOverlay,
         )
 
-        self._overlays.update({'polygon': LabelsPolygonOverlay()})
+        self._overlays.update({'polygon': LabelsPolygonOverlay(visible=True)})
 
         self._feature_table = _FeatureTable.from_layer(
             features=features, properties=properties
@@ -972,7 +972,7 @@ class Labels(ScalarFieldBase):
         like adjusting gamma or changing the data based on the contrast
         limits.
         """
-        if not self.loaded:
+        if not self.loaded or self._slice.empty:
             # ASYNC_TODO: Do not compute the thumbnail until we are loaded.
             # Is there a nicer way to prevent this from getting called?
             return

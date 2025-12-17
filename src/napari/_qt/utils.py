@@ -4,7 +4,7 @@ import re
 import signal
 import socket
 import weakref
-from collections.abc import Iterable, Sequence
+from collections.abc import Callable, Iterable, Sequence
 from contextlib import contextmanager, suppress
 from enum import auto
 from functools import partial
@@ -15,6 +15,7 @@ import qtpy
 from qtpy.QtCore import (
     QByteArray,
     QCoreApplication,
+    QObject,
     QPropertyAnimation,
     QSocketNotifier,
     Qt,
@@ -127,7 +128,7 @@ def QImg2array(
     h, w, c = img.height(), img.width(), 4
 
     # As vispy doesn't use qtpy we need to reconcile the differences
-    # between the `QImage` API for `PySide2` and `PyQt5` on how to convert
+    # between the `QImage` API for `PySide` and `PyQt` on how to convert
     # a QImage to a numpy array.
     if qtpy.API_NAME.startswith('PySide'):
         arr = np.array(b).reshape(h, w, c)
@@ -397,10 +398,7 @@ def qt_might_be_rich_text(text) -> bool:
     """
     Check if a text might be rich text in a cross-binding compatible way.
     """
-    if qtpy.PYSIDE2:
-        from qtpy.QtGui import Qt as Qt_
-    else:
-        from qtpy.QtCore import Qt as Qt_
+    from qtpy.QtCore import Qt as Qt_
 
     try:
         return Qt_.mightBeRichText(text)
@@ -459,3 +457,51 @@ def get_color(
                 / 255
             )
     return new_color
+
+
+def attr_to_settr(obj, name: str, q_object: QObject, setter: str) -> Callable:
+    """
+    Helper function to connect object attributes changes to QObject attributes.
+
+    Parameters
+    ----------
+    obj : object
+        The object instance which attributes changes will trigger an event.
+        The instance should have an `events` attribute (`EmitterGroup`) with an
+        event related to the attribute.
+    name : str
+        Object attribute that emits changes.
+    q_object : QObject
+        `QObject` instance (usually a `QWidget`) which attribute will be changed.
+    setter : str
+        Name of the method that needs to be used to set the `q_object` attribute.
+
+    Returns
+    -------
+    Callable
+        The callback that was created to call the `QObject` setter when the event
+        gets triggered.
+
+    """
+    qt_ref = weakref.ref(q_object)
+    obj_ref = weakref.ref(obj)
+
+    def callback(event):
+        obj_ = obj_ref()
+        if obj_ is None:
+            return
+
+        q_obj = qt_ref()
+        if q_obj is None:
+            getattr(obj.events, name).disconnect(callback)
+            return
+        with qt_signals_blocked(q_obj):
+            getattr(q_obj, setter)(getattr(obj, name))
+
+    getattr(obj.events, name).connect(callback)
+
+    return callback
+
+
+def checked_to_bool(value: Qt.CheckState) -> bool:
+    return Qt.CheckState(value) == Qt.CheckState.Checked

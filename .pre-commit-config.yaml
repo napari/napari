@@ -1,20 +1,20 @@
 exclude: _vendor|vendored
 repos:
 - repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: v0.12.11
+  rev: v0.14.9
   hooks:
-  - id: ruff-format
-    exclude: examples
-  - id: ruff
+  - id: ruff-check
 #    args:
 #      - "--unsafe-fixes"
+  - id: ruff-format
+    exclude: examples
 - repo: https://github.com/seddonym/import-linter
-  rev: v2.4
+  rev: v2.9
   hooks:
   - id: import-linter
     stages: [manual]
 - repo: https://github.com/python-jsonschema/check-jsonschema
-  rev: 0.33.3
+  rev: 0.35.0
   hooks:
   - id: check-github-workflows
 - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -32,3 +32,10 @@ repos:
     exclude: .*\.py|.*\.md
   - id: mixed-line-ending
     exclude: .*\.py
+- repo: local
+  hooks:
+  - id: check-groups-vs-extras
+    name: check that all group names in pyproject.toml are in extras
+    language: python
+    entry: python tools/check_groups_vs_extras.py
+    files: ^pyproject.toml$

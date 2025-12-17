@@ -61,7 +61,10 @@ def _convert(ll: LayerList, type_: str) -> None:
     for lay in list(ll.selection):
         idx = ll.index(lay)
         if isinstance(lay, Shapes) and type_ == 'labels':
-            data = lay.to_labels()
+            ll_shape = (
+                ll._extent_world_augmented[1] - ll._extent_world_augmented[0]
+            )
+            data = lay.to_labels(labels_shape=lay.world_to_data(ll_shape))
             idx += 1
         elif (
             not np.issubdtype(lay.data.dtype, np.integer) and type_ == 'labels'
@@ -79,7 +82,6 @@ def _convert(ll: LayerList, type_: str) -> None:
         try:
             layer_type._projectionclass(state['projection_mode'].value)
         except ValueError:
-            state['projection_mode'] = 'none'
             warnings.warn(
                 trans._(
                     'projection mode "{mode}" is not compatible with {type_} layers. Falling back to "none".',
@@ -90,6 +92,7 @@ def _convert(ll: LayerList, type_: str) -> None:
                 category=UserWarning,
                 stacklevel=1,
             )
+            state['projection_mode'] = 'none'
         new_layer = Layer.create(data, state, type_)
         ll.insert(idx, new_layer)
 
@@ -245,3 +248,20 @@ def _project(ll: LayerList, axis: int = 0, mode: str = 'max') -> None:
     )
 
     ll.append(new)
+
+
+def _toggle_bounding_box(ll: LayerList) -> None:
+    for layer in ll.selection:
+        layer.bounding_box.visible = not layer.bounding_box.visible
+
+
+def _toggle_colorbar(ll: LayerList) -> None:
+    for layer in ll.selection:
+        if not hasattr(layer, 'colorbar'):
+            raise NotImplementedError(
+                trans._(
+                    'Colorbar is only implemented for Images and Surfaces',
+                    deferred=True,
+                )
+            )
+        layer.colorbar.visible = not layer.colorbar.visible
