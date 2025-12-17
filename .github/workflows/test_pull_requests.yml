@@ -127,7 +127,7 @@ jobs:
             coverage: cov
           - python: "3.13"
             platform: macos-15-intel
-            backend: pyqt5
+            backend: pyqt5_no_numba
             coverage: no_cov
             timeout-minutes: 60
           - python: "3.13"
