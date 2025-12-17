@@ -298,7 +298,10 @@ class _QtMainWindow(QMainWindow):
                 if hasattr(e, 'globalPosition')
                 else e.globalPos()
             )
-            QToolTip.showText(pnt, self._qt_viewer.viewer.tooltip.text, self)
+            rect = QRect(pnt.x() - 5, pnt.y() - 5, 10, 10)
+            QToolTip.showText(
+                pnt, self._qt_viewer.viewer.tooltip.text, self, rect=rect
+            )
         if e.type() in {QEvent.Type.WindowActivate, QEvent.Type.ZOrderChange}:
             # upon activation or raise_, put window at the end of _instances
             with contextlib.suppress(ValueError):
@@ -1293,6 +1296,7 @@ class Window:
             layers_events.inserted.connect(widget.reset_choices)
             layers_events.removed.connect(widget.reset_choices)
             layers_events.reordered.connect(widget.reset_choices)
+            layers_events.renamed.connect(widget.reset_choices)
 
         # Add dock widget to dictionary
         self._wrapped_dock_widgets[dock_widget.name] = dock_widget
