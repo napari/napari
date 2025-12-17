@@ -113,8 +113,12 @@ class VispyPointsLayer(VispyBaseLayer):
 
         scale = self.layer.scale[-1]
         highlight_thickness = settings.appearance.highlight.highlight_thickness
-        scaled_highlight = highlight_thickness * self.layer.scale_factor
         scaled_size = (size + border_width) * scale
+        # cap scaled_highlight to the marker size, cause otherwise we get strange effects
+        # in the shaders which result in unbound growth of highlights)
+        scaled_highlight = np.minimum(
+            highlight_thickness * self.layer.scale_factor, scaled_size
+        )
         highlight_color = tuple(settings.appearance.highlight.highlight_color)
 
         self.node.selection_markers.set_data(
