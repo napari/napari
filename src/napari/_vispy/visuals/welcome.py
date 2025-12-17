@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 import textwrap
+import warnings
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
@@ -93,24 +94,14 @@ class Welcome(Node):
 
     def set_shortcuts(self, commands: tuple[str, ...]) -> None:
         shortcuts = {}
-        app = get_app_model()
-        all_shortcuts = get_settings().shortcuts.shortcuts
         for command_id in commands:
-            keybinding = app.keybindings.get_keybinding(command_id)
-            if keybinding is not None:
-                shortcut = Shortcut(keybinding.keybinding).platform
-                command = app.commands[command_id].title
-            else:
-                # might be an action_manager action
-                keybinding = all_shortcuts.get(command_id, [None])[0]
-                if keybinding is not None:
-                    shortcut = Shortcut(keybinding).platform
-                    command = action_manager._actions[command_id].description
-                else:
-                    continue
+            shortcut, command = self._command_shortcut_and_description(
+                command_id
+            )
+            if shortcut is not None:
+                shortcuts[shortcut] = command
 
-            shortcuts[shortcut] = command
-
+        # TODO: use template strings in the future
         self.shortcut_keybindings.text = '\n'.join(shortcuts.keys())
         self.shortcut_descriptions.text = '\n'.join(shortcuts.values())
 
@@ -118,17 +109,40 @@ class Welcome(Node):
         # TODO: this should use template strings in the future
         for match in re.finditer(r'{(.*?)}', tip):
             command_id = match.group(1)
-            app = get_app_model()
-            keybinding = app.keybindings.get_keybinding(command_id)
+            shortcut, _ = self._command_shortcut_and_description(command_id)
             # this can be none at launch (not yet initialized), will be updated after
-            if keybinding is not None:
-                shortcut = Shortcut(keybinding.keybinding)
+            if shortcut is None:
+                # maybe it was just a direct keybinding given
+                with warnings.catch_warnings(action='ignore'):
+                    shortcut = Shortcut(command_id).platform
+            if shortcut:
                 tip = re.sub(match.group(), str(shortcut), tip)
 
         # wrap tip so it's not clipped
         self.tip.text = 'Did you know?\n' + '\n'.join(
             textwrap.wrap(tip, break_on_hyphens=False)
         )
+
+    @staticmethod
+    def _command_shortcut_and_description(
+        command_id: str,
+    ) -> tuple[str | None, str | None]:
+        app = get_app_model()
+        all_shortcuts = get_settings().shortcuts.shortcuts
+        keybinding = app.keybindings.get_keybinding(command_id)
+        if keybinding is not None:
+            shortcut = Shortcut(keybinding.keybinding).platform
+            command = app.commands[command_id].title
+        else:
+            # might be an action_manager action
+            keybinding = all_shortcuts.get(command_id, [None])[0]
+            if keybinding is not None:
+                shortcut = Shortcut(keybinding).platform
+                command = action_manager._actions[command_id].description
+            else:
+                shortcut = command = None
+
+        return shortcut, command
 
     def set_scale_and_position(self, x: float, y: float) -> None:
         self.transform.translate = (x / 2, y / 2, 0, 0)
