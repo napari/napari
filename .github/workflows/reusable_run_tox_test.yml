@@ -191,6 +191,14 @@ jobs:
           BACKEND: ${{ env.FOURTH }}
           NAPARI_TEST_SUBSET: qt
 
+      - name: Debug info
+        if: always()
+        shell: bash
+        run: |
+          set -x
+          ls -a ${{ github.workspace }}
+          ls ${{ github.workspace }}/.cache
+
       - name: Upload test artifacts
         if: failure()
         uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0

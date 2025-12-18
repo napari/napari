@@ -185,7 +185,7 @@ jobs:
   test_examples:
     name: test examples
     uses: ./.github/workflows/reusable_run_tox_test.yml
-    needs: test_initial
+    needs: build_wheel
     with:
         toxenv: py312-linux-pyqt6-examples-cov
         timeout: 60
