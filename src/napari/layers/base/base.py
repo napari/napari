@@ -71,7 +71,7 @@ if TYPE_CHECKING:
     import numpy.typing as npt
 
     from napari.components.dims import Dims
-    from napari.components.overlays.base import Overlay
+    from napari.components.overlays import BoundingBoxOverlay, Overlay
     from napari.layers._source import Source
 
 
@@ -1233,8 +1233,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             self._experimental_clipping_planes.append(plane)
 
     @property
-    def bounding_box(self) -> Overlay:
-        return self._overlays['bounding_box']
+    def bounding_box(self) -> BoundingBoxOverlay:
+        return self._overlays['bounding_box']  # type: ignore[return-value]
 
     def set_view_slice(self) -> None:
         with self.dask_optimized_slicing():

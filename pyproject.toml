@@ -59,7 +59,7 @@ dependencies = [
     "pint>=0.17",
     "psutil>=5.9.0",
     "psygnal>=0.14.2",
-    "pydantic>=2.2.0",
+    "pydantic>=2.7.0",
     "pydantic-extra-types",
     "pydantic-settings",
     "pygments>=2.6.0",
