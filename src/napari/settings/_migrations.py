@@ -53,7 +53,7 @@ def do_migrations(model: NapariSettings):
 @contextmanager
 def mutation_allowed(obj: NapariSettings):
     """Temporarily allow mutations on an immutable model."""
-    config = obj.__config__
+    config = obj.model_config
     prev, config.allow_mutation = config.allow_mutation, True
     try:
         yield

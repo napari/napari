@@ -19,9 +19,9 @@ import numpy as np
 # This cannot be condition to TYPE_CHECKING or the stubgen fails
 # with undefined Context.
 from app_model.expressions import Context
+from pydantic import Field, PrivateAttr, field_validator
 
 from napari import layers
-from napari._pydantic_compat import Extra, Field, PrivateAttr, validator
 from napari.components._layer_slicer import _LayerSlicer
 from napari.components._viewer_mouse_bindings import (
     dims_scroll,
@@ -218,17 +218,16 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         # elsewhere.  The app should know about the ViewerModel, but not vice versa.
         self._ctx = create_context(self, max_depth=0)
         # allow extra attributes during model initialization, useful for mixins
-        self.__config__.extra = Extra.allow
+        self.model_config['extra'] = 'allow'
         super().__init__(
             title=title,
             dims={
-                'ndim': max(2, len(axis_labels), ndisplay, len(order)),
                 'axis_labels': axis_labels,
                 'ndisplay': ndisplay,
                 'order': order,
             },
         )
-        self.__config__.extra = Extra.ignore
+        self.model_config['extra'] = 'ignore'
 
         settings = get_settings()
         self.tooltip.visible = settings.appearance.layer_tooltip_visibility
@@ -341,7 +340,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         )
         self.grid.spacing = settings.application.grid_spacing
 
-    @validator('theme', allow_reuse=True)
+    @field_validator('theme')
     def _valid_theme(cls, v):
         if not is_theme_available(v):
             raise ValueError(

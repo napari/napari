@@ -1,7 +1,10 @@
 from dataclasses import dataclass
 from itertools import cycle
+from typing import Any
 
 import numpy as np
+from pydantic import GetCoreSchemaHandler
+from pydantic_core import CoreSchema, core_schema
 
 from napari.layers.utils.color_transformations import (
     transform_color,
@@ -29,6 +32,12 @@ class ColorCycle:
     @classmethod
     def __get_validators__(cls):
         yield cls.validate_type
+
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls, source_type: Any, handler: GetCoreSchemaHandler
+    ) -> CoreSchema:
+        return core_schema.no_info_plain_validator_function(cls.validate_type)
 
     @classmethod
     def validate_type(cls, val):

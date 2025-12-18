@@ -9,13 +9,12 @@ from pathlib import Path
 from typing import TYPE_CHECKING, cast
 from warnings import warn
 
-from napari._pydantic_compat import (
+from pydantic import (
     BaseModel,
-    BaseSettings,
-    SettingsError,
     ValidationError,
-    display_errors,
 )
+from pydantic_settings import BaseSettings, SettingsError
+
 from napari.settings._yaml import PydanticYamlMixin
 from napari.utils.events import EmitterGroup, EventedModel
 from napari.utils.misc import deep_update
@@ -49,9 +48,6 @@ class EventedSettings(BaseSettings, EventedModel):
     """
 
     # provide config_path=None to prevent reading from disk.
-
-    class Config(EventedModel.Config):
-        pass
 
     def __init__(self, **values: Any) -> None:
         super().__init__(**values)
@@ -193,7 +189,7 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
         if str(path).endswith(('.yaml', '.yml')):
             _data = self._yaml_dump(data)
         elif str(path).endswith('.json'):
-            json_dumps = self.__config__.json_dumps
+            json_dumps = self.model_config.json_dumps
             _data = json_dumps(data, default=self.__json_encoder__)
         else:
             raise NotImplementedError(
@@ -208,7 +204,7 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
 
     def env_settings(self) -> Dict[str, Any]:
         """Get a dict of fields that were provided as environment vars."""
-        env_settings = getattr(self.__config__, '_env_settings', {})
+        env_settings = getattr(self.model_config, '_env_settings', {})
         if callable(env_settings):
             env_settings = env_settings(self)
         return env_settings
@@ -296,7 +292,7 @@ def nested_env_settings(
         d = super_eset(settings)
         env_val: str | dict | None
 
-        if settings.__config__.case_sensitive:
+        if settings.model_config.case_sensitive:
             env_vars: Mapping[str, str | None] = os.environ
         else:
             env_vars = {k.lower(): v for k, v in os.environ.items()}
@@ -327,7 +323,7 @@ def nested_env_settings(
                     )
                     if env_val is not None and is_complex:
                         try:
-                            env_val = settings.__config__.json_loads(env_val)
+                            env_val = settings.model_config.json_loads(env_val)
                         except ValueError as e:
                             if not all_json_fail:
                                 msg = trans._(
@@ -360,7 +356,7 @@ def config_file_settings_source(
 
     The two important values are the `settings._config_path`
     attribute, which is the main config file (if present), and
-    `settings.__config__.source`, which is an optional list of additional files
+    `settings.model_config.source`, which is an optional list of additional files
     to read. (files later in the list take precedence and `_config_path` takes
     precedence over all)
 
@@ -381,7 +377,7 @@ def config_file_settings_source(
     default_cfg = getattr(default_cfg, 'default', None)
 
     # if the config has a `sources` list, read those too and merge.
-    sources: list[str] = list(getattr(settings.__config__, 'sources', []))
+    sources: list[str] = list(getattr(settings.model_config, 'sources', []))
     if config_path:
         sources.append(config_path)
     if not sources:
@@ -440,7 +436,7 @@ def config_file_settings_source(
         # back to this point again.
         type(settings)(config_path=None, **data)
     except ValidationError as err:
-        if getattr(settings.__config__, 'strict_config_check', False):
+        if getattr(settings.model_config, 'strict_config_check', False):
             raise
 
         # if errors occur, we still want to boot, so we just remove bad keys
@@ -448,7 +444,7 @@ def config_file_settings_source(
         msg = trans._(
             'Validation errors in config file(s).\nThe following fields have been reset to the default value:\n\n{errors}\n',
             deferred=True,
-            errors=display_errors(errors),
+            errors=errors,  # TODO: is this good enough?
         )
         with contextlib.suppress(Exception):
             # we're about to nuke some settings, so just in case... try backup

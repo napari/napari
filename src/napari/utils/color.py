@@ -1,7 +1,7 @@
 """Contains napari color constants and utilities."""
 
 from collections.abc import Callable, Iterator
-from typing import Any, Union
+from typing import Any
 
 import numpy as np
 from pydantic import GetCoreSchemaHandler
@@ -9,8 +9,8 @@ from pydantic_core import CoreSchema, core_schema
 
 from napari.utils.colormaps.standardize_color import transform_color
 
-ColorValueParam = Union[np.ndarray, list, tuple, str, None]
-ColorArrayParam = Union[np.ndarray, list, tuple, None]
+ColorValueParam = np.ndarray | list | tuple | str | None
+ColorArrayParam = np.ndarray | list | tuple | None
 
 
 class ColorValue(np.ndarray):
@@ -28,11 +28,6 @@ class ColorValue(np.ndarray):
     def __get_pydantic_core_schema__(
         cls, source_type: Any, handler: GetCoreSchemaHandler
     ) -> CoreSchema:
-        # pydantic v2 requires to know how to serialize/deserialize custom types,
-        # even if serialization/deserialization is not needed in practice.
-        # for simplicity, we decide to serialize to a list of floats (RGBA).
-        # Implemented using gemmini AI
-
         validate_schema = core_schema.no_info_plain_validator_function(
             cls.validate
         )
@@ -43,7 +38,9 @@ class ColorValue(np.ndarray):
         )
 
         return core_schema.json_or_python_schema(
+            # Schema for JSON inputs (always run validation)
             json_schema=validate_schema,
+            # Schema for Python inputs (allow existing instances to pass through)
             python_schema=core_schema.union_schema(
                 [
                     core_schema.is_instance_schema(cls),
@@ -119,6 +116,33 @@ class ColorArray(np.ndarray):
 
     def __new__(cls, value: ColorArrayParam) -> 'ColorArray':
         return cls.validate(value)
+
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls, source_type: Any, handler: GetCoreSchemaHandler
+    ) -> CoreSchema:
+        validate_schema = core_schema.no_info_plain_validator_function(
+            cls.validate
+        )
+
+        serialize_schema = core_schema.plain_serializer_function_ser_schema(
+            lambda x: x.tolist(),
+            when_used='json',  # Only convert to list for JSON; keep as array for Python
+        )
+
+        return core_schema.json_or_python_schema(
+            # Schema for JSON inputs (always run validation)
+            json_schema=validate_schema,
+            # Schema for Python inputs (allow existing instances to pass through)
+            python_schema=core_schema.union_schema(
+                [
+                    core_schema.is_instance_schema(cls),
+                    validate_schema,
+                ],
+                mode='left_to_right',
+            ),
+            serialization=serialize_schema,
+        )
 
     @classmethod
     def __get_validators__(
