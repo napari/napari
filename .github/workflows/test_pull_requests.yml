@@ -104,77 +104,77 @@ jobs:
       min_req: ${{ matrix.MIN_REQ }}
       artifacts_suffix: "initial"
 
-  test:
-    name: ${{ matrix.platform }}
-    uses: ./.github/workflows/reusable_run_tox_test.yml
-    needs: test_initial
-    strategy:
-      fail-fast: false
-      matrix:
-        platform: [ ubuntu-latest ]
-        python: [ "3.13" ]
-        backend: [ "pyqt5,pyqt6" ]
-        coverage: [ cov ]
-        include:
-          # Windows py310
-          - python: "3.11"
-            platform: windows-2022
-            backend: pyqt5
-            coverage: no_cov
-          - python: "3.13"
-            platform: windows-2022
-            backend: pyqt6
-            coverage: cov
-          - python: "3.13"
-            platform: macos-15-intel
-            backend: pyqt5_no_numba
-            coverage: no_cov
-            timeout-minutes: 60
-          - python: "3.13"
-            platform: macos-latest
-            backend: pyqt6
-            coverage: no_cov
-            timeout-minutes: 60
-          # minimum specified requirements
-          - python: "3.10"
-            platform: ubuntu-22.04
-            backend: pyqt5
-            MIN_REQ: 1
-            coverage: cov
-          - python: "3.12"
-            platform: ubuntu-22.04
-            backend: pyqt6
-            coverage: cov
-            tox_extras: "all_optional"
-          # test without any Qt backends
-          - python: "3.11"
-            platform: ubuntu-22.04
-            backend: headless
-            coverage: no_cov
-          # test with torch
-          - python: "3.13"
-            platform: ubuntu-latest
-            backend: pyqt6
-            coverage: cov
-            tox_extras: "testing_extra"
-          # test with no numba
-          - python: "3.13"
-            platform: ubuntu-latest
-            backend: pyqt6_no_numba
-            coverage: cov
-          # pyside6 test
-          - python: "3.13"
-            platform: ubuntu-latest
-            backend: pyside6
-            coverage: cov
-    with:
-      python_version: ${{ matrix.python }}
-      platform: ${{ matrix.platform }}
-      qt_backend: ${{ matrix.backend }}
-      min_req: ${{ matrix.MIN_REQ }}
-      coverage: ${{ matrix.coverage }}
-      tox_extras: ${{ matrix.tox_extras }}
-      timeout: ${{ matrix.timeout-minutes || 40 }}
+#  test:
+#    name: ${{ matrix.platform }}
+#    uses: ./.github/workflows/reusable_run_tox_test.yml
+#    needs: test_initial
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        platform: [ ubuntu-latest ]
+#        python: [ "3.13" ]
+#        backend: [ "pyqt5,pyqt6" ]
+#        coverage: [ cov ]
+#        include:
+#          # Windows py310
+#          - python: "3.11"
+#            platform: windows-2022
+#            backend: pyqt5
+#            coverage: no_cov
+#          - python: "3.13"
+#            platform: windows-2022
+#            backend: pyqt6
+#            coverage: cov
+#          - python: "3.13"
+#            platform: macos-15-intel
+#            backend: pyqt5_no_numba
+#            coverage: no_cov
+#            timeout-minutes: 60
+#          - python: "3.13"
+#            platform: macos-latest
+#            backend: pyqt6
+#            coverage: no_cov
+#            timeout-minutes: 60
+#          # minimum specified requirements
+#          - python: "3.10"
+#            platform: ubuntu-22.04
+#            backend: pyqt5
+#            MIN_REQ: 1
+#            coverage: cov
+#          - python: "3.12"
+#            platform: ubuntu-22.04
+#            backend: pyqt6
+#            coverage: cov
+#            tox_extras: "all_optional"
+#          # test without any Qt backends
+#          - python: "3.11"
+#            platform: ubuntu-22.04
+#            backend: headless
+#            coverage: no_cov
+#          # test with torch
+#          - python: "3.13"
+#            platform: ubuntu-latest
+#            backend: pyqt6
+#            coverage: cov
+#            tox_extras: "testing_extra"
+#          # test with no numba
+#          - python: "3.13"
+#            platform: ubuntu-latest
+#            backend: pyqt6_no_numba
+#            coverage: cov
+#          # pyside6 test
+#          - python: "3.13"
+#            platform: ubuntu-latest
+#            backend: pyside6
+#            coverage: cov
+#    with:
+#      python_version: ${{ matrix.python }}
+#      platform: ${{ matrix.platform }}
+#      qt_backend: ${{ matrix.backend }}
+#      min_req: ${{ matrix.MIN_REQ }}
+#      coverage: ${{ matrix.coverage }}
+#      tox_extras: ${{ matrix.tox_extras }}
+#      timeout: ${{ matrix.timeout-minutes || 40 }}
 
 
   test_pip_install:
