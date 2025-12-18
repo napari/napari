@@ -77,19 +77,19 @@ coverage==7.13.0
     # via napari (pyproject.toml)
 cycler==0.12.1
     # via matplotlib
-dask==2025.11.0
+dask==2025.12.0
     # via
     #   napari (pyproject.toml)
     #   napari (pyproject.toml:docs)
     #   distributed
     #   trackastra
-debugpy==1.8.18
+debugpy==1.8.19
     # via ipykernel
 decorator==5.2.1
     # via ipython
 distlib==0.4.0
     # via virtualenv
-distributed==2025.11.0
+distributed==2025.12.0
     # via dask
 docstring-parser==0.17.0
     # via
@@ -112,7 +112,7 @@ executing==2.2.1
     # via stack-data
 fastjsonschema==2.21.2
     # via nbformat
-filelock==3.20.0
+filelock==3.20.1
     # via
     #   torch
     #   virtualenv
@@ -120,7 +120,7 @@ flexcache==0.3
     # via pint
 flexparser==0.4
     # via pint
-fonttools==4.61.0
+fonttools==4.61.1
     # via matplotlib
 freetype-py==2.5.1
     # via vispy
@@ -138,19 +138,15 @@ geff==1.1.4.1.1
 geff-spec==1.1.1
     # via geff
 glasbey==0.3.0
-    # via
-    #   napari (pyproject.toml)
-    #   napari (pyproject.toml:docs)
-google-crc32c==1.7.1
+    # via napari (pyproject.toml:docs)
+google-crc32c==1.8.0
     # via zarr
 greenlet==3.3.0
     # via sqlalchemy
 h11==0.16.0
     # via uvicorn
 h5netcdf==1.7.3
-    # via
-    #   napari (pyproject.toml)
-    #   napari (pyproject.toml:docs)
+    # via napari (pyproject.toml:docs)
 h5py==3.15.1
     # via h5netcdf
 heapdict==1.0.1
@@ -209,7 +205,7 @@ jinja2==3.1.6
     #   myst-parser
     #   sphinx
     #   torch
-joblib==1.5.2
+joblib==1.5.3
     # via
     #   nilearn
     #   scikit-learn
@@ -284,9 +280,7 @@ mdit-py-plugins==0.5.0
 mdurl==0.1.2
     # via markdown-it-py
 meshio==5.3.5
-    # via
-    #   napari (pyproject.toml)
-    #   napari (pyproject.toml:docs)
+    # via napari (pyproject.toml:docs)
 ml-dtypes==0.5.4
     # via tensorstore
 mouseinfo==0.1.3
@@ -307,7 +301,7 @@ napari-console==0.1.4
     # via napari (pyproject.toml)
 napari-plugin-engine==0.2.0
     # via napari (pyproject.toml)
-napari-plugin-manager==0.1.8
+napari-plugin-manager==0.1.9
     # via napari (pyproject.toml)
 napari-sphinx-theme==1.0.1
     # via napari (pyproject.toml:docs)
@@ -334,9 +328,7 @@ networkx==3.6.1
 nibabel==5.3.3
     # via nilearn
 nilearn==0.12.1
-    # via
-    #   napari (pyproject.toml)
-    #   napari (pyproject.toml:docs)
+    # via napari (pyproject.toml:docs)
 npe2==0.7.9
     # via
     #   napari (pyproject.toml)
@@ -779,7 +771,7 @@ tensorstore==0.1.80
     #   napari (pyproject.toml)
 threadpoolctl==3.6.0
     # via scikit-learn
-tifffile==2025.10.16
+tifffile==2025.12.12
     # via
     #   napari (pyproject.toml)
     #   scikit-image
@@ -798,7 +790,7 @@ torch==2.9.1
     #   trackastra
 torchvision==0.24.1
     # via trackastra
-tornado==6.5.3
+tornado==6.5.4
     # via
     #   distributed
     #   ipykernel
@@ -863,7 +855,7 @@ typing-extensions==4.15.0
     #   zarr
 typing-inspection==0.4.2
     # via pydantic
-tzdata==2025.2
+tzdata==2025.3
     # via pandas
 uc-micro-py==1.0.3
     # via linkify-it-py

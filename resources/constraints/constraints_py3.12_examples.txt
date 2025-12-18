@@ -40,14 +40,9 @@ charset-normalizer==3.4.4
 click==8.3.1
     # via
     #   dask
-    #   distributed
     #   typer
 cloudpickle==3.1.2
-    # via
-    #   dask
-    #   distributed
-colorspacious==1.1.2
-    # via glasbey
+    # via dask
 comm==0.2.3
     # via ipykernel
 contourpy==1.3.3
@@ -56,19 +51,17 @@ coverage==7.13.0
     # via napari (pyproject.toml)
 cycler==0.12.1
     # via matplotlib
-dask==2025.11.0
+dask==2025.12.0
     # via
     #   napari (pyproject.toml)
     #   distributed
     #   trackastra
-debugpy==1.8.18
+debugpy==1.8.19
     # via ipykernel
 decorator==5.2.1
     # via ipython
 distlib==0.4.0
     # via virtualenv
-distributed==2025.11.0
-    # via dask
 docstring-parser==0.17.0
     # via
     #   napari (pyproject.toml)
@@ -79,7 +72,7 @@ edt==3.1.0
     # via trackastra
 executing==2.2.1
     # via stack-data
-filelock==3.20.0
+filelock==3.20.1
     # via
     #   torch
     #   virtualenv
@@ -87,7 +80,7 @@ flexcache==0.3
     # via pint
 flexparser==0.4
     # via pint
-fonttools==4.61.0
+fonttools==4.61.1
     # via matplotlib
 freetype-py==2.5.1
     # via vispy
@@ -106,12 +99,8 @@ geff-spec==1.1.1
     # via geff
 glasbey==0.3.0
     # via napari (pyproject.toml)
-google-crc32c==1.7.1
+google-crc32c==1.8.0
     # via zarr
-h5netcdf==1.7.3
-    # via napari (pyproject.toml)
-h5py==3.15.1
-    # via h5netcdf
 heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
@@ -184,14 +173,11 @@ lazy-loader==0.4
 llvmlite==0.46.0
     # via numba
 locket==1.0.0
-    # via
-    #   distributed
-    #   partd
+    # via partd
 lxml==6.0.2
     # via
     #   napari (pyproject.toml)
     #   lxml-html-clean
-    #   nilearn
 lxml-html-clean==0.4.3
     # via lxml
 lz4==4.4.5
@@ -212,16 +198,12 @@ matplotlib-inline==0.2.1
     #   ipython
 mdurl==0.1.2
     # via markdown-it-py
-meshio==5.3.5
-    # via napari (pyproject.toml)
 ml-dtypes==0.5.4
     # via tensorstore
 mouseinfo==0.1.3
     # via pyautogui
 mpmath==1.3.0
     # via sympy
-msgpack==1.1.2
-    # via distributed
 multidict==6.7.0
     # via
     #   aiohttp
@@ -230,7 +212,7 @@ napari-console==0.1.4
     # via napari (pyproject.toml)
 napari-plugin-engine==0.2.0
     # via napari (pyproject.toml)
-napari-plugin-manager==0.1.8
+napari-plugin-manager==0.1.9
     # via napari (pyproject.toml)
 napari-svg==0.2.1
     # via napari (pyproject.toml)
@@ -262,7 +244,6 @@ numpy==2.3.5
     # via
     #   napari (pyproject.toml)
     #   bermuda
-    #   colorspacious
     #   contourpy
     #   dask
     #   edt
@@ -273,17 +254,13 @@ numpy==2.3.5
     #   imagecodecs
     #   imageio
     #   matplotlib
-    #   meshio
     #   ml-dtypes
     #   napari-svg
-    #   nibabel
-    #   nilearn
     #   numba
     #   numcodecs
     #   pandas
     #   partsegcore-compiled-backend
     #   scikit-image
-    #   scikit-learn
     #   scipy
     #   tensorstore
     #   tifffile
@@ -336,14 +313,10 @@ packaging==25.0
     # via
     #   build
     #   dask
-    #   distributed
-    #   h5netcdf
     #   ipykernel
     #   lazy-loader
     #   matplotlib
     #   napari-plugin-manager
-    #   nibabel
-    #   nilearn
     #   pooch
     #   pytest
     #   pytest-rerunfailures
@@ -405,7 +378,6 @@ propcache==0.4.1
 psutil==7.1.3
     # via
     #   napari (pyproject.toml)
-    #   distributed
     #   ipykernel
     #   trackastra
 psygnal==0.15.0
@@ -511,7 +483,6 @@ pyyaml==6.0.3
     # via
     #   napari (pyproject.toml)
     #   dask
-    #   distributed
     #   donfig
     #   npe2
     #   trackastra
@@ -537,14 +508,12 @@ referencing==0.37.0
     #   jsonschema-specifications
 requests==2.32.5
     # via
-    #   nilearn
     #   pooch
     #   pyconify
     #   trackastra
 rich==14.2.0
     # via
     #   napari (pyproject.toml)
-    #   meshio
     #   npe2
     #   pytest-pretty
     #   typer
@@ -563,7 +532,6 @@ scikit-learn==1.8.0
 scipy==1.16.3
     # via
     #   napari (pyproject.toml)
-    #   nilearn
     #   scikit-image
     #   scikit-learn
     #   trackastra
@@ -579,9 +547,7 @@ shiboken6==6.10.1
 six==1.17.0
     # via python-dateutil
 sortedcontainers==2.4.0
-    # via
-    #   distributed
-    #   hypothesis
+    # via hypothesis
 stack-data==0.6.3
     # via ipython
 superqt==0.7.6
@@ -597,9 +563,7 @@ tensorstore==0.1.80
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
-threadpoolctl==3.6.0
-    # via scikit-learn
-tifffile==2025.10.16
+tifffile==2025.12.12
     # via
     #   napari (pyproject.toml)
     #   scikit-image
@@ -609,7 +573,6 @@ toolz==1.1.0
     # via
     #   napari (pyproject.toml)
     #   dask
-    #   distributed
     #   partd
 torch==2.9.1
     # via
@@ -618,9 +581,8 @@ torch==2.9.1
     #   trackastra
 torchvision==0.24.1
     # via trackastra
-tornado==6.5.3
+tornado==6.5.4
     # via
-    #   distributed
     #   ipykernel
     #   jupyter-client
 tqdm==4.67.1
@@ -653,7 +615,6 @@ typing-extensions==4.15.0
     #   flexcache
     #   flexparser
     #   magicgui
-    #   nibabel
     #   numcodecs
     #   pint
     #   pydantic
@@ -667,7 +628,7 @@ typing-extensions==4.15.0
     #   zarr
 typing-inspection==0.4.2
     # via pydantic
-tzdata==2025.2
+tzdata==2025.3
     # via pandas
 urllib3==2.6.2
     # via
