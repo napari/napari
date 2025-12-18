@@ -1049,7 +1049,7 @@ def test_get_status_text():
             'source_type': '',
             'value': '0; a: 1',
         },
-        'a: 1',
+        '0\na: 1',
     )
     viewer.update_status_from_cursor()
     assert viewer.status == {
@@ -1061,7 +1061,7 @@ def test_get_status_text():
         'source_type': '',
         'value': '0; a: 1',
     }
-    assert viewer.tooltip.text == 'a: 1'
+    assert viewer.tooltip.text == '0\na: 1'
 
 
 def test_reset_view():
