@@ -150,9 +150,8 @@ jobs:
         run: |
           set -x
           pip install -U uv
-          ls
           cd napari_repo
-          ls
+          ls tools
 
           bash tools/upgrade_constraints.sh
 
