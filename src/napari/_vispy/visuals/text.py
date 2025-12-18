@@ -9,9 +9,11 @@ from napari._vispy.utils.text import (
 
 
 class Text(BaseText):
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
+    def __init__(
+        self, *args: Any, face: str = 'AlataPlus', **kwargs: Any
+    ) -> None:
         register_napari_fonts()
-        super().__init__(*args, face='AlataPlus', **kwargs)
+        super().__init__(*args, face=face, **kwargs)
 
     def get_width_height(self) -> tuple[float, float]:
         width, height = get_text_width_height(self)

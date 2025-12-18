@@ -242,7 +242,7 @@ def _text_to_vbo(text, font, anchor_x, anchor_y, lowres_size):
     return vertices
 
 
-def register_napari_fonts():
+def register_napari_fonts() -> None:
     from vispy.util.fonts import register_vispy_font
 
     path = resources.files('napari') / 'resources' / 'fonts' / 'AlataPlus'
