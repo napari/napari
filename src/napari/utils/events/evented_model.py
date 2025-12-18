@@ -5,13 +5,12 @@ from typing import Any, ClassVar, Union
 
 import numpy as np
 from app_model.types import KeyBinding
-
-from napari._pydantic_compat import (
+from pydantic import (
     BaseModel,
-    ModelMetaclass,
     PrivateAttr,
-    main,
 )
+from pydantic._internal._model_construction import ModelMetaclass
+
 from napari.utils.events.event import EmitterGroup, Event
 from napari.utils.misc import pick_equality_operator
 from napari.utils.translations import trans
@@ -42,7 +41,7 @@ class EventedMetaclass(ModelMetaclass):
     def __new__(mcs, name, bases, namespace, **kwargs):
         cls = super().__new__(mcs, name, bases, namespace, **kwargs)
         cls.__eq_operators__ = {}
-        for n, f in cls.__fields__.items():
+        for n, f in cls.model_fields.items():
             cls.__eq_operators__[n] = pick_equality_operator(f.type_)
             # If a field type has a _json_encode method, add it to the json
             # encoders for this model.
@@ -50,11 +49,11 @@ class EventedMetaclass(ModelMetaclass):
             # passed to json.dumps ... but it needn't return a string.
             if hasattr(f.type_, '_json_encode'):
                 encoder = f.type_._json_encode
-                cls.__config__.json_encoders[f.type_] = encoder
+                cls.model_config.json_encoders[f.type_] = encoder
                 # also add it to the base config
                 # required for pydantic>=1.8.0 due to:
                 # https://github.com/samuelcolvin/pydantic/pull/2064
-                EventedModel.__config__.json_encoders[f.type_] = encoder
+                EventedModel.model_config.json_encoders[f.type_] = encoder
         # check for properties defined on the class, so we can allow them
         # in EventedModel.__setattr__ and create events
         cls.__properties__ = {}
@@ -85,7 +84,7 @@ def _update_dependents_from_property_code(
     Update the given deps dictionary with the new findings.
     """
     for name in prop.fget.__code__.co_names:
-        if name in cls.__fields__:
+        if name in cls.model_fields:
             deps.setdefault(name, set()).add(prop_name)
         elif name in cls.__properties__ and name not in visited:
             # to avoid infinite recursion, we shouldn't re-check getter we've already seen
@@ -142,7 +141,7 @@ def _get_field_dependents(cls: 'EventedModel') -> dict[str, set[str]]:
 
     deps: dict[str, set[str]] = {}
 
-    _deps = getattr(cls.__config__, 'dependencies', None)
+    _deps = getattr(cls.model_config, 'dependencies', None)
     if _deps:
         for prop_name, fields in _deps.items():
             if prop_name not in cls.__properties__:
@@ -151,7 +150,7 @@ def _get_field_dependents(cls: 'EventedModel') -> dict[str, set[str]]:
                     f'{prop_name!r} is not.'
                 )
             for field in fields:
-                if field not in cls.__fields__:
+                if field not in cls.model_fields:
                     warnings.warn(f'Unrecognized field dependency: {field}')
                 deps.setdefault(field, set()).add(prop_name)
     else:
@@ -210,7 +209,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         # add event emitters for each field which is mutable
         field_events = [
             name
-            for name, field in self.__fields__.items()
+            for name, field in self.model_fields.items()
             if field.field_info.allow_mutation
         ]
 
@@ -345,7 +344,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         # events are all messed up due to objects being probably
         # recreated arbitrarily during validation
         self.events.source = self
-        for name in self.__fields__:
+        for name in self.model_fields:
             child = getattr(self, name)
             if isinstance(child, EventedModel):
                 # TODO: this isinstance check should be EventedMutables in the future
@@ -363,8 +362,8 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             if isinstance(value, EventedModel):
                 getattr(self, name).reset()
             elif (
-                self.__config__.allow_mutation
-                and self.__fields__[name].field_info.allow_mutation
+                self.model_config.allow_mutation
+                and self.model_fields[name].field_info.allow_mutation
             ):
                 setattr(self, name, value)
 
@@ -421,7 +420,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             return self.dict() == other
         if self.__class__ != other.__class__:
             return False
-        for f_name in self.__fields__:
+        for f_name in self.model_fields:
             eq = self.__eq_operators__[f_name]
             if not eq(getattr(self, f_name), getattr(other, f_name)):
                 return False
@@ -452,9 +451,9 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
 def get_defaults(obj: BaseModel):
     """Get possibly nested default values for a Model object."""
     dflt = {}
-    for k, v in obj.__fields__.items():
+    for k, v in obj.model_fields.items():
         d = v.get_default()
-        if d is None and isinstance(v.type_, main.ModelMetaclass):
+        if d is None and isinstance(v.type_, ModelMetaclass):
             d = get_defaults(v.type_)
         dflt[k] = d
     return dflt

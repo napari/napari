@@ -7,7 +7,7 @@ from typing import (
 
 import numpy as np
 
-from napari._pydantic_compat import errors, types
+from napari._pydantic_compat import types
 
 if TYPE_CHECKING:
     from decimal import Decimal
@@ -61,7 +61,7 @@ class Array(np.ndarray):
         return result
 
 
-class NumberNotEqError(errors.PydanticValueError):
+class NumberNotEqError(ValueError):
     code = 'number.not_eq'
     msg_template = 'ensure this value is not equal to {prohibited}'
 

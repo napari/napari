@@ -11,9 +11,9 @@ from typing import (
 from warnings import warn
 
 import numpy as np
+from pydantic import Field, PrivateAttr, field_validator
 from typing_extensions import Self
 
-from napari._pydantic_compat import Field, PrivateAttr, validator
 from napari.utils.color import ColorArray, ColorValue
 from napari.utils.colormaps import _accelerated_cmap as _accel_cmap
 from napari.utils.colormaps.colorbars import make_colorbar
@@ -96,7 +96,7 @@ class Colormap(EventedModel):
         self._display_name = display_name
 
     # controls validator must be called even if None for correct initialization
-    @validator('controls', pre=True, always=True, allow_reuse=True)
+    @field_validator('controls', mode='before')
     def _check_controls(cls, v, values):
         # If no control points provided generate defaults
         if v is None or len(v) == 0:
@@ -297,7 +297,7 @@ class CyclicLabelColormap(LabelColormapBase):
 
     seed: float = 0.5
 
-    @validator('colors', allow_reuse=True)
+    @field_validator('colors')
     def _validate_color(cls, v):
         if len(v) > 2**16:
             raise ValueError(
@@ -428,7 +428,7 @@ class DirectLabelColormap(LabelColormapBase):
         """
         return self._num_unique_colors + 2
 
-    @validator('color_dict', pre=True, always=True, allow_reuse=True)
+    @field_validator('color_dict', mode='before')
     def _validate_color_dict(cls, v, values):
         """Ensure colors are RGBA arrays, not strings.
 
