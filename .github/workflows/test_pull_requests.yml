@@ -104,17 +104,17 @@ jobs:
       min_req: ${{ matrix.MIN_REQ }}
       artifacts_suffix: "initial"
 
-#  test:
-#    name: ${{ matrix.platform }}
-#    uses: ./.github/workflows/reusable_run_tox_test.yml
-#    needs: test_initial
-#    strategy:
-#      fail-fast: false
-#      matrix:
-#        platform: [ ubuntu-latest ]
-#        python: [ "3.13" ]
-#        backend: [ "pyqt5,pyqt6" ]
-#        coverage: [ cov ]
+  test:
+    name: ${{ matrix.platform }}
+    uses: ./.github/workflows/reusable_run_tox_test.yml
+    needs: test_initial
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [ ubuntu-latest ]
+        python: [ "3.13" ]
+        backend: [ "pyqt5,pyqt6" ]
+        coverage: [ cov ]
 #        include:
 #          # Windows py310
 #          - python: "3.11"
@@ -167,14 +167,14 @@ jobs:
 #            platform: ubuntu-latest
 #            backend: pyside6
 #            coverage: cov
-#    with:
-#      python_version: ${{ matrix.python }}
-#      platform: ${{ matrix.platform }}
-#      qt_backend: ${{ matrix.backend }}
-#      min_req: ${{ matrix.MIN_REQ }}
-#      coverage: ${{ matrix.coverage }}
-#      tox_extras: ${{ matrix.tox_extras }}
-#      timeout: ${{ matrix.timeout-minutes || 40 }}
+    with:
+      python_version: ${{ matrix.python }}
+      platform: ${{ matrix.platform }}
+      qt_backend: ${{ matrix.backend }}
+      min_req: ${{ matrix.MIN_REQ }}
+      coverage: ${{ matrix.coverage }}
+      tox_extras: ${{ matrix.tox_extras }}
+      timeout: ${{ matrix.timeout-minutes || 40 }}
 
 
   test_pip_install:
