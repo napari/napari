@@ -150,12 +150,8 @@ jobs:
         run: |
           set -x
           pip install -U uv
-          ls tools
-          echo ###################################
-          cd napari_repo
-          ls tools
 
-          bash tools/upgrade_constraints.sh
+          bash tools/compile_constraints.sh
 
       # END PYTHON DEPENDENCIES
 
