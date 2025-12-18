@@ -1,13 +1,6 @@
 from __future__ import annotations
 
-import logging
-import os
-import sys
-import tempfile
-from ctypes import cdll, util
-from functools import lru_cache
 from importlib import resources
-from pathlib import Path
 from typing import TYPE_CHECKING, no_type_check
 
 import numpy as np
@@ -17,8 +10,6 @@ from napari.layers.utils.string_encoding import ConstantStringEncoding
 
 if TYPE_CHECKING:
     from vispy.visuals.text import Text
-
-logger = logging.getLogger(__name__)
 
 
 def update_text(
@@ -251,84 +242,8 @@ def _text_to_vbo(text, font, anchor_x, anchor_y, lowres_size):
     return vertices
 
 
-def _register_napari_font_macos(font_dir: Path) -> None:
-    from ctypes import POINTER, c_bool, c_char_p, c_uint32, c_void_p
+def register_napari_fonts():
+    from vispy.util.fonts import register_vispy_font
 
-    from vispy.ext.cocoapy import cf, ct
-
-    # following vispy's implementation in vispy.ext.cocoapy
-    # and vispy.utils.fonts._quartz.py
-    cf.CFURLCreateFromFileSystemRepresentation.restype = c_void_p
-    cf.CFURLCreateFromFileSystemRepresentation.argtypes = [
-        c_void_p,
-        c_char_p,
-        c_uint32,
-        c_bool,
-    ]
-
-    ct.CTFontManagerRegisterFontsForURL.restype = c_bool
-    ct.CTFontManagerRegisterFontsForURL.argtypes = [
-        c_void_p,
-        c_uint32,
-        POINTER(c_void_p),
-    ]
-
-    # vispy/qt use quartz for font discovery on mac
-    for font_file in font_dir.glob('*/*.ttf'):
-        path = str(font_file).encode('utf-8')
-        url = cf.CFURLCreateFromFileSystemRepresentation(
-            None, path, len(path), False
-        )
-        ok = ct.CTFontManagerRegisterFontsForURL(
-            url, 1, None
-        )  # 1 = scope process
-        if not ok:
-            logger.error('Failed to register custom fonts.')
-        cf.CFRelease(url)
-
-
-def _register_napari_font_linux_windows(font_dir: Path) -> None:
-    # windows and linux use freetype
-    conf_dir = tempfile.mkdtemp()
-    conf_path = os.path.join(conf_dir, 'fonts.conf')
-
-    system_fonts = ''
-    if sys.platform.startswith('linux'):
-        system_fonts = """
-        <include ignore_missing="yes">/etc/fonts/fonts.conf</include>
-        <include ignore_missing="yes" prefix="xdg">fonts.conf</include>
-        <include ignore_missing="yes" prefix="xdg">conf.d</include>
-        """
-    elif sys.platform == 'win32':
-        system_fonts = """
-        <dir>C:\\Windows\\Fonts</dir>
-        """
-    conf_contents = f"""<?xml version="1.0"?>
-    <!DOCTYPE fontconfig SYSTEM "fonts.dtd">
-    <fontconfig>
-        {system_fonts}
-        <dir>{font_dir}</dir>
-    </fontconfig>
-    """
-    with open(conf_path, 'w') as f:
-        f.write(conf_contents)
-    os.environ['FONTCONFIG_PATH'] = conf_dir
-
-
-@lru_cache
-def register_napari_font():
-    font_dir = Path(
-        str(resources.files('napari').joinpath('resources', 'fonts'))
-    )
-
-    if sys.platform == 'darwin':
-        _register_napari_font_macos(font_dir)
-    elif sys.platform.startswith('linux') or sys.platform.startswith('win'):
-        _register_napari_font_linux_windows(font_dir)
-    else:
-        logger.error('Platform not supported for custom fonts.')
-
-    # refresh font cache, as sometimes this is needed (see #8117)
-    if fc := util.find_library('fontconfig'):
-        fontconfig = cdll.LoadLibrary(fc)
-        fontconfig.FcInitReinitialize()
+    path = resources.files('napari') / 'resources' / 'fonts' / 'AlataPlus'
+    register_vispy_font(path, 'AlataPlus', False, False)

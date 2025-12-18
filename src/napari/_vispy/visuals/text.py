@@ -2,11 +2,15 @@ from typing import Any
 
 from vispy.scene.visuals import Text as BaseText
 
-from napari._vispy.utils.text import get_text_width_height
+from napari._vispy.utils.text import (
+    get_text_width_height,
+    register_napari_fonts,
+)
 
 
 class Text(BaseText):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
+        register_napari_fonts()
         super().__init__(*args, face='AlataPlus', **kwargs)
 
     def get_width_height(self) -> tuple[float, float]:
