@@ -198,7 +198,7 @@ jobs:
           set -x
           ls -a ${{ github.workspace }}
 
-          ls -a ${{ github.workspace }}/../../../cache
+          ls -a ${{ github.workspace }}/../../../.cache
 
 
       - name: Upload test artifacts
