@@ -150,6 +150,8 @@ jobs:
         run: |
           set -x
           pip install -U uv
+          ls tools
+          echo ###################################
           cd napari_repo
           ls tools
 
