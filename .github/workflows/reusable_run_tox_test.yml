@@ -197,9 +197,10 @@ jobs:
         run: |
           set -x
           ls -a ${{ github.workspace }}
-          ls ${{ github.workspace }}/.cache
+          ls -a ${{ github.workspace }}/.cache
 
-          ls ${{ github.workspace }}/../..
+          ls -a ${{ github.workspace }}/../..
+          ls -a ${{ github.workspace }}/../../..
 
 
       - name: Upload test artifacts
