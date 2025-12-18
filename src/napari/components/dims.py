@@ -7,8 +7,8 @@ from typing import (
 )
 
 import numpy as np
+from pydantic import field_validator, model_validator
 
-from napari._pydantic_compat import root_validator, validator
 from napari.utils.events import EventedModel
 from napari.utils.misc import argsort, reorder_after_dim_reduction
 from napari.utils.translations import trans
@@ -108,20 +108,19 @@ class Dims(EventedModel):
 
     # validators
     # check fields is false to allow private fields to work
-    @validator(
+    @field_validator(
         'order',
         'axis_labels',
         'rollable',
         'point',
         'margin_left',
         'margin_right',
-        pre=True,
-        allow_reuse=True,
+        mode='before',
     )
     def _as_tuple(v):
         return tuple(v)
 
-    @validator('range', pre=True)
+    @field_validator('range', mode='before')
     def _check_ranges(ranges):
         """
         Ensure the range values are sane.
@@ -151,8 +150,8 @@ class Dims(EventedModel):
                 )
         return ranges
 
-    @root_validator(skip_on_failure=True, allow_reuse=True)
-    def _check_dims(cls, values):
+    @model_validator(mode='after')
+    def _check_dims(self):
         """Check the consistency of dimensionality for all attributes.
 
         Parameters
@@ -160,81 +159,83 @@ class Dims(EventedModel):
         values : dict
             Values dictionary to update dims model with.
         """
-        updated = {}
+        with self.events.blocker_all():
+            ndim = self.ndim
 
-        ndim = values['ndim']
+            range_ = ensure_len(self.range, ndim, pad_width=(0.0, 2.0, 1.0))
+            self.range = tuple(RangeTuple(*rng) for rng in range_)
 
-        range_ = ensure_len(values['range'], ndim, pad_width=(0.0, 2.0, 1.0))
-        updated['range'] = tuple(RangeTuple(*rng) for rng in range_)
-
-        point = ensure_len(values['point'], ndim, pad_width=0.0)
-        # ensure point is limited to range
-        updated['point'] = tuple(
-            np.clip(pt, rng.start, rng.stop)
-            for pt, rng in zip(point, updated['range'], strict=False)
-        )
-
-        updated['margin_left'] = ensure_len(
-            values['margin_left'], ndim, pad_width=0.0
-        )
-        updated['margin_right'] = ensure_len(
-            values['margin_right'], ndim, pad_width=0.0
-        )
-
-        # order and label default computation is too different to include in ensure_len()
-        # Check the order tuple has same number of elements as ndim
-        order = values['order']
-        if len(order) < ndim:
-            order_ndim = len(order)
-            # new dims are always prepended
-            prepended_dims = tuple(range(ndim - order_ndim))
-            # maintain existing order, but shift accordingly
-            existing_order = tuple(o + ndim - order_ndim for o in order)
-            order = prepended_dims + existing_order
-        elif len(order) > ndim:
-            order = reorder_after_dim_reduction(order[-ndim:])
-        updated['order'] = order
-
-        # Check the order is a permutation of 0, ..., ndim - 1
-        if set(updated['order']) != set(range(ndim)):
-            raise ValueError(
-                trans._(
-                    'Invalid ordering {order} for {ndim} dimensions',
-                    deferred=True,
-                    order=updated['order'],
-                    ndim=ndim,
-                )
+            point = ensure_len(self.point, ndim, pad_width=0.0)
+            # ensure point is limited to range
+            self.point = tuple(
+                np.clip(pt, rng.start, rng.stop)
+                for pt, rng in zip(point, self.range, strict=False)
             )
 
-        # Check the axis labels tuple has same number of elements as ndim
-        axis_labels = values['axis_labels']
-        labels_ndim = len(axis_labels)
-        if labels_ndim < ndim:
-            # Append new "default" labels to existing ones
-            if axis_labels == tuple(map(str, range(labels_ndim))):
-                updated['axis_labels'] = tuple(map(str, range(ndim)))
-            else:
-                updated['axis_labels'] = (
-                    tuple(map(str, range(ndim - labels_ndim))) + axis_labels
+            self.margin_left = ensure_len(
+                self.margin_left, ndim, pad_width=0.0
+            )
+            self.margin_right = ensure_len(
+                self.margin_right, ndim, pad_width=0.0
+            )
+
+            # order and label default computation is too different to include in ensure_len()
+            # Check the order tuple has same number of elements as ndim
+            order = self.order
+            if len(order) < ndim:
+                order_ndim = len(order)
+                # new dims are always prepended
+                prepended_dims = tuple(range(ndim - order_ndim))
+                # maintain existing order, but shift accordingly
+                existing_order = tuple(o + ndim - order_ndim for o in order)
+                order = prepended_dims + existing_order
+            elif len(order) > ndim:
+                order = reorder_after_dim_reduction(order[-ndim:])
+            self.order = order
+
+            # Check the order is a permutation of 0, ..., ndim - 1
+            if set(self.order) != set(range(ndim)):
+                raise ValueError(
+                    trans._(
+                        'Invalid ordering {order} for {ndim} dimensions',
+                        deferred=True,
+                        order=self.order,
+                        ndim=ndim,
+                    )
                 )
-        elif labels_ndim > ndim:
-            updated['axis_labels'] = axis_labels[-ndim:]
 
-        # Check the rollable axes tuple has same number of elements as ndim
-        updated['rollable'] = ensure_len(values['rollable'], ndim, True)
+            # Check the axis labels tuple has same number of elements as ndim
+            axis_labels = self.axis_labels
+            labels_ndim = len(axis_labels)
+            if labels_ndim < ndim:
+                # Append new "default" labels to existing ones
+                if axis_labels == tuple(map(str, range(labels_ndim))):
+                    self.axis_labels = tuple(map(str, range(ndim)))
+                else:
+                    self.axis_labels = (
+                        tuple(map(str, range(ndim - labels_ndim)))
+                        + axis_labels
+                    )
+            elif labels_ndim > ndim:
+                self.axis_labels = axis_labels[-ndim:]
 
-        # If the last used slider is no longer visible, use the first.
-        last_used = values['last_used']
-        ndisplay = values['ndisplay']
-        dims_range = updated['range']
-        nsteps = cls._nsteps_from_range(dims_range)
-        not_displayed = [
-            d for d in order[:-ndisplay] if len(nsteps) > d and nsteps[d] > 1
-        ]
-        if len(not_displayed) > 0 and last_used not in not_displayed:
-            updated['last_used'] = not_displayed[0]
+            # Check the rollable axes tuple has same number of elements as ndim
+            self.rollable = ensure_len(self.rollable, ndim, True)
 
-        return {**values, **updated}
+            # If the last used slider is no longer visible, use the first.
+            last_used = self.last_used
+            ndisplay = self.ndisplay
+            dims_range = self.range
+            nsteps = self._nsteps_from_range(dims_range)
+            not_displayed = [
+                d
+                for d in order[:-ndisplay]
+                if len(nsteps) > d and nsteps[d] > 1
+            ]
+            if len(not_displayed) > 0 and last_used not in not_displayed:
+                self.last_used = not_displayed[0]
+
+        return self
 
     @staticmethod
     def _nsteps_from_range(dims_range) -> tuple[float, ...]:

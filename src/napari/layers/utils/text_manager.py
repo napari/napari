@@ -5,9 +5,8 @@ from typing import Any, Union
 
 import numpy as np
 import pandas as pd
-from pydantic import PositiveFloat
+from pydantic import PositiveFloat, field_validator
 
-from napari._pydantic_compat import validator
 from napari.layers.base._base_constants import Blending
 from napari.layers.utils._text_constants import Anchor
 from napari.layers.utils._text_utils import get_text_anchors
@@ -376,7 +375,7 @@ class TextManager(EventedModel):
         # values if needed.
         self.apply(features)
 
-    @validator('blending', pre=True, always=True, allow_reuse=True)
+    @field_validator('blending', mode='before')
     def _check_blending_mode(cls, blending):
         blending_mode = Blending(blending)
 

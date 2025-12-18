@@ -1,6 +1,7 @@
 from typing import Union, cast
 
-from napari._pydantic_compat import Field
+from pydantic import Field
+
 from napari.settings._fields import Theme
 from napari.utils.events.evented_model import ComparisonDelayer, EventedModel
 from napari.utils.theme import available_themes, get_theme

@@ -51,11 +51,13 @@ class EventedMetaclass(ModelMetaclass):
             # passed to json.dumps ... but it needn't return a string.
             if hasattr(field_type, '_json_encode'):
                 encoder = field_type._json_encode
-                cls.model_config.json_encoders[field_type] = encoder
+                cls.model_config['json_encoders'][field_type] = encoder
                 # also add it to the base config
                 # required for pydantic>=1.8.0 due to:
                 # https://github.com/samuelcolvin/pydantic/pull/2064
-                EventedModel.model_config.json_encoders[field_type] = encoder
+                EventedModel.model_config['json_encoders'][field_type] = (
+                    encoder
+                )
         # check for properties defined on the class, so we can allow them
         # in EventedModel.__setattr__ and create events
         cls.__properties__ = {}

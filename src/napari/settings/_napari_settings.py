@@ -2,7 +2,8 @@ import os
 from pathlib import Path
 from typing import Any
 
-from napari._pydantic_compat import Field
+from pydantic import Field
+
 from napari.settings._appearance import AppearanceSettings
 from napari.settings._application import ApplicationSettings
 from napari.settings._base import (

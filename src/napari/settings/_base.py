@@ -54,12 +54,13 @@ class EventedSettings(BaseSettings, EventedModel):
         self.events.add(changed=None)
 
         # re-emit subfield
-        for name, field in self.__fields__.items():
+        for name, field in self.model_fields.items():
             attr = getattr(self, name)
             if isinstance(getattr(attr, 'events', None), EmitterGroup):
                 attr.events.connect(partial(self._on_sub_event, field=name))
 
-            if field.field_info.extra.get('requires_restart'):
+            extra = getattr(field, 'json_schema_extra', None)
+            if extra is not None and extra.get('requires_restart', False):
                 emitter = getattr(self.events, name)
 
                 @emitter.connect

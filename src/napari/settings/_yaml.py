@@ -5,9 +5,9 @@ from pathlib import Path, PosixPath, WindowsPath
 from typing import TYPE_CHECKING
 
 from app_model.types import KeyBinding
+from pydantic import BaseModel
 from yaml import SafeDumper, dump_all
 
-from napari._pydantic_compat import BaseModel
 from napari.settings._fields import Version
 
 if TYPE_CHECKING:
