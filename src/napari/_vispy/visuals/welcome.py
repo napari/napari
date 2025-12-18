@@ -98,7 +98,7 @@ class Welcome(Node):
             shortcut, command = self._command_shortcut_and_description(
                 command_id
             )
-            if shortcut is not None:
+            if shortcut is not None and command is not None:
                 shortcuts[shortcut] = command
 
         # TODO: use template strings in the future
@@ -130,6 +130,8 @@ class Welcome(Node):
         app = get_app_model()
         all_shortcuts = get_settings().shortcuts.shortcuts
         keybinding = app.keybindings.get_keybinding(command_id)
+
+        shortcut = command = None
         if keybinding is not None:
             shortcut = Shortcut(keybinding.keybinding).platform
             command = app.commands[command_id].title
