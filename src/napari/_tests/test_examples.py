@@ -6,20 +6,20 @@ from pathlib import Path
 import numpy as np
 import pytest
 import skimage.data
-from pooch import downloaders
+from pooch import core
 from qtpy import API_NAME
 
 import napari
 from napari._qt.qt_main_window import Window
-from napari.utils._examples_data import DOI_TO_FILE_GOOGLE_ID, GODGLE_PREFIX
+from napari.utils._examples_data import napari_choose_downloader
 from napari.utils.notifications import notification_manager
 
 # check if this module has been explicitly requested or `--test-examples` is included
 fpath = os.path.join(*__file__.split(os.path.sep)[-4:])
-if '--test-examples' not in sys.argv and fpath not in sys.argv:
-    pytest.skip(
-        'Use `--test-examples` to test examples.', allow_module_level=True
-    )
+# if '--test-examples' not in sys.argv and fpath not in sys.argv:
+#     pytest.skip(
+#         'Use `napari/_tests/test_examples.py` to test examples.', allow_module_level=True
+#     )
 
 # not testing these examples
 skip = [
@@ -58,13 +58,7 @@ if os.getenv('CI') and os.name == 'nt' and 'to_screenshot.py' in examples:
 
 @pytest.fixture(autouse=True)
 def _mock_pooch(monkeypatch):
-    original_doi_to_url = downloaders.doi_to_url
-
-    def _mock_doi_to_url(doi: str):
-        if doi in DOI_TO_FILE_GOOGLE_ID:
-            return GODGLE_PREFIX + DOI_TO_FILE_GOOGLE_ID[doi]
-        return original_doi_to_url(doi)
-    monkeypatch.setattr(downloaders, 'doi_to_url', _mock_doi_to_url)
+    monkeypatch.setattr(core, 'choose_downloader', napari_choose_downloader)
 
 
 
