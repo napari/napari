@@ -3,6 +3,7 @@ from qtpy.QtWidgets import QLabel, QVBoxLayout, QWidget
 from scipy.spatial.transform import Rotation
 from superqt import QToggleSwitch
 from vispy.scene import ArcballCamera, Box, InfiniteLine, SceneCanvas
+from vispy.util.quaternion import Quaternion
 from vispy.visuals.transforms import MatrixTransform, STTransform
 
 import napari
@@ -117,11 +118,12 @@ class ClippingPlanesControls(QWidget):
         )
         self.camera_model.set_view_direction(side, up)
 
-        quat = self.view.camera._quaternion.create_from_euler_angles(
-            *self.camera_model.angles,
-            degrees=True,
-        )
-        self.view.camera._quaternion = quat
+        angles = self.camera_model.to_legacy_angles(self.camera_model.angles)
+        # see #8281 for why this is yzx. In short: longstanding vispy bug.
+        rotation = Rotation.from_euler('yzx', angles, degrees=True)
+        # Create and set quaternion
+        q = Quaternion(*rotation.as_quat(scalar_first=True))
+        self.view.camera._quaternion = q
 
         VISPY_DEFAULT_ORIENTATION_3D = ('right', 'down', 'away')  # xyz
         self.view.camera.flip = tuple(
