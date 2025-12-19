@@ -15,10 +15,10 @@ from napari.utils.notifications import notification_manager
 
 # check if this module has been explicitly requested or `--test-examples` is included
 fpath = os.path.join(*__file__.split(os.path.sep)[-4:])
-# if '--test-examples' not in sys.argv and fpath not in sys.argv:
-#     pytest.skip(
-#         'Use `napari/_tests/test_examples.py` to test examples.', allow_module_level=True
-#     )
+if '--test-examples' not in sys.argv and fpath not in sys.argv:
+    pytest.skip(
+        'Use `napari/_tests/test_examples.py` to test examples.', allow_module_level=True
+    )
 
 # not testing these examples
 skip = [
