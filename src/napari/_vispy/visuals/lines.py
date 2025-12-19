@@ -103,11 +103,6 @@ class LineVisual(Visual):
 
         Visual.__init__(self, vcode=vert, gcode=geom, fcode=frag)
 
-        self.set_gl_state(
-            depth_test=True,
-            blend=True,
-            blend_func=('src_alpha', 'one_minus_src_alpha'),
-        )
         self._draw_mode = 'lines'
 
         if len(kwargs) > 0:
