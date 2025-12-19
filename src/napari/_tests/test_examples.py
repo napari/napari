@@ -11,7 +11,6 @@ from qtpy import API_NAME
 
 import napari
 from napari._qt.qt_main_window import Window
-from napari.utils._examples_data import napari_choose_downloader
 from napari.utils.notifications import notification_manager
 
 # check if this module has been explicitly requested or `--test-examples` is included
@@ -58,6 +57,8 @@ if os.getenv('CI') and os.name == 'nt' and 'to_screenshot.py' in examples:
 
 @pytest.fixture(autouse=True)
 def _mock_pooch(monkeypatch):
+    from napari.utils._examples_data import napari_choose_downloader
+
     monkeypatch.setattr(core, 'choose_downloader', napari_choose_downloader)
 
 
