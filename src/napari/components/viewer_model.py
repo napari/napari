@@ -416,11 +416,11 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             Margin as fraction of the canvas, showing blank space around the
             data. Default is 0.05 (5% of the canvas).
         reset_camera_angle : bool
-            Whether to reset the camera angles to (0, 0, 90) before fitting
+            Whether to reset the camera angles to (0, 0, 0) before fitting
             to view. Default is True.
         """
         if self.dims.ndisplay == 3 and reset_camera_angle:
-            self.camera.angles = (0, 0, 90)
+            self.camera.angles = (0, 0, 0)
         self.fit_to_view(margin=margin)
 
     def fit_to_view(self, *, margin: float = 0.05) -> None:
