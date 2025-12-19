@@ -1,4 +1,12 @@
-from pooch.downloaders import HTTPDownloader, choose_downloader
+from typing import Any
+
+from pooch.downloaders import (
+    DOIDownloader,
+    FTPDownloader,
+    HTTPDownloader,
+    SFTPDownloader,
+    choose_downloader,
+)
 
 DOI_TO_FILE_GOOGLE_ID = {
     "doi:10.5281/zenodo.17668709/ddic.zip": "1-AAkBUXykxXG3Ve20jPk43co-m3f9ZWB",
@@ -13,12 +21,12 @@ GODGLE_PREFIX="https://drive.google.com/uc?export=download&id="
 
 
 class BackupDownloader(HTTPDownloader):
-    def __call__(self, url, *args, **kwargs):
+    def __call__(self, url: str, *args: Any, **kwargs: Any) -> bool | None:
         resource_id = DOI_TO_FILE_GOOGLE_ID[url]
-        super().__call__(GODGLE_PREFIX + resource_id, *args, **kwargs)
+        return super().__call__(GODGLE_PREFIX + resource_id, *args, **kwargs)
 
 
-def napari_choose_downloader(url, progressbar=False):
+def napari_choose_downloader(url: str, progressbar: bool=False) -> HTTPDownloader | SFTPDownloader | FTPDownloader | DOIDownloader:
     if url in DOI_TO_FILE_GOOGLE_ID:
         return BackupDownloader(progressbar=progressbar)
     return choose_downloader(url)
