@@ -17,6 +17,9 @@ class _VispyBaseTextOverlay(VispyCanvasOverlay):
         self.overlay.events.color.connect(self._on_color_change)
         self.overlay.events.font_size.connect(self._on_font_size_change)
 
+    def _connect_events(self):
+        pass
+
     def _on_text_change(self):
         self.node.text = self.overlay.text
         self._on_position_change()
