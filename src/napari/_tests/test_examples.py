@@ -6,10 +6,12 @@ from pathlib import Path
 import numpy as np
 import pytest
 import skimage.data
+from pooch import downloaders
 from qtpy import API_NAME
 
 import napari
 from napari._qt.qt_main_window import Window
+from napari.utils._examples_data import DOI_TO_FILE_GOOGLE_ID, GODGLE_PREFIX
 from napari.utils.notifications import notification_manager
 
 # check if this module has been explicitly requested or `--test-examples` is included
@@ -50,6 +52,21 @@ if os.getenv('CI') and os.name == 'nt' and API_NAME == 'PyQt5':
 
 if os.getenv('CI') and os.name == 'nt' and 'to_screenshot.py' in examples:
     examples.remove('to_screenshot.py')
+
+
+
+
+@pytest.fixture(autouse=True)
+def _mock_pooch(monkeypatch):
+    original_doi_to_url = downloaders.doi_to_url
+
+    def _mock_doi_to_url(doi: str):
+        if doi in DOI_TO_FILE_GOOGLE_ID:
+            return GODGLE_PREFIX + DOI_TO_FILE_GOOGLE_ID[doi]
+        return original_doi_to_url(doi)
+    monkeypatch.setattr(downloaders, 'doi_to_url', _mock_doi_to_url)
+
+
 
 @pytest.fixture
 def _example_monkeypatch(monkeypatch):
