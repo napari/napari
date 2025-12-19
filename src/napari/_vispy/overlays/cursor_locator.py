@@ -1,15 +1,15 @@
 import numpy as np
 
 from napari._vispy.overlays.base import ViewerOverlayMixin, VispySceneOverlay
-from napari._vispy.visuals.cursor import Cursor
+from napari._vispy.visuals.cursor_locator import CursorLocator
 
 
-class VispyCursorOverlay(ViewerOverlayMixin, VispySceneOverlay):
+class VispyCursorLocatorOverlay(ViewerOverlayMixin, VispySceneOverlay):
     """Overlay indicating the position of the cursor in the world."""
 
     def __init__(self, *, viewer, overlay, parent=None) -> None:
         super().__init__(
-            node=Cursor(), viewer=viewer, overlay=overlay, parent=parent
+            node=CursorLocator(), viewer=viewer, overlay=overlay, parent=parent
         )
         self.viewer.cursor.events.position.connect(self._on_cursor_move)
 

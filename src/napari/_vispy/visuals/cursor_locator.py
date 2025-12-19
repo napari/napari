@@ -2,7 +2,7 @@ import numpy as np
 from vispy.scene import Line
 
 
-class Cursor(Line):
+class CursorLocator(Line):
     _segments = (
         np.array(
             [
