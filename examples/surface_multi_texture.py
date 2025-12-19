@@ -54,8 +54,8 @@ import napari
 ###############################################################################
 # Download the model
 # ------------------
-download = pooch.DOIDownloader(progressbar=True)
-doi = '10.5281/zenodo.13380203'
+download = pooch.HTTPDownloader(progressbar=True)
+zenodo_record = 'https://zenodo.org/records/13380203/files'
 tmp_dir = pooch.os_cache('napari-surface-texture-example')
 os.makedirs(tmp_dir, exist_ok=True)
 data_files = {
@@ -69,7 +69,7 @@ for file_name in data_files.values():
     if not (tmp_dir / file_name).exists():
         print(f'downloading {file_name}')
         download(
-            f'doi:{doi}/{file_name}',
+            f'{zenodo_record}/{file_name}',
             output_file=tmp_dir / file_name,
             pooch=None,
         )

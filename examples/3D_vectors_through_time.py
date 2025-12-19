@@ -28,7 +28,7 @@ import napari
 # Let's download it!
 
 grey_files = sorted(pooch.retrieve(
-    "doi:10.5281/zenodo.17668709/grey.zip",
+    "https://zenodo.org/records/17668709/files/grey.zip",
     known_hash="md5:760be2bad68366872111410776563760",
     processor=pooch.Unzip(),
     progressbar=True
@@ -40,7 +40,7 @@ greys = np.array([tifffile.imread(grey_file) for grey_file in grey_files[0:-1]])
 
 # load incremental TSV tracking files from spam-ddic, [::2] is to skip VTK files also in folder
 tracking_files = sorted(pooch.retrieve(
-    "doi:10.5281/zenodo.17668709/ddic.zip",
+    "https://zenodo.org/records/17668709/files/ddic.zip",
     known_hash="md5:2d7c6a052f53b4a827ff4e4585644fac",
     processor=pooch.Unzip(),
     progressbar=True
