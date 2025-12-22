@@ -57,23 +57,31 @@ class EventedSettings(BaseSettings, EventedModel):
         super().__init__(**values)
         self.events.add(changed=None)
 
-        # re-emit subfield
-        for name, field in self.__fields__.items():
-            attr = getattr(self, name)
-            if isinstance(getattr(attr, 'events', None), EmitterGroup):
-                attr.events.connect(partial(self._on_sub_event, field=name))
-
-            if field.field_info.extra.get('requires_restart'):
-                emitter = getattr(self.events, name)
-
-                @emitter.connect
-                def _warn_restart(*_):
-                    warn(
-                        trans._(
-                            'Restart required for this change to take effect.',
-                            deferred=True,
-                        )
+        def _connect(model: EventedModel, prefix=''):
+            """Recursively connect and re-emit to all sub-fields."""
+            # re-emit subfield
+            for name, field in model.__fields__.items():
+                attr = getattr(model, name)
+                if isinstance(getattr(attr, 'events', None), EmitterGroup):
+                    path = f'{prefix}{name}'
+                    attr.events.connect(
+                        partial(self._on_sub_event, field=path)
                     )
+                    _connect(attr, f'{path}.')
+
+                if field.field_info.extra.get('requires_restart'):
+                    emitter = getattr(model.events, name)
+
+                    @emitter.connect
+                    def _warn_restart(*_):
+                        warn(
+                            trans._(
+                                'Restart required for this change to take effect.',
+                                deferred=True,
+                            )
+                        )
+
+        _connect(self)
 
     def _on_sub_event(self, event: Event, field=None):
         """emit the field.attr name and new value"""
