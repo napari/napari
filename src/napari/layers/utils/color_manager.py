@@ -3,8 +3,8 @@ from dataclasses import dataclass
 from typing import Any
 
 import numpy as np
+from pydantic import Field, field_validator, model_validator
 
-from napari._pydantic_compat import Field, root_validator, validator
 from napari.layers.utils._color_manager_constants import ColorMode
 from napari.layers.utils.color_manager_utils import (
     _validate_colormap_mode,
@@ -156,18 +156,18 @@ class ColorManager(EventedModel):
     )
 
     # validators
-    @validator('continuous_colormap', pre=True, allow_reuse=True)
+    @field_validator('continuous_colormap', mode='before')
     def _ensure_continuous_colormap(cls, v):
         return ensure_colormap(v)
 
-    @validator('colors', pre=True, allow_reuse=True)
+    @field_validator('colors', mode='before')
     def _ensure_color_array(cls, v):
         if len(v) > 0:
             return transform_color(v)
 
         return np.empty((0, 4))
 
-    @validator('current_color', pre=True, allow_reuse=True)
+    @field_validator('current_color', mode='before')
     def _coerce_current_color(cls, v):
         if v is None:
             return v
@@ -176,7 +176,7 @@ class ColorManager(EventedModel):
 
         return transform_color(v)[0]
 
-    @root_validator(allow_reuse=True)
+    @model_validator(mode='before')
     def _validate_colors(cls, values):
         color_mode = values['color_mode']
         if color_mode == ColorMode.CYCLE:

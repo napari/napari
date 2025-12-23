@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import inspect
 from pathlib import Path
-from typing import Any
+from typing import Annotated, Any
 
 from psutil import virtual_memory
+from pydantic import Field, field_validator
 
-from napari._pydantic_compat import Field, validator
 from napari.settings._constants import (
     BrushSizeOnMouseModifiers,
     LabelDTypes,
@@ -20,18 +20,19 @@ from napari.utils.camera_orientations import (
     HorizontalAxisOrientation,
     VerticalAxisOrientation,
 )
-from napari.utils.events.custom_types import confloat, conint
+from napari.utils.events.custom_types import NotEqual
 from napari.utils.events.evented_model import EventedModel
 from napari.utils.notifications import NotificationSeverity
 from napari.utils.translations import trans
 
-GridStride = conint(ge=-50, le=50, ne=0)
-GridWidth = conint(ge=-1, ne=0)
-GridHeight = conint(ge=-1, ne=0)
+GridStride = Annotated[int, Field(ge=-50, le=50), NotEqual(0)]
+GridStride = Annotated[int, Field(ge=-50, le=50), NotEqual(0)]
+GridWidth = Annotated[int, Field(ge=-1), NotEqual(0)]
+GridHeight = Annotated[int, Field(ge=-1), NotEqual(0)]
 # we could use a smaller or greater 'le' for spacing,
 # this is just meant to be a somewhat reasonable upper limit,
 # as even on a 4k monitor a 2x2 grid will break calculation with >1300 spacing
-GridSpacing = confloat(ge=0, le=1500, step=5)
+GridSpacing = Annotated[float, Field(ge=0, le=1500)]
 
 _DEFAULT_MEM_FRACTION = 0.25
 MAX_CACHE = virtual_memory().total * 0.5 / 1e9
@@ -301,7 +302,7 @@ class ApplicationSettings(EventedModel):
                 )
         super().__setattr__(name, value)
 
-    @validator('window_state', allow_reuse=True)
+    @field_validator('window_state')
     def _validate_qbtye(cls, v: str) -> str:
         if v and (not isinstance(v, str) or not v.startswith('!QBYTE_')):
             raise ValueError(

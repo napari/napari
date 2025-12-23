@@ -1,8 +1,10 @@
 from typing import Any
 
+from psygnal import EventedModel
+from pydantic import ConfigDict
+
 from napari.components._viewer_constants import CanvasPosition
 from napari.layers.base._base_constants import Blending
-from napari.utils.events import EventedModel
 
 
 class Overlay(EventedModel):
@@ -22,6 +24,10 @@ class Overlay(EventedModel):
     order : int
         The rendering order of the overlay: lower numbers get rendered first.
     """
+
+    model_config = EventedModel.model_config | ConfigDict(
+        validate_assignment=True
+    )
 
     visible: bool = False
     opacity: float = 1

@@ -1,8 +1,10 @@
 from typing import Union, cast
 
+from psygnal._evented_model import ComparisonDelayer
+
 from napari._pydantic_compat import Field
 from napari.settings._fields import Theme
-from napari.utils.events.evented_model import ComparisonDelayer, EventedModel
+from napari.utils.events.evented_model import EventedModel
 from napari.utils.theme import available_themes, get_theme
 from napari.utils.translations import trans
 

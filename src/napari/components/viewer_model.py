@@ -21,7 +21,7 @@ import numpy as np
 from app_model.expressions import Context
 
 from napari import layers
-from napari._pydantic_compat import Extra, Field, PrivateAttr, validator
+from napari._pydantic_compat import Field, PrivateAttr, validator
 from napari.components._layer_slicer import _LayerSlicer
 from napari.components._viewer_mouse_bindings import (
     dims_scroll,
@@ -218,7 +218,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         # elsewhere.  The app should know about the ViewerModel, but not vice versa.
         self._ctx = create_context(self, max_depth=0)
         # allow extra attributes during model initialization, useful for mixins
-        self.__config__.extra = Extra.allow
+        self.model_config['extra'] = 'allow'
         super().__init__(
             title=title,
             dims={
@@ -228,7 +228,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 'order': order,
             },
         )
-        self.__config__.extra = Extra.ignore
+        self.model_config['extra'] = 'ignore'
 
         settings = get_settings()
         self.tooltip.visible = settings.appearance.layer_tooltip_visibility
@@ -297,24 +297,24 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     # simple properties exposing overlays for backward compatibility
     @property
-    def axes(self):
-        return self._overlays['axes']
+    def axes(self) -> AxesOverlay:
+        return self._overlays['axes']  # type: ignore[return-value]
 
     @property
-    def scale_bar(self):
-        return self._overlays['scale_bar']
+    def scale_bar(self) -> ScaleBarOverlay:
+        return self._overlays['scale_bar']  # type: ignore[return-value]
 
     @property
-    def text_overlay(self):
-        return self._overlays['text']
+    def text_overlay(self) -> TextOverlay:
+        return self._overlays['text']  # type: ignore[return-value]
 
     @property
-    def _zoom_box(self):
-        return self._overlays['zoom']
+    def _zoom_box(self) -> ZoomOverlay:
+        return self._overlays['zoom']  # type: ignore[return-value]
 
     @property
-    def _brush_circle_overlay(self):
-        return self._overlays['brush_circle']
+    def _brush_circle_overlay(self) -> BrushCircleOverlay:
+        return self._overlays['brush_circle']  # type: ignore[return-value]
 
     def _tooltip_visible_update(self, event):
         self.tooltip.visible = event.value

@@ -67,7 +67,7 @@ class NapariPluginManager(PluginManager):
             disabled=None,
         )
         self._blocked: EventedSet[str] = EventedSet()
-        self._blocked.events.changed.connect(self._on_blocked_change)
+        self._blocked.events.items_changed.connect(self._on_blocked_change)
 
         # set of package names to skip when discovering, used for skipping
         # npe2 stuff
