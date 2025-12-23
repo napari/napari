@@ -1059,7 +1059,7 @@ def test_more_than_uint16_colors(
 @skip_local_popups
 @pytest.mark.show_qt_viewer
 def test_scale_bar_colored(
-    qt_viewer: QtViewer, viewer_model: ViewerModel, qtbot
+    qt_viewer: QtViewer, viewer_model: ViewerModel, qtbot, qapp
 ) -> None:
     scale_bar = viewer_model.scale_bar
 
@@ -1081,6 +1081,7 @@ def test_scale_bar_colored(
         assert np.all(screenshot == [255, 255, 255, 255], axis=-1).any()
 
     scale_bar.visible = True
+    qapp.processEvents()
     qtbot.waitUntil(check_white_scale_bar)
 
     # Check scale bar is colored (canvas has fuchsia `[1, 0, 1, 255]` and not white in it)
