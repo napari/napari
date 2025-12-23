@@ -1,8 +1,8 @@
 from typing import Any
 
 import numpy as np
+from pydantic import Field
 
-from napari._pydantic_compat import Field
 from napari.utils.color import ColorValue
 from napari.utils.colormaps.categorical_colormap_utils import (
     ColorCycle,

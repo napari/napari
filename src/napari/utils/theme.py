@@ -8,8 +8,9 @@ from contextlib import suppress
 from typing import Any
 
 import npe2
+from pydantic import field_validator
+from pydantic_extra_types.color import Color
 
-from napari._pydantic_compat import Color, validator
 from napari.resources._icons import (
     PLUGIN_FILE_NAME,
     _theme_path,
@@ -83,7 +84,7 @@ class Theme(EventedModel):
     current: Color
     font_size: str = '12pt' if sys.platform == 'darwin' else '9pt'
 
-    @validator('syntax_style', pre=True, allow_reuse=True)
+    @field_validator('syntax_style', mode='before')
     def _ensure_syntax_style(cls, value: str) -> str:
         from pygments.styles import STYLE_MAP
 
@@ -95,7 +96,7 @@ class Theme(EventedModel):
         )
         return value
 
-    @validator('font_size', pre=True)
+    @field_validator('font_size', mode='before')
     def _ensure_font_size(cls, value: str) -> str:
         assert value.endswith('pt'), trans._(
             'Font size must be in points (pt).', deferred=True
