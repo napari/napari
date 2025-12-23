@@ -66,7 +66,7 @@ dependencies = [
     "PyYAML>=6.0",
     "qtpy>=2.3.1",
     "scikit-image[data]>=0.19.1",
-    "scipy>=1.10.1",
+    "scipy>=1.14.0",
     "superqt>=0.7.4",
     "tifffile>=2022.7.28",
     "toolz>=0.11.0",
@@ -178,6 +178,7 @@ gallery = [
     "xarray",
     "h5netcdf",
     "meshio",
+    "gdown", # to download some large example data files
 ]
 # needed to build docs
 docs = [
@@ -269,6 +270,7 @@ gallery = [
     "xarray",
     "h5netcdf",
     "meshio",
+    "gdown", # to download some large example data files
 ]
 # needed to build docs
 docs = [
