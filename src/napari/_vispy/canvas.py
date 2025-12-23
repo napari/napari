@@ -230,7 +230,7 @@ class VispyCanvas:
         self.viewer.camera.events.mouse_zoom.connect(self._on_interactive)
         self.viewer.camera.events.zoom.connect(self._on_cursor)
 
-        self.viewer._zoom_box.events.zoom.connect(self._on_boxzoom)
+        self.viewer._zoom_box.events.zoom_area.connect(self._on_boxzoom)
         self.viewer.layers.events.reordered.connect(self._update_scenegraph)
         self.viewer.layers.events.removed.connect(self._remove_layer)
         self.viewer.layers.events.begin_batch.connect(
@@ -408,12 +408,14 @@ class VispyCanvas:
             self.view.interactive = interactive
             self.grid.interactive = False
 
-    def _on_boxzoom(self, event):
+    def _on_boxzoom(
+        self, zoom_area: tuple[tuple[float, float], tuple[float, float]]
+    ) -> None:
         """Update zoom level."""
         box_size_canvas = np.abs(
             np.diff(self.viewer._zoom_box.position, axis=0)
         )
-        box_center_world = np.mean(event.value, axis=0)
+        box_center_world = np.mean(zoom_area, axis=0)
         ratio = np.min(self._current_viewbox_size / box_size_canvas)
         self.viewer.camera.zoom = self.viewer.camera.zoom * np.min(ratio)
         self.viewer.camera.center = box_center_world
@@ -842,8 +844,12 @@ class VispyCanvas:
         self._needs_overlay_position_update = True
 
     def _connect_canvas_overlay_events(self, overlay: Overlay) -> None:
-        overlay.events.position.connect(self._defer_overlay_position_update)
-        overlay.events.visible.connect(self._defer_overlay_position_update)
+        overlay.events.position.connect(
+            self._defer_overlay_position_update, unique=True
+        )
+        overlay.events.visible.connect(
+            self._defer_overlay_position_update, unique=True
+        )
 
     def _disconnect_canvas_overlay_events(self, overlay: Overlay) -> None:
         overlay.events.position.disconnect(self._defer_overlay_position_update)
@@ -871,7 +877,9 @@ class VispyCanvas:
             # connect position callbacks
             if isinstance(overlay, CanvasOverlay):
                 self._connect_canvas_overlay_events(overlay)
-                overlay.events.gridded.connect(self._update_viewer_overlays)
+                overlay.events.gridded.connect(
+                    self._update_viewer_overlays, unique=True
+                )
 
             if self.viewer.grid.enabled and getattr(overlay, 'gridded', True):
                 views = self.grid_views
@@ -935,7 +943,9 @@ class VispyCanvas:
             # only create overlays when they are visible. If not, we connect the visible
             # event of this overlay to this method until it's finally visible
             if not overlay.visible:
-                overlay.events.visible.connect(self._overlay_callbacks[layer])
+                overlay.events.visible.connect(
+                    self._overlay_callbacks[layer], unique=True
+                )
                 continue
             overlay.events.visible.disconnect(self._overlay_callbacks[layer])
 
