@@ -38,6 +38,14 @@ def test_settings_autosave(test_settings):
     assert Path(test_settings.config_path).exists()
 
 
+def test_settings_autosave_recursive(test_settings):
+    """Test that changing a deeply nested field triggers autosave."""
+    assert not Path(test_settings.config_path).exists()
+    # 'highlight' is a nested model inside 'appearance'
+    test_settings.appearance.highlight.highlight_thickness = 5
+    assert Path(test_settings.config_path).exists()
+
+
 def test_settings_file_not_created(test_settings):
     assert not Path(test_settings.config_path).exists()
     test_settings._save_on_change = False
