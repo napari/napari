@@ -56,32 +56,29 @@ class EventedSettings(BaseSettings, EventedModel):
     def __init__(self, **values: Any) -> None:
         super().__init__(**values)
         self.events.add(changed=None)
+        self._connect(self)
 
-        def _connect(model: EventedModel, prefix=''):
-            """Recursively connect and re-emit to all sub-fields."""
-            # re-emit subfield
-            for name, field in model.__fields__.items():
-                attr = getattr(model, name)
-                if isinstance(getattr(attr, 'events', None), EmitterGroup):
-                    path = f'{prefix}{name}'
-                    attr.events.connect(
-                        partial(self._on_sub_event, field=path)
-                    )
-                    _connect(attr, f'{path}.')
+    @staticmethod
+    def _warn_restart(*_: Event) -> None:
+        warn(
+            trans._(
+                'Restart required for this change to take effect.',
+                deferred=True,
+            )
+        )
 
-                if field.field_info.extra.get('requires_restart'):
-                    emitter = getattr(model.events, name)
+    def _connect(self, model: EventedModel, prefix: str = '') -> None:
+        """Recursively connect and re-emit to all sub-fields."""
+        for name, field in model.__fields__.items():
+            attr = getattr(model, name)
+            if isinstance(getattr(attr, 'events', None), EmitterGroup):
+                path = f'{prefix}{name}'
+                attr.events.connect(partial(self._on_sub_event, field=path))
+                self._connect(attr, f'{path}.')
 
-                    @emitter.connect
-                    def _warn_restart(*_):
-                        warn(
-                            trans._(
-                                'Restart required for this change to take effect.',
-                                deferred=True,
-                            )
-                        )
-
-        _connect(self)
+            if field.field_info.extra.get('requires_restart'):
+                emitter = getattr(model.events, name)
+                emitter.connect(self._warn_restart)
 
     def _on_sub_event(self, event: Event, field=None):
         """emit the field.attr name and new value"""
