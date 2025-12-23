@@ -1076,12 +1076,12 @@ def test_scale_bar_colored(
 
     # Check scale bar is visible (canvas has white `[1, 1, 1, 255]` in it)
     def check_white_scale_bar():
+        qapp.processEvents()
         screenshot = qt_viewer.screenshot(flash=False)
         assert not np.all(screenshot == [0, 0, 0, 255], axis=-1).all()
         assert np.all(screenshot == [255, 255, 255, 255], axis=-1).any()
 
     scale_bar.visible = True
-    qapp.processEvents()
     qtbot.waitUntil(check_white_scale_bar)
 
     # Check scale bar is colored (canvas has fuchsia `[1, 0, 1, 255]` and not white in it)
