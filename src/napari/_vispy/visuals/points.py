@@ -23,7 +23,7 @@ class PointsVisual(ClippingPlanesMixin, Compound):
             [
                 Markers(),
                 Markers(),
-                Line(),
+                Line(antialias=True),
                 Text(),
             ]
         )
