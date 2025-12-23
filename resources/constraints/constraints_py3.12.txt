@@ -90,7 +90,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.148.7
+hypothesis==6.148.8
     # via napari (pyproject.toml)
 idna==3.11
     # via
@@ -369,7 +369,7 @@ pyopengl==3.1.10
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
-pyparsing==3.2.5
+pyparsing==3.3.1
     # via matplotlib
 pyperclip==1.11.0
     # via mouseinfo
@@ -385,11 +385,11 @@ pyrect==0.2.0
     # via pygetwindow
 pyscreeze==1.0.1
     # via pyautogui
-pyside6==6.9.2
+pyside6==6.10.1
     # via napari (pyproject.toml)
-pyside6-addons==6.9.2
+pyside6-addons==6.10.1
     # via pyside6
-pyside6-essentials==6.9.2
+pyside6-essentials==6.10.1
     # via
     #   pyside6
     #   pyside6-addons
@@ -464,7 +464,7 @@ rpds-py==0.30.0
     # via
     #   jsonschema
     #   referencing
-scikit-image==0.25.2
+scikit-image==0.26.0
     # via napari (pyproject.toml)
 scipy==1.16.3
     # via
@@ -474,7 +474,7 @@ setuptools==80.9.0
     # via torch
 shellingham==1.5.4
     # via typer
-shiboken6==6.9.2
+shiboken6==6.10.1
     # via
     #   pyside6
     #   pyside6-addons
@@ -496,7 +496,7 @@ tensorstore==0.1.80
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
-tifffile==2025.12.12
+tifffile==2025.12.20
     # via
     #   napari (pyproject.toml)
     #   scikit-image
@@ -527,7 +527,7 @@ triangle==20250106
     # via napari (pyproject.toml)
 triton==3.5.1
     # via torch
-typer==0.20.0
+typer==0.20.1
     # via npe2
 typing-extensions==4.15.0
     # via
