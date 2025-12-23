@@ -193,7 +193,7 @@ def sys_info(as_html: bool = False) -> str:
     try:
         from qtpy import API_NAME, PYQT_VERSION, PYSIDE_VERSION, QtCore
 
-        if API_NAME in {'PySide2', 'PySide6'}:
+        if API_NAME == 'PySide6':
             API_VERSION = PYSIDE_VERSION
         elif API_NAME in {'PyQt5', 'PyQt6'}:
             API_VERSION = PYQT_VERSION

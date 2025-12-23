@@ -1,4 +1,5 @@
 import os
+from unittest.mock import Mock
 
 import npe2
 import numpy as np
@@ -573,3 +574,40 @@ def test_readd_layers():
     with pytest.raises(ValueError, match='already present'):
         layers[:3] = layers[:]
     assert set(layers) == set(imgs)
+
+
+def test_layer_renamed_event():
+    """Test the layer renamed event."""
+    layers = LayerList()
+    layer_a = Image(np.zeros((5, 5)), name='image_a')
+    layer_b = Image(np.zeros((5, 5)), name='image_b')
+    layers.extend([layer_a, layer_b])
+
+    mock_callback = Mock()
+    layers.events.renamed.connect(mock_callback)
+
+    layers[0].name = 'new_name_a'
+    mock_callback.assert_called_once()
+    event = mock_callback.call_args[0][0]
+    assert event.index == 0
+
+    layers[-1].name = 'new_name_b'
+    assert mock_callback.call_count == 2
+    event = mock_callback.call_args[0][0]
+    assert event.index == 1
+
+
+def test_layer_renamed_event_connection_management():
+    """Test that the renamed event is connected and disconnected properly."""
+    layers = LayerList()
+    layer = Image(np.zeros((5, 5)), name='image')
+    assert len(layer.events.name.callbacks) == 0
+
+    layers.append(layer)
+    # When the layer is added to the list, two callbacks are connected.
+    # One is the LayerList._on_layer_renamed, and the other is the
+    # layer.events EmitterGroup itself (from EventedList._connect_child_emitters).
+    assert len(layer.events.name.callbacks) == 2
+
+    layers.remove(layer)
+    assert len(layer.events.name.callbacks) == 0
