@@ -68,7 +68,7 @@ class _VectorSliceRequest:
         if len(self.data) == 0:
             return _VectorSliceResponse(
                 indices=np.empty(0, dtype=int),
-                alphas=np.empty(0),
+                alphas=np.empty(0, dtype=float),
                 slice_input=self.slice_input,
                 request_id=self.id,
             )

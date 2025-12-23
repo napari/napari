@@ -68,6 +68,8 @@ class Vectors(Layer):
         (property.min(), property.max())
     edge_width : float
         Width for all vectors in pixels.
+    fixed_canvas_width : bool
+        If True, vector width is defined in canvas pixels.
     experimental_clipping_planes : list of dicts, list of ClippingPlane, or ClippingPlaneList
         Each dict defines a clipping plane in 3D in data coordinates.
         Valid dictionary keys are {'position', 'normal', and 'enabled'}.
@@ -138,6 +140,8 @@ class Vectors(Layer):
         where N is the number of vectors.
     edge_width : float
         Width for all vectors in pixels.
+    fixed_canvas_width : bool
+        If True, vector width is defined in canvas pixels.
     vector_style : VectorStyle
         Determines how vectors are displayed.
 
@@ -172,7 +176,7 @@ class Vectors(Layer):
     _view_data : (M, 2, 2) array
         The start point and projections of N vectors in 2D for vectors whose
         start point is in the currently viewed slice.
-    _view_face_color : (M, 4) np.ndarray
+    _view_color : (M, 4) np.ndarray
         colors for the M in view vectors
     _view_indices : (1, M) array
         indices for the M in view vectors
@@ -205,6 +209,7 @@ class Vectors(Layer):
         edge_colormap='viridis',
         edge_contrast_limits=None,
         edge_width=1,
+        fixed_canvas_width=False,
         experimental_clipping_planes=None,
         feature_defaults=None,
         features=None,
@@ -254,6 +259,7 @@ class Vectors(Layer):
         self.events.add(
             length=Event,
             edge_width=Event,
+            fixed_canvas_width=Event,
             edge_color=Event,
             vector_style=Event,
             edge_color_mode=Event,
@@ -266,6 +272,7 @@ class Vectors(Layer):
         # Save the vector style params
         self._vector_style = VectorStyle(vector_style)
         self._edge_width = edge_width
+        self._fixed_canvas_width = fixed_canvas_width
         self._out_of_slice_display = out_of_slice_display
 
         self._length = float(length)
@@ -492,6 +499,15 @@ class Vectors(Layer):
         self.refresh(extent=False)
 
     @property
+    def fixed_canvas_width(self):
+        return self._fixed_canvas_width
+
+    @fixed_canvas_width.setter
+    def fixed_canvas_width(self, value):
+        self._fixed_canvas_width = bool(value)
+        self.events.fixed_canvas_width()
+
+    @property
     def vector_style(self) -> str:
         """Vectors display mode: Determines how vectors are displayed.
 
@@ -660,34 +676,11 @@ class Vectors(Layer):
         self._edge.contrast_limits = contrast_limits
 
     @property
-    def _view_face_color(self) -> np.ndarray:
-        """(Mx4) np.ndarray : colors for the M in view triangles"""
-
-        # Create as many colors as there are visible vectors.
-        # Using fancy array indexing implicitly creates a new
-        # array rather than creating a view of the original one
-        # in ColorManager
-        face_color = self.edge_color[self._view_indices]
-        face_color[:, -1] *= self._view_alphas
-
-        # Generally, several triangles are drawn for each vector,
-        # so we need to duplicate the colors accordingly
-        if self.vector_style == 'line':
-            # Line vectors are drawn with 2 triangles
-            face_color = np.repeat(face_color, 2, axis=0)
-
-        elif self.vector_style == 'triangle':
-            # Triangle vectors are drawn with 1 triangle
-            pass  # No need to duplicate colors
-
-        elif self.vector_style == 'arrow':
-            # Arrow vectors are drawn with 3 triangles
-            face_color = np.repeat(face_color, 3, axis=0)
-
-        if self._slice_input.ndisplay == 3 and self.ndim > 2:
-            face_color = np.vstack([face_color, face_color])
-
-        return face_color
+    def _view_color(self) -> np.ndarray:
+        """(Mx4) np.ndarray : colors for the M vectors in view."""
+        color = self.edge_color[self._view_indices]
+        color[:, -1] *= self._view_alphas
+        return color
 
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""
