@@ -1,6 +1,6 @@
 from functools import partial
 from pathlib import Path
-from typing import Dict, List, Optional, TYPE_CHECKING, Tuple
+from typing import Dict, List, Optional, TYPE_CHECKING, Tuple, Any
 from packaging.version import parse as parse_version
 import os
 
@@ -8,7 +8,7 @@ from qtpy import QtCore, QtGui, QtWidgets, QT_VERSION
 
 from ...._qt.widgets.qt_extension2reader import Extension2ReaderTable
 from ...._qt.widgets.qt_highlight_preview import QtHighlightPreviewWidget
-from ...._qt.widgets.qt_keyboard_settings import ShortcutEditor
+from ...._qt.widgets.qt_keyboard_settings import ShortcutEditor, BuiltinShortcutEditor
 from ...._qt.widgets.qt_font_size import QtFontSizeWidget
 
 from .signal import Signal
@@ -38,36 +38,37 @@ class SchemaWidgetMixin:
         ui_schema: dict,
         widget_builder: 'WidgetBuilder',
         **kwargs,
-    ):
+    ) -> None:
         super().__init__(**kwargs)
 
         self.schema = schema
         self.ui_schema = ui_schema
         self.widget_builder = widget_builder
+        self.description = ""
 
         self.on_changed.connect(lambda _: self.clear_error())
         self.configure()
 
-    def configure(self):
+    def configure(self) -> None:
         pass
 
     @state_property
-    def state(self):
+    def state(self) -> Any:
         raise NotImplementedError(f"{self.__class__.__name__}.state")
 
     @state.setter
-    def state(self, state):
+    def state(self, state) -> None:
         raise NotImplementedError(f"{self.__class__.__name__}.state")
 
-    def handle_error(self, path: Tuple[str], err: Exception):
+    def handle_error(self, path: Tuple[str], err: Exception) -> None:
         if path:
             raise ValueError("Cannot handle nested error by default")
         self._set_valid_state(err)
 
-    def clear_error(self):
+    def clear_error(self) -> None:
         self._set_valid_state(None)
 
-    def _set_valid_state(self, error: Exception = None):
+    def _set_valid_state(self, error: Exception = None) -> None:
         palette = self.palette()
         colour = QtGui.QColor()
         if QT_GE_66:
@@ -82,6 +83,9 @@ class SchemaWidgetMixin:
 
         self.setPalette(palette)
         self.setToolTip("" if error is None else error.message)  # TODO
+
+    def setDescription(self, description: str) -> None:
+        self.description = description
 
 
 class TextSchemaWidget(SchemaWidgetMixin, QtWidgets.QLineEdit):
@@ -99,9 +103,6 @@ class TextSchemaWidget(SchemaWidgetMixin, QtWidgets.QLineEdit):
     def state(self, state: str):
         self.setText(state)
 
-    def setDescription(self, description: str):
-        self.description = description
-
 
 class PasswordWidget(TextSchemaWidget):
     def configure(self):
@@ -109,8 +110,6 @@ class PasswordWidget(TextSchemaWidget):
 
         self.setEchoMode(self.Password)
 
-    def setDescription(self, description: str):
-        self.description = description
 
 
 class TextAreaSchemaWidget(SchemaWidgetMixin, QtWidgets.QTextEdit):
@@ -128,9 +127,6 @@ class TextAreaSchemaWidget(SchemaWidgetMixin, QtWidgets.QTextEdit):
         self.setGraphicsEffect(self.opacity)
         self.opacity.setOpacity(1)
 
-    def setDescription(self, description: str):
-        self.description = description
-
 
 class CheckboxSchemaWidget(SchemaWidgetMixin, QtWidgets.QCheckBox):
     @state_property
@@ -146,9 +142,6 @@ class CheckboxSchemaWidget(SchemaWidgetMixin, QtWidgets.QCheckBox):
         self.opacity = QtWidgets.QGraphicsOpacityEffect(self)
         self.setGraphicsEffect(self.opacity)
         self.opacity.setOpacity(1)
-
-    def setDescription(self, description: str):
-        self.description = description
 
 
 class SpinDoubleSchemaWidget(SchemaWidgetMixin, QtWidgets.QDoubleSpinBox):
@@ -173,10 +166,6 @@ class SpinDoubleSchemaWidget(SchemaWidgetMixin, QtWidgets.QDoubleSpinBox):
             self.setSingleStep(self.schema['step'])
 
 
-    def setDescription(self, description: str):
-        self.description = description
-
-
 class PluginWidget(SchemaWidgetMixin, QtPluginSorter):
     @state_property
     def state(self) -> int:
@@ -189,9 +178,6 @@ class PluginWidget(SchemaWidgetMixin, QtPluginSorter):
 
     def configure(self):
         self.hook_list.order_changed.connect(self.on_changed.emit)
-
-    def setDescription(self, description: str):
-        self.description = description
 
 
 class SpinSchemaWidget(SchemaWidgetMixin, QtSpinBox):
@@ -226,8 +212,6 @@ class SpinSchemaWidget(SchemaWidgetMixin, QtSpinBox):
         if "not" in self.schema and 'const' in self.schema["not"]:
             self.setProhibitValue(self.schema["not"]['const'])
 
-    def setDescription(self, description: str):
-        self.description = description
 
 
 class IntegerRangeSchemaWidget(SchemaWidgetMixin, QtWidgets.QSlider):
@@ -274,8 +258,6 @@ class IntegerRangeSchemaWidget(SchemaWidgetMixin, QtWidgets.QSlider):
 
         self.setRange(minimum, maximum)
 
-    def setDescription(self, description: str):
-        self.description = description
 
 
 class QColorButton(QtWidgets.QPushButton):
@@ -288,6 +270,7 @@ class QColorButton(QtWidgets.QPushButton):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.description = ""
 
         self._color = None
         self.pressed.connect(self.onColorPicker)
@@ -343,9 +326,6 @@ class ColorSchemaWidget(SchemaWidgetMixin, QColorButton):
     def state(self, data: str):
         self.setColor(data)
 
-    def setDescription(self, description: str):
-        self.description = description
-
 
 class FilepathSchemaWidget(SchemaWidgetMixin, QtWidgets.QWidget):
     def __init__(
@@ -399,8 +379,6 @@ class FilepathSchemaWidget(SchemaWidgetMixin, QtWidgets.QWidget):
             state = str(state)
         self.path_widget.setText(state)
 
-    def setDescription(self, description: str):
-        self.description = description
 
 
 class ArrayControlsWidget(QtWidgets.QWidget):
@@ -410,6 +388,7 @@ class ArrayControlsWidget(QtWidgets.QWidget):
 
     def __init__(self):
         super().__init__()
+        self.description = ""
 
         style = self.style()
 
@@ -441,8 +420,6 @@ class ArrayControlsWidget(QtWidgets.QWidget):
         group_layout.setSpacing(0)
         group_layout.addStretch(0)
 
-    def setDescription(self, description: str):
-        self.description = description
 
 
 class ArrayRowWidget(QtWidgets.QWidget):
@@ -450,6 +427,7 @@ class ArrayRowWidget(QtWidgets.QWidget):
         self, widget: QtWidgets.QWidget, controls: ArrayControlsWidget
     ):
         super().__init__()
+        self.description = ""
 
         layout = QtWidgets.QHBoxLayout()
         layout.addWidget(widget)
@@ -640,8 +618,21 @@ class ShortcutsWidget(SchemaWidgetMixin, ShortcutEditor):
     def state(self) -> dict:
         return self.value()
 
-    def setDescription(self, description: str):
-        self.description = description
+    @state.setter
+    def state(self, state: dict):
+        self.setValue(state)
+
+    def configure(self):
+        self.valueChanged.connect(self.on_changed.emit)
+        self.opacity = QtWidgets.QGraphicsOpacityEffect(self)
+        self.setGraphicsEffect(self.opacity)
+        self.opacity.setOpacity(1)
+
+
+class BuiltinShortcutWidget(SchemaWidgetMixin, BuiltinShortcutEditor):
+    @state_property
+    def state(self) -> dict:
+        return self.value()
 
     @state.setter
     def state(self, state: dict):
@@ -658,9 +649,6 @@ class Extension2ReaderWidget(SchemaWidgetMixin, Extension2ReaderTable):
     @state_property
     def state(self) -> dict:
         return self.value()
-
-    def setDescription(self, description: str):
-        self.description = description
 
     @state.setter
     def state(self, state: dict):
@@ -703,10 +691,6 @@ class FontSizeSchemaWidget(SchemaWidgetMixin, QtFontSizeWidget):
 
         self.setRange(minimum, maximum)
 
-    def setDescription(self, description: str):
-        self.description = description
-
-
 class ObjectSchemaWidgetMinix(SchemaWidgetMixin):
     def __init__(
         self,
@@ -736,9 +720,6 @@ class ObjectSchemaWidgetMinix(SchemaWidgetMixin):
     def widget_on_changed(self, name: str, value):
         self.state[name] = value
         self.on_changed.emit(self.state)
-
-    def setDescription(self, description: str):
-        self.description = description
 
     def populate_from_schema(
         self,
@@ -842,9 +823,6 @@ class EnumSchemaWidget(SchemaWidgetMixin, QtWidgets.QComboBox):
 
     def _index_changed(self, index: int):
         self.on_changed.emit(self.state)
-
-    def setDescription(self, description: str):
-        self.description = description
 
 
 class FormWidget(QtWidgets.QWidget):
