@@ -38,6 +38,7 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self.overlay.events.ticks.connect(self._on_rendering_change)
         self.overlay.events.unit.connect(self._on_unit_change)
         self.overlay.events.length.connect(self._on_size_or_zoom_change)
+        self.overlay.events.visible.connect(self._on_rendering_change)
 
         self.viewer.events.theme.connect(self._on_rendering_change)
         self.viewer.camera.events.zoom.connect(self._on_size_or_zoom_change)
@@ -170,6 +171,8 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
 
     def _on_rendering_change(self):
         """Change color and other rendering features of scale bar and box."""
+        if not self.overlay.visible:
+            return
         color, box_color = self._get_colors()
 
         width, height = self.node.set_data(

@@ -150,6 +150,7 @@ class VispyCanvas:
     ) -> None:
         # Since the base class is frozen we must create this attribute
         # before calling super().__init__().
+        self._pause_scene_graph = False
         self.max_texture_sizes = None
         self._last_theme_color = None
         self._background_color_override = None
@@ -232,6 +233,12 @@ class VispyCanvas:
         self.viewer._zoom_box.events.zoom_area.connect(self._on_boxzoom)
         self.viewer.layers.events.reordered.connect(self._update_scenegraph)
         self.viewer.layers.events.removed.connect(self._remove_layer)
+        self.viewer.layers.events.begin_batch.connect(
+            self._pause_scene_graph_update
+        )
+        self.viewer.layers.events.end_batch.connect(
+            self._resume_scene_graph_update
+        )
         self.viewer.grid.events.stride.connect(self._update_scenegraph)
         self.viewer.grid.events.shape.connect(self._update_scenegraph)
         self.viewer.grid.events.enabled.connect(self._update_scenegraph)
@@ -774,7 +781,11 @@ class VispyCanvas:
 
         self._update_layer_overlays(layer)
         del self._layer_overlay_to_visual[layer]
+        if self._pause_scene_graph:
+            return
+        self._clean_and_update_scenegraph()
 
+    def _clean_and_update_scenegraph(self):
         # Critical two-step fix for Windows OpenGL access violation bug
         # This prevents the race condition where scenegraph updates occur while
         # GPU resources from the removed layer are still being processed/deleted.
@@ -852,7 +863,7 @@ class VispyCanvas:
         """
         # delete outdated overlays
         for overlay in set(self._overlay_to_visual) - set(
-            self.viewer._overlays
+            self.viewer._overlays.values()
         ):
             if isinstance(overlay, CanvasOverlay):
                 self._disconnect_canvas_overlay_events(overlay)
@@ -1170,6 +1181,8 @@ class VispyCanvas:
             self.grid_cameras.append(camera)
 
     def _update_scenegraph(self, event=None):
+        if self._pause_scene_graph:
+            return
         with self._scene_canvas.events.draw.blocker():
             if self.viewer.grid.enabled:
                 self._init_or_update_grid()
@@ -1252,3 +1265,10 @@ class VispyCanvas:
             self.viewer.grid.spacing = safe_spacing
 
         self.grid.spacing = safe_spacing
+
+    def _pause_scene_graph_update(self):
+        self._pause_scene_graph = True
+
+    def _resume_scene_graph_update(self):
+        self._pause_scene_graph = False
+        self._clean_and_update_scenegraph()
