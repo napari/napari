@@ -92,19 +92,23 @@ class VispyPointsLayer(VispyBaseLayer):
         settings = get_settings()
         if len(self.layer._highlight_index) > 0:
             # Color the hovered or selected points
-            data = self.layer._view_data[self.layer._highlight_index]
-            if data.ndim == 1:
-                data = np.expand_dims(data, axis=0)
-            size = self.layer._view_size[self.layer._highlight_index]
-            border_width = self.layer._view_border_width[
+
+            # _highlight_index contains indices into the view arrays, but we can get the
+            # actual data indices once to avoid materializing the entire view for each property
+            data_indices = self.layer._indices_view[
                 self.layer._highlight_index
             ]
+
+            data = self.layer.data[
+                np.ix_(data_indices, self.layer._slice_input.displayed)
+            ]
+            if data.ndim == 1:
+                data = np.expand_dims(data, axis=0)
+            size = self.layer.size[data_indices] * self.layer._view_size_scale
+            border_width = self.layer.border_width[data_indices]
             if self.layer.border_width_is_relative:
-                border_width = (
-                    border_width
-                    * self.layer._view_size[self.layer._highlight_index][-1]
-                )
-            symbol = self.layer._view_symbol[self.layer._highlight_index]
+                border_width = border_width * size
+            symbol = self.layer.symbol[data_indices]
         else:
             data = np.empty((0, self.layer._slice_input.ndisplay))
             size = 0
