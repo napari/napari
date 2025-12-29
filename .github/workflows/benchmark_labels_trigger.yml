@@ -4,6 +4,10 @@ on:
   pull_request:
     types: [labeled]
 
+permissions:
+  contents: read
+  issues: write
+
 jobs:
   trigger-benchmarks:
     if: github.event.label.name == 'run-benchmarks'
