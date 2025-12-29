@@ -27,7 +27,7 @@ tmp_dir = Path(pooch.os_cache('napari-cell-tracking-example'))
 tmp_dir.mkdir(parents=True, exist_ok=True)
 
 # Extract silver truth data for trackastra
-st_url = "https://zenodo.org/records/15852284/files/masks_pred.npz?download=1"
+st_url = "doi:10.5281/zenodo.15852284/masks_pred.npz"
 st_path = pooch.retrieve(
     url=st_url,
     fname="masks_pred.npz",
@@ -36,7 +36,7 @@ st_path = pooch.retrieve(
 )
 
 # Extract raw tif files for trackastra
-tif_url = "https://zenodo.org/records/17643282/files/01(1).zip?download=1"
+tif_url = "doi:10.5281/zenodo.17643282/01(1).zip"
 tif_file = pooch.retrieve(
     url=tif_url,
     fname="01(1).zip",
