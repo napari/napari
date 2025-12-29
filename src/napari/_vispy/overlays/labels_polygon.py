@@ -86,8 +86,6 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
 
         self.reset()
         self._update_color()
-        # If there are no points, it won't be visible
-        self.overlay.visible = True
 
     def _on_completion_radius_settings_change(self, event=None):
         completion_radius_setting = (

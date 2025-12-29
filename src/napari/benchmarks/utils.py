@@ -154,6 +154,7 @@ def labeled_particles(
     dtype: np.dtype | None = None,
     n: int = 144,
     seed: int | None = None,
+    *,
     return_density: Literal[False] = False,
 ) -> np.ndarray: ...
 
@@ -164,7 +165,8 @@ def labeled_particles(
     dtype: np.dtype | None = None,
     n: int = 144,
     seed: int | None = None,
-    return_density: Literal[True] = True,
+    *,
+    return_density: Literal[True],
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]: ...
 
 
@@ -174,6 +176,7 @@ def labeled_particles(
     dtype: np.dtype | None = None,
     n: int = 144,
     seed: int | None = None,
+    *,
     return_density: bool = False,
 ) -> np.ndarray | tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Generate labeled blobs of given shape and dtype.

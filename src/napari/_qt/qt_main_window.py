@@ -283,7 +283,10 @@ class _QtMainWindow(QMainWindow):
                 if hasattr(e, 'globalPosition')
                 else e.globalPos()
             )
-            QToolTip.showText(pnt, self._qt_viewer.viewer.tooltip.text, self)
+            rect = QRect(pnt.x() - 5, pnt.y() - 5, 10, 10)
+            QToolTip.showText(
+                pnt, self._qt_viewer.viewer.tooltip.text, self, rect=rect
+            )
         if e.type() in {QEvent.Type.WindowActivate, QEvent.Type.ZOrderChange}:
             # upon activation or raise_, put window at the end of _instances
             with contextlib.suppress(ValueError):
@@ -1230,6 +1233,7 @@ class Window:
             layers_events.inserted.connect(widget.reset_choices)
             layers_events.removed.connect(widget.reset_choices)
             layers_events.reordered.connect(widget.reset_choices)
+            layers_events.renamed.connect(widget.reset_choices)
 
         # Add dock widget to dictionary
         self._wrapped_dock_widgets[dock_widget.name] = dock_widget
@@ -1250,7 +1254,9 @@ class Window:
         # other widget we should keep this name for a longer period
         warnings.warn(
             'The `_dock_widgets` property is private and should not be used in any plugin code. '
-            'Please use the `dock_widgets` property instead.',
+            'To return the inner widget, use the `dock_widgets` property instead.'
+            'If you need the dock wrapper, return it via `dock_widgets[name].parent()`'
+            '(or `dock_widgets[name].native.parent()` for magicgui widgets).',
             FutureWarning,
             stacklevel=2,
         )
@@ -1258,9 +1264,23 @@ class Window:
 
     @property
     def dock_widgets(self) -> Mapping[str, 'QWidget | Widget']:
-        """Read only mapping of widgets docked in napari window.
+        """Read-only mapping of widgets docked in napari window.
 
-        For wrapping QtViewerDockWidget use `dock_widgets` property.
+        Notes
+        -----
+        This mapping returns the *inner* widget contained in each dock widget
+        (a Qt ``QWidget`` or a ``magicgui.widgets.Widget``), not the
+        :class:`~napari._qt.widgets.qt_viewer_dock_widget.QtViewerDockWidget`
+        wrapper.
+
+        If you need to control the dock widget itself (for example, to show or
+        raise a docked widget tab), access the wrapper via the Qt parent:
+
+        >>> name = "My widget"
+        >>> widget = viewer.window.dock_widgets[name]
+        >>> qt_widget = widget.native if hasattr(widget, "native") else widget
+        >>> dock_widget = qt_widget.parent()  # QtViewerDockWidget / QDockWidget
+        >>> dock_widget.show(); dock_widget.raise_()
         """
         return InnerWidgetMappingProxy(self._wrapped_dock_widgets)
 
