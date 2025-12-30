@@ -63,9 +63,9 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
             parent=parent,
         )
 
-        self.layer.mouse_move_callbacks.append(self._on_mouse_move)
-        self.layer.mouse_drag_callbacks.append(self._on_mouse_press)
-        self.layer.mouse_double_click_callbacks.append(
+        self.layer.mouse_move_callbacks.append(self._on_mouse_move)  # type: ignore[attr-defined]
+        self.layer.mouse_drag_callbacks.append(self._on_mouse_press)  # type: ignore[attr-defined]
+        self.layer.mouse_double_click_callbacks.append(  # type: ignore[attr-defined]
             self._on_mouse_double_click
         )
 
@@ -233,9 +233,9 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
         self._on_points_change()
 
     def close(self):
-        self.layer.mouse_move_callbacks.remove(self._on_mouse_move)
-        self.layer.mouse_drag_callbacks.remove(self._on_mouse_press)
-        self.layer.mouse_double_click_callbacks.remove(
+        self.layer.mouse_move_callbacks.remove(self._on_mouse_move)  # type: ignore[attr-defined]
+        self.layer.mouse_drag_callbacks.remove(self._on_mouse_press)  # type: ignore[attr-defined]
+        self.layer.mouse_double_click_callbacks.remove(  # type: ignore[attr-defined]
             self._on_mouse_double_click
         )
         get_settings().experimental.events.completion_radius.disconnect(

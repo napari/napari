@@ -544,10 +544,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             )
 
         for callback_list, mode_dict in [
-            (self.mouse_drag_callbacks, self._drag_modes),
-            (self.mouse_move_callbacks, self._move_modes),
+            (self.mouse_drag_callbacks, self._drag_modes),  # type: ignore[attr-defined]
+            (self.mouse_move_callbacks, self._move_modes),  # type: ignore[attr-defined]
             (
-                self.mouse_double_click_callbacks,
+                self.mouse_double_click_callbacks,  # type: ignore[attr-defined]
                 getattr(
                     self, '_double_click_modes', defaultdict(lambda: no_op)
                 ),

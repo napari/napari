@@ -289,10 +289,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self.layers.events.reordered.connect(self._on_layers_change)
         self.layers.selection.events.active.connect(self._on_active_layer)
 
-        # Add mouse callback
-        self.mouse_wheel_callbacks.append(dims_scroll)
-        self.mouse_double_click_callbacks.append(double_click_to_zoom)
-        self.mouse_drag_callbacks.append(drag_to_zoom)
+        # Add mouse callback (from MousemapProvider mixin)
+        self.mouse_wheel_callbacks.append(dims_scroll)  # type: ignore[attr-defined]
+        self.mouse_double_click_callbacks.append(double_click_to_zoom)  # type: ignore[attr-defined]
+        self.mouse_drag_callbacks.append(drag_to_zoom)  # type: ignore[attr-defined]
 
         self._overlays.update({k: v() for k, v in DEFAULT_OVERLAYS.items()})
 
