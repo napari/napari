@@ -58,6 +58,9 @@ class LayerList(SelectableEventedList[Layer]):
         ``value``
     reordered : (value: self)
         emitted when the list is reordered (eg. moved/reversed).
+    renamed : (index: int)
+        emitted when a layer in the list is renamed, providing the index
+        of the layer.
     selection.events.changed : (added: Set[_T], removed: Set[_T])
         emitted when the set changes, includes item(s) that have been added
         and/or removed from the set.
@@ -117,11 +120,26 @@ class LayerList(SelectableEventedList[Layer]):
             basetype=Layer,
             lookup={str: get_name},
         )
-        self.events.add(
-            begin_batch=Event,
-            end_batch=Event,
-        )
+        self.events.add(begin_batch=Event, end_batch=Event, renamed=Event)
+        self.events.inserted.connect(self._on_layer_inserted)
+        self.events.removed.connect(self._on_layer_removed)
         self._create_contexts()
+
+    def _on_layer_inserted(self, event: Event):
+        """Connect to layer events when a new layer is inserted."""
+        layer = event.value
+        layer.events.name.connect(self._on_layer_renamed)
+
+    def _on_layer_removed(self, event: Event):
+        """Disconnect from layer events when a layer is removed."""
+        layer = event.value
+        layer.events.name.disconnect(self._on_layer_renamed)
+
+    def _on_layer_renamed(self, event: Event):
+        """Re-emit layer name changes from a layer as a LayerList event."""
+        layer = event.source
+        index = self.index(layer)
+        self.events.renamed(index=index)
 
     def _create_contexts(self):
         """Create contexts to manage enabled/visible action/menu states.
