@@ -551,7 +551,7 @@ class Surface(IntensityVisualizationMixin, Layer):
             )
         else:
             if isinstance(normals, SurfaceNormals):
-                normals = {k: dict(v) for k, v in normals.dict().items()}
+                normals = {k: dict(v) for k, v in normals.model_dump().items()}
             # ignore modes, they are unmutable cause errors
             for norm_type in ('face', 'vertex'):
                 normals.get(norm_type, {}).pop('mode', None)
@@ -602,15 +602,15 @@ class Surface(IntensityVisualizationMixin, Layer):
         state = self._get_base_state()
         state.update(
             {
-                'colormap': self.colormap.dict(),
+                'colormap': self.colormap.model_dump(),
                 'contrast_limits': self.contrast_limits,
                 'gamma': self.gamma,
                 'shading': self.shading,
                 'data': self.data,
                 'features': self.features,
                 'feature_defaults': self.feature_defaults,
-                'wireframe': self.wireframe.dict(),
-                'normals': self.normals.dict(),
+                'wireframe': self.wireframe.model_dump(),
+                'normals': self.normals.model_dump(),
                 'texture': self.texture,
                 'texcoords': self.texcoords,
                 'vertex_colors': self.vertex_colors,

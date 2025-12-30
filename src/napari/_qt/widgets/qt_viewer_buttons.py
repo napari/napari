@@ -17,6 +17,12 @@ from qtpy.QtWidgets import (
 from superqt import QEnumComboBox, QLabeledDoubleSlider
 
 from napari._app_model.actions._file import add_new_points, add_new_shapes
+from napari.settings._application import (
+    GridHeight,
+    GridSpacing,
+    GridStride,
+    GridWidth,
+)
 from napari._qt.dialogs.qt_modal import QtPopup
 from napari._qt.widgets.qt_dims_sorter import QtDimsSorter
 from napari._qt.widgets.qt_spinbox import QtSpinBox
@@ -567,9 +573,10 @@ class QtViewerButtons(QFrame):
             'If equal or greater than 1, it is interpreted as screen pixels.'
         )
 
-        stride_min = self.viewer.grid.__fields__['stride'].type_.ge
-        stride_max = self.viewer.grid.__fields__['stride'].type_.le
-        stride_not = self.viewer.grid.__fields__['stride'].type_.ne
+        # In Pydantic V2, access constraints directly from the type class
+        stride_min = GridStride.ge
+        stride_max = GridStride.le
+        stride_not = GridStride.ne
         grid_stride.setObjectName('gridStrideBox')
         grid_stride.setAlignment(Qt.AlignmentFlag.AlignCenter)
         grid_stride.setRange(stride_min, stride_max)
@@ -578,8 +585,8 @@ class QtViewerButtons(QFrame):
         grid_stride.valueChanged.connect(self._update_grid_stride)
         self.grid_stride_box = grid_stride
 
-        width_min = self.viewer.grid.__fields__['shape'].sub_fields[1].type_.ge
-        width_not = self.viewer.grid.__fields__['shape'].sub_fields[1].type_.ne
+        width_min = GridWidth.ge
+        width_not = GridWidth.ne
         grid_width.setObjectName('gridWidthBox')
         grid_width.setAlignment(Qt.AlignmentFlag.AlignCenter)
         grid_width.setMinimum(width_min)
@@ -588,12 +595,8 @@ class QtViewerButtons(QFrame):
         grid_width.valueChanged.connect(self._update_grid_width)
         self.grid_width_box = grid_width
 
-        height_min = (
-            self.viewer.grid.__fields__['shape'].sub_fields[0].type_.ge
-        )
-        height_not = (
-            self.viewer.grid.__fields__['shape'].sub_fields[0].type_.ne
-        )
+        height_min = GridHeight.ge
+        height_not = GridHeight.ne
         grid_height.setObjectName('gridStrideBox')
         grid_height.setAlignment(Qt.AlignmentFlag.AlignCenter)
         grid_height.setMinimum(height_min)
@@ -603,9 +606,9 @@ class QtViewerButtons(QFrame):
         self.grid_height_box = grid_height
 
         # set up spacing
-        spacing_min = self.viewer.grid.__fields__['spacing'].type_.ge
-        spacing_max = self.viewer.grid.__fields__['spacing'].type_.le
-        spacing_step = self.viewer.grid.__fields__['spacing'].type_.step
+        spacing_min = GridSpacing.ge
+        spacing_max = GridSpacing.le
+        spacing_step = GridSpacing.step
         grid_spacing.setObjectName('gridSpacingBox')
         grid_spacing.setAlignment(Qt.AlignmentFlag.AlignCenter)
         grid_spacing.setMinimum(spacing_min)

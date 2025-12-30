@@ -6,7 +6,7 @@ from typing import Any
 
 from psutil import virtual_memory
 
-from napari._pydantic_compat import Field, validator
+from napari._pydantic_compat import ConfigDict, Field, field_validator
 from napari.settings._constants import (
     BrushSizeOnMouseModifiers,
     LabelDTypes,
@@ -301,7 +301,8 @@ class ApplicationSettings(EventedModel):
                 )
         super().__setattr__(name, value)
 
-    @validator('window_state', allow_reuse=True)
+    @field_validator('window_state')
+    @classmethod
     def _validate_qbtye(cls, v: str) -> str:
         if v and (not isinstance(v, str) or not v.startswith('!QBYTE_')):
             raise ValueError(
@@ -309,8 +310,7 @@ class ApplicationSettings(EventedModel):
             )
         return v
 
-    class Config:
-        use_enum_values = False  # https://github.com/napari/napari/issues/3062
+    model_config = ConfigDict(use_enum_values=False)  # https://github.com/napari/napari/issues/3062
 
     class NapariConfig:
         # Napari specific configuration

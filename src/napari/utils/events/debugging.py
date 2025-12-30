@@ -4,7 +4,10 @@ import site
 from textwrap import indent
 from typing import TYPE_CHECKING, ClassVar
 
-from napari._pydantic_compat import BaseSettings, Field, PrivateAttr
+from pydantic import ConfigDict
+from pydantic_settings import BaseSettings
+
+from napari._pydantic_compat import Field, PrivateAttr
 from napari.utils.misc import ROOT_DIR
 from napari.utils.translations import trans
 
@@ -47,9 +50,7 @@ class EventDebugSettings(BaseSettings):
 
     _cur_depth: ClassVar[int] = PrivateAttr(0)
 
-    class Config:
-        env_prefix = 'event_debug_'
-        env_file = '.env'
+    model_config = ConfigDict(env_prefix='event_debug_', env_file='.env')
 
 
 _SETTINGS = EventDebugSettings()

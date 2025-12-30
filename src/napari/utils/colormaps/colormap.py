@@ -13,7 +13,7 @@ from warnings import warn
 import numpy as np
 from typing_extensions import Self
 
-from napari._pydantic_compat import Field, PrivateAttr, validator
+from napari._pydantic_compat import ConfigDict, Field, PrivateAttr, field_validator, model_validator
 from napari.utils.color import ColorArray, ColorValue
 from napari.utils.colormaps import _accelerated_cmap as _accel_cmap
 from napari.utils.colormaps.colorbars import make_colorbar
@@ -96,14 +96,18 @@ class Colormap(EventedModel):
         self._display_name = display_name
 
     # controls validator must be called even if None for correct initialization
-    @validator('controls', pre=True, always=True, allow_reuse=True)
-    def _check_controls(cls, v, values):
+    # Using model_validator(mode='after') to ensure all fields are set before validation
+    @model_validator(mode='after')
+    def _check_controls(self) -> Self:
+        v = self.controls
+
         # If no control points provided generate defaults
         if v is None or len(v) == 0:
-            n_controls = len(values['colors']) + int(
-                values['interpolation'] == ColormapInterpolationMode.ZERO
+            n_controls = len(self.colors) + int(
+                self.interpolation == ColormapInterpolationMode.ZERO
             )
-            return np.linspace(0, 1, n_controls, dtype=np.float32)
+            object.__setattr__(self, 'controls', np.linspace(0, 1, n_controls, dtype=np.float32))
+            return self
 
         # Check control end points are correct
         if v[0] != 0 or (len(v) > 1 and v[-1] != 1):
@@ -127,8 +131,8 @@ class Colormap(EventedModel):
             )
 
         # Check number of control points is correct
-        n_controls_target = len(values.get('colors', [])) + int(
-            values['interpolation'] == ColormapInterpolationMode.ZERO
+        n_controls_target = len(self.colors) + int(
+            self.interpolation == ColormapInterpolationMode.ZERO
         )
         n_controls = len(v)
         if n_controls != n_controls_target:
@@ -141,7 +145,7 @@ class Colormap(EventedModel):
                 )
             )
 
-        return v
+        return self
 
     def __len__(self):
         return len(self.colors)
@@ -199,12 +203,10 @@ class LabelColormapBase(Colormap):
     )
     _cache_other: dict[str, Any] = PrivateAttr(default={})
 
-    class Config(Colormap.Config):
-        # this config is to avoid deepcopy of cached_property
-        # see https://github.com/pydantic/pydantic/issues/2763
-        # it is required until we drop Pydantic 1 or Python 3.11 and older
-        # need to validate after drop pydantic 1
-        keep_untouched = (cached_property,)
+    # model_config to avoid deepcopy of cached_property
+    # see https://github.com/pydantic/pydantic/issues/2763
+    # it is required until we drop Python 3.11 and older
+    model_config = ConfigDict(ignored_types=(cached_property,))
 
     @overload
     def _data_to_texture(self, values: np.ndarray) -> np.ndarray: ...
@@ -297,7 +299,8 @@ class CyclicLabelColormap(LabelColormapBase):
 
     seed: float = 0.5
 
-    @validator('colors', allow_reuse=True)
+    @field_validator('colors')
+    @classmethod
     def _validate_color(cls, v):
         if len(v) > 2**16:
             raise ValueError(
@@ -409,8 +412,8 @@ class DirectLabelColormap(LabelColormapBase):
         Exist because of implementation details. Please do not use it.
     """
 
-    color_dict: defaultdict[int | None, np.ndarray] = Field(
-        default_factory=lambda: defaultdict(lambda: np.zeros(4))
+    color_dict: dict[int | None, np.ndarray] = Field(
+        default_factory=dict
     )
     use_selection: bool = False
     selection: int = 0
@@ -428,8 +431,9 @@ class DirectLabelColormap(LabelColormapBase):
         """
         return self._num_unique_colors + 2
 
-    @validator('color_dict', pre=True, always=True, allow_reuse=True)
-    def _validate_color_dict(cls, v, values):
+    @field_validator('color_dict', mode='before')
+    @classmethod
+    def _validate_color_dict(cls, v, info):
         """Ensure colors are RGBA arrays, not strings.
 
         Parameters
@@ -464,8 +468,8 @@ class DirectLabelColormap(LabelColormapBase):
             for label, color_str in v.items()
         }
         if (
-            'background_value' in values
-            and (bg := values['background_value']) not in res
+            'background_value' in info.data
+            and (bg := info.data['background_value']) not in res
         ):
             res[bg] = transform_color('transparent')[0]
         if isinstance(v, defaultdict):

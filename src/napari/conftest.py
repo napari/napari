@@ -217,8 +217,9 @@ def _fresh_settings(monkeypatch):
     cp = NapariSettings.__private_attributes__['_config_path']
     monkeypatch.setattr(cp, 'default', None)
 
+    # In Pydantic V2, use model_fields instead of __fields__
     monkeypatch.setattr(
-        ExperimentalSettings.__fields__['triangulation_backend'],
+        ExperimentalSettings.model_fields['triangulation_backend'],
         'default',
         TriangulationBackend.fastest_available,
     )

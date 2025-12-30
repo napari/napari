@@ -8,7 +8,10 @@ from typing import (
 
 import numpy as np
 
-from napari._pydantic_compat import Field, parse_obj_as, validator
+from pydantic import GetCoreSchemaHandler
+from pydantic_core import CoreSchema, core_schema as pydantic_core_schema
+
+from napari._pydantic_compat import Field, field_validator, parse_obj_as
 from napari.layers.utils.color_transformations import ColorType
 from napari.layers.utils.style_encoding import (
     StyleEncoding,
@@ -31,8 +34,15 @@ class ColorEncoding(StyleEncoding[ColorValue, ColorArray], Protocol):
     """Encodes colors from features."""
 
     @classmethod
-    def __get_validators__(cls):
-        yield cls.validate
+    def __get_pydantic_core_schema__(
+        cls,
+        source_type: Any,
+        handler: GetCoreSchemaHandler,
+    ) -> CoreSchema:
+        return pydantic_core_schema.no_info_before_validator_function(
+            cls.validate,
+            pydantic_core_schema.any_schema(),
+        )
 
     @classmethod
     def validate(
@@ -202,11 +212,13 @@ class QuantitativeColorEncoding(_DerivedStyleEncoding[ColorValue, ColorArray]):
             values = np.interp(values, contrast_limits, (0, 1))
         return self.colormap.map(values)
 
-    @validator('colormap', pre=True, always=True, allow_reuse=True)
+    @field_validator('colormap', mode='before')
+    @classmethod
     def _check_colormap(cls, colormap: ValidColormapArg) -> Colormap:
         return ensure_colormap(colormap)
 
-    @validator('contrast_limits', pre=True, always=True, allow_reuse=True)
+    @field_validator('contrast_limits', mode='before')
+    @classmethod
     def _check_contrast_limits(
         cls, contrast_limits
     ) -> tuple[float, float] | None:

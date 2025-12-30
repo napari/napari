@@ -11,6 +11,7 @@ from typing import (
 
 import numpy as np
 
+from napari._pydantic_compat import ConfigDict
 from napari.utils.events import EventedModel
 from napari.utils.translations import trans
 
@@ -107,13 +108,12 @@ class StyleEncoding(Protocol[StyleValue, StyleArray]):
 
 
 class _StyleEncodingModel(EventedModel):
-    class Config:
-        # Forbid extra initialization parameters instead of ignoring
-        # them by default. This is useful when parsing style encodings
-        # from dicts, as different types of encodings may have the same
-        # field names.
-        # https://pydantic-docs.helpmanual.io/usage/model_config/#options
-        extra = 'forbid'
+    # Forbid extra initialization parameters instead of ignoring
+    # them by default. This is useful when parsing style encodings
+    # from dicts, as different types of encodings may have the same
+    # field names.
+    # https://docs.pydantic.dev/latest/api/config/#pydantic.config.ConfigDict
+    model_config = ConfigDict(extra='forbid')
 
 
 # The following classes provide generic implementations of common ways
@@ -163,7 +163,7 @@ class _ConstantStyleEncoding(
         pass
 
     def _json_encode(self) -> dict:
-        return self.dict()
+        return self.model_dump()
 
 
 class _ManualStyleEncoding(
@@ -211,7 +211,7 @@ class _ManualStyleEncoding(
         pass
 
     def _json_encode(self) -> dict:
-        return self.dict()
+        return self.model_dump()
 
 
 class _DerivedStyleEncoding(
@@ -275,7 +275,7 @@ class _DerivedStyleEncoding(
         self._cached = _empty_array_like(self.fallback)
 
     def _json_encode(self) -> dict:
-        return self.dict()
+        return self.model_dump()
 
 
 def _get_style_values(

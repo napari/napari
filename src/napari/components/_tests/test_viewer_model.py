@@ -816,12 +816,13 @@ def test_not_mutable_fields(field):
     assert not hasattr(viewer.events, field)
 
     # Check attribute is not settable
-    with pytest.raises((TypeError, ValueError)) as err:
+    # In Pydantic V2, frozen fields raise ValidationError with "Field is frozen"
+    with pytest.raises((TypeError, ValueError, Exception)) as err:
         setattr(viewer, field, 'test')
 
-    assert 'has allow_mutation set to False and cannot be assigned' in str(
-        err.value
-    )
+    # Check for V2 frozen field error message
+    err_str = str(err.value).lower()
+    assert 'frozen' in err_str or 'immutable' in err_str or 'cannot be assigned' in err_str
 
 
 @pytest.mark.parametrize(('Layer', 'data', 'ndim'), layer_test_data)

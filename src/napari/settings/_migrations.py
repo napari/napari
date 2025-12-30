@@ -3,7 +3,6 @@ from __future__ import annotations
 import sys
 import warnings
 from collections.abc import Callable
-from contextlib import contextmanager
 from importlib.metadata import distributions
 from typing import TYPE_CHECKING, NamedTuple
 
@@ -30,35 +29,27 @@ def do_migrations(model: NapariSettings):
     """Migrate (update) a NapariSettings model in place."""
     for migration in sorted(_MIGRATORS, key=lambda m: m.from_):
         if model.schema_version == migration.from_:
-            with mutation_allowed(model):
-                backup = model.dict()
+            # In Pydantic V2, frozen fields prevent reassignment of the field itself,
+            # but we can still mutate attributes of the nested models.
+            # The migration functions modify nested attributes (e.g., model.plugins.extension2reader)
+            # which works fine. The schema_version field is not frozen.
+            backup = model.model_dump()
+            try:
+                migration.run(model)
+                model.schema_version = migration.to_
+            except Exception as e:  # noqa BLE001
+                msg = (
+                    f'Failed to migrate settings from v{migration.from_} '
+                    f'to v{migration.to_}. Error: {e}. '
+                )
                 try:
-                    migration.run(model)
-                    model.schema_version = migration.to_
-                except Exception as e:  # noqa BLE001
-                    msg = (
-                        f'Failed to migrate settings from v{migration.from_} '
-                        f'to v{migration.to_}. Error: {e}. '
-                    )
-                    try:
-                        model.update(backup)
-                        msg += 'You may need to reset your settings with `napari --reset`. '
-                    except Exception:  # noqa BLE001
-                        msg += 'Settings rollback also failed. Please run `napari --reset`.'
-                    warnings.warn(msg)
-                    return
+                    model.update(backup)
+                    msg += 'You may need to reset your settings with `napari --reset`. '
+                except Exception:  # noqa BLE001
+                    msg += 'Settings rollback also failed. Please run `napari --reset`.'
+                warnings.warn(msg)
+                return
     model._maybe_save()
-
-
-@contextmanager
-def mutation_allowed(obj: NapariSettings):
-    """Temporarily allow mutations on an immutable model."""
-    config = obj.__config__
-    prev, config.allow_mutation = config.allow_mutation, True
-    try:
-        yield
-    finally:
-        config.allow_mutation = prev
 
 
 def migrator(from_: str, to_: str) -> Callable[[MigratorF], MigratorF]:

@@ -144,7 +144,7 @@ def test_colormap_equality():
 
 def test_colormap_recreate():
     c_map = Colormap('black')
-    Colormap(**c_map.dict())
+    Colormap(**c_map.model_dump())
 
 
 @pytest.mark.parametrize('ndim', range(1, 5))

@@ -808,7 +808,7 @@ def test_instiantiate_with_plane():
     """
     plane = SlicingPlane(position=(32, 32, 32), normal=(1, 1, 1), thickness=22)
     image = Image(np.ones((32, 32, 32)), plane=plane)
-    for k, v in plane.dict().items():
+    for k, v in plane.model_dump().items():
         assert v == getattr(image.plane, k, v)
 
 

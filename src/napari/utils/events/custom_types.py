@@ -1,20 +1,9 @@
-from collections.abc import Callable, Generator
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Union,
-)
+from typing import Any
 
 import numpy as np
-
-from napari._pydantic_compat import errors, types
-
-if TYPE_CHECKING:
-    from decimal import Decimal
-
-    from napari._pydantic_compat import ModelField
-
-    Number = Union[int, float, Decimal]
+from pydantic import GetCoreSchemaHandler, GetJsonSchemaHandler
+from pydantic.json_schema import JsonSchemaValue
+from pydantic_core import CoreSchema, core_schema
 
 # In numpy 2, the semantics of the copy argument in np.array changed
 # so that copy=False errors if a copy is needed:
@@ -34,12 +23,31 @@ if np.lib.NumpyVersion(np.__version__) >= '2.0.0b1':
 
 
 class Array(np.ndarray):
+    """A numpy array type that works with Pydantic V2 validation."""
+
     def __class_getitem__(cls, t):
         return type('Array', (Array,), {'__dtype__': t})
 
     @classmethod
-    def __get_validators__(cls):
-        yield cls.validate_type
+    def __get_pydantic_core_schema__(
+        cls,
+        source_type: Any,
+        handler: GetCoreSchemaHandler,
+    ) -> CoreSchema:
+        """Define how Pydantic V2 should validate this type."""
+        return core_schema.no_info_before_validator_function(
+            cls.validate_type,
+            core_schema.any_schema(),
+        )
+
+    @classmethod
+    def __get_pydantic_json_schema__(
+        cls,
+        core_schema: CoreSchema,
+        handler: GetJsonSchemaHandler,
+    ) -> JsonSchemaValue:
+        """Define the JSON schema for this type."""
+        return {'type': 'array'}
 
     @classmethod
     def validate_type(cls, val):
@@ -61,37 +69,76 @@ class Array(np.ndarray):
         return result
 
 
-class NumberNotEqError(errors.PydanticValueError):
-    code = 'number.not_eq'
-    msg_template = 'ensure this value is not equal to {prohibited}'
+class NumberNotEqError(ValueError):
+    """Error raised when a number equals a prohibited value."""
 
-    def __init__(self, *, prohibited: 'Number') -> None:
-        super().__init__(prohibited=prohibited)
+    def __init__(self, prohibited: 'int | float') -> None:
+        self.prohibited = prohibited
+        super().__init__(f'ensure this value is not equal to {prohibited}')
 
 
-class ConstrainedInt(types.ConstrainedInt):
-    """ConstrainedInt extension that adds not-equal"""
+class ConstrainedInt(int):
+    """ConstrainedInt extension that adds not-equal.
 
+    In Pydantic V2, use Annotated[int, Field(gt=..., lt=...)] for most constraints.
+    This class is kept for backward compatibility with the 'ne' constraint.
+    """
+
+    strict: bool = False
+    gt: int | None = None
+    ge: int | None = None
+    lt: int | None = None
+    le: int | None = None
+    multiple_of: int | None = None
     ne: int | list[int] | None = None
 
     @classmethod
-    def __modify_schema__(cls, field_schema: dict[str, Any]) -> None:
-        super().__modify_schema__(field_schema)
-        if cls.ne is not None:
-            f = 'const' if isinstance(cls.ne, int) else 'enum'
-            field_schema['not'] = {f: cls.ne}
+    def __get_pydantic_core_schema__(
+        cls,
+        source_type: Any,
+        handler: GetCoreSchemaHandler,
+    ) -> CoreSchema:
+        """Define how Pydantic V2 should validate this type."""
+        return core_schema.no_info_after_validator_function(
+            cls._validate,
+            core_schema.int_schema(
+                strict=cls.strict,
+                gt=cls.gt,
+                ge=cls.ge,
+                lt=cls.lt,
+                le=cls.le,
+                multiple_of=cls.multiple_of,
+            ),
+        )
 
     @classmethod
-    def __get_validators__(cls) -> Generator[Callable[..., Any], None, None]:
-        yield from super().__get_validators__()
-        yield cls.validate_ne
+    def __get_pydantic_json_schema__(
+        cls,
+        core_schema: CoreSchema,
+        handler: GetJsonSchemaHandler,
+    ) -> JsonSchemaValue:
+        """Define the JSON schema for this type."""
+        schema: dict[str, Any] = {'type': 'integer'}
+        if cls.gt is not None:
+            schema['exclusiveMinimum'] = cls.gt
+        if cls.ge is not None:
+            schema['minimum'] = cls.ge
+        if cls.lt is not None:
+            schema['exclusiveMaximum'] = cls.lt
+        if cls.le is not None:
+            schema['maximum'] = cls.le
+        if cls.multiple_of is not None:
+            schema['multipleOf'] = cls.multiple_of
+        if cls.ne is not None:
+            f = 'const' if isinstance(cls.ne, int) else 'enum'
+            schema['not'] = {f: cls.ne}
+        return schema
 
-    @staticmethod
-    def validate_ne(v: 'Number', field: 'ModelField') -> 'Number':
-        field_type: ConstrainedInt = field.type_
-        _ne = field_type.ne
+    @classmethod
+    def _validate(cls, v: int) -> int:
+        _ne = cls.ne
         if _ne is not None and v in (_ne if isinstance(_ne, list) else [_ne]):
-            raise NumberNotEqError(prohibited=field_type.ne)
+            raise NumberNotEqError(prohibited=cls.ne)
         return v
 
 
@@ -119,20 +166,67 @@ def conint(
     return type('ConstrainedIntValue', (ConstrainedInt,), namespace)
 
 
-class ConstrainedFloat(types.ConstrainedFloat):
-    """ConstrainedFloat extension that adds step size"""
+class ConstrainedFloat(float):
+    """ConstrainedFloat extension that adds step size.
 
+    In Pydantic V2, use Annotated[float, Field(gt=..., lt=...)] for most constraints.
+    This class is kept for backward compatibility with the 'step' constraint.
+    """
+
+    strict: bool = False
+    gt: float | None = None
+    ge: float | None = None
+    lt: float | None = None
+    le: float | None = None
+    multiple_of: float | None = None
     step: float | None = None
 
     @classmethod
-    def __modify_schema__(cls, field_schema: dict[str, Any]) -> None:
-        super().__modify_schema__(field_schema)
-        if cls.step is not None:
-            field_schema['step'] = cls.step
+    def __get_pydantic_core_schema__(
+        cls,
+        source_type: Any,
+        handler: GetCoreSchemaHandler,
+    ) -> CoreSchema:
+        """Define how Pydantic V2 should validate this type."""
+        return core_schema.no_info_before_validator_function(
+            cls._validate,
+            core_schema.float_schema(
+                strict=cls.strict,
+                gt=cls.gt,
+                ge=cls.ge,
+                lt=cls.lt,
+                le=cls.le,
+                multiple_of=cls.multiple_of,
+            ),
+        )
 
     @classmethod
-    def __get_validators__(cls) -> Generator[Callable[..., Any], None, None]:
-        yield from super().__get_validators__()
+    def __get_pydantic_json_schema__(
+        cls,
+        core_schema: CoreSchema,
+        handler: GetJsonSchemaHandler,
+    ) -> JsonSchemaValue:
+        """Define the JSON schema for this type."""
+        schema: dict[str, Any] = {'type': 'number'}
+        if cls.gt is not None:
+            schema['exclusiveMinimum'] = cls.gt
+        if cls.ge is not None:
+            schema['minimum'] = cls.ge
+        if cls.lt is not None:
+            schema['exclusiveMaximum'] = cls.lt
+        if cls.le is not None:
+            schema['maximum'] = cls.le
+        if cls.multiple_of is not None:
+            schema['multipleOf'] = cls.multiple_of
+        if cls.step is not None:
+            schema['step'] = cls.step
+        return schema
+
+    @classmethod
+    def _validate(cls, v: Any) -> float:
+        if not isinstance(v, (int, float)):
+            raise TypeError('float required')
+        return float(v)
 
 
 def confloat(

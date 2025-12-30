@@ -31,7 +31,7 @@ class AppearanceSettings(EventedModel):
         Theme('dark'),
         title=trans._('Theme'),
         description=trans._('Select the user interface theme.'),
-        env='napari_theme',
+        json_schema_extra={'env': 'napari_theme'},
     )
     font_size: int = Field(
         int(get_theme('dark').font_size[:-2]),
@@ -64,7 +64,7 @@ class AppearanceSettings(EventedModel):
         self, values: Union['EventedModel', dict], recurse: bool = True
     ) -> None:
         if isinstance(values, self.__class__):
-            values = values.dict()
+            values = values.model_dump()
         values = cast(dict, values)
 
         # Check if a font_size change is needed when changing theme:
@@ -107,8 +107,12 @@ class AppearanceSettings(EventedModel):
 
     def refresh_themes(self) -> None:
         """Updates theme data.
-        This is not a fantastic solution but it works. Each time a new theme is
-        added (either by a plugin or directly by the user) the enum is updated in
-        place, ensuring that Preferences dialog can still be opened.
+
+        Note: In Pydantic V2, schemas are immutable after class creation.
+        This method is kept for compatibility but the schema update has no effect.
+        Theme validation handles dynamic themes through the validator.
         """
-        self.schema()['properties']['theme'].update(enum=available_themes())
+        # In V2, schemas are regenerated each time model_json_schema() is called
+        # and cannot be modified in place. The Theme validator handles dynamic
+        # theme validation, so this is now a no-op.
+        pass

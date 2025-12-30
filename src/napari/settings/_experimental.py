@@ -33,8 +33,7 @@ class ExperimentalSettings(EventedSettings):
         description=trans._(
             'Asynchronous loading of image data. \nThis setting partially loads data while viewing.'
         ),
-        env='napari_async',
-        requires_restart=False,
+        json_schema_extra={'env': 'napari_async', 'requires_restart': False},
     )
     autoswap_buffers: bool = Field(
         False,
@@ -42,8 +41,7 @@ class ExperimentalSettings(EventedSettings):
         description=trans._(
             'Autoswapping rendering buffers improves quality by reducing tearing artifacts, while sacrificing some performance.'
         ),
-        env='napari_autoswap',
-        requires_restart=True,
+        json_schema_extra={'env': 'napari_autoswap', 'requires_restart': True},
     )
 
     rdp_epsilon: float = Field(
@@ -53,7 +51,6 @@ class ExperimentalSettings(EventedSettings):
             'Setting this higher removes more points from polygons or paths. \nSetting this to 0 keeps all vertices of '
             'a given polygon or path.'
         ),
-        type=float,
         ge=0,
     )
 
@@ -66,7 +63,6 @@ class ExperimentalSettings(EventedSettings):
             'Value determines how many screen pixels one has to move before another vertex can be added to the polygon'
             'or path.'
         ),
-        type=int,
         gt=0,
         lt=50,
     )
@@ -93,7 +89,7 @@ class ExperimentalSettings(EventedSettings):
             "The 'pure python' backend uses the default Python triangulation from vispy.\n"
             "The 'fastest available' backend will select the fastest available backend.\n"
         ),
-        env='napari_triangulation_backend',
+        json_schema_extra={'env': 'napari_triangulation_backend'},
     )
     colormap_backend: ColormapBackend = Field(
         ColormapBackend.fastest_available,
@@ -105,7 +101,7 @@ class ExperimentalSettings(EventedSettings):
             "'pure python' uses only NumPy and Python.\n"
             "The 'fastest available' backend will select the fastest installed backend.\n"
         ),
-        env='napari_colormap_backend',
+        json_schema_extra={'env': 'napari_colormap_backend'},
     )
 
     compiled_triangulation: bool = Field(

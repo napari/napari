@@ -388,14 +388,14 @@ def test_init_color_manager_direct(n_colors):
             color_manager.colors, expected_colors
         )
     # test that colormanager state can be saved and loaded
-    cm_dict = color_manager.dict()
+    cm_dict = color_manager.model_dump()
     color_manager_2 = ColorManager._from_layer_kwargs(
         colors=cm_dict, properties={}, n_colors=n_colors
     )
     assert color_manager == color_manager_2
 
     # test json serialization
-    json_str = color_manager.json()
+    json_str = color_manager.model_dump_json()
     cm_json_dict = json.loads(json_str)
     color_manager_3 = ColorManager._from_layer_kwargs(
         colors=cm_json_dict, properties={}, n_colors=n_colors
@@ -425,14 +425,14 @@ def test_init_color_manager_cycle():
     assert color_manager.color_properties.current_value == 'B'
 
     # test that colormanager state can be saved and loaded
-    cm_dict = color_manager.dict()
+    cm_dict = color_manager.model_dump()
     color_manager_2 = ColorManager._from_layer_kwargs(
         colors=cm_dict, properties=properties
     )
     assert color_manager == color_manager_2
 
     # test json serialization
-    json_str = color_manager.json()
+    json_str = color_manager.model_dump_json()
     cm_json_dict = json.loads(json_str)
     color_manager_3 = ColorManager._from_layer_kwargs(
         colors=cm_json_dict, properties={}, n_colors=n_colors
@@ -498,7 +498,7 @@ def test_init_empty_color_manager_cycle():
     )
 
     # test that colormanager state can be saved and loaded
-    cm_dict = color_manager.dict()
+    cm_dict = color_manager.model_dump()
     color_manager_2 = ColorManager._from_layer_kwargs(
         colors=cm_dict, properties=properties
     )
@@ -527,14 +527,14 @@ def test_init_color_manager_colormap():
     assert color_manager.color_properties.current_value == 1.5
 
     # test that colormanager state can be saved and loaded
-    cm_dict = color_manager.dict()
+    cm_dict = color_manager.model_dump()
     color_manager_2 = ColorManager._from_layer_kwargs(
         colors=cm_dict, properties=properties
     )
     assert color_manager == color_manager_2
 
     # test json serialization
-    json_str = color_manager.json()
+    json_str = color_manager.model_dump_json()
     cm_json_dict = json.loads(json_str)
     color_manager_3 = ColorManager._from_layer_kwargs(
         colors=cm_json_dict, properties={}, n_colors=n_colors
@@ -599,7 +599,7 @@ def test_init_empty_color_manager_colormap():
     )
 
     # test that colormanager state can be saved and loaded
-    cm_dict = color_manager.dict()
+    cm_dict = color_manager.model_dump()
     color_manager_2 = ColorManager._from_layer_kwargs(
         colors=cm_dict, properties=properties
     )

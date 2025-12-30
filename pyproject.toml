@@ -60,6 +60,8 @@ dependencies = [
     "psutil>=5.9.0",
     "psygnal>=0.14.2",
     "pydantic>=2.2.0",
+    "pydantic-settings>=2.0.0",
+    "pydantic-extra-types>=2.0.0",
     "pygments>=2.6.0",
     "PyOpenGL>=3.1.5",
     "pywin32 ; platform_system == 'Windows'",

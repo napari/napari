@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from napari._pydantic_compat import validator
+from napari._pydantic_compat import field_validator
 from napari.components.overlays.base import CanvasOverlay
 from napari.utils.events import Event
 
@@ -33,7 +33,8 @@ class ZoomOverlay(CanvasOverlay):
         super().__init__(**kwargs)
         self.events.add(zoom=Event)
 
-    @validator('position', pre=True, always=True, allow_reuse=True)
+    @field_validator('position', mode='before')
+    @classmethod
     def _validate_bounds(
         cls, v: tuple[tuple[float, ...], tuple[float, ...]]
     ) -> tuple[tuple[float, float], tuple[float, float]]:

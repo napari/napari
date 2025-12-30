@@ -1,13 +1,12 @@
 import warnings
 from collections.abc import Sequence
 from copy import deepcopy
-from typing import Any, Union
+from typing import Annotated, Any, Union
 
 import numpy as np
 import pandas as pd
-from pydantic.v1 import PositiveFloat
 
-from napari._pydantic_compat import validator
+from napari._pydantic_compat import Field, field_validator
 from napari.layers.base._base_constants import Blending
 from napari.layers.utils._text_constants import Anchor
 from napari.layers.utils._text_utils import get_text_anchors
@@ -88,12 +87,12 @@ class TextManager(EventedModel):
     string: StringEncoding = ConstantStringEncoding(constant='')
     color: ColorEncoding = ConstantColorEncoding(constant='cyan')
     visible: bool = True
-    size: PositiveFloat = 12
+    size: Annotated[float, Field(gt=0)] = 12
     scaling: bool = False  # scaling changes with zoom level, consistent with other vispy visuals, see: https://github.com/vispy/vispy/blob/af2439895a13f187d840a476bd73ed480f2978f2/vispy/visuals/markers.py#L526
     blending: Blending = Blending.TRANSLUCENT
     anchor: Anchor = Anchor.CENTER
     # Use a scalar default translation to broadcast to any dimensionality.
-    translation: Array[float] = 0
+    translation: Array[float] = Field(default_factory=lambda: np.array(0.0))
     rotation: float = 0
 
     def __init__(
@@ -329,7 +328,7 @@ class TextManager(EventedModel):
         TextManager
         """
         if isinstance(text, TextManager):
-            kwargs = text.dict()
+            kwargs = text.model_dump()
         elif isinstance(text, dict):
             kwargs = deepcopy(text)
         elif text is None:
@@ -365,7 +364,7 @@ class TextManager(EventedModel):
         # should not mutate any existing fields in-place.
         # Avoid recursion because some fields are also models that may
         # not share field names/types (e.g. string).
-        current_manager = self.copy()
+        current_manager = self.model_copy()
         current_manager.update(new_manager, recurse=False)
 
         # If we got here, then there were no errors, so update for real.
@@ -376,7 +375,8 @@ class TextManager(EventedModel):
         # values if needed.
         self.apply(features)
 
-    @validator('blending', pre=True, always=True, allow_reuse=True)
+    @field_validator('blending', mode='before')
+    @classmethod
     def _check_blending_mode(cls, blending):
         blending_mode = Blending(blending)
 

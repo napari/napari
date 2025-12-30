@@ -3,6 +3,10 @@ from dataclasses import dataclass
 from functools import total_ordering
 from typing import Any, SupportsInt
 
+from pydantic import GetCoreSchemaHandler, GetJsonSchemaHandler
+from pydantic.json_schema import JsonSchemaValue
+from pydantic_core import CoreSchema, core_schema
+
 from napari.utils.theme import available_themes, is_theme_available
 from napari.utils.translations import _load_language, get_language_packs, trans
 
@@ -12,24 +16,35 @@ class Theme(str):
     Custom theme type to dynamically load all installed themes.
     """
 
-    # https://pydantic-docs.helpmanual.io/usage/types/#custom-data-types
+    # https://docs.pydantic.dev/latest/concepts/types/#custom-types
 
     __slots__ = ()
 
     @classmethod
-    def __get_validators__(cls):
-        yield cls.validate
+    def __get_pydantic_core_schema__(
+        cls,
+        source_type: Any,
+        handler: GetCoreSchemaHandler,
+    ) -> CoreSchema:
+        return core_schema.no_info_before_validator_function(
+            cls.validate,
+            core_schema.str_schema(),
+        )
 
     @classmethod
-    def __modify_schema__(cls, field_schema):
+    def __get_pydantic_json_schema__(
+        cls, core_schema_: CoreSchema, handler: GetJsonSchemaHandler
+    ) -> JsonSchemaValue:
         # TODO: Provide a way to handle keys so we can display human readable
         # option in the preferences dropdown
-        field_schema.update(enum=available_themes())
+        json_schema = handler(core_schema_)
+        json_schema['enum'] = available_themes()
+        return json_schema
 
     @classmethod
     def validate(cls, v):
         if not isinstance(v, str):
-            raise TypeError(trans._('must be a string', deferred=True))
+            raise ValueError(trans._('must be a string', deferred=True))
 
         value = v.lower()
         if not is_theme_available(value):
@@ -50,25 +65,36 @@ class Language(str):
     Custom theme type to dynamically load all installed language packs.
     """
 
-    # https://pydantic-docs.helpmanual.io/usage/types/#custom-data-types
+    # https://docs.pydantic.dev/latest/concepts/types/#custom-types
 
     __slots__ = ()
 
     @classmethod
-    def __get_validators__(cls):
-        yield cls.validate
+    def __get_pydantic_core_schema__(
+        cls,
+        source_type: Any,
+        handler: GetCoreSchemaHandler,
+    ) -> CoreSchema:
+        return core_schema.no_info_before_validator_function(
+            cls.validate,
+            core_schema.str_schema(),
+        )
 
     @classmethod
-    def __modify_schema__(cls, field_schema):
+    def __get_pydantic_json_schema__(
+        cls, core_schema_: CoreSchema, handler: GetJsonSchemaHandler
+    ) -> JsonSchemaValue:
         # TODO: Provide a way to handle keys so we can display human readable
         # option in the preferences dropdown
         language_packs = list(get_language_packs(_load_language()).keys())
-        field_schema.update(enum=language_packs)
+        json_schema = handler(core_schema_)
+        json_schema['enum'] = language_packs
+        return json_schema
 
     @classmethod
     def validate(cls, v):
         if not isinstance(v, str):
-            raise TypeError(trans._('must be a string', deferred=True))
+            raise ValueError(trans._('must be a string', deferred=True))
 
         language_packs = list(get_language_packs(_load_language()).keys())
         if v not in language_packs:
@@ -192,8 +218,21 @@ class Version:
         return v
 
     @classmethod
-    def __get_validators__(cls):
-        yield cls.validate
+    def __get_pydantic_core_schema__(
+        cls,
+        source_type: Any,
+        handler: GetCoreSchemaHandler,
+    ) -> CoreSchema:
+        return core_schema.no_info_before_validator_function(
+            cls.validate,
+            core_schema.any_schema(),
+        )
+
+    @classmethod
+    def __get_pydantic_json_schema__(
+        cls, _schema: CoreSchema, handler: GetJsonSchemaHandler
+    ) -> JsonSchemaValue:
+        return {'type': 'string', 'pattern': r'^\d+\.\d+\.\d+'}
 
     @classmethod
     def validate(cls, v):

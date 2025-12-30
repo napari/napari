@@ -13,7 +13,7 @@ from napari.viewer import Viewer
 __all__ = ['imshow']
 
 _viewer_params = inspect.signature(Viewer).parameters
-_dims_params = Dims.__fields__
+_dims_params = Dims.model_fields
 
 
 def _make_viewer_then(

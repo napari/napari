@@ -63,10 +63,9 @@ class PydanticYamlMixin(BaseModel):
     """Mixin that provides yaml dumping capability to pydantic BaseModel.
 
     To provide a custom yaml Dumper on a subclass, provide a `yaml_dumper`
-    on the Config:
+    in model_config:
 
-        class Config:
-            yaml_dumper = MyDumper
+        model_config = ConfigDict(yaml_dumper=MyDumper)
     """
 
     def yaml(
@@ -82,7 +81,7 @@ class PydanticYamlMixin(BaseModel):
         **dumps_kwargs: Any,
     ) -> str:
         """Serialize model to yaml."""
-        data = self.dict(
+        data = self.model_dump(
             include=include,
             exclude=exclude,
             by_alias=by_alias,
@@ -90,15 +89,11 @@ class PydanticYamlMixin(BaseModel):
             exclude_defaults=exclude_defaults,
             exclude_none=exclude_none,
         )
-        if self.__custom_root_type__:
-            from napari._pydantic_compat import ROOT_KEY
-
-            data = data[ROOT_KEY]
         return self._yaml_dump(data, dumper, **dumps_kwargs)
 
     def _yaml_dump(
         self, data, dumper: type[SafeDumper] | None = None, **kw
     ) -> str:
         kw.setdefault('sort_keys', False)
-        dumper = dumper or getattr(self.__config__, 'yaml_dumper', YamlDumper)
+        dumper = dumper or self.model_config.get('yaml_dumper', YamlDumper)
         return dump_all([data], Dumper=dumper, **kw)

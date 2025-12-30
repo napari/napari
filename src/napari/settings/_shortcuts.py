@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from napari._pydantic_compat import Field, validator
+from napari._pydantic_compat import Field, field_validator
 from napari.utils.events.evented_model import EventedModel
 from napari.utils.key_bindings import KeyBinding, coerce_keybinding
 from napari.utils.shortcuts import default_shortcuts
@@ -20,7 +20,8 @@ class ShortcutsSettings(EventedModel):
         # Napari specific configuration
         preferences_exclude = ('schema_version',)
 
-    @validator('shortcuts', allow_reuse=True, pre=True)
+    @field_validator('shortcuts', mode='before')
+    @classmethod
     def shortcut_validate(
         cls, v: dict[str, list[KeyBinding | str]]
     ) -> dict[str, list[KeyBinding]]:

@@ -1,18 +1,19 @@
-from collections.abc import Generator, Iterable
+from collections.abc import Iterable
 from typing import (
-    TYPE_CHECKING,
     Any,
     Generic,
     TypeVar,
     Union,
+    get_args,
 )
+
+from pydantic import GetCoreSchemaHandler, GetJsonSchemaHandler
+from pydantic.json_schema import JsonSchemaValue
+from pydantic_core import CoreSchema, core_schema
 
 from napari.utils.events.containers._set import EventedSet
 from napari.utils.events.event import EmitterGroup
 from napari.utils.translations import trans
-
-if TYPE_CHECKING:
-    from napari._pydantic_compat import ModelField
 
 _T = TypeVar('_T')
 _S = TypeVar('_S')
@@ -144,63 +145,67 @@ class Selection(EventedSet[_T]):
         self.add(obj)
 
     @classmethod
-    def __get_validators__(cls) -> Generator:
-        yield cls.validate
-
-    @classmethod
-    def validate(
+    def __get_pydantic_core_schema__(
         cls,
-        v: Union['Selection', dict],  # type: ignore[override]
-        field: 'ModelField',
-    ) -> 'Selection':
-        """Pydantic validator."""
-        from napari._pydantic_compat import sequence_like
+        source_type: Any,
+        handler: GetCoreSchemaHandler,
+    ) -> CoreSchema:
+        """Generate Pydantic V2 core schema."""
+        from pydantic import TypeAdapter
 
-        if isinstance(v, dict):
-            data = v.get('selection', [])
-            current = v.get('_current', None)
-        elif isinstance(v, Selection):
-            data = v._set
-            current = v._current
-        else:
-            data = v
-            current = None
+        # Get the type argument if Selection[T] was used
+        args = get_args(source_type)
+        item_type = args[0] if args else Any
 
-        if not sequence_like(data):
-            raise TypeError(
-                trans._(
-                    'Value is not a valid sequence: {data}',
-                    deferred=True,
-                    data=data,
+        # Create a TypeAdapter for validating items if we have a type param
+        item_validator = TypeAdapter(item_type) if item_type is not Any else None
+
+        def validate_selection(v: Any) -> 'Selection':
+            """Pydantic validator."""
+            from napari._pydantic_compat import sequence_like
+
+            if isinstance(v, dict):
+                data = v.get('selection', [])
+                current = v.get('_current', None)
+            elif isinstance(v, Selection):
+                data = v._set
+                current = v._current
+            else:
+                data = v
+                current = None
+
+            if not sequence_like(data):
+                raise ValueError(
+                    trans._(
+                        'Value is not a valid sequence: {data}',
+                        deferred=True,
+                        data=data,
+                    )
                 )
-            )
 
-        # no type parameter was provided, just return
-        if not field.sub_fields:
+            # Validate items if we have a type parameter
+            if item_validator is not None:
+                validated_data = []
+                for item in data:
+                    validated_data.append(item_validator.validate_python(item))
+                data = validated_data
+                if current is not None:
+                    current = item_validator.validate_python(current)
+
             obj = cls(data=data)
             obj._current_ = current
             return obj
 
-        # Selection[type] parameter was provided.  Validate contents
-        type_field = field.sub_fields[0]
-        errors = []
-        for i, v_ in enumerate(data):
-            _, error = type_field.validate(v_, {}, loc=f'[{i}]')
-            if error:
-                errors.append(error)
-        if current is not None:
-            _, error = type_field.validate(current, {}, loc='current')
-            if error:
-                errors.append(error)
+        return core_schema.no_info_before_validator_function(
+            validate_selection,
+            core_schema.any_schema(),
+        )
 
-        if errors:
-            from napari._pydantic_compat import ValidationError
-
-            raise ValidationError(errors, cls)  # type: ignore [arg-type]
-            # need to be fixed when migrate to pydantic 2
-        obj = cls(data=data)
-        obj._current_ = current
-        return obj
+    @classmethod
+    def __get_pydantic_json_schema__(
+        cls, _schema: CoreSchema, handler: GetJsonSchemaHandler
+    ) -> JsonSchemaValue:
+        return {'type': 'object'}
 
     def _json_encode(self) -> dict:  # type: ignore[override]
         """Return an object that can be used by json.dumps."""

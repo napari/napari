@@ -1,6 +1,8 @@
 from typing import Any
 
 import numpy as np
+from pydantic import GetCoreSchemaHandler, model_validator
+from pydantic_core import CoreSchema, core_schema
 
 from napari._pydantic_compat import Field
 from napari.utils.color import ColorValue
@@ -32,6 +34,34 @@ class CategoricalColormap(EventedModel):
     fallback_color: ColorCycle = Field(
         default_factory=lambda: ColorCycle.validate_type('white')
     )
+
+    @model_validator(mode='before')
+    @classmethod
+    def _preprocess_input(cls, data):
+        """Preprocess input data before normal validation."""
+        if isinstance(data, cls):
+            return data
+        if isinstance(data, list | np.ndarray):
+            # Array input means fallback_color only
+            return {'colormap': {}, 'fallback_color': data}
+        if isinstance(data, dict):
+            # Check if it's a structured dict with 'colormap' or 'fallback_color' keys
+            if ('colormap' in data) or ('fallback_color' in data):
+                result = {}
+                if 'colormap' in data:
+                    result['colormap'] = {
+                        k: transform_color(v)[0]
+                        for k, v in data['colormap'].items()
+                    }
+                if 'fallback_color' in data:
+                    result['fallback_color'] = data['fallback_color']
+                return result
+            # Otherwise, treat the entire dict as a colormap
+            return {
+                'colormap': {k: transform_color(v)[0] for k, v in data.items()},
+                'fallback_color': 'white',
+            }
+        return data
 
     def map(self, color_properties: list | np.ndarray) -> np.ndarray:
         """Map an array of values to an array of colors
@@ -68,38 +98,25 @@ class CategoricalColormap(EventedModel):
 
     @classmethod
     def from_array(cls, fallback_color):
-        return cls(fallback_color=fallback_color)
+        """Create from array."""
+        return cls(colormap={}, fallback_color=fallback_color)
 
     @classmethod
     def from_dict(cls, params: dict):
-        if ('colormap' in params) or ('fallback_color' in params):
-            if 'colormap' in params:
-                colormap = {
-                    k: transform_color(v)[0]
-                    for k, v in params['colormap'].items()
-                }
-            else:
-                colormap = {}
-            fallback_color = params.get('fallback_color', 'white')
-        else:
-            colormap = {k: transform_color(v)[0] for k, v in params.items()}
-            fallback_color = 'white'
-
-        return cls(colormap=colormap, fallback_color=fallback_color)
-
-    @classmethod
-    def __get_validators__(cls):
-        yield cls.validate_type
+        """Create from dict."""
+        return cls(**params) if ('colormap' in params or 'fallback_color' in params) else cls(colormap=params)
 
     @classmethod
     def validate_type(cls, val):
+        """Legacy validation method kept for compatibility."""
         if isinstance(val, cls):
             return val
         if isinstance(val, list | np.ndarray):
-            return cls.from_array(val)
+            return cls(colormap={}, fallback_color=val)
         if isinstance(val, dict):
-            return cls.from_dict(val)
-
+            if ('colormap' in val) or ('fallback_color' in val):
+                return cls(**val)
+            return cls(colormap=val)
         raise TypeError(
             trans._(
                 'colormap should be an array or dict',
@@ -115,3 +132,43 @@ class CategoricalColormap(EventedModel):
                 self.fallback_color.values, other.fallback_color.values
             )
         )
+
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls,
+        source_type: Any,
+        handler: GetCoreSchemaHandler,
+    ) -> CoreSchema:
+        """Define how Pydantic V2 should validate this type when used as a field."""
+        # Use a before validator to preprocess input, then use the normal model schema
+        return core_schema.no_info_before_validator_function(
+            cls._preprocess_for_field,
+            handler(source_type),
+        )
+
+    @classmethod
+    def _preprocess_for_field(cls, val):
+        """Preprocess input when CategoricalColormap is used as a field type."""
+        if isinstance(val, cls):
+            return val
+        if isinstance(val, list | np.ndarray):
+            # Array input means fallback_color only
+            return {'colormap': {}, 'fallback_color': val}
+        if isinstance(val, dict):
+            # Check if it's a structured dict with 'colormap' or 'fallback_color' keys
+            if ('colormap' in val) or ('fallback_color' in val):
+                result = {}
+                if 'colormap' in val:
+                    result['colormap'] = {
+                        k: transform_color(v)[0]
+                        for k, v in val['colormap'].items()
+                    }
+                if 'fallback_color' in val:
+                    result['fallback_color'] = val['fallback_color']
+                return result
+            # Otherwise, treat the entire dict as a colormap
+            return {
+                'colormap': {k: transform_color(v)[0] for k, v in val.items()},
+                'fallback_color': 'white',
+            }
+        return val

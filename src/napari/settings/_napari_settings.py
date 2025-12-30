@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 from typing import Any
 
-from napari._pydantic_compat import Field
+from napari._pydantic_compat import ConfigDict, Field
 from napari.settings._appearance import AppearanceSettings
 from napari.settings._application import ApplicationSettings
 from napari.settings._base import (
@@ -45,44 +45,37 @@ class NapariSettings(EventedConfigFileSettings):
         default_factory=AppearanceSettings,
         title=trans._('Appearance'),
         description=trans._('User interface appearance settings.'),
-        allow_mutation=False,
+        frozen=True,
     )
     plugins: PluginsSettings = Field(
         default_factory=PluginsSettings,
         title=trans._('Plugins'),
         description=trans._('Plugins settings.'),
-        allow_mutation=False,
+        frozen=True,
     )
     shortcuts: ShortcutsSettings = Field(
         default_factory=ShortcutsSettings,
         title=trans._('Shortcuts'),
         description=trans._('Shortcut settings.'),
-        allow_mutation=False,
+        frozen=True,
     )
     experimental: ExperimentalSettings = Field(
         default_factory=ExperimentalSettings,
         title=trans._('Experimental'),
         description=trans._('Experimental settings.'),
-        allow_mutation=False,
+        frozen=True,
     )
 
     # private attributes and ClassVars will not appear in the schema
     _config_path: Path | None = Path(_CFG_PATH) if _CFG_PATH else None
 
-    class Config(EventedConfigFileSettings.Config):
-        env_prefix = 'napari_'
-        use_enum_values = False
+    model_config = ConfigDict(
+        env_prefix='napari_',
+        use_enum_values=False,
         # all of these fields are evented models, so we don't want to break
         # connections by setting the top-level field itself
         # (you can still mutate attributes in the subfields)
-
-        @classmethod
-        def _config_file_settings_source(cls, settings) -> dict:
-            # before '0.4.0' we didn't write the schema_version in the file
-            # written to disk. so if it's missing, add schema_version of 0.3.0
-            d = super()._config_file_settings_source(settings)
-            d.setdefault('schema_version', '0.3.0')
-            return d
+    )
 
     def __init__(self, config_path=_NOT_SET, **values: Any) -> None:
         super().__init__(config_path, **values)
@@ -98,7 +91,7 @@ class NapariSettings(EventedConfigFileSettings):
 
     def __str__(self):
         out = 'NapariSettings (defaults excluded)\n' + 34 * '-' + '\n'
-        data = self.dict(exclude_defaults=True)
+        data = self.model_dump(exclude_defaults=True)
         out += self._yaml_dump(_remove_empty_dicts(data))
         return out
 
@@ -119,4 +112,5 @@ if __name__ == '__main__':
         dest = Path(sys.argv[2]).expanduser().absolute()
     else:
         dest = Path(__file__).parent / 'napari.schema.json'
-    dest.write_text(NapariSettings.schema_json())
+    import json
+    dest.write_text(json.dumps(NapariSettings.model_json_schema(), indent=2))

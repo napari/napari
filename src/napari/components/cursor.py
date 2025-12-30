@@ -40,6 +40,6 @@ class Cursor(EventedModel):
     position: tuple[float, ...] = (1.0, 1.0)
     viewbox: tuple[int, int] | None = None
     scaled: bool = True
-    size = 1.0
+    size: float = 1.0
     style: CursorStyle = CursorStyle.STANDARD
     _view_direction: np.ndarray | None = None

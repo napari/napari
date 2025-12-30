@@ -1,9 +1,10 @@
 """Contains napari color constants and utilities."""
 
-from collections.abc import Callable, Iterator
-from typing import Union
+from typing import Any, Union
 
 import numpy as np
+from pydantic import GetCoreSchemaHandler
+from pydantic_core import CoreSchema, core_schema
 
 from napari.utils.colormaps.standardize_color import transform_color
 
@@ -23,10 +24,19 @@ class ColorValue(np.ndarray):
         return cls.validate(value)
 
     @classmethod
-    def __get_validators__(
+    def __get_pydantic_core_schema__(
         cls,
-    ) -> Iterator[Callable[[ColorValueParam], 'ColorValue']]:
-        yield cls.validate
+        source_type: Any,
+        handler: GetCoreSchemaHandler,
+    ) -> CoreSchema:
+        return core_schema.no_info_before_validator_function(
+            cls.validate,
+            core_schema.any_schema(),
+            serialization=core_schema.plain_serializer_function_ser_schema(
+                lambda x: x.tolist() if isinstance(x, np.ndarray) else list(x),
+                info_arg=False,
+            ),
+        )
 
     @classmethod
     def validate(cls, value: ColorValueParam) -> 'ColorValue':
@@ -89,10 +99,15 @@ class ColorArray(np.ndarray):
         return cls.validate(value)
 
     @classmethod
-    def __get_validators__(
+    def __get_pydantic_core_schema__(
         cls,
-    ) -> Iterator[Callable[[ColorArrayParam], 'ColorArray']]:
-        yield cls.validate
+        source_type: Any,
+        handler: GetCoreSchemaHandler,
+    ) -> CoreSchema:
+        return core_schema.no_info_before_validator_function(
+            cls.validate,
+            core_schema.any_schema(),
+        )
 
     def __sizeof__(self) -> int:
         return super().__sizeof__() + self.nbytes

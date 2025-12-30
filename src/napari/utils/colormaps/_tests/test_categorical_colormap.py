@@ -139,7 +139,7 @@ def test_categorical_colormap_equality():
 )
 def test_categorical_colormap_serialization(params):
     cmap_1 = CategoricalColormap(**params)
-    cmap_json = cmap_1.json()
+    cmap_json = cmap_1.model_dump_json()
 
     json_dict = json.loads(cmap_json)
     cmap_2 = CategoricalColormap(**json_dict)

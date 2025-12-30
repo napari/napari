@@ -11,7 +11,7 @@ import pytest
 from dask import delayed
 from dask.delayed import Delayed
 
-from napari._pydantic_compat import Field, ValidationError
+from napari._pydantic_compat import ConfigDict, Field, ValidationError
 from napari.utils.events import EmitterGroup, EventedModel
 from napari.utils.events.custom_types import Array
 from napari.utils.misc import StringEnum
@@ -217,12 +217,13 @@ def test_values_updated():
     user2.events.id = Mock(user2.events.id)
 
     # Check user1 and user2 dicts
-    assert user1.dict() == {'id': 0, 'name': 'A'}
-    assert user2.dict() == {'id': 1, 'name': 'K'}
+    # In Pydantic V2, use model_dump() instead of dict()
+    assert user1.model_dump() == {'id': 0, 'name': 'A'}
+    assert user2.model_dump() == {'id': 1, 'name': 'K'}
 
     # Update user1 from user2
     user1.update(user2)
-    assert user1.dict() == {'id': 1, 'name': 'K'}
+    assert user1.model_dump() == {'id': 1, 'name': 'K'}
 
     user1.events.id.assert_called_with(value=1)
     user2.events.id.assert_not_called()
@@ -233,7 +234,7 @@ def test_values_updated():
 
     # Update user1 from user2 again, no event emission expected
     user1.update(user2)
-    assert user1.dict() == {'id': 1, 'name': 'K'}
+    assert user1.model_dump() == {'id': 1, 'name': 'K'}
 
     user1.events.id.assert_not_called()
     user2.events.id.assert_not_called()
@@ -260,14 +261,23 @@ def test_update_with_inner_model_union():
 
 
 def test_update_with_inner_model_protocol():
+    from typing import Any
+    from pydantic import GetCoreSchemaHandler
+    from pydantic_core import CoreSchema, core_schema
+
     @runtime_checkable
     class InnerProtocol(Protocol):
         def string(self) -> str: ...
 
         # Protocol fields are not successfully set without explicit validation.
+        # In Pydantic V2, use __get_pydantic_core_schema__ instead of __get_validators__
         @classmethod
-        def __get_validators__(cls):
-            yield cls.validate
+        def __get_pydantic_core_schema__(
+            cls, source_type: Any, handler: GetCoreSchemaHandler
+        ) -> CoreSchema:
+            return core_schema.no_info_before_validator_function(
+                cls.validate, core_schema.any_schema()
+            )
 
         @classmethod
         def validate(cls, v):
@@ -301,7 +311,8 @@ def test_evented_model_signature():
     class T(EventedModel):
         x: int
         y: str = 'yyy'
-        z = b'zzz'
+        # In Pydantic V2, all model fields require type annotations
+        z: bytes = b'zzz'
 
     assert isinstance(T.__signature__, inspect.Signature)
     sig = inspect.signature(T)
@@ -313,9 +324,14 @@ class MyObj:
         self.a = a
         self.b = b
 
+    # In Pydantic V2, use __get_pydantic_core_schema__ instead of __get_validators__
     @classmethod
-    def __get_validators__(cls):
-        yield cls.validate_type
+    def __get_pydantic_core_schema__(cls, source_type, handler):
+        from pydantic_core import core_schema
+        return core_schema.no_info_before_validator_function(
+            cls.validate_type,
+            core_schema.any_schema(),
+        )
 
     @classmethod
     def validate_type(cls, val):
@@ -343,9 +359,11 @@ def test_evented_model_serialization():
         shaped: Array[float, (-1,)]
 
     m = Model(obj=MyObj(1, 'hi'), shaped=[1, 2, 3])
-    raw = m.json()
-    assert raw == '{"obj": {"a": 1, "b": "hi"}, "shaped": [1.0, 2.0, 3.0]}'
-    deserialized = Model.parse_raw(raw)
+    # In Pydantic V2, use model_dump_json() instead of json()
+    raw = m.model_dump_json()
+    assert raw == '{"obj":{"a":1,"b":"hi"},"shaped":[1.0,2.0,3.0]}'
+    # In Pydantic V2, use model_validate_json() instead of parse_raw()
+    deserialized = Model.model_validate_json(raw)
     assert deserialized == m
 
 
@@ -359,9 +377,11 @@ def test_nested_evented_model_serialization():
         nest: NestedModel
 
     m = Model(nest={'obj': {'a': 1, 'b': 'hi'}})
-    raw = m.json()
-    assert raw == r'{"nest": {"obj": {"a": 1, "b": "hi"}}}'
-    deserialized = Model.parse_raw(raw)
+    # In Pydantic V2, use model_dump_json() instead of json()
+    raw = m.model_dump_json()
+    assert raw == r'{"nest":{"obj":{"a":1,"b":"hi"}}}'
+    # In Pydantic V2, use model_validate_json() instead of parse_raw()
+    deserialized = Model.model_validate_json(raw)
     assert deserialized == m
 
 
@@ -424,13 +444,13 @@ def test_evented_model_with_string_enum_setter_as_str():
 
 def test_evented_model_with_string_enum_parse_raw():
     model = ModelWithStringEnum(enum_field=SomeStringEnum.SOME_VALUE)
-    deserialized_model = ModelWithStringEnum.parse_raw(model.json())
+    deserialized_model = ModelWithStringEnum.model_validate_json(model.model_dump_json())
     assert deserialized_model.enum_field == model.enum_field
 
 
 def test_evented_model_with_string_enum_parse_obj():
     model = ModelWithStringEnum(enum_field=SomeStringEnum.SOME_VALUE)
-    deserialized_model = ModelWithStringEnum.parse_obj(model.dict())
+    deserialized_model = ModelWithStringEnum.model_validate(model.model_dump())
     assert deserialized_model.enum_field == model.enum_field
 
 
@@ -538,8 +558,7 @@ def test_evented_model_with_provided_dependencies():
         def b(self):
             return self.a * 2
 
-        class Config:
-            dependencies = {'b': ['a']}
+        model_config = ConfigDict(dependencies={'b': ['a']})
 
     t = T()
     t.events.a = Mock(t.events.a)
@@ -561,8 +580,7 @@ def test_evented_model_with_provided_dependencies():
             def b(self):  # pragma: no cover
                 return self.a * 2
 
-            class Config:
-                dependencies = {'x': ['a']}
+            model_config = ConfigDict(dependencies={'x': ['a']})
 
     # should warn if field does not exist
     with pytest.warns(match='Unrecognized field dependency'):
@@ -574,8 +592,7 @@ def test_evented_model_with_provided_dependencies():
             def b(self):  # pragma: no cover
                 return self.a * 2
 
-            class Config:
-                dependencies = {'b': ['x']}
+            model_config = ConfigDict(dependencies={'b': ['x']})
 
 
 def test_property_get_eq_operator():

@@ -3,7 +3,7 @@ from typing import Any, TypeAlias, cast
 import numpy as np
 import numpy.typing as npt
 
-from napari._pydantic_compat import validator
+from napari._pydantic_compat import field_validator
 from napari.utils.events import EventedModel, SelectableEventedList
 from napari.utils.geometry import intersect_line_with_plane_3d
 from napari.utils.translations import trans
@@ -30,11 +30,13 @@ class Plane(EventedModel):
     normal: Point3D = (1, 0, 0)
     position: Point3D = (0, 0, 0)
 
-    @validator('normal', allow_reuse=True)
+    @field_validator('normal')
+    @classmethod
     def _normalise_vector(cls, v: npt.NDArray) -> Point3D:
         return cast(Point3D, tuple(v / np.linalg.norm(v)))
 
-    @validator('normal', 'position', pre=True, allow_reuse=True)
+    @field_validator('normal', 'position', mode='before')
+    @classmethod
     def _ensure_tuple(cls, v: Any) -> Point3D:
         return cast(Point3D, tuple(v))
 

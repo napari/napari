@@ -1,6 +1,6 @@
 from typing_extensions import TypedDict
 
-from napari._pydantic_compat import Field
+from napari._pydantic_compat import ConfigDict, Field
 from napari.settings._base import EventedSettings
 from napari.utils.translations import trans
 
@@ -45,8 +45,7 @@ class PluginsSettings(EventedSettings):
         ),
     )
 
-    class Config:
-        use_enum_values = False
+    model_config = ConfigDict(use_enum_values=False)
 
     class NapariConfig:
         # Napari specific configuration

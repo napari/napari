@@ -32,7 +32,7 @@ class Normals(EventedModel):
         The length of the face normal lines.
     """
 
-    mode: NormalMode = Field(NormalMode.FACE, allow_mutation=False)
+    mode: NormalMode = Field(NormalMode.FACE, frozen=True)
     visible: bool = False
     color: ColorValue = Field(default_factory=lambda: _DEFAULT_COLOR)
     width: float = 1
@@ -45,8 +45,8 @@ class SurfaceNormals(EventedModel):
     """
 
     face: Normals = Field(
-        Normals(mode=NormalMode.FACE, color='orange'), allow_mutation=False
+        Normals(mode=NormalMode.FACE, color='orange'), frozen=True
     )
     vertex: Normals = Field(
-        Normals(mode=NormalMode.FACE, color='blue'), allow_mutation=False
+        Normals(mode=NormalMode.FACE, color='blue'), frozen=True
     )

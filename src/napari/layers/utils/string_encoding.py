@@ -4,6 +4,9 @@ from typing import Any, Literal, Protocol, Union, runtime_checkable
 
 import numpy as np
 
+from pydantic import GetCoreSchemaHandler
+from pydantic_core import CoreSchema, core_schema
+
 from napari._pydantic_compat import parse_obj_as
 from napari.layers.utils.style_encoding import (
     StyleEncoding,
@@ -30,8 +33,15 @@ class StringEncoding(StyleEncoding[StringValue, StringArray], Protocol):
     """Encodes strings from layer features."""
 
     @classmethod
-    def __get_validators__(cls):
-        yield cls.validate
+    def __get_pydantic_core_schema__(
+        cls,
+        source_type: Any,
+        handler: GetCoreSchemaHandler,
+    ) -> CoreSchema:
+        return core_schema.no_info_before_validator_function(
+            cls.validate,
+            core_schema.any_schema(),
+        )
 
     @classmethod
     def validate(

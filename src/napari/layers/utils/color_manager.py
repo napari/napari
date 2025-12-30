@@ -1,10 +1,12 @@
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Any
+from typing import Annotated, Any, Self
 
 import numpy as np
+from pydantic import BeforeValidator, GetCoreSchemaHandler, GetJsonSchemaHandler
+from pydantic_core import CoreSchema, PydanticCustomError, core_schema
 
-from napari._pydantic_compat import Field, root_validator, validator
+from napari._pydantic_compat import Field, field_validator, model_validator
 from napari.layers.utils._color_manager_constants import ColorMode
 from napari.layers.utils.color_manager_utils import (
     _validate_colormap_mode,
@@ -45,40 +47,42 @@ class ColorProperties:
     current_value: Any | None = None
 
     @classmethod
-    def __get_validators__(cls):
-        yield cls.validate_type
+    def __get_pydantic_core_schema__(
+        cls,
+        source_type: Any,
+        handler: GetCoreSchemaHandler,
+    ) -> CoreSchema:
+        """Define how Pydantic V2 should validate this type."""
+        return core_schema.no_info_before_validator_function(
+            cls._validate,
+            core_schema.any_schema(),
+        )
 
     @classmethod
-    def validate_type(cls, val):
+    def _validate(cls, val: Any) -> 'ColorProperties | None':
+        """Validate and convert input to ColorProperties."""
         if val is None:
-            color_properties = val
+            return None
         elif isinstance(val, dict):
             if len(val) == 0:
-                color_properties = None
+                return None
             else:
                 try:
                     # ensure the values are a numpy array
                     val['values'] = np.asarray(val['values'])
-                    color_properties = cls(**val)
-                except ValueError as e:
-                    raise ValueError(
-                        trans._(
-                            'color_properties dictionary should have keys: name, values, and optionally current_value',
-                            deferred=True,
-                        )
+                    return cls(**val)
+                except (ValueError, TypeError) as e:
+                    raise PydanticCustomError(
+                        'color_properties_invalid',
+                        'color_properties dictionary should have keys: name, values, and optionally current_value',
                     ) from e
-
         elif isinstance(val, cls):
-            color_properties = val
+            return val
         else:
-            raise TypeError(
-                trans._(
-                    'color_properties should be None, a dict, or ColorProperties object',
-                    deferred=True,
-                )
+            raise PydanticCustomError(
+                'color_properties_type',
+                'color_properties should be None, a dict, or ColorProperties object',
             )
-
-        return color_properties
 
     def _json_encode(self):
         return {
@@ -156,18 +160,21 @@ class ColorManager(EventedModel):
     )
 
     # validators
-    @validator('continuous_colormap', pre=True, allow_reuse=True)
+    @field_validator('continuous_colormap', mode='before')
+    @classmethod
     def _ensure_continuous_colormap(cls, v):
         return ensure_colormap(v)
 
-    @validator('colors', pre=True, allow_reuse=True)
+    @field_validator('colors', mode='before')
+    @classmethod
     def _ensure_color_array(cls, v):
         if len(v) > 0:
             return transform_color(v)
 
         return np.empty((0, 4))
 
-    @validator('current_color', pre=True, allow_reuse=True)
+    @field_validator('current_color', mode='before')
+    @classmethod
     def _coerce_current_color(cls, v):
         if v is None:
             return v
@@ -176,27 +183,34 @@ class ColorManager(EventedModel):
 
         return transform_color(v)[0]
 
-    @root_validator(allow_reuse=True)
-    def _validate_colors(cls, values):
-        color_mode = values['color_mode']
+    @model_validator(mode='after')
+    def _validate_colors(self) -> Self:
+        color_mode = self.color_mode
         if color_mode == ColorMode.CYCLE:
-            colors, values = _validate_cycle_mode(values)
+            colors, updated = _validate_cycle_mode_v2(self)
+            # Use object.__setattr__ to bypass validate_assignment and avoid recursion
+            for key, value in updated.items():
+                object.__setattr__(self, key, value)
         elif color_mode == ColorMode.COLORMAP:
-            colors, values = _validate_colormap_mode(values)
+            colors, updated = _validate_colormap_mode_v2(self)
+            # Use object.__setattr__ to bypass validate_assignment and avoid recursion
+            for key, value in updated.items():
+                object.__setattr__(self, key, value)
         else:  # color_mode == ColorMode.DIRECT:
-            colors = values['colors']
+            colors = self.colors
 
         # set the current color to the last color/property value
         # if it wasn't already set
-        if values.get('current_color') is None and len(colors) > 0:
-            values['current_color'] = colors[-1]
+        if self.current_color is None and len(colors) > 0:
+            # Use object.__setattr__ to bypass validate_assignment
+            object.__setattr__(self, 'current_color', colors[-1])
             if color_mode in [ColorMode.CYCLE, ColorMode.COLORMAP]:
-                property_values = values['color_properties']
+                property_values = self.color_properties
                 property_values.current_value = property_values.values[-1]
-                values['color_properties'] = property_values
+                object.__setattr__(self, 'color_properties', property_values)
 
-        values['colors'] = colors
-        return values
+        object.__setattr__(self, 'colors', colors)
+        return self
 
     def _set_color(
         self,
@@ -576,3 +590,49 @@ class ColorManager(EventedModel):
             )
 
         return cls(**color_kwargs)
+
+
+def _validate_cycle_mode_v2(model: ColorManager) -> tuple[np.ndarray, dict]:
+    """V2-compatible version of _validate_cycle_mode that works with model instances."""
+    # Store original values before they get modified
+    original_values = {
+        'color_mode': model.color_mode,
+        'color_properties': model.color_properties,
+        'categorical_colormap': model.categorical_colormap,
+        'colors': model.colors,
+        'current_color': model.current_color,
+        'continuous_colormap': model.continuous_colormap,
+        'contrast_limits': model.contrast_limits,
+    }
+    # Create a copy for mutation
+    values = dict(original_values)
+    colors, updated_values = _validate_cycle_mode(values)
+    # Return only the fields that changed
+    updated = {}
+    for key in ['color_properties', 'categorical_colormap', 'colors', 'current_color']:
+        if key in updated_values and updated_values[key] is not original_values.get(key):
+            updated[key] = updated_values[key]
+    return colors, updated
+
+
+def _validate_colormap_mode_v2(model: ColorManager) -> tuple[np.ndarray, dict]:
+    """V2-compatible version of _validate_colormap_mode that works with model instances."""
+    # Store original values before they get modified
+    original_values = {
+        'color_mode': model.color_mode,
+        'color_properties': model.color_properties,
+        'categorical_colormap': model.categorical_colormap,
+        'colors': model.colors,
+        'current_color': model.current_color,
+        'continuous_colormap': model.continuous_colormap,
+        'contrast_limits': model.contrast_limits,
+    }
+    # Create a copy for mutation
+    values = dict(original_values)
+    colors, updated_values = _validate_colormap_mode(values)
+    # Return only the fields that changed
+    updated = {}
+    for key in ['color_properties', 'colors', 'current_color', 'contrast_limits']:
+        if key in updated_values and updated_values[key] is not original_values.get(key):
+            updated[key] = updated_values[key]
+    return colors, updated

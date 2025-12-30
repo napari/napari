@@ -462,6 +462,8 @@ def pick_equality_operator(obj: Any) -> Callable[[Any, Any], bool]:
         equality between objects of type ``type(obj)``.
     """
     import operator
+    import types
+    from typing import Union, get_args, get_origin
 
     # yes, it's a little riskier, but we are checking namespaces instead of
     # actual `issubclass` here to avoid slow import times
@@ -473,6 +475,17 @@ def pick_equality_operator(obj: Any) -> Callable[[Any, Any], bool]:
         'xarray.DataArray': _quiet_array_equal,  # xarray.core.dataarray.DataArray
         'pandas.DataFrame': _pandas_dataframe_equal,  # pandas.DataFrame.equals
     }
+
+    # Handle Union types (e.g., Array | None) by checking each type arg
+    origin = get_origin(obj)
+    if origin is Union or origin is types.UnionType:
+        for type_arg in get_args(obj):
+            if type_arg is type(None):
+                continue  # Skip NoneType
+            # Recursively check each type argument
+            eq_op = pick_equality_operator(type_arg)
+            if eq_op is not operator.eq:
+                return eq_op
 
     for name in _arraylike_short_names(obj):
         func = _known_arrays.get(name)

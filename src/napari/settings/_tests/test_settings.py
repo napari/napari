@@ -7,7 +7,7 @@ import pytest
 from yaml import safe_load
 
 from napari import settings
-from napari._pydantic_compat import Field, ValidationError
+from napari._pydantic_compat import ConfigDict, Field, ValidationError
 from napari.settings import CURRENT_SCHEMA_VERSION, NapariSettings
 from napari.utils.theme import get_theme, register_theme
 
@@ -18,8 +18,7 @@ def test_settings(tmp_path):
     from napari.settings import NapariSettings
 
     class TestSettings(NapariSettings):
-        class Config:
-            env_prefix = 'testnapari_'
+        model_config = ConfigDict(env_prefix='testnapari_')
 
     return TestSettings(
         tmp_path / 'test_settings.yml', schema_version=CURRENT_SCHEMA_VERSION
@@ -78,13 +77,17 @@ def test_settings_load_invalid_type(tmp_path, caplog):
 
 
 def test_settings_load_strict(tmp_path, monkeypatch):
-    # use Config.strict_config_check to enforce good config files
-    monkeypatch.setattr(NapariSettings.__config__, 'strict_config_check', True)
-    data = 'appearance:\n   theme: 1'
-    fake_path = tmp_path / 'fake_path.yml'
-    fake_path.write_text(data)
-    with pytest.raises(ValidationError):
-        NapariSettings(fake_path)
+    # use model_config strict_config_check to enforce good config files
+    original_config = NapariSettings.model_config.copy()
+    NapariSettings.model_config = ConfigDict(**original_config, strict_config_check=True)
+    try:
+        data = 'appearance:\n   theme: 1'
+        fake_path = tmp_path / 'fake_path.yml'
+        fake_path.write_text(data)
+        with pytest.raises(ValidationError):
+            NapariSettings(fake_path)
+    finally:
+        NapariSettings.model_config = original_config
 
 
 def test_settings_load_invalid_key(tmp_path, monkeypatch):
@@ -195,11 +198,14 @@ def test_settings_string(test_settings):
 
 def test_model_fields_are_annotated(test_settings):
     errors = []
-    for field in test_settings.__fields__.values():
-        model = field.type_
-        if not hasattr(model, '__fields__'):
+    # In Pydantic V2, use model_fields instead of __fields__
+    for field_info in type(test_settings).model_fields.values():
+        model = field_info.annotation
+        if not hasattr(model, 'model_fields'):
             continue
-        difference = set(model.__fields__) - set(model.__annotations__)
+        # In Pydantic V2, all model fields must have annotations
+        # so this test is mostly a no-op now, but we keep it for compatibility
+        difference = set(model.model_fields) - set(model.__annotations__)
         if difference:
             errors.append(
                 f"Model '{model.__name__}' does not provide annotations "
@@ -249,11 +255,12 @@ def test_settings_env_variables_fails(monkeypatch):
 
 
 def test_subfield_env_field(monkeypatch):
-    """test that setting Field(env=) works for subfields"""
+    """test that setting Field(json_schema_extra={'env': ...}) works for subfields"""
     from napari.settings._base import EventedSettings
 
     class Sub(EventedSettings):
-        x: int = Field(1, env='varname')
+        # In Pydantic V2, use json_schema_extra instead of env= directly
+        x: int = Field(1, json_schema_extra={'env': 'varname'})
 
     class T(NapariSettings):
         sub: Sub

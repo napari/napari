@@ -21,7 +21,7 @@ def test_selection():
     assert 1 in t.sel
     assert t.sel._current == 1
 
-    assert t.json() == r'{"sel": {"selection": [1], "_current": 1}}'
+    assert t.model_dump_json() == r'{"sel":{"selection":[1],"_current":1}}'
     assert T(sel={'selection': [1], '_current': 1}) == t
 
     t.sel.remove(1)

@@ -1085,7 +1085,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             'axis_labels': self.axis_labels,
             'blending': self.blending,
             'experimental_clipping_planes': [
-                plane.dict() for plane in self.experimental_clipping_planes
+                plane.model_dump() for plane in self.experimental_clipping_planes
             ],
             'metadata': self.metadata,
             'name': self.name,
