@@ -1,6 +1,8 @@
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Annotated, Any, Self
+from typing import Annotated, Any
+
+from typing_extensions import Self
 
 import numpy as np
 from pydantic import BeforeValidator, GetCoreSchemaHandler, GetJsonSchemaHandler
