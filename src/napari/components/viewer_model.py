@@ -10,7 +10,6 @@ from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
-    Dict,
     Union,
     cast,
 )
@@ -109,7 +108,7 @@ EXCLUDE_DICT = {
     'mouse_wheel_callbacks',
 }
 EXCLUDE_JSON = EXCLUDE_DICT.union({'layers', 'active_layer'})
-Dict: type[dict] = dict  # rename, because ViewerModel has method dict
+Dict = dict  # rename, because ViewerModel has method dict
 
 __all__ = ['ViewerModel', 'valid_add_kwargs']
 
@@ -190,7 +189,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         default_factory=LayerList, frozen=True
     )  # Need to create custom JSON encoder for layer!
     help: str = ''
-    status: Union[str, Dict[str, Any]] = 'Ready'
+    status: Union[str, dict[str, Any]] = 'Ready'
     tooltip: Tooltip = Field(default_factory=Tooltip, frozen=True)
     theme: str = Field(default_factory=_current_theme)
     title: str = 'napari'
@@ -1423,7 +1422,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     def _open_or_raise_error(
         self,
         paths: list[Path | str],
-        kwargs: Dict[str, Any] | None = None,
+        kwargs: dict[str, Any] | None = None,
         layer_type: LayerTypeName | None = None,
         stack: bool = False,
     ):
