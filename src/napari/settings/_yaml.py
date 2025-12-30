@@ -71,8 +71,8 @@ class PydanticYamlMixin(BaseModel):
     def yaml(
         self,
         *,
-        include: AbstractSetIntStr | MappingIntStrAny = None,  # type: ignore
-        exclude: AbstractSetIntStr | MappingIntStrAny = None,  # type: ignore
+        include: AbstractSetIntStr | MappingIntStrAny | None = None,
+        exclude: AbstractSetIntStr | MappingIntStrAny | None = None,
         by_alias: bool = False,
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
@@ -82,8 +82,8 @@ class PydanticYamlMixin(BaseModel):
     ) -> str:
         """Serialize model to yaml."""
         data = self.model_dump(
-            include=include,
-            exclude=exclude,
+            include=include,  # type: ignore[arg-type]
+            exclude=exclude,  # type: ignore[arg-type]
             by_alias=by_alias,
             exclude_unset=exclude_unset,
             exclude_defaults=exclude_defaults,
@@ -92,8 +92,8 @@ class PydanticYamlMixin(BaseModel):
         return self._yaml_dump(data, dumper, **dumps_kwargs)
 
     def _yaml_dump(
-        self, data, dumper: type[SafeDumper] | None = None, **kw
+        self, data: Any, dumper: type[SafeDumper] | None = None, **kw: Any
     ) -> str:
         kw.setdefault('sort_keys', False)
-        dumper = dumper or self.model_config.get('yaml_dumper', YamlDumper)
-        return dump_all([data], Dumper=dumper, **kw)
+        dumper_cls: type[SafeDumper] = dumper or self.model_config.get('yaml_dumper', YamlDumper)  # type: ignore[assignment]
+        return dump_all([data], Dumper=dumper_cls, **kw)

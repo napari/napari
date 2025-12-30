@@ -65,7 +65,9 @@ def _exclude_defaults_evented(
         if default_value is PydanticUndefined:
             if field_info.default_factory is not None:
                 # Create a default instance to compare against
-                default_value = field_info.default_factory()
+                # default_factory is a no-arg callable in Pydantic V2
+                factory = field_info.default_factory
+                default_value = factory()
             else:
                 # No default available, include the field
                 result[field_name] = data[field_name]
@@ -172,9 +174,9 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
         arbitrary_types_allowed=True,
         validate_assignment=True,
         extra='ignore',
-        # Settings-specific config
-        env_prefix='NAPARI_',
     )
+    # Settings-specific config (not part of Pydantic V2 ConfigDict)
+    _env_prefix: str = 'NAPARI_'
 
     # provide config_path=None to prevent reading from disk.
     def __init__(self, config_path=_NOT_SET, **values: Any) -> None:
@@ -224,7 +226,7 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
         import json
         parsed: dict[str, Any] = {}
         raw: dict[str, Any] = {}
-        env_prefix = self.model_config.get('env_prefix', 'NAPARI_').upper()
+        env_prefix = getattr(type(self), '_env_prefix', 'NAPARI_').upper()
 
         env_vars: Mapping[str, str | None] = {
             k.upper(): v for k, v in os.environ.items()
@@ -236,17 +238,18 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
             env_name = f'{env_prefix}{field_name.upper()}'
             if env_name in env_vars:
                 val = env_vars[env_name]
-                raw[field_name] = val
-                # Try to parse as JSON for complex types
-                try:
-                    parsed[field_name] = json.loads(val)
-                except (json.JSONDecodeError, TypeError):
-                    parsed[field_name] = val
+                if val is not None:
+                    raw[field_name] = val
+                    # Try to parse as JSON for complex types
+                    try:
+                        parsed[field_name] = json.loads(val)
+                    except (json.JSONDecodeError, TypeError):
+                        parsed[field_name] = val
 
             # Check for nested field access (e.g., NAPARI_APPEARANCE_THEME)
             nested_prefix = f'{env_prefix}{field_name.upper()}_'
             for env_name, env_val in env_vars.items():
-                if env_name.startswith(nested_prefix):
+                if env_name.startswith(nested_prefix) and env_val is not None:
                     nested_path = env_name[len(nested_prefix):].lower()
                     if field_name not in parsed:
                         parsed[field_name] = {}
@@ -270,12 +273,14 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
                             if isinstance(extra, dict) and 'env' in extra:
                                 custom_env = extra['env'].upper()
                                 if custom_env in env_vars:
+                                    val = env_vars[custom_env]
+                                    if val is None:
+                                        continue
                                     if field_name not in parsed:
                                         parsed[field_name] = {}
                                         raw[field_name] = {}
                                     elif not isinstance(parsed[field_name], dict):
                                         continue
-                                    val = env_vars[custom_env]
                                     raw[field_name][nested_name] = val
                                     # Try to parse as JSON, but handle booleans specially
                                     if val.lower() in ('true', '1', 'yes'):

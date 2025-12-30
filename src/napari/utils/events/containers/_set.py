@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Generator, Iterable, Iterator, MutableSet, Sequence
+from collections.abc import Iterable, Iterator, MutableSet
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -13,7 +13,8 @@ from napari.utils.translations import trans
 _T = TypeVar('_T')
 
 if TYPE_CHECKING:
-    from napari._pydantic_compat import ModelField
+    from pydantic import GetCoreSchemaHandler
+    from pydantic_core import CoreSchema
 
 
 class EventedSet(MutableSet[_T]):
@@ -168,14 +169,29 @@ class EventedSet(MutableSet[_T]):
         return type(self)(self._set.union(others))
 
     @classmethod
-    def __get_validators__(cls) -> Generator:
-        yield cls.validate
+    def __get_pydantic_core_schema__(
+        cls,
+        source_type: Any,
+        handler: 'GetCoreSchemaHandler',
+    ) -> 'CoreSchema':
+        """Pydantic V2 schema generation."""
+        from pydantic_core import core_schema
+
+        return core_schema.no_info_plain_validator_function(
+            cls._validate,
+            serialization=core_schema.plain_serializer_function_ser_schema(
+                lambda x: list(x),
+                info_arg=False,
+            ),
+        )
 
     @classmethod
-    def validate(cls, v: Sequence, field: ModelField) -> EventedSet:
+    def _validate(cls, v: Any) -> 'EventedSet[Any]':
         """Pydantic validator."""
         from napari._pydantic_compat import sequence_like
 
+        if isinstance(v, cls):
+            return v
         if not sequence_like(v):
             raise TypeError(
                 trans._(
@@ -184,20 +200,6 @@ class EventedSet(MutableSet[_T]):
                     value=v,
                 )
             )
-        if not field.sub_fields:
-            return cls(v)
-
-        type_field = field.sub_fields[0]
-        errors = []
-        for i, v_ in enumerate(v):
-            _valid_value, error = type_field.validate(v_, {}, loc=f'[{i}]')
-            if error:
-                errors.append(error)
-        if errors:
-            from napari._pydantic_compat import ValidationError
-
-            raise ValidationError(errors, cls)  # type: ignore [arg-type]
-            # need to be fixed when migrate to pydantic 2
         return cls(v)
 
     def _json_encode(self) -> list:

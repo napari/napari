@@ -941,7 +941,7 @@ def _normalize_label_colormap(
     ):
         return any_colormap_like
     if isinstance(any_colormap_like, Sequence):
-        return CyclicLabelColormap(any_colormap_like)
+        return CyclicLabelColormap(colors=any_colormap_like)
     if isinstance(any_colormap_like, MutableMapping):
         return DirectLabelColormap(color_dict=any_colormap_like)
     if (
@@ -949,7 +949,7 @@ def _normalize_label_colormap(
         and any_colormap_like.ndim == 2
         and any_colormap_like.shape[1] in (3, 4)
     ):
-        return CyclicLabelColormap(any_colormap_like)
+        return CyclicLabelColormap(colors=any_colormap_like)
     raise ValueError(
         f'Unable to interpret as labels colormap: {any_colormap_like}'
     )

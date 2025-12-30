@@ -996,7 +996,8 @@ def test_text_error(properties):
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     # try adding text as the wrong type
-    with pytest.raises(ValidationError):
+    # TypeError is raised for invalid text types in Pydantic V2
+    with pytest.raises((TypeError, ValidationError)):
         Points(data, properties=copy(properties), text=123)
 
 
