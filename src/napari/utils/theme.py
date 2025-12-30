@@ -419,10 +419,10 @@ def _install_npe2_themes(themes=None):
     ):
         for theme in manifest.contributions.themes or ():
             # get fallback values
-            theme_dict = themes[theme.type].dict()
+            theme_dict = themes[theme.type].model_dump()
             # update available values
-            theme_info = theme.dict(exclude={'colors'}, exclude_unset=True)
-            theme_colors = theme.colors.dict(exclude_unset=True)
+            theme_info = theme.model_dump(exclude={'colors'}, exclude_unset=True)
+            theme_colors = theme.colors.model_dump(exclude_unset=True)
             theme_dict.update(theme_info)
             theme_dict.update(theme_colors)
             try:

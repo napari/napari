@@ -367,7 +367,7 @@ class NapariPluginManager(PluginManager):
         _data = {}
         for theme_id, theme_colors in data.items():
             try:
-                theme = Theme.parse_obj(theme_colors)
+                theme = Theme.model_validate(theme_colors)
                 register_theme(theme_id, theme, plugin_name)
                 _data[theme_id] = theme
             except (KeyError, ValidationError) as err:
