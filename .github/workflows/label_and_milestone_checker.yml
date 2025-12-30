@@ -91,7 +91,7 @@ jobs:
           else
             echo "ERROR: GitHub username '$PR_AUTHOR' not found as an alias in CITATION.cff under authors."
             echo "You are welcome to modify this PR to include your authorship in CITATION.cff;"
-            echo "citations for community contributions are listed in alphabetical order by family-names."
+            echo "citations for community contributors are listed in alphabetical order by family-names."
             echo "Otherwise, a napari core team member will request this information from you."
             printf '%s\n' "Citation format example:" \
             "```yaml" \
