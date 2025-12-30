@@ -118,11 +118,11 @@ jobs:
         include:
           # Windows py310
           - python: "3.11"
-            platform: windows-2022
+            platform: windows-2025
             backend: pyqt5
             coverage: no_cov
           - python: "3.13"
-            platform: windows-2022
+            platform: windows-2025
             backend: pyqt6
             coverage: cov
           - python: "3.13"
