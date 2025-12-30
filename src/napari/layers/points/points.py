@@ -1378,10 +1378,6 @@ class Points(Layer):
 
     @selected_data.setter
     def selected_data(self, selected_data: Iterable[int]) -> None:
-        # Previously selected points not present in the selection are dropped
-        # and newly selected points are added to the sequence. Reusing the same
-        # Selection object maintains Event signal connections. Only changes are
-        # emitted in events, retained selections are not reported.
         self._selected_data.replace_selection(selected_data)
 
         self._selected_view = list(
