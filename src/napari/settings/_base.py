@@ -6,7 +6,7 @@ import os
 from collections.abc import Mapping, Sequence
 from functools import partial
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, ClassVar, cast
 from warnings import warn
 
 from pydantic import ConfigDict
@@ -176,7 +176,8 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
         extra='ignore',
     )
     # Settings-specific config (not part of Pydantic V2 ConfigDict)
-    _env_prefix: str = 'NAPARI_'
+    # Use ClassVar to prevent Pydantic from treating this as a PrivateAttr
+    _env_prefix: ClassVar[str] = 'NAPARI_'
 
     # provide config_path=None to prevent reading from disk.
     def __init__(self, config_path=_NOT_SET, **values: Any) -> None:

@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 from napari._pydantic_compat import ConfigDict, Field
 from napari.settings._appearance import AppearanceSettings
@@ -68,9 +68,10 @@ class NapariSettings(EventedConfigFileSettings):
 
     # private attributes and ClassVars will not appear in the schema
     _config_path: Path | None = Path(_CFG_PATH) if _CFG_PATH else None
+    # Override env prefix for NapariSettings (ClassVar to prevent Pydantic treating as PrivateAttr)
+    _env_prefix: ClassVar[str] = 'napari_'
 
     model_config = ConfigDict(
-        env_prefix='napari_',
         use_enum_values=False,
         # all of these fields are evented models, so we don't want to break
         # connections by setting the top-level field itself
