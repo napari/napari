@@ -94,12 +94,12 @@ jobs:
             echo "citations for community contributors are listed in alphabetical order by family-names."
             echo "Otherwise, a napari core team member will request this information from you."
             printf '%s\n' "Citation format example:" \
-            "```yaml" \
+            '```yaml' \
             "- given-names: <first name>" \
             "  family-names: <last name>" \
             "  affiliation: <required> (ex. ${PR_AFFILIATION})" \
             "  orcid: https://orcid.org/<ORCID> <optional>" \
             "  alias: ${PR_AUTHOR}" \
-            "```"
+            '```'
             exit 1
           fi
