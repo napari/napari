@@ -18,7 +18,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWrappedLabel,
 )
 from napari._qt.utils import qt_signals_blocked
-from napari._qt.widgets.qt_histogram_widget import QtHistogramWidget
+from napari._qt.widgets.qt_histogram import QtHistogramWidget
 from napari.layers import Image, Surface
 from napari.utils._dtype import normalize_dtype
 from napari.utils.events.event_utils import connect_no_arg, connect_setattr
