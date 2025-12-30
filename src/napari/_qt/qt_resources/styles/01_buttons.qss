@@ -199,6 +199,10 @@ QtModeRadioButton[mode="add_points"]::indicator {
     image: url("theme_{{ id }}:/add.svg");
 }
 
+QtModeRadioButton[mode="histogram"]::indicator {
+   image: url("theme_{{ id }}:/histogram.svg");
+}
+
 QtModePushButton[mode="shuffle"] {
    image: url("theme_{{ id }}:/shuffle.svg");
 }
@@ -217,10 +221,6 @@ QtModePushButton[mode="delete_shape"] {
 
 QWidget[emphasized="true"] QtModePushButton[mode="delete_shape"]:pressed {
   background-color: {{ error }};
-}
-
-QtModePushButton[mode="histogram"] {
-   image: url("theme_{{ id }}:/histogram.svg");
 }
 
 

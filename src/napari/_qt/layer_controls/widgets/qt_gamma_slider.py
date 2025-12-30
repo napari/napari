@@ -6,7 +6,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWrappedLabel,
 )
 from napari._qt.utils import attr_to_settr
-from napari._qt.widgets.qt_mode_buttons import QtModePushButton
+from napari._qt.widgets.qt_mode_buttons import QtModeRadioButton
 from napari.layers.base.base import Layer
 from napari.utils.events.event_utils import connect_setattr
 from napari.utils.translations import trans
@@ -30,7 +30,7 @@ class QtGammaSliderControl(QtWidgetControlsBase):
         Gamma adjustment slider widget.
     gamma_slider_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for the gamma chooser widget.
-    histogram_button : QtModePushButton
+    histogram_button : QtModeRadioButton
         Button to toggle histogram widget.
     histogram_visible : bool
         Whether the histogram widget is currently visible.
@@ -57,16 +57,16 @@ class QtGammaSliderControl(QtWidgetControlsBase):
         self.gamma_slider_label = QtWrappedLabel(trans._('gamma:'))
 
         # Create histogram button on same row by appending to slider's layout
-        self.histogram_button = QtModePushButton(
+        self.histogram_button = QtModeRadioButton(
             layer,
             button_name='histogram',
+            mode=None,
             slot=self._on_histogram_button_clicked,
             tooltip=(
                 'Left click to toggle histogram in layer controls.\n'
                 'Right click to open histogram popup.'
             ),
         )
-        self.histogram_button.setCheckable(True)
         # Install event filter for right-click handling
         self.histogram_button.installEventFilter(self)
 
