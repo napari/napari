@@ -131,12 +131,20 @@ class ErrorWrapper:
         self.loc = loc
 
 
-def display_errors(errors: list[dict]) -> str:
-    """Format validation errors for display."""
+def display_errors(errors: list[Any]) -> str:
+    """Format validation errors for display.
+
+    Works with both Pydantic V1 (list[dict]) and V2 (list[ErrorDetails]) error formats.
+    """
     lines = []
     for error in errors:
-        loc = '.'.join(str(l) for l in error.get('loc', ()))
-        msg = error.get('msg', '')
+        # Handle both dict and ErrorDetails (TypedDict) formats
+        if hasattr(error, 'get'):
+            loc = '.'.join(str(loc_part) for loc_part in error.get('loc', ()))
+            msg = error.get('msg', '')
+        else:
+            loc = '.'.join(str(loc_part) for loc_part in getattr(error, 'loc', ()))
+            msg = getattr(error, 'msg', '')
         lines.append(f"  {loc}: {msg}")
     return '\n'.join(lines)
 

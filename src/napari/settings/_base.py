@@ -67,7 +67,7 @@ def _exclude_defaults_evented(
                 # Create a default instance to compare against
                 # default_factory is a no-arg callable in Pydantic V2
                 factory = field_info.default_factory
-                default_value = factory()
+                default_value = factory()  # type: ignore[call-arg]
             else:
                 # No default available, include the field
                 result[field_name] = data[field_name]
@@ -311,7 +311,7 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
         """Return the path to/from which settings be saved/loaded."""
         return self._config_path
 
-    def model_dump(
+    def model_dump(  # type: ignore[override]
         self,
         *,
         mode: str = 'python',
@@ -322,6 +322,7 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
         exclude_defaults: bool = False,
         exclude_none: bool = False,
         exclude_env: bool = False,
+        **kwargs: Any,
     ) -> DictStrAny:
         """Return dict representation of the model.
 
@@ -331,13 +332,14 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
         # because Pydantic V2's exclude_defaults doesn't work correctly for
         # EventedModel (it compares private attrs which are always different)
         data = super().model_dump(
-            mode=mode,
-            include=include,
-            exclude=exclude,
+            mode=mode,  # type: ignore[arg-type]
+            include=include,  # type: ignore[arg-type]
+            exclude=exclude,  # type: ignore[arg-type]
             by_alias=by_alias,
             exclude_unset=exclude_unset,
             exclude_defaults=False,  # Handle below
             exclude_none=exclude_none,
+            **kwargs,
         )
         if exclude_defaults:
             data = _exclude_defaults_evented(self, data)
@@ -346,7 +348,7 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
         return data
 
     # Backwards compatibility alias
-    def dict(
+    def dict(  # type: ignore[override]
         self,
         *,
         include: AbstractSetIntStr | MappingIntStrAny | None = None,
@@ -568,7 +570,7 @@ def _remove_bad_keys(data: dict, keys: list[tuple[int | str, ...]]):
             continue
         d = data
         while True:
-            base, *key = key
+            base, *key = key  # type: ignore[assignment]
             if not key:
                 break
             # since no pydantic fields will be integers, integers usually
