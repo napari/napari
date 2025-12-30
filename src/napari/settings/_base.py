@@ -332,7 +332,7 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
         # because Pydantic V2's exclude_defaults doesn't work correctly for
         # EventedModel (it compares private attrs which are always different)
         data = super().model_dump(
-            mode=mode,  # type: ignore[arg-type]
+            mode=mode,
             include=include,  # type: ignore[arg-type]
             exclude=exclude,  # type: ignore[arg-type]
             by_alias=by_alias,

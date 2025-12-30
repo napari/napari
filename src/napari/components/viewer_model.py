@@ -109,7 +109,7 @@ EXCLUDE_DICT = {
     'mouse_wheel_callbacks',
 }
 EXCLUDE_JSON = EXCLUDE_DICT.union({'layers', 'active_layer'})
-Dict = dict  # rename, because ViewerModel has method dict
+Dict: type[dict] = dict  # rename, because ViewerModel has method dict
 
 __all__ = ['ViewerModel', 'valid_add_kwargs']
 
