@@ -356,7 +356,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         return v
 
-    def json(self, **kwargs):
+    def model_dump_json(self, **kwargs):
         """Serialize to json."""
         # Manually exclude the layer list and active layer which cannot be serialized at this point
         # and mouse and keybindings don't belong on model
@@ -364,9 +364,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         # https://github.com/samuelcolvin/pydantic/issues/660#issuecomment-642211017
         exclude = kwargs.pop('exclude', set())
         exclude = exclude.union(EXCLUDE_JSON)
-        return super().json(exclude=exclude, **kwargs)
+        return super().model_dump_json(exclude=exclude, **kwargs)
 
-    def dict(self, **kwargs):
+    def model_dump(self, **kwargs):
         """Convert to a dictionary."""
         # Manually exclude the layer list and active layer which cannot be serialized at this point
         # and mouse and keybindings don't belong on model
@@ -374,7 +374,16 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         # https://github.com/samuelcolvin/pydantic/issues/660#issuecomment-642211017
         exclude = kwargs.pop('exclude', set())
         exclude = exclude.union(EXCLUDE_DICT)
-        return super().dict(exclude=exclude, **kwargs)
+        return super().model_dump(exclude=exclude, **kwargs)
+
+    # Compatibility aliases for Pydantic V1 API
+    def json(self, **kwargs):
+        """Deprecated: Use model_dump_json() instead."""
+        return self.model_dump_json(**kwargs)
+
+    def dict(self, **kwargs):
+        """Deprecated: Use model_dump() instead."""
+        return self.model_dump(**kwargs)
 
     def __hash__(self):
         return id(self)
