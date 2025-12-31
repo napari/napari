@@ -1,9 +1,9 @@
+import contextlib
 from typing import Optional
 
 import numpy as np
 from qtpy.QtCore import Qt, Signal
 from qtpy.QtWidgets import (
-    QCheckBox,
     QHBoxLayout,
     QLabel,
     QPushButton,
@@ -19,6 +19,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
 )
 from napari._qt.utils import qt_signals_blocked
 from napari._qt.widgets.qt_histogram import QtHistogramWidget
+from napari._qt.widgets.qt_histogram_settings import QtHistogramSettingsWidget
 from napari.layers import Image, Surface
 from napari.utils._dtype import normalize_dtype
 from napari.utils.events.event_utils import connect_no_arg, connect_setattr
@@ -88,6 +89,8 @@ class QContrastLimitsPopup(QtPopup):
     ) -> None:
         super().__init__(parent)
 
+        self._layer = layer
+
         # Create vertical layout for stacking widgets
         from qtpy.QtWidgets import QApplication, QVBoxLayout
         from superqt import QLabeledDoubleRangeSlider
@@ -123,12 +126,12 @@ class QContrastLimitsPopup(QtPopup):
 
         # Add histogram widget for Image layers, Surface layers not yet implemented
         self.histogram_widget = None
+        self.settings_widget = None
         if isinstance(layer, Image) and hasattr(layer, 'histogram'):
             # Create histogram widget
             self.histogram_widget = QtHistogramWidget(layer)
 
             # Add histogram below the slider (slider is at index 0)
-            # The layout is already a QVBoxLayout from QRangeSliderPopup
             self._layout.insertWidget(1, self.histogram_widget)
 
             # Create controls layout below histogram
@@ -136,11 +139,15 @@ class QContrastLimitsPopup(QtPopup):
             controls_layout.setContentsMargins(0, 5, 0, 5)
             controls_layout.setSpacing(10)
 
-            # Add log scale checkbox
-            self.log_checkbox = QCheckBox('Log scale')
-            self.log_checkbox.setChecked(layer.histogram.log_scale)
-            self.log_checkbox.toggled.connect(self._on_log_scale_toggled)
-            controls_layout.addWidget(self.log_checkbox)
+            # Add shared settings widget (mode, bins, log scale)
+            self.settings_widget = QtHistogramSettingsWidget(
+                layer.histogram,
+                show_mode=True,
+                show_bins=True,
+                show_log=True,
+                compact=True,
+            )
+            controls_layout.addWidget(self.settings_widget)
 
             # Add gamma slider with label
             if hasattr(layer, 'gamma'):
@@ -223,16 +230,33 @@ class QContrastLimitsPopup(QtPopup):
             return
         super().keyPressEvent(event)
 
+    def closeEvent(self, event):
+        """Clean up event handlers when popup is closed."""
+        self._cleanup()
+        super().closeEvent(event)
+
+    def hideEvent(self, event):
+        """Clean up event handlers when popup is hidden."""
+        self._cleanup()
+        super().hideEvent(event)
+
+    def _cleanup(self) -> None:
+        """Disconnect event handlers and clean up widgets."""
+        if self.settings_widget is not None:
+            self.settings_widget.cleanup()
+        if self.histogram_widget is not None:
+            self.histogram_widget.cleanup()
+        if hasattr(self, 'gamma_slider') and hasattr(self._layer, 'events'):
+            with contextlib.suppress(ValueError, RuntimeError):
+                self._layer.events.gamma.disconnect(
+                    self._on_layer_gamma_changed
+                )
+
     def _create_widget_from_layout(self, layout: QHBoxLayout) -> QWidget:
         """Helper to wrap a layout in a widget."""
         widget = QWidget()
         widget.setLayout(layout)
         return widget
-
-    def _on_log_scale_toggled(self, checked: bool) -> None:
-        """Handle log scale checkbox toggle."""
-        if self.histogram_widget is not None:
-            self.histogram_widget.layer.histogram.log_scale = checked
 
     def _on_gamma_slider_changed(self, value: int) -> None:
         """Handle gamma slider value change."""

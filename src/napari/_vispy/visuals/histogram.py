@@ -47,7 +47,7 @@ class HistogramVisual(Compound):
         # Disable depth test for LUT line to ensure it renders on top
         self._lut_line.set_gl_state('translucent', depth_test=False)
 
-        # Initialize with empty data using helper
+        # Initialize with empty data using helper to prevent Vispy errors
         self._set_empty_data()
 
         super().__init__(
@@ -270,7 +270,6 @@ class HistogramVisual(Compound):
         x_min = (clim_min - data_min) / range_size
         x_max = (clim_max - data_min) / range_size
 
-        # Clamp to [0, 1] range
         x_min = np.clip(x_min, 0, 1)
         x_max = np.clip(x_max, 0, 1)
 
