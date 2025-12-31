@@ -226,15 +226,33 @@ class QContrastLimitsPopup(QtPopup):
             return
         super().keyPressEvent(event)
 
+    def showEvent(self, event):
+        """Enable histogram when popup is shown."""
+        super().showEvent(event)
+        if self.histogram_widget is not None and hasattr(
+            self._layer, 'histogram'
+        ):
+            self._layer.histogram.enabled = True
+            self._layer.histogram.compute()
+
     def closeEvent(self, event):
         """Clean up event handlers when popup is closed."""
+        self._disable_histogram()
         self._cleanup()
         super().closeEvent(event)
 
     def hideEvent(self, event):
         """Clean up event handlers when popup is hidden."""
+        self._disable_histogram()
         self._cleanup()
         super().hideEvent(event)
+
+    def _disable_histogram(self) -> None:
+        """Disable histogram when popup is hidden/closed."""
+        if self.histogram_widget is not None and hasattr(
+            self._layer, 'histogram'
+        ):
+            self._layer.histogram.enabled = False
 
     def _cleanup(self) -> None:
         """Disconnect event handlers and clean up widgets."""
