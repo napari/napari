@@ -508,7 +508,7 @@ def config_file_settings_source(
         try:
             # try to parse the config file into a dict
             new_data = load(path_.read_text()) or {}
-        except Exception as err:
+        except Exception as err:  # noqa: BLE001
             _logger.warning(
                 trans._(
                     'The content of the napari settings file could not be read\n\nThe default settings will be used and the content of the file will be replaced the next time settings are changed.\n\nError:\n{err}',
