@@ -28,13 +28,13 @@ class HistogramVisual(Compound):
         self._bins = np.array([])
         self._counts = np.array([])
         self._log_scale = False
-        self._bar_color = (0.8, 0.8, 0.8, 0.8)
+        self._bar_color = (0.8, 0.8, 0.8, 0.8)  # Light gray bars
         self._lut_color = (1.0, 1.0, 0.0, 0.9)  # Yellow for unified LUT line
         self._axes_color = (0.5, 0.5, 0.5, 1.0)
 
         # Create sub-visuals
         self._bars = Mesh()
-        self._lut_line = Line(method='gl', antialias=True)  # Unified LUT line
+        self._lut_line = Line(method='gl', antialias=True)
         self._axes = Line(method='gl', antialias=True)
         self._text = Text(color='white', font_size=8, anchor_x='left')
 
@@ -47,14 +47,9 @@ class HistogramVisual(Compound):
         # Disable depth test for LUT line to ensure it renders on top
         self._lut_line.set_gl_state('translucent', depth_test=False)
 
-        # Initialize lines with dummy 2D data (vispy requires proper shape)
-        # Use a simple line that won't be visible
-        dummy_line = np.array([[0, 0], [0, 0]], dtype=np.float32)
-        self._lut_line.set_data(pos=dummy_line)
-        self._axes.set_data(pos=dummy_line)
+        # Initialize with empty data using helper
+        self._set_empty_data()
 
-        # Combine into compound visual - order matters for rendering!
-        # Draw bars and axes first, then LUT line on top
         super().__init__(
             [
                 self._bars,
@@ -131,7 +126,6 @@ class HistogramVisual(Compound):
         # Update axes
         self._update_axes()
 
-        # Update unified LUT line (combines clims and gamma curve)
         if clims is not None and data_range is not None:
             self._update_lut_line(clims, gamma, data_range)
         else:
@@ -139,23 +133,23 @@ class HistogramVisual(Compound):
             dummy_line = np.array([[0, 0], [0, 0]], dtype=np.float32)
             self._lut_line.set_data(pos=dummy_line)
 
-    def _clear(self) -> None:
-        """Clear all visual elements."""
+    def _set_empty_data(self) -> None:
+        """Set minimal valid data to avoid vispy errors with empty arrays."""
         dummy_line = np.array([[0, 0], [0, 0]], dtype=np.float32)
-        # Use minimal valid mesh instead of empty arrays to avoid vispy errors
         dummy_vertices = np.array([[0, 0, 0]], dtype=np.float32)
         dummy_faces = np.array([[0, 0, 0]], dtype=np.uint32)
         self._bars.set_data(vertices=dummy_vertices, faces=dummy_faces)
         self._lut_line.set_data(pos=dummy_line)
         self._axes.set_data(pos=dummy_line)
 
+    def _clear(self) -> None:
+        """Clear all visual elements."""
+        self._set_empty_data()
+
     def _update_bars(self) -> None:
         """Update the bar chart mesh from bins and counts."""
         if len(self._bins) < 2 or len(self._counts) == 0:
-            # Use minimal valid mesh instead of empty arrays to avoid vispy errors
-            dummy_vertices = np.array([[0, 0, 0]], dtype=np.float32)
-            dummy_faces = np.array([[0, 0, 0]], dtype=np.uint32)
-            self._bars.set_data(vertices=dummy_vertices, faces=dummy_faces)
+            self._set_empty_data()
             return
 
         # Normalize data to [0, 1] range

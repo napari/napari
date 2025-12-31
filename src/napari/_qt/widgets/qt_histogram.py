@@ -53,9 +53,7 @@ class QtHistogramWidget(QWidget):
         )
         # Set parent after creation
         self.canvas.native.setParent(self)
-        # Set reasonable height constraints
         self.canvas.native.setMinimumHeight(100)
-        self.canvas.native.setMaximumHeight(150)
 
         # Create view - use ViewBox and add_widget pattern from working PR
         from vispy.scene import ViewBox
@@ -69,7 +67,7 @@ class QtHistogramWidget(QWidget):
 
         # Set up camera
         self.view.camera = 'panzoom'
-        self.view.camera.set_range(x=(0, 1), y=(0, 1))  # type: ignore[attr-defined]
+        self.view.camera.set_range(x=(0, 1), y=(0, 1), margin=0.01)  # type: ignore[attr-defined]
         # Disable viewbox interaction to prevent accidental pan/zoom
         self.view.interactive = False
 
