@@ -373,6 +373,11 @@ class FilepathSchemaWidget(SchemaWidgetMixin, QtWidgets.QWidget):
 
 
     def file_filter(self) -> str:
+        # Pydantic V2 spreads json_schema_extra to top level
+        if 'file_extension' in self.schema:
+            extension = self.schema['file_extension']
+            return f"File (*.{extension})"
+        # Pydantic V1 style - nested under json_schema_extra
         if "json_schema_extra" in self.schema and 'file_extension' in self.schema['json_schema_extra']:
             extension = self.schema['json_schema_extra']['file_extension']
             return f"File (*.{extension})"
