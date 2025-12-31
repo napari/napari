@@ -393,5 +393,10 @@ authors:
   affiliation: Chinese Academy of Sciences - SIAT, Shenzhen, China
   orcid: https://orcid.org/0009-0005-8264-5682
   alias: BeanLi
+- given-names: Derek
+  family-names: Thirstrup
+  affiliation: Allen Institute
+  orcid: https://orcid.org/0000-0002-2702-2010
+  alias: derekthirstrup
 repository-code: https://github.com/napari/napari
 license: BSD-3-Clause
