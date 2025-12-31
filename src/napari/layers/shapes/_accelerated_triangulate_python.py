@@ -124,7 +124,7 @@ def generate_2D_edge_meshes_py(
     miters = np.divide(
         miters,
         _mf_dot,
-        out=np.zeros_like(miters),
+        out=miters,
         where=np.abs(_mf_dot) > 1e-10,
     )
 
