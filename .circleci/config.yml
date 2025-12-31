@@ -45,7 +45,8 @@ jobs:
           command: |
             . .venv/bin/activate
             cd docs
-            xvfb-run --auto-servernum make html
+            # Use 'slim' target to skip npe2 docs rendering (npe2 docs script not yet Pydantic V2 compatible)
+            xvfb-run --auto-servernum make slim
           environment:
             UV_CONSTRAINT: ../napari/resources/constraints/constraints_py3.12_docs.txt
           no_output_timeout: 30m
