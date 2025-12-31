@@ -38,7 +38,7 @@ class QtHistogramSettingsWidget(QWidget):
     Attributes
     ----------
     mode_combobox : QComboBox | None
-        Combobox for selecting displayed/full mode.
+        Combobox for selecting canvas/full mode.
     n_bins_spinbox : QSpinBox | None
         Spinbox for setting number of bins.
     log_scale_checkbox : QCheckBox | None
@@ -63,10 +63,12 @@ class QtHistogramSettingsWidget(QWidget):
 
         # Mode selector
         self.mode_combobox = QComboBox()
-        self.mode_combobox.addItems(['displayed', 'full'])
+        self.mode_combobox.addItems(['canvas', 'full'])
         self.mode_combobox.setCurrentText(histogram_model.mode)
         self.mode_combobox.setToolTip(
-            trans._('Compute histogram from displayed data or full volume')
+            trans._(
+                'Compute histogram from data shown on canvas or full volume'
+            )
         )
         self.mode_combobox.currentTextChanged.connect(self._on_mode_change)
 
@@ -108,7 +110,7 @@ class QtHistogramSettingsWidget(QWidget):
 
         self.setLayout(layout)
 
-    def _on_mode_change(self, mode: Literal['displayed', 'full']) -> None:
+    def _on_mode_change(self, mode: Literal['canvas', 'full']) -> None:
         """Update model when mode changes in the combobox."""
         self._histogram.mode = mode
 
