@@ -4,10 +4,10 @@ from typing import (
     Any,
     Literal,
     NamedTuple,
-    Self,
 )
 
 import numpy as np
+from typing_extensions import Self
 
 from napari._pydantic_compat import field_validator, model_validator
 from napari.utils.events import EventedModel
