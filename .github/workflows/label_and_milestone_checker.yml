@@ -71,8 +71,7 @@ jobs:
 
   check_citation_cff_for_pr_author:
     name: Check PR author is in CITATION.cff
-    # Only run on main repo - forks may have authors not in CITATION.cff
-    if: (github.event_name == 'pull_request' && github.repository == 'napari/napari')
+    if: (github.event_name == 'pull_request')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
