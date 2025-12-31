@@ -40,8 +40,6 @@ class QtHistogramSettingsWidget(QWidget):
         Whether to show the bins spinbox.
     show_log : bool, default: True
         Whether to show the log scale checkbox.
-    compact : bool, default: False
-        Use more compact layout without labels.
 
     Attributes
     ----------
@@ -61,7 +59,6 @@ class QtHistogramSettingsWidget(QWidget):
         show_mode: bool = True,
         show_bins: bool = True,
         show_log: bool = True,
-        compact: bool = False,
     ) -> None:
         super().__init__(parent)
         self._histogram = histogram_model
@@ -69,7 +66,7 @@ class QtHistogramSettingsWidget(QWidget):
 
         layout = QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(8 if not compact else 4)
+        layout.setSpacing(4)
 
         self.mode_combobox = None
         self.n_bins_spinbox = None
@@ -84,11 +81,8 @@ class QtHistogramSettingsWidget(QWidget):
                 trans._('Compute histogram from displayed data or full volume')
             )
             self.mode_combobox.currentTextChanged.connect(self._on_mode_change)
-            # Model -> UI
-            histogram_model.events.mode.connect(self._on_model_mode_change)
 
-            if not compact:
-                layout.addWidget(QLabel(trans._('mode:')))
+            histogram_model.events.mode.connect(self._on_model_mode_change)
             layout.addWidget(self.mode_combobox)
 
         # Bins spinbox
@@ -102,11 +96,10 @@ class QtHistogramSettingsWidget(QWidget):
                 histogram_model,
                 'n_bins',
             )
-            # Model -> UI
+
             histogram_model.events.n_bins.connect(self._on_model_n_bins_change)
 
-            if not compact:
-                layout.addWidget(QLabel(trans._('bins:')))
+            layout.addWidget(QLabel(trans._('bins:')))
             layout.addWidget(self.n_bins_spinbox)
 
         # Log scale checkbox

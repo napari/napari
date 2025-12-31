@@ -145,7 +145,6 @@ class QContrastLimitsPopup(QtPopup):
                 show_mode=True,
                 show_bins=True,
                 show_log=True,
-                compact=True,
             )
             controls_layout.addWidget(self.settings_widget)
 
