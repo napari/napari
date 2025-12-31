@@ -112,6 +112,11 @@ class HistogramModel(EventedModel):
         if hasattr(layer.events, 'set_data'):
             layer.events.set_data.connect(self._on_slice_change)
 
+        # Connect to loaded event for async slicing support
+        # This fires when async slice loading completes
+        if hasattr(layer.events, 'loaded'):
+            layer.events.loaded.connect(self._on_loaded_change)
+
         # Connect to our own events to trigger recomputation
         self.events.n_bins.connect(self._on_params_change)
         self.events.mode.connect(self._on_params_change)
@@ -209,65 +214,44 @@ class HistogramModel(EventedModel):
         return self._get_full_data()
 
     def _get_displayed_data(self) -> Optional[np.ndarray]:
-        """Get data from currently displayed dimensions.
+        """Get data from currently displayed slice.
 
         In 'displayed' mode, the histogram is computed from the visible data
-        via _layer._slice_input.displayed dimensions.
+        that has already been sliced for rendering. This uses the layer's
+        internal _slice.image.raw which contains the data being displayed.
 
         This provides a histogram of what the user is actually seeing,
-        which is most useful for adjusting contrast limits.
+        which is most useful for adjusting contrast limits. It also
+        correctly handles multiscale data by using the appropriate
+        resolution level that is currently being rendered.
 
         Returns
         -------
         np.ndarray | None
-            Data from displayed dimensions only.
+            Data from displayed slice only.
         """
-        # Get the data slice position for non-displayed dimensions
-        data_slice = self._layer._data_slice
+        # Use the already-sliced data from the rendering pipeline
+        # This correctly handles multiscale, dask, and async loading
+        if (
+            hasattr(self._layer, '_slice')
+            and self._layer._slice is not None
+            and hasattr(self._layer._slice, 'image')
+            and self._layer._slice.image is not None
+            and hasattr(self._layer._slice.image, 'raw')
+        ):
+            raw = self._layer._slice.image.raw
+            if raw is not None:
+                return np.asarray(raw)
 
-        # Get the full data
-        data = self._layer.data
-        # Handle multiscale - use highest resolution level
-        if isinstance(data, list | tuple):
-            data = data[0]
-
-        # For RGB images, data_slice.point doesn't include the RGB channel dimension
-        # We need to account for this when building slices
-        is_rgb = getattr(self._layer, 'rgb', False)
-
-        # Build the slice to extract only displayed dimensions
-        # Use the current slice point for non-displayed dimensions
-        slices = []
-        point_idx = 0  # Index into data_slice.point tuple
-
-        for dim_idx in range(data.ndim):
-            # For RGB images, the last dimension is the color channel
-            # and should always be included (not sliced)
-            if is_rgb and dim_idx == data.ndim - 1:
-                slices.append(slice(None))
-                continue
-
-            # Check if this dimension is displayed (has np.nan in point)
-            point = data_slice.point[point_idx]
-            if np.isnan(point):
-                # This is a displayed dimension - include all data
-                slices.append(slice(None))
-            else:
-                # Use the current position for this non-displayed dimension
-                # data_slice.point is in data coordinates
-                point_val = int(np.round(point))
-                # Clamp to valid range
-                point_val = np.clip(point_val, 0, data.shape[dim_idx] - 1)
-                slices.append(point_val)
-
-            point_idx += 1
-
-        # Extract and return the slice
-        slice_data = data[tuple(slices)]
-        return np.asarray(slice_data)
+        # Fallback: if slice not available, use full data
+        # This can happen before first render
+        return self._get_full_data()
 
     def _get_full_data(self) -> Optional[np.ndarray]:
         """Get full volume data.
+
+        For multiscale data, uses the lowest resolution level (like
+        contrast limit calculations) for efficiency.
 
         Returns
         -------
@@ -275,9 +259,10 @@ class HistogramModel(EventedModel):
             Full volume data.
         """
         data = self._layer.data
-        # Handle multiscale - use highest resolution level
+        # Handle multiscale - use lowest resolution level for efficiency
+        # This matches the pattern in _calc_data_range
         if isinstance(data, list | tuple):
-            data = data[0]
+            data = data[-1]
         return np.asarray(data)
 
     def _sample_data(self, data: np.ndarray, max_samples: int) -> np.ndarray:
@@ -326,6 +311,16 @@ class HistogramModel(EventedModel):
         on the currently visible data.
         """
         if self.mode == 'displayed':
+            self._mark_dirty()
+
+    def _on_loaded_change(self) -> None:
+        """Called when async slice loading completes.
+
+        For async slicing, the slice data may not be available immediately.
+        This event fires when loading completes, so we can update the histogram
+        with the newly loaded slice data.
+        """
+        if self.mode == 'displayed' and getattr(self._layer, 'loaded', True):
             self._mark_dirty()
 
     def _on_params_change(self) -> None:
