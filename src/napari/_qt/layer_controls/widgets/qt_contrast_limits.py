@@ -90,6 +90,9 @@ class QContrastLimitsPopup(QtPopup):
         super().__init__(parent)
 
         self._layer = layer
+        self._histogram_was_enabled = (
+            False  # Track if histogram was enabled before popup opened
+        )
 
         # Create vertical layout for stacking widgets
         from qtpy.QtWidgets import QApplication, QVBoxLayout
@@ -232,8 +235,12 @@ class QContrastLimitsPopup(QtPopup):
         if self.histogram_widget is not None and hasattr(
             self._layer, 'histogram'
         ):
-            self._layer.histogram.enabled = True
-            self._layer.histogram.compute()
+            # Track if histogram was already enabled before we open the popup
+            self._histogram_was_enabled = self._layer.histogram.enabled
+            if not self._histogram_was_enabled:
+                # Only enable if it wasn't already enabled
+                self._layer.histogram.enabled = True
+                self._layer.histogram.compute()
 
     def closeEvent(self, event):
         """Clean up event handlers when popup is closed."""
@@ -248,10 +255,13 @@ class QContrastLimitsPopup(QtPopup):
         super().hideEvent(event)
 
     def _disable_histogram(self) -> None:
-        """Disable histogram when popup is hidden/closed."""
-        if self.histogram_widget is not None and hasattr(
-            self._layer, 'histogram'
+        """Disable histogram when popup is hidden/closed, only if popup enabled it."""
+        if (
+            self.histogram_widget is not None
+            and hasattr(self._layer, 'histogram')
+            and not self._histogram_was_enabled
         ):
+            # Only disable if the popup was the one that enabled it
             self._layer.histogram.enabled = False
 
     def _cleanup(self) -> None:
