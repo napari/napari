@@ -19,6 +19,7 @@ from napari.layers.shapes._shapes_utils import (
     reconstruct_and_triangulate_edge,
     triangulate_face_and_edges,
     triangulate_face_vispy,
+    vectorized_lines_intersect,
 )
 
 W_DATA = [[0, 3], [1, 0], [2, 3], [5, 0], [2.5, 5]]
@@ -532,3 +533,33 @@ def test_save_failed_triangulation(tmp_path):
 
     d2 = np.load(bin_path)['data']
     npt.assert_array_equal(d2, data)
+
+
+@pytest.mark.parametrize(
+    ('p1', 'q1', 'expected', 'name'),
+    [
+        ([0, 0], [2, 2], True, 'simple intersection'),
+        ([-1, -1], [0, -1], False, 'no intersection'),
+        ([0, 4], [4, 0], False, 'parallel, non-intersecting'),
+        ([1, 1], [2.5, -0.5], True, 'collinear overlapping'),
+        ([3, -1], [4, -2], False, 'collinear non-overlapping'),
+        ([2, 0], [3, 1], True, 'segments meeting at endpoint'),
+        ([1, 1], [1, 1], True, 'zero-length (point) on line'),
+        ([0, 0], [0, 0], False, 'zero-length (point) off line'),
+    ],
+)
+def test_vectorized_lines_intersect(p1, q1, expected, name):
+    """Test the vectorized_lines_intersect function with multiple cases."""
+    # p2 and q2 define a single line segment to test against
+    p2 = np.array([0, 2])
+    q2 = np.array([2, 0])
+
+    # The function expects arrays of points, so we wrap the single case
+    p1_arr = np.array([p1])
+    q1_arr = np.array([q1])
+
+    # Call the function
+    intersection = vectorized_lines_intersect(p1_arr, q1_arr, p2, q2)
+
+    # Assert correctness
+    assert intersection[0] == expected

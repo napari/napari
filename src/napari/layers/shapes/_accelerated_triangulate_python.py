@@ -483,6 +483,60 @@ def orientation(p: np.ndarray, q: np.ndarray, r: np.ndarray) -> np.ndarray:
     return val
 
 
+def vectorized_orientation(
+    p: npt.NDArray, q: npt.NDArray, r: npt.NDArray
+) -> npt.NDArray:
+    """Determines orientation of ordered triplet(s) (p, q, r).
+
+    This implementation is vectorized and works for arrays of points.
+
+    Parameters
+    ----------
+    p : (..., 2) array
+        Array of first points of triplets.
+    q : (..., 2) array
+        Array of second points of triplets.
+    r : (..., 2) array
+        Array of third points of triplets.
+
+    Returns
+    -------
+    val : (...) array of int
+        An array of values, one for each triplet. 0 if p, q, r are collinear,
+        1 if clockwise, and -1 if counterclockwise. (These definitions assume
+        napari's default reference frame, in which the 0th axis is y pointing
+        down, and the 1st axis is x, pointing right.)
+    """
+    # The orientation is calculated as the sign of the cross product
+    # of the vectors (q - p) and (r - p).
+    val = cross_2d(q - p, r - p)
+    return np.sign(val).astype(np.int8)
+
+
+def cross_2d(a: npt.NDArray, b: npt.NDArray) -> npt.NDArray:
+    """Calculate the magnitude of the cross product of two 2D vectors.
+
+    This is the explicit implementation of the 2D cross product magnitude,
+    which was provided by numpy developer Sebastian Berg
+    (seberg) to avoid a NumPy 2.0 deprecation warning.
+    See this issue fordetails:
+    https://github.com/numpy/numpy/issues/26620#issuecomment-2150748569
+
+    Parameters
+    ----------
+    a : (..., 2) array
+        An array of 2D vectors.
+    b : (..., 2) array
+        An array of 2D vectors.
+
+    Returns
+    -------
+    cross_product : (...) array
+        The magnitude of the cross product.
+    """
+    return a[..., 0] * b[..., 1] - a[..., 1] * b[..., 0]
+
+
 def _common_orientation(poly: npt.NDArray) -> int | None:
     """Check whether a polygon has the same orientation for all its angles.
     and return the orientation.
