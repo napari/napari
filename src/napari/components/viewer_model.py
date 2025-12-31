@@ -719,7 +719,11 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         # TODO: this doesn't work well yet with grid mode (and is broken by wide borders too)
 
         # Compute the tooltip first since it is always needed.
-        if self.tooltip.visible and active is not None and active._loaded:
+        if (
+            self.tooltip.visible
+            and active is not None
+            and active._slicing_state._loaded
+        ):
             tooltip_text = active._get_tooltip_text(
                 np.asarray(self.cursor.position),
                 view_direction=self.cursor._view_direction,
@@ -729,7 +733,11 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         # If there is an active layer and a single selection, calculate status using "the classic way".
         # Then return the status and the tooltip.
-        if active is not None and active._loaded and len(selection) < 2:
+        if (
+            active is not None
+            and active._slicing_state._loaded
+            and len(selection) < 2
+        ):
             status = active.get_status(
                 self.cursor.position,
                 view_direction=self.cursor._view_direction,
@@ -744,7 +752,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             if (
                 not layer.visible
                 or layer.opacity == 0
-                or not layer._loaded
+                or not layer._slicing_state._loaded
                 or (layer not in selection and not self.grid.enabled)
             ):
                 continue
