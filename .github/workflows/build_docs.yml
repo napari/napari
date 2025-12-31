@@ -26,4 +26,6 @@ jobs:
       main-ref: ${{ github.sha }}
       docs-repo: napari/docs
       docs-ref: main
-      make_target: "html"
+      # Use slimfast to skip npe2 docs prep until npe2 has Pydantic V2 compatibility
+      # See: https://github.com/napari/npe2/pull/419
+      make_target: "slimfast"
