@@ -128,7 +128,7 @@ optional-numba = [
 ]
 optional = [
     "napari[optional-base,optional-numba,bermuda]",
-    "triangle",
+    "triangle @ git+https://github.com/drufat/triangle.git",  # PyPI version incompatible with Python 3.14
 ]
 bermuda = [
     "bermuda>=0.1.5",
@@ -207,7 +207,7 @@ docs = [
     "pydeps",
     "seedir",
     # triangle and bermuda needed for docs/guides/triangulation.md
-    "triangle",
+    "triangle @ git+https://github.com/drufat/triangle.git",  # PyPI version incompatible with Python 3.14
     "bermuda>=0.1.4",
     "pytest",
     "linkify-it-py",
@@ -299,7 +299,7 @@ docs = [
     "pydeps",
     "seedir",
     # triangle and bermuda needed for docs/guides/triangulation.md
-    "triangle",
+    "triangle @ git+https://github.com/drufat/triangle.git",  # PyPI version incompatible with Python 3.14
     "bermuda>=0.1.4",
     "pytest",
     "linkify-it-py",
