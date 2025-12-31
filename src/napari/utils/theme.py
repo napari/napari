@@ -414,6 +414,13 @@ def _install_npe2_themes(themes=None):
         themes = _themes
     import npe2
 
+    def _model_dump(obj, **kwargs):
+        """Compatibility helper for npe2 models (supports both Pydantic V1 and V2)."""
+        if hasattr(obj, 'model_dump'):
+            return obj.model_dump(**kwargs)
+        # Pydantic V1 fallback
+        return obj.dict(**kwargs)  # type: ignore[union-attr]
+
     for manifest in npe2.PluginManager.instance().iter_manifests(
         disabled=False
     ):
@@ -421,10 +428,8 @@ def _install_npe2_themes(themes=None):
             # get fallback values
             theme_dict = themes[theme.type].model_dump()
             # update available values from npe2 theme objects
-            theme_info = theme.model_dump(
-                exclude={'colors'}, exclude_unset=True
-            )  # type: ignore[attr-defined]
-            theme_colors = theme.colors.model_dump(exclude_unset=True)  # type: ignore[attr-defined]
+            theme_info = _model_dump(theme, exclude={'colors'}, exclude_unset=True)
+            theme_colors = _model_dump(theme.colors, exclude_unset=True)
             theme_dict.update(theme_info)
             theme_dict.update(theme_colors)
             try:
