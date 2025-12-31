@@ -194,7 +194,8 @@ jobs:
         coverage: cov
 
   coverage_report:
-    if: ${{ always() }}
+    # Only run coverage upload on main repo (forks don't have CODECOV_TOKEN)
+    if: ${{ always() && github.repository == 'napari/napari' }}
     secrets: inherit
     needs:
       - test
