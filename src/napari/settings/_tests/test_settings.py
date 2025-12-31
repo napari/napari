@@ -126,24 +126,24 @@ def test_settings_load_invalid_section(tmp_path):
 
 
 def test_settings_to_dict(test_settings):
-    data_dict = test_settings.dict()
+    data_dict = test_settings.model_dump()
     assert isinstance(data_dict, dict)
     assert data_dict.get('application')
 
-    data_dict = test_settings.dict(exclude_defaults=True)
+    data_dict = test_settings.model_dump(exclude_defaults=True)
     assert not data_dict.get('application')
 
 
 def test_settings_to_dict_no_env(monkeypatch):
     """Test that exclude_env works to exclude variables coming from the env."""
     s = NapariSettings(None, appearance={'theme': 'light'})
-    assert s.dict()['appearance']['theme'] == 'light'
-    assert s.dict(exclude_env=True)['appearance']['theme'] == 'light'
+    assert s.model_dump()['appearance']['theme'] == 'light'
+    assert s.model_dump(exclude_env=True)['appearance']['theme'] == 'light'
 
     monkeypatch.setenv('NAPARI_APPEARANCE_THEME', 'light')
     s = NapariSettings(None)
-    assert s.dict()['appearance']['theme'] == 'light'
-    assert 'theme' not in s.dict(exclude_env=True).get('appearance', {})
+    assert s.model_dump()['appearance']['theme'] == 'light'
+    assert 'theme' not in s.model_dump(exclude_env=True).get('appearance', {})
 
 
 def test_settings_reset(test_settings):
