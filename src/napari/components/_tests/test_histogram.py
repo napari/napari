@@ -17,7 +17,7 @@ class TestHistogramModel:
 
         assert isinstance(hist, HistogramModel)
         assert hist.n_bins == 256
-        assert hist.mode == 'displayed'
+        assert hist.mode == 'canvas'
         assert hist.log_scale is False
         assert hist.enabled is True
 
@@ -112,8 +112,8 @@ class TestHistogramModel:
         layer = Image(data)
         hist = layer.histogram
 
-        # Default is displayed mode
-        assert hist.mode == 'displayed'
+        # Default is canvas mode
+        assert hist.mode == 'canvas'
 
         # Change to full mode
         hist.mode = 'full'
@@ -213,7 +213,7 @@ class TestHistogramModel:
 
         assert hist.n_bins == 256
         assert hist.log_scale is False
-        assert hist.mode == 'displayed'
+        assert hist.mode == 'canvas'
 
     def test_histogram_events(self):
         """Test that histogram events fire correctly."""

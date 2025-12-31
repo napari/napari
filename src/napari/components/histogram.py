@@ -209,7 +209,7 @@ class HistogramModel(EventedModel):
         np.ndarray | None
             Data array to compute histogram from.
         """
-        if self.mode == 'displayed':
+        if self.mode == 'canvas':
             return self._get_displayed_data()
         return self._get_full_data()
 
@@ -307,10 +307,10 @@ class HistogramModel(EventedModel):
     def _on_slice_change(self) -> None:
         """Called when the displayed slice changes (slice navigation or 2D/3D toggle).
 
-        This is important for 'displayed' mode where we only compute histogram
+        This is important for 'canvas' mode where we only compute histogram
         on the currently visible data.
         """
-        if self.mode == 'displayed':
+        if self.mode == 'canvas':
             self._mark_dirty()
 
     def _on_loaded_change(self) -> None:
@@ -320,7 +320,7 @@ class HistogramModel(EventedModel):
         This event fires when loading completes, so we can update the histogram
         with the newly loaded slice data.
         """
-        if self.mode == 'displayed' and getattr(self._layer, 'loaded', True):
+        if self.mode == 'canvas' and getattr(self._layer, 'loaded', True):
             self._mark_dirty()
 
     def _on_params_change(self) -> None:
@@ -348,5 +348,5 @@ class HistogramModel(EventedModel):
         """Reset histogram to default settings."""
         self.n_bins = 256
         self.log_scale = False
-        self.mode = 'displayed'
+        self.mode = 'canvas'
         self.compute()
