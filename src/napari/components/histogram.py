@@ -59,7 +59,7 @@ class HistogramModel(EventedModel):
 
     # Evented properties
     n_bins: int = 256
-    mode: Literal['displayed', 'full'] = 'displayed'
+    mode: Literal['canvas', 'full'] = 'canvas'
     log_scale: bool = False
     enabled: bool = True
 
@@ -75,7 +75,7 @@ class HistogramModel(EventedModel):
         self,
         layer: Image,
         n_bins: int = 256,
-        mode: Literal['displayed', 'full'] = 'displayed',
+        mode: Literal['canvas', 'full'] = 'canvas',
         log_scale: bool = False,
         enabled: bool = True,
     ):
@@ -87,7 +87,7 @@ class HistogramModel(EventedModel):
             The layer to compute histogram for.
         n_bins : int, default: 256
             Number of histogram bins.
-        mode : {'displayed', 'full'}, default: 'displayed'
+        mode : {'canvas', 'full'}, default: 'canvas'
             Whether to compute histogram from displayed data or full volume.
         log_scale : bool, default: False
             Use logarithmic scale for histogram counts.
