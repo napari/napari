@@ -289,7 +289,7 @@ class _QtMainWindow(QMainWindow):
             )
             rect = QRect(pnt.x() - 5, pnt.y() - 5, 10, 10)
             QToolTip.showText(
-                pnt, self._qt_viewer.viewer.tooltip.text, self, rect=rect
+                pnt, self._qt_viewer.viewer.tooltip.text, self, rect
             )
         if e.type() in {QEvent.Type.WindowActivate, QEvent.Type.ZOrderChange}:
             # upon activation or raise_, put window at the end of _instances
