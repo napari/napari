@@ -1,18 +1,7 @@
 import numpy as np
+from scipy.spatial.transform import Rotation
 from vispy.scene import ArcballCamera, BaseCamera, PanZoomCamera
-
-from napari._vispy.utils.quaternion import quaternion2euler_degrees
-
-# Note: the Vispy axis order is xyz, or horizontal, vertical, depth,
-# while the napari axis order is zyx / plane-row-column, or depth, vertical,
-# horizontal — i.e. it is exactly inverted. This switch happens when data
-# is passed from napari to Vispy, usually with a transposition. In the camera
-# models, this means that the order of these orientations appear in the
-# opposite order to that in napari.components.Camera.
-#
-# Note that the default Vispy camera orientations come from Vispy, not from us.
-VISPY_DEFAULT_ORIENTATION_2D = ('right', 'up', 'towards')  # xyz
-VISPY_DEFAULT_ORIENTATION_3D = ('right', 'down', 'away')  # xyz
+from vispy.util.quaternion import Quaternion
 
 
 class VispyCamera:
@@ -63,8 +52,13 @@ class VispyCamera:
 
         if isinstance(self._view.camera, MouseToggledArcballCamera):
             # Do conversion from quaternion representation to euler angles
-            return quaternion2euler_degrees(self._view.camera._quaternion)
-        return (0, 0, 90)
+            q = self._view.camera._quaternion
+            rotation = Rotation.from_quat([q.x, q.y, q.z, q.w])
+            # see #8281 for why this is yzx. In short: longstanding vispy bug.
+            angles = rotation.as_euler('yzx', degrees=True)
+            return self._camera.from_legacy_angles(tuple(angles))
+
+        return (0, 0, 0)
 
     @angles.setter
     def angles(self, angles):
@@ -73,12 +67,12 @@ class VispyCamera:
 
         # Only update angles if current camera is 3D camera
         if isinstance(self._view.camera, MouseToggledArcballCamera):
+            angles = self._camera.to_legacy_angles(angles)
+            # see #8281 for why this is yzx. In short: longstanding vispy bug.
+            rotation = Rotation.from_euler('yzx', angles, degrees=True)
             # Create and set quaternion
-            quat = self._view.camera._quaternion.create_from_euler_angles(
-                *angles,
-                degrees=True,
-            )
-            self._view.camera._quaternion = quat
+            q = Quaternion(*rotation.as_quat(scalar_first=True))
+            self._view.camera._quaternion = q
             self._view.camera.view_changed()
 
     @property
@@ -187,24 +181,8 @@ class VispyCamera:
         self.zoom = self._camera.zoom
 
     def _on_orientation_change(self):
-        # Vispy uses xyz coordinates; napari uses zyx coordinates. We therefore
-        # start by inverting the order of coordinates coming from the napari
-        # camera model:
-        orientation_xyz = self._camera.orientation[::-1]
-        # The Vispy camera flip is a tuple of three ints in {0, 1}, indicating
-        # whether they are flipped relative to the Vispy default.
-        self._2D_camera.flip = tuple(
-            int(ori != default_ori)
-            for ori, default_ori in zip(
-                orientation_xyz, VISPY_DEFAULT_ORIENTATION_2D, strict=True
-            )
-        )
-        self._3D_camera.flip = tuple(
-            int(ori != default_ori)
-            for ori, default_ori in zip(
-                orientation_xyz, VISPY_DEFAULT_ORIENTATION_3D, strict=True
-            )
-        )
+        self._2D_camera.flip = self._camera._vispy_flipped_axes(ndisplay=2)
+        self._3D_camera.flip = self._camera._vispy_flipped_axes(ndisplay=3)
 
     def _on_perspective_change(self):
         self.perspective = self._camera.perspective
