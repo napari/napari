@@ -34,12 +34,6 @@ class QtHistogramSettingsWidget(QWidget):
         The histogram model to control.
     parent : QWidget, optional
         Parent widget.
-    show_mode : bool, default: True
-        Whether to show the mode selector (displayed/full).
-    show_bins : bool, default: True
-        Whether to show the bins spinbox.
-    show_log : bool, default: True
-        Whether to show the log scale checkbox.
 
     Attributes
     ----------
@@ -55,10 +49,6 @@ class QtHistogramSettingsWidget(QWidget):
         self,
         histogram_model: HistogramModel,
         parent: QWidget | None = None,
-        *,
-        show_mode: bool = True,
-        show_bins: bool = True,
-        show_log: bool = True,
     ) -> None:
         super().__init__(parent)
         self._histogram = histogram_model
@@ -66,59 +56,55 @@ class QtHistogramSettingsWidget(QWidget):
 
         layout = QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(4)
 
         self.mode_combobox = None
         self.n_bins_spinbox = None
         self.log_scale_checkbox = None
 
         # Mode selector
-        if show_mode:
-            self.mode_combobox = QComboBox()
-            self.mode_combobox.addItems(['displayed', 'full'])
-            self.mode_combobox.setCurrentText(histogram_model.mode)
-            self.mode_combobox.setToolTip(
-                trans._('Compute histogram from displayed data or full volume')
-            )
-            self.mode_combobox.currentTextChanged.connect(self._on_mode_change)
+        self.mode_combobox = QComboBox()
+        self.mode_combobox.addItems(['displayed', 'full'])
+        self.mode_combobox.setCurrentText(histogram_model.mode)
+        self.mode_combobox.setToolTip(
+            trans._('Compute histogram from displayed data or full volume')
+        )
+        self.mode_combobox.currentTextChanged.connect(self._on_mode_change)
 
-            histogram_model.events.mode.connect(self._on_model_mode_change)
-            layout.addWidget(self.mode_combobox)
+        histogram_model.events.mode.connect(self._on_model_mode_change)
+        layout.addWidget(self.mode_combobox)
 
         # Bins spinbox
-        if show_bins:
-            self.n_bins_spinbox = QSpinBox()
-            self.n_bins_spinbox.setRange(8, 1024)
-            self.n_bins_spinbox.setValue(histogram_model.n_bins)
-            self.n_bins_spinbox.setToolTip(trans._('Number of histogram bins'))
-            connect_setattr(
-                self.n_bins_spinbox.valueChanged,
-                histogram_model,
-                'n_bins',
-            )
+        self.n_bins_spinbox = QSpinBox()
+        self.n_bins_spinbox.setRange(8, 1024)
+        self.n_bins_spinbox.setValue(histogram_model.n_bins)
+        self.n_bins_spinbox.setToolTip(trans._('Number of histogram bins'))
+        connect_setattr(
+            self.n_bins_spinbox.valueChanged,
+            histogram_model,
+            'n_bins',
+        )
 
-            histogram_model.events.n_bins.connect(self._on_model_n_bins_change)
+        histogram_model.events.n_bins.connect(self._on_model_n_bins_change)
 
-            layout.addWidget(QLabel(trans._('bins:')))
-            layout.addWidget(self.n_bins_spinbox)
+        layout.addWidget(QLabel(trans._('bins:')))
+        layout.addWidget(self.n_bins_spinbox)
 
         # Log scale checkbox
-        if show_log:
-            self.log_scale_checkbox = QCheckBox(trans._('log'))
-            self.log_scale_checkbox.setChecked(histogram_model.log_scale)
-            self.log_scale_checkbox.setToolTip(
-                trans._('Use logarithmic scale for histogram counts')
-            )
-            connect_setattr(
-                self.log_scale_checkbox.toggled,
-                histogram_model,
-                'log_scale',
-            )
-            # Model -> UI
-            histogram_model.events.log_scale.connect(
-                self._on_model_log_scale_change
-            )
-            layout.addWidget(self.log_scale_checkbox)
+        self.log_scale_checkbox = QCheckBox(trans._('log'))
+        self.log_scale_checkbox.setChecked(histogram_model.log_scale)
+        self.log_scale_checkbox.setToolTip(
+            trans._('Use logarithmic scale for histogram counts')
+        )
+        connect_setattr(
+            self.log_scale_checkbox.toggled,
+            histogram_model,
+            'log_scale',
+        )
+        # Model -> UI
+        histogram_model.events.log_scale.connect(
+            self._on_model_log_scale_change
+        )
+        layout.addWidget(self.log_scale_checkbox)
 
         self.setLayout(layout)
 

@@ -142,9 +142,6 @@ class QContrastLimitsPopup(QtPopup):
             # Add shared settings widget (mode, bins, log scale)
             self.settings_widget = QtHistogramSettingsWidget(
                 layer.histogram,
-                show_mode=True,
-                show_bins=True,
-                show_log=True,
             )
             controls_layout.addWidget(self.settings_widget)
 

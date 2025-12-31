@@ -63,9 +63,6 @@ class QtHistogramControl(QtWidgetControlsBase):
         self.settings_widget = QtHistogramSettingsWidget(
             layer.histogram,
             parent=self.content_widget,
-            show_mode=True,
-            show_bins=True,
-            show_log=True,
         )
         content_layout.addWidget(self.settings_widget)
 
