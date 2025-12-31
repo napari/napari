@@ -446,7 +446,7 @@ class EventedModel(BaseModel):
         return super().model_json_schema(*args, **kwargs)
 
     # V2 serializers for common types
-    @field_serializer('*', mode='wrap')
+    @field_serializer('*', mode='wrap', check_fields=False)
     @classmethod
     def _serialize_any(cls, value: Any, handler: Callable) -> Any:
         """Handle serialization of numpy arrays and other special types."""
