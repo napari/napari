@@ -39,7 +39,7 @@ from pydantic import (
 )
 from pydantic.fields import FieldInfo
 from pydantic.json_schema import JsonSchemaValue
-from pydantic_core import CoreSchema, core_schema
+from pydantic_core import core_schema
 
 # BaseSettings is now in a separate package
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -54,10 +54,12 @@ except ImportError:
 # Type variable for generic models
 T = TypeVar('T')
 
+
 # For sequence_like functionality
 def sequence_like(v: Any) -> bool:
     """Check if a value is sequence-like (but not a string or bytes)."""
     return isinstance(v, (list, tuple, set, frozenset))
+
 
 # ROOT_KEY equivalent (used in some validation contexts)
 ROOT_KEY = '__root__'
@@ -79,6 +81,7 @@ def parse_obj_as(type_: type[T], obj: Any) -> T:
 
 # ---- Removed V1 APIs with stubs/alternatives ----
 
+
 # ModelMetaclass is no longer used in V2. Instead, use:
 # - __pydantic_complete__ class method for post-model-creation hooks
 # - model_post_init for per-instance initialization
@@ -89,7 +92,6 @@ class ModelMetaclass(type):
     In Pydantic V2, use __pydantic_complete__ or model_post_init instead.
     This is provided only for compatibility during migration.
     """
-    pass
 
 
 # ModelField is replaced by FieldInfo in V2
@@ -100,6 +102,7 @@ ModelField = FieldInfo
 # ClassAttribute stub - not needed in V2
 class ClassAttribute:
     """Stub for V1 ClassAttribute. Use standard class attributes in V2."""
+
     def __init__(self, name: str, value: Any) -> None:
         self.name = name
         self.value = value
@@ -116,9 +119,11 @@ SHAPE_LIST = 'list'
 
 # ---- Error handling compatibility ----
 
+
 # V2 uses different error handling
 class ErrorWrapper:
     """Stub for V1 ErrorWrapper. Use ValidationError directly in V2."""
+
     def __init__(self, exc: Exception, loc: tuple) -> None:
         self.exc = exc
         self.loc = loc
@@ -136,17 +141,19 @@ def display_errors(errors: list[Any]) -> str:
             loc = '.'.join(str(loc_part) for loc_part in error.get('loc', ()))
             msg = error.get('msg', '')
         else:
-            loc = '.'.join(str(loc_part) for loc_part in getattr(error, 'loc', ()))
+            loc = '.'.join(
+                str(loc_part) for loc_part in getattr(error, 'loc', ())
+            )
             msg = getattr(error, 'msg', '')
-        lines.append(f"  {loc}: {msg}")
+        lines.append(f'  {loc}: {msg}')
     return '\n'.join(lines)
 
 
 # ---- Settings compatibility ----
 
+
 class SettingsError(ValueError):
     """Error raised when settings validation fails."""
-    pass
 
 
 # Settings source types (simplified for V2)
@@ -155,6 +162,7 @@ if TYPE_CHECKING:
         EnvSettingsSource,
         PydanticBaseSettingsSource,
     )
+
     SettingsSourceCallable = PydanticBaseSettingsSource
 else:
     EnvSettingsSource = Any
@@ -164,6 +172,7 @@ else:
 # ---- Extra enum for forbid/allow/ignore ----
 class Extra:
     """V1-style Extra enum. Use ConfigDict(extra='...') in V2 instead."""
+
     allow = 'allow'
     forbid = 'forbid'
     ignore = 'ignore'
@@ -171,11 +180,13 @@ class Extra:
 
 # ---- Stub modules for compatibility ----
 
+
 class _ErrorsModule:
     """Stub for pydantic.v1.errors module."""
 
     class PydanticValueError(ValueError):
         """Base class for pydantic value errors."""
+
         code = 'value_error'
         msg_template = 'value error'
 
@@ -185,6 +196,7 @@ class _ErrorsModule:
 
     class PydanticTypeError(TypeError):
         """Base class for pydantic type errors."""
+
         code = 'type_error'
         msg_template = 'type error'
 
@@ -201,6 +213,7 @@ class _TypesModule:
 
     class ConstrainedInt(int):
         """V1-style constrained int. Use Annotated[int, Field(...)] in V2."""
+
         strict: bool = False
         gt: int | None = None
         ge: int | None = None
@@ -215,6 +228,7 @@ class _TypesModule:
             handler,
         ):
             from pydantic_core import core_schema as cs
+
             return cs.no_info_before_validator_function(
                 cls._validate,
                 cs.int_schema(),
@@ -254,6 +268,7 @@ class _TypesModule:
 
     class ConstrainedFloat(float):
         """V1-style constrained float. Use Annotated[float, Field(...)] in V2."""
+
         strict: bool = False
         gt: float | None = None
         ge: float | None = None
@@ -268,6 +283,7 @@ class _TypesModule:
             handler,
         ):
             from pydantic_core import core_schema as cs
+
             return cs.no_info_before_validator_function(
                 cls._validate,
                 cs.float_schema(),
@@ -309,6 +325,7 @@ types = _TypesModule()
 
 class _UtilsModule:
     """Stub for pydantic.v1.utils module."""
+
     ROOT_KEY = '__root__'
 
     @staticmethod
@@ -321,6 +338,7 @@ utils = _UtilsModule()
 
 class _MainModule:
     """Stub for pydantic.v1.main module."""
+
     ModelMetaclass = ModelMetaclass
 
 
@@ -330,6 +348,7 @@ main = _MainModule()
 # color module compatibility
 class _ColorModule:
     """Stub for pydantic.v1.color module."""
+
     Color = Color
 
 
