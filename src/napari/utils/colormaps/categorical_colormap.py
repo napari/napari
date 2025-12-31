@@ -58,7 +58,9 @@ class CategoricalColormap(EventedModel):
                 return result
             # Otherwise, treat the entire dict as a colormap
             return {
-                'colormap': {k: transform_color(v)[0] for k, v in data.items()},
+                'colormap': {
+                    k: transform_color(v)[0] for k, v in data.items()
+                },
                 'fallback_color': 'white',
             }
         return data
@@ -104,7 +106,11 @@ class CategoricalColormap(EventedModel):
     @classmethod
     def from_dict(cls, params: dict):
         """Create from dict."""
-        return cls(**params) if ('colormap' in params or 'fallback_color' in params) else cls(colormap=params)
+        return (
+            cls(**params)
+            if ('colormap' in params or 'fallback_color' in params)
+            else cls(colormap=params)
+        )
 
     @classmethod
     def validate_type(cls, val):

@@ -159,17 +159,31 @@ class Dims(EventedModel):
 
         # Use object.__setattr__ to bypass validate_assignment and avoid recursion
         range_ = ensure_len(self.range, ndim, pad_width=(0.0, 2.0, 1.0))
-        object.__setattr__(self, 'range', tuple(RangeTuple(*rng) for rng in range_))
+        object.__setattr__(
+            self, 'range', tuple(RangeTuple(*rng) for rng in range_)
+        )
 
         point = ensure_len(self.point, ndim, pad_width=0.0)
         # ensure point is limited to range
-        object.__setattr__(self, 'point', tuple(
-            np.clip(pt, rng.start, rng.stop)
-            for pt, rng in zip(point, self.range, strict=False)
-        ))
+        object.__setattr__(
+            self,
+            'point',
+            tuple(
+                np.clip(pt, rng.start, rng.stop)
+                for pt, rng in zip(point, self.range, strict=False)
+            ),
+        )
 
-        object.__setattr__(self, 'margin_left', ensure_len(self.margin_left, ndim, pad_width=0.0))
-        object.__setattr__(self, 'margin_right', ensure_len(self.margin_right, ndim, pad_width=0.0))
+        object.__setattr__(
+            self,
+            'margin_left',
+            ensure_len(self.margin_left, ndim, pad_width=0.0),
+        )
+        object.__setattr__(
+            self,
+            'margin_right',
+            ensure_len(self.margin_right, ndim, pad_width=0.0),
+        )
 
         # order and label default computation is too different to include in ensure_len()
         # Check the order tuple has same number of elements as ndim
@@ -202,16 +216,22 @@ class Dims(EventedModel):
         if labels_ndim < ndim:
             # Append new "default" labels to existing ones
             if axis_labels == tuple(map(str, range(labels_ndim))):
-                object.__setattr__(self, 'axis_labels', tuple(map(str, range(ndim))))
+                object.__setattr__(
+                    self, 'axis_labels', tuple(map(str, range(ndim)))
+                )
             else:
-                object.__setattr__(self, 'axis_labels', (
-                    tuple(map(str, range(ndim - labels_ndim))) + axis_labels
-                ))
+                object.__setattr__(
+                    self,
+                    'axis_labels',
+                    (tuple(map(str, range(ndim - labels_ndim))) + axis_labels),
+                )
         elif labels_ndim > ndim:
             object.__setattr__(self, 'axis_labels', axis_labels[-ndim:])
 
         # Check the rollable axes tuple has same number of elements as ndim
-        object.__setattr__(self, 'rollable', ensure_len(self.rollable, ndim, True))
+        object.__setattr__(
+            self, 'rollable', ensure_len(self.rollable, ndim, True)
+        )
 
         # If the last used slider is no longer visible, use the first.
         last_used = self.last_used
@@ -219,7 +239,9 @@ class Dims(EventedModel):
         dims_range = self.range
         nsteps = self._nsteps_from_range(dims_range)
         not_displayed = [
-            d for d in self.order[:-ndisplay] if len(nsteps) > d and nsteps[d] > 1
+            d
+            for d in self.order[:-ndisplay]
+            if len(nsteps) > d and nsteps[d] > 1
         ]
         if len(not_displayed) > 0 and last_used not in not_displayed:
             object.__setattr__(self, 'last_used', not_displayed[0])

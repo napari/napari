@@ -172,8 +172,8 @@ class EventedSet(MutableSet[_T]):
     def __get_pydantic_core_schema__(
         cls,
         source_type: Any,
-        handler: 'GetCoreSchemaHandler',
-    ) -> 'CoreSchema':
+        handler: GetCoreSchemaHandler,
+    ) -> CoreSchema:
         """Pydantic V2 schema generation."""
         from pydantic_core import core_schema
 
@@ -186,7 +186,7 @@ class EventedSet(MutableSet[_T]):
         )
 
     @classmethod
-    def _validate(cls, v: Any) -> 'EventedSet[Any]':
+    def _validate(cls, v: Any) -> EventedSet[Any]:
         """Pydantic validator."""
         from napari._pydantic_compat import sequence_like
 

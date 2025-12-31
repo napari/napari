@@ -114,4 +114,5 @@ if __name__ == '__main__':
     else:
         dest = Path(__file__).parent / 'napari.schema.json'
     import json
+
     dest.write_text(json.dumps(NapariSettings.model_json_schema(), indent=2))

@@ -13,7 +13,13 @@ from warnings import warn
 import numpy as np
 from typing_extensions import Self
 
-from napari._pydantic_compat import ConfigDict, Field, PrivateAttr, field_validator, model_validator
+from napari._pydantic_compat import (
+    ConfigDict,
+    Field,
+    PrivateAttr,
+    field_validator,
+    model_validator,
+)
 from napari.utils.color import ColorArray, ColorValue
 from napari.utils.colormaps import _accelerated_cmap as _accel_cmap
 from napari.utils.colormaps.colorbars import make_colorbar
@@ -106,7 +112,11 @@ class Colormap(EventedModel):
             n_controls = len(self.colors) + int(
                 self.interpolation == ColormapInterpolationMode.ZERO
             )
-            object.__setattr__(self, 'controls', np.linspace(0, 1, n_controls, dtype=np.float32))
+            object.__setattr__(
+                self,
+                'controls',
+                np.linspace(0, 1, n_controls, dtype=np.float32),
+            )
             return self
 
         # Check control end points are correct
@@ -412,9 +422,7 @@ class DirectLabelColormap(LabelColormapBase):
         Exist because of implementation details. Please do not use it.
     """
 
-    color_dict: dict[int | None, np.ndarray] = Field(
-        default_factory=dict
-    )
+    color_dict: dict[int | None, np.ndarray] = Field(default_factory=dict)
     use_selection: bool = False
     selection: int = 0
 

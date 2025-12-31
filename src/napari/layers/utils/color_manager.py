@@ -1,12 +1,13 @@
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Annotated, Any
-
-from typing_extensions import Self
+from typing import Any
 
 import numpy as np
-from pydantic import BeforeValidator, GetCoreSchemaHandler, GetJsonSchemaHandler
+from pydantic import (
+    GetCoreSchemaHandler,
+)
 from pydantic_core import CoreSchema, PydanticCustomError, core_schema
+from typing_extensions import Self
 
 from napari._pydantic_compat import Field, field_validator, model_validator
 from napari.layers.utils._color_manager_constants import ColorMode
@@ -65,19 +66,18 @@ class ColorProperties:
         """Validate and convert input to ColorProperties."""
         if val is None:
             return None
-        elif isinstance(val, dict):
+        if isinstance(val, dict):
             if len(val) == 0:
                 return None
-            else:
-                try:
-                    # ensure the values are a numpy array
-                    val['values'] = np.asarray(val['values'])
-                    return cls(**val)
-                except (ValueError, TypeError) as e:
-                    raise PydanticCustomError(
-                        'color_properties_invalid',
-                        'color_properties dictionary should have keys: name, values, and optionally current_value',
-                    ) from e
+            try:
+                # ensure the values are a numpy array
+                val['values'] = np.asarray(val['values'])
+                return cls(**val)
+            except (ValueError, TypeError) as e:
+                raise PydanticCustomError(
+                    'color_properties_invalid',
+                    'color_properties dictionary should have keys: name, values, and optionally current_value',
+                ) from e
         elif isinstance(val, cls):
             return val
         else:
@@ -611,8 +611,15 @@ def _validate_cycle_mode_v2(model: ColorManager) -> tuple[np.ndarray, dict]:
     colors, updated_values = _validate_cycle_mode(values)
     # Return only the fields that changed
     updated = {}
-    for key in ['color_properties', 'categorical_colormap', 'colors', 'current_color']:
-        if key in updated_values and updated_values[key] is not original_values.get(key):
+    for key in [
+        'color_properties',
+        'categorical_colormap',
+        'colors',
+        'current_color',
+    ]:
+        if key in updated_values and updated_values[
+            key
+        ] is not original_values.get(key):
             updated[key] = updated_values[key]
     return colors, updated
 
@@ -634,7 +641,14 @@ def _validate_colormap_mode_v2(model: ColorManager) -> tuple[np.ndarray, dict]:
     colors, updated_values = _validate_colormap_mode(values)
     # Return only the fields that changed
     updated = {}
-    for key in ['color_properties', 'colors', 'current_color', 'contrast_limits']:
-        if key in updated_values and updated_values[key] is not original_values.get(key):
+    for key in [
+        'color_properties',
+        'colors',
+        'current_color',
+        'contrast_limits',
+    ]:
+        if key in updated_values and updated_values[
+            key
+        ] is not original_values.get(key):
             updated[key] = updated_values[key]
     return colors, updated

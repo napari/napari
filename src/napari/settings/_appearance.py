@@ -115,4 +115,3 @@ class AppearanceSettings(EventedModel):
         # In V2, schemas are regenerated each time model_json_schema() is called
         # and cannot be modified in place. The Theme validator handles dynamic
         # theme validation, so this is now a no-op.
-        pass

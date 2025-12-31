@@ -21,7 +21,7 @@ import numpy as np
 from app_model.expressions import Context
 
 from napari import layers
-from napari._pydantic_compat import Extra, Field, PrivateAttr, field_validator
+from napari._pydantic_compat import Field, PrivateAttr, field_validator
 from napari.components._layer_slicer import _LayerSlicer
 from napari.components._viewer_mouse_bindings import (
     dims_scroll,
@@ -110,6 +110,7 @@ EXCLUDE_DICT = {
 EXCLUDE_JSON = EXCLUDE_DICT.union({'layers', 'active_layer'})
 # Use builtin dict for type hints since ViewerModel has a method named 'dict'
 import builtins
+
 Dict = builtins.dict
 
 __all__ = ['ViewerModel', 'valid_add_kwargs']

@@ -3,17 +3,15 @@ from __future__ import annotations
 import contextlib
 import logging
 import os
-from collections.abc import Mapping, Sequence
+from collections.abc import Mapping
 from functools import partial
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, ClassVar, cast
+from typing import TYPE_CHECKING, Any, ClassVar
 from warnings import warn
 
 from pydantic import ConfigDict
-from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from napari._pydantic_compat import (
-    BaseModel,
     PrivateAttr,
     ValidationError,
     display_errors,
@@ -29,8 +27,6 @@ if TYPE_CHECKING:
     from collections.abc import Set as AbstractSet
     from typing import Union
 
-    from pydantic_settings import PydanticBaseSettingsSource
-
     from napari.utils.events import Event
 
     IntStr = Union[int, str]
@@ -42,7 +38,7 @@ Dict = dict  # rename, because EventedSettings has method dict
 
 
 def _exclude_defaults_evented(
-    obj: 'EventedModel',
+    obj: EventedModel,
     data: dict[str, Any],
 ) -> dict[str, Any]:
     """Remove fields from data that equal their defaults.
@@ -79,7 +75,9 @@ def _exclude_defaults_evented(
                 # Skip - equals default
                 continue
             # Recurse for nested models
-            nested_data = _exclude_defaults_evented(current_value, data[field_name])
+            nested_data = _exclude_defaults_evented(
+                current_value, data[field_name]
+            )
             if nested_data:  # Only include if there's non-default data
                 result[field_name] = nested_data
         else:
@@ -92,7 +90,6 @@ def _exclude_defaults_evented(
 
 class SettingsError(ValueError):
     """Error raised when settings validation fails."""
-    pass
 
 
 class EventedSettings(EventedModel):
@@ -225,6 +222,7 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
             initialization, raw_values are for caching (to identify env-provided settings).
         """
         import json
+
         parsed: dict[str, Any] = {}
         raw: dict[str, Any] = {}
         env_prefix = getattr(type(self), '_env_prefix', 'NAPARI_').upper()
@@ -251,7 +249,7 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
             nested_prefix = f'{env_prefix}{field_name.upper()}_'
             for env_name, env_val in env_vars.items():
                 if env_name.startswith(nested_prefix) and env_val is not None:
-                    nested_path = env_name[len(nested_prefix):].lower()
+                    nested_path = env_name[len(nested_prefix) :].lower()
                     if field_name not in parsed:
                         parsed[field_name] = {}
                         raw[field_name] = {}
@@ -269,7 +267,10 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
             if annotation is not None:
                 try:
                     if hasattr(annotation, 'model_fields'):
-                        for nested_name, nested_info in annotation.model_fields.items():
+                        for (
+                            nested_name,
+                            nested_info,
+                        ) in annotation.model_fields.items():
                             extra = nested_info.json_schema_extra or {}
                             if isinstance(extra, dict) and 'env' in extra:
                                 custom_env = extra['env'].upper()
@@ -280,7 +281,9 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
                                     if field_name not in parsed:
                                         parsed[field_name] = {}
                                         raw[field_name] = {}
-                                    elif not isinstance(parsed[field_name], dict):
+                                    elif not isinstance(
+                                        parsed[field_name], dict
+                                    ):
                                         continue
                                     raw[field_name][nested_name] = val
                                     # Try to parse as JSON, but handle booleans specially
@@ -290,9 +293,16 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
                                         parsed[field_name][nested_name] = False
                                     else:
                                         try:
-                                            parsed[field_name][nested_name] = json.loads(val)
-                                        except (json.JSONDecodeError, TypeError):
-                                            parsed[field_name][nested_name] = val
+                                            parsed[field_name][nested_name] = (
+                                                json.loads(val)
+                                            )
+                                        except (
+                                            json.JSONDecodeError,
+                                            TypeError,
+                                        ):
+                                            parsed[field_name][nested_name] = (
+                                                val
+                                            )
                 except (TypeError, AttributeError):
                     pass
 
@@ -409,6 +419,7 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
             _data = self._yaml_dump(data)
         elif str(path).endswith('.json'):
             import json
+
             _data = json.dumps(data, default=str)
         else:
             raise NotImplementedError(
@@ -515,7 +526,9 @@ def config_file_settings_source(
     except ValidationError as err:
         # Check if strict mode is enabled - if so, re-raise the error
         if hasattr(settings_cls, 'model_config'):
-            strict_check = settings_cls.model_config.get('strict_config_check', False)
+            strict_check = settings_cls.model_config.get(
+                'strict_config_check', False
+            )
             if strict_check:
                 raise
 

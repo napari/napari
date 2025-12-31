@@ -704,7 +704,8 @@ class Labels(ScalarFieldBase):
                 'depiction': self.depiction,
                 'plane': self.plane.model_dump(),
                 'experimental_clipping_planes': [
-                    plane.model_dump() for plane in self.experimental_clipping_planes
+                    plane.model_dump()
+                    for plane in self.experimental_clipping_planes
                 ],
                 'data': self.data,
                 'features': self.features,

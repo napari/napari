@@ -1,4 +1,3 @@
-import json
 from enum import EnumMeta
 from typing import TYPE_CHECKING, ClassVar, cast
 
@@ -94,13 +93,17 @@ class PreferencesDialog(QDialog):
         from napari.plugins import plugin_manager
 
         self._starting_pm_order = plugin_manager.call_order()
-        self._starting_values = self._settings.model_dump(exclude={'schema_version'})
+        self._starting_values = self._settings.model_dump(
+            exclude={'schema_version'}
+        )
 
         self._list.clear()
         while self._stack.count():
             self._stack.removeWidget(self._stack.currentWidget())
 
-        for field_name, field_info in type(self._settings).model_fields.items():
+        for field_name, field_info in type(
+            self._settings
+        ).model_fields.items():
             annotation = field_info.annotation
             if isinstance(annotation, type) and issubclass(
                 annotation, BaseModel
@@ -109,7 +112,9 @@ class PreferencesDialog(QDialog):
 
         self._list.setCurrentRow(0)
 
-    def _add_page(self, field_name: str, field_info: 'FieldInfo', annotation: type):
+    def _add_page(
+        self, field_name: str, field_info: 'FieldInfo', annotation: type
+    ):
         """Builds the preferences widget using the json schema builder.
 
         Parameters
@@ -125,7 +130,9 @@ class PreferencesDialog(QDialog):
             WidgetBuilder,
         )
 
-        schema, values = self._get_page_dict(field_name, field_info, annotation)
+        schema, values = self._get_page_dict(
+            field_name, field_info, annotation
+        )
         name = field_info.title or field_name
 
         form = WidgetBuilder().create_form(schema, self.ui_schema)
@@ -166,7 +173,9 @@ class PreferencesDialog(QDialog):
         self._list.addItem(field_info.title or field_name)
         self._stack.addWidget(page_scrollarea)
 
-    def _get_page_dict(self, field_name: str, field_info: 'FieldInfo', annotation: type) -> tuple[dict, dict]:
+    def _get_page_dict(
+        self, field_name: str, field_info: 'FieldInfo', annotation: type
+    ) -> tuple[dict, dict]:
         """Provides the schema, set of values for each setting, and the
         properties for each setting."""
         ftype = cast('BaseModel', annotation)
@@ -183,8 +192,12 @@ class PreferencesDialog(QDialog):
                 'type': 'object',
                 'properties': {
                     'shortcuts': {
-                        'title': shortcuts_field.title if shortcuts_field else 'Shortcuts',
-                        'description': shortcuts_field.description if shortcuts_field else '',
+                        'title': shortcuts_field.title
+                        if shortcuts_field
+                        else 'Shortcuts',
+                        'description': shortcuts_field.description
+                        if shortcuts_field
+                        else '',
                         'type': 'object',
                     }
                 },
@@ -204,7 +217,9 @@ class PreferencesDialog(QDialog):
                 enums = [s.value for s in subfield_annotation]  # type: ignore
                 schema['properties'][name]['enum'] = enums
                 schema['properties'][name]['type'] = 'string'
-            if isinstance(subfield_annotation, type) and issubclass(subfield_annotation, BaseModel):
+            if isinstance(subfield_annotation, type) and issubclass(
+                subfield_annotation, BaseModel
+            ):
                 local_schema = subfield_annotation.model_json_schema()
                 schema['properties'][name]['type'] = 'object'
                 schema['properties'][name]['properties'] = local_schema.get(

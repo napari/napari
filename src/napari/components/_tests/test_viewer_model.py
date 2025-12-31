@@ -822,7 +822,11 @@ def test_not_mutable_fields(field):
 
     # Check for V2 frozen field error message
     err_str = str(err.value).lower()
-    assert 'frozen' in err_str or 'immutable' in err_str or 'cannot be assigned' in err_str
+    assert (
+        'frozen' in err_str
+        or 'immutable' in err_str
+        or 'cannot be assigned' in err_str
+    )
 
 
 @pytest.mark.parametrize(('Layer', 'data', 'ndim'), layer_test_data)

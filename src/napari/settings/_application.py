@@ -310,7 +310,9 @@ class ApplicationSettings(EventedModel):
             )
         return v
 
-    model_config = ConfigDict(use_enum_values=False)  # https://github.com/napari/napari/issues/3062
+    model_config = ConfigDict(
+        use_enum_values=False
+    )  # https://github.com/napari/napari/issues/3062
 
     class NapariConfig:
         # Napari specific configuration

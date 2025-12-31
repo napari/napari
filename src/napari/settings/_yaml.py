@@ -95,5 +95,7 @@ class PydanticYamlMixin(BaseModel):
         self, data: Any, dumper: type[SafeDumper] | None = None, **kw: Any
     ) -> str:
         kw.setdefault('sort_keys', False)
-        dumper_cls: type[SafeDumper] = dumper or self.model_config.get('yaml_dumper', YamlDumper)  # type: ignore[assignment]
+        dumper_cls: type[SafeDumper] = dumper or self.model_config.get(
+            'yaml_dumper', YamlDumper
+        )  # type: ignore[assignment]
         return dump_all([data], Dumper=dumper_cls, **kw)

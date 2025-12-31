@@ -79,7 +79,9 @@ def test_settings_load_invalid_type(tmp_path, caplog):
 def test_settings_load_strict(tmp_path, monkeypatch):
     # use model_config strict_config_check to enforce good config files
     original_config = NapariSettings.model_config.copy()
-    NapariSettings.model_config = ConfigDict(**original_config, strict_config_check=True)
+    NapariSettings.model_config = ConfigDict(
+        **original_config, strict_config_check=True
+    )
     try:
         data = 'appearance:\n   theme: 1'
         fake_path = tmp_path / 'fake_path.yml'

@@ -3,7 +3,6 @@ from string import Formatter
 from typing import Any, Literal, Protocol, Union, runtime_checkable
 
 import numpy as np
-
 from pydantic import GetCoreSchemaHandler
 from pydantic_core import CoreSchema, core_schema
 

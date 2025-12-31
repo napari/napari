@@ -17,16 +17,16 @@ from qtpy.QtWidgets import (
 from superqt import QEnumComboBox, QLabeledDoubleSlider
 
 from napari._app_model.actions._file import add_new_points, add_new_shapes
+from napari._qt.dialogs.qt_modal import QtPopup
+from napari._qt.widgets.qt_dims_sorter import QtDimsSorter
+from napari._qt.widgets.qt_spinbox import QtSpinBox
+from napari._qt.widgets.qt_tooltip import QtToolTipLabel
 from napari.settings._application import (
     GridHeight,
     GridSpacing,
     GridStride,
     GridWidth,
 )
-from napari._qt.dialogs.qt_modal import QtPopup
-from napari._qt.widgets.qt_dims_sorter import QtDimsSorter
-from napari._qt.widgets.qt_spinbox import QtSpinBox
-from napari._qt.widgets.qt_tooltip import QtToolTipLabel
 from napari.utils.action_manager import action_manager
 from napari.utils.camera_orientations import (
     DepthAxisOrientation,

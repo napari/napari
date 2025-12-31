@@ -262,6 +262,7 @@ def test_update_with_inner_model_union():
 
 def test_update_with_inner_model_protocol():
     from typing import Any
+
     from pydantic import GetCoreSchemaHandler
     from pydantic_core import CoreSchema, core_schema
 
@@ -328,6 +329,7 @@ class MyObj:
     @classmethod
     def __get_pydantic_core_schema__(cls, source_type, handler):
         from pydantic_core import core_schema
+
         return core_schema.no_info_before_validator_function(
             cls.validate_type,
             core_schema.any_schema(),
@@ -444,7 +446,9 @@ def test_evented_model_with_string_enum_setter_as_str():
 
 def test_evented_model_with_string_enum_parse_raw():
     model = ModelWithStringEnum(enum_field=SomeStringEnum.SOME_VALUE)
-    deserialized_model = ModelWithStringEnum.model_validate_json(model.model_dump_json())
+    deserialized_model = ModelWithStringEnum.model_validate_json(
+        model.model_dump_json()
+    )
     assert deserialized_model.enum_field == model.enum_field
 
 

@@ -3,8 +3,6 @@ from collections.abc import Callable
 from contextlib import contextmanager
 from typing import Any, ClassVar, Union
 
-from typing_extensions import Self
-
 import numpy as np
 from app_model.types import KeyBinding
 
@@ -80,7 +78,11 @@ def _get_field_dependents(cls: type['EventedModel']) -> dict[str, set[str]]:
     field_names = _get_field_names(cls)
 
     # Get dependencies from model_config if available
-    _deps = cls.model_config.get('dependencies') if hasattr(cls, 'model_config') else None
+    _deps = (
+        cls.model_config.get('dependencies')
+        if hasattr(cls, 'model_config')
+        else None
+    )
     if _deps:
         for prop_name, fields in _deps.items():
             if prop_name not in cls.__properties__:
@@ -96,7 +98,9 @@ def _get_field_dependents(cls: type['EventedModel']) -> dict[str, set[str]]:
         # if dependencies haven't been explicitly defined, we can glean
         # them from the property.fget code object:
         for prop_name, prop in cls.__properties__.items():
-            _update_dependents_from_property_code(cls, prop_name, prop, deps, field_names)
+            _update_dependents_from_property_code(
+                cls, prop_name, prop, deps, field_names
+            )
     return deps
 
 
@@ -164,9 +168,13 @@ class EventedModel(BaseModel):
         # Set up equality operators for each field using __annotations__
         # In Pydantic V2, model_fields isn't populated until after __init_subclass__,
         # so we use __annotations__ directly.
-        for field_name, annotation in getattr(cls, '__annotations__', {}).items():
+        for field_name, annotation in getattr(
+            cls, '__annotations__', {}
+        ).items():
             if not field_name.startswith('_'):  # Skip private attributes
-                cls.__eq_operators__[field_name] = pick_equality_operator(annotation)
+                cls.__eq_operators__[field_name] = pick_equality_operator(
+                    annotation
+                )
 
         # Check for properties defined on the class (not inherited from BaseModel/EventedModel)
         # Walk the MRO but stop at EventedModel to exclude BaseModel properties
@@ -174,7 +182,10 @@ class EventedModel(BaseModel):
             if klass is EventedModel:
                 break
             for name, attr in vars(klass).items():
-                if isinstance(attr, property) and name not in cls.__properties__:
+                if (
+                    isinstance(attr, property)
+                    and name not in cls.__properties__
+                ):
                     cls.__properties__[name] = attr
                     # determine compare operator
                     if (
@@ -198,7 +209,9 @@ class EventedModel(BaseModel):
         field_events = []
         for name, field_info in type(self).model_fields.items():
             # In V2, check if field is frozen
-            is_frozen = field_info.frozen if field_info.frozen is not None else False
+            is_frozen = (
+                field_info.frozen if field_info.frozen is not None else False
+            )
             if not is_frozen:
                 field_events.append(name)
 
@@ -354,7 +367,11 @@ class EventedModel(BaseModel):
                 # In V2, check model_config for frozen and field for frozen
                 model_frozen = self.model_config.get('frozen', False)
                 field_info = type(self).model_fields.get(name)
-                field_frozen = field_info.frozen if field_info and field_info.frozen is not None else False
+                field_frozen = (
+                    field_info.frozen
+                    if field_info and field_info.frozen is not None
+                    else False
+                )
                 if not model_frozen and not field_frozen:
                     setattr(self, name, value)
 
@@ -474,7 +491,9 @@ def get_defaults(obj: BaseModel) -> dict[str, Any]:
         elif d is None and field_info.annotation is not None:
             # Check if the annotation is a BaseModel subclass
             try:
-                if isinstance(field_info.annotation, type) and issubclass(field_info.annotation, BaseModel):
+                if isinstance(field_info.annotation, type) and issubclass(
+                    field_info.annotation, BaseModel
+                ):
                     d = get_defaults(field_info.annotation)
             except TypeError:
                 pass

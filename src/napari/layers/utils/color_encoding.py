@@ -7,7 +7,6 @@ from typing import (
 )
 
 import numpy as np
-
 from pydantic import GetCoreSchemaHandler
 from pydantic_core import CoreSchema, core_schema as pydantic_core_schema
 

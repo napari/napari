@@ -3,7 +3,6 @@ from typing import (
     Any,
     Generic,
     TypeVar,
-    Union,
     get_args,
 )
 
@@ -158,7 +157,9 @@ class Selection(EventedSet[_T]):
         item_type = args[0] if args else Any
 
         # Create a TypeAdapter for validating items if we have a type param
-        item_validator = TypeAdapter(item_type) if item_type is not Any else None
+        item_validator = (
+            TypeAdapter(item_type) if item_type is not Any else None
+        )
 
         def validate_selection(v: Any) -> 'Selection':
             """Pydantic validator."""
