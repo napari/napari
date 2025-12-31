@@ -213,8 +213,8 @@ class PreferencesDialog(QDialog):
 
         # Need to remove certain properties that will not be displayed on the GUI
         setting = getattr(self._settings, field_name)
-        with setting.enums_as_values():
-            values = setting.model_dump()
+        # Use mode='json' to serialize enums as their string values
+        values = setting.model_dump(mode='json')
         napari_config = getattr(setting, 'NapariConfig', None)
         if hasattr(napari_config, 'preferences_exclude'):
             for val in napari_config.preferences_exclude:
