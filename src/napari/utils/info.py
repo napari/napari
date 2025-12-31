@@ -128,7 +128,7 @@ def get_plugin_list() -> str:
             'package_metadata.version',
             'contributions',
         ]
-        pm_dict = pm.model_dump(include=set(fields))
+        pm_dict = pm.model_dump(include=set(fields))  # type: ignore[attr-defined]
 
         res = []
 
