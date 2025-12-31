@@ -82,6 +82,7 @@ class QtHistogramWidget(QWidget):
             layer.histogram.events.bins.connect(self._on_histogram_change)
             layer.histogram.events.counts.connect(self._on_histogram_change)
             layer.histogram.events.log_scale.connect(self._on_histogram_change)
+            layer.histogram.events.enabled.connect(self._on_histogram_change)
 
         # Connect to layer events that affect visualization
         if hasattr(layer, 'events'):
@@ -142,6 +143,9 @@ class QtHistogramWidget(QWidget):
                 self._on_histogram_change
             )
             self.layer.histogram.events.log_scale.disconnect(
+                self._on_histogram_change
+            )
+            self.layer.histogram.events.enabled.disconnect(
                 self._on_histogram_change
             )
         if hasattr(self.layer, 'events'):

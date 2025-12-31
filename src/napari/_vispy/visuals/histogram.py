@@ -211,12 +211,13 @@ class HistogramVisual(Compound):
     def _update_axes(self) -> None:
         """Draw simple X and Y axes at bottom and left edges."""
         # Simple axes: bottom edge (X) and left edge (Y)
+        # Use 2D positions (vispy Line with method='gl' expects 2D)
         axes_pos = np.array(
             [
-                [0, 0, 0],  # Bottom-left corner
-                [1, 0, 0],  # Bottom-right corner
-                [0, 0, 0],  # Bottom-left corner (repeated for Y axis)
-                [0, 1, 0],  # Top-left corner
+                [0, 0],  # Bottom-left corner
+                [1, 0],  # Bottom-right corner
+                [0, 0],  # Bottom-left corner (repeated for Y axis)
+                [0, 1],  # Top-left corner
             ],
             dtype=np.float32,
         )
@@ -296,10 +297,8 @@ class HistogramVisual(Compound):
         x_coords.extend([x_max, x_max])
         y_coords.extend([1.0, 0.0])
 
-        # Combine into 3D positions (Z=0 for all points)
-        pos = np.column_stack(
-            [x_coords, y_coords, np.zeros(len(x_coords))]
-        ).astype(np.float32)
+        # Combine into 2D positions (vispy Line with method='gl' expects 2D)
+        pos = np.column_stack([x_coords, y_coords]).astype(np.float32)
 
         # Set line data with strip connection (all points connected in sequence)
         # Use solid color - no gradient/pattern
