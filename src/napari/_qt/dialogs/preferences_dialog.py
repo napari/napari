@@ -100,7 +100,7 @@ class PreferencesDialog(QDialog):
         while self._stack.count():
             self._stack.removeWidget(self._stack.currentWidget())
 
-        for field_name, field_info in self._settings.model_fields.items():
+        for field_name, field_info in type(self._settings).model_fields.items():
             annotation = field_info.annotation
             if isinstance(annotation, type) and issubclass(
                 annotation, BaseModel
