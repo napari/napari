@@ -428,7 +428,9 @@ def _install_npe2_themes(themes=None):
             # get fallback values
             theme_dict = themes[theme.type].model_dump()
             # update available values from npe2 theme objects
-            theme_info = _model_dump(theme, exclude={'colors'}, exclude_unset=True)
+            theme_info = _model_dump(
+                theme, exclude={'colors'}, exclude_unset=True
+            )
             theme_colors = _model_dump(theme.colors, exclude_unset=True)
             theme_dict.update(theme_info)
             theme_dict.update(theme_colors)
