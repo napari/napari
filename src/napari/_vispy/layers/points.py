@@ -64,6 +64,7 @@ class VispyPointsLayer(VispyBaseLayer):
 
         # use only last dimension to scale point sizes, see #5582
         scale = self.layer.scale[-1]
+        scaled_size = size * scale
 
         if self.layer.border_width_is_relative:
             border_kw = {
@@ -71,8 +72,10 @@ class VispyPointsLayer(VispyBaseLayer):
                 'edge_width_rel': border_width,
             }
         else:
+            # cap border_width to the marker size, cause otherwise we get strange effects
+            # in the shaders which result in unbound growth of highlights)
             border_kw = {
-                'edge_width': border_width * scale,
+                'edge_width': np.minimum(border_width * scale, scaled_size),
                 'edge_width_rel': None,
             }
 
@@ -117,8 +120,12 @@ class VispyPointsLayer(VispyBaseLayer):
 
         scale = self.layer.scale[-1]
         highlight_thickness = settings.appearance.highlight.highlight_thickness
-        scaled_highlight = highlight_thickness * self.layer.scale_factor
         scaled_size = (size + border_width) * scale
+        # cap scaled_highlight to the marker size, cause otherwise we get strange effects
+        # in the shaders which result in unbound growth of highlights)
+        scaled_highlight = np.minimum(
+            highlight_thickness * self.layer.scale_factor, scaled_size
+        )
         highlight_color = tuple(settings.appearance.highlight.highlight_color)
 
         self.node.selection_markers.set_data(
