@@ -431,6 +431,20 @@ class EventedModel(BaseModel):
         # We keep this for API compatibility but it's a no-op in V2
         yield
 
+    @classmethod
+    def model_json_schema(cls, *args, **kwargs):
+        """Generate a JSON schema for the model.
+
+        This method generates a JSON schema dictionary for the model class.
+        See Pydantic documentation for full parameter details.
+
+        Returns
+        -------
+        dict
+            A JSON schema dictionary representing the model.
+        """
+        return super().model_json_schema(*args, **kwargs)
+
     # V2 serializers for common types
     @field_serializer('*', mode='wrap')
     @classmethod

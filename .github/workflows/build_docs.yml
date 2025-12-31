@@ -27,5 +27,8 @@ jobs:
       docs-repo: napari/docs
       docs-ref: main
       # Use slimfast to skip npe2 docs prep until npe2 has Pydantic V2 compatibility
+      # Note: docs build may still fail due to Pydantic V2's model_json_schema
+      # docstrings having formatting issues that Sphinx treats as errors.
+      # This requires sphinx configuration changes in napari/docs repo.
       # See: https://github.com/napari/npe2/pull/419
       make_target: "slimfast"
