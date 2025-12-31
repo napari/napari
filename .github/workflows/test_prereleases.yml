@@ -48,6 +48,7 @@ jobs:
       - name: Setup Graphviz
         uses: ts-graphviz/setup-graphviz@b1de5da23ed0a6d14e0aeee8ed52fdd87af2363c # v2.0.2
         continue-on-error: true
+        timeout-minutes: 5
 
       - name: Set Windows resolution
         if: runner.os == 'Windows'
