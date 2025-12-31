@@ -1816,6 +1816,35 @@ def test_get_status_with_custom_index():
     )
 
 
+def test_get_tooltip_text_with_same_features():
+    """
+    Test that tooltip text for different labels is different, even with
+    identical features.
+    """
+    data = np.array([[0, 1], [2, 0]])
+    features = {
+        'class': ['none', 'A', 'A'],
+        'value': ['none', 100, 100],
+    }
+    layer = Labels(data, features=features)
+
+    value1 = layer.get_value(position=(0, 1))
+    assert value1 == 1
+    tooltip1 = layer._get_tooltip_text(position=(0, 1))
+    features1 = layer._get_properties(position=(0, 1))
+
+    value2 = layer.get_value(position=(1, 0))
+    assert value2 == 2
+    tooltip2 = layer._get_tooltip_text(position=(1, 0))
+    features2 = layer._get_properties(position=(1, 0))
+
+    assert features1 == features2
+    assert tooltip1 != tooltip2
+
+    assert tooltip1 == f'{value1}\n' + '\n'.join(features1)
+    assert tooltip2 == f'{value2}\n' + '\n'.join(features2)
+
+
 def test_labels_features_event():
     event_emitted = False
 

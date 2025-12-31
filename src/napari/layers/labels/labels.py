@@ -392,7 +392,7 @@ class Labels(ScalarFieldBase):
             LabelsPolygonOverlay,
         )
 
-        self._overlays.update({'polygon': LabelsPolygonOverlay()})
+        self._overlays.update({'polygon': LabelsPolygonOverlay(visible=True)})
 
         self._feature_table = _FeatureTable.from_layer(
             features=features, properties=properties
@@ -1573,14 +1573,26 @@ class Labels(ScalarFieldBase):
         msg : string
             String containing a message that can be used as a tooltip.
         """
-        return '\n'.join(
-            self._get_properties(
-                position,
-                view_direction=view_direction,
-                dims_displayed=dims_displayed,
-                world=world,
-            )
+        value = self.get_value(
+            position,
+            view_direction=view_direction,
+            dims_displayed=dims_displayed,
+            world=world,
         )
+        if value is None:
+            return ''
+
+        properties = self._get_properties(
+            position,
+            view_direction=view_direction,
+            dims_displayed=dims_displayed,
+            world=world,
+        )
+
+        if not properties:
+            return f'{value}'
+
+        return f'{value}\n' + '\n'.join(properties)
 
     def _get_properties(
         self,

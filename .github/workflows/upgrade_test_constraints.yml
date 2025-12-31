@@ -102,12 +102,12 @@ jobs:
           echo "FULL_NAME=${{ github.repository }}" >> "$GITHUB_ENV"
           echo "BRANCH=${{ github.ref_name }}" >> "$GITHUB_ENV"
 
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           fetch-depth: 0
 
       - name: Clone target repo (remote)
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         if: github.event_name == 'issue_comment'
         with:
           path: napari_repo  # place in a named directory
@@ -117,13 +117,13 @@ jobs:
 
       - name: Clone target repo (pull request)
         # we need separate step as passing empty token to actions/checkout@v4 will not work
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         if: github.event_name == 'pull_request'
         with:
           path: napari_repo  # place in a named directory
 
       - name: Clone target repo (main)
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         if: github.event_name != 'issue_comment' && github.event_name != 'pull_request'
         with:
           path: napari_repo  # place in a named directory
@@ -139,7 +139,7 @@ jobs:
           git remote -v
 
       # START PYTHON DEPENDENCIES
-      - uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
+      - uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v6.1.0
         with:
           python-version: "3.12"
           cache: pip
@@ -150,34 +150,13 @@ jobs:
         run: |
           set -x
           pip install -U uv
-          cd napari_repo
-          flags=(--quiet --extra pyqt6 --extra pyside2 --extra pyside6 --extra testing --group testing_extra --extra all_optional)
 
-          # Explanation of below commands
-          # uv pip compile --python-version 3.9 - call uv pip compile but ensure proper interpreter
-          # --upgrade upgrade to the latest possible version. Without this pip-compile will take a look to output files and reuse versions (so will ad something on when adding dependency.
-          # -o resources/constraints/constraints_py3.9.txt - output file
-          # pyproject.toml resources/constraints/version_denylist.txt - source files. the resources/constraints/version_denylist.txt - contains our test specific constraints like pytes-cov`
-          #
-          # --extra pyqt6 etc - names of extra sections from pyproject.toml that should be checked for the dependencies list (maybe we could create a super extra section to collect them all in)
-          pyproject_toml="pyproject.toml"
-          constraints="resources/constraints"
-
-
-          for pyv in 3.10 3.11 3.12 3.13; do
-            uv pip compile --python-version ${pyv} --upgrade --output-file ${constraints}/constraints_py${pyv}.txt  ${pyproject_toml} ${constraints}/version_denylist.txt "${flags[@]}"
-          done
-
-
-          uv pip compile --python-version 3.12 --upgrade --output-file ${constraints}/constraints_py3.12_examples.txt ${pyproject_toml} ${constraints}/version_denylist.txt ${constraints}/version_denylist_examples.txt "${flags[@]}"
-          uv pip compile --python-version 3.10 --upgrade --output-file ${constraints}/constraints_py3.10_docs.txt ${pyproject_toml} ${constraints}/version_denylist.txt ${constraints}/version_denylist_examples.txt --group docs "${flags[@]}"
-          uv pip compile --python-version 3.12 --upgrade --output-file ${constraints}/constraints_py3.12_docs.txt ${pyproject_toml} ${constraints}/version_denylist.txt ${constraints}/version_denylist_examples.txt --group docs "${flags[@]}"
-          uv pip compile --python-version 3.12 --upgrade --output-file resources/requirements_mypy.txt resources/requirements_mypy.in
+          bash tools/compile_constraints.sh
 
       # END PYTHON DEPENDENCIES
 
       - name: Upload constraints
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
         with:
           name: constraints
           path: |
