@@ -6,7 +6,7 @@ import dask.array as da
 import numpy as np
 import pytest
 import skimage
-from hypothesis import given
+from hypothesis import HealthCheck, given, settings
 from hypothesis.extra.numpy import array_shapes
 from skimage.transform import pyramid_gaussian
 
@@ -48,7 +48,8 @@ def test_guess_rgb():
     assert guess_rgb(shape, min_side_len=5)
 
 
-@given(shape=array_shapes(min_dims=3, min_side=0))
+@settings(suppress_health_check=[HealthCheck.too_slow])
+@given(shape=array_shapes(min_dims=3, max_dims=5, min_side=0, max_side=100))
 def test_guess_rgb_property(shape):
     sig = inspect.signature(guess_rgb)
     min_side_len = sig.parameters['min_side_len'].default
