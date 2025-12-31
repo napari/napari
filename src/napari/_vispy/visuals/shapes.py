@@ -17,7 +17,9 @@ class ShapesVisual(ClippingPlanesMixin, Compound):
     """
 
     def __init__(self) -> None:
-        super().__init__([Mesh(), Mesh(), Line(), Markers(), Text()])
+        super().__init__(
+            [Mesh(), Mesh(), Line(antialias=True), Markers(), Text()]
+        )
 
     @property
     def shape_faces(self) -> Mesh:
