@@ -130,10 +130,10 @@ def get_plugin_list() -> str:
         ]
         # model_dump is the Pydantic V2 method; TestPluginManager may not have it
         if hasattr(pm, 'model_dump'):
-            pm_dict = pm.model_dump(include=set(fields))  # type: ignore[attr-defined]
+            pm_dict = pm.model_dump(include=set(fields))
         elif hasattr(pm, 'dict'):
             # Fallback for older npe2 versions or test plugin managers
-            pm_dict = pm.dict(include=set(fields))  # type: ignore[attr-defined]
+            pm_dict = pm.dict(include=set(fields))
         else:
             # TestPluginManager or other mock doesn't have serialization
             return '  - (plugin manager does not support serialization)<br>'
