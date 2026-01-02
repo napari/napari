@@ -211,13 +211,13 @@ def test_ndisplay_button_popup(qt_viewer_buttons, qtbot):
     viewer_buttons.zoom.setValue(5)
     assert viewer.camera.zoom == viewer_buttons.zoom.value() == 5
 
-    # check viewer camera rotation value affects camera angles
+    # check viewer camera rotation with widget values affects camera angles
     assert viewer_buttons.rx
     assert viewer_buttons.ry
     assert viewer_buttons.rz
-    viewer_buttons.rx.setValue(90)
+    viewer_buttons.rx.setValue(150)
     viewer_buttons.ry.setValue(45)
-    viewer_buttons.rz.setValue(0)
+    viewer_buttons.rz.setValue(-50)
     assert (
         viewer.camera.angles
         == (
@@ -225,7 +225,40 @@ def test_ndisplay_button_popup(qt_viewer_buttons, qtbot):
             viewer_buttons.ry.value(),
             viewer_buttons.rz.value(),
         )
-        == (90, 45, 0)
+        == (
+            viewer_buttons.rx._label.value(),
+            viewer_buttons.ry._label.value(),
+            viewer_buttons.rz._label.value(),
+        )
+        == (150, 45, -50)
+    )
+
+    # popup needs to be relaunched to get widget controls with the new values
+    perspective_popup.close()
+    perspective_popup = None
+
+    # check that changing angles outside widget properly updates the widget values
+    viewer.camera.angles = (125, 15, -45)
+
+    # relaunch popup to check values
+    viewer_buttons.ndisplayButton.customContextMenuRequested.emit(QPoint())
+    for widget in QApplication.topLevelWidgets():
+        if isinstance(widget, QtPopup):
+            perspective_popup = widget
+    assert perspective_popup
+    assert (
+        viewer.camera.angles
+        == (
+            viewer_buttons.rx.value(),
+            viewer_buttons.ry.value(),
+            viewer_buttons.rz.value(),
+        )
+        == (
+            viewer_buttons.rx._label.value(),
+            viewer_buttons.ry._label.value(),
+            viewer_buttons.rz._label.value(),
+        )
+        == (125, 15, -45)
     )
 
     # popup needs to be relaunched to get widget controls with the new values
