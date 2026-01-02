@@ -6,10 +6,9 @@
 name: Benchmarks
 
 on:
-  pull_request:
-    types: [labeled]
+  workflow_call:
   schedule:
-    - cron: "6 6 * * 0" # every sunday
+    - cron: "6 6 * * 0" # every sunday
   workflow_dispatch:
     inputs:
       base_ref:
@@ -20,7 +19,7 @@ on:
         required: true
 
 # This is the main configuration section that needs to be fine tuned to napari's needs
-# All the *_THREADS options is just to make the benchmarks more robust by not using parallelism
+# All the *_THREADS options is just to make the benchmarks more robust by not using parallelism
 env:
   OPENBLAS_NUM_THREADS: "1"
   MKL_NUM_THREADS: "1"
@@ -30,11 +29,10 @@ env:
   # --show-stderr -> print tracebacks if errors occur
   # --factor 1.5 -> report anomaly if tested timings are beyond 1.5x base timings
   # --attribute timeout=300 -> override timeout attribute (default=60s) to allow slow tests to run
-  # see https://asv.readthedocs.io/en/stable/commands.html#asv-continuous for more details!
+  # see https://asv.readthedocs.io/en/stable/commands.html#asv-continuous for more details!
 
 jobs:
   benchmark:
-    if: ${{ github.event.label.name == 'run-benchmarks' && github.event_name == 'pull_request' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
     name: ${{ matrix.benchmark-name }}
     runs-on: ${{ matrix.runs-on }}
     env:
@@ -108,7 +106,7 @@ jobs:
           # ID this runner
           asv machine --yes
 
-          if [[ $GITHUB_EVENT_NAME == pull_request ]]; then
+          if [[ $GITHUB_EVENT_NAME == workflow_call ]]; then
             EVENT_NAME="PR #${{ github.event.pull_request.number }}"
             BASE_REF=${{ github.event.pull_request.base.sha }}
             CONTENDER_REF=${GITHUB_SHA}
@@ -178,7 +176,7 @@ jobs:
           # Add the message that might be posted as a comment on the PR
           # We delegate the actual comment to `benchmarks_report.yml` due to
           # potential token permissions issues
-          if [[ $GITHUB_EVENT_NAME == pull_request ]]; then
+          if [[ $GITHUB_EVENT_NAME == workflow_call ]]; then
 
           echo "${{ github.event.pull_request.number }}" > .asv/results/pr_number
           echo \

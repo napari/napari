@@ -257,6 +257,10 @@ class PreferencesDialog(QDialog):
         event.accept()
         self.accept()
 
+    def accept(self):
+        self._settings.save()
+        super().accept()
+
     def reject(self):
         """Restores the settings in place when dialog was launched."""
         self._settings.update(self._starting_values)

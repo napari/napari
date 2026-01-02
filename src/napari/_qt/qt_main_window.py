@@ -60,7 +60,6 @@ from napari._qt.dialogs.confirm_close_dialog import ConfirmCloseDialog
 from napari._qt.dialogs.preferences_dialog import PreferencesDialog
 from napari._qt.dialogs.qt_activity_dialog import QtActivityDialog
 from napari._qt.dialogs.qt_notification import NapariQtNotification
-from napari._qt.dialogs.shimmed_plugin_dialog import ShimmedPluginDialog
 from napari._qt.qt_event_loop import (
     NAPARI_ICON_PATH,
     get_qapp,
@@ -288,7 +287,10 @@ class _QtMainWindow(QMainWindow):
                 if hasattr(e, 'globalPosition')
                 else e.globalPos()
             )
-            QToolTip.showText(pnt, self._qt_viewer.viewer.tooltip.text, self)
+            rect = QRect(pnt.x() - 5, pnt.y() - 5, 10, 10)
+            QToolTip.showText(
+                pnt, self._qt_viewer.viewer.tooltip.text, self, rect=rect
+            )
         if e.type() in {QEvent.Type.WindowActivate, QEvent.Type.ZOrderChange}:
             # upon activation or raise_, put window at the end of _instances
             with contextlib.suppress(ValueError):
@@ -461,31 +463,6 @@ class _QtMainWindow(QMainWindow):
 
         if settings.application.save_window_state:
             settings.application.window_state = window_state
-
-    def _warn_on_shimmed_plugins(self) -> None:
-        """Warn about shimmed plugins if needed.
-
-        In 0.6.0, a plugin using the deprecated plugin engine will be automatically
-        converted so it can be used with npe2. By default, a dialog is displayed
-        with each startup listing all shimmed plugins. The user can change this setting
-        to only be warned about newly installed shimmed plugins.
-
-        """
-        from npe2 import plugin_manager as pm
-
-        settings = get_settings()
-        shimmed_plugins = set(pm.get_shimmed_plugins())
-        if settings.plugins.only_new_shimmed_plugins_warning:
-            new_plugins = (
-                shimmed_plugins
-                - settings.plugins.already_warned_shimmed_plugins
-            )
-        else:
-            new_plugins = shimmed_plugins
-
-        if new_plugins:
-            dialog = ShimmedPluginDialog(self, new_plugins)
-            dialog.exec_()
 
     def close(self, quit_app=False, confirm_need=False):
         """Override to handle closing app or just the window."""
@@ -783,8 +760,6 @@ class Window:
                 [self._qt_viewer.dockLayerControls.minimumHeight(), 10000],
                 Qt.Orientation.Vertical,
             )
-            # TODO: where to put this?
-            self._qt_window._warn_on_shimmed_plugins()
 
     def _setup_existing_themes(self, connect: bool = True):
         """This function is only executed once at the startup of napari
@@ -1283,6 +1258,7 @@ class Window:
             layers_events.inserted.connect(widget.reset_choices)
             layers_events.removed.connect(widget.reset_choices)
             layers_events.reordered.connect(widget.reset_choices)
+            layers_events.renamed.connect(widget.reset_choices)
 
         # Add dock widget to dictionary
         self._wrapped_dock_widgets[dock_widget.name] = dock_widget
