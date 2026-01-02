@@ -9,7 +9,6 @@ import numpy as np
 import numpy.typing as npt
 import pandas as pd
 from psygnal.containers import Selection
-from superqt.utils import qdebounced
 from vispy.color import get_color_names
 
 from napari.layers.base import Layer, no_op
@@ -619,8 +618,6 @@ class Shapes(Layer):
             text=text,
             features=self.features,
         )
-
-        self._force_highlight_update = False
 
         self.refresh()
 
@@ -1753,12 +1750,6 @@ class Shapes(Layer):
         if not self.editable:
             self.mode = Mode.PAN_ZOOM
 
-    @qdebounced()
-    def _on_highlight_debounced(self):
-        """Debounced highlight update that uses force status."""
-        self._set_highlight(force=self._force_highlight_update)
-        self._force_highlight_update = False
-
     def _update_draw(
         self, scale_factor, corner_pixels_displayed, shape_threshold
     ):
@@ -1767,11 +1758,7 @@ class Shapes(Layer):
             scale_factor, corner_pixels_displayed, shape_threshold
         )
         if prev_scale != self.scale_factor and self.selected_data:
-            if len(self.selected_data) < 1000:
-                self._set_highlight(force=True)
-
-            self._force_highlight_update = True
-            self._on_highlight_debounced()
+            self._set_highlight(force=True)
 
     def add_rectangles(
         self,
@@ -2648,11 +2635,11 @@ class Shapes(Layer):
             Bool that forces a redraw to occur when `True`
         """
         # Check if any shape or vertex ids have changed since last call
-        if (
+        if not force and (
             self.selected_data == self._selected_data_stored
             and np.array_equal(self._value, self._value_stored)
             and np.array_equal(self._drag_box, self._drag_box_stored)
-        ) and not force:
+        ):
             return
         self._selected_data_stored = set(self._selected_data)
         self._value_stored = copy(self._value)
