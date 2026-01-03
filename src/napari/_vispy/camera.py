@@ -54,7 +54,7 @@ class VispyCamera:
             # Do conversion from quaternion representation to euler angles
             q = self._view.camera._quaternion
             rotation = Rotation.from_quat([q.x, q.y, q.z, q.w])
-            # vispy's create_from_euler_angles uses ZYX extrinsic convention
+            # vispy's equivalent quaternion creation uses ZYX extrinsic convention
             angles = rotation.as_euler('ZYX', degrees=True)
             return self._camera.from_legacy_angles(tuple(angles))
 
@@ -68,7 +68,7 @@ class VispyCamera:
         # Only update angles if current camera is 3D camera
         if isinstance(self._view.camera, MouseToggledArcballCamera):
             angles = self._camera.to_legacy_angles(angles)
-            # vispy's create_from_euler_angles uses ZYX extrinsic convention
+            # vispy's equivalent quaternion creation uses ZYX extrinsic convention
             rotation = Rotation.from_euler('ZYX', angles, degrees=True)
             # Create and set quaternion
             q = Quaternion(*rotation.as_quat(scalar_first=True))

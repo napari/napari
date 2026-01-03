@@ -227,8 +227,8 @@ class Camera(EventedModel):
     ) -> tuple[float, float, float]:
         """Convert camera angles from vispy convention (legacy behaviour) to napari.
 
-        Vispy's create_from_euler_angles uses ZYX extrinsic ordering (note: capital
-        letters indicate extrinsic rotations). In napari 0.7.0+ we use xyz intrinsic.
+        Vispy's quaternion representation uses ZYX extrinsic ordering.
+        In napari 0.7.0+ we use xyz intrinsic.
 
         Prior to napari 0.7.0, we didn't account for Vispy's ZYX ordering, so our
         camera angles updated the rotation around the wrong axes. See:
@@ -253,8 +253,8 @@ class Camera(EventedModel):
     ) -> tuple[float, float, float]:
         """Convert camera angles from napari convention to vispy (legacy behaviour).
 
-        Vispy's create_from_euler_angles uses ZYX extrinsic ordering (note: capital
-        letters indicate extrinsic rotations). In napari 0.7.0+ we use xyz intrinsic.
+        Vispy's quaternion representation uses ZYX extrinsic ordering.
+        In napari 0.7.0+ we use xyz intrinsic.
 
         Prior to napari 0.7.0, we didn't account for Vispy's ZYX ordering, so our
         camera angles updated the rotation around the wrong axes. See:
