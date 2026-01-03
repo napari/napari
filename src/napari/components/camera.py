@@ -227,22 +227,23 @@ class Camera(EventedModel):
     ) -> tuple[float, float, float]:
         """Convert camera angles from vispy convention (legacy behaviour) to napari.
 
-        Vispy (and previously napari) uses YZX ordering, but in napari we use XYZ.
-        Rotations are extrinsic.
+        Vispy's create_from_euler_angles uses ZYX extrinsic ordering (note: capital
+        letters indicate extrinsic rotations). In napari 0.7.0+ we use xyz intrinsic.
 
-        Prior to napari 0.7.0, we didn't account for Vispy's YZX ordering, so our
+        Prior to napari 0.7.0, we didn't account for Vispy's ZYX ordering, so our
         camera angles updated the rotation around the wrong axes. See:
 
         https://github.com/napari/napari/pull/8281
         """
-        # see #8281 for why this is yzx. In short: longstanding vispy bug.
-        rot = R.from_euler('yzx', angles, degrees=True)
-        # rotate 90 degrees to get neutral position at 0, 0, 0
+        # vispy's create_from_euler_angles uses ZYX extrinsic (= zyx intrinsic reversed)
+        rot = R.from_euler('ZYX', angles, degrees=True)
+        # rotate -90 degrees around x to shift neutral position to 0, 0, 0
         rot = rot * R.from_euler('x', -90, degrees=True)
-        angles = rot.as_euler('xyz', degrees=True)
+        # output as xyz intrinsic (napari 0.7.0 convention)
+        new_angles = rot.as_euler('xyz', degrees=True)
         # flip angles where orientation is flipped relative to default, so the
         # resulting rotation is always right-handed (i.e: CCW when facing the plane)
-        flipped = angles * np.where(
+        flipped = new_angles * np.where(
             self._vispy_flipped_axes(ndisplay=3), -1, 1
         )
         return cast(tuple[float, float, float], tuple(flipped))
@@ -252,10 +253,10 @@ class Camera(EventedModel):
     ) -> tuple[float, float, float]:
         """Convert camera angles from napari convention to vispy (legacy behaviour).
 
-        Vispy (and previously napari) uses YZX ordering, but in napari we use XYZ.
-        Rotations are extrinsic.
+        Vispy's create_from_euler_angles uses ZYX extrinsic ordering (note: capital
+        letters indicate extrinsic rotations). In napari 0.7.0+ we use xyz intrinsic.
 
-        Prior to napari 0.7.0, we didn't account for Vispy's YZX ordering, so our
+        Prior to napari 0.7.0, we didn't account for Vispy's ZYX ordering, so our
         camera angles updated the rotation around the wrong axes. See:
 
         https://github.com/napari/napari/pull/8281
@@ -265,14 +266,14 @@ class Camera(EventedModel):
         flipped_angles = angles * np.where(
             self._vispy_flipped_axes(ndisplay=3), -1, 1
         )
-        # input is xyz (napari 0.7.0 convention, matching view_direction/up_direction)
+        # input is xyz intrinsic (napari 0.7.0 convention)
         rot = R.from_euler('xyz', flipped_angles, degrees=True)
         # rotate +90 degrees around x to shift neutral position (inverse of from_legacy)
         rot = rot * R.from_euler('x', 90, degrees=True)
-        # see #8281 for why this is yzx. In short: longstanding vispy bug.
+        # vispy's create_from_euler_angles uses ZYX extrinsic
         return cast(
             tuple[float, float, float],
-            tuple(rot.as_euler('yzx', degrees=True)),
+            tuple(rot.as_euler('ZYX', degrees=True)),
         )
 
     def _vispy_flipped_axes(
