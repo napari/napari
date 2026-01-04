@@ -79,7 +79,6 @@ jobs:
       - name: Verify PR author exists in CITATION.cff
         env:
           PR_AUTHOR: ${{ github.event.pull_request.user.login }}
-          PR_AFFILIATION: ${{ github.event.pull_request.user.company }}
         run: |
           echo "PR author: $PR_AUTHOR"
           if [[ "$PR_AUTHOR" == *"[bot]" || "$PR_AUTHOR" == "napari-bot" ]]; then
@@ -97,7 +96,7 @@ jobs:
             '```yaml' \
             "- given-names: <first name>" \
             "  family-names: <last name>" \
-            "  affiliation: <required> (ex. ${PR_AFFILIATION})" \
+            "  affiliation: <required> (e.g. napari University)" \
             "  orcid: https://orcid.org/<ORCID> <optional>" \
             "  alias: ${PR_AUTHOR}" \
             '```'
