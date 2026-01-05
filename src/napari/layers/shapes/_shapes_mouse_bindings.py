@@ -46,7 +46,13 @@ def highlight(layer: Shapes, event: MouseEvent) -> None:
     -------
     None
     """
-    layer._set_highlight()
+    if layer._mode in {
+        Mode.SELECT,
+        Mode.DIRECT,
+        Mode.VERTEX_INSERT,
+        Mode.VERTEX_REMOVE,
+    }:
+        layer._set_highlight()
 
 
 def select(layer: Shapes, event: MouseEvent) -> Generator[None, None, None]:
@@ -943,8 +949,3 @@ def _move_active_element_under_cursor(
 
             layer._data_view.edit(index, vertices, new_type=new_type)
             layer.refresh()
-
-
-def _set_highlight(layer: Shapes, event: MouseEvent) -> None:
-    if event.type in {'mouse_press', 'mouse_wheel'}:
-        layer._set_highlight()
