@@ -2,6 +2,7 @@ import csv
 import os
 from pathlib import Path
 from typing import NamedTuple
+from unittest.mock import MagicMock
 from uuid import uuid4
 
 import dask.array as da
@@ -19,6 +20,7 @@ from napari_builtins.io._read import (
     csv_to_layer_data,
     magic_imread,
     read_csv,
+    read_zarr_dataset,
 )
 from napari_builtins.io._write import write_csv
 
@@ -361,3 +363,72 @@ def test_add_many_zarr_1d_array_is_ignored(tmp_path):
 )
 def test_github_and_gitlab_to_raw_url(url, expected):
     assert _git_provider_url_to_raw_url(url) == expected
+
+
+def test_read_zarr_non_existent_path_raises(tmp_path):
+    """Ensure that read_zarr_dataset raises FileNotFoundError for a non-existent path."""
+    with pytest.raises(FileNotFoundError):
+        read_zarr_dataset(str(tmp_path / 'non-existent.zarr'))
+
+
+def test_read_zarr_remote_group_raises(tmp_path, monkeypatch):
+    """Test that read_zarr_dataset raises ValueError for a remote http group."""
+    # create a real local zarr group
+    root_path = tmp_path / 'dataset.zarr'
+    zarr.open(store=str(root_path), mode='a')
+
+    # mock that the path is a remote URL
+    monkeypatch.setattr('napari_builtins.io._read._is_url', lambda path: True)
+
+    with pytest.raises(
+        ValueError, match='Opening remote zarr Groups is not supported'
+    ):
+        read_zarr_dataset(str(root_path))
+
+
+def test_read_zarr_remote_array_succeeds(tmp_path, monkeypatch):
+    """Test that read_zarr_dataset succeeds for a remote http array."""
+    # create a real local zarr array
+    image = np.random.random((10, 20))
+    data_path = str(tmp_path / 'data.zarr')
+    zarr.save(data_path, image)
+
+    # mock that the path is a remote URL
+    monkeypatch.setattr('napari_builtins.io._read._is_url', lambda path: True)
+
+    # should successfully read the array
+    image_in, _ = read_zarr_dataset(data_path)
+    np.testing.assert_array_equal(image, image_in)
+
+
+def test_zarr_multiple_groups_reads_first(tmp_path, monkeypatch):
+    """
+    Test that when a zarr store has multiple groups, the first one
+    is chosen.
+    """
+    root_path = tmp_path / 'multigroup.zarr'
+    root = zarr.open_group(str(root_path), mode='a')
+
+    data1 = np.zeros((5, 5))
+    data0 = np.zeros((10, 10))
+
+    group_one = root.create_group('1')
+    group_one.create_dataset('data', data=data1, shape=data1.shape)
+    group_zero = root.create_group('0')
+    group_zero.create_dataset('data', data=data0, shape=data0.shape)
+
+    # Mock show_info to check if it was called
+    mock_show_info = MagicMock()
+    monkeypatch.setattr('napari.utils.notifications.show_info', mock_show_info)
+
+    # Read the root, which should auto-select 'group_zero'
+    image_in, _ = read_zarr_dataset(str(root_path))
+
+    # Check that the data from the first group ('group_zero') was read
+    np.testing.assert_array_equal(image_in[0].shape, data0.shape)
+
+    # Check that the user was informed
+    mock_show_info.assert_called_once()
+    call_args, _ = mock_show_info.call_args
+    assert 'Opening group "0"' in call_args[0]
+    assert 'Other groups: 1' in call_args[0]

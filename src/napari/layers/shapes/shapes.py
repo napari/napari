@@ -29,7 +29,6 @@ from napari.layers.shapes._shapes_constants import (
     shape_classes,
 )
 from napari.layers.shapes._shapes_mouse_bindings import (
-    _set_highlight,
     add_ellipse,
     add_line,
     add_path_polygon,
@@ -620,9 +619,6 @@ class Shapes(Layer):
             features=self.features,
         )
 
-        # Trigger generation of view slice and thumbnail
-        self.mouse_wheel_callbacks.append(_set_highlight)
-        self.mouse_drag_callbacks.append(_set_highlight)
         self.refresh()
 
     def _initialize_current_color_for_empty_layer(
@@ -866,16 +862,14 @@ class Shapes(Layer):
         extent_data : array, shape (2, D)
         """
         if len(self.data) == 0:
-            extrema = np.full((2, self.ndim), np.nan)
-        else:
-            maxs = np.max(
-                [d._bounding_box[1] for d in self._data_view.shapes], axis=0
-            )
-            mins = np.min(
-                [d._bounding_box[0] for d in self._data_view.shapes], axis=0
-            )
-            extrema = np.vstack([mins, maxs])
-        return extrema
+            return np.full((2, self.ndim), np.nan)
+
+        bounding_boxes = np.array(
+            [d._bounding_box for d in self._data_view.shapes]
+        )
+        mins = np.min(bounding_boxes[:, 0, :], axis=0)
+        maxs = np.max(bounding_boxes[:, 1, :], axis=0)
+        return np.vstack([mins, maxs])
 
     @property
     def nshapes(self):
@@ -1763,8 +1757,8 @@ class Shapes(Layer):
         super()._update_draw(
             scale_factor, corner_pixels_displayed, shape_threshold
         )
-        # update highlight only if scale has changed, otherwise causes a cycle
-        self._set_highlight(force=(prev_scale != self.scale_factor))
+        if prev_scale != self.scale_factor and self.selected_data:
+            self._set_highlight(force=True)
 
     def add_rectangles(
         self,
@@ -2641,11 +2635,11 @@ class Shapes(Layer):
             Bool that forces a redraw to occur when `True`
         """
         # Check if any shape or vertex ids have changed since last call
-        if (
+        if not force and (
             self.selected_data == self._selected_data_stored
             and np.array_equal(self._value, self._value_stored)
             and np.array_equal(self._drag_box, self._drag_box_stored)
-        ) and not force:
+        ):
             return
         self._selected_data_stored = set(self._selected_data)
         self._value_stored = copy(self._value)
@@ -2782,9 +2776,7 @@ class Shapes(Layer):
                 ),
                 vertex_indices=((),),
             )
-            # FIXME: this is really slow
-            for ind in to_remove:
-                self._data_view.remove(ind)
+            self._data_view.remove_multiple(to_remove)
 
             if len(self.data) == 0 and self.selected_data:
                 self.selected_data.clear()

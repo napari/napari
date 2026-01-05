@@ -345,7 +345,7 @@ def test_emitting_data_doesnt_change_points_value(make_napari_viewer):
     data = np.array([[0, 0], [10, 10], [20, 20]])
     layer = viewer.add_points(data, size=2)
     viewer.layers.selection.active = layer
-
+    layer.mode = 'select'
     assert layer._value is None
     viewer.mouse_over_canvas = True
     viewer.cursor.position = tuple(layer.data[1])
@@ -457,3 +457,53 @@ def test_negative_translate(make_napari_viewer, qtbot):
     viewer = make_napari_viewer()
     _ = viewer.add_image(data, translate=(-1, 0, 0))
     assert viewer.dims.range[2].start == -1
+
+
+@pytest.mark.parametrize(
+    ('axis_labels', 'expected_labels', 'expected_ndim'),
+    [
+        ((), ('0', '1'), 2),
+        (('x',), ('0', 'x'), 2),
+        (('y', 'x'), ('y', 'x'), 2),
+        (('z', 'y', 'x'), ('z', 'y', 'x'), 3),
+        (('t', 'z', 'y', 'x'), ('t', 'z', 'y', 'x'), 4),
+    ],
+)
+def test_axis_labels(
+    make_napari_viewer,
+    qtbot,
+    axis_labels: tuple[str, ...],
+    expected_labels: tuple[str, ...],
+    expected_ndim: int,
+):
+    """
+    Check that axis labels are set properly.
+    """
+    viewer = make_napari_viewer(axis_labels=axis_labels)
+    assert viewer.dims.axis_labels == expected_labels
+    assert viewer.dims.ndim == expected_ndim
+
+
+def test_axis_labels_after_data(make_napari_viewer, qtbot):
+    """
+    Check that axis labels persist after adding data in different ways.
+    """
+    original_labels = ('z', 'y', 'x')
+    viewer = make_napari_viewer(axis_labels=original_labels)
+    assert viewer.dims.ndim == 3
+    assert viewer.dims.axis_labels == original_labels
+
+    # Add data with same dimensionality as viewer
+    _ = viewer.add_image(np.random.random((10, 12, 12)))
+    assert viewer.dims.axis_labels == original_labels
+
+    # Add data with lower dimensionality than viewer
+    _ = viewer.add_image(np.random.random((10, 12)))
+    assert viewer.dims.axis_labels == original_labels
+
+    # Add data with lower dimensionality than viewer,
+    # with different axis labels
+    data_labels = ('i', 'j')
+    assert data_labels != original_labels
+    _ = viewer.add_image(np.random.random((10, 12)), axis_labels=data_labels)
+    assert viewer.dims.axis_labels == original_labels
