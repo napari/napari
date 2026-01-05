@@ -581,6 +581,7 @@ class Shapes(Layer):
         self._selected_data.events.items_changed.connect(
             self._clean_outline_cache
         )
+        self.events.set_data.connect(self._clean_outline_cache)
 
         self._status = self.mode
 
