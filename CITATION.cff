@@ -76,10 +76,14 @@ authors:
   alias: GenevieveBuckley
 - given-names: Wouter-Michiel
   family-names: Vierdag
-  affiliation: European Molecular Biology Laboratory, Genome Biology Unit, Heidelberg,
-    Germany
+  affiliation: European Molecular Biology Laboratory, Genome Biology Unit, Heidelberg, Germany
   orcid: https://orcid.org/0000-0003-1666-5421
   alias: melonora
+- given-names: Ashley
+  family-names: Anderson
+  affiliation: Chan Zuckerberg Initiative
+  orcid: https://orcid.org/0000-0002-3841-8344
+  alias: aganders3
 - given-names: Timothy
   family-names: Monko
   affiliation: University of Minnesota — Twin Cities
@@ -123,11 +127,11 @@ authors:
   affiliation: Harvard Medical School, BIDMC
   orcid: https://orcid.org/0000-0002-8070-0378
   alias: orena1
-- given-names: Ashley
-  family-names: Anderson
-  affiliation: Chan Zuckerberg Initiative
-  orcid: https://orcid.org/0000-0002-3841-8344
-  alias: aganders3
+- given-names: Edward
+  family-names: Andò
+  affiliation: EPFL Center for Imaging
+  orcid: https://orcid.org/0000-0001-5509-5287
+  alias: edwardando
 - given-names: Andrew
   family-names: Annex
   affiliation: SETI Institute/NASA ARC
@@ -399,6 +403,11 @@ authors:
   family-names: Winston
   affiliation: Tobeva Software
   alias: pwinston
+- given-names: Qin
+  family-names: Yu
+  affiliation: European Molecular Biology Laboratory (EMBL)
+  orcid: https://orcid.org/0000-0002-4652-0795
+  alias: qin-yu
 - given-names: Rubin
   family-names: Zhao
   affiliation: Chinese Academy of Sciences - SIAT, Shenzhen, China
