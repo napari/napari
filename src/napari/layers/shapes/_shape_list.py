@@ -1903,7 +1903,7 @@ class ShapeList:
     ]:
         data = np.array([s[1].bounding_box for s in self._visible_shapes])
         if data.size == 0:
-            return np.empty((0, self.ndisplay)), np.empty((0, self.ndisplay))
+            return np.empty((0, self.ndisplay)), np.empty((0, self.ndisplay))  # type: ignore[return-value]
         return data[:, 0], data[:, 1]
 
     @cached_property
