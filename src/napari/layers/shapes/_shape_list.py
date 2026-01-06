@@ -1816,87 +1816,72 @@ class ShapeList:
             np.concatenate(triangles_blocks),
         )
 
-    def shapes_in_box(self, corners: npt.NDArray) -> list:
-        """Determines which shapes, if any, are inside an axis aligned box.
+    def shapes_in_box(
+        self, corners: np.ndarray[tuple[Literal[2], Literal[2]]]
+    ) -> list[int]:
+        """Determines which shapes, if any, are inside an axis-aligned box.
 
         Looks only at displayed shapes
 
         Parameters
         ----------
         corners : np.ndarray
-            2x2 array of two corners that will be used to create an axis
-            aligned box.
+            2x2 array of two corners that will be used to create an
+            axis-aligned box.
 
         Returns
         -------
-        shapes : list
+        shapes : list of ints
             List of shapes that are inside the box.
         """
-
-        displayed_indices = np.where(self._displayed)[0]
-        if not displayed_indices.any():
+        shape_mins, shape_maxs = self._bounding_boxes
+        if shape_mins.shape[0] == 0:
             return []
 
-        # Get bounding boxes of all displayed shapes
         selection_min = np.min(corners, axis=0)
         selection_max = np.max(corners, axis=0)
-        bounding_boxes = np.array(
-            [self.shapes[i].bounding_box for i in displayed_indices]
-        )
-        shape_mins = bounding_boxes[:, 0, :]
-        shape_maxs = bounding_boxes[:, 1, :]
 
         # If the box encompasses all shapes, just get them directly
-        layer_min = np.min(shape_mins, axis=0)
-        layer_max = np.max(shape_maxs, axis=0)
-        if np.all(selection_min <= layer_min) and np.all(
-            selection_max >= layer_max
-        ):
-            return displayed_indices.tolist()
+        # layer_min = np.min(shape_mins, axis=0)
+        # layer_max = np.max(shape_maxs, axis=0)
+        # if np.all(selection_min <= layer_min) and np.all(
+        #     selection_max >= layer_max
+        # ):
+        #     return self._visible_shapes_indices.tolist()
 
         # Get shapes with bounding boxes intersecting the selection box
         intersects_mask = np.all(shape_maxs >= selection_min, axis=1) & np.all(
             shape_mins <= selection_max, axis=1
         )
 
-        intersecting_indices = displayed_indices[intersects_mask]
+        intersecting_indices = self._visible_shapes_indices[intersects_mask]
 
-        if len(intersecting_indices) == 0:
+        if intersecting_indices.size == 0:
             return []
 
-        # For all intersecting shapes, check triangle intersection
-        slices = [self._mesh_triangles_slice(i) for i in intersecting_indices]
+        shape_mins = shape_mins[intersects_mask]
+        shape_maxs = shape_maxs[intersects_mask]
 
-        if not slices:
-            return []
+        shapes_full_in_mask = np.all(
+            shape_maxs <= selection_max, axis=1
+        ) & np.all(shape_mins >= selection_min, axis=1)
 
-        triangle_indices_for_shapes = np.concatenate(
-            [np.arange(s.start, s.stop) for s in slices]
-        )
-
-        if triangle_indices_for_shapes.size == 0:
-            return []
-
-        triangle_vertex_indices = self._mesh.triangles[
-            triangle_indices_for_shapes
+        return [
+            num
+            for num, full_in in zip(
+                intersecting_indices, shapes_full_in_mask, strict=True
+            )
+            if full_in
+            or triangles_intersect_box(
+                self._mesh.vertices[
+                    self._mesh.triangles[self._mesh_triangles_slice(num)]
+                ],
+                corners,
+            ).any()
         ]
-        triangles = self._mesh.vertices[triangle_vertex_indices]
-
-        intersects = triangles_intersect_box(triangles, corners)
-
-        if not np.any(intersects):
-            return []
-
-        # Map the intersecting triangles back to their original shape indices
-        counts = np.array([s.stop - s.start for s in slices])
-        shape_for_each_triangle = np.repeat(intersecting_indices, counts)
-
-        intersecting_triangles_shapes = shape_for_each_triangle[intersects]
-
-        return np.unique(intersecting_triangles_shapes).tolist()
 
     @cached_property
-    def _visible_shapes(self):
+    def _visible_shapes(self) -> list[tuple[int, Shape]]:
         slice_key = self.slice_key
         if len(slice_key):
             return [
@@ -1910,11 +1895,22 @@ class ShapeList:
         return list(enumerate(self.shapes))
 
     @cached_property
-    def _bounding_boxes(self):
+    def _bounding_boxes(
+        self,
+    ) -> tuple[
+        np.ndarray[tuple[int, Literal[2, 3]]],
+        np.ndarray[tuple[int, Literal[2, 3]]],
+    ]:
         data = np.array([s[1].bounding_box for s in self._visible_shapes])
         if data.size == 0:
             return np.empty((0, self.ndisplay)), np.empty((0, self.ndisplay))
         return data[:, 0], data[:, 1]
+
+    @cached_property
+    def _visible_shapes_indices(
+        self,
+    ) -> np.ndarray[tuple[int], np.dtype[IndexDtype]]:
+        return np.array([s[0] for s in self._visible_shapes])
 
     def inside(self, coord):
         """Determines if any shape at given coord by looking inside triangle
@@ -2179,3 +2175,4 @@ class ShapeList:
     def _clear_cache(self):
         self.__dict__.pop('_bounding_boxes', None)
         self.__dict__.pop('_visible_shapes', None)
+        self.__dict__.pop('_visible_shapes_indices', None)
