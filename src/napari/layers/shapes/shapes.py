@@ -581,7 +581,6 @@ class Shapes(Layer):
         self._selected_data.events.items_changed.connect(
             self._clean_outline_cache
         )
-        self.events.set_data.connect(self._clean_outline_cache)
 
         self._status = self.mode
 
@@ -2500,6 +2499,27 @@ class Shapes(Layer):
             box = np.append(box, [rot], axis=0)
 
         return box
+
+    def refresh(
+        self,
+        event: Event | None = None,
+        *,
+        thumbnail: bool = True,
+        data_displayed: bool = True,
+        highlight: bool = True,
+        extent: bool = True,
+        force: bool = False,
+    ) -> None:
+        if data_displayed:
+            self._clean_outline_cache()
+        super().refresh(
+            event,
+            thumbnail=thumbnail,
+            data_displayed=data_displayed,
+            highlight=highlight,
+            extent=extent,
+            force=force,
+        )
 
     def _clean_outline_cache(self):
         self._outlines_cache.clear()
