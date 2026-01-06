@@ -1218,9 +1218,13 @@ class ShapeList:
                 self._mesh.triangles[padding_slice] = triangle_shift
         else:
             # there are more triangles in the shape than in the mesh
+            prev_vertices_slice = self._mesh_vertices_slice_available(index)
+            prev_vertices_count = (
+                prev_vertices_slice.stop - prev_vertices_slice.start
+            )
             before_array = self._mesh.triangles[: triangles_slice.start]
             after_array = self._mesh.triangles[triangles_slice.stop :]
-            after_array += new_triangle_count - current_triangles_count
+            after_array += shape.vertices_count - prev_vertices_count
             self._mesh.triangles = np.concatenate(
                 [
                     before_array,
