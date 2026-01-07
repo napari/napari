@@ -1400,7 +1400,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             value = None
         # This should be removed as soon as possible, it is still
         # used in Points and Shapes.
-        self._value = value
+        if self.mode != 'pan_zoom':
+            self._value = value
         return value
 
     def _get_value_3d(

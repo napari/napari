@@ -178,6 +178,7 @@ gallery = [
     "xarray",
     "h5netcdf",
     "meshio",
+    "gdown", # to download some large example data files
 ]
 # needed to build docs
 docs = [
@@ -269,6 +270,7 @@ gallery = [
     "xarray",
     "h5netcdf",
     "meshio",
+    "gdown", # to download some large example data files
 ]
 # needed to build docs
 docs = [
@@ -381,6 +383,7 @@ fix = true
 
 [tool.ruff.format]
 quote-style = "single"
+line-ending = "lf"
 
 [tool.ruff.lint]
 select = [

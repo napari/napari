@@ -1378,8 +1378,8 @@ class Points(Layer):
 
     @selected_data.setter
     def selected_data(self, selected_data: Iterable[int]) -> None:
-        self._selected_data.clear()
-        self._selected_data.update(set(selected_data))
+        self._selected_data.replace_selection(selected_data)
+
         self._selected_view = list(
             np.intersect1d(
                 np.array(list(self._selected_data)),
