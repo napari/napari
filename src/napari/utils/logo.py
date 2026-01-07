@@ -5,15 +5,15 @@ from pathlib import Path
 
 
 @lru_cache
-def available_logos():
-    logo_dir = Path(resources.files('napari').joinpath('resources', 'logos'))
+def available_logos() -> list[str]:
+    logo_dir = Path(resources.files('napari').joinpath('resources', 'logos'))  # type: ignore
     variants = ['auto']
     for logo in Path(logo_dir).glob('*-plain-light.svg'):
         variants.append(logo.stem.rsplit('-', 2)[0])
     return sorted(variants)
 
 
-def _get_seasonal_logo(today=None, theme='dark'):
+def _get_seasonal_logo(today: date | None = None, theme: str = 'dark') -> str:
     today = today or date.today()
 
     ranges = {
@@ -39,14 +39,16 @@ def _get_seasonal_logo(today=None, theme='dark'):
     else:
         name = 'gradient'
 
-    if name in theme_variants:
-        name = theme_variants[name].get(theme)
+    if name in theme_variants and theme in theme_variants[name]:
+        name = theme_variants[name][theme]
 
     return name
 
 
-def get_logo_path(logo, theme, today=None):
-    logo_dir = Path(resources.files('napari').joinpath('resources', 'logos'))
+def get_logo_path(logo: str, theme: str, today: date | None = None) -> Path:
+    logo_dir = Path(resources.files('napari').joinpath('resources', 'logos'))  # type: ignore
+    # eventually we should actually use the dark/light "type" that the theme spec of npe2 allows,
+    # which is currently unused in napari
     if theme not in {'dark', 'light'}:
         theme = 'dark'
 
