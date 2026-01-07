@@ -101,9 +101,10 @@ class VispyScalarFieldBaseLayer(VispyBaseLayer[ScalarFieldBase]):
         node = self._layer_node.get_node(
             ndisplay, getattr(data, 'dtype', None)
         )
-
-        if ndisplay > data.ndim:
-            data = data.reshape((1,) * (ndisplay - data.ndim) + data.shape)
+        if ndisplay > self.layer.ndim:
+            data = data.reshape(
+                (1,) * (ndisplay - self.layer.ndim) + data.shape
+            )
 
         # Check if data exceeds MAX_TEXTURE_SIZE and downsample
         if self.MAX_TEXTURE_SIZE_2D is not None and ndisplay == 2:
