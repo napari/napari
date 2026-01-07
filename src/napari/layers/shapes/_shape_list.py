@@ -1842,12 +1842,12 @@ class ShapeList:
         selection_max = np.max(corners, axis=0)
 
         # If the box encompasses all shapes, just get them directly
-        # layer_min = np.min(shape_mins, axis=0)
-        # layer_max = np.max(shape_maxs, axis=0)
-        # if np.all(selection_min <= layer_min) and np.all(
-        #     selection_max >= layer_max
-        # ):
-        #     return self._visible_shapes_indices.tolist()
+        layer_min = np.min(shape_mins, axis=0)
+        layer_max = np.max(shape_maxs, axis=0)
+        if np.all(selection_min <= layer_min) and np.all(
+            selection_max >= layer_max
+        ):
+            return self._visible_shapes_indices.tolist()
 
         # Get shapes with bounding boxes intersecting the selection box
         intersects_mask = np.all(shape_maxs >= selection_min, axis=1) & np.all(
