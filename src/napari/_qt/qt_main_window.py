@@ -703,7 +703,6 @@ class Window:
         _themes.events.removed.connect(self._remove_theme)
 
         # discover any themes provided by plugins
-        plugin_manager.discover_themes()
         self._setup_existing_themes()
 
         # import and index all discovered shimmed npe1 plugins
