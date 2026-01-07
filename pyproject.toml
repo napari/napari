@@ -387,6 +387,7 @@ fix = true
 
 [tool.ruff.format]
 quote-style = "single"
+line-ending = "lf"
 
 [tool.ruff.lint]
 select = [
