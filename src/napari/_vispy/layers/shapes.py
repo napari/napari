@@ -1,6 +1,7 @@
 import typing
 
 import numpy as np
+from superqt.utils import qdebounced
 
 from napari._vispy.layers.base import VispyBaseLayer
 from napari._vispy.utils.gl import BLENDING_MODES
@@ -20,6 +21,10 @@ class VispyShapesLayer(VispyBaseLayer):
     def __init__(self, layer: 'Shapes') -> None:
         node = ShapesVisual()
         super().__init__(layer, node)
+
+        self._on_highlight_change_debounc = qdebounced(
+            self._on_highlight_change_impl
+        )
 
         self.layer.events.edge_width.connect(self._on_data_change)
         self.layer.events.edge_color.connect(self._on_data_change)
@@ -67,6 +72,13 @@ class VispyShapesLayer(VispyBaseLayer):
         self.node.update()
 
     def _on_highlight_change(self):
+        if len(self.layer.selected_data) > 1000:
+            # Defer to next frame to avoid blocking UI
+            self._on_highlight_change_debounc()
+        else:
+            self._on_highlight_change_impl()
+
+    def _on_highlight_change_impl(self):
         settings = get_settings()
         self.layer._highlight_width = (
             settings.appearance.highlight.highlight_thickness
