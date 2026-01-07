@@ -1,6 +1,6 @@
 [build-system]
 requires = [
-  "setuptools >= 69",
+  "setuptools >= 77.0.1",
   "setuptools_scm[toml]>=8"
 ]
 build-backend = "setuptools.build_meta"
@@ -17,7 +17,6 @@ classifiers = [
     "Framework :: napari",
     "Intended Audience :: Education",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: BSD License",
     "Programming Language :: C",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3 :: Only",
@@ -36,6 +35,10 @@ classifiers = [
     "Operating System :: MacOS",
 ]
 requires-python = ">=3.10"
+license = "BSD-3-Clause"
+license-files = [
+    "LICENSE",
+]
 dependencies = [
     "appdirs>=1.4.4",
     "app-model>=0.4.0,<0.5.0",
@@ -46,12 +49,11 @@ dependencies = [
     "jsonschema>=3.2.0",
     "lazy_loader>=0.3",
     "magicgui>=0.7.0",
-    "napari-console>=0.1.1",
+    "napari-console>=0.1.4",
     "napari-plugin-engine>=0.1.9",
     "napari-svg>=0.1.8",
     "npe2>=0.7.9",
     "numpy>=1.24.2",
-    "numpydoc>=1.0.0",
     "pandas>=1.3.3",
     "Pillow>=9.0",
     "pint>=0.17",
@@ -64,7 +66,7 @@ dependencies = [
     "PyYAML>=6.0",
     "qtpy>=2.3.1",
     "scikit-image[data]>=0.19.1",
-    "scipy>=1.10.1",
+    "scipy>=1.14.0",
     "superqt>=0.7.4",
     "tifffile>=2022.7.28",
     "toolz>=0.11.0",
@@ -76,9 +78,6 @@ dependencies = [
 dynamic = [
     "version",
 ]
-
-[project.license]
-text = "BSD 3-Clause"
 
 [project.readme]
 file = "README.md"
@@ -92,9 +91,6 @@ Documentation = "https://napari.org"
 "Source Code" = "https://github.com/napari/napari"
 
 [project.optional-dependencies]
-pyside2 = [
-    "PySide2>=5.15.1 ; python_version < '3.11' and platform_machine != 'arm64'",
-]
 pyside6 = [
     "PySide6 > 6.7"
 ]
@@ -103,7 +99,7 @@ pyqt6 = [
     "PyQt6 != 6.6.1 ; platform_system == 'Darwin'"
 ]
 pyside = [
-    "napari[pyside2]"
+    "napari[pyside6]"
 ]
 pyqt5 = [
     "PyQt5>=5.15.8",
@@ -121,10 +117,11 @@ all = [
 optional-base = [
     "zarr>=2.12.0", # needed by `builtins` (dask.array.from_zarr) to open zarr
     "aiohttp", # needed to open remote files by zarr, replace by extras once https://github.com/zarr-developers/zarr-python/issues/3453 is done
-    "napari-plugin-manager >=0.1.3, <0.2.0",
+    "napari-plugin-manager >=0.1.9, <0.2.0",
 ]
 optional-numba = [
-    "numba>=0.57.1",
+    "numba>=0.57.1,<=0.62.1 ; platform_system == 'Darwin' and platform_machine == 'x86_64'",
+    "numba>=0.57.1 ; platform_system != 'Darwin' or platform_machine != 'x86_64'",
 ]
 optional = [
     "napari[optional-base,optional-numba,bermuda]",
@@ -144,15 +141,14 @@ all_optional = [
 # they will be removed in napari 0.7.0
 
 testing = [
-    "napari[gallery]",
     "babel>=2.9.0",
+    "docstring_parser>=0.15",
     "fsspec>=2023.10.0",
     "hypothesis>=6.8.0",
     "lxml[html_clean]>5",
     "matplotlib >= 3.6.1",
     "pooch>=1.6.0",
     "coverage>7",
-    "docstring_parser>=0.15",
     "pretend>=1.0.9",
     "pyautogui>=0.9.54",
     "pytest-qt >=4.4.0; python_version > '3.10'",
@@ -182,10 +178,12 @@ gallery = [
     "xarray",
     "h5netcdf",
     "meshio",
+    "gdown", # to download some large example data files
 ]
 # needed to build docs
 docs = [
     "napari[gallery]",
+    "numpydoc>=1.0.0",
     "sphinx<8",
     "sphinx-autobuild",
     "sphinx-tabs",
@@ -210,6 +208,7 @@ docs = [
     "bermuda>=0.1.4",
     "pytest",
     "linkify-it-py",
+    "numba!=0.62.1,!=0.62.0",
 ]
 release = [
     "PyGithub>=1.46",
@@ -234,15 +233,14 @@ build = [
 # these need to be kept in sync with the equivalent optional-dependencies
 [dependency-groups]
 testing = [
-    {include-group = "gallery"},
     "babel>=2.9.0",
+    "docstring_parser>=0.15",
     "fsspec>=2023.10.0",
     "hypothesis>=6.8.0",
     "lxml[html_clean]>5",
     "matplotlib >= 3.6.1",
     "pooch>=1.6.0",
     "coverage>7",
-    "docstring_parser>=0.15",
     "pretend>=1.0.9",
     "pyautogui>=0.9.54",
     "pytest-qt >=4.4.0; python_version > '3.10'",
@@ -272,10 +270,12 @@ gallery = [
     "xarray",
     "h5netcdf",
     "meshio",
+    "gdown", # to download some large example data files
 ]
 # needed to build docs
 docs = [
     {include-group = "gallery"},
+    "numpydoc>=1.0.0",
     "sphinx<8",
     "sphinx-autobuild",
     "sphinx-tabs",
@@ -300,6 +300,7 @@ docs = [
     "bermuda>=0.1.4",
     "pytest",
     "linkify-it-py",
+    "numba!=0.62.1,!=0.62.0",
 ]
 release = [
     "PyGithub>=1.46",
@@ -333,9 +334,6 @@ napari = "napari.__main__:main"
 [tool.setuptools]
 zip-safe = false
 include-package-data = true
-license-files = [
-    "LICENSE",
-]
 
 [tool.setuptools.packages.find]
 where = [
@@ -376,24 +374,7 @@ ignore = [
 
 [tool.ruff]
 line-length = 79
-exclude = [
-    ".bzr",
-    ".direnv",
-    ".eggs",
-    ".git",
-    ".mypy_cache",
-    ".pants.d",
-    ".ruff_cache",
-    ".svn",
-    ".tox",
-    ".venv",
-    "__pypackages__",
-    "_build",
-    "buck-out",
-    "build",
-    "dist",
-    "node_modules",
-    "venv",
+extend-exclude = [
     "*vendored*",
     "*_vendor*",
 ]
@@ -402,6 +383,7 @@ fix = true
 
 [tool.ruff.format]
 quote-style = "single"
+line-ending = "lf"
 
 [tool.ruff.lint]
 select = [
@@ -565,7 +547,7 @@ disable_error_code = [
 ]
 # see `$ qtpy mypy-args` and qtpy readme. This will be used by `tox -e mypy`
 # to properly infer with PyQt6 installed
-always_false=['PYSIDE6', 'PYSIDE2', 'PYQT5']
+always_false=['PYSIDE6', 'PYQT5']
 always_true=['PYQT6']
 
 
@@ -735,7 +717,6 @@ module = [
     'napari.utils.interactions',
     'napari.utils.key_bindings',
     'napari.utils.mouse_bindings',
-    'napari.utils.progress',
     'napari.utils.shortcuts',
     'napari.utils.stubgen',
     'napari.utils.transforms.transforms',
@@ -918,7 +899,6 @@ warn_unused_ignores = false
 module = [
     "napari.__main__",
     "napari.utils.colormaps.vendored.colors",
-    "napari.layers.image.image",
     "napari.layers._scalar_field.scalar_field",
 ]
 check_untyped_defs = false
@@ -987,20 +967,6 @@ source = [
     "napari_builtins",
 ]
 
-[tool.coverage.paths]
-source = [
-    "src/napari/",
-    "**/src/napari/",
-    "**/.tox/*/lib/python*/site-packages/napari/",
-    "**\\.tox\\*\\Lib\\site-packages\\napari",
-]
-builtins = [
-    "src/napari_builtins/",
-    "**/src/napari_builtins/",
-    "**/.tox/*/lib/python*/site-packages/napari_builtins/",
-    "**\\.tox\\*\\Lib\\site-packages\\napari_builtins",
-]
-
 [tool.importlinter]
 root_package = "napari"
 include_external_packages = true
@@ -1009,9 +975,8 @@ include_external_packages = true
 name = "Forbid import PyQt and PySide"
 type = "forbidden"
 source_modules = "napari"
-forbidden_modules = ["PyQt5", "PySide2", "PyQt6", "PySide6"]
+forbidden_modules = ["PyQt5", "PyQt6", "PySide6"]
 ignore_imports = [
-    "napari._qt -> PySide2",
     "napari.plugins._npe2 -> napari._qt._qplugins",
 ]
 

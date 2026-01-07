@@ -84,7 +84,6 @@ def _convert(ll: LayerList, type_: str) -> None:
         try:
             layer_type._projectionclass(state['projection_mode'].value)
         except ValueError:
-            state['projection_mode'] = 'none'
             warnings.warn(
                 trans._(
                     'projection mode "{mode}" is not compatible with {type_} layers. Falling back to "none".',
@@ -95,6 +94,7 @@ def _convert(ll: LayerList, type_: str) -> None:
                 category=UserWarning,
                 stacklevel=1,
             )
+            state['projection_mode'] = 'none'
         new_layer = Layer.create(data, state, type_)
         ll.insert(idx, new_layer)
 
