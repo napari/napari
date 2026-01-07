@@ -152,7 +152,7 @@ jobs:
         run: |
           echo ${{ env.MAIN }}
           tox --version
-          python -m tox run -v --installpkg ${{ env.WHEEL_PATH }} -- --basetemp=.pytest_tmp
+          python -m tox run -vv --installpkg ${{ env.WHEEL_PATH }} -- --basetemp=.pytest_tmp
           rm -r .tox
         env:
           BACKEND: ${{ env.MAIN }}
