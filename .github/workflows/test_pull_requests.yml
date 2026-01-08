@@ -97,7 +97,7 @@ jobs:
             coverage: no_cov
             min_req: ""
           - python: "3.11"
-            platform: windows-2025
+            platform: windows-2022
             backend: pyqt5
             coverage: no_cov
     with:
