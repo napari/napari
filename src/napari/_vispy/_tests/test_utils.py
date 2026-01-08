@@ -76,4 +76,4 @@ def test_set_cursor(make_napari_viewer):
 
 
 def test_aa_support(qt_viewer):
-    assert get_gl_aa_max_level() >= 0
+    assert False, get_gl_aa_max_level()  # noqa: PT015
