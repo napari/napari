@@ -21,3 +21,4 @@ recursive-exclude binder *
 recursive-exclude examples *
 exclude dockerfile
 exclude EULA.md
+exclude toxfile.py
