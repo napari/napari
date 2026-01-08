@@ -4,6 +4,7 @@ from qtpy.QtCore import Qt
 
 from napari._pydantic_compat import ValidationError
 from napari._vispy.utils.cursor import QtCursorVisual
+from napari._vispy.utils.gl import get_gl_aa_max_level
 from napari._vispy.utils.visual import get_view_direction_in_scene_coordinates
 from napari.components._viewer_constants import CursorStyle
 
@@ -72,3 +73,7 @@ def test_set_cursor(make_napari_viewer):
 
     with pytest.raises(ValidationError):
         viewer.cursor.style = 'invalid'
+
+
+def test_aa_support(qt_viewer):
+    assert get_gl_aa_max_level() >= 0
