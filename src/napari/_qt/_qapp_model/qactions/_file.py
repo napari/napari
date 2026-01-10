@@ -9,7 +9,7 @@ from app_model.types import (
     KeyMod,
     StandardKeyBinding,
 )
-from PyQt6.QtWidgets import QApplication
+from qtpy.QtWidgets import QApplication
 
 from napari._app_model.constants import MenuGroup, MenuId
 from napari._app_model.context import (
