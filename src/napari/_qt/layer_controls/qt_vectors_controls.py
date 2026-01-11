@@ -7,6 +7,7 @@ from napari._qt.layer_controls.widgets import (
 )
 from napari._qt.layer_controls.widgets._vectors import (
     QtEdgeColorFeatureControl,
+    QtFixedCanvasWidthCheckBoxControl,
     QtLengthSpinBoxControl,
     QtVectorStyleComboBoxControl,
     QtWidthSpinBoxControl,
@@ -39,6 +40,8 @@ class QtVectorsControls(QtLayerControls):
         Widget that wraps a dropdown widget to select vector_style for the vectors.
     _width_spinbox_control : napari._qt.layer_controls.widgets._vectors.QtWidthSpinBoxControl
         Widget that wraps a spinbox controlling edge line width of vectors.
+    _fixed_canvas_width_checkbox_control : napari._qt.layer_controls.widgets._vectors.QtFixedCanvasWidthCheckBoxControl
+        Widget that wraps a combobox to control whether vectors should have fixed canvas width.
     """
 
     layer: 'napari.layers.Vectors'
@@ -51,6 +54,10 @@ class QtVectorsControls(QtLayerControls):
         # Setup widgets controls
         self._width_spinbox_control = QtWidthSpinBoxControl(self, layer)
         self._add_widget_controls(self._width_spinbox_control)
+        self._fixed_canvas_width_checkbox_control = (
+            QtFixedCanvasWidthCheckBoxControl(self, layer)
+        )
+        self._add_widget_controls(self._fixed_canvas_width_checkbox_control)
         self._length_spinbox_control = QtLengthSpinBoxControl(self, layer)
         self._add_widget_controls(self._length_spinbox_control)
         self._projection_mode_control = QtProjectionModeControl(self, layer)
