@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 from qtpy.QtCore import Qt, Signal
 from qtpy.QtWidgets import (
@@ -165,6 +166,8 @@ class Extension2ReaderTable(QWidget):
         readers = self._npe2_readers.copy()
         to_delete = []
         try:
+            ext = str(Path(new_pattern).suffix).lower()
+            _ = str(Path(new_pattern).with_suffix(ext))
             compatible_readers = _npe2.get_readers(new_pattern)
         except ValueError as e:
             if 'empty name' not in str(e):
