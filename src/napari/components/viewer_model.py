@@ -67,7 +67,8 @@ from napari.layers.surface._surface_key_bindings import surface_fun_to_mode
 from napari.layers.tracks._tracks_key_bindings import tracks_fun_to_mode
 from napari.layers.utils.stack_utils import split_channels
 from napari.layers.vectors._vectors_key_bindings import vectors_fun_to_mode
-from napari.plugins.utils import get_potential_readers, get_preferred_reader
+from napari.plugins import _npe2
+from napari.plugins.utils import get_preferred_reader
 from napari.settings import get_settings
 from napari.types import (
     FullLayerData,
@@ -1469,7 +1470,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         _path = paths[0]
         # we want to display the paths nicely so make a help string here
         path_message = f'[{_path}], ...]' if len(paths) > 1 else _path
-        readers = get_potential_readers(_path)
+        readers = _npe2.get_readers(_path)
         if not readers:
             raise NoAvailableReaderError(
                 trans._(

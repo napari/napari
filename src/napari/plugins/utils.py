@@ -4,11 +4,10 @@ import re
 from enum import IntFlag
 from fnmatch import fnmatch
 from functools import lru_cache
-from pathlib import Path
 
 from npe2 import PluginManifest
 
-from napari.plugins import _npe2, plugin_manager
+from napari.plugins import _npe2
 from napari.settings import get_settings
 from napari.types import PathLike
 
@@ -119,31 +118,6 @@ def get_preferred_reader(path: PathLike) -> str | None:
         return reader
 
     return None
-
-
-def get_potential_readers(filename: PathLike) -> dict[str, str]:
-    """Given filename, returns all readers that may read the file.
-
-    Original plugin engine readers are checked based on returning
-    a function from `napari_get_reader`. Npe2 readers are iterated
-    based on file extension and accepting directories.
-
-    Returns
-    -------
-    Dict[str, str]
-        dictionary of registered name to display_name
-    """
-    readers = {}
-    hook_caller = plugin_manager.hook.napari_get_reader
-    # lower case file extension
-    ext = str(Path(filename).suffix).lower()
-    filename = str(Path(filename).with_suffix(ext))
-    for impl in hook_caller.get_hookimpls():
-        reader = hook_caller._call_plugin(impl.plugin_name, path=filename)
-        if callable(reader):
-            readers[impl.plugin_name] = impl.plugin_name
-    readers.update(_npe2.get_readers(filename))
-    return readers
 
 
 def normalized_name(name: str) -> str:

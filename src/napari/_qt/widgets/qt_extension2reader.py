@@ -18,7 +18,6 @@ from qtpy.QtWidgets import (
 from napari.plugins import _npe2
 from napari.plugins.utils import (
     get_filename_patterns_for_reader,
-    get_potential_readers,
 )
 from napari.settings import get_settings
 from napari.utils.translations import trans
@@ -166,7 +165,7 @@ class Extension2ReaderTable(QWidget):
         readers = self._npe2_readers.copy()
         to_delete = []
         try:
-            compatible_readers = get_potential_readers(new_pattern)
+            compatible_readers = _npe2.get_readers(new_pattern)
         except ValueError as e:
             if 'empty name' not in str(e):
                 raise
