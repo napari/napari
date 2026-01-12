@@ -151,7 +151,7 @@ jobs:
           set -x
           pip install -U uv
 
-          bash tools/compile_constraints.sh
+          bash napari_repo/tools/compile_constraints.sh
 
       - name: Show changed constraints
         run: |
