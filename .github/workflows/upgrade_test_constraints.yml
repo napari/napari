@@ -155,7 +155,8 @@ jobs:
 
       - name: Show changed constraints
         run: |
-          git --no-pager diff napari_repo/resources/**.txt
+          cd napari_repo
+          git --no-pager diff
 
       # END PYTHON DEPENDENCIES
 
