@@ -1,5 +1,5 @@
-from typing import cast
 from collections.abc import Callable
+from typing import TypeVar, cast
 
 import numpy as np
 from app_model.types import KeyCode, KeyMod
@@ -17,15 +17,18 @@ MIN_BRUSH_SIZE = 1
 CONVERT_TEXT = 'You can convert the layer dtype in the right-click contextual menu of the layer list.'
 
 
+TFunc = TypeVar('TFunc', bound=Callable)
+
+
 def register_label_action(
     description: str, repeatable: bool = False
-) -> Callable[[Callable], Callable]:
+) -> Callable[[TFunc], TFunc]:
     return register_layer_action(Labels, description, repeatable)
 
 
 def register_label_mode_action(
     description: str,
-) -> Callable[[Callable], Callable]:
+) -> Callable[[TFunc], TFunc]:
     return register_layer_attr_action(Labels, description, 'mode')
 
 

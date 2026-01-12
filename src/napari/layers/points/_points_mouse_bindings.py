@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from collections.abc import Set as AbstractSet
-from typing import TYPE_CHECKING, TypeVar, Generator
+from collections.abc import Generator, Set as AbstractSet
+from typing import TYPE_CHECKING, TypeVar
 
 import numpy as np
 
