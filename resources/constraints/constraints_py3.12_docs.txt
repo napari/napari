@@ -819,7 +819,7 @@ tzdata==2025.3
     # via pandas
 uc-micro-py==1.0.3
     # via linkify-it-py
-urllib3==2.6.2
+urllib3==2.6.3
     # via
     #   distributed
     #   requests
