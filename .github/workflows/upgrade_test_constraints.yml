@@ -165,6 +165,7 @@ jobs:
           name: constraints
           path: |
             napari_repo/resources/constraints/constraints*.txt
+            napari_repo/resources/constraints/*mypy.txt
 
       - name: Check builtin extensions
         run: uv run tools/check_extensions.py --ci
