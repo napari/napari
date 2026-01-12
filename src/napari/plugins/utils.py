@@ -146,25 +146,6 @@ def get_potential_readers(filename: PathLike) -> dict[str, str]:
     return readers
 
 
-def get_all_readers() -> tuple[dict[str, str], dict[str, str]]:
-    """
-    Return a dict of all npe2 readers and one of all npe1 readers
-
-    Can be removed once npe2 shim is activated.
-    """
-
-    npe2_readers = _npe2.get_readers()
-
-    npe1_readers = {}
-    for spec, hook_caller in plugin_manager.hooks.items():
-        if spec == 'napari_get_reader':
-            potential_readers = hook_caller.get_hookimpls()
-            for get_reader in potential_readers:
-                npe1_readers[get_reader.plugin_name] = get_reader.plugin_name
-
-    return npe2_readers, npe1_readers
-
-
 def normalized_name(name: str) -> str:
     """
     Normalize a plugin name by replacing underscores and dots by dashes and
@@ -200,10 +181,4 @@ def get_filename_patterns_for_reader(plugin_name: str):
             all_fn_patterns = all_fn_patterns.union(
                 set(reader.filename_patterns)
             )
-    # npe1 plugins
-    else:
-        _, npe1_readers = get_all_readers()
-        if plugin_name in npe1_readers:
-            all_fn_patterns = {'*'}
-
     return all_fn_patterns

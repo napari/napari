@@ -15,8 +15,8 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
+from napari.plugins import _npe2
 from napari.plugins.utils import (
-    get_all_readers,
     get_filename_patterns_for_reader,
     get_potential_readers,
 )
@@ -31,19 +31,14 @@ class Extension2ReaderTable(QWidget):
 
     valueChanged = Signal(int)
 
-    def __init__(
-        self, parent=None, npe2_readers=None, npe1_readers=None
-    ) -> None:
+    def __init__(self, parent=None, npe2_readers=None) -> None:
         super().__init__(parent=parent)
 
-        npe2, npe1 = get_all_readers()
+        registered_readers = _npe2.get_readers()
         if npe2_readers is None:
-            npe2_readers = npe2
-        if npe1_readers is None:
-            npe1_readers = npe1
+            npe2_readers = registered_readers
 
         self._npe2_readers = npe2_readers
-        self._npe1_readers = npe1_readers
 
         self._table = QTableWidget()
         self._table.setShowGrid(False)
@@ -117,7 +112,7 @@ class Extension2ReaderTable(QWidget):
 
         self._new_reader_dropdown = QComboBox()
         for i, (plugin_name, display_name) in enumerate(
-            sorted(dict(self._npe2_readers, **self._npe1_readers).items())
+            sorted(self._npe2_readers.items())
         ):
             self._add_reader_choice(i, plugin_name, display_name)
 
@@ -182,8 +177,6 @@ class Extension2ReaderTable(QWidget):
 
         for reader in to_delete:
             del readers[reader]
-
-        readers.update(self._npe1_readers)
 
         for i, (plugin_name, display_name) in enumerate(
             sorted(readers.items())
