@@ -389,13 +389,11 @@ class ScalarFieldBase(Layer, ABC):
         self._data_level = level
         self.refresh(extent=False)
 
-    def _get_level_shapes(self):
+    def _get_level_shapes(self) -> Sequence[tuple[int, ...]]:
         data = self.data
         if isinstance(data, MultiScaleData):
-            shapes = data.shapes
-        else:
-            shapes = [self.data.shape]
-        return shapes
+            return data.shapes
+        return [self.data.shape]
 
     @property
     def level_shapes(self) -> np.ndarray:
