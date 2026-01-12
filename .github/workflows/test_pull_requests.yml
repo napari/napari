@@ -96,6 +96,10 @@ jobs:
             backend: pyqt6
             coverage: no_cov
             min_req: ""
+          - python: "3.11"
+            platform: windows-2022
+            backend: pyqt5
+            coverage: no_cov
     with:
       python_version: ${{ matrix.python }}
       platform: ${{ matrix.platform }}
