@@ -153,6 +153,10 @@ jobs:
 
           bash tools/compile_constraints.sh
 
+      - name: Show changed constraints
+        run: |
+          git --no-pager diff napari_repo/resources/**.txt
+
       # END PYTHON DEPENDENCIES
 
       - name: Upload constraints
