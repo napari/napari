@@ -986,8 +986,6 @@ type = "layers"
 layers = ["napari.qt","napari.layers"]
 ignore_imports = [
     "napari.plugins._npe2 -> napari._qt._qplugins",
-    # TODO: remove once npe1 deprecated
-    "napari._qt.qt_main_window -> napari._qt._qplugins",
 ]
 
 [[tool.importlinter.contracts]]
@@ -996,6 +994,4 @@ type = "layers"
 layers = ["napari.qt","napari.components"]
 ignore_imports = [
     "napari.plugins._npe2 -> napari._qt._qplugins",
-    # TODO: remove once npe1 deprecated
-    "napari._qt.qt_main_window -> napari._qt._qplugins",
 ]
