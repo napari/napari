@@ -54,6 +54,8 @@ else
   fi
 fi
 
+set -x
+
 flags=(--quiet --extra pyqt6 --extra pyside6 --extra testing --group testing_extra --extra all_optional)
 
 # Explanation of below commands
