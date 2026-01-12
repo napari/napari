@@ -60,7 +60,7 @@
         "https://napari.org/{VERSION}/howtos/layers/index.html",
         "https://napari.org/{VERSION}/release/release_{VERSION.replace(\".\", \"_\")}.html",
         "https://napari.org/{VERSION}/tutorials/index.html",
-        "https://napari.org/{VERSION}/tutorials/start_index.html",
+        "https://napari.org/{VERSION}/getting_started/start_index.html",
         "id",
         "layers_guide",
         "release_notes",
