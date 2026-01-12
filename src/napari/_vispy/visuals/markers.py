@@ -1,11 +1,26 @@
 import logging
 
+from vispy import use
 from vispy.scene.visuals import Markers as BaseMarkers
 
 logger = logging.getLogger(__name__)
 
+try:
+    use(gl='gl+')
+except RuntimeError:
+    logger.warning(
+        'Could not use gl+ for instanced rendering of points.'
+        'Falling back to GL point rendering.'
+    )
+    rendering_method = 'points'
+else:
+    rendering_method = 'instanced'
+
 
 class Markers(BaseMarkers):
+    def __init__(self, *args, method=rendering_method, **kwargs) -> None:
+        super().__init__(*args, method=method, **kwargs)
+
     def _compute_bounds(self, axis, view):
         # needed for entering 3D rendering mode when a points
         # layer is invisible and the self._data property is None
