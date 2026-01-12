@@ -10,7 +10,7 @@ from unittest import mock
 import numpy as np
 import numpy.testing as npt
 import pytest
-from imageio import imread
+from imageio import imread, imwrite
 from pytestqt.qtbot import QtBot
 from qtpy.QtWidgets import QApplication, QMessageBox
 from scipy import ndimage as ndi
@@ -1059,7 +1059,7 @@ def test_more_than_uint16_colors(
 @skip_local_popups
 @pytest.mark.show_qt_viewer
 def test_scale_bar_colored(
-    qt_viewer: QtViewer, viewer_model: ViewerModel, qtbot, qapp
+    qt_viewer: QtViewer, viewer_model: ViewerModel, qtbot, qapp, tmp_path
 ) -> None:
     scale_bar = viewer_model.scale_bar
 
@@ -1078,6 +1078,7 @@ def test_scale_bar_colored(
     def check_white_scale_bar():
         qapp.processEvents()
         screenshot = qt_viewer.screenshot(flash=False)
+        imwrite(tmp_path / 'test_scale_bar_colored.png', screenshot)
         assert not np.all(screenshot == [0, 0, 0, 255], axis=-1).all()
         assert np.all(screenshot == [255, 255, 255, 255], axis=-1).any()
 
