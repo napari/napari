@@ -113,7 +113,8 @@ class Welcome(Node):
             # this can be none at launch (not yet initialized), will be updated after
             if shortcut is None:
                 # maybe it was just a direct keybinding given
-                with warnings.catch_warnings(action='ignore'):
+                with warnings.catch_warnings():
+                    warnings.simplefilter('ignore')
                     shortcut = Shortcut(command_id).platform
             if shortcut:
                 tip = re.sub(match.group(), str(shortcut), tip)
