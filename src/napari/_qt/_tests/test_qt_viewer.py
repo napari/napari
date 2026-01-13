@@ -10,7 +10,7 @@ from unittest import mock
 import numpy as np
 import numpy.testing as npt
 import pytest
-from imageio import imread, imwrite
+from imageio import imread
 from pytestqt.qtbot import QtBot
 from qtpy.QtWidgets import QApplication, QMessageBox
 from scipy import ndimage as ndi
@@ -1076,11 +1076,11 @@ def test_scale_bar_colored(
 
     # Check scale bar is visible (canvas has white `[1, 1, 1, 255]` in it)
     def check_white_scale_bar():
-        qapp.processEvents()
         screenshot = qt_viewer.screenshot(flash=False)
-        imwrite(tmp_path / 'test_scale_bar_colored.png', screenshot)
         assert not np.all(screenshot == [0, 0, 0, 255], axis=-1).all()
-        assert np.all(screenshot == [255, 255, 255, 255], axis=-1).any()
+        # antialiasing can make things less saturated
+        assert np.all(screenshot[..., 0] == screenshot[..., 1])
+        assert np.all(screenshot[..., 1] == screenshot[..., 2])
 
     scale_bar.visible = True
     qtbot.waitUntil(check_white_scale_bar)
@@ -1090,6 +1090,9 @@ def test_scale_bar_colored(
         screenshot = qt_viewer.screenshot(flash=False)
         assert not np.all(screenshot == [255, 255, 255, 255], axis=-1).any()
         assert np.all(screenshot == [255, 0, 255, 255], axis=-1).any()
+        # antialiasing can make things less saturated
+        assert np.all(screenshot[..., 0] == screenshot[..., 2])
+        assert np.all(screenshot[..., 1] == 0)
 
     scale_bar.colored = True
     qtbot.waitUntil(check_colored_scale_bar)
@@ -1098,11 +1101,12 @@ def test_scale_bar_colored(
     def check_only_white_scale_bar():
         screenshot = qt_viewer.screenshot(flash=False)
         assert np.all(screenshot == [255, 255, 255, 255], axis=-1).any()
-        assert not np.all(screenshot == [255, 0, 255, 255], axis=-1).any()
+        # antialiasing can make things less saturated
+        assert np.all(screenshot[..., 0] == screenshot[..., 1])
+        assert np.all(screenshot[..., 1] == screenshot[..., 2])
 
     scale_bar.colored = False
     qtbot.waitUntil(check_only_white_scale_bar)
-    assert False  # noqa
 
 
 @skip_local_popups
