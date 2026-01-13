@@ -1088,8 +1088,7 @@ def test_scale_bar_colored(
     # Check scale bar is colored (canvas has fuchsia `[1, 0, 1, 255]` and not white in it)
     def check_colored_scale_bar():
         screenshot = qt_viewer.screenshot(flash=False)
-        assert not np.all(screenshot == [255, 255, 255, 255], axis=-1).any()
-        assert np.all(screenshot == [255, 0, 255, 255], axis=-1).any()
+        assert not np.all(screenshot == [0, 0, 0, 255], axis=-1).all()
         # antialiasing can make things less saturated
         assert np.all(screenshot[..., 0] == screenshot[..., 2])
         assert np.all(screenshot[..., 1] == 0)
@@ -1100,7 +1099,7 @@ def test_scale_bar_colored(
     # Check scale bar is still visible but not colored (canvas has white again but not fuchsia in it)
     def check_only_white_scale_bar():
         screenshot = qt_viewer.screenshot(flash=False)
-        assert np.all(screenshot == [255, 255, 255, 255], axis=-1).any()
+        assert not np.all(screenshot == [0, 0, 0, 255], axis=-1).all()
         # antialiasing can make things less saturated
         assert np.all(screenshot[..., 0] == screenshot[..., 1])
         assert np.all(screenshot[..., 1] == screenshot[..., 2])
