@@ -1102,6 +1102,7 @@ def test_scale_bar_colored(
 
     scale_bar.colored = False
     qtbot.waitUntil(check_only_white_scale_bar)
+    assert False  # noqa
 
 
 @skip_local_popups
