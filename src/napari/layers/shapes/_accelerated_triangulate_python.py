@@ -117,14 +117,15 @@ def generate_2D_edge_meshes_py(
     miters = 0.5 * (full_normals[:-1] + full_normals[1:])
 
     # scale miters such that their dot product with normals is 1
-    _mf_dot = np.expand_dims(
+    mf_dot = np.expand_dims(
         np.einsum('ij,ij->i', miters, full_normals[:-1]), -1
     )
 
     miters = np.divide(
         miters,
-        _mf_dot,
-        where=np.abs(_mf_dot) > 1e-10,
+        mf_dot,
+        out=np.zeros_like(miters),
+        where=np.abs(mf_dot) > 1e-10,
     )
 
     miter_lengths_squared = (miters**2).sum(axis=1)

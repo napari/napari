@@ -52,25 +52,30 @@ class EventedSettings(BaseSettings, EventedModel):
     def __init__(self, **values: Any) -> None:
         super().__init__(**values)
         self.events.add(changed=None)
+        self._connect(self)
 
-        # re-emit subfield
-        for name, field in self.model_fields.items():
-            attr = getattr(self, name)
+    @staticmethod
+    def _warn_restart(*_: Event) -> None:
+        warn(
+            trans._(
+                'Restart required for this change to take effect.',
+                deferred=True,
+            )
+        )
+
+    def _connect(self, model: EventedModel, prefix: str = '') -> None:
+        """Recursively connect and re-emit to all sub-fields."""
+        for name, field in model.model_fields.items():
+            attr = getattr(model, name)
             if isinstance(getattr(attr, 'events', None), EmitterGroup):
-                attr.events.connect(partial(self._on_sub_event, field=name))
+                path = f'{prefix}{name}'
+                attr.events.connect(partial(self._on_sub_event, field=path))
+                self._connect(attr, f'{path}.')
 
             extra = getattr(field, 'json_schema_extra', None)
             if extra is not None and extra.get('requires_restart', False):
                 emitter = getattr(self.events, name)
-
-                @emitter.connect
-                def _warn_restart(*_):
-                    warn(
-                        trans._(
-                            'Restart required for this change to take effect.',
-                            deferred=True,
-                        )
-                    )
+                emitter.connect(self._warn_restart)
 
     def _on_sub_event(self, event: Event, field=None):
         """emit the field.attr name and new value"""

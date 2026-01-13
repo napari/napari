@@ -68,13 +68,13 @@ dependencies = [
     "PyYAML>=6.0",
     "qtpy>=2.3.1",
     "scikit-image[data]>=0.19.1",
-    "scipy>=1.10.1",
+    "scipy>=1.14.0",
     "superqt>=0.7.4",
     "tifffile>=2022.7.28",
     "toolz>=0.11.0",
     "tqdm>=4.56.0",
     "typing_extensions>=4.12",
-    "vispy>=0.15.2,<0.16",
+    "vispy>=0.16.1,<0.17",
     "wrapt>=1.13.3",
 ]
 dynamic = [
@@ -180,6 +180,7 @@ gallery = [
     "xarray",
     "h5netcdf",
     "meshio",
+    "gdown", # to download some large example data files
 ]
 # needed to build docs
 docs = [
@@ -271,6 +272,7 @@ gallery = [
     "xarray",
     "h5netcdf",
     "meshio",
+    "gdown", # to download some large example data files
 ]
 # needed to build docs
 docs = [
@@ -383,6 +385,7 @@ fix = true
 
 [tool.ruff.format]
 quote-style = "single"
+line-ending = "lf"
 
 [tool.ruff.lint]
 select = [
@@ -985,8 +988,6 @@ type = "layers"
 layers = ["napari.qt","napari.layers"]
 ignore_imports = [
     "napari.plugins._npe2 -> napari._qt._qplugins",
-    # TODO: remove once npe1 deprecated
-    "napari._qt.qt_main_window -> napari._qt._qplugins",
 ]
 
 [[tool.importlinter.contracts]]
@@ -995,6 +996,4 @@ type = "layers"
 layers = ["napari.qt","napari.components"]
 ignore_imports = [
     "napari.plugins._npe2 -> napari._qt._qplugins",
-    # TODO: remove once npe1 deprecated
-    "napari._qt.qt_main_window -> napari._qt._qplugins",
 ]
