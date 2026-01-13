@@ -2,7 +2,7 @@ from napari.layers.labels._labels_constants import Mode
 from napari.layers.labels._labels_utils import mouse_event_to_labels_coordinate
 from napari.settings import get_settings
 
-BRUSH_SIZE_ON_MOUSE_MOVE_MODIFIERS_PARTS = 'Alt'
+BRUSH_SIZE_ON_MOUSE_MOVE_MODIFIERS_PARTS = ('Alt',)
 
 
 def change_brush_size_on_mouse_move_modifiers(value: tuple[str]) -> None:
