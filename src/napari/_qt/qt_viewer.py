@@ -7,9 +7,7 @@ import traceback
 import warnings
 import weakref
 from collections.abc import Sequence
-from itertools import cycle
 from pathlib import Path
-from random import sample
 from types import FrameType, MethodType
 from typing import (
     TYPE_CHECKING,
@@ -19,7 +17,7 @@ from typing import (
 from weakref import WeakSet, ref
 
 import numpy as np
-from qtpy.QtCore import QCoreApplication, QObject, Qt, QTimer, QUrl
+from qtpy.QtCore import QCoreApplication, QObject, Qt, QUrl
 from qtpy.QtGui import QGuiApplication, QImage
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 from superqt import ensure_main_thread
@@ -137,22 +135,6 @@ def _extension_string_for_layers(
     return ext_str, []
 
 
-# TODO: these should live somewhere nicer to contribute
-# TODO: query mouse binding as well somehow? Currently we have to hardcode those.
-TIPS = [
-    'You can take a screenshot and copy it to your clipboard by pressing {napari.window.file.copy_canvas_screenshot}',
-    'You can change most shortcuts from the File→Preferences→Shortcuts menu',
-    'You can right click many components of the graphical interface to access advanced controls',
-    'If you select multiple layers in the layer list, and Right-Click→Link-Layers, their parameters will be synced',
-    'You can press {Ctrl} and scroll the mouse wheel to move the dimension sliders',
-    'To zoom in on a specific area, hold {Alt} and draw a rectangle around it',
-    'Hold {napari:hold_for_pan_zoom} to pan/zoom in any mode (e.g. while painting)',
-    'While painting labels, hold {Alt} and move the cursor left/right to quickly decrease/increase the brush size',
-    'If you have questions, you can reach out on our community chat at napari.zulipchat.com',
-    'The community at forum.image.sc is full of imaging experts sharing knowledge and tools for napari and much, much more',
-]
-
-
 class QtViewer(QSplitter):
     """Qt view for the napari Viewer model.
 
@@ -193,6 +175,7 @@ class QtViewer(QSplitter):
         viewer: ViewerModel,
         show_welcome_screen: bool = False,
         canvas_class: type[VispyCanvas] = VispyCanvas,
+        tips: Sequence | None = None,
     ) -> None:
         super().__init__()
         self._instances.add(self)
@@ -288,17 +271,10 @@ class QtViewer(QSplitter):
         for layer in self.viewer.layers:
             self._add_layer(layer)
 
-        # set up welcome screen tips
+        # set up welcome screen
         viewer.welcome_screen.visible = show_welcome_screen
-        self._tips = cycle(sample(TIPS, len(TIPS)))
-        self._tip_timer = QTimer()
-        self._tip_timer.setInterval(10000)
-        self._tip_timer.timeout.connect(self._next_tip)
-        self._tip_timer.start()
-        self._next_tip()
-
-    def _next_tip(self, event=None):
-        self.viewer.welcome_screen.tip = next(self._tips)
+        if tips is not None:
+            viewer.welcome_screen.tips = tips
 
     @staticmethod
     def _update_dask_cache_settings(
@@ -720,6 +696,7 @@ class QtViewer(QSplitter):
                 vispy_layer.events.loaded.connect(self._qt_poll.wake_up)
 
         self.canvas.add_layer_visual_mapping(layer, vispy_layer)
+        self._stop_tip_timer()
 
     def _remove_invalid_chars(self, selected_layer_name):
         """Removes invalid characters from selected layer name to suggest a filename.

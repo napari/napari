@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+from itertools import cycle
+from random import sample
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
+from vispy.app.timer import Timer
 
 from napari._vispy.overlays.base import ViewerOverlayMixin, VispyCanvasOverlay
 from napari._vispy.visuals.welcome import Welcome
@@ -28,9 +31,13 @@ class VispyWelcomeOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
 
         self.overlay.events.version.connect(self._on_version_change)
         self.overlay.events.shortcuts.connect(self._on_shortcuts_change)
-        self.overlay.events.tip.connect(self._on_tip_change)
+        self.overlay.events.tips.connect(self._on_tips_change)
 
         self.node.canvas.native.resized.connect(self._on_position_change)
+
+        self.tips_iterator = cycle(["You're awesome!"])
+        self.tip_timer = Timer(5, self.next_tip)
+        self.next_tip()
 
         self.reset()
 
@@ -51,7 +58,12 @@ class VispyWelcomeOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self.node.set_color(color)
 
     def _on_visible_change(self) -> None:
-        self.node.visible = self.overlay.visible and not self.viewer.layers
+        show = self.overlay.visible and not self.viewer.layers
+        self.node.visible = show
+        if show:
+            self.tip_timer.start()
+        else:
+            self.tip_timer.stop()
 
     def _on_version_change(self) -> None:
         self.node.set_version(self.overlay.version)
@@ -59,12 +71,25 @@ class VispyWelcomeOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
     def _on_shortcuts_change(self) -> None:
         self.node.set_shortcuts(self.overlay.shortcuts)
 
-    def _on_tip_change(self) -> None:
-        self.node.set_tip(self.overlay.tip)
+    def _on_tips_change(self) -> None:
+        if self.overlay.tips:
+            self.tips_iterator = cycle(
+                sample(self.overlay.tips, len(self.overlay.tips))
+            )
+        else:
+            self.tips_iterator = cycle(["You're awesome!"])
+
+    def next_tip(self, event=None) -> None:
+        self.node.set_tip(next(self.tips_iterator))
 
     def reset(self) -> None:
         super().reset()
         self._on_theme_change()
         self._on_version_change()
         self._on_shortcuts_change()
-        self._on_tip_change()
+        self._on_tips_change()
+        self.next_tip()
+
+    def close(self) -> None:
+        self.tip_timer.stop()
+        super().close()
