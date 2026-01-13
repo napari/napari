@@ -696,7 +696,6 @@ class QtViewer(QSplitter):
                 vispy_layer.events.loaded.connect(self._qt_poll.wake_up)
 
         self.canvas.add_layer_visual_mapping(layer, vispy_layer)
-        self._stop_tip_timer()
 
     def _remove_invalid_chars(self, selected_layer_name):
         """Removes invalid characters from selected layer name to suggest a filename.
