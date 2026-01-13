@@ -2543,6 +2543,7 @@ class Shapes(Layer):
             value = self._value[0]
             if value in self.selected_data:
                 value = None
+
             if value in self._outlines_cache:
                 centers, offsets, triangles = self._outlines_cache[value]
             else:
