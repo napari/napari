@@ -9,13 +9,13 @@ from typing import TYPE_CHECKING, cast
 import numpy as np
 from numpy import typing as npt
 
-from napari.layers import Layer
 from napari.layers._data_protocols import LayerDataProtocol
 from napari.layers._multiscale_data import MultiScaleData
 from napari.layers._scalar_field._slice import (
     _ScalarFieldSliceRequest,
     _ScalarFieldSliceResponse,
 )
+from napari.layers.base import Layer
 from napari.layers.image._image_constants import Interpolation, VolumeDepiction
 from napari.layers.image._image_mouse_bindings import (
     move_plane_along_normal as plane_drag_callback,

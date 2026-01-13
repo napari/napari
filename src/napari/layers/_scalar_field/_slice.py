@@ -4,9 +4,11 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
+from napari.layers._scalar_field._scalar_field_constants import (
+    ImageProjectionMode,
+)
+from napari.layers._scalar_field._scalar_field_utils import project_slice
 from napari.layers.base._slice import _next_request_id
-from napari.layers.image._image_constants import ImageProjectionMode
-from napari.layers.image._image_utils import project_slice
 from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
 from napari.types import ArrayLike
 from napari.utils._dask_utils import DaskIndexer
