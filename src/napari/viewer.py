@@ -45,6 +45,7 @@ class Viewer(ViewerModel):
         order=(),
         axis_labels=(),
         show=True,
+        show_welcome_screen=True,
         **kwargs,
     ) -> None:
         super().__init__(
@@ -64,7 +65,9 @@ class Viewer(ViewerModel):
 
         _initialize_plugins()
 
-        self._window = Window(self, show=show)
+        self._window = Window(
+            self, show=show, show_welcome_screen=show_welcome_screen
+        )
         self._instances.add(self)
 
     def __new__(cls, *args, **kwargs):
