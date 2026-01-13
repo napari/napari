@@ -14,6 +14,7 @@ from napari.utils.theme import get_theme
 
 if TYPE_CHECKING:
     from vispy.scene import Node
+    from vispy.util.event import Event
 
     from napari import Viewer
     from napari.components.overlays import Overlay
@@ -79,7 +80,7 @@ class VispyWelcomeOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         else:
             self.tips_iterator = cycle(["You're awesome!"])
 
-    def next_tip(self, event=None) -> None:
+    def next_tip(self, event: Event | None = None) -> None:
         self.node.set_tip(next(self.tips_iterator))
 
     def reset(self) -> None:
