@@ -43,6 +43,7 @@ from napari.layers.labels._labels_utils import (
     interpolate_coordinates,
     sphere_indices,
 )
+from napari.layers.labels._slice import _LabelsSliceRequest
 from napari.layers.utils.layer_utils import _FeatureTable
 from napari.utils._dtype import (
     get_dtype_limits,
@@ -260,6 +261,7 @@ class Labels(ScalarFieldBase):
     events: EmitterGroup
     _colormap: LabelColormapBase
 
+    _slice_request_class = _LabelsSliceRequest
     _modeclass = Mode
 
     _drag_modes: ClassVar[

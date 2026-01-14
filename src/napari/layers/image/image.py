@@ -12,17 +12,16 @@ from scipy import ndimage as ndi
 
 from napari.layers._data_protocols import LayerDataProtocol
 from napari.layers._multiscale_data import MultiScaleData
-from napari.layers._scalar_field._scalar_field_constants import (
-    ImageProjectionMode,
-)
 from napari.layers._scalar_field._slice import _ScalarFieldSliceResponse
 from napari.layers._scalar_field.scalar_field import ScalarFieldBase
 from napari.layers.image._image_constants import (
+    ImageProjectionMode,
     ImageRendering,
     Interpolation,
     InterpolationStr,
 )
 from napari.layers.image._image_utils import guess_rgb
+from napari.layers.image._slice import _ImageSliceRequest
 from napari.layers.intensity_mixin import IntensityVisualizationMixin
 from napari.layers.utils.layer_utils import calc_data_range
 from napari.utils._dtype import get_dtype_limits, normalize_dtype
@@ -231,6 +230,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
     """
 
     _projectionclass = ImageProjectionMode
+    _slice_request_class = _ImageSliceRequest
 
     def __init__(
         self,

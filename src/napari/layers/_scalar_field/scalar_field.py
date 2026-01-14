@@ -174,6 +174,8 @@ class ScalarFieldBase(Layer, ABC):
         `True`.
     """
 
+    _slice_request_class = _ScalarFieldSliceRequest
+
     _colormaps = AVAILABLE_COLORMAPS
     _interpolation2d: Interpolation
     _interpolation3d: Interpolation
@@ -530,7 +532,7 @@ class ScalarFieldBase(Layer, ABC):
         This is temporary scaffolding that should go away once we have completed
         the async slicing project: https://github.com/napari/napari/issues/4795
         """
-        return _ScalarFieldSliceRequest(
+        return self._slice_request_class(
             slice_input=slice_input,
             data=self.data,
             dask_indexer=dask_indexer,
