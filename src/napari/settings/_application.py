@@ -48,6 +48,16 @@ class DaskSettings(EventedModel):
 
 
 class ApplicationSettings(EventedModel):
+    def __init__(self, **data: dict[str, Any]):
+        super().__init__(**data)
+
+        self.events.brush_size_on_mouse_move_modifiers.connect(
+            _set_brush_modifiers
+        )
+        self.events.brush_size_on_mouse_move_modifiers(
+            value=self.brush_size_on_mouse_move_modifiers
+        )
+
     first_time: bool = Field(
         True,
         title=trans._('First time'),
@@ -329,3 +339,13 @@ class ApplicationSettings(EventedModel):
             'ipy_interactive',
             'plugin_widget_positions',
         )
+
+
+def _set_brush_modifiers(event) -> None:
+    from napari.layers.labels import _labels_mouse_bindings
+
+    settings: ApplicationSettings = event.source
+
+    _labels_mouse_bindings.BRUSH_MODIFIERS = (
+        settings.brush_size_on_mouse_move_modifiers
+    )

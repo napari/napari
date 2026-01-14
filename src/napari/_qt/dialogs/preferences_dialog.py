@@ -30,6 +30,7 @@ class PreferencesDialog(QDialog):
         'call_order': {'ui:widget': 'plugins'},
         'highlight': {'ui:widget': 'highlight'},
         'shortcuts': {'ui:widget': 'shortcuts'},
+        'app_shortcuts': {'ui:widget': 'app_shortcuts'},
         'extension2reader': {'ui:widget': 'extension2reader'},
         'dask': {'ui:widget': 'horizontal_object'},
         'font_size': {'ui:widget': 'font_size'},
@@ -184,7 +185,16 @@ class PreferencesDialog(QDialog):
                             'shortcuts'
                         ].field_info.description,
                         'type': 'object',
-                    }
+                    },
+                    'app_shortcuts': {
+                        'title': field.type_.__fields__[
+                            'app_shortcuts'
+                        ].field_info.title,
+                        'description': field.type_.__fields__[
+                            'app_shortcuts'
+                        ].field_info.description,
+                        'type': 'object',
+                    },
                 },
             }
         else:
