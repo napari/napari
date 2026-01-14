@@ -385,7 +385,7 @@ def test_labels_painting(make_napari_viewer):
 @skip_local_popups
 def test_welcome(make_napari_viewer):
     """Test that something visible on launch."""
-    viewer = make_napari_viewer(show=True)
+    viewer = make_napari_viewer(show=True, show_welcome_screen=True)
 
     # Check something is visible
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
@@ -403,6 +403,7 @@ def test_welcome(make_napari_viewer):
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
     assert len(viewer.layers) == 0
     assert screenshot[..., :-1].max() > 0
+    viewer.welcome_screen.visible = False  # to stop timer
 
 
 @skip_on_win_ci

@@ -177,7 +177,7 @@ def test_screenshot(make_napari_viewer, qtbot):
     # Test that flash animation does not occur
     screenshot = viewer.screenshot(canvas_only=True)
     assert not hasattr(
-        viewer.window._qt_viewer._welcome_widget, '_flash_animation'
+        viewer.window._qt_viewer.canvas.native, '_flash_animation'
     )
     assert screenshot.ndim == 3
 
@@ -191,16 +191,14 @@ def test_screenshot(make_napari_viewer, qtbot):
 
     # test flash animation works
     screenshot = viewer.screenshot(canvas_only=True, flash=True)
-    assert hasattr(
-        viewer.window._qt_viewer._welcome_widget, '_flash_animation'
-    )
+    assert hasattr(viewer.window._qt_viewer.canvas.native, '_flash_animation')
 
     # Here we wait until the flash animation will be over for teardown.
     # We cannot wait on finished signal as _flash_animation may be already
     # removed when calling wait.
     qtbot.waitUntil(
         lambda: not hasattr(
-            viewer.window._qt_viewer._welcome_widget, '_flash_animation'
+            viewer.window._qt_viewer.canvas.native, '_flash_animation'
         )
     )
 
