@@ -1,5 +1,4 @@
 import numpy as np
-from scipy.interpolate import splev, splprep
 
 from napari.layers.shapes._accelerated_triangulate_dispatch import (
     create_box_from_bounding,
@@ -107,6 +106,9 @@ class PolygonBase(Shape):
         # data_spline = data[~np.all(duplicates, axis=1)]
 
         if self.interpolation_order > 1:
+            # only import if needed
+            from scipy.interpolate import splev, splprep
+
             data_spline = remove_path_duplicates(data, closed=True)
 
             if len(data_spline) > self.interpolation_order:
