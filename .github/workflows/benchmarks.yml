@@ -159,7 +159,7 @@ jobs:
 #         this is where our code stores the dumped
 #         structures that crash triangulation
         if: failure()
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           path: ${{ github.workspace }}/tmp
           include-hidden-files: true
@@ -190,7 +190,7 @@ jobs:
 
           fi
 
-      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         if: always()
         with:
           name: asv-benchmark-results-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}-${{ matrix.benchmark-name }}
@@ -202,13 +202,13 @@ jobs:
     if: always() && needs.benchmark.result != 'skipped'
     steps:
       - name: Download artifact
-        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           pattern: asv-benchmark-results*
           path: asv_result
           merge-multiple: true
       - name: Upload artifact
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: asv-benchmark-results-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}
           path: asv_result

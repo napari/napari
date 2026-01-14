@@ -151,16 +151,17 @@ jobs:
           set -x
           pip install -U uv
 
-          bash tools/compile_constraints.sh
+          bash napari_repo/tools/compile_constraints.sh
 
       # END PYTHON DEPENDENCIES
 
       - name: Upload constraints
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: constraints
           path: |
             napari_repo/resources/constraints/constraints*.txt
+            napari_repo/resources/constraints/*mypy.txt
 
       - name: Check builtin extensions
         run: uv run tools/check_extensions.py --ci
