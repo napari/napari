@@ -538,11 +538,11 @@ pyrect==0.2.0
     # via pygetwindow
 pyscreeze==1.0.1
     # via pyautogui
-pyside6==6.9.2
+pyside6==6.10.1
     # via napari (pyproject.toml)
-pyside6-addons==6.9.2
+pyside6-addons==6.10.1
     # via pyside6
-pyside6-essentials==6.9.2
+pyside6-essentials==6.10.1
     # via
     #   pyside6
     #   pyside6-addons
@@ -648,7 +648,7 @@ setuptools==80.9.0
     # via torch
 shellingham==1.5.4
     # via typer
-shiboken6==6.9.2
+shiboken6==6.10.1
     # via
     #   pyside6
     #   pyside6-addons
