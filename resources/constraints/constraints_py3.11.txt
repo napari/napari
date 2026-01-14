@@ -631,13 +631,11 @@ typing-inspection==0.4.2
     # via pydantic
 tzdata==2025.3
     # via pandas
-urllib3==2.6.2
-    # via
-    #   distributed
-    #   requests
+urllib3==2.6.3
+    # via requests
 virtualenv==20.35.4
     # via napari (pyproject.toml)
-vispy==0.15.2
+vispy==0.16.1
     # via
     #   napari (pyproject.toml)
     #   napari-svg
