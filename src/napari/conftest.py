@@ -36,7 +36,7 @@ import os
 import sys
 import threading
 from concurrent.futures import ThreadPoolExecutor
-from contextlib import suppress
+from contextlib import contextmanager, suppress
 from datetime import timedelta
 from functools import partial
 from itertools import chain
@@ -44,6 +44,7 @@ from multiprocessing.pool import ThreadPool
 from pathlib import Path
 from time import perf_counter
 from typing import TYPE_CHECKING
+from unittest.mock import MagicMock
 from weakref import WeakKeyDictionary
 
 import dask.threaded
@@ -426,6 +427,45 @@ def qt_viewer(
     if 'show_qt_viewer' in request.keywords:
         qt_viewer_.show()
     return qt_viewer_
+
+
+@pytest.fixture
+def mock_qt_method(monkeypatch):
+    def _mock_fun(obj: str | object, method: str | None = None):
+        mock = MagicMock()
+
+        def _mocked_method(_self, *args, **kwargs):
+            return mock(*args, **kwargs)
+
+        if method is None:
+            monkeypatch.setattr(obj, _mocked_method)
+        else:
+            monkeypatch.setattr(obj, method, _mocked_method)
+        return mock
+
+    return _mock_fun
+
+
+@pytest.fixture
+def mock_qt_method_ctx(monkeypatch, qtbot):
+    @contextmanager
+    def _mock_fun(obj: str | object, method: str | None = None):
+        mock = MagicMock()
+
+        def _mocked_method(self, *args, **kwargs):
+            if self.parent() is None:
+                qtbot.add_widget(self)
+
+            return mock(*args, **kwargs)
+
+        with monkeypatch.context() as m:
+            if method is None:
+                m.setattr(obj, _mocked_method)
+            else:
+                m.setattr(obj, method, _mocked_method)
+            yield mock
+
+    return _mock_fun
 
 
 @pytest.fixture(autouse=True)

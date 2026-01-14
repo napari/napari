@@ -77,7 +77,7 @@ def test_potentially_conflicting_actions(shortcut_editor_widget):
 
 
 @pytest.mark.key_bindings
-def test_mark_conflicts(shortcut_editor_widget, qtbot):
+def test_mark_conflicts(shortcut_editor_widget, qtbot, mock_qt_method_ctx):
     widget = shortcut_editor_widget()
     v_keybinding = KeyBinding.from_str('V')
     u_keybinding = KeyBinding.from_str('U')
@@ -93,20 +93,20 @@ def test_mark_conflicts(shortcut_editor_widget, qtbot):
 
     # Check conflicts detection using `KeyBindingLike` params
     # (`KeyBinding`, `str` and `int` representations of a shortcut)
-    with patch.object(WarnPopup, 'exec_') as mock:
+    with mock_qt_method_ctx(WarnPopup, 'exec_') as mock:
         assert not widget._mark_conflicts(v_keybinding, 1)
         assert mock.called
-    with patch.object(WarnPopup, 'exec_') as mock:
+    with mock_qt_method_ctx(WarnPopup, 'exec_') as mock:
         assert not widget._mark_conflicts(str(v_keybinding), 1)
         assert mock.called
-    with patch.object(WarnPopup, 'exec_') as mock:
+    with mock_qt_method_ctx(WarnPopup, 'exec_') as mock:
         assert not widget._mark_conflicts(int(v_keybinding), 1)
         assert mock.called
 
-    with patch.object(WarnPopup, 'exec_') as mock:
+    with mock_qt_method_ctx(WarnPopup, 'exec_') as mock:
         assert not widget._mark_conflicts(u_keybinding, 1)
         assert mock.called
-    with patch.object(WarnPopup, 'exec_') as mock:
+    with mock_qt_method_ctx(WarnPopup, 'exec_') as mock:
         assert not widget._mark_conflicts(str(u_keybinding), 1)
         assert mock.called
 
