@@ -794,16 +794,15 @@ class ShapeList:
             triangle_ranges = self._mesh_triangles_range_seq(disp_indices)
             vertices_range = self._vertices_range_seq(disp_indices)
 
-        z_order_selected = np.argsort(z_order[triangle_ranges])
-
-        self._mesh.displayed_triangles = self._mesh.triangles[triangle_ranges][
-            z_order_selected
+        self._mesh.displayed_triangles = self._mesh.triangles[
+            z_order[triangle_ranges]
         ]
+
         self._update_displayed_triangles_to_shape_index(disp_indices)
 
         self._mesh.displayed_triangles_colors = self._mesh.triangles_colors[
-            triangle_ranges
-        ][z_order_selected]
+            z_order[triangle_ranges]
+        ]
 
         self.displayed_vertices = self._vertices[vertices_range]
         self._update_displayed_vertices_to_shape_num(disp_indices)
@@ -1191,9 +1190,12 @@ class ShapeList:
             ).stop
         triangles_slice = self._mesh_triangles_slice_available(index)
         current_triangles_count = triangles_slice.stop - triangles_slice.start
-        new_triangle_count = (
-            shape.face_triangles_count + shape.edge_triangles_count
+        new_triangle_count = shape.triangles_count
+        prev_vertices_slice = self._mesh_vertices_slice_available(index)
+        prev_vertices_count = (
+            prev_vertices_slice.stop - prev_vertices_slice.start
         )
+        new_vertices_count = shape.vertices_count
         if new_triangle_count <= current_triangles_count:
             face_slice = slice(
                 triangles_slice.start,
@@ -1217,11 +1219,16 @@ class ShapeList:
                     triangles_slice.stop,
                 )
                 self._mesh.triangles[padding_slice] = triangle_shift
+            if new_vertices_count > prev_vertices_count:
+                # Shift triangles indices if more vertices were added
+                self._mesh.triangles[triangles_slice.stop :] += (
+                    new_vertices_count - prev_vertices_count
+                )
         else:
             # there are more triangles in the shape than in the mesh
             before_array = self._mesh.triangles[: triangles_slice.start]
             after_array = self._mesh.triangles[triangles_slice.stop :]
-            after_array += new_triangle_count - current_triangles_count
+            after_array += new_vertices_count - prev_vertices_count
             self._mesh.triangles = np.concatenate(
                 [
                     before_array,
@@ -1265,44 +1272,89 @@ class ShapeList:
             expectation is that this shape is being immediately added back to the
             list using `add_shape`.
         """
-        indices = self._vertices_slice_available(index)
-        self._vertices = np.delete(self._vertices, indices, axis=0)
-        diff = indices.stop - indices.start
-        self._vertices_index = np.delete(self._vertices_index, index)
-        self._vertices_index[index:] -= diff
+        self.remove_multiple([index], renumber=renumber)
+
+    @_batch_dec
+    def remove_multiple(self, indices: list[int], renumber: bool = True):
+        """Removes multiple shapes located at indices.
+
+        Parameters
+        ----------
+        indices : list of int
+            Locations in list of the shapes to be removed. Assumed to be sorted descending.
+        renumber : bool
+            Bool to indicate whether to renumber all shapes or not.
+        """
+        if not indices:
+            return
+
+        # Remove indices
+        vert_slices = [self._vertices_slice_available(i) for i in indices]
+        vert_indices_to_del = np.concatenate(
+            [np.arange(s.start, s.stop) for s in vert_slices]
+        )
+        self._vertices = np.delete(self._vertices, vert_indices_to_del, axis=0)
+
+        vert_counts = np.diff(self._vertices_index)
+        new_vert_counts = np.delete(vert_counts, indices)
+        self._vertices_index = np.concatenate(
+            ([0], np.cumsum(new_vert_counts))
+        ).astype(IndexDtype)
 
         # Remove vertices
-        indices = self._mesh_vertices_slice_available(index)
-        self._mesh.vertices = np.delete(self._mesh.vertices, indices, axis=0)
+        mesh_vert_slices = [
+            self._mesh_vertices_slice_available(i) for i in indices
+        ]
+        mesh_vert_indices_to_del = np.concatenate(
+            [np.arange(s.start, s.stop) for s in mesh_vert_slices]
+        )
+        # Get the shift for triangles caused by the removal of mesh vertices
+        deleted_vertex_shift = np.zeros(len(self._mesh.vertices), dtype=int)
+        deleted_vertex_shift[mesh_vert_indices_to_del] = 1
+        deleted_vertex_shift = np.cumsum(deleted_vertex_shift)
+        self._mesh.vertices = np.delete(
+            self._mesh.vertices, mesh_vert_indices_to_del, axis=0
+        )
         self._mesh.vertices_centers = np.delete(
-            self._mesh.vertices_centers, indices, axis=0
+            self._mesh.vertices_centers, mesh_vert_indices_to_del, axis=0
         )
         self._mesh.vertices_offsets = np.delete(
-            self._mesh.vertices_offsets, indices, axis=0
+            self._mesh.vertices_offsets, mesh_vert_indices_to_del, axis=0
         )
-        self._mesh.vertices_index = np.delete(self._mesh.vertices_index, index)
-        diff = indices.stop - indices.start
-        self._mesh.vertices_index[index:] -= diff
 
-        vertices_diff = diff
+        mesh_vert_counts = np.diff(self._mesh.vertices_index)
+        new_mesh_vert_counts = np.delete(mesh_vert_counts, indices)
+        self._mesh.vertices_index = np.concatenate(
+            ([0], np.cumsum(new_mesh_vert_counts))
+        ).astype(IndexDtype)
 
         # Remove triangles
-        indices = self._mesh_triangles_slice_available(index)
-        self._mesh.triangles = np.delete(self._mesh.triangles, indices, axis=0)
+        mesh_tri_slices = [
+            self._mesh_triangles_slice_available(i) for i in indices
+        ]
+        mesh_tri_indices_to_del = np.concatenate(
+            [np.arange(s.start, s.stop) for s in mesh_tri_slices]
+        )
+        self._mesh.triangles -= deleted_vertex_shift[self._mesh.triangles]
+        self._mesh.triangles = np.delete(
+            self._mesh.triangles, mesh_tri_indices_to_del, axis=0
+        )
         self._mesh.triangles_colors = np.delete(
-            self._mesh.triangles_colors, indices, axis=0
+            self._mesh.triangles_colors, mesh_tri_indices_to_del, axis=0
         )
-        self._mesh.triangles_index = np.delete(
-            self._mesh.triangles_index, index
-        )
-        diff = indices.stop - indices.start
-        self._mesh.triangles_index[index:] -= diff
-        self._mesh.triangles[indices.start :] -= vertices_diff
+
+        mesh_tri_counts = np.diff(self._mesh.triangles_index)
+        new_mesh_tri_counts = np.delete(mesh_tri_counts, indices)
+        self._mesh.triangles_index = np.concatenate(
+            ([0], np.cumsum(new_mesh_tri_counts))
+        ).astype(IndexDtype)
 
         if renumber:
-            del self.shapes[index]
-            self._z_index = np.delete(self._z_index, index)
+            for i in indices:
+                del self.shapes[i]
+            self._z_index = np.delete(self._z_index, indices)
             self._update_z_order()
+
         self._clear_cache()
 
     @_batch_dec
