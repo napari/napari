@@ -1130,7 +1130,9 @@ def test_scale_bar_ticks(
     def check_white_scale_bar():
         screenshot = qt_viewer.screenshot(flash=False)
         assert not np.all(screenshot == [0, 0, 0, 255], axis=-1).all()
-        assert np.all(screenshot == [255, 255, 255, 255], axis=-1).any()
+        # antialiasing can make things less saturated
+        assert np.all(screenshot[..., 0] == screenshot[..., 1])
+        assert np.all(screenshot[..., 1] == screenshot[..., 2])
 
     scale_bar.visible = True
     qtbot.waitUntil(check_white_scale_bar)
@@ -1142,7 +1144,9 @@ def test_scale_bar_ticks(
     # Check scale bar without ticks (still white present but new screenshot differs from ticks one)
     def check_no_ticks_scale_bar():
         screenshot = qt_viewer.screenshot(flash=False)
-        assert np.all(screenshot == [255, 255, 255, 255], axis=-1).any()
+        # antialiasing can make things less saturated
+        assert np.all(screenshot[..., 0] == screenshot[..., 1])
+        assert np.all(screenshot[..., 1] == screenshot[..., 2])
         npt.assert_raises(
             AssertionError,
             npt.assert_array_equal,
@@ -1156,7 +1160,9 @@ def test_scale_bar_ticks(
     # Check scale bar again has ticks (still white present and new screenshot corresponds with ticks one)
     def check_ticks_scale_bar():
         screenshot = qt_viewer.screenshot(flash=False)
-        assert np.all(screenshot == [255, 255, 255, 255], axis=-1).any()
+        # antialiasing can make things less saturated
+        assert np.all(screenshot[..., 0] == screenshot[..., 1])
+        assert np.all(screenshot[..., 1] == screenshot[..., 2])
         npt.assert_array_equal(screenshot, screenshot_with_ticks)
 
     scale_bar.ticks = True
