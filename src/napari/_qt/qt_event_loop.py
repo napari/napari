@@ -30,16 +30,14 @@ from napari.utils.notifications import (
     show_console_notification,
 )
 from napari.utils.perf import perf_config
-from napari.utils.theme import _themes
+from napari.utils.theme import _themes, get_system_theme
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from IPython import InteractiveShell
 
 NAPARI_ICON_PATH = str(
-    get_logo_path(
-        get_settings().appearance.logo, get_settings().appearance.theme
-    )
+    get_logo_path(get_settings().appearance.logo, get_system_theme())
 )
 NAPARI_APP_ID = f'napari.napari.viewer.{__version__}'
 

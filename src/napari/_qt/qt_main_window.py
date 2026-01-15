@@ -730,7 +730,6 @@ class Window:
         get_settings().appearance.events.font_size.connect(
             self._update_theme_font_size
         )
-        get_settings().appearance.events.theme.connect(self._update_logo)
         get_settings().appearance.events.logo.connect(self._update_logo)
 
         self._add_viewer_dock_widget(self._qt_viewer.dockConsole, tabify=False)
@@ -1655,9 +1654,10 @@ class Window:
     def _update_logo(self):
         from napari._qt.qt_event_loop import _svg_path_to_icon
         from napari.utils.logo import get_logo_path
+        from napari.utils.theme import get_system_theme
 
         path = get_logo_path(
-            get_settings().appearance.logo, get_settings().appearance.theme
+            get_settings().appearance.logo, get_system_theme()
         )
         icon = _svg_path_to_icon(path)
         get_qapp().setWindowIcon(icon)
