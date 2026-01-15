@@ -1163,7 +1163,8 @@ def test_scale_bar_ticks(
         # antialiasing can make things less saturated
         assert np.all(screenshot[..., 0] == screenshot[..., 1])
         assert np.all(screenshot[..., 1] == screenshot[..., 2])
-        npt.assert_array_equal(screenshot, screenshot_with_ticks)
+        # some variation can happen with antialiasing
+        npt.assert_allclose(screenshot, screenshot_with_ticks, atol=1)
 
     scale_bar.ticks = True
     qtbot.waitUntil(check_ticks_scale_bar)
