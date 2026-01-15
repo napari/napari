@@ -6,6 +6,7 @@ wrap.
 import contextlib
 import inspect
 import os
+import platform
 import sys
 import time
 import uuid
@@ -1657,7 +1658,9 @@ class Window:
         from napari.utils.theme import get_system_theme
 
         path = get_logo_path(
-            get_settings().appearance.logo, get_system_theme()
+            logo=get_settings().appearance.logo,
+            template='padded' if platform.system() == 'Darwin' else 'plain',
+            theme=get_system_theme(),
         )
         icon = _svg_path_to_icon(path)
         get_qapp().setWindowIcon(icon)

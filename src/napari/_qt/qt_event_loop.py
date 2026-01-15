@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import platform
 import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -37,7 +38,11 @@ if TYPE_CHECKING:
     from IPython import InteractiveShell
 
 NAPARI_ICON_PATH = str(
-    get_logo_path(get_settings().appearance.logo, get_system_theme())
+    get_logo_path(
+        logo=get_settings().appearance.logo,
+        template='padded' if platform.system() == 'Darwin' else 'plain',
+        theme=get_system_theme(),
+    )
 )
 NAPARI_APP_ID = f'napari.napari.viewer.{__version__}'
 
