@@ -135,3 +135,93 @@ def test_labels_drawing_with_polygons(MouseEvent, make_napari_viewer):
     # Finish drawing
     complete_polygon(layer)
     assert np.array_equiv(data[0, :], 0)
+
+
+def test_labels_polygon_with_downsampling(
+    MouseEvent, make_napari_viewer, monkeypatch
+):
+    """Test that polygon overlay visual positions are correct with downsampling.
+
+    This test verifies that when a Labels layer is downsampled (exceeding
+    GL_MAX_TEXTURE_SIZE), the polygon overlay visual correctly transforms
+    coordinates from data space to texture space for proper display.
+    """
+    # Patch get_max_texture_sizes to a small value
+    monkeypatch.setattr(
+        'napari._vispy.layers.base.get_max_texture_sizes',
+        lambda: (256, 256),
+    )
+
+    viewer = make_napari_viewer()
+
+    # Create a labels layer that will be downsampled
+    shape = (512, 512)
+    data = np.zeros(shape, dtype=np.int32)
+    layer = viewer.add_labels(data, multiscale=False)
+
+    expected_downsample = np.array([2, 2])
+    np.testing.assert_array_equal(
+        layer._transforms['tile2data'].scale, expected_downsample
+    )
+
+    layer.mode = 'polygon'
+    layer.selected_label = 1
+
+    polygon_overlay = layer._overlays['polygon']
+    from napari._vispy.overlays.labels_polygon import VispyLabelsPolygonOverlay
+
+    vispy_polygon_overlay = None
+    for (
+        overlay_visual
+    ) in viewer.window._qt_viewer.canvas._layer_overlay_to_visual.get(
+        layer, {}
+    ).values():
+        if isinstance(overlay_visual, VispyLabelsPolygonOverlay):
+            vispy_polygon_overlay = overlay_visual
+            break
+
+    assert vispy_polygon_overlay is not None, (
+        'Could not find polygon overlay visual'
+    )
+
+    # Define points in data coordinates (512x512 space)
+    # These coordinates are what mouse events would provide
+    data_points = [
+        [200.5, 200.5],  # data coordinates
+        [200.5, 300.5],
+        [300.5, 300.5],
+    ]
+
+    # Set overlay points (simulating mouse clicks adding vertices)
+    polygon_overlay.points = data_points
+
+    # Get the visual positions that were set
+    # The overlay's _on_points_change should have been called
+    # Vispy Markers store position data in _data['a_position'] attribute
+    visual_positions = vispy_polygon_overlay._nodes._data['a_position'][:, :2]
+
+    # Expected visual positions should be in texture space
+    # With 2x downsampling: texture_coord = data_coord / 2
+    # Note: dims are reversed for vispy (y, x instead of x, y)
+    expected_texture_positions = (
+        np.array(
+            [
+                [200.5, 200.5],  # reversed: (y, x)
+                [300.5, 200.5],
+                [300.5, 300.5],
+            ]
+        )
+        / 2
+    )  # Apply downsampling
+
+    # The visual positions should match the texture coordinates
+    # (with coordinates properly transformed by tile2data.inverse)
+    np.testing.assert_array_almost_equal(
+        visual_positions,
+        expected_texture_positions,
+        decimal=1,
+        err_msg=(
+            'Polygon overlay visual positions should be in texture space '
+            '(data coordinates divided by downsample factor) when downsampling is active'
+        ),
+    )
