@@ -1480,10 +1480,8 @@ class Labels(ScalarFieldBase):
             indices = [np.array(x).flatten() for x in indices]
 
         updated_slice = tuple(
-            [
-                slice(min(axis_indices), max(axis_indices) + 1)
-                for axis_indices in indices
-            ]
+            slice(int(axis_indices.min()), int(axis_indices.max()) + 1)
+            for axis_indices in indices
         )
 
         if self.contour > 0:
