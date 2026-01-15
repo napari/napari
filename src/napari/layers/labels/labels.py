@@ -11,8 +11,8 @@ from typing import (
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
+from PIL import Image, ImageDraw
 from scipy import ndimage as ndi
-from skimage.draw import polygon2mask
 
 from napari.layers._data_protocols import LayerDataProtocol
 from napari.layers._multiscale_data import MultiScaleData
@@ -1287,7 +1287,12 @@ class Labels(ScalarFieldBase):
         slice_coord = points[0].tolist()
         points2d = points[:, dims_to_paint]
 
-        polygon_mask = polygon2mask(shape, points2d)
+        # PIL uses (x, y) which is (col, row), so flip things
+        img = Image.new('L', (shape[1], shape[0]), 0)
+        draw = ImageDraw.Draw(img)
+        points_pil = [tuple(p[::-1]) for p in points2d]
+        draw.polygon(points_pil, outline=1, fill=1)
+        polygon_mask = np.array(img, dtype=bool)
         mask_indices = np.argwhere(polygon_mask)
         self._paint_indices(
             mask_indices,
