@@ -1737,15 +1737,18 @@ class Shapes(Layer):
         self._mode = mode
         self.events.mode(mode=mode)
 
-        draw_modes = {
+        non_draw_modes = {
             Mode.SELECT,
             Mode.DIRECT,
             Mode.VERTEX_INSERT,
             Mode.VERTEX_REMOVE,
+            Mode.PAN_ZOOM,
         }
 
-        # don't update thumbnail on mode changes
-        if not (mode in draw_modes and self._mode in draw_modes):
+        if mode not in non_draw_modes:
+            self.selected_data.clear()
+
+        if self._is_creating:
             # Shapes._finish_drawing() calls Shapes.refresh() via Shapes._update_dims()
             # so we need to block thumbnail update from here
             # TODO: this is not great... ideally we should no longer need this blocking system
