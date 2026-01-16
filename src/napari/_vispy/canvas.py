@@ -897,12 +897,16 @@ class VispyCanvas:
 
                 (row, col), layer_indices = view_info
 
-                if not layer_indices:
+                # Never hide the last remaining overlay (allows things like
+                # welcome screen, and to see any changes to overlays when the viewer is empty)
+                if len(vispy_overlays) > 1 and not layer_indices:
                     if vispy_overlay is not None:
-                        # number of occupied views decreased (no grid resizing happened)
+                        # number of occupied views decreased (no grid resizing happened, just
+                        # some layers got deleted)
                         # works "backwards" with pop() but it's ok cause we can't have empty views
-                        # followed by occupied ones
+                        # followed by occupied ones.
                         vispy_overlays.pop().close()
+                    # either way no new overlay should be created or there's not overlay to reparent
                     continue
 
                 view = (
