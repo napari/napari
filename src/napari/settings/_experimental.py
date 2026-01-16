@@ -46,7 +46,7 @@ class ExperimentalSettings(EventedSettings):
         requires_restart=True,
     )
     multisampling: bool = Field(
-        False,
+        True,
         title=trans._('Enable multisampling.'),
         description=trans._(
             'Multisampling improves quality by rendering more fragments to reduce aliasing, at the cost of some performance.'
