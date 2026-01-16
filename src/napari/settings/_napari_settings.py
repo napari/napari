@@ -20,7 +20,7 @@ from napari.utils.translations import trans
 
 _CFG_PATH = os.getenv('NAPARI_CONFIG', _DEFAULT_CONFIG_PATH)
 
-CURRENT_SCHEMA_VERSION = Version(0, 8, 0)
+CURRENT_SCHEMA_VERSION = Version(0, 9, 0)
 
 
 class NapariSettings(EventedConfigFileSettings):

@@ -221,58 +221,6 @@ class Camera(EventedModel):
             return Handedness.LEFT
         return Handedness.RIGHT
 
-    def from_legacy_angles(
-        self, angles: tuple[float, float, float]
-    ) -> tuple[float, float, float]:
-        """Convert camera angles from vispy convention (legacy behaviour) to napari.
-
-        Vispy (and previously napari) uses YZX ordering, but in napari we use ZYX.
-        Rotations are extrinsic.
-
-        Prior to napari 0.7.0, we didn't account for Vispy's ZYX ordering, so our
-        camera angles updated the rotation around the wrong axes. See:
-
-        https://github.com/napari/napari/pull/8281
-        """
-        # see #8281 for why this is yzx. In short: longstanding vispy bug.
-        rot = R.from_euler('yzx', angles, degrees=True)
-        # rotate 90 degrees to get neutral position at 0, 0, 0
-        rot = rot * R.from_euler('x', -90, degrees=True)
-        angles = rot.as_euler('zyx', degrees=True)
-        # flip angles where orientation is flipped relative to default, so the
-        # resulting rotation is always right-handed (i.e: CCW when facing the plane)
-        flipped = angles * np.where(
-            self._vispy_flipped_axes(ndisplay=3), -1, 1
-        )
-        return cast(tuple[float, float, float], tuple(flipped))
-
-    def to_legacy_angles(
-        self, angles: tuple[float, float, float]
-    ) -> tuple[float, float, float]:
-        """Convert camera angles to napari convention to vispy (legacy behaviour).
-
-        Vispy (and previously napari) uses YZX ordering, but in napari we use ZYX.
-        Rotations are extrinsic.
-
-        Prior to napari 0.7.0, we didn't account for Vispy's ZYX ordering, so our
-        camera angles updated the rotation around the wrong axes. See:
-
-        https://github.com/napari/napari/pull/8281
-        """
-        # flip angles where orientation is flipped relative to default, so the
-        # resulting rotation is always right-handed (i.e: CCW when facing the plane)
-        flipped_angles = angles * np.where(
-            self._vispy_flipped_axes(ndisplay=3), -1, 1
-        )
-        # see #8281 for why this is yzx. In short: longstanding vispy bug.
-        rot = R.from_euler('zyx', flipped_angles, degrees=True)
-        # flip angles so handedness of rotation is always right
-        rot = rot * R.from_euler('x', 90, degrees=True)
-        return cast(
-            tuple[float, float, float],
-            tuple(rot.as_euler('yzx', degrees=True)),
-        )
-
     def _vispy_flipped_axes(
         self, ndisplay: Literal[2, 3] = 2
     ) -> tuple[int, int, int]:
