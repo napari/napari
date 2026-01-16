@@ -16,7 +16,6 @@ import numpy as np
 import numpy.typing as npt
 import pandas as pd
 from psygnal.containers import Selection
-from scipy.stats import gmean
 
 from napari.layers.base import Layer, no_op
 from napari.layers.base._base_constants import ActionType
@@ -2307,6 +2306,8 @@ class Points(Layer):
         np.ndarray
             The output binary mask array of the given shape containing this layer's points as balls.
         """
+        from scipy.stats import gmean  # only import if needed
+
         if data_to_world is None:
             data_to_world = self._data_to_world
         mask = np.zeros(shape, dtype=bool)

@@ -72,7 +72,7 @@ dependencies = [
     "toolz>=0.11.0",
     "tqdm>=4.56.0",
     "typing_extensions>=4.12",
-    "vispy>=0.15.2,<0.16",
+    "vispy>=0.16.1,<0.17",
     "wrapt>=1.13.3",
 ]
 dynamic = [
@@ -986,8 +986,6 @@ type = "layers"
 layers = ["napari.qt","napari.layers"]
 ignore_imports = [
     "napari.plugins._npe2 -> napari._qt._qplugins",
-    # TODO: remove once npe1 deprecated
-    "napari._qt.qt_main_window -> napari._qt._qplugins",
 ]
 
 [[tool.importlinter.contracts]]
@@ -996,6 +994,4 @@ type = "layers"
 layers = ["napari.qt","napari.components"]
 ignore_imports = [
     "napari.plugins._npe2 -> napari._qt._qplugins",
-    # TODO: remove once npe1 deprecated
-    "napari._qt.qt_main_window -> napari._qt._qplugins",
 ]
