@@ -45,6 +45,15 @@ class ExperimentalSettings(EventedSettings):
         env='napari_autoswap',
         requires_restart=True,
     )
+    multisampling: bool = Field(
+        False,
+        title=trans._('Enable multisampling.'),
+        description=trans._(
+            'Multisampling improves quality by rendering more fragments to reduce aliasing, at the cost of some performance.'
+        ),
+        env='napari_multisampling',
+        requires_restart=True,
+    )
 
     rdp_epsilon: float = Field(
         0.5,
