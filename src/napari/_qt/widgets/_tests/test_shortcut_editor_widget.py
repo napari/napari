@@ -185,6 +185,7 @@ def test_keybinding_with_modifiers(
     mock_qt_method,
 ):
     mock = mock_qt_method(WarnPopup, 'exec_')
+    mock.side_effect = RuntimeError
     widget = shortcut_editor_widget()
     # 12 is the row for 'napari:toggle_selected_visibility'
     shortcut = widget._table.item(12, widget._shortcut_col).text()
