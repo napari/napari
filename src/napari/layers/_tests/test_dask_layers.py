@@ -161,8 +161,8 @@ def test_dask_unoptimized_slicing(delayed_dask_stack, monkeypatch):
     # the first and the middle stack will be loaded
     assert delayed_dask_stack['calls'] == 2
 
-    with layer.dask_optimized_slicing() as (_, cache):
-        assert cache is None
+    with layer.dask_optimized_slicing() as (_, cache_):
+        assert cache_ is None
 
     # without optimized dask slicing, we get a new call to the get_array func
     # (which "re-reads" the full z stack) EVERY time we change the Z plane
