@@ -1059,7 +1059,7 @@ def test_more_than_uint16_colors(
 @skip_local_popups
 @pytest.mark.show_qt_viewer
 def test_scale_bar_colored(
-    qt_viewer: QtViewer, viewer_model: ViewerModel, qtbot, qapp, tmp_path
+    qt_viewer: QtViewer, viewer_model: ViewerModel, qtbot
 ) -> None:
     scale_bar = viewer_model.scale_bar
 

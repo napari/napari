@@ -44,13 +44,6 @@ def get_gl_extensions() -> str:
         return gl.glGetParameter(gl.GL_EXTENSIONS)
 
 
-@lru_cache(maxsize=1)
-def get_gl_aa_max_level() -> int:
-    """Get basic info about the Gl capabilities of this machine"""
-    with _opengl_context():
-        return gl.glGetParameter(0x8D57)
-
-
 @lru_cache
 def get_max_texture_sizes() -> tuple[int, int]:
     """Return the maximum texture sizes for 2D and 3D rendering.

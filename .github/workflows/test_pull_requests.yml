@@ -96,15 +96,6 @@ jobs:
             backend: pyqt6
             coverage: no_cov
             min_req: ""
-          - python: "3.11"
-            platform: windows-2022
-            backend: pyqt5
-            coverage: no_cov
-          - python: "3.13"
-            platform: macos-latest
-            backend: pyqt6
-            coverage: no_cov
-            timeout-minutes: 60
     with:
       python_version: ${{ matrix.python }}
       platform: ${{ matrix.platform }}
