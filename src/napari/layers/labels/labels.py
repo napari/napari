@@ -1290,7 +1290,8 @@ class Labels(ScalarFieldBase):
         # PIL uses (x, y) which is (col, row), so flip things
         img = Image.new('L', (shape[1], shape[0]), 0)
         draw = ImageDraw.Draw(img)
-        draw.polygon(points2d[:, ::-1], outline=1, fill=1)
+        points_pil = [tuple(p[::-1]) for p in points2d]
+        draw.polygon(points_pil, outline=1, fill=1)
         polygon_mask = np.array(img, dtype=bool)
         mask_indices = np.argwhere(polygon_mask)
         self._paint_indices(
