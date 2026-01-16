@@ -74,7 +74,11 @@ class AsyncImage2DSuite:
 
     def time_set_view_slice(self, *args):
         """Time to set view slice."""
-        self.layer._set_view_slice()
+        if hasattr(self.layer, '_slicing_state'):
+            self.layer._slicing_state._set_view_slice()
+        else:
+            # before https://github.com/napari/napari/pull/8254
+            self.layer._set_view_slice()
 
     def time_refresh(self, *args):
         """Time to refresh view."""
