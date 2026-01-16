@@ -1,6 +1,5 @@
 import os
 from sys import platform
-from unittest.mock import patch
 
 import numpy as np
 import pytest
@@ -8,6 +7,17 @@ from qtpy.QtCore import Qt
 
 from napari._qt.widgets.qt_dims import QtDims
 from napari.components import Dims
+
+
+@pytest.fixture
+def qt_dims(qtbot):
+    dims = Dims(ndim=2)
+    qt_dims = QtDims(dims)
+    qtbot.addWidget(qt_dims)
+    yield qt_dims
+    if qt_dims.is_playing:
+        qt_dims.stop()
+        qtbot.waitUntil(lambda: qt_dims.is_playing)
 
 
 def test_creating_view(qtbot):
@@ -316,35 +326,35 @@ def test_slider_press_updates_last_used(qtbot):
     os.environ.get('CI') and platform == 'win32',
     reason='not working in windows VM',
 )
-def test_play_button(qtbot):
+def test_play_button(qtbot, mock_qt_method_ctx, qt_dims):
     """test that the play button and its popup dialog work"""
     ndim = 3
-    view = QtDims(Dims(ndim=ndim))
-    qtbot.addWidget(view)
-    slider = view.slider_widgets[0]
+    qt_dims.dims.ndim = ndim
+    qtbot.addWidget(qt_dims)
+    slider = qt_dims.slider_widgets[0]
     button = slider.play_button
 
     # Need looping playback so that it does not stop before we can assert that.
     assert slider.loop_mode == 'loop'
-    assert not view.is_playing
+    assert not qt_dims.is_playing
 
-    qtbot.mouseClick(button, Qt.LeftButton)
-    qtbot.waitUntil(lambda: view.is_playing)
+    qtbot.mouseClick(button, Qt.MouseButton.LeftButton)
+    qtbot.waitUntil(lambda: qt_dims.is_playing)
 
-    qtbot.mouseClick(button, Qt.LeftButton)
-    qtbot.waitUntil(lambda: not view.is_playing)
+    qtbot.mouseClick(button, Qt.MouseButton.LeftButton)
+    qtbot.waitUntil(lambda: not qt_dims.is_playing)
 
-    with patch.object(button.popup, 'show_above_mouse') as mock_popup:
-        qtbot.mouseClick(button, Qt.RightButton)
+    with mock_qt_method_ctx(button.popup, 'show_above_mouse') as mock_popup:
+        qtbot.mouseClick(button, Qt.MouseButton.RightButton)
         mock_popup.assert_called_once()
 
     # Check popup updates widget properties (fps, play mode and loop mode)
     button.fpsspin.clear()
     qtbot.keyClicks(button.fpsspin, '11')
-    qtbot.keyClick(button.fpsspin, Qt.Key_Enter)
+    qtbot.keyClick(button.fpsspin, Qt.Key.Key_Enter)
     assert slider.fps == button.fpsspin.value() == 11
     button.reverse_check.setChecked(True)
     assert slider.fps == -button.fpsspin.value() == -11
     button.mode_combo.setCurrentText('once')
     assert slider.loop_mode == button.mode_combo.currentText() == 'once'
-    qtbot.waitUntil(view._animation_thread.isFinished)
+    qtbot.waitUntil(qt_dims._animation_thread.isFinished)

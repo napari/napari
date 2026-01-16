@@ -448,13 +448,20 @@ def mock_qt_method(monkeypatch):
 
 @pytest.fixture
 def mock_qt_method_ctx(monkeypatch, qtbot):
+    from qtpy.QtCore import QObject
+
     @contextmanager
     def _mock_fun(obj: str | object, method: str | None = None):
         mock = MagicMock()
 
-        def _mocked_method(self, *args, **kwargs):
-            if self.parent() is None:
-                qtbot.add_widget(self)
+        def _mocked_method(*args, **kwargs):
+            if (
+                len(args) > 0
+                and isinstance(args[0], QObject)
+                and args[0].parent() is None
+            ):
+                qtbot.add_widget(args[0])
+                args = args[1:]
 
             return mock(*args, **kwargs)
 
