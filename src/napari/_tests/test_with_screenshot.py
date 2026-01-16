@@ -552,6 +552,7 @@ def test_shapes_with_holes(make_napari_viewer):
 
 @skip_local_popups
 def test_active_layer_highlight_visibility(qt_viewer):
+    qt_viewer.show()
     viewer = qt_viewer.viewer
 
     # add shapes layer setting edge and face color to `black` (so shapes aren't
