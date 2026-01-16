@@ -1588,12 +1588,12 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             assert isinstance(p, str)
 
         if stack:
-            layer_data, hookimpl = read_data_with_plugins(
+            layer_data, plugin = read_data_with_plugins(
                 paths, plugin=plugin, stack=stack
             )
         else:
             assert len(paths) == 1
-            layer_data, hookimpl = read_data_with_plugins(
+            layer_data, plugin = read_data_with_plugins(
                 paths, plugin=plugin, stack=stack
             )
 
@@ -1613,7 +1613,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         # add each layer to the viewer
         added: list[Layer] = []  # for layers that get added
-        plugin = hookimpl.plugin_name if hookimpl else None
         for data, filename in zip(layer_data, filenames, strict=False):
             basename, _ext = os.path.splitext(os.path.basename(filename))
             # actually add the layer

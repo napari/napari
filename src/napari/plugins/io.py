@@ -55,11 +55,6 @@ def read_data_with_plugins(
         ``(data,)``, ``(data, meta)``, or ``(data, meta, layer_type)`` .
 
         If no reader plugins were found (or they all failed), returns ``None``
-
-    Raises
-    ------
-    PluginCallError
-        If ``plugin`` is specified but raises an Exception while reading.
     """
     if plugin == 'builtins':
         warnings.warn(
@@ -73,110 +68,14 @@ def read_data_with_plugins(
     assert isinstance(paths, list)
     if not stack:
         assert len(paths) == 1
-    hookimpl: HookImplementation | None
+    reader: HookImplementation | None
 
     res = _npe2.read(paths, plugin, stack=stack)
     if res is not None:
-        ld_, hookimpl = res
-        return [] if _is_null_layer_sentinel(ld_) else list(ld_), hookimpl
+        ld_, reader = res
+        return [] if _is_null_layer_sentinel(ld_) else list(ld_), reader
 
-    hook_caller = plugin_manager.hook.napari_get_reader
-    paths = [abspath_or_url(p, must_exist=True) for p in paths]
-    if not plugin and not stack:
-        extension = os.path.splitext(paths[0])[-1]
-        plugin = plugin_manager.get_reader_for_extension(extension)
-
-    # npe1 compact whether we are reading as stack or not is carried in the type
-    # of paths
-    npe1_path = paths if stack else paths[0]
-    hookimpl = None
-    if plugin:
-        if plugin == 'napari':
-            # napari is npe2 only
-            message = trans._(
-                'No plugin found capable of reading {repr_path!r}.',
-                deferred=True,
-                repr_path=npe1_path,
-            )
-            raise ValueError(message)
-
-        if plugin not in plugin_manager.plugins:
-            names = set(_npe2.get_readers().keys()).union(
-                {i.plugin_name for i in hook_caller.get_hookimpls()}
-            )
-            err_helper = (
-                trans._(
-                    'No readers are available. '
-                    'Do you have any plugins installed?',
-                    deferred=True,
-                )
-                if len(names) <= 1
-                else trans._(
-                    f'\nNames of plugins offering readers are: {names}.',
-                    deferred=True,
-                )
-            )
-            raise ValueError(
-                trans._(
-                    "There is no registered plugin named '{plugin}'. {err_helper}",
-                    deferred=True,
-                    plugin=plugin,
-                    err_helper=err_helper,
-                )
-            )
-        reader = hook_caller._call_plugin(plugin, path=npe1_path)
-        if not callable(reader):
-            raise ValueError(
-                trans._(
-                    'Plugin {plugin!r} does not support file(s) {paths}',
-                    deferred=True,
-                    plugin=plugin,
-                    paths=paths,
-                )
-            )
-
-        hookimpl = hook_caller.get_plugin_implementation(plugin)
-        layer_data = reader(npe1_path)
-        # if the reader returns a "null layer" sentinel indicating an empty
-        # file, return an empty list, otherwise return the result or None
-        if _is_null_layer_sentinel(layer_data):
-            return [], hookimpl
-
-        return layer_data or None, hookimpl
-
-    layer_data = None
-    result = hook_caller.call_with_result_obj(path=npe1_path)
-    if reader := result.result:  # will raise exceptions if any occurred
-        try:
-            layer_data = reader(npe1_path)  # try to read data
-            hookimpl = result.implementation
-        except Exception as exc:  # BLE001
-            raise PluginCallError(result.implementation, cause=exc) from exc
-
-    if not layer_data:
-        # if layer_data is empty, it means no plugin could read path
-        # we just want to provide some useful feedback, which includes
-        # whether or not paths were passed to plugins as a list.
-        if stack:
-            message = trans._(
-                'No plugin found capable of reading [{repr_path!r}, ...] as stack.',
-                deferred=True,
-                repr_path=paths[0],
-            )
-        else:
-            message = trans._(
-                'No plugin found capable of reading {repr_path!r}.',
-                deferred=True,
-                repr_path=paths,
-            )
-
-        # TODO: change to a warning notification in a later PR
-        raise ValueError(message)
-
-    # if the reader returns a "null layer" sentinel indicating an empty file,
-    # return an empty list, otherwise return the result or None
-    _data = [] if _is_null_layer_sentinel(layer_data) else layer_data or None
-    return _data, hookimpl
+    return [], None
 
 
 def save_layers(

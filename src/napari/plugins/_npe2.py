@@ -25,23 +25,10 @@ if TYPE_CHECKING:
     from napari.types import SampleDict
 
 
-class _FakeHookimpl:
-    def __init__(self, name) -> None:
-        self.plugin_name = name
-
-
 def read(
     paths: Sequence[str], plugin: str | None = None, *, stack: bool
-) -> tuple[list[LayerData], _FakeHookimpl] | None:
+) -> tuple[list[LayerData], str | None]:
     """Try to return data for `path`, from reader plugins using a manifest."""
-
-    # do nothing if `plugin` is not an npe2 reader
-    if plugin:
-        # user might have passed 'plugin.reader_contrib' as the command
-        # so ensure we check vs. just the actual plugin name
-        plugin_name = plugin.partition('.')[0]
-        if plugin_name not in get_readers():
-            return None
 
     assert stack is not None
     # the goal here would be to make read_get_reader of npe2 aware of "stack",
@@ -52,17 +39,10 @@ def read(
     else:
         assert len(paths) == 1
         npe1_path = paths[0]
-    try:
-        layer_data, reader = io_utils.read_get_reader(
-            npe1_path, plugin_name=plugin
-        )
-    except ValueError as e:
-        # plugin wasn't passed and no reader was found
-        if 'No readers returned data' not in str(e):
-            raise
-    else:
-        return layer_data, _FakeHookimpl(reader.plugin_name)
-    return None
+    layer_data, reader = io_utils.read_get_reader(
+        npe1_path, plugin_name=plugin
+    )
+    return layer_data, reader.plugin_name
 
 
 def write_layers(
