@@ -176,8 +176,15 @@ def test_restore_defaults(shortcut_editor_widget):
     ],
 )
 def test_keybinding_with_modifiers(
-    shortcut_editor_widget, qtbot, recwarn, key, modifier, key_symbols
+    shortcut_editor_widget,
+    qtbot,
+    recwarn,
+    key,
+    modifier,
+    key_symbols,
+    mock_qt_method,
 ):
+    mock = mock_qt_method(WarnPopup, 'exec_')
     widget = shortcut_editor_widget()
     # 12 is the row for 'napari:toggle_selected_visibility'
     shortcut = widget._table.item(12, widget._shortcut_col).text()
@@ -201,6 +208,7 @@ def test_keybinding_with_modifiers(
     shortcut = widget._table.item(12, widget._shortcut_col).text()
     for key_symbol in key_symbols:
         assert key_symbol in shortcut
+    mock.assert_not_called()
 
 
 @skip_local_focus
