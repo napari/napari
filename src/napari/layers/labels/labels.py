@@ -1350,7 +1350,7 @@ class Labels(ScalarFieldBase):
         # Build slice key: replace contiguous dims_to_paint with mask
         slice_key = self._build_slice_key(mask, dims_to_paint, slice_coord)
 
-        current_values = self.data[slice_key]
+        current_values = np.asarray(self.data[slice_key])
 
         if self.preserve_labels:
             if new_label == self.colormap.background_value:
@@ -1397,7 +1397,9 @@ class Labels(ScalarFieldBase):
         dims_to_paint: list[int],
     ) -> None:
         """Update the view if it is not sharing memory with data (e.g. uint32)."""
-        if np.shares_memory(self.data, self._slice.image.view):
+        if isinstance(self.data, np.ndarray) and np.shares_memory(
+            self.data, self._slice.image.view
+        ):
             return
 
         # check if we are painting on displayed slice
@@ -1407,7 +1409,7 @@ class Labels(ScalarFieldBase):
 
         # Calculate texture value
         texture_value = self.colormap._data_to_texture(
-            np.array(new_label, dtype=self.data.dtype)
+            np.array(new_label, dtype=self.dtype)
         )
 
         # Align mask with view
@@ -1517,16 +1519,16 @@ class Labels(ScalarFieldBase):
         # subset it if we want to only paint into background/only erase
         # current label, accounting for swap_selected_and_background_labels
         if self.preserve_labels:
+            current_values = np.asarray(self.data[slice_coord])
             if new_label == self.colormap.background_value:
-                keep_coords = self.data[slice_coord] == (
+                target_label = (
                     self._prev_selected_label
-                    if self._prev_selected_label
+                    if self._prev_selected_label is not None
                     else self.selected_label
                 )
+                keep_coords = current_values == target_label
             else:
-                keep_coords = (
-                    self.data[slice_coord] == self.colormap.background_value
-                )
+                keep_coords = current_values == self.colormap.background_value
             slice_coord = tuple(sc[keep_coords] for sc in slice_coord)
 
         self.data_setitem(slice_coord, new_label, refresh)
@@ -1571,7 +1573,7 @@ class Labels(ScalarFieldBase):
         ----------
         .. [2] https://numpy.org/doc/stable/user/basics.indexing.html
         """
-        changed_indices = self.data[indices] != value
+        changed_indices = np.asarray(self.data[indices]) != value
         indices = tuple(x[changed_indices] for x in indices)
 
         if isinstance(value, Sequence):
