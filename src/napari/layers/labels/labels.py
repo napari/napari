@@ -1443,11 +1443,12 @@ class Labels(ScalarFieldBase):
         """Track bounding box of updated region for partial refresh."""
         min_vals = np.min(polygon_points, axis=0)
         max_vals = np.max(polygon_points, axis=0)
+        shape = self.data.shape
 
         updated_slice = tuple(
             slice(
-                min_vals[dims_to_paint.index(i)],
-                max_vals[dims_to_paint.index(i)] + 1,
+                max(0, min_vals[dims_to_paint.index(i)]),
+                min(shape[i], max_vals[dims_to_paint.index(i)] + 1),
             )
             if i in dims_to_paint
             else slice(slice_coord[i], slice_coord[i] + 1)
