@@ -1384,9 +1384,37 @@ class Labels(ScalarFieldBase):
         self._save_history((slice_key, current_values, new_label))
         self.data[slice_key] = new_label
 
+        self._maybe_update_view_from_mask(mask, new_label, dims_to_paint)
+
         # Track updated region for partial refresh
         self._update_display_region(polygon_points, dims_to_paint, slice_coord)
         self._partial_labels_refresh()
+
+    def _maybe_update_view_from_mask(
+        self,
+        mask: np.ndarray,
+        new_label: int,
+        dims_to_paint: list[int],
+    ) -> None:
+        """Update the view if it is not sharing memory with data (e.g. uint32)."""
+        if np.shares_memory(self.data, self._slice.image.view):
+            return
+
+        # check if we are painting on displayed slice
+        displayed_dims = self._slice_input.displayed
+        if set(dims_to_paint) != set(displayed_dims):
+            return
+
+        # Calculate texture value
+        texture_value = self.colormap._data_to_texture(
+            np.array(new_label, dtype=self.data.dtype)
+        )
+
+        # Align mask with view
+        if tuple(dims_to_paint) == tuple(displayed_dims):
+            self._slice.image.view[mask] = texture_value
+        else:
+            self._slice.image.view[mask.T] = texture_value
 
     def _build_slice_key(
         self,
