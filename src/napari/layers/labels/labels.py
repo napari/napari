@@ -1266,12 +1266,12 @@ class Labels(ScalarFieldBase):
             mask_indices, new_label, shape, dims_to_paint, slice_coord, refresh
         )
 
-    def paint_polygon(self, points, new_label):
+    def paint_polygon(self, points: list | np.ndarray, new_label: int) -> None:
         """Paint a polygon over existing labels with a new label.
 
         Parameters
         ----------
-        points : list of coordinates
+        points : list or array
             List of coordinates of the vertices of a polygon.
         new_label : int
             Value of the new label to be filled in.
@@ -1287,21 +1287,155 @@ class Labels(ScalarFieldBase):
         slice_coord = points[0].tolist()
         points2d = points[:, dims_to_paint]
 
-        # PIL uses (x, y) which is (col, row), so flip things
+        polygon_mask = self._create_polygon_mask(points2d, shape)
+
+        if self._are_dims_contiguous(dims_to_paint):
+            # Fast path: use boolean mask indexing (avoids coordinate expansion)
+            self._paint_polygon_mask(
+                polygon_mask, new_label, dims_to_paint, slice_coord, points2d
+            )
+        else:
+            # Fallback: convert mask to indices for non-contiguous dimensions
+            mask_indices = np.argwhere(polygon_mask)
+            self._paint_indices(
+                mask_indices,
+                new_label,
+                shape,
+                dims_to_paint,
+                slice_coord,
+                refresh=True,
+            )
+
+    def _create_polygon_mask(
+        self, points2d: np.ndarray, shape: list[int]
+    ) -> np.ndarray:
+        """Create a boolean mask from polygon points using PIL.
+
+        Parameters
+        ----------
+        points2d : ndarray
+            2D polygon vertices in (row, col) format.
+        shape : list
+            Shape of the mask to create (height, width).
+
+        Returns
+        -------
+        ndarray
+            Boolean mask with True inside polygon.
+        """
+        # PIL uses (x, y) = (col, row), so reverse the points
         img = Image.new('L', (shape[1], shape[0]), 0)
         draw = ImageDraw.Draw(img)
         points_pil = [tuple(p[::-1]) for p in points2d]
         draw.polygon(points_pil, outline=1, fill=1)
-        polygon_mask = np.array(img, dtype=bool)
-        mask_indices = np.argwhere(polygon_mask)
-        self._paint_indices(
-            mask_indices,
-            new_label,
-            shape,
-            dims_to_paint,
-            slice_coord,
-            refresh=True,
+        return np.array(img, dtype=bool)
+
+    def _are_dims_contiguous(self, dims_to_paint: list[int]) -> bool:
+        """Check if painted dimensions are contiguous."""
+        return dims_to_paint[1] == dims_to_paint[0] + 1
+
+    def _paint_polygon_mask(
+        self,
+        mask: np.ndarray,
+        new_label: int,
+        dims_to_paint: list[int],
+        slice_coord: list[int],
+        polygon_points: np.ndarray,
+    ) -> None:
+        """Paint polygon using boolean mask indexing for contiguous dimensions.
+
+        This is an optimized path that uses boolean masks directly instead of
+        expanding coordinates, significantly improving performance for large polygons.
+        """
+        # Build slice key: replace contiguous dims_to_paint with mask
+        slice_key = self._build_slice_key(mask, dims_to_paint, slice_coord)
+
+        current_values = self.data[slice_key]
+
+        if self.preserve_labels:
+            if new_label == self.colormap.background_value:
+                # Erasing: only erase the previously selected label
+                target_label = (
+                    self._prev_selected_label
+                    if self._prev_selected_label is not None
+                    else self.selected_label
+                )
+                keep_mask = current_values == target_label
+            else:
+                # Painting: only paint on background
+                keep_mask = current_values == self.colormap.background_value
+
+            if not np.any(keep_mask):
+                return
+
+            mask[mask] = keep_mask
+            current_values = current_values[keep_mask]
+
+        # Filter out pixels already at new_label (no change needed)
+        change_mask = current_values != new_label
+        if not np.any(change_mask):
+            return
+
+        # Refine to only pixels that will actually change
+        mask[mask] = change_mask
+        current_values = current_values[change_mask]
+
+        # Save to history and update data
+        self._save_history((slice_key, current_values, new_label))
+        self.data[slice_key] = new_label
+
+        # Track updated region for partial refresh
+        self._update_display_region(polygon_points, dims_to_paint, slice_coord)
+        self._partial_labels_refresh()
+
+    def _build_slice_key(
+        self,
+        mask: np.ndarray,
+        dims_to_paint: list[int],
+        slice_coord: list[int],
+    ) -> tuple[int | slice | np.ndarray, ...]:
+        """Construct slice key with mask replacing contiguous painted dimensions."""
+        slice_key = []
+        i = 0
+        while i < self.ndim:
+            if i == dims_to_paint[0]:
+                slice_key.append(mask)
+                i += 2  # Skip both contiguous dims
+            else:
+                slice_key.append(slice_coord[i])
+                i += 1
+        return tuple(slice_key)
+
+    def _update_display_region(
+        self,
+        polygon_points: np.ndarray,
+        dims_to_paint: list[int],
+        slice_coord: list[int],
+    ) -> None:
+        """Track bounding box of updated region for partial refresh."""
+        min_vals = np.min(polygon_points, axis=0)
+        max_vals = np.max(polygon_points, axis=0)
+
+        updated_slice = tuple(
+            slice(
+                min_vals[dims_to_paint.index(i)],
+                max_vals[dims_to_paint.index(i)] + 1,
+            )
+            if i in dims_to_paint
+            else slice(slice_coord[i], slice_coord[i] + 1)
+            for i in range(self.ndim)
         )
+
+        if self._updated_slice is None:
+            self._updated_slice = updated_slice
+        else:
+            # Merge with existing updated region
+            self._updated_slice = tuple(
+                slice(min(s1.start, s2.start), max(s1.stop, s2.stop))
+                for s1, s2 in zip(
+                    updated_slice, self._updated_slice, strict=False
+                )
+            )
 
     def _paint_indices(
         self,
