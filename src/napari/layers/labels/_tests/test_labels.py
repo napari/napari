@@ -2002,3 +2002,105 @@ def test_paint_polygon_non_contiguous():
 
     assert np.all(layer.data[0:3, 0, 0:3] == 1)
     assert np.all(layer.data[:, 1:, :] == 0)
+
+
+def test_paint_polygon_uint32_view_update():
+    """Test that uint32 view is updated after paint_polygon (fast path)."""
+    data = np.zeros((20, 20), dtype=np.uint32)
+    layer = Labels(data)
+    # Ensure view is initialized
+    layer.refresh()
+    assert not np.shares_memory(layer.data, layer._slice.image.view)
+
+    points = [[5, 5], [5, 15], [15, 15], [15, 5]]
+    layer.paint_polygon(points, 1)
+
+    assert layer.data[10, 10] == 1
+    # Check that the view was also updated
+    # Colormap._data_to_texture(1) for uint32/auto usually returns 1 in uint8 view
+    assert layer._slice.image.view[10, 10] == 1
+
+
+def test_paint_polygon_out_of_bounds():
+    """Test that painting polygon with out-of-bounds points doesn't crash."""
+    data = np.zeros((20, 20), dtype=int)
+    layer = Labels(data)
+    layer.refresh()
+
+    updates = []
+
+    def on_update(event):
+        updates.append(event)
+
+    layer.events.labels_update.connect(on_update)
+
+    # Points completely outside
+    points = [[-10, -10], [-10, -5], [-5, -5], [-5, -10]]
+    # This should not crash and should not change data
+    layer.paint_polygon(points, 1)
+    assert np.all(layer.data == 0)
+    # No update event should be emitted if nothing changed
+    assert len(updates) == 0
+
+    # Points partially outside
+    # A square that covers [-5, 10] in both dims.
+    # Inside part is [0, 10] in both dims.
+    points2 = [[-5, -5], [-5, 10], [10, 10], [10, -5]]
+    # This should not crash and should update part of the data
+    layer.paint_polygon(points2, 2)
+    assert layer.data[5, 5] == 2
+    assert layer.data[0, 0] == 2
+
+    assert len(updates) == 1
+    event = updates[0]
+    # Check that offset is not negative (this was causing the GL_INVALID_VALUE)
+    assert all(o >= 0 for o in event.offset)
+    # Check that the update region is within data bounds
+    for o, d, s in zip(
+        event.offset, event.data.shape, layer.data.shape, strict=True
+    ):
+        assert o + d <= s
+
+
+def test_paint_polygon_tensorstore_preserve_labels(tmp_path):
+    """Test preserve_labels=True with tensorstore and paint_polygon."""
+    ts = pytest.importorskip('tensorstore')
+
+    data = np.zeros((20, 20), dtype=np.uint32)
+    data[5:15, 5:15] = 1
+
+    file_path = str(tmp_path / 'labels_preserve.zarr')
+
+    spec = {
+        'driver': 'zarr',
+        'kvstore': {'driver': 'file', 'path': file_path},
+        'metadata': {
+            'shape': [20, 20],
+            'dtype': '<u4',
+            'chunks': [10, 10],
+        },
+        'create': True,
+        'delete_existing': True,
+    }
+    ts_array = ts.open(spec).result()
+    ts_array[:, :] = data
+
+    layer = Labels(ts_array)
+    layer.refresh()
+    layer.preserve_labels = True
+    layer.selected_label = 2
+
+    # Paint a polygon that overlaps with existing label 1
+    # Region [10:18, 10:18]
+    points = [[10, 10], [10, 18], [18, 18], [18, 10]]
+    layer.paint_polygon(points, 2)
+
+    # Read back data
+    updated_data = ts_array.read().result()
+
+    # Existing label 1 should be preserved in overlap [10:15, 10:15]
+    assert np.all(updated_data[10:15, 10:15] == 1)
+
+    # Background should be painted in [15:18, 10:18] and [10:18, 15:18]
+    assert np.all(updated_data[15:18, 10:15] == 2)
+    assert np.all(updated_data[10:18, 15:18] == 2)
