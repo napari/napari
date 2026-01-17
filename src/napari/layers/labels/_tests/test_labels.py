@@ -1936,3 +1936,69 @@ def test_view_dtype(visible, dtype):
 def test_view_dtype_int16(visible, dtype):
     layer = Labels(np.arange(25, dtype=dtype).reshape(5, 5), visible=visible)
     assert layer._slice.image.view.dtype == np.uint16
+
+
+def test_paint_polygon_preserve_labels():
+    """Test painting polygon with preserve_labels=True."""
+    data = np.zeros((20, 20), dtype=int)
+    data[5:15, 5:15] = 1
+    layer = Labels(data)
+    layer.preserve_labels = True
+    layer.selected_label = 2
+
+    # Paint a polygon that overlaps with existing label 1
+    points = [[10, 10], [10, 19], [19, 19], [19, 10]]
+    layer.paint_polygon(points, 2)
+
+    # Existing label 1 should be preserved
+    # Overlap region is [10:15, 10:15]
+    assert np.all(layer.data[10:15, 10:15] == 1)
+
+    # Background should be painted
+    # Region [15:20, 10:20] and [10:20, 15:20] (excluding overlap)
+    assert np.all(layer.data[15:19, 10:15] == 2)
+    assert np.all(layer.data[10:19, 15:19] == 2)
+
+
+def test_paint_polygon_erase_preserve_labels():
+    """Test erasing polygon with preserve_labels=True."""
+    data = np.zeros((20, 20), dtype=int)
+    data[5:15, 5:15] = 1
+    layer = Labels(data)
+    layer.preserve_labels = True
+
+    layer.selected_label = 1
+    layer.swap_selected_and_background_labels()
+    # Now selected is 0 (background), _prev_selected_label is 1
+
+    # Paint (erase) polygon overlapping with label 1
+    points = [[10, 10], [10, 19], [19, 19], [19, 10]]
+    layer.paint_polygon(points, 0)
+
+    assert np.all(layer.data[10:15, 10:15] == 0)
+
+    # test with another label, not bg
+    layer.data[16:18, 16:18] = 3
+    # Paint over it with 0 (erase), but preserve_labels is True and prev was 1.
+    # So 3 should be preserved.
+    points2 = [[15, 15], [15, 19], [19, 19], [19, 15]]  # Covers the 3
+    layer.paint_polygon(points2, 0)
+    assert np.all(layer.data[16:18, 16:18] == 3)
+
+
+def test_paint_polygon_non_contiguous():
+    """Test painting polygon on non-contiguous dimensions."""
+    data = np.zeros((3, 10, 10), dtype=int)
+    layer = Labels(data)
+
+    # Show Z and X (dims 0 and 2). Y (dim 1) is sliced.
+    layer._slice_dims(
+        Dims(ndim=3, ndisplay=2, order=(1, 0, 2), point=(0, 0, 0))
+    )
+
+    # Paint on the displayed slice.
+    points = [[0, 0, 0], [0, 0, 3], [3, 0, 3], [3, 0, 0]]
+    layer.paint_polygon(points, 1)
+
+    assert np.all(layer.data[0:3, 0, 0:3] == 1)
+    assert np.all(layer.data[:, 1:, :] == 0)
