@@ -100,7 +100,10 @@ class PandasModel(QAbstractTableModel):
             dtype = np.dtype(type(value))
 
         # show booleans as respective checkboxes
-        if role == Qt.ItemDataRole.CheckStateRole and pd.api.types.is_bool_dtype(dtype):
+        if (
+            role == Qt.ItemDataRole.CheckStateRole
+            and pd.api.types.is_bool_dtype(dtype)
+        ):
             return Qt.CheckState.Checked if value else Qt.CheckState.Unchecked
 
         if role in (Qt.ItemDataRole.DisplayRole, Qt.ItemDataRole.EditRole):
@@ -109,10 +112,10 @@ class PandasModel(QAbstractTableModel):
             if pd.api.types.is_integer_dtype(dtype):
                 return int(value)
             if pd.api.types.is_datetime64_any_dtype(dtype):
-                return value.strftime("%Y-%m-%d")
+                return value.strftime('%Y-%m-%d')
             if pd.api.types.is_bool_dtype(dtype):
                 if role == Qt.ItemDataRole.DisplayRole:
-                    return ""  # do not show True/False text
+                    return ''  # do not show True/False text
                 if role == Qt.ItemDataRole.EditRole:
                     return bool(value)  # needed for proper sorting
             return str(value)
@@ -132,7 +135,7 @@ class PandasModel(QAbstractTableModel):
             if orientation == Qt.Orientation.Horizontal:
                 # Special case for index column (first column)
                 if section == 0:
-                    return self.df.index.name or "Index"
+                    return self.df.index.name or 'Index'
                 return self.df.columns[section - 1]
             # Vertical header
             return self.df.index[section]
@@ -181,9 +184,16 @@ class PandasModel(QAbstractTableModel):
         dtype = np.dtype(type(self.df.iat[row, col - 1]))
 
         # checkboxes
-        if role == Qt.ItemDataRole.CheckStateRole and pd.api.types.is_bool_dtype(dtype):
-            self.df.iat[row, col - 1] = Qt.CheckState(value) == Qt.CheckState.Checked
-            self.dataChanged.emit(index, index, [Qt.ItemDataRole.CheckStateRole])
+        if (
+            role == Qt.ItemDataRole.CheckStateRole
+            and pd.api.types.is_bool_dtype(dtype)
+        ):
+            self.df.iat[row, col - 1] = (
+                Qt.CheckState(value) == Qt.CheckState.Checked
+            )
+            self.dataChanged.emit(
+                index, index, [Qt.ItemDataRole.CheckStateRole]
+            )
             return True
 
         if role == Qt.ItemDataRole.EditRole:
@@ -244,7 +254,7 @@ class PandasModel(QAbstractTableModel):
             if self.df.index.name is not None:
                 self._immutable_columns.add(self.df.index.name)
             else:
-                self._immutable_columns.add("Index")
+                self._immutable_columns.add('Index')
 
     def is_column_immutable(self, col_idx: int) -> bool:
         """Check if a column is immutable based on its index.
@@ -367,7 +377,9 @@ class PandasView(QTableView):
         self.setModel(proxy_model)
         self.setSortingEnabled(True)
         # do not auto sort using index on startup
-        self.horizontalHeader().setSortIndicator(-1, Qt.SortOrder.AscendingOrder)
+        self.horizontalHeader().setSortIndicator(
+            -1, Qt.SortOrder.AscendingOrder
+        )
         # disable vertical header (since we duplicate it as a column)
         self.verticalHeader().setVisible(False)
         # delegate which provides comboboxes for editing categorical values
@@ -422,7 +434,7 @@ class PandasView(QTableView):
 
         sub_df = model.df.iloc[actual_rows, actual_cols]
 
-        tsv = sub_df.to_csv(sep="\t", index=False, header=False)
+        tsv = sub_df.to_csv(sep='\t', index=False, header=False)
         QGuiApplication.clipboard().setText(tsv)
 
     def pasteSelection(self):
@@ -442,8 +454,8 @@ class PandasView(QTableView):
         ):
             return  # pragma: no cover
 
-        rows = clipboard.strip().split("\n")
-        data = [row.split("\t") for row in rows]
+        rows = clipboard.strip().split('\n')
+        data = [row.split('\t') for row in rows]
         n_rows = len(data)
         n_cols = max(len(row) for row in data)
 
@@ -504,10 +516,10 @@ class FeaturesTable(QWidget):
 
         self.setLayout(QVBoxLayout())
 
-        self.info = QLabel("")
-        self.toggle = QToggleSwitch("editable")
-        self.join_toggle = QToggleSwitch("shared columns")
-        self.save = QPushButton("Save as CSV...")
+        self.info = QLabel('')
+        self.toggle = QToggleSwitch('editable')
+        self.join_toggle = QToggleSwitch('shared columns')
+        self.save = QPushButton('Save as CSV...')
         self.table = PandasView()
         self.layout().addWidget(self.info)
         self.layout().addWidget(self.toggle)
@@ -534,13 +546,13 @@ class FeaturesTable(QWidget):
 
     @staticmethod
     def _get_selection_event_for_layer(layer):
-        if hasattr(layer, "selected_label"):
+        if hasattr(layer, 'selected_label'):
             return layer.events.selected_label
-        if hasattr(layer, "selected_data"):
+        if hasattr(layer, 'selected_data'):
             # Points layer has selected_data.events, but Shapes layer uses highlight event
-            if hasattr(layer.selected_data, "events"):
+            if hasattr(layer.selected_data, 'events'):
                 return layer.selected_data.events
-            if hasattr(layer.events, "highlight"):
+            if hasattr(layer.events, 'highlight'):
                 return layer.events.highlight
         # Return None if layer doesn't have expected selection attributes
         return None
@@ -548,7 +560,7 @@ class FeaturesTable(QWidget):
     def _disconnect_layer_events(self, layers):
         """Disconnect features and selection events from the update table callbacks."""
         for layer in layers:
-            if hasattr(layer, "events") and hasattr(layer.events, "features"):
+            if hasattr(layer, 'events') and hasattr(layer.events, 'features'):
                 layer.events.features.disconnect(self._on_features_change)
             selection_event = self._get_selection_event_for_layer(layer)
             if selection_event is not None:
@@ -557,7 +569,7 @@ class FeaturesTable(QWidget):
     def _connect_layer_events(self, layers):
         """Connect features and selection events to the appropriate update table callbacks."""
         for layer in layers:
-            if hasattr(layer, "events") and hasattr(layer.events, "features"):
+            if hasattr(layer, 'events') and hasattr(layer.events, 'features'):
                 layer.events.features.connect(self._on_features_change)
             selection_event = self._get_selection_event_for_layer(layer)
             if selection_event is not None:
@@ -570,9 +582,8 @@ class FeaturesTable(QWidget):
         self._selected_layers = [
             layer
             for layer in self.viewer.layers.selection
-            if hasattr(layer, "features")
+            if hasattr(layer, 'features')
         ]
-
         if len(old_layer_list) > 0:
             self._disconnect_layer_events(old_layer_list)
 
@@ -586,7 +597,7 @@ class FeaturesTable(QWidget):
             self.table.setVisible(True)
             self.join_toggle.setVisible(len(self._selected_layers) > 1)
             self.info.setText(
-                f"Features of {sorted(layer.name for layer in self._selected_layers)}"
+                f'Features of {sorted(layer.name for layer in self._selected_layers)}'
             )
         else:
             # Hide widgets and show appropriate message
@@ -597,42 +608,46 @@ class FeaturesTable(QWidget):
 
             # Determine message based on original selection
             if len(self.viewer.layers.selection) > 0:
-                self.info.setText("Selected layers do not have features.")
+                self.info.setText('Selected layers do not have features.')
             else:
-                self.info.setText("No layer selected.")
+                self.info.setText('No layer selected.')
 
     def _on_features_change(self):
         """Update the table with the features of the currently selected layers."""
         # TODO: optimize for smaller changes?
-        join_type = "inner" if self.join_toggle.isChecked() else "outer"
+        join_type = 'inner' if self.join_toggle.isChecked() else 'outer'
         df = self._build_multilayer_features_table(join=join_type)
 
         # Replace data and configure immutable columns
         model = self.table.model().sourceModel()
         model.replace_data(df)
-        model.set_immutable_columns(["Layer"] if "Layer" in df.columns else [])
+        model.set_immutable_columns(['Layer'] if 'Layer' in df.columns else [])
 
         self.table.resizeColumnsToContents()
         self._update_table_selected_cells()
 
-    def _build_multilayer_features_table(self, join: str = "outer") -> pd.DataFrame:
+    def _build_multilayer_features_table(
+        self, join: str = 'outer'
+    ) -> pd.DataFrame:
         """Builds a features table for multiple layers."""
         df_list = []
         for layer in self._selected_layers:
             # All layers in self._selected_layers are guaranteed to have features
             if layer.features is not None:
                 if isinstance(layer.features, pd.DataFrame):
-                    if "Layer" not in layer.features.columns:
-                        layer.features["Layer"] = layer.name
-                        layer.features["Layer"] = layer.features["Layer"].astype(
-                            "category"
-                        )
-                        # Move 'Layer' to the first column
-                        cols = list(layer.features.columns)
-                        cols.remove("Layer")
-                        cols.insert(0, "Layer")
-                        layer.features = layer.features[cols]
-                    df_list.append(layer.features)
+                    # Make a copy to avoid modifying the original layer.features
+                    df = layer.features.copy()
+
+                    # Only add 'Layer' column for multiple layers
+                    if len(self._selected_layers) > 1 and 'Layer' not in df.columns:
+                            df['Layer'] = layer.name
+                            df['Layer'] = df['Layer'].astype('category')
+                            # Move 'Layer' to the first column
+                            cols = list(df.columns)
+                            cols.remove('Layer')
+                            cols.insert(0, 'Layer')
+                            df = df[cols]
+                    df_list.append(df)
                 else:
                     # TODO: Handle non-pandas dataframe libraries here
                     pass
@@ -666,14 +681,30 @@ class FeaturesTable(QWidget):
         if df.empty:
             return
 
+        # Handle single layer case (no 'Layer' column)
+        if len(self._selected_layers) == 1:
+            layer = self._selected_layers[0]
+            # Convert global row indices to layer-specific indices (all rows belong to this layer)
+            layer_specific_indices = np.array(selected_global_rows)
+
+            with self._block_selection():
+                if hasattr(layer, 'selected_label'):
+                    layer.selected_label = layer_specific_indices[-1]
+                elif hasattr(layer, 'selected_data'):
+                    layer.selected_data = set(layer_specific_indices)
+            return
+
+        # Handle multiple layers case (has 'Layer' column)
         # Calculate layer start indices for all layers once (most efficient)
-        layer_starts = df.groupby("Layer", sort=False, observed=False).apply(
+        layer_starts = df.groupby('Layer', sort=False, observed=False).apply(
             lambda x: x.index[0], include_groups=False
         )
 
         # Get layer names for selected rows and convert to layer-specific indices
-        selected_layer_names = df["Layer"].iloc[selected_global_rows]
-        layer_start_indices = selected_layer_names.map(layer_starts).astype(int)
+        selected_layer_names = df['Layer'].iloc[selected_global_rows]
+        layer_start_indices = selected_layer_names.map(layer_starts).astype(
+            int
+        )
         layer_specific_indices = (
             np.array(selected_global_rows) - layer_start_indices.values
         )
@@ -692,9 +723,9 @@ class FeaturesTable(QWidget):
             layer_indices = selections_by_layer[layer.name]
 
             with self._block_selection():
-                if hasattr(layer, "selected_label"):
+                if hasattr(layer, 'selected_label'):
                     layer.selected_label = layer_indices[-1]
-                elif hasattr(layer, "selected_data"):
+                elif hasattr(layer, 'selected_data'):
                     layer.selected_data = set(layer_indices)
 
     def _update_table_selected_cells(self):
@@ -708,24 +739,39 @@ class FeaturesTable(QWidget):
             return
 
         indices = []
-        for layer in self._selected_layers:
-            matching_rows = df[df["Layer"] == layer.name]
 
-            # Get indices of rows matching this layer in the combined dataframe
-            if isinstance(df, pd.DataFrame):
-                layer_data_row_index = matching_rows.index
-            else:
-                # TODO: Handle non-pandas dataframes here (no index attribute)
-                continue
+        # Handle single layer case (no 'Layer' column)
+        if len(self._selected_layers) == 1:
+            layer = self._selected_layers[0]
+            # All rows in the dataframe belong to this single layer
+            layer_data_row_index = df.index
 
-            if hasattr(layer, "selected_label"):
+            if hasattr(layer, 'selected_label'):
                 sel = layer.selected_label
                 indices += [[layer_data_row_index[sel]]]
-            elif hasattr(layer, "selected_data"):
+            elif hasattr(layer, 'selected_data'):
                 sel = layer.selected_data
                 indices += [layer_data_row_index[list(sel)]]
-            else:
-                continue
+        else:
+            # Handle multiple layers case (has 'Layer' column)
+            for layer in self._selected_layers:
+                matching_rows = df[df['Layer'] == layer.name]
+
+                # Get indices of rows matching this layer in the combined dataframe
+                if isinstance(df, pd.DataFrame):
+                    layer_data_row_index = matching_rows.index
+                else:
+                    # TODO: Handle non-pandas dataframes here (no index attribute)
+                    continue
+
+                if hasattr(layer, 'selected_label'):
+                    sel = layer.selected_label
+                    indices += [[layer_data_row_index[sel]]]
+                elif hasattr(layer, 'selected_data'):
+                    sel = layer.selected_data
+                    indices += [layer_data_row_index[list(sel)]]
+                else:
+                    continue
 
         if not indices:
             # deselect all rows if no selection attributes are found
@@ -759,18 +805,27 @@ class FeaturesTable(QWidget):
         df = model.df
         # For each edited cell
         for row in range(topLeft.row(), bottomRight.row() + 1):
-            # Find corresponding layer and layer row index
-            layer_name = df.iloc[row]["Layer"]
-            layer = next(ly for ly in self._selected_layers if ly.name == layer_name)
-            # Get indices of rows matching this layer name
-            matching_rows = df[df["Layer"] == layer_name]
-            # For pandas DataFrame, we can use .index
-            if isinstance(df, pd.DataFrame):
-                layer_rows = matching_rows.index
-                layer_row_idx = list(layer_rows).index(row)
+            # Determine which layer this row belongs to
+            if len(self._selected_layers) == 1:
+                # Single layer case: all rows belong to this layer
+                layer = self._selected_layers[0]
+                layer_row_idx = row
             else:
-                # TODO: Handle non-pandas dataframes here (no index attribute)
-                continue
+                # Multiple layers case: find layer from 'Layer' column
+                layer_name = df.iloc[row]['Layer']
+                layer = next(
+                    ly for ly in self._selected_layers if ly.name == layer_name
+                )
+                # Get indices of rows matching this layer name
+                matching_rows = df[df['Layer'] == layer_name]
+                # For pandas DataFrame, we can use .index
+                if isinstance(df, pd.DataFrame):
+                    layer_rows = matching_rows.index
+                    layer_row_idx = list(layer_rows).index(row)
+                else:
+                    # TODO: Handle non-pandas dataframes here (no index attribute)
+                    continue
+
             # Update the layer features DataFrame (except if immutable columns)
             for col in range(topLeft.column(), bottomRight.column() + 1):
                 if model.is_column_immutable(col):
@@ -795,19 +850,21 @@ class FeaturesTable(QWidget):
 
         # Generate filename for multiple layers
         if len(self._selected_layers) == 1:
-            fname = f"{self._selected_layers[0].name}_features.csv"
+            fname = f'{self._selected_layers[0].name}_features.csv'
         elif len(self._selected_layers) > 1:
             first_layer = self._selected_layers[0].name
             others_count = len(self._selected_layers) - 1
-            fname = f"{first_layer}_and_{others_count}_other_layers_features.csv"
+            fname = (
+                f'{first_layer}_and_{others_count}_other_layers_features.csv'
+            )
 
         fname = self._remove_invalid_chars(fname)
 
         fname, _ = dlg.getSaveFileName(
             self,  # parent
-            "Save layer features",  # caption
+            'Save layer features',  # caption
             str(Path(hist[0]) / fname),  # directory in PyQt, dir in PySide
-            filter="*.csv",
+            filter='*.csv',
             options=(
                 QFileDialog.Option.DontUseNativeDialog
                 if in_ipython()
@@ -837,39 +894,39 @@ class FeaturesTable(QWidget):
             Suggested name from input selected layer name, without invalid characters.
         """
         unprintable_ascii_chars = (
-            "\x00",
-            "\x01",
-            "\x02",
-            "\x03",
-            "\x04",
-            "\x05",
-            "\x06",
-            "\x07",
-            "\x08",
-            "\x0e",
-            "\x0f",
-            "\x10",
-            "\x11",
-            "\x12",
-            "\x13",
-            "\x14",
-            "\x15",
-            "\x16",
-            "\x17",
-            "\x18",
-            "\x19",
-            "\x1a",
-            "\x1b",
-            "\x1c",
-            "\x1d",
-            "\x1e",
-            "\x1f",
-            "\x7f",
+            '\x00',
+            '\x01',
+            '\x02',
+            '\x03',
+            '\x04',
+            '\x05',
+            '\x06',
+            '\x07',
+            '\x08',
+            '\x0e',
+            '\x0f',
+            '\x10',
+            '\x11',
+            '\x12',
+            '\x13',
+            '\x14',
+            '\x15',
+            '\x16',
+            '\x17',
+            '\x18',
+            '\x19',
+            '\x1a',
+            '\x1b',
+            '\x1c',
+            '\x1d',
+            '\x1e',
+            '\x1f',
+            '\x7f',
         )
         invalid_characters = (
-            "".join(unprintable_ascii_chars)
-            + "/"
-            + "\\"  # invalid Windows filename character
+            ''.join(unprintable_ascii_chars)
+            + '/'
+            + '\\'  # invalid Windows filename character
             + ':*?"<>|\t\n\r\x0b\x0c'  # invalid Windows path characters
         )
         translation_table = dict.fromkeys(map(ord, invalid_characters), None)
