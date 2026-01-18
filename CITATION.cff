@@ -76,10 +76,14 @@ authors:
   alias: GenevieveBuckley
 - given-names: Wouter-Michiel
   family-names: Vierdag
-  affiliation: European Molecular Biology Laboratory, Genome Biology Unit, Heidelberg,
-    Germany
+  affiliation: European Molecular Biology Laboratory, Genome Biology Unit, Heidelberg, Germany
   orcid: https://orcid.org/0000-0003-1666-5421
   alias: melonora
+- given-names: Ashley
+  family-names: Anderson
+  affiliation: Chan Zuckerberg Initiative
+  orcid: https://orcid.org/0000-0002-3841-8344
+  alias: aganders3
 - given-names: Timothy
   family-names: Monko
   affiliation: University of Minnesota — Twin Cities
@@ -123,11 +127,11 @@ authors:
   affiliation: Harvard Medical School, BIDMC
   orcid: https://orcid.org/0000-0002-8070-0378
   alias: orena1
-- given-names: Ashley
-  family-names: Anderson
-  affiliation: Chan Zuckerberg Initiative
-  orcid: https://orcid.org/0000-0002-3841-8344
-  alias: aganders3
+- given-names: Edward
+  family-names: Andò
+  affiliation: EPFL Center for Imaging
+  orcid: https://orcid.org/0000-0001-5509-5287
+  alias: edwardando
 - given-names: Andrew
   family-names: Annex
   affiliation: SETI Institute/NASA ARC
@@ -149,6 +153,11 @@ authors:
   family-names: Bragantini
   affiliation: Chan Zuckerberg Biohub
   alias: JoOkuma
+- given-names: David
+  family-names: Bunten
+  affiliation: University of Colorado Anschutz
+  orcid: https://orcid.org/0000-0001-6041-3665
+  alias: d33bs
 - given-names: Matthias
   family-names: Bussonnier
   affiliation: Quansight Labs
@@ -165,6 +174,11 @@ authors:
   affiliation: Unaffiliated
   orcid: https://orcid.org/0000-0001-7194-7750
   alias: ian-coccimiglio
+- given-names: Zuzana
+  family-names: Čočková
+  affiliation: Imaging Methods Core Facility at Biocev, Charles University
+  orcid: https://orcid.org/0000-0002-7623-5848
+  alias: cockovaz
 - given-names: Jan
   family-names: Eglinger
   affiliation: Friedrich Miescher Institute for Biomedical Research (FMI), Basel (Switzerland)
@@ -179,6 +193,11 @@ authors:
   family-names: Freeman
   affiliation: Chan Zuckerberg Initiative
   alias: freeman-lab
+- given-names: Yohsuke
+  family-names: Fukai T.
+  affiliation: Pioneering Research Institute, RIKEN
+  orcid: https://orcid.org/0000-0002-8860-7178
+  alias: yfukai
 - given-names: Christoph
   family-names: Gohlke
   affiliation: University of California, Irvine
@@ -299,6 +318,11 @@ authors:
   affiliation: Yikes LLC
   orcid: https://orcid.org/0000-0001-5542-1302
   alias: perlman
+- given-names: Rensu Petrus
+  family-names: Theart
+  affiliation: Department of Electrical and Electronic Engineering, Stellenbosch University
+  orcid: https://orcid.org/0000-0003-0508-1690
+  alias: rensutheart
 - given-names: Kim
   family-names: Pevey
   alias: kcpevey
@@ -379,6 +403,11 @@ authors:
   family-names: Winston
   affiliation: Tobeva Software
   alias: pwinston
+- given-names: Qin
+  family-names: Yu
+  affiliation: European Molecular Biology Laboratory (EMBL)
+  orcid: https://orcid.org/0000-0002-4652-0795
+  alias: qin-yu
 - given-names: Rubin
   family-names: Zhao
   affiliation: Chinese Academy of Sciences - SIAT, Shenzhen, China

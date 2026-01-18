@@ -64,17 +64,12 @@ data_files = {
     'Texture_0': 'PocilloporaDamicornisSkin_Texture_0.jpg',
     'GeneratedMat2': 'PocilloporaDamicornisSkin_GeneratedMat2.png',
 }
+data_to_path = {}
 print(f'downloading data into {tmp_dir}')
-for file_name in data_files.values():
-    if not (tmp_dir / file_name).exists():
-        print(f'downloading {file_name}')
-        download(
-            f'doi:{doi}/{file_name}',
-            output_file=tmp_dir / file_name,
-            pooch=None,
-        )
-    else:
-        print(f'using cached {tmp_dir / file_name}')
+for id_, file_name in data_files.items():
+    res = pooch.retrieve(f'doi:{doi}/{file_name}', known_hash=None,  progressbar=True)
+    data_to_path[id_] = res
+
 
 ###############################################################################
 # Load the model
@@ -83,7 +78,7 @@ for file_name in data_files.values():
 # support reading material properties (.mtl files) nor separate texture and
 # vertex indices (i.e. repeated vertices). Normal vectors read from the file
 # are also ignored and re-calculated from the faces.
-vertices, faces, _normals, texcoords = read_mesh(tmp_dir / data_files['mesh'])
+vertices, faces, _normals, texcoords = read_mesh(data_to_path['mesh'])
 
 ###############################################################################
 # Load the textures
@@ -91,8 +86,8 @@ vertices, faces, _normals, texcoords = read_mesh(tmp_dir / data_files['mesh'])
 # This model comes with two textures: `Texture_0` is generated from
 # photogrammetry of the actual object, and `GeneratedMat2` is a generated
 # material to fill in  parts of the model lacking photographic texture.
-photo_texture = imread(tmp_dir / data_files['Texture_0'])
-generated_texture = imread(tmp_dir / data_files['GeneratedMat2'])
+photo_texture = imread(data_to_path['Texture_0'])
+generated_texture = imread(data_to_path['GeneratedMat2'])
 
 ###############################################################################
 # This is what the texture images look like in 2D:
