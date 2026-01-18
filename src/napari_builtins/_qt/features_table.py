@@ -639,14 +639,17 @@ class FeaturesTable(QWidget):
                     df = layer.features.copy()
 
                     # Only add 'Layer' column for multiple layers
-                    if len(self._selected_layers) > 1 and 'Layer' not in df.columns:
-                            df['Layer'] = layer.name
-                            df['Layer'] = df['Layer'].astype('category')
-                            # Move 'Layer' to the first column
-                            cols = list(df.columns)
-                            cols.remove('Layer')
-                            cols.insert(0, 'Layer')
-                            df = df[cols]
+                    if (
+                        len(self._selected_layers) > 1
+                        and 'Layer' not in df.columns
+                    ):
+                        df['Layer'] = layer.name
+                        df['Layer'] = df['Layer'].astype('category')
+                        # Move 'Layer' to the first column
+                        cols = list(df.columns)
+                        cols.remove('Layer')
+                        cols.insert(0, 'Layer')
+                        df = df[cols]
                     df_list.append(df)
                 else:
                     # TODO: Handle non-pandas dataframe libraries here
@@ -654,6 +657,8 @@ class FeaturesTable(QWidget):
 
         # Combine all dataframes
         df = pd.concat(df_list, ignore_index=True, join=join)
+        # Replace np.nan with pd.NA for missing cells
+        df = df.fillna(pd.NA)
         return df
 
     def _on_editable_change(self):
