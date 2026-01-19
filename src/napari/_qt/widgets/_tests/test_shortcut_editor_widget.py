@@ -131,7 +131,7 @@ def test_restore_defaults(shortcut_editor_widget):
     with patch(
         'napari._qt.widgets.qt_keyboard_settings.QMessageBox.question'
     ) as mock:
-        mock.return_value = QMessageBox.RestoreDefaults
+        mock.return_value = QMessageBox.StandardButton.RestoreDefaults
         widget._restore_button.click()
         assert mock.called
     # 12 is the row for 'napari:toggle_selected_visibility'
@@ -185,7 +185,6 @@ def test_keybinding_with_modifiers(
     mock_qt_method,
 ):
     mock = mock_qt_method(WarnPopup, 'exec_')
-    mock.side_effect = RuntimeError
     widget = shortcut_editor_widget()
     # 12 is the row for 'napari:toggle_selected_visibility'
     shortcut = widget._table.item(12, widget._shortcut_col).text()
@@ -202,7 +201,7 @@ def test_keybinding_with_modifiers(
     editor = widget._table.focusWidget()
     qtbot.keyPress(editor, key, modifier=modifier)
     widget._table.commitData(editor)
-    widget._table.closeEditor(editor, QAbstractItemDelegate.NoHint)
+    widget._table.closeEditor(editor, QAbstractItemDelegate.EndEditHint.NoHint)
 
     assert len([warn for warn in recwarn if warn.category is UserWarning]) == 0
 
@@ -232,7 +231,13 @@ def test_keybinding_with_modifiers(
     ],
 )
 def test_keybinding_with_only_modifiers(
-    shortcut_editor_widget, qtbot, recwarn, modifiers, key_symbols, valid
+    shortcut_editor_widget,
+    qtbot,
+    recwarn,
+    modifiers,
+    key_symbols,
+    valid,
+    mock_qt_method_ctx,
 ):
     widget = shortcut_editor_widget()
     # 12 is the row for 'napari:toggle_selected_visibility'
@@ -249,10 +254,12 @@ def test_keybinding_with_only_modifiers(
     qtbot.waitUntil(lambda: widget._table.focusWidget() is not None)
     editor = widget._table.focusWidget()
 
-    with patch.object(WarnPopup, 'exec_') as mock:
-        qtbot.keyPress(editor, Qt.Key_Enter, modifier=modifiers)
+    with mock_qt_method_ctx(WarnPopup, 'exec_') as mock:
+        qtbot.keyPress(editor, Qt.Key.Key_Enter, modifier=modifiers)
         widget._table.commitData(editor)
-        widget._table.closeEditor(editor, QAbstractItemDelegate.NoHint)
+        widget._table.closeEditor(
+            editor, QAbstractItemDelegate.EndEditHint.NoHint
+        )
         if valid:
             assert not mock.called
         else:
@@ -297,7 +304,7 @@ def test_remove_shortcut(
     qtbot.keyClick(editor, removal_trigger_key)
     qtbot.keyClick(editor, confirm_key)
     widget._table.commitData(editor)
-    widget._table.closeEditor(editor, QAbstractItemDelegate.NoHint)
+    widget._table.closeEditor(editor, QAbstractItemDelegate.EndEditHint.NoHint)
     # 12 is the row for 'napari:toggle_selected_visibility'
     shortcut = widget._table.item(12, widget._shortcut_col).text()
     assert shortcut == ''
