@@ -390,7 +390,7 @@ def test_keybinding_editor_modifier_key_detection(
 
     qtbot.waitUntil(lambda: release_check())
 
-    qtbot.keyClick(line_edit, Qt.Key_Escape)
+    qtbot.keyClick(line_edit, Qt.Key.Key_Escape)
     # 12 is the row for 'napari:toggle_selected_visibility'
     shortcut = widget._table.item(12, widget._shortcut_col).text()
     assert shortcut == 'V'
