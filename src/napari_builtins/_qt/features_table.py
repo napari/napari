@@ -637,9 +637,18 @@ class FeaturesTable(QWidget):
             self.save.setVisible(True)
             self.table.setVisible(True)
             self.join_toggle.setVisible(len(self._selected_layers) > 1)
-            self.info.setText(
-                f'Features of {sorted(layer.name for layer in self._selected_layers)}'
-            )
+            if len(self._selected_layers) == 1:
+                self.info.setText(
+                    f'Features of "{self._selected_layers[0].name}"'
+                )
+            else:
+                layer_names = ', '.join(
+                    f'"{layer.name}"'
+                    for layer in sorted(
+                        self._selected_layers, key=lambda lyr: lyr.name
+                    )
+                )
+                self.info.setText(f'Features of [{layer_names}]')
         else:
             # Hide widgets and show appropriate message
             self.toggle.setVisible(False)
