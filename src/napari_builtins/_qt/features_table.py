@@ -668,6 +668,7 @@ class FeaturesTable(QWidget):
     ) -> pd.DataFrame:
         """Builds a features table for multiple layers."""
         df_list = []
+        presence_mask_list = []
         for layer in self._selected_layers:
             # All layers in self._selected_layers are guaranteed to have features
             if layer.features is not None:
@@ -688,14 +689,23 @@ class FeaturesTable(QWidget):
                         cols.insert(0, 'Layer')
                         df = df[cols]
                     df_list.append(df)
+                    presence_mask_list.append(~df.isna())
                 else:
                     # TODO: Handle non-pandas dataframe libraries here
                     pass
-
-        # Combine all dataframes
+        # Combine all dataframes and presence masks
         df = pd.concat(df_list, ignore_index=True, join=join)
-        # Replace np.nan with pd.NA for missing cells
-        df = df.fillna(pd.NA, axis=1)
+        presence_mask = pd.concat(
+            presence_mask_list, ignore_index=True, join=join
+        )
+        nan_cells_introduced_by_join = df.isna() & presence_mask.isna()
+        # Convert columns with join-introduced NaNs to object dtype to ensure 
+        # pd.NA will be set instead of internally converted to NaT or np.nan
+        cols_with_join_nans = nan_cells_introduced_by_join.any()
+        for col in df.columns[cols_with_join_nans]:
+            df[col] = df[col].astype('object')
+        # Replace only NaNs introduced by outer join with pd.NA
+        df = df.mask(nan_cells_introduced_by_join, pd.NA)
         return df
 
     def _on_editable_change(self):
