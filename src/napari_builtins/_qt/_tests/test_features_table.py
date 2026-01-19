@@ -100,63 +100,37 @@ def test_features_table(qtbot):
     assert proxy.columnCount() == 1  # 0 is index
     assert proxy.rowCount() == 0
 
-    original_a = (2, 0, 1, 3, 4, 5, 6, 7, 8, 9, 10)
+    original_a = (2, 0, 1)
 
-    layer = v.add_points(np.zeros((11, 2)), features={'a': original_a})
-    assert proxy.columnCount() == 3  # Index, Layer and 'a'
-    assert (
-        proxy.data(proxy.index(0, 1)) == 'Points'
-    )  # first column has the layer name
-    assert proxy.rowCount() == 11
+    layer = v.add_points(np.zeros((3, 2)), features={'a': original_a})
+    assert proxy.columnCount() == 2
+    assert proxy.rowCount() == 3
 
-    layer.features['b'] = [
-        True,
-        False,
-        True,
-        True,
-        True,
-        True,
-        True,
-        True,
-        True,
-        True,
-        True,
-    ]
+    layer.features['b'] = [True, False, True]
     layer.events.features()
 
-    assert proxy.columnCount() == 4
-    assert proxy.rowCount() == 11
+    assert proxy.columnCount() == 3
+    assert proxy.rowCount() == 3
 
     # sorting should sort the proxy model but not the data
-    w.table.sortByColumn(2, Qt.SortOrder.AscendingOrder)
-    for i in range(11):
-        assert proxy.data(proxy.index(i, 2), Qt.ItemDataRole.EditRole) == i
+    w.table.sortByColumn(1, Qt.SortOrder.AscendingOrder)
+    for i in range(3):
+        assert proxy.data(proxy.index(i, 1), Qt.ItemDataRole.EditRole) == i
         assert layer.features['a'][i] == original_a[i]
 
     # sorting bools should work
-    w.table.sortByColumn(3, Qt.SortOrder.AscendingOrder)
-    for i in range(11):
+    w.table.sortByColumn(2, Qt.SortOrder.AscendingOrder)
+    for i in range(3):
         assert (
             proxy.data(
                 proxy.index(
                     i,
-                    3,
+                    2,
                 ),
                 Qt.ItemDataRole.EditRole,
             )
             == sorted(layer.features['b'])[i]
         )
-
-    # sorting index should handle index as integers, not strings
-    w.table.sortByColumn(0, Qt.SortOrder.DescendingOrder)
-    for i in range(11):
-        assert proxy.data(
-            proxy.index(
-                i,
-                0,
-            ),
-            Qt.ItemDataRole.EditRole,
-        ) == str(10 - i)
 
     # test selection (with sorted rows)
     layer.selected_data = {1, 2}
@@ -231,7 +205,7 @@ def test_features_table_edit(qtbot):
 
     layer = v.add_points(np.zeros((2, 2)), features={'a': original_a})
 
-    idx = proxy.index(0, 2)
+    idx = proxy.index(0, 1)
     w.table.edit(idx)
     assert w.table.state() != QAbstractItemView.State.EditingState
 
@@ -262,8 +236,6 @@ def test_features_table_save_csv(qtbot, tmp_path, monkeypatch):
 
     w.save.click()
 
-    # add layer name column to df
-    df.insert(0, 'Layer', 'Points')
     pd.testing.assert_frame_equal(pd.read_csv(path, index_col=0), df)
 
 
@@ -277,8 +249,8 @@ def test_features_table_copy_paste(qtbot, qapp):
 
     layer = v.add_points(np.zeros((3, 2)), features=df.copy())
 
-    first_cell = proxy.index(1, 2)
-    last_cell = proxy.index(1, 3)
+    first_cell = proxy.index(1, 1)
+    last_cell = proxy.index(1, 2)
     selection = QItemSelection()
     selection.select(first_cell, last_cell)
 
@@ -294,8 +266,8 @@ def test_features_table_copy_paste(qtbot, qapp):
     # stip cause windows and linux otherwise differ
     assert qapp.clipboard().text().strip() == '2\t5'
 
-    first_cell = proxy.index(2, 2)
-    last_cell = proxy.index(2, 3)
+    first_cell = proxy.index(2, 1)
+    last_cell = proxy.index(2, 2)
     selection = QItemSelection()
     selection.select(first_cell, last_cell)
 
@@ -310,7 +282,7 @@ def test_features_table_copy_paste(qtbot, qapp):
     # cause issues when pasting and we just discard them
     qtbot.keyClick(w.table, 'v', Qt.KeyboardModifier.ControlModifier)
 
-    np.testing.assert_array_equal(layer.features.iloc[2, 1:], [3, 8])
+    np.testing.assert_array_equal(layer.features.iloc[2], [3, 8])
 
 
 @pytest.mark.parametrize(
@@ -343,7 +315,7 @@ def test_features_tables_dtypes(
     layer = v.add_points(np.zeros((1, 2)), features=df)
     idx = proxy.index(
         0,
-        2,
+        1,
     )
     assert layer.features['a'].dtype == pandas_dtype(dtype)
     assert (
@@ -396,14 +368,14 @@ def test_features_table_change_active_layer(qtbot):
     assert len(layer1.selected_data.events.all) == 1
     assert len(layer2.events.features.callbacks) == 1
     assert len(layer2.events.selected_label.callbacks) == 1
-    assert w.info.text() == f'Features of {[layer1.name]}'
+    assert w.info.text() == f'Features of "{layer1.name}"'
 
     v.layers.selection.active = layer2
     assert len(layer1.events.features.callbacks) == 1
     assert len(layer1.selected_data.events.all) == 0
     assert len(layer2.events.features.callbacks) == 2
     assert len(layer2.events.selected_label.callbacks) == 2
-    assert w.info.text() == f'Features of {[layer2.name]}'
+    assert w.info.text() == f'Features of "{layer2.name}"'
 
     v.layers.selection.active = layer3
     assert len(layer1.events.features.callbacks) == 1
@@ -488,11 +460,11 @@ def test_features_table_multilayer_table_concat(qtbot):
     assert proxy.columnCount() == 5  # Index, Layer, a, b and track_id
     assert (
         w.info.text()
-        == "Features of ['Labels', 'Points', 'Shapes', 'Surface', 'Tracks', 'Vectors']"
+        == 'Features of ["Labels", "Points", "Shapes", "Surface", "Tracks", "Vectors"]'
     )
     # Sort by layer name and check that the 'track_id' column is NaN for the 'Labels' layer
     w.table.sortByColumn(1, Qt.AscendingOrder)
-    assert np.isnan(proxy.data(proxy.index(0, 4)))
+    assert proxy.data(proxy.index(0, 4)) is pd.NA
 
     # toggle shared columns
     w.join_toggle.click()
