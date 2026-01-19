@@ -35,7 +35,7 @@ from qtpy.QtCore import (
     Qt,
     Slot,
 )
-from qtpy.QtGui import QHideEvent, QIcon, QImage, QShowEvent
+from qtpy.QtGui import QHideEvent, QImage, QShowEvent
 from qtpy.QtWidgets import (
     QApplication,
     QDialog,
@@ -63,6 +63,7 @@ from napari._qt.dialogs.qt_activity_dialog import QtActivityDialog
 from napari._qt.dialogs.qt_notification import NapariQtNotification
 from napari._qt.qt_event_loop import (
     NAPARI_ICON_PATH,
+    _svg_path_to_icon,
     get_qapp,
     quit_app as quit_app_,
 )
@@ -141,7 +142,7 @@ class _QtMainWindow(QMainWindow):
         self._qt_viewer = QtViewer(viewer, show_welcome_screen=True)
         self._quit_app = False
 
-        self.setWindowIcon(QIcon(self._window_icon))
+        get_qapp().setWindowIcon(_svg_path_to_icon(self._window_icon))
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         center = QWidget(self)
         center.setLayout(QHBoxLayout())
@@ -1653,7 +1654,6 @@ class Window:
                 self._qt_viewer._console._update_theme(style_sheet=style_sheet)
 
     def _update_logo(self):
-        from napari._qt.qt_event_loop import _svg_path_to_icon
         from napari.utils.logo import get_logo_path
         from napari.utils.theme import get_system_theme
 
@@ -1662,8 +1662,10 @@ class Window:
             template='padded' if platform.system() == 'Darwin' else 'plain',
             theme=get_system_theme(),
         )
-        icon = _svg_path_to_icon(path)
-        get_qapp().setWindowIcon(icon)
+        self._qt_window._window_icon = path
+        get_qapp().setWindowIcon(
+            _svg_path_to_icon(self._qt_window._window_icon)
+        )
 
     def _status_changed(self, event):
         """Update status bar.
