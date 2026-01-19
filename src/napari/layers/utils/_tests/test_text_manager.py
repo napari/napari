@@ -3,8 +3,8 @@ from itertools import permutations
 import numpy as np
 import pandas as pd
 import pytest
+from pydantic import ValidationError
 
-from napari._pydantic_compat import ValidationError
 from napari._tests.utils import assert_colors_equal
 from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
 from napari.layers.utils.string_encoding import (

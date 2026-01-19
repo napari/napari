@@ -3,10 +3,10 @@ import sys
 import numpy.testing as npt
 import pyautogui
 import pytest
+from pydantic import BaseModel
 from qtpy.QtCore import QPoint, Qt
 from qtpy.QtWidgets import QApplication
 
-from napari._pydantic_compat import BaseModel
 from napari._qt.dialogs.preferences_dialog import (
     PreferencesDialog,
     QMessageBox,

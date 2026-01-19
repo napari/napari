@@ -6,10 +6,10 @@ import sys
 from pathlib import Path
 
 import pytest
+from pydantic import Field, ValidationError
 from yaml import safe_load
 
 from napari import settings
-from napari._pydantic_compat import Field, ValidationError
 from napari.settings import CURRENT_SCHEMA_VERSION, NapariSettings
 from napari.utils.theme import get_theme, register_theme
 

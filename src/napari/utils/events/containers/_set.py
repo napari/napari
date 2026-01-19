@@ -13,7 +13,7 @@ from napari.utils.translations import trans
 _T = TypeVar('_T')
 
 if TYPE_CHECKING:
-    from napari._pydantic_compat import ModelField
+    from pydantic import ModelField
 
 
 class EventedSet(MutableSet[_T]):
@@ -194,7 +194,7 @@ class EventedSet(MutableSet[_T]):
             if error:
                 errors.append(error)
         if errors:
-            from napari._pydantic_compat import ValidationError
+            from pydantic import ValidationError
 
             raise ValidationError(errors, cls)  # type: ignore [arg-type]
             # need to be fixed when migrate to pydantic 2

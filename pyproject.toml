@@ -936,13 +936,6 @@ module = [
 check_untyped_defs = false
 disallow_untyped_defs = false
 
-[[tool.mypy.overrides]]
-module = [
-    "napari._pydantic_compat",
-]
-ignore_errors = true
-
-
 [tool.coverage.report]
 exclude_lines = [
     "pragma: no cover",

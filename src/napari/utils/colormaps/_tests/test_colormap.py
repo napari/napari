@@ -6,8 +6,8 @@ from unittest.mock import patch
 import numpy as np
 import numpy.testing as npt
 import pytest
+from pydantic import ValidationError
 
-from napari._pydantic_compat import ValidationError
 from napari.utils.color import ColorArray
 from napari.utils.colormap_backend import ColormapBackend, set_backend
 from napari.utils.colormaps import (

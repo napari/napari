@@ -10,8 +10,8 @@ import numpy as np
 import pytest
 from dask import delayed
 from dask.delayed import Delayed
+from pydantic import Field, ValidationError
 
-from napari._pydantic_compat import Field, ValidationError
 from napari.utils.events import EmitterGroup, EventedModel
 from napari.utils.events.custom_types import Array
 from napari.utils.misc import StringEnum

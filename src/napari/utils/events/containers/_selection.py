@@ -12,7 +12,7 @@ from napari.utils.events.event import EmitterGroup
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
-    from napari._pydantic_compat import ModelField
+    from pydantic import ModelField
 
 _T = TypeVar('_T')
 _S = TypeVar('_S')
@@ -194,7 +194,7 @@ class Selection(EventedSet[_T]):
                 errors.append(error)
 
         if errors:
-            from napari._pydantic_compat import ValidationError
+            from pydantic import ValidationError
 
             raise ValidationError(errors, cls)  # type: ignore [arg-type]
             # need to be fixed when migrate to pydantic 2
