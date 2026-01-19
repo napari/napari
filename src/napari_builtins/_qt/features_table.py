@@ -161,6 +161,10 @@ class PandasModel(QAbstractTableModel):
         if self.is_column_immutable(col):
             return flags
 
+        # Cells with pd.NA are not editable
+        if value is pd.NA:
+            return flags
+
         if self.editable:
             # make boolean columns checkable
             if pd.api.types.is_bool_dtype(dtype):
@@ -699,7 +703,7 @@ class FeaturesTable(QWidget):
             presence_mask_list, ignore_index=True, join=join
         )
         nan_cells_introduced_by_join = df.isna() & presence_mask.isna()
-        # Convert columns with join-introduced NaNs to object dtype to ensure 
+        # Convert columns with join-introduced NaNs to object dtype to ensure
         # pd.NA will be set instead of internally converted to NaT or np.nan
         cols_with_join_nans = nan_cells_introduced_by_join.any()
         for col in df.columns[cols_with_join_nans]:
