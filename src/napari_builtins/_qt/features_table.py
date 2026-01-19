@@ -658,7 +658,7 @@ class FeaturesTable(QWidget):
         # Combine all dataframes
         df = pd.concat(df_list, ignore_index=True, join=join)
         # Replace np.nan with pd.NA for missing cells
-        df = df.fillna(pd.NA)
+        df = df.fillna(pd.NA, axis=1)
         return df
 
     def _on_editable_change(self):
