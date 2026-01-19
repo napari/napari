@@ -9,14 +9,13 @@ from typing import TYPE_CHECKING, cast
 import numpy as np
 from numpy import typing as npt
 
-from napari.layers import Layer
 from napari.layers._data_protocols import LayerDataProtocol
 from napari.layers._multiscale_data import MultiScaleData
 from napari.layers._scalar_field._slice import (
     _ScalarFieldSliceRequest,
     _ScalarFieldSliceResponse,
 )
-from napari.layers.base import _LayerSlicingState
+from napari.layers.base import Layer, _LayerSlicingState
 from napari.layers.image._image_constants import Interpolation, VolumeDepiction
 from napari.layers.image._image_mouse_bindings import (
     move_plane_along_normal as plane_drag_callback,
@@ -678,6 +677,7 @@ class ScalarFieldBase(Layer, ABC):
 
 class ScalarFieldSlicingState(_LayerSlicingState):
     layer: ScalarFieldBase
+    _slice_request_class = _ScalarFieldSliceRequest
 
     def __init__(
         self, layer: ScalarFieldBase, data: LayerDataType, cache: bool
@@ -730,7 +730,7 @@ class ScalarFieldSlicingState(_LayerSlicingState):
         This is temporary scaffolding that should go away once we have completed
         the async slicing project: https://github.com/napari/napari/issues/4795
         """
-        return _ScalarFieldSliceRequest(
+        return self._slice_request_class(
             slice_input=slice_input,
             data=self.layer.data,
             dask_indexer=dask_indexer,
