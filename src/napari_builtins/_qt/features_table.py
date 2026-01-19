@@ -119,6 +119,8 @@ class PandasModel(QAbstractTableModel):
                     return ''  # do not show True/False text
                 if role == Qt.ItemDataRole.EditRole:
                     return bool(value)  # needed for proper sorting
+            if value is pd.NA:
+                return pd.NA # shows empty cell in the view
             return str(value)
 
         return None
