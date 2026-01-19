@@ -3,6 +3,7 @@ from __future__ import annotations
 from contextlib import contextmanager
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
+from warnings import warn
 
 import numpy as np
 import pandas as pd
@@ -197,6 +198,16 @@ class PandasModel(QAbstractTableModel):
             return True
 
         if role == Qt.ItemDataRole.EditRole:
+            # Warn if setting a string cell to a number-like value
+            if pd.api.types.is_string_dtype(dtype) and self._looks_like_number(
+                str(value)
+            ):
+                warn(
+                    f'Setting a string cell to the value "{value}" which looks like a number.',
+                    UserWarning,
+                    stacklevel=3,
+                )
+
             try:
                 if not isinstance(dtype, pd.CategoricalDtype):
                     value = dtype.type(value)
@@ -284,6 +295,32 @@ class PandasModel(QAbstractTableModel):
             return col_name in self._immutable_columns
 
         return False
+
+    @staticmethod
+    def _looks_like_number(value: str) -> bool:
+        """Check if a string looks like a number (int or float).
+
+        Parameters
+        ----------
+        value : str
+            The string value to check
+
+        Returns
+        -------
+        bool
+            True if the string looks like an int or float, False otherwise
+        """
+        if not isinstance(value, str):
+            return False
+        stripped = value.strip()
+        if not stripped:
+            return False
+        try:
+            float(stripped)
+        except ValueError:
+            return False
+        else:
+            return True
 
 
 class DelegateCategorical(QStyledItemDelegate):
