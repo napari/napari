@@ -20,10 +20,10 @@ class WelcomeOverlay(CanvasOverlay):
     )
     # TODO: query mouse binding as well somehow? Currently we have to hardcode those.
     tips: tuple = (
-        'You can take a screenshot and copy it to your clipboard by pressing {napari.window.file.copy_canvas_screenshot}',
-        'You can change most shortcuts from the File→Preferences→Shortcuts menu',
+        'You can take a screenshot of the canvas and copy it to your clipboard by pressing {napari.window.file.copy_canvas_screenshot}',
+        'You can change most shortcuts from the File → Preferences → Shortcuts menu',
         'You can right click many components of the graphical interface to access advanced controls',
-        'If you select multiple layers in the layer list, and Right-Click→Link-Layers, their parameters will be synced',
+        'If you select multiple layers in the layer list, then right click and select "Link Layers", their parameters will be synced',
         'You can press {Ctrl} and scroll the mouse wheel to move the dimension sliders',
         'To zoom in on a specific area, hold {Alt} and draw a rectangle around it',
         'Hold {napari:hold_for_pan_zoom} to pan/zoom in any mode (e.g. while painting)',

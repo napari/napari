@@ -37,7 +37,7 @@ class VispyWelcomeOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self.node.canvas.native.resized.connect(self._on_position_change)
 
         self.tips_iterator = cycle(["You're awesome!"])
-        self.tip_timer = Timer(5, self.next_tip)
+        self.tip_timer = Timer(10, self.next_tip)
         self.next_tip()
 
         self.reset()

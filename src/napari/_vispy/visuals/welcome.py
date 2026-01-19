@@ -50,8 +50,8 @@ class Welcome(Node):
         )
         self.shortcut_keybindings = Text(
             text='',
-            line_height=1.3,
-            pos=[-50, 70],
+            line_height=1.15,
+            pos=[-80, 60],
             anchor_x='right',
             anchor_y='bottom',
             method='gpu',
@@ -59,8 +59,8 @@ class Welcome(Node):
         )
         self.shortcut_descriptions = Text(
             text='',
-            line_height=1.3,
-            pos=[-30, 70],
+            line_height=1.15,
+            pos=[-60, 60],
             anchor_x='left',
             anchor_y='bottom',
             method='gpu',
@@ -68,8 +68,8 @@ class Welcome(Node):
         )
         self.tip = Text(
             text='',
-            line_height=1.3,
-            pos=[0, 180],
+            line_height=1.15,
+            pos=[0, 160],
             anchor_x='center',
             anchor_y='bottom',
             method='gpu',
