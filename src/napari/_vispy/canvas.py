@@ -466,12 +466,16 @@ class VispyCanvas:
         if not self.viewer.grid.enabled:
             return self.view, (0, 0)
 
+        # loop through all viewboxes to check whether the click is inside
         for (grid_coords, layer_indices), viewbox in zip(
             self.viewer.grid.iter_viewboxes(len(self.viewer.layers)),
             self.grid_views,
             strict=False,
         ):
             if not layer_indices:
+                # this is an empty viewbox and we never want to return it,
+                # so we can just skip the check and if it is the actually clicked
+                # one it will return None, None
                 continue
 
             shifted_pos = position - viewbox.transform.translate[:2]
@@ -854,11 +858,6 @@ class VispyCanvas:
     def _disconnect_canvas_overlay_events(self, overlay: Overlay) -> None:
         overlay.events.position.disconnect(self._defer_overlay_position_update)
         overlay.events.visible.disconnect(self._defer_overlay_position_update)
-
-    def _create_or_reparent_vispy_overlay(
-        self, overlay, vispy_overlay, parent_view, **vispy_overlay_kwargs
-    ):
-        return vispy_overlay
 
     def _update_viewer_overlays(self):
         """Update the viewer overlay visuals.
