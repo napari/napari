@@ -8,7 +8,7 @@ aiosignal==1.4.0
     # via aiohttp
 annotated-types==0.7.0
     # via pydantic
-app-model==0.4.0
+app-model==0.5.1
     # via napari (pyproject.toml)
 appdirs==1.4.4
     # via napari (pyproject.toml)
@@ -350,9 +350,6 @@ pydantic==2.12.5
     #   napari (pyproject.toml)
     #   app-model
     #   npe2
-    #   pydantic-compat
-pydantic-compat==0.1.2
-    # via app-model
 pydantic-core==2.41.5
     # via pydantic
 pygetwindow==0.0.9
