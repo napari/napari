@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+from collections import deque
 from collections.abc import Generator, Iterable, Iterator, MutableSet, Sequence
+from types import GeneratorType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -14,6 +16,10 @@ _T = TypeVar('_T')
 
 if TYPE_CHECKING:
     from pydantic import ModelField
+
+
+def sequence_like(v: Any) -> bool:
+    return isinstance(v, (list, tuple, set, frozenset, GeneratorType, deque))
 
 
 class EventedSet(MutableSet[_T]):
@@ -174,8 +180,6 @@ class EventedSet(MutableSet[_T]):
     @classmethod
     def validate(cls, v: Sequence, field: ModelField) -> EventedSet:
         """Pydantic validator."""
-        from napari._pydantic_compat import sequence_like
-
         if not sequence_like(v):
             raise TypeError(
                 trans._(

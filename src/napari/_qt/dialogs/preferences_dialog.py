@@ -2,6 +2,7 @@ import json
 from enum import EnumMeta
 from typing import TYPE_CHECKING, ClassVar, cast
 
+from pydantic import BaseModel, ModelField, ModelMetaclass
 from qtpy.QtCore import QSize, Qt, Signal
 from qtpy.QtWidgets import (
     QApplication,
@@ -15,7 +16,6 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
 )
 
-from napari._pydantic_compat import BaseModel, ModelField, ModelMetaclass
 from napari.utils.compat import StrEnum
 from napari.utils.translations import trans
 

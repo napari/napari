@@ -1,4 +1,6 @@
+from collections import deque
 from collections.abc import Generator, Iterable
+from types import GeneratorType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -16,6 +18,10 @@ if TYPE_CHECKING:
 
 _T = TypeVar('_T')
 _S = TypeVar('_S')
+
+
+def sequence_like(v: Any) -> bool:
+    return isinstance(v, (list, tuple, set, frozenset, GeneratorType, deque))
 
 
 class Selection(EventedSet[_T]):
@@ -154,8 +160,6 @@ class Selection(EventedSet[_T]):
         field: 'ModelField',
     ) -> 'Selection':
         """Pydantic validator."""
-        from napari._pydantic_compat import sequence_like
-
         if isinstance(v, dict):
             data = v.get('selection', [])
             current = v.get('_current', None)
