@@ -32,6 +32,7 @@ class PreferencesDialog(QDialog):
         'extension2reader': {'ui:widget': 'extension2reader'},
         'dask': {'ui:widget': 'horizontal_object'},
         'font_size': {'ui:widget': 'font_size'},
+        'font': {'ui:widget': 'font'},
     }
 
     resized = Signal(QSize)
