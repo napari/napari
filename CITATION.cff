@@ -339,6 +339,10 @@ authors:
 - given-names: David
   family-names: Pinto
   alias: MarchisLost
+- given-names: Carlos M.
+  family-names: Rodríguez-Reza
+  affiliation: Kyoto University
+  alias: carlosmariorr
 - given-names: David
   family-names: Ross
   affiliation: NanoString Technologies, Inc.
