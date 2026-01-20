@@ -431,6 +431,17 @@ def qt_viewer(
 
 @pytest.fixture
 def mock_qt_method(monkeypatch):
+    """Since PySide6 6.10, the tests deterministically segfault when mocking
+    methods of Qt objects using `unittest.mock.Mock` (or `MagicMock`) directly.
+
+    This fixture provides a workaround for this by wrapping the mock in a function.
+    Should be used as a replacement of `monkeypatch.setattr` and `mock.patch`
+
+    FUTURE NOTE: Similar to `mock_qt_method_ctx `, it might be worth
+     adding `qtbot.addWidget` when the first argument is a `QObject` in the future.
+    Currently, this fixture is only used in tests where that look not necessary.
+    """
+
     def _mock_fun(obj: str | object, method: str | None = None):
         mock = MagicMock()
 
@@ -448,7 +459,19 @@ def mock_qt_method(monkeypatch):
 
 @pytest.fixture
 def mock_qt_method_ctx(monkeypatch, qtbot):
-    from qtpy.QtCore import QObject
+    """Since PySide6 6.10, the tests deterministically segfault when mocking
+    methods of Qt objects using `unittest.mock.Mock` (or `MagicMock`) directly.
+
+    This fixture provides a workaround for this by wrapping the mock in a function.
+    Should be used as a replacement of `monkeypatch.context` and `object.patch`
+
+    When the mocking is performed before creating the Qt object, the
+    mocking function will get access to the created `object` using the first
+    argument of the mocked method and will check if the object has no parent.
+    In such case, the created `QWidget` will be added to `qtbot` using
+    `qtbot.add_widget`.
+    """
+    from qtpy.QtWidgets import QWidget
 
     @contextmanager
     def _mock_fun(obj: str | object, method: str | None = None):
@@ -457,7 +480,7 @@ def mock_qt_method_ctx(monkeypatch, qtbot):
         def _mocked_method(*args, **kwargs):
             if (
                 len(args) > 0
-                and isinstance(args[0], QObject)
+                and isinstance(args[0], QWidget)
                 and args[0].parent() is None
             ):
                 qtbot.add_widget(args[0])
