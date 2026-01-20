@@ -38,7 +38,9 @@ class BoundingBox(Compound):
         self._marker_color = (1, 1, 1, 1)
         self._marker_size = 1
 
-        super().__init__([Line(), Markers(antialias=0)], *args, **kwargs)
+        super().__init__(
+            [Line(antialias=True), Markers(antialias=0)], *args, **kwargs
+        )
 
     @property
     def lines(self):
