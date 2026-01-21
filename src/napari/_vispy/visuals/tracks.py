@@ -20,7 +20,7 @@ class TracksVisual(ClippingPlanesMixin, Compound):
         self.tracks_filter = TracksFilter()
         self.graph_filter = TracksFilter()
 
-        super().__init__([Line(), Text(), Line()])
+        super().__init__([Line(antialias=True), Text(), Line(antialias=True)])
 
         self._subvisuals[0].attach(self.tracks_filter)
         self._subvisuals[2].attach(self.graph_filter)

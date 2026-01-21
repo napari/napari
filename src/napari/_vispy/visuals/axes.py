@@ -184,7 +184,7 @@ class Axes(Compound):
 
         super().__init__(
             [
-                Line(connect='segments', method='gl', width=3),
+                Line(connect='segments', method='gl', width=3, antialias=True),
                 Mesh(),
                 Text(
                     text='1',
