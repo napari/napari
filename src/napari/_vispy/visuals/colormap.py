@@ -52,6 +52,7 @@ class Colormap(Node):
             connect='strip',
             method='gl',
             width=1,
+            antialias=True,
             parent=self,
         )
         self.box.transform = STTransform()
