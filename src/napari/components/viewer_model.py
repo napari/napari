@@ -1476,7 +1476,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         _path = paths[0]
         # we want to display the paths nicely so make a help string here
         path_message = f'[{_path}], ...]' if len(paths) > 1 else _path
-        readers = _npe2.get_readers(_path)
+        readers = _npe2.get_readers(str(_path))
         if not readers:
             raise NoAvailableReaderError(
                 trans._(
