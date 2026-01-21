@@ -177,13 +177,6 @@ class _QtMainWindow(QMainWindow):
 
         settings = get_settings()
 
-        # TODO:
-        # settings.plugins.defaults.call_order = plugin_manager.call_order()
-
-        # set the values in plugins to match the ones saved in settings
-        if settings.plugins.call_order is not None:
-            plugin_manager.set_call_order(settings.plugins.call_order)
-
         _QtMainWindow._instances.append(self)
 
         # since we initialize canvas before the window,
@@ -706,7 +699,6 @@ class Window:
         _themes.events.removed.connect(self._remove_theme)
 
         # discover any themes provided by plugins
-        plugin_manager.discover_themes()
         self._setup_existing_themes()
 
         # import and index all discovered shimmed npe1 plugins
