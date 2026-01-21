@@ -102,7 +102,6 @@ def napari_plugin_manager(monkeypatch):
     # make it so that internal requests for the plugin_manager
     # get this test version for the duration of the test.
     monkeypatch.setattr(napari.plugins, 'plugin_manager', pm)
-    monkeypatch.setattr(napari.plugins.io, 'plugin_manager', pm)
     with suppress(AttributeError):
         monkeypatch.setattr(napari._qt.qt_main_window, 'plugin_manager', pm)
     # prevent discovery of plugins in the environment

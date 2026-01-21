@@ -57,7 +57,7 @@ def test_sample_uses_reader_plugin(builtins, tmp_plugin, tmp_path):
         )
     ]
     # if we don't pass a plugin, the declared reader_plugin is tried
-    with pytest.raises(ValueError, match='no registered plugin'):
+    with pytest.raises(ValueError, match=r'Given reader .* does not exist'):
         viewer.open_sample(NAME, 'napari logo')
 
     # if we pass a plugin, it overrides the declared one

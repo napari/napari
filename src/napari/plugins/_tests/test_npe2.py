@@ -31,12 +31,12 @@ def mock_pm(npe2pm: 'TestPluginManager'):
 
 
 def test_read(mock_pm: 'TestPluginManager'):
-    _, hookimpl = _npe2.read(['some.fzzy'], stack=False)
+    _, reader_name = _npe2.read(['some.fzzy'], stack=False)
     mock_pm.commands.get.assert_called_once_with(f'{PLUGIN_NAME}.some_reader')
-    assert hookimpl.plugin_name == PLUGIN_NAME
+    assert reader_name == PLUGIN_NAME
 
     mock_pm.commands.get.reset_mock()
-    _, hookimpl = _npe2.read(['some.fzzy'], stack=True)
+    _, reader_name = _npe2.read(['some.fzzy'], stack=True)
     mock_pm.commands.get.assert_called_once_with(f'{PLUGIN_NAME}.some_reader')
     mock_pm.commands.get.reset_mock()
     with pytest.raises(ValueError, match='No compatible readers'):
@@ -44,18 +44,17 @@ def test_read(mock_pm: 'TestPluginManager'):
     mock_pm.commands.get.assert_not_called()
 
     mock_pm.commands.get.reset_mock()
-    assert (
+    with pytest.raises(ValueError, match=r'Given reader .* does not exist'):
         _npe2.read(['some.randomext'], stack=True, plugin='not-npe2-plugin')
-        is None
-    )
+
     mock_pm.commands.get.assert_not_called()
 
     mock_pm.commands.get.reset_mock()
-    _, hookimpl = _npe2.read(
+    _, reader_name = _npe2.read(
         ['some.fzzy'], stack=False, plugin='my-plugin.some_reader'
     )
     mock_pm.commands.get.assert_called_once_with(f'{PLUGIN_NAME}.some_reader')
-    assert hookimpl.plugin_name == PLUGIN_NAME
+    assert reader_name == PLUGIN_NAME
 
 
 @pytest.mark.skipif(
