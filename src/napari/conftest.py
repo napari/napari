@@ -218,7 +218,7 @@ def _fresh_settings(monkeypatch):
     monkeypatch.setattr(cp, 'default', None)
 
     monkeypatch.setattr(
-        ExperimentalSettings.__fields__['triangulation_backend'],
+        ExperimentalSettings.model_fields['triangulation_backend'],
         'default',
         TriangulationBackend.fastest_available,
     )

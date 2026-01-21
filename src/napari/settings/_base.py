@@ -308,7 +308,7 @@ def nested_env_settings(
         # NapariSettings has a Config.env_prefix of 'napari_'
         # so every field in the NapariSettings.Application subfield will be
         # available at 'napari_application_fieldname'
-        for field in settings.__fields__.values():
+        for field in settings.model_fields.values():
             if not isinstance(field.type_, type(BaseModel)):
                 continue  # pragma: no cover
             field_type = cast(BaseModel, field.type_)

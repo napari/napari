@@ -1,8 +1,9 @@
 import json
 from enum import EnumMeta
-from typing import TYPE_CHECKING, ClassVar, cast
+from typing import TYPE_CHECKING, ClassVar
 
-from pydantic import BaseModel, ModelField, ModelMetaclass
+from pydantic import BaseModel
+from pydantic.fields import FieldInfo
 from qtpy.QtCore import QSize, Qt, Signal
 from qtpy.QtWidgets import (
     QApplication,
@@ -96,28 +97,26 @@ class PreferencesDialog(QDialog):
         while self._stack.count():
             self._stack.removeWidget(self._stack.currentWidget())
 
-        for field in self._settings.__fields__.values():
-            if isinstance(field.type_, type) and issubclass(
-                field.type_, BaseModel
-            ):
-                self._add_page(field)
+        for field_name, field_info in self._settings.model_fields.values():
+            if issubclass(field_info.annotation, BaseModel):
+                self._add_page(field_name, field_info)
 
         self._list.setCurrentRow(0)
 
-    def _add_page(self, field: 'ModelField'):
+    def _add_page(self, field_name: str, field_info: FieldInfo):
         """Builds the preferences widget using the json schema builder.
 
         Parameters
         ----------
-        field : ModelField
+        field : FieldInfo
             subfield for which to create a page.
         """
         from napari._vendor.qt_json_builder.qt_jsonschema_form import (
             WidgetBuilder,
         )
 
-        schema, values = self._get_page_dict(field)
-        name = field.field_info.title or field.name
+        schema, values = self._get_page_dict(field_name, field_info)
+        name = field_info.title or field_name
 
         form = WidgetBuilder().create_form(schema, self.ui_schema)
         # set state values for widget
@@ -154,18 +153,20 @@ class PreferencesDialog(QDialog):
         page_scrollarea.setWidgetResizable(True)
         page_scrollarea.setWidget(form)
 
-        self._list.addItem(field.field_info.title or field.name)
+        self._list.addItem(name)
         self._stack.addWidget(page_scrollarea)
 
-    def _get_page_dict(self, field: 'ModelField') -> tuple[dict, dict]:
+    def _get_page_dict(
+        self, field_name: str, field_info: FieldInfo
+    ) -> tuple[dict, dict]:
         """Provides the schema, set of values for each setting, and the
         properties for each setting."""
-        ftype = cast('BaseModel', field.type_)
+        ftype = field_info.annotation
 
         # TODO make custom shortcuts dialog to properly capture new
         #      functionality once we switch to app-model's keybinding system
         #      then we can remove the below code used for autogeneration
-        if field.name == 'shortcuts':
+        if field_name == 'shortcuts':
             # hardcode workaround because pydantic's schema generation
             # does not allow you to specify custom JSON serialization
             schema = {
@@ -173,12 +174,10 @@ class PreferencesDialog(QDialog):
                 'type': 'object',
                 'properties': {
                     'shortcuts': {
-                        'title': field.type_.__fields__[
+                        'title': ftype.model_fields['shortcuts'].title,
+                        'description': ftype.model_fields[
                             'shortcuts'
-                        ].field_info.title,
-                        'description': field.type_.__fields__[
-                            'shortcuts'
-                        ].field_info.description,
+                        ].description,
                         'type': 'object',
                     }
                 },
@@ -186,26 +185,27 @@ class PreferencesDialog(QDialog):
         else:
             schema = json.loads(ftype.schema_json())
 
-        if field.field_info.title:
-            schema['title'] = field.field_info.title
-        if field.field_info.description:
-            schema['description'] = field.field_info.description
+        if field_info.title:
+            schema['title'] = field_info.title
+        if field_info.description:
+            schema['description'] = field_info.description
 
         # find enums:
-        for name, subfield in ftype.__fields__.items():
-            if isinstance(subfield.type_, EnumMeta):
-                enums = [s.value for s in subfield.type_]  # type: ignore
-                schema['properties'][name]['enum'] = enums
-                schema['properties'][name]['type'] = 'string'
-            if isinstance(subfield.type_, ModelMetaclass):
-                local_schema = json.loads(subfield.type_.schema_json())
-                schema['properties'][name]['type'] = 'object'
-                schema['properties'][name]['properties'] = local_schema[
-                    'properties'
-                ]
+        for subfield_name, subfield_info in ftype.model_fields.items():
+            sftype = subfield_info.annotation
+            if isinstance(sftype, EnumMeta):
+                enums = [s.value for s in sftype]
+                schema['properties'][subfield_name]['enum'] = enums
+                schema['properties'][subfield_name]['type'] = 'string'
+            if issubclass(sftype, BaseModel):
+                local_schema = json.loads(sftype.schema_json())
+                schema['properties'][subfield_name]['type'] = 'object'
+                schema['properties'][subfield_name]['properties'] = (
+                    local_schema['properties']
+                )
 
         # Need to remove certain properties that will not be displayed on the GUI
-        setting = getattr(self._settings, field.name)
+        setting = getattr(self._settings, field_name)
         with setting.enums_as_values():
             values = setting.dict()
         napari_config = getattr(setting, 'NapariConfig', None)
