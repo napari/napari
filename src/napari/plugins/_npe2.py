@@ -27,7 +27,7 @@ if TYPE_CHECKING:
 
 def read(
     paths: Sequence[str], plugin: str | None = None, *, stack: bool
-) -> tuple[list[LayerData], str | None]:
+) -> tuple[list[LayerData], str]:
     """Try to return data for `path`, from reader plugins using a manifest."""
 
     assert stack is not None
