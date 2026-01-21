@@ -2,7 +2,6 @@ from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pytest
-from napari_plugin_engine import HookImplementation
 
 from napari._tests.utils import layer_test_data
 from napari.components.viewer_model import ViewerModel
@@ -16,7 +15,7 @@ def _impl(path):
     """just a dummy Hookimpl object to return from mocks"""
 
 
-_testimpl = HookImplementation(_impl, plugin_name='testimpl')
+_test_plugin_name = 'testimpl'
 
 
 @pytest.mark.parametrize('layer_datum', layer_data)
@@ -24,7 +23,7 @@ def test_add_layers_with_plugins(layer_datum):
     """Test that add_layers_with_plugins adds the expected layer types."""
     with patch(
         'napari.plugins.io.read_data_with_plugins',
-        MagicMock(return_value=([layer_datum], _testimpl)),
+        MagicMock(return_value=([layer_datum], _test_plugin_name)),
     ):
         v = ViewerModel()
         v._add_layers_with_plugins(['mock_path'], stack=False)
@@ -39,7 +38,7 @@ def test_add_layers_with_plugins_full_layers(layer):
     """Test that add_layers_with_plugins works for full Layer objects."""
     with patch(
         'napari.plugins.io.read_data_with_plugins',
-        MagicMock(return_value=([layer], _testimpl)),
+        MagicMock(return_value=([layer], _test_plugin_name)),
     ):
         v = ViewerModel()
         v._add_layers_with_plugins(['mock_path'], stack=False)
@@ -54,7 +53,7 @@ def test_add_layers_with_plugins_layer_mix(layer):
     with patch(
         'napari.plugins.io.read_data_with_plugins',
         # return one instantiated layer and one layer tuple
-        MagicMock(return_value=([layer, layer_tuple], _testimpl)),
+        MagicMock(return_value=([layer, layer_tuple], _test_plugin_name)),
     ):
         v = ViewerModel()
         v._add_layers_with_plugins(['mock_path'], stack=False)
@@ -67,7 +66,7 @@ def test_add_layers_with_plugins_layer_mix(layer):
 
 @patch(
     'napari.plugins.io.read_data_with_plugins',
-    MagicMock(return_value=([], _testimpl)),
+    MagicMock(return_value=([], _test_plugin_name)),
 )
 def test_plugin_returns_nothing():
     """Test that a plugin returning nothing adds nothing to the Viewer."""
@@ -78,7 +77,7 @@ def test_plugin_returns_nothing():
 
 @patch(
     'napari.plugins.io.read_data_with_plugins',
-    MagicMock(return_value=([(img,)], _testimpl)),
+    MagicMock(return_value=([(img,)], _test_plugin_name)),
 )
 def test_viewer_open():
     """Test that a plugin to returning an image adds stuff to the viewer."""
@@ -124,7 +123,7 @@ def test_add_layers_with_plugins_and_kwargs(layer_data, kwargs):
     """
     with patch(
         'napari.plugins.io.read_data_with_plugins',
-        MagicMock(return_value=(layer_data, _testimpl)),
+        MagicMock(return_value=(layer_data, _test_plugin_name)),
     ):
         v = ViewerModel()
         v._add_layers_with_plugins(['mock_path'], kwargs=kwargs, stack=False)
