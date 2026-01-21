@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, cast
 from app_model.types import CommandRule, MenuItem
 from qtpy import QtCore, QtGui, QtWidgets as QtW
 from qtpy.QtCore import Qt, Signal
+from thefuzz import fuzz, process
 
 from napari._app_model import get_app_model
 from napari._app_model.context._context import get_context
@@ -375,12 +376,25 @@ class QCommandList(QtW.QListView):
 
     def iter_top_hits(self, input_text: str) -> Iterator[CommandRule]:
         """Iterate over the top hits for the input text"""
+        if not input_text:
+            yield from [
+                c
+                for c in self.all_commands
+                if _enabled(c, self._app_model_context)
+            ]
+
         commands: list[tuple[float, CommandRule]] = []
-        for command in self.all_commands:
-            score = _match_score(command, input_text)
-            if score > 0.0:
+        action_names = {c: _format_action_name(c) for c in self.all_commands}
+        for _, score, command in process.extract(
+            input_text,
+            action_names,
+            limit=100,
+            scorer=fuzz.partial_token_sort_ratio,
+            processor=lambda x: x.lower(),
+        ):
+            if score > 0:
                 if _enabled(command, self._app_model_context):
-                    score += 10.0
+                    score += 100
                 commands.append((score, command))
         commands.sort(key=lambda x: x[0], reverse=True)
         for _, command in commands:
@@ -401,14 +415,6 @@ def _enabled(action: CommandRule, context: Mapping[str, Any]) -> bool:
         return action.enablement.eval(context)
     except NameError:
         return False
-
-
-def _match_score(action: CommandRule, input_text: str) -> float:
-    """Return a match score (between 0 and 1) for the input text."""
-    name = _format_action_name(action).lower()
-    if all(word in name for word in input_text.lower().split(' ')):
-        return 1.0
-    return 0.0
 
 
 def _format_action_name(cmd: CommandRule) -> str:
