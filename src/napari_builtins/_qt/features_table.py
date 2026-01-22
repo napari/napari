@@ -561,7 +561,7 @@ class FeaturesTable(QWidget):
 
         self.info = QLabel('')
         self.toggle = QToggleSwitch('editable')
-        self.join_toggle = QToggleSwitch('shared columns')
+        self.join_toggle = QToggleSwitch('shared columns only')
         self.save = QPushButton('Save as CSV...')
         self.table = PandasView()
         self.layout().addWidget(self.info)
