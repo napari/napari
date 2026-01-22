@@ -12,7 +12,13 @@ from typing import (
 from warnings import warn
 
 import numpy as np
-from pydantic import ConfigDict, Field, PrivateAttr, field_validator
+from pydantic import (
+    ConfigDict,
+    Field,
+    PrivateAttr,
+    ValidationInfo,
+    field_validator,
+)
 from typing_extensions import Self
 
 from napari.utils.color import ColorArray, ColorValue
@@ -82,7 +88,9 @@ class Colormap(EventedModel):
     name: str = 'custom'
     _display_name: str | None = PrivateAttr(None)
     interpolation: ColormapInterpolationMode = ColormapInterpolationMode.LINEAR
-    controls: Array = Field(default_factory=lambda: cast(Array, []))
+    controls: Array = Field(
+        default_factory=lambda: cast(Array, []), validate_default=True
+    )
     nan_color: ColorValue = ColorValue('transparent')
     high_color: ColorValue | None = None
     low_color: ColorValue | None = None
@@ -433,7 +441,8 @@ class DirectLabelColormap(LabelColormapBase):
         return self._num_unique_colors + 2
 
     @field_validator('color_dict', mode='before')
-    def _validate_color_dict(cls, v, values):
+    @classmethod
+    def _validate_color_dict(cls, v: MutableMapping, values: ValidationInfo):
         """Ensure colors are RGBA arrays, not strings.
 
         Parameters
@@ -445,10 +454,8 @@ class DirectLabelColormap(LabelColormapBase):
             which indicates the color to map items not in the dictionary.
             Alternatively, it could be a defaultdict. If neither is provided,
             missing colors are not rendered (rendered as fully transparent).
-        values : dict[str, Any]
-            A dictionary mapping previously-validated attributes to their
-            validated values. Attributes are validated in the order in which
-            they are defined.
+        values : ValidationInfo
+            A structure with information about previously validated attributes
 
         Returns
         -------
@@ -468,8 +475,8 @@ class DirectLabelColormap(LabelColormapBase):
             for label, color_str in v.items()
         }
         if (
-            'background_value' in values
-            and (bg := values['background_value']) not in res
+            'background_value' in values.data
+            and (bg := values.data['background_value']) not in res
         ):
             res[bg] = transform_color('transparent')[0]
         if isinstance(v, defaultdict):

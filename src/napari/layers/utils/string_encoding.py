@@ -3,7 +3,7 @@ from string import Formatter
 from typing import Any, Literal, Protocol, Union, runtime_checkable
 
 import numpy as np
-from pydantic import parse_obj_as
+from pydantic import ValidationInfo, parse_obj_as
 
 from napari.layers.utils.style_encoding import (
     StyleEncoding,
@@ -35,7 +35,9 @@ class StringEncoding(StyleEncoding[StringValue, StringArray], Protocol):
 
     @classmethod
     def validate(
-        cls, value: Union['StringEncoding', dict, str, Sequence[str]]
+        cls,
+        value: Union['StringEncoding', dict, str, Sequence[str]],
+        info: ValidationInfo,
     ) -> 'StringEncoding':
         """Validates and coerces a value to a StringEncoding.
 

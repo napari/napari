@@ -88,7 +88,7 @@ from napari.utils.events import (
 )
 from napari.utils.key_bindings import KeymapProvider
 from napari.utils.misc import ensure_list_of_layer_data_tuple, is_sequence
-from napari.utils.mouse_bindings import MousemapProvider
+from napari.utils.mouse_bindings import MousemapProviderPydantic
 from napari.utils.progress import progress
 from napari.utils.theme import available_themes, is_theme_available
 from napari.utils.translations import trans
@@ -127,7 +127,7 @@ DEFAULT_OVERLAYS = {
 
 
 # KeymapProvider & MousemapProvider should eventually be moved off the ViewerModel
-class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
+class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     """Viewer containing the rendered scene, layers, and controlling elements
     including dimension sliders, and control bars for color limits.
 
@@ -212,11 +212,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self, title='napari', ndisplay=2, order=(), axis_labels=()
     ) -> None:
         # max_depth=0 means don't look for parent contexts.
-        from napari._app_model.context import create_context
 
         # FIXME: just like the LayerList, this object should ideally be created
         # elsewhere.  The app should know about the ViewerModel, but not vice versa.
-        self._ctx = create_context(self, max_depth=0)
+        # self._ctx = create_context(self, max_depth=0)
         # allow extra attributes during model initialization, useful for mixins
         self.model_config['extra'] = 'allow'
         super().__init__(
