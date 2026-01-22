@@ -8,7 +8,7 @@ from napari.components import Dims
 
 
 @pytest.fixture
-def qt_dims(qtbot: QtBot) -> Generator[Dims, None, None]:
+def qt_dims(qtbot: QtBot) -> Generator[QtDims, None, None]:
     """Fixture that provides a QtDims and ensures
     that animation is stopped after the test failed.
 
