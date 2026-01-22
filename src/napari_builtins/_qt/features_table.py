@@ -76,6 +76,9 @@ class PandasModel(QAbstractTableModel):
         self.df = df if df is not None else pd.DataFrame()
         self.editable = False
         self._immutable_columns = set(immutable_columns or [])
+        self._original_categories: dict[
+            str, dict[str, list]
+        ] = {}  # {layer_name: {col_name: [categories]}}
         self._add_index_to_immutable()
 
     # model methods necessary for qt
@@ -242,6 +245,57 @@ class PandasModel(QAbstractTableModel):
         with self.changing():
             self.df = df
             self._add_index_to_immutable()
+            # Reset provenance when data is replaced
+            self._original_categories = {}
+
+    def set_original_categories(
+        self, categories_dict: dict[str, dict[str, list]]
+    ) -> None:
+        """Store original categories by layer before concat conversion to object dtype.
+
+        Parameters
+        ----------
+        categories_dict : dict[str, dict[str, list]]
+            Mapping of layer_name -> {column_name -> [category_values]}
+            Only includes columns that were categorical in each layer.
+        """
+        self._original_categories = categories_dict
+
+    def is_categorical_in_layer(self, col_name: str, layer_name: str) -> bool:
+        """Check if a column was categorical in a specific layer.
+
+        Parameters
+        ----------
+        col_name : str
+            Column name to check
+        layer_name : str
+            Layer name to check against
+
+        Returns
+        -------
+        bool
+            True if column was categorical in that layer before concat
+        """
+        return col_name in self._original_categories.get(layer_name, {})
+
+    def get_original_categories(
+        self, col_name: str, layer_name: str
+    ) -> list | None:
+        """Get original categories for a column in a specific layer.
+
+        Parameters
+        ----------
+        col_name : str
+            Column name
+        layer_name : str
+            Layer name
+
+        Returns
+        -------
+        list | None
+            List of categories if column was categorical in that layer, else None
+        """
+        return self._original_categories.get(layer_name, {}).get(col_name)
 
     def set_immutable_columns(self, column_names: list[str]):
         """Set columns that should be treated as immutable (read-only).
@@ -344,6 +398,37 @@ class DelegateCategorical(QStyledItemDelegate):
         # If bool dtype or value is bool, let Qt use default checkbox editor
         if pd.api.types.is_bool_dtype(dtype) or isinstance(value, bool):
             return None
+
+        # Check if this column was originally categorical in the source layer
+        col_name = source_model.df.columns[col - 1]
+
+        # Determine layer name for this row
+        if 'Layer' in source_model.df.columns:
+            # Multi-layer case: get layer from the 'Layer' column
+            layer_name = source_model.df.iloc[source_index.row()]['Layer']
+        else:
+            # Single-layer case: get the layer name from provenance (should be exactly one)
+            layer_names = list(source_model._original_categories.keys())
+            layer_name = layer_names[0] if layer_names else None
+
+        # Check provenance: only create combobox if column was originally categorical
+        original_categories = None
+        if layer_name is not None:
+            original_categories = source_model.get_original_categories(
+                col_name, layer_name
+            )
+
+        if original_categories is not None:
+            editor = QComboBox(parent)
+            editor.addItems([str(c) for c in original_categories])
+            # allow arrow keys selection
+            editor.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+
+            # force editor to open on first click, otherwise we need 2 clicks
+            QTimer.singleShot(0, editor.showPopup)
+            return editor
+
+        # Fallback: check current dtype for backward compatibility
         if isinstance(dtype, pd.CategoricalDtype):
             editor = QComboBox(parent)
             categories = source_model.df.iloc[:, col - 1].cat.categories
@@ -354,6 +439,7 @@ class DelegateCategorical(QStyledItemDelegate):
             # force editor to open on first click, otherwise we need 2 clicks
             QTimer.singleShot(0, editor.showPopup)
             return editor
+
         # If float, use spinbox
         if pd.api.types.is_float_dtype(dtype):
             editor = super().createEditor(parent, option, index)
@@ -668,11 +754,16 @@ class FeaturesTable(QWidget):
         """Update the table with the features of the currently selected layers."""
         # TODO: optimize for smaller changes?
         join_type = 'inner' if self.join_toggle.isChecked() else 'outer'
+
+        # Extract categories before concat converts them to object dtype
+        original_categories = self._get_original_categories_from_layers()
+
         df = self._build_multilayer_features_table(join=join_type)
 
         # Replace data and configure immutable columns
         model = self.table.model().sourceModel()
         model.replace_data(df)
+        model.set_original_categories(original_categories)
         model.set_immutable_columns(['Layer'] if 'Layer' in df.columns else [])
 
         self.table.resizeColumnsToContents()
@@ -729,6 +820,36 @@ class FeaturesTable(QWidget):
     def _on_join_change(self):
         """Update the table when join mode changes."""
         self._on_features_change()
+
+    def _get_original_categories_from_layers(
+        self,
+    ) -> dict[str, dict[str, list]]:
+        """Extract categories by layer before concat loses dtype information.
+
+        When concatenating DataFrames with columns that are categorical in some
+        layers but strings (or missing) in others, pandas converts all to object dtype.
+        This method captures the original categorical information per layer.
+
+        Returns
+        -------
+        dict[str, dict[str, list]]
+            Mapping: {layer_name: {column_name: [category_values]}}
+            Only includes columns that were categorical in each layer.
+        """
+        categories_dict: dict[str, dict[str, list]] = {}
+        for layer in self._selected_layers:
+            if layer.features is not None and isinstance(
+                layer.features, pd.DataFrame
+            ):
+                layer_categories: dict[str, list] = {}
+                for col in layer.features.columns:
+                    if pd.api.types.is_categorical_dtype(layer.features[col]):
+                        layer_categories[col] = list(
+                            layer.features[col].cat.categories
+                        )
+                if layer_categories:  # Only add if there are categoricals
+                    categories_dict[layer.name] = layer_categories
+        return categories_dict
 
     def _on_table_selection_changed(self):
         """Update layer selection when table cells are selected."""
