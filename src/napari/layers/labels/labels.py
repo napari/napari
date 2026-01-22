@@ -1289,7 +1289,11 @@ class Labels(ScalarFieldBase):
 
         polygon_mask = self._create_polygon_mask(points2d, shape)
 
-        if self._are_dims_contiguous(dims_to_paint):
+        if not np.any(polygon_mask):
+            return
+
+        # Check if painted dimensions are contiguous
+        if dims_to_paint[1] == dims_to_paint[0] + 1:
             # Fast path: use boolean mask indexing (avoids coordinate expansion)
             self._paint_polygon_mask(
                 polygon_mask, new_label, dims_to_paint, slice_coord, points2d
@@ -1330,9 +1334,34 @@ class Labels(ScalarFieldBase):
         draw.polygon(points_pil, outline=1, fill=1)
         return np.array(img, dtype=bool)
 
-    def _are_dims_contiguous(self, dims_to_paint: list[int]) -> bool:
-        """Check if painted dimensions are contiguous."""
-        return dims_to_paint[1] == dims_to_paint[0] + 1
+    def _account_for_preserving_labels(
+        self, current_values: np.ndarray, new_label: int
+    ) -> np.ndarray:
+        """
+        Get only the background pixels or previously selected label.
+
+        Parameters
+        ----------
+        current_values : np.ndarray
+            The current values at the locations to be painted.
+        new_label : int
+            The new label value to be painted.
+
+        Returns
+        -------
+        np.ndarray
+            Boolean mask indicating which pixels should be (over)painted.
+        """
+        if new_label == self.colormap.background_value:
+            # Erasing: only erase the previously selected label
+            target_label = (
+                self._prev_selected_label
+                if self._prev_selected_label is not None
+                else self.selected_label
+            )
+            return current_values == target_label
+        # Painting: only paint on background
+        return current_values == self.colormap.background_value
 
     def _paint_polygon_mask(
         self,
@@ -1353,17 +1382,9 @@ class Labels(ScalarFieldBase):
         current_values = np.asarray(self.data[slice_key])
 
         if self.preserve_labels:
-            if new_label == self.colormap.background_value:
-                # Erasing: only erase the previously selected label
-                target_label = (
-                    self._prev_selected_label
-                    if self._prev_selected_label is not None
-                    else self.selected_label
-                )
-                keep_mask = current_values == target_label
-            else:
-                # Painting: only paint on background
-                keep_mask = current_values == self.colormap.background_value
+            keep_mask = self._account_for_preserving_labels(
+                current_values, new_label
+            )
 
             if not np.any(keep_mask):
                 return
@@ -1449,8 +1470,8 @@ class Labels(ScalarFieldBase):
 
         updated_slice = tuple(
             slice(
-                max(0, min_vals[dims_to_paint.index(i)]),
-                min(shape[i], max_vals[dims_to_paint.index(i)] + 1),
+                int(max(0, min_vals[dims_to_paint.index(i)])),
+                int(min(shape[i], max_vals[dims_to_paint.index(i)]) + 1),
             )
             if i in dims_to_paint
             else slice(slice_coord[i], slice_coord[i] + 1)
@@ -1520,15 +1541,9 @@ class Labels(ScalarFieldBase):
         # current label, accounting for swap_selected_and_background_labels
         if self.preserve_labels:
             current_values = np.asarray(self.data[slice_coord])
-            if new_label == self.colormap.background_value:
-                target_label = (
-                    self._prev_selected_label
-                    if self._prev_selected_label is not None
-                    else self.selected_label
-                )
-                keep_coords = current_values == target_label
-            else:
-                keep_coords = current_values == self.colormap.background_value
+            keep_coords = self._account_for_preserving_labels(
+                current_values, new_label
+            )
             slice_coord = tuple(sc[keep_coords] for sc in slice_coord)
 
         self.data_setitem(slice_coord, new_label, refresh)
