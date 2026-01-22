@@ -4,7 +4,6 @@ import pytest
 from pytestqt.qtbot import QtBot
 
 from napari._qt.widgets.qt_dims import QtDims
-from napari._qt.widgets.qt_dims_slider import AnimationThread
 from napari.components import Dims
 
 
@@ -25,19 +24,3 @@ def qt_dims(qtbot: QtBot) -> Generator[QtDims, None, None]:
     if qt_dims.is_playing:
         qt_dims.stop()
         qtbot.waitUntil(lambda: not qt_dims.is_playing)
-
-
-@pytest.fixture(autouse=True)
-def _prevent_thread(request, monkeypatch):
-    if 'allow_animation_thread' in request.keywords:
-        return
-    if 'qt_dims' in request.fixturenames or 'ref_view' in request.fixturenames:
-        return
-
-    def fake_start(self):
-        raise RuntimeError(
-            'QtDims animation thread should not be started outside of tests '
-            "without using the 'qt_dims' fixture."
-        )
-
-    monkeypatch.setattr(AnimationThread, 'start', fake_start)

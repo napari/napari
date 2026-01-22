@@ -615,6 +615,24 @@ def _disable_notification_dismiss_timer(monkeypatch):
         monkeypatch.setattr(NapariQtNotification, 'slide_in', lambda x: None)
 
 
+@pytest.fixture(autouse=True)
+def _prevent_thread(request, monkeypatch):
+    if 'allow_animation_thread' in request.keywords:
+        return
+    if 'qt_dims' in request.fixturenames or 'ref_view' in request.fixturenames:
+        return
+
+    from napari._qt.widgets.qt_dims_slider import AnimationThread
+
+    def fake_start(self):
+        raise RuntimeError(
+            'QtDims animation thread should not be started outside of tests '
+            "without using the 'qt_dims' fixture."
+        )
+
+    monkeypatch.setattr(AnimationThread, 'start', fake_start)
+
+
 @pytest.fixture
 def single_threaded_executor():
     executor = ThreadPoolExecutor(max_workers=1)
