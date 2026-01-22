@@ -155,7 +155,7 @@ def test_labels_polygon_with_downsampling(
     viewer = make_napari_viewer()
 
     # Create a labels layer that will be downsampled
-    shape = (512, 512)
+    shape = (600, 500)
     data = np.zeros(shape, dtype=np.int32)
     layer = viewer.add_labels(data, multiscale=False)
 
