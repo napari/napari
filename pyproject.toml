@@ -517,6 +517,7 @@ markers = [
     "disable_qthread_pool_start: Disable strarting QRunnable using QThreadPool start in this Test",
     "disable_qtimer_start: Disable timer start in this Test",
     "disable_qanimation_start: Disable animation start in this Test",
+    'allow_animation_thread: Allow animation thread to run in this Test (normally disabled to prevent segfaults)',
     "enable_console: Don't mock the IPython console (in QtConsole) in this Test",
     # mark slow tests, so they can be skipped using: pytest -m "not slow"
     "slow: mark a test as slow",

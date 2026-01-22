@@ -622,6 +622,9 @@ def _prevent_thread(request, monkeypatch):
     if 'qt_dims' in request.fixturenames or 'ref_view' in request.fixturenames:
         return
 
+    if 'qtbot' not in request.fixturenames:
+        return
+
     from napari._qt.widgets.qt_dims_slider import AnimationThread
 
     def fake_start(self):
