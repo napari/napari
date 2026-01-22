@@ -227,6 +227,7 @@ def test_toggle_menubar(make_napari_viewer, qtbot):
     assert not viewer.window._qt_window._toggle_menubar_visibility
 
 
+@pytest.mark.allow_animation_thread
 def test_toggle_play(make_napari_viewer, qtbot):
     """Test toggle play action."""
     action_id = 'napari.window.view.toggle_play'
