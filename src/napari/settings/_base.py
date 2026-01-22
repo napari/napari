@@ -74,7 +74,7 @@ class EventedSettings(BaseSettings, EventedModel):
 
             extra = getattr(field, 'json_schema_extra', None)
             if extra is not None and extra.get('requires_restart', False):
-                emitter = getattr(self.events, name)
+                emitter = getattr(model.events, name)
                 emitter.connect(self._warn_restart)
 
     def _on_sub_event(self, event: Event, field=None):
