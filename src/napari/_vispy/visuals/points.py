@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from vispy.scene.visuals import Compound, Line, Text
+from vispy.scene.visuals import Compound, Line
 
 from napari._vispy.visuals.clipping_planes_mixin import ClippingPlanesMixin
 from napari._vispy.visuals.markers import Markers
+from napari._vispy.visuals.text import Text
 
 
 class PointsVisual(ClippingPlanesMixin, Compound):

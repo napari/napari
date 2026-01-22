@@ -328,6 +328,7 @@ def make_napari_viewer(
 
         should_show = request.config.getoption('--show-napari-viewer')
         model_kwargs['show'] = model_kwargs.pop('show', should_show)
+        model_kwargs.setdefault('show_welcome_screen', False)
         viewer = ViewerClass(*model_args, **model_kwargs)
         viewers.add(viewer)
 
