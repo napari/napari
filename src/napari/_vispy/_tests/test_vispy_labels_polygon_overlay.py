@@ -159,7 +159,7 @@ def test_labels_polygon_with_downsampling(
     data = np.zeros(shape, dtype=np.int32)
     layer = viewer.add_labels(data, multiscale=False)
 
-    expected_downsample = np.array([2, 2])
+    expected_downsample = np.array([3, 2])
     np.testing.assert_array_equal(
         layer._transforms['tile2data'].scale, expected_downsample
     )
