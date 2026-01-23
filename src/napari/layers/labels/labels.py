@@ -385,8 +385,7 @@ class Labels(ScalarFieldBase):
             paint=Event,
             preserve_labels=Event,
             properties=Event,
-            selected_label=Event,
-            selected_labels=Event,  # Left here for backwards compatibility, the same as self.selected_labels
+            selected_labels=Event,
             show_selected_label=Event,
         )
 
@@ -718,11 +717,7 @@ class Labels(ScalarFieldBase):
     @property
     def selected_label(self):
         """int: Index of selected label."""
-        # TODO update the implementation by next(reversed(self._selected_labels))
-        # once https://github.com/pyapp-kit/psygnal/pull/395 is accepted
-        # There is no length check here because self._selected_labels
-        # always contains at least one label.
-        return list(self._selected_labels)[-1]
+        return next(reversed(self._selected_labels))
 
     @selected_label.setter
     def selected_label(self, selected_label: int):
