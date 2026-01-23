@@ -69,6 +69,7 @@ from napari.utils.colormaps.colormap import (
 from napari.utils.colormaps.colormap_utils import shuffle_and_extend_colormap
 from napari.utils.events import EmitterGroup, Event
 from napari.utils.events.custom_types import Array
+from napari.utils.events.event import WarningEmitter
 from napari.utils.misc import StringEnum, _is_array_type
 from napari.utils.naming import magic_name
 from napari.utils.translations import trans
@@ -391,6 +392,13 @@ class Labels(ScalarFieldBase):
             paint=Event,
             preserve_labels=Event,
             properties=Event,
+            selected_label=WarningEmitter(
+                trans._(
+                    'layer.events.selected_label is deprecated and will be removed in the future release. Please use layer.events.selected_labels instead.',
+                    deferred=True,
+                ),
+                type_name='selected_label',
+            ),
             selected_labels=Event,
             show_selected_label=Event,
         )
