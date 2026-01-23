@@ -7,6 +7,7 @@ import numpy as np
 from app_model.types import KeyBinding
 from pydantic import (
     BaseModel,
+    ConfigDict,
     PrivateAttr,
 )
 from pydantic._internal._model_construction import ModelMetaclass
@@ -188,17 +189,18 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
 
     # pydantic BaseModel configuration.  see:
     # https://pydantic-docs.helpmanual.io/usage/model_config/
-    class Config:
+    model_config = ConfigDict(
         # whether to allow arbitrary user types for fields (they are validated
         # simply by checking if the value is an instance of the type). If
         # False, RuntimeError will be raised on model declaration
-        arbitrary_types_allowed = True
-        validate_assignment = True
-        validate_defaults = True
+        arbitrary_types_allowed=True,
+        validate_assignment=True,
+        validate_default=True,
         # https://pydantic-docs.helpmanual.io/usage/exporting_models/#modeljson
         # NOTE: json_encoders are also added EventedMetaclass.__new__ if the
         # field declares a _json_encode method.
-        json_encoders = _BASE_JSON_ENCODERS
+        json_encoders=_BASE_JSON_ENCODERS,
+    )
 
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
@@ -207,7 +209,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         # add event emitters for each field which is mutable
         field_events = [
             name
-            for name, field in self.model_fields.items()
+            for name, field in self.__class__.model_fields.items()
             if not field.frozen
         ]
 
@@ -342,7 +344,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         # events are all messed up due to objects being probably
         # recreated arbitrarily during validation
         self.events.source = self
-        for name in self.model_fields:
+        for name in self.__class__.model_fields:
             child = getattr(self, name)
             if isinstance(child, EventedModel):
                 # TODO: this isinstance check should be EventedMutables in the future
@@ -361,7 +363,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
                 getattr(self, name).reset()
             elif (
                 not self.model_config.get('frozen', False)
-                and not self.model_fields[name].frozen
+                and not self.__class__.model_fields[name].frozen
             ):
                 setattr(self, name, value)
 
@@ -418,7 +420,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             return self.model_dump() == other
         if self.__class__ != other.__class__:
             return False
-        for f_name in self.model_fields:
+        for f_name in self.__class__.model_fields:
             eq = self.__eq_operators__[f_name]
             if not eq(getattr(self, f_name), getattr(other, f_name)):
                 return False
@@ -435,15 +437,15 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             by default `True`
         """
         null = object()
-        before = getattr(self.Config, 'use_enum_values', null)
-        self.Config.use_enum_values = as_values
+        before = getattr(self.model_config, 'use_enum_values', null)
+        self.model_config.use_enum_values = as_values
         try:
             yield
         finally:
             if before is not null:
-                self.Config.use_enum_values = before
+                self.model_config.use_enum_values = before
             else:
-                delattr(self.Config, 'use_enum_values')
+                delattr(self.model_config, 'use_enum_values')
 
 
 def get_defaults(obj: BaseModel):
