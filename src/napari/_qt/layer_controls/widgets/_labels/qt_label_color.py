@@ -11,7 +11,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,
 )
-from napari._qt.utils import attr_to_settr, qt_signals_blocked
+from napari._qt.utils import qt_signals_blocked
 from napari.layers import Labels
 from napari.layers.labels._labels_utils import get_dtype
 from napari.utils._dtype import get_dtype_limits
@@ -139,14 +139,16 @@ class QtLabelControl(QtWidgetControlsBase):
         self.selection_spinbox.setKeyboardTracking(False)
         self.selection_spinbox.valueChanged.connect(self.change_selection)
         self.selection_spinbox.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._callbacks.append(
-            attr_to_settr(
-                self._layer,
-                'selected_label',
-                self.selection_spinbox,
-                'setValue',
-            )
-        )
+
+        # Listen to `selected_labels` event (no dedicated `selected_label`
+        # event exists) and keep the spinbox in sync with the current
+        # single-selection value.
+        def _sync_selected_label(event=None):
+            with qt_signals_blocked(self.selection_spinbox):
+                self.selection_spinbox.setValue(self._layer.selected_label)
+
+        self._layer.events.selected_labels.connect(_sync_selected_label)
+        self._callbacks.append(_sync_selected_label)
 
         self.label_color_label = QtWrappedLabel(trans._('label:'))
         self.label_color = QWidget()
