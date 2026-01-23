@@ -360,7 +360,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             if isinstance(value, EventedModel):
                 getattr(self, name).reset()
             elif (
-                not self.model_config.frozen
+                not self.model_config.get('frozen', False)
                 and not self.model_fields[name].frozen
             ):
                 setattr(self, name, value)
@@ -415,7 +415,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         if self is other:
             return True
         if not isinstance(other, EventedModel):
-            return self.dict() == other
+            return self.model_dump() == other
         if self.__class__ != other.__class__:
             return False
         for f_name in self.model_fields:

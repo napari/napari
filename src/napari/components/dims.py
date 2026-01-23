@@ -1,3 +1,4 @@
+import contextlib
 from collections.abc import Sequence
 from numbers import Integral
 from typing import (
@@ -105,6 +106,7 @@ class Dims(EventedModel):
     # private vars
     _play_ready: bool = True  # False if currently awaiting a draw event
     _scroll_progress: int = 0
+    _validating: bool = False
 
     # validators
     # check fields is false to allow private fields to work
@@ -159,7 +161,9 @@ class Dims(EventedModel):
         values : dict
             Values dictionary to update dims model with.
         """
-        with self.events.blocker_all():
+        if self._validating:
+            return self
+        with self.events.blocker_all(), self._validating_ctx():
             ndim = self.ndim
 
             range_ = ensure_len(self.range, ndim, pad_width=(0.0, 2.0, 1.0))
@@ -533,6 +537,15 @@ class Dims(EventedModel):
         for ax in axis:
             ensure_axis_in_bounds(ax, self.ndim)
         return axis, value
+
+    @contextlib.contextmanager
+    def _validating_ctx(self):
+        prev = self._validating
+        self._validating = True
+        try:
+            yield
+        finally:
+            self._validating = prev
 
 
 def ensure_len(value: tuple, length: int, pad_width: Any):

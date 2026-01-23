@@ -347,6 +347,9 @@ namespaces = false
 "*" = [
     "*.pyi",
 ]
+napari = [
+    "resources/fonts/*.ttf",
+]
 napari_builtins = [
     "builtins.yaml",
 ]

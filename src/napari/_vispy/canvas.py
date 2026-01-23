@@ -6,6 +6,7 @@ import gc
 from collections.abc import Iterator
 from functools import partial
 from itertools import zip_longest
+from types import MethodType
 from typing import TYPE_CHECKING
 from weakref import WeakSet
 
@@ -58,6 +59,25 @@ from napari.utils.translations import trans
 
 class NapariSceneCanvas(SceneCanvas_):
     """Vispy SceneCanvas used to allow for ignoring mouse wheel events with modifiers."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        orig_enterEvent = self.native.enterEvent
+        orig_leaveEvent = self.native.leaveEvent
+
+        def enterEvent(self_, event):
+            qtviewer = self_.parent()
+            qtviewer._enter_canvas()
+            orig_enterEvent(event)
+
+        def leaveEvent(self_, event):
+            qtviewer = self_.parent()
+            qtviewer._leave_canvas()
+            orig_leaveEvent(event)
+
+        self.native.enterEvent = MethodType(enterEvent, self.native)
+        self.native.leaveEvent = MethodType(leaveEvent, self.native)
 
     def _process_mouse_event(self, event: MouseEvent):
         """Ignore mouse wheel events which have modifiers."""

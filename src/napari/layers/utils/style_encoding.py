@@ -115,6 +115,10 @@ class _StyleEncodingModel(EventedModel):
         # https://pydantic-docs.helpmanual.io/usage/model_config/#options
         extra = 'forbid'
 
+    @classmethod
+    def __get_validators__(cls):
+        yield None
+
 
 # The following classes provide generic implementations of common ways
 # to encode style values, like constant, manual, and derived encodings.

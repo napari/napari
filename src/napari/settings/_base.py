@@ -74,7 +74,7 @@ class EventedSettings(BaseSettings, EventedModel):
 
             extra = getattr(field, 'json_schema_extra', None)
             if extra is not None and extra.get('requires_restart', False):
-                emitter = getattr(self.events, name)
+                emitter = getattr(model.events, name)
                 emitter.connect(self._warn_restart)
 
     def _on_sub_event(self, event: Event, field=None):
@@ -113,7 +113,7 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
         # this line is here for usage in the `customise_sources` hook.  It
         # will be overwritten in __init__ by BaseModel._init_private_attributes
         # so we set it again after __init__.
-        self._config_path = _cfg
+        # self._config_path = _cfg
         super().__init__(**values)
         self._config_path = _cfg
 

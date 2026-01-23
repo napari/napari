@@ -265,7 +265,7 @@ def get_theme(theme_id: str):
                 themes=available_themes(),
             )
         )
-    theme = _themes[theme_id].copy()
+    theme = _themes[theme_id].model_copy()
     return theme
 
 
