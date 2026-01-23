@@ -286,10 +286,14 @@ myst-parser==4.0.1
     # via myst-nb
 napari-console==0.1.4
     # via napari (pyproject.toml)
+napari-meshio==0.0.2
+    # via napari (pyproject.toml:docs)
 napari-plugin-engine==0.2.0
     # via napari (pyproject.toml)
 napari-plugin-manager==0.1.9
     # via napari (pyproject.toml)
+napari-skimage==0.6.0
+    # via napari (pyproject.toml:docs)
 napari-sphinx-theme==1.0.1
     # via napari (pyproject.toml:docs)
 napari-svg==0.2.1
@@ -305,6 +309,8 @@ nbformat==5.10.4
     #   jupyter-cache
     #   myst-nb
     #   nbclient
+ndevio==0.7.0
+    # via napari (pyproject.toml:docs)
 nest-asyncio==1.6.0
     # via ipykernel
 networkx==3.6.1
