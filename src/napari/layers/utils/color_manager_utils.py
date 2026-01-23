@@ -1,9 +1,14 @@
-from typing import Any
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 import numpy as np
 
 from napari.utils.colormaps import Colormap
 from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    from napari.layers.utils.color_manager import ColorManager
 
 
 def guess_continuous(color_map: np.ndarray) -> bool:
@@ -73,9 +78,7 @@ def map_property(
     return mapped_properties, contrast_limits
 
 
-def _validate_colormap_mode(
-    values: dict[str, Any],
-) -> tuple[np.ndarray, dict[str, Any]]:
+def _validate_colormap_mode(color_manager: ColorManager) -> None:
     """Validate the ColorManager field values specific for colormap mode
     This is called by the root_validator in ColorManager
 
@@ -90,36 +93,33 @@ def _validate_colormap_mode(
         The (Nx4) color array to set as ColorManager.colors
     values : dict
     """
-    color_properties = values['color_properties'].values
-    cmap = values['continuous_colormap']
+    color_properties = color_manager.color_properties.values
+    cmap = color_manager.continuous_colormap
     if len(color_properties) > 0:
-        if values['contrast_limits'] is None:
-            colors, contrast_limits = map_property(
+        if color_manager.contrast_limits is None:
+            color_manager.colors, color_manager.contrast_limits = map_property(
                 prop=color_properties,
                 colormap=cmap,
             )
-            values['contrast_limits'] = contrast_limits
         else:
-            colors, _ = map_property(
+            color_manager.colors, _ = map_property(
                 prop=color_properties,
                 colormap=cmap,
-                contrast_limits=values['contrast_limits'],
+                contrast_limits=color_manager.contrast_limits,
             )
     else:
-        colors = np.empty((0, 4))
-        current_prop_value = values['color_properties'].current_value
+        color_manager.colors = np.empty((0, 4))
+        current_prop_value = color_manager.color_properties.current_value
         if current_prop_value is not None:
-            values['current_color'] = cmap.map(current_prop_value)[0]
+            color_manager.current_color = cmap.map(current_prop_value)[0]
 
-    if len(colors) == 0:
-        colors = np.empty((0, 4))
-
-    return colors, values
+    if len(color_manager.colors) == 0:
+        color_manager.colors = np.empty((0, 4))
 
 
 def _validate_cycle_mode(
-    values: dict[str, Any],
-) -> tuple[np.ndarray, dict[str, Any]]:
+    color_manager: ColorManager,
+) -> None:
     """Validate the ColorManager field values specific for color cycle mode
     This is called by the root_validator in ColorManager
 
@@ -134,15 +134,12 @@ def _validate_cycle_mode(
         The (Nx4) color array to set as ColorManager.colors
     values : dict
     """
-    color_properties = values['color_properties'].values
-    cmap = values['categorical_colormap']
-    if len(color_properties) == 0:
-        colors = np.empty((0, 4))
-        current_prop_value = values['color_properties'].current_value
+    color_properties = color_manager.color_properties
+    cmap = color_manager.categorical_colormap
+    if len(color_properties) == 0:  # type: ignore
+        color_manager.colors = np.empty((0, 4))
+        current_prop_value = color_properties.current_value
         if current_prop_value is not None:
-            values['current_color'] = cmap.map(current_prop_value)[0]
+            color_manager.current_color = cmap.map(current_prop_value)[0]
     else:
-        colors = cmap.map(color_properties)
-    values['categorical_colormap'] = cmap
-
-    return colors, values
+        color_manager.colors = cmap.map(color_properties)

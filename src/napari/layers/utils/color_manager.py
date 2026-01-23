@@ -176,27 +176,23 @@ class ColorManager(EventedModel):
 
         return transform_color(v)[0]
 
-    @model_validator(mode='before')
-    def _validate_colors(cls, values):
-        color_mode = values['color_mode']
-        if color_mode == ColorMode.CYCLE:
-            colors, values = _validate_cycle_mode(values)
-        elif color_mode == ColorMode.COLORMAP:
-            colors, values = _validate_colormap_mode(values)
-        else:  # color_mode == ColorMode.DIRECT:
-            colors = values['colors']
+    @model_validator(mode='after')
+    def _validate_colors(self):
+        if self.color_mode == ColorMode.CYCLE:
+            _validate_cycle_mode(self)
+        elif self.color_mode == ColorMode.COLORMAP:
+            _validate_colormap_mode(self)
 
         # set the current color to the last color/property value
         # if it wasn't already set
-        if values.get('current_color') is None and len(colors) > 0:
-            values['current_color'] = colors[-1]
-            if color_mode in [ColorMode.CYCLE, ColorMode.COLORMAP]:
-                property_values = values['color_properties']
+        if self.current_color is None and len(self.colors) > 0:
+            self.current_color = self.colors[-1]
+            if self.color_mode in [ColorMode.CYCLE, ColorMode.COLORMAP]:
+                property_values = self.color_properties
                 property_values.current_value = property_values.values[-1]
-                values['color_properties'] = property_values
+                self.color_properties = property_values
 
-        values['colors'] = colors
-        return values
+        return self
 
     def _set_color(
         self,

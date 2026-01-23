@@ -1,7 +1,8 @@
 from typing import Any
 
 import numpy as np
-from pydantic import Field
+from pydantic import Field, GetCoreSchemaHandler
+from pydantic_core import CoreSchema, core_schema
 
 from napari.utils.color import ColorValue
 from napari.utils.colormaps.categorical_colormap_utils import (
@@ -90,6 +91,12 @@ class CategoricalColormap(EventedModel):
     @classmethod
     def __get_validators__(cls):
         yield cls.validate_type
+
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls, source_type: Any, handler: GetCoreSchemaHandler
+    ) -> CoreSchema:
+        return core_schema.no_info_plain_validator_function(cls.validate_type)
 
     @classmethod
     def validate_type(cls, val):
