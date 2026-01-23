@@ -50,7 +50,6 @@ dependencies = [
     "lazy_loader>=0.3",
     "magicgui>=0.7.0",
     "napari-console>=0.1.4",
-    "napari-metadata>=0.1.0",
     "napari-plugin-engine>=0.1.9",
     "napari-svg>=0.1.8",
     "npe2>=0.7.9",
@@ -118,6 +117,7 @@ all = [
 optional-base = [
     "zarr>=2.12.0", # needed by `builtins` (dask.array.from_zarr) to open zarr
     "aiohttp", # needed to open remote files by zarr, replace by extras once https://github.com/zarr-developers/zarr-python/issues/3453 is done
+    "napari-metadata>=0.1.0",
     "napari-plugin-manager >=0.1.9, <0.2.0",
 ]
 optional-numba = [
