@@ -741,6 +741,21 @@ def test_selected_data_update_and_events():
     )
 
 
+def test_selected_data_triggers_deprecated_selected_label_event():
+    """selected_data should still fire the deprecated selected_label event."""
+    labels = Labels(np.zeros((10, 10), dtype=np.uint8))
+    callback = Mock()
+
+    with pytest.warns(
+        FutureWarning, match='Please use layer.events.selected_data instead'
+    ):
+        labels.events.selected_label.connect(callback)
+
+    labels.selected_data = [3]
+
+    callback.assert_called_once()
+
+
 def test_selected_data_validation():
     labels = Labels(np.zeros((10, 10), dtype=np.uint8))
     with pytest.raises(
