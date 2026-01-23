@@ -198,7 +198,7 @@ def _update_drag_vectors_from_event(layer: Points, event: Event) -> None:
         # if in 3D, set the drag normal and up directions
         # get the indices of the displayed dimensions
         ndim_world = len(event.position)
-        layer_dims_displayed = layer._world_to_layer_dims(
+        layer_dims_displayed = layer._slicing_state._world_to_layer_dims(
             world_dims=event.dims_displayed, ndim_world=ndim_world
         )
 

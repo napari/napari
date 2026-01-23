@@ -6,6 +6,7 @@ import gc
 from collections.abc import Iterator
 from functools import partial
 from itertools import zip_longest
+from types import MethodType
 from typing import TYPE_CHECKING
 from weakref import WeakSet
 
@@ -58,6 +59,25 @@ from napari.utils.translations import trans
 
 class NapariSceneCanvas(SceneCanvas_):
     """Vispy SceneCanvas used to allow for ignoring mouse wheel events with modifiers."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        orig_enterEvent = self.native.enterEvent
+        orig_leaveEvent = self.native.leaveEvent
+
+        def enterEvent(self_, event):
+            qtviewer = self_.parent()
+            qtviewer._enter_canvas()
+            orig_enterEvent(event)
+
+        def leaveEvent(self_, event):
+            qtviewer = self_.parent()
+            qtviewer._leave_canvas()
+            orig_leaveEvent(event)
+
+        self.native.enterEvent = MethodType(enterEvent, self.native)
+        self.native.leaveEvent = MethodType(leaveEvent, self.native)
 
     def _process_mouse_event(self, event: MouseEvent):
         """Ignore mouse wheel events which have modifiers."""
@@ -150,6 +170,7 @@ class VispyCanvas:
     ) -> None:
         # Since the base class is frozen we must create this attribute
         # before calling super().__init__().
+        self._pause_scene_graph = False
         self.max_texture_sizes = None
         self._last_theme_color = None
         self._background_color_override = None
@@ -232,6 +253,12 @@ class VispyCanvas:
         self.viewer._zoom_box.events.zoom.connect(self._on_boxzoom)
         self.viewer.layers.events.reordered.connect(self._update_scenegraph)
         self.viewer.layers.events.removed.connect(self._remove_layer)
+        self.viewer.layers.events.begin_batch.connect(
+            self._pause_scene_graph_update
+        )
+        self.viewer.layers.events.end_batch.connect(
+            self._resume_scene_graph_update
+        )
         self.viewer.grid.events.stride.connect(self._update_scenegraph)
         self.viewer.grid.events.shape.connect(self._update_scenegraph)
         self.viewer.grid.events.enabled.connect(self._update_scenegraph)
@@ -452,18 +479,28 @@ class VispyCanvas:
         return tuple(position_world)
 
     def _get_viewbox_at(self, position):
-        """Get the viewbox and its grid coordinates from the mouse position."""
+        """Get the viewbox and its grid coordinates from the mouse position.
+
+        Returns (None, None) when the view is empty (no layers).
+        """
         if not self.viewer.grid.enabled:
             return self.view, (0, 0)
 
-        for (coords, _), viewbox in zip(
+        # loop through all viewboxes to check whether the click is inside
+        for (grid_coords, layer_indices), viewbox in zip(
             self.viewer.grid.iter_viewboxes(len(self.viewer.layers)),
             self.grid_views,
             strict=False,
         ):
+            if not layer_indices:
+                # this is an empty viewbox and we never want to return it,
+                # so we can just skip the check and if it is the actually clicked
+                # one it will return None, None
+                continue
+
             shifted_pos = position - viewbox.transform.translate[:2]
             if viewbox.inner_rect.contains(*shifted_pos):
-                return viewbox, coords
+                return viewbox, grid_coords
 
         return None, None
 
@@ -772,7 +809,11 @@ class VispyCanvas:
 
         self._update_layer_overlays(layer)
         del self._layer_overlay_to_visual[layer]
+        if self._pause_scene_graph:
+            return
+        self._clean_and_update_scenegraph()
 
+    def _clean_and_update_scenegraph(self):
         # Critical two-step fix for Windows OpenGL access violation bug
         # This prevents the race condition where scenegraph updates occur while
         # GPU resources from the removed layer are still being processed/deleted.
@@ -846,7 +887,7 @@ class VispyCanvas:
         """
         # delete outdated overlays
         for overlay in set(self._overlay_to_visual) - set(
-            self.viewer._overlays
+            self.viewer._overlays.values()
         ):
             if isinstance(overlay, CanvasOverlay):
                 self._disconnect_canvas_overlay_events(overlay)
@@ -862,17 +903,36 @@ class VispyCanvas:
                 self._connect_canvas_overlay_events(overlay)
                 overlay.events.gridded.connect(self._update_viewer_overlays)
 
-            if self.viewer.grid.enabled and getattr(overlay, 'gridded', True):
-                views = self.grid_views
-            else:
-                views = [self.view]
-
-            for view, vispy_overlay in zip_longest(views, vispy_overlays):
-                if view is None:
-                    # works backwards but ends up removing the correct amount
-                    # when the number of views decreased since last time
+            # this loop works for both gridded mode and nongridded, since grid.iter_viewboxes returns
+            # a single viewbox when the grid is disabled
+            for view_info, vispy_overlay in zip_longest(
+                self.viewer.grid.iter_viewboxes(len(self.viewer.layers)),
+                list(vispy_overlays),
+            ):
+                if view_info is None:
+                    # number of views decreased (grid resized); we should delete remaining orphan overlays
                     vispy_overlays.pop().close()
                     continue
+
+                (row, col), layer_indices = view_info
+
+                # Never hide the last remaining overlay (allows things like
+                # welcome screen, and to see any changes to overlays when the viewer is empty)
+                if len(vispy_overlays) > 1 and not layer_indices:
+                    if vispy_overlay is not None:
+                        # number of occupied views decreased (no grid resizing happened, just
+                        # some layers got deleted)
+                        # works "backwards" with pop() but it's ok cause we can't have empty views
+                        # followed by occupied ones.
+                        vispy_overlays.pop().close()
+                    # either way no new overlay should be created or there's not overlay to reparent
+                    continue
+
+                view = (
+                    self.grid[row, col]
+                    if self.viewer.grid.enabled
+                    else self.view
+                )
 
                 parent = (
                     view if isinstance(overlay, CanvasOverlay) else view.scene
@@ -985,7 +1045,11 @@ class VispyCanvas:
         # first the base view: non-gridded viewer overlays which appear
         # "on top of" the main canvas
         for overlay, vispy_overlays in self._overlay_to_visual.items():
-            if is_visible_tileable(overlay) and not is_gridded(overlay):
+            if (
+                vispy_overlays
+                and is_visible_tileable(overlay)
+                and not is_gridded(overlay)
+            ):
                 yield overlay, vispy_overlays[0], None
 
         # then gridded viewer overlays and layer overlays, by viewbox, in order
@@ -1001,7 +1065,11 @@ class VispyCanvas:
             view = viewbox_idx if self.viewer.grid.enabled else None
 
             for overlay, vispy_overlays in self._overlay_to_visual.items():
-                if is_visible_tileable(overlay) and is_gridded(overlay):
+                if (
+                    vispy_overlays
+                    and is_visible_tileable(overlay)
+                    and is_gridded(overlay)
+                ):
                     yield overlay, vispy_overlays[viewbox_idx], view
 
             # layer overlays are always "gridded"
@@ -1160,6 +1228,8 @@ class VispyCanvas:
             self.grid_cameras.append(camera)
 
     def _update_scenegraph(self, event=None):
+        if self._pause_scene_graph:
+            return
         with self._scene_canvas.events.draw.blocker():
             if self.viewer.grid.enabled:
                 self._init_or_update_grid()
@@ -1242,3 +1312,10 @@ class VispyCanvas:
             self.viewer.grid.spacing = safe_spacing
 
         self.grid.spacing = safe_spacing
+
+    def _pause_scene_graph_update(self):
+        self._pause_scene_graph = True
+
+    def _resume_scene_graph_update(self):
+        self._pause_scene_graph = False
+        self._clean_and_update_scenegraph()

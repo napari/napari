@@ -39,6 +39,7 @@ from napari.components.overlays import (
     Overlay,
     ScaleBarOverlay,
     TextOverlay,
+    WelcomeOverlay,
     ZoomOverlay,
 )
 from napari.components.tooltip import Tooltip
@@ -118,6 +119,7 @@ def _current_theme() -> str:
 
 
 DEFAULT_OVERLAYS = {
+    'welcome': WelcomeOverlay,
     'scale_bar': ScaleBarOverlay,
     'text': TextOverlay,
     'axes': AxesOverlay,
@@ -222,6 +224,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         super().__init__(
             title=title,
             dims={
+                'ndim': max(2, len(axis_labels), ndisplay, len(order)),
                 'axis_labels': axis_labels,
                 'ndisplay': ndisplay,
                 'order': order,
@@ -306,6 +309,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     @property
     def text_overlay(self):
         return self._overlays['text']
+
+    @property
+    def welcome_screen(self):
+        return self._overlays['welcome']
 
     @property
     def _zoom_box(self):
@@ -413,11 +420,11 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             Margin as fraction of the canvas, showing blank space around the
             data. Default is 0.05 (5% of the canvas).
         reset_camera_angle : bool
-            Whether to reset the camera angles to (0, 0, 90) before fitting
+            Whether to reset the camera angles to (0, 0, 0) before fitting
             to view. Default is True.
         """
         if self.dims.ndisplay == 3 and reset_camera_angle:
-            self.camera.angles = (0, 0, 90)
+            self.camera.angles = (0, 0, 0)
         self.fit_to_view(margin=margin)
 
     def fit_to_view(self, *, margin: float = 0.05) -> None:
@@ -718,7 +725,11 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         # TODO: this doesn't work well yet with grid mode (and is broken by wide borders too)
 
         # Compute the tooltip first since it is always needed.
-        if self.tooltip.visible and active is not None and active._loaded:
+        if (
+            self.tooltip.visible
+            and active is not None
+            and active._slicing_state._loaded
+        ):
             tooltip_text = active._get_tooltip_text(
                 np.asarray(self.cursor.position),
                 view_direction=self.cursor._view_direction,
@@ -728,7 +739,11 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         # If there is an active layer and a single selection, calculate status using "the classic way".
         # Then return the status and the tooltip.
-        if active is not None and active._loaded and len(selection) < 2:
+        if (
+            active is not None
+            and active._slicing_state._loaded
+            and len(selection) < 2
+        ):
             status = active.get_status(
                 self.cursor.position,
                 view_direction=self.cursor._view_direction,
@@ -743,7 +758,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             if (
                 not layer.visible
                 or layer.opacity == 0
-                or not layer._loaded
+                or not layer._slicing_state._loaded
                 or (layer not in selection and not self.grid.enabled)
             ):
                 continue
