@@ -32,7 +32,7 @@ class QtColorBox(QWidget):
         super().__init__()
 
         self._layer = layer
-        self._layer.events.selected_labels.connect(
+        self._layer.events.selected_data.connect(
             self._on_selected_label_change
         )
         self._layer.events.opacity.connect(self._on_opacity_change)
@@ -147,7 +147,7 @@ class QtLabelControl(QtWidgetControlsBase):
             with qt_signals_blocked(self.selection_spinbox):
                 self.selection_spinbox.setValue(self._layer.selected_label)
 
-        self._layer.events.selected_labels.connect(_sync_selected_label)
+        self._layer.events.selected_data.connect(_sync_selected_label)
         self._callbacks.append(_sync_selected_label)
 
         self.label_color_label = QtWrappedLabel(trans._('label:'))

@@ -725,40 +725,40 @@ def test_selecting_label_exception():
         labels.selected_label = -1
 
 
-def test_selected_labels_update_and_events():
-    """Changing selected_labels updates selection state and emits an event."""
+def test_selected_data_update_and_events():
+    """Changing selected_data updates selection state and emits an event."""
     labels = Labels(np.zeros((10, 10), dtype=np.uint8))
     callback = Mock()
-    labels.events.selected_labels.connect(callback)
+    labels.events.selected_data.connect(callback)
 
-    labels.selected_labels = [1, 2]
+    labels.selected_data = [1, 2]
 
     callback.assert_called_once()
-    assert set(labels.selected_labels) == {1, 2}
+    assert set(labels.selected_data) == {1, 2}
     assert labels.colormap.selection == labels.selected_label
     assert np.allclose(
         labels._selected_color, labels.get_color(labels.selected_label)
     )
 
 
-def test_selected_labels_validation():
+def test_selected_data_validation():
     labels = Labels(np.zeros((10, 10), dtype=np.uint8))
     with pytest.raises(
         ValueError, match=r'At least one label must be selected.'
     ):
-        labels.selected_labels = []
+        labels.selected_data = []
     with pytest.raises(WrongSelectedLabelError, match='The value 256'):
-        labels.selected_labels = [256, 2, 3]
+        labels.selected_data = [256, 2, 3]
     with pytest.raises(WrongSelectedLabelError, match='The value -1'):
-        labels.selected_labels = [-1, 0, 3]
+        labels.selected_data = [-1, 0, 3]
 
 
-def test_selected_labels_refresh_when_filtering():
+def test_selected_data_refresh_when_filtering():
     labels = Labels(np.zeros((5, 5), dtype=np.uint8))
     labels.show_selected_label = True
     labels.refresh = refresh_mock = Mock()
 
-    labels.selected_labels = [1, 2]
+    labels.selected_data = [1, 2]
 
     refresh_mock.assert_called_once_with(extent=False)
 

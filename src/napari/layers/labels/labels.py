@@ -394,12 +394,12 @@ class Labels(ScalarFieldBase):
             properties=Event,
             selected_label=WarningEmitter(
                 trans._(
-                    'layer.events.selected_label is deprecated and will be removed in the future release. Please use layer.events.selected_labels instead.',
+                    'layer.events.selected_label is deprecated and will be removed in the future release. Please use layer.events.selected_data instead.',
                     deferred=True,
                 ),
                 type_name='selected_label',
             ),
-            selected_labels=Event,
+            selected_data=Event,
             show_selected_label=Event,
         )
 
@@ -420,7 +420,7 @@ class Labels(ScalarFieldBase):
 
         self._iso_gradient_mode = IsoCategoricalGradientMode(iso_gradient_mode)
 
-        self._selected_labels: Selection[int] = Selection([1])
+        self._selected_data: Selection[int] = Selection([1])
         self.colormap.selection = self.selected_label
         self.colormap.use_selection = self._show_selected_label
         self._prev_selected_label = None
@@ -588,7 +588,7 @@ class Labels(ScalarFieldBase):
         self._selected_color = self.get_color(self.selected_label)
         self._color_mode = color_mode
         self.events.colormap()  # Will update the LabelVispyColormap shader
-        self.events.selected_labels()
+        self.events.selected_data()
         self.refresh(extent=False)
 
     @property
@@ -731,13 +731,13 @@ class Labels(ScalarFieldBase):
     @property
     def selected_label(self):
         """int: Index of selected label."""
-        return next(reversed(self._selected_labels))
+        return next(reversed(self._selected_data))
 
     @selected_label.setter
     def selected_label(self, selected_label: int):
         if (
-            selected_label in self._selected_labels
-            and len(self._selected_labels) == 1
+            selected_label in self._selected_data
+            and len(self._selected_data) == 1
         ):
             return
         # when setting the label to the background, store the previous
@@ -746,20 +746,20 @@ class Labels(ScalarFieldBase):
             self._prev_selected_label = self.selected_label
         else:
             self._prev_selected_label = None
-        self.selected_labels = [selected_label]
+        self.selected_data = [selected_label]
 
     @property
-    def selected_labels(self) -> Selection[int]:
-        return self._selected_labels
+    def selected_data(self) -> Selection[int]:
+        return self._selected_data
 
-    @selected_labels.setter
-    def selected_labels(self, selected_labels: Sequence[int]) -> None:
-        if len(selected_labels) == 0:
+    @selected_data.setter
+    def selected_data(self, selected_data: Sequence[int]) -> None:
+        if len(selected_data) == 0:
             raise ValueError('At least one label must be selected.')
         layer_dtype = get_dtype(self)
         dtype_lims = get_dtype_limits(layer_dtype)
-        min_val = min(selected_labels)
-        max_val = max(selected_labels)
+        min_val = min(selected_data)
+        max_val = max(selected_data)
 
         if dtype_lims[0] > min_val or dtype_lims[1] < max_val:
             raise WrongSelectedLabelError(
@@ -769,12 +769,12 @@ class Labels(ScalarFieldBase):
                 lower_bound=dtype_lims[0],
                 upper_bound=dtype_lims[1],
             )
-        self._selected_labels.replace_selection(selected_labels)
+        self._selected_data.replace_selection(selected_data)
         self.colormap.selection = self.selected_label
         self._selected_color = self.get_color(self.selected_label)
         if self.show_selected_label:
             self.refresh(extent=False)
-        self.events.selected_labels()
+        self.events.selected_data()
 
     def swap_selected_and_background_labels(self):
         """Swap between the selected label and the background label."""
