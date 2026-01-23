@@ -45,7 +45,7 @@ def slice_from_axis(array, *, axis, element):
         import dask.array as da
 
         array = da.from_zarr(array)
-        logger.warning(
+        logger.info(
             trans._(
                 'zarr array cannot be sliced lazily, converted to dask array.',
                 deferred=True,
@@ -384,7 +384,7 @@ def images_to_stack(images: list[Image], axis: int = 0, **kwargs) -> Image:
         import dask.array as da
 
         stacker = da.stack
-        logger.warning(
+        logger.info(
             trans._(
                 'zarr array cannot be sliced lazily, converted to dask array.',
                 deferred=True,
