@@ -426,14 +426,17 @@ class FeaturesTable(QWidget):
     @staticmethod
     def _get_selection_event_for_layer(layer):
         if hasattr(layer, 'selected_data'):
-            # Points layer has selected_data.events, but Shapes layer uses highlight event.
-            # Labels layer has selected_data event.
+            # Labels layer exposes ``selected_data`` as a layer event, while
+            # Points (and others) expose events on the Selection container
+            # itself.  Prefer the layer event when available so we add/remove
+            # callbacks on the same emitter that fires when the layer
+            # property changes.
+            if hasattr(layer.events, 'selected_data'):
+                return layer.events.selected_data
             if hasattr(layer.selected_data, 'events'):
                 return layer.selected_data.events
             if hasattr(layer.events, 'highlight'):
                 return layer.events.highlight
-            if hasattr(layer.events, 'selected_data'):
-                return layer.events.selected_data
         raise RuntimeError(  # pragma: no cover
             "Layer with features must have either 'selected_label' or 'selected_data'."
         )
