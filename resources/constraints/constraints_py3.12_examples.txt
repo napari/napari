@@ -384,7 +384,7 @@ psutil==7.1.3
     #   napari (pyproject.toml)
     #   distributed
     #   ipykernel
-psygnal==0.15.0
+psygnal==0.15.1
     # via
     #   napari (pyproject.toml)
     #   app-model

@@ -38,7 +38,7 @@ pathspec==0.12.1
     # via mypy
 platformdirs==4.5.1
     # via npe2
-psygnal==0.15.0
+psygnal==0.15.1
     # via
     #   magicgui
     #   npe2
