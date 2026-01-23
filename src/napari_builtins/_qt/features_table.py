@@ -70,12 +70,14 @@ class PandasModel(QAbstractTableModel):
         self,
         df: pd.DataFrame | None = None,
         immutable_columns: list[str] | None = None,
+        source_column_name: str | None = None,
         parent=None,
     ):
         super().__init__(parent)
         self.df = df if df is not None else pd.DataFrame()
         self.editable = False
         self._immutable_columns = set(immutable_columns or [])
+        self._source_column_name = source_column_name
         self._original_categories: dict[
             str, dict[str, list]
         ] = {}  # {layer_name: {col_name: [categories]}}
@@ -94,14 +96,7 @@ class PandasModel(QAbstractTableModel):
 
         row = index.row()
         col = index.column()
-        # Special handling for pandas DataFrame index column
-        if col == 0 and isinstance(self.df, pd.DataFrame):
-            value = self.df.index[row]
-            dtype = np.dtype(type(value))
-        else:
-            value = self.df.iat[row, col - 1]
-            # Get dtype from cell value, needed for columns with mixed types (e.g. bool and NaN)
-            dtype = np.dtype(type(value))
+        value, dtype = self._get_cell_value_and_dtype(row, col)
 
         # show booleans as respective checkboxes
         if (
@@ -139,7 +134,14 @@ class PandasModel(QAbstractTableModel):
 
         if isinstance(self.df, pd.DataFrame):
             if orientation == Qt.Orientation.Horizontal:
-                # Special case for index column (first column)
+                if self._has_source_column():
+                    # With source column: col 0 = Source, col 1 = Index, col 2+ = features
+                    if section == 0:
+                        return self._source_column_name
+                    if section == 1:
+                        return self.df.index.name or 'Index'
+                    return self.df.columns[section - 1]  # Offset by 1
+                # Without source column: col 0 = Index, col 1+ = features
                 if section == 0:
                     return self.df.index.name or 'Index'
                 return self.df.columns[section - 1]
@@ -154,12 +156,7 @@ class PandasModel(QAbstractTableModel):
 
         row = index.row()
         col = index.column()
-        if col == 0 and isinstance(self.df, pd.DataFrame):
-            value = self.df.index[row]
-            dtype = np.dtype(type(value))
-        else:
-            value = self.df.iat[row, col - 1]
-            dtype = np.dtype(type(value))
+        value, dtype = self._get_cell_value_and_dtype(row, col)
 
         # Check if this column is immutable
         flags = Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled
@@ -191,14 +188,19 @@ class PandasModel(QAbstractTableModel):
             return False
 
         row = index.row()
-        dtype = np.dtype(type(self.df.iat[row, col - 1]))
+        # Get DataFrame column index
+        df_col = self._get_df_col_idx(col)
+        if df_col is None:
+            # Index or Layer column - should be caught by immutability check
+            return False
+        dtype = np.dtype(type(self.df.iat[row, df_col]))
 
         # checkboxes
         if (
             role == Qt.ItemDataRole.CheckStateRole
             and pd.api.types.is_bool_dtype(dtype)
         ):
-            self.df.iat[row, col - 1] = (
+            self.df.iat[row, df_col] = (
                 Qt.CheckState(value) == Qt.CheckState.Checked
             )
             self.dataChanged.emit(
@@ -220,7 +222,7 @@ class PandasModel(QAbstractTableModel):
             try:
                 if not isinstance(dtype, pd.CategoricalDtype):
                     value = dtype.type(value)
-                self.df.iat[row, col - 1] = value
+                self.df.iat[row, df_col] = value
             except (TypeError, ValueError):
                 # Type error is for categorical types that cannot be converted
                 # Value error is for invalid values in dtype.type(value)
@@ -327,12 +329,98 @@ class PandasModel(QAbstractTableModel):
             else:
                 self._immutable_columns.add('Index')
 
+    def _has_source_column(self) -> bool:
+        """Check if the DataFrame has a source identifier column.
+
+        Returns
+        -------
+        bool
+            True if source column exists in the DataFrame.
+        """
+        return (
+            self._source_column_name is not None
+            and self._source_column_name in self.df.columns
+        )
+
+    def _get_df_col_idx(self, view_col: int) -> int | None:
+        """Convert view column index to DataFrame column index.
+
+        When a source column exists, the view layout is:
+        - view col 0 → source column (e.g., 'Layer') at df.columns[0]
+        - view col 1 → DataFrame index
+        - view col 2+ → DataFrame columns starting at df.columns[1]
+
+        Without a source column, the view layout is:
+        - view col 0 → DataFrame index
+        - view col 1+ → DataFrame columns starting at df.columns[0]
+
+        Parameters
+        ----------
+        view_col : int
+            The column index from the view
+
+        Returns
+        -------
+        int | None
+            DataFrame column index, or None if this is the index column or source column
+        """
+        if self._has_source_column():
+            # Multi-source mode: Source, Index, then features
+            if view_col == 0:
+                return (
+                    None  # Source column (special handling needed by caller)
+                )
+            if view_col == 1:
+                return None  # Index column
+            return view_col - 1  # view col 2 → df col 1, etc.
+        # Single-source mode: Index, then features
+        if view_col == 0:
+            return None  # Index column
+        return view_col - 1  # view col 1 → df col 0, etc.
+
+    def _get_cell_value_and_dtype(
+        self, row: int, col: int
+    ) -> tuple[Any, np.dtype]:
+        """Get value and dtype for a cell at the given row and column.
+
+        Parameters
+        ----------
+        row : int
+            Row index in the model
+        col : int
+            Column index in the model (view column)
+
+        Returns
+        -------
+        tuple[Any, np.dtype]
+            The cell value and its dtype
+        """
+        if self._has_source_column():
+            # With source column: col 0 = Source, col 1 = Index, col 2+ = features
+            if col == 0:
+                value = self.df.iat[row, 0]  # Source column is first in df
+            elif col == 1:
+                value = self.df.index[row]
+            else:
+                value = self.df.iat[
+                    row, col - 1
+                ]  # Offset by 1 (source column)
+        else:
+            # Without source column: col 0 = Index, col 1+ = features
+            if col == 0:
+                value = self.df.index[row]
+            else:
+                value = self.df.iat[row, col - 1]
+
+        return value, np.dtype(type(value))
+
     def is_column_immutable(self, col_idx: int) -> bool:
         """Check if a column is immutable based on its index.
 
-        For pandas DataFrames, column 0 (index) is automatically immutable.
-        For all dataframe types, columns with names in self._immutable_columns
-        are treated as immutable.
+        For pandas DataFrames:
+        - With source column: columns 0 (source) and 1 (Index) are immutable
+        - Without source column: column 0 (Index) is immutable
+        Columns with names in self._immutable_columns are also immutable.
 
         Parameters
         ----------
@@ -344,12 +432,20 @@ class PandasModel(QAbstractTableModel):
         bool
             True if the column is immutable, False otherwise
         """
-        # For pandas DataFrames, column 0 represents the index which is immutable
-        # For other dataframe libraries, rely solely on immutable_columns
-        if col_idx == 0 and isinstance(self.df, pd.DataFrame):
-            return True
+        if not isinstance(self.df, pd.DataFrame):
+            return False
 
-        # Check if this column name is in the immutable set
+        # Check if this is an immutable structural column (source or index)
+        if self._has_source_column():
+            # With source: Source (col 0) and Index (col 1) are immutable
+            if col_idx in (0, 1):
+                return True
+        else:
+            # Without source: Index (col 0) is immutable
+            if col_idx == 0:
+                return True
+
+        # Check if the feature column name is in immutable set
         if col_idx - 1 < len(self.df.columns):
             col_name = self.df.columns[col_idx - 1]
             return col_name in self._immutable_columns
@@ -399,13 +495,19 @@ class DelegateCategorical(QStyledItemDelegate):
         if pd.api.types.is_bool_dtype(dtype) or isinstance(value, bool):
             return None
 
-        # Check if this column was originally categorical in the source layer
-        col_name = source_model.df.columns[col - 1]
+        # Map view column to DataFrame column name
+        df_col_idx = source_model._get_df_col_idx(col)
+        if df_col_idx is None:
+            # Index or Layer column - no editor needed
+            return None
+        col_name = source_model.df.columns[df_col_idx]
 
         # Determine layer name for this row
-        if 'Layer' in source_model.df.columns:
-            # Multi-layer case: get layer from the 'Layer' column
-            layer_name = source_model.df.iloc[source_index.row()]['Layer']
+        if source_model._has_source_column():
+            # Multi-source case: get source from the source column
+            layer_name = source_model.df.iloc[source_index.row()][
+                source_model._source_column_name
+            ]
         else:
             # Single-layer case: get the layer name from provenance (should be exactly one)
             layer_names = list(source_model._original_categories.keys())
@@ -431,7 +533,7 @@ class DelegateCategorical(QStyledItemDelegate):
         # Fallback: check current dtype for backward compatibility
         if isinstance(dtype, pd.CategoricalDtype):
             editor = QComboBox(parent)
-            categories = source_model.df.iloc[:, col - 1].cat.categories
+            categories = source_model.df.iloc[:, df_col_idx].cat.categories
             editor.addItems([str(c) for c in categories])
             # allow arrow keys selection
             editor.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
@@ -501,7 +603,7 @@ class PandasView(QTableView):
 
         # view/model setup with a proxy for sorting and filtering
         proxy_model = BoolFriendlyProxyModel()
-        proxy_model.setSourceModel(PandasModel())
+        proxy_model.setSourceModel(PandasModel(source_column_name='Layer'))
         proxy_model.setSortCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
         self.setModel(proxy_model)
         self.setSortingEnabled(True)
@@ -559,7 +661,8 @@ class PandasView(QTableView):
 
         # convert proxy indices to actual row/column labels
         actual_rows = [map_func(proxy_model.index(r, 1)).row() for r in rows]
-        actual_cols = [c - 1 for c in cols]  # adjust for index, if pandas
+        # View columns always map to df columns with offset of 1 (for index column)
+        actual_cols = [c - 1 for c in cols]
 
         sub_df = model.df.iloc[actual_rows, actual_cols]
 
@@ -597,9 +700,8 @@ class PandasView(QTableView):
         for i in range(n_rows):
             for j in range(n_cols):
                 r = start_row + i
-                c = (
-                    start_col + j - 1
-                )  # dataframe column index (offset for index) if pandas
+                # View columns always map to df columns with offset of 1 (for index column)
+                c = start_col + j - 1
                 if r >= df.shape[0] or c >= df.shape[1]:
                     continue
                 val = data[i][j]
@@ -799,10 +901,10 @@ class FeaturesTable(QWidget):
                 else:
                     # TODO: Handle non-pandas dataframe libraries here
                     pass
-        # Combine all dataframes and presence masks
-        df = pd.concat(df_list, ignore_index=True, join=join)
+        # Combine all dataframes and presence masks, preserving original indices per layer
+        df = pd.concat(df_list, ignore_index=False, join=join)
         presence_mask = pd.concat(
-            presence_mask_list, ignore_index=True, join=join
+            presence_mask_list, ignore_index=False, join=join
         )
         nan_cells_introduced_by_join = df.isna() & presence_mask.isna()
         # Convert columns with join-introduced NaNs to object dtype to ensure
@@ -872,7 +974,7 @@ class FeaturesTable(QWidget):
         # Handle single layer case (no 'Layer' column)
         if len(self._selected_layers) == 1:
             layer = self._selected_layers[0]
-            # Convert global row indices to layer-specific indices (all rows belong to this layer)
+            # All rows belong to this layer; global row indices are layer-specific indices
             layer_specific_indices = np.array(selected_global_rows)
 
             with self._block_selection():
@@ -882,27 +984,23 @@ class FeaturesTable(QWidget):
                     layer.selected_data = set(layer_specific_indices)
             return
 
-        # Handle multiple layers case (has 'Layer' column)
-        # Calculate layer start indices for all layers once (most efficient)
-        layer_starts = df.groupby('Layer', sort=False, observed=False).apply(
-            lambda x: x.index[0], include_groups=False
-        )
-
-        # Get layer names for selected rows and convert to layer-specific indices
-        selected_layer_names = df['Layer'].iloc[selected_global_rows]
-        layer_start_indices = selected_layer_names.map(layer_starts).astype(
-            int
-        )
-        layer_specific_indices = (
-            np.array(selected_global_rows) - layer_start_indices.values
-        )
-
-        # Group by layer name efficiently
+        # Handle multiple layers case (has source column)
+        # Indices may not be continuous, so use positional indexing
         selections_by_layer = {}
-        for layer_name, layer_idx in zip(
-            selected_layer_names, layer_specific_indices, strict=False
-        ):
-            selections_by_layer.setdefault(layer_name, []).append(layer_idx)
+        source_col_name = df.columns[
+            0
+        ]  # Source column is always first when present
+
+        for row_pos in selected_global_rows:
+            # Get source identifier for this row
+            layer_name = df.iloc[row_pos][source_col_name]
+            # Convert global row to layer-specific row
+            layer_row_idx = self._global_row_to_layer_row(
+                df, row_pos, layer_name
+            )
+            selections_by_layer.setdefault(layer_name, []).append(
+                layer_row_idx
+            )
 
         # Update layer selections
         for layer in self._selected_layers:
@@ -931,33 +1029,37 @@ class FeaturesTable(QWidget):
         # Handle single layer case (no 'Layer' column)
         if len(self._selected_layers) == 1:
             layer = self._selected_layers[0]
-            # All rows in the dataframe belong to this single layer
-            layer_data_row_index = df.index
+            # All rows belong to this single layer
+            # layer.selected_data/selected_label refer to positions in the layer
 
             if hasattr(layer, 'selected_label'):
                 sel = layer.selected_label
-                indices += [[layer_data_row_index[sel]]]
+                # Position in layer maps directly to df position
+                indices += [[sel]]
             elif hasattr(layer, 'selected_data'):
                 sel = layer.selected_data
-                indices += [layer_data_row_index[list(sel)]]
+                # Positions in layer map directly to df positions
+                indices += [list(sel)]
         else:
-            # Handle multiple layers case (has 'Layer' column)
+            # Handle multiple sources case
             for layer in self._selected_layers:
-                matching_rows = df[df['Layer'] == layer.name]
-
-                # Get indices of rows matching this layer in the combined dataframe
-                if isinstance(df, pd.DataFrame):
-                    layer_data_row_index = matching_rows.index
-                else:
-                    # TODO: Handle non-pandas dataframes here (no index attribute)
-                    continue
-
                 if hasattr(layer, 'selected_label'):
                     sel = layer.selected_label
-                    indices += [[layer_data_row_index[sel]]]
+                    # Position within the layer's features
+                    global_row = self._layer_row_to_global_row(
+                        df, sel, layer.name
+                    )
+                    if global_row is not None:
+                        indices += [[global_row]]
                 elif hasattr(layer, 'selected_data'):
                     sel = layer.selected_data
-                    indices += [layer_data_row_index[list(sel)]]
+                    # Positions within the layer's features
+                    for layer_pos in sel:
+                        global_row = self._layer_row_to_global_row(
+                            df, layer_pos, layer.name
+                        )
+                        if global_row is not None:
+                            indices += [[global_row]]
                 else:
                     continue
 
@@ -997,39 +1099,118 @@ class FeaturesTable(QWidget):
             if len(self._selected_layers) == 1:
                 # Single layer case: all rows belong to this layer
                 layer = self._selected_layers[0]
+                # Row position directly maps to layer position
                 layer_row_idx = row
             else:
-                # Multiple layers case: find layer from 'Layer' column
-                layer_name = df.iloc[row]['Layer']
+                # Multiple sources case: find source from the source column
+                source_col_name = df.columns[
+                    0
+                ]  # Source column is always first when present
+                layer_name = df.iloc[row][source_col_name]
                 layer = next(
                     ly for ly in self._selected_layers if ly.name == layer_name
                 )
-                # Get indices of rows matching this layer name
-                matching_rows = df[df['Layer'] == layer_name]
-                # For pandas DataFrame, we can use .index
-                if isinstance(df, pd.DataFrame):
-                    layer_rows = matching_rows.index
-                    layer_row_idx = list(layer_rows).index(row)
-                else:
-                    # TODO: Handle non-pandas dataframes here (no index attribute)
-                    continue
+                # Convert global row to layer-specific row
+                layer_row_idx = self._global_row_to_layer_row(
+                    df, row, layer_name
+                )
 
             # Update the layer features DataFrame (except if immutable columns)
             for col in range(topLeft.column(), bottomRight.column() + 1):
                 if model.is_column_immutable(col):
                     continue
-                col_name = df.columns[col - 1]
+                # Map view column to DataFrame column
+                df_col_idx = model._get_df_col_idx(col)
+                if df_col_idx is None:
+                    continue
+                col_name = df.columns[df_col_idx]
                 if col_name not in layer.features.columns:
                     continue  # do not update features if column not present
                 layer.features.iloc[
                     layer_row_idx, layer.features.columns.get_loc(col_name)
-                ] = df.iloc[row, col - 1]
+                ] = df.iloc[row, df_col_idx]
 
     @contextmanager
     def _block_selection(self):
         self._selection_blocked = True
         yield
         self._selection_blocked = False
+
+    def _global_row_to_layer_row(
+        self, df: pd.DataFrame, global_row: int, layer_name: str
+    ) -> int:
+        """Convert global DataFrame row position to layer-specific row position.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            The combined features DataFrame
+        global_row : int
+            Row position in the combined DataFrame
+        layer_name : str
+            Name of the layer
+
+        Returns
+        -------
+        int
+            Row position within the layer's features
+        """
+        source_col_name = df.columns[0]
+        matching_rows = df[df[source_col_name] == layer_name]
+        layer_row_positions = matching_rows.index.tolist()
+        df_row_index_value = df.index[global_row]
+
+        # Find all occurrences of this index value in the layer
+        layer_local_positions = [
+            i
+            for i, idx_val in enumerate(layer_row_positions)
+            if idx_val == df_row_index_value
+        ]
+
+        # Handle duplicate indices by checking actual DataFrame position
+        if len(layer_local_positions) == 1:
+            return layer_local_positions[0]
+        # Multiple rows with same index value in this layer
+        layer_start_pos = df.index.tolist().index(layer_row_positions[0])
+        return global_row - layer_start_pos
+
+    def _layer_row_to_global_row(
+        self, df: pd.DataFrame, layer_row: int, layer_name: str
+    ) -> int | None:
+        """Convert layer-specific row position to global DataFrame row position.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            The combined features DataFrame
+        layer_row : int
+            Row position within the layer's features
+        layer_name : str
+            Name of the layer
+
+        Returns
+        -------
+        int | None
+            Row position in the combined DataFrame, or None if not found
+        """
+        source_col_name = df.columns[0]
+        matching_rows = df[df[source_col_name] == layer_name]
+
+        if layer_row >= len(matching_rows):
+            return None
+
+        # Get the index value at this layer position
+        global_pos = matching_rows.iloc[[layer_row]].index.tolist()[0]
+
+        # Find this index value's position in the full DataFrame
+        df_positions = df.index.tolist()
+        layer_positions = [
+            i
+            for i, idx in enumerate(df_positions)
+            if idx == global_pos and df.iloc[i][source_col_name] == layer_name
+        ]
+
+        return layer_positions[0] if layer_positions else None
 
     def _on_save_clicked(self):
         dlg = QFileDialog()
