@@ -2,10 +2,17 @@
 #    uv pip compile --python-version 3.12 --output-file resources/constraints/constraints_py3.12_docs.txt pyproject.toml resources/constraints/version_denylist.txt resources/constraints/version_denylist_examples.txt --group docs --extra pyqt6 --extra pyside6 --extra testing --group testing_extra --extra all_optional
 accessible-pygments==0.0.5
     # via pydata-sphinx-theme
+aiobotocore==3.1.1
+    # via s3fs
 aiohappyeyeballs==2.6.1
     # via aiohttp
 aiohttp==3.13.2
-    # via napari (pyproject.toml)
+    # via
+    #   napari (pyproject.toml)
+    #   aiobotocore
+    #   ome-zarr
+aioitertools==0.13.0
+    # via aiobotocore
 aiosignal==1.4.0
     # via aiohttp
 alabaster==0.7.16
@@ -19,7 +26,9 @@ anyio==4.12.0
 app-model==0.5.1
     # via napari (pyproject.toml)
 appdirs==1.4.4
-    # via napari (pyproject.toml)
+    # via
+    #   napari (pyproject.toml)
+    #   ndev-settings
 asttokens==3.0.1
     # via stack-data
 attrs==25.4.0
@@ -41,6 +50,26 @@ bermuda==0.1.6
     # via
     #   napari (pyproject.toml)
     #   napari (pyproject.toml:docs)
+bioio==3.2.0
+    # via ndevio
+bioio-base==3.2.0
+    # via
+    #   bioio
+    #   bioio-imageio
+    #   bioio-ome-tiff
+    #   bioio-ome-zarr
+    #   bioio-tifffile
+    #   ndevio
+bioio-imageio==1.3.0
+    # via ndevio
+bioio-ome-tiff==1.4.0
+    # via ndevio
+bioio-ome-zarr==1.2.0
+    # via ndevio
+bioio-tifffile==1.3.0
+    # via ndevio
+botocore==1.42.30
+    # via aiobotocore
 build==1.3.0
     # via npe2
 cachey==0.2.1
@@ -79,7 +108,13 @@ dask==2025.12.0
     # via
     #   napari (pyproject.toml)
     #   napari (pyproject.toml:docs)
+    #   bioio
+    #   bioio-base
+    #   bioio-imageio
+    #   bioio-ome-tiff
+    #   bioio-tifffile
     #   distributed
+    #   ome-zarr
 debugpy==1.8.19
     # via ipykernel
 decorator==5.2.1
@@ -91,6 +126,7 @@ distributed==2025.12.0
 docstring-parser==0.17.0
     # via
     #   napari (pyproject.toml)
+    #   magic-class
     #   magicgui
 docutils==0.21.2
     # via
@@ -103,6 +139,8 @@ docutils-stubs==0.0.22
     # via napari-sphinx-theme
 donfig==0.8.1.post1
     # via zarr
+elementpath==5.1.1
+    # via xmlschema
 executing==2.2.1
     # via stack-data
 fastjsonschema==2.21.2
@@ -127,7 +165,16 @@ frozenlist==1.8.0
 fsspec==2025.12.0
     # via
     #   napari (pyproject.toml)
+    #   bioio-base
+    #   bioio-imageio
+    #   bioio-ome-tiff
+    #   bioio-ome-zarr
+    #   bioio-tifffile
     #   dask
+    #   kerchunk
+    #   ome-zarr
+    #   s3fs
+    #   tifffile
     #   torch
 gdown==5.2.0
     # via napari (pyproject.toml:docs)
@@ -154,13 +201,20 @@ idna==3.11
     #   anyio
     #   requests
     #   yarl
+imagecodecs==2026.1.14
+    # via
+    #   bioio-ome-tiff
+    #   bioio-tifffile
 imageio==2.37.2
     # via
     #   napari (pyproject.toml)
+    #   bioio-imageio
     #   napari-svg
     #   scikit-image
 imageio-ffmpeg==0.6.0
-    # via napari (pyproject.toml:docs)
+    # via
+    #   napari (pyproject.toml:docs)
+    #   imageio
 imagesize==1.4.1
     # via sphinx
 importlib-metadata==8.7.0
@@ -195,6 +249,10 @@ jinja2==3.1.6
     #   myst-parser
     #   sphinx
     #   torch
+jmespath==1.1.0
+    # via
+    #   aiobotocore
+    #   botocore
 joblib==1.5.3
     # via
     #   nilearn
@@ -219,6 +277,8 @@ jupyter-core==5.9.1
     #   nbclient
     #   nbformat
     #   qtconsole
+kerchunk==0.2.9
+    # via tifffile
 kiwisolver==1.4.9
     # via
     #   matplotlib
@@ -241,10 +301,19 @@ lxml==6.0.2
     #   napari (pyproject.toml:docs)
     #   lxml-html-clean
     #   nilearn
+    #   ome-types
 lxml-html-clean==0.4.3
     # via lxml
+macro-kit==0.4.10
+    # via magic-class
+magic-class==0.7.20
+    # via ndev-settings
 magicgui==0.10.1
-    # via napari (pyproject.toml)
+    # via
+    #   napari (pyproject.toml)
+    #   magic-class
+    #   napari-skimage
+    #   ndev-settings
 markdown-it-py==3.0.0
     # via
     #   mdit-py-plugins
@@ -267,7 +336,9 @@ mdit-py-plugins==0.5.0
 mdurl==0.1.2
     # via markdown-it-py
 meshio==5.3.5
-    # via napari (pyproject.toml:docs)
+    # via
+    #   napari (pyproject.toml:docs)
+    #   napari-meshio
 ml-dtypes==0.5.4
     # via tensorstore
 mouseinfo==0.1.3
@@ -278,6 +349,7 @@ msgpack==1.1.2
     # via distributed
 multidict==6.7.0
     # via
+    #   aiobotocore
     #   aiohttp
     #   yarl
 myst-nb==1.3.0
@@ -286,10 +358,16 @@ myst-parser==4.0.1
     # via myst-nb
 napari-console==0.1.4
     # via napari (pyproject.toml)
+napari-meshio==0.0.2
+    # via napari (pyproject.toml:docs)
 napari-plugin-engine==0.2.0
     # via napari (pyproject.toml)
 napari-plugin-manager==0.1.9
-    # via napari (pyproject.toml)
+    # via
+    #   napari (pyproject.toml)
+    #   ndevio
+napari-skimage==0.6.0
+    # via napari (pyproject.toml:docs)
 napari-sphinx-theme==1.0.1
     # via napari (pyproject.toml:docs)
 napari-svg==0.2.1
@@ -305,6 +383,10 @@ nbformat==5.10.4
     #   jupyter-cache
     #   myst-nb
     #   nbclient
+ndev-settings==0.4.0
+    # via ndevio
+ndevio==0.3.3
+    # via napari (pyproject.toml:docs)
 nest-asyncio==1.6.0
     # via ipykernel
 networkx==3.6.1
@@ -325,25 +407,37 @@ numba==0.63.1
     #   napari (pyproject.toml:docs)
     #   glasbey
 numcodecs==0.16.5
-    # via zarr
+    # via
+    #   kerchunk
+    #   zarr
 numpy==2.3.5
     # via
     #   napari (pyproject.toml)
     #   bermuda
+    #   bioio
+    #   bioio-base
+    #   bioio-imageio
+    #   bioio-ome-tiff
+    #   bioio-tifffile
     #   colorspacious
     #   contourpy
     #   dask
     #   glasbey
     #   h5py
+    #   imagecodecs
     #   imageio
+    #   kerchunk
     #   matplotlib
     #   meshio
     #   ml-dtypes
+    #   napari-meshio
+    #   napari-skimage
     #   napari-svg
     #   nibabel
     #   nilearn
     #   numba
     #   numcodecs
+    #   ome-zarr
     #   pandas
     #   partsegcore-compiled-backend
     #   scikit-image
@@ -396,6 +490,13 @@ nvidia-nvshmem-cu12==3.3.20
     # via torch
 nvidia-nvtx-cu12==12.8.90
     # via torch
+ome-types==0.6.3
+    # via
+    #   bioio
+    #   bioio-base
+    #   bioio-ome-tiff
+ome-zarr==0.12.2
+    # via bioio-ome-zarr
 packaging==25.0
     # via
     #   build
@@ -435,12 +536,16 @@ pexpect==4.9.0
 pillow==12.0.0
     # via
     #   napari (pyproject.toml)
+    #   bioio-imageio
     #   imageio
     #   matplotlib
     #   scikit-image
     #   sphinx-gallery
 pint==0.25.2
-    # via napari (pyproject.toml)
+    # via
+    #   napari (pyproject.toml)
+    #   bioio-base
+    #   ome-types
 pip==25.3
     # via napari-plugin-manager
 platformdirs==4.5.1
@@ -458,6 +563,7 @@ pooch==1.8.2
     # via
     #   napari (pyproject.toml)
     #   napari (pyproject.toml:docs)
+    #   napari-meshio
     #   scikit-image
 pretend==1.0.9
     # via napari (pyproject.toml)
@@ -471,11 +577,13 @@ psutil==7.1.3
     # via
     #   napari (pyproject.toml)
     #   distributed
+    #   imageio
     #   ipykernel
 psygnal==0.15.0
     # via
     #   napari (pyproject.toml)
     #   app-model
+    #   magic-class
     #   magicgui
     #   npe2
 ptyprocess==0.7.0
@@ -491,9 +599,17 @@ pydantic==2.12.5
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
     #   app-model
+    #   bioio-ome-tiff
     #   npe2
+    #   ome-types
+    #   pydantic-compat
+    #   pydantic-extra-types
+pydantic-compat==0.1.2
+    # via app-model
 pydantic-core==2.41.5
     # via pydantic
+pydantic-extra-types==2.11.0
+    # via ome-types
 pydata-sphinx-theme==0.16.1
     # via napari-sphinx-theme
 pydeps==3.0.1
@@ -566,6 +682,8 @@ pytest-rerunfailures==16.1
     # via napari (pyproject.toml)
 python-dateutil==2.9.0.post0
     # via
+    #   aiobotocore
+    #   botocore
     #   jupyter-client
     #   matplotlib
     #   pandas
@@ -580,12 +698,14 @@ pytz==2025.2
 pyyaml==6.0.3
     # via
     #   napari (pyproject.toml)
+    #   bioio-ome-tiff
     #   dask
     #   distributed
     #   donfig
     #   jupyter-cache
     #   myst-nb
     #   myst-parser
+    #   ndev-settings
     #   npe2
     #   sphinx-external-toc
     #   sphinxcontrib-mermaid
@@ -600,9 +720,11 @@ qtconsole==5.7.0
 qtpy==2.4.3
     # via
     #   napari (pyproject.toml)
+    #   magic-class
     #   magicgui
     #   napari-console
     #   napari-plugin-manager
+    #   napari-skimage
     #   qtconsole
     #   superqt
 referencing==0.37.0
@@ -613,6 +735,7 @@ requests==2.32.5
     # via
     #   gdown
     #   nilearn
+    #   ome-zarr
     #   pooch
     #   pyconify
     #   sphinx
@@ -620,6 +743,7 @@ rich==14.2.0
     # via
     #   napari (pyproject.toml)
     #   meshio
+    #   napari-meshio
     #   npe2
     #   pytest-pretty
     #   typer
@@ -627,8 +751,13 @@ rpds-py==0.30.0
     # via
     #   jsonschema
     #   referencing
+s3fs==0.6.0
+    # via fsspec
 scikit-image==0.25.2
-    # via napari (pyproject.toml)
+    # via
+    #   napari (pyproject.toml)
+    #   napari-skimage
+    #   ome-zarr
 scikit-learn==1.8.0
     # via
     #   glasbey
@@ -641,6 +770,8 @@ scipy==1.16.3
     #   scikit-learn
 seedir==0.5.1
     # via napari (pyproject.toml:docs)
+semver==3.0.4
+    # via bioio
 setuptools==80.9.0
     # via torch
 shellingham==1.5.4
@@ -723,6 +854,7 @@ stdlib-list==0.12.0
 superqt==0.7.6
     # via
     #   napari (pyproject.toml)
+    #   magic-class
     #   magicgui
     #   napari-plugin-manager
 sympy==1.14.0
@@ -740,6 +872,8 @@ threadpoolctl==3.6.0
 tifffile==2025.12.12
     # via
     #   napari (pyproject.toml)
+    #   bioio-ome-tiff
+    #   bioio-tifffile
     #   scikit-image
 tomli-w==1.2.0
     # via npe2
@@ -748,6 +882,7 @@ toolz==1.1.0
     #   napari (pyproject.toml)
     #   dask
     #   distributed
+    #   ome-zarr
     #   partd
 torch==2.9.1
     # via napari (pyproject.toml:testing-extra)
@@ -793,6 +928,8 @@ typing-extensions==4.15.0
     #   beautifulsoup4
     #   flexcache
     #   flexparser
+    #   macro-kit
+    #   magic-class
     #   magicgui
     #   myst-nb
     #   nibabel
@@ -800,6 +937,7 @@ typing-extensions==4.15.0
     #   pint
     #   pydantic
     #   pydantic-core
+    #   pydantic-extra-types
     #   pydata-sphinx-theme
     #   pytest-qt
     #   referencing
@@ -809,6 +947,7 @@ typing-extensions==4.15.0
     #   torch
     #   typer
     #   typing-inspection
+    #   xsdata
     #   zarr
 typing-inspection==0.4.2
     # via pydantic
@@ -816,8 +955,11 @@ tzdata==2025.3
     # via pandas
 uc-micro-py==1.0.3
     # via linkify-it-py
+ujson==5.11.0
+    # via kerchunk
 urllib3==2.6.3
     # via
+    #   botocore
     #   distributed
     #   requests
 uvicorn==0.38.0
@@ -838,10 +980,21 @@ wrapt==2.0.1
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
+    #   aiobotocore
 xarray==2025.12.0
     # via
     #   napari (pyproject.toml)
     #   napari (pyproject.toml:docs)
+    #   bioio-base
+    #   bioio-imageio
+    #   bioio-ome-tiff
+    #   bioio-ome-zarr
+    #   bioio-tifffile
+    #   ndevio
+xmlschema==4.3.1
+    # via bioio-ome-tiff
+xsdata==26.1
+    # via ome-types
 yarl==1.22.0
     # via aiohttp
 zarr==3.1.5
@@ -849,6 +1002,10 @@ zarr==3.1.5
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
     #   napari (pyproject.toml:docs)
+    #   bioio-ome-zarr
+    #   kerchunk
+    #   ome-zarr
+    #   tifffile
 zict==3.0.0
     # via distributed
 zipp==3.23.0
