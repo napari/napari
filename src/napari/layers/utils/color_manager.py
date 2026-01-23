@@ -502,7 +502,9 @@ class ColorManager(EventedModel):
             color_properties = None
 
         if categorical_colormap is None:
-            categorical_colormap = deepcopy(default_color_cycle)
+            categorical_colormap = {
+                'fallback_color': deepcopy(default_color_cycle)
+            }
 
         color_kwargs = {
             'categorical_colormap': categorical_colormap,
