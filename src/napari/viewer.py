@@ -271,7 +271,6 @@ class Viewer(ViewerModel):
         disconnect_events(self.dims.events, self)
         # Remove all the layers and overlays from the viewer
         self.layers.clear()
-        self._overlays.clear()
         # Close the main window
         self.window.close()
 
