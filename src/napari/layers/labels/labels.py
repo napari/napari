@@ -734,8 +734,6 @@ class Labels(ScalarFieldBase):
             self._prev_selected_label = None
         self.selected_labels = [selected_label]
 
-        self.events.selected_label()
-
     @property
     def selected_labels(self) -> Selection[int]:
         return self._selected_labels
@@ -758,7 +756,6 @@ class Labels(ScalarFieldBase):
                 upper_bound=dtype_lims[1],
             )
         self._selected_labels.replace_selection(selected_labels)
-        # container when it is changed.
         self.colormap.selection = self.selected_label
         self._selected_color = self.get_color(self.selected_label)
         if self.show_selected_label:
