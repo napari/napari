@@ -27,7 +27,7 @@ def test_bounding_box_multiscale_3D(make_napari_viewer, qtbot):
 
     viewer.dims.ndisplay = 3
 
-    qtbot.waitUntil(lambda: viewer.layers[-1]._loaded)
+    qtbot.waitUntil(lambda: viewer.layers[-1].loaded)
     # get the actual bounding box vertices
     bb = viewer.window._qt_viewer.canvas._layer_overlay_to_visual[layer][
         layer.bounding_box
