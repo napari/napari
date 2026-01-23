@@ -39,6 +39,7 @@ from napari.components.overlays import (
     Overlay,
     ScaleBarOverlay,
     TextOverlay,
+    WelcomeOverlay,
     ZoomOverlay,
 )
 from napari.components.tooltip import Tooltip
@@ -119,6 +120,7 @@ def _current_theme() -> str:
 
 
 DEFAULT_OVERLAYS = {
+    'welcome': WelcomeOverlay,
     'scale_bar': ScaleBarOverlay,
     'text': TextOverlay,
     'axes': AxesOverlay,
@@ -308,6 +310,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     @property
     def text_overlay(self):
         return self._overlays['text']
+
+    @property
+    def welcome_screen(self):
+        return self._overlays['welcome']
 
     @property
     def _zoom_box(self):
