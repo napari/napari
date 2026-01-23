@@ -1944,8 +1944,9 @@ class TestLabels:
     def test_events_defined(self, event_define_check, obj):
         event_define_check(
             obj,
-            {'seed', 'num_colors', 'color', 'seed_rng', 'selected_label'},
-        )  # "selected_label" returns the last element of "selected_labels", and does not have its own event.
+            {'seed', 'num_colors', 'color', 'seed_rng'},
+            {'selected_label'},
+        )
 
 
 def test_docstring():
