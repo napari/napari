@@ -184,7 +184,7 @@ def test_labels_polygon_with_downsampling(
         'Could not find polygon overlay visual'
     )
 
-    # Define points in data coordinates (512x512 space)
+    # Define points in data coordinates (600x500 space)
     # These coordinates are what mouse events would provide
     data_points = [
         [200.5, 200.5],  # data coordinates
@@ -201,7 +201,7 @@ def test_labels_polygon_with_downsampling(
     visual_positions = vispy_polygon_overlay._nodes._data['a_position'][:, :2]
 
     # Expected visual positions should be in texture space
-    # With 2x downsampling: texture_coord = data_coord / 2
+    # With [3, 2] downsampling: texture_coord = data_coord / downsample
     # Note: dims are reversed for vispy (y, x instead of x, y)
     expected_texture_positions = (
         np.array(
@@ -211,8 +211,8 @@ def test_labels_polygon_with_downsampling(
                 [300.5, 300.5],
             ]
         )
-        / 2
-    )  # Apply downsampling
+        / expected_downsample[::-1]
+    )
 
     # The visual positions should match the texture coordinates
     # (with coordinates properly transformed by tile2data.inverse)
