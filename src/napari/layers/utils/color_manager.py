@@ -148,8 +148,8 @@ class ColorManager(EventedModel):
     color_properties: ColorProperties | None = None
     continuous_colormap: Colormap = ensure_colormap('viridis')
     contrast_limits: tuple[float, float] | None = None
-    categorical_colormap: CategoricalColormap = CategoricalColormap.from_array(
-        [0, 0, 0, 1]
+    categorical_colormap: CategoricalColormap = CategoricalColormap(
+        fallback_color=[0, 0, 0, 1]
     )
     colors: Array[float, (-1, 4)] = Field(
         default_factory=lambda: np.empty((0, 4))

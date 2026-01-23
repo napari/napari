@@ -6,10 +6,6 @@ import numpy as np
 from pydantic import GetCoreSchemaHandler
 from pydantic_core import CoreSchema, core_schema
 
-from napari.layers.utils.color_transformations import (
-    transform_color,
-    transform_color_cycle,
-)
 from napari.utils.translations import trans
 
 
@@ -63,6 +59,12 @@ class ColorCycle:
 def _coerce_colorcycle_from_dict(
     val: dict[str, str | list | np.ndarray | cycle],
 ) -> ColorCycle:
+    # avoid circular import
+    from napari.layers.utils.color_transformations import (
+        transform_color,
+        transform_color_cycle,
+    )
+
     # validate values
     color_values = val.get('values')
     if color_values is None:
@@ -93,6 +95,11 @@ def _coerce_colorcycle_from_dict(
 def _coerce_colorcycle_from_colors(
     val: str | list | np.ndarray,
 ) -> ColorCycle:
+    # avoid circular import
+    from napari.layers.utils.color_transformations import (
+        transform_color_cycle,
+    )
+
     if isinstance(val, str):
         val = [val]
     (
