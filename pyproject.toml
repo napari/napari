@@ -41,7 +41,7 @@ license-files = [
 ]
 dependencies = [
     "appdirs>=1.4.4",
-    "app-model>=0.4.0,<0.5.0",
+    "app-model>=0.5.0,<0.6.0",
     "cachey>=0.2.1",
     "certifi>=2018.1.18",
     "dask[array]>=2021.10.0",
@@ -59,7 +59,7 @@ dependencies = [
     "pint>=0.17",
     "psutil>=5.9.0",
     "psygnal>=0.14.2",
-    "pydantic>=2.2.0",
+    "pydantic>=2.8.0",
     "pygments>=2.6.0",
     "PyOpenGL>=3.1.5",
     "pywin32 ; platform_system == 'Windows'",
@@ -528,6 +528,7 @@ markers = [
     "disable_qthread_pool_start: Disable strarting QRunnable using QThreadPool start in this Test",
     "disable_qtimer_start: Disable timer start in this Test",
     "disable_qanimation_start: Disable animation start in this Test",
+    'allow_animation_thread: Allow animation thread to run in this Test (normally disabled to prevent segfaults)',
     "enable_console: Don't mock the IPython console (in QtConsole) in this Test",
     # mark slow tests, so they can be skipped using: pytest -m "not slow"
     "slow: mark a test as slow",
