@@ -121,6 +121,8 @@ def _new_layer_from_active(
     layer_list: LayerList, layer_class: type[Points] | type[Shapes]
 ) -> Points | Shapes:
     """Create a new layer from the given layer list."""
+    if layer_list.selection.active is None:
+        raise ValueError('No active layer to create new layer from.')
     source_layer = layer_list.selection.active
     new_layer_name = get_layer_name(
         f'{source_layer.name} {layer_class.__name__.lower()}',
