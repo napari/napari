@@ -66,13 +66,13 @@ dependencies = [
     "PyYAML>=6.0",
     "qtpy>=2.3.1",
     "scikit-image[data]>=0.19.1",
-    "scipy>=1.10.1",
+    "scipy>=1.14.0",
     "superqt>=0.7.4",
     "tifffile>=2022.7.28",
     "toolz>=0.11.0",
     "tqdm>=4.56.0",
     "typing_extensions>=4.12",
-    "vispy>=0.15.2,<0.16",
+    "vispy>=0.16.1,<0.17",
     "wrapt>=1.13.3",
 ]
 dynamic = [
@@ -117,10 +117,11 @@ all = [
 optional-base = [
     "zarr>=2.12.0", # needed by `builtins` (dask.array.from_zarr) to open zarr
     "aiohttp", # needed to open remote files by zarr, replace by extras once https://github.com/zarr-developers/zarr-python/issues/3453 is done
-    "napari-plugin-manager >=0.1.3, <0.2.0",
+    "napari-plugin-manager >=0.1.9, <0.2.0",
 ]
 optional-numba = [
-    "numba>=0.57.1",
+    "numba>=0.57.1,<=0.62.1 ; platform_system == 'Darwin' and platform_machine == 'x86_64'",
+    "numba>=0.57.1 ; platform_system != 'Darwin' or platform_machine != 'x86_64'",
 ]
 optional = [
     "napari[optional-base,optional-numba,bermuda]",
@@ -140,7 +141,6 @@ all_optional = [
 # they will be removed in napari 0.7.0
 
 testing = [
-    "napari[gallery]",
     "babel>=2.9.0",
     "docstring_parser>=0.15",
     "fsspec>=2023.10.0",
@@ -178,6 +178,7 @@ gallery = [
     "xarray",
     "h5netcdf",
     "meshio",
+    "gdown", # to download some large example data files
 ]
 # needed to build docs
 docs = [
@@ -232,7 +233,6 @@ build = [
 # these need to be kept in sync with the equivalent optional-dependencies
 [dependency-groups]
 testing = [
-    {include-group = "gallery"},
     "babel>=2.9.0",
     "docstring_parser>=0.15",
     "fsspec>=2023.10.0",
@@ -270,6 +270,7 @@ gallery = [
     "xarray",
     "h5netcdf",
     "meshio",
+    "gdown", # to download some large example data files
 ]
 # needed to build docs
 docs = [
@@ -344,6 +345,9 @@ namespaces = false
 "*" = [
     "*.pyi",
 ]
+napari = [
+    "resources/fonts/*.ttf",
+]
 napari_builtins = [
     "builtins.yaml",
 ]
@@ -382,6 +386,7 @@ fix = true
 
 [tool.ruff.format]
 quote-style = "single"
+line-ending = "lf"
 
 [tool.ruff.lint]
 select = [
@@ -897,7 +902,6 @@ warn_unused_ignores = false
 module = [
     "napari.__main__",
     "napari.utils.colormaps.vendored.colors",
-    "napari.layers.image.image",
     "napari.layers._scalar_field.scalar_field",
 ]
 check_untyped_defs = false
@@ -985,8 +989,6 @@ type = "layers"
 layers = ["napari.qt","napari.layers"]
 ignore_imports = [
     "napari.plugins._npe2 -> napari._qt._qplugins",
-    # TODO: remove once npe1 deprecated
-    "napari._qt.qt_main_window -> napari._qt._qplugins",
 ]
 
 [[tool.importlinter.contracts]]
@@ -995,6 +997,4 @@ type = "layers"
 layers = ["napari.qt","napari.components"]
 ignore_imports = [
     "napari.plugins._npe2 -> napari._qt._qplugins",
-    # TODO: remove once npe1 deprecated
-    "napari._qt.qt_main_window -> napari._qt._qplugins",
 ]

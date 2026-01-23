@@ -1,6 +1,8 @@
 """Tests for the settings manager."""
 
 import os
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -35,6 +37,14 @@ def test_settings_file(test_settings):
 def test_settings_autosave(test_settings):
     assert not Path(test_settings.config_path).exists()
     test_settings.appearance.theme = 'light'
+    assert Path(test_settings.config_path).exists()
+
+
+def test_settings_autosave_recursive(test_settings):
+    """Test that changing a deeply nested field triggers autosave."""
+    assert not Path(test_settings.config_path).exists()
+    # 'highlight' is a nested model inside 'appearance'
+    test_settings.appearance.highlight.highlight_thickness = 5
     assert Path(test_settings.config_path).exists()
 
 
@@ -434,3 +444,23 @@ def test_env_settings_restore(monkeypatch):
     s.experimental.completion_radius = 1
     assert s.env_settings() == {'experimental': {'async_': '0'}}
     assert s._save_dict()['experimental'] == {'completion_radius': 1}
+
+
+NO_IMPORT_SCRIPT = """
+from napari.viewer import Viewer
+from napari import settings
+
+assert settings._SETTINGS is None
+
+settings.get_settings()
+
+assert settings._SETTINGS is not None
+"""
+
+
+def test_settings_no_import(tmp_path):
+    tmp_path.joinpath('test_no_import.py').write_text(NO_IMPORT_SCRIPT)
+
+    subprocess.check_call(
+        [sys.executable, str(tmp_path / 'test_no_import.py')]
+    )
