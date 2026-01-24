@@ -141,8 +141,7 @@ def test_signature(layer):
         assert class_parameters == method_parameters, fail_msg
 
 
-# plugin_manager fixture is added to prevent errors due to installed plugins
-def test_imshow(qtbot, napari_plugin_manager):
+def test_imshow(qtbot):
     shape = (10, 15)
     ndim = len(shape)
     np.random.seed(0)
@@ -154,8 +153,7 @@ def test_imshow(qtbot, napari_plugin_manager):
     viewer.close()
 
 
-# plugin_manager fixture is added to prevent errors due to installed plugins
-def test_imshow_multichannel(qtbot, napari_plugin_manager):
+def test_imshow_multichannel(qtbot):
     """Test adding image."""
     np.random.seed(0)
     data = np.random.random((15, 10, 5))
@@ -171,8 +169,7 @@ def test_imshow_multichannel(qtbot, napari_plugin_manager):
     gc.collect()
 
 
-# plugin_manager fixture is added to prevent errors due to installed plugins
-def test_imshow_with_viewer(qtbot, napari_plugin_manager, make_napari_viewer):
+def test_imshow_with_viewer(qtbot, make_napari_viewer):
     shape = (10, 15)
     ndim = len(shape)
     np.random.seed(0)

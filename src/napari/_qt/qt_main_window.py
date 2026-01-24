@@ -73,7 +73,6 @@ from napari._qt.widgets.qt_viewer_dock_widget import (
 from napari._qt.widgets.qt_viewer_status_bar import ViewerStatusBar
 from napari.plugins import (
     menu_item_template as plugin_menu_item_template,
-    plugin_manager,
 )
 from napari.plugins._npe2 import index_npe1_adapters
 from napari.settings import get_settings
@@ -1091,18 +1090,6 @@ class Window:
         if result := _npe2.get_widget_contribution(plugin_name, widget_name):
             widget_class, widget_name = result
 
-        if widget_class is None:
-            widget_class, dock_kwargs = plugin_manager.get_widget(
-                plugin_name, widget_name
-            )
-
-        if not widget_name:
-            # if widget_name wasn't provided, `get_widget` will have
-            # ensured that there is a single widget available.
-            widget_name = next(
-                iter(plugin_manager._wrapped_dock_widgets[plugin_name])
-            )
-
         full_name = plugin_menu_item_template.format(plugin_name, widget_name)
         if full_name in self._wrapped_dock_widgets:
             dock_widget = self._wrapped_dock_widgets[full_name]
@@ -1118,29 +1105,6 @@ class Window:
             wdg, name=full_name, tabify=tabify, **dock_kwargs
         )
         return dock_widget, wdg
-
-    def _add_plugin_function_widget(self, plugin_name: str, widget_name: str):
-        """Add plugin function widget if not already added.
-
-        Parameters
-        ----------
-        plugin_name : str
-            Name of a plugin providing a widget
-        widget_name : str, optional
-            Name of a widget provided by `plugin_name`. If `None`, and the
-            specified plugin provides only a single widget, that widget will be
-            returned, otherwise a ValueError will be raised, by default None
-        """
-        full_name = plugin_menu_item_template.format(plugin_name, widget_name)
-        if full_name in self._wrapped_dock_widgets:
-            return None
-
-        func = plugin_manager._function_widgets[plugin_name][widget_name]
-
-        # Add function widget
-        return self.add_function_widget(
-            func, name=full_name, area=None, allowed_areas=None
-        )
 
     def add_dock_widget(
         self,
