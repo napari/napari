@@ -1714,7 +1714,7 @@ class Labels(ScalarFieldBase):
         # subset it if we want to only paint into background/only erase
         # current label, accounting for swap_selected_and_background_labels
         if self.preserve_labels:
-            current_values = np.asarray(self.data[slice_coord])
+            current_values = self.data[slice_coord]
             keep_coords = self._account_for_preserving_labels(
                 current_values, new_label
             )
@@ -1762,7 +1762,7 @@ class Labels(ScalarFieldBase):
         ----------
         .. [2] https://numpy.org/doc/stable/user/basics.indexing.html
         """
-        changed_indices = np.asarray(self.data[indices]) != value
+        changed_indices = self.data[indices] != value
         indices = tuple(x[changed_indices] for x in indices)
 
         if isinstance(value, Sequence):
@@ -1814,8 +1814,10 @@ class Labels(ScalarFieldBase):
             indices = [np.array(x).flatten() for x in indices]
 
         updated_slice = tuple(
-            slice(int(axis_indices.min()), int(axis_indices.max()) + 1)
-            for axis_indices in indices
+            [
+                slice(min(axis_indices), max(axis_indices) + 1)
+                for axis_indices in indices
+            ]
         )
 
         if self.contour > 0:
