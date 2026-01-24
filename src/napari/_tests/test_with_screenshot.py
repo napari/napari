@@ -11,14 +11,6 @@ from napari.utils.interactions import (
 )
 
 
-@pytest.fixture
-def qt_viewer(qt_viewer_):
-    # show the qt_viewer and hide its welcome widget
-    qt_viewer_.show()
-    qt_viewer_.set_welcome_visible(False)
-    return qt_viewer_
-
-
 @skip_on_win_ci
 @skip_local_popups
 def test_z_order_adding_removing_images(make_napari_viewer):
@@ -389,12 +381,11 @@ def test_labels_painting(make_napari_viewer):
     assert screenshot[:, :, :2].max() > 0
 
 
-@pytest.mark.skip('Welcome visual temporarily disabled')
 @skip_on_win_ci
 @skip_local_popups
 def test_welcome(make_napari_viewer):
     """Test that something visible on launch."""
-    viewer = make_napari_viewer(show=True)
+    viewer = make_napari_viewer(show=True, show_welcome_screen=True)
 
     # Check something is visible
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
@@ -412,6 +403,7 @@ def test_welcome(make_napari_viewer):
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
     assert len(viewer.layers) == 0
     assert screenshot[..., :-1].max() > 0
+    viewer.welcome_screen.visible = False  # to stop timer
 
 
 @skip_on_win_ci
@@ -419,7 +411,6 @@ def test_welcome(make_napari_viewer):
 def test_axes_visible(make_napari_viewer):
     """Test that something appears when axes become visible."""
     viewer = make_napari_viewer(show=True)
-    viewer.window._qt_viewer.set_welcome_visible(False)
 
     # Check axes are not visible
     launch_screenshot = viewer.screenshot(canvas_only=True, flash=False)
@@ -443,7 +434,6 @@ def test_axes_visible(make_napari_viewer):
 def test_scale_bar_visible(make_napari_viewer):
     """Test that something appears when scale bar becomes visible."""
     viewer = make_napari_viewer(show=True)
-    viewer.window._qt_viewer.set_welcome_visible(False)
 
     # Check scale bar is not visible
     launch_screenshot = viewer.screenshot(canvas_only=True, flash=False)
@@ -562,12 +552,8 @@ def test_shapes_with_holes(make_napari_viewer):
 
 @skip_local_popups
 def test_active_layer_highlight_visibility(qt_viewer):
+    qt_viewer.show()
     viewer = qt_viewer.viewer
-
-    # take initial screenshot (full black/empty screenshot since welcome message is hidden)
-    launch_screenshot = qt_viewer.screenshot(flash=False)
-    # check screenshot ignoring alpha
-    assert launch_screenshot[..., :-1].max() == 0
 
     # add shapes layer setting edge and face color to `black` (so shapes aren't
     # visible unless they're selected), create a rectangle and select the created shape

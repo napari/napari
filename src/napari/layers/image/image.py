@@ -24,6 +24,7 @@ from napari.layers.image._image_constants import (
     InterpolationStr,
 )
 from napari.layers.image._image_utils import guess_rgb
+from napari.layers.image._slice import _ImageSliceRequest
 from napari.layers.intensity_mixin import IntensityVisualizationMixin
 from napari.layers.utils.layer_utils import calc_data_range
 from napari.types import LayerDataType
@@ -676,6 +677,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
 
 class _ImageSlicingState(ScalarFieldSlicingState):
     layer: Image
+    _slice_request_class = _ImageSliceRequest
 
     def _update_slice_response(
         self, response: _ScalarFieldSliceResponse
