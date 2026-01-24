@@ -1267,7 +1267,9 @@ class Shapes(Layer):
         return self._selected_data
 
     @selected_data.setter
-    def selected_data(self, selected_data: Collection[int]) -> None:
+    def selected_data(
+        self, selected_data: Collection[int | np.integer]
+    ) -> None:
         self._selected_data.replace_selection(selected_data)
 
     def _on_selection_changed(self, added, removed):
