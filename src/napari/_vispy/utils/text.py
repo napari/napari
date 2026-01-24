@@ -1,10 +1,15 @@
-from typing import no_type_check
+from __future__ import annotations
+
+from importlib import resources
+from typing import TYPE_CHECKING, no_type_check
 
 import numpy as np
-from vispy.scene.visuals import Text
 
 from napari.layers import Points, Shapes
 from napari.layers.utils.string_encoding import ConstantStringEncoding
+
+if TYPE_CHECKING:
+    from vispy.visuals.text import Text
 
 
 def update_text(
@@ -235,3 +240,10 @@ def _text_to_vbo(text, font, anchor_x, anchor_y, lowres_size):
     vertices['a_position'] /= lowres_size
 
     return vertices
+
+
+def register_napari_fonts() -> None:
+    from vispy.util.fonts import register_vispy_font
+
+    path = resources.files('napari') / 'resources' / 'fonts' / 'AlataPlus'
+    register_vispy_font(path, 'AlataPlus', False, False)

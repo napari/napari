@@ -20,6 +20,7 @@ from napari.utils.camera_orientations import (
     HorizontalAxisOrientation,
     VerticalAxisOrientation,
 )
+from napari.utils.events import Event
 from napari.utils.events.custom_types import confloat, conint
 from napari.utils.events.evented_model import EventedModel
 from napari.utils.notifications import NotificationSeverity
@@ -48,6 +49,16 @@ class DaskSettings(EventedModel):
 
 
 class ApplicationSettings(EventedModel):
+    def __init__(self, **kwargs: Any):
+        super().__init__(**kwargs)
+        # register callback to update brush size on mouse move modifiers
+        self.events.brush_size_on_mouse_move_modifiers.connect(
+            brush_size_on_mouse_move_modifiers_callback
+        )
+        self.events.brush_size_on_mouse_move_modifiers(
+            value=self.brush_size_on_mouse_move_modifiers
+        )
+
     first_time: bool = Field(
         True,
         title=trans._('First time'),
@@ -329,3 +340,11 @@ class ApplicationSettings(EventedModel):
             'ipy_interactive',
             'plugin_widget_positions',
         )
+
+
+def brush_size_on_mouse_move_modifiers_callback(event: Event) -> None:
+    from napari.layers.labels._labels_mouse_bindings import (
+        change_brush_size_on_mouse_move_modifiers,
+    )
+
+    change_brush_size_on_mouse_move_modifiers(event.value.split('+'))
