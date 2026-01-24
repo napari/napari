@@ -1360,8 +1360,7 @@ class Labels(ScalarFieldBase):
             polygon_mask, new_label, dims_to_paint, slice_key
         )
 
-        # Track updated region for partial refresh
-        self._update_display_region(points2d, dims_to_paint, slice_coord)
+        self._updated_slice = slice_key
         self._partial_labels_refresh()
 
     def _create_polygon_mask(
@@ -1663,38 +1662,6 @@ class Labels(ScalarFieldBase):
                 slice_key.append(slice_coord[i])
                 i += 1
         return tuple(slice_key)
-
-    def _update_display_region(
-        self,
-        polygon_points: np.ndarray,
-        dims_to_paint: list[int],
-        slice_coord: list[int],
-    ) -> None:
-        """Track bounding box of updated region for partial refresh."""
-        min_vals = np.min(polygon_points, axis=0)
-        max_vals = np.max(polygon_points, axis=0)
-        shape = self.data.shape
-
-        updated_slice = tuple(
-            slice(
-                int(max(0, min_vals[dims_to_paint.index(i)])),
-                int(min(shape[i], max_vals[dims_to_paint.index(i)]) + 1),
-            )
-            if i in dims_to_paint
-            else slice(slice_coord[i], slice_coord[i] + 1)
-            for i in range(self.ndim)
-        )
-
-        if self._updated_slice is None:
-            self._updated_slice = updated_slice
-        else:
-            # Merge with existing updated region
-            self._updated_slice = tuple(
-                slice(min(s1.start, s2.start), max(s1.stop, s2.stop))
-                for s1, s2 in zip(
-                    updated_slice, self._updated_slice, strict=False
-                )
-            )
 
     def _paint_indices(
         self,
