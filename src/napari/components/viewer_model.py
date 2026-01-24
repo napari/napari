@@ -1220,8 +1220,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         KeyError
             If `plugin` does not provide a sample named `sample`.
         """
-        from napari.plugins import _npe2
-
         plugin_spec_reader = None
         data: None | SampleDataCreator | SampleData
         # try with npe2

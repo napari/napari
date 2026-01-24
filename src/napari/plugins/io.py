@@ -46,7 +46,7 @@ def read_data_with_plugins(
         ``(data,)``, ``(data, meta)``, or ``(data, meta, layer_type)`` .
 
         If no reader plugins were found (or they all failed), returns ``None``
-    reader : str | None
+    reader : str, optional
         The name of the reader plugin that was used, or None if no reader was found.
     """
     if plugin == 'builtins':
@@ -61,7 +61,6 @@ def read_data_with_plugins(
     assert isinstance(paths, list)
     if not stack:
         assert len(paths) == 1
-    reader: str | None
 
     res = _npe2.read(paths, plugin, stack=stack)
     if res is not None:
