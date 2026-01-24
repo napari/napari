@@ -1,3 +1,4 @@
+import contextlib
 import typing
 import warnings
 from collections import deque
@@ -1269,6 +1270,10 @@ class Labels(ScalarFieldBase):
     def paint_polygon(self, points: list | np.ndarray, new_label: int) -> None:
         """Paint a polygon over existing labels with a new label.
 
+        Uses a bounding box optimization: extracts a rectangular region around
+        the polygon, paints within that region in-place, then writes back.
+        This approach works for both contiguous and non-contiguous dimension orderings.
+
         Parameters
         ----------
         points : list or array
@@ -1287,40 +1292,91 @@ class Labels(ScalarFieldBase):
         slice_coord = points[0].tolist()
         points2d = points[:, dims_to_paint]
 
-        polygon_mask = self._create_polygon_mask(points2d, shape)
+        # Calculate bounding box of the polygon
+        min_vals = np.min(points2d, axis=0)
+        max_vals = np.max(points2d, axis=0) + 1  # exclusive
+
+        # Clip bounding box to data shape
+        min_vals = np.maximum(min_vals, 0)
+        max_vals = np.minimum(max_vals, shape)
+
+        if np.any(min_vals >= max_vals):
+            return
+
+        # Shift points relative to bounding box
+        bbox_shape = list(max_vals - min_vals)
+        points2d_shifted = points2d - min_vals
+
+        polygon_mask = self._create_polygon_mask(points2d_shifted, bbox_shape)
 
         if not np.any(polygon_mask):
             return
 
-        # Check if painted dimensions are contiguous
-        if dims_to_paint[1] == dims_to_paint[0] + 1:
-            # Fast path: use boolean mask indexing (avoids coordinate expansion)
-            self._paint_polygon_mask(
-                polygon_mask, new_label, dims_to_paint, slice_coord, points2d
+        # Construct slice key to access the bounding box region in volume space
+        slice_key_list = list(slice_coord)
+        for i, d in enumerate(dims_to_paint):
+            slice_key_list[d] = slice(min_vals[i], max_vals[i])
+        slice_key = tuple(slice_key_list)
+
+        # Extract bounding box region from volume
+        region_data = np.asarray(self.data[slice_key])
+
+        # Ensure we have a 2D array matching the polygon mask
+        # Some backends may not squeeze singleton dimensions automatically
+        if region_data.ndim != 2:
+            region_data = region_data.squeeze()
+            if region_data.ndim != 2:
+                raise ValueError('Expected 2D region data')
+
+        # Paint on the extracted region (modifies region_data in place)
+        painted = self._paint_mask(
+            region_data,
+            (slice(None), slice(None)),  # Paint on full region [:, :]
+            polygon_mask,
+            new_label,
+            dims_to_paint,
+            slice_coord,
+            history_indices=slice_key,
+        )
+
+        # If nothing was painted, skip cache updates and return
+        if not painted:
+            return
+
+        # Write updated region back to source data
+        # Reshape needed in case of squeeze to 2D for painting
+        self.data[slice_key] = region_data.reshape(self.data[slice_key].shape)
+
+        # Update raw cache if necessary (for Zarr/Dask/etc where view is separate)
+        if not (
+            isinstance(self.data, np.ndarray)
+            and np.shares_memory(self.data, self._slice.image.raw)
+        ):
+            self._update_cached_view_region(
+                self._slice.image.raw, slice_key, region_data, dims_to_paint
             )
-        else:
-            # Fallback: convert mask to indices for non-contiguous dimensions
-            mask_indices = np.argwhere(polygon_mask)
-            self._paint_indices(
-                mask_indices,
-                new_label,
-                shape,
-                dims_to_paint,
-                slice_coord,
-                refresh=True,
-            )
+
+        # Update view cache for non-shared memory backends (e.g., uint32)
+        self._maybe_update_view_from_mask(
+            polygon_mask, new_label, dims_to_paint, slice_key
+        )
+
+        # Track updated region for partial refresh
+        self._update_display_region(points2d, dims_to_paint, slice_coord)
+        self._partial_labels_refresh()
 
     def _create_polygon_mask(
         self, points2d: np.ndarray, shape: list[int]
     ) -> np.ndarray:
-        """Create a boolean mask from polygon points using PIL.
+        """Create a boolean mask from polygon points using PIL rasterization.
 
         Parameters
         ----------
         points2d : ndarray
-            2D polygon vertices in (row, col) format.
-        shape : list
-            Shape of the mask to create (height, width).
+            2D polygon vertices in (row, col) format, relative to the mask
+            coordinate system.
+        shape : list of int
+            Shape of the mask to create [height, width].
 
         Returns
         -------
@@ -1337,13 +1393,16 @@ class Labels(ScalarFieldBase):
     def _account_for_preserving_labels(
         self, current_values: np.ndarray, new_label: int
     ) -> np.ndarray:
-        """
-        Get only the background pixels or previously selected label.
+        """Determine which pixels can be painted when preserve_labels is True.
+
+        When preserve_labels is enabled, only certain pixels are allowed to
+        be painted: background pixels when painting, or the previously selected
+        label when erasing.
 
         Parameters
         ----------
         current_values : np.ndarray
-            The current values at the locations to be painted.
+            The current label values at the locations to be painted.
         new_label : int
             The new label value to be painted.
 
@@ -1363,23 +1422,57 @@ class Labels(ScalarFieldBase):
         # Painting: only paint on background
         return current_values == self.colormap.background_value
 
-    def _paint_polygon_mask(
+    def _paint_mask(
         self,
+        data: np.ndarray,
+        slice_key: Any,
         mask: np.ndarray,
         new_label: int,
         dims_to_paint: list[int],
         slice_coord: list[int],
-        polygon_points: np.ndarray,
-    ) -> None:
-        """Paint polygon using boolean mask indexing for contiguous dimensions.
+        history_indices: Any = None,
+    ) -> bool:
+        """Paint within a data region using a boolean mask.
 
-        This is an optimized path that uses boolean masks directly instead of
-        expanding coordinates, significantly improving performance for large polygons.
+        This method operates on the data array in-place, using boolean mask
+        indexing. It handles preserve_labels logic and optimization to skip
+        unchanged pixels. The return indicates if any pixels were painted.
+
+        Parameters
+        ----------
+        data : np.ndarray
+            The data to paint (e.g., extracted region/bounding box around polygon).
+            This array is modified IN PLACE.
+        slice_key : Any
+            Slice within the data to paint. Typically (slice(None), slice(None))
+            to paint the entire array.
+        mask : np.ndarray
+            Boolean mask indicating which pixels to paint, with shape matching
+            the sliced data dimensions.
+        new_label : int
+            Label value to paint.
+        dims_to_paint : list[int]
+            Dimensions being painted in the full volume (used for history).
+        slice_coord : list[int]
+            Coordinates of the slice in non-painted dimensions (used for history).
+        history_indices : Any, optional
+            Slice key in volume space for undo/redo history. If None, uses
+            slice_key parameter.
+
+        Returns
+        -------
+        bool
+            True if any pixels were painted, False otherwise.
+
+        Notes
+        -----
+        - Respects preserve_labels setting
+        - Skips pixels already at new_label (optimization)
+        - Saves to undo/redo history
+        - Does NOT update caches or refresh display (caller's responsibility)
         """
-        # Build slice key: replace contiguous dims_to_paint with mask
-        slice_key = self._build_slice_key(mask, dims_to_paint, slice_coord)
-
-        current_values = np.asarray(self.data[slice_key])
+        # data is already a numpy array (materialized in paint_polygon)
+        current_values = data[slice_key]
 
         if self.preserve_labels:
             keep_mask = self._account_for_preserving_labels(
@@ -1387,37 +1480,127 @@ class Labels(ScalarFieldBase):
             )
 
             if not np.any(keep_mask):
-                return
+                return False
 
-            mask[mask] = keep_mask
-            current_values = current_values[keep_mask]
+            mask &= keep_mask
 
         # Filter out pixels already at new_label (no change needed)
         change_mask = current_values != new_label
         if not np.any(change_mask):
-            return
+            return False
 
         # Refine to only pixels that will actually change
-        mask[mask] = change_mask
-        current_values = current_values[change_mask]
+        mask &= change_mask
 
-        # Save to history and update data
-        self._save_history((slice_key, current_values, new_label))
-        self.data[slice_key] = new_label
+        if not np.any(mask):
+            return False
 
-        self._maybe_update_view_from_mask(mask, new_label, dims_to_paint)
+        # Use copy to preserve original for history
+        new_values = current_values.copy()
+        new_values[mask] = new_label
 
-        # Track updated region for partial refresh
-        self._update_display_region(polygon_points, dims_to_paint, slice_coord)
-        self._partial_labels_refresh()
+        # Save to history
+        if history_indices is None:
+            history_indices = slice_key
+        self._save_history(
+            (history_indices, current_values.copy(), new_values)
+        )
+
+        # Update the region in place
+        data[slice_key] = new_values
+
+        return True
+
+    def _update_cached_view_region(
+        self,
+        cache_array: np.ndarray,
+        volume_key: Any,
+        update_values: np.ndarray,
+        dims_to_paint: list[int],
+    ) -> None:
+        """Update a cached view region using bounding box slices.
+
+        For non-shared memory backends (Zarr, Dask, etc.), updates must be
+        explicitly written to cached views. This extracts the appropriate
+        region from the cache and updates it with the new values.
+
+        Parameters
+        ----------
+        cache_array : np.ndarray
+            The cached array to update (e.g., self._slice.image.raw or .view).
+        volume_key : Any
+            The volume-space slice key defining the bounding box region.
+        update_values : np.ndarray
+            The new values to write into the cache region.
+        dims_to_paint : list[int]
+            The dimensions being painted.
+
+        Notes
+        -----
+        - Only updates if painting on the currently displayed slice
+        - Handles dimension ordering with transpose when needed
+        - Silently skips update if shapes don't match (defensive)
+        """
+        # Check if volume_key is suitable for region update
+        if not (
+            isinstance(volume_key, tuple) and len(volume_key) == self.ndim
+        ):
+            return
+
+        # Check if we are painting on displayed slice
+        displayed_dims = self._slice_input.displayed
+        if set(dims_to_paint) != set(displayed_dims):
+            return
+
+        # Extract the slices from volume_key corresponding to displayed dims
+        region_slices = []
+        for d in displayed_dims:
+            s = volume_key[d]
+            if not isinstance(s, slice):
+                break
+            region_slices.append(s)
+        else:
+            if len(region_slices) == len(displayed_dims):
+                # Align update_values with cache array order
+                if list(displayed_dims) == sorted(displayed_dims):
+                    aligned_values = update_values
+                else:
+                    aligned_values = update_values.T
+
+                with contextlib.suppress(ValueError, IndexError):
+                    cache_array[tuple(region_slices)] = aligned_values
 
     def _maybe_update_view_from_mask(
         self,
         mask: np.ndarray,
         new_label: int,
         dims_to_paint: list[int],
+        slice_key: Any = None,
     ) -> None:
-        """Update the view if it is not sharing memory with data (e.g. uint32)."""
+        """Update the texture view cache if needed for non-shared memory data.
+
+        For data types where the view is not sharing memory with the underlying
+        data (e.g., uint32 converted to uint8 texture), this updates the view
+        cache with the new painted values.
+
+        Parameters
+        ----------
+        mask : np.ndarray
+            Boolean mask indicating which pixels were painted.
+        new_label : int
+            The label value that was painted.
+        dims_to_paint : list[int]
+            The dimensions that were painted.
+        slice_key : Any, optional
+            Volume-space slice key defining the bounding box region.
+
+        Notes
+        -----
+        - Only updates if data and view don't share memory
+        - Only updates if painting on currently displayed slice
+        - Converts label value to texture value via colormap
+        - Handles dimension ordering with transpose when needed
+        """
         if isinstance(self.data, np.ndarray) and np.shares_memory(
             self.data, self._slice.image.view
         ):
@@ -1433,11 +1616,36 @@ class Labels(ScalarFieldBase):
             np.array(new_label, dtype=self.dtype)
         )
 
-        # Align mask with view
-        if tuple(dims_to_paint) == tuple(displayed_dims):
-            self._slice.image.view[mask] = texture_value
-        else:
-            self._slice.image.view[mask.T] = texture_value
+        # Prepare texture values array with same shape as update values
+        # We need to get the shape from slice_key to create properly shaped texture array
+        if isinstance(slice_key, tuple) and len(slice_key) == self.ndim:
+            # Extract slices for displayed dims to get the shape
+            region_slices = []
+            for d in displayed_dims:
+                s = slice_key[d]
+                if not isinstance(s, slice):
+                    break
+                region_slices.append(s)
+
+            if len(region_slices) == len(displayed_dims):
+                try:
+                    region_view = self._slice.image.view[tuple(region_slices)]
+
+                    # Create texture array from mask
+                    texture_values = np.where(
+                        mask
+                        if list(displayed_dims) == sorted(displayed_dims)
+                        else mask.T,
+                        texture_value,
+                        region_view,
+                    )
+
+                    self._slice.image.view[tuple(region_slices)] = (
+                        texture_values
+                    )
+                except (ValueError, IndexError):
+                    # If region update fails, skip fallback as it would be incorrect
+                    pass
 
     def _build_slice_key(
         self,
