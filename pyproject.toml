@@ -176,7 +176,7 @@ gallery = [
     "pooch",
     "nilearn",
     "xarray",
-    "h5netcdf",
+    "h5netcdf[h5py]",
     "meshio",
     "gdown", # to download some large example data files
 ]
@@ -272,7 +272,7 @@ gallery = [
     "pooch",
     "nilearn",
     "xarray",
-    "h5netcdf",
+    "h5netcdf[h5py]",
     "meshio",
     "gdown", # to download some large example data files
 ]
