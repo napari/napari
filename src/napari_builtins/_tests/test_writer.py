@@ -53,7 +53,6 @@ def test_no_write_layer_bad_extension(some_layer: 'layers.Layer'):
         assert not some_layer.save('layer.bad_extension')
 
 
-# test_plugin_manager fixture is provided by napari_plugin_engine._testsupport
 def test_get_writer_succeeds(
     tmp_path: Path, layers_list: 'list[layers.Layer]'
 ):
