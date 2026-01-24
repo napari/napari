@@ -11,7 +11,7 @@ import pandas as pd
 from psygnal.containers import Selection
 from vispy.color import get_color_names
 
-from napari.layers.base import Layer, no_op
+from napari.layers.base import Layer, _LayerSlicingState, no_op
 from napari.layers.base._base_constants import ActionType
 from napari.layers.base._base_mouse_bindings import (
     highlight_box_handles,
@@ -66,6 +66,7 @@ from napari.layers.utils.interactivity_utils import (
 from napari.layers.utils.layer_utils import _FeatureTable, _unique_element
 from napari.layers.utils.text_manager import TextManager
 from napari.settings import get_settings
+from napari.types import LayerDataType
 from napari.utils.colormaps import Colormap, ValidColormapArg, ensure_colormap
 from napari.utils.colormaps.colormap_utils import ColorType
 from napari.utils.colormaps.standardize_color import (
@@ -1266,7 +1267,9 @@ class Shapes(Layer):
         return self._selected_data
 
     @selected_data.setter
-    def selected_data(self, selected_data: Collection[int]) -> None:
+    def selected_data(
+        self, selected_data: Collection[int | np.integer]
+    ) -> None:
         self._selected_data.replace_selection(selected_data)
 
     def _on_selection_changed(self, added, removed):
@@ -1736,15 +1739,18 @@ class Shapes(Layer):
         self._mode = mode
         self.events.mode(mode=mode)
 
-        draw_modes = {
+        non_draw_modes = {
             Mode.SELECT,
             Mode.DIRECT,
             Mode.VERTEX_INSERT,
             Mode.VERTEX_REMOVE,
+            Mode.PAN_ZOOM,
         }
 
-        # don't update thumbnail on mode changes
-        if not (mode in draw_modes and self._mode in draw_modes):
+        if mode not in non_draw_modes:
+            self.selected_data.clear()
+
+        if self._is_creating:
             # Shapes._finish_drawing() calls Shapes.refresh() via Shapes._update_dims()
             # so we need to block thumbnail update from here
             # TODO: this is not great... ideally we should no longer need this blocking system
@@ -3312,3 +3318,15 @@ class Shapes(Layer):
         labels = self._data_view.to_labels(labels_shape=labels_shape)
 
         return labels
+
+    def _get_layer_slicing_state(
+        self, data: LayerDataType, cache: bool
+    ) -> '_ShapesSlicingState':
+        return _ShapesSlicingState(layer=self, data=data, cache=cache)
+
+
+class _ShapesSlicingState(_LayerSlicingState):
+    layer: Shapes
+
+    def _set_view_slice(self):
+        self.layer._set_view_slice()

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import contextlib
 import typing
 import warnings
@@ -17,8 +19,10 @@ from scipy import ndimage as ndi
 
 from napari.layers._data_protocols import LayerDataProtocol
 from napari.layers._multiscale_data import MultiScaleData
-from napari.layers._scalar_field._slice import _ScalarFieldSliceResponse
-from napari.layers._scalar_field.scalar_field import ScalarFieldBase
+from napari.layers._scalar_field.scalar_field import (
+    ScalarFieldBase,
+    ScalarFieldSlicingState,
+)
 from napari.layers.base import Layer, no_op
 from napari.layers.base._base_mouse_bindings import (
     highlight_box_handles,
@@ -44,7 +48,9 @@ from napari.layers.labels._labels_utils import (
     interpolate_coordinates,
     sphere_indices,
 )
+from napari.layers.labels._slice import _LabelsSliceRequest
 from napari.layers.utils.layer_utils import _FeatureTable
+from napari.types import LayerDataType
 from napari.utils._dtype import (
     get_dtype_limits,
     normalize_dtype,
@@ -264,7 +270,7 @@ class Labels(ScalarFieldBase):
     _modeclass = Mode
 
     _drag_modes: ClassVar[
-        dict[Mode, Callable[['Labels', Event], None | Generator]]
+        dict[Mode, Callable[[Labels, Event], None | Generator]]
     ] = {  # type: ignore[assignment]
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: transform_with_box,
@@ -278,7 +284,7 @@ class Labels(ScalarFieldBase):
     brush_size_on_mouse_move = BrushSizeOnMouseMove(min_brush_size=1)
 
     _move_modes: ClassVar[
-        dict[StringEnum, Callable[['Labels', Event], None]]
+        dict[StringEnum, Callable[[Labels, Event], None]]
     ] = {  # type: ignore[assignment]
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: highlight_box_handles,
@@ -844,17 +850,10 @@ class Labels(ScalarFieldBase):
         """
         return vispy_texture_dtype(data)
 
-    def _update_slice_response(
-        self, response: _ScalarFieldSliceResponse
-    ) -> None:
-        """Override to convert raw slice data to displayed label colors."""
-        response = response.to_displayed(self._raw_to_displayed)
-        super()._update_slice_response(response)
-
     def _partial_labels_refresh(self):
         """Prepares and displays only an updated part of the labels."""
 
-        if self._updated_slice is None or not self.loaded:
+        if self._updated_slice is None or not self._slicing_state.loaded:
             return
 
         dims_displayed = self._slice_input.displayed
@@ -973,7 +972,7 @@ class Labels(ScalarFieldBase):
         like adjusting gamma or changing the data based on the contrast
         limits.
         """
-        if not self.loaded or self._slice.empty:
+        if not self._slicing_state.loaded or self._slice.empty:
             # ASYNC_TODO: Do not compute the thumbnail until we are loaded.
             # Is there a nicer way to prevent this from getting called?
             return
@@ -2021,6 +2020,16 @@ class Labels(ScalarFieldBase):
             and v[idx] is not None
             and not (isinstance(v[idx], float) and np.isnan(v[idx]))
         ]
+
+    def _get_layer_slicing_state(
+        self, data: LayerDataType, cache: bool
+    ) -> _LabelsSlicingState:
+        return _LabelsSlicingState(self, data, cache)
+
+
+class _LabelsSlicingState(ScalarFieldSlicingState):
+    layer: Labels
+    _slice_request_class = _LabelsSliceRequest
 
 
 def _coerce_indices_for_vectorization(array, indices: list) -> tuple:

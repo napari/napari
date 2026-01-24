@@ -14,8 +14,6 @@ from ...._qt.widgets.qt_font_size import QtFontSizeWidget
 from .signal import Signal
 from .utils import is_concrete_schema, iter_layout_widgets, state_property
 
-from ...._qt.widgets.qt_plugin_sorter import QtPluginSorter
-
 from ...._qt.widgets.qt_spinbox import QtSpinBox
 
 
@@ -175,24 +173,6 @@ class SpinDoubleSchemaWidget(SchemaWidgetMixin, QtWidgets.QDoubleSpinBox):
 
     def setDescription(self, description: str):
         self.description = description
-
-
-class PluginWidget(SchemaWidgetMixin, QtPluginSorter):
-    @state_property
-    def state(self) -> int:
-        return self.value()
-
-    @state.setter
-    def state(self, state: int):
-        return None
-        # self.setValue(state)
-
-    def configure(self):
-        self.hook_list.order_changed.connect(self.on_changed.emit)
-
-    def setDescription(self, description: str):
-        self.description = description
-
 
 class SpinSchemaWidget(SchemaWidgetMixin, QtSpinBox):
     @state_property
