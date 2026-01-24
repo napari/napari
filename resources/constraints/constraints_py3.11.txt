@@ -561,7 +561,7 @@ vispy==0.16.1
     # via
     #   napari (pyproject.toml)
     #   napari-svg
-wcwidth==0.3.1
+wcwidth==0.3.2
     # via prompt-toolkit
 wrapt==2.0.1
     # via

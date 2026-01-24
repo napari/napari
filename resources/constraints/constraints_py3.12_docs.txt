@@ -7,7 +7,11 @@ aiobotocore==3.1.1
 aiohappyeyeballs==2.6.1
     # via aiohttp
 aiohttp==3.13.3
-    # via napari (pyproject.toml)
+    # via
+    #   napari (pyproject.toml)
+    #   aiobotocore
+    #   fsspec
+    #   s3fs
 aioitertools==0.13.0
     # via aiobotocore
 aiosignal==1.4.0
@@ -25,6 +29,7 @@ app-model==0.5.1
 appdirs==1.4.4
     # via
     #   napari (pyproject.toml)
+    #   napari
     #   ndev-settings
 asttokens==3.0.1
     # via stack-data
@@ -61,7 +66,7 @@ bioio-imageio==1.3.0
     # via ndevio
 bioio-ome-tiff==1.4.0
     # via ndevio
-bioio-ome-zarr==1.2.0
+bioio-ome-zarr==3.2.1
     # via ndevio
 bioio-tifffile==1.3.0
     # via ndevio
@@ -70,10 +75,13 @@ botocore==1.42.30
 build==1.4.0
     # via npe2
 cachey==0.2.1
-    # via napari (pyproject.toml)
+    # via
+    #   napari (pyproject.toml)
+    #   napari
 certifi==2026.1.4
     # via
     #   napari (pyproject.toml)
+    #   napari
     #   requests
 charset-normalizer==3.4.4
     # via requests
@@ -113,9 +121,10 @@ dask==2026.1.1
     #   bioio-base
     #   bioio-imageio
     #   bioio-ome-tiff
+    #   bioio-ome-zarr
     #   bioio-tifffile
     #   distributed
-    #   ome-zarr
+    #   napari
 debugpy==1.8.19
     # via ipykernel
 decorator==5.2.1
@@ -173,7 +182,6 @@ fsspec==2026.1.0
     #   bioio-tifffile
     #   dask
     #   kerchunk
-    #   ome-zarr
     #   s3fs
     #   tifffile
     #   torch
@@ -210,6 +218,7 @@ imageio==2.37.2
     # via
     #   napari (pyproject.toml)
     #   bioio-imageio
+    #   napari
     #   napari-svg
     #   scikit-image
 imageio-ffmpeg==0.6.0
@@ -263,6 +272,7 @@ joblib==1.5.3
 jsonschema==4.26.0
     # via
     #   napari (pyproject.toml)
+    #   napari
     #   nbformat
 jsonschema-specifications==2025.9.1
     # via jsonschema
@@ -303,20 +313,23 @@ lxml==6.0.2
     #   napari (pyproject.toml)
     #   napari (pyproject.toml:docs)
     #   lxml-html-clean
-    #   nilearn
     #   ome-types
 lxml-html-clean==0.4.3
     # via lxml
 macro-kit==0.4.10
     # via magic-class
 magic-class==0.7.20
-    # via ndev-settings
+    # via
+    #   ndev-settings
+    #   ndevio
 magicgui==0.10.1
     # via
     #   napari (pyproject.toml)
     #   magic-class
+    #   napari
     #   napari-skimage
     #   ndev-settings
+    #   ndevio
 markdown-it-py==3.0.0
     # via
     #   mdit-py-plugins
@@ -359,12 +372,18 @@ myst-nb==1.3.0
     # via napari (pyproject.toml:docs)
 myst-parser==4.0.1
     # via myst-nb
+napari==0.4.15
+    # via ndevio
 napari-console==0.1.4
-    # via napari (pyproject.toml)
+    # via
+    #   napari (pyproject.toml)
+    #   napari
 napari-meshio==0.0.2
     # via napari (pyproject.toml:docs)
 napari-plugin-engine==0.2.0
-    # via napari (pyproject.toml)
+    # via
+    #   napari (pyproject.toml)
+    #   napari
 napari-plugin-manager==0.1.9
     # via
     #   napari (pyproject.toml)
@@ -374,9 +393,16 @@ napari-skimage==0.6.0
 napari-sphinx-theme==1.0.1
     # via napari (pyproject.toml:docs)
 napari-svg==0.2.1
-    # via napari (pyproject.toml)
+    # via
+    #   napari (pyproject.toml)
+    #   napari
 natsort==8.4.0
-    # via seedir
+    # via
+    #   nbatch
+    #   ndevio
+    #   seedir
+nbatch==0.0.4
+    # via ndevio
 nbclient==0.10.4
     # via
     #   jupyter-cache
@@ -388,7 +414,7 @@ nbformat==5.10.4
     #   nbclient
 ndev-settings==0.4.0
     # via ndevio
-ndevio==0.3.3
+ndevio==0.7.0
     # via napari (pyproject.toml:docs)
 nest-asyncio==1.6.0
     # via ipykernel
@@ -403,6 +429,7 @@ nilearn==0.13.0
 npe2==0.7.9
     # via
     #   napari (pyproject.toml)
+    #   napari
     #   napari-plugin-manager
 numba==0.63.1
     # via
@@ -434,6 +461,7 @@ numpy==2.3.5
     #   matplotlib
     #   meshio
     #   ml-dtypes
+    #   napari
     #   napari-meshio
     #   napari-skimage
     #   napari-svg
@@ -441,7 +469,6 @@ numpy==2.3.5
     #   nilearn
     #   numba
     #   numcodecs
-    #   ome-zarr
     #   pandas
     #   partsegcore-compiled-backend
     #   scikit-image
@@ -454,7 +481,9 @@ numpy==2.3.5
     #   xarray
     #   zarr
 numpydoc==1.10.0
-    # via napari (pyproject.toml:docs)
+    # via
+    #   napari (pyproject.toml:docs)
+    #   napari
 nvidia-cublas-cu12==12.8.4.1
     # via
     #   nvidia-cudnn-cu12
@@ -499,8 +528,6 @@ ome-types==0.6.3
     #   bioio
     #   bioio-base
     #   bioio-ome-tiff
-ome-zarr==0.12.2
-    # via bioio-ome-zarr
 packaging==26.0
     # via
     #   build
@@ -527,6 +554,7 @@ packaging==26.0
 pandas==3.0.0
     # via
     #   napari (pyproject.toml)
+    #   napari
     #   nilearn
     #   xarray
 parso==0.8.5
@@ -543,12 +571,14 @@ pillow==12.1.0
     #   bioio-imageio
     #   imageio
     #   matplotlib
+    #   napari
     #   scikit-image
     #   sphinx-gallery
 pint==0.25.2
     # via
     #   napari (pyproject.toml)
     #   bioio-base
+    #   napari
     #   ome-types
 pip==25.3
     # via napari-plugin-manager
@@ -568,6 +598,7 @@ pooch==1.8.2
     #   napari (pyproject.toml)
     #   napari (pyproject.toml:docs)
     #   napari-meshio
+    #   ndevio
     #   scikit-image
 pretend==1.0.9
     # via napari (pyproject.toml)
@@ -583,6 +614,7 @@ psutil==7.2.1
     #   distributed
     #   imageio
     #   ipykernel
+    #   napari
 psygnal==0.15.1
     # via
     #   napari (pyproject.toml)
@@ -604,12 +636,10 @@ pydantic==2.12.5
     #   napari (pyproject.toml)
     #   app-model
     #   bioio-ome-tiff
+    #   napari
     #   npe2
     #   ome-types
-    #   pydantic-compat
     #   pydantic-extra-types
-pydantic-compat==0.1.2
-    # via app-model
 pydantic-core==2.41.5
     # via pydantic
 pydantic-extra-types==2.11.0
@@ -639,6 +669,7 @@ pyopengl==3.1.10
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
+    #   napari
 pyparsing==3.3.2
     # via matplotlib
 pyperclip==1.11.0
@@ -707,6 +738,7 @@ pyyaml==6.0.3
     #   jupyter-cache
     #   myst-nb
     #   myst-parser
+    #   napari
     #   ndev-settings
     #   npe2
     #   sphinx-external-toc
@@ -724,6 +756,7 @@ qtpy==2.4.3
     #   napari (pyproject.toml)
     #   magic-class
     #   magicgui
+    #   napari
     #   napari-console
     #   napari-plugin-manager
     #   napari-skimage
@@ -737,7 +770,6 @@ requests==2.32.5
     # via
     #   gdown
     #   nilearn
-    #   ome-zarr
     #   pooch
     #   pyconify
     #   sphinx
@@ -753,10 +785,13 @@ rpds-py==0.30.0
     # via
     #   jsonschema
     #   referencing
-s3fs==0.6.0
-    # via fsspec
+s3fs==2026.1.0
+    # via bioio-ome-zarr
 scikit-image==0.26.0
-    # via napari (pyproject.toml)
+    # via
+    #   napari (pyproject.toml)
+    #   bioio-ome-zarr
+    #   napari-skimage
 scikit-learn==1.8.0
     # via
     #   glasbey
@@ -764,6 +799,7 @@ scikit-learn==1.8.0
 scipy==1.17.0
     # via
     #   napari (pyproject.toml)
+    #   napari
     #   nilearn
     #   scikit-image
     #   scikit-learn
@@ -837,7 +873,7 @@ sphinxcontrib-htmlhelp==2.1.0
     # via sphinx
 sphinxcontrib-jsmath==1.0.1
     # via sphinx
-sphinxcontrib-mermaid==1.2.3
+sphinxcontrib-mermaid==2.0.0
     # via napari (pyproject.toml:docs)
 sphinxcontrib-qthelp==2.0.0
     # via sphinx
@@ -858,6 +894,7 @@ superqt==0.7.7
     #   napari (pyproject.toml)
     #   magic-class
     #   magicgui
+    #   napari
     #   napari-plugin-manager
 sympy==1.14.0
     # via torch
@@ -876,6 +913,7 @@ tifffile==2026.1.14
     #   napari (pyproject.toml)
     #   bioio-ome-tiff
     #   bioio-tifffile
+    #   napari
     #   scikit-image
 tomli-w==1.2.0
     # via npe2
@@ -884,7 +922,7 @@ toolz==1.1.0
     #   napari (pyproject.toml)
     #   dask
     #   distributed
-    #   ome-zarr
+    #   napari
     #   partd
 torch==2.10.0
     # via napari (pyproject.toml:testing-extra)
@@ -897,6 +935,7 @@ tqdm==4.67.1
     # via
     #   napari (pyproject.toml)
     #   gdown
+    #   napari
 traitlets==5.14.3
     # via
     #   ipykernel
@@ -934,6 +973,7 @@ typing-extensions==4.15.0
     #   magic-class
     #   magicgui
     #   myst-nb
+    #   napari
     #   nibabel
     #   numcodecs
     #   pint
@@ -969,10 +1009,11 @@ virtualenv==20.36.1
 vispy==0.16.1
     # via
     #   napari (pyproject.toml)
+    #   napari
     #   napari-svg
 watchfiles==1.1.1
     # via sphinx-autobuild
-wcwidth==0.3.1
+wcwidth==0.3.2
     # via prompt-toolkit
 websockets==16.0
     # via sphinx-autobuild
@@ -981,6 +1022,7 @@ wrapt==2.0.1
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
     #   aiobotocore
+    #   napari
 xarray==2025.12.0
     # via
     #   napari (pyproject.toml)
@@ -1004,7 +1046,7 @@ zarr==3.1.5
     #   napari (pyproject.toml:docs)
     #   bioio-ome-zarr
     #   kerchunk
-    #   ome-zarr
+    #   ndevio
     #   tifffile
 zict==3.0.0
     # via distributed
