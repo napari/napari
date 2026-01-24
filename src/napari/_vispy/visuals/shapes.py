@@ -1,6 +1,7 @@
-from vispy.scene.visuals import Compound, Line, Markers, Mesh, Text
+from vispy.scene.visuals import Compound, Line, Markers, Mesh
 
 from napari._vispy.visuals.clipping_planes_mixin import ClippingPlanesMixin
+from napari._vispy.visuals.text import Text
 
 
 class ShapesVisual(ClippingPlanesMixin, Compound):
