@@ -1311,13 +1311,13 @@ class Labels(ScalarFieldBase):
             return
 
         # Build volume-space slice key for the bounding box region
-        slice_key = list(slice_coord)
-        slice_key[dims_to_paint[0]] = slice(min_vals[0], max_vals[0])
-        slice_key[dims_to_paint[1]] = slice(min_vals[1], max_vals[1])
-        slice_key = tuple(slice_key)
+        slice_key_list = list(slice_coord)
+        slice_key_list[dims_to_paint[0]] = slice(min_vals[0], max_vals[0])
+        slice_key_list[dims_to_paint[1]] = slice(min_vals[1], max_vals[1])
+        slice_key = tuple(slice_key_list)
 
         # Extract bounding box region from volume
-        region_data = np.asarray(self.data[slice_key])
+        region_data = np.asarray(self.data[slice_key])  # type: ignore[index]
 
         if region_data.ndim != 2:
             raise ValueError(
