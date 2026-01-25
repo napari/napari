@@ -417,7 +417,7 @@ class Labels(ScalarFieldBase):
         self.colormap.use_selection = self._show_selected_label
         self._prev_selected_label = None
         self._selected_color = self.get_color(self._selected_label)
-        self._updated_slice = None
+        self._updated_slice: tuple[Any, ...] | None = None
         if colormap is not None:
             self._set_colormap(colormap)
 
@@ -1344,7 +1344,7 @@ class Labels(ScalarFieldBase):
 
         # Write updated region back to source data
         # Reshape needed in case of squeeze to 2D for painting
-        self.data[slice_key] = region_data.reshape(self.data[slice_key].shape)
+        self.data[slice_key] = region_data.reshape(self.data[slice_key].shape)  # type: ignore[index]
 
         # Update raw cache if necessary (for Zarr/Dask/etc where view is separate)
         if not (
@@ -1652,7 +1652,7 @@ class Labels(ScalarFieldBase):
         slice_coord: list[int],
     ) -> tuple[int | slice | np.ndarray, ...]:
         """Construct slice key with mask replacing contiguous painted dimensions."""
-        slice_key = []
+        slice_key: list[int | slice | np.ndarray] = []
         i = 0
         while i < self.ndim:
             if i == dims_to_paint[0]:
