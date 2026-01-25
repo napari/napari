@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import contextlib
 import typing
 import warnings
 from collections import deque
@@ -1512,61 +1511,30 @@ class Labels(ScalarFieldBase):
     def _update_cached_view_region(
         self,
         cache_array: np.ndarray,
-        volume_key: Any,
+        volume_key: tuple,
         update_values: np.ndarray,
         dims_to_paint: list[int],
     ) -> None:
         """Update a cached view region using bounding box slices.
 
         For non-shared memory backends (Zarr, Dask, etc.), updates must be
-        explicitly written to cached views. This extracts the appropriate
-        region from the cache and updates it with the new values.
+        explicitly written to cached views. This extracts the 2D slices from
+        the volume-space slice key and updates the cache.
 
         Parameters
         ----------
         cache_array : np.ndarray
-            The cached array to update (e.g., self._slice.image.raw or .view).
-        volume_key : Any
-            The volume-space slice key defining the bounding box region.
+            The cached 2D array to update (e.g., self._slice.image.raw).
+        volume_key : tuple
+            The N-dimensional volume-space slice key with bounding box slices
+            at dims_to_paint positions.
         update_values : np.ndarray
-            The new values to write into the cache region.
+            The 2D array of new values to write (already in correct shape).
         dims_to_paint : list[int]
-            The dimensions being painted.
-
-        Notes
-        -----
-        - Only updates if painting on the currently displayed slice
-        - Handles dimension ordering with transpose when needed
-        - Silently skips update if shapes don't match (defensive)
+            The two dimensions being painted (indices into volume_key).
         """
-        # Check if volume_key is suitable for region update
-        if not (
-            isinstance(volume_key, tuple) and len(volume_key) == self.ndim
-        ):
-            return
-
-        # Check if we are painting on displayed slice
-        displayed_dims = self._slice_input.displayed
-        if set(dims_to_paint) != set(displayed_dims):
-            return
-
-        # Extract the slices from volume_key corresponding to displayed dims
-        region_slices = []
-        for d in displayed_dims:
-            s = volume_key[d]
-            if not isinstance(s, slice):
-                break
-            region_slices.append(s)
-        else:
-            if len(region_slices) == len(displayed_dims):
-                # Align update_values with cache array order
-                if list(displayed_dims) == sorted(displayed_dims):
-                    aligned_values = update_values
-                else:
-                    aligned_values = update_values.T
-
-                with contextlib.suppress(ValueError, IndexError):
-                    cache_array[tuple(region_slices)] = aligned_values
+        cache_slices = tuple(volume_key[d] for d in dims_to_paint)
+        cache_array[cache_slices] = update_values
 
     def _maybe_update_view_from_mask(
         self,
