@@ -1317,7 +1317,7 @@ class Labels(ScalarFieldBase):
         slice_key = tuple(slice_key_list)
 
         # Extract bounding box region from volume
-        region_data = np.asarray(self.data[slice_key])  # type: ignore[index]
+        region_data = np.asarray(self.data[slice_key])
 
         if region_data.ndim != 2:
             raise ValueError(
