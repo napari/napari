@@ -663,8 +663,9 @@ class PandasView(QTableView):
 
         # convert proxy indices to actual row/column labels
         actual_rows = [map_func(proxy_model.index(r, 1)).row() for r in rows]
-        # View columns always map to df columns with offset of 1 (for index column)
-        actual_cols = [c - 1 for c in cols]
+        # Map view columns to df columns, filtering out immutable columns (None)
+        actual_cols = [model._get_df_col_idx(c) for c in cols]
+        actual_cols = [c for c in actual_cols if c is not None]
 
         sub_df = model.df.iloc[actual_rows, actual_cols]
 
@@ -699,26 +700,34 @@ class PandasView(QTableView):
         start_row = start_source_index.row()
         start_col = start_source_index.column()
 
+        # Track max modified column
+        max_modified_col = start_col
+
         for i in range(n_rows):
             for j in range(n_cols):
                 r = start_row + i
-                # View columns always map to df columns with offset of 1 (for index column)
-                c = start_col + j - 1
-                if r >= df.shape[0] or c >= df.shape[1]:
+                c = start_col + j
+                # Get DataFrame column index from source model column
+                df_col = model._get_df_col_idx(c)
+                if df_col is None:  # Index or Layer column - skip
+                    continue
+                if r >= df.shape[0] or df_col >= df.shape[1]:
                     continue
                 val = data[i][j]
-                dtype = df.dtypes.iloc[c]
+                dtype = df.dtypes.iloc[df_col]
                 try:
                     if not isinstance(dtype, pd.CategoricalDtype):
                         val = dtype.type(val)
-                    df.iat[r, c] = val
+                    df.iat[r, df_col] = val
+                    # Track the max column that was actually modified
+                    max_modified_col = max(max_modified_col, c)
                 except (ValueError, TypeError):  # pragma: no cover
                     # TODO: warning? undo?
                     pass
 
         # notify the model/view
         top_left = model.index(start_row, start_col)
-        bottom_right = model.index(start_row + n_rows - 1, start_col + n_cols)
+        bottom_right = model.index(start_row + n_rows - 1, max_modified_col)
         model.dataChanged.emit(top_left, bottom_right)
 
 
