@@ -1,8 +1,16 @@
 from types import NoneType, UnionType
-from typing import Annotated, Dict, List, Union, get_args, get_origin  # noqa
+from typing import (  # noqa
+    Annotated,
+    Any,
+    Dict,
+    List,
+    Union,
+    get_args,
+    get_origin,
+)
 
 
-def iter_inner_types(type_):
+def iter_inner_types(type_: Any) -> Any:
     origin = get_origin(type_)
     args = get_args(type_)
     if origin in (list, List):  # noqa
@@ -18,12 +26,12 @@ def iter_inner_types(type_):
         yield type_
 
 
-def get_inner_type(type_):
+def get_inner_type(type_: Any) -> Any:
     """Roughly replacing pydantic.v1 Field.type_"""
     return Union[tuple(iter_inner_types(type_))]
 
 
-def get_outer_type(type_):
+def get_outer_type(type_: Any) -> Any:
     """Roughly replacing pydantic.v1 Field.outer_type_"""
     origin = get_origin(type_)
     args = get_args(type_)
@@ -40,7 +48,7 @@ def get_outer_type(type_):
     return type_
 
 
-def is_list_type(type_):
+def is_list_type(type_: Any) -> bool:
     """Roughly replacing pydantic.v1 comparison to SHAPE_LIST"""
     return get_outer_type(type_) is list
 
