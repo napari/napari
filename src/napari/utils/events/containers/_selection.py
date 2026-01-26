@@ -1,20 +1,13 @@
 from collections import deque
-from collections.abc import Generator, Iterable
+from collections.abc import Iterable, MutableSet
 from types import GeneratorType
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Generic,
-    TypeVar,
-    Union,
-)
+from typing import Any, Generic, TypeVar, Union, get_args
+
+from pydantic import GetCoreSchemaHandler
+from pydantic_core import core_schema
 
 from napari.utils.events.containers._set import EventedSet
 from napari.utils.events.event import EmitterGroup
-from napari.utils.translations import trans
-
-if TYPE_CHECKING:
-    from pydantic import ModelField
 
 _T = TypeVar('_T')
 _S = TypeVar('_S')
@@ -150,14 +143,26 @@ class Selection(EventedSet[_T]):
         self.add(obj)
 
     @classmethod
-    def __get_validators__(cls) -> Generator:
-        yield cls.validate
+    def __get_pydantic_core_schema__(
+        cls, source: Any, handler: GetCoreSchemaHandler
+    ) -> core_schema.CoreSchema:
+        instance_schema = core_schema.is_instance_schema(cls)
+
+        args = get_args(source)
+        if args:
+            mutableset_t_schema = handler.generate_schema(MutableSet[args[0]])
+        else:
+            mutableset_t_schema = handler.generate_schema(MutableSet)
+
+        non_instance_schema = core_schema.no_info_after_validator_function(
+            cls._validate_selection, EventedSet, mutableset_t_schema
+        )
+        return core_schema.union_schema([instance_schema, non_instance_schema])
 
     @classmethod
-    def validate(
+    def _validate_selection(
         cls,
         v: Union['Selection', dict],  # type: ignore[override]
-        field: 'ModelField',
     ) -> 'Selection':
         """Pydantic validator."""
         if isinstance(v, dict):
@@ -170,38 +175,6 @@ class Selection(EventedSet[_T]):
             data = v
             current = None
 
-        if not sequence_like(data):
-            raise TypeError(
-                trans._(
-                    'Value is not a valid sequence: {data}',
-                    deferred=True,
-                    data=data,
-                )
-            )
-
-        # no type parameter was provided, just return
-        if not field.sub_fields:
-            obj = cls(data=data)
-            obj._current_ = current
-            return obj
-
-        # Selection[type] parameter was provided.  Validate contents
-        type_field = field.sub_fields[0]
-        errors = []
-        for i, v_ in enumerate(data):
-            _, error = type_field.validate(v_, {}, loc=f'[{i}]')
-            if error:
-                errors.append(error)
-        if current is not None:
-            _, error = type_field.validate(current, {}, loc='current')
-            if error:
-                errors.append(error)
-
-        if errors:
-            from pydantic import ValidationError
-
-            raise ValidationError(errors, cls)  # type: ignore [arg-type]
-            # need to be fixed when migrate to pydantic 2
         obj = cls(data=data)
         obj._current_ = current
         return obj
