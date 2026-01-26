@@ -34,7 +34,6 @@ class Extension2ReaderTable(QWidget):
     def __init__(self, parent=None, npe2_readers=None) -> None:
         super().__init__(parent=parent)
 
-        registered_readers = _npe2.get_readers()
         if npe2_readers is None:
             npe2_readers = _npe2.get_readers()
 
