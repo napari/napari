@@ -67,7 +67,7 @@ jobs:
     steps:
       - name: Get PR details
         # extract PR number and branch name from issue_comment event
-        if: github.event_name == 'issue_comment' && inputs.pr_number != ''
+        if: github.event_name == 'issue_comment'
         run: |
           PR_number=${{ github.event.issue.number }}
           PR_data=$(curl \
