@@ -52,12 +52,6 @@ class ColorValue(np.ndarray):
         )
 
     @classmethod
-    def __get_validators__(
-        cls,
-    ) -> Iterator[Callable[[ColorValueParam], 'ColorValue']]:
-        yield cls.validate
-
-    @classmethod
     def validate(cls, value: ColorValueParam) -> 'ColorValue':
         """Validates and coerces the given value into an array storing one color.
 

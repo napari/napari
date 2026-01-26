@@ -19,12 +19,16 @@ class Logo(str):
     __slots__ = ()
 
     @classmethod
-    def __get_validators__(cls):
-        yield cls.validate
+    def __get_pydantic_core_schema__(
+        cls, source_type: Any, handler: GetCoreSchemaHandler
+    ) -> CoreSchema:
+        return core_schema.no_info_plain_validator_function(cls.validate)
 
     @classmethod
-    def __modify_schema__(cls, field_schema):
-        field_schema.update(enum=available_logos())
+    def __get_pydantic_json_schema__(cls, core_schema, handler):
+        json_schema = handler(core_schema)
+        json_schema.update(enum=available_logos())
+        return json_schema
 
     @classmethod
     def validate(cls, v):
@@ -53,10 +57,6 @@ class Theme(str):
     # https://pydantic-docs.helpmanual.io/usage/types/#custom-data-types
 
     __slots__ = ()
-
-    @classmethod
-    def __get_validators__(cls):
-        yield cls.validate
 
     @classmethod
     def __get_pydantic_core_schema__(

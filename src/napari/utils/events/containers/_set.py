@@ -1,21 +1,20 @@
 from __future__ import annotations
 
 from collections import deque
-from collections.abc import Generator, Iterable, Iterator, MutableSet, Sequence
+from collections.abc import Iterable, Iterator, MutableSet
 from types import GeneratorType
 from typing import (
-    TYPE_CHECKING,
     Any,
     TypeVar,
+    get_args,
 )
 
+from pydantic import GetCoreSchemaHandler
+from pydantic_core import core_schema
+
 from napari.utils.events import EmitterGroup
-from napari.utils.translations import trans
 
 _T = TypeVar('_T')
-
-if TYPE_CHECKING:
-    from pydantic import ModelField
 
 
 def sequence_like(v: Any) -> bool:
@@ -174,35 +173,21 @@ class EventedSet(MutableSet[_T]):
         return type(self)(self._set.union(others))
 
     @classmethod
-    def __get_validators__(cls) -> Generator:
-        yield cls.validate
+    def __get_pydantic_core_schema__(
+        cls, source: Any, handler: GetCoreSchemaHandler
+    ) -> core_schema.CoreSchema:
+        instance_schema = core_schema.is_instance_schema(cls)
 
-    @classmethod
-    def validate(cls, v: Sequence, field: ModelField) -> EventedSet:
-        """Pydantic validator."""
-        if not sequence_like(v):
-            raise TypeError(
-                trans._(
-                    'Value is not a valid sequence: {value}',
-                    deferred=True,
-                    value=v,
-                )
-            )
-        if not field.sub_fields:
-            return cls(v)
+        args = get_args(source)
+        if args:
+            mutableset_t_schema = handler.generate_schema(MutableSet[args[0]])
+        else:
+            mutableset_t_schema = handler.generate_schema(MutableSet)
 
-        type_field = field.sub_fields[0]
-        errors = []
-        for i, v_ in enumerate(v):
-            _valid_value, error = type_field.validate(v_, {}, loc=f'[{i}]')
-            if error:
-                errors.append(error)
-        if errors:
-            from pydantic import ValidationError
-
-            raise ValidationError(errors, cls)  # type: ignore [arg-type]
-            # need to be fixed when migrate to pydantic 2
-        return cls(v)
+        non_instance_schema = core_schema.no_info_after_validator_function(
+            EventedSet, mutableset_t_schema
+        )
+        return core_schema.union_schema([instance_schema, non_instance_schema])
 
     def _json_encode(self) -> list:
         """Return an object that can be used by json.dumps."""
