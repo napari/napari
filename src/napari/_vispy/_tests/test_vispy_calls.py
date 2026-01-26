@@ -121,22 +121,3 @@ def test_data_change_ndisplay_surface(make_napari_viewer):
     # Switch to 3D rendering mode and back to 2D rendering mode
     test_ndisplay_change(ndisplay=3)
     test_ndisplay_change(ndisplay=2)
-
-
-def test_labels_selected_data_signal_does_not_break_colormap(
-    make_napari_viewer,
-):
-    """Regression test: selection change emits tuples, should not error."""
-    viewer = make_napari_viewer()
-    data = np.array([[0, 1], [2, 3]], dtype=np.int32)
-    layer = viewer.add_labels(data)
-
-    visual = viewer.window._qt_viewer.canvas.layer_to_visual[layer]
-    # The bug was an AttributeError inside _on_colormap_change when handling
-    # Selection.events.items_changed (emits tuples). We just ensure the call
-    # completes without raising.
-    layer.selected_label = 3
-    layer.selected_label = 1
-
-    # also ensure the vispy visual updated its colormap attribute
-    assert getattr(visual.node, 'cmap', None) is not None

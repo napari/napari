@@ -729,7 +729,7 @@ def test_selected_data_update_and_events():
     """Changing selected_data updates selection state and emits an event."""
     labels = Labels(np.zeros((10, 10), dtype=np.uint8))
     callback = Mock()
-    labels.selected_data.events.items_changed.connect(callback)
+    labels.events.selected_data.connect(callback)
 
     labels.selected_data = [1, 2]
 
@@ -747,8 +747,7 @@ def test_selected_data_triggers_deprecated_selected_label_event():
     callback = Mock()
 
     with pytest.warns(
-        FutureWarning,
-        match='Please use layer.selected_data.events.items_changed instead',
+        FutureWarning, match='Please use layer.events.selected_data instead'
     ):
         labels.events.selected_label.connect(callback)
 
@@ -1960,13 +1959,7 @@ class TestLabels:
     def test_events_defined(self, event_define_check, obj):
         event_define_check(
             obj,
-            {
-                'seed',
-                'num_colors',
-                'color',
-                'seed_rng',
-                'selected_data',
-            },  # `selected_data` itself is an evented model
+            {'seed', 'num_colors', 'color', 'seed_rng'},
             {'selected_label'},
         )
 
