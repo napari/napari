@@ -361,6 +361,8 @@ myst-parser==4.0.1
     # via myst-nb
 napari-console==0.1.4
     # via napari (pyproject.toml)
+napari-metadata==0.1.0
+    # via napari (pyproject.toml)
 napari-meshio==0.0.2
     # via napari (pyproject.toml:docs)
 napari-plugin-engine==0.2.0
@@ -434,6 +436,7 @@ numpy==2.3.5
     #   matplotlib
     #   meshio
     #   ml-dtypes
+    #   napari-metadata
     #   napari-meshio
     #   napari-skimage
     #   napari-svg
@@ -548,6 +551,7 @@ pillow==12.1.0
 pint==0.25.2
     # via
     #   napari (pyproject.toml)
+    #   napari-metadata
     #   bioio-base
     #   ome-types
 pip==25.3
@@ -725,6 +729,7 @@ qtpy==2.4.3
     #   magic-class
     #   magicgui
     #   napari-console
+    #   napari-metadata
     #   napari-plugin-manager
     #   napari-skimage
     #   qtconsole
@@ -817,14 +822,12 @@ sphinx-copybutton==0.5.2
     # via napari (pyproject.toml:docs)
 sphinx-design==0.7.0
     # via napari (pyproject.toml:docs)
-sphinx-external-toc==1.1.0
+sphinx-external-toc==1.0.1
     # via napari (pyproject.toml:docs)
 sphinx-favicon==1.0.1
     # via napari (pyproject.toml:docs)
 sphinx-gallery==0.20.0
     # via napari (pyproject.toml:docs)
-sphinx-multitoc-numbering==0.1.3
-    # via sphinx-external-toc
 sphinx-tabs==3.4.7
     # via napari (pyproject.toml:docs)
 sphinx-tags==0.4
