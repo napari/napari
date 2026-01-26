@@ -55,7 +55,7 @@ def test_animated_gif_reader(save_image):
 def test_reader_plugin_url():
     layer_data = npe2.read(
         [
-            'https://github.com/napari/napari/raw/main/src/napari/resources/logo.png'
+            'https://github.com/napari/docs/raw/main/docs/_static/images/nf-logo.png'
         ],
         stack=False,
     )
