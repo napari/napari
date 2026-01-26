@@ -221,6 +221,8 @@ multidict==6.7.0
     #   yarl
 napari-console==0.1.4
     # via napari (pyproject.toml)
+napari-metadata==0.1.0
+    # via napari (pyproject.toml)
 napari-plugin-engine==0.2.0
     # via napari (pyproject.toml)
 napari-plugin-manager==0.1.9
@@ -261,6 +263,7 @@ numpy==2.3.5
     #   matplotlib
     #   meshio
     #   ml-dtypes
+    #   napari-metadata
     #   napari-svg
     #   nibabel
     #   nilearn
@@ -358,6 +361,7 @@ pillow==12.1.0
     #   scikit-image
 pint==0.25.2
     # via napari (pyproject.toml)
+    #   napari-metadata
 pip==25.3
     # via napari-plugin-manager
 platformdirs==4.5.1
@@ -503,6 +507,7 @@ qtpy==2.4.3
     #   napari (pyproject.toml)
     #   magicgui
     #   napari-console
+    #   napari-metadata
     #   napari-plugin-manager
     #   qtconsole
     #   superqt
