@@ -6,39 +6,42 @@
 #
 # The GitHub workflows have the following limitations:
 # - There is no pull request comment trigger for workflows.
-#   The `issue_comment` trigger is used instead, because it is used for pull requests too.
-# - If a workflow is triggered by pull_requests from forked repository,
+#   The `issue_comment` trigger is used instead because it is used for pull requests too.
+#   (See constraints_comment_trigger.yml)
+# - If a workflow is triggered by pull_requests from a forked repository,
 #   then it does not have access to secrets.
-#   So it is not possible to create PR from forked repository.
-# - If workflow is triggered by comment, then it is triggered on the main branch
-#   and not on the branch where the comment was created.
-# - In workflow triggers it is only possible to depend on created event, without any conditions.
+#   So it is not possible to create PR from a forked repository.
+# - If a comment triggers a workflow, then it is triggered on the main branch
+#   and not on the branch from PR where the comment was created.
+# - In workflow triggers it is only possible to depend on a created event, without any conditions.
 #   So it is not possible to trigger workflow only when the comment contains specific text.
 #   So we need to check it in the workflow.
-#   It will produce multiple empty runs that will create multiple empty entries in actions
-#   making it harder to find the right one.
-# - It is not possible to update pull request from forked repository using Fine grained personal token.
-# - It is not possible to create pull request to forked repository using Fine grained personal token.
+#   It will produce multiple empty runs that will create multiple empty entries in actions,
+#   making it harder to find the right one. Because of that, we move the comment triggering workflow
+#   to the separate file constraints_comment_trigger.yml.
+# - It is not possible to update a pull request from a forked repository using Fine grained personal token.
+# - It is not possible to create a pull request to forked repository using Fine grained personal token.
 # - There is no interface indicator that the workflow triggered by issue comment is running.
 #
-# Also, for safety reason, it is better to store automatically generated changes outside the main repository.
+# Also, for safety reasons, it is better to store automatically generated changes outside the main repository.
 #
 # Because of the above limitations, the following approach is used:
 # - We use `napari-bot/napari` repository to store automatically generated changes.
-# - We don't push changes to `napari-bot/napari` repository if PR contains changes in workflows.
-# - We use two checkouts of repository:
-#   * First into `.` directory from which we run the workflow.
-#   * Second into `napari_repo` directory from which we create pull request.
-#     If comment triggers the workflow, then this will contain the branch from which the PR was created.
-#     Changes will be pushed to `napari-bot/napari` repository.
-#     If schedule or workflow_dispatch triggers workflow, then this will contain the main branch.
-#     Changes will not be pushed to `napari/napari` repository.
-#     If pull_request triggers workflow, then this will contain PR branch.
+# - We don't push changes to the `napari-bot/napari` repository if PR contains changes in workflows.
+# - We use two checkouts of the repository:
+#   * First into the `.` directory from which we run the workflow.
+#   * Second into the `napari_repo` directory from which we create a pull request.
+#     If the comment triggers the workflow, then this will contain the branch from which the PR was created.
+#     Changes will be pushed to the `napari-bot/napari` repository.
+#     If schedule or workflow_dispatch triggers this workflow, then this will contain the main branch.
+#     Changes will not be pushed to the `napari/napari` repository.
+#     If pull_request triggers this workflow, then this will contain a PR branch.
 #     Changes will be only accessible as artifacts.
-# - If workflow is triggered by comment,
-#   then we add eyes reaction to the comment to show that workflow has started.
-#   After finishing calculation of new constraints, we add rocket reaction to the comment.
-#   Then pushing changes to `napari-bot/napari` repository and adding comment to the PR is
+# - If a comment triggers this workflow,
+#   then we add eyes reaction to the comment to show that the workflow has started.
+#   (add_eyes job in constraints_comment_trigger.yml)
+#   After finishing the calculation of new constraints, we add rocket reaction to the comment.
+#   Then pushing changes to the `napari-bot/napari` repository and adding comment to the PR is
 #   done by `tools/create_pr_or_update_existing_one.py`.
 name: Upgrade test constraints
 
