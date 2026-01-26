@@ -970,7 +970,9 @@ class FeaturesTable(QWidget):
             ):
                 layer_categories: dict[str, list] = {}
                 for col in layer.features.columns:
-                    if pd.api.types.is_categorical_dtype(layer.features[col]):
+                    if isinstance(
+                        layer.features[col].dtype, pd.CategoricalDtype
+                    ):
                         layer_categories[col] = list(
                             layer.features[col].cat.categories
                         )
