@@ -41,7 +41,7 @@ license-files = [
 ]
 dependencies = [
     "appdirs>=1.4.4",
-    "app-model>=0.4.0,<0.5.0",
+    "app-model>=0.5.0,<0.6.0",
     "cachey>=0.2.1",
     "certifi>=2018.1.18",
     "dask[array]>=2021.10.0",
@@ -59,14 +59,9 @@ dependencies = [
     "pint>=0.17",
     "psutil>=5.9.0",
     "psygnal>=0.14.2",
-    "pydantic>=2.7.0",
+    "pydantic>=2.8.0",
     "pydantic-extra-types",
     "pydantic-settings",
-    "pygments>=2.6.0",
-    "PyOpenGL>=3.1.5",
-    "pywin32 ; platform_system == 'Windows'",
-    "PyYAML>=6.0",
-    "qtpy>=2.3.1",
     "scikit-image[data]>=0.19.1",
     "scipy>=1.14.0",
     "superqt>=0.7.4",
@@ -119,6 +114,7 @@ all = [
 optional-base = [
     "zarr>=2.12.0", # needed by `builtins` (dask.array.from_zarr) to open zarr
     "aiohttp", # needed to open remote files by zarr, replace by extras once https://github.com/zarr-developers/zarr-python/issues/3453 is done
+    "napari-metadata>=0.1.0",
     "napari-plugin-manager >=0.1.9, <0.2.0",
 ]
 optional-numba = [
@@ -178,20 +174,24 @@ gallery = [
     "pooch",
     "nilearn",
     "xarray",
-    "h5netcdf",
+    "h5netcdf[h5py]",
     "meshio",
     "gdown", # to download some large example data files
 ]
 # needed to build docs
 docs = [
     "napari[gallery]",
+    # napari-meshio, napari-skimage, ndevio needed for docs/getting_started/open_images.md docs PR #907
+    "napari-meshio",
+    "napari-skimage",
+    "ndevio",
     "numpydoc>=1.0.0",
     "sphinx<8",
     "sphinx-autobuild",
     "sphinx-tabs",
     "sphinx-tags",
     "sphinx-design",
-    "sphinx-external-toc",
+    "sphinx-external-toc<1.1.0", # parallel build issue
     "sphinx-favicon>=1.0",
     "sphinx-copybutton",
     "sphinx-gallery",
@@ -270,20 +270,24 @@ gallery = [
     "pooch",
     "nilearn",
     "xarray",
-    "h5netcdf",
+    "h5netcdf[h5py]",
     "meshio",
     "gdown", # to download some large example data files
 ]
 # needed to build docs
 docs = [
     {include-group = "gallery"},
+    # napari-meshio, napari-skimage, ndevio needed for docs/getting_started/open_images.md docs PR #907
+    "napari-meshio",
+    "napari-skimage",
+    "ndevio",
     "numpydoc>=1.0.0",
     "sphinx<8",
     "sphinx-autobuild",
     "sphinx-tabs",
     "sphinx-tags",
     "sphinx-design",
-    "sphinx-external-toc",
+    "sphinx-external-toc<1.1.0", # parallel build issue
     "sphinx-favicon>=1.0",
     "sphinx-copybutton",
     "sphinx-gallery",
@@ -522,6 +526,7 @@ markers = [
     "disable_qthread_pool_start: Disable strarting QRunnable using QThreadPool start in this Test",
     "disable_qtimer_start: Disable timer start in this Test",
     "disable_qanimation_start: Disable animation start in this Test",
+    'allow_animation_thread: Allow animation thread to run in this Test (normally disabled to prevent segfaults)',
     "enable_console: Don't mock the IPython console (in QtConsole) in this Test",
     # mark slow tests, so they can be skipped using: pytest -m "not slow"
     "slow: mark a test as slow",
