@@ -406,7 +406,7 @@ def images_to_stack(images: list[Image], axis: int = 0, **kwargs) -> Image:
         meta['units'] = (pint.get_application_registry().pixel,) + meta[
             'units'
         ]
-        meta['axis_labels'] = (f'axis -{data.ndim + 1}',) + meta['axis_labels']
+        meta['axis_labels'] = (f'-{data.ndim + 1}',) + meta['axis_labels']
 
     return Image(new_data, **meta)
 
