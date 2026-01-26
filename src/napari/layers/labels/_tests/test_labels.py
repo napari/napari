@@ -1936,3 +1936,150 @@ def test_view_dtype(visible, dtype):
 def test_view_dtype_int16(visible, dtype):
     layer = Labels(np.arange(25, dtype=dtype).reshape(5, 5), visible=visible)
     assert layer._slice.image.view.dtype == np.uint16
+
+
+@pytest.mark.parametrize('preserve_labels', [False, True])
+def test_paint_polygon_undo_redo(preserve_labels):
+    """Test undo/redo with preserve_labels."""
+    data = np.zeros((20, 20), dtype=int)
+    data[5:15, 5:15] = 1
+    layer = Labels(data.copy())
+    layer.preserve_labels = preserve_labels
+    layer.selected_label = 2
+
+    points = [[10, 10], [10, 18], [18, 18], [18, 10]]
+    layer.paint_polygon(points, 2)
+
+    if preserve_labels:
+        assert layer.data[12, 12] == 1
+        assert layer.data[12, 17] == 2
+    else:
+        assert layer.data[12, 12] == 2
+
+    painted = layer.data.copy()
+    layer.undo()
+    np.testing.assert_array_equal(layer.data, data)
+    layer.redo()
+    np.testing.assert_array_equal(layer.data, painted)
+
+
+def test_paint_polygon_erase_with_preserve():
+    """Test erasing with preserve_labels only erases the previous label."""
+    data = np.zeros((20, 20), dtype=int)
+    data[5:10, 5:10] = 1
+    data[10:15, 10:15] = 2
+    layer = Labels(data)
+    layer.preserve_labels = True
+    layer.selected_label = 1
+    layer.swap_selected_and_background_labels()
+
+    points = [[2, 2], [2, 18], [18, 18], [18, 2]]
+    layer.paint_polygon(points, 0)
+
+    assert np.all(layer.data[5:10, 5:10] == 0)
+    assert np.all(layer.data[10:15, 10:15] == 2)
+
+
+def test_paint_polygon_non_contiguous():
+    """Test painting on non-contiguous dimensions."""
+    data = np.zeros((3, 10, 10), dtype=int)
+    layer = Labels(data)
+
+    layer._slice_dims(
+        Dims(ndim=3, ndisplay=2, order=(1, 0, 2), point=(0, 0, 0))
+    )
+
+    points = [[0, 0, 0], [0, 0, 3], [3, 0, 3], [3, 0, 0]]
+    layer.paint_polygon(points, 1)
+
+    assert np.all(layer.data[0:3, 0, 0:3] == 1)
+    assert np.all(layer.data[:, 1:, :] == 0)
+
+
+def test_paint_polygon_uint32_view_update():
+    """Test view cache is updated for uint32 arrays."""
+    data = np.zeros((20, 20), dtype=np.uint32)
+    layer = Labels(data)
+    layer.refresh()
+    assert not np.shares_memory(layer.data, layer._slice.image.view)
+
+    points = [[5, 5], [5, 15], [15, 15], [15, 5]]
+    layer.paint_polygon(points, 1)
+
+    assert layer.data[10, 10] == 1
+    assert layer._slice.image.view[10, 10] == 1
+
+
+def test_paint_polygon_out_of_bounds():
+    """Test bounds clipping and event emission."""
+    data = np.zeros((20, 20), dtype=int)
+    layer = Labels(data)
+    layer.refresh()
+
+    updates = []
+    layer.events.labels_update.connect(lambda e: updates.append(e))
+
+    # fully outside
+    points = [[-10, -10], [-10, -5], [-5, -5], [-5, -10]]
+    layer.paint_polygon(points, 1)
+    assert np.all(layer.data == 0)
+    assert len(updates) == 0
+
+    # partially outside
+    points2 = [[-5, -5], [-5, 10], [10, 10], [10, -5]]
+    layer.paint_polygon(points2, 2)
+    assert layer.data[5, 5] == 2
+    assert layer.data[0, 0] == 2
+    assert len(updates) == 1
+
+
+def test_paint_polygon_tensorstore(tmp_path):
+    """Test paint_polygon works with TensorStore backend."""
+    ts = pytest.importorskip('tensorstore')
+
+    data = np.zeros((20, 20), dtype=np.uint32)
+    data[5:15, 5:15] = 1
+    file_path = str(tmp_path / 'labels.zarr')
+
+    spec = {
+        'driver': 'zarr',
+        'kvstore': {'driver': 'file', 'path': file_path},
+        'metadata': {'shape': [20, 20], 'dtype': '<u4', 'chunks': [10, 10]},
+        'create': True,
+        'delete_existing': True,
+    }
+    ts_array = ts.open(spec).result()
+    ts_array[:, :] = data
+
+    layer = Labels(ts_array)
+    layer.refresh()
+    layer.preserve_labels = True
+    layer.selected_label = 2
+
+    # Paint a polygon that overlaps with existing label 1
+    points = [[10, 10], [10, 18], [18, 18], [18, 10]]
+    layer.paint_polygon(points, 2)
+
+    updated_data = ts_array.read().result()
+    assert np.all(updated_data[10:15, 10:15] == 1)
+    assert np.all(updated_data[15:18, 10:15] == 2)
+    assert np.all(updated_data[10:18, 15:18] == 2)
+
+
+def test_paint_polygon_zarr(tmp_path):
+    """Test paint_polygon across zarr chunks and cache updates."""
+    z = zarr.zeros((100, 100), chunks=(50, 50), dtype=np.uint8)
+
+    layer = Labels(z)
+    layer.refresh()
+
+    points = [[25, 25], [25, 75], [75, 75], [75, 25]]
+    layer.paint_polygon(points, 1)
+
+    assert z[30, 30] == 1
+    assert z[30, 60] == 1
+    assert z[60, 30] == 1
+    assert z[60, 60] == 1
+    assert z[10, 10] == 0
+    assert z[90, 90] == 0
+    assert layer._slice.image.raw[30, 30] == 1

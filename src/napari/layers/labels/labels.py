@@ -13,8 +13,8 @@ from typing import (
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
+from PIL import Image, ImageDraw
 from scipy import ndimage as ndi
-from skimage.draw import polygon2mask
 
 from napari.layers._data_protocols import LayerDataProtocol
 from napari.layers._multiscale_data import MultiScaleData
@@ -416,7 +416,7 @@ class Labels(ScalarFieldBase):
         self.colormap.use_selection = self._show_selected_label
         self._prev_selected_label = None
         self._selected_color = self.get_color(self._selected_label)
-        self._updated_slice = None
+        self._updated_slice: tuple[Any, ...] | None = None
         if colormap is not None:
             self._set_colormap(colormap)
 
@@ -1265,12 +1265,16 @@ class Labels(ScalarFieldBase):
             mask_indices, new_label, shape, dims_to_paint, slice_coord, refresh
         )
 
-    def paint_polygon(self, points, new_label):
+    def paint_polygon(self, points: list | np.ndarray, new_label: int) -> None:
         """Paint a polygon over existing labels with a new label.
+
+        Uses a bounding box optimization: extracts a rectangular region around
+        the polygon, paints within that region in-place, then writes back.
+        This approach works for both contiguous and non-contiguous dimension orderings.
 
         Parameters
         ----------
-        points : list of coordinates
+        points : list or array
             List of coordinates of the vertices of a polygon.
         new_label : int
             Value of the new label to be filled in.
@@ -1286,16 +1290,264 @@ class Labels(ScalarFieldBase):
         slice_coord = points[0].tolist()
         points2d = points[:, dims_to_paint]
 
-        polygon_mask = polygon2mask(shape, points2d)
-        mask_indices = np.argwhere(polygon_mask)
-        self._paint_indices(
-            mask_indices,
-            new_label,
-            shape,
-            dims_to_paint,
-            slice_coord,
-            refresh=True,
+        # Calculate bounding box of the polygon
+        min_vals = np.min(points2d, axis=0)
+        max_vals = np.max(points2d, axis=0) + 1  # exclusive
+
+        # Clip bounding box to data shape
+        min_vals = np.maximum(min_vals, 0)
+        max_vals = np.minimum(max_vals, shape)
+
+        if np.any(min_vals >= max_vals):
+            return
+
+        # Shift points relative to bounding box
+        bbox_shape = list(max_vals - min_vals)
+        points2d_shifted = points2d - min_vals
+
+        polygon_mask = self._create_polygon_mask(points2d_shifted, bbox_shape)
+
+        if not np.any(polygon_mask):
+            return
+
+        # Build volume-space slice key for the bounding box region
+        slice_key_list = list(slice_coord)
+        slice_key_list[dims_to_paint[0]] = slice(min_vals[0], max_vals[0])
+        slice_key_list[dims_to_paint[1]] = slice(min_vals[1], max_vals[1])
+        slice_key = tuple(slice_key_list)
+
+        # Extract bounding box region from volume
+        region_data = np.asarray(self.data[slice_key])
+
+        if region_data.ndim != 2:
+            raise ValueError(
+                f'Expected 2D region data, got {region_data.ndim}D. '
+                f'This indicates a bug in slice construction.'
+            )
+
+        # Paint on the extracted region (modifies region_data in place)
+        painted = self._paint_mask(
+            region_data, polygon_mask, new_label, slice_key
         )
+
+        # If nothing was painted, skip cache updates and return
+        if not painted:
+            return
+
+        # Write updated region back to source data
+        self.data[slice_key] = region_data  # type: ignore[index]
+
+        # Update raw cache if necessary (for Zarr/Dask/etc where view is separate)
+        if not (
+            isinstance(self.data, np.ndarray)
+            and np.shares_memory(self.data, self._slice.image.raw)
+        ):
+            self._update_raw_cache(
+                self._slice.image.raw, slice_key, region_data, dims_to_paint
+            )
+
+        # Update view cache for non-shared memory data (e.g., uint32)
+        self._update_view_cache(
+            polygon_mask, new_label, dims_to_paint, slice_key
+        )
+
+        self._updated_slice = slice_key
+        self._partial_labels_refresh()
+
+    def _create_polygon_mask(
+        self, points2d: np.ndarray, shape: list[int]
+    ) -> np.ndarray:
+        """Create a boolean mask from polygon points using PIL rasterization.
+
+        Parameters
+        ----------
+        points2d : ndarray
+            2D polygon vertices in (row, col) format, relative to the mask
+            coordinate system.
+        shape : list of int
+            Shape of the mask to create [height, width].
+
+        Returns
+        -------
+        ndarray
+            Boolean mask with True inside polygon.
+        """
+        # PIL uses (x, y) = (col, row), so reverse the points
+        img = Image.new('L', (shape[1], shape[0]), 0)
+        draw = ImageDraw.Draw(img)
+        points_pil = [tuple(p[::-1]) for p in points2d]
+        draw.polygon(points_pil, outline=1, fill=1)
+        return np.array(img, dtype=bool)
+
+    def _account_for_preserving_labels(
+        self, current_values: np.ndarray, new_label: int
+    ) -> np.ndarray:
+        """Determine which pixels can be painted when preserve_labels is True.
+
+        When preserve_labels is enabled, only certain pixels are allowed to
+        be painted: background pixels when painting, or the previously selected
+        label when erasing.
+
+        Parameters
+        ----------
+        current_values : np.ndarray
+            The current label values at the locations to be painted.
+        new_label : int
+            The new label value to be painted.
+
+        Returns
+        -------
+        np.ndarray
+            Boolean mask indicating which pixels should be (over)painted.
+        """
+        if new_label == self.colormap.background_value:
+            # Erasing: only erase the previously selected label
+            target_label = (
+                self._prev_selected_label
+                if self._prev_selected_label is not None
+                else self.selected_label
+            )
+            return current_values == target_label
+        # Painting: only paint on background
+        return current_values == self.colormap.background_value
+
+    def _paint_mask(
+        self,
+        data: np.ndarray,
+        mask: np.ndarray,
+        new_label: int,
+        volume_slice: Any,
+    ) -> bool:
+        """Paint within a data region using a boolean mask.
+
+        This method operates on the data array in-place, using boolean mask
+        indexing. It handles preserve_labels logic and optimization to skip
+        unchanged pixels. The return indicates if any pixels were painted.
+
+        Parameters
+        ----------
+        data : np.ndarray
+            The data to paint (e.g., extracted region/bounding box around polygon).
+            This array is modified IN PLACE.
+        mask : np.ndarray
+            Boolean mask indicating which pixels to paint, with shape matching data.
+        new_label : int
+            Label value to paint.
+        volume_slice : Any
+            Slice key in volume space for undo/redo history.
+
+        Returns
+        -------
+        bool
+            True if any pixels were painted, False otherwise.
+
+        Notes
+        -----
+        - Respects preserve_labels setting
+        - Saves to undo/redo history
+        - Does NOT update caches or refresh display (caller's responsibility)
+        """
+        if self.preserve_labels:
+            keep_mask = self._account_for_preserving_labels(data, new_label)
+            if not np.any(keep_mask):
+                return False
+            mask &= keep_mask
+
+        mask &= data != new_label
+        if not np.any(mask):
+            return False
+
+        old_values = data.copy()
+        data[mask] = new_label
+        self._save_history((volume_slice, old_values, data.copy()))
+
+        return True
+
+    def _update_raw_cache(
+        self,
+        cache_array: np.ndarray,
+        volume_slice: tuple,
+        update_values: np.ndarray,
+        dims_to_paint: list[int],
+    ) -> None:
+        """Update the raw data cache for non-shared memory backends.
+
+        For non-shared memory backends (Zarr, Dask, etc.), updates must be
+        explicitly written to cached views. This extracts the 2D slices from
+        the volume-space slice key and updates the cache.
+
+        Parameters
+        ----------
+        cache_array : np.ndarray
+            The cached 2D array to update (e.g., self._slice.image.raw).
+        volume_slice : tuple
+            The N-dimensional volume-space slice key with bounding box slices
+            at dims_to_paint positions.
+        update_values : np.ndarray
+            The 2D array of new values to write (already in correct shape).
+        dims_to_paint : list[int]
+            The two dimensions being painted (indices into volume_slice).
+        """
+        cache_slices = tuple(volume_slice[d] for d in dims_to_paint)
+        cache_array[cache_slices] = update_values
+
+    def _update_view_cache(
+        self,
+        mask: np.ndarray,
+        new_label: int,
+        dims_to_paint: list[int],
+        volume_slice: Any,
+    ) -> None:
+        """Update the texture view cache if needed for non-shared memory data.
+
+        For data types where the view is not sharing memory with the underlying
+        data (e.g., uint32 converted to uint8 texture), this updates the view
+        cache with the new painted values.
+
+        Parameters
+        ----------
+        mask : np.ndarray
+            Boolean mask indicating which pixels were painted.
+        new_label : int
+            The label value that was painted.
+        dims_to_paint : list[int]
+            The dimensions that were painted.
+        volume_slice : Any
+            Volume-space slice key defining the bounding box region.
+        """
+        if isinstance(self.data, np.ndarray) and np.shares_memory(
+            self.data, self._slice.image.view
+        ):
+            return
+
+        displayed_dims = self._slice_input.displayed
+        if set(dims_to_paint) != set(displayed_dims):
+            return
+
+        texture_value = self.colormap._data_to_texture(
+            np.array(new_label, dtype=self.dtype)
+        )
+
+        if (
+            not isinstance(volume_slice, tuple)
+            or len(volume_slice) != self.ndim
+        ):
+            return
+
+        region_slices = tuple(
+            volume_slice[d]
+            for d in displayed_dims
+            if isinstance(volume_slice[d], slice)
+        )
+
+        if len(region_slices) != len(displayed_dims):
+            return
+
+        region_view = self._slice.image.view[region_slices]
+        needs_transpose = list(displayed_dims) != sorted(displayed_dims)
+        texture_mask = mask.T if needs_transpose else mask
+        texture_values = np.where(texture_mask, texture_value, region_view)
+        self._slice.image.view[region_slices] = texture_values
 
     def _paint_indices(
         self,
@@ -1348,16 +1600,10 @@ class Labels(ScalarFieldBase):
         # subset it if we want to only paint into background/only erase
         # current label, accounting for swap_selected_and_background_labels
         if self.preserve_labels:
-            if new_label == self.colormap.background_value:
-                keep_coords = self.data[slice_coord] == (
-                    self._prev_selected_label
-                    if self._prev_selected_label
-                    else self.selected_label
-                )
-            else:
-                keep_coords = (
-                    self.data[slice_coord] == self.colormap.background_value
-                )
+            current_values = self.data[slice_coord]
+            keep_coords = self._account_for_preserving_labels(
+                current_values, new_label
+            )
             slice_coord = tuple(sc[keep_coords] for sc in slice_coord)
 
         self.data_setitem(slice_coord, new_label, refresh)
