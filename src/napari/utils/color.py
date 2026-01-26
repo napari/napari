@@ -1,6 +1,5 @@
 """Contains napari color constants and utilities."""
 
-from collections.abc import Callable, Iterator
 from typing import Any
 
 import numpy as np
@@ -137,12 +136,6 @@ class ColorArray(np.ndarray):
             ),
             serialization=serialize_schema,
         )
-
-    @classmethod
-    def __get_validators__(
-        cls,
-    ) -> Iterator[Callable[[ColorArrayParam], 'ColorArray']]:
-        yield cls.validate
 
     def __sizeof__(self) -> int:
         return super().__sizeof__() + self.nbytes
