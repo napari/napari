@@ -1,7 +1,7 @@
 from typing import Union, cast
 
 from napari._pydantic_compat import Field
-from napari.settings._fields import Theme
+from napari.settings._fields import Logo, Theme
 from napari.utils.events.evented_model import ComparisonDelayer, EventedModel
 from napari.utils.theme import available_themes, get_theme
 from napari.utils.translations import trans
@@ -32,6 +32,11 @@ class AppearanceSettings(EventedModel):
         title=trans._('Theme'),
         description=trans._('Select the user interface theme.'),
         env='napari_theme',
+    )
+    logo: Logo = Field(
+        Logo('auto'),
+        title='Logo variant',
+        description='Select which logo variant to use.',
     )
     font_size: int = Field(
         int(get_theme('dark').font_size[:-2]),

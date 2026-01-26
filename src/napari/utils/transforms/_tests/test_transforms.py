@@ -427,8 +427,8 @@ def test_set_units(AffineType):
 
 @pytest.mark.parametrize('AffineType', affine_type)
 def test_empty_axis_labels(AffineType):
-    assert AffineType(ndim=2).axis_labels == ('axis -2', 'axis -1')
-    assert AffineType(ndim=3).axis_labels == ('axis -3', 'axis -2', 'axis -1')
+    assert AffineType(ndim=2).axis_labels == ('-2', '-1')
+    assert AffineType(ndim=3).axis_labels == ('-3', '-2', '-1')
 
 
 @pytest.mark.parametrize('AffineType', affine_type)
