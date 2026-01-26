@@ -125,7 +125,7 @@ def _new_layer_from_active(
         raise ValueError('No active layer to create new layer from.')
     source_layer = layer_list.selection.active
     new_layer_name = get_layer_name(
-        f'{source_layer.name} {layer_class.__name__.lower()}',
+        f'{source_layer.name} - {layer_class.__name__.lower()}',
         existing_names={layer.name for layer in layer_list},
     )
     return _create_single_layer(source_layer, layer_class, new_layer_name)
