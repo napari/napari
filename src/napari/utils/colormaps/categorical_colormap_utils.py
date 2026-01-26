@@ -26,10 +26,6 @@ class ColorCycle:
     cycle: cycle
 
     @classmethod
-    def __get_validators__(cls):
-        yield cls.validate_type
-
-    @classmethod
     def __get_pydantic_core_schema__(
         cls, source_type: Any, handler: GetCoreSchemaHandler
     ) -> CoreSchema:
