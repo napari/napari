@@ -463,7 +463,7 @@ def test_features_table_multilayer_table_concat(qtbot):
         == 'Features of ["Labels", "Points", "Shapes", "Surface", "Tracks", "Vectors"]'
     )
     # Sort by layer name and check that the 'track_id' column is NaN for the 'Labels' layer
-    w.table.sortByColumn(1, Qt.AscendingOrder)
+    w.table.sortByColumn(0, Qt.AscendingOrder)
     assert proxy.data(proxy.index(0, 4)) is pd.NA
 
     # toggle shared columns
@@ -581,7 +581,7 @@ def test_features_table_multilayer_edit(qtbot):
     v.layers.selection.clear()
     v.layers.selection.add(points_layer)
     v.layers.selection.add(labels_layer)
-    w.table.sortByColumn(1, Qt.AscendingOrder)  # Labels, Points
+    w.table.sortByColumn(0, Qt.AscendingOrder)  # Labels, Points
 
     # Edit first data column: Labels layer
     idx = proxy.index(0, 2)
