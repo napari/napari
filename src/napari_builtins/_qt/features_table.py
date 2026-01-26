@@ -110,7 +110,9 @@ class PandasModel(QAbstractTableModel):
                 return float(value)
             if pd.api.types.is_integer_dtype(dtype):
                 return int(value)
-            if pd.api.types.is_datetime64_any_dtype(dtype):
+            if isinstance(
+                value, pd.Timestamp
+            ) or pd.api.types.is_datetime64_any_dtype(dtype):
                 return value.strftime('%Y-%m-%d')
             if pd.api.types.is_bool_dtype(dtype):
                 if role == Qt.ItemDataRole.DisplayRole:
