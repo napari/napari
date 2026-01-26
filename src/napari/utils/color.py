@@ -1,7 +1,7 @@
 """Contains napari color constants and utilities."""
 
 from collections.abc import Callable, Iterator
-from typing import Union
+from typing import Self, Union
 
 import numpy as np
 
@@ -19,17 +19,17 @@ class ColorValue(np.ndarray):
     use the ``validate`` method to coerce a value to a single color.
     """
 
-    def __new__(cls, value: ColorValueParam) -> 'ColorValue':
+    def __new__(cls, value: ColorValueParam) -> Self:
         return cls.validate(value)
 
     @classmethod
     def __get_validators__(
         cls,
-    ) -> Iterator[Callable[[ColorValueParam], 'ColorValue']]:
+    ) -> Iterator[Callable[[ColorValueParam], Self]]:
         yield cls.validate
 
     @classmethod
-    def validate(cls, value: ColorValueParam) -> 'ColorValue':
+    def validate(cls, value: ColorValueParam) -> Self:
         """Validates and coerces the given value into an array storing one color.
 
         Parameters
@@ -85,20 +85,20 @@ class ColorArray(np.ndarray):
     use the ``validate`` method to coerce a value to an array of colors.
     """
 
-    def __new__(cls, value: ColorArrayParam) -> 'ColorArray':
+    def __new__(cls, value: ColorArrayParam) -> Self:
         return cls.validate(value)
 
     @classmethod
     def __get_validators__(
         cls,
-    ) -> Iterator[Callable[[ColorArrayParam], 'ColorArray']]:
+    ) -> Iterator[Callable[[ColorArrayParam], Self]]:
         yield cls.validate
 
     def __sizeof__(self) -> int:
         return super().__sizeof__() + self.nbytes
 
     @classmethod
-    def validate(cls, value: ColorArrayParam) -> 'ColorArray':
+    def validate(cls, value: ColorArrayParam) -> Self:
         """Validates and coerces the given value into an array storing many colors.
 
         Parameters
