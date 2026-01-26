@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import re
 import textwrap
 import warnings
@@ -21,19 +22,27 @@ from napari.utils.interactions import Shortcut
 if TYPE_CHECKING:
     from napari.utils.color import ColorValue
 
+vispy_logger = logging.getLogger('vispy')
+
 
 class Welcome(Node):
     def __init__(self) -> None:
+        old_level = vispy_logger.level
+        vispy_logger.setLevel(logging.ERROR)
         self.logo_coords = (
-            Document(get_icon_path('logo_silhouette')).paths[0].vertices[1][0]
+            Document(get_icon_path('logo_silhouette')).paths[0].vertices[0][0]
         )
+        vispy_logger.setLevel(old_level)
         self.logo_coords = self.logo_coords[
             :, :2
         ]  # drop z: causes issues with polygon agg mode
-        # center vertically and move up
+        # center
         self.logo_coords -= (
             np.max(self.logo_coords, axis=0) + np.min(self.logo_coords, axis=0)
         ) / 2
+        # make it smaller
+        self.logo_coords /= 4
+        # move it up
         self.logo_coords[:, 1] -= 130  # magic number shifting up logo
         super().__init__()
 
