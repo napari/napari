@@ -117,6 +117,7 @@ all = [
 optional-base = [
     "zarr>=2.12.0", # needed by `builtins` (dask.array.from_zarr) to open zarr
     "aiohttp", # needed to open remote files by zarr, replace by extras once https://github.com/zarr-developers/zarr-python/issues/3453 is done
+    "napari-metadata>=0.1.0",
     "napari-plugin-manager >=0.1.9, <0.2.0",
 ]
 optional-numba = [
@@ -193,7 +194,7 @@ docs = [
     "sphinx-tabs",
     "sphinx-tags",
     "sphinx-design",
-    "sphinx-external-toc",
+    "sphinx-external-toc<1.1.0", # parallel build issue
     "sphinx-favicon>=1.0",
     "sphinx-copybutton",
     "sphinx-gallery",
@@ -289,7 +290,7 @@ docs = [
     "sphinx-tabs",
     "sphinx-tags",
     "sphinx-design",
-    "sphinx-external-toc",
+    "sphinx-external-toc<1.1.0", # parallel build issue
     "sphinx-favicon>=1.0",
     "sphinx-copybutton",
     "sphinx-gallery",
