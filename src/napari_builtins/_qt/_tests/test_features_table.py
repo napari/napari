@@ -520,9 +520,13 @@ def test_features_table_multilayer_table_selection(qtbot):
     proxy = w.table.model()
 
     original_a = (2, 0, 1)
-    points_layer = v.add_points(np.zeros((3, 2)), features={'a': original_a})
+    points_layer = v.add_points(
+        np.zeros((3, 2)), features={'a': original_a}, name='Points'
+    )
     labels_layer = v.add_labels(
-        np.zeros((10, 10), dtype=np.uint8), features={'a': original_a}
+        np.zeros((10, 10), dtype=np.uint8),
+        features={'a': original_a},
+        name='Labels',
     )
     features = pd.DataFrame(
         {'shape_type': ['rectangle', 'ellipse'], 'value': [1, 2]}
@@ -531,13 +535,13 @@ def test_features_table_multilayer_table_selection(qtbot):
         np.array([[0, 0], [1, 1], [1, 0], [0, 1]]),
         np.array([[2, 2], [3, 3], [3, 2], [2, 3]]),
     ]
-    shapes_layer = v.add_shapes(data, features=features)
+    shapes_layer = v.add_shapes(data, features=features, name='Shapes')
 
     v.layers.selection.clear()
     v.layers.selection.add(points_layer)
     v.layers.selection.add(labels_layer)
     v.layers.selection.add(shapes_layer)
-    w.table.sortByColumn(1, Qt.AscendingOrder)  # Labels, Points, Shapes
+    w.table.sortByColumn(0, Qt.AscendingOrder)  # Labels, Points, Shapes
 
     # Assert that selected_label is updated
     assert labels_layer.selected_label == 1
