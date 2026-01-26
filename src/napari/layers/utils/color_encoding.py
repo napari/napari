@@ -7,7 +7,8 @@ from typing import (
 )
 
 import numpy as np
-from pydantic import Field, field_validator, parse_obj_as
+from pydantic import Field, GetCoreSchemaHandler, field_validator, parse_obj_as
+from pydantic_core import core_schema
 
 from napari.layers.utils.color_transformations import ColorType
 from napari.layers.utils.style_encoding import (
@@ -31,8 +32,12 @@ class ColorEncoding(StyleEncoding[ColorValue, ColorArray], Protocol):
     """Encodes colors from features."""
 
     @classmethod
-    def __get_validators__(cls):
-        yield cls.validate
+    def __get_pydantic_core_schema__(
+        cls, source, handler: GetCoreSchemaHandler
+    ):
+        return core_schema.no_info_after_validator_function(
+            cls.validate, core_schema.any_schema()
+        )
 
     @classmethod
     def validate(
