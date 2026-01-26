@@ -15,6 +15,7 @@ from typing import (
 )
 
 import numpy as np
+import numpy.typing as npt
 
 # This cannot be condition to TYPE_CHECKING or the stubgen fails
 # with undefined Context.
@@ -59,6 +60,9 @@ from napari.layers import (
     Vectors,
 )
 from napari.layers._source import Source, layer_source
+from napari.layers.image._image_constants import (
+    InterpolationStr,
+)
 from napari.layers.image._image_key_bindings import image_fun_to_mode
 from napari.layers.image._image_utils import guess_labels
 from napari.layers.labels._labels_key_bindings import labels_fun_to_mode
@@ -71,6 +75,7 @@ from napari.layers.vectors._vectors_key_bindings import vectors_fun_to_mode
 from napari.plugins.utils import get_potential_readers, get_preferred_reader
 from napari.settings import get_settings
 from napari.types import (
+    ArrayLike,
     FullLayerData,
     LayerData,
     LayerTypeName,
@@ -80,7 +85,7 @@ from napari.types import (
 )
 from napari.utils._register import create_func as create_add_method
 from napari.utils.action_manager import action_manager
-from napari.utils.colormaps import ensure_colormap
+from napari.utils.colormaps import ValidColormapArg, ensure_colormap
 from napari.utils.events import (
     Event,
     EventedDict,
@@ -92,9 +97,11 @@ from napari.utils.misc import ensure_list_of_layer_data_tuple, is_sequence
 from napari.utils.mouse_bindings import MousemapProvider
 from napari.utils.progress import progress
 from napari.utils.theme import available_themes, is_theme_available
+from napari.utils.transforms import Affine
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
+    import pint
     from npe2.types import SampleDataCreator
 
 
@@ -939,37 +946,37 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     def add_image(
         self,
-        data=None,
+        data: ArrayLike | Sequence[ArrayLike] | None = None,
         *,
-        channel_axis=None,
-        affine=None,
-        axis_labels=None,
-        attenuation=0.05,
-        blending=None,
-        cache=True,
-        colormap=None,
-        contrast_limits=None,
-        custom_interpolation_kernel_2d=None,
-        depiction='volume',
-        experimental_clipping_planes=None,
-        gamma=1.0,
-        interpolation2d='nearest',
-        interpolation3d='linear',
-        iso_threshold=None,
-        metadata=None,
-        multiscale=None,
-        name=None,
-        opacity=1.0,
-        plane=None,
-        projection_mode='mean',
-        rendering='mip',
-        rgb=None,
-        rotate=None,
-        scale=None,
-        shear=None,
-        translate=None,
-        units=None,
-        visible=True,
+        channel_axis: int | None = None,
+        affine: npt.ArrayLike | Affine | None = None,
+        attenuation: float = 0.05,
+        axis_labels: Sequence[str] | None = None,
+        blending: str | None = None,
+        cache: bool = True,
+        colormap: list[ValidColormapArg] | ValidColormapArg | None = None,
+        contrast_limits: tuple[float, float] | None = None,
+        custom_interpolation_kernel_2d: npt.NDArray | None = None,
+        depiction: str = 'volume',
+        experimental_clipping_planes: Dict | None = None,
+        gamma: float = 1.0,
+        interpolation2d: InterpolationStr = 'nearest',
+        interpolation3d: InterpolationStr = 'linear',
+        iso_threshold: float | None = None,
+        metadata: Dict | None = None,
+        multiscale: bool | None = None,
+        name: str | None = None,
+        opacity: float = 1.0,
+        plane: Dict | None = None,
+        projection_mode: str = 'mean',
+        rendering: str = 'mip',
+        rgb: bool | None = None,
+        rotate: float | Sequence[float] | npt.NDArray | None = None,
+        scale: Sequence[float] | None = None,
+        shear: Sequence[float] | npt.NDArray | None = None,
+        translate: Sequence[float] | None = None,
+        units: Sequence[str | pint.Unit] | None = None,
+        visible: bool = True,
     ) -> Image | list[Image]:
         """Add one or more Image layers to the layer list.
 
@@ -1169,7 +1176,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                             argument=k,
                         )
                     )
-            layer = Image(data, **kwargs)
+            # TODO: find a way to correctly type `kwargs`
+            layer = Image(data, **kwargs)  # type: ignore[arg-type]
             self.layers.append(layer)
 
             return layer

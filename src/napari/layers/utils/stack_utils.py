@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import itertools
 import warnings
+from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -14,7 +15,7 @@ from napari.utils.misc import ensure_iterable, ensure_sequence_of_iterables
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
-    from napari.types import FullLayerData
+    from napari.types import ArrayLike, FullLayerData
 
 
 def slice_from_axis(array, *, axis, element):
@@ -56,7 +57,7 @@ def slice_from_axis(array, *, axis, element):
 
 
 def split_channels(
-    data: np.ndarray,
+    data: ArrayLike | Sequence[ArrayLike],
     channel_axis: int,
     **kwargs,
 ) -> list[FullLayerData]:
