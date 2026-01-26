@@ -394,12 +394,12 @@ class Labels(ScalarFieldBase):
             properties=Event,
             selected_label=WarningEmitter(
                 trans._(
-                    'layer.events.selected_label is deprecated and will be removed in 0.8.0. Please use layer.events.selected_data instead.',
+                    'layer.events.selected_label is deprecated and will be removed in 0.8.0.'
+                    'Please use layer.selected_data.events.items_changed instead.',
                     deferred=True,
                 ),
                 type_name='selected_label',
             ),
-            selected_data=Event,
             show_selected_label=Event,
         )
 
@@ -432,9 +432,9 @@ class Labels(ScalarFieldBase):
         self._status = self.mode
         self._preserve_labels = False
 
-        self.events.selected_data.connect(
-            self.events.selected_label
-        )  # For backward compatibility
+        self.selected_data.events.items_changed.connect(
+            lambda *_args: self.events.selected_label()
+        )  # For backwards compatibility
 
     def _slice_dtype(self):
         """Calculate dtype of data view based on data dtype and current colormap"""
@@ -592,7 +592,6 @@ class Labels(ScalarFieldBase):
         self._selected_color = self.get_color(self.selected_label)
         self._color_mode = color_mode
         self.events.colormap()  # Will update the LabelVispyColormap shader
-        self.events.selected_data()
         self.refresh(extent=False)
 
     @property
@@ -773,12 +772,12 @@ class Labels(ScalarFieldBase):
                 lower_bound=dtype_lims[0],
                 upper_bound=dtype_lims[1],
             )
+        next_selected_label = next(reversed(selected_data))
+        self._selected_color = self.get_color(next_selected_label)
         self._selected_data.replace_selection(selected_data)
         self.colormap.selection = self.selected_label
-        self._selected_color = self.get_color(self.selected_label)
         if self.show_selected_label:
             self.refresh(extent=False)
-        self.events.selected_data()
 
     def swap_selected_and_background_labels(self):
         """Swap between the selected label and the background label."""

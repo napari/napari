@@ -204,7 +204,9 @@ class VispyLabelsLayer(VispyScalarFieldBaseLayer):
         )
 
         self.layer.events.labels_update.connect(self._on_partial_labels_update)
-        self.layer.events.selected_data.connect(self._on_colormap_change)
+        self.layer.selected_data.events.items_changed.connect(
+            self._on_colormap_change
+        )
         self.layer.events.show_selected_label.connect(self._on_colormap_change)
         self.layer.events.iso_gradient_mode.connect(
             self._on_iso_gradient_mode_change
@@ -228,8 +230,7 @@ class VispyLabelsLayer(VispyScalarFieldBaseLayer):
         # from napari.utils.colormaps.Colormap (or similar). If we use it
         # in our constructor, we have access to the texture data we need
         if (
-            event is not None
-            and event.type == 'selected_labels'
+            getattr(event, 'type', None) == 'selected_labels'
             and not self.layer.show_selected_label
         ):
             return

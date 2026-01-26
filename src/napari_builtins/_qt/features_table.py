@@ -432,7 +432,7 @@ class FeaturesTable(QWidget):
             # callbacks on the same emitter that fires when the layer
             # property changes.
             if hasattr(layer.events, 'selected_data'):
-                return layer.events.selected_data
+                return layer.selected_data.events.items_changed
             if hasattr(layer.selected_data, 'events'):
                 return layer.selected_data.events
             if hasattr(layer.events, 'highlight'):

@@ -367,7 +367,7 @@ def test_features_table_change_active_layer(qtbot):
     assert len(layer1.selected_data.events.all) == 1
     assert len(layer2.events.features.callbacks) == 1
     assert (
-        len(layer2.events.selected_data.callbacks) == 2
+        len(layer2.selected_data.events.items_changed.callbacks) == 2
     )  # Including emitter of selected_label
     assert w.info.text() == f'Features of "{layer1.name}"'
 
@@ -376,7 +376,7 @@ def test_features_table_change_active_layer(qtbot):
     assert len(layer1.selected_data.events.all) == 0
     assert len(layer2.events.features.callbacks) == 2
     assert (
-        len(layer2.events.selected_data.callbacks) == 3
+        len(layer2.selected_data.events.items_changed.callbacks) == 3
     )  # Including emitter of selected_label
     assert w.info.text() == f'Features of "{layer2.name}"'
 
@@ -385,7 +385,7 @@ def test_features_table_change_active_layer(qtbot):
     assert len(layer1.selected_data.events.all) == 0
     assert len(layer2.events.features.callbacks) == 1
     assert (
-        len(layer2.events.selected_data.callbacks) == 2
+        len(layer2.selected_data.events.items_changed.callbacks) == 2
     )  # Including emitter of selected_label
     assert 'has no features table' in w.info.text()
 
