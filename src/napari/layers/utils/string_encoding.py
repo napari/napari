@@ -3,7 +3,8 @@ from string import Formatter
 from typing import Any, Literal, Protocol, Union, runtime_checkable
 
 import numpy as np
-from pydantic import ValidationInfo, parse_obj_as
+from pydantic import GetCoreSchemaHandler, parse_obj_as
+from pydantic_core import core_schema
 
 from napari.layers.utils.style_encoding import (
     StyleEncoding,
@@ -30,14 +31,17 @@ class StringEncoding(StyleEncoding[StringValue, StringArray], Protocol):
     """Encodes strings from layer features."""
 
     @classmethod
-    def __get_validators__(cls):
-        yield cls.validate
+    def __get_pydantic_core_schema__(
+        cls, source, handler: GetCoreSchemaHandler
+    ):
+        return core_schema.no_info_after_validator_function(
+            cls.validate, core_schema.any_schema()
+        )
 
     @classmethod
     def validate(
         cls,
         value: Union['StringEncoding', dict, str, Sequence[str]],
-        info: ValidationInfo,
     ) -> 'StringEncoding':
         """Validates and coerces a value to a StringEncoding.
 
