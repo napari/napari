@@ -2083,3 +2083,51 @@ def test_paint_polygon_zarr(tmp_path):
     assert z[10, 10] == 0
     assert z[90, 90] == 0
     assert layer._slice.image.raw[30, 30] == 1
+
+
+@pytest.mark.parametrize('ndisplay', [2, 3])
+@pytest.mark.parametrize('n_edit_dimensions', [2, 3])
+def test_paint_int64_view_update_3d_display(ndisplay, n_edit_dimensions):
+    """Test view cache is updated for int64 arrays in all display modes.
+
+    Regression test for bug where int64 arrays didn't update visuals when
+    painting with n_edit_dimension not matching display mode
+    e.g. ndisplay=2 with n_edit_dimensions=3
+    """
+    data = np.zeros((50, 50, 50), dtype=np.int64)
+    layer = Labels(data)
+    layer.brush_size = 5
+    layer.n_edit_dimensions = n_edit_dimensions
+
+    dims = Dims(ndim=3, ndisplay=ndisplay)
+    for i in range(3):
+        dims.set_range(i, (0, 49, 1))
+    if ndisplay == 2:
+        dims.set_current_step(0, 25)
+    layer._slice_dims(dims)
+    layer.refresh()
+
+    assert not np.shares_memory(layer.data, layer._slice.image.view)
+
+    view_before = layer._slice.image.view.copy()
+
+    layer.paint([25, 25, 25], 1)
+
+    # Verify data was painted
+    if n_edit_dimensions == 2:
+        painted_data = data[25, 20:30, 20:30]
+    else:
+        painted_data = data[20:30, 20:30, 20:30]
+
+    assert np.any(painted_data == 1)
+
+    if ndisplay == 2:
+        view_painted = layer._slice.image.view[23:28, 23:28]
+    else:
+        if n_edit_dimensions == 2:
+            view_painted = layer._slice.image.view[25, 23:28, 23:28]
+        else:
+            view_painted = layer._slice.image.view[23:28, 23:28, 23:28]
+
+    assert np.any(view_painted != 0)
+    assert not np.array_equal(view_before, layer._slice.image.view)
