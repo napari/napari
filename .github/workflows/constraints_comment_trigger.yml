@@ -1,0 +1,46 @@
+name: Upgrade test constraints trigger by comment
+
+on:
+  issue_comment:
+    types: [ created ]
+
+permissions:
+  pull-requests: write
+  issues: write
+
+jobs:
+  add_eyes:
+    name: Add eyes reaction
+    if: github.event.issue.pull_request != '' && contains(github.event.comment.body, '@napari-bot update constraints')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Add eyes reaction
+        run: |
+          COMMENT_ID=${{ github.event.comment.id }}
+          curl \
+            -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/issues/comments/$COMMENT_ID/reactions" \
+            -d '{"content": "eyes"}'
+  trigger-benchmarks:
+    needs: add_eyes
+    uses: ./.github/workflows/upgrade_test_constraints.yml
+    with:
+      pr_number: ${{ github.event.issue.number }}
+    secrets: inherit
+
+  add_rocket:
+    name: Add rocket reaction
+    needs: trigger-benchmarks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Add rocket reaction
+        run: |
+          COMMENT_ID=${{ github.event.comment.id }}
+          curl \
+            -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/issues/comments/$COMMENT_ID/reactions" \
+            -d '{"content": "rocket"}'

@@ -1,7 +1,7 @@
 # This is a workflow for upgrading test constraints. It is triggered by:
 # - On-demand workflow_dispatch
 # - weekly schedule (every Monday at 8:00 UTC)
-# - issue_comment with text "@napari-bot update constraints"
+# - workflow_call from constraints_comment_trigger.yml (comment text "@napari-bot update constraints")
 # - pull_request with changed .github/workflows/upgrade_test_constraints.yml
 #
 # The GitHub workflows have the following limitations:
@@ -10,7 +10,7 @@
 # - If a workflow is triggered by pull_requests from forked repository,
 #   then it does not have access to secrets.
 #   So it is not possible to create PR from forked repository.
-# - If workflow is triggered by issue comment, then it is triggered on the main branch
+# - If workflow is triggered by comment, then it is triggered on the main branch
 #   and not on the branch where the comment was created.
 # - In workflow triggers it is only possible to depend on created event, without any conditions.
 #   So it is not possible to trigger workflow only when the comment contains specific text.
@@ -35,7 +35,7 @@
 #     Changes will not be pushed to `napari/napari` repository.
 #     If pull_request triggers workflow, then this will contain PR branch.
 #     Changes will be only accessible as artifacts.
-# - If workflow is triggered by issue comment,
+# - If workflow is triggered by comment,
 #   then we add eyes reaction to the comment to show that workflow has started.
 #   After finishing calculation of new constraints, we add rocket reaction to the comment.
 #   Then pushing changes to `napari-bot/napari` repository and adding comment to the PR is
@@ -48,8 +48,12 @@ on:
     # Runs every Monday at 8:00 UTC (4:00 Eastern)
     - cron: '0 8 * * 1'
 
-  issue_comment:
-    types: [ created ]
+  workflow_call:
+    inputs:
+      pr_number:
+        description: Pull request number that triggered the comment workflow.
+        required: false
+        type: string
 
   pull_request:
     paths:
@@ -61,26 +65,13 @@ jobs:
       pull-requests: write
       issues: write
     name: Upgrade & Open Pull Request
-    if: (github.event.issue.pull_request != '' && contains(github.event.comment.body, '@napari-bot update constraints')) || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' || github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
-      - name: Add eyes reaction
-        # show that workflow has started
-        if: github.event_name == 'issue_comment'
-        run: |
-          COMMENT_ID=${{ github.event.comment.id }}
-          curl \
-            -X POST \
-            -H "Accept: application/vnd.github+json" \
-            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            "https://api.github.com/repos/${{ github.repository }}/issues/comments/$COMMENT_ID/reactions" \
-            -d '{"content": "eyes"}'
-
       - name: Get PR details
         # extract PR number and branch name from issue_comment event
-        if: github.event_name == 'issue_comment'
+        if: github.event_name == 'workflow_call' && inputs.pr_number != ''
         run: |
-          PR_number=${{ github.event.issue.number }}
+          PR_number=${{ inputs.pr_number }}
           PR_data=$(curl \
               -H "Accept: application/vnd.github.v3+json" \
               "https://api.github.com/repos/${{ github.repository }}/pulls/$PR_number" \
@@ -97,7 +88,7 @@ jobs:
 
       - name: Get repo info
         # when schedule or workflow_dispatch triggers workflow, then we need to get info about which branch to use
-        if: github.event_name != 'issue_comment' && github.event_name != 'pull_request'
+        if: github.event_name != 'workflow_call' && github.event_name != 'pull_request'
         run: |
           echo "FULL_NAME=${{ github.repository }}" >> "$GITHUB_ENV"
           echo "BRANCH=${{ github.ref_name }}" >> "$GITHUB_ENV"
@@ -108,7 +99,7 @@ jobs:
 
       - name: Clone target repo (remote)
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
-        if: github.event_name == 'issue_comment'
+        if: github.event_name == 'workflow_call'
         with:
           path: napari_repo  # place in a named directory
           repository: ${{ env.FULL_NAME }}
@@ -124,7 +115,7 @@ jobs:
 
       - name: Clone target repo (main)
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
-        if: github.event_name != 'issue_comment' && github.event_name != 'pull_request'
+        if: github.event_name != 'workflow_call' && github.event_name != 'pull_request'
         with:
           path: napari_repo  # place in a named directory
           repository: ${{ env.FULL_NAME }}
@@ -137,20 +128,15 @@ jobs:
           git remote -v
           git remote add napari-bot https://github.com/napari-bot/napari.git
           git remote -v
-
-      # START PYTHON DEPENDENCIES
-      - uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v6.1.0
+      - name: Set up Python 3.12
+        uses: astral-sh/setup-uv@v7
         with:
           python-version: "3.12"
-          cache: pip
-          cache-dependency-path: 'pyproject.toml'
 
       - name: Upgrade Python dependencies
         # ADD YOUR CUSTOM DEPENDENCY UPGRADE COMMANDS BELOW
         run: |
           set -x
-          pip install -U uv
-
           bash napari_repo/tools/compile_constraints.sh
 
       # END PYTHON DEPENDENCIES
@@ -168,23 +154,10 @@ jobs:
         env:
           UV_CONSTRAINT: napari_repo/resources/constraints/constraints_py3.12.txt
 
-      - name: Add rocket reaction
-        # inform that new constraints are available in artifacts
-        if: github.event_name == 'issue_comment'
-        run: |
-          COMMENT_ID=${{ github.event.comment.id }}
-          curl \
-            -X POST \
-            -H "Accept: application/vnd.github+json" \
-            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            "https://api.github.com/repos/${{ github.repository }}/issues/comments/$COMMENT_ID/reactions" \
-            -d '{"content": "rocket"}'
-
       - name: Create commit
         run: |
-          pip install requests
-          python tools/create_pr_or_update_existing_one.py
+          uv run tools/create_pr_or_update_existing_one.py
         env:
             GHA_TOKEN_MAIN_REPO: ${{ secrets.GHA_TOKEN_NAPARI_BOT_MAIN_REPO }}
-            PR_NUMBER: ${{ github.event.issue.number }}
+            PR_NUMBER: ${{ inputs.pr_number }}
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
