@@ -822,14 +822,12 @@ sphinx-copybutton==0.5.2
     # via napari (pyproject.toml:docs)
 sphinx-design==0.7.0
     # via napari (pyproject.toml:docs)
-sphinx-external-toc==1.1.0
+sphinx-external-toc==1.0.1
     # via napari (pyproject.toml:docs)
 sphinx-favicon==1.0.1
     # via napari (pyproject.toml:docs)
 sphinx-gallery==0.20.0
     # via napari (pyproject.toml:docs)
-sphinx-multitoc-numbering==0.1.3
-    # via sphinx-external-toc
 sphinx-tabs==3.4.7
     # via napari (pyproject.toml:docs)
 sphinx-tags==0.4

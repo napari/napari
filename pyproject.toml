@@ -194,7 +194,7 @@ docs = [
     "sphinx-tabs",
     "sphinx-tags",
     "sphinx-design",
-    "sphinx-external-toc",
+    "sphinx-external-toc<1.1.0", # parallel build issue
     "sphinx-favicon>=1.0",
     "sphinx-copybutton",
     "sphinx-gallery",
@@ -290,7 +290,7 @@ docs = [
     "sphinx-tabs",
     "sphinx-tags",
     "sphinx-design",
-    "sphinx-external-toc",
+    "sphinx-external-toc<1.1.0", # parallel build issue
     "sphinx-favicon>=1.0",
     "sphinx-copybutton",
     "sphinx-gallery",
