@@ -99,10 +99,6 @@ class Language(str):
     __slots__ = ()
 
     @classmethod
-    def __get_validators__(cls):
-        yield cls.validate
-
-    @classmethod
     def __get_pydantic_core_schema__(
         cls, source_type: Any, handler: GetCoreSchemaHandler
     ) -> CoreSchema:
@@ -240,10 +236,6 @@ class Version:
         if self.build:  # pragma: no cover
             v += str(self.build)
         return v
-
-    @classmethod
-    def __get_validators__(cls):
-        yield cls.validate
 
     @classmethod
     def __get_pydantic_core_schema__(
