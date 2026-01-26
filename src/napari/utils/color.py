@@ -1,9 +1,10 @@
 """Contains napari color constants and utilities."""
 
 from collections.abc import Callable, Iterator
-from typing import Self, Union
+from typing import Union
 
 import numpy as np
+from typing_extensions import Self
 
 from napari.utils.colormaps.standardize_color import transform_color
 
