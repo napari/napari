@@ -26,14 +26,15 @@ from napari.utils.events.evented_model import EventedModel
 from napari.utils.notifications import NotificationSeverity
 from napari.utils.translations import trans
 
-GridStride = Annotated[int, Field(ge=-50, le=50), NotEqual(0)]
-GridStride = Annotated[int, Field(ge=-50, le=50), NotEqual(0)]
-GridWidth = Annotated[int, Field(ge=-1), NotEqual(0)]
-GridHeight = Annotated[int, Field(ge=-1), NotEqual(0)]
 # we could use a smaller or greater 'le' for spacing,
 # this is just meant to be a somewhat reasonable upper limit,
 # as even on a 4k monitor a 2x2 grid will break calculation with >1300 spacing
-GridSpacing = Annotated[float, Field(ge=0, le=1500)]
+MAX_GRID_SPACING = 1500
+
+GridStride = Annotated[int, NotEqual(0)]
+GridWidth = Annotated[int, Field(ge=-1), NotEqual(0)]
+GridHeight = Annotated[int, Field(ge=-1), NotEqual(0)]
+GridSpacing = Annotated[float, Field(ge=0, le=MAX_GRID_SPACING)]
 
 _DEFAULT_MEM_FRACTION = 0.25
 MAX_CACHE = virtual_memory().total * 0.5 / 1e9
