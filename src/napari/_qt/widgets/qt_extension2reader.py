@@ -36,7 +36,7 @@ class Extension2ReaderTable(QWidget):
 
         registered_readers = _npe2.get_readers()
         if npe2_readers is None:
-            npe2_readers = registered_readers
+            npe2_readers = _npe2.get_readers()
 
         self._npe2_readers = npe2_readers
 
