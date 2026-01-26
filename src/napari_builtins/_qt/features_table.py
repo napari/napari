@@ -744,6 +744,7 @@ class FeaturesTable(QWidget):
         self.viewer.layers.selection.events.changed.connect(
             self._on_layer_selection_change
         )
+        self.viewer.layers.events.renamed.connect(self._on_layer_renamed)
 
         self.setLayout(QVBoxLayout())
 
@@ -774,6 +775,30 @@ class FeaturesTable(QWidget):
 
         self._on_layer_selection_change()
         self._on_editable_change()
+
+    def _on_layer_renamed(self, event):
+        """Update table and info label when a layer is renamed."""
+        if not self._selected_layers:
+            return
+
+        # Update info label with new layer names
+        if len(self._selected_layers) == 1:
+            self.info.setText(f'Features of "{self._selected_layers[0].name}"')
+        else:
+            layer_names = ', '.join(
+                f'"{layer.name}"'
+                for layer in sorted(
+                    self._selected_layers, key=lambda lyr: lyr.name
+                )
+            )
+            self.info.setText(f'Features of [{layer_names}]')
+
+        # Update the Layer column in the table if present
+        model = self.table.model().sourceModel()
+        df = model.df
+        if 'Layer' in df.columns and len(self._selected_layers) > 1:
+            # Rebuild the table to reflect the renamed layer
+            self._on_features_change()
 
     @staticmethod
     def _get_selection_event_for_layer(layer):
