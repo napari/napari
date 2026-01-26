@@ -52,11 +52,6 @@ on:
     - cron: '0 8 * * 1'
 
   workflow_call:
-    inputs:
-      pr_number:
-        description: Pull request number that triggered the comment workflow.
-        required: false
-        type: string
 
   pull_request:
     paths:
@@ -72,9 +67,9 @@ jobs:
     steps:
       - name: Get PR details
         # extract PR number and branch name from issue_comment event
-        if: github.event_name == 'workflow_call' && inputs.pr_number != ''
+        if: github.event_name == 'issue_comment' && inputs.pr_number != ''
         run: |
-          PR_number=${{ inputs.pr_number }}
+          PR_number=${{ github.event.issue.number }}
           PR_data=$(curl \
               -H "Accept: application/vnd.github.v3+json" \
               "https://api.github.com/repos/${{ github.repository }}/pulls/$PR_number" \
@@ -91,7 +86,7 @@ jobs:
 
       - name: Get repo info
         # when schedule or workflow_dispatch triggers workflow, then we need to get info about which branch to use
-        if: github.event_name != 'workflow_call' && github.event_name != 'pull_request'
+        if: github.event_name != 'issue_comment' && github.event_name != 'pull_request'
         run: |
           echo "FULL_NAME=${{ github.repository }}" >> "$GITHUB_ENV"
           echo "BRANCH=${{ github.ref_name }}" >> "$GITHUB_ENV"
@@ -102,7 +97,7 @@ jobs:
 
       - name: Clone target repo (remote)
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
-        if: github.event_name == 'workflow_call'
+        if: github.event_name == 'issue_comment'
         with:
           path: napari_repo  # place in a named directory
           repository: ${{ env.FULL_NAME }}
@@ -118,7 +113,7 @@ jobs:
 
       - name: Clone target repo (main)
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
-        if: github.event_name != 'workflow_call' && github.event_name != 'pull_request'
+        if: github.event_name != 'issue_comment' && github.event_name != 'pull_request'
         with:
           path: napari_repo  # place in a named directory
           repository: ${{ env.FULL_NAME }}
@@ -162,5 +157,5 @@ jobs:
           uv run tools/create_pr_or_update_existing_one.py
         env:
             GHA_TOKEN_MAIN_REPO: ${{ secrets.GHA_TOKEN_NAPARI_BOT_MAIN_REPO }}
-            PR_NUMBER: ${{ inputs.pr_number }}
+            PR_NUMBER: ${{ github.event.issue.number }}
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

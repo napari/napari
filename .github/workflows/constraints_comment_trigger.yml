@@ -26,8 +26,6 @@ jobs:
   trigger-benchmarks:
     needs: add_eyes
     uses: ./.github/workflows/upgrade_test_constraints.yml
-    with:
-      pr_number: ${{ github.event.issue.number }}
     secrets: inherit
 
   add_rocket:
