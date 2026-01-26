@@ -3,7 +3,13 @@ from dataclasses import dataclass
 from typing import Any
 
 import numpy as np
-from pydantic import Field, field_validator, model_validator
+from pydantic import (
+    Field,
+    GetCoreSchemaHandler,
+    field_validator,
+    model_validator,
+)
+from pydantic_core import core_schema
 
 from napari.layers.utils._color_manager_constants import ColorMode
 from napari.layers.utils.color_manager_utils import (
@@ -45,8 +51,12 @@ class ColorProperties:
     current_value: Any | None = None
 
     @classmethod
-    def __get_validators__(cls):
-        yield cls.validate_type
+    def __get_pydantic_core_schema__(
+        cls, source, handler: GetCoreSchemaHandler
+    ):
+        return core_schema.no_info_after_validator_function(
+            cls.validate_type, core_schema.any_schema()
+        )
 
     @classmethod
     def validate_type(cls, val):
