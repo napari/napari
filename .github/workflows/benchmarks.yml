@@ -106,7 +106,7 @@ jobs:
           # ID this runner
           asv machine --yes
 
-          if [[ $GITHUB_EVENT_NAME == workflow_call ]]; then
+          if [[ $GITHUB_EVENT_NAME == pull_request ]]; then
             EVENT_NAME="PR #${{ github.event.pull_request.number }}"
             BASE_REF=${{ github.event.pull_request.base.sha }}
             CONTENDER_REF=${GITHUB_SHA}
@@ -176,7 +176,7 @@ jobs:
           # Add the message that might be posted as a comment on the PR
           # We delegate the actual comment to `benchmarks_report.yml` due to
           # potential token permissions issues
-          if [[ $GITHUB_EVENT_NAME == workflow_call ]]; then
+          if [[ $GITHUB_EVENT_NAME == pull_request ]]; then
 
           echo "${{ github.event.pull_request.number }}" > .asv/results/pr_number
           echo \
