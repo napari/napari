@@ -165,6 +165,11 @@ class Extension2ReaderTable(QWidget):
         readers = self._npe2_readers.copy()
         to_delete = []
         try:
+            # Running both the extension and the new_pattern through the `Path`
+            # module helps us avoid issues with empty or invalid paths on
+            # Windows. Either of these lines could throw a ValueError about
+            # empty names, which we catch below. See PR #6107 and #8579 for
+            # more detail
             ext = str(Path(new_pattern).suffix).lower()
             _ = str(Path(new_pattern).with_suffix(ext))
             compatible_readers = _npe2.get_readers(new_pattern)
