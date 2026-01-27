@@ -2,12 +2,12 @@ import itertools
 from typing import Any
 
 import numpy as np
-from vispy.scene.node import Node
-from vispy.scene.visuals import Image
+from vispy.scene.visuals import Compound, Image
+from vispy.visuals import BaseVisual
 from vispy.visuals.transforms.linear import STTransform
 
 
-class TiledImageNode(Node):
+class TiledImageNode(Compound):
     """Custom Vispy scenegraph Node to display large images.
 
     Vispy 2D rendering works by drawing images as 2D OpenGL textures.
@@ -42,12 +42,22 @@ class TiledImageNode(Node):
         tile_size: int,
         texture_format: str | None = None,
     ) -> None:
+        self.unfreeze()
         self.texture_format = texture_format
         self.adopted_children: list[Image] = []
+        self.offsets: list[tuple[int, int]] = []
         self.tile_size = tile_size
-        super().__init__()
-
+        self.data = None
+        self.custom_kernel = None
+        self.interpolation = None
+        super().__init__([])
         self.set_data(data)
+
+    def add_subvisual(self, visual):
+        self._subvisuals.append(visual)
+
+    def _transform_changed(self, event=None):
+        BaseVisual._transform_changed(self)
 
     def set_data(self, data: np.ndarray) -> None:
         tiles = make_tiles(data, self.tile_size)
@@ -61,6 +71,7 @@ class TiledImageNode(Node):
         else:
             for child in self.adopted_children:
                 child.parent = None
+            self._subvisuals = []
             self.adopted_children = [
                 Image(
                     data=dat,
@@ -73,6 +84,7 @@ class TiledImageNode(Node):
                 self.adopted_children, self.offsets, strict=True
             ):
                 ch.transform = STTransform(translate=offset + (0,))
+                self.add_subvisual(ch)
 
     def set_gl_state(self, *args: Any, **kwargs: Any) -> None:
         for child in self.adopted_children:
