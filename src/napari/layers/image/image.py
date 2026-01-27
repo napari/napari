@@ -13,7 +13,10 @@ from scipy import ndimage as ndi
 from napari.layers._data_protocols import LayerDataProtocol
 from napari.layers._multiscale_data import MultiScaleData
 from napari.layers._scalar_field._slice import _ScalarFieldSliceResponse
-from napari.layers._scalar_field.scalar_field import ScalarFieldBase
+from napari.layers._scalar_field.scalar_field import (
+    ScalarFieldBase,
+    ScalarFieldSlicingState,
+)
 from napari.layers.image._image_constants import (
     ImageProjectionMode,
     ImageRendering,
@@ -21,8 +24,10 @@ from napari.layers.image._image_constants import (
     InterpolationStr,
 )
 from napari.layers.image._image_utils import guess_rgb
+from napari.layers.image._slice import _ImageSliceRequest
 from napari.layers.intensity_mixin import IntensityVisualizationMixin
 from napari.layers.utils.layer_utils import calc_data_range
+from napari.types import LayerDataType
 from napari.utils._dtype import get_dtype_limits, normalize_dtype
 from napari.utils.colormaps import ensure_colormap
 from napari.utils.colormaps.colormap_utils import _coerce_contrast_limits
@@ -60,7 +65,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         Attenuation rate for attenuated maximum intensity projection.
     axis_labels : tuple of str
         Dimension names of the layer data.
-        If not provided, axis_labels will be set to (..., 'axis -2', 'axis -1').
+        If not provided, axis_labels will be set to (..., '-2', '-1').
     blending : str
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
@@ -397,28 +402,6 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         )
         return state
 
-    def _update_slice_response(
-        self, response: _ScalarFieldSliceResponse
-    ) -> None:
-        if self._keep_auto_contrast:
-            data = response.image.raw
-            input_data = data[-1] if self.multiscale else data
-            self.contrast_limits = calc_data_range(
-                typing.cast(LayerDataProtocol, input_data),
-                rgb=self.rgb,
-                dtype=self.dtype,
-            )
-
-        super()._update_slice_response(response)
-
-        # Maybe reset the contrast limits based on the new slice.
-        if self._should_calc_clims:
-            self.reset_contrast_limits_range()
-            self.reset_contrast_limits()
-            self._should_calc_clims = False
-        elif self._keep_auto_contrast:
-            self.reset_contrast_limits()
-
     @property
     def attenuation(self) -> float:
         """float: attenuation rate for attenuated_mip rendering."""
@@ -579,8 +562,9 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         Calculate the range of the data values in the currently viewed slice
         or full data array
         """
+        input_data: np.ndarray
         if mode == 'data':
-            input_data = self.data[-1] if self.multiscale else self.data
+            input_data = self.data[-1] if self.multiscale else self.data  # type: ignore[assignment]
         elif mode == 'slice':
             input_data = self._slice.image.raw  # ugh
         else:
@@ -684,3 +668,37 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         raise RuntimeError(  # pragma: no cover
             f'ray value calculation not implemented for {self.rendering}'
         )
+
+    def _get_layer_slicing_state(
+        self, data: LayerDataType, cache: bool
+    ) -> _ImageSlicingState:
+        return _ImageSlicingState(self, data, cache)
+
+
+class _ImageSlicingState(ScalarFieldSlicingState):
+    layer: Image
+    _slice_request_class = _ImageSliceRequest
+
+    def _update_slice_response(
+        self, response: _ScalarFieldSliceResponse
+    ) -> None:
+        """Restore the original contrast limits after slicing.
+
+        WARNING: This is a hack.
+        Will be removed as we want to go into multi canvas mode.
+        """
+        if self.layer._keep_auto_contrast:
+            data = response.image.raw
+            input_data = data[-1] if self.layer.multiscale else data
+            self.layer.contrast_limits = calc_data_range(
+                typing.cast(LayerDataProtocol, input_data),
+                rgb=self.layer.rgb,
+                dtype=self.layer.dtype,
+            )
+        super()._update_slice_response(response)
+        if self.layer._should_calc_clims:
+            self.layer.reset_contrast_limits_range()
+            self.layer.reset_contrast_limits()
+            self.layer._should_calc_clims = False
+        elif self.layer._keep_auto_contrast:
+            self.layer.reset_contrast_limits()

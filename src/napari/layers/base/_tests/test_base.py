@@ -74,7 +74,7 @@ def test_axis_labels_assign():
     layer = SampleLayer(np.empty((10, 10)))
     mock = Mock()
     layer.events.axis_labels.connect(mock)
-    assert layer.axis_labels == ('axis -2', 'axis -1')
+    assert layer.axis_labels == ('-2', '-1')
 
     layer.axis_labels = ('x', 'y')
     mock.assert_called_once()
@@ -87,7 +87,7 @@ def test_axis_labels_assign():
 
     layer.axis_labels = None
     mock.assert_called_once()
-    assert layer.axis_labels == ('axis -2', 'axis -1')
+    assert layer.axis_labels == ('-2', '-1')
 
 
 def test_axis_labels_constructor():
@@ -95,7 +95,7 @@ def test_axis_labels_constructor():
     assert layer.axis_labels == ('x', 'y')
 
     layer = SampleLayer(np.empty((10, 10)), axis_labels=None)
-    assert layer.axis_labels == ('axis -2', 'axis -1')
+    assert layer.axis_labels == ('-2', '-1')
 
 
 def test_axis_labels_error():

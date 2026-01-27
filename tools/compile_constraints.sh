@@ -54,7 +54,7 @@ else
   fi
 fi
 
-flags=(--quiet --extra pyqt6 --extra pyside6 --extra testing --group testing_extra --extra all_optional)
+set -x
 
 # Explanation of below commands
 # uv pip compile --python-version 3.9 - call uv pip compile but ensure proper interpreter
@@ -65,7 +65,7 @@ flags=(--quiet --extra pyqt6 --extra pyside6 --extra testing --group testing_ext
 # --extra pyqt6 etc - names of extra sections from pyproject.toml that should be checked for the dependencies list (maybe we could create a super extra section to collect them all in)
 pyproject_toml="pyproject.toml"
 constraints="resources/constraints"
-
+flags=(--quiet --extra pyqt6 --extra pyside6 --extra testing --group testing_extra --extra all_optional --exclude ${constraints}/napari_exclude.txt)
 
 for pyv in 3.10 3.11 3.12 3.13; do
 uv pip compile --python-version ${pyv} --output-file ${constraints}/constraints_py${pyv}.txt "${upgrade_flag[@]}" ${pyproject_toml} ${constraints}/version_denylist.txt "${flags[@]}"

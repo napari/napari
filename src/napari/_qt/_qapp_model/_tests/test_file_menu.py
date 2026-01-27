@@ -311,20 +311,15 @@ def test_open_with_plugin(
     )
 
 
-def test_preference_dialog(make_napari_viewer):
+def test_preference_dialog(make_napari_viewer, mock_qt_method):
     """Test preferences action can be triggered."""
     make_napari_viewer()
     app = get_app_model()
 
-    # Check action command execution
-    with (
-        mock.patch(
-            'napari._qt.qt_main_window.PreferencesDialog.show'
-        ) as mock_pref_dialog_show,
-    ):
-        app.commands.execute_command(
-            'napari.window.file.show_preferences_dialog'
-        )
+    mock_pref_dialog_show = mock_qt_method(
+        'napari._qt.qt_main_window.PreferencesDialog.show'
+    )
+    app.commands.execute_command('napari.window.file.show_preferences_dialog')
     mock_pref_dialog_show.assert_called_once()
 
 
