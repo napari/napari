@@ -196,8 +196,6 @@ def test_5D_multiscale(make_napari_viewer):
     """Test 5D multiscale data."""
     # Show must be true to trigger multiscale draw and corner estimation
     viewer = make_napari_viewer(show=True)
-    view = viewer.window._qt_viewer
-    view.set_welcome_visible(False)
     shapes = [(1, 2, 5, 20, 20), (1, 2, 5, 10, 10), (1, 2, 5, 5, 5)]
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
@@ -226,16 +224,16 @@ def test_multiscale_flipped_axes(make_napari_viewer):
 
 @skip_on_win_ci
 @skip_local_popups
-def test_multiscale_rotated_image(make_napari_viewer):
-    viewer = make_napari_viewer(show=True)
+def test_multiscale_rotated_image(qt_viewer, viewer_model):
+    qt_viewer.show()
     sizes = [4000 // i for i in range(1, 5)]
     arrays = [np.zeros((size, size), dtype=np.uint8) for size in sizes]
     for arr in arrays:
         arr[:10, :10] = 255
         arr[-10:, -10:] = 255
 
-    viewer.add_image(arrays, multiscale=True, rotate=44)
-    screenshot_rgba = viewer.screenshot(canvas_only=True, flash=False)
+    viewer_model.add_image(arrays, multiscale=True, rotate=44)
+    screenshot_rgba = qt_viewer.screenshot(flash=False)
     screenshot_rgb = screenshot_rgba[..., :3]
     assert np.any(
         screenshot_rgb
