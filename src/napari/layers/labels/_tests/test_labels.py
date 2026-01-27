@@ -1288,7 +1288,7 @@ def test_fill_with_xarray():
     # problems due to different read indexing rules, so check that the data
     # saved for undo has the expected vectorized shape and values.
     undo_data = layer._undo_history[0][0][1]
-    np.testing.assert_array_equal(undo_data, np.zeros((16,)))
+    np.testing.assert_array_equal(undo_data, np.zeros((4, 4)))
 
 
 @pytest.mark.parametrize(
