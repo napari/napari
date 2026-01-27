@@ -15,6 +15,7 @@ import numpy.typing as npt
 import pandas as pd
 from PIL import Image, ImageDraw
 from scipy import ndimage as ndi
+from skimage.segmentation import flood
 
 from napari.layers._data_protocols import LayerDataProtocol
 from napari.layers._multiscale_data import MultiScaleData
@@ -66,7 +67,7 @@ from napari.utils.colormaps.colormap import (
 from napari.utils.colormaps.colormap_utils import shuffle_and_extend_colormap
 from napari.utils.events import EmitterGroup, Event
 from napari.utils.events.custom_types import Array
-from napari.utils.misc import StringEnum, _is_array_type
+from napari.utils.misc import StringEnum
 from napari.utils.naming import magic_name
 from napari.utils.translations import trans
 
@@ -881,13 +882,14 @@ class Labels(ScalarFieldBase):
         # and https://github.com/napari/napari/issues/6185
         self._slice.image.view[updated_slice_with_ints] = colors_sliced
 
-        # For 3D rendering (ndisplay=3), we need to expand colors_sliced
-        # to match the dimensionality expected by vispy if it was reduced
-        # by integer indexing
+        # For 3D rendering (ndisplay=3), restore reduced dimensions caused by
+        # integer indexing. When updated_slice_with_ints contains integer indices
+        # (not slices), those dimensions are reduced, making colors_sliced.ndim < 3.
+        # However, vispy expects consistent 3D data for the renderer. We restore
+        # those dimensions to match the display expectation.
         if self._slice_input.ndisplay == 3 and colors_sliced.ndim < 3:
-            # Add back the dimensions that were reduced by integer indexing
             for i, item in enumerate(updated_slice_with_ints):
-                if isinstance(item, int):
+                if isinstance(item, (int, np.integer)):
                     colors_sliced = np.expand_dims(colors_sliced, axis=i)
 
         self.events.labels_update(data=colors_sliced, offset=offset)
@@ -1073,13 +1075,28 @@ class Labels(ScalarFieldBase):
 
         Parameters
         ----------
-        value : 3-tuple of arrays
+        value : 3-tuple
             The value is a 3-tuple containing:
 
-            - a numpy multi-index, pointing to the array elements that were
-              changed
-            - the values corresponding to those elements before the change
-            - the value(s) after the change
+            - **indices**: A numpy indexing expression for the changed region.
+              Can be either:
+
+              * **Slice-based** (new paint/fill methods): tuple of slices/ints
+                defining a bounding box, e.g., ``(0, slice(5, 10), slice(5, 10))``
+              * **Array-based** (data_setitem): tuple of coordinate arrays for
+                fancy indexing, e.g., ``(array([0,1]), array([2,3]))``
+
+            - **old_values**: Array of values before the change. Shape matches
+              the indexing expression (2D array for slice-based, 1D for array-based)
+            - **new_values**: Value(s) after the change. Can be a scalar, 1D array,
+              or N-D array matching old_values shape
+
+        Notes
+        -----
+        Both indexing formats are supported for backward compatibility. The
+        slice-based format (used by paint/fill methods) is more efficient for
+        large brush sizes and contiguous regions. The array-based format is
+        preserved for the public ``data_setitem`` API.
         """
         self._redo_history.clear()
         if self._block_history:
@@ -1128,10 +1145,11 @@ class Labels(ScalarFieldBase):
         )
 
     def fill(self, coord, new_label, refresh=True):
-        """Replace an existing label with a new label, either just at the
-        connected component if the `contiguous` flag is `True` or everywhere
-        if it is `False`, working in the number of dimensions specified by
-        the `n_edit_dimensions` flag.
+        """Replace an existing label with a new label.
+
+        This replaces the label at the cursor position with `new_label`.
+        If `contiguous` is True, only the connected component is replaced.
+        Otherwise, all pixels with the same label are replaced.
 
         Parameters
         ----------
@@ -1154,11 +1172,10 @@ class Labels(ScalarFieldBase):
         old_label = np.asarray(self.data[int_coord]).item()
         if old_label == new_label:
             return
+
         # If preserve_labels is True, then we only want to fill:
         # - pixels of the background label, filling with the new label
         # - pixels of the previous label, filling with the background
-        # the previous label is stored when the selected label is set
-        # to the background, e.g. by swap_selected_and_background_labels
         if (
             self.preserve_labels
             and old_label != self._prev_selected_label
@@ -1166,45 +1183,60 @@ class Labels(ScalarFieldBase):
         ):
             return
 
-        dims_to_fill = sorted(
-            self._slice_input.order[-self.n_edit_dimensions :]
-        )
+        dims_to_fill = sorted(self._get_dims_to_paint())
+
+        # Create the slice to extract the full working volume/plane
         data_slice_list = list(int_coord)
         for dim in dims_to_fill:
             data_slice_list[dim] = slice(None)
         data_slice = tuple(data_slice_list)
+
         labels = np.asarray(self.data[data_slice])
+
+        # Coordinate of the seed point relative to the extracted labels
         slice_coord = tuple(int_coord[d] for d in dims_to_fill)
 
-        matches = labels == old_label
         if self.contiguous:
-            # if contiguous replace only selected connected component
-            labeled_matches, num_features = ndi.label(matches)
-            if num_features != 1:
-                match_label = labeled_matches[slice_coord]
-                matches = np.logical_and(
-                    matches, labeled_matches == match_label
-                )
-
-        match_indices_local = np.nonzero(matches)
-        if self.ndim not in {2, self.n_edit_dimensions}:
-            n_idx = len(match_indices_local[0])
-            match_indices = []
-            j = 0
-            for d in data_slice:
-                if isinstance(d, slice):
-                    match_indices.append(match_indices_local[j])
-                    j += 1
-                else:
-                    match_indices.append(np.full(n_idx, d, dtype=np.intp))
+            # Flood fill to find connected component
+            mask = flood(labels, slice_coord)
         else:
-            match_indices = match_indices_local
+            # Select all pixels with the old label
+            mask = labels == old_label
 
-        match_indices = _coerce_indices_for_vectorization(
-            self.data, match_indices
+        if not np.any(mask):
+            return
+
+        # Calculate bounding box of the mask to minimize update size
+        if mask.all():
+            bbox_slices = tuple(slice(None) for _ in dims_to_fill)
+            cropped_mask = mask
+        else:
+            # Find min and max for each dimension of the mask
+            min_vals = []
+            max_vals = []
+            for i in range(mask.ndim):
+                axes = tuple(j for j in range(mask.ndim) if j != i)
+                any_on_axis = np.any(mask, axis=axes)
+                nonzero_idx = np.where(any_on_axis)[0]
+                min_vals.append(nonzero_idx[0])
+                max_vals.append(nonzero_idx[-1] + 1)
+
+            # Crop the mask to the bounding box
+            bbox_slices = tuple(
+                slice(min_v, max_v)
+                for min_v, max_v in zip(min_vals, max_vals, strict=False)
+            )
+            cropped_mask = mask[bbox_slices]
+
+        # Build the global slice key for the bounding box
+        slice_key_list = list(int_coord)
+        for i, dim in enumerate(dims_to_fill):
+            slice_key_list[dim] = bbox_slices[i]
+        slice_key = tuple(slice_key_list)
+
+        self._paint_region_with_mask(
+            slice_key, cropped_mask, new_label, dims_to_fill, refresh
         )
-
-        self.data_setitem(match_indices, new_label, refresh)
 
     def _draw(self, new_label, last_cursor_coord, coordinates):
         """Paint into coordinates, accounting for mode and cursor movement.
@@ -1387,11 +1419,8 @@ class Labels(ScalarFieldBase):
 
         This method generates a boolean mask for brushes in arbitrary dimensions,
         supporting 2D circles, 3D spheres, 4D hyperspheres, etc. with anisotropic
-        scaling (ellipsoids).
-
-        Uses pure numpy for efficient nD mask generation. The mask is created by
-        computing the scaled distance from the center point and comparing against
-        the radius.
+        scaling (ellipsoids). The mask is created by computing the scaled distance
+        from the center point and comparing against the radius.
 
         Parameters
         ----------
@@ -1412,27 +1441,6 @@ class Labels(ScalarFieldBase):
         ndarray
             Boolean mask with True inside brush shape, False outside
             Shape matches input `shape` parameter
-
-        Notes
-        -----
-        - Works for any number of dimensions (2D, 3D, 4D, ...)
-        - Supports anisotropic scaling (ellipsoids)
-        - Uses np.ogrid for memory-efficient coordinate generation
-        - Equivalent to sphere_indices but returns boolean mask instead of coordinates
-
-        Examples
-        --------
-        >>> # 2D circle with radius 10
-        >>> mask = layer._create_brush_mask((20, 20), 10.0, np.array([10., 10.]), np.array([1., 1.]))
-        >>> mask.shape
-        (20, 20)
-        >>> mask[10, 10]  # Center is True
-        True
-
-        >>> # 3D ellipsoid with anisotropic scaling
-        >>> mask = layer._create_brush_mask((30, 40, 50), 15.0, np.array([15., 20., 25.]), np.array([1., 2., 3.]))
-        >>> mask.shape
-        (30, 40, 50)
         """
         ndim = len(shape)
 
@@ -1448,36 +1456,6 @@ class Labels(ScalarFieldBase):
         )
 
         return dist_sq <= radius**2
-
-    def _matches_current_slice(
-        self, slice_key: tuple, dims_to_paint: list[int]
-    ) -> bool:
-        """Return True if slice_key matches currently displayed slice for non-painted dims.
-
-        For dimensions that are not displayed (ndisplay < ndim), check if the painting
-        position matches the current slice. For fully 3D views (ndisplay=3), always return True
-        since all positions are visible.
-        """
-        if len(dims_to_paint) >= self.ndim:
-            return True
-
-        not_displayed_dims = set(range(self.ndim)) - set(
-            self._slice_input.displayed
-        )
-
-        if not not_displayed_dims:
-            # All dimensions are displayed (e.g., ndisplay=3)
-            # Everything is visible, so always update
-            return True
-
-        # Check if non-displayed dims have integer indices matching current position
-        pt_not_disp = self._get_pt_not_disp()
-
-        return all(
-            isinstance(slice_key[dim], int)
-            and slice_key[dim] == pt_not_disp.get(dim)
-            for dim in not_displayed_dims
-        )
 
     def _build_slice_key(
         self,
@@ -1554,48 +1532,26 @@ class Labels(ScalarFieldBase):
 
         self.data[slice_key] = region_data  # type: ignore[index]
 
-        # Update raw cache if necessary (for Zarr/Dask/etc where view is separate)
-        # Only for 2D painting on the currently displayed slice
-        if (
-            len(dims_to_paint) == 2
-            and not (
-                isinstance(self.data, np.ndarray)
-                and np.shares_memory(self.data, self._slice.image.raw)
-            )
-            # Check if we're painting on the currently displayed slice
-            # by comparing non-displayed dimensions in slice_key with current slice position
-            and self._matches_current_slice(slice_key, dims_to_paint)
-        ):
-            self._update_raw_cache(
-                self._slice.image.raw, slice_key, region_data, dims_to_paint
-            )
-
-        # Update view cache for non-shared memory data (e.g., uint32)
-        self._update_view_cache(mask, new_label, dims_to_paint, slice_key)
+        # Update caches (raw and view) for non-shared memory backends
+        # This handles mapping the N-D painted region to the currently displayed slice
+        self._refresh_caches_from_region(region_data, slice_key, dims_to_paint)
 
         # Accumulate updated slices for batch painting (refresh=False)
-        # When multiple paints are batched, we need to merge the bounding boxes
-        # so that _partial_labels_refresh() refreshes all painted regions
         if self._updated_slice is None:
             self._updated_slice = slice_key
         else:
-            # Merge the bounding boxes by taking min start and max stop for each slice
-            merged_slices = []
-            for old_item, new_item in zip(
-                self._updated_slice, slice_key, strict=False
-            ):
-                if isinstance(old_item, slice) and isinstance(new_item, slice):
-                    # Merge two slices: take min start and max stop
-                    merged_slices.append(
-                        slice(
-                            min(old_item.start, new_item.start),
-                            max(old_item.stop, new_item.stop),
-                        )
-                    )
-                else:
-                    # For integer indices (non-painted dims), just use the new value
-                    merged_slices.append(new_item)
-            self._updated_slice = tuple(merged_slices)
+            # Merge the bounding boxes
+            self._updated_slice = tuple(
+                slice(
+                    min(old.start, new.start),
+                    max(old.stop, new.stop),
+                )
+                if isinstance(old, slice) and isinstance(new, slice)
+                else new
+                for old, new in zip(
+                    self._updated_slice, slice_key, strict=False
+                )
+            )
 
         if refresh:
             self._partial_labels_refresh()
@@ -1652,6 +1608,7 @@ class Labels(ScalarFieldBase):
             This array is modified IN PLACE.
         mask : np.ndarray
             Boolean mask indicating which pixels to paint, with shape matching data.
+            The mask is also modified in-place during processing for efficiency.
         new_label : int
             Label value to paint.
         volume_slice : Any
@@ -1667,6 +1624,7 @@ class Labels(ScalarFieldBase):
         - Respects preserve_labels setting
         - Saves to undo/redo history
         - Does NOT update caches or refresh display (caller's responsibility)
+        - Both data and mask arrays are modified in-place
         """
         if self.preserve_labels:
             keep_mask = self._account_for_preserving_labels(data, new_label)
@@ -1684,161 +1642,132 @@ class Labels(ScalarFieldBase):
 
         return True
 
-    def _update_raw_cache(
+    def _refresh_caches_from_region(
         self,
-        cache_array: np.ndarray,
-        volume_slice: tuple,
-        update_values: np.ndarray,
+        region_data: np.ndarray,
+        slice_key: tuple,
         dims_to_paint: list[int],
     ) -> None:
-        """Update the raw data cache for non-shared memory backends.
+        """Update raw and view caches with new data from a painted region.
 
-        For non-shared memory backends (Zarr, Dask, etc.), updates must be
-        explicitly written to cached views. This extracts the 2D slices from
-        the volume-space slice key and updates the cache.
+        Checks if the painted region intersects with the currently displayed slice.
+        If so, extracts the visible sub-region and updates the caches. This method
+        handles painting on non-shared memory backends (zarr, tensorstore, etc.)
+        that require manual cache updates.
+
+        Example
+        -------
+        When painting a 3D region at dims [0, 1, 2] with shape (10, 20, 30),
+        and currently displaying dims [1, 2] (a 2D slice), this method:
+        1. Extracts the 2D slice from the 3D region_data that matches the current
+           display position along dimension 0
+        2. Transposes the data if dimension ordering differs
+        3. Expands dimensions for any displayed dims not included in the paint
+        4. Updates the view cache
 
         Parameters
         ----------
-        cache_array : np.ndarray
-            The cached 2D array to update (e.g., self._slice.image.raw).
-        volume_slice : tuple
-            The N-dimensional volume-space slice key with bounding box slices
-            at dims_to_paint positions.
-        update_values : np.ndarray
-            The 2D array of new values to write (already in correct shape).
+        region_data : np.ndarray
+            The N-D data array of the painted region.
+        slice_key : tuple
+            The N-D slice used to extract region_data from the full volume.
+            Elements are either slice(start, stop) for painted dims or int for non-painted dims.
         dims_to_paint : list[int]
-            The two dimensions being painted (indices into volume_slice).
-        """
-        cache_slices = tuple(volume_slice[d] for d in dims_to_paint)
-        cache_array[cache_slices] = update_values
-
-    def _update_view_cache(
-        self,
-        mask: np.ndarray,
-        new_label: int,
-        dims_to_paint: list[int],
-        volume_slice: Any,
-    ) -> None:
-        """Update the texture view cache if needed for non-shared memory data.
-
-        For data types where the view is not sharing memory with the underlying
-        data (e.g., uint32 converted to uint8 texture), this updates the view
-        cache with the new painted values.
-
-        Handles nD dimension ordering by properly permuting the mask to match
-        the displayed dimensions order.
-
-        Parameters
-        ----------
-        mask : np.ndarray
-            Boolean mask indicating which pixels were painted, in dims_to_paint order.
-        new_label : int
-            The label value that was painted.
-        dims_to_paint : list[int]
-            The dimensions that were painted (e.g., [1, 2] for YX in ZYX).
-        volume_slice : Any
-            Volume-space slice key defining the bounding box region.
+            The dimensions corresponding to the axes of region_data (in sorted order).
         """
         if isinstance(self.data, np.ndarray) and np.shares_memory(
             self.data, self._slice.image.view
         ):
             return
 
-        displayed_dims = list(self._slice_input.displayed)
-        # Only proceed if at least some painted dimensions are displayed
-        # (we need overlap between painted and displayed dimensions)
+        displayed_dims = self._slice_input.displayed
+
+        # Check intersection between painted dims and displayed dims
         if not set(dims_to_paint).intersection(set(displayed_dims)):
             return
 
-        # Check if we're painting on the currently displayed slice
-        # Only update view cache if painting overlaps the current slice position
-        if not self._matches_current_slice(volume_slice, dims_to_paint):
-            return
-
-        # Convert new_label to texture value matching the view's dtype.
-        # First convert to raw dtype, then convert to texture using
-        # colormap's _data_to_texture method.
-        raw_value = self._slice.image.raw.dtype.type(new_label)
-        texture_value = self.colormap._data_to_texture(raw_value)
-
-        if (
-            not isinstance(volume_slice, tuple)
-            or len(volume_slice) != self.ndim
-        ):
-            return
-
-        # Build region_slices corresponding to displayed dimensions
-        # For dims that are displayed but not painted, convert integers to slices
-        region_slices = []
-        for d in displayed_dims:
-            item = volume_slice[d]
-            if isinstance(item, slice):
-                region_slices.append(item)
-            elif isinstance(item, (int, np.integer)):
-                # Dimension is displayed but not painted - convert to single-element slice
-                # This preserves dimensionality for 3D rendering
-                region_slices.append(slice(item, item + 1))
-            else:
-                # Unexpected type
-                return
-
-        region_slices = tuple(region_slices)
-        region_view = self._slice.image.view[region_slices]
-
-        # If mask spans additional (non-displayed) painted dimensions, index
-        # into mask at the current slice position for those dims to reduce it
-        # to the displayed dims shape.
         pt_not_disp = self._get_pt_not_disp()
-        # Build indexers for mask in the order of dims_to_paint
-        indexers = []
-        for dim in dims_to_paint:
-            if dim in displayed_dims:
-                indexers.append(slice(None))
+
+        # Build slices to extract visible data from region_data
+        # and slices to insert data into the view
+        region_slices = [slice(None)] * len(dims_to_paint)
+        view_slices = [slice(None)] * len(displayed_dims)
+
+        # Map sorted painted dimensions to their index in region_data
+        # This enables dimension-agnostic indexing of the region data array
+        paint_dim_to_idx = {d: i for i, d in enumerate(sorted(dims_to_paint))}
+
+        for d in range(self.ndim):
+            if d in displayed_dims:
+                view_idx = displayed_dims.index(d)
+                if d in paint_dim_to_idx:
+                    # Dimension is painted and displayed: copy full range from region
+                    # slice_key[d] matches region bounds
+                    view_slices[view_idx] = slice_key[d]
+                else:
+                    # Dimension is displayed but not painted: it's a singleton in slice_key
+                    # Wrap it in a slice to preserve dimensionality
+                    val = slice_key[d]
+                    view_slices[view_idx] = slice(val, val + 1)
             else:
-                vol_item = volume_slice[dim]
-                if not isinstance(vol_item, slice):
-                    return
-                start = vol_item.start
-                pt = pt_not_disp.get(dim)
-                if pt is None or not isinstance(pt, (int, np.integer)):
-                    return
-                if not (start <= pt < vol_item.stop):
-                    # Painted bbox does not include the current displayed slice
-                    return
-                indexers.append(int(pt - start))
+                # Dimension is not displayed: must match current slice position
+                current_pos = pt_not_disp.get(d)
+                if current_pos is None:
+                    continue  # Should not happen for valid dims
 
-        # Reduce mask to only displayed dims
-        mask_indexed = mask[tuple(indexers)]
+                if d in paint_dim_to_idx:
+                    # Painted but not displayed: check bounds and extract slice
+                    sl = slice_key[d]
+                    if not (sl.start <= current_pos < sl.stop):
+                        return  # Painted region is outside visible slice
+                    # Convert position to index within region_data
+                    region_slices[paint_dim_to_idx[d]] = int(
+                        current_pos - sl.start
+                    )
+                else:
+                    # Not painted, not displayed: must match exactly
+                    if slice_key[d] != current_pos:
+                        return
 
-        # kept_dims are dims_to_paint filtered to those that are displayed (in original order)
-        kept_dims = [d for d in dims_to_paint if d in displayed_dims]
+        # Extract visible data from region_data using computed slices
+        visible_data = region_data[tuple(region_slices)]
 
-        # Build texture_mask to match region_view shape by handling dims that are
-        # displayed but not painted
-        texture_mask = mask_indexed
-
-        # First, permute the mask dimensions to match the order of kept_dims in displayed_dims
-        if len(kept_dims) > 1:
-            perm = [kept_dims.index(d) for d in kept_dims if d in kept_dims]
-            # Only transpose if the order is different
-            kept_dims_in_display_order = [
-                d for d in displayed_dims if d in kept_dims
+        # Transpose visible_data to match displayed_dims order if necessary.
+        # region_data is always arranged in sorted dimension order, but we need
+        # to match the order of displayed_dims (which may be in arbitrary order)
+        painted_and_displayed = [
+            d for d in dims_to_paint if d in displayed_dims
+        ]
+        if len(painted_and_displayed) > 1:
+            # Current axis order in visible_data: sorted(painted_and_displayed)
+            # Desired axis order: displayed_dims order
+            current_order = sorted(painted_and_displayed)
+            desired_order = [
+                d for d in displayed_dims if d in painted_and_displayed
             ]
-            if kept_dims != kept_dims_in_display_order:
-                # Map from mask axes to desired order
-                perm = [kept_dims.index(d) for d in kept_dims_in_display_order]
-                texture_mask = np.transpose(texture_mask, perm)
+            if current_order != desired_order:
+                # Build permutation that reorders axes
+                perm = [current_order.index(d) for d in desired_order]
+                visible_data = np.transpose(visible_data, perm)
 
-        # Next, expand dimensions for displayed dims that weren't painted
-        # Insert new axes at positions where a dim is displayed but not painted
+        # Expand dims for displayed dimensions that were not painted.
+        # When a displayed dimension is not in dims_to_paint, integer indexing
+        # reduces dimensionality (e.g., 3D region -> 2D slice). We must restore
+        # those dimensions for consistency with the expected output shape.
         for i, d in enumerate(displayed_dims):
-            if d not in kept_dims:
-                # This dimension is displayed but wasn't painted - add a singleton dimension
-                texture_mask = np.expand_dims(texture_mask, axis=i)
+            if d not in dims_to_paint:
+                visible_data = np.expand_dims(visible_data, axis=i)
 
-        # Apply texture_value at painted pixels; keep existing where mask is False
-        texture_values = np.where(texture_mask, texture_value, region_view)
-        self._slice.image.view[region_slices] = texture_values
+        # Update raw cache (always safe to do if not sharing memory, updates display source)
+        if not (
+            isinstance(self.data, np.ndarray)
+            and np.shares_memory(self.data, self._slice.image.raw)
+        ):
+            self._slice.image.raw[tuple(view_slices)] = visible_data
+
+        # Update texture view cache
+        texture_data = self.colormap._data_to_texture(visible_data)
+        self._slice.image.view[tuple(view_slices)] = texture_data
 
     def _get_shape_and_dims_to_paint(self) -> tuple[list, list]:
         dims_to_paint = sorted(self._get_dims_to_paint())
@@ -2117,21 +2046,6 @@ class Labels(ScalarFieldBase):
 class _LabelsSlicingState(ScalarFieldSlicingState):
     layer: Labels
     _slice_request_class = _LabelsSliceRequest
-
-
-def _coerce_indices_for_vectorization(array, indices: list) -> tuple:
-    """Coerces indices so that they can be used for vectorized indexing in the given data array."""
-    if _is_array_type(array, 'xarray.DataArray'):
-        # Fix indexing for xarray if necessary
-        # See http://xarray.pydata.org/en/stable/indexing.html#vectorized-indexing
-        # for difference from indexing numpy
-        try:
-            import xarray as xr
-        except ModuleNotFoundError:
-            pass
-        else:
-            return tuple(xr.DataArray(i) for i in indices)
-    return tuple(indices)
 
 
 class WrongSelectedLabelError(ValueError):
