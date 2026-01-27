@@ -572,7 +572,7 @@ def test_features_table_multilayer_edit(qtbot):
     qtbot.add_widget(w)
     proxy = w.table.model()
 
-    original_a = [1, 2]
+    original_a = [3, 4]
 
     points_layer = v.add_points(np.zeros((2, 2)), features={'a': original_a})
     labels_layer = v.add_labels(
@@ -586,14 +586,15 @@ def test_features_table_multilayer_edit(qtbot):
     # Edit first data column: Labels layer
     idx = proxy.index(0, 2)
     w.table.edit(idx)
-    assert not w.table.isPersistentEditorOpen(idx)
+    assert w.table.state() != QAbstractItemView.State.EditingState
 
     w.toggle.click()
     assert proxy.sourceModel().editable
     w.table.edit(idx)
-    assert w.table.isPersistentEditorOpen(idx)
+    assert w.table.state() == QAbstractItemView.State.EditingState
 
     editor = w.table.findChild(QSpinBox)
+    assert editor
     editor.selectAll()
     qtbot.keyClicks(editor, str(42))
     assert editor.text() == '42'
