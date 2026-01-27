@@ -6,6 +6,16 @@ from vispy.scene.visuals import Compound, Image
 from vispy.visuals import BaseVisual
 from vispy.visuals.transforms.linear import STTransform
 
+# attributes that are passed from the tiled node to the child image nodes.
+PASS_THROUGH_ATTRIBUTES = {
+    'cmap',
+    'clim',
+    'opacity',
+    'gamma',
+    'interpolation',
+    'custom_kernel',
+}
+
 
 class TiledImageNode(Compound):
     """Custom Vispy scenegraph Node to display large images.
@@ -48,8 +58,6 @@ class TiledImageNode(Compound):
         self.offsets: list[tuple[int, int]] = []
         self.tile_size = tile_size
         self.data = None
-        self.custom_kernel = None
-        self.interpolation = None
         super().__init__([])
         self.set_data(data)
 
@@ -91,15 +99,14 @@ class TiledImageNode(Compound):
             child.set_gl_state(*args, **kwargs)
 
     def __getattr__(self, name: str) -> Any:
-        if (
-            name in ['cmap', 'clim', 'opacity', 'gamma', 'events']
-            and len(self.adopted_children) > 0
-        ):
-            return getattr(self.adopted_children[0], name)
+        if name in PASS_THROUGH_ATTRIBUTES | {'events'}:
+            if len(self.adopted_children) > 0:
+                return getattr(self.adopted_children[0], name)
+            return None
         return self.__getattribute__(name)
 
     def __setattr__(self, name: str, value: Any) -> None:
-        if name in ['cmap', 'clim', 'opacity', 'gamma']:
+        if name in PASS_THROUGH_ATTRIBUTES:
             for child in self.adopted_children:
                 setattr(child, name, value)
         else:
