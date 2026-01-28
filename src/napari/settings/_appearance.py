@@ -117,4 +117,6 @@ class AppearanceSettings(EventedModel):
         added (either by a plugin or directly by the user) the enum is updated in
         place, ensuring that Preferences dialog can still be opened.
         """
-        self.schema()['properties']['theme'].update(enum=available_themes())
+        self.model_json_schema()['properties']['theme'].update(
+            enum=available_themes()
+        )
