@@ -328,7 +328,7 @@ class TextManager(EventedModel):
         TextManager
         """
         if isinstance(text, TextManager):
-            kwargs = text.dict()
+            kwargs = text.model_dump()
         elif isinstance(text, dict):
             kwargs = deepcopy(text)
         elif text is None:

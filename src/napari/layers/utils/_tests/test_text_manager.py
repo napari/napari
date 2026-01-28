@@ -536,7 +536,7 @@ def test_serialization():
     )
     original = TextManager(features=features, string='class', color='red')
 
-    serialized = original.dict()
+    serialized = original.model_dump()
     deserialized = TextManager(**serialized)
 
     assert original == deserialized

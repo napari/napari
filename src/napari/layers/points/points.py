@@ -1340,7 +1340,7 @@ class Points(Layer):
                     else [self.current_face_color]
                 ),
                 'face_color_cycle': self.face_color_cycle,
-                'face_colormap': self.face_colormap.dict(),
+                'face_colormap': self.face_colormap.model_dump(),
                 'face_contrast_limits': self.face_contrast_limits,
                 'border_color': (
                     self.border_color
@@ -1348,11 +1348,11 @@ class Points(Layer):
                     else [self.current_border_color]
                 ),
                 'border_color_cycle': self.border_color_cycle,
-                'border_colormap': self.border_colormap.dict(),
+                'border_colormap': self.border_colormap.model_dump(),
                 'border_contrast_limits': self.border_contrast_limits,
                 'properties': self.properties,
                 'property_choices': self.property_choices,
-                'text': self.text.dict(),
+                'text': self.text.model_dump(),
                 'out_of_slice_display': self.out_of_slice_display,
                 'n_dimensional': self.out_of_slice_display,
                 'size': self.size,

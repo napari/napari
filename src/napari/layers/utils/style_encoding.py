@@ -163,7 +163,7 @@ class _ConstantStyleEncoding(
         pass
 
     def _json_encode(self) -> dict:
-        return self.dict()
+        return self.model_dump()
 
 
 class _ManualStyleEncoding(
@@ -211,7 +211,7 @@ class _ManualStyleEncoding(
         pass
 
     def _json_encode(self) -> dict:
-        return self.dict()
+        return self.model_dump()
 
 
 class _DerivedStyleEncoding(
@@ -275,7 +275,7 @@ class _DerivedStyleEncoding(
         self._cached = _empty_array_like(self.fallback)
 
     def _json_encode(self) -> dict:
-        return self.dict()
+        return self.model_dump()
 
 
 def _get_style_values(

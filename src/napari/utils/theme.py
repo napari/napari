@@ -110,7 +110,7 @@ class Theme(EventedModel):
         """
         This differs from baseclass `dict()` by converting colors to rgb.
         """
-        th = super().dict()
+        th = super().model_dump()
         return {
             k: v if not isinstance(v, Color) else v.as_rgb()
             for (k, v) in th.items()
@@ -418,7 +418,7 @@ def _install_npe2_themes(themes=None):
     ):
         for theme in manifest.contributions.themes or ():
             # get fallback values
-            theme_dict = themes[theme.type].dict()
+            theme_dict = themes[theme.type].model_dump()
             # update available values
             theme_info = theme.dict(exclude={'colors'}, exclude_unset=True)
             theme_colors = theme.colors.dict(exclude_unset=True)

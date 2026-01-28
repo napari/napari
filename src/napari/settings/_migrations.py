@@ -31,7 +31,7 @@ def do_migrations(model: NapariSettings):
     for migration in sorted(_MIGRATORS, key=lambda m: m.from_):
         if model.schema_version == migration.from_:
             with mutation_allowed(model):
-                backup = model.dict()
+                backup = model.model_dump()
                 try:
                     migration.run(model)
                     model.schema_version = migration.to_

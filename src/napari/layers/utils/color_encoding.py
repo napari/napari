@@ -7,7 +7,7 @@ from typing import (
 )
 
 import numpy as np
-from pydantic import Field, GetCoreSchemaHandler, field_validator, parse_obj_as
+from pydantic import Field, GetCoreSchemaHandler, TypeAdapter, field_validator
 from pydantic_core import core_schema
 
 from napari.layers.utils.color_transformations import ColorType
@@ -69,14 +69,15 @@ class ColorEncoding(StyleEncoding[ColorValue, ColorArray], Protocol):
         if isinstance(value, ColorEncoding):
             return value
         if isinstance(value, dict):
-            return parse_obj_as(
+            return TypeAdapter(
                 Union[
                     ConstantColorEncoding,
                     ManualColorEncoding,
                     DirectColorEncoding,
                     NominalColorEncoding,
                     QuantitativeColorEncoding,
-                ],
+                ]
+            ).validate_python(
                 value,
             )
         try:

@@ -3,7 +3,7 @@ from string import Formatter
 from typing import Any, Literal, Protocol, Union, runtime_checkable
 
 import numpy as np
-from pydantic import GetCoreSchemaHandler, parse_obj_as
+from pydantic import GetCoreSchemaHandler, TypeAdapter
 from pydantic_core import core_schema
 
 from napari.layers.utils.style_encoding import (
@@ -69,13 +69,14 @@ class StringEncoding(StyleEncoding[StringValue, StringArray], Protocol):
         if isinstance(value, StringEncoding):
             return value
         if isinstance(value, dict):
-            return parse_obj_as(
+            return TypeAdapter(
                 Union[
                     ConstantStringEncoding,
                     ManualStringEncoding,
                     DirectStringEncoding,
                     FormatStringEncoding,
-                ],
+                ]
+            ).validate_python(
                 value,
             )
         if isinstance(value, str):

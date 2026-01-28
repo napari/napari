@@ -231,7 +231,7 @@ class LabelColormapBase(Colormap):
 
     def _cmap_without_selection(self) -> Self:
         if self.use_selection:
-            cmap = self.__class__(**self.dict())
+            cmap = self.__class__(**self.model_dump())
             cmap.use_selection = False
             return cmap
         return self

@@ -70,7 +70,7 @@ class AppearanceSettings(EventedModel):
         self, values: Union['EventedModel', dict], recurse: bool = True
     ) -> None:
         if isinstance(values, self.__class__):
-            values = values.dict()
+            values = values.model_dump()
         values = cast(dict, values)
 
         # Check if a font_size change is needed when changing theme:

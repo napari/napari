@@ -217,12 +217,12 @@ def test_values_updated():
     user2.events.id = Mock(user2.events.id)
 
     # Check user1 and user2 dicts
-    assert user1.dict() == {'id': 0, 'name': 'A'}
-    assert user2.dict() == {'id': 1, 'name': 'K'}
+    assert user1.model_dump() == {'id': 0, 'name': 'A'}
+    assert user2.model_dump() == {'id': 1, 'name': 'K'}
 
     # Update user1 from user2
     user1.update(user2)
-    assert user1.dict() == {'id': 1, 'name': 'K'}
+    assert user1.model_dump() == {'id': 1, 'name': 'K'}
 
     user1.events.id.assert_called_with(value=1)
     user2.events.id.assert_not_called()
@@ -233,7 +233,7 @@ def test_values_updated():
 
     # Update user1 from user2 again, no event emission expected
     user1.update(user2)
-    assert user1.dict() == {'id': 1, 'name': 'K'}
+    assert user1.model_dump() == {'id': 1, 'name': 'K'}
 
     user1.events.id.assert_not_called()
     user2.events.id.assert_not_called()
@@ -430,7 +430,7 @@ def test_evented_model_with_string_enum_parse_raw():
 
 def test_evented_model_with_string_enum_parse_obj():
     model = ModelWithStringEnum(enum_field=SomeStringEnum.SOME_VALUE)
-    deserialized_model = ModelWithStringEnum.parse_obj(model.dict())
+    deserialized_model = ModelWithStringEnum.parse_obj(model.model_dump())
     assert deserialized_model.enum_field == model.enum_field
 
 

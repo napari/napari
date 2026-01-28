@@ -23,6 +23,7 @@ from napari.layers.utils.color_transformations import (
     transform_color,
     transform_color_with_defaults,
 )
+from napari.types import ArrayLike
 from napari.utils.colormaps import Colormap
 from napari.utils.colormaps.categorical_colormap import CategoricalColormap
 from napari.utils.colormaps.colormap_utils import ColorType, ensure_colormap
@@ -514,6 +515,10 @@ class ColorManager(EventedModel):
         if categorical_colormap is None:
             categorical_colormap = {
                 'fallback_color': deepcopy(default_color_cycle)
+            }
+        elif isinstance(categorical_colormap, ArrayLike):
+            categorical_colormap = {
+                'fallback_color': categorical_colormap,
             }
 
         color_kwargs = {
