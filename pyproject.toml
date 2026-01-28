@@ -59,7 +59,7 @@ dependencies = [
     "pint>=0.17",
     "psutil>=5.9.0",
     "psygnal>=0.14.2",
-    "pydantic>=2.8.0",
+    "pydantic>=2.8.0,<=2.10",
     "pydantic-extra-types",
     "pydantic-settings",
     "scikit-image[data]>=0.19.1",
