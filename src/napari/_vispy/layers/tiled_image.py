@@ -63,9 +63,28 @@ class TiledImageNode(Compound):
         self.set_data(data)
 
     def add_subvisual(self, visual: BaseVisual) -> None:
+        """Override for CompoundVisual to not update subvisual transforms.
+
+        CompoundVisual normally sets the transforms for all subvisuals to be
+        the same as the parent as they are added to the CompoundVisual. For the
+        tiled image layer, that is totally not what we want! So we make sure to
+        just update the parent.
+
+        See:
+        https://github.com/napari/napari/pull/8395#issuecomment-3776882524
+        """
         self._subvisuals.append(visual)
 
     def _transform_changed(self, event: Any = None) -> None:
+        """Override for CompoundVisual to not update subvisual transforms.
+
+        CompoundVisual normally sets the transforms for all subvisuals to be
+        the same as the parent. For the tiled image layer, that is totally not
+        what we want! So we make sure to just update the parent.
+
+        See:
+        https://github.com/napari/napari/pull/8395#issuecomment-3776882524
+        """
         BaseVisual._transform_changed(self)
 
     def set_data(self, data: np.ndarray) -> None:
