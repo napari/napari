@@ -27,7 +27,6 @@ class PreferencesDialog(QDialog):
     """Preferences Dialog for Napari user settings."""
 
     ui_schema: ClassVar[dict[str, dict[str, str]]] = {
-        'call_order': {'ui:widget': 'plugins'},
         'highlight': {'ui:widget': 'highlight'},
         'shortcuts': {'ui:widget': 'shortcuts'},
         'extension2reader': {'ui:widget': 'extension2reader'},
@@ -90,10 +89,7 @@ class PreferencesDialog(QDialog):
 
     def _rebuild_dialog(self):
         """Removes settings not to be exposed to user and creates dialog pages."""
-        # FIXME: this dialog should not need to know about the plugin manager
-        from napari.plugins import plugin_manager
 
-        self._starting_pm_order = plugin_manager.call_order()
         self._starting_values = self._settings.dict(exclude={'schema_version'})
 
         self._list.clear()
@@ -257,15 +253,13 @@ class PreferencesDialog(QDialog):
         event.accept()
         self.accept()
 
+    def accept(self):
+        self._settings.save()
+        super().accept()
+
     def reject(self):
         """Restores the settings in place when dialog was launched."""
         self._settings.update(self._starting_values)
-
-        # FIXME: this dialog should not need to know about the plugin manager
-        if self._starting_pm_order:
-            from napari.plugins import plugin_manager
-
-            plugin_manager.set_call_order(self._starting_pm_order)
         super().reject()
 
 

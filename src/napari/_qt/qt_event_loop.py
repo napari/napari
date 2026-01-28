@@ -1,13 +1,16 @@
 from __future__ import annotations
 
 import os
+import platform
 import sys
+from pathlib import Path
 from typing import TYPE_CHECKING
 from warnings import warn
 
-from qtpy import PYQT5, PYSIDE2
-from qtpy.QtCore import QDir, Qt
-from qtpy.QtGui import QIcon
+from qtpy import PYQT5
+from qtpy.QtCore import QDir, QRectF, QSize, Qt
+from qtpy.QtGui import QIcon, QPainter, QPixmap
+from qtpy.QtSvg import QSvgRenderer
 from qtpy.QtWidgets import QApplication, QWidget
 
 from napari import Viewer, __version__
@@ -22,19 +25,24 @@ from napari.resources._icons import _theme_path
 from napari.settings import get_settings
 from napari.utils import config, perf
 from napari.utils._logging import register_logger_to_napari_handler
+from napari.utils.logo import get_logo_path
 from napari.utils.notifications import (
     notification_manager,
     show_console_notification,
 )
 from napari.utils.perf import perf_config
-from napari.utils.theme import _themes
+from napari.utils.theme import _themes, get_system_theme
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from IPython import InteractiveShell
 
-NAPARI_ICON_PATH = os.path.join(
-    os.path.dirname(__file__), '..', 'resources', 'logo.png'
+NAPARI_ICON_PATH = str(
+    get_logo_path(
+        logo=get_settings().appearance.logo,
+        template='padded' if platform.system() == 'Darwin' else 'plain',
+        theme=get_system_theme(),
+    )
 )
 NAPARI_APP_ID = f'napari.napari.viewer.{__version__}'
 
@@ -44,6 +52,24 @@ def set_app_id(app_id):
         import ctypes
 
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(app_id)
+
+
+def _svg_path_to_icon(path: str | Path) -> QIcon:
+    """Generate QIcon object from svg file.
+
+    Generate icon with resolutions  16x16, 32x32, 48x48, 64x64 and 128x128
+    """
+    renderer = QSvgRenderer(str(path))
+    icon = QIcon()
+
+    for s in (16, 32, 48, 64, 128):
+        pixmap = QPixmap(QSize(s, s))
+        pixmap.fill(Qt.transparent)
+        painter = QPainter(pixmap)
+        renderer.render(painter, QRectF(0, 0, s, s))
+        painter.end()
+        icon.addPixmap(pixmap)
+    return icon
 
 
 _defaults = {
@@ -168,11 +194,11 @@ def get_qapp(
     else:
         # automatically determine monitor DPI.
         # Note: this MUST be set before the QApplication is instantiated. Also, this
-        # attributes need to be applied only to Qt5 bindings (PyQt5 and PySide2)
+        # attributes need to be applied only to Qt5 bindings (PyQt5)
         # since the High DPI scaling attributes are deactivated by default while on Qt6
         # they are deprecated and activated by default. For more info see:
         # https://doc.qt.io/qtforpython-6/gettingstarted/porting_from2.html#class-function-deprecations
-        if PYQT5 or PYSIDE2:
+        if PYQT5:
             QApplication.setAttribute(
                 Qt.ApplicationAttribute.AA_EnableHighDpiScaling
             )
@@ -209,7 +235,7 @@ def get_qapp(
         app.installEventFilter(QtToolTipEventFilter())
 
     if app.windowIcon().isNull():
-        app.setWindowIcon(QIcon(kwargs.get('icon')))
+        app.setWindowIcon(_svg_path_to_icon(kwargs['icon']))
 
     if ipy_interactive is None:
         ipy_interactive = get_settings().application.ipy_interactive

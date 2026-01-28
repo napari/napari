@@ -8,6 +8,7 @@ from qtpy.QtCore import QItemSelection, QItemSelectionModel, Qt
 from qtpy.QtGui import QGuiApplication
 from qtpy.QtWidgets import (
     QAbstractItemDelegate,
+    QAbstractItemView,
     QAbstractSpinBox,
     QComboBox,
     QDoubleSpinBox,
@@ -205,14 +206,14 @@ def test_features_table_edit(qtbot):
 
     idx = proxy.index(0, 1)
     w.table.edit(idx)
-    assert not w.table.isPersistentEditorOpen(idx)
+    assert w.table.state() != QAbstractItemView.State.EditingState
 
     w.toggle.click()
     assert proxy.sourceModel().editable
     w.table.edit(idx)
-    assert w.table.isPersistentEditorOpen(idx)
-
+    assert w.table.state() == QAbstractItemView.State.EditingState
     editor = w.table.findChild(QLineEdit)
+    assert editor
     qtbot.keyClicks(editor, 'hello')
     assert editor.text() == 'hello'
     w.table.commitData(editor)
