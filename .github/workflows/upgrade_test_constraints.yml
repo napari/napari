@@ -1,44 +1,47 @@
 # This is a workflow for upgrading test constraints. It is triggered by:
 # - On-demand workflow_dispatch
 # - weekly schedule (every Monday at 8:00 UTC)
-# - issue_comment with text "@napari-bot update constraints"
+# - workflow_call from constraints_comment_trigger.yml (comment text "@napari-bot update constraints")
 # - pull_request with changed .github/workflows/upgrade_test_constraints.yml
 #
 # The GitHub workflows have the following limitations:
 # - There is no pull request comment trigger for workflows.
-#   The `issue_comment` trigger is used instead, because it is used for pull requests too.
-# - If a workflow is triggered by pull_requests from forked repository,
+#   The `issue_comment` trigger is used instead because it is used for pull requests too.
+#   (See constraints_comment_trigger.yml)
+# - If a workflow is triggered by pull_requests from a forked repository,
 #   then it does not have access to secrets.
-#   So it is not possible to create PR from forked repository.
-# - If workflow is triggered by issue comment, then it is triggered on the main branch
-#   and not on the branch where the comment was created.
-# - In workflow triggers it is only possible to depend on created event, without any conditions.
+#   So it is not possible to create PR from a forked repository.
+# - If a comment triggers a workflow, then it is triggered on the main branch
+#   and not on the branch from PR where the comment was created.
+# - In workflow triggers it is only possible to depend on a created event, without any conditions.
 #   So it is not possible to trigger workflow only when the comment contains specific text.
 #   So we need to check it in the workflow.
-#   It will produce multiple empty runs that will create multiple empty entries in actions
-#   making it harder to find the right one.
-# - It is not possible to update pull request from forked repository using Fine grained personal token.
-# - It is not possible to create pull request to forked repository using Fine grained personal token.
+#   It will produce multiple empty runs that will create multiple empty entries in actions,
+#   making it harder to find the right one. Because of that, we move the comment triggering workflow
+#   to the separate file constraints_comment_trigger.yml.
+# - It is not possible to update a pull request from a forked repository using Fine grained personal token.
+# - It is not possible to create a pull request to forked repository using Fine grained personal token.
 # - There is no interface indicator that the workflow triggered by issue comment is running.
 #
-# Also, for safety reason, it is better to store automatically generated changes outside the main repository.
+# Also, for safety reasons, it is better to store automatically generated changes outside the main repository.
 #
 # Because of the above limitations, the following approach is used:
 # - We use `napari-bot/napari` repository to store automatically generated changes.
-# - We don't push changes to `napari-bot/napari` repository if PR contains changes in workflows.
-# - We use two checkouts of repository:
-#   * First into `.` directory from which we run the workflow.
-#   * Second into `napari_repo` directory from which we create pull request.
-#     If comment triggers the workflow, then this will contain the branch from which the PR was created.
-#     Changes will be pushed to `napari-bot/napari` repository.
-#     If schedule or workflow_dispatch triggers workflow, then this will contain the main branch.
-#     Changes will not be pushed to `napari/napari` repository.
-#     If pull_request triggers workflow, then this will contain PR branch.
+# - We don't push changes to the `napari-bot/napari` repository if PR contains changes in workflows.
+# - We use two checkouts of the repository:
+#   * First into the `.` directory from which we run the workflow.
+#   * Second into the `napari_repo` directory from which we create a pull request.
+#     If the comment triggers the workflow, then this will contain the branch from which the PR was created.
+#     Changes will be pushed to the `napari-bot/napari` repository.
+#     If schedule or workflow_dispatch triggers this workflow, then this will contain the main branch.
+#     Changes will not be pushed to the `napari/napari` repository.
+#     If pull_request triggers this workflow, then this will contain a PR branch.
 #     Changes will be only accessible as artifacts.
-# - If workflow is triggered by issue comment,
-#   then we add eyes reaction to the comment to show that workflow has started.
-#   After finishing calculation of new constraints, we add rocket reaction to the comment.
-#   Then pushing changes to `napari-bot/napari` repository and adding comment to the PR is
+# - If a comment triggers this workflow,
+#   then we add eyes reaction to the comment to show that the workflow has started.
+#   (add_eyes job in constraints_comment_trigger.yml)
+#   After finishing the calculation of new constraints, we add rocket reaction to the comment.
+#   Then pushing changes to the `napari-bot/napari` repository and adding comment to the PR is
 #   done by `tools/create_pr_or_update_existing_one.py`.
 name: Upgrade test constraints
 
@@ -48,8 +51,7 @@ on:
     # Runs every Monday at 8:00 UTC (4:00 Eastern)
     - cron: '0 8 * * 1'
 
-  issue_comment:
-    types: [ created ]
+  workflow_call:
 
   pull_request:
     paths:
@@ -61,21 +63,8 @@ jobs:
       pull-requests: write
       issues: write
     name: Upgrade & Open Pull Request
-    if: (github.event.issue.pull_request != '' && contains(github.event.comment.body, '@napari-bot update constraints')) || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' || github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
-      - name: Add eyes reaction
-        # show that workflow has started
-        if: github.event_name == 'issue_comment'
-        run: |
-          COMMENT_ID=${{ github.event.comment.id }}
-          curl \
-            -X POST \
-            -H "Accept: application/vnd.github+json" \
-            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            "https://api.github.com/repos/${{ github.repository }}/issues/comments/$COMMENT_ID/reactions" \
-            -d '{"content": "eyes"}'
-
       - name: Get PR details
         # extract PR number and branch name from issue_comment event
         if: github.event_name == 'issue_comment'
@@ -137,20 +126,15 @@ jobs:
           git remote -v
           git remote add napari-bot https://github.com/napari-bot/napari.git
           git remote -v
-
-      # START PYTHON DEPENDENCIES
-      - uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v6.1.0
+      - name: Set up Python 3.12
+        uses: astral-sh/setup-uv@v7
         with:
           python-version: "3.12"
-          cache: pip
-          cache-dependency-path: 'pyproject.toml'
 
       - name: Upgrade Python dependencies
         # ADD YOUR CUSTOM DEPENDENCY UPGRADE COMMANDS BELOW
         run: |
           set -x
-          pip install -U uv
-
           bash napari_repo/tools/compile_constraints.sh
 
       # END PYTHON DEPENDENCIES
@@ -168,22 +152,9 @@ jobs:
         env:
           UV_CONSTRAINT: napari_repo/resources/constraints/constraints_py3.12.txt
 
-      - name: Add rocket reaction
-        # inform that new constraints are available in artifacts
-        if: github.event_name == 'issue_comment'
-        run: |
-          COMMENT_ID=${{ github.event.comment.id }}
-          curl \
-            -X POST \
-            -H "Accept: application/vnd.github+json" \
-            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            "https://api.github.com/repos/${{ github.repository }}/issues/comments/$COMMENT_ID/reactions" \
-            -d '{"content": "rocket"}'
-
       - name: Create commit
         run: |
-          pip install requests
-          python tools/create_pr_or_update_existing_one.py
+          uv run tools/create_pr_or_update_existing_one.py
         env:
             GHA_TOKEN_MAIN_REPO: ${{ secrets.GHA_TOKEN_NAPARI_BOT_MAIN_REPO }}
             PR_NUMBER: ${{ github.event.issue.number }}
