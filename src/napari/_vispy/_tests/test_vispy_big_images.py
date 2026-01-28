@@ -1,3 +1,5 @@
+import itertools
+
 import numpy as np
 import pytest
 
@@ -13,10 +15,14 @@ def test_big_2D_image(make_napari_viewer):
     layer = viewer.add_image(data, multiscale=False)
     visual = viewer.window._qt_viewer.canvas.layer_to_visual[layer]
     assert visual.node is not None
-    if visual.MAX_TEXTURE_SIZE_2D is not None:
+    if (
+        visual.MAX_TEXTURE_SIZE_2D is not None
+        and shape[0] > visual.MAX_TEXTURE_SIZE_2D
+    ):
         assert isinstance(visual.node, TiledImageNode)
-        # s = np.ceil(np.divide(shape, visual.MAX_TEXTURE_SIZE_2D)).astype(int)
-        # np.testing.assert_array_equal(layer._transforms['tile2data'].scale, s)
+        assert visual.MAX_TEXTURE_SIZE_2D in itertools.chain(
+            *visual.node.offsets
+        )
 
 
 def test_big_3D_image(make_napari_viewer):
