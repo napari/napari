@@ -301,7 +301,7 @@ def test_evented_model_signature():
     class T(EventedModel):
         x: int
         y: str = 'yyy'
-        z = b'zzz'
+        z: bytes = b'zzz'
 
     assert isinstance(T.__signature__, inspect.Signature)
     sig = inspect.signature(T)
