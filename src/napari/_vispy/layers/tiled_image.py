@@ -2,6 +2,7 @@ import itertools
 from typing import Any
 
 import numpy as np
+import numpy.typing as npt
 from vispy.scene.visuals import Compound, Image
 from vispy.visuals import BaseVisual
 from vispy.visuals.transforms.linear import STTransform
@@ -57,14 +58,14 @@ class TiledImageNode(Compound):
         self.adopted_children: list[Image] = []
         self.offsets: list[tuple[int, int]] = []
         self.tile_size = tile_size
-        self.data = None
+        self.data: npt.ArrayLike | None = None
         super().__init__([])
         self.set_data(data)
 
-    def add_subvisual(self, visual):
+    def add_subvisual(self, visual: BaseVisual) -> None:
         self._subvisuals.append(visual)
 
-    def _transform_changed(self, event=None):
+    def _transform_changed(self, event: Any = None) -> None:
         BaseVisual._transform_changed(self)
 
     def set_data(self, data: np.ndarray) -> None:
@@ -79,7 +80,7 @@ class TiledImageNode(Compound):
         else:
             for child in self.adopted_children:
                 child.parent = None
-            self._subvisuals = []
+            self._subvisuals: list[BaseVisual] = []
             self.adopted_children = [
                 Image(
                     data=dat,
