@@ -5,6 +5,7 @@ from typing import Any
 import numpy as np
 from pydantic import GetCoreSchemaHandler
 from pydantic_core import CoreSchema, core_schema
+from typing_extensions import Self
 
 from napari.utils.colormaps.standardize_color import transform_color
 
@@ -20,7 +21,7 @@ class ColorValue(np.ndarray):
     use the ``validate`` method to coerce a value to a single color.
     """
 
-    def __new__(cls, value: ColorValueParam) -> 'ColorValue':
+    def __new__(cls, value: ColorValueParam) -> Self:
         return cls.validate(value)
 
     @classmethod
@@ -51,7 +52,7 @@ class ColorValue(np.ndarray):
         )
 
     @classmethod
-    def validate(cls, value: ColorValueParam) -> 'ColorValue':
+    def validate(cls, value: ColorValueParam) -> Self:
         """Validates and coerces the given value into an array storing one color.
 
         Parameters
@@ -107,7 +108,7 @@ class ColorArray(np.ndarray):
     use the ``validate`` method to coerce a value to an array of colors.
     """
 
-    def __new__(cls, value: ColorArrayParam) -> 'ColorArray':
+    def __new__(cls, value: ColorArrayParam) -> Self:
         return cls.validate(value)
 
     @classmethod
@@ -141,7 +142,7 @@ class ColorArray(np.ndarray):
         return super().__sizeof__() + self.nbytes
 
     @classmethod
-    def validate(cls, value: ColorArrayParam) -> 'ColorArray':
+    def validate(cls, value: ColorArrayParam) -> Self:
         """Validates and coerces the given value into an array storing many colors.
 
         Parameters

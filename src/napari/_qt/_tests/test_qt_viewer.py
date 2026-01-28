@@ -812,7 +812,7 @@ def test_axis_labels(viewer_model: ViewerModel, qt_viewer: QtViewer) -> None:
 
     layer_visual_size = vispy_image_scene_size(layer_visual)
     assert tuple(layer_visual_size) == (8, 4, 2)
-    assert tuple(axes_visual.node.text.text) == ('2', '1', '0')
+    assert tuple(axes_visual.node.text.text) == ('-1', '-2', '-3')
 
 
 def _find_margin(data: np.ndarray, additional_margin: int) -> tuple[int, int]:

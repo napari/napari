@@ -13,8 +13,8 @@ from typing import (
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
+from PIL import Image, ImageDraw
 from scipy import ndimage as ndi
-from skimage.draw import polygon2mask
 
 from napari.layers._data_protocols import LayerDataProtocol
 from napari.layers._multiscale_data import MultiScaleData
@@ -753,7 +753,7 @@ class Labels(ScalarFieldBase):
         if self.show_selected_label:
             self.refresh(extent=False)
 
-    def swap_selected_and_background_labels(self):
+    def swap_selected_and_background_labels(self) -> None:
         """Swap between the selected label and the background label."""
         if self.selected_label != self.colormap.background_value:
             self.selected_label = self.colormap.background_value
@@ -1107,12 +1107,12 @@ class Labels(ScalarFieldBase):
 
         self.refresh()
 
-    def undo(self):
+    def undo(self) -> None:
         self._load_history(
             self._undo_history, self._redo_history, undoing=True
         )
 
-    def redo(self):
+    def redo(self) -> None:
         self._load_history(
             self._redo_history, self._undo_history, undoing=False
         )
@@ -1287,7 +1287,8 @@ class Labels(ScalarFieldBase):
         slice_coord = points[0].tolist()
         points2d = points[:, dims_to_paint]
 
-        polygon_mask = polygon2mask(shape, points2d)
+        polygon_mask = self._create_polygon_mask(points2d, shape)
+
         mask_indices = np.argwhere(polygon_mask)
         self._paint_indices(
             mask_indices,
@@ -1297,6 +1298,31 @@ class Labels(ScalarFieldBase):
             slice_coord,
             refresh=True,
         )
+
+    def _create_polygon_mask(
+        self, points2d: np.ndarray, shape: list[int]
+    ) -> np.ndarray:
+        """Create a boolean mask from polygon points using PIL rasterization.
+
+        Parameters
+        ----------
+        points2d : ndarray
+            2D polygon vertices in (row, col) format, relative to the mask
+            coordinate system.
+        shape : list of int
+            Shape of the mask to create [height, width].
+
+        Returns
+        -------
+        ndarray
+            Boolean mask with True inside polygon.
+        """
+        # PIL uses (x, y) = (col, row), so reverse the points
+        img = Image.new('L', (shape[1], shape[0]), 0)
+        draw = ImageDraw.Draw(img)
+        points_pil = [tuple(p[::-1]) for p in points2d]
+        draw.polygon(points_pil, outline=1, fill=1)
+        return np.array(img, dtype=bool)
 
     def _paint_indices(
         self,
@@ -1455,10 +1481,8 @@ class Labels(ScalarFieldBase):
             indices = [np.array(x).flatten() for x in indices]
 
         updated_slice = tuple(
-            [
-                slice(min(axis_indices), max(axis_indices) + 1)
-                for axis_indices in indices
-            ]
+            slice(int(axis_indices.min()), int(axis_indices.max()) + 1)
+            for axis_indices in indices
         )
 
         if self.contour > 0:

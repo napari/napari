@@ -208,20 +208,17 @@ class Dims(EventedModel):
                     )
                 )
 
-            # Check the axis labels tuple has same number of elements as ndim
-            axis_labels = self.axis_labels
-            labels_ndim = len(axis_labels)
-            if labels_ndim < ndim:
-                # Append new "default" labels to existing ones
-                if axis_labels == tuple(map(str, range(labels_ndim))):
-                    self.axis_labels = tuple(map(str, range(ndim)))
-                else:
-                    self.axis_labels = (
-                        tuple(map(str, range(ndim - labels_ndim)))
-                        + axis_labels
-                    )
-            elif labels_ndim > ndim:
-                self.axis_labels = axis_labels[-ndim:]
+        # Check the axis labels tuple has same number of elements as ndim
+        axis_labels = self.axis_labels
+        labels_ndim = len(axis_labels)
+        if labels_ndim < ndim:
+            # Append new "default" labels to existing ones
+
+            self.axis_labels = (
+                tuple(map(str, range(-ndim, -labels_ndim))) + axis_labels
+            )
+        elif labels_ndim > ndim:
+            self.axis_labels = axis_labels[-ndim:]
 
             # Check the rollable axes tuple has same number of elements as ndim
             self.rollable = ensure_len(self.rollable, ndim, True)
