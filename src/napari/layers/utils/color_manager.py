@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from copy import deepcopy
 from dataclasses import dataclass
 from typing import Any
@@ -6,6 +7,7 @@ import numpy as np
 from pydantic import (
     Field,
     GetCoreSchemaHandler,
+    PrivateAttr,
     field_validator,
     model_validator,
 )
@@ -23,7 +25,6 @@ from napari.layers.utils.color_transformations import (
     transform_color,
     transform_color_with_defaults,
 )
-from napari.types import ArrayLike
 from napari.utils.colormaps import Colormap
 from napari.utils.colormaps.categorical_colormap import CategoricalColormap
 from napari.utils.colormaps.colormap_utils import ColorType, ensure_colormap
@@ -165,6 +166,7 @@ class ColorManager(EventedModel):
     colors: Array[float, (-1, 4)] = Field(
         default_factory=lambda: np.empty((0, 4))
     )
+    _is_validating: bool = PrivateAttr(default=False)
 
     # validators
     @field_validator('continuous_colormap', mode='before')
@@ -189,21 +191,27 @@ class ColorManager(EventedModel):
 
     @model_validator(mode='after')
     def _validate_colors(self):
-        if self.color_mode == ColorMode.CYCLE:
-            _validate_cycle_mode(self)
-        elif self.color_mode == ColorMode.COLORMAP:
-            _validate_colormap_mode(self)
+        if self._is_validating:
+            return self
+        self._is_validating = True
+        try:
+            if self.color_mode == ColorMode.CYCLE:
+                _validate_cycle_mode(self)
+            elif self.color_mode == ColorMode.COLORMAP:
+                _validate_colormap_mode(self)
 
-        # set the current color to the last color/property value
-        # if it wasn't already set
-        if self.current_color is None and len(self.colors) > 0:
-            self.current_color = self.colors[-1]
-            if self.color_mode in [ColorMode.CYCLE, ColorMode.COLORMAP]:
-                property_values = self.color_properties
-                property_values.current_value = property_values.values[-1]
-                self.color_properties = property_values
+            # set the current color to the last color/property value
+            # if it wasn't already set
+            if self.current_color is None and len(self.colors) > 0:
+                self.current_color = self.colors[-1]
+                if self.color_mode in [ColorMode.CYCLE, ColorMode.COLORMAP]:
+                    property_values = self.color_properties
+                    property_values.current_value = property_values.values[-1]
+                    self.color_properties = property_values
 
-        return self
+            return self
+        finally:
+            self._is_validating = False
 
     def _set_color(
         self,
@@ -516,7 +524,7 @@ class ColorManager(EventedModel):
             categorical_colormap = {
                 'fallback_color': deepcopy(default_color_cycle)
             }
-        elif isinstance(categorical_colormap, ArrayLike):
+        elif isinstance(categorical_colormap, Sequence):
             categorical_colormap = {
                 'fallback_color': categorical_colormap,
             }

@@ -136,10 +136,10 @@ def _validate_cycle_mode(
     """
     color_properties = color_manager.color_properties
     cmap = color_manager.categorical_colormap
-    if len(color_properties) == 0:  # type: ignore
+    if len(color_properties.values) == 0:  # type: ignore
         color_manager.colors = np.empty((0, 4))
         current_prop_value = color_properties.current_value
         if current_prop_value is not None:
             color_manager.current_color = cmap.map(current_prop_value)[0]
     else:
-        color_manager.colors = cmap.map(color_properties)
+        color_manager.colors = cmap.map(color_properties.values)
