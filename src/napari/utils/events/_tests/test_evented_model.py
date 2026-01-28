@@ -2,7 +2,7 @@ import inspect
 import operator
 from collections.abc import Sequence
 from enum import auto
-from typing import ClassVar, Protocol, runtime_checkable
+from typing import Any, ClassVar, Protocol, runtime_checkable
 from unittest.mock import Mock
 
 import dask.array as da
@@ -10,8 +10,10 @@ import numpy as np
 import pytest
 from dask import delayed
 from dask.delayed import Delayed
-from pydantic import Field, ValidationError
+from pydantic import Field, GetCoreSchemaHandler, ValidationError
+from pydantic_core import core_schema
 
+from napari._pydantic_util import NapariConfigDict
 from napari.utils.events import EmitterGroup, EventedModel
 from napari.utils.events.custom_types import Array
 from napari.utils.misc import StringEnum
@@ -270,7 +272,7 @@ def test_update_with_inner_model_protocol():
             yield cls.validate
 
         @classmethod
-        def validate(cls, v):
+        def validate(cls, v, info):
             return v
 
     class Inner(EventedModel):
@@ -318,7 +320,7 @@ class MyObj:
         yield cls.validate_type
 
     @classmethod
-    def validate_type(cls, val):
+    def validate_type(cls, val, info=None):
         # turn a generic dict into object
         if isinstance(val, dict):
             a = val.get('a')
@@ -330,6 +332,23 @@ class MyObj:
 
     def __eq__(self, other):
         return self.__dict__ == other.__dict__
+
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls, source_type: Any, handler: GetCoreSchemaHandler
+    ):
+        validate = core_schema.no_info_plain_validator_function(
+            cls.validate_type
+        )
+        serialize = core_schema.plain_serializer_function_ser_schema(
+            lambda v: v.__dict__,
+            when_used='json',
+        )
+        return core_schema.json_or_python_schema(
+            json_schema=validate,
+            python_schema=validate,
+            serialization=serialize,
+        )
 
     def _json_encode(self):
         return self.__dict__
@@ -343,9 +362,9 @@ def test_evented_model_serialization():
         shaped: Array[float, (-1,)]
 
     m = Model(obj=MyObj(1, 'hi'), shaped=[1, 2, 3])
-    raw = m.json()
-    assert raw == '{"obj": {"a": 1, "b": "hi"}, "shaped": [1.0, 2.0, 3.0]}'
-    deserialized = Model.parse_raw(raw)
+    raw = m.model_dump_json()
+    assert raw == '{"obj":{"a":1,"b":"hi"},"shaped":[1.0,2.0,3.0]}'
+    deserialized = Model.model_validate_json(raw)
     assert deserialized == m
 
 
@@ -359,9 +378,9 @@ def test_nested_evented_model_serialization():
         nest: NestedModel
 
     m = Model(nest={'obj': {'a': 1, 'b': 'hi'}})
-    raw = m.json()
-    assert raw == r'{"nest": {"obj": {"a": 1, "b": "hi"}}}'
-    deserialized = Model.parse_raw(raw)
+    raw = m.model_dump_json()
+    assert raw == r'{"nest":{"obj":{"a":1,"b":"hi"}}}'
+    deserialized = Model.model_validate_json(raw)
     assert deserialized == m
 
 
@@ -424,13 +443,15 @@ def test_evented_model_with_string_enum_setter_as_str():
 
 def test_evented_model_with_string_enum_parse_raw():
     model = ModelWithStringEnum(enum_field=SomeStringEnum.SOME_VALUE)
-    deserialized_model = ModelWithStringEnum.parse_raw(model.json())
+    deserialized_model = ModelWithStringEnum.model_validate_json(
+        model.model_dump_json()
+    )
     assert deserialized_model.enum_field == model.enum_field
 
 
 def test_evented_model_with_string_enum_parse_obj():
     model = ModelWithStringEnum(enum_field=SomeStringEnum.SOME_VALUE)
-    deserialized_model = ModelWithStringEnum.parse_obj(model.model_dump())
+    deserialized_model = ModelWithStringEnum.model_validate(model.model_dump())
     assert deserialized_model.enum_field == model.enum_field
 
 
@@ -561,8 +582,7 @@ def test_evented_model_with_provided_dependencies():
             def b(self):  # pragma: no cover
                 return self.a * 2
 
-            class Config:
-                dependencies = {'x': ['a']}
+            model_config = NapariConfigDict(dependencies={'x': ['a']})
 
     # should warn if field does not exist
     with pytest.warns(match='Unrecognized field dependency'):

@@ -135,18 +135,19 @@ def _get_field_dependents(cls: 'EventedModel') -> dict[str, set[str]]:
             def d(self, val: int):
                 self.c = [val // 2, val // 2]
 
-            class Config:
+            model_config = ConfigDict(
                 dependencies={
                     'c': ['a', 'b'],
                     'd': ['a', 'b']
                 }
+                )
     """
     if not cls.__properties__:
         return {}
 
     deps: dict[str, set[str]] = {}
 
-    _deps = getattr(cls.model_config, 'dependencies', None)
+    _deps = cls.model_config.get('dependencies')
     if _deps:
         for prop_name, fields in _deps.items():
             if prop_name not in cls.__properties__:
