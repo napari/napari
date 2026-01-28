@@ -1,7 +1,7 @@
 from typing import Any
 
 import numpy as np
-from pydantic import Field, model_validator
+from pydantic import Field, field_serializer, model_validator
 
 from napari.utils.color import ColorValue
 from napari.utils.colormaps.categorical_colormap_utils import (
@@ -93,3 +93,18 @@ class CategoricalColormap(EventedModel):
                 self.fallback_color.values, other.fallback_color.values
             )
         )
+
+    @field_serializer('colormap', when_used='json')
+    def _serialize_colormap(self, colormap):
+        return {
+            k: v.tolist() if isinstance(v, np.ndarray) else v
+            for k, v in colormap.items()
+        }
+
+    @field_serializer('fallback_color', when_used='json')
+    def _serialize_fallback_color(self, fallback_color):
+        return {
+            'values': fallback_color.values.tolist()
+            if isinstance(fallback_color.values, np.ndarray)
+            else fallback_color.values,
+        }

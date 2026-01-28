@@ -4,7 +4,7 @@ from typing import Any
 
 import numpy as np
 from pydantic import GetCoreSchemaHandler
-from pydantic_core import CoreSchema, core_schema
+from pydantic_core import core_schema
 
 from napari.utils.translations import trans
 
@@ -28,8 +28,19 @@ class ColorCycle:
     @classmethod
     def __get_pydantic_core_schema__(
         cls, source_type: Any, handler: GetCoreSchemaHandler
-    ) -> CoreSchema:
-        return core_schema.no_info_plain_validator_function(cls.validate_type)
+    ):
+        validate = core_schema.no_info_plain_validator_function(
+            cls.validate_type
+        )
+        serialize = core_schema.plain_serializer_function_ser_schema(
+            lambda v: {'values': v.values.tolist()},
+            when_used='json',
+        )
+        return core_schema.json_or_python_schema(
+            json_schema=validate,
+            python_schema=validate,
+            serialization=serialize,
+        )
 
     @classmethod
     def validate_type(cls, val):
@@ -40,9 +51,6 @@ class ColorCycle:
             return val
 
         return _coerce_colorcycle_from_colors(val)
-
-    def _json_encode(self):
-        return {'values': self.values.tolist()}
 
     def __eq__(self, other):
         if isinstance(other, ColorCycle):
