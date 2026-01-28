@@ -150,14 +150,49 @@ class Selection(EventedSet[_T]):
 
         args = get_args(source)
         if args:
+            item_schema = handler.generate_schema(args[0])
             mutableset_t_schema = handler.generate_schema(MutableSet[args[0]])
+            current_schema = core_schema.union_schema(
+                [item_schema, core_schema.none_schema()]
+            )
+            dict_schema = core_schema.typed_dict_schema(
+                {
+                    'selection': core_schema.typed_dict_field(
+                        core_schema.list_schema(item_schema)
+                    ),
+                    '_current': core_schema.typed_dict_field(
+                        current_schema, required=False
+                    ),
+                }
+            )
         else:
             mutableset_t_schema = handler.generate_schema(MutableSet)
+            dict_schema = core_schema.dict_schema(
+                keys_schema=core_schema.str_schema(),
+                values_schema=core_schema.any_schema(),
+            )
+
+        input_schema = core_schema.union_schema(
+            [mutableset_t_schema, dict_schema]
+        )
 
         non_instance_schema = core_schema.no_info_after_validator_function(
-            cls._validate_selection, EventedSet, mutableset_t_schema
+            cls._validate_selection, input_schema
         )
-        return core_schema.union_schema([instance_schema, non_instance_schema])
+
+        def _serialize(v: Selection):
+            return {
+                'selection': EventedSet(v)._json_encode(),
+                '_current': v._current,
+            }
+
+        serialize = core_schema.plain_serializer_function_ser_schema(
+            _serialize,
+            when_used='json',
+        )
+        return core_schema.union_schema(
+            [instance_schema, non_instance_schema], serialization=serialize
+        )
 
     @classmethod
     def _validate_selection(
