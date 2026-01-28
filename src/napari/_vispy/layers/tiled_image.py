@@ -87,6 +87,14 @@ class TiledImageNode(Compound):
         """
         BaseVisual._transform_changed(self)
 
+    def handle_axis_change(self) -> None:
+        """Handle changes in axis order by updating tile transforms."""
+
+        for ch, offset in zip(
+            self.adopted_children, self.offsets, strict=True
+        ):
+            ch.transform = STTransform(translate=offset + (0,))
+
     def set_data(self, data: np.ndarray) -> None:
         tiles = make_tiles(data, self.tile_size)
         self.offsets = [of for of, _ in tiles]

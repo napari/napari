@@ -130,6 +130,9 @@ class VispyImageLayer(VispyScalarFieldBaseLayer):
         texture_format='auto',
         layer_node_class=ImageLayerNode,
     ) -> None:
+        # Track order to detect transpose/roll. Needs to be set before super().__init__()
+        self._last_order = None
+
         super().__init__(
             layer,
             node=node,
@@ -157,6 +160,16 @@ class VispyImageLayer(VispyScalarFieldBaseLayer):
         self._on_display_change()
         self.reset()
         self._on_data_change()
+
+    def _on_matrix_change(self):
+        super()._on_matrix_change()
+
+        # Detect if order changed (transpose or roll)
+        current_order = self.layer._slice_input.order
+        if current_order != self._last_order:
+            if isinstance(self.node, TiledImageNode):
+                self.node.handle_axis_change()
+            self._last_order = current_order
 
     def _on_interpolation_change(self) -> None:
         self.node.interpolation = (
