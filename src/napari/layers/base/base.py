@@ -5,7 +5,6 @@ import inspect
 import itertools
 import logging
 import os.path
-import typing
 import uuid
 from abc import ABC, ABCMeta, abstractmethod
 from collections import defaultdict
@@ -172,13 +171,15 @@ class _LayerSlicingState(ABC):
         self,
         dims: Dims,
     ) -> _SliceInput:
-        world_slice = _ThickNDSlice.from_dims(dims)
+        world_slice = _ThickNDSlice.from_dims(
+            dims, layer_units=self.layer.units
+        )
         order_array = (
             np.arange(dims.ndim)
             if dims.order is None
             else np.asarray(dims.order)
         )
-        order = tuple(
+        order: tuple[int, ...] = tuple(
             self._world_to_layer_dims(
                 world_dims=order_array,
                 ndim_world=dims.ndim,
@@ -188,7 +189,7 @@ class _LayerSlicingState(ABC):
         return _SliceInput(
             ndisplay=dims.ndisplay,
             world_slice=world_slice[-self.ndim :],
-            order=typing.cast(tuple[int, ...], order[-self.ndim :]),
+            order=order[-self.ndim :],
         )
 
     def _world_to_layer_dims(
