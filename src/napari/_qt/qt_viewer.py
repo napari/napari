@@ -200,6 +200,7 @@ class QtViewer(QSplitter):
         self._dockLayerControls = None
         self._dockConsole = None
         self._dockPerformance = None
+        self._show_welcome_screen = show_welcome_screen
 
         # This dictionary holds the corresponding vispy visual for each layer
         self.canvas = canvas_class(
@@ -259,6 +260,23 @@ class QtViewer(QSplitter):
         viewer.welcome_screen.visible = show_welcome_screen
         if tips is not None:
             viewer.welcome_screen.tips = tips
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        self.viewer.welcome_screen.visible = self._show_welcome_screen
+
+    def hideEvent(self, event):
+        self.viewer.welcome_screen.visible = False
+
+    @property
+    def show_welcome_screen(self) -> bool:
+        """bool: Whether to show the welcome screen when there are no layers."""
+        return self._show_welcome_screen
+
+    @show_welcome_screen.setter
+    def show_welcome_screen(self, value: bool):
+        self._show_welcome_screen = value
+        self.viewer.welcome_screen.visible = value and self.isVisible()
 
     @staticmethod
     def _update_dask_cache_settings(
