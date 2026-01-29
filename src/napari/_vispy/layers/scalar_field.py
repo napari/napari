@@ -8,7 +8,9 @@ from vispy.scene import Node
 from vispy.visuals import ImageVisual
 
 from napari._vispy.layers.base import VispyBaseLayer
+from napari._vispy.layers.tiled_image import TiledImageNode
 from napari._vispy.utils.gl import fix_data_dtype
+from napari._vispy.visuals.labels import LabelNode
 from napari._vispy.visuals.volume import Volume as VolumeNode
 from napari.layers._scalar_field.scalar_field import ScalarFieldBase
 from napari.utils.translations import trans
@@ -22,7 +24,12 @@ class ScalarFieldLayerNode(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def get_node(self, ndisplay: int, dtype: np.dtype | None = None) -> Node:
+    def get_node(
+        self,
+        ndisplay: int,
+        dtype: np.dtype | None = None,
+        shape: tuple | None = None,
+    ) -> Node:
         """Return the appropriate node for the given ndisplay and dtype."""
         raise NotImplementedError
 
@@ -44,6 +51,7 @@ class VispyScalarFieldBaseLayer(VispyBaseLayer[ScalarFieldBase]):
         super().__init__(layer, self._layer_node.get_node(2))
 
         self._array_like = True
+        self._data = np.empty(0)
 
         self.layer.events.rendering.connect(self._on_rendering_change)
         self.layer.events.depiction.connect(self._on_depiction_change)
@@ -73,7 +81,9 @@ class VispyScalarFieldBaseLayer(VispyBaseLayer[ScalarFieldBase]):
         self.node.parent = None
         ndisplay = self.layer._slice_input.ndisplay
         self.node = self._layer_node.get_node(
-            ndisplay, getattr(data, 'dtype', None)
+            ndisplay,
+            getattr(data, 'dtype', None),
+            getattr(data, 'shape', None),
         )
 
         if data is None:
@@ -91,30 +101,41 @@ class VispyScalarFieldBaseLayer(VispyBaseLayer[ScalarFieldBase]):
         self.node.order = self.order
         # reattach overlays to new node
         for child in children:
-            child.parent = self.node
+            if not isinstance(child.parent, TiledImageNode):
+                child.parent = self.node
         self.reset()
 
     def _on_data_change(self) -> None:
+        self._data = self.layer._data_view
+
         data = fix_data_dtype(self.layer._data_view)
         ndisplay = self.layer._slice_input.ndisplay
 
         node = self._layer_node.get_node(
-            ndisplay, getattr(data, 'dtype', None)
+            ndisplay,
+            getattr(data, 'dtype', None),
+            getattr(data, 'shape', None),
         )
         if ndisplay > self.layer.ndim:
             data = data.reshape(
                 (1,) * (ndisplay - self.layer.ndim) + data.shape
             )
 
-        # Check if data exceeds MAX_TEXTURE_SIZE and downsample
-        if self.MAX_TEXTURE_SIZE_2D is not None and ndisplay == 2:
+        if (
+            self.MAX_TEXTURE_SIZE_2D is not None
+            and ndisplay == 2
+            and isinstance(node, LabelNode)
+        ):
             data = self.downsample_texture(data, self.MAX_TEXTURE_SIZE_2D)
-        elif self.MAX_TEXTURE_SIZE_3D is not None and ndisplay == 3:
+        if self.MAX_TEXTURE_SIZE_3D is not None and ndisplay == 3:
             data = self.downsample_texture(data, self.MAX_TEXTURE_SIZE_3D)
 
         # Check if ndisplay has changed current node type needs updating
         if (ndisplay == 3 and not isinstance(node, VolumeNode)) or (
-            (ndisplay == 2 and not isinstance(node, ImageVisual))
+            (
+                ndisplay == 2
+                and not isinstance(node, (ImageVisual, TiledImageNode))
+            )
             or node != self.node
         ):
             self._on_display_change(data)
