@@ -364,7 +364,7 @@ class TextManager(EventedModel):
         # should not mutate any existing fields in-place.
         # Avoid recursion because some fields are also models that may
         # not share field names/types (e.g. string).
-        current_manager = self.copy()
+        current_manager = self.model_copy()
         current_manager.update(new_manager, recurse=False)
 
         # If we got here, then there were no errors, so update for real.
