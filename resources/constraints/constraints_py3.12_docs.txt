@@ -610,7 +610,7 @@ pyautogui==0.9.54
     # via napari (pyproject.toml)
 pyconify==0.2.1
     # via superqt
-pydantic==2.12.5
+pydantic==2.10.0
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
@@ -619,10 +619,15 @@ pydantic==2.12.5
     #   npe2
     #   ome-types
     #   pydantic-extra-types
-pydantic-core==2.41.5
+    #   pydantic-settings
+pydantic-core==2.27.0
     # via pydantic
 pydantic-extra-types==2.11.0
-    # via ome-types
+    # via
+    #   napari (pyproject.toml)
+    #   ome-types
+pydantic-settings==2.12.0
+    # via napari (pyproject.toml)
 pydata-sphinx-theme==0.16.1
     # via napari-sphinx-theme
 pydeps==3.0.2
@@ -631,7 +636,6 @@ pygetwindow==0.0.9
     # via pyautogui
 pygments==2.19.2
     # via
-    #   napari (pyproject.toml)
     #   accessible-pygments
     #   ipython
     #   ipython-pygments-lexers
@@ -645,9 +649,7 @@ pygments==2.19.2
 pymsgbox==2.0.1
     # via pyautogui
 pyopengl==3.1.10
-    # via
-    #   -r resources/constraints/version_denylist.txt
-    #   napari (pyproject.toml)
+    # via -r resources/constraints/version_denylist.txt
 pyparsing==3.3.2
     # via matplotlib
 pyperclip==1.11.0
@@ -700,6 +702,8 @@ python-dateutil==2.9.0.post0
     #   jupyter-client
     #   matplotlib
     #   pandas
+python-dotenv==1.2.1
+    # via pydantic-settings
 python3-xlib==0.15
     # via
     #   mouseinfo
@@ -708,7 +712,6 @@ pytweening==1.2.0
     # via pyautogui
 pyyaml==6.0.3
     # via
-    #   napari (pyproject.toml)
     #   bioio-ome-tiff
     #   dask
     #   distributed
@@ -730,7 +733,6 @@ qtconsole==5.7.0
     #   napari-console
 qtpy==2.4.3
     # via
-    #   napari (pyproject.toml)
     #   magic-class
     #   magicgui
     #   napari-console
@@ -960,7 +962,7 @@ typing-extensions==4.15.0
     #   xsdata
     #   zarr
 typing-inspection==0.4.2
-    # via pydantic
+    # via pydantic-settings
 uc-micro-py==1.0.3
     # via linkify-it-py
 ujson==5.11.0

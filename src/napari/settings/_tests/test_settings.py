@@ -6,10 +6,10 @@ import sys
 from pathlib import Path
 
 import pytest
+from pydantic import Field, ValidationError
 from yaml import safe_load
 
 from napari import settings
-from napari._pydantic_compat import Field, ValidationError
 from napari.settings import CURRENT_SCHEMA_VERSION, NapariSettings
 from napari.utils.theme import get_theme, register_theme
 
@@ -125,7 +125,7 @@ def test_settings_load_invalid_section(tmp_path):
 
 
 def test_settings_to_dict(test_settings):
-    data_dict = test_settings.dict()
+    data_dict = test_settings.model_dump()
     assert isinstance(data_dict, dict)
     assert data_dict.get('application')
 
@@ -136,12 +136,12 @@ def test_settings_to_dict(test_settings):
 def test_settings_to_dict_no_env(monkeypatch):
     """Test that exclude_env works to exclude variables coming from the env."""
     s = NapariSettings(None, appearance={'theme': 'light'})
-    assert s.dict()['appearance']['theme'] == 'light'
+    assert s.model_dump()['appearance']['theme'] == 'light'
     assert s.dict(exclude_env=True)['appearance']['theme'] == 'light'
 
     monkeypatch.setenv('NAPARI_APPEARANCE_THEME', 'light')
     s = NapariSettings(None)
-    assert s.dict()['appearance']['theme'] == 'light'
+    assert s.model_dump()['appearance']['theme'] == 'light'
     assert 'theme' not in s.dict(exclude_env=True).get('appearance', {})
 
 

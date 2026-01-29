@@ -5,13 +5,14 @@ from typing import Any, ClassVar, Union
 
 import numpy as np
 from app_model.types import KeyBinding
-
-from napari._pydantic_compat import (
+from pydantic import (
     BaseModel,
-    ModelMetaclass,
+    ConfigDict,
     PrivateAttr,
-    main,
 )
+from pydantic._internal._model_construction import ModelMetaclass
+
+from napari._pydantic_util import get_inner_type, get_outer_type
 from napari.utils.events.event import EmitterGroup, Event
 from napari.utils.misc import pick_equality_operator
 from napari.utils.translations import trans
@@ -42,19 +43,22 @@ class EventedMetaclass(ModelMetaclass):
     def __new__(mcs, name, bases, namespace, **kwargs):
         cls = super().__new__(mcs, name, bases, namespace, **kwargs)
         cls.__eq_operators__ = {}
-        for n, f in cls.__fields__.items():
-            cls.__eq_operators__[n] = pick_equality_operator(f.type_)
+        for n, f in cls.model_fields.items():
+            field_type = get_outer_type(f.annotation)
+            cls.__eq_operators__[n] = pick_equality_operator(field_type)
             # If a field type has a _json_encode method, add it to the json
             # encoders for this model.
             # NOTE: a _json_encode field must return an object that can be
             # passed to json.dumps ... but it needn't return a string.
-            if hasattr(f.type_, '_json_encode'):
-                encoder = f.type_._json_encode
-                cls.__config__.json_encoders[f.type_] = encoder
+            if hasattr(field_type, '_json_encode'):
+                encoder = field_type._json_encode
+                cls.model_config['json_encoders'][field_type] = encoder
                 # also add it to the base config
                 # required for pydantic>=1.8.0 due to:
                 # https://github.com/samuelcolvin/pydantic/pull/2064
-                EventedModel.__config__.json_encoders[f.type_] = encoder
+                EventedModel.model_config['json_encoders'][field_type] = (
+                    encoder
+                )
         # check for properties defined on the class, so we can allow them
         # in EventedModel.__setattr__ and create events
         cls.__properties__ = {}
@@ -85,7 +89,7 @@ def _update_dependents_from_property_code(
     Update the given deps dictionary with the new findings.
     """
     for name in prop.fget.__code__.co_names:
-        if name in cls.__fields__:
+        if name in cls.model_fields:
             deps.setdefault(name, set()).add(prop_name)
         elif name in cls.__properties__ and name not in visited:
             # to avoid infinite recursion, we shouldn't re-check getter we've already seen
@@ -131,18 +135,19 @@ def _get_field_dependents(cls: 'EventedModel') -> dict[str, set[str]]:
             def d(self, val: int):
                 self.c = [val // 2, val // 2]
 
-            class Config:
+            model_config = ConfigDict(
                 dependencies={
                     'c': ['a', 'b'],
                     'd': ['a', 'b']
                 }
+                )
     """
     if not cls.__properties__:
         return {}
 
     deps: dict[str, set[str]] = {}
 
-    _deps = getattr(cls.__config__, 'dependencies', None)
+    _deps = cls.model_config.get('dependencies')
     if _deps:
         for prop_name, fields in _deps.items():
             if prop_name not in cls.__properties__:
@@ -151,7 +156,7 @@ def _get_field_dependents(cls: 'EventedModel') -> dict[str, set[str]]:
                     f'{prop_name!r} is not.'
                 )
             for field in fields:
-                if field not in cls.__fields__:
+                if field not in cls.model_fields:
                     warnings.warn(f'Unrecognized field dependency: {field}')
                 deps.setdefault(field, set()).add(prop_name)
     else:
@@ -185,23 +190,18 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
 
     # pydantic BaseModel configuration.  see:
     # https://pydantic-docs.helpmanual.io/usage/model_config/
-    class Config:
+    model_config = ConfigDict(
         # whether to allow arbitrary user types for fields (they are validated
         # simply by checking if the value is an instance of the type). If
         # False, RuntimeError will be raised on model declaration
-        arbitrary_types_allowed = True
-        # whether to perform validation on assignment to attributes
-        validate_assignment = True
-        # whether to treat any underscore non-class var attrs as private
-        # https://pydantic-docs.helpmanual.io/usage/models/#private-model-attributes
-        underscore_attrs_are_private = True
-        # whether to validate field defaults (default: False)
-        validate_all = True
+        arbitrary_types_allowed=True,
+        validate_assignment=True,
+        validate_default=True,
         # https://pydantic-docs.helpmanual.io/usage/exporting_models/#modeljson
         # NOTE: json_encoders are also added EventedMetaclass.__new__ if the
         # field declares a _json_encode method.
-        json_encoders = _BASE_JSON_ENCODERS
-        # extra = Extra.forbid
+        json_encoders=_BASE_JSON_ENCODERS,
+    )
 
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
@@ -210,8 +210,8 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         # add event emitters for each field which is mutable
         field_events = [
             name
-            for name, field in self.__fields__.items()
-            if field.field_info.allow_mutation
+            for name, field in self.__class__.model_fields.items()
+            if not field.frozen
         ]
 
         self._events.add(
@@ -345,7 +345,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         # events are all messed up due to objects being probably
         # recreated arbitrarily during validation
         self.events.source = self
-        for name in self.__fields__:
+        for name in self.__class__.model_fields:
             child = getattr(self, name)
             if isinstance(child, EventedModel):
                 # TODO: this isinstance check should be EventedMutables in the future
@@ -363,8 +363,8 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             if isinstance(value, EventedModel):
                 getattr(self, name).reset()
             elif (
-                self.__config__.allow_mutation
-                and self.__fields__[name].field_info.allow_mutation
+                not self.model_config.get('frozen', False)
+                and not self.__class__.model_fields[name].frozen
             ):
                 setattr(self, name, value)
 
@@ -386,7 +386,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             different realized types with different fields.
         """
         if isinstance(values, self.__class__):
-            values = values.dict()
+            values = values.model_dump()
         if not isinstance(values, dict):
             raise TypeError(
                 trans._(
@@ -411,17 +411,17 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         """Check equality with another object.
 
         We override the pydantic approach (which just checks
-        ``self.dict() == other.dict()``) to accommodate more complicated types
+        ``self.model_dump() == other.model_dump()``) to accommodate more complicated types
         like arrays, whose truth value is often ambiguous. ``__eq_operators__``
         is constructed in ``EqualityMetaclass.__new__``
         """
         if self is other:
             return True
         if not isinstance(other, EventedModel):
-            return self.dict() == other
+            return self.model_dump() == other
         if self.__class__ != other.__class__:
             return False
-        for f_name in self.__fields__:
+        for f_name in self.__class__.model_fields:
             eq = self.__eq_operators__[f_name]
             if not eq(getattr(self, f_name), getattr(other, f_name)):
                 return False
@@ -438,24 +438,25 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             by default `True`
         """
         null = object()
-        before = getattr(self.Config, 'use_enum_values', null)
-        self.Config.use_enum_values = as_values
+        before = getattr(self.model_config, 'use_enum_values', null)
+        self.model_config.use_enum_values = as_values
         try:
             yield
         finally:
             if before is not null:
-                self.Config.use_enum_values = before
+                self.model_config.use_enum_values = before
             else:
-                delattr(self.Config, 'use_enum_values')
+                delattr(self.model_config, 'use_enum_values')
 
 
 def get_defaults(obj: BaseModel):
     """Get possibly nested default values for a Model object."""
     dflt = {}
-    for k, v in obj.__fields__.items():
+    for k, v in obj.model_fields.items():
         d = v.get_default()
-        if d is None and isinstance(v.type_, main.ModelMetaclass):
-            d = get_defaults(v.type_)
+        field_type = get_inner_type(v.annotation)
+        if d is None and isinstance(field_type, ModelMetaclass):
+            d = get_defaults(field_type)
         dflt[k] = d
     return dflt
 

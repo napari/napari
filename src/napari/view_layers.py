@@ -13,7 +13,6 @@ from napari.viewer import Viewer
 __all__ = ['imshow']
 
 _viewer_params = inspect.signature(Viewer).parameters
-_dims_params = Dims.__fields__
 
 
 def _make_viewer_then(
@@ -62,7 +61,7 @@ def _make_viewer_then(
         )
     # separate dims kwargs because we want to set those after adding data
     dims_kwargs = {
-        k: vkwargs.pop(k) for k in list(vkwargs) if k in _dims_params
+        k: vkwargs.pop(k) for k in list(vkwargs) if k in Dims.model_fields
     }
     if viewer is None:
         viewer = Viewer(**vkwargs)

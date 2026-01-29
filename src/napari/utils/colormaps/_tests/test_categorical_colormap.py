@@ -84,7 +84,7 @@ fallback_colors = np.array([[1, 0, 0, 1], [0, 1, 0, 1]])
 
 
 def test_categorical_colormap_from_array():
-    cmap = CategoricalColormap.from_array(fallback_colors)
+    cmap = CategoricalColormap(fallback_color=fallback_colors)
     np.testing.assert_almost_equal(cmap.fallback_color.values, fallback_colors)
 
 
@@ -108,7 +108,7 @@ default_fallback_color = np.array([[1, 1, 1, 1]])
     ],
 )
 def test_categorical_colormap_from_dict(params, expected):
-    cmap = CategoricalColormap.from_dict(params)
+    cmap = CategoricalColormap(**params)
     np.testing.assert_equal(cmap.colormap, expected[0])
     np.testing.assert_almost_equal(cmap.fallback_color.values, expected[1])
 
@@ -139,7 +139,7 @@ def test_categorical_colormap_equality():
 )
 def test_categorical_colormap_serialization(params):
     cmap_1 = CategoricalColormap(**params)
-    cmap_json = cmap_1.json()
+    cmap_json = cmap_1.model_dump_json()
 
     json_dict = json.loads(cmap_json)
     cmap_2 = CategoricalColormap(**json_dict)

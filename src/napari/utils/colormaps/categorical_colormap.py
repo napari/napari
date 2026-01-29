@@ -1,8 +1,8 @@
 from typing import Any
 
 import numpy as np
+from pydantic import Field, field_serializer, model_validator
 
-from napari._pydantic_compat import Field
 from napari.utils.color import ColorValue
 from napari.utils.colormaps.categorical_colormap_utils import (
     ColorCycle,
@@ -10,7 +10,6 @@ from napari.utils.colormaps.categorical_colormap_utils import (
 )
 from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils.events import EventedModel
-from napari.utils.translations import trans
 
 
 class CategoricalColormap(EventedModel):
@@ -66,46 +65,25 @@ class CategoricalColormap(EventedModel):
         colors = np.array([self.colormap[x] for x in color_properties])
         return colors
 
-    @classmethod
-    def from_array(cls, fallback_color):
-        return cls(fallback_color=fallback_color)
-
-    @classmethod
-    def from_dict(cls, params: dict):
-        if ('colormap' in params) or ('fallback_color' in params):
-            if 'colormap' in params:
+    @model_validator(mode='before')
+    def _validate_args(cls, values):
+        if ('colormap' in values) or ('fallback_color' in values):
+            if 'colormap' in values:
                 colormap = {
                     k: transform_color(v)[0]
-                    for k, v in params['colormap'].items()
+                    for k, v in values['colormap'].items()
                 }
             else:
                 colormap = {}
-            fallback_color = params.get('fallback_color', 'white')
+            fallback_color = values.get('fallback_color', 'white')
         else:
-            colormap = {k: transform_color(v)[0] for k, v in params.items()}
+            colormap = {k: transform_color(v)[0] for k, v in values.items()}
             fallback_color = 'white'
 
-        return cls(colormap=colormap, fallback_color=fallback_color)
+        values['colormap'] = colormap
+        values['fallback_color'] = fallback_color
 
-    @classmethod
-    def __get_validators__(cls):
-        yield cls.validate_type
-
-    @classmethod
-    def validate_type(cls, val):
-        if isinstance(val, cls):
-            return val
-        if isinstance(val, list | np.ndarray):
-            return cls.from_array(val)
-        if isinstance(val, dict):
-            return cls.from_dict(val)
-
-        raise TypeError(
-            trans._(
-                'colormap should be an array or dict',
-                deferred=True,
-            )
-        )
+        return values
 
     def __eq__(self, other):
         return (
@@ -115,3 +93,18 @@ class CategoricalColormap(EventedModel):
                 self.fallback_color.values, other.fallback_color.values
             )
         )
+
+    @field_serializer('colormap', when_used='json')
+    def _serialize_colormap(self, colormap):
+        return {
+            k: v.tolist() if isinstance(v, np.ndarray) else v
+            for k, v in colormap.items()
+        }
+
+    @field_serializer('fallback_color', when_used='json')
+    def _serialize_fallback_color(self, fallback_color):
+        return {
+            'values': fallback_color.values.tolist()
+            if isinstance(fallback_color.values, np.ndarray)
+            else fallback_color.values,
+        }

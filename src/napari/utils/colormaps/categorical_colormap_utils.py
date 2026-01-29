@@ -1,12 +1,11 @@
 from dataclasses import dataclass
 from itertools import cycle
+from typing import Any
 
 import numpy as np
+from pydantic import GetCoreSchemaHandler
+from pydantic_core import core_schema
 
-from napari.layers.utils.color_transformations import (
-    transform_color,
-    transform_color_cycle,
-)
 from napari.utils.translations import trans
 
 
@@ -27,8 +26,21 @@ class ColorCycle:
     cycle: cycle
 
     @classmethod
-    def __get_validators__(cls):
-        yield cls.validate_type
+    def __get_pydantic_core_schema__(
+        cls, source_type: Any, handler: GetCoreSchemaHandler
+    ):
+        validate = core_schema.no_info_plain_validator_function(
+            cls.validate_type
+        )
+        serialize = core_schema.plain_serializer_function_ser_schema(
+            lambda v: {'values': v.values.tolist()},
+            when_used='json',
+        )
+        return core_schema.json_or_python_schema(
+            json_schema=validate,
+            python_schema=validate,
+            serialization=serialize,
+        )
 
     @classmethod
     def validate_type(cls, val):
@@ -39,9 +51,6 @@ class ColorCycle:
             return val
 
         return _coerce_colorcycle_from_colors(val)
-
-    def _json_encode(self):
-        return {'values': self.values.tolist()}
 
     def __eq__(self, other):
         if isinstance(other, ColorCycle):
@@ -54,6 +63,12 @@ class ColorCycle:
 def _coerce_colorcycle_from_dict(
     val: dict[str, str | list | np.ndarray | cycle],
 ) -> ColorCycle:
+    # avoid circular import
+    from napari.layers.utils.color_transformations import (
+        transform_color,
+        transform_color_cycle,
+    )
+
     # validate values
     color_values = val.get('values')
     if color_values is None:
@@ -84,6 +99,11 @@ def _coerce_colorcycle_from_dict(
 def _coerce_colorcycle_from_colors(
     val: str | list | np.ndarray,
 ) -> ColorCycle:
+    # avoid circular import
+    from napari.layers.utils.color_transformations import (
+        transform_color_cycle,
+    )
+
     if isinstance(val, str):
         val = [val]
     (

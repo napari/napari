@@ -5,9 +5,9 @@ from pathlib import Path, PosixPath, WindowsPath
 from typing import TYPE_CHECKING
 
 from app_model.types import KeyBinding
+from pydantic import BaseModel
 from yaml import SafeDumper, dump_all
 
-from napari._pydantic_compat import BaseModel
 from napari.settings._fields import Version
 
 if TYPE_CHECKING:
@@ -90,15 +90,17 @@ class PydanticYamlMixin(BaseModel):
             exclude_defaults=exclude_defaults,
             exclude_none=exclude_none,
         )
-        if self.__custom_root_type__:
-            from napari._pydantic_compat import ROOT_KEY
-
-            data = data[ROOT_KEY]
+        # if self.__custom_root_type__:
+        #     from pydantic.utils import ROOT_KEY
+        #
+        #     data = data[ROOT_KEY]
         return self._yaml_dump(data, dumper, **dumps_kwargs)
 
     def _yaml_dump(
         self, data, dumper: type[SafeDumper] | None = None, **kw
     ) -> str:
         kw.setdefault('sort_keys', False)
-        dumper = dumper or getattr(self.__config__, 'yaml_dumper', YamlDumper)
+        dumper = dumper or getattr(
+            self.model_config, 'yaml_dumper', YamlDumper
+        )
         return dump_all([data], Dumper=dumper, **kw)
