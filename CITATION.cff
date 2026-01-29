@@ -423,5 +423,10 @@ authors:
   affiliation: Data Science Lab, University of Bern, Switzerland
   orcid: https://orcid.org/0000-0003-1562-4265
   alias: guiwitz
+- given-names: Marcelo
+  family-names: Leomil Zoccoler
+  affiliation: Katana Labs
+  orcid: https://orcid.org/0000-0002-6165-4679
+  alias: zoccoler
 repository-code: https://github.com/napari/napari
 license: BSD-3-Clause
