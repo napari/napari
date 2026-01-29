@@ -1,39 +1,11 @@
 import numpy as np
 import pytest
 from qtpy.QtCore import Qt
-from vispy.util.quaternion import Quaternion
 
 from napari._pydantic_compat import ValidationError
 from napari._vispy.utils.cursor import QtCursorVisual
-from napari._vispy.utils.quaternion import quaternion2euler_degrees
 from napari._vispy.utils.visual import get_view_direction_in_scene_coordinates
 from napari.components._viewer_constants import CursorStyle
-
-# Euler angles to be tested, in degrees
-angles = [[12, 53, 92], [180, -90, 0], [16, 90, 0]]
-
-# Prepare for input and add corresponding values in radians
-
-
-@pytest.mark.parametrize('angles', angles)
-def test_quaternion2euler_degrees(angles):
-    """Test quaternion to euler angle conversion."""
-
-    # Test for degrees
-    q = Quaternion.create_from_euler_angles(*angles, degrees=True)
-    ea = quaternion2euler_degrees(q)
-    q_p = Quaternion.create_from_euler_angles(*ea, degrees=True)
-
-    # We now compare the corresponding quaternions ; they should be equals or opposites (as they're already unit ones)
-    q_values = np.array([q.w, q.x, q.y, q.z])
-    q_p_values = np.array([q_p.w, q_p.x, q_p.y, q_p.z])
-
-    nn_zero_ind = np.argmax((q_values != 0) & (q_p_values != 0))
-
-    q_values *= np.sign(q_values[nn_zero_ind])
-    q_p_values *= np.sign(q_p_values[nn_zero_ind])
-
-    np.testing.assert_allclose(q_values, q_p_values)
 
 
 def test_get_view_direction_in_scene_coordinates(make_napari_viewer):

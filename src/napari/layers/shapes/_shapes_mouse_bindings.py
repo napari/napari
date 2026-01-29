@@ -4,6 +4,7 @@ from copy import copy
 from typing import TYPE_CHECKING
 
 import numpy as np
+from psygnal.containers import Selection
 
 from napari.layers.base._base_constants import ActionType
 from napari.layers.shapes._shapes_constants import Box, Mode
@@ -45,7 +46,13 @@ def highlight(layer: Shapes, event: MouseEvent) -> None:
     -------
     None
     """
-    layer._set_highlight()
+    if layer._mode in {
+        Mode.SELECT,
+        Mode.DIRECT,
+        Mode.VERTEX_INSERT,
+        Mode.VERTEX_REMOVE,
+    }:
+        layer._set_highlight()
 
 
 def select(layer: Shapes, event: MouseEvent) -> Generator[None, None, None]:
@@ -67,7 +74,7 @@ def select(layer: Shapes, event: MouseEvent) -> Generator[None, None, None]:
     value = layer.get_value(event.position, world=True)
     layer._moving_value = copy(value)
     shape_under_cursor, vertex_under_cursor = value
-    if vertex_under_cursor is None:
+    if vertex_under_cursor is None or layer.mode == Mode.SELECT:
         if shift and shape_under_cursor is not None:
             if shape_under_cursor in layer.selected_data:
                 layer.selected_data.remove(shape_under_cursor)
@@ -257,6 +264,7 @@ def _add_line_rectangle_ellipse(
         String indicating the type of shape to be added.
     """
     # on press
+    layer._is_creating = True
     # reset layer._aspect_ratio for a new shape
     layer._aspect_ratio = 1
     # Start drawing rectangle / ellipse / line
@@ -314,7 +322,7 @@ def initiate_polygon_draw(
     layer._is_creating = True
     data = np.array([coordinates, coordinates])
     layer.add(data, shape_type='path', gui=True)
-    layer.selected_data = {layer.nshapes - 1}
+    layer.selected_data = Selection({layer.nshapes - 1})
     layer._value = (layer.nshapes - 1, 1)
     layer._moving_value = copy(layer._value)
     layer._set_highlight()
@@ -390,7 +398,6 @@ def add_vertex_to_path(
     layer._value = (value[0], value[1] + 1)
     layer._moving_value = copy(layer._value)
     layer._data_view.edit(index, vertices, new_type=new_type)
-    layer._selected_box = layer.interaction_box(layer.selected_data)
     layer._last_cursor_position = np.array(event.pos)
 
 
@@ -556,7 +563,6 @@ def vertex_insert(layer: Shapes, event: MouseEvent) -> None:
     vertices = np.insert(vertices, ind, [coordinates], axis=0)
     with layer.events.set_data.blocker():
         layer._data_view.edit(index, vertices, new_type=new_type)
-        layer._selected_box = layer.interaction_box(layer.selected_data)
     layer.events.data(
         value=layer.data,
         action=ActionType.CHANGED,
@@ -605,8 +611,6 @@ def vertex_remove(layer: Shapes, event: MouseEvent) -> None:
             if shape_under_cursor in layer.selected_data:
                 layer.selected_data.remove(shape_under_cursor)
             layer._data_view.remove(shape_under_cursor)
-            shapes = layer.selected_data
-            layer._selected_box = layer.interaction_box(shapes)
     else:
         if shape_type == Rectangle:  # noqa SIM108
             # Deleting vertex from a rectangle creates a polygon
@@ -619,8 +623,6 @@ def vertex_remove(layer: Shapes, event: MouseEvent) -> None:
             layer._data_view.edit(
                 shape_under_cursor, vertices, new_type=new_type
             )
-            shapes = layer.selected_data
-            layer._selected_box = layer.interaction_box(shapes)
     layer.events.data(
         value=layer.data,
         action=ActionType.CHANGED,
@@ -947,11 +949,4 @@ def _move_active_element_under_cursor(
             vertices[vertex] = coordinates
 
             layer._data_view.edit(index, vertices, new_type=new_type)
-            shapes = layer.selected_data
-            layer._selected_box = layer.interaction_box(shapes)
             layer.refresh()
-
-
-def _set_highlight(layer: Shapes, event: MouseEvent) -> None:
-    if event.type in {'mouse_press', 'mouse_wheel'}:
-        layer._set_highlight()

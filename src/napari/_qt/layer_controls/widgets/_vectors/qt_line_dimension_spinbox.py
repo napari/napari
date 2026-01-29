@@ -8,7 +8,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,
 )
-from napari._qt.utils import qt_signals_blocked
+from napari._qt.utils import attr_to_settr
 from napari.layers import Vectors
 from napari.utils.translations import trans
 
@@ -35,9 +35,6 @@ class QtWidthSpinBoxControl(QtWidgetControlsBase):
 
     def __init__(self, parent: QWidget, layer: Vectors) -> None:
         super().__init__(parent, layer)
-        # Setup layer
-        self._layer.events.edge_width.connect(self._on_edge_width_change)
-
         # Setup widgets
         # line width in pixels
         self.width_spinbox = QDoubleSpinBox()
@@ -47,12 +44,18 @@ class QtWidthSpinBoxControl(QtWidgetControlsBase):
         self.width_spinbox.setMaximum(np.inf)
         self.width_spinbox.setValue(self._layer.edge_width)
         self.width_spinbox.valueChanged.connect(self.change_width)
-
+        self._callbacks.append(
+            attr_to_settr(
+                self._layer,
+                'edge_width',
+                self.width_spinbox,
+                'setValue',
+            )
+        )
         self.width_spinbox_label = QtWrappedLabel(trans._('width:'))
 
     def change_width(self, value) -> None:
         """Change edge line width of vectors on the layer model.
-
         Parameters
         ----------
         value : float
@@ -62,11 +65,6 @@ class QtWidthSpinBoxControl(QtWidgetControlsBase):
         self.width_spinbox.clearFocus()
         # TODO: Check other way to give focus without calling parent
         self.parent().setFocus()
-
-    def _on_edge_width_change(self) -> None:
-        """Receive layer model width change event and update width spinbox."""
-        with qt_signals_blocked(self.width_spinbox):
-            self.width_spinbox.setValue(self._layer.edge_width)
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
         return [(self.width_spinbox_label, self.width_spinbox)]
@@ -95,9 +93,6 @@ class QtLengthSpinBoxControl(QtWidgetControlsBase):
 
     def __init__(self, parent: QWidget, layer: Vectors) -> None:
         super().__init__(parent, layer)
-        # Setup layer
-        self._layer.events.length.connect(self._on_length_change)
-
         # Setup widgets
         # line length
         self.length_spinbox = QDoubleSpinBox()
@@ -107,14 +102,19 @@ class QtLengthSpinBoxControl(QtWidgetControlsBase):
         self.length_spinbox.setMinimum(0.1)
         self.length_spinbox.setMaximum(np.inf)
         self.length_spinbox.valueChanged.connect(self.change_length)
-
+        self._callbacks.append(
+            attr_to_settr(
+                self._layer,
+                'length',
+                self.length_spinbox,
+                'setValue',
+            )
+        )
         self.length_spinbox_label = QtWrappedLabel(trans._('length:'))
 
     def change_length(self, value: float) -> None:
         """Change length of vectors on the layer model.
-
         Multiplicative factor on projections for length of all vectors.
-
         Parameters
         ----------
         value : float
@@ -124,11 +124,6 @@ class QtLengthSpinBoxControl(QtWidgetControlsBase):
         self.length_spinbox.clearFocus()
         # TODO: Check other way to give focus without calling parent
         self.parent().setFocus()
-
-    def _on_length_change(self) -> None:
-        """Change length of vectors."""
-        with qt_signals_blocked(self.length_spinbox):
-            self.length_spinbox.setValue(self._layer.length)
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
         return [(self.length_spinbox_label, self.length_spinbox)]

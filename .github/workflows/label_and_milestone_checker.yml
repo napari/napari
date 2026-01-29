@@ -68,3 +68,37 @@ jobs:
             echo "and re-add it when all earlier milestones are completed."
             exit 1
           fi
+
+  check_citation_cff_for_pr_author:
+    name: Check PR author is in CITATION.cff
+    if: (github.event_name == 'pull_request')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # v6.0.1
+      - name: Verify PR author exists in CITATION.cff
+        env:
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+        run: |
+          echo "PR author: $PR_AUTHOR"
+          if [[ "$PR_AUTHOR" == *"[bot]" || "$PR_AUTHOR" == "napari-bot" ]]; then
+            echo "Bot author '$PR_AUTHOR' detected. Skipping CITATION.cff check."
+            exit 0
+          fi
+          if grep -Ei "^[[:space:]]*alias:[[:space:]]*${PR_AUTHOR}[[:space:]]*$" CITATION.cff; then
+            echo "Found alias '$PR_AUTHOR' in CITATION.cff."
+          else
+            echo "ERROR: GitHub username '$PR_AUTHOR' not found as an alias in CITATION.cff under authors."
+            echo "You are welcome to modify this PR to include your authorship in CITATION.cff;"
+            echo "citations for community contributors are listed in alphabetical order by family-names."
+            echo "Otherwise, a napari core team member will request this information from you."
+            printf '%s\n' "Citation format example:" \
+            '```yaml' \
+            "- given-names: <first name>" \
+            "  family-names: <last name>" \
+            "  affiliation: <required> (e.g. napari University)" \
+            "  orcid: https://orcid.org/<ORCID> <optional>" \
+            "  alias: ${PR_AUTHOR}" \
+            '```'
+            exit 1
+          fi

@@ -1,4 +1,5 @@
 import gc
+import logging
 import os
 import sys
 import warnings
@@ -327,8 +328,12 @@ def make_napari_viewer(
 
         should_show = request.config.getoption('--show-napari-viewer')
         model_kwargs['show'] = model_kwargs.pop('show', should_show)
+        model_kwargs.setdefault('show_welcome_screen', False)
         viewer = ViewerClass(*model_args, **model_kwargs)
         viewers.add(viewer)
+
+        if model_kwargs.get('show', False):
+            qtbot.wait_exposed(viewer.window._qt_window, timeout=5000)
 
         return viewer
 
@@ -456,3 +461,29 @@ def MouseEvent():
         handled: bool = False
 
     return Event
+
+
+class LeakSafeLogRecord(logging.LogRecord):
+    """LogRecord that converts args to strings to prevent reference retention."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Convert args to strings immediately
+        if self.args:
+            self.args = tuple(
+                str(arg) if not isinstance(arg, int | float) else arg
+                for arg in self.args
+            )
+
+
+@pytest.fixture(autouse=True, scope='session')
+def use_leak_safe_log_records():
+    """Use custom LogRecord factory that doesn't retain object references."""
+    original_record_factory = logging.getLogRecordFactory()
+
+    logging.setLogRecordFactory(LeakSafeLogRecord)
+
+    yield
+
+    # Restore original factory
+    logging.setLogRecordFactory(original_record_factory)

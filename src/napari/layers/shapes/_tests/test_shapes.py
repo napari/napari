@@ -1,6 +1,6 @@
 from copy import copy
 from itertools import cycle, islice
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import numpy as np
 import pandas as pd
@@ -1365,14 +1365,22 @@ def test_selecting_shapes():
     data = 20 * np.random.random((10, 4, 2))
     np.random.seed(0)
     layer = Shapes(data)
+    emitted_events = Mock()
+    layer.selected_data.events.items_changed.connect(emitted_events)
     layer.selected_data = {0, 1}
     assert layer.selected_data == {0, 1}
+    assert emitted_events.call_count == 1
 
     layer.selected_data = {9}
     assert layer.selected_data == {9}
+    # must be three calls because setting to {9} first clears the set
+    # and then adds 9
+    assert emitted_events.call_count == 2
 
     layer.selected_data = set()
     assert layer.selected_data == set()
+    # must be four calls because we are only clearing the set here
+    assert emitted_events.call_count == 3
 
 
 def test_removing_all_shapes_empty_list():
@@ -1423,6 +1431,67 @@ def test_removing_all_shapes_empty_array():
         'data_indices': (),
         'vertex_indices': ((),),
     }
+
+
+def test_removing_shapes():
+    """Test removing shapes, including with selection."""
+    np.random.seed(0)
+    data = [
+        20 * np.random.random((np.random.randint(2, 12), 2)).astype(np.float32)
+        for i in range(5)
+    ] + list(np.random.random((5, 4, 2)).astype(np.float32))
+    shape_type = ['polygon'] * 5 + ['rectangle'] * 3 + ['ellipse'] * 2
+    layer = Shapes(data, shape_type=shape_type)
+    layer.events.data = Mock()
+    old_data = layer.data
+    # select some shapes
+    layer.selected_data = {1, 2, 4, 6}
+
+    # Removing shapes by indices
+    indices = [0, 2, 5]
+    layer.remove(indices)
+
+    # check selection after removal
+    # one selected shape was removed, the other indexes need to be shifted
+    assert layer.selected_data == {0, 2, 3}
+
+    assert layer.events.data.call_args_list[0][1] == {
+        'value': old_data,
+        'action': ActionType.REMOVING,
+        'data_indices': tuple(
+            indices,
+        ),
+        'vertex_indices': ((),),
+    }
+    assert layer.events.data.call_args_list[1][1] == {
+        'value': layer.data,
+        'action': ActionType.REMOVED,
+        'data_indices': tuple(
+            indices,
+        ),
+        'vertex_indices': ((),),
+    }
+
+    keep = [1, 3, 4, 6, 7, 8, 9]
+    data_keep = [data[i] for i in keep]
+    shape_type_keep = [shape_type[i] for i in keep]
+    assert len(layer.data) == len(data_keep)
+    assert np.all(
+        [
+            np.array_equal(ld, d)
+            for ld, d in zip(layer.data, data_keep, strict=False)
+        ]
+    )
+    assert layer.ndim == 2
+    assert np.all(
+        [
+            s == so
+            for s, so in zip(layer.shape_type, shape_type_keep, strict=False)
+        ]
+    )
+
+    # removing nothing should work smoothly
+    layer.remove([])
 
 
 def test_removing_selected_shapes():
@@ -1480,6 +1549,41 @@ def test_removing_selected_shapes():
             for s, so in zip(layer.shape_type, shape_type_keep, strict=False)
         ]
     )
+
+
+def test_popping_shapes():
+    """Test popping shapes."""
+    np.random.seed(0)
+    data = [
+        20 * np.random.random((np.random.randint(2, 12), 2)).astype(np.float32)
+        for i in range(5)
+    ] + list(np.random.random((5, 4, 2)).astype(np.float32))
+    shape_type = ['polygon'] * 5 + ['rectangle'] * 3 + ['ellipse'] * 2
+    layer = Shapes(data, shape_type=shape_type)
+    layer.events.data = Mock()
+    old_data = layer.data
+
+    # Pop a single shape
+    popped_shape = layer.pop()
+    popped_index = {9}
+    assert layer.events.data.call_args_list[0][1] == {
+        'value': old_data,
+        'action': ActionType.REMOVING,
+        'data_indices': tuple(
+            popped_index,
+        ),
+        'vertex_indices': ((),),
+    }
+    assert layer.events.data.call_args_list[1][1] == {
+        'value': layer.data,
+        'action': ActionType.REMOVED,
+        'data_indices': tuple(
+            popped_index,
+        ),
+        'vertex_indices': ((),),
+    }
+    assert len(layer.data) == len(data) - 1
+    assert np.array_equal(popped_shape['data'], old_data[-1])
 
 
 def test_changing_modes():
@@ -1947,7 +2051,7 @@ def test_colormap_without_properties(attribute):
     data = 20 * np.random.random(shape)
     layer = Shapes(data)
 
-    with pytest.raises(ValueError, match='must be a valid Shapes.properties'):
+    with pytest.raises(ValueError, match=r'must be a valid Shapes.properties'):
         setattr(layer, f'{attribute}_color_mode', 'colormap')
 
 
@@ -2306,6 +2410,31 @@ def test_thumbnail():
     assert layer.thumbnail.shape == layer._thumbnail_shape
 
 
+def test_thumbnail_z_order():
+    """Test the image thumbnail for z-ordered shapes."""
+    data1 = [[0, 0], [0, 20], [20, 20], [20, 0]]
+    data2 = [[0, 0], [0, 20], [20, 20], [20, 0]]
+
+    # Create a layer with the first shape
+    layer = Shapes(data1, shape_type='rectangle', face_color='blue')
+    # Add the second shape, which will have higher z-index
+    layer.add(data2, shape_type='rectangle', face_color='red')
+    assert layer._data_view._z_order[-1] > layer._data_view._z_order[0]
+
+    # Update the thumbnail
+    layer._update_thumbnail()
+
+    center_pixel_coord = (
+        layer._thumbnail_shape[0] // 2,
+        layer._thumbnail_shape[1] // 2,
+    )
+    center_pixel_color = layer.thumbnail[center_pixel_coord]
+
+    # check that red shape is on top
+    red_rgba = (transform_color('red')[0] * 255).astype(np.uint8)
+    assert np.allclose(center_pixel_color, red_rgba)
+
+
 def test_to_masks():
     """Test the mask generation."""
     shape = (10, 4, 2)
@@ -2501,3 +2630,47 @@ def test_clean_selection_on_set_data():
 def test_docstring():
     validate_all_params_in_docstring(Shapes)
     validate_kwargs_sorted(Shapes)
+
+
+def test_finish_drawing_not_called_when_leaving_add_mode_not_drawing():
+    """_finish_drawing should NOT be called when leaving ADD_* modes if not actively drawing."""
+
+    layer = Shapes()
+    layer.mode = 'add_rectangle'
+
+    with patch.object(layer, '_finish_drawing') as mock_finish:
+        layer.mode = 'pan_zoom'
+        mock_finish.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    ('initial_mode', 'target_mode'),
+    [
+        ('select', 'pan_zoom'),
+        ('pan_zoom', 'select'),
+    ],
+)
+def test_finish_drawing_not_called_select_pan_zoom(initial_mode, target_mode):
+    """_finish_drawing should not be called for SELECT <-> PAN_ZOOM."""
+
+    layer = Shapes()
+    layer.mode = initial_mode
+
+    with patch.object(layer, '_finish_drawing') as mock_finish:
+        layer.mode = target_mode
+        mock_finish.assert_not_called()
+
+
+def test_finish_drawing_called_when_is_creating():
+    """_finish_drawing should be called if _is_creating is True."""
+
+    layer = Shapes()
+    layer.mode = 'add_rectangle'
+    layer._is_creating = True
+
+    with patch.object(
+        layer, '_finish_drawing', wraps=layer._finish_drawing
+    ) as mock_finish:
+        layer.mode = 'select'
+        mock_finish.assert_called_once()
+    assert not layer._is_creating

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import itertools
 import typing
 import warnings
@@ -13,6 +14,7 @@ import pint
 from napari.components.dims import RangeTuple
 from napari.layers import Layer
 from napari.layers.utils.layer_utils import Extent, LLExtent
+from napari.utils.events import Event
 from napari.utils.events.containers import SelectableEventedList
 from napari.utils.naming import inc_name_count
 from napari.utils.translations import trans
@@ -57,6 +59,9 @@ class LayerList(SelectableEventedList[Layer]):
         ``value``
     reordered : (value: self)
         emitted when the list is reordered (eg. moved/reversed).
+    renamed : (index: int)
+        emitted when a layer in the list is renamed, providing the index
+        of the layer.
     selection.events.changed : (added: Set[_T], removed: Set[_T])
         emitted when the set changes, includes item(s) that have been added
         and/or removed from the set.
@@ -116,7 +121,26 @@ class LayerList(SelectableEventedList[Layer]):
             basetype=Layer,
             lookup={str: get_name},
         )
+        self.events.add(begin_batch=Event, end_batch=Event, renamed=Event)
+        self.events.inserted.connect(self._on_layer_inserted)
+        self.events.removed.connect(self._on_layer_removed)
         self._create_contexts()
+
+    def _on_layer_inserted(self, event: Event):
+        """Connect to layer events when a new layer is inserted."""
+        layer = event.value
+        layer.events.name.connect(self._on_layer_renamed)
+
+    def _on_layer_removed(self, event: Event):
+        """Disconnect from layer events when a layer is removed."""
+        layer = event.value
+        layer.events.name.disconnect(self._on_layer_renamed)
+
+    def _on_layer_renamed(self, event: Event):
+        """Re-emit layer name changes from a layer as a LayerList event."""
+        layer = event.source
+        index = self.index(layer)
+        self.events.renamed(index=index)
 
     def _create_contexts(self):
         """Create contexts to manage enabled/visible action/menu states.
@@ -238,7 +262,8 @@ class LayerList(SelectableEventedList[Layer]):
         if not self.selection:
             return
         self.unlink_layers(self.selection)
-        super().remove_selected()
+        with self.batched_update():
+            super().remove_selected()
 
     def toggle_selected_visibility(self):
         """Toggle visibility of selected layers"""
@@ -665,3 +690,16 @@ class LayerList(SelectableEventedList[Layer]):
             return []
 
         return save_layers(path, layers, plugin=plugin, _writer=_writer)
+
+    def clear(self):
+        """Remove all layers from viewer."""
+        with self.batched_update():
+            super().clear()
+
+    @contextlib.contextmanager
+    def batched_update(self):
+        try:
+            self.events.begin_batch()
+            yield
+        finally:
+            self.events.end_batch()

@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+import inspect
+from pathlib import Path
+from typing import Any
+
 from psutil import virtual_memory
 
 from napari._pydantic_compat import Field, validator
@@ -16,6 +20,7 @@ from napari.utils.camera_orientations import (
     HorizontalAxisOrientation,
     VerticalAxisOrientation,
 )
+from napari.utils.events import Event
 from napari.utils.events.custom_types import confloat, conint
 from napari.utils.events.evented_model import EventedModel
 from napari.utils.notifications import NotificationSeverity
@@ -44,6 +49,16 @@ class DaskSettings(EventedModel):
 
 
 class ApplicationSettings(EventedModel):
+    def __init__(self, **kwargs: Any):
+        super().__init__(**kwargs)
+        # register callback to update brush size on mouse move modifiers
+        self.events.brush_size_on_mouse_move_modifiers.connect(
+            brush_size_on_mouse_move_modifiers_callback
+        )
+        self.events.brush_size_on_mouse_move_modifiers(
+            value=self.brush_size_on_mouse_move_modifiers
+        )
+
     first_time: bool = Field(
         True,
         title=trans._('First time'),
@@ -269,6 +284,34 @@ class ApplicationSettings(EventedModel):
         ),
     )
 
+    startup_script: Path = Field(
+        default=Path(),
+        title=trans._('Full path to a startup script'),
+        description=trans._(
+            'Path to a Python script that will be executed on napari startup.\n'
+            'This can be used to customize the behavior of napari or load specific plugins automatically.',
+        ),
+        json_schema_extra={'file_extension': 'py'},
+    )
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        if name == 'startup_script' and value is not None:
+            # Ensure the script is a valid Python file
+            frame = inspect.currentframe()
+            if frame is None:
+                raise ValueError(
+                    "The 'startup_script' setting can only be set by the napari application itself."
+                )
+
+            caller_frame = frame.f_back
+            if caller_frame is None or not caller_frame.f_globals.get(
+                '__name__', ''
+            ).startswith('napari.'):
+                raise ValueError(
+                    "The 'startup_script' setting can only be set by the napari application itself."
+                )
+        super().__setattr__(name, value)
+
     @validator('window_state', allow_reuse=True)
     def _validate_qbtye(cls, v: str) -> str:
         if v and (not isinstance(v, str) or not v.startswith('!QBYTE_')):
@@ -297,3 +340,11 @@ class ApplicationSettings(EventedModel):
             'ipy_interactive',
             'plugin_widget_positions',
         )
+
+
+def brush_size_on_mouse_move_modifiers_callback(event: Event) -> None:
+    from napari.layers.labels._labels_mouse_bindings import (
+        change_brush_size_on_mouse_move_modifiers,
+    )
+
+    change_brush_size_on_mouse_move_modifiers(event.value.split('+'))

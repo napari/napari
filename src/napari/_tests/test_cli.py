@@ -91,16 +91,18 @@ def test_cli_runscript(monkeypatch, tmp_path, make_napari_viewer):
         m.setattr(sys, 'argv', ['napari', str(script)])
         m.setattr(__main__, 'Viewer', lambda: v)
         m.setattr(
-            'qtpy.QtWidgets.QApplication.exec_', lambda: None
+            'qtpy.QtWidgets.QApplication.exec_', lambda *_: None
         )  # revent event loop if run this test standalone
         __main__._run()
 
     assert len(v.layers) == 1
 
 
-@mock.patch('napari._qt.qt_viewer.QtViewer._qt_open')
-def test_cli_passes_kwargs(qt_open, mock_run, monkeypatch, make_napari_viewer):
+def test_cli_passes_kwargs(
+    mock_run, monkeypatch, make_napari_viewer, mock_qt_method
+):
     """test that we can parse layer keyword arg variants"""
+    qt_open = mock_qt_method('napari._qt.qt_viewer.QtViewer._qt_open')
     v = make_napari_viewer()
 
     with (
@@ -120,11 +122,11 @@ def test_cli_passes_kwargs(qt_open, mock_run, monkeypatch, make_napari_viewer):
     mock_run.assert_called_once_with(gui_exceptions=True)
 
 
-@mock.patch('napari._qt.qt_viewer.QtViewer._qt_open')
 def test_cli_passes_kwargs_stack(
-    qt_open, mock_run, monkeypatch, make_napari_viewer
+    mock_run, monkeypatch, make_napari_viewer, mock_qt_method
 ):
     """test that we can parse layer keyword arg variants"""
+    qt_open = mock_qt_method('napari._qt.qt_viewer.QtViewer._qt_open')
     v = make_napari_viewer()
 
     with (

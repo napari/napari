@@ -1,6 +1,8 @@
 from functools import partial
+from pathlib import Path
 from typing import Dict, List, Optional, TYPE_CHECKING, Tuple
 from packaging.version import parse as parse_version
+import os
 
 from qtpy import QtCore, QtGui, QtWidgets, QT_VERSION
 
@@ -11,8 +13,6 @@ from ...._qt.widgets.qt_font_size import QtFontSizeWidget
 
 from .signal import Signal
 from .utils import is_concrete_schema, iter_layout_widgets, state_property
-
-from ...._qt.widgets.qt_plugin_sorter import QtPluginSorter
 
 from ...._qt.widgets.qt_spinbox import QtSpinBox
 
@@ -173,24 +173,6 @@ class SpinDoubleSchemaWidget(SchemaWidgetMixin, QtWidgets.QDoubleSpinBox):
 
     def setDescription(self, description: str):
         self.description = description
-
-
-class PluginWidget(SchemaWidgetMixin, QtPluginSorter):
-    @state_property
-    def state(self) -> int:
-        return self.value()
-
-    @state.setter
-    def state(self, state: int):
-        return None
-        # self.setValue(state)
-
-    def configure(self):
-        self.hook_list.order_changed.connect(self.on_changed.emit)
-
-    def setDescription(self, description: str):
-        self.description = description
-
 
 class SpinSchemaWidget(SchemaWidgetMixin, QtSpinBox):
     @state_property
@@ -369,8 +351,22 @@ class FilepathSchemaWidget(SchemaWidgetMixin, QtWidgets.QWidget):
         self.button_widget.clicked.connect(self._on_clicked)
         self.path_widget.textChanged.connect(self.on_changed.emit)
 
+
+    def file_filter(self) -> str:
+        if "json_schema_extra" in self.schema and 'file_extension' in self.schema['json_schema_extra']:
+            extension = self.schema['json_schema_extra']['file_extension']
+            return f"File (*.{extension})"
+        return "All Files (*)"
+
     def _on_clicked(self, flag):
-        path, filter = QtWidgets.QFileDialog.getOpenFileName()
+        if self.path_widget.text():
+            start_dir = os.path.dirname(self.path_widget.text())
+        else:
+            start_dir = os.path.expanduser("~")
+
+        path, filter = QtWidgets.QFileDialog.getOpenFileName(self, "Select File", start_dir, self.file_filter())
+        if not path:
+            return
         self.path_widget.setText(path)
 
     @state_property
@@ -378,7 +374,9 @@ class FilepathSchemaWidget(SchemaWidgetMixin, QtWidgets.QWidget):
         return self.path_widget.text()
 
     @state.setter
-    def state(self, state: str):
+    def state(self, state: str | Path):
+        if isinstance(state, Path):
+            state = str(state)
         self.path_widget.setText(state)
 
     def setDescription(self, description: str):

@@ -36,7 +36,7 @@ import os
 import sys
 import threading
 from concurrent.futures import ThreadPoolExecutor
-from contextlib import suppress
+from contextlib import contextmanager, suppress
 from datetime import timedelta
 from functools import partial
 from itertools import chain
@@ -44,6 +44,7 @@ from multiprocessing.pool import ThreadPool
 from pathlib import Path
 from time import perf_counter
 from typing import TYPE_CHECKING
+from unittest.mock import MagicMock
 from weakref import WeakKeyDictionary
 
 import dask.threaded
@@ -61,6 +62,11 @@ from napari.utils.misc import ROOT_DIR
 
 if TYPE_CHECKING:
     from npe2._pytest_plugin import TestPluginManager
+    from pytestqt.qtbot import QtBot
+
+    from napari._qt.qt_viewer import QtViewer
+    from napari.components import ViewerModel
+
 
 # touch ~/.Xauthority for Xlib support, must happen before importing pyautogui
 if os.getenv('CI') and sys.platform.startswith('linux'):
@@ -299,26 +305,28 @@ def tmp_plugin(npe2pm_: TestPluginManager):
 
 
 @pytest.fixture
-def viewer_model():
+def viewer_model() -> ViewerModel:
     from napari.components import ViewerModel
 
     return ViewerModel()
 
 
 @pytest.fixture
-def qt_viewer_(qtbot, viewer_model, monkeypatch):
+def qt_viewer_(
+    qtbot: QtBot, viewer_model: ViewerModel, monkeypatch: pytest.MonkeyPatch
+) -> QtViewer:
     from napari._qt.qt_viewer import QtViewer
 
     viewer = QtViewer(viewer_model)
 
-    original_controls = viewer.__class__.controls.fget
-    original_layers = viewer.__class__.layers.fget
-    original_layer_buttons = viewer.__class__.layerButtons.fget
-    original_viewer_buttons = viewer.__class__.viewerButtons.fget
-    original_dock_layer_list = viewer.__class__.dockLayerList.fget
-    original_dock_layer_controls = viewer.__class__.dockLayerControls.fget
-    original_dock_console = viewer.__class__.dockConsole.fget
-    original_dock_performance = viewer.__class__.dockPerformance.fget
+    original_controls = viewer.__class__.controls.fget  # type: ignore[attr-defined]
+    original_layers = viewer.__class__.layers.fget  # type: ignore[attr-defined]
+    original_layer_buttons = viewer.__class__.layerButtons.fget  # type: ignore[attr-defined]
+    original_viewer_buttons = viewer.__class__.viewerButtons.fget  # type: ignore[attr-defined]
+    original_dock_layer_list = viewer.__class__.dockLayerList.fget  # type: ignore[attr-defined]
+    original_dock_layer_controls = viewer.__class__.dockLayerControls.fget  # type: ignore[attr-defined]
+    original_dock_console = viewer.__class__.dockConsole.fget  # type: ignore[attr-defined]
+    original_dock_performance = viewer.__class__.dockPerformance.fget  # type: ignore[attr-defined]
 
     def hide_widget(widget):
         widget.hide()
@@ -409,12 +417,85 @@ def qt_viewer_(qtbot, viewer_model, monkeypatch):
 
 
 @pytest.fixture
-def qt_viewer(qt_viewer_):
+def qt_viewer(
+    qt_viewer_: QtViewer, request: pytest.FixtureRequest
+) -> QtViewer:
     """We created `qt_viewer_` fixture to allow modifying qt_viewer
     if module-level-specific modifications are necessary.
     For example, in `test_qt_viewer.py`.
     """
+    if 'show_qt_viewer' in request.keywords:
+        qt_viewer_.show()
     return qt_viewer_
+
+
+@pytest.fixture
+def mock_qt_method(monkeypatch):
+    """Since PySide6 6.10, the tests deterministically segfault when mocking
+    methods of Qt objects using `unittest.mock.Mock` (or `MagicMock`) directly.
+
+    This fixture provides a workaround for this by wrapping the mock in a function.
+    Should be used as a replacement of `monkeypatch.setattr` and `mock.patch`
+
+    FUTURE NOTE: Similar to `mock_qt_method_ctx `, it might be worth
+     adding `qtbot.addWidget` when the first argument is a `QObject` in the future.
+    Currently, this fixture is only used in tests where that look not necessary.
+    """
+
+    def _mock_fun(obj: str | object, method: str | None = None):
+        mock = MagicMock()
+
+        def _mocked_method(_self, *args, **kwargs):
+            return mock(*args, **kwargs)
+
+        if method is None:
+            monkeypatch.setattr(obj, _mocked_method)
+        else:
+            monkeypatch.setattr(obj, method, _mocked_method)
+        return mock
+
+    return _mock_fun
+
+
+@pytest.fixture
+def mock_qt_method_ctx(monkeypatch, qtbot):
+    """Since PySide6 6.10, the tests deterministically segfault when mocking
+    methods of Qt objects using `unittest.mock.Mock` (or `MagicMock`) directly.
+
+    This fixture provides a workaround for this by wrapping the mock in a function.
+    Should be used as a replacement of `monkeypatch.context` and `object.patch`
+
+    When the mocking is performed before creating the Qt object, the
+    mocking function will get access to the created `object` using the first
+    argument of the mocked method and will check if the object has no parent.
+    In such case, the created `QWidget` will be added to `qtbot` using
+    `qtbot.add_widget`.
+    """
+    from qtpy.QtWidgets import QWidget
+
+    @contextmanager
+    def _mock_fun(obj: str | object, method: str | None = None):
+        mock = MagicMock()
+
+        def _mocked_method(*args, **kwargs):
+            if (
+                len(args) > 0
+                and isinstance(args[0], QWidget)
+                and args[0].parent() is None
+            ):
+                qtbot.add_widget(args[0])
+                args = args[1:]
+
+            return mock(*args, **kwargs)
+
+        with monkeypatch.context() as m:
+            if method is None:
+                m.setattr(obj, _mocked_method)
+            else:
+                m.setattr(obj, method, _mocked_method)
+            yield mock
+
+    return _mock_fun
 
 
 @pytest.fixture(autouse=True)
@@ -532,6 +613,27 @@ def _disable_notification_dismiss_timer(monkeypatch):
 
         # disable slide in animation
         monkeypatch.setattr(NapariQtNotification, 'slide_in', lambda x: None)
+
+
+@pytest.fixture(autouse=True)
+def _prevent_thread(request, monkeypatch):
+    if 'allow_animation_thread' in request.keywords:
+        return
+    if 'qt_dims' in request.fixturenames or 'ref_view' in request.fixturenames:
+        return
+
+    if 'qtbot' not in request.fixturenames:
+        return
+
+    from napari._qt.widgets.qt_dims_slider import AnimationThread
+
+    def fake_start(self):
+        raise RuntimeError(
+            'QtDims animation thread should not be started outside of tests '
+            "without using the 'qt_dims' fixture."
+        )
+
+    monkeypatch.setattr(AnimationThread, 'start', fake_start)
 
 
 @pytest.fixture
@@ -892,7 +994,7 @@ with contextlib.suppress(ImportError):
     # So we cannot inherit from QtBot and declare the fixture
 
     from pytestqt.qtbot import QtBot
-    from qtpy import PYQT5, PYSIDE2
+    from qtpy import PYQT5
     from qtpy.QtCore import Qt
     from qtpy.QtWidgets import QApplication
 
@@ -957,7 +1059,7 @@ with contextlib.suppress(ImportError):
 
         We need to set attributte before the QApplication is created.
         """
-        if PYQT5 or PYSIDE2:
+        if PYQT5:
             # As Qt6 autodetect High dpi scaling, we need to
             # enable it only on Qt5 bindings.
             # https://doc.qt.io/qtforpython-6/faq/porting_from2.html#class-function-deprecations

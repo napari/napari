@@ -15,8 +15,6 @@ from napari.utils.translations import trans
 if TYPE_CHECKING:
     from weakref import ReferenceType
 
-    from numpy.typing import DTypeLike
-
     from napari.components.layerlist import LayerList
     from napari.layers import Layer
     from napari.utils.events import Selection
@@ -66,6 +64,10 @@ def _n_selected_imgs(s: LayerSel) -> int:
     return sum(x._type_string == 'image' for x in s)
 
 
+def _only_image(s: LayerSel) -> bool:
+    return bool(s and all(x._type_string == 'image' for x in s))
+
+
 def _only_labels(s: LayerSel) -> bool:
     return bool(s and all(x._type_string == 'labels' for x in s))
 
@@ -84,6 +86,10 @@ def _n_selected_points(s: LayerSel) -> int:
 
 def _only_shapes(s: LayerSel) -> bool:
     return bool(s and all(x._type_string == 'shapes' for x in s))
+
+
+def _only_surfaces(s: LayerSel) -> bool:
+    return bool(s and all(x._type_string == 'surface' for x in s))
 
 
 def _n_selected_shapes(s: LayerSel) -> int:
@@ -147,7 +153,7 @@ def _same_shape(s: LayerSel) -> bool:
     return len({tuple(getattr(x.data, 'shape', ())) for x in s}) == 1
 
 
-def _active_dtype(s: LayerSel) -> DTypeLike:
+def _active_dtype(s: LayerSel) -> str | None:
     dtype = None
     if s.active:
         with contextlib.suppress(AttributeError):
@@ -182,6 +188,10 @@ def _empty_shapes_layer_selected(s: LayerSel) -> Callable[[], bool]:
 
 def _active_supports_features(s: LayerSel) -> bool:
     return hasattr(s.active, 'features')
+
+
+def _all_support_colorbar(s: LayerSel) -> bool:
+    return bool(s and all(hasattr(x, 'colorbar') for x in s))
 
 
 class LayerListSelectionContextKeys(ContextNamespace['LayerSel']):
@@ -288,6 +298,11 @@ class LayerListSelectionContextKeys(ContextNamespace['LayerSel']):
         trans._('True when all selected layers are of the same type.'),
         _same_type,
     )
+    all_selected_layers_image = ContextKey(
+        False,
+        trans._('True when all selected layers are images.'),
+        _only_image,
+    )
     all_selected_layers_labels = ContextKey(
         False,
         trans._('True when all selected layers are labels.'),
@@ -297,6 +312,16 @@ class LayerListSelectionContextKeys(ContextNamespace['LayerSel']):
         False,
         trans._('True when all selected layers are shapes.'),
         _only_shapes,
+    )
+    all_selected_layers_surfaces = ContextKey(
+        False,
+        trans._('True when all selected layers are surfaces.'),
+        _only_surfaces,
+    )
+    all_selected_layers_support_colorbar = ContextKey(
+        False,
+        trans._('True when all selected layers support a colorbar.'),
+        _all_support_colorbar,
     )
     selected_empty_shapes_layer = ContextKey(
         False,
