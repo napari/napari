@@ -383,9 +383,7 @@ class LayerList(SelectableEventedList[Layer]):
         """
         return self._get_step_size([layer.extent for layer in self])
 
-    def _step_size_from_scales(
-        self, scales, units: tuple[pint.Unit, ...] | None
-    ):
+    def _step_size_from_scales(self, scales):
         # Reverse order so last axes of scale with different ndim are aligned
         scales = [scale[::-1] for scale in scales]
         full_scales = list(
@@ -427,7 +425,9 @@ class LayerList(SelectableEventedList[Layer]):
         )
 
     def _get_step_size(
-        self, layer_extent_list, units: tuple[pint.Unit, ...] | None = None
+        self,
+        layer_extent_list: list[Extent],
+        units: tuple[pint.Unit, ...] | None = None,
     ):
         if len(layer_extent_list) == 0:
             return np.ones(self.ndim)
@@ -438,7 +438,7 @@ class LayerList(SelectableEventedList[Layer]):
                 self._convert_units(extent.step, extent.units, units)
                 for extent in layer_extent_list
             ]
-        return self._step_size_from_scales(scales, units=units)
+        return self._step_size_from_scales(scales)
 
     def get_extent(self, layers: Iterable[Layer]) -> LLExtent:
         """
