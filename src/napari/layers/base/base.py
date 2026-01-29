@@ -634,6 +634,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             SelectionBoxOverlay,
             TransformBoxOverlay,
         )
+        from napari.components.overlays.text import LayerNameOverlay
 
         self._overlays: EventedDict[str, Overlay] = EventedDict()
 
@@ -679,6 +680,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
                 'transform_box': TransformBoxOverlay(),
                 'selection_box': SelectionBoxOverlay(),
                 'bounding_box': BoundingBoxOverlay(),
+                'layer_name': LayerNameOverlay(),
             }
         )
         self._slicing_state = self._get_layer_slicing_state(data, cache)
