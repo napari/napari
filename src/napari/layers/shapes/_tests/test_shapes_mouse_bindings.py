@@ -1,3 +1,5 @@
+from collections.abc import Callable
+from typing import Any
 from unittest.mock import Mock
 
 import numpy as np
@@ -8,6 +10,7 @@ from napari.layers.base._base_constants import ActionType
 from napari.layers.shapes.shapes import Mode
 from napari.settings import get_settings
 from napari.utils._test_utils import read_only_mouse_event
+from napari.utils.events import Event
 from napari.utils.interactions import (
     mouse_double_click_callbacks,
     mouse_move_callbacks,
@@ -1094,8 +1097,10 @@ def test_all_modes_covered(attr):
     Test that all dictionaries modes have all the keys, this simplify the handling logic
     As we do not need to test whether a key is in a dict or not.
     """
-    mode_dict = getattr(Shapes, attr)
-    assert {k.value for k in mode_dict} == set(Mode.keys())
+    mode_dict: dict[Mode, Callable[[Shapes, Event], Any]] = getattr(
+        Shapes, attr
+    )
+    assert {k.name for k in mode_dict} == {e.name for e in Mode}
 
 
 @pytest.mark.parametrize(

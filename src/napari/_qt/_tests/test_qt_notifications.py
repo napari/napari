@@ -223,7 +223,7 @@ def test_notification_display(count_show, severity, monkeypatch):
     )
     notif = Notification('hi', severity, actions=[('click', lambda x: None)])
     NapariQtNotification.show_notification(notif)
-    if NotificationSeverity(severity) >= NotificationSeverity.INFO:
+    if NotificationSeverity[severity] >= NotificationSeverity.INFO:
         assert count_show.show_notification_count == 1
     else:
         assert count_show.show_notification_count == 0
