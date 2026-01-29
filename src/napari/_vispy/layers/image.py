@@ -152,7 +152,7 @@ class VispyImageLayer(VispyScalarFieldBaseLayer):
         self.layer.events.gamma.connect(self._on_gamma_change)
         self.layer.events.iso_threshold.connect(self._on_iso_threshold_change)
         self.layer.events.attenuation.connect(self._on_attenuation_change)
-
+        self.layer.events.set_data.connect(self._on_axis_order_change)
         # display_change is special (like data_change) because it requires a
         # self.reset(). This means that we have to call it manually. Also,
         # it must be called before reset in order to set the appropriate node
@@ -161,9 +161,17 @@ class VispyImageLayer(VispyScalarFieldBaseLayer):
         self.reset()
         self._on_data_change()
 
-    def _on_matrix_change(self):
+    """def _on_matrix_change(self):
         super()._on_matrix_change()
 
+        # Detect if order changed (transpose or roll)
+        current_order = self.layer._slice_input.order
+        if current_order != self._last_order:
+            if isinstance(self.node, TiledImageNode):
+                self.node.handle_axis_change()
+            self._last_order = current_order"""
+
+    def _on_axis_order_change(self, event=None) -> None:
         # Detect if order changed (transpose or roll)
         current_order = self.layer._slice_input.order
         if current_order != self._last_order:
