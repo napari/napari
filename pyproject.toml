@@ -194,7 +194,7 @@ docs = [
     "sphinx-tabs",
     "sphinx-tags",
     "sphinx-design",
-    "sphinx-external-toc",
+    "sphinx-external-toc<1.1.0", # parallel build issue
     "sphinx-favicon>=1.0",
     "sphinx-copybutton",
     "sphinx-gallery",
@@ -290,7 +290,7 @@ docs = [
     "sphinx-tabs",
     "sphinx-tags",
     "sphinx-design",
-    "sphinx-external-toc",
+    "sphinx-external-toc<1.1.0", # parallel build issue
     "sphinx-favicon>=1.0",
     "sphinx-copybutton",
     "sphinx-gallery",
@@ -705,8 +705,6 @@ module = [
     'napari.layers._layer_actions',
     'napari.layers._multiscale_data',
     'napari.layers.intensity_mixin',
-    'napari.layers.points._points_key_bindings',
-    'napari.layers.points._points_utils',
     'napari.layers.points.points',
     'napari.layers.shapes._shapes_mouse_bindings',
     'napari.layers.shapes.shapes',
@@ -810,7 +808,6 @@ module = [
     "napari._vispy.overlays.labels_polygon",
     "napari._vispy.overlays.scale_bar",
     "napari._vispy.overlays.text",
-    "napari.layers.labels._labels_key_bindings",
     "napari.layers.utils._slice_input",
     "napari.utils._register",
     "napari.utils.colormaps.categorical_colormap",
@@ -890,7 +887,6 @@ module = [
     "napari.components.dims",
     "napari.conftest",
     "napari.layers.labels._labels_utils",
-    "napari.layers.points._points_mouse_bindings",
     "napari.utils.colormaps.colormap",
     "napari.utils.notifications",
 ]

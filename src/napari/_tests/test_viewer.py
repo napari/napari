@@ -455,8 +455,8 @@ def test_negative_translate(make_napari_viewer, qtbot):
 @pytest.mark.parametrize(
     ('axis_labels', 'expected_labels', 'expected_ndim'),
     [
-        ((), ('0', '1'), 2),
-        (('x',), ('0', 'x'), 2),
+        ((), ('-2', '-1'), 2),
+        (('x',), ('-2', 'x'), 2),
         (('y', 'x'), ('y', 'x'), 2),
         (('z', 'y', 'x'), ('z', 'y', 'x'), 3),
         (('t', 'z', 'y', 'x'), ('t', 'z', 'y', 'x'), 4),
