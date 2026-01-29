@@ -16,7 +16,7 @@ from qtpy.QtWidgets import (
 )
 from superqt import QEnumComboBox, QLabeledDoubleSlider
 
-from napari._app_model.actions._file import add_new_points, add_new_shapes
+from napari._app_model.actions._file import new_points, new_shapes
 from napari._qt.dialogs.qt_modal import QtPopup
 from napari._qt.widgets.qt_dims_sorter import QtDimsSorter
 from napari._qt.widgets.qt_spinbox import QtSpinBox
@@ -74,13 +74,13 @@ class QtLayerButtons(QFrame):
         self.newPointsButton = QtViewerPushButton(
             'new_points',
             trans._('New points layer'),
-            partial(add_new_points, self.viewer),
+            partial(new_points, self.viewer),
         )
 
         self.newShapesButton = QtViewerPushButton(
             'new_shapes',
             trans._('New shapes layer'),
-            partial(add_new_shapes, self.viewer),
+            partial(new_shapes, self.viewer),
         )
         self.newLabelsButton = QtViewerPushButton(
             'new_labels',
