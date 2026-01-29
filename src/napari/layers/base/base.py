@@ -1186,6 +1186,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             data=extent_data,
             world=extent_world,
             step=abs(data_to_world.scale),
+            units=self.units,
         )
 
     @cached_property
@@ -1208,6 +1209,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             data=extent_data,
             world=extent_world,
             step=abs(data_to_world.scale),
+            units=self.units,
         )
 
     def _clear_extent(self) -> None:
@@ -1430,7 +1432,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
                 data_displayed=True,
                 thumbnail=True,
                 highlight=True,
-                extent=True,
+                extent=False,
             )
 
     def _world_to_layer_dims(
