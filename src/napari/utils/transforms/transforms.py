@@ -660,7 +660,8 @@ class Affine(Transform):
         """Return the inverse transform."""
         if 'inverse' not in self._cache_dict:
             self._cache_dict['inverse'] = Affine(
-                affine_matrix=np.linalg.inv(self.affine_matrix)
+                affine_matrix=np.linalg.inv(self.affine_matrix),
+                units=self.units,
             )
         return self._cache_dict['inverse']
 
