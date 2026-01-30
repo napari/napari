@@ -27,7 +27,11 @@ from napari.layers.base._base_mouse_bindings import (
     highlight_box_handles,
     transform_with_box,
 )
-from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
+from napari.layers.utils._slice_input import (
+    _SliceInput,
+    _ThickNDSlice,
+    apply_units,
+)
 from napari.layers.utils.interactivity_utils import (
     drag_data_to_projected_distance,
 )
@@ -130,6 +134,7 @@ class _LayerSlicingState(ABC):
         )
         self._loaded: bool = True
         self._last_slice_id: int = -1
+        self._units = None
 
     def set_view_slice(self) -> None:
         with self.dask_optimized_slicing():
@@ -143,15 +148,17 @@ class _LayerSlicingState(ABC):
             # early return to avoid evaluating data_to_world.inverse
             return _ThickNDSlice.make_full(point=(np.nan,) * self.ndim)
 
-        return self._slice_input.data_slice(
-            self.layer._data_to_world.inverse,
-        )
+        world_to_data = self.layer._data_to_world.inverse
+        world_to_data = apply_units(world_to_data, self._units)
+
+        return self._slice_input.data_slice(world_to_data=world_to_data)
 
     def update_dims(self):
         self._slice_input = self._slice_input.with_ndim(self.ndim)
 
     def set_slice_input_from_dims(self, dims: Dims, force: bool) -> bool:
         slice_input = self.make_slice_input(dims)
+        self._units = dims.units
         return self.set_slice_input(slice_input, force)
 
     def set_slice_input(self, slice_input: _SliceInput, force: bool) -> bool:
@@ -171,9 +178,7 @@ class _LayerSlicingState(ABC):
         self,
         dims: Dims,
     ) -> _SliceInput:
-        world_slice = _ThickNDSlice.from_dims(
-            dims, layer_units=self.layer.units
-        )
+        world_slice = _ThickNDSlice.from_dims(dims)
         order_array = (
             np.arange(dims.ndim)
             if dims.order is None
@@ -1777,7 +1782,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
         affine * (rotate * shear * scale + translate)
         """
-        return self._transforms[1:3].simplified
+        res = self._transforms[1:3].simplified
+        res.units = self.units
+        return res
 
     def _world_to_data_ray(self, vector: npt.ArrayLike) -> npt.NDArray:
         """Convert a vector defining an orientation from world coordinates to data coordinates.
