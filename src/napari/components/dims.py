@@ -220,21 +220,20 @@ class Dims(EventedModel):
         elif labels_ndim > ndim:
             self.axis_labels = axis_labels[-ndim:]
 
+        with self._validating_ctx():
             # Check the rollable axes tuple has same number of elements as ndim
             self.rollable = ensure_len(self.rollable, ndim, True)
 
-            # If the last used slider is no longer visible, use the first.
-            last_used = self.last_used
-            ndisplay = self.ndisplay
-            dims_range = self.range
-            nsteps = self._nsteps_from_range(dims_range)
-            not_displayed = [
-                d
-                for d in order[:-ndisplay]
-                if len(nsteps) > d and nsteps[d] > 1
-            ]
-            if len(not_displayed) > 0 and last_used not in not_displayed:
-                self.last_used = not_displayed[0]
+        # If the last used slider is no longer visible, use the first.
+        last_used = self.last_used
+        ndisplay = self.ndisplay
+        dims_range = self.range
+        nsteps = self._nsteps_from_range(dims_range)
+        not_displayed = [
+            d for d in order[:-ndisplay] if len(nsteps) > d and nsteps[d] > 1
+        ]
+        if len(not_displayed) > 0 and last_used not in not_displayed:
+            self.last_used = not_displayed[0]
 
         return self
 
