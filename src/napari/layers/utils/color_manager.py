@@ -56,8 +56,20 @@ class ColorProperties:
     def __get_pydantic_core_schema__(
         cls, source, handler: GetCoreSchemaHandler
     ):
+        def _json_encode(val: ColorProperties):
+            return {
+                'name': val.name,
+                'values': val.values.tolist(),
+                'current_value': val.current_value,
+            }
+
         return core_schema.no_info_after_validator_function(
-            cls.validate_type, core_schema.any_schema()
+            cls.validate_type,
+            core_schema.any_schema(),
+            serialization=core_schema.plain_serializer_function_ser_schema(
+                _json_encode,
+                when_used='json',
+            ),
         )
 
     @classmethod
@@ -91,13 +103,6 @@ class ColorProperties:
             )
 
         return color_properties
-
-    def _json_encode(self):
-        return {
-            'name': self.name,
-            'values': self.values.tolist(),
-            'current_value': self.current_value,
-        }
 
     def __eq__(self, other):
         if isinstance(other, ColorProperties):
@@ -170,8 +175,30 @@ class ColorManager(EventedModel):
 
     # validators
     @field_validator('continuous_colormap', mode='before')
+    @classmethod
     def _ensure_continuous_colormap(cls, v):
         return ensure_colormap(v)
+
+    @field_validator('categorical_colormap', mode='before')
+    @classmethod
+    def _ensure_categorical_colormap(cls, categorical_colormap):
+        if isinstance(categorical_colormap, CategoricalColormap):
+            return categorical_colormap
+        if (
+            isinstance(categorical_colormap, dict)
+            and 'colormap' not in categorical_colormap
+            and 'fallback_color' not in categorical_colormap
+        ):
+            # assume it's a direct mapping between property values and colors
+            categorical_colormap = {
+                'colormap': categorical_colormap,
+            }
+        elif isinstance(categorical_colormap, (Sequence, np.ndarray)):
+            categorical_colormap = {
+                'fallback_color': categorical_colormap,
+            }
+
+        return CategoricalColormap(**categorical_colormap)
 
     @field_validator('colors', mode='before')
     def _ensure_color_array(cls, v):
@@ -181,6 +208,7 @@ class ColorManager(EventedModel):
         return np.empty((0, 4))
 
     @field_validator('current_color', mode='before')
+    @classmethod
     def _coerce_current_color(cls, v):
         if v is None:
             return v

@@ -1,3 +1,4 @@
+from collections.abc import Iterable
 from dataclasses import dataclass
 from itertools import cycle
 from typing import Any
@@ -32,14 +33,18 @@ class ColorCycle:
         validate = core_schema.no_info_plain_validator_function(
             cls.validate_type
         )
-        serialize = core_schema.plain_serializer_function_ser_schema(
-            lambda v: {'values': v.values.tolist()},
+        json_serialize = core_schema.plain_serializer_function_ser_schema(
+            lambda v: {
+                'values': v.values.tolist()
+                if isinstance(v.values, np.ndarray)
+                else v
+            },
             when_used='json',
         )
         return core_schema.json_or_python_schema(
             json_schema=validate,
             python_schema=validate,
-            serialization=serialize,
+            serialization=json_serialize,
         )
 
     @classmethod
@@ -88,6 +93,9 @@ def _coerce_colorcycle_from_dict(
         )[0]
     elif isinstance(color_cycle, cycle):
         transformed_color_cycle = color_cycle
+    elif isinstance(color_cycle, Iterable):
+        # Workaround for https://github.com/pydantic/pydantic/issues/8907
+        transformed_color_cycle = cycle(color_cycle)
     else:
         raise TypeError(f'cycle entry must be type(cycle), got {type(cycle)}')
 

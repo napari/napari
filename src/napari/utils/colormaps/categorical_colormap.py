@@ -66,6 +66,7 @@ class CategoricalColormap(EventedModel):
         return colors
 
     @model_validator(mode='before')
+    @classmethod
     def _validate_args(cls, values):
         if isinstance(values, dict):
             if ('colormap' in values) or ('fallback_color' in values):
