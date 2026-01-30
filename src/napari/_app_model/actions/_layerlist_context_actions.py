@@ -235,22 +235,14 @@ LAYERLIST_CONTEXT_ACTIONS: list[Action] = [
         id='napari.layer.bounding_box',
         title=trans._('Bounding Box'),
         callback=_layer_actions._toggle_bounding_box,
-        menus=[
-            {
-                'id': MenuId.LAYERS_CONTEXT_VISUALIZATION,
-            }
-        ],
+        menus=[MenuId.LAYERS_CONTEXT_VISUALIZATION],
         enablement=LLSCK.num_selected_layers > 0,
     ),
     Action(
         id='napari.layer.colorbar',
         title=trans._('Colorbar'),
         callback=_layer_actions._toggle_colorbar,
-        menus=[
-            {
-                'id': MenuId.LAYERS_CONTEXT_VISUALIZATION,
-            }
-        ],
+        menus=[MenuId.LAYERS_CONTEXT_VISUALIZATION, MenuId.LAYERS_MEASURE],
         enablement=(
             (LLSCK.num_selected_layers > 0)
             & LLSCK.all_selected_layers_support_colorbar
