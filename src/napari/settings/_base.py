@@ -6,7 +6,7 @@ import os
 from collections.abc import Mapping, Sequence
 from functools import partial
 from pathlib import Path
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any, cast
 from warnings import warn
 
 from pydantic import (
@@ -22,14 +22,16 @@ from napari.utils.translations import trans
 
 _logger = logging.getLogger(__name__)
 
+
 if TYPE_CHECKING:
     from collections.abc import Set as AbstractSet
     from typing import Any, Union
 
-    from napari._pydantic_compat import (
-        EnvSettingsSource,
-        SettingsSourceCallable,
-    )
+    from pydantic_settings import EnvSettingsSource
+
+    # TODO: needs to be fixed properly
+    SettingsSourceCallable = Any
+
     from napari.utils.events import Event
 
     IntStr = Union[int, str]

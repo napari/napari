@@ -1,5 +1,5 @@
 from enum import EnumMeta
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, ClassVar, get_origin
 
 from pydantic import BaseModel
 from pydantic.fields import FieldInfo
@@ -16,6 +16,7 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
 )
 
+from napari._pydantic_util import get_inner_type
 from napari.utils.compat import StrEnum
 from napari.utils.translations import trans
 
@@ -97,7 +98,10 @@ class PreferencesDialog(QDialog):
             self._stack.removeWidget(self._stack.currentWidget())
 
         for field_name, field_info in self._settings.model_fields.items():
-            if issubclass(field_info.annotation, BaseModel):
+            field_type = get_inner_type(field_info.annotation)
+            if get_origin(field_type) is None and issubclass(
+                field_type, BaseModel
+            ):
                 self._add_page(field_name, field_info)
 
         self._list.setCurrentRow(0)
@@ -191,12 +195,12 @@ class PreferencesDialog(QDialog):
 
         # find enums:
         for subfield_name, subfield_info in ftype.model_fields.items():
-            sftype = subfield_info.annotation
+            sftype = get_inner_type(subfield_info.annotation)
             if isinstance(sftype, EnumMeta):
                 enums = [s.value for s in sftype]
                 schema['properties'][subfield_name]['enum'] = enums
                 schema['properties'][subfield_name]['type'] = 'string'
-            if issubclass(sftype, BaseModel):
+            if get_origin(sftype) is None and issubclass(sftype, BaseModel):
                 local_schema = sftype.model_json_schema()
                 schema['properties'][subfield_name]['type'] = 'object'
                 schema['properties'][subfield_name]['properties'] = (
