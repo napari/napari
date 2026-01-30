@@ -1,4 +1,3 @@
-import json
 from enum import EnumMeta
 from typing import TYPE_CHECKING, ClassVar
 
@@ -183,7 +182,7 @@ class PreferencesDialog(QDialog):
                 },
             }
         else:
-            schema = json.loads(ftype.model_json_schema())
+            schema = ftype.model_json_schema()
 
         if field_info.title:
             schema['title'] = field_info.title
@@ -198,7 +197,7 @@ class PreferencesDialog(QDialog):
                 schema['properties'][subfield_name]['enum'] = enums
                 schema['properties'][subfield_name]['type'] = 'string'
             if issubclass(sftype, BaseModel):
-                local_schema = json.loads(sftype.model_json_schema())
+                local_schema = sftype.model_json_schema()
                 schema['properties'][subfield_name]['type'] = 'object'
                 schema['properties'][subfield_name]['properties'] = (
                     local_schema['properties']
