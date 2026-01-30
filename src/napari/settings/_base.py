@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import contextlib
+import json
 import logging
 import os
 from collections.abc import Mapping, Sequence
@@ -197,8 +198,7 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
         if str(path).endswith(('.yaml', '.yml')):
             _data = self._yaml_dump(data)
         elif str(path).endswith('.json'):
-            json_dumps = self.model_config.json_dumps
-            _data = json_dumps(data, default=self.__json_encoder__)
+            _data = json.dumps(data)
         else:
             raise NotImplementedError(
                 trans._(
