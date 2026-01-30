@@ -925,6 +925,42 @@ def test_paint_3d():
     assert np.sum(layer.data[4:17, 9:32, 9:32] == 5) == 1103
 
 
+def test_paint_3d_batch_refresh():
+    """Test painting on different slices with refresh=False preserves all slices.
+
+    Regression test for bounding box merge bug where painting on different
+    Z-slices with refresh=False would only show the last painted slice.
+    The bug was in the bounding box merge logic which overwrote integer
+    indices instead of accumulating them into a slice range.
+    """
+    data = np.zeros((10, 20, 20), dtype=np.uint32)
+    layer = Labels(data)
+    layer.brush_size = 8
+    layer.mode = 'paint'
+
+    layer.paint((2, 10, 10), 1, refresh=False)
+    layer.paint((5, 10, 10), 2, refresh=False)
+    layer.paint((7, 10, 10), 3, refresh=False)
+
+    assert layer.data[2, 10, 10] == 1
+    assert layer.data[5, 10, 10] == 2
+    assert layer.data[7, 10, 10] == 3
+
+    assert layer._updated_slice is not None
+    z_slice = layer._updated_slice[0]
+    assert isinstance(z_slice, slice)
+    assert z_slice.start == 2
+    assert z_slice.stop == 8
+
+    # Call refresh to ensure the fix works end-to-end
+    layer._partial_labels_refresh()
+
+    # Data should still be intact after refresh
+    assert layer.data[2, 10, 10] == 1
+    assert layer.data[5, 10, 10] == 2
+    assert layer.data[7, 10, 10] == 3
+
+
 def test_paint_polygon():
     """Test painting labels with polygons."""
     data = np.zeros((10, 15), dtype=int)
@@ -1037,6 +1073,47 @@ def test_fill_swap_with_preserve_labels():
     assert np.unique(layer.data[0:3, 3:]) == 0
     # existing label should not be filled
     assert np.unique(layer.data[:3, :3]) == 1
+
+
+def test_fill_3d_batch_refresh():
+    """Test batch fill operations with refresh=False on different slices.
+
+    Regression test ensuring the bounding box merge correctly handles
+    slice(None) that can be produced by fill operations, and that batch
+    fill operations across different slices work correctly.
+    """
+    data = np.zeros((10, 20, 20), dtype=np.uint32)
+    # Create distinct regions on different Z slices
+    data[2, 5:10, 5:10] = 1
+    data[5, 5:10, 5:10] = 2
+    data[7, 5:10, 5:10] = 3
+
+    layer = Labels(data)
+    layer.contiguous = True  # Fill connected component only
+
+    layer.fill((2, 7, 7), 10, refresh=False)
+    layer.fill((5, 7, 7), 20, refresh=False)
+    layer.fill((7, 7, 7), 30, refresh=False)
+
+    assert np.all(data[2, 5:10, 5:10] == 10)
+    assert np.all(data[5, 5:10, 5:10] == 20)
+    assert np.all(data[7, 5:10, 5:10] == 30)
+
+    assert layer._updated_slice is not None
+    z_slice = layer._updated_slice[0]
+
+    # Should be a slice covering Z=2 through Z=7
+    assert isinstance(z_slice, slice)
+    assert z_slice.start == 2
+    assert z_slice.stop == 8
+
+    # Call refresh to ensure it works
+    layer._partial_labels_refresh()
+
+    # Data should still be intact
+    assert np.all(data[2, 5:10, 5:10] == 10)
+    assert np.all(data[5, 5:10, 5:10] == 20)
+    assert np.all(data[7, 5:10, 5:10] == 30)
 
 
 def test_value():

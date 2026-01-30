@@ -1497,6 +1497,8 @@ class Labels(ScalarFieldBase):
 
         This method extracts the common pattern used by both brush painting and
         polygon painting: extract a region, apply a mask, write back, update caches.
+        It manages cache updates for non-shared memory backends, respects preserve_labels
+        setting (handled by _apply_mask_to_data), and updates undo/redo history
 
         Parameters
         ----------
@@ -1513,13 +1515,6 @@ class Labels(ScalarFieldBase):
             Indices of dimensions being painted (e.g., [1, 2] for YX in a ZYX volume).
         refresh : bool, optional
             Whether to refresh the display after painting. Default is True.
-
-        Notes
-        -----
-        - Handles all array backends (numpy, zarr, dask, tensorstore)
-        - Manages cache updates for non-shared memory backends
-        - Respects preserve_labels setting (handled by _apply_mask_to_data)
-        - Updates undo/redo history
         """
         region_data = np.asarray(self.data[slice_key])
 
@@ -1541,17 +1536,41 @@ class Labels(ScalarFieldBase):
             self._updated_slice = slice_key
         else:
             # Merge the bounding boxes
-            self._updated_slice = tuple(
-                slice(
-                    min(old.start, new.start),
-                    max(old.stop, new.stop),
-                )
-                if isinstance(old, slice) and isinstance(new, slice)
-                else new
-                for old, new in zip(
-                    self._updated_slice, slice_key, strict=False
-                )
-            )
+            new_slice_list = []
+            for old, new in zip(self._updated_slice, slice_key, strict=False):
+                # Handle slice(None) - full range always wins
+                if (isinstance(old, slice) and old.start is None) or (
+                    isinstance(new, slice) and new.start is None
+                ):
+                    new_slice_list.append(slice(None))
+                    continue
+
+                # Normalize to slices with explicit bounds
+                if isinstance(old, (int, np.integer)):
+                    old_start, old_stop = old, old + 1
+                else:
+                    old_start, old_stop = old.start, old.stop
+
+                if isinstance(new, (int, np.integer)):
+                    new_start, new_stop = new, new + 1
+                else:
+                    new_start, new_stop = new.start, new.stop
+
+                merged_start = min(old_start, new_start)
+                merged_stop = max(old_stop, new_stop)
+
+                # If the merged range is a single integer, keep it as int
+                # (only if both inputs were effectively single integers)
+                if (
+                    merged_stop == merged_start + 1
+                    and isinstance(old, (int, np.integer))
+                    and isinstance(new, (int, np.integer))
+                ):
+                    new_slice_list.append(merged_start)
+                else:
+                    new_slice_list.append(slice(merged_start, merged_stop))
+
+            self._updated_slice = tuple(new_slice_list)
 
         if refresh:
             self._partial_labels_refresh()
