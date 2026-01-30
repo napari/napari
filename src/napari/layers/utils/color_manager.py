@@ -524,7 +524,7 @@ class ColorManager(EventedModel):
             categorical_colormap = {
                 'fallback_color': deepcopy(default_color_cycle)
             }
-        elif isinstance(categorical_colormap, Sequence):
+        elif isinstance(categorical_colormap, (Sequence, np.ndarray)):
             categorical_colormap = {
                 'fallback_color': categorical_colormap,
             }
