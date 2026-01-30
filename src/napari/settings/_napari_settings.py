@@ -46,25 +46,25 @@ class NapariSettings(EventedConfigFileSettings):
         default_factory=AppearanceSettings,
         title=trans._('Appearance'),
         description=trans._('User interface appearance settings.'),
-        allow_mutation=False,
+        frozen=True,
     )
     plugins: PluginsSettings = Field(
         default_factory=PluginsSettings,
         title=trans._('Plugins'),
         description=trans._('Plugins settings.'),
-        allow_mutation=False,
+        frozen=True,
     )
     shortcuts: ShortcutsSettings = Field(
         default_factory=ShortcutsSettings,
         title=trans._('Shortcuts'),
         description=trans._('Shortcut settings.'),
-        allow_mutation=False,
+        frozen=True,
     )
     experimental: ExperimentalSettings = Field(
         default_factory=ExperimentalSettings,
         title=trans._('Experimental'),
         description=trans._('Experimental settings.'),
-        allow_mutation=False,
+        frozen=True,
     )
 
     # private attributes and ClassVars will not appear in the schema

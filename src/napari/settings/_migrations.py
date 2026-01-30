@@ -54,11 +54,11 @@ def do_migrations(model: NapariSettings):
 def mutation_allowed(obj: NapariSettings):
     """Temporarily allow mutations on an immutable model."""
     config = obj.model_config
-    prev, config.allow_mutation = config.allow_mutation, True
+    prev, config['frozen'] = config.get('frozen', False), False
     try:
         yield
     finally:
-        config.allow_mutation = prev
+        config['frozen'] = prev
 
 
 def migrator(from_: str, to_: str) -> Callable[[MigratorF], MigratorF]:
