@@ -528,6 +528,15 @@ class ColorManager(EventedModel):
             categorical_colormap = {
                 'fallback_color': categorical_colormap,
             }
+        elif (
+            isinstance(categorical_colormap, dict)
+            and 'colormap' not in categorical_colormap
+            and 'fallback_color' not in categorical_colormap
+        ):
+            # assume it's a direct mapping between property values and colors
+            categorical_colormap = {
+                'colormap': categorical_colormap,
+            }
 
         color_kwargs = {
             'categorical_colormap': categorical_colormap,

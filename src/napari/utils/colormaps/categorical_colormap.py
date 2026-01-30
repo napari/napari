@@ -67,18 +67,29 @@ class CategoricalColormap(EventedModel):
 
     @model_validator(mode='before')
     def _validate_args(cls, values):
-        if ('colormap' in values) or ('fallback_color' in values):
-            if 'colormap' in values:
-                colormap = {
-                    k: transform_color(v)[0]
-                    for k, v in values['colormap'].items()
-                }
+        if isinstance(values, dict):
+            if ('colormap' in values) or ('fallback_color' in values):
+                if 'colormap' in values:
+                    colormap = {
+                        k: transform_color(v)[0]
+                        for k, v in values['colormap'].items()
+                    }
+                else:
+                    colormap = {}
+                fallback_color = values.get('fallback_color', 'white')
             else:
-                colormap = {}
-            fallback_color = values.get('fallback_color', 'white')
+                colormap = {
+                    k: transform_color(v)[0] for k, v in values.items()
+                }
+                fallback_color = 'white'
+        elif isinstance(values, list | np.ndarray):
+            colormap = {}
+            fallback_color = values
+            values = {}
         else:
-            colormap = {k: transform_color(v)[0] for k, v in values.items()}
-            fallback_color = 'white'
+            raise TypeError(
+                f'Invalid input type for CategoricalColormap: {type(values)}'
+            )
 
         values['colormap'] = colormap
         values['fallback_color'] = fallback_color
