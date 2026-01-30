@@ -362,7 +362,7 @@ def test_update_from_layer_with_invalid_value_fails_safely():
         text='class',
         features=features,
     )
-    before = text_manager.copy(deep=True)
+    before = text_manager.model_copy(deep=True)
 
     text = {
         'string': 'confidence',

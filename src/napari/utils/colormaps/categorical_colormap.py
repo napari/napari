@@ -88,7 +88,7 @@ class CategoricalColormap(EventedModel):
             fallback_color = values
             values = {}
         else:
-            raise TypeError(
+            raise ValueError(  # noqa: TRY004
                 f'Invalid input type for CategoricalColormap: {type(values)}'
             )
 
