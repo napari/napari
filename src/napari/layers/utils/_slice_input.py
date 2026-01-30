@@ -36,11 +36,11 @@ class _ThickNDSlice(Generic[_T]):
     @classmethod
     def make_full(
         cls,
-        point: Sequence[float] | None = None,
-        margin_left: Sequence[float] | None = None,
-        margin_right: Sequence[float] | None = None,
-        ndim: int | None = None,
-    ) -> Self:
+        point=None,
+        margin_left=None,
+        margin_right=None,
+        ndim=None,
+    ):
         """
         Make a full slice based on minimal input.
 

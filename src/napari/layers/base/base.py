@@ -134,7 +134,7 @@ class _LayerSlicingState(ABC):
         )
         self._loaded: bool = True
         self._last_slice_id: int = -1
-        self._units = None
+        self._units: tuple[pint.Unit] | None = None
 
     def set_view_slice(self) -> None:
         with self.dask_optimized_slicing():
@@ -178,7 +178,7 @@ class _LayerSlicingState(ABC):
         self,
         dims: Dims,
     ) -> _SliceInput:
-        world_slice = _ThickNDSlice.from_dims(dims)
+        world_slice = _ThickNDSlice[float].from_dims(dims)
         order_array = (
             np.arange(dims.ndim)
             if dims.order is None
