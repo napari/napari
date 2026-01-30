@@ -197,11 +197,11 @@ def test_settings_string(test_settings):
 
 def test_model_fields_are_annotated(test_settings):
     errors = []
-    for field in test_settings.__fields__.values():
+    for field in test_settings.model_fields.values():
         model = field.type_
-        if not hasattr(model, '__fields__'):
+        if not hasattr(model, 'model_fields'):
             continue
-        difference = set(model.__fields__) - set(model.__annotations__)
+        difference = set(model.model_fields) - set(model.__annotations__)
         if difference:
             errors.append(
                 f"Model '{model.__name__}' does not provide annotations "

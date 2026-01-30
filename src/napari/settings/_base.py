@@ -145,7 +145,7 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
 
         May optionally specify which fields to include or exclude.
         """
-        data = super().dict(
+        data = super().model_dump(
             include=include,
             exclude=exclude,
             by_alias=by_alias,
