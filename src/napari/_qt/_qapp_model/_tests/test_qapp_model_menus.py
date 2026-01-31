@@ -68,20 +68,29 @@ def test_update_menu_state_context(make_napari_viewer):
     assert dummy_action.isEnabled()
 
 
-def test_layers_menu_colorbar_checked(make_napari_viewer):
-    """Ensure colorbar menu item check state reflects layer colorbar visibility."""
+@pytest.mark.parametrize(
+    ('submenu_label', 'action_label', 'layer_attr'),
+    [
+        ('Measure', 'Colorbar', 'colorbar'),
+        ('Visualize', 'Bounding Box', 'bounding_box'),
+    ],
+)
+def test_layers_menu_colorbar_checked(
+    make_napari_viewer, submenu_label, action_label, layer_attr
+):
+    """Ensure menu item check state reflects layer overlay visibility."""
     viewer = make_napari_viewer()
     layer = Image(np.random.random((10, 10)))
     viewer.layers.append(layer)
     viewer.layers.selection.active = layer
     viewer.window.layers_menu.aboutToShow.emit()
-    colorbar_action, _submenu_action = get_submenu_action(
-        viewer.window.layers_menu, 'Measure', 'Colorbar'
+    action, submenu_action = get_submenu_action(
+        viewer.window.layers_menu, submenu_label, action_label
     )
-    submenu = _submenu_action.menu()
+    submenu = submenu_action.menu()
     submenu.aboutToShow.emit()
-    assert not colorbar_action.isChecked()
+    assert not action.isChecked()
 
-    layer.colorbar.visible = True
+    getattr(layer, layer_attr).visible = True
     submenu.aboutToShow.emit()
-    assert colorbar_action.isChecked()
+    assert action.isChecked()
