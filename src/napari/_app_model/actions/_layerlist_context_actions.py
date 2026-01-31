@@ -235,8 +235,11 @@ LAYERLIST_CONTEXT_ACTIONS: list[Action] = [
         id='napari.layer.bounding_box',
         title=trans._('Bounding Box'),
         callback=_layer_actions._toggle_bounding_box,
-        menus=[MenuId.LAYERS_CONTEXT_VISUALIZATION],
+        menus=[MenuId.LAYERS_CONTEXT_VISUALIZATION, MenuId.LAYERS_VISUALIZE],
         enablement=LLSCK.num_selected_layers > 0,
+        toggled=ToggleRule(
+            get_current=_layer_actions._are_bounding_boxes_visible
+        ),
     ),
     Action(
         id='napari.layer.colorbar',
