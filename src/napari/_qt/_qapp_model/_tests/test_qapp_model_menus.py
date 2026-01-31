@@ -6,6 +6,7 @@ from napari._app_model import get_app_model
 from napari._app_model.constants import MenuId
 from napari._app_model.context import LayerListContextKeys as LLCK
 from napari._qt._qapp_model import build_qmodel_menu
+from napari._qt._qapp_model._tests.utils import get_submenu_action
 from napari.layers import Image
 
 
@@ -65,3 +66,22 @@ def test_update_menu_state_context(make_napari_viewer):
     viewer.window._update_file_menu_state()
     assert dummy_action.isVisible()
     assert dummy_action.isEnabled()
+
+
+def test_layers_menu_colorbar_checked(make_napari_viewer):
+    """Ensure colorbar menu item check state reflects layer colorbar visibility."""
+    viewer = make_napari_viewer()
+    layer = Image(np.random.random((10, 10)))
+    viewer.layers.append(layer)
+    viewer.layers.selection.active = layer
+    viewer.window.layers_menu.aboutToShow.emit()
+    colorbar_action, _submenu_action = get_submenu_action(
+        viewer.window.layers_menu, 'Measure', 'Colorbar'
+    )
+    submenu = _submenu_action.menu()
+    submenu.aboutToShow.emit()
+    assert not colorbar_action.isChecked()
+
+    layer.colorbar.visible = True
+    submenu.aboutToShow.emit()
+    assert colorbar_action.isChecked()
