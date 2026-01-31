@@ -94,7 +94,7 @@ class Labels(ScalarFieldBase):
         provided scale, rotate, and shear values.
     axis_labels : tuple of str, optional
         Dimension names of the layer data.
-        If not provided, axis_labels will be set to (..., 'axis -2', 'axis -1').
+        If not provided, axis_labels will be set to (..., '-2', '-1').
     blending : str
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
@@ -751,7 +751,7 @@ class Labels(ScalarFieldBase):
         if self.show_selected_label:
             self.refresh(extent=False)
 
-    def swap_selected_and_background_labels(self):
+    def swap_selected_and_background_labels(self) -> None:
         """Swap between the selected label and the background label."""
         if self.selected_label != self.colormap.background_value:
             self.selected_label = self.colormap.background_value
@@ -1134,12 +1134,12 @@ class Labels(ScalarFieldBase):
 
         self.refresh()
 
-    def undo(self):
+    def undo(self) -> None:
         self._load_history(
             self._undo_history, self._redo_history, undoing=True
         )
 
-    def redo(self):
+    def redo(self) -> None:
         self._load_history(
             self._redo_history, self._undo_history, undoing=False
         )
@@ -1885,10 +1885,8 @@ class Labels(ScalarFieldBase):
             indices = [np.array(x).flatten() for x in indices]
 
         updated_slice = tuple(
-            [
-                slice(min(axis_indices), max(axis_indices) + 1)
-                for axis_indices in indices
-            ]
+            slice(int(axis_indices.min()), int(axis_indices.max()) + 1)
+            for axis_indices in indices
         )
 
         if self.contour > 0:

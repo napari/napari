@@ -6,6 +6,7 @@ from app_model.types import MenuItem, SubmenuItem
 from npe2 import DynamicPlugin
 from npe2.manifest.contributions import SampleDataURI
 from qtpy.QtGui import QGuiApplication
+from qtpy.QtWidgets import QApplication
 
 from napari._app_model import get_app_model
 from napari._app_model.constants import MenuId
@@ -491,9 +492,14 @@ def test_restart(make_napari_viewer, action_id, patch_method):
         ),
     ],
 )
-def test_close(make_napari_viewer, action_id, patch_method, method_params):
+def test_close(
+    make_napari_viewer, action_id, patch_method, method_params, monkeypatch
+):
     """Test close/exit actions can be triggered."""
-    make_napari_viewer()
+    v = make_napari_viewer()
+    monkeypatch.setattr(
+        QApplication, 'activeWindow', lambda: v.window._qt_window
+    )
     app = get_app_model()
     quit_app, confirm_need = method_params
 
