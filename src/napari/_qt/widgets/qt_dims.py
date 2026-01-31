@@ -53,7 +53,9 @@ class QtDims(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(3)
         self.setLayout(layout)
-        self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+        self.setSizePolicy(
+            QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed
+        )
 
         # Update the number of sliders now that the dims have been added
         self._update_nsliders()
