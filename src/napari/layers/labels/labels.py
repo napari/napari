@@ -1737,12 +1737,17 @@ class Labels(ScalarFieldBase):
                 if d in paint_dim_to_idx:
                     # Painted but not displayed: check bounds and extract slice
                     sl = slice_key[d]
-                    if not (sl.start <= current_pos < sl.stop):
+                    # Handle slice(None) which means the entire dimension
+                    if sl.start is None:
+                        # Full range - always contains current_pos
+                        region_slices[paint_dim_to_idx[d]] = current_pos
+                    elif not (sl.start <= current_pos < sl.stop):
                         return  # Painted region is outside visible slice
-                    # Convert position to index within region_data
-                    region_slices[paint_dim_to_idx[d]] = int(
-                        current_pos - sl.start
-                    )
+                    else:
+                        # Convert position to index within region_data
+                        region_slices[paint_dim_to_idx[d]] = int(
+                            current_pos - sl.start
+                        )
                 else:
                     # Not painted, not displayed: must match exactly
                     if slice_key[d] != current_pos:

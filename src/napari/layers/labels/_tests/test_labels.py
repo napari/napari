@@ -1116,6 +1116,31 @@ def test_fill_3d_batch_refresh():
     assert np.all(data[7, 5:10, 5:10] == 30)
 
 
+def test_fill_entire_volume_slice_none_regression():
+    """Test fill doesn't crash when all pixels have same label with n_edit_dimensions > ndisplay.
+
+    Regression test for bug triggered when:
+    1. All pixels in the volume have the same label (creates entirely True mask)
+    2. contiguous=False (fill all pixels with that label, not just connected)
+    3. n_edit_dimensions > ndisplay (painting in more dims than displayed)
+    4. Fill creates slice(None) for entire painted dimensions
+    5. The bounds check tries to compare None with current_pos and crashes
+    """
+    # Create 3D volume with ALL pixels set to same label
+    data = np.full((10, 10, 10), 1, dtype=np.uint32)
+    layer = Labels(data)
+    layer.contiguous = False
+
+    # Set up bug scenario:
+    # ndisplay=2 (viewing 2D slice) but n_edit_dimensions=3 (painting in 3D)
+    layer.n_edit_dimensions = 3
+    layer._slice_dims(Dims(ndim=3, ndisplay=2, point=(5, 0, 0)))
+
+    layer.fill((5, 5, 5), 2)
+
+    assert np.all(layer.data == 2)
+
+
 def test_value():
     """Test getting the value of the data at the current coordinates."""
     np.random.seed(0)
