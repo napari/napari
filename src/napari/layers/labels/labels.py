@@ -858,37 +858,38 @@ class Labels(ScalarFieldBase):
         raw_displayed = self._slice.image.raw
 
         # Keep only the dimensions that correspond to the current view
-        updated_slice_with_ints = tuple(
+        # Note: updated_slice can contain int objects
+        updated_slice = tuple(
             self._updated_slice[index] for index in dims_displayed
         )
 
         # Build offset list from slice starts
         offset = [
             item.start if isinstance(item, slice) else item
-            for item in updated_slice_with_ints
+            for item in updated_slice
         ]
 
         if self.contour > 0:
             colors_sliced = self._raw_to_displayed(
-                raw_displayed, data_slice=updated_slice_with_ints
+                raw_displayed, data_slice=updated_slice
             )
         else:
-            colors_sliced = self._slice.image.view[updated_slice_with_ints]
+            colors_sliced = self._slice.image.view[updated_slice]
         # The next line is needed to make the following tests pass in
         # napari/_vispy/_tests/:
         # - test_vispy_labels_layer.py::test_labels_painting
         # - test_vispy_labels_layer.py::test_labels_fill_slice
         # See https://github.com/napari/napari/pull/6112/files#r1291613760
         # and https://github.com/napari/napari/issues/6185
-        self._slice.image.view[updated_slice_with_ints] = colors_sliced
+        self._slice.image.view[updated_slice] = colors_sliced
 
         # For 3D rendering (ndisplay=3), restore reduced dimensions caused by
-        # integer indexing. When updated_slice_with_ints contains integer indices
+        # integer indexing. When updated_slice contains integer indices
         # (not slices), those dimensions are reduced, making colors_sliced.ndim < 3.
         # However, vispy expects consistent 3D data for the renderer. We restore
         # those dimensions to match the display expectation.
         if self._slice_input.ndisplay == 3 and colors_sliced.ndim < 3:
-            for i, item in enumerate(updated_slice_with_ints):
+            for i, item in enumerate(updated_slice):
                 if isinstance(item, (int, np.integer)):
                     colors_sliced = np.expand_dims(colors_sliced, axis=i)
 
@@ -1205,10 +1206,9 @@ class Labels(ScalarFieldBase):
         else:
             mask = labels == old_label
 
-        mask_is_full = mask.all()
-
         # Calculate bounding box of the mask to minimize update size.
         # When mask covers the full region, skip bbox calculation.
+        mask_is_full = mask.all()
         if mask_is_full:
             bbox_slices = tuple(slice(None) for _ in dims_to_fill)
             cropped_mask = mask
@@ -1514,6 +1514,59 @@ class Labels(ScalarFieldBase):
             slice_key_list[dim] = slice(int(min_vals[i]), int(max_vals[i]))
         return tuple(slice_key_list)
 
+    def _merge_slices(
+        self,
+        old: int | np.integer | slice,
+        new: int | np.integer | slice,
+    ) -> int | slice:
+        """Merge two slice/index specs preserving semantics used for updated_slice.
+
+        Parameters
+        ----------
+        old, new : int | slice
+            Existing and new slice/index specification. Can be an int index
+            or a slice object. A slice(None) represents the full range and wins
+            over any other value.
+
+        Returns
+        -------
+        int | slice
+            The merged slice specification. Returns an int if the merged
+            range is exactly a single index and both inputs were ints; otherwise
+            returns a slice(start, stop). A slice(None) is returned if either
+            input was slice(None).
+        """
+        # Handle full-range slices (slice(None)) - full range always wins
+        if isinstance(old, slice) and old.start is None:
+            return slice(None)
+        if isinstance(new, slice) and new.start is None:
+            return slice(None)
+
+        # Normalize to explicit start/stop ranges
+        if isinstance(old, (int, np.integer)):
+            old_start, old_stop = int(old), int(old) + 1
+            old_is_int = True
+        else:
+            old_start, old_stop = old.start, old.stop
+            old_is_int = False
+
+        if isinstance(new, (int, np.integer)):
+            new_start, new_stop = int(new), int(new) + 1
+            new_is_int = True
+        else:
+            new_start, new_stop = new.start, new.stop
+            new_is_int = False
+
+        merged_start = min(old_start, new_start)
+        merged_stop = max(old_stop, new_stop)
+
+        # If the merged range is a single integer and both inputs were ints,
+        # keep it as an int (preserve legacy behavior)
+        if merged_stop == merged_start + 1 and old_is_int and new_is_int:
+            return merged_start
+
+        return slice(merged_start, merged_stop)
+
     def _paint_region_with_mask(
         self,
         slice_key: tuple,
@@ -1573,39 +1626,12 @@ class Labels(ScalarFieldBase):
             self._updated_slice = slice_key
         else:
             # Merge the bounding boxes
-            new_slice_list = []
-            for old, new in zip(self._updated_slice, slice_key, strict=False):
-                # Handle slice(None) - full range always wins
-                if (isinstance(old, slice) and old.start is None) or (
-                    isinstance(new, slice) and new.start is None
-                ):
-                    new_slice_list.append(slice(None))
-                    continue
-
-                # Normalize to slices with explicit bounds
-                if isinstance(old, (int, np.integer)):
-                    old_start, old_stop = old, old + 1
-                else:
-                    old_start, old_stop = old.start, old.stop
-
-                if isinstance(new, (int, np.integer)):
-                    new_start, new_stop = new, new + 1
-                else:
-                    new_start, new_stop = new.start, new.stop
-
-                merged_start = min(old_start, new_start)
-                merged_stop = max(old_stop, new_stop)
-
-                # If the merged range is a single integer, keep it as int
-                # (only if both inputs were effectively single integers)
-                if (
-                    merged_stop == merged_start + 1
-                    and isinstance(old, (int, np.integer))
-                    and isinstance(new, (int, np.integer))
-                ):
-                    new_slice_list.append(merged_start)
-                else:
-                    new_slice_list.append(slice(merged_start, merged_stop))
+            new_slice_list = [
+                self._merge_slices(old, new)
+                for old, new in zip(
+                    self._updated_slice, slice_key, strict=False
+                )
+            ]
 
             self._updated_slice = tuple(new_slice_list)
 
