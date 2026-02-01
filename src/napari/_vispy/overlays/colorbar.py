@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from vispy.scene import Node
 
     from napari.components.overlays import ColorBarOverlay, Overlay
-    from napari.layers import Image, Surface
+    from napari.layers import Image, Points, Surface
 
 
 class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
@@ -27,22 +27,30 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
     def __init__(
         self,
         *,
-        layer: Image | Surface,
+        layer: Image | Surface | Points,
         overlay: Overlay,
         parent: Node | None = None,
     ) -> None:
         super().__init__(
             node=Colormap(), layer=layer, overlay=overlay, parent=parent
         )
-        self.layer: Image | Surface
+        self.layer: Image | Surface | Points
         self.x_size = 50
         self.y_size = 250
         self.x_offset = 7
         self.y_offset = 7
+        # TODO: check with napari core whether image and surface layer always have contrast limits that are not None.
+        # Checking with the points layer, this layer can have face_contrast_limits set to None.
+        if getattr(self.layer, 'contrast_limits', None):
+            self.layer.events.contrast_limits.connect(self._on_data_change)
+            self.layer.events.colormap.connect(self._on_colormap_change)
+            self.layer.events.gamma.connect(self._on_gamma_change)
+        else:
+            self.layer.events.face_contrast_limits.connect(
+                self._on_data_change
+            )
+            self.layer.events.face_colormap.connect(self._on_colormap_change)
 
-        self.layer.events.contrast_limits.connect(self._on_data_change)
-        self.layer.events.colormap.connect(self._on_colormap_change)
-        self.layer.events.gamma.connect(self._on_gamma_change)
         self.overlay.events.size.connect(self._on_size_change)
         self.overlay.events.tick_length.connect(self._on_ticks_change)
         self.overlay.events.font_size.connect(self._on_ticks_change)
@@ -53,15 +61,21 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
         self.reset()
 
     def _on_data_change(self) -> None:
-        self.node.set_data_and_clim(
-            clim=_coerce_contrast_limits(
-                self.layer.contrast_limits
-            ).contrast_limits,
-            dtype=self.layer.dtype,
-        )
-        self._on_colormap_change()
-        self._on_gamma_change()
-        self._on_ticks_change()
+        if (
+            getattr(self.layer, 'contrast_limits', None)
+            or self.layer.face_contrast_limits
+        ):
+            self.node.set_data_and_clim(
+                clim=_coerce_contrast_limits(
+                    getattr(self.layer, 'contrast_limits', None)
+                    or self.layer.face_contrast_limits
+                ).contrast_limits,
+                dtype=self.layer.dtype,
+            )
+            self._on_colormap_change()
+            if getattr(self.layer, 'contrast_limits', None):
+                self._on_gamma_change()
+            self._on_ticks_change()
 
     def _on_colormap_change(self) -> None:
         self.node.set_cmap(_napari_cmap_to_vispy(self.layer.colormap))
@@ -77,39 +91,44 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
         # set color to the negative of theme background.
         # the reason for using the `as_hex` here is to avoid
         # `UserWarning` which is emitted when RGB values are above 1
-        color = self.overlay.color
-        if color is None:
-            if (
-                self.node.parent is not None
-                and self.node.parent.canvas.bgcolor
-            ):
-                background_color = self.node.parent.canvas.bgcolor.rgba
-            else:
-                background_color = get_theme(
-                    get_settings().appearance.theme
-                ).canvas.as_hex()
-                background_color = transform_color(background_color)[0]
-            color = np.subtract(1, background_color)
-            color[-1] = background_color[-1]
+        if (
+            getattr(self.layer, 'contrast_limits', None)
+            or self.layer.face_contrast_limits
+        ):
+            color = self.overlay.color
+            if color is None:
+                if (
+                    self.node.parent is not None
+                    and self.node.parent.canvas.bgcolor
+                ):
+                    background_color = self.node.parent.canvas.bgcolor.rgba
+                else:
+                    background_color = get_theme(
+                        get_settings().appearance.theme
+                    ).canvas.as_hex()
+                    background_color = transform_color(background_color)[0]
+                color = np.subtract(1, background_color)
+                color[-1] = background_color[-1]
 
-        text_width, text_height = self.node.set_ticks_and_get_text_size(
-            tick_length=self.overlay.tick_length,
-            font_size=self.overlay.font_size,
-            clim=_coerce_contrast_limits(
-                self.layer.contrast_limits
-            ).contrast_limits,
-            color=color,
-        )
+            text_width, text_height = self.node.set_ticks_and_get_text_size(
+                tick_length=self.overlay.tick_length,
+                font_size=self.overlay.font_size,
+                clim=_coerce_contrast_limits(
+                    getattr(self.layer, 'contrast_limits', None)
+                    or self.layer.face_contrast_limits
+                ).contrast_limits,
+                color=color,
+            )
 
-        # Calculate proper layout with explicit spacing constants
-        self.x_size = (
-            self.overlay.size[0]  # Colorbar width
-            + self.overlay.tick_length  # Tick marks length
-            + text_width  # Text width with margins
-        )
-        self.y_size = text_height
+            # Calculate proper layout with explicit spacing constants
+            self.x_size = (
+                self.overlay.size[0]  # Colorbar width
+                + self.overlay.tick_length  # Tick marks length
+                + text_width  # Text width with margins
+            )
+            self.y_size = text_height
 
-        self._on_position_change()
+            self._on_position_change()
 
     def reset(self) -> None:
         super().reset()

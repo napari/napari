@@ -461,6 +461,8 @@ class Points(Layer):
             border_width_is_relative=Event,
             face_color=Event,
             current_face_color=Event,
+            face_contrast_limits=Event,
+            face_colormap=Event,
             border_color=Event,
             current_border_color=Event,
             properties=Event,
@@ -549,6 +551,10 @@ class Points(Layer):
         # Trigger generation of view slice and thumbnail
         self.refresh(extent=False)
         self._slicing_state.slice_done.connect(self._refresh_highlight)
+
+        from napari.components.overlays import ColorBarOverlay
+
+        self._overlays.update({'colorbar': ColorBarOverlay()})
 
     @property
     def data(self) -> np.ndarray:
@@ -714,6 +720,11 @@ class Points(Layer):
         self._face._update_current_properties(current_properties)
         self.events.current_properties()
         self.events.feature_defaults()
+
+    @property
+    def colorbar(self):
+        """The colorbar associated with this layer's color manager."""
+        return self._overlays['colorbar']
 
     @property
     def property_choices(self) -> dict[str, np.ndarray]:
