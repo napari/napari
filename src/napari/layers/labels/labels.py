@@ -1203,9 +1203,6 @@ class Labels(ScalarFieldBase):
         else:
             mask = labels == old_label
 
-        if not np.any(mask):
-            return
-
         mask_is_full = mask.all()
 
         # Calculate bounding box of the mask to minimize update size.
@@ -1229,7 +1226,12 @@ class Labels(ScalarFieldBase):
         )
 
         self._paint_region_with_mask(
-            slice_key, cropped_mask, new_label, dims_to_fill, refresh
+            slice_key,
+            cropped_mask,
+            new_label,
+            dims_to_fill,
+            refresh,
+            region_data=labels[bbox_slices],
         )
 
     def _draw(self, new_label, last_cursor_coord, coordinates):
@@ -1518,6 +1520,7 @@ class Labels(ScalarFieldBase):
         new_label: int,
         dims_to_paint: list[int],
         refresh: bool = True,
+        region_data: np.ndarray | None = None,
     ) -> None:
         """Universal painting method using a boolean mask within a bounding box.
 
@@ -1541,8 +1544,13 @@ class Labels(ScalarFieldBase):
             Indices of dimensions being painted (e.g., [1, 2] for YX in a ZYX volume).
         refresh : bool, optional
             Whether to refresh the display after painting. Default is True.
+        region_data : np.ndarray | None, optional
+            Pre-loaded data for the region defined by slice_key. If None (default),
+            data will be read from self.data[slice_key]. Providing this avoids
+            redundant reads when data is already available (e.g. in fill).
         """
-        region_data = np.asarray(self.data[slice_key])
+        if region_data is None:
+            region_data = np.asarray(self.data[slice_key])
 
         painted = self._apply_mask_to_data(
             region_data, mask, new_label, slice_key
@@ -1555,7 +1563,9 @@ class Labels(ScalarFieldBase):
 
         # Update caches (raw and view) for non-shared memory backends
         # This handles mapping the N-D painted region to the currently displayed slice
-        self._refresh_caches_from_region(region_data, slice_key, dims_to_paint)
+        self._refresh_caches_from_region(
+            region_data, slice_key, dims_to_paint, mask, new_label
+        )
 
         # Accumulate updated slices for batch painting (refresh=False)
         if self._updated_slice is None:
@@ -1692,6 +1702,8 @@ class Labels(ScalarFieldBase):
         region_data: np.ndarray,
         slice_key: tuple,
         dims_to_paint: list[int],
+        mask: np.ndarray,
+        new_label: int,
     ) -> None:
         """Update raw and view caches with new data from a painted region.
 
@@ -1719,6 +1731,11 @@ class Labels(ScalarFieldBase):
             Elements are either slice(start, stop) for painted dims or int for non-painted dims.
         dims_to_paint : list[int]
             The dimensions corresponding to the axes of region_data (in sorted order).
+        mask : np.ndarray
+            Boolean mask indicating modified pixels in region_data.
+            Used to optimize texture updates.
+        new_label : int
+            The new label value that was painted. Used to optimize texture updates.
         """
         if isinstance(self.data, np.ndarray) and np.shares_memory(
             self.data, self._slice.image.view
@@ -1782,6 +1799,9 @@ class Labels(ScalarFieldBase):
         # Extract visible data from region_data using computed slices
         visible_data = region_data[tuple(region_slices)]
 
+        # Extract visible mask using the same slices
+        visible_mask = mask[tuple(region_slices)]
+
         # Transpose visible_data to match displayed_dims order if necessary.
         # region_data is always arranged in sorted dimension order, but we need
         # to match the order of displayed_dims (which may be in arbitrary order)
@@ -1799,6 +1819,7 @@ class Labels(ScalarFieldBase):
                 # Build permutation that reorders axes
                 perm = [current_order.index(d) for d in desired_order]
                 visible_data = np.transpose(visible_data, perm)
+                visible_mask = np.transpose(visible_mask, perm)
 
         # Expand dims for displayed dimensions that were not painted.
         # When a displayed dimension is not in dims_to_paint, integer indexing
@@ -1807,6 +1828,7 @@ class Labels(ScalarFieldBase):
         for i, d in enumerate(displayed_dims):
             if d not in dims_to_paint:
                 visible_data = np.expand_dims(visible_data, axis=i)
+                visible_mask = np.expand_dims(visible_mask, axis=i)
 
         # Update raw cache (always safe to do if not sharing memory, updates display source)
         if not (
@@ -1815,9 +1837,18 @@ class Labels(ScalarFieldBase):
         ):
             self._slice.image.raw[tuple(view_slices)] = visible_data
 
-        # Update texture view cache
-        texture_data = self.colormap._data_to_texture(visible_data)
-        self._slice.image.view[tuple(view_slices)] = texture_data
+        # Update texture view cache by compute new color only once
+        new_color = self.colormap._data_to_texture(
+            np.array([new_label], dtype=visible_data.dtype)
+        )[0]
+
+        # Update cache in-place for changed pixels only
+        if visible_mask.all():
+            self._slice.image.view[tuple(view_slices)] = new_color
+        else:
+            self._slice.image.view[tuple(view_slices)][visible_mask] = (
+                new_color
+            )
 
     def _get_shape_and_dims_to_paint(self) -> tuple[list, list]:
         dims_to_paint = sorted(self._get_dims_to_paint())
