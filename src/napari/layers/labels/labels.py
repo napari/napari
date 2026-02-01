@@ -1148,13 +1148,15 @@ class Labels(ScalarFieldBase):
         """Replace an existing label with a new label.
 
         This replaces the label at the cursor position with `new_label`.
-        If `contiguous` is True, only the connected component is replaced.
+        If `contiguous` is True, only the connected component is replaced,
+        using skimage.segmentation.flood
         Otherwise, all pixels with the same label are replaced.
 
         Parameters
         ----------
         coord : sequence of float
             Position of mouse cursor in image coordinates.
+            Note: Floats are rounded to the nearest integer before indexing.
         new_label : int
             Value of the new label to be filled in.
         refresh : bool
@@ -1206,7 +1208,7 @@ class Labels(ScalarFieldBase):
         mask_is_full = mask.all()
 
         # Calculate bounding box of the mask to minimize update size.
-        # When mask covers the full region, skip expensive bbox calculation.
+        # When mask covers the full region, skip bbox calculation.
         if mask_is_full:
             bbox_slices = tuple(slice(None) for _ in dims_to_fill)
             cropped_mask = mask
@@ -1269,7 +1271,7 @@ class Labels(ScalarFieldBase):
         """Paint over existing labels with a new label.
 
         This uses the selected brush shape and size, painting either on the
-        visible slice or in all n dimensions depending on `n_edit_dimensions`.
+        visible slice or in n dimensions depending on `n_edit_dimensions`.
 
         Parameters
         ----------
@@ -1422,7 +1424,6 @@ class Labels(ScalarFieldBase):
         ----------
         shape : tuple of int
             Shape of the mask to create (matches bounding box shape)
-            For example: (100, 100) for 2D, (50, 50, 50) for 3D
         radius : float
             Brush radius in data coordinates
         center : ndarray
@@ -1491,7 +1492,7 @@ class Labels(ScalarFieldBase):
         dims_to_paint: list[int],
         min_vals: np.ndarray,
         max_vals: np.ndarray,
-    ) -> tuple:
+    ) -> tuple[object, ...]:
         """Build an N-dimensional slice key with bounding-box slices for painted dims.
 
         Parameters
@@ -1508,7 +1509,7 @@ class Labels(ScalarFieldBase):
         tuple
             N-dimensional slice key suitable for indexing self.data
         """
-        slice_key_list = list(slice_coord)
+        slice_key_list: list[object] = list(slice_coord)
         for i, dim in enumerate(dims_to_paint):
             slice_key_list[dim] = slice(int(min_vals[i]), int(max_vals[i]))
         return tuple(slice_key_list)
