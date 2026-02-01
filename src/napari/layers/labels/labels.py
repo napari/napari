@@ -1176,6 +1176,8 @@ class Labels(ScalarFieldBase):
         # If preserve_labels is True, then we only want to fill:
         # - pixels of the background label, filling with the new label
         # - pixels of the previous label, filling with the background
+        # the previous label is stored when the selected label is set
+        # to the background, e.g. by swap_selected_and_background_labels
         if (
             self.preserve_labels
             and old_label != self._prev_selected_label
@@ -1197,42 +1199,34 @@ class Labels(ScalarFieldBase):
         slice_coord = tuple(int_coord[d] for d in dims_to_fill)
 
         if self.contiguous:
-            # Flood fill to find connected component
             mask = flood(labels, slice_coord)
         else:
-            # Select all pixels with the old label
             mask = labels == old_label
 
         if not np.any(mask):
             return
 
-        # Calculate bounding box of the mask to minimize update size
-        if mask.all():
+        mask_is_full = mask.all()
+
+        # Calculate bounding box of the mask to minimize update size.
+        # When mask covers the full region, skip expensive bbox calculation.
+        if mask_is_full:
             bbox_slices = tuple(slice(None) for _ in dims_to_fill)
             cropped_mask = mask
+            min_vals = np.zeros(mask.ndim, dtype=int)
+            max_vals = np.array(mask.shape)
         else:
-            # Find min and max for each dimension of the mask
-            min_vals = []
-            max_vals = []
-            for i in range(mask.ndim):
-                axes = tuple(j for j in range(mask.ndim) if j != i)
-                any_on_axis = np.any(mask, axis=axes)
-                nonzero_idx = np.where(any_on_axis)[0]
-                min_vals.append(nonzero_idx[0])
-                max_vals.append(nonzero_idx[-1] + 1)
+            min_vals, max_vals = self._compute_mask_bbox(mask)
 
-            # Crop the mask to the bounding box
             bbox_slices = tuple(
                 slice(min_v, max_v)
                 for min_v, max_v in zip(min_vals, max_vals, strict=False)
             )
             cropped_mask = mask[bbox_slices]
 
-        # Build the global slice key for the bounding box
-        slice_key_list = list(int_coord)
-        for i, dim in enumerate(dims_to_fill):
-            slice_key_list[dim] = bbox_slices[i]
-        slice_key = tuple(slice_key_list)
+        slice_key = self._build_slice_key(
+            list(int_coord), dims_to_fill, min_vals, max_vals
+        )
 
         self._paint_region_with_mask(
             slice_key, cropped_mask, new_label, dims_to_fill, refresh
@@ -1300,7 +1294,7 @@ class Labels(ScalarFieldBase):
         radius = np.floor(self.brush_size / 2) + 0.5
 
         # Radius in pixels for each dimension (accounting for scale)
-        # Use floor to match sphere_indices behavior: points where dist <= radius
+        # Use floor to match old sphere_indices behavior: points where dist <= radius
         # means integer coordinates from -floor(radius) to +floor(radius)
         abs_scale = np.abs(paint_scale)
         radius_pixels = np.floor(
@@ -1456,6 +1450,38 @@ class Labels(ScalarFieldBase):
         )
 
         return dist_sq <= radius**2
+
+    def _compute_mask_bbox(
+        self, mask: np.ndarray
+    ) -> tuple[np.ndarray, np.ndarray]:
+        """Compute the bounding box of True values in a boolean mask.
+
+        Uses np.argmax on axis projections to find the first and last True
+        values along each dimension, avoiding intermediate index arrays.
+
+        Parameters
+        ----------
+        mask : np.ndarray
+            Boolean mask array. Must contain at least one True value.
+
+        Returns
+        -------
+        min_vals : np.ndarray
+            Minimum (inclusive) index for each dimension.
+        max_vals : np.ndarray
+            Maximum (exclusive) index for each dimension.
+        """
+        min_vals = np.empty(mask.ndim, dtype=int)
+        max_vals = np.empty(mask.ndim, dtype=int)
+
+        for i in range(mask.ndim):
+            axes = tuple(j for j in range(mask.ndim) if j != i)
+            any_on_axis = np.any(mask, axis=axes)
+            # argmax finds the first True; reverse search finds the last
+            min_vals[i] = np.argmax(any_on_axis)
+            max_vals[i] = len(any_on_axis) - np.argmax(any_on_axis[::-1])
+
+        return min_vals, max_vals
 
     def _build_slice_key(
         self,
