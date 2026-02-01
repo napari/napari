@@ -65,12 +65,17 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
             getattr(self.layer, 'contrast_limits', None)
             or self.layer.face_contrast_limits
         ):
+            # TODO: for initial implementation only focus on face_color of points layer and not border.
+            dtype = (
+                getattr(self.layer, 'dtype', None)
+                or self.layer.face_color.dtype
+            )
             self.node.set_data_and_clim(
                 clim=_coerce_contrast_limits(
                     getattr(self.layer, 'contrast_limits', None)
                     or self.layer.face_contrast_limits
                 ).contrast_limits,
-                dtype=self.layer.dtype,
+                dtype=dtype,
             )
             self._on_colormap_change()
             if getattr(self.layer, 'contrast_limits', None):
@@ -78,7 +83,10 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
             self._on_ticks_change()
 
     def _on_colormap_change(self) -> None:
-        self.node.set_cmap(_napari_cmap_to_vispy(self.layer.colormap))
+        colormap = (
+            getattr(self.layer, 'colormap', None) or self.layer.face_colormap
+        )
+        self.node.set_cmap(_napari_cmap_to_vispy(colormap))
 
     def _on_gamma_change(self) -> None:
         self.node.set_gamma(self.layer.gamma)
