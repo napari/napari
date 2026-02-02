@@ -29,18 +29,13 @@ from napari.components._viewer_mouse_bindings import (
     drag_to_zoom,
 )
 from napari.components.camera import Camera
+from napari.components.canvas import Canvas
 from napari.components.cursor import Cursor, CursorStyle
 from napari.components.dims import Dims
-from napari.components.grid import GridCanvas
 from napari.components.layerlist import LayerList
 from napari.components.overlays import (
     AxesOverlay,
-    BrushCircleOverlay,
     Overlay,
-    ScaleBarOverlay,
-    TextOverlay,
-    WelcomeOverlay,
-    ZoomOverlay,
 )
 from napari.components.tooltip import Tooltip
 from napari.errors import (
@@ -118,13 +113,8 @@ def _current_theme() -> str:
     return get_settings().appearance.theme
 
 
-DEFAULT_OVERLAYS = {
-    'welcome': WelcomeOverlay,
-    'scale_bar': ScaleBarOverlay,
-    'text': TextOverlay,
+DEFAULT_SCENE_OVERLAYS = {
     'axes': AxesOverlay,
-    'brush_circle': BrushCircleOverlay,
-    'zoom': ZoomOverlay,
 }
 
 
@@ -154,8 +144,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         The cursor object containing the position and properties of the cursor.
     dims : napari.components.dims.Dimensions
         Contains axes, indices, dimensions and sliders.
-    grid: napari.components.grid.Gridcanvas
-        Gridcanvas allowing for the current implementation of a gridview of the canvas.
     help: str
         A help message of the viewer model
     layers : napari.components.layerlist.LayerList
@@ -170,8 +158,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         A tooltip showing extra information on the cursor
     window : napari._qt.qt_main_window.Window
         Parent window.
-    _canvas_size: Tuple[int, int]
-        The canvas size following the Numpy convention of height x width
     _ctx: Mapping
         Viewer object context mapping.
     _layer_slicer: napari.components._layer_slicer._Layer_Slicer
@@ -183,15 +169,15 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     # Using allow_mutation=False means these attributes aren't settable and don't
     # have an event emitter associated with them
+    canvas: Canvas = Field(default_factory=Canvas, allow_mutation=False)
     camera: Camera = Field(default_factory=Camera, allow_mutation=False)
     cursor: Cursor = Field(default_factory=Cursor, allow_mutation=False)
     dims: Dims = Field(default_factory=Dims, allow_mutation=False)
-    grid: GridCanvas = Field(default_factory=GridCanvas, allow_mutation=False)
     layers: LayerList = Field(
         default_factory=LayerList, allow_mutation=False
     )  # Need to create custom JSON encoder for layer!
     help: str = ''
-    status: Union[str, dict] = 'Ready'
+    status: Union[str, Dict] = 'Ready'
     tooltip: Tooltip = Field(default_factory=Tooltip, allow_mutation=False)
     theme: str = Field(default_factory=_current_theme)
     title: str = 'napari'
@@ -199,8 +185,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     _overlays: EventedDict[str, Overlay] = PrivateAttr(
         default_factory=EventedDict
     )
-    # 2-tuple indicating height and width
-    _canvas_size: tuple[int, int] = (800, 600)
     _ctx: Context
     # To check if mouse is over canvas to avoid race conditions between
     # different events systems
@@ -249,19 +233,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             self._update_camera_orientation
         )
 
-        self._update_viewer_grid()
-        settings.application.events.grid_stride.connect(
-            self._update_viewer_grid
-        )
-        settings.application.events.grid_width.connect(
-            self._update_viewer_grid
-        )
-        settings.application.events.grid_height.connect(
-            self._update_viewer_grid
-        )
-        settings.application.events.grid_spacing.connect(
-            self._update_viewer_grid
-        )
         settings.experimental.events.async_.connect(self._update_async)
 
         # Add extra reset_view event. Ideally this should be removed in the
@@ -295,7 +266,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self.mouse_double_click_callbacks.append(double_click_to_zoom)
         self.mouse_drag_callbacks.append(drag_to_zoom)
 
-        self._overlays.update({k: v() for k, v in DEFAULT_OVERLAYS.items()})
+        self._overlays.update(
+            {k: v() for k, v in DEFAULT_SCENE_OVERLAYS.items()}
+        )
 
     # simple properties exposing overlays for backward compatibility
     @property
@@ -304,23 +277,36 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     @property
     def scale_bar(self):
+        warnings.warn(
+            trans._(
+                'viewer.scale_bar is a deprecated attribute since 0.7.1. Use viewer.canvas.scale_bar instead.'
+            ),
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return self._overlays['scale_bar']
 
     @property
     def text_overlay(self):
+        warnings.warn(
+            trans._(
+                'viewer.text_overlay is a deprecated attribute since 0.7.1. Use viewer.canvas.text instead.'
+            ),
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return self._overlays['text']
 
     @property
     def welcome_screen(self):
+        warnings.warn(
+            trans._(
+                'viewer.welcome_screen is a deprecated attribute since 0.7.1. Use viewer.canvas.welcome instead.'
+            ),
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return self._overlays['welcome']
-
-    @property
-    def _zoom_box(self):
-        return self._overlays['zoom']
-
-    @property
-    def _brush_circle_overlay(self):
-        return self._overlays['brush_circle']
 
     def _tooltip_visible_update(self, event):
         self.tooltip.visible = event.value
@@ -334,18 +320,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             settings.application.vertical_axis_orientation,
             settings.application.horizontal_axis_orientation,
         )
-
-    def _update_viewer_grid(self):
-        """Keep viewer grid settings up to date with settings values."""
-
-        settings = get_settings()
-
-        self.grid.stride = settings.application.grid_stride
-        self.grid.shape = (
-            settings.application.grid_height,
-            settings.application.grid_width,
-        )
-        self.grid.spacing = settings.application.grid_spacing
 
     @validator('theme', allow_reuse=True)
     def _valid_theme(cls, v):
@@ -452,7 +426,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         # of view will occupy 95% of the canvas on the most filled axis
         if np.max(scene_size) == 0:
             # TODO: does this even ever happen?
-            self.camera.zoom = scale_factor * np.min(self._canvas_size)
+            self.camera.zoom = scale_factor * np.min(self.canvas.size)
 
         elif self.dims.ndisplay == 2:
             self.camera.zoom = self._get_2d_camera_zoom(
@@ -519,30 +493,15 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             )
         )
 
-    def _get_viewbox_size(self):
-        """Get the size of a single viewbox (whether grid is enabled or not).
-
-        If grid.border_width > 0, that's accounted for too.
-        """
-        viewbox_size = np.array(self._canvas_size)
-        if self.grid.enabled:
-            grid_shape = np.array(self.grid.actual_shape(len(self.layers)))
-            spacing_pixels = self.grid._compute_canvas_spacing(
-                self._canvas_size, len(self.layers)
-            )
-            # Now calculate actual available space
-            total_gap_space = spacing_pixels * (grid_shape - 1)
-            available_space = self._canvas_size - total_gap_space
-            viewbox_size = available_space / grid_shape
-        return viewbox_size
-
     def _get_2d_camera_zoom(
         self, scene_size: np.ndarray, scale_factor: float
     ) -> float:
         """Get the camera zoom for 2D view."""
         scale = np.array(scene_size[-2:])
         scale[np.isclose(scale, 0)] = 1
-        return scale_factor * np.min(self._get_viewbox_size() / scale)
+        return scale_factor * np.min(
+            self.canvas._get_viewbox_size(len(self.layers)) / scale
+        )
 
     def _get_3d_camera_zoom(
         self, extent: np.ndarray, scale_factor: float
@@ -553,7 +512,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             view_direction=self.camera.view_direction,
             up_direction=self.camera.up_direction,
         )
-        return scale_factor * np.min(self._get_viewbox_size() / bounding_box)
+        return scale_factor * np.min(
+            self.canvas._get_viewbox_size(len(self.layers)) / bounding_box
+        )
 
     @staticmethod
     def _calculate_bounding_box(
@@ -759,7 +720,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 not layer.visible
                 or layer.opacity == 0
                 or not layer._slicing_state._loaded
-                or (layer not in selection and not self.grid.enabled)
+                or (layer not in selection and not self.canvas.grid.enabled)
             ):
                 continue
             status = layer.get_status(
@@ -778,7 +739,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                     f'{layer.name}: {status["value"]}{emphasis}'
                 )
         if coord2val:
-            if not self.grid.enabled:
+            if not self.canvas.grid.enabled:
                 # use a single coordinate system
                 values = list(itertools.chain(*coord2val.values()))
                 key = next(iter(coord2val))  # choose arbitrary coordinate
@@ -788,9 +749,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 for key, values in coord2val.items()
             ]
             status_str = separator.join(status_strs)
-        elif coord_str and not self.grid.enabled:
+        elif coord_str and not self.canvas.grid.enabled:
             status_str = coord_str + '[empty]'
-        elif self.grid.enabled:
+        elif self.canvas.grid.enabled:
             status_str = '[empty]'
         else:
             status_str = 'Ready'
