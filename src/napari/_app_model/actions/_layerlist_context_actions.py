@@ -245,7 +245,7 @@ LAYERLIST_CONTEXT_ACTIONS: list[Action] = [
         id='napari.layer.colorbar',
         title=trans._('Colorbar'),
         callback=_layer_actions._toggle_colorbar,
-        menus=[MenuId.LAYERS_CONTEXT_VISUALIZATION, MenuId.LAYERS_MEASURE],
+        menus=[MenuId.LAYERS_CONTEXT_VISUALIZATION, MenuId.LAYERS_VISUALIZE],
         enablement=(
             (LLSCK.num_selected_layers > 0)
             & LLSCK.all_selected_layers_support_colorbar
