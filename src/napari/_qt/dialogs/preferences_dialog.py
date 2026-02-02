@@ -79,7 +79,7 @@ class PreferencesDialog(QDialog):
             # escape key should just close the window
             # which implies "accept"
             e.accept()
-            self.accept()
+            self.reject()
             return
         super().keyPressEvent(e)
 
@@ -254,7 +254,7 @@ class PreferencesDialog(QDialog):
 
     def closeEvent(self, event: 'QCloseEvent') -> None:
         event.accept()
-        self.accept()
+        self.reject()
 
     def accept(self):
         self._settings.save()

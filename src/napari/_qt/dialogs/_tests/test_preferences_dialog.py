@@ -220,13 +220,13 @@ def test_preferences_dialog_ok(qtbot, pref):
 def test_preferences_dialog_close(qtbot, pref):
     with qtbot.waitSignal(pref.finished):
         pref.close()
-    assert get_settings().appearance.theme == 'light'
+    assert get_settings().appearance.theme == 'dark'
 
 
 def test_preferences_dialog_escape(qtbot, pref):
     with qtbot.waitSignal(pref.finished):
         qtbot.keyPress(pref, Qt.Key_Escape)
-    assert get_settings().appearance.theme == 'light'
+    assert get_settings().appearance.theme == 'dark'
 
 
 @pytest.mark.key_bindings
