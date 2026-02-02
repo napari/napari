@@ -806,7 +806,7 @@ def test_axis_labels(viewer_model: ViewerModel, qt_viewer: QtViewer) -> None:
     layer = viewer_model.add_image(np.zeros((2, 2, 2)), scale=(1, 2, 4))
 
     layer_visual = qt_viewer.layer_to_visual[layer]
-    axes_visual = qt_viewer.canvas._overlay_to_visual[
+    axes_visual = qt_viewer.canvas._scene_overlay_to_visual[
         viewer_model._overlays['axes']
     ][0]
 

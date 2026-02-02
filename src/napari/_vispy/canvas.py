@@ -250,7 +250,7 @@ class VispyCanvas:
         self.viewer.camera.events.mouse_zoom.connect(self._on_interactive)
         self.viewer.camera.events.zoom.connect(self._on_cursor)
 
-        self.viewer._zoom_box.events.zoom.connect(self._on_boxzoom)
+        self.viewer.canvas._zoom_box.events.zoom.connect(self._on_boxzoom)
         self.viewer.layers.events.reordered.connect(self._update_scenegraph)
         self.viewer.layers.events.removed.connect(self._remove_layer)
         self.viewer.layers.events.begin_batch.connect(
@@ -259,10 +259,10 @@ class VispyCanvas:
         self.viewer.layers.events.end_batch.connect(
             self._resume_scene_graph_update
         )
-        self.viewer.grid.events.stride.connect(self._update_scenegraph)
-        self.viewer.grid.events.shape.connect(self._update_scenegraph)
-        self.viewer.grid.events.enabled.connect(self._update_scenegraph)
-        self.viewer.grid.events.spacing.connect(self._update_scenegraph)
+        self.viewer.canvas.grid.events.stride.connect(self._update_scenegraph)
+        self.viewer.canvas.grid.events.shape.connect(self._update_scenegraph)
+        self.viewer.canvas.grid.events.enabled.connect(self._update_scenegraph)
+        self.viewer.canvas.grid.events.spacing.connect(self._update_scenegraph)
         self.viewer._overlays.events.added.connect(
             self._update_viewer_overlays
         )
@@ -271,6 +271,15 @@ class VispyCanvas:
         )
         self.viewer._overlays.events.changed.connect(
             self._update_viewer_overlays
+        )
+        self.viewer._overlays.events.added.connect(
+            self._update_canvas_overlays
+        )
+        self.viewer._overlays.events.removed.connect(
+            self._update_canvas_overlays
+        )
+        self.viewer._overlays.events.changed.connect(
+            self._update_canvas_overlays
         )
         self.destroyed.connect(self._disconnect_events)
 
