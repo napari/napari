@@ -77,8 +77,8 @@ class LayerNameOverlay(_BaseTextOverlay):
     position: CanvasPosition = CanvasPosition.TOP_LEFT
 
 
-class DimsOverlay(_BaseTextOverlay):
-    """Label model to display layer name text in the canvas
+class CurrentSliceOverlay(_BaseTextOverlay):
+    """Label model to display the current dims slice in the canvas
 
     Attributes
     ----------

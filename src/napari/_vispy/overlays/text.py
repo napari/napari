@@ -113,7 +113,7 @@ class VispyLayerNameOverlay(_VispyLayerTextOverlay):
         self._on_position_change()
 
 
-class VispyDimsOverlay(_VispyViewerTextOverlay):
+class VispyCurrentSliceOverlay(_VispyViewerTextOverlay):
     def _connect_events(self):
         self.viewer.dims.events.connect(self._on_text_change)
 
