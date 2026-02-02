@@ -694,7 +694,7 @@ def test_data_setitem_multi_dim():
     )
 
 
-def test_data_setitiem_transposed_axes():
+def test_data_setitem_transposed_axes():
     data = np.zeros((10, 100), dtype=np.uint32)
     labels = Labels(data)
     dims = Dims(ndim=2, ndisplay=2, order=(1, 0))
@@ -2233,3 +2233,34 @@ def test_paint_int64_view_update_3d_display(ndisplay, n_edit_dimensions):
 
     assert np.any(view_painted != 0)
     assert not np.array_equal(view_before, layer._slice.image.view)
+
+
+def test_merge_slices():
+    """Test the _merge_slices helper utility."""
+    layer = Labels(np.zeros((10, 10), dtype=int))
+
+    # 1. Same int should return int
+    assert layer._merge_slices(2, 2) == 2
+
+    # 2. Different ints should return a range slice
+    s = layer._merge_slices(2, 5)
+    assert isinstance(s, slice)
+    assert s.start == 2
+    assert s.stop == 6
+
+    # 3. int and slice should merge correctly
+    s = layer._merge_slices(2, slice(4, 8))
+    assert isinstance(s, slice)
+    assert s.start == 2
+    assert s.stop == 8
+
+    # 4. slice(None) should always win
+    assert layer._merge_slices(2, slice(None)) == slice(None)
+    assert layer._merge_slices(slice(None), 5) == slice(None)
+    assert layer._merge_slices(slice(4, 8), slice(None)) == slice(None)
+
+    # 5. Overlapping slices
+    s = layer._merge_slices(slice(2, 5), slice(4, 8))
+    assert isinstance(s, slice)
+    assert s.start == 2
+    assert s.stop == 8
