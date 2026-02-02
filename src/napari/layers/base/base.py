@@ -1396,6 +1396,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     def bounding_box(self) -> Overlay:
         return self._overlays['bounding_box']
 
+    @property
+    def name_overlay(self) -> Overlay:
+        return self._overlays['layer_name']
+
     def set_view_slice(self) -> None:
         self._slicing_state.set_view_slice()
 

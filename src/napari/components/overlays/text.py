@@ -26,7 +26,7 @@ class _BaseTextOverlay(CanvasOverlay):
     """
 
     color: ColorValue = Field(
-        default_factory=lambda: ColorValue((0.5, 0.5, 0.5, 1.0))
+        default_factory=lambda: ColorValue((0.8, 0.8, 0.8, 1.0))
     )
     font_size: float = 10
 
