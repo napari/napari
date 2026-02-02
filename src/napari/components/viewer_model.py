@@ -284,7 +284,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             DeprecationWarning,
             stacklevel=2,
         )
-        return self._overlays['scale_bar']
+        return self.canvas._overlays['scale_bar']
 
     @property
     def text_overlay(self):
@@ -295,7 +295,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             DeprecationWarning,
             stacklevel=2,
         )
-        return self._overlays['text']
+        return self.canvas._overlays['text']
 
     @property
     def welcome_screen(self):
@@ -306,7 +306,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             DeprecationWarning,
             stacklevel=2,
         )
-        return self._overlays['welcome']
+        return self.canvas._overlays['welcome']
 
     def _tooltip_visible_update(self, event):
         self.tooltip.visible = event.value
@@ -500,7 +500,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         scale = np.array(scene_size[-2:])
         scale[np.isclose(scale, 0)] = 1
         return scale_factor * np.min(
-            self.canvas._get_viewbox_size(len(self.layers)) / scale
+            self.canvas.viewbox_size(len(self.layers)) / scale
         )
 
     def _get_3d_camera_zoom(
@@ -513,7 +513,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             up_direction=self.camera.up_direction,
         )
         return scale_factor * np.min(
-            self.canvas._get_viewbox_size(len(self.layers)) / bounding_box
+            self.canvas.viewbox_size(len(self.layers)) / bounding_box
         )
 
     @staticmethod

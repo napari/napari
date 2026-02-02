@@ -206,7 +206,7 @@ class QtViewer(QSplitter):
             viewer=viewer,
             parent=self,
             key_map_handler=self._key_map_handler,
-            size=self.viewer._canvas_size,
+            size=self.viewer.canvas._size,
             autoswap=get_settings().experimental.autoswap_buffers,  # see #5734
         )
 

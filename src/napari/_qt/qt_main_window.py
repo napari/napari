@@ -199,7 +199,7 @@ class _QtMainWindow(QMainWindow):
 
         # only after qaction are initialized we can get all shortcuts, so we have
         # to force update the welcome screen here. TODO: UGLYYYY
-        self._qt_viewer.canvas._scene_overlay_to_visual[
+        self._qt_viewer.canvas._canvas_overlay_to_visual[
             self._qt_viewer.viewer.welcome_screen
         ][0].reset()
 

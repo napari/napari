@@ -1,6 +1,6 @@
 import numpy as np
-from pydantic import Field, PrivateAttr
 
+from napari._pydantic_compat import Field, PrivateAttr
 from napari.components.grid import GridCanvas
 from napari.components.overlays import (
     BrushCircleOverlay,
@@ -41,11 +41,10 @@ class Canvas(EventedModel):
 
     background_color_override: ColorValue | None = None
     grid: GridCanvas = Field(default_factory=GridCanvas, allow_mutation=False)
-    size: tuple[int, int] = (800, 600)
-
     _overlays: EventedDict[str, Overlay] = PrivateAttr(
         default_factory=EventedDict
     )
+    _size: tuple[int, int] = PrivateAttr((800, 600))
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -71,6 +70,39 @@ class Canvas(EventedModel):
         )
 
     @property
+    def size(self):
+        return self._size
+
+    def viewbox_size(self, n_layers):
+        """Get the size of a single viewbox (whether grid is enabled or not).
+
+        If grid.border_width > 0, that's accounted for too.
+        """
+        viewbox_size = np.array(self.size)
+        if self.grid.enabled:
+            grid_shape = np.array(self.grid.actual_shape(n_layers))
+            spacing_pixels = self.grid._compute_canvas_spacing(
+                self.size, n_layers
+            )
+            # Now calculate actual available space
+            total_gap_space = spacing_pixels * (grid_shape - 1)
+            available_space = self.size - total_gap_space
+            viewbox_size = available_space / grid_shape
+        return viewbox_size
+
+    @property
+    def scale_bar(self):
+        return self._overlays['scale_bar']
+
+    @property
+    def text(self):
+        return self._overlays['text']
+
+    @property
+    def welcome(self):
+        return self._overlays['welcome']
+
+    @property
     def _zoom_box(self):
         return self._overlays['zoom']
 
@@ -89,20 +121,3 @@ class Canvas(EventedModel):
             settings.application.grid_width,
         )
         self.grid.spacing = settings.application.grid_spacing
-
-    def _get_viewbox_size(self, n_layers):
-        """Get the size of a single viewbox (whether grid is enabled or not).
-
-        If grid.border_width > 0, that's accounted for too.
-        """
-        viewbox_size = np.array(self.size)
-        if self.grid.enabled:
-            grid_shape = np.array(self.grid.actual_shape(n_layers))
-            spacing_pixels = self.grid._compute_canvas_spacing(
-                self.size, n_layers
-            )
-            # Now calculate actual available space
-            total_gap_space = spacing_pixels * (grid_shape - 1)
-            available_space = self.size - total_gap_space
-            viewbox_size = available_space / grid_shape
-        return viewbox_size
