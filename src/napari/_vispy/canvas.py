@@ -20,7 +20,7 @@ from napari._vispy.utils.cursor import QtCursorVisual
 from napari._vispy.utils.gl import get_max_texture_sizes
 from napari._vispy.utils.visual import create_vispy_overlay
 from napari.components._viewer_constants import CanvasPosition
-from napari.components.overlays import CanvasOverlay
+from napari.components.overlays import CanvasOverlay, SceneOverlay
 from napari.utils._proxies import ReadOnlyWrapper
 from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils.events import disconnect_events
@@ -45,7 +45,11 @@ if TYPE_CHECKING:
     from vispy.scene import Node
 
     from napari._vispy.layers.base import VispyBaseLayer
-    from napari._vispy.overlays.base import VispyBaseOverlay
+    from napari._vispy.overlays.base import (
+        VispyBaseOverlay,
+        VispyCanvasOverlay,
+        VispySceneOverlay,
+    )
     from napari.components import ViewerModel
     from napari.components.overlays import Overlay
     from napari.layers import Layer
@@ -192,7 +196,12 @@ class VispyCanvas:
         self.grid_cameras = []
 
         self.layer_to_visual: dict[Layer, VispyBaseLayer[Layer]] = {}
-        self._overlay_to_visual: dict[Overlay, list[VispyBaseOverlay]] = {}
+        self._scene_overlay_to_visual: dict[
+            SceneOverlay, VispySceneOverlay
+        ] = {}
+        self._canvas_overlay_to_visual: dict[
+            CanvasOverlay, list[VispyCanvasOverlay]
+        ] = {}
         self._layer_overlay_to_visual: dict[
             Layer, dict[Overlay, VispyBaseOverlay]
         ] = {}
@@ -214,7 +223,7 @@ class VispyCanvas:
         self.max_texture_sizes = get_max_texture_sizes()
 
         self._update_grid_spacing()
-        self._update_viewer_overlays()
+        self._update_scene_overlays()
 
         self._scene_canvas.events.ignore_callback_errors = False
         self._scene_canvas.context.set_depth_func('lequal')
@@ -263,14 +272,12 @@ class VispyCanvas:
         self.viewer.canvas.grid.events.shape.connect(self._update_scenegraph)
         self.viewer.canvas.grid.events.enabled.connect(self._update_scenegraph)
         self.viewer.canvas.grid.events.spacing.connect(self._update_scenegraph)
-        self.viewer._overlays.events.added.connect(
-            self._update_viewer_overlays
-        )
+        self.viewer._overlays.events.added.connect(self._update_scene_overlays)
         self.viewer._overlays.events.removed.connect(
-            self._update_viewer_overlays
+            self._update_scene_overlays
         )
         self.viewer._overlays.events.changed.connect(
-            self._update_viewer_overlays
+            self._update_scene_overlays
         )
         self.viewer._overlays.events.added.connect(
             self._update_canvas_overlays
@@ -897,8 +904,9 @@ class VispyCanvas:
             vispy_overlay = create_vispy_overlay(
                 overlay=overlay, viewer=self.viewer, parent=parent
             )
-            self._overlay_to_visual[overlay].append(vispy_overlay)
+            self._scene_overlay_to_visual[overlay].append(vispy_overlay)
 
+            # connect position callbacks
             if isinstance(overlay, CanvasOverlay):
                 vispy_overlay.canvas_position_callback = (
                     self._defer_overlay_position_update
@@ -907,30 +915,44 @@ class VispyCanvas:
         else:
             vispy_overlay.node.parent = parent
 
-    def _update_viewer_overlays(self):
-        """Update the viewer overlay visuals.
-
-        Also ensures that overlays are properly assigned parents depending on
-        their class (canvas vs scene overlays).
-        """
+    def _update_scene_overlays(self):
+        """Update the viewer's scene overlay visuals."""
         # delete outdated overlays
-        for overlay in set(self._overlay_to_visual) - set(
+        for overlay in set(self._scene_overlay_to_visual) - set(
             self.viewer._overlays.values()
         ):
-            if isinstance(overlay, CanvasOverlay):
-                self._disconnect_canvas_overlay_events(overlay)
-            vispy_overlays = self._overlay_to_visual.pop(overlay)
+            self._scene_overlay_to_visual.pop(overlay).close()
+
+        for overlay in self.viewer._overlays.values():
+            # create, or update parent if existing
+            view = self.view
+
+            vispy_overlay = self._scene_overlay_to_visual.get(overlay, None)
+            self._create_or_update_vispy_viewer_overlay(
+                overlay, vispy_overlay, view
+            )
+
+    def _update_canvas_overlays(self):
+        """Update the viewer's canvas overlay visuals."""
+        # delete outdated overlays
+        for overlay in set(self._canvas_overlay_to_visual) - set(
+            self.viewer._overlays.values()
+        ):
+            self._disconnect_canvas_overlay_events(overlay)
+            vispy_overlays = self._canvas_overlay_to_visual.pop(overlay)
             for vispy_overlay in vispy_overlays:
                 vispy_overlay.close()
 
         # go through all overlays and ensure there are the exact amount of
         # corresponding visuals depending on number of views to display
         for overlay in self.viewer._overlays.values():
-            vispy_overlays = self._overlay_to_visual.setdefault(overlay, [])
+            vispy_overlays = self._canvas_overlay_to_visual.setdefault(
+                overlay, []
+            )
 
             gridded = (
                 self.viewer.grid.enabled
-                and getattr(overlay, 'gridded', False)
+                and overlay.gridded
                 and self.viewer.layers
             )
 
@@ -965,9 +987,8 @@ class VispyCanvas:
                 )
 
             # connect position callbacks
-            if isinstance(overlay, CanvasOverlay):
-                self._connect_canvas_overlay_events(overlay)
-                overlay.events.gridded.connect(self._update_viewer_overlays)
+            self._connect_canvas_overlay_events(overlay)
+            overlay.events.gridded.connect(self._update_canvas_overlays)
 
         self._defer_overlay_position_update()
 
@@ -1037,7 +1058,7 @@ class VispyCanvas:
 
     def _get_ordered_visible_canvas_overlays(
         self,
-    ) -> Iterator[tuple[CanvasOverlay, VispyBaseOverlay, Node | None]]:
+    ) -> Iterator[tuple[CanvasOverlay, VispyCanvasOverlay, Node | None]]:
         """
         Iterator over visible canvas overlays by grid viewbox, in tiling order.
 
@@ -1065,7 +1086,7 @@ class VispyCanvas:
 
         # first the base view: non-gridded viewer overlays which appear
         # "on top of" the main canvas
-        for overlay, vispy_overlays in self._overlay_to_visual.items():
+        for overlay, vispy_overlays in self._scene_overlay_to_visual.items():
             if (
                 vispy_overlays
                 and is_visible_tileable(overlay)
@@ -1089,7 +1110,10 @@ class VispyCanvas:
                 else None
             )
 
-            for overlay, vispy_overlays in self._overlay_to_visual.items():
+            for (
+                overlay,
+                vispy_overlays,
+            ) in self._scene_overlay_to_visual.items():
                 if (
                     vispy_overlays
                     and is_visible_tileable(overlay)
@@ -1264,7 +1288,7 @@ class VispyCanvas:
                 self._setup_single_view()
 
             self._reorder_layers()
-            self._update_viewer_overlays()
+            self._update_scene_overlays()
             for layer in self.viewer.layers:
                 self._update_layer_overlays(layer)
             self._on_interactive()
