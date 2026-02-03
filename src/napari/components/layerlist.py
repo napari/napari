@@ -360,7 +360,9 @@ class LayerList(SelectableEventedList[Layer]):
                 extrema = [extent.world for extent in layer_extent_list]
             else:
                 extrema = [
-                    self._convert_units(extent.world.T, extent.units, units).T
+                    self._convert_scale_between_units(
+                        extent.world.T, extent.units, units
+                    ).T
                     for extent in layer_extent_list
                 ]
             mins = [e[0] for e in extrema]
@@ -393,20 +395,20 @@ class LayerList(SelectableEventedList[Layer]):
         return np.nanmin(full_scales, axis=1)[::-1]
 
     @staticmethod
-    def _convert_units(
-        array: np.ndarray[tuple[int], np.dtype[np.float32]],
-        units: tuple[pint.Unit, ...],
-        target_units: tuple[pint.Unit, ...],
+    def _convert_scale_between_units(
+        scale: np.ndarray[tuple[int], np.dtype[np.float32]],
+        from_units: tuple[pint.Unit, ...],
+        to_units: tuple[pint.Unit, ...],
     ) -> np.ndarray:
         """Convert units of scale to target units.
 
         Parameters
         ----------
-        array : np.ndarray
+        scale : np.ndarray
             Scale to convert.
-        units : tuple[pint.Unit, ...]
+        from_units : tuple[pint.Unit, ...]
             Units of the scale.
-        target_units : tuple[pint.Unit, ...]
+        to_units : tuple[pint.Unit, ...]
             Target units.
 
         Returns
@@ -414,12 +416,12 @@ class LayerList(SelectableEventedList[Layer]):
         np.ndarray
             Converted scale.
         """
-        clipped_target_units = target_units[-len(units) :]
+        clipped_target_units = to_units[-len(from_units) :]
         return np.array(
             [
                 (s * u).to(cu).magnitude
                 for s, u, cu in zip(
-                    array, units, clipped_target_units, strict=False
+                    scale, from_units, clipped_target_units, strict=False
                 )
             ]
         )
@@ -435,7 +437,9 @@ class LayerList(SelectableEventedList[Layer]):
             scales = [extent.step for extent in layer_extent_list]
         else:
             scales = [
-                self._convert_units(extent.step, extent.units, units)
+                self._convert_scale_between_units(
+                    extent.step, extent.units, units
+                )
                 for extent in layer_extent_list
             ]
         return self._step_size_from_scales(scales)
