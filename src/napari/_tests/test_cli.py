@@ -5,7 +5,7 @@ from unittest import mock
 import pytest
 
 import napari
-from napari import __main__
+from napari import _main
 
 
 @pytest.fixture
@@ -22,7 +22,7 @@ def test_cli_works(monkeypatch, capsys):
     """Test the cli runs and shows help"""
     monkeypatch.setattr(sys, 'argv', ['napari', '-h'])
     with pytest.raises(SystemExit):
-        __main__._run()
+        _main._run()
     assert 'napari command line viewer.' in str(capsys.readouterr())
 
 
@@ -30,7 +30,7 @@ def test_cli_shows_plugins(monkeypatch, capsys, tmp_plugin):
     """Test the cli --info runs and shows plugins"""
     monkeypatch.setattr(sys, 'argv', ['napari', '--info'])
     with pytest.raises(SystemExit):
-        __main__._run()
+        _main._run()
     assert tmp_plugin.name in str(capsys.readouterr())
 
 
@@ -45,7 +45,7 @@ def test_cli_parses_unknowns(mock_run, monkeypatch, make_napari_viewer):
         assert kwargs['contrast_limits'] == (0, 1)
 
     # testing all the variants of literal_evals
-    with mock.patch('napari.__main__.Viewer', return_value=mocked_viewer):
+    with mock.patch('napari._main.Viewer', return_value=mocked_viewer):
         monkeypatch.setattr(
             napari.components.viewer_model.ViewerModel, 'open', assert_kwargs
         )
@@ -53,16 +53,16 @@ def test_cli_parses_unknowns(mock_run, monkeypatch, make_napari_viewer):
             m.setattr(
                 sys, 'argv', ['n', 'file', '--contrast-limits', '(0, 1)']
             )
-            __main__._run()
+            _main._run()
         with monkeypatch.context() as m:
             m.setattr(sys, 'argv', ['n', 'file', '--contrast-limits', '(0,1)'])
-            __main__._run()
+            _main._run()
         with monkeypatch.context() as m:
             m.setattr(sys, 'argv', ['n', 'file', '--contrast-limits=(0, 1)'])
-            __main__._run()
+            _main._run()
         with monkeypatch.context() as m:
             m.setattr(sys, 'argv', ['n', 'file', '--contrast-limits=(0,1)'])
-            __main__._run()
+            _main._run()
 
 
 def test_cli_raises(monkeypatch):
@@ -70,13 +70,13 @@ def test_cli_raises(monkeypatch):
     with monkeypatch.context() as m:
         m.setattr(sys, 'argv', ['napari', 'path/to/file', '--nonsense'])
         with pytest.raises(SystemExit) as e:
-            __main__._run()
+            _main._run()
         assert str(e.value) == 'error: unrecognized argument: --nonsense'
 
     with monkeypatch.context() as m:
         m.setattr(sys, 'argv', ['napari', 'path/to/file', '--gamma'])
         with pytest.raises(SystemExit) as e:
-            __main__._run()
+            _main._run()
         assert str(e.value) == 'error: argument --gamma expected one argument'
 
 
@@ -89,11 +89,11 @@ def test_cli_runscript(monkeypatch, tmp_path, make_napari_viewer):
 
     with monkeypatch.context() as m:
         m.setattr(sys, 'argv', ['napari', str(script)])
-        m.setattr(__main__, 'Viewer', lambda: v)
+        m.setattr(_main, 'Viewer', lambda: v)
         m.setattr(
             'qtpy.QtWidgets.QApplication.exec_', lambda *_: None
         )  # revent event loop if run this test standalone
-        __main__._run()
+        _main._run()
 
     assert len(v.layers) == 1
 
@@ -106,11 +106,11 @@ def test_cli_passes_kwargs(
     v = make_napari_viewer()
 
     with (
-        mock.patch('napari.__main__.Viewer', return_value=v),
+        mock.patch('napari._main.Viewer', return_value=v),
         monkeypatch.context() as m,
     ):
         m.setattr(sys, 'argv', ['n', 'file', '--name', 'some name'])
-        __main__._run()
+        _main._run()
 
     qt_open.assert_called_once_with(
         ['file'],
@@ -130,7 +130,7 @@ def test_cli_passes_kwargs_stack(
     v = make_napari_viewer()
 
     with (
-        mock.patch('napari.__main__.Viewer', return_value=v),
+        mock.patch('napari._main.Viewer', return_value=v),
         monkeypatch.context() as m,
     ):
         m.setattr(
@@ -149,7 +149,7 @@ def test_cli_passes_kwargs_stack(
                 'some name',
             ],
         )
-        __main__._run()
+        _main._run()
 
     qt_open.assert_called_once_with(
         ['file'],
@@ -162,21 +162,21 @@ def test_cli_passes_kwargs_stack(
 
 
 def test_cli_retains_viewer_ref(mock_run, monkeypatch, make_napari_viewer):
-    """Test that napari.__main__ is retaining a reference to the viewer."""
+    """Test that napari._main is retaining a reference to the viewer."""
     mocked_viewer = (
         make_napari_viewer()
     )  # our mock view_path will return this object
-    ref_count = None  # counter that will be updated before __main__._run()
+    ref_count = None  # counter that will be updated before _main._run()
 
     def _check_refs(**kwargs):
-        # when run() is called in napari.__main__, we will call this function
+        # when run() is called in napari._main, we will call this function
         # it forces garbage collection, and then makes sure that at least one
         # additional reference to our viewer exists.
         gc.collect()
         if sys.getrefcount(mocked_viewer) <= ref_count:  # pragma: no cover
             raise AssertionError(
                 'Reference to napari.viewer has been lost by '
-                'the time the event loop started in napari.__main__'
+                'the time the event loop started in napari._main'
             )
 
     mock_run.side_effect = _check_refs
@@ -184,7 +184,7 @@ def test_cli_retains_viewer_ref(mock_run, monkeypatch, make_napari_viewer):
         m.setattr(sys, 'argv', ['napari', 'path/to/file.tif'])
         # return our local v
         with mock.patch(
-            'napari.__main__.Viewer', return_value=mocked_viewer
+            'napari._main.Viewer', return_value=mocked_viewer
         ) as mock_viewer:
             ref_count = sys.getrefcount(
                 mocked_viewer
@@ -193,6 +193,6 @@ def test_cli_retains_viewer_ref(mock_run, monkeypatch, make_napari_viewer):
             with mock.patch(
                 'napari._qt.qt_viewer.QtViewer._qt_open', return_value=None
             ) as mock_viewer_open:
-                __main__._run()
+                _main._run()
             mock_viewer.assert_called_once()
             mock_viewer_open.assert_called_once()
