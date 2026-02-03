@@ -449,7 +449,10 @@ def test_env_settings_restore(monkeypatch):
 NO_IMPORT_SCRIPT = """
 from napari.viewer import Viewer
 from napari import settings
-from napari._qt.qt_event_loop import get_qapp
+try:
+    from napari._qt.qt_event_loop import get_qapp
+except ImportError:
+    pass
 
 assert settings._SETTINGS is None
 
