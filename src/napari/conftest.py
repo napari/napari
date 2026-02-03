@@ -215,7 +215,7 @@ def _fresh_settings(monkeypatch):
     from napari.utils.triangulation_backend import TriangulationBackend
 
     # prevent the developer's config file from being used if it exists
-    cp = NapariSettings.__private_attributes__['_config_path']
+    cp = NapariSettings.model_fields['config_path']
     monkeypatch.setattr(cp, 'default', None)
 
     monkeypatch.setattr(

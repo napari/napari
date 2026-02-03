@@ -1,6 +1,6 @@
 from typing import Any
 
-from pydantic import Field
+from pydantic import AliasChoices, Field
 
 from napari.settings._base import EventedSettings
 from napari.utils.colormap_backend import (
@@ -34,7 +34,7 @@ class ExperimentalSettings(EventedSettings):
         description=trans._(
             'Asynchronous loading of image data. \nThis setting partially loads data while viewing.'
         ),
-        env='napari_async',
+        validation_alias=AliasChoices('async_', 'async', 'napari_async'),
         requires_restart=False,
     )
     autoswap_buffers: bool = Field(
@@ -43,7 +43,7 @@ class ExperimentalSettings(EventedSettings):
         description=trans._(
             'Autoswapping rendering buffers improves quality by reducing tearing artifacts, while sacrificing some performance.'
         ),
-        env='napari_autoswap',
+        validation_alias=AliasChoices('autoswap_buffers', 'napari_autoswap'),
         requires_restart=True,
     )
 
