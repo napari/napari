@@ -1623,8 +1623,8 @@ class Labels(ScalarFieldBase):
 
         return min_vals, max_vals
 
+    @staticmethod
     def _build_slice_key(
-        self,
         slice_coord: list[int],
         dims_to_paint: list[int],
         min_vals: np.ndarray,
@@ -1644,15 +1644,15 @@ class Labels(ScalarFieldBase):
         Returns
         -------
         tuple
-            N-dimensional slice key suitable for indexing self.data
+            N-dimensional slice key
         """
         slice_key_list: list[object] = list(slice_coord)
         for i, dim in enumerate(dims_to_paint):
             slice_key_list[dim] = slice(int(min_vals[i]), int(max_vals[i]))
         return tuple(slice_key_list)
 
+    @staticmethod
     def _merge_slices(
-        self,
         old: int | np.integer | slice,
         new: int | np.integer | slice,
     ) -> int | slice:
