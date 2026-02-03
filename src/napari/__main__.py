@@ -9,7 +9,7 @@ def show_error_dialog_windows(message: str, title: str = 'Error') -> None:
 
     # Display a message box with the error message
     # https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-messageboxw
-    ctypes.windll.user32.MessageBoxW(0, message, title, 1)
+    ctypes.windll.user32.MessageBoxW(0, message, title, 1)  # type: ignore[attr-defined]
 
 
 def show_error_dialog_mac(message: str, title: str = 'Error') -> None:
@@ -44,7 +44,7 @@ def show_error_dialog_linux(message: str, title: str = 'Error') -> None:
         )
 
 
-def message_exception(exc: Exception):
+def message_exception(exc: Exception) -> None:
     title = 'Startup Error'
     message = f'An error occurred while starting napari.\n\nexc: {exc}'
     if sys.stdout is None:  # when run without terminal
@@ -57,11 +57,15 @@ def message_exception(exc: Exception):
             show_error_dialog_linux(message, title)
 
 
-if __name__ == '__main__':
+def main():
     try:
-        from napari._main import main
+        from napari._main import main as main_function
     except Exception as e:
         message_exception(e)
         raise
     else:
-        sys.exit(main())
+        sys.exit(main_function())
+
+
+if __name__ == '__main__':
+    main()

@@ -907,6 +907,7 @@ warn_unused_ignores = false
 [[tool.mypy.overrides]]
 module = [
     "napari.__main__",
+    "napari._main",
     "napari.utils.colormaps.vendored.colors",
     "napari.layers._scalar_field.scalar_field",
 ]
