@@ -2264,3 +2264,31 @@ def test_merge_slices():
     assert isinstance(s, slice)
     assert s.start == 2
     assert s.stop == 8
+
+
+def test_block_history_with_mask_painting():
+    """Test that block_history groups mask-based paint operations."""
+    data = np.zeros((20, 20), dtype=int)
+    layer = Labels(data)
+    layer.brush_size = 3
+
+    with layer.block_history():
+        layer.paint([5, 5], 1, refresh=False)
+        layer.paint([10, 10], 2, refresh=False)
+
+    assert len(layer._undo_history) == 1  # Should be single grouped item
+    layer.undo()
+    assert layer.data[5, 5] == 0
+    assert layer.data[10, 10] == 0
+
+
+def test_paint_brush_fully_outside_returns_early():
+    """Painting fully outside data bounds should not modify history."""
+    data = np.zeros((10, 10), dtype=int)
+    layer = Labels(data)
+    layer.brush_size = 1
+    initial_history_len = len(layer._undo_history)
+
+    layer.paint([-100, -100], 1)
+
+    assert len(layer._undo_history) == initial_history_len

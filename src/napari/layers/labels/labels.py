@@ -1518,8 +1518,9 @@ class Labels(ScalarFieldBase):
 
         return polygon_mask, min_vals, max_vals
 
+    @staticmethod
     def _create_polygon_mask(
-        self, points2d: np.ndarray, shape: list[int]
+        points2d: np.ndarray, shape: list[int]
     ) -> np.ndarray:
         """Create a boolean mask from polygon points using PIL rasterization.
 
@@ -1543,8 +1544,8 @@ class Labels(ScalarFieldBase):
         draw.polygon(points_pil, outline=1, fill=1)
         return np.array(img, dtype=bool)
 
+    @staticmethod
     def _create_brush_mask(
-        self,
         shape: tuple[int, ...],
         radius: float,
         center: np.ndarray,
@@ -1591,9 +1592,8 @@ class Labels(ScalarFieldBase):
 
         return dist_sq <= radius**2
 
-    def _compute_mask_bbox(
-        self, mask: np.ndarray
-    ) -> tuple[np.ndarray, np.ndarray]:
+    @staticmethod
+    def _compute_mask_bbox(mask: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         """Compute the bounding box of True values in a boolean mask.
 
         Uses np.argmax on axis projections to find the first and last True
@@ -1817,7 +1817,8 @@ class Labels(ScalarFieldBase):
         """Paint within a data region using a boolean mask.
 
         This method operates on the data array in-place, using boolean mask
-        indexing. It handles preserve_labels logic and optimization to skip
+        indexing. Importantly, *both the data and the mask arrays* are modified
+        in-place. It handles preserve_labels logic and optimization to skip
         unchanged pixels. The return indicates if any pixels were painted.
 
         Parameters
@@ -1840,10 +1841,8 @@ class Labels(ScalarFieldBase):
 
         Notes
         -----
-        - Respects preserve_labels setting
         - Saves to undo/redo history
         - Does NOT update caches or refresh display (caller's responsibility)
-        - Both data and mask arrays are modified in-place
         """
         if self.preserve_labels:
             keep_mask = self._account_for_preserving_labels(data, new_label)
