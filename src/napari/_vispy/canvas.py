@@ -790,7 +790,7 @@ class VispyCanvas:
         units = self.viewer.layers.extent.units
         if units is None:
             show_warning(
-                'Inconsistent units across layers, not use units during rendering.'
+                'Inconsistent units across layers; units will not be used for rendering.'
             )
         for vispy_layer in self.layer_to_visual.values():
             vispy_layer.units = units
