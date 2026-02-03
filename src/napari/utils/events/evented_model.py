@@ -360,7 +360,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
     def reset(self):
         """Reset the state of the model to default values."""
         for name, value in self._defaults.items():
-            if isinstance(value, EventedModel):
+            if isinstance(getattr(self, name), EventedModel):
                 getattr(self, name).reset()
             elif (
                 not self.model_config.get('frozen', False)
@@ -453,10 +453,16 @@ def get_defaults(obj: BaseModel):
     """Get possibly nested default values for a Model object."""
     dflt = {}
     for k, v in obj.model_fields.items():
+        if v.exclude:
+            continue
         d = v.get_default()
         field_type = get_inner_type(v.annotation)
-        if d is None and isinstance(field_type, ModelMetaclass):
-            d = get_defaults(field_type)
+        if d is None:
+            if isinstance(field_type, ModelMetaclass):
+                d = get_defaults(field_type)
+            else:
+                d = v.get_default(call_default_factory=True, validated_data={})
+
         dflt[k] = d
     return dflt
 

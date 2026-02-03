@@ -4,31 +4,33 @@ import contextlib
 import json
 import logging
 import os
-from collections.abc import Mapping, Sequence
+from collections.abc import Mapping
 from functools import partial
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Literal, cast
 from warnings import warn
 
-from pydantic import (
-    BaseModel,
-    ValidationError,
+from pydantic import BaseModel, Field, PrivateAttr, ValidationError
+from pydantic_settings import (
+    BaseSettings,
+    EnvSettingsSource,
+    PydanticBaseSettingsSource,
+    SettingsConfigDict,
+    SettingsError,
 )
-from pydantic_settings import BaseSettings, SettingsError
 
 from napari.settings._yaml import PydanticYamlMixin
+from napari.utils.compat import StrEnum
 from napari.utils.events import EmitterGroup, EventedModel
-from napari.utils.misc import deep_update
+from napari.utils.misc import StringEnum, deep_update
 from napari.utils.translations import trans
 
 _logger = logging.getLogger(__name__)
 
 
 if TYPE_CHECKING:
-    from collections.abc import Set as AbstractSet
+    from collections.abc import Callable, Set as AbstractSet
     from typing import Any, Union
-
-    from pydantic_settings import EnvSettingsSource
 
     # TODO: needs to be fixed properly
     SettingsSourceCallable = Any
@@ -39,8 +41,29 @@ if TYPE_CHECKING:
     AbstractSetIntStr = AbstractSet[IntStr]
     DictStrAny = dict[str, Any]
     MappingIntStrAny = Mapping[IntStr, Any]
+    JSONable = str | list | dict | int | float | bool | None
 
 Dict = dict  # rename, because EventedSettings has method dict
+
+
+def _json_encode(
+    dkt: dict[type, Callable[[Any], JSONable]],
+) -> Callable[[Any], JSONable]:
+    def json_encode(value: Any) -> JSONable:
+        if type(value) in dkt:
+            return dkt[type(value)](value)
+        if isinstance(value, (StrEnum, StringEnum)):
+            return value.value
+        if isinstance(value, Path):
+            return str(value)
+        if isinstance(value, set):
+            return [str(x) for x in value]
+
+        raise TypeError(
+            f'Object of type {type(value)} is not JSON serializable'
+        )
+
+    return json_encode
 
 
 class EventedSettings(BaseSettings, EventedModel):
@@ -91,6 +114,120 @@ class EventedSettings(BaseSettings, EventedModel):
 _NOT_SET = object()
 
 
+class FileConfigSettingsSource(PydanticBaseSettingsSource):
+    """
+    Źródło danych, które ładuje JSON z pliku przekazanego w init_settings.
+    """
+
+    def get_field_value(self, field, field_name):
+        # Ta metoda jest wymagana przez interfejs, ale w tym przypadku
+        # logikę obsłużymy zbiorczo w __call__
+        return None
+
+    def __call__(self) -> Dict[str, Any]:
+        # Szukamy ścieżki do pliku w danych przekazanych do konstruktora BaseSettings
+        sources: list[str | Path] = list(
+            getattr(self.settings_cls.model_config, 'sources', [])
+        )
+        default_cfg = self.settings_cls.model_fields['config_path'].default
+
+        filepath = self.current_state.get('config_path')
+        if filepath is None:
+            return {}
+
+        if filepath != _NOT_SET and Path(filepath).exists():
+            sources.append(filepath)
+
+        if not sources:
+            return {}
+
+        data = {}
+
+        for path in sources:
+            path_ = Path(path).expanduser().resolve()
+
+            if not path_.is_file():
+                # if it wasn't the `_config_path` stated in the BaseModel itself,
+                # we warn, since this would have been user provided.
+                if path_ != default_cfg:
+                    _logger.warning(
+                        trans._(
+                            'Requested config path is not a file: {path}',
+                            path=path_,
+                        )
+                    )
+                continue
+                # get loader for yaml/json
+            if path_.suffix in {'.yaml', '.yml'}:
+                load = __import__('yaml').safe_load
+            elif path_.suffix == '.json':
+                load = __import__('json').load
+            else:
+                warn(
+                    trans._(
+                        'Unrecognized file extension for config_path: {path}',
+                        path=path,
+                    )
+                )
+                continue
+
+            try:
+                # try to parse the config file into a dict
+                new_data = load(path_.read_text()) or {}
+            except Exception as err:  # noqa: BLE001
+                _logger.warning(
+                    trans._(
+                        'The content of the napari settings file could not be read\n\nThe default settings will be used and the content of the file will be replaced the next time settings are changed.\n\nError:\n{err}',
+                        deferred=True,
+                        err=err,
+                    )
+                )
+                continue
+            assert isinstance(new_data, dict), path_.read_text()
+            deep_update(data, new_data, copy=False)
+        try:
+            # validate the data, passing config_path=None so we dont recurse
+            # back to this point again.
+            self.settings_cls(config_path=None, **data)
+        except ValidationError as err:
+            if self.settings_cls.model_config.get(
+                'strict_config_check', False
+            ):
+                raise
+
+            # if errors occur, we still want to boot, so we just remove bad keys
+            errors = err.errors()
+            msg = trans._(
+                'Validation errors in config file(s).\nThe following fields have been reset to the default value:\n\n{errors}\n',
+                deferred=True,
+                errors=errors,  # TODO: is this good enough?
+            )
+            with contextlib.suppress(Exception):
+                # we're about to nuke some settings, so just in case... try backup
+                backup_path = path_.parent / f'{path_.stem}.BAK{path_.suffix}'
+                backup_path.write_text(path_.read_text())
+
+            _logger.warning(msg)
+            try:
+                _remove_bad_keys(data, [e.get('loc', ()) for e in errors])
+            except KeyError:  # pragma: no cover
+                _logger.warning(
+                    trans._(
+                        'Failed to remove validation errors from config file. Using defaults.'
+                    )
+                )
+                data = {}
+        data['config_file_settings'] = data.copy()
+        return data
+
+
+class NapariEnvSettingsSource(EnvSettingsSource):
+    def __call__(self):
+        res = super().__call__()
+        res['env_settings'] = res.copy()
+        return res
+
+
 class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
     """This adds config read/write and yaml support to EventedSettings.
 
@@ -99,26 +236,34 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
     EventedSettings.
     """
 
-    _config_path: Path | None = None
-    _save_on_change: bool = True
+    config_path: Path | Literal[_NOT_SET] | None = Field(
+        default=None, exclude=True
+    )
+    env_settings: Dict = Field(
+        default_factory=dict, exclude=True, repr=False, frozen=True
+    )
+    _save_on_change: bool = PrivateAttr(True)
     # this dict stores the data that came specifically from the config file.
     # it's populated in `config_file_settings_source` and
     # used in `_remove_env_settings`
-    _config_file_settings: dict
+    config_file_settings: Dict = Field(
+        default_factory=dict, exclude=True, repr=False, frozen=True
+    )
 
     # provide config_path=None to prevent reading from disk.
     def __init__(self, config_path=_NOT_SET, **values: Any) -> None:
-        _cfg = (
+        cfg = (
             config_path
             if config_path is not _NOT_SET
-            else self.__private_attributes__['_config_path'].get_default()
+            else self.__class__.model_fields['config_path'].get_default()
         )
         # this line is here for usage in the `customise_sources` hook.  It
         # will be overwritten in __init__ by BaseModel._init_private_attributes
         # so we set it again after __init__.
         # self._config_path = _cfg
-        super().__init__(**values)
-        self._config_path = _cfg
+        if 'env_settings' in values:
+            raise ValueError('env_settings is a reserved field name')
+        super().__init__(config_path=cfg, **values)
 
     def _maybe_save(self):
         if self._save_on_change and self.config_path:
@@ -128,10 +273,10 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
         super()._on_sub_event(event, field)
         self._maybe_save()
 
-    @property
-    def config_path(self):
-        """Return the path to/from which settings be saved/loaded."""
-        return self._config_path
+    # @property
+    # def config_path(self):
+    #     """Return the path to/from which settings be saved/loaded."""
+    #     return self._config_path
 
     def dict(
         self,
@@ -196,9 +341,11 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
     def _dump(self, path: str, data: Dict) -> None:
         """Encode and dump `data` to `path` using a path-appropriate encoder."""
         if str(path).endswith(('.yaml', '.yml')):
-            _data = self._yaml_dump(data)
+            data_ = self._yaml_dump(data)
         elif str(path).endswith('.json'):
-            _data = json.dumps(data)
+            data_ = json.dumps(
+                data, default=_json_encode(self.model_config['json_encoders'])
+            )
         else:
             raise NotImplementedError(
                 trans._(
@@ -208,14 +355,14 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
                 )
             )
         with open(path, 'w') as target:
-            target.write(_data)
+            target.write(data_)
 
-    def env_settings(self) -> Dict[str, Any]:
-        """Get a dict of fields that were provided as environment vars."""
-        env_settings = getattr(self.model_config, '_env_settings', {})
-        if callable(env_settings):
-            env_settings = env_settings(self)
-        return env_settings
+    # def env_settings(self) -> Dict[str, Any]:
+    #     """Get a dict of fields that were provided as environment vars."""
+    #     env_settings = getattr(self, '_env_settings', {})
+    #     if callable(env_settings):
+    #         env_settings = env_settings(self)
+    #     return env_settings
 
     def _remove_env_settings(self, data):
         """Remove key:values from `data` that match settings from env vars.
@@ -224,53 +371,72 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
         including settings that were provided by environment variables (which
         are usually more temporary).
         """
-        env_data = self.env_settings()
-        if env_data:
+        if self.env_settings:
             _restore_config_data(
-                data, env_data, getattr(self, '_config_file_settings', {})
+                data, self.env_settings, self.config_file_settings
             )
 
-    class Config:
-        # If True: validation errors in a config file will raise an exception
-        # otherwise they will warn to the logger
-        strict_config_check: bool = False
-        sources: Sequence[str] = []
-        _env_settings: SettingsSourceCallable
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls: type[BaseSettings],
+        init_settings: PydanticBaseSettingsSource,
+        env_settings: PydanticBaseSettingsSource,
+        dotenv_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
+    ) -> tuple[PydanticBaseSettingsSource, ...]:
+        return (
+            init_settings,
+            NapariEnvSettingsSource(settings_cls),
+            FileConfigSettingsSource(settings_cls),
+            file_secret_settings,
+        )
 
-        @classmethod
-        def customise_sources(
-            cls,
-            init_settings: SettingsSourceCallable,
-            env_settings: EnvSettingsSource,
-            file_secret_settings: SettingsSourceCallable,
-        ) -> tuple[SettingsSourceCallable, ...]:
-            """customise the way data is loaded.
+    model_config = SettingsConfigDict(
+        strict_config_check=False,
+    )
 
-            This does 2 things:
-            1) adds the `config_file_settings_source` to the sources, which
-               will load data from `settings._config_path` if it exists.
-            2) adds support for nested env_vars, such that if a model with an
-               env_prefix of "foo_" has a field named `bar`, then you can use
-               `FOO_BAR_X=1` to set the x attribute in `foo.bar`.
-
-            Priority is given to sources earlier in the list.  You can resort
-            the return list to change the priority of sources.
-            """
-            cls._env_settings = nested_env_settings(env_settings)
-            return (  # type: ignore[return-value]
-                init_settings,
-                cls._env_settings,
-                cls._config_file_settings_source,
-                file_secret_settings,
-            )
-            # Even when EventedConfigFileSettings is a subclass of BaseSettings,
-            # mypy do not see this
-
-        @classmethod
-        def _config_file_settings_source(
-            cls, settings: EventedConfigFileSettings
-        ) -> dict[str, Any]:
-            return config_file_settings_source(settings)
+    # class Config:
+    #     # If True: validation errors in a config file will raise an exception
+    #     # otherwise they will warn to the logger
+    #     strict_config_check: bool = False
+    #     sources: Sequence[str] = []
+    #     _env_settings: SettingsSourceCallable
+    #
+    #     @classmethod
+    #     def customise_sources(
+    #         cls,
+    #         init_settings: SettingsSourceCallable,
+    #         env_settings: EnvSettingsSource,
+    #         file_secret_settings: SettingsSourceCallable,
+    #     ) -> tuple[SettingsSourceCallable, ...]:
+    #         """customise the way data is loaded.
+    #
+    #         This does 2 things:
+    #         1) adds the `config_file_settings_source` to the sources, which
+    #            will load data from `settings._config_path` if it exists.
+    #         2) adds support for nested env_vars, such that if a model with an
+    #            env_prefix of "foo_" has a field named `bar`, then you can use
+    #            `FOO_BAR_X=1` to set the x attribute in `foo.bar`.
+    #
+    #         Priority is given to sources earlier in the list.  You can resort
+    #         the return list to change the priority of sources.
+    #         """
+    #         cls._env_settings = nested_env_settings(env_settings)
+    #         return (  # type: ignore[return-value]
+    #             init_settings,
+    #             cls._env_settings,
+    #             cls._config_file_settings_source,
+    #             file_secret_settings,
+    #         )
+    #         # Even when EventedConfigFileSettings is a subclass of BaseSettings,
+    #         # mypy do not see this
+    #
+    #     @classmethod
+    #     def _config_file_settings_source(
+    #         cls, settings: EventedConfigFileSettings
+    #     ) -> dict[str, Any]:
+    #         return config_file_settings_source(settings)
 
 
 # Utility functions
