@@ -238,7 +238,9 @@ class _SliceInput:
         return all(abs(v) < 1e-8 for v in displayed_mapped_subspace)
 
 
-def apply_units(data_to_world: Affine, units: Sequence[str] | None) -> Affine:
+def apply_units_to_transform(
+    data_to_world: Affine, units: Sequence[str] | None
+) -> Affine:
     """Applies unit scaling to a data_to_world transform.
 
     Parameters

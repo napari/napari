@@ -30,7 +30,7 @@ from napari.layers.base._base_mouse_bindings import (
 from napari.layers.utils._slice_input import (
     _SliceInput,
     _ThickNDSlice,
-    apply_units,
+    apply_units_to_transform,
 )
 from napari.layers.utils.interactivity_utils import (
     drag_data_to_projected_distance,
@@ -149,7 +149,7 @@ class _LayerSlicingState(ABC):
             return _ThickNDSlice.make_full(point=(np.nan,) * self.ndim)
 
         world_to_data = self.layer._data_to_world.inverse
-        world_to_data = apply_units(world_to_data, self._units)
+        world_to_data = apply_units_to_transform(world_to_data, self._units)
 
         return self._slice_input.data_slice(world_to_data=world_to_data)
 

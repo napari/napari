@@ -10,7 +10,7 @@ from napari.layers.utils._color_manager_constants import ColorMode
 from napari.layers.utils._slice_input import (
     _SliceInput,
     _ThickNDSlice,
-    apply_units,
+    apply_units_to_transform,
 )
 from napari.layers.utils.color_manager import ColorManager
 from napari.layers.utils.color_transformations import ColorType
@@ -814,7 +814,7 @@ class _VectorsSlicingState(_LayerSlicingState):
         # things either by caching the world-to-data transform on the layer
         # or by lazily evaluating it in the slice task itself.
         world_to_data = self.layer._data_to_world.inverse
-        world_to_data = apply_units(world_to_data, dims.units)
+        world_to_data = apply_units_to_transform(world_to_data, dims.units)
         slice_indices = slice_input.data_slice(world_to_data)
         return self.make_slice_request_internal(slice_input, slice_indices)
 
