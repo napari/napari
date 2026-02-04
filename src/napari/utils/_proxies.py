@@ -21,6 +21,8 @@ class ReadOnlyWrapper(wrapt.ObjectProxy):
     """
 
     def __init__(self, wrapped: Any, exceptions: tuple[str, ...] = ()):
+        if isinstance(wrapped, ReadOnlyWrapper):
+            wrapped = wrapped.__wrapped__
         super().__init__(wrapped)
         self._self_exceptions = exceptions
 
@@ -31,7 +33,7 @@ class ReadOnlyWrapper(wrapt.ObjectProxy):
         ):
             raise TypeError(
                 trans._(
-                    'cannot set attribute {name}',
+                    'cannot set attribute {name} (read only)',
                     deferred=True,
                     name=name,
                 )
@@ -42,9 +44,16 @@ class ReadOnlyWrapper(wrapt.ObjectProxy):
     def __setitem__(self, name: str, val: Any) -> None:
         if name not in self._self_exceptions:
             raise TypeError(
-                trans._('cannot set item {name}', deferred=True, name=name)
+                trans._(
+                    'cannot set item {name} (read only)',
+                    deferred=True,
+                    name=name,
+                )
             )
         super().__setitem__(name, val)
+
+    def __call__(self, *args, **kwargs) -> Any:
+        self.__wrapped__(args, **kwargs)
 
 
 _SUNDER = re.compile('^_[^_]')
