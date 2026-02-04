@@ -1074,14 +1074,27 @@ class VispyCanvas:
 
             # layer overlays are always "gridded"
             # (they always appear in the same viewbox as the layer itself)
-            for layer_idx in reversed(layer_indices):
+            for layer_idx in layer_indices:
                 layer = self.viewer.layers[layer_idx]
+                ordered_overlays = []
                 for (
                     overlay,
                     vispy_overlay,
                 ) in self._layer_overlay_to_visual.get(layer, {}).items():
                     if layer.visible and is_visible_tileable(overlay):
-                        yield overlay, vispy_overlay, view
+                        # this should check for tiling direction when it becomes settable
+                        if overlay.position in (
+                            'top_left',
+                            'top_center',
+                            'bottom_left',
+                        ):
+                            i = 0
+                        else:
+                            i = -1
+                        ordered_overlays.insert(
+                            i, (overlay, vispy_overlay, view)
+                        )
+                yield from ordered_overlays
 
     def _update_overlay_canvas_positions(self, event=None):
         # TODO: make settable
