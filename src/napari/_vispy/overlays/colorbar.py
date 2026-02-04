@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -51,6 +52,7 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
             )
             self.layer.events.face_colormap.connect(self._on_colormap_change)
 
+        self.overlay.events.visible.connect(self._on_visible_change)
         self.overlay.events.size.connect(self._on_size_change)
         self.overlay.events.tick_length.connect(self._on_ticks_change)
         self.overlay.events.font_size.connect(self._on_ticks_change)
@@ -59,6 +61,18 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
         get_settings().appearance.events.theme.connect(self._on_data_change)
 
         self.reset()
+
+    def _on_visible_change(self) -> None:
+        if not (
+            getattr(self.layer, 'contrast_limits', None)
+            or self.layer.face_contrast_limits
+        ):
+            warnings.warn(
+                'Colorbar overlay is set to visible but the layer has no '
+                'contrast limits set. Hiding colorbar overlay.',
+                UserWarning,
+            )
+            self.layer.colorbar.visible = False
 
     def _on_data_change(self) -> None:
         if (
@@ -81,6 +95,13 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
             if getattr(self.layer, 'contrast_limits', None):
                 self._on_gamma_change()
             self._on_ticks_change()
+        else:
+            warnings.warn(
+                'Colorbar overlay is set to visible but the layer has no '
+                'contrast limits set. Hiding colorbar overlay.',
+                UserWarning,
+            )
+            self.layer.colorbar.visible = False
 
     def _on_colormap_change(self) -> None:
         colormap = (
