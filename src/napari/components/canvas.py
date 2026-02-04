@@ -61,7 +61,6 @@ class Canvas(EventedModel):
     overlay_tiling: OverlayTiling = Field(
         default_factory=OverlayTiling, allow_mutation=False
     )
-    font_size: float = 10
     _overlays: EventedDict[str, Overlay] = PrivateAttr(
         default_factory=EventedDict
     )
