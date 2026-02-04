@@ -724,7 +724,7 @@ class VispyCanvas:
         -------
         None
         """
-        self.viewer._canvas_size = self.size
+        self.viewer.canvas._size = self.size
 
     def add_layer_visual_mapping(
         self, napari_layer: Layer, vispy_layer: VispyBaseLayer
