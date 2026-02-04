@@ -1072,29 +1072,35 @@ class VispyCanvas:
                 ):
                     yield overlay, vispy_overlays[viewbox_idx], view
 
+            # we want to ensure that the tiling of layer overlays always looks
+            # the same as the llayerlist order, so we reverse the direction for
+            # some cases
+            overlays_by_tiling_order = {'direct': [], 'reversed': []}
+
             # layer overlays are always "gridded"
             # (they always appear in the same viewbox as the layer itself)
             for layer_idx in layer_indices:
                 layer = self.viewer.layers[layer_idx]
-                ordered_overlays = []
                 for (
                     overlay,
                     vispy_overlay,
                 ) in self._layer_overlay_to_visual.get(layer, {}).items():
                     if layer.visible and is_visible_tileable(overlay):
-                        # this should check for tiling direction when it becomes settable
+                        # TODO: this should check for tiling direction when it becomes settable
                         if overlay.position in (
-                            'top_left',
-                            'top_center',
-                            'bottom_left',
+                            CanvasPosition.TOP_LEFT,
+                            CanvasPosition.TOP_CENTER,
+                            CanvasPosition.BOTTOM_LEFT,
                         ):
-                            i = 0
+                            direction = 'reversed'
                         else:
-                            i = -1
-                        ordered_overlays.insert(
-                            i, (overlay, vispy_overlay, view)
+                            direction = 'direct'
+                        overlays_by_tiling_order[direction].append(
+                            (overlay, vispy_overlay, view)
                         )
-                yield from ordered_overlays
+
+            yield from reversed(overlays_by_tiling_order['reversed'])
+            yield from overlays_by_tiling_order['direct']
 
     def _update_overlay_canvas_positions(self, event=None):
         # TODO: make settable
