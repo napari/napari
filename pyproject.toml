@@ -161,6 +161,7 @@ testing = [
     "qtconsole>=4.5.1",
     "rich>=12.0.0",
     "napari[optional-base]",
+    "pyopengl"
 ]
 testing_extra = [
     "torch>=1.10.2",
@@ -257,6 +258,7 @@ testing = [
     "qtconsole>=4.5.1",
     "rich>=12.0.0",
     "napari[optional-base]",
+    "pyopengl"
 ]
 testing_extra = [
     "torch>=1.10.2",
