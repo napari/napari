@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Literal, cast
 from warnings import warn
 
 from pydantic import BaseModel, Field, PrivateAttr, ValidationError
+from pydantic.fields import FieldInfo
 from pydantic_settings import (
     BaseSettings,
     EnvSettingsSource,
@@ -115,17 +116,17 @@ _NOT_SET = object()
 
 
 class FileConfigSettingsSource(PydanticBaseSettingsSource):
-    """
-    Źródło danych, które ładuje JSON z pliku przekazanego w init_settings.
-    """
+    """Class to load settings from a config file (yaml, json)."""
 
-    def get_field_value(self, field, field_name):
-        # Ta metoda jest wymagana przez interfejs, ale w tym przypadku
-        # logikę obsłużymy zbiorczo w __call__
-        return None
+    def get_field_value(
+        self, field: FieldInfo, field_name: str
+    ) -> tuple[Any, str, bool]:
+        """Required to satisfy PydanticBaseSettingsSource interface.
+        All logic is in __call__ method.
+        """
+        raise NotImplementedError
 
     def __call__(self) -> Dict[str, Any]:
-        # Szukamy ścieżki do pliku w danych przekazanych do konstruktora BaseSettings
         sources: list[str | Path] = list(
             getattr(self.settings_cls.model_config, 'sources', [])
         )
