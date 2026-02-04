@@ -1074,7 +1074,7 @@ class VispyCanvas:
 
             # layer overlays are always "gridded"
             # (they always appear in the same viewbox as the layer itself)
-            for layer_idx in layer_indices:
+            for layer_idx in reversed(layer_indices):
                 layer = self.viewer.layers[layer_idx]
                 for (
                     overlay,
