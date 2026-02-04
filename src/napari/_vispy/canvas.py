@@ -356,7 +356,7 @@ class VispyCanvas:
     def _on_cursor(self) -> None:
         """Create a QCursor based on the napari cursor settings and set in Vispy."""
         cursor = self.viewer.cursor.style
-        brush_overlay = self.viewer._brush_circle_overlay
+        brush_overlay = self.viewer.canvas._brush_circle_overlay
         brush_overlay.visible = False
 
         if cursor in {'square', 'circle', 'circle_frozen'}:
