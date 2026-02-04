@@ -284,7 +284,7 @@ class VispyCanvas:
             self._update_canvas_overlays
         )
 
-        self.viewer.canvas.events.overlay_tiling.connect(
+        self.viewer.canvas.overlay_tiling.events.connect(
             self._update_overlay_canvas_positions
         )
 
