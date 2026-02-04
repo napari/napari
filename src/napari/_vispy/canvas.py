@@ -901,6 +901,13 @@ class VispyCanvas:
         # go through all overlays and ensure there are the exact amount of
         # corresponding visuals depending on number of views to display
         for overlay in self.viewer.canvas._overlays.values():
+            # only create overlays when they are visible. If not, we connect the visible
+            # event of this overlay to this method until it's finally visible
+            if not overlay.visible:
+                overlay.events.visible.connect(self._update_canvas_overlays)
+                continue
+            overlay.events.visible.disconnect(self._update_canvas_overlays)
+
             vispy_overlays = self._canvas_overlay_to_visual.setdefault(
                 overlay, []
             )
