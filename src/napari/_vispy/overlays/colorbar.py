@@ -52,7 +52,9 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
             )
             self.layer.events.face_colormap.connect(self._on_colormap_change)
 
-        self.overlay.events.visible.connect(self._on_visible_change)
+        self.overlay.events.visible.connect(
+            self._check_contrast_limits_colorbar
+        )
         self.overlay.events.size.connect(self._on_size_change)
         self.overlay.events.tick_length.connect(self._on_ticks_change)
         self.overlay.events.font_size.connect(self._on_ticks_change)
@@ -62,7 +64,7 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
 
         self.reset()
 
-    def _on_visible_change(self) -> None:
+    def _check_contrast_limits_colorbar(self) -> None:
         if not (
             getattr(self.layer, 'contrast_limits', None)
             or self.layer.face_contrast_limits
