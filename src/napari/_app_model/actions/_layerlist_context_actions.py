@@ -13,7 +13,7 @@ from __future__ import annotations
 from functools import partial
 from typing import TYPE_CHECKING
 
-from app_model.types import Action, SubmenuItem
+from app_model.types import Action, SubmenuItem, ToggleRule
 
 from napari._app_model.constants import MenuGroup, MenuId
 from napari._app_model.context import LayerListSelectionContextKeys as LLSCK
@@ -254,6 +254,16 @@ LAYERLIST_CONTEXT_ACTIONS: list[Action] = [
         enablement=(
             (LLSCK.num_selected_layers > 0)
             & LLSCK.all_selected_layers_support_colorbar
+        ),
+    ),
+    Action(
+        id='napari.layer.name_overlay',
+        title=trans._('Name Overlay'),
+        callback=_layer_actions._toggle_name_overlay,
+        menus=[MenuId.LAYERS_CONTEXT_VISUALIZATION, MenuId.LAYERS_VISUALIZE],
+        enablement=(LLSCK.num_selected_layers > 0),
+        toggled=ToggleRule(
+            get_current=_layer_actions._are_name_overlays_visible
         ),
     ),
 ]
