@@ -54,7 +54,6 @@ class ExperimentalSettings(EventedSettings):
             'Setting this higher removes more points from polygons or paths. \nSetting this to 0 keeps all vertices of '
             'a given polygon or path.'
         ),
-        type=float,
         ge=0,
     )
 
@@ -67,7 +66,6 @@ class ExperimentalSettings(EventedSettings):
             'Value determines how many screen pixels one has to move before another vertex can be added to the polygon'
             'or path.'
         ),
-        type=int,
         gt=0,
         lt=50,
     )
