@@ -1018,6 +1018,7 @@ class VispyCanvas:
             vispy_overlay = self._create_or_update_vispy_overlay(
                 overlay, vispy_overlay, parent, layer=layer
             )
+            overlay_to_visual[overlay] = vispy_overlay
             if isinstance(overlay, CanvasOverlay):
                 vispy_overlay.canvas_position_callback = (
                     self._defer_overlay_position_update
