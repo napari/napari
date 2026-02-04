@@ -147,4 +147,6 @@ class Canvas(EventedModel):
         if self.background_color_override is not None:
             return self.background_color_override
 
-        return get_theme(get_settings().appearance.theme).canvas.as_rgb_tuple()
+        return ColorValue(
+            get_theme(get_settings().appearance.theme).canvas.as_rgb_tuple()
+        )

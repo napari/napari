@@ -39,7 +39,7 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
 
         self.viewer.events.theme.connect(self._on_rendering_change)
         self.viewer.camera.events.zoom.connect(self._on_size_or_zoom_change)
-        self.viewer.canvas.events.background_color.connect(
+        self.viewer.canvas.events.background_color_override.connect(
             self._on_rendering_change
         )
 
@@ -161,7 +161,6 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
                         self.viewer.theme
                     ).canvas.as_hex()
                     background_color = transform_color(background_color)[0]
-                background_color = self.viewer.canvas.background_color
                 color = np.subtract(1, background_color)
                 color[-1] = background_color[-1]
 

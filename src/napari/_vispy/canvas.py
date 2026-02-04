@@ -908,6 +908,10 @@ class VispyCanvas:
                 continue
             overlay.events.visible.disconnect(self._update_canvas_overlays)
 
+            # connect position callbacks
+            self._connect_canvas_overlay_events(overlay)
+            overlay.events.gridded.connect(self._update_canvas_overlays)
+
             vispy_overlays = self._canvas_overlay_to_visual.setdefault(
                 overlay, []
             )
@@ -915,7 +919,7 @@ class VispyCanvas:
             gridded = (
                 self.viewer.canvas.grid.enabled
                 and overlay.gridded
-                and self.viewer.layers
+                and len(self.viewer.layers)
             )
 
             # delete redundant vispy overlays (always keep 1)
@@ -958,10 +962,6 @@ class VispyCanvas:
                     self._defer_overlay_position_update
                 )
                 vispy_overlays.append(vispy_overlay)
-
-            # connect position callbacks
-            self._connect_canvas_overlay_events(overlay)
-            overlay.events.gridded.connect(self._update_canvas_overlays)
 
         self._defer_overlay_position_update()
 
@@ -1050,7 +1050,7 @@ class VispyCanvas:
             return (
                 overlay.gridded
                 and self.viewer.canvas.grid.enabled
-                and self.viewer.layers
+                and len(self.viewer.layers)
             )
 
         # first the base view: non-gridded viewer overlays which appear
@@ -1075,7 +1075,7 @@ class VispyCanvas:
             # in the base (None) viewbox
             view = (
                 viewbox_idx
-                if self.viewer.canvas.grid.enabled and self.viewer.layers
+                if self.viewer.canvas.grid.enabled and len(self.viewer.layers)
                 else None
             )
 

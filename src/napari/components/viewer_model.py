@@ -308,6 +308,17 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         )
         return self.canvas._overlays['welcome']
 
+    @property
+    def grid(self):
+        warnings.warn(
+            trans._(
+                'viewer.grid is a deprecated attribute since 0.7.1. Use viewer.canvas.grid instead.'
+            ),
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.canvas.grid
+
     def _tooltip_visible_update(self, event):
         self.tooltip.visible = event.value
 
