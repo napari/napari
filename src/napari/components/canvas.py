@@ -12,7 +12,9 @@ from napari.components.overlays import (
 )
 from napari.settings import get_settings
 from napari.utils.color import ColorValue
+from napari.utils.compat import StrEnum
 from napari.utils.events import EventedDict, EventedModel
+from napari.utils.theme import get_theme
 
 DEFAULT_CANVAS_OVERLAYS = {
     'welcome': WelcomeOverlay,
@@ -23,6 +25,21 @@ DEFAULT_CANVAS_OVERLAYS = {
 }
 
 
+class Orientation(StrEnum):
+    HORIZONTAL = 'horizontal'
+    VERTICAL = 'vertical'
+
+
+class OverlayTiling(EventedModel):
+    padding: tuple[float, float] = (10.0, 10.0)
+    top_left: Orientation = Orientation.VERTICAL
+    top_center: Orientation = Orientation.VERTICAL
+    top_right: Orientation = Orientation.HORIZONTAL
+    bottom_left: Orientation = Orientation.HORIZONTAL
+    bottom_center: Orientation = Orientation.VERTICAL
+    bottom_right: Orientation = Orientation.VERTICAL
+
+
 class Canvas(EventedModel):
     """
     Canvas evented model.
@@ -31,7 +48,7 @@ class Canvas(EventedModel):
 
     Attributes
     ----------
-    background_color_override :
+    background_color :
         ...
     grid :
         ...
@@ -41,6 +58,10 @@ class Canvas(EventedModel):
 
     background_color_override: ColorValue | None = None
     grid: GridCanvas = Field(default_factory=GridCanvas, allow_mutation=False)
+    overlay_tiling: OverlayTiling = Field(
+        default_factory=OverlayTiling, allow_mutation=False
+    )
+    font_size: float = 10
     _overlays: EventedDict[str, Overlay] = PrivateAttr(
         default_factory=EventedDict
     )
@@ -121,3 +142,10 @@ class Canvas(EventedModel):
             settings.application.grid_width,
         )
         self.grid.spacing = settings.application.grid_spacing
+
+    @property
+    def background_color(self):
+        if self.background_color_override is not None:
+            return self.background_color_override
+
+        return get_theme(get_settings().appearance.theme).canvas.as_rgb_tuple()

@@ -22,7 +22,6 @@ from napari._vispy.utils.visual import create_vispy_overlay
 from napari.components._viewer_constants import CanvasPosition
 from napari.components.overlays import CanvasOverlay, SceneOverlay
 from napari.utils._proxies import ReadOnlyWrapper
-from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils.events import disconnect_events
 from napari.utils.events.event import Event
 from napari.utils.interactions import (
@@ -32,7 +31,6 @@ from napari.utils.interactions import (
     mouse_release_callbacks,
     mouse_wheel_callbacks,
 )
-from napari.utils.theme import get_theme
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -177,7 +175,6 @@ class VispyCanvas:
         self._pause_scene_graph = False
         self.max_texture_sizes = None
         self._last_theme_color = None
-        self._background_color_override = None
         self.viewer = viewer
         self._scene_canvas = NapariSceneCanvas(
             *args, keys=None, vsync=True, **kwargs
@@ -212,9 +209,7 @@ class VispyCanvas:
         self._last_viewbox_size = np.array((0, 0))
         self._needs_overlay_position_update = False
 
-        self.bgcolor = transform_color(
-            get_theme(self.viewer.theme).canvas.as_hex()
-        )[0]
+        self._on_bgcolor_change()
 
         # Call get_max_texture_sizes() here so that we query OpenGL right
         # now while we know a Canvas exists. Later calls to
@@ -249,11 +244,10 @@ class VispyCanvas:
         self._scene_canvas.events.draw.connect(self.on_draw, position='last')
         self.viewer.cursor.events.style.connect(self._on_cursor)
         self.viewer.cursor.events.size.connect(self._on_cursor)
-        # position=first is important to some downstream components such as
-        # scale_bar overlay which need to have access to the updated color
-        # by the time they get updated as well
-        self.viewer.events.theme.connect(
-            self._on_theme_change, position='first'
+
+        self.viewer.events.theme.connect(self._on_bgcolor_change)
+        self.viewer.canvas.events.background_color_override.connect(
+            self._on_bgcolor_change
         )
 
         self.viewer.camera.events.mouse_pan.connect(self._on_interactive)
@@ -289,6 +283,11 @@ class VispyCanvas:
         self.viewer._overlays.events.changed.connect(
             self._update_canvas_overlays
         )
+
+        self.viewer.canvas.events.overlay_tiling.connect(
+            self._update_overlay_canvas_positions
+        )
+
         self.destroyed.connect(self._disconnect_events)
 
     @property
@@ -311,36 +310,8 @@ class VispyCanvas:
         """Bound method returning signal indicating whether the window screen has changed."""
         return self._scene_canvas._backend.screen_changed
 
-    @property
-    def background_color_override(self) -> str | npt.ArrayLike | None:
-        """Background color of VispyCanvas.
-
-        When not None, color is shown instead of VispyCanvas.bgcolor.
-        """
-        return self._background_color_override
-
-    @background_color_override.setter
-    def background_color_override(
-        self, value: str | npt.ArrayLike | None
-    ) -> None:
-        self._background_color_override = value
-        self.bgcolor = value or self._last_theme_color
-
-    def _on_theme_change(self, event: Event) -> None:
-        self._set_theme_change(event.value)
-
-    def _set_theme_change(self, theme: str) -> None:
-        from napari.utils.theme import get_theme
-
-        # Note 1. store last requested theme color, in case we need to reuse it
-        # when clearing the background_color_override, without needing to
-        # keep track of the viewer.
-        # Note 2. the reason for using the `as_hex` here is to avoid
-        # `UserWarning` which is emitted when RGB values are above 1
-        self._last_theme_color = transform_color(
-            get_theme(theme).canvas.as_hex()
-        )[0]
-        self.bgcolor = self._last_theme_color
+    def _on_bgcolor_change(self) -> None:
+        self.bgcolor = self.viewer.canvas.background_color
 
     def _disconnect_events(self) -> None:
         disconnect_events(self.viewer.events, self)
@@ -350,17 +321,6 @@ class VispyCanvas:
         disconnect_events(self.viewer.camera.events, self)
         disconnect_events(self.viewer.cursor.events, self)
         disconnect_events(self._scene_canvas.events, self)
-
-    @property
-    def bgcolor(self) -> str:
-        """Background color of the vispy scene canvas as a hex string. The setter expects str
-        (any in vispy.color.get_color_names) or hex starting with # or a tuple | np.array ({3,4},)
-        with values between 0 and 1."""
-        return self._scene_canvas.bgcolor.hex
-
-    @bgcolor.setter
-    def bgcolor(self, value: str | npt.ArrayLike) -> None:
-        self._scene_canvas.bgcolor = self._background_color_override or value
 
     @property
     def central_widget(self) -> Widget:
@@ -1135,8 +1095,7 @@ class VispyCanvas:
                         yield overlay, vispy_overlay, view
 
     def _update_overlay_canvas_positions(self, event=None):
-        # TODO: make settable
-        x_padding = y_padding = 10.0
+        x_padding, y_padding = self.viewer.canvas.overlay_tiling.padding
         x_offset_total = {}
         y_offset_total = {}
         for (
@@ -1144,7 +1103,6 @@ class VispyCanvas:
             vispy_overlay,
             view,
         ) in self._get_ordered_visible_canvas_overlays():
-            # TODO: vertical vs horizontal tiling should be settable!
             x_offset_total.setdefault(
                 view, dict.fromkeys(CanvasPosition, x_padding)
             )
@@ -1156,9 +1114,12 @@ class VispyCanvas:
             y_offset = y_offset_total[view][overlay.position]
 
             # add offset to the following overlays based on tiling direction
-            # these are currently hardcoded, so we just tile horizontally or
-            # vertically depending on which corner we're on
-            if overlay.position in ('top_right', 'bottom_left'):
+            if (
+                getattr(
+                    self.viewer.canvas.overlay_tiling, str(overlay.position)
+                )
+                == 'horizontal'
+            ):
                 x_offset_total[view][overlay.position] += (
                     vispy_overlay.x_size + x_padding
                 )
