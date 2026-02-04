@@ -6,6 +6,7 @@ wrap.
 import contextlib
 import inspect
 import os
+import platform
 import sys
 import time
 import uuid
@@ -34,7 +35,7 @@ from qtpy.QtCore import (
     Qt,
     Slot,
 )
-from qtpy.QtGui import QHideEvent, QIcon, QImage, QShowEvent
+from qtpy.QtGui import QHideEvent, QImage, QShowEvent
 from qtpy.QtWidgets import (
     QApplication,
     QDialog,
@@ -58,6 +59,7 @@ from napari._qt.dialogs.qt_activity_dialog import QtActivityDialog
 from napari._qt.dialogs.qt_notification import NapariQtNotification
 from napari._qt.qt_event_loop import (
     NAPARI_ICON_PATH,
+    _svg_path_to_icon,
     get_qapp,
     quit_app as quit_app_,
 )
@@ -141,7 +143,7 @@ class _QtMainWindow(QMainWindow):
         )
         self._quit_app = False
 
-        self.setWindowIcon(QIcon(self._window_icon))
+        get_qapp().setWindowIcon(_svg_path_to_icon(self._window_icon))
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         center = QWidget(self)
         center.setLayout(QHBoxLayout())
@@ -737,6 +739,7 @@ class Window:
         get_settings().appearance.events.font_size.connect(
             self._update_theme_font_size
         )
+        get_settings().appearance.events.logo.connect(self._update_logo)
 
         self._add_viewer_dock_widget(self._qt_viewer.dockConsole, tabify=False)
         self._add_viewer_dock_widget(
@@ -1600,6 +1603,20 @@ class Window:
             self._qt_viewer.setStyleSheet(style_sheet)
             if self._qt_viewer._console:
                 self._qt_viewer._console._update_theme(style_sheet=style_sheet)
+
+    def _update_logo(self):
+        from napari.utils.logo import get_logo_path
+        from napari.utils.theme import get_system_theme
+
+        path = get_logo_path(
+            logo=get_settings().appearance.logo,
+            template='padded' if platform.system() == 'Darwin' else 'plain',
+            theme=get_system_theme(),
+        )
+        self._qt_window._window_icon = path
+        get_qapp().setWindowIcon(
+            _svg_path_to_icon(self._qt_window._window_icon)
+        )
 
     def _status_changed(self, event):
         """Update status bar.

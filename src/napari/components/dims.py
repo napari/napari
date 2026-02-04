@@ -210,13 +210,10 @@ class Dims(EventedModel):
         axis_labels = values['axis_labels']
         labels_ndim = len(axis_labels)
         if labels_ndim < ndim:
-            # Append new "default" labels to existing ones
-            if axis_labels == tuple(map(str, range(labels_ndim))):
-                updated['axis_labels'] = tuple(map(str, range(ndim)))
-            else:
-                updated['axis_labels'] = (
-                    tuple(map(str, range(ndim - labels_ndim))) + axis_labels
-                )
+            # Prepend negative indexed default labels to existing ones
+            updated['axis_labels'] = (
+                tuple(map(str, range(-ndim, -labels_ndim))) + axis_labels
+            )
         elif labels_ndim > ndim:
             updated['axis_labels'] = axis_labels[-ndim:]
 

@@ -47,7 +47,7 @@ class Vectors(Layer):
         provided scale, rotate, and shear values.
     axis_labels : tuple of str, optional
         Dimension names of the layer data.
-        If not provided, axis_labels will be set to (..., 'axis -2', 'axis -1').
+        If not provided, axis_labels will be set to (..., '-2', '-1').
     blending : str
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are

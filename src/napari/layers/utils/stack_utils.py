@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import itertools
-import warnings
+import logging
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -15,6 +15,8 @@ from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from napari.types import FullLayerData
+
+logger = logging.getLogger(__name__)
 
 
 def slice_from_axis(array, *, axis, element):
@@ -43,7 +45,7 @@ def slice_from_axis(array, *, axis, element):
         import dask.array as da
 
         array = da.from_zarr(array)
-        warnings.warn(
+        logger.info(
             trans._(
                 'zarr array cannot be sliced lazily, converted to dask array.',
                 deferred=True,
@@ -382,9 +384,9 @@ def images_to_stack(images: list[Image], axis: int = 0, **kwargs) -> Image:
         import dask.array as da
 
         stacker = da.stack
-        warnings.warn(
+        logger.info(
             trans._(
-                'zarr array cannot be stacked lazily, using dask array to stack.',
+                'zarr array cannot be sliced lazily, converted to dask array.',
                 deferred=True,
             )
         )
@@ -406,7 +408,7 @@ def images_to_stack(images: list[Image], axis: int = 0, **kwargs) -> Image:
         meta['units'] = (pint.get_application_registry().pixel,) + meta[
             'units'
         ]
-        meta['axis_labels'] = (f'axis -{data.ndim + 1}',) + meta['axis_labels']
+        meta['axis_labels'] = (f'-{data.ndim + 1}',) + meta['axis_labels']
 
     return Image(new_data, **meta)
 
