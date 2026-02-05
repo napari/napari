@@ -1401,9 +1401,8 @@ class Labels(ScalarFieldBase):
         # Use floor to match old sphere_indices behavior: points where dist <= radius
         # means integer coordinates from -floor(radius) to +floor(radius)
         abs_scale = np.abs(paint_scale)
-        radius_pixels = np.floor(
-            radius * abs_scale / np.min(abs_scale)
-        ).astype(int)
+        scale_normalized = abs_scale / np.min(abs_scale)
+        radius_pixels = np.floor(radius / scale_normalized).astype(int)
 
         center = np.round(coord_paint).astype(int)
 
