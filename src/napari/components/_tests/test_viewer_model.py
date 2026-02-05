@@ -427,25 +427,25 @@ def test_grid():
     for _i in range(6):
         data = np.random.random((15, 15))
         viewer.add_image(data)
-    assert not viewer.grid.enabled
-    assert viewer.grid.actual_shape(6) == (1, 1)
-    assert viewer.grid.stride == 1
-    assert viewer.grid.spacing == 0
+    assert not viewer.canvas.grid.enabled
+    assert viewer.canvas.grid.actual_shape(6) == (1, 1)
+    assert viewer.canvas.grid.stride == 1
+    assert viewer.canvas.grid.spacing == 0
 
     # enter grid view
-    viewer.grid.enabled = True
-    assert viewer.grid.enabled
-    assert viewer.grid.actual_shape(6) == (2, 3)
-    assert viewer.grid.stride == 1
-    assert viewer.grid.spacing == 0
+    viewer.canvas.grid.enabled = True
+    assert viewer.canvas.grid.enabled
+    assert viewer.canvas.grid.actual_shape(6) == (2, 3)
+    assert viewer.canvas.grid.stride == 1
+    assert viewer.canvas.grid.spacing == 0
 
     # reenter grid view with new stride
-    viewer.grid.stride = -2
-    viewer.grid.enabled = True
-    assert viewer.grid.enabled
-    assert viewer.grid.actual_shape(6) == (2, 2)
-    assert viewer.grid.stride == -2
-    assert viewer.grid.spacing == 0
+    viewer.canvas.grid.stride = -2
+    viewer.canvas.grid.enabled = True
+    assert viewer.canvas.grid.enabled
+    assert viewer.canvas.grid.actual_shape(6) == (2, 2)
+    assert viewer.canvas.grid.stride == -2
+    assert viewer.canvas.grid.spacing == 0
 
 
 def test_add_remove_layer_dims_change():
