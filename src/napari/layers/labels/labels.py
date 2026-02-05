@@ -1949,8 +1949,8 @@ class Labels(ScalarFieldBase):
 
         # Build slices to extract visible data from region_data
         # and slices to insert data into the view
-        region_slices = [slice(None)] * len(dims_to_paint)
-        view_slices = [slice(None)] * len(displayed_dims)
+        region_slices: list[slice | int] = [slice(None)] * len(dims_to_paint)
+        view_slices: list[slice | int] = [slice(None)] * len(displayed_dims)
 
         paint_dim_to_idx = {d: i for i, d in enumerate(sorted(dims_to_paint))}
 
