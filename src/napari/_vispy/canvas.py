@@ -959,7 +959,8 @@ class VispyCanvas:
                     vispy_overlay.canvas_position_callback = (
                         self._defer_canvas_overlay_position_update
                     )
-                    vispy_overlays.append(vispy_overlay)
+                    if vispy_overlay not in vispy_overlays:
+                        vispy_overlays.append(vispy_overlay)
             else:
                 parent = self.view
                 vispy_overlay = vispy_overlays[0] if vispy_overlays else None
@@ -969,7 +970,8 @@ class VispyCanvas:
                 vispy_overlay.canvas_position_callback = (
                     self._defer_canvas_overlay_position_update
                 )
-                vispy_overlays.append(vispy_overlay)
+                if vispy_overlay not in vispy_overlays:
+                    vispy_overlays.append(vispy_overlay)
 
         self._defer_canvas_overlay_position_update()
 
