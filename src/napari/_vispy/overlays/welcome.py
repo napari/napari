@@ -21,6 +21,8 @@ if TYPE_CHECKING:
 
 
 class VispyWelcomeOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
+    overlay: WelcomeOverlay
+
     def __init__(
         self,
         *,
@@ -31,8 +33,6 @@ class VispyWelcomeOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         super().__init__(
             node=Welcome(), viewer=viewer, overlay=overlay, parent=parent
         )
-        self.overlay: WelcomeOverlay
-
         self.viewer.events.theme.connect(self._on_theme_change)
         self.viewer.layers.events.connect(self._on_visible_change)
 

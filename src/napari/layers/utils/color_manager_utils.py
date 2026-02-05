@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from napari.utils.colormaps import Colormap
+from napari.utils.events.custom_types import Array
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
@@ -54,7 +55,7 @@ def map_property(
     prop: np.ndarray,
     colormap: Colormap,
     contrast_limits: None | tuple[float, float] = None,
-) -> tuple[np.ndarray, tuple[float, float]]:
+) -> tuple[Array, tuple[float, float]]:
     """Apply a colormap to a property
 
     Parameters
@@ -101,12 +102,12 @@ def _validate_colormap_mode(color_manager: ColorManager) -> None:
     cmap = color_manager.continuous_colormap
     if len(color_properties.values) > 0:
         if color_manager.contrast_limits is None:
-            color_manager.colors, color_manager.contrast_limits = map_property(  # type: ignore
+            color_manager.colors, color_manager.contrast_limits = map_property(
                 prop=color_properties.values,
                 colormap=cmap,
             )
         else:
-            color_manager.colors, _ = map_property(  # type: ignore
+            color_manager.colors, _ = map_property(
                 prop=color_properties.values,
                 colormap=cmap,
                 contrast_limits=color_manager.contrast_limits,
