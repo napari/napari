@@ -10,3 +10,6 @@ else:
 
     class StrEnum(str, Enum):
         pass
+
+
+__all__ = ['StrEnum']
