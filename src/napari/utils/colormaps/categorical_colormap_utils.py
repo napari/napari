@@ -1,6 +1,6 @@
+import itertools
 from collections.abc import Iterable
 from dataclasses import dataclass
-from itertools import cycle
 from typing import Any
 
 import numpy as np
@@ -19,17 +19,17 @@ class ColorCycle:
     ----------
     values : np.ndarray
         The (Nx4) color array of all colors contained in the color cycle.
-    cycle : cycle
+    cycle : itertools.cycle
         The cycle object that gives fallback colors.
     """
 
     values: np.ndarray
-    cycle: cycle
+    cycle: itertools.cycle
 
     @classmethod
     def __get_pydantic_core_schema__(
         cls, source_type: Any, handler: GetCoreSchemaHandler
-    ):
+    ) -> core_schema.CoreSchema:
         validate = core_schema.no_info_plain_validator_function(
             cls.validate_type
         )
@@ -66,7 +66,7 @@ class ColorCycle:
 
 
 def _coerce_colorcycle_from_dict(
-    val: dict[str, str | list | np.ndarray | cycle],
+    val: dict[str, str | list | np.ndarray | itertools.cycle],
 ) -> ColorCycle:
     # avoid circular import
     from napari.layers.utils.color_transformations import (
@@ -91,13 +91,16 @@ def _coerce_colorcycle_from_dict(
             elem_name='color_cycle',
             default='white',
         )[0]
-    elif isinstance(color_cycle, cycle):
+    elif isinstance(color_cycle, itertools.cycle):
         transformed_color_cycle = color_cycle
     elif isinstance(color_cycle, Iterable):
         # Workaround for https://github.com/pydantic/pydantic/issues/8907
-        transformed_color_cycle = cycle(color_cycle)
+        color_cycle = itertools.cycle(color_cycle)
+        transformed_color_cycle = color_cycle
     else:
-        raise TypeError(f'cycle entry must be type(cycle), got {type(cycle)}')
+        raise TypeError(
+            f'cycle entry must be of type itertools.cycle, got {type(color_cycle)}'
+        )
 
     return ColorCycle(
         values=transformed_color_values, cycle=transformed_color_cycle

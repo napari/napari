@@ -7,7 +7,7 @@ import os
 from collections.abc import Mapping
 from functools import partial
 from pathlib import Path
-from typing import TYPE_CHECKING, Literal, cast
+from typing import TYPE_CHECKING, cast
 from warnings import warn
 
 from pydantic import BaseModel, Field, PrivateAttr, ValidationError
@@ -30,7 +30,7 @@ _logger = logging.getLogger(__name__)
 
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Set as AbstractSet
+    from collections.abc import Callable
     from typing import Any, Union
 
     # TODO: needs to be fixed properly
@@ -39,7 +39,8 @@ if TYPE_CHECKING:
     from napari.utils.events import Event
 
     IntStr = Union[int, str]
-    AbstractSetIntStr = AbstractSet[IntStr]
+    from pydantic.main import IncEx
+
     DictStrAny = dict[str, Any]
     MappingIntStrAny = Mapping[IntStr, Any]
     JSONable = str | list | dict | int | float | bool | None
@@ -112,7 +113,11 @@ class EventedSettings(BaseSettings, EventedModel):
         self.events.changed(key=f'{field}{event._type}', value=value)
 
 
-_NOT_SET = object()
+class _NotSetType:
+    pass
+
+
+_NOT_SET = _NotSetType()
 
 
 class FileConfigSettingsSource(PydanticBaseSettingsSource):
@@ -237,9 +242,7 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
     EventedSettings.
     """
 
-    config_path: Path | Literal[_NOT_SET] | None = Field(
-        default=None, exclude=True
-    )
+    config_path: Path | _NotSetType | None = Field(default=None, exclude=True)
     env_settings: Dict = Field(
         default_factory=dict, exclude=True, repr=False, frozen=True
     )
@@ -282,8 +285,8 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
     def dict(
         self,
         *,
-        include: AbstractSetIntStr | MappingIntStrAny = None,  # type: ignore
-        exclude: AbstractSetIntStr | MappingIntStrAny = None,  # type: ignore
+        include: IncEx | None = None,
+        exclude: IncEx | None = None,
         by_alias: bool = False,
         exclude_unset: bool = False,
         exclude_defaults: bool = False,

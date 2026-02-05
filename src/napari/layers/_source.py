@@ -44,7 +44,7 @@ class Source(BaseModel):
     def make_weakref(cls, layer: Layer) -> ReferenceType[Layer]:
         return weakref.ref(layer)
 
-    def __deepcopy__(self, memo: Any) -> Self:
+    def __deepcopy__(self, memo: dict[int, Any] | None = None) -> Self:
         """Custom deepcopy implementation.
 
         this prevents deep copy. `Source` doesn't really need to be copied

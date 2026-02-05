@@ -180,7 +180,7 @@ class EventedSet(MutableSet[_T]):
 
         args = get_args(source)
         if args:
-            mutableset_t_schema = handler.generate_schema(MutableSet[args[0]])
+            mutableset_t_schema = handler.generate_schema(MutableSet[args[0]])  # type: ignore
         else:
             mutableset_t_schema = handler.generate_schema(MutableSet)
 

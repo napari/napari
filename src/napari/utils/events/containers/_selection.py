@@ -5,6 +5,7 @@ from typing import Any, Generic, TypeVar, Union, get_args
 
 from pydantic import GetCoreSchemaHandler
 from pydantic_core import core_schema
+from pydantic_core.core_schema import DictSchema, TypedDictSchema
 
 from napari.utils.events.containers._set import EventedSet
 from napari.utils.events.event import EmitterGroup
@@ -149,9 +150,10 @@ class Selection(EventedSet[_T]):
         instance_schema = core_schema.is_instance_schema(cls)
 
         args = get_args(source)
+        dict_schema: DictSchema | TypedDictSchema
         if args:
             item_schema = handler.generate_schema(args[0])
-            mutableset_t_schema = handler.generate_schema(MutableSet[args[0]])
+            mutableset_t_schema = handler.generate_schema(MutableSet[args[0]])  # type: ignore
             current_schema = core_schema.union_schema(
                 [item_schema, core_schema.none_schema()]
             )
@@ -180,7 +182,7 @@ class Selection(EventedSet[_T]):
             cls._validate_selection, input_schema
         )
 
-        def _serialize(v: Selection):
+        def _serialize(v: Selection) -> dict:
             return {
                 'selection': EventedSet(v)._json_encode(),
                 '_current': v._current,
@@ -197,7 +199,7 @@ class Selection(EventedSet[_T]):
     @classmethod
     def _validate_selection(
         cls,
-        v: Union['Selection', dict],  # type: ignore[override]
+        v: Union['Selection', dict],
     ) -> 'Selection':
         """Pydantic validator."""
         if isinstance(v, dict):

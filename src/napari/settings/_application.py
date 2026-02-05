@@ -207,7 +207,7 @@ class ApplicationSettings(EventedModel):
         ),
     )
 
-    grid_stride: GridStride = Field(  # type: ignore [valid-type]
+    grid_stride: GridStride = Field(
         default=1,
         title=trans._('Grid Stride'),
         description=trans._(
@@ -217,19 +217,19 @@ class ApplicationSettings(EventedModel):
         ),
     )
 
-    grid_width: GridWidth = Field(  # type: ignore [valid-type]
+    grid_width: GridWidth = Field(
         default=-1,
         title=trans._('Grid Width'),
         description=trans._('Number of columns in the grid.'),
     )
 
-    grid_height: GridHeight = Field(  # type: ignore [valid-type]
+    grid_height: GridHeight = Field(
         default=-1,
         title=trans._('Grid Height'),
         description=trans._('Number of rows in the grid.'),
     )
 
-    grid_spacing: GridSpacing = Field(  # type: ignore [valid-type]
+    grid_spacing: GridSpacing = Field(
         default=0,
         title=trans._('Grid Spacing'),
         description=trans._(

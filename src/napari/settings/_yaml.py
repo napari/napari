@@ -11,13 +11,12 @@ from yaml import SafeDumper, dump_all
 from napari.settings._fields import Version
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping, Set as AbstractSet
     from typing import Any, TypeVar, Union
 
     IntStr = Union[int, str]
-    AbstractSetIntStr = AbstractSet[IntStr]
     DictStrAny = dict[str, Any]
-    MappingIntStrAny = Mapping[IntStr, Any]
+    from pydantic.main import IncEx
+
     Model = TypeVar('Model', bound=BaseModel)
 
 
@@ -72,8 +71,8 @@ class PydanticYamlMixin(BaseModel):
     def yaml(
         self,
         *,
-        include: AbstractSetIntStr | MappingIntStrAny = None,  # type: ignore
-        exclude: AbstractSetIntStr | MappingIntStrAny = None,  # type: ignore
+        include: IncEx | None = None,
+        exclude: IncEx | None = None,
         by_alias: bool = False,
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
@@ -82,7 +81,7 @@ class PydanticYamlMixin(BaseModel):
         **dumps_kwargs: Any,
     ) -> str:
         """Serialize model to yaml."""
-        data = self.dict(
+        data = self.model_dump(
             include=include,
             exclude=exclude,
             by_alias=by_alias,

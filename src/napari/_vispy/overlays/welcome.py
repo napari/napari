@@ -17,16 +17,22 @@ if TYPE_CHECKING:
     from vispy.util.event import Event
 
     from napari import Viewer
-    from napari.components.overlays import Overlay
+    from napari.components.overlays import WelcomeOverlay
 
 
 class VispyWelcomeOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
     def __init__(
-        self, *, viewer: Viewer, overlay: Overlay, parent: Node | None = None
+        self,
+        *,
+        viewer: Viewer,
+        overlay: WelcomeOverlay,
+        parent: Node | None = None,
     ) -> None:
         super().__init__(
             node=Welcome(), viewer=viewer, overlay=overlay, parent=parent
         )
+        self.overlay: WelcomeOverlay
+
         self.viewer.events.theme.connect(self._on_theme_change)
         self.viewer.layers.events.connect(self._on_visible_change)
 

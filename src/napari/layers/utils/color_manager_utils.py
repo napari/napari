@@ -93,28 +93,32 @@ def _validate_colormap_mode(color_manager: ColorManager) -> None:
         The (Nx4) color array to set as ColorManager.colors
     values : dict
     """
-    color_properties = color_manager.color_properties.values
+    if color_manager.color_properties is None:
+        raise ValueError(
+            'color properties must be set to validate colormap mode'
+        )
+    color_properties = color_manager.color_properties
     cmap = color_manager.continuous_colormap
-    if len(color_properties) > 0:
+    if len(color_properties.values) > 0:
         if color_manager.contrast_limits is None:
-            color_manager.colors, color_manager.contrast_limits = map_property(
-                prop=color_properties,
+            color_manager.colors, color_manager.contrast_limits = map_property(  # type: ignore
+                prop=color_properties.values,
                 colormap=cmap,
             )
         else:
-            color_manager.colors, _ = map_property(
-                prop=color_properties,
+            color_manager.colors, _ = map_property(  # type: ignore
+                prop=color_properties.values,
                 colormap=cmap,
                 contrast_limits=color_manager.contrast_limits,
             )
     else:
-        color_manager.colors = np.empty((0, 4))
-        current_prop_value = color_manager.color_properties.current_value
+        color_manager.colors = np.empty((0, 4))  # type: ignore
+        current_prop_value = color_properties.current_value
         if current_prop_value is not None:
             color_manager.current_color = cmap.map(current_prop_value)[0]
 
     if len(color_manager.colors) == 0:
-        color_manager.colors = np.empty((0, 4))
+        color_manager.colors = np.empty((0, 4))  # type: ignore
 
 
 def _validate_cycle_mode(
@@ -135,11 +139,15 @@ def _validate_cycle_mode(
     values : dict
     """
     color_properties = color_manager.color_properties
+    if color_properties is None:
+        raise ValueError(
+            'color properties must be set to validate colormap mode'
+        )
     cmap = color_manager.categorical_colormap
-    if len(color_properties.values) == 0:  # type: ignore
-        color_manager.colors = np.empty((0, 4))
+    if len(color_properties.values) == 0:
+        color_manager.colors = np.empty((0, 4))  # type: ignore
         current_prop_value = color_properties.current_value
         if current_prop_value is not None:
             color_manager.current_color = cmap.map(current_prop_value)[0]
     else:
-        color_manager.colors = cmap.map(color_properties.values)
+        color_manager.colors = cmap.map(color_properties.values)  # type: ignore
