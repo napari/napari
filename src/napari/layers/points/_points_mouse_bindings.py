@@ -1,18 +1,19 @@
 from __future__ import annotations
 
-from collections.abc import Set as AbstractSet
+from collections.abc import Generator, Set as AbstractSet
 from typing import TYPE_CHECKING, TypeVar
 
 import numpy as np
 
 from napari.layers.base import ActionType
 from napari.layers.points._points_utils import _points_in_box_3d, points_in_box
+from napari.utils.events import Event
 
 if TYPE_CHECKING:
     from napari.layers.points.points import Points
 
 
-def select(layer: Points, event):
+def select(layer: Points, event: Event) -> Generator[None, None, None]:
     """Select points.
 
     Clicking on a point will select that point. If holding shift while clicking
@@ -126,7 +127,7 @@ def select(layer: Points, event):
 DRAG_DIST_THRESHOLD = 5
 
 
-def add(layer: Points, event):
+def add(layer: Points, event: Event) -> Generator[None, None, None]:
     """Add a new point at the clicked position."""
     start_pos = event.pos
     yield
@@ -146,7 +147,7 @@ def add(layer: Points, event):
         layer.add(coordinates)
 
 
-def highlight(layer: Points, event):
+def highlight(layer: Points, event: Event) -> None:
     """Highlight hovered points."""
     layer._set_highlight()
 
@@ -179,7 +180,7 @@ def _toggle_selected(selection: AbstractSet[_T], value: _T) -> set[_T]:
     return selection
 
 
-def _update_drag_vectors_from_event(layer: Points, event):
+def _update_drag_vectors_from_event(layer: Points, event: Event) -> None:
     """Update the drag normal and up vectors on layer from a mouse event.
 
     Note that in 2D mode, the layer._drag_normal and layer._drag_up
@@ -219,7 +220,7 @@ def _update_drag_vectors_from_event(layer: Points, event):
 
 def _select_points_from_drag(
     layer: Points, modify_selection: bool, n_display: int
-):
+) -> None:
     """Select points on a Points layer after a drag event.
 
     Parameters

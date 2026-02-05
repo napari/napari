@@ -103,7 +103,7 @@ class Shapes(Layer):
         provided scale, rotate, and shear values.
     axis_labels : tuple of str, optional
         Dimension names of the layer data.
-        If not provided, axis_labels will be set to (..., 'axis -2', 'axis -1').
+        If not provided, axis_labels will be set to (..., '-2', '-1').
     blending : str
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
@@ -1267,7 +1267,9 @@ class Shapes(Layer):
         return self._selected_data
 
     @selected_data.setter
-    def selected_data(self, selected_data: Collection[int]) -> None:
+    def selected_data(
+        self, selected_data: Collection[int | np.integer]
+    ) -> None:
         self._selected_data.replace_selection(selected_data)
 
     def _on_selection_changed(self, added, removed):

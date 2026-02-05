@@ -65,7 +65,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         Attenuation rate for attenuated maximum intensity projection.
     axis_labels : tuple of str
         Dimension names of the layer data.
-        If not provided, axis_labels will be set to (..., 'axis -2', 'axis -1').
+        If not provided, axis_labels will be set to (..., '-2', '-1').
     blending : str
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
@@ -492,10 +492,9 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
 
     def _update_thumbnail(self) -> None:
         """Update thumbnail with current image data and colormap."""
-        # don't bother updating thumbnail if we don't have any data
-        # this also avoids possible dtype mismatch issues below
-        # for example np.clip may raise an OverflowError (in numpy 2.0)
+        # black thumbnail if there is no data in the slice
         if self._slice.empty:
+            self.thumbnail = np.zeros(self._thumbnail_shape, self.dtype)
             return
 
         image = self._slice.thumbnail.raw
