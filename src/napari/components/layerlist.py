@@ -250,7 +250,8 @@ class LayerList(SelectableEventedList[Layer]):
         """Insert ``value`` before index."""
         (value,) = self._ensure_unique((value,))
         new_layer = self._type_check(value)
-        new_layer.name = self._coerce_name(new_layer.name)
+        with new_layer._bypass_lock():
+            new_layer.name = self._coerce_name(new_layer.name)
         self._clean_cache()
         new_layer.events.extent.connect(self._clean_cache)
         new_layer.events._extent_augmented.connect(self._clean_cache)
