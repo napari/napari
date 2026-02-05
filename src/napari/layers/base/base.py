@@ -672,6 +672,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             visible=Event,
             _extent_augmented=Event,
             _overlays=Event,
+            locked=Event,
         )
         self.name = name
         self.mode = mode
@@ -2433,6 +2434,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     @locked.setter
     def locked(self, value) -> None:
         self._locked = bool(value)
+        self.events.locked()
 
     @contextmanager
     def _bypass_lock(self):
