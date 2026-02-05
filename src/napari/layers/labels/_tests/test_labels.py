@@ -886,6 +886,31 @@ def test_paint_2d():
     assert np.sum(layer.data[5:26, 17:38] == 7) == 349
 
 
+def test_brush_bbox_anisotropic_scale():
+    """Ensure that bbox is calculated correctly for anisotropic scales."""
+    data = np.zeros((20, 30), dtype=np.uint32)
+    layer = Labels(data, scale=(10, 1))
+    layer.brush_size = 10
+
+    shape, dims_to_paint = layer._get_shape_and_dims_to_paint()
+    coord = (10, 15)
+    brush_info = layer._get_brush_mask_and_bbox(coord, dims_to_paint, shape)
+    assert brush_info is not None
+    _, min_vals, max_vals = brush_info
+
+    center = np.round(np.array(coord)).astype(int)
+    radius_pixels = center - min_vals
+    radius = np.floor(layer.brush_size / 2) + 0.5
+    paint_scale = np.array(
+        [layer.scale[i] for i in dims_to_paint], dtype=float
+    )
+    scale_normalized = np.abs(paint_scale) / np.min(np.abs(paint_scale))
+    expected = np.floor(radius / scale_normalized).astype(int)
+
+    npt.assert_array_equal(radius_pixels, expected)
+    npt.assert_array_equal(max_vals - min_vals, expected * 2 + 1)
+
+
 def test_paint_2d_xarray():
     """Test the memory usage of painting a xarray indirectly via timeout."""
     now = time.monotonic()
