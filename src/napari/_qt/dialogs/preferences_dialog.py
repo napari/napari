@@ -97,7 +97,10 @@ class PreferencesDialog(QDialog):
         while self._stack.count():
             self._stack.removeWidget(self._stack.currentWidget())
 
-        for field_name, field_info in self._settings.model_fields.items():
+        for (
+            field_name,
+            field_info,
+        ) in self._settings.__class__.model_fields.items():
             field_type = get_inner_type(field_info.annotation)
             if get_origin(field_type) is None and issubclass(
                 field_type, BaseModel

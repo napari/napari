@@ -451,10 +451,14 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
                 del self.model_config['use_enum_values']
 
 
-def get_defaults(obj: BaseModel):
+def get_defaults(obj: BaseModel | type[BaseModel]) -> dict[str, Any]:
     """Get possibly nested default values for a Model object."""
     dflt = {}
-    for k, v in obj.model_fields.items():
+    if isinstance(obj, BaseModel):
+        model_fields = obj.__class__.model_fields
+    else:
+        model_fields = obj.model_fields
+    for k, v in model_fields.items():
         if v.exclude:
             continue
         d = v.get_default()

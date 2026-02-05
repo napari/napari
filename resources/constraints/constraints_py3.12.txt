@@ -350,7 +350,7 @@ pyautogui==0.9.54
     # via napari (pyproject.toml)
 pyconify==0.2.1
     # via superqt
-pydantic==2.10.0
+pydantic==2.12.5
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
@@ -358,7 +358,7 @@ pydantic==2.10.0
     #   npe2
     #   pydantic-extra-types
     #   pydantic-settings
-pydantic-core==2.27.0
+pydantic-core==2.41.5
     # via pydantic
 pydantic-extra-types==2.11.0
     # via napari (pyproject.toml)
@@ -377,7 +377,9 @@ pygments==2.19.2
 pymsgbox==2.0.1
     # via pyautogui
 pyopengl==3.1.10
-    # via -r resources/constraints/version_denylist.txt
+    # via
+    #   -r resources/constraints/version_denylist.txt
+    #   napari (pyproject.toml)
 pyparsing==3.3.2
     # via matplotlib
 pyperclip==1.11.0
@@ -448,6 +450,7 @@ qtconsole==5.7.0
     #   napari-console
 qtpy==2.4.3
     # via
+    #   napari (pyproject.toml)
     #   magicgui
     #   napari-console
     #   napari-metadata
@@ -558,7 +561,9 @@ typing-extensions==4.15.0
     #   typing-inspection
     #   zarr
 typing-inspection==0.4.2
-    # via pydantic-settings
+    # via
+    #   pydantic
+    #   pydantic-settings
 urllib3==2.6.3
     # via requests
 virtualenv==20.36.1

@@ -93,7 +93,7 @@ class EventedSettings(BaseSettings, EventedModel):
 
     def _connect(self, model: EventedModel, prefix: str = '') -> None:
         """Recursively connect and re-emit to all sub-fields."""
-        for name, field in model.model_fields.items():
+        for name, field in model.__class__.model_fields.items():
             attr = getattr(model, name)
             if isinstance(getattr(attr, 'events', None), EmitterGroup):
                 path = f'{prefix}{name}'

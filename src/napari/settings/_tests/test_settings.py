@@ -200,7 +200,7 @@ def test_settings_string(test_settings):
 
 def test_model_fields_are_annotated(test_settings):
     errors = []
-    for field in test_settings.model_fields.values():
+    for field in test_settings.__class__.model_fields.values():
         model = get_inner_type(field.annotation)
         if not hasattr(model, 'model_fields'):
             continue
