@@ -10,6 +10,7 @@ from typing import (
 )
 
 import numpy as np
+from pydantic import ConfigDict
 
 from napari.utils.events import EventedModel
 from napari.utils.translations import trans
@@ -107,13 +108,7 @@ class StyleEncoding(Protocol[StyleValue, StyleArray]):
 
 
 class _StyleEncodingModel(EventedModel):
-    class Config:
-        # Forbid extra initialization parameters instead of ignoring
-        # them by default. This is useful when parsing style encodings
-        # from dicts, as different types of encodings may have the same
-        # field names.
-        # https://pydantic-docs.helpmanual.io/usage/model_config/#options
-        extra = 'forbid'
+    model_config = ConfigDict(extra='forbid')
 
 
 # The following classes provide generic implementations of common ways

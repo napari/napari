@@ -559,8 +559,7 @@ def test_evented_model_with_provided_dependencies():
         def b(self):
             return self.a * 2
 
-        class Config:
-            dependencies = {'b': ['a']}
+        model_config = NapariConfigDict(dependencies={'b': ['a']})
 
     t = T()
     t.events.a = Mock(t.events.a)
@@ -594,8 +593,7 @@ def test_evented_model_with_provided_dependencies():
             def b(self):  # pragma: no cover
                 return self.a * 2
 
-            class Config:
-                dependencies = {'b': ['x']}
+            model_config = NapariConfigDict(dependencies={'b': ['x']})
 
 
 def test_property_get_eq_operator():

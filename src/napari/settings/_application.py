@@ -6,6 +6,7 @@ from typing import Annotated, Any
 
 from psutil import virtual_memory
 from pydantic import Field, field_validator
+from pydantic_settings import SettingsConfigDict
 
 from napari.settings._constants import (
     BrushSizeOnMouseModifiers,
@@ -322,8 +323,7 @@ class ApplicationSettings(EventedModel):
             )
         return v
 
-    class Config:
-        use_enum_values = False  # https://github.com/napari/napari/issues/3062
+    model_config = SettingsConfigDict(use_enum_values=False)
 
     class NapariConfig:
         # Napari specific configuration
