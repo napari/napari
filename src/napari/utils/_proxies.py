@@ -20,15 +20,24 @@ class ReadOnlyWrapper(wrapt.ObjectProxy):
     Disable item and attribute setting with the exception of  ``__wrapped__``.
     """
 
-    def __init__(self, wrapped: Any, exceptions: tuple[str, ...] = ()):
-        if isinstance(wrapped, ReadOnlyWrapper):
+    def __init__(
+        self,
+        wrapped: Any,
+        exceptions: tuple[str, ...] = (),
+        depth_limit=None,
+        depth=None,
+    ):
+        # prevent nested wrapping
+        while isinstance(wrapped, ReadOnlyWrapper):
             wrapped = wrapped.__wrapped__
         super().__init__(wrapped)
         self._self_exceptions = exceptions
+        self._self_depth = depth
 
     def __setattr__(self, name: str, val: Any) -> None:
         if (
-            name not in ('__wrapped__', '_self_exceptions')
+            name != '__wrapped__'
+            and not name.startswith('_self_')
             and name not in self._self_exceptions
         ):
             raise TypeError(
@@ -52,7 +61,7 @@ class ReadOnlyWrapper(wrapt.ObjectProxy):
             )
         super().__setitem__(name, val)
 
-    def __call__(self, *args, **kwargs) -> Any:
+    def __call__(self, *args: Any, **kwargs: Any) -> Any:
         self.__wrapped__(args, **kwargs)
 
 

@@ -539,6 +539,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         units=None,
         visible=True,
     ):
+        self._locked = False
+
         super().__init__()
 
         if name is None and data is not None:
@@ -628,7 +630,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self._update_properties = True
         self._name = ''
         self.experimental_clipping_planes = experimental_clipping_planes
-        self._locked = False
 
         # circular import
         from napari.components.overlays.bounding_box import BoundingBoxOverlay
@@ -2432,7 +2433,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         return self._locked
 
     @locked.setter
-    def locked(self, value) -> None:
+    def locked(self, value: bool) -> None:
         self._locked = bool(value)
         self.events.locked()
 
@@ -2442,7 +2443,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         yield
         self._locked = prev
 
-    def __setattr__(self, name, value) -> None:
+    def __setattr__(self, name: str, value: Any) -> None:
         if (
             name != 'locked'
             and not name.startswith('_')
@@ -2453,16 +2454,15 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             )
         super().__setattr__(name, value)
 
-    def __getattribute__(self, name):
+    def __getattribute__(self, name: str):
         attr = super().__getattribute__(name)
-        # TODO: if we always give a readonly wrapper, we somehow end up with the whole layer wrapped
-        #       by readonly... something's going too deep with the wrappers
-        # if (
-        #     name != 'locked'
-        #     and not name.startswith('_')
-        #     and getattr(self, '_locked', False)
-        # ):
-        if name in ('data',) and self.locked:
+        if name == 'locked' or name.startswith('_'):
+            return attr
+        # TODO: if we always give a readonly wrapper, it causes long cascades that propagate
+        #       the wrapper to places we don't want. For now, it's best to only wrap
+        #       user-facing elements that could be modified inplace without going through
+        #       Layer.__setattr__ (such as modifying sub-models or Layer.data)
+        if self.locked and (hasattr(attr, 'events') or name in ('data',)):
             attr = ReadOnlyWrapper(attr)
         return attr
 
