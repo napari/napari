@@ -1,52 +1,82 @@
 import numpy as np
 
 from napari.components.overlays import (
+    AxesOverlay,
     BoundingBoxOverlay,
     CanvasOverlay,
     ScaleBarOverlay,
 )
 
 
-def test_viewer_overlays(qt_viewer):
+def test_scene_overlays(qt_viewer):
     viewer = qt_viewer.viewer
-    canvas = qt_viewer.canvas
+    vispy_canvas = qt_viewer.canvas
 
     for overlay in viewer._overlays.values():
         # vispy overlays only exist if they are visible at least once
         overlay.visible = True
-        if isinstance(overlay, CanvasOverlay):
-            assert all(
-                visual.node in canvas.view.children
-                for visual in canvas._canvas_overlay_to_visual[overlay]
-            )
-        else:
-            assert (
-                canvas._scene_overlay_to_visual[overlay].node
-                in canvas.view.scene.children
-            )
+        assert (
+            vispy_canvas._scene_overlay_to_visual[overlay].node
+            in vispy_canvas.view.scene.children
+        )
+
+    old_vispy_scene_overlays = dict(
+        vispy_canvas._scene_overlay_to_visual.items()
+    )
+
+    new_overlay = AxesOverlay(visible=True)
+    viewer._overlays['test'] = new_overlay
+
+    assert new_overlay in vispy_canvas._scene_overlay_to_visual
+    new_overlay_node = vispy_canvas._scene_overlay_to_visual[new_overlay].node
+    assert new_overlay_node in vispy_canvas.view.scene.children
+    assert new_overlay_node not in vispy_canvas.view.children
+
+    # old visuals should still be there, as they are reused when possible
+    for _, vispy_overlay in old_vispy_scene_overlays.items():
+        assert vispy_overlay.node in vispy_canvas.view.scene.children
+
+    viewer._overlays.pop('test')
+    assert new_overlay not in vispy_canvas._scene_overlay_to_visual
+    assert new_overlay_node not in vispy_canvas.view.children
+
+
+def test_canvas_overlays(qt_viewer):
+    canvas = qt_viewer.viewer.canvas
+    vispy_canvas = qt_viewer.canvas
+
+    for overlay in canvas._overlays.values():
+        # vispy overlays only exist if they are visible at least once
+        overlay.visible = True
+        assert all(
+            visual.node in vispy_canvas.view.children
+            for visual in vispy_canvas._canvas_overlay_to_visual[overlay]
+        )
 
     old_vispy_canvas_overlays = {
-        k: list(v) for k, v in canvas._canvas_overlay_to_visual.items()
+        k: list(v) for k, v in vispy_canvas._canvas_overlay_to_visual.items()
     }
 
     new_overlay = ScaleBarOverlay(visible=True)
-    viewer._overlays['test'] = new_overlay
+    canvas._overlays['test'] = new_overlay
 
-    assert new_overlay in canvas._canvas_overlay_to_visual
-    new_overlay_node = canvas._canvas_overlay_to_visual[new_overlay][0].node
-    assert new_overlay_node not in canvas.view.scene.children
-    assert new_overlay_node in canvas.view.children
+    assert new_overlay in vispy_canvas._canvas_overlay_to_visual
+    new_overlay_node = vispy_canvas._canvas_overlay_to_visual[new_overlay][
+        0
+    ].node
+    assert new_overlay_node not in vispy_canvas.view.scene.children
+    assert new_overlay_node in vispy_canvas.view.children
 
     # old visuals should still be there, as they are reused when possible
     for _, vispy_overlays in old_vispy_canvas_overlays.items():
         for vispy_overlay in vispy_overlays:
-            assert vispy_overlay.node in canvas.view.children
+            assert vispy_overlay.node in vispy_canvas.view.children
 
-    viewer._overlays.pop('test')
-    assert new_overlay not in canvas._canvas_overlay_to_visual
-    assert new_overlay_node not in canvas.view.children
+    canvas._overlays.pop('test')
+    assert new_overlay not in vispy_canvas._canvas_overlay_to_visual
+    assert new_overlay_node not in vispy_canvas.view.children
 
-    viewer.canvas.welcome.visible = False  # just for proper test cleanup
+    canvas.welcome.visible = False  # just for proper test cleanup
 
 
 def test_layer_overlays(qt_viewer):
