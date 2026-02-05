@@ -415,7 +415,7 @@ class Labels(ScalarFieldBase):
         self.colormap.use_selection = self._show_selected_label
         self._prev_selected_label = None
         self._selected_color = self.get_color(self._selected_label)
-        self._updated_slice: tuple[Any, ...] | None = None
+        self._updated_slice: tuple[int | slice, ...] | None = None
         if colormap is not None:
             self._set_colormap(colormap)
 
