@@ -269,6 +269,8 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         """
         if self._delay_check_semaphore > 0 or len(self._changes_queue) == 0:
             # do not run whole machinery if there is no need
+            if self._delay_check_semaphore == 0:
+                self._primary_changes.clear()
             return
         to_emit = []
         for name in self._primary_changes:
