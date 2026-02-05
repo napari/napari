@@ -51,7 +51,7 @@ class VispyBaseOverlay:
 
     def close(self) -> None:
         disconnect_events(self.overlay.events, self)
-        self.node.transforms = MatrixTransform()
+        self.node.transform = MatrixTransform()
         self.node.parent = None
 
 
