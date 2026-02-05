@@ -6,7 +6,6 @@ wrap.
 import contextlib
 import inspect
 import os
-import platform
 import sys
 import time
 import uuid
@@ -58,8 +57,8 @@ from napari._qt.dialogs.preferences_dialog import PreferencesDialog
 from napari._qt.dialogs.qt_activity_dialog import QtActivityDialog
 from napari._qt.dialogs.qt_notification import NapariQtNotification
 from napari._qt.qt_event_loop import (
-    NAPARI_ICON_PATH,
     _svg_path_to_icon,
+    get_icon_path,
     get_qapp,
     quit_app as quit_app_,
 )
@@ -114,11 +113,6 @@ MenuStr = Literal[
 
 
 class _QtMainWindow(QMainWindow):
-    # This was added so that someone can patch
-    # `napari._qt.qt_main_window._QtMainWindow._window_icon`
-    # to their desired window icon
-    _window_icon = NAPARI_ICON_PATH
-
     # To track window instances and facilitate getting the "active" viewer...
     # We use this instead of QApplication.activeWindow for compatibility with
     # IPython usage. When you activate IPython, it will appear that there are
@@ -144,7 +138,7 @@ class _QtMainWindow(QMainWindow):
         )
         self._quit_app = False
 
-        get_qapp().setWindowIcon(_svg_path_to_icon(self._window_icon))
+        get_qapp().setWindowIcon(_svg_path_to_icon(self._get_window_icon()))
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         center = QWidget(self)
         center.setLayout(QHBoxLayout())
@@ -197,11 +191,10 @@ class _QtMainWindow(QMainWindow):
         # were defined somewhere in the `_qt` module and imported in init_qactions
         init_qactions()
 
-        # only after qaction are initialized we can get all shortcuts, so we have
-        # to force update the welcome screen here. TODO: UGLYYYY
-        self._qt_viewer.canvas._canvas_overlay_to_visual[
-            self._qt_viewer.viewer.welcome_screen
-        ][0].reset()
+        # only after qaction are initialized we can get all shortcuts and actions,
+        # so we have to force update the welcome screen here.
+        viewer.welcome_screen.events.shortcuts()
+        viewer.welcome_screen.events.tips()
 
         with contextlib.suppress(IndexError):
             viewer.cursor.events.position.disconnect(
@@ -220,6 +213,14 @@ class _QtMainWindow(QMainWindow):
         )
 
         self._command_palette = QCommandPalette(self)
+
+    def _get_window_icon(self) -> str:
+        if hasattr(self, '_window_icon'):
+            # This was added so that someone can patch
+            # `napari._qt.qt_main_window._QtMainWindow._window_icon`
+            # to their desired window icon
+            return self._window_icon
+        return str(get_icon_path())
 
     def _toggle_status_thread(self, event: Event):
         if event.value:
@@ -1641,17 +1642,8 @@ class Window:
                 self._qt_viewer._console._update_theme(style_sheet=style_sheet)
 
     def _update_logo(self):
-        from napari.utils.logo import get_logo_path
-        from napari.utils.theme import get_system_theme
-
-        path = get_logo_path(
-            logo=get_settings().appearance.logo,
-            template='padded' if platform.system() == 'Darwin' else 'plain',
-            theme=get_system_theme(),
-        )
-        self._qt_window._window_icon = path
         get_qapp().setWindowIcon(
-            _svg_path_to_icon(self._qt_window._window_icon)
+            _svg_path_to_icon(self._qt_window._get_window_icon())
         )
 
     def _status_changed(self, event):
