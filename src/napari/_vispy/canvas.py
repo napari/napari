@@ -274,13 +274,13 @@ class VispyCanvas:
         self.viewer._overlays.events.changed.connect(
             self._update_scene_overlays
         )
-        self.viewer._overlays.events.added.connect(
+        self.viewer.canvas._overlays.events.added.connect(
             self._update_canvas_overlays
         )
-        self.viewer._overlays.events.removed.connect(
+        self.viewer.canvas._overlays.events.removed.connect(
             self._update_canvas_overlays
         )
-        self.viewer._overlays.events.changed.connect(
+        self.viewer.canvas._overlays.events.changed.connect(
             self._update_canvas_overlays
         )
 
@@ -840,21 +840,29 @@ class VispyCanvas:
                 vispy_layer.first_visible = False
             vispy_layer._on_blending_change()
 
-        self._defer_overlay_position_update()
+        self._defer_canvas_overlay_position_update()
 
         self._scene_canvas._draw_order.clear()
         self._scene_canvas.update()
 
-    def _defer_overlay_position_update(self):
+    def _defer_canvas_overlay_position_update(self):
         self._needs_overlay_position_update = True
 
     def _connect_canvas_overlay_events(self, overlay: Overlay) -> None:
-        overlay.events.position.connect(self._defer_overlay_position_update)
-        overlay.events.visible.connect(self._defer_overlay_position_update)
+        overlay.events.position.connect(
+            self._defer_canvas_overlay_position_update
+        )
+        overlay.events.visible.connect(
+            self._defer_canvas_overlay_position_update
+        )
 
     def _disconnect_canvas_overlay_events(self, overlay: Overlay) -> None:
-        overlay.events.position.disconnect(self._defer_overlay_position_update)
-        overlay.events.visible.disconnect(self._defer_overlay_position_update)
+        overlay.events.position.disconnect(
+            self._defer_canvas_overlay_position_update
+        )
+        overlay.events.visible.disconnect(
+            self._defer_canvas_overlay_position_update
+        )
 
     def _create_or_update_vispy_overlay(
         self, overlay, vispy_overlay, parent, **kwargs
@@ -949,7 +957,7 @@ class VispyCanvas:
                         overlay, vispy_overlay, parent, viewer=self.viewer
                     )
                     vispy_overlay.canvas_position_callback = (
-                        self._defer_overlay_position_update
+                        self._defer_canvas_overlay_position_update
                     )
                     vispy_overlays.append(vispy_overlay)
             else:
@@ -959,11 +967,11 @@ class VispyCanvas:
                     overlay, vispy_overlay, parent, viewer=self.viewer
                 )
                 vispy_overlay.canvas_position_callback = (
-                    self._defer_overlay_position_update
+                    self._defer_canvas_overlay_position_update
                 )
                 vispy_overlays.append(vispy_overlay)
 
-        self._defer_overlay_position_update()
+        self._defer_canvas_overlay_position_update()
 
     def _update_layer_overlays(self, layer: Layer) -> None:
         """Update the overlay visuals for each layer in the canvas.
@@ -1021,10 +1029,10 @@ class VispyCanvas:
             overlay_to_visual[overlay] = vispy_overlay
             if isinstance(overlay, CanvasOverlay):
                 vispy_overlay.canvas_position_callback = (
-                    self._defer_overlay_position_update
+                    self._defer_canvas_overlay_position_update
                 )
 
-        self._defer_overlay_position_update()
+        self._defer_canvas_overlay_position_update()
 
     def _get_ordered_visible_canvas_overlays(
         self,
@@ -1041,11 +1049,7 @@ class VispyCanvas:
         """
 
         def is_visible_tileable(overlay):
-            return (
-                overlay.visible
-                and isinstance(overlay, CanvasOverlay)
-                and overlay.position in list(CanvasPosition)
-            )
+            return overlay.visible and overlay.position in list(CanvasPosition)
 
         def is_gridded(overlay):
             return (
@@ -1056,7 +1060,7 @@ class VispyCanvas:
 
         # first the base view: non-gridded viewer overlays which appear
         # "on top of" the main canvas
-        for overlay, vispy_overlays in self._scene_overlay_to_visual.items():
+        for overlay, vispy_overlays in self._canvas_overlay_to_visual.items():
             if (
                 vispy_overlays
                 and is_visible_tileable(overlay)
@@ -1083,7 +1087,7 @@ class VispyCanvas:
             for (
                 overlay,
                 vispy_overlays,
-            ) in self._scene_overlay_to_visual.items():
+            ) in self._canvas_overlay_to_visual.items():
                 if (
                     vispy_overlays
                     and is_visible_tileable(overlay)
