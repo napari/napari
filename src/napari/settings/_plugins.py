@@ -1,4 +1,5 @@
 from pydantic import Field
+from pydantic_settings import SettingsConfigDict
 from typing_extensions import TypedDict
 
 from napari.settings._base import EventedSettings
@@ -38,8 +39,7 @@ class PluginsSettings(EventedSettings):
         ),
     )
 
-    class Config:
-        use_enum_values = False
+    model_config = SettingsConfigDict(use_enum_values=False)
 
     class NapariConfig:
         # Napari specific configuration

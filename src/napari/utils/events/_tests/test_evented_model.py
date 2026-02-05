@@ -268,12 +268,14 @@ def test_update_with_inner_model_protocol():
 
         # Protocol fields are not successfully set without explicit validation.
         @classmethod
-        def __get_validators__(cls):
-            yield cls.validate
+        def validate(cls, v, info=None):
+            return v
 
         @classmethod
-        def validate(cls, v, info):
-            return v
+        def __get_pydantic_core_schema__(
+            cls, source_type: Any, handler: GetCoreSchemaHandler
+        ):
+            return core_schema.no_info_plain_validator_function(cls.validate)
 
     class Inner(EventedModel):
         w: str
@@ -314,10 +316,6 @@ class MyObj:
     def __init__(self, a: int, b: str) -> None:
         self.a = a
         self.b = b
-
-    @classmethod
-    def __get_validators__(cls):
-        yield cls.validate_type
 
     @classmethod
     def validate_type(cls, val, info=None):
@@ -559,8 +557,7 @@ def test_evented_model_with_provided_dependencies():
         def b(self):
             return self.a * 2
 
-        class Config:
-            dependencies = {'b': ['a']}
+        model_config = NapariConfigDict(dependencies={'b': ['a']})
 
     t = T()
     t.events.a = Mock(t.events.a)
@@ -594,8 +591,7 @@ def test_evented_model_with_provided_dependencies():
             def b(self):  # pragma: no cover
                 return self.a * 2
 
-            class Config:
-                dependencies = {'b': ['x']}
+            model_config = NapariConfigDict(dependencies={'b': ['x']})
 
 
 def test_property_get_eq_operator():

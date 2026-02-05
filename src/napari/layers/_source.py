@@ -8,7 +8,7 @@ from typing import Any
 from weakref import ReferenceType
 
 from magicgui.widgets import FunctionGui
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, ConfigDict, field_validator
 from typing_extensions import Self
 
 from napari.layers.base.base import Layer
@@ -38,9 +38,7 @@ class Source(BaseModel):
     widget: FunctionGui | None = None
     parent: Layer | None = None
 
-    class Config:
-        arbitrary_types_allowed = True
-        frozen = True
+    model_config = ConfigDict(arbitrary_types_allowed=True, frozen=True)
 
     @field_validator('parent')
     def make_weakref(cls, layer: Layer) -> ReferenceType[Layer]:
