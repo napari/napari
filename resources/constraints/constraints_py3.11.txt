@@ -584,7 +584,7 @@ torch==2.10.0
     #   napari (pyproject.toml:testing-extra)
     #   torchvision
     #   trackastra
-torchvision==0.24.1
+torchvision==0.25.0
     # via trackastra
 tornado==6.5.4
     # via
