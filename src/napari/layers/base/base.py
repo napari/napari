@@ -2460,7 +2460,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         #     and not name.startswith('_')
         #     and getattr(self, '_locked', False)
         # ):
-        if name in ('data',):
+        if name in ('data',) and self.locked:
             attr = ReadOnlyWrapper(attr)
         return attr
 
