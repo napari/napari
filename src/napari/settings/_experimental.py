@@ -16,7 +16,7 @@ from napari.utils.triangulation_backend import (
 
 
 # this class inherits from EventedSettings instead of EventedModel because
-# it uses Field(env=...) for one of its attributes
+# it uses Field(validation_alias=...) for some of its attributes
 class ExperimentalSettings(EventedSettings):
     def __init__(self, **data: dict[str, Any]):
         super().__init__(**data)
@@ -35,7 +35,7 @@ class ExperimentalSettings(EventedSettings):
             'Asynchronous loading of image data. \nThis setting partially loads data while viewing.'
         ),
         validation_alias=AliasChoices('async_', 'async', 'napari_async'),
-        requires_restart=False,
+        json_schema_extra={'requires_restart': False},
     )
     autoswap_buffers: bool = Field(
         False,
@@ -44,7 +44,7 @@ class ExperimentalSettings(EventedSettings):
             'Autoswapping rendering buffers improves quality by reducing tearing artifacts, while sacrificing some performance.'
         ),
         validation_alias=AliasChoices('autoswap_buffers', 'napari_autoswap'),
-        requires_restart=True,
+        json_schema_extra={'requires_restart': True},
     )
 
     rdp_epsilon: float = Field(
@@ -92,7 +92,9 @@ class ExperimentalSettings(EventedSettings):
             "The 'pure python' backend uses the default Python triangulation from vispy.\n"
             "The 'fastest available' backend will select the fastest available backend.\n"
         ),
-        env='napari_triangulation_backend',
+        validation_alias=AliasChoices(
+            'triangulation_backend', 'napari_triangulation_backend'
+        ),
     )
     colormap_backend: ColormapBackend = Field(
         ColormapBackend.fastest_available,
@@ -104,7 +106,9 @@ class ExperimentalSettings(EventedSettings):
             "'pure python' uses only NumPy and Python.\n"
             "The 'fastest available' backend will select the fastest installed backend.\n"
         ),
-        env='napari_colormap_backend',
+        validation_alias=AliasChoices(
+            'colormap_backend', 'napari_colormap_backend'
+        ),
     )
 
     compiled_triangulation: bool = Field(
