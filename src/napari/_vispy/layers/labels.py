@@ -231,7 +231,10 @@ class VispyLabelsLayer(VispyScalarFieldBaseLayer):
         # in our constructor, we have access to the texture data we need
         if (
             event is not None
-            and event.type == 'selected_data'
+            # and getattr(event, 'type', None) == 'selected_data',
+            and isinstance(
+                event, tuple
+            )  # for selected_data event TODO: fix this properly
             and not self.layer.show_selected_label
         ):
             return
