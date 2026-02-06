@@ -769,6 +769,24 @@ def test_selected_data_validation():
         labels.selected_data = [-1, 0, 3]
 
 
+def test_selected_data_validation_reports_both_out_of_bounds_values():
+    labels = Labels(np.zeros((10, 10), dtype=np.uint8))
+    with pytest.raises(
+        WrongSelectedLabelError,
+        match=r'The values -1, 256 are out of bounds',
+    ):
+        labels.selected_data = [-1, 0, 256]
+
+
+def test_selected_data_validation_truncates_many_out_of_bounds_values():
+    labels = Labels(np.zeros((10, 10), dtype=np.uint8))
+    with pytest.raises(
+        WrongSelectedLabelError,
+        match=r'The values -3, -2, -1, \.\.\., 259, 260, 261 are out of bounds',
+    ):
+        labels.selected_data = [-3, -2, -1, 256, 257, 258, 259, 260, 261]
+
+
 def test_selected_data_refresh_when_filtering():
     labels = Labels(np.zeros((5, 5), dtype=np.uint8))
     labels.show_selected_label = True

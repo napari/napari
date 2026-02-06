@@ -765,10 +765,14 @@ class Labels(ScalarFieldBase):
         max_val = max(selected_data)
 
         if dtype_lims[0] > min_val or dtype_lims[1] < max_val:
+            out_of_bounds_values = [
+                value
+                for value in selected_data
+                if value < dtype_lims[0] or value > dtype_lims[1]
+            ]
             raise WrongSelectedLabelError(
                 dtype=layer_dtype,
-                lower_value=min_val,
-                upper_value=max_val,
+                invalid_values=out_of_bounds_values,
                 lower_bound=dtype_lims[0],
                 upper_bound=dtype_lims[1],
             )
@@ -1710,22 +1714,46 @@ def _coerce_indices_for_vectorization(array, indices: list) -> tuple:
 class WrongSelectedLabelError(ValueError):
     """Raised when the selected label is not in the data array."""
 
+    _MAX_DISPLAYED_INVALID_VALUES = 6
+
     def __init__(
         self,
         dtype: np.dtype,
-        lower_value: int,
-        upper_value: int,
+        invalid_values: Sequence[int],
         lower_bound: float,
         upper_bound: float,
         message: str = '',
     ):
         self.dtype = dtype
-        self.lower_value = lower_value
-        self.upper_value = upper_value
         self.lower_bound = lower_bound
         self.upper_bound = upper_bound
-        wrong_value = lower_value if lower_value < lower_bound else upper_value
-        text = f'The value {wrong_value} is out of bounds for dtype {dtype} that allow for range [{int(lower_bound)}, {int(upper_bound)}].'
+        invalid_values = sorted(set(invalid_values))
+
+        if len(invalid_values) == 1:
+            invalid_values_text = str(invalid_values[0])
+            value_word = 'value'
+            verb = 'is'
+        elif len(invalid_values) <= self._MAX_DISPLAYED_INVALID_VALUES:
+            invalid_values_text = ', '.join(map(str, invalid_values))
+            value_word = 'values'
+            verb = 'are'
+        else:
+            displayed_count = self._MAX_DISPLAYED_INVALID_VALUES // 2
+            invalid_values_text = ', '.join(
+                map(str, invalid_values[:displayed_count])
+            )
+            invalid_values_text += ', ..., '
+            invalid_values_text += ', '.join(
+                map(str, invalid_values[-displayed_count:])
+            )
+            value_word = 'values'
+            verb = 'are'
+
+        text = (
+            f'The {value_word} {invalid_values_text} {verb} out of bounds for '
+            f'dtype {dtype} that allow for range [{int(lower_bound)}, '
+            f'{int(upper_bound)}].'
+        )
         if message:
             text = f'{message} {text}'
         self.text = text

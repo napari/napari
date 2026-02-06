@@ -33,7 +33,7 @@ class QtColorBox(QWidget):
 
         self._layer = layer
         self._layer.selected_data.events.items_changed.connect(
-            self._on_selected_label_change
+            self._on_selected_data_change
         )
         self._layer.events.opacity.connect(self._on_opacity_change)
         self._layer.events.colormap.connect(self._on_colormap_change)
@@ -47,7 +47,7 @@ class QtColorBox(QWidget):
 
         self.color = None
 
-    def _on_selected_label_change(self) -> None:
+    def _on_selected_data_change(self) -> None:
         """Receive layer model label selection change event & update colorbox."""
         self.update()
 
