@@ -412,7 +412,7 @@ nibabel==5.3.3
     # via nilearn
 nilearn==0.13.0
     # via napari (pyproject.toml:docs)
-npe2==0.7.9
+npe2==0.8.0
     # via
     #   napari (pyproject.toml)
     #   napari-plugin-manager
@@ -625,6 +625,7 @@ pydantic-core==2.41.5
 pydantic-extra-types==2.11.0
     # via
     #   napari (pyproject.toml)
+    #   npe2
     #   ome-types
 pydantic-settings==2.12.0
     # via napari (pyproject.toml)

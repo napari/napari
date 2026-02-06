@@ -200,7 +200,7 @@ networkx==3.6.1
     # via
     #   scikit-image
     #   torch
-npe2==0.7.9
+npe2==0.8.0
     # via
     #   napari (pyproject.toml)
     #   napari-plugin-manager
@@ -364,7 +364,9 @@ pydantic==2.12.5
 pydantic-core==2.41.5
     # via pydantic
 pydantic-extra-types==2.11.0
-    # via napari (pyproject.toml)
+    # via
+    #   napari (pyproject.toml)
+    #   npe2
 pydantic-settings==2.12.0
     # via napari (pyproject.toml)
 pygetwindow==0.0.9

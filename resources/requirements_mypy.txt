@@ -26,7 +26,7 @@ mypy==1.19.1
     # via -r resources/requirements_mypy.in
 mypy-extensions==1.1.0
     # via mypy
-npe2==0.7.9
+npe2==0.8.0
     # via -r resources/requirements_mypy.in
 numpy==2.4.2
     # via -r resources/requirements_mypy.in
@@ -48,8 +48,11 @@ pydantic==2.12.5
     # via
     #   -r resources/requirements_mypy.in
     #   npe2
+    #   pydantic-extra-types
 pydantic-core==2.41.5
     # via pydantic
+pydantic-extra-types==2.11.0
+    # via npe2
 pygments==2.19.2
     # via
     #   rich
@@ -95,6 +98,7 @@ typing-extensions==4.15.0
     #   mypy
     #   pydantic
     #   pydantic-core
+    #   pydantic-extra-types
     #   superqt
     #   typer
     #   typing-inspection
