@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import gc
 from collections.abc import Iterator
 from functools import partial
@@ -831,7 +832,9 @@ class VispyCanvas:
         # If the GPU is still processing deletion commands from the removed layer, it can lead to
         # memory access violations when the scene graph is updated with new resources.
         # finish() ensures complete GPU synchronization before proceeding
-        self._scene_canvas.context.finish()
+        with contextlib.suppress(AttributeError):
+            # need to suppress the error because of implementation details of vispy
+            self._scene_canvas.context.finish()
 
         self._update_scenegraph()
 
