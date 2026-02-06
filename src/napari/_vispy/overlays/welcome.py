@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 from itertools import cycle
 from random import sample
 from typing import TYPE_CHECKING, Any
@@ -70,7 +71,9 @@ class VispyWelcomeOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         if show:
             self.tip_timer.start()
         else:
-            self.tip_timer.stop()
+            # if we get RuntimeError the backend qt object was probably already deleted
+            with contextlib.suppress(RuntimeError):
+                self.tip_timer.stop()
 
     def _on_version_change(self) -> None:
         self.node.set_version(self.overlay.version)
