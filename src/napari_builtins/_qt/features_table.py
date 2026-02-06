@@ -814,13 +814,6 @@ class FeaturesTable(QWidget):
     @staticmethod
     def _get_selection_event_for_layer(layer):
         if hasattr(layer, 'selected_data'):
-            # Labels layer exposes ``selected_data`` as a layer event, while
-            # Points (and others) expose events on the Selection container
-            # itself.  Prefer the layer event when available so we add/remove
-            # callbacks on the same emitter that fires when the layer
-            # property changes.
-            if hasattr(layer.events, 'selected_data'):
-                return layer.selected_data.events.items_changed
             if hasattr(layer.selected_data, 'events'):
                 return layer.selected_data.events
             if hasattr(layer.events, 'highlight'):

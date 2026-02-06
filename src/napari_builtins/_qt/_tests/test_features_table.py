@@ -367,21 +367,21 @@ def test_features_table_change_active_layer(qtbot):
     assert len(layer1.events.features.callbacks) == 2
     assert len(layer1.selected_data.events.all) == 1
     assert len(layer2.events.features.callbacks) == 1
-    assert len(layer2.selected_data.events.items_changed) == 1
+    assert len(layer2.selected_data.events.all) == 0
     assert w.info.text() == f'Features of "{layer1.name}"'
 
     v.layers.selection.active = layer2
     assert len(layer1.events.features.callbacks) == 1
     assert len(layer1.selected_data.events.all) == 0
     assert len(layer2.events.features.callbacks) == 2
-    assert len(layer2.selected_data.events.items_changed) == 2
+    assert len(layer2.selected_data.events.all) == 1
     assert w.info.text() == f'Features of "{layer2.name}"'
 
     v.layers.selection.active = layer3
     assert len(layer1.events.features.callbacks) == 1
     assert len(layer1.selected_data.events.all) == 0
     assert len(layer2.events.features.callbacks) == 1
-    assert len(layer2.selected_data.events.items_changed) == 1
+    assert len(layer2.selected_data.events.all) == 0
     assert 'do not have features' in w.info.text()
 
     v.layers.selection.active = None
@@ -501,7 +501,7 @@ def test_features_table_multilayer_layer_selection_change(qtbot):
     assert len(points_layer.events.features.callbacks) == 1
     assert len(points_layer.selected_data.events.all) == 0
     assert len(labels_layer.events.features.callbacks) == 1
-    assert len(labels_layer.selected_data.events.items_changed) == 1
+    assert len(labels_layer.selected_data.events.all) == 0
     assert 'do not have features' in w.info.text()
 
     # all layers selected
@@ -510,7 +510,7 @@ def test_features_table_multilayer_layer_selection_change(qtbot):
     assert len(points_layer.events.features.callbacks) == 2
     assert len(points_layer.selected_data.events.all) == 1
     assert len(labels_layer.events.features.callbacks) == 2
-    assert len(labels_layer.selected_data.events.items_changed) == 2
+    assert len(labels_layer.selected_data.events.all) == 1
 
 
 def test_features_table_multilayer_table_selection(qtbot):
