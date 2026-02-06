@@ -11,7 +11,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,
 )
-from napari._qt.utils import attr_to_settr, qt_signals_blocked
+from napari._qt.utils import qt_signals_blocked
 from napari.layers import Labels
 from napari.layers.labels._labels_utils import get_dtype
 from napari.utils._dtype import get_dtype_limits
@@ -139,13 +139,8 @@ class QtLabelControl(QtWidgetControlsBase):
         self.selection_spinbox.setKeyboardTracking(False)
         self.selection_spinbox.valueChanged.connect(self.change_selection)
         self.selection_spinbox.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._callbacks.append(
-            attr_to_settr(
-                self._layer,
-                'selected_label',
-                self.selection_spinbox,
-                'setValue',
-            )
+        self._layer.selected_data.events.items_changed.connect(
+            self._on_selected_data_change
         )
 
         self.label_color_label = QtWrappedLabel(trans._('label:'))
@@ -176,7 +171,15 @@ class QtLabelControl(QtWidgetControlsBase):
             dtype_lims = get_dtype_limits(get_dtype(self._layer))
             self.selection_spinbox.setRange(*dtype_lims)
 
+    def _on_selected_data_change(self) -> None:
+        """Update spinbox when selected label changes."""
+        with qt_signals_blocked(self.selection_spinbox):
+            self.selection_spinbox.setValue(self._layer.selected_label)
+
     def disconnect_widget_controls(self) -> None:
+        self._layer.selected_data.events.items_changed.disconnect(
+            self._on_selected_data_change
+        )
         self.colorbox.disconnect_widget_controls()
         super().disconnect_widget_controls()
 
