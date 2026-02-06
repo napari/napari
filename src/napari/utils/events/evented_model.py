@@ -467,7 +467,8 @@ def get_defaults(obj: BaseModel | type[BaseModel]) -> dict[str, Any]:
             if isinstance(field_type, ModelMetaclass):
                 d = get_defaults(field_type)
             else:
-                d = v.get_default(call_default_factory=True)
+                # pydantic require `validated_data` if `call_default_factory` is True
+                d = v.get_default(call_default_factory=True, validated_data={})
 
         dflt[k] = d
     return dflt
