@@ -204,12 +204,12 @@ class VispyLabelsLayer(VispyScalarFieldBaseLayer):
         )
 
         self.layer.events.labels_update.connect(self._on_partial_labels_update)
-        self.layer.selected_data.events.items_changed.connect(
-            self._on_colormap_change
-        )
         self.layer.events.show_selected_label.connect(self._on_colormap_change)
         self.layer.events.iso_gradient_mode.connect(
             self._on_iso_gradient_mode_change
+        )
+        self.layer.selected_data.events.items_changed.connect(
+            self._on_selected_data_change
         )
         self.layer.events.data.connect(self._on_colormap_change)
         # as we generate colormap texture based on the data type, we need to
@@ -225,19 +225,16 @@ class VispyLabelsLayer(VispyScalarFieldBaseLayer):
                 else 'translucent_categorical'
             )
 
+    def _on_selected_data_change(self) -> None:
+        """Receive layer model label selection change event & update colorbox."""
+        if self.layer.show_selected_label:
+            # We need to trigger the shader update when show_selected_label is True.
+            self._on_colormap_change()
+
     def _on_colormap_change(self, event=None):
         # self.layer.colormap is a labels_colormap, which is an evented model
         # from napari.utils.colormaps.Colormap (or similar). If we use it
         # in our constructor, we have access to the texture data we need
-        if (
-            event is not None
-            # and getattr(event, 'type', None) == 'selected_data',
-            and isinstance(
-                event, tuple
-            )  # for selected_data event TODO: fix this properly
-            and not self.layer.show_selected_label
-        ):
-            return
         colormap = self.layer.colormap
         auto_mode = isinstance(colormap, CyclicLabelColormap)
         view_dtype = self.layer._slice.image.view.dtype
