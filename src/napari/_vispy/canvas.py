@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING
 from weakref import WeakSet
 
 import numpy as np
+from OpenGL.error import GLError
 from superqt.utils import qthrottled
 from vispy.scene import SceneCanvas as SceneCanvas_, ViewBox, Widget
 
@@ -832,7 +833,7 @@ class VispyCanvas:
         # If the GPU is still processing deletion commands from the removed layer, it can lead to
         # memory access violations when the scene graph is updated with new resources.
         # finish() ensures complete GPU synchronization before proceeding
-        with contextlib.suppress(AttributeError):
+        with contextlib.suppress(AttributeError, GLError):
             # need to suppress the error because of implementation details of vispy
             self._scene_canvas.context.finish()
 
