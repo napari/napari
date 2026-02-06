@@ -71,7 +71,7 @@ def test_add_layer(
     data: ArrayLike,
     ndim: int,
 ) -> None:
-    viewer_model.dims.ndisplay = np.clip(ndim, 2, 3)
+    viewer_model.dims.ndisplay = max(min(3, ndim), 2)
 
     add_layer_by_type(viewer_model, layer_class, data)
     check_viewer_functioning(viewer_model, qt_viewer, data, ndim)
