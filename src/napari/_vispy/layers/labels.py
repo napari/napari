@@ -355,7 +355,7 @@ class LabelLayerNode(ScalarFieldLayerNode):
             interpolation='nearest',
         )
 
-    def get_node(self, ndisplay: int, dtype=None) -> Node:
+    def get_node(self, ndisplay: int, dtype=None, shape=None) -> Node:
         res = self._image_node if ndisplay == 2 else self._volume_node
 
         if (
