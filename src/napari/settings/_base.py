@@ -10,7 +10,14 @@ from pathlib import Path
 from typing import TYPE_CHECKING, cast
 from warnings import warn
 
-from pydantic import BaseModel, Field, PrivateAttr, ValidationError
+from pydantic import (
+    AliasChoices,
+    BaseModel,
+    Field,
+    PrivateAttr,
+    TypeAdapter,
+    ValidationError,
+)
 from pydantic.fields import FieldInfo
 from pydantic_settings import (
     BaseSettings,
@@ -20,6 +27,7 @@ from pydantic_settings import (
     SettingsError,
 )
 
+from napari._pydantic_util import get_inner_type, get_origin
 from napari.settings._yaml import PydanticYamlMixin
 from napari.utils.compat import StrEnum
 from napari.utils.events import EmitterGroup, EventedModel
@@ -230,8 +238,57 @@ class FileConfigSettingsSource(PydanticBaseSettingsSource):
 class NapariEnvSettingsSource(EnvSettingsSource):
     def __call__(self):
         res = super().__call__()
+        env_lower = {k.lower(): v for k, v in os.environ.items()}
+        self.scan_env_aliases(res, self.settings_cls, [], env_lower)
+
         res['env_settings'] = res.copy()
         return res
+
+    def scan_env_aliases(
+        self,
+        dkt: dict[str, Any],
+        class_: type[BaseSettings],
+        path: list[str],
+        env_dkt: dict[str, str],
+    ):
+        for field_name, field in class_.model_fields.items():
+            if field.exclude:
+                continue
+            field_type = get_inner_type(field.annotation)
+            if get_origin(field_type) is None and issubclass(
+                field_type, BaseModel
+            ):
+                self.scan_env_aliases(
+                    dkt, field_type, path + [field_name], env_dkt
+                )
+            if field.validation_alias is None:
+                continue
+            if (
+                not isinstance(field.validation_alias, AliasChoices)
+                or field.validation_alias.choices[0] != field_name
+            ):
+                raise ValueError(
+                    f'Invalid validation alias for field {field_name} needs to be AliasChoices with first choice as field name'
+                )
+            for env_name in field.validation_alias.choices[1:]:
+                if env_name not in env_dkt:
+                    continue
+                env_value = env_dkt[env_name]
+                value = TypeAdapter(field_type).validate_python(env_value)
+                sub_dkt = dkt
+                for sub in path:
+                    sub_dkt = sub_dkt.setdefault(sub, {})
+                if field_name in sub_dkt:
+                    _logger.warning(
+                        'Multiple environment variables found for %(field_name) at %(env_name) and %(existing_env_name). Using ealier value.',
+                        extra={
+                            'field_name': field_name,
+                            'env_name': env_name,
+                            'existing_env_name': field.validation_alias.choices,
+                        },
+                    )
+                    continue
+                sub_dkt[field_name] = value
 
 
 class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):

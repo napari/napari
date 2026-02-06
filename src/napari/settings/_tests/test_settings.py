@@ -310,7 +310,6 @@ def test_settings_env_variables_do_not_write_to_disk(tmp_path, monkeypatch):
     assert NapariSettings(fake_path).appearance.theme == 'light'
 
 
-@pytest.mark.xfail(reason='Currently, aliases do not override file settings.')
 def test_settings_env_variables_override_file(tmp_path, monkeypatch):
     # create a settings file with async_ = true
     data = 'experimental:\n   async_: true\n   autoswap_buffers: true'
@@ -451,13 +450,12 @@ def test_shortcut_aliases():
     assert settings_original == settings_canonical
 
 
-@pytest.mark.xfail(reason='Currently, aliases are not stored in env settings.')
 def test_env_settings_restore(monkeypatch):
     monkeypatch.setenv('NAPARI_ASYNC', '0')
     s = NapariSettings()
     s.experimental.completion_radius = 1
     assert s._save_dict()['experimental'] == {'completion_radius': 1}
-    assert s.env_settings == {'experimental': {'async_': '0'}}
+    assert s.env_settings == {'experimental': {'async_': False}}
 
 
 NO_IMPORT_SCRIPT = """
