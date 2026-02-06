@@ -271,11 +271,15 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         if self._delay_check_semaphore > 0 or len(self._changes_queue) == 0:
             # do not run whole machinery if there is no need
             if self._delay_check_semaphore == 0:
+                # it means that we finished processing changes,
+                # but there is no callback connected to events
+                # associated with changed fields, so we need
+                # to clear the queues to not have stale data on next changes
                 self._primary_changes.clear()
             return
         to_emit = []
         for name in self._primary_changes:
-            # primary changes should contains only fields that are changed directly by assignment
+            # primary changes should contain only fields that are changed directly by assignment
             if name not in self._changes_queue:
                 continue
             old_value = self._changes_queue[name]
@@ -283,12 +287,12 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
                 to_emit.append((name, res[1]))
             self._changes_queue.pop(name)
         if not to_emit:
-            # If no direct changes was made then we can skip whole machinery
+            # If no direct changes were made then we can skip the whole machinery
             self._changes_queue.clear()
             self._primary_changes.clear()
             return
         for name, old_value in self._changes_queue.items():
-            # check if any of dependent properties changed
+            # check if any of the dependent properties changed
             if (res := self._check_if_differ(name, old_value))[0]:
                 to_emit.append((name, res[1]))
         self._changes_queue.clear()
