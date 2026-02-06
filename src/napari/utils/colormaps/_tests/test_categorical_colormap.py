@@ -1,10 +1,10 @@
 import json
-from itertools import cycle
 
 import numpy as np
 import pytest
 
 from napari.utils.colormaps.categorical_colormap import CategoricalColormap
+from napari.utils.colormaps.categorical_colormap_utils import Cycle
 
 
 def test_default_categorical_colormap():
@@ -66,7 +66,7 @@ def test_categorical_colormap_cycle():
 
 def test_categorical_colormap_cycle_as_dict():
     color_values = np.array([[1, 1, 1, 1], [1, 0, 0, 1]])
-    color_cycle = cycle(color_values)
+    color_cycle = Cycle(color_values)
     fallback_color = {'values': color_values, 'cycle': color_cycle}
     cmap = CategoricalColormap(fallback_color=fallback_color)
 

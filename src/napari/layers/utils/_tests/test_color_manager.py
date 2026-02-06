@@ -1,11 +1,12 @@
 import json
-from itertools import cycle, islice
+from itertools import islice
 
 import numpy as np
 import pytest
 
 from napari.layers.utils.color_manager import ColorManager, ColorProperties
 from napari.utils.colormaps.categorical_colormap import CategoricalColormap
+from napari.utils.colormaps.categorical_colormap_utils import Cycle
 from napari.utils.colormaps.standardize_color import transform_color
 
 
@@ -22,7 +23,7 @@ def _make_cycled_properties(values, length):
     cycled_properties : np.ndarray
         The property array comprising the cycled values.
     """
-    cycled_properties = np.array(list(islice(cycle(values), 0, length)))
+    cycled_properties = np.array(list(islice(Cycle(values), 0, length)))
     return cycled_properties
 
 
@@ -299,7 +300,7 @@ def test_color_cycle(color_cycle):
     color_mode = cm.color_mode
     assert color_mode == 'cycle'
     color_array = transform_color(
-        list(islice(cycle(color_cycle), 0, n_colors))
+        list(islice(Cycle(color_cycle), 0, n_colors))
     )
     np.testing.assert_allclose(cm.colors, color_array)
 
@@ -418,7 +419,7 @@ def test_init_color_manager_cycle():
     assert len(color_manager.colors) == n_colors
     assert color_manager.color_mode == 'cycle'
     color_array = transform_color(
-        list(islice(cycle(color_cycle), 0, n_colors))
+        list(islice(Cycle(color_cycle), 0, n_colors))
     )
     np.testing.assert_allclose(color_manager.colors, color_array)
     assert color_manager.color_properties.current_value == 'B'
@@ -461,7 +462,7 @@ def test_init_color_manager_cycle_with_colors_dict():
     assert len(color_manager.colors) == n_colors
     assert color_manager.color_mode == 'cycle'
     color_array = transform_color(
-        list(islice(cycle(color_cycle), 0, n_colors))
+        list(islice(Cycle(color_cycle), 0, n_colors))
     )
     np.testing.assert_allclose(color_manager.colors, color_array)
     assert color_manager.color_properties.current_value == 'B'

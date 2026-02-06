@@ -10,6 +10,21 @@ from pydantic_core import core_schema
 from napari.utils.translations import trans
 
 
+class Cycle(itertools.cycle):
+    """A picklable cycle object.
+
+    Python 3.14 removed pickling from itertools, but this workaround
+    seems to work ok even for deepcopy of numpy arrays; however,
+    This should ideally not be stored as a `cycle` object anymore.
+    """
+
+    def __copy__(self):
+        return Cycle(self)
+
+    def __deepcopy__(self, memo):
+        return Cycle(self)
+
+
 @dataclass(eq=False)
 class ColorCycle:
     """A dataclass to hold a color cycle for the fallback_colors
@@ -19,12 +34,12 @@ class ColorCycle:
     ----------
     values : np.ndarray
         The (Nx4) color array of all colors contained in the color cycle.
-    cycle : itertools.cycle
+    cycle : Cycle
         The cycle object that gives fallback colors.
     """
 
     values: np.ndarray
-    cycle: itertools.cycle
+    cycle: Cycle
 
     @classmethod
     def __get_pydantic_core_schema__(
@@ -66,7 +81,7 @@ class ColorCycle:
 
 
 def _coerce_colorcycle_from_dict(
-    val: dict[str, str | list | np.ndarray | itertools.cycle],
+    val: dict[str, str | list | np.ndarray | Cycle],
 ) -> ColorCycle:
     # avoid circular import
     from napari.layers.utils.color_transformations import (
@@ -91,15 +106,15 @@ def _coerce_colorcycle_from_dict(
             elem_name='color_cycle',
             default='white',
         )[0]
-    elif isinstance(color_cycle, itertools.cycle):
+    elif isinstance(color_cycle, Cycle):
         transformed_color_cycle = color_cycle
     elif isinstance(color_cycle, Iterable):
         # Workaround for https://github.com/pydantic/pydantic/issues/8907
-        color_cycle = itertools.cycle(color_cycle)
+        color_cycle = Cycle(color_cycle)
         transformed_color_cycle = color_cycle
     else:
         raise TypeError(
-            f'cycle entry must be of type itertools.cycle, got {type(color_cycle)}'
+            f'cycle entry must be of type Cycle, got {type(color_cycle)}'
         )
 
     return ColorCycle(
