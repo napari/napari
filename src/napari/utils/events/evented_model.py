@@ -184,7 +184,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
     __field_dependents__: ClassVar[dict[str, set[str]]]
     __eq_operators__: ClassVar[dict[str, Callable[[Any, Any], bool]]]
     _changes_queue: dict[str, Any] = PrivateAttr(default_factory=dict)
-    _primary_changes: set[str] = PrivateAttr(default_factory=dict)
+    _primary_changes: set[str] = PrivateAttr(default_factory=set)
     _delay_check_semaphore: int = PrivateAttr(0)
     __slots__: ClassVar[set[str]] = {'__weakref__'}  # type: ignore
 
@@ -257,7 +257,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             super().__setattr__(name, value)
             return
         with ComparisonDelayer(self):
-            self._primary_changes[name] = None
+            self._primary_changes.add(name)
             self._setattr_impl(name, value)
 
     def _check_if_values_changed_and_emit_if_needed(self):
