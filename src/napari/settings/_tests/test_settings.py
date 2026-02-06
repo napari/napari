@@ -264,7 +264,7 @@ def test_subfield_env_field(monkeypatch):
     from napari.settings._base import EventedSettings
 
     class Sub(EventedSettings):
-        x: int = Field(1, validation_alias=AliasChoices('varname'))
+        x: int = Field(1, validation_alias=AliasChoices('x', 'varname'))
 
     class T(NapariSettings):
         sub: Sub
