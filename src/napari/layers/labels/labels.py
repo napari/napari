@@ -423,7 +423,7 @@ class Labels(ScalarFieldBase):
         self._selected_data: Selection[int] = Selection([1])
         self.colormap.selection = self.selected_label
         self.colormap.use_selection = self._show_selected_label
-        self._prev_selected_label = None
+        self._prev_selected_label: int | None = None
         self._selected_color = self.get_color(self.selected_label)
         self._updated_slice = None
         if colormap is not None:
@@ -788,7 +788,8 @@ class Labels(ScalarFieldBase):
         if self.selected_label != self.colormap.background_value:
             self.selected_label = self.colormap.background_value
         else:
-            self.selected_label = self._prev_selected_label
+            if self._prev_selected_label is not None:
+                self.selected_label = self._prev_selected_label
 
     @property
     def show_selected_label(self):
