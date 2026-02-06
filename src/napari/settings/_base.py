@@ -7,7 +7,7 @@ import os
 from collections.abc import Mapping
 from functools import partial
 from pathlib import Path
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 from warnings import warn
 
 from pydantic import (
@@ -122,7 +122,8 @@ class EventedSettings(BaseSettings, EventedModel):
 
 
 class _NotSetType:
-    pass
+    def __bool__(self) -> bool:
+        return False
 
 
 _NOT_SET = _NotSetType()
@@ -155,7 +156,7 @@ class FileConfigSettingsSource(PydanticBaseSettingsSource):
         if not sources:
             return {}
 
-        data = {}
+        data: dict = {}
 
         for path in sources:
             path_ = Path(path).expanduser().resolve()
@@ -273,7 +274,7 @@ class NapariEnvSettingsSource(EnvSettingsSource):
             for env_name in field.validation_alias.choices[1:]:
                 if env_name not in env_dkt:
                     continue
-                env_value = env_dkt[env_name]
+                env_value = env_dkt[str(env_name)]
                 value = TypeAdapter(field_type).validate_python(env_value)
                 sub_dkt = dkt
                 for sub in path:
@@ -379,7 +380,9 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
         _remove_empty_dicts(data)
         return data
 
-    def save(self, path: str | Path | None = None, **dict_kwargs):
+    def save(
+        self, path: str | Path | _NotSetType | None = None, **dict_kwargs
+    ):
         """Save current settings to path.
 
         By default, this will exclude settings values that match the default
@@ -387,7 +390,8 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
         variables.  (see `_save_dict` method.)
         """
         path = path or self.config_path
-        if not path:
+        # use insinstance so mypy is happy
+        if not path or isinstance(path, _NotSetType):
             raise ValueError(
                 trans._(
                     'No path provided in config or save argument.',
@@ -538,14 +542,14 @@ def nested_env_settings(
         # so every field in the NapariSettings.Application subfield will be
         # available at 'napari_application_fieldname'
         for field in settings.model_fields.values():
-            if not isinstance(field.type_, type(BaseModel)):
+            field_type = get_inner_type(field.annotation)
+            if not issubclass(field_type, BaseModel):
                 continue  # pragma: no cover
-            field_type = cast(BaseModel, field.type_)
-            for env_name in field.field_info.extra['env_names']:
-                for subf in field_type.__fields__.values():
+            for env_name in field.extra['env_names']:
+                for subf in field_type.model_fields.values():
                     # first check if subfield directly declares an "env"
                     # (for example: ExperimentalSettings.async_)
-                    for e in subf.field_info.extra.get('env_names', []):
+                    for e in subf.extra.get('env_names', []):
                         env_val = env_vars.get(e.lower())
                         if env_val is not None:
                             break

@@ -73,7 +73,7 @@ class ColorCycle:
     def __iter__(self):
         return self
 
-    def current_color(self):
+    def current_color(self) -> np.ndarray:
         return self.values[self.current_index]
 
     @property
