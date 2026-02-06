@@ -469,7 +469,7 @@ def get_defaults(obj: BaseModel | type[BaseModel]) -> dict[str, Any]:
         d = v.get_default()
         field_type = get_inner_type(v.annotation)
         if d is None:
-            if issubclass(field_type, BaseModel):
+            if isinstance(field_type, ModelMetaclass):
                 d = get_defaults(field_type)
             else:
                 try:
