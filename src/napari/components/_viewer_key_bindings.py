@@ -114,7 +114,7 @@ def focus_axes_down(viewer: Viewer):
 # Use non-breaking spaces and non-breaking hyphen for Preferences table
 @register_viewer_action(
     trans._(
-        'Change order of the visible axes, e.g.\u00a0[0,\u00a01,\u00a02]\u00a0\u2011>\u00a0[2,\u00a00,\u00a01]'
+        'Change order of the visible axes, e.g.\u00a0[-3,\u00a0-2,\u00a0-1]\u00a0\u2011>\u00a0[-1,\u00a0-3,\u00a0-2]'
     ),
 )
 def roll_axes(viewer: Viewer):
@@ -124,7 +124,7 @@ def roll_axes(viewer: Viewer):
 # Use non-breaking spaces and non-breaking hyphen for Preferences table
 @register_viewer_action(
     trans._(
-        'Transpose order of the last two visible axes, e.g.\u00a0[0,\u00a01]\u00a0\u2011>\u00a0[1,\u00a00]'
+        'Transpose order of the last two visible axes, e.g.\u00a0[-2,\u00a0-1]\u00a0\u2011>\u00a0[-1,\u00a0-2]'
     ),
 )
 def transpose_axes(viewer: Viewer):
