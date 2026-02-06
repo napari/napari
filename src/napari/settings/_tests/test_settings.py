@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 
 import pytest
-from pydantic import Field, ValidationError
+from pydantic import AliasChoices, Field, ValidationError
 from pydantic_settings import SettingsConfigDict
 from yaml import safe_load
 
@@ -264,7 +264,7 @@ def test_subfield_env_field(monkeypatch):
     from napari.settings._base import EventedSettings
 
     class Sub(EventedSettings):
-        x: int = Field(1, validation_alias='varname')
+        x: int = Field(1, validation_alias=AliasChoices('varname'))
 
     class T(NapariSettings):
         sub: Sub
