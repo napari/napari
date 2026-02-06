@@ -472,8 +472,16 @@ def get_defaults(obj: BaseModel | type[BaseModel]) -> dict[str, Any]:
             if isinstance(field_type, ModelMetaclass):
                 d = get_defaults(field_type)
             else:
-                # pydantic require `validated_data` if `call_default_factory` is True
-                d = v.get_default(call_default_factory=True, validated_data={})
+                try:
+                    # pydantic require `validated_data` if `call_default_factory` is True
+                    d = v.get_default(
+                        call_default_factory=True, validated_data={}
+                    )
+                except TypeError:
+                    # pydantic 2.9 and 2.8 do not allow passing `validated_data` to `get_default`,
+                    # pydantic 2.10 requires it, so we need to catch the TypeError and try again
+                    # without it for compatibility with 2.8 and 2.9
+                    d = v.get_default(call_default_factory=True)
 
         dflt[k] = d
     return dflt

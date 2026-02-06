@@ -201,7 +201,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     )
     # 2-tuple indicating height and width
     _canvas_size: tuple[int, int] = (800, 600)
-    _ctx: Context
+    _ctx: Context = PrivateAttr()
     # To check if mouse is over canvas to avoid race conditions between
     # different events systems
     mouse_over_canvas: bool = False
