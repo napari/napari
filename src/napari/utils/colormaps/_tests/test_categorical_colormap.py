@@ -4,7 +4,6 @@ import numpy as np
 import pytest
 
 from napari.utils.colormaps.categorical_colormap import CategoricalColormap
-from napari.utils.colormaps.categorical_colormap_utils import Cycle
 
 
 def test_default_categorical_colormap():
@@ -13,7 +12,7 @@ def test_default_categorical_colormap():
 
     color_cycle = cmap.fallback_color
     np.testing.assert_almost_equal(color_cycle.values, [[1, 1, 1, 1]])
-    np.testing.assert_almost_equal(next(color_cycle.cycle), [1, 1, 1, 1])
+    np.testing.assert_almost_equal(next(color_cycle), [1, 1, 1, 1])
 
 
 def test_categorical_colormap_direct():
@@ -66,8 +65,7 @@ def test_categorical_colormap_cycle():
 
 def test_categorical_colormap_cycle_as_dict():
     color_values = np.array([[1, 1, 1, 1], [1, 0, 0, 1]])
-    color_cycle = Cycle(color_values)
-    fallback_color = {'values': color_values, 'cycle': color_cycle}
+    fallback_color = {'values': color_values}
     cmap = CategoricalColormap(fallback_color=fallback_color)
 
     # verify that no mapping between prop value and color has been set
@@ -75,9 +73,7 @@ def test_categorical_colormap_cycle_as_dict():
 
     # the values used to create the color cycle can be accessed via fallback color
     np.testing.assert_almost_equal(cmap.fallback_color.values, color_values)
-    np.testing.assert_almost_equal(
-        next(cmap.fallback_color.cycle), color_values[0]
-    )
+    np.testing.assert_almost_equal(next(cmap.fallback_color), color_values[0])
 
 
 fallback_colors = np.array([[1, 0, 0, 1], [0, 1, 0, 1]])

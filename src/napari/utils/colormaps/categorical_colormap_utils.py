@@ -1,5 +1,3 @@
-import itertools
-from collections.abc import Iterable
 from dataclasses import dataclass
 from typing import Any
 
@@ -8,21 +6,6 @@ from pydantic import GetCoreSchemaHandler
 from pydantic_core import core_schema
 
 from napari.utils.translations import trans
-
-
-class Cycle(itertools.cycle):
-    """A picklable cycle object.
-
-    Python 3.14 removed pickling from itertools, but this workaround
-    seems to work ok even for deepcopy of numpy arrays; however,
-    This should ideally not be stored as a `cycle` object anymore.
-    """
-
-    def __copy__(self):
-        return Cycle(self)
-
-    def __deepcopy__(self, memo):
-        return Cycle(self)
 
 
 @dataclass(eq=False)
@@ -34,12 +17,12 @@ class ColorCycle:
     ----------
     values : np.ndarray
         The (Nx4) color array of all colors contained in the color cycle.
-    cycle : Cycle
-        The cycle object that gives fallback colors.
+    current_index : int
+        The index of the current color within the values array.
     """
 
     values: np.ndarray
-    cycle: Cycle
+    current_index: int = 0
 
     @classmethod
     def __get_pydantic_core_schema__(
@@ -79,14 +62,25 @@ class ColorCycle:
             eq = False
         return eq
 
+    def __next__(self):
+        val = self.current_color()
+        self.current_index += 1
+        self.current_index %= len(self.values)
+        return val
+
+    def __iter__(self):
+        return self
+
+    def current_color(self):
+        return self.values[self.current_index]
+
 
 def _coerce_colorcycle_from_dict(
-    val: dict[str, str | list | np.ndarray | Cycle],
+    val: dict[str, str | list | np.ndarray | int],
 ) -> ColorCycle:
     # avoid circular import
     from napari.layers.utils.color_transformations import (
         transform_color,
-        transform_color_cycle,
     )
 
     # validate values
@@ -98,27 +92,15 @@ def _coerce_colorcycle_from_dict(
 
     transformed_color_values = transform_color(color_values)
 
-    # validate cycle
-    color_cycle = val.get('cycle')
-    if color_cycle is None:
-        transformed_color_cycle = transform_color_cycle(
-            color_cycle=color_values,
-            elem_name='color_cycle',
-            default='white',
-        )[0]
-    elif isinstance(color_cycle, Cycle):
-        transformed_color_cycle = color_cycle
-    elif isinstance(color_cycle, Iterable):
-        # Workaround for https://github.com/pydantic/pydantic/issues/8907
-        color_cycle = Cycle(color_cycle)
-        transformed_color_cycle = color_cycle
-    else:
-        raise TypeError(
-            f'cycle entry must be of type Cycle, got {type(color_cycle)}'
-        )
+    current_index = val.get('current_index', 0)
+    if not isinstance(current_index, int):
+        raise TypeError('ColorCycle current_index must be an integer')
+    if current_index > len(transformed_color_values) - 1:
+        raise ValueError('ColorCycle current_index must be < len(values)')
 
     return ColorCycle(
-        values=transformed_color_values, cycle=transformed_color_cycle
+        values=transformed_color_values,
+        current_index=current_index,
     )
 
 
@@ -132,17 +114,13 @@ def _coerce_colorcycle_from_colors(
 
     if isinstance(val, str):
         val = [val]
-    (
-        transformed_color_cycle,
-        transformed_color_values,
-    ) = transform_color_cycle(
+
+    transformed_color_values = transform_color_cycle(
         color_cycle=val,
         elem_name='color_cycle',
         default='white',
     )
-    return ColorCycle(
-        values=transformed_color_values, cycle=transformed_color_cycle
-    )
+    return ColorCycle(values=transformed_color_values)
 
 
 def compare_colormap_dicts(cmap_1, cmap_2):

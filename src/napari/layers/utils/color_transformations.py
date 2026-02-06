@@ -8,7 +8,6 @@ import warnings
 
 import numpy as np
 
-from napari.utils.colormaps.categorical_colormap_utils import Cycle
 from napari.utils.colormaps.colormap_utils import ColorType
 from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils.translations import trans
@@ -66,7 +65,7 @@ def transform_color_with_defaults(
 
 def transform_color_cycle(
     color_cycle: ColorType, elem_name: str, default: str
-) -> tuple['Cycle[np.ndarray]', np.ndarray]:
+) -> np.ndarray:
     """Helper method to return an Nx4 np.array from an arbitrary user input.
 
     Parameters
@@ -91,9 +90,7 @@ def transform_color_cycle(
         elem_name=elem_name,
         default=default,
     )
-    transformed_color_cycle = Cycle(transformed_colors)
-
-    return transformed_color_cycle, transformed_colors
+    return transformed_colors
 
 
 def normalize_and_broadcast_colors(
