@@ -745,7 +745,7 @@ def _restore_config_data(dct: dict, delete: dict, defaults: dict) -> dict:
             dflt = defaults.get(k, {})
             if not isinstance(dflt, dict):
                 dflt = {}
-            _restore_config_data(dct[k], v, dflt)
+            _restore_config_data(dct.setdefault(k, {}), v, dflt)
         # restore from defaults if present, or just delete the key
         elif k in defaults:
             dct[k] = defaults[k]

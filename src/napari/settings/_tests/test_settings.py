@@ -274,9 +274,6 @@ def test_subfield_env_field(monkeypatch):
 
 
 # Failing because dark is actually the default...
-@pytest.mark.xfail(
-    reason='Currently, there are problems with saving env var overrides.'
-)
 def test_settings_env_variables_do_not_write_to_disk(tmp_path, monkeypatch):
     # create a settings file with light theme
     data = 'appearance:\n   theme: light'
