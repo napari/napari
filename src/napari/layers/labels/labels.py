@@ -432,8 +432,8 @@ class Labels(ScalarFieldBase):
         self._status = self.mode
         self._preserve_labels = False
 
-        self.selected_data.events.items_changed.connect(
-            lambda *_args: self.events.selected_label()
+        typing.cast(WarningEmitter, self.events.selected_label).connect_from(
+            self.selected_data.events.items_changed
         )  # For backwards compatibility
 
     def _slice_dtype(self):
