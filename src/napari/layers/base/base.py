@@ -539,8 +539,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         units=None,
         visible=True,
     ):
-        self._locked = False
-
         super().__init__()
 
         if name is None and data is not None:
@@ -2430,7 +2428,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
     @property
     def locked(self) -> bool:
-        return self._locked
+        # getattr needed here to ensure during layer initialization this can still work
+        # (subclasses call super().__init__ after this needs to trigger)
+        return getattr(self, '_locked', False)
 
     @locked.setter
     def locked(self, value: bool) -> None:
@@ -2439,9 +2439,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
     @contextmanager
     def _bypass_lock(self):
-        prev, self._locked = self._locked, False
+        prev, self.locked = self.locked, False
         yield
-        self._locked = prev
+        self.locked = prev
 
     def __setattr__(self, name: str, value: Any) -> None:
         if (
