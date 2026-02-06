@@ -50,7 +50,7 @@ jobs:
       fail-fast: false
       matrix:
         platform: [ubuntu-latest, windows-2022]
-        python: ["3.10", "3.11", "3.12", "3.13"]
+        python: ["3.10", "3.11", "3.12", "3.14"]
         backend: [pyqt5]
         include:
           - python: "3.11"
@@ -65,7 +65,7 @@ jobs:
           - python: "3.10"
             platform: ubuntu-22.04
             backend: headless
-          - python: "3.13"
+          - python: "3.14"
             platform: ubuntu-latest
             backend: pyqt6
             tox_extras: "testing_extra"
@@ -91,9 +91,9 @@ jobs:
     uses: ./.github/workflows/reusable_run_tox_test.yml
     needs: build_wheel
     with:
-        toxenv: py312-linux-pyqt6-examples-cov
+        toxenv: py314-linux-pyqt6-examples-cov
         timeout: 60
-        python_version: 3.12
+        python_version: 3.14
         constraints_suffix: _examples
         coverage: cov
 
