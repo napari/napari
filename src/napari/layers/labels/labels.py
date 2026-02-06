@@ -777,9 +777,12 @@ class Labels(ScalarFieldBase):
                 upper_bound=dtype_lims[1],
             )
         next_selected_label = next(reversed(selected_data))
-        self._selected_color = self.get_color(next_selected_label)
+        self.colormap.selection = next_selected_label
+        if next_selected_label == self.colormap.background_value:
+            self._selected_color = None
+        else:
+            self._selected_color = self.colormap.map(next_selected_label)
         self._selected_data.replace_selection(selected_data)
-        self.colormap.selection = self.selected_label
         if self.show_selected_label:
             self.refresh(extent=False)
 

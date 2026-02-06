@@ -741,6 +741,16 @@ def test_selected_data_update_and_events():
     )
 
 
+def test_selected_data_updates_selected_color_when_filtering():
+    labels = Labels(np.arange(4, dtype=np.uint8)[None, :])
+    labels.show_selected_label = True
+
+    labels.selected_data = [1, 2]
+
+    assert labels.selected_label == 2
+    assert np.allclose(labels._selected_color, labels.colormap.map(2))
+
+
 def test_selected_data_triggers_deprecated_selected_label_event():
     """selected_data should still fire the deprecated selected_label event."""
     labels = Labels(np.zeros((10, 10), dtype=np.uint8))
