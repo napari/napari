@@ -1,51 +1,82 @@
 import numpy as np
 
 from napari.components.overlays import (
+    AxesOverlay,
     BoundingBoxOverlay,
     CanvasOverlay,
     ScaleBarOverlay,
 )
 
 
-def test_viewer_overlays(qt_viewer):
+def test_scene_overlays(qt_viewer):
     viewer = qt_viewer.viewer
-    canvas = qt_viewer.canvas
+    vispy_canvas = qt_viewer.canvas
 
     for overlay in viewer._overlays.values():
-        if isinstance(overlay, CanvasOverlay):
-            assert all(
-                visual.node in canvas.view.children
-                for visual in canvas._overlay_to_visual[overlay]
-            )
-        else:
-            assert all(
-                visual.node in canvas.view.scene.children
-                for visual in canvas._overlay_to_visual[overlay]
-            )
+        # vispy overlays only exist if they are visible at least once
+        overlay.visible = True
+        assert (
+            vispy_canvas._scene_overlay_to_visual[overlay].node
+            in vispy_canvas.view.scene.children
+        )
 
-    old_vispy_overlays = {
-        k: list(v) for k, v in canvas._overlay_to_visual.items()
-    }
+    old_vispy_scene_overlays = dict(
+        vispy_canvas._scene_overlay_to_visual.items()
+    )
 
-    new_overlay = ScaleBarOverlay()
+    new_overlay = AxesOverlay(visible=True)
     viewer._overlays['test'] = new_overlay
 
-    assert new_overlay in canvas._overlay_to_visual
-    new_overlay_node = canvas._overlay_to_visual[new_overlay][0].node
-    assert new_overlay_node not in canvas.view.scene.children
-    assert new_overlay_node in canvas.view.children
+    assert new_overlay in vispy_canvas._scene_overlay_to_visual
+    new_overlay_node = vispy_canvas._scene_overlay_to_visual[new_overlay].node
+    assert new_overlay_node in vispy_canvas.view.scene.children
+    assert new_overlay_node not in vispy_canvas.view.children
 
     # old visuals should still be there, as they are reused when possible
-    for overlay, vispy_overlays in old_vispy_overlays.items():
-        for vispy_overlay in vispy_overlays:
-            if isinstance(overlay, CanvasOverlay):
-                assert vispy_overlay.node in canvas.view.children
-            else:
-                assert vispy_overlay.node in canvas.view.scene.children
+    for _, vispy_overlay in old_vispy_scene_overlays.items():
+        assert vispy_overlay.node in vispy_canvas.view.scene.children
 
     viewer._overlays.pop('test')
-    assert new_overlay not in canvas._overlay_to_visual
-    assert new_overlay_node not in canvas.view.children
+    assert new_overlay not in vispy_canvas._scene_overlay_to_visual
+    assert new_overlay_node not in vispy_canvas.view.children
+
+
+def test_canvas_overlays(qt_viewer):
+    canvas = qt_viewer.viewer.canvas
+    vispy_canvas = qt_viewer.canvas
+
+    for overlay in canvas._overlays.values():
+        # vispy overlays only exist if they are visible at least once
+        overlay.visible = True
+        assert all(
+            visual.node in vispy_canvas.view.children
+            for visual in vispy_canvas._canvas_overlay_to_visual[overlay]
+        )
+
+    old_vispy_canvas_overlays = {
+        k: list(v) for k, v in vispy_canvas._canvas_overlay_to_visual.items()
+    }
+
+    new_overlay = ScaleBarOverlay(visible=True)
+    canvas._overlays['test'] = new_overlay
+
+    assert new_overlay in vispy_canvas._canvas_overlay_to_visual
+    new_overlay_node = vispy_canvas._canvas_overlay_to_visual[new_overlay][
+        0
+    ].node
+    assert new_overlay_node not in vispy_canvas.view.scene.children
+    assert new_overlay_node in vispy_canvas.view.children
+
+    # old visuals should still be there, as they are reused when possible
+    for _, vispy_overlays in old_vispy_canvas_overlays.items():
+        for vispy_overlay in vispy_overlays:
+            assert vispy_overlay.node in vispy_canvas.view.children
+
+    canvas._overlays.pop('test')
+    assert new_overlay not in vispy_canvas._canvas_overlay_to_visual
+    assert new_overlay_node not in vispy_canvas.view.children
+
+    canvas.welcome.visible = False  # just for proper test cleanup
 
 
 def test_layer_overlays(qt_viewer):
@@ -122,7 +153,7 @@ def test_grid_mode(qt_viewer):
         assert camera.zoom == zoom
 
     # ensure that switching to grid maintains zoom and angles
-    viewer.grid.enabled = True
+    viewer.canvas.grid.enabled = True
 
     canvas.on_draw(None)
 
@@ -130,7 +161,7 @@ def test_grid_mode(qt_viewer):
         np.testing.assert_allclose(camera.angles, angles)
         assert camera.zoom == zoom
 
-    viewer.grid.enabled = False
+    viewer.canvas.grid.enabled = False
 
     canvas.on_draw(None)
 
@@ -143,12 +174,16 @@ def test_tiling_canvas_overlays(qt_viewer):
     viewer = qt_viewer.viewer
     canvas = qt_viewer.canvas
 
-    viewer.scale_bar.visible = True
-    viewer.text_overlay.visible = True
-    viewer.text_overlay.text = 'test'
+    viewer.canvas.scale_bar.visible = True
+    viewer.canvas.text.visible = True
+    viewer.canvas.text.text = 'test'
 
-    vispy_scale_bar = canvas._overlay_to_visual[viewer.scale_bar][0]
-    vispy_text_overlay = canvas._overlay_to_visual[viewer.text_overlay][0]
+    vispy_scale_bar = canvas._canvas_overlay_to_visual[
+        viewer.canvas.scale_bar
+    ][0]
+    vispy_text_overlay = canvas._canvas_overlay_to_visual[viewer.canvas.text][
+        0
+    ]
 
     padding = 10.0  # currently hardcoded
     y_max, x_max = canvas.size
@@ -160,8 +195,8 @@ def test_tiling_canvas_overlays(qt_viewer):
     text_overlay_x_size = vispy_text_overlay.x_size + padding
 
     # check vertical tiling works on the bottom right
-    viewer.scale_bar.position = 'bottom_right'
-    viewer.text_overlay.position = 'bottom_right'
+    viewer.canvas.scale_bar.position = 'bottom_right'
+    viewer.canvas.text.position = 'bottom_right'
     canvas._update_overlay_canvas_positions()
 
     np.testing.assert_almost_equal(
@@ -176,7 +211,7 @@ def test_tiling_canvas_overlays(qt_viewer):
     )
 
     # move scale bar out of the way and check tiling is updated
-    viewer.scale_bar.position = 'top_right'
+    viewer.canvas.scale_bar.position = 'top_right'
     canvas._update_overlay_canvas_positions()
     np.testing.assert_almost_equal(
         vispy_text_overlay.node.transform.translate[0],
@@ -190,7 +225,7 @@ def test_tiling_canvas_overlays(qt_viewer):
     )
 
     # check horizontal tiling works on the top right
-    viewer.text_overlay.position = 'top_right'
+    viewer.canvas.text.position = 'top_right'
     canvas._update_overlay_canvas_positions()
     np.testing.assert_almost_equal(
         vispy_text_overlay.node.transform.translate[0],

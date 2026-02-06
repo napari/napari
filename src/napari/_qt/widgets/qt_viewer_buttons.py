@@ -202,11 +202,11 @@ class QtViewerButtons(QFrame):
         )
         self.gridViewButton = gvb
         gvb.setCheckable(True)
-        gvb.setChecked(viewer.grid.enabled)
+        gvb.setChecked(viewer.canvas.grid.enabled)
         gvb.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         gvb.customContextMenuRequested.connect(self._open_grid_popup)
 
-        @self.viewer.grid.events.enabled.connect
+        @self.viewer.canvas.grid.events.enabled.connect
         def _set_grid_mode_checkstate(event):
             gvb.setChecked(event.value)
 
@@ -567,50 +567,54 @@ class QtViewerButtons(QFrame):
             'If equal or greater than 1, it is interpreted as screen pixels.'
         )
 
-        stride_min = self.viewer.grid.__fields__['stride'].type_.ge
-        stride_max = self.viewer.grid.__fields__['stride'].type_.le
-        stride_not = self.viewer.grid.__fields__['stride'].type_.ne
+        stride_min = self.viewer.canvas.grid.__fields__['stride'].type_.ge
+        stride_max = self.viewer.canvas.grid.__fields__['stride'].type_.le
+        stride_not = self.viewer.canvas.grid.__fields__['stride'].type_.ne
         grid_stride.setObjectName('gridStrideBox')
         grid_stride.setAlignment(Qt.AlignmentFlag.AlignCenter)
         grid_stride.setRange(stride_min, stride_max)
         grid_stride.setProhibitValue(stride_not)
-        grid_stride.setValue(self.viewer.grid.stride)
+        grid_stride.setValue(self.viewer.canvas.grid.stride)
         grid_stride.valueChanged.connect(self._update_grid_stride)
         self.grid_stride_box = grid_stride
 
-        width_min = self.viewer.grid.__fields__['shape'].sub_fields[1].type_.ge
-        width_not = self.viewer.grid.__fields__['shape'].sub_fields[1].type_.ne
+        width_min = (
+            self.viewer.canvas.grid.__fields__['shape'].sub_fields[1].type_.ge
+        )
+        width_not = (
+            self.viewer.canvas.grid.__fields__['shape'].sub_fields[1].type_.ne
+        )
         grid_width.setObjectName('gridWidthBox')
         grid_width.setAlignment(Qt.AlignmentFlag.AlignCenter)
         grid_width.setMinimum(width_min)
         grid_width.setProhibitValue(width_not)
-        grid_width.setValue(self.viewer.grid.shape[1])
+        grid_width.setValue(self.viewer.canvas.grid.shape[1])
         grid_width.valueChanged.connect(self._update_grid_width)
         self.grid_width_box = grid_width
 
         height_min = (
-            self.viewer.grid.__fields__['shape'].sub_fields[0].type_.ge
+            self.viewer.canvas.grid.__fields__['shape'].sub_fields[0].type_.ge
         )
         height_not = (
-            self.viewer.grid.__fields__['shape'].sub_fields[0].type_.ne
+            self.viewer.canvas.grid.__fields__['shape'].sub_fields[0].type_.ne
         )
         grid_height.setObjectName('gridStrideBox')
         grid_height.setAlignment(Qt.AlignmentFlag.AlignCenter)
         grid_height.setMinimum(height_min)
         grid_height.setProhibitValue(height_not)
-        grid_height.setValue(self.viewer.grid.shape[0])
+        grid_height.setValue(self.viewer.canvas.grid.shape[0])
         grid_height.valueChanged.connect(self._update_grid_height)
         self.grid_height_box = grid_height
 
         # set up spacing
-        spacing_min = self.viewer.grid.__fields__['spacing'].type_.ge
-        spacing_max = self.viewer.grid.__fields__['spacing'].type_.le
-        spacing_step = self.viewer.grid.__fields__['spacing'].type_.step
+        spacing_min = self.viewer.canvas.grid.__fields__['spacing'].type_.ge
+        spacing_max = self.viewer.canvas.grid.__fields__['spacing'].type_.le
+        spacing_step = self.viewer.canvas.grid.__fields__['spacing'].type_.step
         grid_spacing.setObjectName('gridSpacingBox')
         grid_spacing.setAlignment(Qt.AlignmentFlag.AlignCenter)
         grid_spacing.setMinimum(spacing_min)
         grid_spacing.setMaximum(spacing_max)
-        grid_spacing.setValue(self.viewer.grid.spacing)
+        grid_spacing.setValue(self.viewer.canvas.grid.spacing)
         grid_spacing.setDecimals(2)
         grid_spacing.setSingleStep(spacing_step)
         grid_spacing.valueChanged.connect(self._update_grid_spacing)
@@ -656,7 +660,10 @@ class QtViewerButtons(QFrame):
             New grid width value.
         """
 
-        self.viewer.grid.shape = (self.viewer.grid.shape[0], value)
+        self.viewer.canvas.grid.shape = (
+            self.viewer.canvas.grid.shape[0],
+            value,
+        )
 
     def _update_grid_stride(self, value):
         """Update stride in grid settings.
@@ -667,7 +674,7 @@ class QtViewerButtons(QFrame):
             New grid stride value.
         """
 
-        self.viewer.grid.stride = value
+        self.viewer.canvas.grid.stride = value
 
     def _update_grid_height(self, value):
         """Update height value in grid shape.
@@ -678,7 +685,10 @@ class QtViewerButtons(QFrame):
             New grid height value.
         """
 
-        self.viewer.grid.shape = (value, self.viewer.grid.shape[1])
+        self.viewer.canvas.grid.shape = (
+            value,
+            self.viewer.canvas.grid.shape[1],
+        )
 
     def _update_grid_spacing(self, value: float) -> None:
         """Update spacing value in grid settings.
@@ -688,7 +698,7 @@ class QtViewerButtons(QFrame):
         value : float
             New grid spacing value.
         """
-        self.viewer.grid.spacing = value
+        self.viewer.canvas.grid.spacing = value
 
 
 def _omit_viewer_args(constructor):

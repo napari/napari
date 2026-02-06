@@ -20,7 +20,7 @@ class VispyBaseOverlay:
     vispy backend, translating them into rendering.
     """
 
-    def __init__(self, *, overlay, node, parent=None) -> None:
+    def __init__(self, *, overlay, node, parent=None, **kwargs) -> None:
         super().__init__()
         self.overlay = overlay
 
@@ -51,7 +51,7 @@ class VispyBaseOverlay:
 
     def close(self) -> None:
         disconnect_events(self.overlay.events, self)
-        self.node.transforms = MatrixTransform()
+        self.node.transform = MatrixTransform()
         self.node.parent = None
 
 
