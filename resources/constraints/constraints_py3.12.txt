@@ -43,7 +43,7 @@ comm==0.2.3
     # via ipykernel
 contourpy==1.3.3
     # via matplotlib
-coverage==7.13.2
+coverage==7.13.3
     # via napari (pyproject.toml)
 cuda-bindings==12.9.4
     # via torch
@@ -83,7 +83,7 @@ frozenlist==1.8.0
     # via
     #   aiohttp
     #   aiosignal
-fsspec==2026.1.0
+fsspec==2026.2.0
     # via
     #   napari (pyproject.toml)
     #   dask
@@ -94,7 +94,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.151.4
+hypothesis==6.151.5
     # via napari (pyproject.toml)
 idna==3.11
     # via
@@ -114,7 +114,7 @@ ipykernel==6.31.0
     #   -r resources/constraints/version_denylist.txt
     #   napari-console
     #   qtconsole
-ipython==9.9.0
+ipython==9.10.0
     # via
     #   napari (pyproject.toml)
     #   ipykernel
@@ -188,7 +188,7 @@ napari-metadata==0.1.1
     # via napari (pyproject.toml)
 napari-plugin-engine==0.2.0
     # via napari (pyproject.toml)
-napari-plugin-manager==0.1.9
+napari-plugin-manager==0.1.10
     # via napari (pyproject.toml)
 napari-svg==0.2.1
     # via napari (pyproject.toml)
@@ -198,7 +198,7 @@ networkx==3.6.1
     # via
     #   scikit-image
     #   torch
-npe2==0.7.9
+npe2==0.8.0
     # via
     #   napari (pyproject.toml)
     #   napari-plugin-manager
@@ -307,7 +307,7 @@ pint==0.25.2
     # via
     #   napari (pyproject.toml)
     #   napari-metadata
-pip==26.0
+pip==26.0.1
     # via napari-plugin-manager
 platformdirs==4.5.1
     # via
@@ -361,7 +361,9 @@ pydantic==2.12.5
 pydantic-core==2.41.5
     # via pydantic
 pydantic-extra-types==2.11.0
-    # via napari (pyproject.toml)
+    # via
+    #   napari (pyproject.toml)
+    #   npe2
 pydantic-settings==2.12.0
     # via napari (pyproject.toml)
 pygetwindow==0.0.9
@@ -396,11 +398,11 @@ pyrect==0.2.0
     # via pygetwindow
 pyscreeze==1.0.1
     # via pyautogui
-pyside6==6.10.1
+pyside6==6.10.2
     # via napari (pyproject.toml)
-pyside6-addons==6.10.1
+pyside6-addons==6.10.2
     # via pyside6
-pyside6-essentials==6.10.1
+pyside6-essentials==6.10.2
     # via
     #   pyside6
     #   pyside6-addons
@@ -485,7 +487,7 @@ setuptools==80.10.2
     # via torch
 shellingham==1.5.4
     # via typer
-shiboken6==6.10.1
+shiboken6==6.10.2
     # via
     #   pyside6
     #   pyside6-addons
@@ -496,7 +498,7 @@ sortedcontainers==2.4.0
     # via hypothesis
 stack-data==0.6.3
     # via ipython
-superqt==0.7.7
+superqt==0.7.8
     # via
     #   napari (pyproject.toml)
     #   magicgui
@@ -524,7 +526,7 @@ tornado==6.5.4
     # via
     #   ipykernel
     #   jupyter-client
-tqdm==4.67.2
+tqdm==4.67.3
     # via napari (pyproject.toml)
 traitlets==5.14.3
     # via
@@ -574,7 +576,7 @@ vispy==0.16.1
     #   napari-svg
 wcwidth==0.5.3
     # via prompt-toolkit
-wrapt==2.1.0
+wrapt==2.1.1
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
