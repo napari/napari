@@ -41,6 +41,7 @@ class Source(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True, frozen=True)
 
     @field_validator('parent')
+    @classmethod
     def make_weakref(cls, layer: Layer) -> ReferenceType[Layer]:
         return weakref.ref(layer)
 

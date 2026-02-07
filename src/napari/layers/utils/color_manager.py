@@ -201,6 +201,7 @@ class ColorManager(EventedModel):
         return CategoricalColormap(**categorical_colormap)
 
     @field_validator('colors', mode='before')
+    @classmethod
     def _ensure_color_array(cls, v):
         if len(v) > 0:
             return transform_color(v)

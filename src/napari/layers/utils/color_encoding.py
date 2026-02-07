@@ -209,10 +209,12 @@ class QuantitativeColorEncoding(_DerivedStyleEncoding[ColorValue, ColorArray]):
         return self.colormap.map(values)
 
     @field_validator('colormap', mode='before')
+    @classmethod
     def _check_colormap(cls, colormap: ValidColormapArg) -> Colormap:
         return ensure_colormap(colormap)
 
     @field_validator('contrast_limits', mode='before')
+    @classmethod
     def _check_contrast_limits(
         cls, contrast_limits
     ) -> tuple[float, float] | None:

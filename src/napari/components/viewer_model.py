@@ -352,6 +352,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         self.grid.spacing = settings.application.grid_spacing
 
     @field_validator('theme')
+    @classmethod
     def _valid_theme(cls, v):
         if not is_theme_available(v):
             raise ValueError(
