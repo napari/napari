@@ -247,7 +247,7 @@ def test_settings_env_variables_alias(monkeypatch):
 def test_two_env_variable_settings(monkeypatch):
     assert NapariSettings(None).experimental.async_ is False
     assert NapariSettings(None).experimental.autoswap_buffers is False
-    monkeypatch.setenv('NAPARI_EXPERIMENTAL_ASYNC', '1')
+    monkeypatch.setenv('NAPARI_EXPERIMENTAL_ASYNC_', '1')
     monkeypatch.setenv('NAPARI_EXPERIMENTAL_AUTOSWAP_BUFFERS', '1')
     assert NapariSettings(None).experimental.async_ is True
     assert NapariSettings(None).experimental.autoswap_buffers is True
@@ -451,8 +451,8 @@ def test_env_settings_restore(monkeypatch):
     monkeypatch.setenv('NAPARI_ASYNC', '0')
     s = NapariSettings()
     s.experimental.completion_radius = 1
-    assert s._save_dict()['experimental'] == {'completion_radius': 1}
     assert s.env_settings == {'experimental': {'async_': False}}
+    assert s._save_dict()['experimental'] == {'completion_radius': 1}
 
 
 NO_IMPORT_SCRIPT = """
