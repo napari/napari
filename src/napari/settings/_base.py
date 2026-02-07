@@ -360,8 +360,9 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
               `dict` will be removed in napari 0.8.0 it is replaced by
               `model_dump` following pydantic 1 to 2 changes.
         """
-        warnings.deprecated(
-            'method `dict` is deprecated in 0.7.0 and will be removed in napari 0.8.0, use `model_dump` instead.'
+        warnings.warn(
+            'method `dict` is deprecated in 0.7.0 and will be removed in napari 0.8.0, use `model_dump` instead.',
+            category=FutureWarning,
         )
         return self.model_dump(
             include=include,
@@ -376,7 +377,7 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
     def model_dump(
         self,
         *,
-        mode: Literal['json', 'python'] = 'python',
+        mode: Literal['json', 'python'] | str = 'python',  # noqa: PYI051
         include: IncEx | None = None,
         exclude: IncEx | None = None,
         context: Any | None = None,
