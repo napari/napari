@@ -287,7 +287,7 @@ class NapariEnvSettingsSource(EnvSettingsSource):
                     sub_dkt = sub_dkt.setdefault(sub, {})
                 if field_name in sub_dkt:
                     _logger.warning(
-                        'Multiple environment variables found for %(field_name) at %(env_name) and %(existing_env_name). Using ealier value.',
+                        'Multiple environment variables found for %(field_name) at %(env_name) and %(existing_env_name). Using earlier value.',
                         extra={
                             'field_name': field_name,
                             'env_name': env_name,
