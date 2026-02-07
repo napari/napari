@@ -66,9 +66,10 @@ from napari.utils.colormaps.colormap import (
     _normalize_label_colormap,
 )
 from napari.utils.colormaps.colormap_utils import shuffle_and_extend_colormap
+from napari.utils.compat import StrEnum as StringEnum
 from napari.utils.events import EmitterGroup, Event
 from napari.utils.events.custom_types import Array
-from napari.utils.misc import StringEnum, _is_array_type
+from napari.utils.misc import _is_array_type
 from napari.utils.naming import magic_name
 from napari.utils.translations import trans
 
