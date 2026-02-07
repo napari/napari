@@ -89,10 +89,7 @@ class PydanticYamlMixin(BaseModel):
             exclude_defaults=exclude_defaults,
             exclude_none=exclude_none,
         )
-        # if self.__custom_root_type__:
-        #     from pydantic.utils import ROOT_KEY
-        #
-        #     data = data[ROOT_KEY]
+
         return self._yaml_dump(data, dumper, **dumps_kwargs)
 
     def _yaml_dump(
