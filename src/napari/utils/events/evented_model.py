@@ -1,7 +1,7 @@
 import warnings
 from collections.abc import Callable
 from contextlib import contextmanager
-from typing import Any, ClassVar, Literal, Union
+from typing import Any, ClassVar, Union
 
 import numpy as np
 from app_model.types import KeyBinding
@@ -11,11 +11,6 @@ from pydantic import (
     PrivateAttr,
 )
 from pydantic._internal._model_construction import ModelMetaclass
-from pydantic.json_schema import (
-    DEFAULT_REF_TEMPLATE,
-    GenerateJsonSchema,
-    JsonSchemaMode,
-)
 
 from napari._pydantic_util import get_inner_type, get_outer_type
 from napari.utils.events.event import EmitterGroup, Event
@@ -463,23 +458,16 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
     @classmethod
     def model_json_schema(
         cls,
-        by_alias: bool = True,
-        ref_template: str = DEFAULT_REF_TEMPLATE,
-        schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
-        mode: JsonSchemaMode = 'validation',
-        *,
-        union_format: Literal['any_of', 'primitive_type_array'] = 'any_of',
+        *args,
+        **kwargs,
     ) -> dict[str, Any]:
         """Generate a JSON schema for this model.
 
         This is required to prevent from mail formated docstring break docs build.
         """
         return super().model_json_schema(
-            by_alias=by_alias,
-            ref_template=ref_template,
-            schema_generator=schema_generator,
-            mode=mode,
-            union_format=union_format,
+            *args,
+            **kwargs,
         )
 
 
