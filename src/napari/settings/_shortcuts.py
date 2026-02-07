@@ -22,6 +22,7 @@ class ShortcutsSettings(EventedModel):
         preferences_exclude = ('schema_version',)
 
     @field_validator('shortcuts', mode='before')
+    @classmethod
     def shortcut_validate(
         cls, v: dict[str, list[KeyBinding | str]]
     ) -> dict[str, list[KeyBinding]]:

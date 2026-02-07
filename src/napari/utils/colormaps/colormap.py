@@ -106,6 +106,7 @@ class Colormap(EventedModel):
 
     # controls validator must be called even if None for correct initialization
     @field_validator('controls', mode='after')
+    @classmethod
     def _check_controls(cls, v, info):
         # If no control points provided generate defaults
         if v is None or len(v) == 0:
@@ -309,6 +310,7 @@ class CyclicLabelColormap(LabelColormapBase):
     seed: float = 0.5
 
     @field_validator('colors', mode='after')
+    @classmethod
     def _validate_color(cls, v):
         if len(v) > 2**16:
             raise ValueError(
