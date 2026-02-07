@@ -4,10 +4,11 @@ import contextlib
 import json
 import logging
 import os
+import warnings
 from collections.abc import Mapping
 from functools import partial
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 from warnings import warn
 
 from pydantic import (
@@ -354,14 +355,64 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
         """Return dict representation of the model.
 
         May optionally specify which fields to include or exclude.
+
+        .. deprecated:: 0.7.0
+              `dict` will be removed in napari 0.8.0 it is replaced by
+              `model_dump` following pydantic 1 to 2 changes.
         """
-        data = super().model_dump(
+        warnings.deprecated(
+            'method `dict` is deprecated in 0.7.0 and will be removed in napari 0.8.0, use `model_dump` instead.'
+        )
+        return self.model_dump(
             include=include,
             exclude=exclude,
             by_alias=by_alias,
             exclude_unset=exclude_unset,
             exclude_defaults=exclude_defaults,
             exclude_none=exclude_none,
+            exclude_env=exclude_env,
+        )
+
+    def model_dump(
+        self,
+        *,
+        mode: Literal['json', 'python'] = 'python',
+        include: IncEx | None = None,
+        exclude: IncEx | None = None,
+        context: Any | None = None,
+        by_alias: bool | None = None,
+        exclude_unset: bool = False,
+        exclude_defaults: bool = False,
+        exclude_none: bool = False,
+        round_trip: bool = False,
+        warnings: bool | Literal['none', 'warn', 'error'] = True,
+        serialize_as_any: bool = False,
+        exclude_env: bool = False,
+        **kwargs: Any,
+    ) -> Dict[str, Any]:
+        """Return dict representation of the model.
+
+        May optionally specify which fields to include or exclude.
+
+        For `exclude_env` kwarg: if True, will exclude any settings
+        provided by environment variables.
+
+        For other kwargs, see ``pydantic.BaseModel.model_dump`` docs:
+        https://docs.pydantic.dev/latest/api/base_model/#pydantic.BaseModel.model_dump
+        """
+        data = super().model_dump(
+            mode=mode,
+            include=include,
+            exclude=exclude,
+            context=context,
+            by_alias=by_alias,
+            exclude_unset=exclude_unset,
+            exclude_defaults=exclude_defaults,
+            exclude_none=exclude_none,
+            round_trip=round_trip,
+            warnings=warnings,
+            serialize_as_any=serialize_as_any,
+            **kwargs,
         )
         if exclude_env:
             self._remove_env_settings(data)
@@ -376,7 +427,7 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
         """
         dict_kwargs.setdefault('exclude_defaults', True)
         dict_kwargs.setdefault('exclude_env', True)
-        data = self.dict(**dict_kwargs)
+        data = self.model_dump(**dict_kwargs)
         _remove_empty_dicts(data)
         return data
 

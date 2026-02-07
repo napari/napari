@@ -91,7 +91,9 @@ class PreferencesDialog(QDialog):
     def _rebuild_dialog(self):
         """Removes settings not to be exposed to user and creates dialog pages."""
 
-        self._starting_values = self._settings.dict(exclude={'schema_version'})
+        self._starting_values = self._settings.model_dump(
+            exclude={'schema_version'}
+        )
 
         self._list.clear()
         while self._stack.count():

@@ -111,7 +111,7 @@ class NapariSettings(EventedConfigFileSettings):
 
     def __str__(self):
         out = 'NapariSettings (defaults excluded)\n' + 34 * '-' + '\n'
-        data = self.dict(exclude_defaults=True)
+        data = self.model_dump(exclude_defaults=True)
         out += self._yaml_dump(_remove_empty_dicts(data))
         return out
 
