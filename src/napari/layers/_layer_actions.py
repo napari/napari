@@ -265,3 +265,23 @@ def _toggle_colorbar(ll: LayerList) -> None:
                 )
             )
         layer.colorbar.visible = not layer.colorbar.visible
+
+
+def _are_colorbars_visible(ll: LayerList) -> bool:
+    return bool(
+        ll.selection
+        and all(
+            hasattr(layer, 'colorbar') and layer.colorbar.visible
+            for layer in ll.selection
+        )
+    )
+
+
+def _are_bounding_boxes_visible(ll: LayerList) -> bool:
+    return bool(
+        ll.selection
+        and all(
+            hasattr(layer, 'bounding_box') and layer.bounding_box.visible
+            for layer in ll.selection
+        )
+    )
