@@ -14,6 +14,7 @@ import numpy as np
 import numpy.typing as npt
 import pandas as pd
 from PIL import Image, ImageDraw
+from psygnal.containers import Selection
 from scipy import ndimage as ndi
 
 from napari.layers._data_protocols import LayerDataProtocol
@@ -68,6 +69,7 @@ from napari.utils.colormaps.colormap import (
 from napari.utils.colormaps.colormap_utils import shuffle_and_extend_colormap
 from napari.utils.events import EmitterGroup, Event
 from napari.utils.events.custom_types import Array
+from napari.utils.events.event import WarningEmitter
 from napari.utils.misc import StringEnum, _is_array_type
 from napari.utils.naming import magic_name
 from napari.utils.translations import trans
@@ -390,7 +392,14 @@ class Labels(ScalarFieldBase):
             paint=Event,
             preserve_labels=Event,
             properties=Event,
-            selected_label=Event,
+            selected_label=WarningEmitter(
+                trans._(
+                    'layer.events.selected_label is deprecated and will be removed in 0.8.0.'
+                    'Please use layer.selected_data.events.items_changed instead.',
+                    deferred=True,
+                ),
+                type_name='selected_label',
+            ),
             show_selected_label=Event,
         )
 
@@ -411,17 +420,21 @@ class Labels(ScalarFieldBase):
 
         self._iso_gradient_mode = IsoCategoricalGradientMode(iso_gradient_mode)
 
-        self._selected_label = 1
-        self.colormap.selection = self._selected_label
+        self._selected_data: Selection[int] = Selection([1])
+        self.colormap.selection = self.selected_label
         self.colormap.use_selection = self._show_selected_label
-        self._prev_selected_label = None
-        self._selected_color = self.get_color(self._selected_label)
+        self._prev_selected_label: int | None = None
+        self._selected_color = self.get_color(self.selected_label)
         self._updated_slice = None
         if colormap is not None:
             self._set_colormap(colormap)
 
         self._status = self.mode
         self._preserve_labels = False
+
+        typing.cast(WarningEmitter, self.events.selected_label).connect_from(
+            self.selected_data.events.items_changed
+        )  # For backwards compatibility
 
     def _slice_dtype(self):
         """Calculate dtype of data view based on data dtype and current colormap"""
@@ -579,7 +592,6 @@ class Labels(ScalarFieldBase):
         self._selected_color = self.get_color(self.selected_label)
         self._color_mode = color_mode
         self.events.colormap()  # Will update the LabelVispyColormap shader
-        self.events.selected_label()
         self.refresh(extent=False)
 
     @property
@@ -722,33 +734,55 @@ class Labels(ScalarFieldBase):
     @property
     def selected_label(self):
         """int: Index of selected label."""
-        return self._selected_label
+        return next(reversed(self._selected_data))
 
     @selected_label.setter
-    def selected_label(self, selected_label):
-        if selected_label == self.selected_label:
+    def selected_label(self, selected_label: int):
+        if (
+            selected_label in self._selected_data
+            and len(self._selected_data) == 1
+        ):
             return
         # when setting the label to the background, store the previous
         # otherwise, clear it
-        layer_dtype = get_dtype(self)
-        dtype_lims = get_dtype_limits(layer_dtype)
-        if dtype_lims[0] > selected_label or dtype_lims[1] < selected_label:
-            raise WrongSelectedLabelError(
-                dtype=layer_dtype,
-                value=selected_label,
-                lower_bound=dtype_lims[0],
-                upper_bound=dtype_lims[1],
-            )
         if selected_label == self.colormap.background_value:
             self._prev_selected_label = self.selected_label
         else:
             self._prev_selected_label = None
-        self.colormap.selection = selected_label
-        self._selected_label = selected_label
-        self._selected_color = self.get_color(selected_label)
+        self.selected_data = [selected_label]
 
-        self.events.selected_label()
+    @property
+    def selected_data(self) -> Selection[int]:
+        return self._selected_data
 
+    @selected_data.setter
+    def selected_data(self, selected_data: Sequence[int]) -> None:
+        if len(selected_data) == 0:
+            raise ValueError('At least one label must be selected.')
+        layer_dtype = get_dtype(self)
+        dtype_lims = get_dtype_limits(layer_dtype)
+        min_val = min(selected_data)
+        max_val = max(selected_data)
+
+        if dtype_lims[0] > min_val or dtype_lims[1] < max_val:
+            out_of_bounds_values = [
+                value
+                for value in selected_data
+                if value < dtype_lims[0] or value > dtype_lims[1]
+            ]
+            raise WrongSelectedLabelError(
+                dtype=layer_dtype,
+                invalid_values=out_of_bounds_values,
+                lower_bound=dtype_lims[0],
+                upper_bound=dtype_lims[1],
+            )
+        next_selected_label = next(reversed(selected_data))
+        self.colormap.selection = next_selected_label
+        if next_selected_label == self.colormap.background_value:
+            self._selected_color = None
+        else:
+            self._selected_color = self.colormap.map(next_selected_label)
+        self._selected_data.replace_selection(selected_data)
         if self.show_selected_label:
             self.refresh(extent=False)
 
@@ -757,7 +791,8 @@ class Labels(ScalarFieldBase):
         if self.selected_label != self.colormap.background_value:
             self.selected_label = self.colormap.background_value
         else:
-            self.selected_label = self._prev_selected_label
+            if self._prev_selected_label is not None:
+                self.selected_label = self._prev_selected_label
 
     @property
     def show_selected_label(self):
@@ -1683,19 +1718,46 @@ def _coerce_indices_for_vectorization(array, indices: list) -> tuple:
 class WrongSelectedLabelError(ValueError):
     """Raised when the selected label is not in the data array."""
 
+    _MAX_DISPLAYED_INVALID_VALUES = 6
+
     def __init__(
         self,
         dtype: np.dtype,
-        value: int,
+        invalid_values: Sequence[int],
         lower_bound: float,
         upper_bound: float,
         message: str = '',
     ):
         self.dtype = dtype
-        self.value = value
         self.lower_bound = lower_bound
         self.upper_bound = upper_bound
-        text = f'The value {value} is out of bounds for dtype {dtype} that allow for range [{int(lower_bound)}, {int(upper_bound)}].'
+        invalid_values = sorted(set(invalid_values))
+
+        if len(invalid_values) == 1:
+            invalid_values_text = str(invalid_values[0])
+            value_word = 'value'
+            verb = 'is'
+        elif len(invalid_values) <= self._MAX_DISPLAYED_INVALID_VALUES:
+            invalid_values_text = ', '.join(map(str, invalid_values))
+            value_word = 'values'
+            verb = 'are'
+        else:
+            displayed_count = self._MAX_DISPLAYED_INVALID_VALUES // 2
+            invalid_values_text = ', '.join(
+                map(str, invalid_values[:displayed_count])
+            )
+            invalid_values_text += ', ..., '
+            invalid_values_text += ', '.join(
+                map(str, invalid_values[-displayed_count:])
+            )
+            value_word = 'values'
+            verb = 'are'
+
+        text = (
+            f'The {value_word} {invalid_values_text} {verb} out of bounds for '
+            f'dtype {dtype} that allow for range [{int(lower_bound)}, '
+            f'{int(upper_bound)}].'
+        )
         if message:
             text = f'{message} {text}'
         self.text = text

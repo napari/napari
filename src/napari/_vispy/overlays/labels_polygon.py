@@ -72,7 +72,9 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
         self.overlay.events.points.connect(self._on_points_change)
         self.overlay.events.enabled.connect(self._on_enabled_change)
 
-        self.layer.events.selected_label.connect(self._update_color)
+        self.layer.selected_data.events.items_changed.connect(
+            self._update_color
+        )
         self.layer.events.colormap.connect(self._update_color)
         self.layer.events.opacity.connect(self._update_color)
 
@@ -151,7 +153,7 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
 
     def _update_color(self):
         layer = self.layer
-        if layer._selected_label == layer.colormap.background_value:
+        if layer.selected_label == layer.colormap.background_value:
             self._set_color((1, 0, 0, 0))
         else:
             self._set_color(
