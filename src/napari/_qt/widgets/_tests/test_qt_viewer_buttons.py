@@ -311,3 +311,23 @@ def test_transpose_rotate_button(monkeypatch, qt_viewer_buttons, qtbot):
         viewer_buttons.transposeDimsButton, Qt.MouseButton.LeftButton
     )
     trigger_mock.assert_called_with('napari:transpose_axes')
+
+
+def test_layer_buttons_visual_on_selection(make_napari_viewer):
+    """Test that new points/shapes buttons are checked when a layer is selected."""
+    viewer = make_napari_viewer()
+    layer_buttons = viewer.window._qt_viewer.layerButtons
+
+    assert not layer_buttons.newPointsButton.isChecked()
+    assert not layer_buttons.newShapesButton.isChecked()
+
+    layer = viewer.add_image([[1, 2], [3, 4]])
+    viewer.layers.selection.add(layer)
+
+    assert layer_buttons.newPointsButton.isChecked()
+    assert layer_buttons.newShapesButton.isChecked()
+
+    viewer.layers.selection.clear()
+
+    assert not layer_buttons.newPointsButton.isChecked()
+    assert not layer_buttons.newShapesButton.isChecked()
