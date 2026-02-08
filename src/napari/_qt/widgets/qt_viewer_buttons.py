@@ -114,7 +114,7 @@ class QtLayerButtons(QFrame):
         to indicate that creating a new layer will inherit properties from the
         selected layer.
         """
-        has_selection = bool(self.viewer.layers.selection)
+        has_selection = bool(self.viewer.layers.selection.active)
         self.newPointsButton.setChecked(has_selection)
         self.newShapesButton.setChecked(has_selection)
 
