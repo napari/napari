@@ -76,12 +76,15 @@ class QtLayerButtons(QFrame):
             trans._('New points layer'),
             partial(new_points, self.viewer),
         )
+        self.newPointsButton.setCheckable(True)
 
         self.newShapesButton = QtViewerPushButton(
             'new_shapes',
             trans._('New shapes layer'),
             partial(new_shapes, self.viewer),
         )
+        self.newShapesButton.setCheckable(True)
+
         self.newLabelsButton = QtViewerPushButton(
             'new_labels',
             trans._('New labels layer'),
@@ -96,6 +99,24 @@ class QtLayerButtons(QFrame):
         layout.addStretch(0)
         layout.addWidget(self.deleteButton)
         self.setLayout(layout)
+
+        # Connect to layer selection changes to highlight buttons
+        self.viewer.layers.selection.events.changed.connect(
+            self._on_selection_changed
+        )
+        # Initialize button highlight state
+        self._on_selection_changed()
+
+    def _on_selection_changed(self, event=None) -> None:
+        """Update button checked state when layer selection changes.
+
+        When a layer is selected, some new layer buttons are checked
+        to indicate that creating a new layer will inherit properties from the
+        selected layer.
+        """
+        has_selection = bool(self.viewer.layers.selection)
+        self.newPointsButton.setChecked(has_selection)
+        self.newShapesButton.setChecked(has_selection)
 
 
 def labeled_double_slider(
