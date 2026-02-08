@@ -18,8 +18,16 @@ QtViewerPushButton[mode="new_points"] {
   image: url("theme_{{ id }}:/new_points.svg");
 }
 
+QtViewerPushButton[mode="new_points"]:checked {
+  background-color: {{ current }};
+}
+
 QtViewerPushButton[mode="new_shapes"] {
   image: url("theme_{{ id }}:/new_shapes.svg");
+}
+
+QtViewerPushButton[mode="new_shapes"]:checked {
+  background-color: {{ current }};
 }
 
 QtViewerPushButton[mode="warning"] {
