@@ -135,6 +135,16 @@ def _toggle_visibility(ll: LayerList) -> None:
             layer.visible = not visibility
 
 
+def _toggle_lock(ll: LayerList) -> None:
+    current_lock_state = []
+    for layer in ll.selection:
+        current_lock_state.append(layer.locked)
+
+    for lock, layer in zip(current_lock_state, ll.selection, strict=False):
+        if layer.locked == lock:
+            layer.locked = not lock
+
+
 def _show_selected(ll: LayerList) -> None:
     for lay in ll.selection:
         lay.visible = True

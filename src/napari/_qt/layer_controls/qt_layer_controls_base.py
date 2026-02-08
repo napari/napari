@@ -85,6 +85,7 @@ class QtLayerControls(QFrame):
         self.layer.events.mode.connect(self._on_mode_change)
         self.layer.events.editable.connect(self._on_editable_or_visible_change)
         self.layer.events.visible.connect(self._on_editable_or_visible_change)
+        self.layer.events.locked.connect(self._on_locked_change)
 
         self.setObjectName('layer')
         self.setMouseTracking(True)
@@ -132,6 +133,7 @@ class QtLayerControls(QFrame):
             self, layer
         )
         self._add_widget_controls(self._opacity_blending_controls)
+        self._on_locked_change()
 
     def _add_widget_controls(
         self,
@@ -274,6 +276,9 @@ class QtLayerControls(QFrame):
             [self.transform_button],
             self.layer.editable and self.layer.visible and self.ndisplay == 2,
         )
+
+    def _on_locked_change(self):
+        self.setEnabled(not self.layer.locked)
 
     def _disconnect_child_widget_controls(self, child) -> None:
         disconnect_method = getattr(child, 'disconnect_widget_controls', None)
