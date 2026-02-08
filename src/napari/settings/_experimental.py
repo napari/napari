@@ -1,6 +1,7 @@
 from typing import Any
 
-from napari._pydantic_compat import Field
+from pydantic import AliasChoices, Field
+
 from napari.settings._base import EventedSettings
 from napari.utils.colormap_backend import (
     ColormapBackend,
@@ -15,7 +16,7 @@ from napari.utils.triangulation_backend import (
 
 
 # this class inherits from EventedSettings instead of EventedModel because
-# it uses Field(env=...) for one of its attributes
+# it uses Field(validation_alias=...) for some of its attributes
 class ExperimentalSettings(EventedSettings):
     def __init__(self, **data: dict[str, Any]):
         super().__init__(**data)
@@ -33,8 +34,8 @@ class ExperimentalSettings(EventedSettings):
         description=trans._(
             'Asynchronous loading of image data. \nThis setting partially loads data while viewing.'
         ),
-        env='napari_async',
-        requires_restart=False,
+        validation_alias=AliasChoices('async_', 'async', 'napari_async'),
+        json_schema_extra={'requires_restart': False},
     )
     autoswap_buffers: bool = Field(
         False,
@@ -42,8 +43,8 @@ class ExperimentalSettings(EventedSettings):
         description=trans._(
             'Autoswapping rendering buffers improves quality by reducing tearing artifacts, while sacrificing some performance.'
         ),
-        env='napari_autoswap',
-        requires_restart=True,
+        validation_alias=AliasChoices('autoswap_buffers', 'napari_autoswap'),
+        json_schema_extra={'requires_restart': True},
     )
 
     rdp_epsilon: float = Field(
@@ -53,7 +54,6 @@ class ExperimentalSettings(EventedSettings):
             'Setting this higher removes more points from polygons or paths. \nSetting this to 0 keeps all vertices of '
             'a given polygon or path.'
         ),
-        type=float,
         ge=0,
     )
 
@@ -66,7 +66,6 @@ class ExperimentalSettings(EventedSettings):
             'Value determines how many screen pixels one has to move before another vertex can be added to the polygon'
             'or path.'
         ),
-        type=int,
         gt=0,
         lt=50,
     )
@@ -93,7 +92,9 @@ class ExperimentalSettings(EventedSettings):
             "The 'pure python' backend uses the default Python triangulation from vispy.\n"
             "The 'fastest available' backend will select the fastest available backend.\n"
         ),
-        env='napari_triangulation_backend',
+        validation_alias=AliasChoices(
+            'triangulation_backend', 'napari_triangulation_backend'
+        ),
     )
     colormap_backend: ColormapBackend = Field(
         ColormapBackend.fastest_available,
@@ -105,7 +106,9 @@ class ExperimentalSettings(EventedSettings):
             "'pure python' uses only NumPy and Python.\n"
             "The 'fastest available' backend will select the fastest installed backend.\n"
         ),
-        env='napari_colormap_backend',
+        validation_alias=AliasChoices(
+            'colormap_backend', 'napari_colormap_backend'
+        ),
     )
 
     compiled_triangulation: bool = Field(

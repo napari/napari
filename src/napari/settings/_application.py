@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import inspect
 from pathlib import Path
-from typing import Any
+from typing import Annotated, Any
 
 from psutil import virtual_memory
+from pydantic import Field, field_validator
+from pydantic_settings import SettingsConfigDict
 
-from napari._pydantic_compat import Field, validator
 from napari.settings._constants import (
     BrushSizeOnMouseModifiers,
     LabelDTypes,
@@ -21,18 +22,20 @@ from napari.utils.camera_orientations import (
     VerticalAxisOrientation,
 )
 from napari.utils.events import Event
-from napari.utils.events.custom_types import confloat, conint
+from napari.utils.events.custom_types import NotEqual
 from napari.utils.events.evented_model import EventedModel
 from napari.utils.notifications import NotificationSeverity
 from napari.utils.translations import trans
 
-GridStride = conint(ge=-50, le=50, ne=0)
-GridWidth = conint(ge=-1, ne=0)
-GridHeight = conint(ge=-1, ne=0)
 # we could use a smaller or greater 'le' for spacing,
 # this is just meant to be a somewhat reasonable upper limit,
 # as even on a 4k monitor a 2x2 grid will break calculation with >1300 spacing
-GridSpacing = confloat(ge=0, le=1500, step=5)
+MAX_GRID_SPACING = 1500
+
+GridStride = Annotated[int, NotEqual(0)]
+GridWidth = Annotated[int, Field(ge=-1), NotEqual(0)]
+GridHeight = Annotated[int, Field(ge=-1), NotEqual(0)]
+GridSpacing = Annotated[float, Field(ge=0, le=MAX_GRID_SPACING)]
 
 _DEFAULT_MEM_FRACTION = 0.25
 MAX_CACHE = virtual_memory().total * 0.5 / 1e9
@@ -204,7 +207,7 @@ class ApplicationSettings(EventedModel):
         ),
     )
 
-    grid_stride: GridStride = Field(  # type: ignore [valid-type]
+    grid_stride: GridStride = Field(
         default=1,
         title=trans._('Grid Stride'),
         description=trans._(
@@ -214,19 +217,19 @@ class ApplicationSettings(EventedModel):
         ),
     )
 
-    grid_width: GridWidth = Field(  # type: ignore [valid-type]
+    grid_width: GridWidth = Field(
         default=-1,
         title=trans._('Grid Width'),
         description=trans._('Number of columns in the grid.'),
     )
 
-    grid_height: GridHeight = Field(  # type: ignore [valid-type]
+    grid_height: GridHeight = Field(
         default=-1,
         title=trans._('Grid Height'),
         description=trans._('Number of rows in the grid.'),
     )
 
-    grid_spacing: GridSpacing = Field(  # type: ignore [valid-type]
+    grid_spacing: GridSpacing = Field(
         default=0,
         title=trans._('Grid Spacing'),
         description=trans._(
@@ -312,7 +315,8 @@ class ApplicationSettings(EventedModel):
                 )
         super().__setattr__(name, value)
 
-    @validator('window_state', allow_reuse=True)
+    @field_validator('window_state')
+    @classmethod
     def _validate_qbtye(cls, v: str) -> str:
         if v and (not isinstance(v, str) or not v.startswith('!QBYTE_')):
             raise ValueError(
@@ -320,8 +324,7 @@ class ApplicationSettings(EventedModel):
             )
         return v
 
-    class Config:
-        use_enum_values = False  # https://github.com/napari/napari/issues/3062
+    model_config = SettingsConfigDict(use_enum_values=False)
 
     class NapariConfig:
         # Napari specific configuration

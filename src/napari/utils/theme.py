@@ -8,8 +8,9 @@ from contextlib import suppress
 from typing import Any
 
 import npe2
+from pydantic import field_validator
+from pydantic_extra_types.color import Color
 
-from napari._pydantic_compat import Color, validator
 from napari.resources._icons import (
     PLUGIN_FILE_NAME,
     _theme_path,
@@ -83,7 +84,8 @@ class Theme(EventedModel):
     current: Color
     font_size: str = '12pt' if sys.platform == 'darwin' else '9pt'
 
-    @validator('syntax_style', pre=True, allow_reuse=True)
+    @field_validator('syntax_style', mode='before')
+    @classmethod
     def _ensure_syntax_style(cls, value: str) -> str:
         from pygments.styles import STYLE_MAP
 
@@ -95,7 +97,8 @@ class Theme(EventedModel):
         )
         return value
 
-    @validator('font_size', pre=True)
+    @field_validator('font_size', mode='before')
+    @classmethod
     def _ensure_font_size(cls, value: str) -> str:
         assert value.endswith('pt'), trans._(
             'Font size must be in points (pt).', deferred=True
@@ -109,7 +112,7 @@ class Theme(EventedModel):
         """
         This differs from baseclass `dict()` by converting colors to rgb.
         """
-        th = super().dict()
+        th = super().model_dump()
         return {
             k: v if not isinstance(v, Color) else v.as_rgb()
             for (k, v) in th.items()
@@ -264,7 +267,7 @@ def get_theme(theme_id: str):
                 themes=available_themes(),
             )
         )
-    theme = _themes[theme_id].copy()
+    theme = _themes[theme_id].model_copy()
     return theme
 
 
@@ -417,10 +420,12 @@ def _install_npe2_themes(themes=None):
     ):
         for theme in manifest.contributions.themes or ():
             # get fallback values
-            theme_dict = themes[theme.type].dict()
+            theme_dict = themes[theme.type].model_dump()
             # update available values
-            theme_info = theme.dict(exclude={'colors'}, exclude_unset=True)
-            theme_colors = theme.colors.dict(exclude_unset=True)
+            theme_info = theme.model_dump(
+                exclude={'colors'}, exclude_unset=True
+            )
+            theme_colors = theme.colors.model_dump(exclude_unset=True)
             theme_dict.update(theme_info)
             theme_dict.update(theme_colors)
             try:

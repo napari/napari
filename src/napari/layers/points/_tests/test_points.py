@@ -6,9 +6,9 @@ import numpy as np
 import pandas as pd
 import pytest
 from psygnal.containers import Selection
+from pydantic import ValidationError
 from vispy.color import get_colormap
 
-from napari._pydantic_compat import ValidationError
 from napari._tests.utils import (
     assert_colors_equal,
     assert_layer_state_equal,

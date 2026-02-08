@@ -69,7 +69,7 @@ if TYPE_CHECKING:
     import numpy.typing as npt
 
     from napari.components.dims import Dims
-    from napari.components.overlays.base import Overlay
+    from napari.components.overlays import BoundingBoxOverlay, Overlay
     from napari.layers._source import Source
 
 from psygnal import Signal
@@ -1243,7 +1243,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             'axis_labels': self.axis_labels,
             'blending': self.blending,
             'experimental_clipping_planes': [
-                plane.dict() for plane in self.experimental_clipping_planes
+                plane.model_dump()
+                for plane in self.experimental_clipping_planes
             ],
             'metadata': self.metadata,
             'name': self.name,
@@ -1391,8 +1392,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             self._experimental_clipping_planes.append(plane)
 
     @property
-    def bounding_box(self) -> Overlay:
-        return self._overlays['bounding_box']
+    def bounding_box(self) -> BoundingBoxOverlay:
+        return self._overlays['bounding_box']  # type: ignore[return-value]
 
     def set_view_slice(self) -> None:
         self._slicing_state.set_view_slice()

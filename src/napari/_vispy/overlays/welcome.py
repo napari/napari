@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 from itertools import cycle
 from random import sample
 from typing import TYPE_CHECKING, Any
@@ -17,12 +18,18 @@ if TYPE_CHECKING:
     from vispy.util.event import Event
 
     from napari import Viewer
-    from napari.components.overlays import Overlay
+    from napari.components.overlays import WelcomeOverlay
 
 
 class VispyWelcomeOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
+    overlay: WelcomeOverlay
+
     def __init__(
-        self, *, viewer: Viewer, overlay: Overlay, parent: Node | None = None
+        self,
+        *,
+        viewer: Viewer,
+        overlay: WelcomeOverlay,
+        parent: Node | None = None,
     ) -> None:
         super().__init__(
             node=Welcome(), viewer=viewer, overlay=overlay, parent=parent
@@ -64,7 +71,9 @@ class VispyWelcomeOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         if show:
             self.tip_timer.start()
         else:
-            self.tip_timer.stop()
+            # if we get RuntimeError the backend qt object was probably already deleted
+            with contextlib.suppress(RuntimeError):
+                self.tip_timer.stop()
 
     def _on_version_change(self) -> None:
         self.node.set_version(self.overlay.version)

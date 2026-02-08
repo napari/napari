@@ -1,6 +1,6 @@
 import pytest
+from pydantic import ValidationError
 
-from napari._pydantic_compat import ValidationError
 from napari.components import Dims
 from napari.components.dims import (
     ensure_axis_in_bounds,

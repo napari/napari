@@ -353,8 +353,8 @@ class FilepathSchemaWidget(SchemaWidgetMixin, QtWidgets.QWidget):
 
 
     def file_filter(self) -> str:
-        if "json_schema_extra" in self.schema and 'file_extension' in self.schema['json_schema_extra']:
-            extension = self.schema['json_schema_extra']['file_extension']
+        if 'file_extension' in self.schema:
+            extension = self.schema['file_extension']
             return f"File (*.{extension})"
         return "All Files (*)"
 

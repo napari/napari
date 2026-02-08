@@ -5,19 +5,18 @@ from pathlib import Path, PosixPath, WindowsPath
 from typing import TYPE_CHECKING
 
 from app_model.types import KeyBinding
+from pydantic import BaseModel
 from yaml import SafeDumper, dump_all
 
-from napari._pydantic_compat import BaseModel
 from napari.settings._fields import Version
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping, Set as AbstractSet
     from typing import Any, TypeVar, Union
 
     IntStr = Union[int, str]
-    AbstractSetIntStr = AbstractSet[IntStr]
     DictStrAny = dict[str, Any]
-    MappingIntStrAny = Mapping[IntStr, Any]
+    from pydantic.main import IncEx
+
     Model = TypeVar('Model', bound=BaseModel)
 
 
@@ -72,8 +71,8 @@ class PydanticYamlMixin(BaseModel):
     def yaml(
         self,
         *,
-        include: AbstractSetIntStr | MappingIntStrAny = None,  # type: ignore
-        exclude: AbstractSetIntStr | MappingIntStrAny = None,  # type: ignore
+        include: IncEx | None = None,
+        exclude: IncEx | None = None,
         by_alias: bool = False,
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
@@ -82,7 +81,7 @@ class PydanticYamlMixin(BaseModel):
         **dumps_kwargs: Any,
     ) -> str:
         """Serialize model to yaml."""
-        data = self.dict(
+        data = self.model_dump(
             include=include,
             exclude=exclude,
             by_alias=by_alias,
@@ -90,15 +89,14 @@ class PydanticYamlMixin(BaseModel):
             exclude_defaults=exclude_defaults,
             exclude_none=exclude_none,
         )
-        if self.__custom_root_type__:
-            from napari._pydantic_compat import ROOT_KEY
 
-            data = data[ROOT_KEY]
         return self._yaml_dump(data, dumper, **dumps_kwargs)
 
     def _yaml_dump(
         self, data, dumper: type[SafeDumper] | None = None, **kw
     ) -> str:
         kw.setdefault('sort_keys', False)
-        dumper = dumper or getattr(self.__config__, 'yaml_dumper', YamlDumper)
+        dumper = dumper or getattr(
+            self.model_config, 'yaml_dumper', YamlDumper
+        )
         return dump_all([data], Dumper=dumper, **kw)

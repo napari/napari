@@ -91,7 +91,7 @@ jobs:
             backend: pyqt5
             coverage: no_cov
             min_req: ""
-          - python: "3.13"
+          - python: "3.14"
             platform: ubuntu-latest
             backend: pyqt6
             coverage: no_cov
