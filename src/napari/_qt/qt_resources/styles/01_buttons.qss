@@ -19,7 +19,7 @@ QtViewerPushButton[mode="new_points"] {
 }
 
 QtViewerPushButton[mode="new_points"]:checked {
-  background-color: {{ current }};
+  background-color: {{ darken(current, 10) }};
 }
 
 QtViewerPushButton[mode="new_shapes"] {
@@ -27,7 +27,7 @@ QtViewerPushButton[mode="new_shapes"] {
 }
 
 QtViewerPushButton[mode="new_shapes"]:checked {
-  background-color: {{ current }};
+  background-color: {{ darken(current, 10) }};
 }
 
 QtViewerPushButton[mode="warning"] {
