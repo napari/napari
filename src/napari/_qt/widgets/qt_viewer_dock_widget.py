@@ -204,6 +204,8 @@ class QtViewerDockWidget(QDockWidget):
 
         viewer = self._ref_qt_viewer().viewer
         if isinstance(viewer, Viewer):
+            if self.widget() is not None:
+                self.widget().close()
             viewer.window.remove_dock_widget(self)
 
     def _maybe_add_vertical_stretch(self, widget):
