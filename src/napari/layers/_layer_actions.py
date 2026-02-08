@@ -280,7 +280,8 @@ def _are_name_overlays_visible(ll: LayerList) -> bool:
             for layer in ll.selection
         )
     )
-          
+
+
 def _are_colorbars_visible(ll: LayerList) -> bool:
     return bool(
         ll.selection
