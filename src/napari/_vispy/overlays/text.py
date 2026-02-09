@@ -102,6 +102,7 @@ class VispyTextOverlay(_VispyViewerTextOverlay):
 
     def _on_text_change(self):
         self.node.text = self.overlay.text
+        self._on_position_change()
 
 
 class VispyLayerNameOverlay(_VispyLayerTextOverlay):

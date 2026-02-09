@@ -2,10 +2,14 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from vispy.scene.visuals import Rectangle
 from vispy.visuals.transforms import MatrixTransform, STTransform
 
 from napari._vispy.utils.gl import BLENDING_MODES
+from napari.settings import get_settings
+from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils.events import disconnect_events
+from napari.utils.theme import get_theme
 
 if TYPE_CHECKING:
     from napari.layers import Layer
@@ -77,11 +81,47 @@ class VispyCanvasOverlay(VispyBaseOverlay):
         self.y_size = 0.0
         self.node.transform = STTransform()
         self.overlay.events.position.connect(self._on_position_change)
+        self.overlay.events.box.connect(self._on_box_change)
+        self.overlay.events.box_color.connect(self._on_box_change)
         self.canvas_position_callback = lambda: None
+
+        self.box = Rectangle(center=(0, 0), border_width=0, parent=self.node)
+
+    def _on_box_change(self):
+        if not self.overlay.box:
+            self.box.parent = None
+            return
+
+        self.box.parent = self.node.parent
+
+        padding = 7
+        self.box.width = self.x_size + padding
+        self.box.height = self.y_size + padding
+        self.box.center = self.x_size / 2, self.y_size / 2
+
+        if self.overlay.box_color is None:
+            if (
+                self.node.parent is not None
+                and self.node.parent.canvas.bgcolor
+            ):
+                background_color = self.node.parent.canvas.bgcolor
+            else:
+                background_color = get_theme(
+                    get_settings().appearance.theme
+                ).canvas.as_hex()
+                background_color = transform_color(background_color)[0]
+        else:
+            background_color = self.overlay.box_color
+
+        self.box.color = background_color
+
+        self.box.order = self.node.order - 1
+        self.box.transform = self.node.transform
 
     def _on_position_change(self, event: Event | None = None) -> None:
         # NOTE: when subclasses call this method, they should first ensure sizes
         # (x_size, and y_size) are set correctly
+        self._on_box_change()
         self.canvas_position_callback()
 
     def reset(self) -> None:

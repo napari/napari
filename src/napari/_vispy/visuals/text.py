@@ -18,7 +18,10 @@ class Text(BaseText):
     def get_width_height(self) -> tuple[float, float]:
         width, height = get_text_width_height(self)
         # width is not quite right for some reason... magic number here we go
-        return width * self.dpi_ratio * 1.2, height * self.dpi_ratio
+        lines = len(self.text.split('\n'))
+        return width * self.dpi_ratio * 1.32, (
+            height + self.line_height * lines
+        ) * self.dpi_ratio * 1.58
 
     @property
     def font_size(self) -> float:

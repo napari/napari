@@ -2,6 +2,7 @@ from typing import Any
 
 from napari.components._viewer_constants import CanvasPosition
 from napari.layers.base._base_constants import Blending
+from napari.utils.color import ColorValue
 from napari.utils.events import EventedModel
 
 
@@ -55,6 +56,8 @@ class CanvasOverlay(Overlay):
 
     position: CanvasPosition | Any = CanvasPosition.BOTTOM_RIGHT
     blending: Blending = Blending.TRANSLUCENT_NO_DEPTH
+    box: bool = True
+    box_color: ColorValue | None = None
     gridded: bool = False
 
 
