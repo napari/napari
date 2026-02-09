@@ -11,6 +11,10 @@ To use from the command line:
 
 $ python -m napari._qt.widgets.qt_theme_sample
 
+To include themes contributed by plugins:
+
+$ python -m napari._qt.widgets.qt_theme_sample --include-plugins
+
 To generate a screenshot within python:
 
 >>> from napari._qt.widgets.qt_theme_sample import SampleWidget
@@ -67,6 +71,16 @@ esse cillum dolore eu fugiat nulla pariatur. Excepteur
 sint occaecat cupidatat non proident, sunt in culpa qui
 officia deserunt mollit anim id est laborum.</p>
 """
+
+
+def _ensure_plugin_themes_loaded() -> bool:
+    """Try to load plugin themes via the npe2 plugin manager."""
+    try:
+        from napari.plugins import _initialize_plugins
+    except (ImportError, RuntimeError):
+        return False
+    _initialize_plugins()
+    return True
 
 
 class TabDemo(QTabWidget):
@@ -402,13 +416,31 @@ class ThemeColorDisplay(QWidget):
 
 
 if __name__ == '__main__':
+    import argparse
     import logging
-    import sys
 
     from napari._qt.qt_event_loop import get_qapp
     from napari.utils.theme import available_themes
 
-    themes = [sys.argv[1]] if len(sys.argv) > 1 else available_themes()
+    parser = argparse.ArgumentParser(
+        description='Show napari theme sample widgets and color swatches.'
+    )
+    parser.add_argument(
+        'themes',
+        nargs='*',
+        help='Theme ids to display (default: all available themes).',
+    )
+    parser.add_argument(
+        '--include-plugins',
+        action='store_true',
+        help='Discover npe2 plugin themes before listing available themes.',
+    )
+    args = parser.parse_args()
+
+    if args.include_plugins:
+        _ensure_plugin_themes_loaded()
+
+    themes = args.themes if args.themes else available_themes()
     app = get_qapp()
     widgets = []
     for n, theme in enumerate(themes):
