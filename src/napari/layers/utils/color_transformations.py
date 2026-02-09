@@ -79,8 +79,6 @@ def transform_color_cycle(
 
     Returns
     -------
-    transformed_color_cycle : cycle
-        cycle of shape (4,) numpy arrays with a dtype of np.float32
     transformed_colors : np.ndarray
         input array of colors transformed to RGBA
     """

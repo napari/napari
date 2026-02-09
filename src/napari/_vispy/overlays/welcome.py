@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import contextlib
 from itertools import cycle
 from random import sample
 from typing import TYPE_CHECKING, Any
@@ -71,9 +70,17 @@ class VispyWelcomeOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         if show:
             self.tip_timer.start()
         else:
-            # if we get RuntimeError the backend qt object was probably already deleted
-            with contextlib.suppress(RuntimeError):
+            try:
                 self.tip_timer.stop()
+            except RuntimeError as e:  # pragma: no cover
+                if (
+                    'wrapped C/C++ object of type' not in e.args[0]
+                    and 'Internal C++ object' not in e.args[0]
+                ):
+                    # checking if the object is partially deleted. Otherwise
+                    # reraise exception. For more details see:
+                    # https://github.com/napari/napari/pull/5499
+                    raise
 
     def _on_version_change(self) -> None:
         self.node.set_version(self.overlay.version)

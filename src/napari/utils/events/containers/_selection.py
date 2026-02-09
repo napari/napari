@@ -15,6 +15,7 @@ _S = TypeVar('_S')
 
 
 def sequence_like(v: Any) -> bool:
+    """Check whether an object is sequence-like."""
     return isinstance(v, (list, tuple, set, frozenset, GeneratorType, deque))
 
 
