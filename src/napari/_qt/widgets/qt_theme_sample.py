@@ -2,17 +2,25 @@
 
 This file and SampleWidget is useful for testing out themes from the command
 line or for generating screenshots of a sample widget to demonstrate a theme.
+ThemeColorDisplay shows all theme colors as labeled swatches with hex values,
+including derived colors (darken, lighten, opacity) used in the QSS.
 
 Examples
 --------
 To use from the command line:
 
-$ python -m napari._qt.theme_sample
+$ python -m napari._qt.widgets.qt_theme_sample
 
 To generate a screenshot within python:
 
 >>> from napari._qt.widgets.qt_theme_sample import SampleWidget
 >>> widg = SampleWidget(theme='dark')
+>>> screenshot = widg.screenshot()
+
+To view theme colors:
+
+>>> from napari._qt.widgets.qt_theme_sample import ThemeColorDisplay
+>>> widg = ThemeColorDisplay(theme='dark')
 >>> screenshot = widg.screenshot()
 """
 
@@ -23,6 +31,8 @@ from qtpy.QtWidgets import (
     QDoubleSpinBox,
     QFontComboBox,
     QFormLayout,
+    QFrame,
+    QGridLayout,
     QGroupBox,
     QHBoxLayout,
     QLabel,
@@ -30,6 +40,7 @@ from qtpy.QtWidgets import (
     QProgressBar,
     QPushButton,
     QRadioButton,
+    QScrollArea,
     QScrollBar,
     QSlider,
     QSpinBox,
@@ -153,6 +164,243 @@ class SampleWidget(QWidget):
         return QImg2array(img)
 
 
+def _rgb_string_to_hex(rgb_string: str) -> str:
+    """Convert rgb() or rgba() CSS string to hex."""
+    if rgb_string.startswith('rgba('):
+        parts = rgb_string.lstrip('rgba(').rstrip(')').split(',')
+        r, g, b = (
+            int(parts[0].strip()),
+            int(parts[1].strip()),
+            int(parts[2].strip()),
+        )
+        return f'#{r:02x}{g:02x}{b:02x}'
+    if rgb_string.startswith('rgb('):
+        parts = rgb_string.lstrip('rgb(').rstrip(')').split(',')
+        r, g, b = (
+            int(parts[0].strip()),
+            int(parts[1].strip()),
+            int(parts[2].strip()),
+        )
+        return f'#{r:02x}{g:02x}{b:02x}'
+    # Already hex or named color
+    return rgb_string
+
+
+class ColorSwatch(QFrame):
+    """A single color swatch box."""
+
+    def __init__(
+        self,
+        hex_color: str,
+        parent: QWidget | None = None,
+    ) -> None:
+        super().__init__(parent)
+        self.setObjectName('colorSwatch')
+        self.setFixedSize(26, 26)
+        self.setStyleSheet(
+            f'#colorSwatch {{ background: {hex_color}; border: 1px solid #888; border-radius: 3px; }}'
+        )
+
+
+def _make_swatch_row(
+    role: str,
+    hex_color: str,
+    description: str,
+) -> QWidget:
+    """Create a row widget with a color swatch and label text."""
+    container = QWidget()
+    layout = QHBoxLayout(container)
+    layout.setContentsMargins(0, 0, 0, 0)
+    layout.setSpacing(8)
+
+    swatch = ColorSwatch(hex_color)
+    label_text = f'<b>{role}</b> &nbsp; {hex_color}'
+    if description:
+        label_text += (
+            f'<br/><span style="font-size: 9pt;">{description}</span>'
+        )
+
+    label = QLabel(label_text)
+    label.setWordWrap(True)
+
+    tooltip = f'{role}: {hex_color}'
+    if description:
+        tooltip += f'\n{description}'
+    container.setToolTip(tooltip)
+    label.setToolTip(tooltip)
+
+    layout.addWidget(swatch)
+    layout.addWidget(label, 1)
+    return container
+
+
+# Descriptions for each theme color role
+_COLOR_DESCRIPTIONS: dict[str, str] = {
+    'canvas': 'Canvas/viewport background (the main viewing area)',
+    'console': 'Console/terminal background',
+    'background': 'Main application background (preferences, dialogs)',
+    'foreground': 'Layer controls panel background',
+    'primary': 'Layer control widgets (sliders, spinboxes) background',
+    'secondary': 'Text selection background, secondary UI elements',
+    'highlight': 'Checked buttons, active selections, hover states',
+    'text': 'Primary text and labels throughout the UI',
+    'icon': 'Icon and button glyph colors',
+    'warning': 'Warning messages and indicators',
+    'error': 'Error messages and critical indicators',
+    'current': 'Active/selected layer highlight (the blue accent)',
+}
+
+
+class ThemeColorDisplay(QWidget):
+    """Display all theme colors as labeled swatches with hex values.
+
+    Shows the base theme colors and commonly used derived colors
+    (darken, lighten, opacity) that appear in the QSS stylesheets.
+
+    Parameters
+    ----------
+    theme : str
+        The napari theme id (e.g. 'dark', 'light').
+    """
+
+    def __init__(self, theme: str = 'dark') -> None:
+        super().__init__(None)
+        from napari.utils.theme import (
+            darken,
+            get_theme,
+            lighten,
+            opacity,
+        )
+
+        theme_obj = get_theme(theme)
+        theme_dict = theme_obj.to_rgb_dict()
+
+        # Main layout with title
+        main_layout = QVBoxLayout()
+        main_layout.setContentsMargins(16, 16, 16, 16)
+        main_layout.setSpacing(20)
+
+        # Title
+        title_label = QLabel(f'<h2>{theme_obj.label} ({theme})</h2>')
+        main_layout.addWidget(title_label)
+
+        # --- Base colors section ---
+        base_label = QLabel('<h3>Base Theme Colors</h3>')
+        main_layout.addWidget(base_label)
+
+        base_grid = QGridLayout()
+        base_grid.setSpacing(10)
+
+        color_roles = [
+            'canvas',
+            'console',
+            'background',
+            'foreground',
+            'primary',
+            'secondary',
+            'highlight',
+            'text',
+            'icon',
+            'warning',
+            'error',
+            'current',
+        ]
+
+        for i, role in enumerate(color_roles):
+            color_val = theme_dict.get(role, '')
+            hex_color = _rgb_string_to_hex(str(color_val))
+            desc = _COLOR_DESCRIPTIONS.get(role, '')
+            row_widget = _make_swatch_row(role, hex_color, desc)
+            row, col = divmod(i, 3)
+            base_grid.addWidget(row_widget, row, col)
+
+        main_layout.addLayout(base_grid)
+
+        # --- Derived colors section ---
+        derived_label = QLabel('<h3>Derived Colors (QSS functions)</h3>')
+        main_layout.addWidget(derived_label)
+
+        derived_grid = QGridLayout()
+        derived_grid.setSpacing(10)
+
+        # Gather the derived colors actually used in the QSS
+        derived_colors: list[tuple[str, str, str]] = [
+            (
+                'darken(current, 10)',
+                darken(theme_dict['current'], 10),
+                'New points/shapes button background when checked',
+            ),
+            (
+                'darken(foreground, 20)',
+                darken(theme_dict['foreground'], 20),
+                'Disabled mode radio buttons background',
+            ),
+            (
+                'darken(background, 10)',
+                darken(theme_dict['background'], 10),
+                'Dock widget title bar hover state',
+            ),
+            (
+                'lighten(error, 10)',
+                lighten(theme_dict['error'], 10),
+                'Play button background during recording',
+            ),
+            (
+                'opacity(text, 90)',
+                opacity(theme_dict['text'], 90),
+                'Disabled widget text (slightly transparent)',
+            ),
+            (
+                'lighten(foreground, 5)',
+                lighten(theme_dict['foreground'], 5),
+                'Subtle highlight on layer controls',
+            ),
+        ]
+
+        for i, (role, color_val, desc) in enumerate(derived_colors):
+            hex_color = _rgb_string_to_hex(color_val)
+            row_widget = _make_swatch_row(role, hex_color, desc)
+            row, col = divmod(i, 3)
+            derived_grid.addWidget(row_widget, row, col)
+
+        main_layout.addLayout(derived_grid)
+
+        # --- Font info ---
+        info_label = QLabel(
+            f'<b>Font size:</b> {theme_dict.get("font_size", "?")} &nbsp;|&nbsp; '
+            f'<b>Syntax style:</b> {theme_dict.get("syntax_style", "?")}'
+        )
+        main_layout.addWidget(info_label)
+
+        main_layout.addStretch()
+
+        # Use scroll area for overflow
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setHorizontalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+        )
+
+        scroll_widget = QWidget()
+        scroll_widget.setLayout(main_layout)
+        scroll.setWidget(scroll_widget)
+
+        # Outer layout
+        outer = QVBoxLayout()
+        outer.setContentsMargins(0, 0, 0, 0)
+        outer.addWidget(scroll)
+        self.setLayout(outer)
+
+        # Apply theme stylesheet to the whole widget
+        self.setStyleSheet(get_stylesheet(theme))
+
+    def screenshot(self, path=None):
+        img = self.grab().toImage()
+        if path is not None:
+            imsave(path, QImg2array(img))
+        return QImg2array(img)
+
+
 if __name__ == '__main__':
     import logging
     import sys
@@ -172,7 +420,17 @@ if __name__ == '__main__':
             )
             continue
         w.setGeometry(10 + 430 * n, 0, 425, 600)
+        w.setWindowTitle(f'Widgets — {theme}')
         w.show()
         widgets.append(w)
+
+        try:
+            c = ThemeColorDisplay(theme)
+        except KeyError:
+            continue
+        c.setGeometry(10 + 430 * n, 620, 600, 550)
+        c.setWindowTitle(f'Theme Colors — {theme}')
+        c.show()
+        widgets.append(c)
     if widgets:
         app.exec_()
