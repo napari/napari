@@ -35,7 +35,7 @@ from napari.components.dims import Dims
 from napari.components.layerlist import LayerList
 from napari.components.overlays import (
     AxesOverlay,
-    Overlay,
+    SceneOverlay,
 )
 from napari.components.tooltip import Tooltip
 from napari.errors import (
@@ -162,9 +162,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         Viewer object context mapping.
     _layer_slicer: napari.components._layer_slicer._Layer_Slicer
         A layer slicer object controlling the creation of a slice
-    _overlays: napari.utils.events.containers._evented_dict.EventedDict[str, Overlay]
-        An EventedDict with as keys the string names of different napari overlays and as values the napari.Overlay
-        objects.
+    _overlays: napari.utils.events.containers._evented_dict.EventedDict[str, SceneOverlay]
+        An EventedDict with as keys the string names of different napari overlays and as values
+        the napari.SceneOverlay objects.
     """
 
     # Using allow_mutation=False means these attributes aren't settable and don't
@@ -182,7 +182,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     theme: str = Field(default_factory=_current_theme)
     title: str = 'napari'
     # private track of overlays, only expose the old ones for backward compatibility
-    _overlays: EventedDict[str, Overlay] = PrivateAttr(
+    _overlays: EventedDict[str, SceneOverlay] = PrivateAttr(
         default_factory=EventedDict
     )
     _ctx: Context

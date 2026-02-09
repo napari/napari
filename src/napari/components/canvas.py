@@ -4,7 +4,7 @@ from napari._pydantic_compat import Field, PrivateAttr
 from napari.components.grid import GridCanvas
 from napari.components.overlays import (
     BrushCircleOverlay,
-    Overlay,
+    CanvasOverlay,
     ScaleBarOverlay,
     TextOverlay,
     WelcomeOverlay,
@@ -61,7 +61,7 @@ class Canvas(EventedModel):
     overlay_tiling: OverlayTiling = Field(
         default_factory=OverlayTiling, allow_mutation=False
     )
-    _overlays: EventedDict[str, Overlay] = PrivateAttr(
+    _overlays: EventedDict[str, CanvasOverlay] = PrivateAttr(
         default_factory=EventedDict
     )
     _size: tuple[int, int] = PrivateAttr((800, 600))
