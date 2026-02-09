@@ -63,6 +63,7 @@ class Camera(EventedModel):
     ] = DEFAULT_ORIENTATION_TYPED
 
     @field_validator('center', 'angles', mode='before')
+    @classmethod
     def _ensure_3_tuple(cls, v):
         return ensure_n_tuple(v, n=3)
 

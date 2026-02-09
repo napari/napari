@@ -4,10 +4,11 @@ import contextlib
 import json
 import logging
 import os
+import warnings
 from collections.abc import Mapping
 from functools import partial
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 from warnings import warn
 
 from pydantic import (
@@ -24,7 +25,6 @@ from pydantic_settings import (
     EnvSettingsSource,
     PydanticBaseSettingsSource,
     SettingsConfigDict,
-    SettingsError,
 )
 
 from napari._pydantic_util import get_inner_type, get_origin
@@ -147,10 +147,8 @@ class FileConfigSettingsSource(PydanticBaseSettingsSource):
         default_cfg = self.settings_cls.model_fields['config_path'].default
 
         filepath = self.current_state.get('config_path')
-        if filepath is None:
-            return {}
 
-        if filepath != _NOT_SET and Path(filepath).exists():
+        if filepath not in {_NOT_SET, None} and Path(filepath).exists():
             sources.append(filepath)
 
         if not sources:
@@ -200,6 +198,15 @@ class FileConfigSettingsSource(PydanticBaseSettingsSource):
                 continue
             assert isinstance(new_data, dict), path_.read_text()
             deep_update(data, new_data, copy=False)
+
+        self.validate_settings_kwargs(data, filepath)
+
+        data['config_file_settings'] = data.copy()
+        return data
+
+    def validate_settings_kwargs(
+        self, data: dict[str, Any], path_: Path
+    ) -> dict[str, Any]:
         try:
             # validate the data, passing config_path=None so we dont recurse
             # back to this point again.
@@ -232,7 +239,6 @@ class FileConfigSettingsSource(PydanticBaseSettingsSource):
                     )
                 )
                 data = {}
-        data['config_file_settings'] = data.copy()
         return data
 
 
@@ -281,7 +287,7 @@ class NapariEnvSettingsSource(EnvSettingsSource):
                     sub_dkt = sub_dkt.setdefault(sub, {})
                 if field_name in sub_dkt:
                     _logger.warning(
-                        'Multiple environment variables found for %(field_name) at %(env_name) and %(existing_env_name). Using ealier value.',
+                        'Multiple environment variables found for %(field_name) at %(env_name) and %(existing_env_name). Using earlier value.',
                         extra={
                             'field_name': field_name,
                             'env_name': env_name,
@@ -335,11 +341,6 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
         super()._on_sub_event(event, field)
         self._maybe_save()
 
-    # @property
-    # def config_path(self):
-    #     """Return the path to/from which settings be saved/loaded."""
-    #     return self._config_path
-
     def dict(
         self,
         *,
@@ -354,14 +355,63 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
         """Return dict representation of the model.
 
         May optionally specify which fields to include or exclude.
+
+        .. deprecated:: 0.7.0
+              `dict` will be removed in napari 0.8.0 it is replaced by
+              `model_dump` following pydantic 1 to 2 changes.
         """
-        data = super().model_dump(
+        warnings.warn(
+            'method `dict` is deprecated in 0.7.0 and will be removed in napari 0.8.0, use `model_dump` instead.',
+            category=FutureWarning,
+        )
+        return self.model_dump(
             include=include,
             exclude=exclude,
             by_alias=by_alias,
             exclude_unset=exclude_unset,
             exclude_defaults=exclude_defaults,
             exclude_none=exclude_none,
+            exclude_env=exclude_env,
+        )
+
+    def model_dump(
+        self,
+        *,
+        mode: Literal['json', 'python'] | str = 'python',  # noqa: PYI051
+        include: IncEx | None = None,
+        exclude: IncEx | None = None,
+        context: Any | None = None,
+        exclude_unset: bool = False,
+        exclude_defaults: bool = False,
+        exclude_none: bool = False,
+        round_trip: bool = False,
+        warnings: bool | Literal['none', 'warn', 'error'] = True,
+        serialize_as_any: bool = False,
+        exclude_env: bool = False,
+        **kwargs: Any,
+    ) -> Dict[str, Any]:
+        """Return dict representation of the model.
+
+        May optionally specify which fields to include or exclude.
+
+        For `exclude_env` kwarg: if True, will exclude any settings
+        provided by environment variables.
+
+        For other kwargs, see ``pydantic.BaseModel.model_dump`` docs:
+        https://docs.pydantic.dev/latest/api/base_model/#pydantic.BaseModel.model_dump
+        """
+        data = super().model_dump(
+            mode=mode,
+            include=include,
+            exclude=exclude,
+            context=context,
+            exclude_unset=exclude_unset,
+            exclude_defaults=exclude_defaults,
+            exclude_none=exclude_none,
+            round_trip=round_trip,
+            warnings=warnings,
+            serialize_as_any=serialize_as_any,
+            **kwargs,
         )
         if exclude_env:
             self._remove_env_settings(data)
@@ -376,7 +426,7 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
         """
         dict_kwargs.setdefault('exclude_defaults', True)
         dict_kwargs.setdefault('exclude_env', True)
-        data = self.dict(**dict_kwargs)
+        data = self.model_dump(**dict_kwargs)
         _remove_empty_dicts(data)
         return data
 
@@ -422,13 +472,6 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
         with open(path, 'w') as target:
             target.write(data_)
 
-    # def env_settings(self) -> Dict[str, Any]:
-    #     """Get a dict of fields that were provided as environment vars."""
-    #     env_settings = getattr(self, '_env_settings', {})
-    #     if callable(env_settings):
-    #         env_settings = env_settings(self)
-    #     return env_settings
-
     def _remove_env_settings(self, data):
         """Remove key:values from `data` that match settings from env vars.
 
@@ -460,249 +503,6 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
     model_config = SettingsConfigDict(
         strict_config_check=False,
     )
-
-    # class Config:
-    #     # If True: validation errors in a config file will raise an exception
-    #     # otherwise they will warn to the logger
-    #     strict_config_check: bool = False
-    #     sources: Sequence[str] = []
-    #     _env_settings: SettingsSourceCallable
-    #
-    #     @classmethod
-    #     def customise_sources(
-    #         cls,
-    #         init_settings: SettingsSourceCallable,
-    #         env_settings: EnvSettingsSource,
-    #         file_secret_settings: SettingsSourceCallable,
-    #     ) -> tuple[SettingsSourceCallable, ...]:
-    #         """customise the way data is loaded.
-    #
-    #         This does 2 things:
-    #         1) adds the `config_file_settings_source` to the sources, which
-    #            will load data from `settings._config_path` if it exists.
-    #         2) adds support for nested env_vars, such that if a model with an
-    #            env_prefix of "foo_" has a field named `bar`, then you can use
-    #            `FOO_BAR_X=1` to set the x attribute in `foo.bar`.
-    #
-    #         Priority is given to sources earlier in the list.  You can resort
-    #         the return list to change the priority of sources.
-    #         """
-    #         cls._env_settings = nested_env_settings(env_settings)
-    #         return (  # type: ignore[return-value]
-    #             init_settings,
-    #             cls._env_settings,
-    #             cls._config_file_settings_source,
-    #             file_secret_settings,
-    #         )
-    #         # Even when EventedConfigFileSettings is a subclass of BaseSettings,
-    #         # mypy do not see this
-    #
-    #     @classmethod
-    #     def _config_file_settings_source(
-    #         cls, settings: EventedConfigFileSettings
-    #     ) -> dict[str, Any]:
-    #         return config_file_settings_source(settings)
-
-
-# Utility functions
-
-
-def nested_env_settings(
-    super_eset: EnvSettingsSource,
-) -> SettingsSourceCallable:
-    """Wraps the pydantic EnvSettingsSource to support nested env vars.
-
-    currently only supports one level of nesting.
-
-    Examples
-    --------
-    `NAPARI_APPEARANCE_THEME=light`
-    will parse to:
-    {'appearance': {'theme': 'light'}}
-
-    If a submodel has a field that explicitly declares an `env`... that will
-    also be found.  For example, 'ExperimentalSettings.async_' directly
-    declares `env='napari_async'`... so NAPARI_ASYNC is accessible without
-    nesting as well.
-    """
-
-    def _inner(settings: BaseSettings) -> dict[str, Any]:
-        # first call the original implementation
-        d = super_eset(settings)
-        env_val: str | dict | None
-
-        if settings.model_config.case_sensitive:
-            env_vars: Mapping[str, str | None] = os.environ
-        else:
-            env_vars = {k.lower(): v for k, v in os.environ.items()}
-
-        # now iterate through all subfields looking for nested env vars
-        # For example:
-        # NapariSettings has a Config.env_prefix of 'napari_'
-        # so every field in the NapariSettings.Application subfield will be
-        # available at 'napari_application_fieldname'
-        for field in settings.model_fields.values():
-            field_type = get_inner_type(field.annotation)
-            if not issubclass(field_type, BaseModel):
-                continue  # pragma: no cover
-            for env_name in field.extra['env_names']:
-                for subf in field_type.model_fields.values():
-                    # first check if subfield directly declares an "env"
-                    # (for example: ExperimentalSettings.async_)
-                    for e in subf.extra.get('env_names', []):
-                        env_val = env_vars.get(e.lower())
-                        if env_val is not None:
-                            break
-                    # otherwise, look for the standard nested env var
-                    else:
-                        env_val = env_vars.get(f'{env_name}_{subf.name}')
-
-                    is_complex, all_json_fail = super_eset.field_is_complex(
-                        subf
-                    )
-                    if env_val is not None and is_complex:
-                        try:
-                            env_val = settings.model_config.json_loads(env_val)
-                        except ValueError as e:
-                            if not all_json_fail:
-                                msg = trans._(
-                                    'error parsing JSON for "{env_name}"',
-                                    deferred=True,
-                                    env_name=env_name,
-                                )
-                                raise SettingsError(msg) from e
-
-                        if isinstance(env_val, dict):
-                            explode = super_eset.explode_env_vars(
-                                field, env_vars
-                            )
-                            env_val = deep_update(env_val, explode)
-
-                    # if we found an env var, store it and return it
-                    if env_val is not None:
-                        if field.alias not in d:
-                            d[field.alias] = {}
-                        d[field.alias][subf.name] = env_val
-        return d
-
-    return _inner
-
-
-def config_file_settings_source(
-    settings: EventedConfigFileSettings,
-) -> dict[str, Any]:
-    """Read config files during init of an EventedConfigFileSettings obj.
-
-    The two important values are the `settings._config_path`
-    attribute, which is the main config file (if present), and
-    `settings.model_config.source`, which is an optional list of additional files
-    to read. (files later in the list take precedence and `_config_path` takes
-    precedence over all)
-
-    Parameters
-    ----------
-    settings : EventedConfigFileSettings
-        The new model instance (not fully instantiated)
-
-    Returns
-    -------
-    dict
-        *validated* values for the model.
-    """
-    # _config_path is the primary config file on the model (the one to save to)
-    config_path = getattr(settings, '_config_path', None)
-
-    default_cfg = type(settings).__private_attributes__.get('_config_path')
-    default_cfg = getattr(default_cfg, 'default', None)
-
-    # if the config has a `sources` list, read those too and merge.
-    sources: list[str] = list(getattr(settings.model_config, 'sources', []))
-    if config_path:
-        sources.append(config_path)
-    if not sources:
-        return {}
-
-    data: dict = {}
-    for path in sources:
-        if not path:
-            continue  # pragma: no cover
-        path_ = Path(path).expanduser().resolve()
-
-        # if the requested config path does not exist, move on to the next
-        if not path_.is_file():
-            # if it wasn't the `_config_path` stated in the BaseModel itself,
-            # we warn, since this would have been user provided.
-            if path_ != default_cfg:
-                _logger.warning(
-                    trans._(
-                        'Requested config path is not a file: {path}',
-                        path=path_,
-                    )
-                )
-            continue
-
-        # get loader for yaml/json
-        if str(path).endswith(('.yaml', '.yml')):
-            load = __import__('yaml').safe_load
-        elif str(path).endswith('.json'):
-            load = __import__('json').load
-        else:
-            warn(
-                trans._(
-                    'Unrecognized file extension for config_path: {path}',
-                    path=path,
-                )
-            )
-            continue
-
-        try:
-            # try to parse the config file into a dict
-            new_data = load(path_.read_text()) or {}
-        except Exception as err:  # noqa: BLE001
-            _logger.warning(
-                trans._(
-                    'The content of the napari settings file could not be read\n\nThe default settings will be used and the content of the file will be replaced the next time settings are changed.\n\nError:\n{err}',
-                    deferred=True,
-                    err=err,
-                )
-            )
-            continue
-        assert isinstance(new_data, dict), path_.read_text()
-        deep_update(data, new_data, copy=False)
-
-    try:
-        # validate the data, passing config_path=None so we dont recurse
-        # back to this point again.
-        type(settings)(config_path=None, **data)
-    except ValidationError as err:
-        if getattr(settings.model_config, 'strict_config_check', False):
-            raise
-
-        # if errors occur, we still want to boot, so we just remove bad keys
-        errors = err.errors()
-        msg = trans._(
-            'Validation errors in config file(s).\nThe following fields have been reset to the default value:\n\n{errors}\n',
-            deferred=True,
-            errors=errors,  # TODO: is this good enough?
-        )
-        with contextlib.suppress(Exception):
-            # we're about to nuke some settings, so just in case... try backup
-            backup_path = path_.parent / f'{path_.stem}.BAK{path_.suffix}'
-            backup_path.write_text(path_.read_text())
-
-        _logger.warning(msg)
-        try:
-            _remove_bad_keys(data, [e.get('loc', ()) for e in errors])
-        except KeyError:  # pragma: no cover
-            _logger.warning(
-                trans._(
-                    'Failed to remove validation errors from config file. Using defaults.'
-                )
-            )
-            data = {}
-    # store data at this state for potential later recovery
-    settings._config_file_settings = data
-    return data
 
 
 def _remove_bad_keys(data: dict, keys: list[tuple[int | str, ...]]):

@@ -4,7 +4,12 @@ import inspect
 import itertools
 import os
 import warnings
-from collections.abc import Iterator, Mapping, MutableMapping, Sequence
+from collections.abc import (
+    Iterator,
+    Mapping,
+    MutableMapping,
+    Sequence,
+)
 from functools import lru_cache
 from pathlib import Path
 from typing import (
@@ -347,6 +352,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         self.grid.spacing = settings.application.grid_spacing
 
     @field_validator('theme')
+    @classmethod
     def _valid_theme(cls, v):
         if not is_theme_available(v):
             raise ValueError(
@@ -370,7 +376,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         exclude = exclude.union(EXCLUDE_JSON)
         return super().json(exclude=exclude, **kwargs)
 
-    def dict(self, **kwargs):
+    def model_dump(self, **kwargs) -> dict[str, Any]:
         """Convert to a dictionary."""
         # Manually exclude the layer list and active layer which cannot be serialized at this point
         # and mouse and keybindings don't belong on model
@@ -378,7 +384,16 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         # https://github.com/samuelcolvin/pydantic/issues/660#issuecomment-642211017
         exclude = kwargs.pop('exclude', set())
         exclude = exclude.union(EXCLUDE_DICT)
-        return super().dict(exclude=exclude, **kwargs)
+        return super().model_dump(exclude=exclude, **kwargs)
+
+    def dict(self, **kwargs):
+        """Convert to a dictionary.
+
+        .. deprecated:: 0.7.0
+             `dict` will be removed in napari 0.8.0 it is replaced by
+             `model_dump` following pydantic 1 to 2 changes.
+        """
+        self.model_dump(**kwargs)
 
     def __hash__(self):
         return id(self)

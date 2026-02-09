@@ -132,7 +132,7 @@ def test_settings_to_dict(test_settings):
     assert isinstance(data_dict, dict)
     assert data_dict.get('application')
 
-    data_dict = test_settings.dict(exclude_defaults=True)
+    data_dict = test_settings.model_dump(exclude_defaults=True)
     assert not data_dict.get('application')
 
 
@@ -140,12 +140,12 @@ def test_settings_to_dict_no_env(monkeypatch):
     """Test that exclude_env works to exclude variables coming from the env."""
     s = NapariSettings(None, appearance={'theme': 'light'})
     assert s.model_dump()['appearance']['theme'] == 'light'
-    assert s.dict(exclude_env=True)['appearance']['theme'] == 'light'
+    assert s.model_dump(exclude_env=True)['appearance']['theme'] == 'light'
 
     monkeypatch.setenv('NAPARI_APPEARANCE_THEME', 'light')
     s = NapariSettings(None)
     assert s.model_dump()['appearance']['theme'] == 'light'
-    assert 'theme' not in s.dict(exclude_env=True).get('appearance', {})
+    assert 'theme' not in s.model_dump(exclude_env=True).get('appearance', {})
 
 
 def test_settings_reset(test_settings):
@@ -247,7 +247,7 @@ def test_settings_env_variables_alias(monkeypatch):
 def test_two_env_variable_settings(monkeypatch):
     assert NapariSettings(None).experimental.async_ is False
     assert NapariSettings(None).experimental.autoswap_buffers is False
-    monkeypatch.setenv('NAPARI_EXPERIMENTAL_ASYNC', '1')
+    monkeypatch.setenv('NAPARI_EXPERIMENTAL_ASYNC_', '1')
     monkeypatch.setenv('NAPARI_EXPERIMENTAL_AUTOSWAP_BUFFERS', '1')
     assert NapariSettings(None).experimental.async_ is True
     assert NapariSettings(None).experimental.autoswap_buffers is True
@@ -451,8 +451,8 @@ def test_env_settings_restore(monkeypatch):
     monkeypatch.setenv('NAPARI_ASYNC', '0')
     s = NapariSettings()
     s.experimental.completion_radius = 1
-    assert s._save_dict()['experimental'] == {'completion_radius': 1}
     assert s.env_settings == {'experimental': {'async_': False}}
+    assert s._save_dict()['experimental'] == {'completion_radius': 1}
 
 
 NO_IMPORT_SCRIPT = """

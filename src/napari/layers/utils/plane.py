@@ -31,10 +31,12 @@ class Plane(EventedModel):
     position: Point3D = (0, 0, 0)
 
     @field_validator('normal')
+    @classmethod
     def _normalise_vector(cls, v: npt.NDArray) -> Point3D:
         return cast(Point3D, tuple(v / np.linalg.norm(v)))
 
     @field_validator('normal', 'position', mode='before')
+    @classmethod
     def _ensure_tuple(cls, v: Any) -> Point3D:
         return cast(Point3D, tuple(v))
 

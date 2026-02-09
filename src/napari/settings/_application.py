@@ -316,6 +316,7 @@ class ApplicationSettings(EventedModel):
         super().__setattr__(name, value)
 
     @field_validator('window_state')
+    @classmethod
     def _validate_qbtye(cls, v: str) -> str:
         if v and (not isinstance(v, str) or not v.startswith('!QBYTE_')):
             raise ValueError(

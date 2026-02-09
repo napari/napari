@@ -21,7 +21,7 @@ from napari.utils.compat import StrEnum
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
-    from qtpy.QtGui import QCloseEvent, QKeyEvent
+    from qtpy.QtGui import QCloseEvent, QKeyEvent, QResizeEvent
 
 
 class PreferencesDialog(QDialog):
@@ -74,7 +74,7 @@ class PreferencesDialog(QDialog):
         # Build dialog from settings
         self._rebuild_dialog()
 
-    def keyPressEvent(self, e: 'QKeyEvent'):
+    def keyPressEvent(self, e: 'QKeyEvent') -> None:
         if e.key() == Qt.Key.Key_Escape:
             # escape key should just close the window
             # which implies "accept"
@@ -83,15 +83,17 @@ class PreferencesDialog(QDialog):
             return
         super().keyPressEvent(e)
 
-    def resizeEvent(self, event):
+    def resizeEvent(self, event: 'QResizeEvent') -> None:
         """Override to emit signal."""
         self.resized.emit(event.size())
         super().resizeEvent(event)
 
-    def _rebuild_dialog(self):
+    def _rebuild_dialog(self) -> None:
         """Removes settings not to be exposed to user and creates dialog pages."""
 
-        self._starting_values = self._settings.dict(exclude={'schema_version'})
+        self._starting_values = self._settings.model_dump(
+            exclude={'schema_version'}
+        )
 
         self._list.clear()
         while self._stack.count():
@@ -109,7 +111,7 @@ class PreferencesDialog(QDialog):
 
         self._list.setCurrentRow(0)
 
-    def _add_page(self, field_name: str, field_info: FieldInfo):
+    def _add_page(self, field_name: str, field_info: FieldInfo) -> None:
         """Builds the preferences widget using the json schema builder.
 
         Parameters

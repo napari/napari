@@ -85,6 +85,7 @@ class Theme(EventedModel):
     font_size: str = '12pt' if sys.platform == 'darwin' else '9pt'
 
     @field_validator('syntax_style', mode='before')
+    @classmethod
     def _ensure_syntax_style(cls, value: str) -> str:
         from pygments.styles import STYLE_MAP
 
@@ -97,6 +98,7 @@ class Theme(EventedModel):
         return value
 
     @field_validator('font_size', mode='before')
+    @classmethod
     def _ensure_font_size(cls, value: str) -> str:
         assert value.endswith('pt'), trans._(
             'Font size must be in points (pt).', deferred=True

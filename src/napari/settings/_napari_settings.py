@@ -83,20 +83,6 @@ class NapariSettings(EventedConfigFileSettings):
         populate_by_name=True,
     )
 
-    # class Config(EventedConfigFileSettings.Config):
-    #
-    #     # all of these fields are evented models, so we don't want to break
-    #     # connections by setting the top-level field itself
-    #     # (you can still mutate attributes in the subfields)
-    #
-    #     @classmethod
-    #     def _config_file_settings_source(cls, settings) -> dict:
-    #         # before '0.4.0' we didn't write the schema_version in the file
-    #         # written to disk. so if it's missing, add schema_version of 0.3.0
-    #         d = super()._config_file_settings_source(settings)
-    #         d.setdefault('schema_version', '0.3.0')
-    #         return d
-
     def __init__(self, config_path=_NOT_SET, **values: Any) -> None:
         super().__init__(config_path, **values)
         self._maybe_migrate()
@@ -111,7 +97,7 @@ class NapariSettings(EventedConfigFileSettings):
 
     def __str__(self):
         out = 'NapariSettings (defaults excluded)\n' + 34 * '-' + '\n'
-        data = self.dict(exclude_defaults=True)
+        data = self.model_dump(exclude_defaults=True)
         out += self._yaml_dump(_remove_empty_dicts(data))
         return out
 

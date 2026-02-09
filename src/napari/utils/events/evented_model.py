@@ -455,6 +455,21 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             else:
                 del self.model_config['use_enum_values']
 
+    @classmethod
+    def model_json_schema(
+        cls,
+        *args,
+        **kwargs,
+    ) -> dict[str, Any]:
+        """Generate a JSON schema for this model.
+
+        This is required to prevent from mail formated docstring break docs build.
+        """
+        return super().model_json_schema(
+            *args,
+            **kwargs,
+        )
+
 
 def get_defaults(obj: BaseModel | type[BaseModel]) -> dict[str, Any]:
     """Get possibly nested default values for a Model object."""
