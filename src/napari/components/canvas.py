@@ -5,6 +5,7 @@ from napari.components.grid import GridCanvas
 from napari.components.overlays import (
     BrushCircleOverlay,
     CanvasOverlay,
+    CurrentSliceOverlay,
     ScaleBarOverlay,
     TextOverlay,
     WelcomeOverlay,
@@ -22,6 +23,7 @@ DEFAULT_CANVAS_OVERLAYS = {
     'text': TextOverlay,
     'brush_circle': BrushCircleOverlay,
     'zoom': ZoomOverlay,
+    'current_slice': CurrentSliceOverlay,
 }
 
 

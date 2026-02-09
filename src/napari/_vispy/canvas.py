@@ -849,19 +849,15 @@ class VispyCanvas:
         self._needs_overlay_position_update = True
 
     def _connect_canvas_overlay_events(self, overlay: Overlay) -> None:
-        overlay.events.position.connect(
-            self._defer_canvas_overlay_position_update
-        )
-        overlay.events.visible.connect(
-            self._defer_canvas_overlay_position_update
-        )
+        overlay.events.position.connect(self._update_overlay_canvas_positions)
+        overlay.events.visible.connect(self._update_overlay_canvas_positions)
 
     def _disconnect_canvas_overlay_events(self, overlay: Overlay) -> None:
         overlay.events.position.disconnect(
-            self._defer_canvas_overlay_position_update
+            self._update_overlay_canvas_positions
         )
         overlay.events.visible.disconnect(
-            self._defer_canvas_overlay_position_update
+            self._update_overlay_canvas_positions
         )
 
     def _create_or_update_vispy_overlay(
@@ -973,7 +969,7 @@ class VispyCanvas:
                 if vispy_overlay not in vispy_overlays:
                     vispy_overlays.append(vispy_overlay)
 
-        self._defer_canvas_overlay_position_update()
+        self._update_overlay_canvas_positions()
 
     def _update_layer_overlays(self, layer: Layer) -> None:
         """Update the overlay visuals for each layer in the canvas.
@@ -1034,7 +1030,7 @@ class VispyCanvas:
                     self._defer_canvas_overlay_position_update
                 )
 
-        self._defer_canvas_overlay_position_update()
+        self._update_overlay_canvas_positions()
 
     def _get_ordered_visible_canvas_overlays(
         self,

@@ -372,7 +372,7 @@ napari-metadata==0.1.1
     # via napari (pyproject.toml)
 napari-plugin-engine==0.2.0
     # via napari (pyproject.toml)
-napari-plugin-manager==0.1.9
+napari-plugin-manager==0.1.10
     # via
     #   napari (pyproject.toml)
     #   ndevio

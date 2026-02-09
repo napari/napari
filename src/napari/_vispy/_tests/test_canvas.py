@@ -177,6 +177,8 @@ def test_tiling_canvas_overlays(qt_viewer):
     viewer.canvas.scale_bar.visible = True
     viewer.canvas.text.visible = True
     viewer.canvas.text.text = 'test'
+    viewer.canvas.scale_bar.position = 'bottom_left'
+    viewer.canvas.text_overlay.position = 'bottom_left'
 
     vispy_scale_bar = canvas._canvas_overlay_to_visual[
         viewer.canvas.scale_bar
