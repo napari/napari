@@ -575,7 +575,7 @@ class Affine(Transform):
         )
 
     @property
-    def rotate(self) -> npt.NDArray:
+    def rotate(self) -> np.ndarray[tuple[int, int], np.dtype[np.float64]]:
         """Return the rotation of the transform."""
         self._setup_decompose_linear_matrix_cache()
         return self._cache_dict['decompose_linear_matrix'][0]

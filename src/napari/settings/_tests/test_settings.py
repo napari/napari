@@ -449,6 +449,7 @@ def test_env_settings_restore(monkeypatch):
 NO_IMPORT_SCRIPT = """
 from napari.viewer import Viewer
 from napari import settings
+{additional_imports}
 
 assert settings._SETTINGS is None
 
@@ -459,7 +460,23 @@ assert settings._SETTINGS is not None
 
 
 def test_settings_no_import(tmp_path):
-    tmp_path.joinpath('test_no_import.py').write_text(NO_IMPORT_SCRIPT)
+    tmp_path.joinpath('test_no_import.py').write_text(
+        NO_IMPORT_SCRIPT.format(additional_imports='')
+    )
+
+    subprocess.check_call(
+        [sys.executable, str(tmp_path / 'test_no_import.py')]
+    )
+
+
+@pytest.mark.skipif('qtpy' not in sys.modules, reason='qtpy not installed')
+# this skipif depends on conditional import of qtpy in conftest.py
+def test_settings_no_import_qt(tmp_path):
+    tmp_path.joinpath('test_no_import.py').write_text(
+        NO_IMPORT_SCRIPT.format(
+            additional_imports='from napari._qt.qt_event_loop import get_qapp'
+        )
+    )
 
     subprocess.check_call(
         [sys.executable, str(tmp_path / 'test_no_import.py')]

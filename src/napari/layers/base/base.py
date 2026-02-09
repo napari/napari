@@ -640,6 +640,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             SelectionBoxOverlay,
             TransformBoxOverlay,
         )
+        from napari.components.overlays.text import LayerNameOverlay
 
         self._overlays: EventedDict[str, Overlay] = EventedDict()
 
@@ -685,6 +686,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
                 'transform_box': TransformBoxOverlay(),
                 'selection_box': SelectionBoxOverlay(),
                 'bounding_box': BoundingBoxOverlay(),
+                'layer_name': LayerNameOverlay(),
             }
         )
         self._slicing_state = self._get_layer_slicing_state(data, cache)
@@ -1052,7 +1054,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self.events.translate()
 
     @property
-    def rotate(self) -> npt.NDArray:
+    def rotate(self) -> np.ndarray[tuple[int, int], np.dtype[np.float64]]:
         """array: Rotation matrix in world coordinates."""
         return self._transforms['data2physical'].rotate
 
@@ -1401,6 +1403,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     @property
     def bounding_box(self) -> Overlay:
         return self._overlays['bounding_box']
+
+    @property
+    def name_overlay(self) -> Overlay:
+        return self._overlays['layer_name']
 
     def set_view_slice(self) -> None:
         self._slicing_state.set_view_slice()
