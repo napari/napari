@@ -884,15 +884,60 @@ class WarningEmitter(EventEmitter):
         self._warned = False
         self._category = category
         self._stacklevel = stacklevel
+        self._source_emitter: Any | None = None
+        self._source_emitter_connected = False
+        self._source_callback: Callable[..., Any] = self._emit_source_event
         EventEmitter.__init__(self, *args, **kwargs)
+
+    def connect_from(
+        self,
+        emitter: Any,
+        callback: Callable[..., Any] | None = None,
+    ) -> None:
+        """Forward events from ``emitter`` while this emitter has listeners.
+
+        The source emitter is connected lazily (on first callback connection)
+        and disconnected when the last callback is removed.
+        """
+        self._disconnect_source_emitter()
+        self._source_emitter = emitter
+        self._source_callback = callback or self._emit_source_event
+        if self._callbacks:
+            self._connect_source_emitter()
 
     def connect(self, cb, *args, **kwargs):
         self._warn(cb)
-        return EventEmitter.connect(self, cb, *args, **kwargs)
+        ret = EventEmitter.connect(self, cb, *args, **kwargs)
+        if self._callbacks:
+            self._connect_source_emitter()
+        return ret
+
+    def disconnect(
+        self, callback: Callback | CallbackRef | None | object = None
+    ):
+        ret = EventEmitter.disconnect(self, callback)
+        if len(self._callbacks) == 0:
+            self._disconnect_source_emitter()
+        return ret
 
     def _invoke_callback(self, cb, event):
         self._warn(cb)
         return EventEmitter._invoke_callback(self, cb, event)
+
+    def _emit_source_event(self, *_args, **_kwargs) -> None:
+        self()
+
+    def _connect_source_emitter(self) -> None:
+        if self._source_emitter is None or self._source_emitter_connected:
+            return
+        self._source_emitter.connect(self._source_callback)
+        self._source_emitter_connected = True
+
+    def _disconnect_source_emitter(self) -> None:
+        if self._source_emitter is None or not self._source_emitter_connected:
+            return
+        self._source_emitter.disconnect(self._source_callback)
+        self._source_emitter_connected = False
 
     def _warn(self, cb):
         if self._warned:
