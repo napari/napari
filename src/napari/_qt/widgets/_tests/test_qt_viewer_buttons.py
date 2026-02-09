@@ -215,7 +215,7 @@ def test_ndisplay_button_popup(qt_viewer_buttons, qtbot):
     # check viewer camera rotation value affects camera angles
     assert viewer_buttons.rz
     assert viewer_buttons.ry
-    assert viewer_buttons.rz
+    assert viewer_buttons.rx
     viewer_buttons.rz.setValue(90)
     viewer_buttons.ry.setValue(45)
     viewer_buttons.rx.setValue(0)
