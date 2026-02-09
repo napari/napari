@@ -51,21 +51,17 @@ class ScaleBar(Compound):
         """Calculate all layout dimensions and positions."""
         # Text dimensions
         text_width, text_height = self.text.get_width_height()
-        # add some extra padding between the scale bar and text
+
         # ceil so there's no flickering due to slight differences between
         # the heigh of the various digits
-        text_height = np.ceil(text_height * 1.5)
+        text_height = np.ceil(text_height)
 
         width = max(
-            length,  # Space for line + padding
-            text_width,  # Space for text + padding
+            length + self.line.width,
+            text_width,
         )
-        height = (
-            +text_height  # Text height
-            + self.TICK_LENGTH  # Line + ticks height
-        )
+        height = text_height + self.TICK_LENGTH
 
-        # Element positions (Y coordinates from top)
         line_center_y = text_height + (self.TICK_LENGTH / 2)
 
         return {

@@ -47,6 +47,10 @@ class VispyWelcomeOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
             x, y = np.array(self.node.canvas.size)
             self.node.set_scale_and_position(x, y)
 
+    def _on_box_change(self):
+        self.box.parent = None
+        # TODO: make the box actually usable
+
     def _on_theme_change(self) -> None:
         if self.node.parent is not None and self.node.parent.canvas.bgcolor:
             background_color = self.node.parent.canvas.bgcolor.rgba

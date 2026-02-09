@@ -32,7 +32,6 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self.overlay.events.length.connect(self._on_size_or_zoom_change)
         self.overlay.events.visible.connect(self._on_rendering_change)
 
-        self.viewer.events.theme.connect(self._on_rendering_change)
         self.viewer.camera.events.zoom.connect(self._on_size_or_zoom_change)
 
         self.reset()
@@ -129,7 +128,6 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         # Update scalebar and text
         self.node.text.text = f'{new_dim:g~#P}'
         self._on_rendering_change()
-        self._on_position_change()
 
     def _on_rendering_change(self):
         """Change color and other rendering features of scale bar and box."""
@@ -143,8 +141,11 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
             font_size=self.overlay.font_size,
         )
 
+        size_changed = width != self.x_size or height != self.y_size
         self.x_size = width
         self.y_size = height
+        if size_changed:
+            self._on_position_change()
 
     def _on_visible_change(self):
         # ensure that dpi is updated when the scale bar is visible

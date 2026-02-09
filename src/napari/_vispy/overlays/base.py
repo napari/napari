@@ -7,7 +7,7 @@ from vispy.visuals.transforms import MatrixTransform, STTransform
 
 from napari._vispy.utils.gl import BLENDING_MODES
 from napari.settings import get_settings
-from napari.utils.colormaps.standardize_color import transform_color
+from napari.utils.color import ColorValue
 from napari.utils.events import disconnect_events
 from napari.utils.theme import get_theme
 
@@ -83,17 +83,23 @@ class VispyCanvasOverlay(VispyBaseOverlay):
         self.overlay.events.position.connect(self._on_position_change)
         self.overlay.events.box.connect(self._on_box_change)
         self.overlay.events.box_color.connect(self._on_box_change)
+        # ensure to connect last cause we need to know the primary node's visiblity
+        self.overlay.events.visible.connect(
+            self._on_box_change, position='last'
+        )
+        get_settings().appearance.events.theme.connect(self._on_box_change)
         self.canvas_position_callback = lambda: None
 
-        self.box = Rectangle(center=(0, 0), border_width=0, parent=self.node)
+        self.box = Rectangle(center=(0, 0), border_width=0)
 
     def _on_box_change(self):
-        if not self.overlay.box:
+        if not self.overlay.box or not self.node.visible:
             self.box.parent = None
             return
 
         self.box.parent = self.node.parent
 
+        # TODO: this should be related to tiling padding
         padding = 7
         self.box.width = self.x_size + padding
         self.box.height = self.y_size + padding
@@ -104,14 +110,21 @@ class VispyCanvasOverlay(VispyBaseOverlay):
                 self.node.parent is not None
                 and self.node.parent.canvas.bgcolor
             ):
-                background_color = self.node.parent.canvas.bgcolor
+                background_color = ColorValue(
+                    self.node.parent.canvas.bgcolor.rgba
+                )
             else:
-                background_color = get_theme(
-                    get_settings().appearance.theme
-                ).canvas.as_hex()
-                background_color = transform_color(background_color)[0]
+                background_color = ColorValue(
+                    get_theme(
+                        get_settings().appearance.theme
+                    ).canvas.as_rgb_tuple()
+                )
         else:
             background_color = self.overlay.box_color
+
+        # make the color a bit transparent (copy to not override)
+        background_color = background_color.copy()
+        background_color[-1] *= 0.8
 
         self.box.color = background_color
 
