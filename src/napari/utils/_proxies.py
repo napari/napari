@@ -24,15 +24,12 @@ class ReadOnlyWrapper(wrapt.ObjectProxy):
         self,
         wrapped: Any,
         exceptions: tuple[str, ...] = (),
-        depth_limit=None,
-        depth=None,
-    ):
+    ) -> None:
         # prevent nested wrapping
         while isinstance(wrapped, ReadOnlyWrapper):
             wrapped = wrapped.__wrapped__
         super().__init__(wrapped)
         self._self_exceptions = exceptions
-        self._self_depth = depth
 
     def __setattr__(self, name: str, val: Any) -> None:
         if (

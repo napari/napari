@@ -2460,7 +2460,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             )
         super().__setattr__(name, value)
 
-    def __getattribute__(self, name: str):
+    def __getattribute__(self, name: str) -> Any:
         attr = super().__getattribute__(name)
         if name == 'locked' or name.startswith('_'):
             return attr
