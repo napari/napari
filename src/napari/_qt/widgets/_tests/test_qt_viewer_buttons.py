@@ -7,7 +7,10 @@ from qtpy.QtWidgets import QApplication
 from napari._app_model._app import get_app_model
 from napari._qt.dialogs.qt_modal import QtPopup
 from napari._qt.widgets import qt_viewer_buttons as qt_viewer_buttons_
-from napari._qt.widgets.qt_viewer_buttons import QtViewerButtons
+from napari._qt.widgets.qt_viewer_buttons import (
+    QtLayerButtons,
+    QtViewerButtons,
+)
 from napari.components.viewer_model import ViewerModel
 from napari.utils.camera_orientations import (
     DepthAxisOrientation,
@@ -313,21 +316,40 @@ def test_transpose_rotate_button(monkeypatch, qt_viewer_buttons, qtbot):
     trigger_mock.assert_called_with('napari:transpose_axes')
 
 
-def test_layer_buttons_visual_on_selection(make_napari_viewer):
-    """Test that new points/shapes buttons are checked when a layer is selected."""
-    viewer = make_napari_viewer()
-    layer_buttons = viewer.window._qt_viewer.layerButtons
+@pytest.fixture
+def qt_layer_buttons(qtbot):
+    # create viewer model and buttons
+    viewer = ViewerModel()
+    layer_buttons = QtLayerButtons(viewer)
+    qtbot.addWidget(layer_buttons)
 
+    yield viewer, layer_buttons
+
+    # close still open popup widgets
+    for widget in QApplication.topLevelWidgets():
+        if isinstance(widget, QtPopup):
+            widget.close()
+    layer_buttons.close()
+
+
+def test_layer_buttons_checked_on_selection(qt_layer_buttons):
+    """Test that new points/shapes buttons are checked when a layer is selected."""
+    import numpy as np
+
+    viewer, layer_buttons = qt_layer_buttons
+
+    # Initially no selection, buttons should not be checked
     assert not layer_buttons.newPointsButton.isChecked()
     assert not layer_buttons.newShapesButton.isChecked()
 
-    layer = viewer.add_image([[1, 2], [3, 4]])
-    viewer.layers.selection.add(layer)
+    data_layer = viewer.add_image(np.random.random((10, 15)))
 
+    # Selecting a layer should check the buttons (visual indicator)
+    viewer.layers.selection.active = data_layer
     assert layer_buttons.newPointsButton.isChecked()
     assert layer_buttons.newShapesButton.isChecked()
 
+    # Clear selection and buttons should no longer be checked
     viewer.layers.selection.clear()
-
     assert not layer_buttons.newPointsButton.isChecked()
     assert not layer_buttons.newShapesButton.isChecked()
