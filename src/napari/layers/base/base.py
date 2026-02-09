@@ -134,7 +134,7 @@ class _LayerSlicingState(ABC):
         )
         self._loaded: bool = True
         self._last_slice_id: int = -1
-        self._units: tuple[pint.Unit] | None = None
+        self._units: tuple[pint.Unit, ...] | None = None
 
     def set_view_slice(self) -> None:
         with self.dask_optimized_slicing():
