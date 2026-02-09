@@ -932,7 +932,9 @@ class VispyCanvas:
 
             gridded = (
                 self.viewer.grid.enabled
-                and getattr(overlay, 'gridded', False)
+                and getattr(
+                    overlay, 'gridded', True
+                )  # scene overlays always gridded
                 and self.viewer.layers
             )
 
