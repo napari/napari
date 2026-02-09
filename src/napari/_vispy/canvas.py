@@ -1093,6 +1093,11 @@ class VispyCanvas:
                 ):
                     yield overlay, vispy_overlays[viewbox_idx], view
 
+            # we want to ensure that the tiling of layer overlays always looks
+            # the same as the llayerlist order, so we reverse the direction for
+            # some cases
+            overlays_by_tiling_order = {'direct': [], 'reversed': []}
+
             # layer overlays are always "gridded"
             # (they always appear in the same viewbox as the layer itself)
             for layer_idx in layer_indices:
@@ -1102,7 +1107,21 @@ class VispyCanvas:
                     vispy_overlay,
                 ) in self._layer_overlay_to_visual.get(layer, {}).items():
                     if layer.visible and is_visible_tileable(overlay):
-                        yield overlay, vispy_overlay, view
+                        # TODO: this should check for tiling direction when it becomes settable
+                        if overlay.position in (
+                            CanvasPosition.TOP_LEFT,
+                            CanvasPosition.TOP_CENTER,
+                            CanvasPosition.BOTTOM_LEFT,
+                        ):
+                            direction = 'reversed'
+                        else:
+                            direction = 'direct'
+                        overlays_by_tiling_order[direction].append(
+                            (overlay, vispy_overlay, view)
+                        )
+
+            yield from reversed(overlays_by_tiling_order['reversed'])
+            yield from overlays_by_tiling_order['direct']
 
     def _update_overlay_canvas_positions(self, event=None):
         x_padding, y_padding = self.viewer.canvas.overlay_tiling.padding
