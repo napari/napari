@@ -105,7 +105,7 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
             + self.overlay.tick_length  # Tick marks length
             + text_width  # Text width with margins
         )
-        self.y_size = text_height
+        self.y_size = self.overlay.size[1] + text_height
 
         self._on_position_change()
 

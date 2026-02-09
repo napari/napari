@@ -1106,12 +1106,24 @@ class VispyCanvas:
                     overlay,
                     vispy_overlay,
                 ) in self._layer_overlay_to_visual.get(layer, {}).items():
+                    if not isinstance(overlay, CanvasOverlay):
+                        continue
                     if layer.visible and is_visible_tileable(overlay):
                         # TODO: this should check for tiling direction when it becomes settable
-                        if overlay.position in (
-                            CanvasPosition.TOP_LEFT,
-                            CanvasPosition.TOP_CENTER,
-                            CanvasPosition.BOTTOM_LEFT,
+                        if (
+                            '_left' in overlay.position
+                            and getattr(
+                                self.viewer.canvas.overlay_tiling,
+                                str(overlay.position),
+                            )
+                            == 'horizontal'
+                        ) or (
+                            'top_' in overlay.position
+                            and getattr(
+                                self.viewer.canvas.overlay_tiling,
+                                str(overlay.position),
+                            )
+                            == 'vertical'
                         ):
                             direction = 'reversed'
                         else:

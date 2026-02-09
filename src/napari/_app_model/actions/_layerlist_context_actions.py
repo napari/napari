@@ -262,16 +262,6 @@ LAYERLIST_CONTEXT_ACTIONS: list[Action] = [
             get_current=_layer_actions._are_name_overlays_visible
         ),
     ),
-    Action(
-        id='napari.layer.name_overlay',
-        title=trans._('Name Overlay'),
-        callback=_layer_actions._toggle_name_overlay,
-        menus=[MenuId.LAYERS_CONTEXT_VISUALIZATION, MenuId.LAYERS_VISUALIZE],
-        enablement=(LLSCK.num_selected_layers > 0),
-        toggled=ToggleRule(
-            get_current=_layer_actions._are_name_overlays_visible
-        ),
-    ),
 ]
 
 for _dtype in (
