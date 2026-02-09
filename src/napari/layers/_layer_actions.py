@@ -265,6 +265,11 @@ def _toggle_bounding_box(ll: LayerList) -> None:
         layer.bounding_box.visible = not layer.bounding_box.visible
 
 
+def _toggle_name_overlay(ll: LayerList) -> None:
+    for layer in ll.selection:
+        layer.name_overlay.visible = not layer.name_overlay.visible
+
+
 def _toggle_colorbar(ll: LayerList) -> None:
     for layer in ll.selection:
         if not hasattr(layer, 'colorbar'):
@@ -275,3 +280,33 @@ def _toggle_colorbar(ll: LayerList) -> None:
                 )
             )
         layer.colorbar.visible = not layer.colorbar.visible
+
+
+def _are_name_overlays_visible(ll: LayerList) -> bool:
+    return bool(
+        ll.selection
+        and all(
+            hasattr(layer, 'name_overlay') and layer.name_overlay.visible
+            for layer in ll.selection
+        )
+    )
+
+
+def _are_colorbars_visible(ll: LayerList) -> bool:
+    return bool(
+        ll.selection
+        and all(
+            hasattr(layer, 'colorbar') and layer.colorbar.visible
+            for layer in ll.selection
+        )
+    )
+
+
+def _are_bounding_boxes_visible(ll: LayerList) -> bool:
+    return bool(
+        ll.selection
+        and all(
+            hasattr(layer, 'bounding_box') and layer.bounding_box.visible
+            for layer in ll.selection
+        )
+    )
