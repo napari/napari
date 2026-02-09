@@ -100,7 +100,7 @@ class VispyCanvasOverlay(VispyBaseOverlay):
         self.box.parent = self.node.parent
 
         # TODO: this should be related to tiling padding
-        padding = 7
+        padding = 8
         self.box.width = self.x_size + padding
         self.box.height = self.y_size + padding
         self.box.center = self.x_size / 2, self.y_size / 2
@@ -130,6 +130,10 @@ class VispyCanvasOverlay(VispyBaseOverlay):
 
         self.box.order = self.node.order - 1
         self.box.transform = self.node.transform
+
+    def _on_blending_change(self) -> None:
+        self.box.set_gl_state(**BLENDING_MODES[self.overlay.blending])
+        super()._on_blending_change()
 
     def _on_position_change(self, event: Event | None = None) -> None:
         # NOTE: when subclasses call this method, they should first ensure sizes

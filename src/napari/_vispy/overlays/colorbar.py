@@ -35,8 +35,6 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
         self.layer: Image | Surface
         self.x_size = 50
         self.y_size = 250
-        self.x_offset = 7
-        self.y_offset = 7
 
         self.layer.events.contrast_limits.connect(self._on_data_change)
         self.layer.events.colormap.connect(self._on_colormap_change)
@@ -105,7 +103,10 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
             + self.overlay.tick_length  # Tick marks length
             + text_width  # Text width with margins
         )
-        self.y_size = self.overlay.size[1] + text_height
+        self.y_size = self.overlay.size[1] + text_height / 2
+
+        # TODO: size setting needs to be smarted to properly account for
+        #       font size in order for the box to be properly set
 
         self._on_position_change()
 

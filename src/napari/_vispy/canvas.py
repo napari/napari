@@ -951,6 +951,8 @@ class VispyCanvas:
 
                 else:
                     vispy_overlay.node.parent = parent
+                    if isinstance(overlay, CanvasOverlay):
+                        vispy_overlay._on_box_change()
 
         self._defer_overlay_position_update()
 
@@ -1015,6 +1017,8 @@ class VispyCanvas:
                     )
             else:
                 vispy_overlay.node.parent = parent
+                if isinstance(overlay, CanvasOverlay):
+                    vispy_overlay._on_box_change()
 
         self._defer_overlay_position_update()
 
