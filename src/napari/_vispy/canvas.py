@@ -912,10 +912,6 @@ class VispyCanvas:
                 continue
             overlay.events.visible.disconnect(self._update_canvas_overlays)
 
-            # connect position callbacks
-            self._connect_canvas_overlay_events(overlay)
-            overlay.events.gridded.connect(self._update_canvas_overlays)
-
             vispy_overlays = self._canvas_overlay_to_visual.setdefault(
                 overlay, []
             )
