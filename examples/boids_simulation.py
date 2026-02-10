@@ -22,25 +22,27 @@ the gui via QTWidgets and napari's thread_worker.
 """
 
 try:
-    import dragon
     import multiprocessing as mp  # Must be after import of dragon
+
+    import dragon
 
     mp.set_start_method("dragon")
 except (ImportError, ValueError):
     if __name__ == "__main__":
-        print(f"Note: dragon unavailable; using standard multiprocessing")
+        print("Note: dragon unavailable; using standard multiprocessing")
 except RuntimeError as re:
     print(f"Warning: {re}")
 finally:
     import multiprocessing as mp
 
-from functools import partial
 import sys
 import time
+from functools import partial
+
 import numpy as np
 import qtpy.QtWidgets
-import napari
 
+import napari
 
 viewer, state = None, None
 
