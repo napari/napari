@@ -874,16 +874,35 @@ class VispyCanvas:
         self._needs_overlay_position_update = True
 
     def _connect_canvas_overlay_events(self, overlay: Overlay) -> None:
-        overlay.events.position.connect(
-            self._defer_overlay_position_update, unique=True
-        )
-        overlay.events.visible.connect(
-            self._defer_overlay_position_update, unique=True
-        )
+        overlay.events.position.connect(self._update_overlay_canvas_positions)
+        overlay.events.visible.connect(self._update_overlay_canvas_positions)
 
     def _disconnect_canvas_overlay_events(self, overlay: Overlay) -> None:
-        overlay.events.position.disconnect(self._defer_overlay_position_update)
-        overlay.events.visible.disconnect(self._defer_overlay_position_update)
+        overlay.events.position.disconnect(
+            self._update_overlay_canvas_positions
+        )
+        overlay.events.visible.disconnect(
+            self._update_overlay_canvas_positions
+        )
+
+    def _create_or_update_vispy_viewer_overlay(
+        self, overlay, vispy_overlay, view
+    ) -> None:
+        parent = view if isinstance(overlay, CanvasOverlay) else view.scene
+
+        if vispy_overlay is None:
+            vispy_overlay = create_vispy_overlay(
+                overlay=overlay, viewer=self.viewer, parent=parent
+            )
+            self._overlay_to_visual[overlay].append(vispy_overlay)
+
+            if isinstance(overlay, CanvasOverlay):
+                vispy_overlay.canvas_position_callback = (
+                    self._defer_overlay_position_update
+                )
+
+        else:
+            vispy_overlay.node.parent = parent
 
     def _update_viewer_overlays(self):
         """Update the viewer overlay visuals.
@@ -901,8 +920,55 @@ class VispyCanvas:
             for vispy_overlay in vispy_overlays:
                 vispy_overlay.close()
 
+        # go through all overlays and ensure there are the exact amount of
+        # corresponding visuals depending on number of views to display
         for overlay in self.viewer._overlays.values():
+            # only create overlays when they are visible. If not, we connect the visible
+            # event of this overlay to this method until it's finally visible
+            if not overlay.visible:
+                overlay.events.visible.connect(self._update_viewer_overlays)
+                continue
+            overlay.events.visible.disconnect(self._update_viewer_overlays)
+
             vispy_overlays = self._overlay_to_visual.setdefault(overlay, [])
+
+            gridded = (
+                self.viewer.grid.enabled
+                and getattr(
+                    overlay, 'gridded', True
+                )  # scene overlays always gridded
+                and self.viewer.layers
+            )
+
+            # delete redundant vispy overlays (always keep 1)
+            n_views_to_populate = (
+                len(self.viewer.layers) // abs(self.viewer.grid.stride) or 1
+                if gridded
+                else 1
+            )
+            while len(vispy_overlays) > n_views_to_populate:
+                vispy_overlays.pop().close()
+
+            # create, or update parent if existing
+            if gridded:
+                for ((row, col), layer_indices), vispy_overlay in zip_longest(
+                    self.viewer.grid.iter_viewboxes(len(self.viewer.layers)),
+                    list(vispy_overlays),
+                ):
+                    if not layer_indices:
+                        # no overlays should be displayed in empty viewboxes
+                        continue
+
+                    view = self.grid[row, col]
+                    self._create_or_update_vispy_viewer_overlay(
+                        overlay, vispy_overlay, view
+                    )
+            else:
+                view = self.view
+                vispy_overlay = vispy_overlays[0] if vispy_overlays else None
+                self._create_or_update_vispy_viewer_overlay(
+                    overlay, vispy_overlay, view
+                )
 
             # connect position callbacks
             if isinstance(overlay, CanvasOverlay):
@@ -911,56 +977,7 @@ class VispyCanvas:
                     self._update_viewer_overlays, unique=True
                 )
 
-            # this loop works for both gridded mode and nongridded, since grid.iter_viewboxes returns
-            # a single viewbox when the grid is disabled
-            for view_info, vispy_overlay in zip_longest(
-                self.viewer.grid.iter_viewboxes(len(self.viewer.layers)),
-                list(vispy_overlays),
-            ):
-                if view_info is None:
-                    # number of views decreased (grid resized); we should delete remaining orphan overlays
-                    vispy_overlays.pop().close()
-                    continue
-
-                (row, col), layer_indices = view_info
-
-                # Never hide the last remaining overlay (allows things like
-                # welcome screen, and to see any changes to overlays when the viewer is empty)
-                if len(vispy_overlays) > 1 and not layer_indices:
-                    if vispy_overlay is not None:
-                        # number of occupied views decreased (no grid resizing happened, just
-                        # some layers got deleted)
-                        # works "backwards" with pop() but it's ok cause we can't have empty views
-                        # followed by occupied ones.
-                        vispy_overlays.pop().close()
-                    # either way no new overlay should be created or there's not overlay to reparent
-                    continue
-
-                view = (
-                    self.grid[row, col]
-                    if self.viewer.grid.enabled
-                    else self.view
-                )
-
-                parent = (
-                    view if isinstance(overlay, CanvasOverlay) else view.scene
-                )
-
-                if vispy_overlay is None:
-                    vispy_overlay = create_vispy_overlay(
-                        overlay=overlay, viewer=self.viewer, parent=parent
-                    )
-                    vispy_overlays.append(vispy_overlay)
-
-                    if isinstance(overlay, CanvasOverlay):
-                        vispy_overlay.canvas_position_callback = (
-                            self._defer_overlay_position_update
-                        )
-
-                else:
-                    vispy_overlay.node.parent = parent
-
-        self._defer_overlay_position_update()
+        self._update_overlay_canvas_positions()
 
     def _update_layer_overlays(self, layer: Layer) -> None:
         """Update the overlay visuals for each layer in the canvas.
@@ -1026,7 +1043,7 @@ class VispyCanvas:
             else:
                 vispy_overlay.node.parent = parent
 
-        self._defer_overlay_position_update()
+        self._update_overlay_canvas_positions()
 
     def _get_ordered_visible_canvas_overlays(
         self,
@@ -1050,7 +1067,11 @@ class VispyCanvas:
             )
 
         def is_gridded(overlay):
-            return overlay.gridded and self.viewer.grid.enabled
+            return (
+                overlay.gridded
+                and self.viewer.grid.enabled
+                and self.viewer.layers
+            )
 
         # first the base view: non-gridded viewer overlays which appear
         # "on top of" the main canvas
@@ -1072,7 +1093,11 @@ class VispyCanvas:
 
             # if grid is disabled, this loop runs once and we put everything
             # in the base (None) viewbox
-            view = viewbox_idx if self.viewer.grid.enabled else None
+            view = (
+                viewbox_idx
+                if self.viewer.grid.enabled and self.viewer.layers
+                else None
+            )
 
             for overlay, vispy_overlays in self._overlay_to_visual.items():
                 if (
