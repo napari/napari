@@ -65,7 +65,7 @@ def test_bad_order():
 def test_pad_bad_labels():
     dims = Dims(ndim=3)
     dims.axis_labels = ('a', 'b')
-    assert dims.axis_labels == ('0', 'a', 'b')
+    assert dims.axis_labels == ('-3', 'a', 'b')
 
 
 def test_keyword_only_dims():
@@ -197,13 +197,13 @@ def test_range_set_multiple():
 
 def test_axis_labels():
     dims = Dims(ndim=4)
-    assert dims.axis_labels == ('0', '1', '2', '3')
+    assert dims.axis_labels == ('-4', '-3', '-2', '-1')
 
     dims.set_axis_label(0, 't')
-    assert dims.axis_labels == ('t', '1', '2', '3')
+    assert dims.axis_labels == ('t', '-3', '-2', '-1')
 
     dims.set_axis_label((0, 1, 3), ('t', 'c', 'last'))
-    assert dims.axis_labels == ('t', 'c', '2', 'last')
+    assert dims.axis_labels == ('t', 'c', '-2', 'last')
 
     # mismatched len(axis) vs. len(value)
     with pytest.raises(ValueError, match='must have equal length'):
@@ -222,7 +222,7 @@ def test_order_when_changing_ndim():
     # Test that new dims get appended to the beginning of lists
     assert dims.point == (0, 2, 0, 0, 0)
     assert dims.order == (0, 1, 2, 3, 4)
-    assert dims.axis_labels == ('0', '1', '2', '3', '4')
+    assert dims.axis_labels == ('-5', '-4', '-3', '-2', '-1')
 
     dims.set_range(2, (0, 4, 1))
     dims.set_point(2, 3)
@@ -230,13 +230,13 @@ def test_order_when_changing_ndim():
     # Test that dims get removed from the beginning of lists
     assert dims.point == (3, 0, 0)
     assert dims.order == (0, 1, 2)
-    assert dims.axis_labels == ('2', '3', '4')
+    assert dims.axis_labels == ('-3', '-2', '-1')
 
 
 def test_labels_order_when_changing_dims():
     dims = Dims(ndim=4)
     dims.ndim = 5
-    assert dims.axis_labels == ('0', '1', '2', '3', '4')
+    assert dims.axis_labels == ('-5', '-4', '-3', '-2', '-1')
 
 
 @pytest.mark.parametrize(

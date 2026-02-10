@@ -1,4 +1,3 @@
-import sys
 import warnings
 from collections.abc import Callable
 from contextlib import contextmanager
@@ -12,7 +11,6 @@ from napari._pydantic_compat import (
     ModelMetaclass,
     PrivateAttr,
     main,
-    utils,
 )
 from napari.utils.events.event import EmitterGroup, Event
 from napari.utils.misc import pick_equality_operator
@@ -25,52 +23,6 @@ _BASE_JSON_ENCODERS = {
     np.ndarray: lambda arr: arr.tolist(),
     KeyBinding: lambda v: str(v),
 }
-
-
-@contextmanager
-def no_class_attributes():
-    """Context in which pydantic.main.ClassAttribute just passes value 2.
-
-    Due to a very annoying decision by PySide2, all class ``__signature__``
-    attributes may only be assigned **once**.  (This seems to be regardless of
-    whether the class has anything to do with PySide2 or not).  Furthermore,
-    the PySide2 ``__signature__`` attribute seems to break the python
-    descriptor protocol, which means that class attributes that have a
-    ``__get__`` method will not be able to successfully retrieve their value
-    (instead, the descriptor object itself will be accessed).
-
-    This plays terribly with Pydantic, which assigns a ``ClassAttribute``
-    object to the value of ``cls.__signature__`` in ``ModelMetaclass.__new__``
-    in order to avoid masking the call signature of object instances that have
-    a ``__call__`` method (https://github.com/samuelcolvin/pydantic/pull/1466).
-
-    So, because we only get to set the ``__signature__`` once, this context
-    manager basically "opts-out" of pydantic's ``ClassAttribute`` strategy,
-    thereby directly setting the ``cls.__signature__`` to an instance of
-    ``inspect.Signature``.
-
-    For additional context, see:
-    - https://github.com/napari/napari/issues/2264
-    - https://github.com/napari/napari/pull/2265
-    - https://bugreports.qt.io/browse/PYSIDE-1004
-    - https://codereview.qt-project.org/c/pyside/pyside-setup/+/261411
-    """
-
-    if 'PySide2' not in sys.modules:
-        yield
-        return
-
-    # monkey patch the pydantic ClassAttribute object
-    # the second argument to ClassAttribute is the inspect.Signature object
-    def _return2(x, y):
-        return y
-
-    main.ClassAttribute = _return2
-    try:
-        yield
-    finally:
-        # undo our monkey patch
-        main.ClassAttribute = utils.ClassAttribute
 
 
 class EventedMetaclass(ModelMetaclass):
@@ -88,8 +40,7 @@ class EventedMetaclass(ModelMetaclass):
     """
 
     def __new__(mcs, name, bases, namespace, **kwargs):
-        with no_class_attributes():
-            cls = super().__new__(mcs, name, bases, namespace, **kwargs)
+        cls = super().__new__(mcs, name, bases, namespace, **kwargs)
         cls.__eq_operators__ = {}
         for n, f in cls.__fields__.items():
             cls.__eq_operators__[n] = pick_equality_operator(f.type_)

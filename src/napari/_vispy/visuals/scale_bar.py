@@ -43,7 +43,9 @@ class ScaleBar(Compound):
             anchor_y='bottom',
             font_size=10,
         )
-        self.line = Line(connect='segments', method='gl', width=3)
+        self.line = Line(
+            connect='segments', method='gl', width=3, antialias=True
+        )
         # order matters (last is drawn on top)
         super().__init__([self.box, self.text, self.line])
 
@@ -52,7 +54,7 @@ class ScaleBar(Compound):
         # Text dimensions
         text_width, text_height = self.text.get_width_height()
         # add some extra padding between the scale bar and text
-        text_height *= 1.1
+        text_height *= 1.5
 
         # Box dimensions
         box_width = max(

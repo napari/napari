@@ -9,13 +9,13 @@ from typing import TYPE_CHECKING, cast
 import numpy as np
 from numpy import typing as npt
 
-from napari.layers import Layer
 from napari.layers._data_protocols import LayerDataProtocol
 from napari.layers._multiscale_data import MultiScaleData
 from napari.layers._scalar_field._slice import (
     _ScalarFieldSliceRequest,
     _ScalarFieldSliceResponse,
 )
+from napari.layers.base import Layer, _LayerSlicingState
 from napari.layers.image._image_constants import Interpolation, VolumeDepiction
 from napari.layers.image._image_mouse_bindings import (
     move_plane_along_normal as plane_drag_callback,
@@ -24,6 +24,7 @@ from napari.layers.image._image_mouse_bindings import (
 from napari.layers.image._image_utils import guess_multiscale
 from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
 from napari.layers.utils.plane import SlicingPlane
+from napari.types import LayerDataType
 from napari.utils._dask_utils import DaskIndexer
 from napari.utils._dtype import normalize_dtype
 from napari.utils.colormaps import AVAILABLE_COLORMAPS
@@ -32,6 +33,7 @@ from napari.utils.events.event import WarningEmitter
 from napari.utils.events.event_utils import connect_no_arg
 from napari.utils.geometry import clamp_point_to_bounding_box
 from napari.utils.naming import magic_name
+from napari.utils.transforms import Affine
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
@@ -64,7 +66,7 @@ class ScalarFieldBase(Layer, ABC):
         provided scale, rotate, and shear values.
     axis_labels : tuple of str, optional
         Dimension names of the layer data.
-        If not provided, axis_labels will be set to (..., 'axis -2', 'axis -1').
+        If not provided, axis_labels will be set to (..., '-2', '-1').
     blending : str
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
@@ -225,6 +227,7 @@ class ScalarFieldBase(Layer, ABC):
         # Determine dimensionality of the data
         if ndim is None:
             ndim = len(data.shape)
+        self._data = data
 
         super().__init__(
             data,
@@ -290,12 +293,6 @@ class ScalarFieldBase(Layer, ABC):
             np.array(self.level_shapes)[self._data_level][displayed_axes] - 1
         )
 
-        self._slice = _ScalarFieldSliceResponse.make_empty(
-            slice_input=self._slice_input,
-            rgb=len(self.data.shape) != self.ndim,
-            dtype=self._slice_dtype(),
-        )
-
         self._plane = SlicingPlane(thickness=1)
         # Whether to calculate clims on the next set_view_slice
         self._should_calc_clims = False
@@ -327,6 +324,10 @@ class ScalarFieldBase(Layer, ABC):
     def _data_view(self) -> np.ndarray:
         """Viewable image for the current slice. (compatibility)"""
         return self._slice.image.view
+
+    @property
+    def _slice(self) -> _ScalarFieldSliceResponse:
+        return self._slicing_state._slice
 
     @property
     def dtype(self):
@@ -387,13 +388,11 @@ class ScalarFieldBase(Layer, ABC):
         self._data_level = level
         self.refresh(extent=False)
 
-    def _get_level_shapes(self):
+    def _get_level_shapes(self) -> Sequence[tuple[int, ...]]:
         data = self.data
         if isinstance(data, MultiScaleData):
-            shapes = data.shapes
-        else:
-            shapes = [self.data.shape]
-        return shapes
+            return data.shapes
+        return [self.data.shape]
 
     @property
     def level_shapes(self) -> np.ndarray:
@@ -490,76 +489,8 @@ class ScalarFieldBase(Layer, ABC):
         """
         raise NotImplementedError
 
-    def _set_view_slice(self) -> None:
-        """Set the slice output based on this layer's current state."""
-        # The new slicing code makes a request from the existing state and
-        # executes the request on the calling thread directly.
-        # For async slicing, the calling thread will not be the main thread.
-        request = self._make_slice_request_internal(
-            slice_input=self._slice_input,
-            data_slice=self._data_slice,
-            dask_indexer=nullcontext,
-        )
-        response = request()
-        self._update_slice_response(response)
-
-    def _make_slice_request(self, dims: Dims) -> _ScalarFieldSliceRequest:
-        """Make an image slice request based on the given dims and this image."""
-        slice_input = self._make_slice_input(dims)
-        # For the existing sync slicing, indices is passed through
-        # to avoid some performance issues related to the evaluation of the
-        # data-to-world transform and its inverse. Async slicing currently
-        # absorbs these performance issues here, but we can likely improve
-        # things either by caching the world-to-data transform on the layer
-        # or by lazily evaluating it in the slice task itself.
-        indices = slice_input.data_slice(self._data_to_world.inverse)
-        return self._make_slice_request_internal(
-            slice_input=slice_input,
-            data_slice=indices,
-            dask_indexer=self.dask_optimized_slicing,
-        )
-
-    def _make_slice_request_internal(
-        self,
-        *,
-        slice_input: _SliceInput,
-        data_slice: _ThickNDSlice,
-        dask_indexer: DaskIndexer,
-    ) -> _ScalarFieldSliceRequest:
-        """Needed to support old-style sync slicing through _slice_dims and
-        _set_view_slice.
-
-        This is temporary scaffolding that should go away once we have completed
-        the async slicing project: https://github.com/napari/napari/issues/4795
-        """
-        return _ScalarFieldSliceRequest(
-            slice_input=slice_input,
-            data=self.data,
-            dask_indexer=dask_indexer,
-            data_slice=data_slice,
-            projection_mode=self.projection_mode,
-            multiscale=self.multiscale,
-            corner_pixels=self.corner_pixels,
-            rgb=len(self.data.shape) != self.ndim,
-            data_level=self.data_level,
-            thumbnail_level=self._thumbnail_level,
-            level_shapes=self.level_shapes,
-            downsample_factors=self.downsample_factors,
-        )
-
-    def _update_slice_response(
-        self, response: _ScalarFieldSliceResponse
-    ) -> None:
-        """Update the slice output state currently on the layer. Currently used
-        for both sync and async slicing.
-        """
-        response = response.to_displayed(self._raw_to_displayed)
-        # We call to_displayed here to ensure that if the contrast limits
-        # are outside the range of supported by vispy, then data view is
-        # rescaled to fit within the range.
-        self._slice_input = response.slice_input
-        self._transforms[0] = response.tile_to_data
-        self._slice = response
+    def _set_view_slice(self):
+        raise NotImplementedError
 
     def _get_value(self, position):
         """Value of the data at a position in data coordinates.
@@ -737,3 +668,96 @@ class ScalarFieldBase(Layer, ABC):
         bounding box of the data at the current level
         """
         return self._extent_level_data_augmented[:, dims_displayed].T
+
+    def _get_layer_slicing_state(
+        self, data: LayerDataType, cache: bool
+    ) -> ScalarFieldSlicingState:
+        return ScalarFieldSlicingState(layer=self, data=data, cache=cache)
+
+
+class ScalarFieldSlicingState(_LayerSlicingState):
+    layer: ScalarFieldBase
+    _slice_request_class = _ScalarFieldSliceRequest
+
+    def __init__(
+        self, layer: ScalarFieldBase, data: LayerDataType, cache: bool
+    ):
+        super().__init__(layer, data, cache)
+        self.transforms = Affine(
+            np.ones(self.ndim), np.zeros(self.ndim), name='tile2data'
+        )
+        self._slice = _ScalarFieldSliceResponse.make_empty(
+            slice_input=self._slice_input,
+            rgb=len(self.layer.data.shape) != self.ndim,
+            dtype=self.layer._slice_dtype(),
+        )
+
+    def _set_view_slice(self):
+        request = self._make_slice_request_internal(
+            slice_input=self._slice_input,
+            data_slice=self.data_slice,
+            dask_indexer=nullcontext,
+        )
+        response = request()
+        self._update_slice_response(response)
+
+    def _make_slice_request(self, dims: Dims) -> _ScalarFieldSliceRequest:
+        """Make an image slice request based on the given dims and this image."""
+        slice_input = self.make_slice_input(dims)
+        # For the existing sync slicing, indices is passed through
+        # to avoid some performance issues related to the evaluation of the
+        # data-to-world transform and its inverse. Async slicing currently
+        # absorbs these performance issues here, but we can likely improve
+        # things either by caching the world-to-data transform on the layer
+        # or by lazily evaluating it in the slice task itself.
+        indices = slice_input.data_slice(self.layer._data_to_world.inverse)
+        return self._make_slice_request_internal(
+            slice_input=slice_input,
+            data_slice=indices,
+            dask_indexer=self.dask_optimized_slicing,
+        )
+
+    def _make_slice_request_internal(
+        self,
+        *,
+        slice_input: _SliceInput,
+        data_slice: _ThickNDSlice,
+        dask_indexer: DaskIndexer,
+    ) -> _ScalarFieldSliceRequest:
+        """Needed to support old-style sync slicing through _slice_dims and
+        _set_view_slice.
+
+        This is temporary scaffolding that should go away once we have completed
+        the async slicing project: https://github.com/napari/napari/issues/4795
+        """
+        return self._slice_request_class(
+            slice_input=slice_input,
+            data=self.layer.data,
+            dask_indexer=dask_indexer,
+            data_slice=data_slice,
+            projection_mode=self.layer.projection_mode,
+            multiscale=self.layer.multiscale,
+            corner_pixels=self.layer.corner_pixels,
+            rgb=len(self.layer.data.shape) != self.ndim,
+            data_level=self.layer.data_level,
+            thumbnail_level=self.layer._thumbnail_level,
+            level_shapes=self.layer.level_shapes,
+            downsample_factors=self.layer.downsample_factors,
+        )
+
+    def _update_slice_response(
+        self, response: _ScalarFieldSliceResponse
+    ) -> None:
+        """Update the slice output state currently on the layer. Currently used
+        for both sync and async slicing.
+        """
+        response = response.to_displayed(self.layer._raw_to_displayed)
+        # We call to_displayed here to ensure that if the contrast limits
+        # are outside the range of supported by vispy, then data view is
+        # rescaled to fit within the range.
+        self._slice_input = response.slice_input
+        # this is the temporary patch
+        self.layer._transforms[0] = response.tile_to_data
+        #
+        self.transforms = response.tile_to_data
+        self._slice = response
