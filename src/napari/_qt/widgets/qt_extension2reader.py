@@ -174,11 +174,13 @@ class Extension2ReaderTable(QWidget):
             # typing. See PR #6107 and #8579 for more detail
             ext = Path(new_pattern).suffix.lower()
             _ = Path(new_pattern).with_suffix(ext)
-            compatible_readers = _npe2.get_readers(new_pattern)
         except ValueError as e:
             if 'empty name' not in str(e):
                 raise
             compatible_readers = {}
+        else:
+            compatible_readers = _npe2.get_readers(new_pattern)
+
         for plugin_name in readers:
             if plugin_name not in compatible_readers:
                 to_delete.append(plugin_name)
