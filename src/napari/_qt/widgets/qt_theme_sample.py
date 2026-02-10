@@ -58,7 +58,9 @@ from superqt import QRangeSlider
 
 from napari._qt.qt_resources import get_stylesheet
 from napari._qt.utils import QImg2array
+from napari._qt.widgets.qt_viewer_buttons import QtViewerPushButton
 from napari.utils.io import imsave
+from napari.utils.theme import get_theme
 
 blurb = """
 <h3>Heading</h3>
@@ -110,6 +112,10 @@ class TabDemo(QTabWidget):
         self.tab2.setLayout(layout2)
 
         self.setWindowTitle('tab demo')
+
+
+class QtConsole(QWidget):
+    """Console-like container to pick up QtConsole QSS rules."""
 
 
 class SampleWidget(QWidget):
@@ -171,6 +177,74 @@ class SampleWidget(QWidget):
         group_box.setLayout(hbox)
         lay.addWidget(group_box)
 
+        # Theme-derived states and accents
+        state_group = QGroupBox('Theme state samples')
+        state_layout = QVBoxLayout()
+        state_group.setLayout(state_layout)
+
+        button_row = QHBoxLayout()
+        checked_btn = QtViewerPushButton('new_points')
+        checked_btn.setCheckable(True)
+        checked_btn.setChecked(True)
+        checked_btn.setToolTip('Checked: uses darken(current, 10) in QSS')
+        unchecked_btn = QtViewerPushButton('new_shapes')
+        unchecked_btn.setCheckable(True)
+        unchecked_btn.setChecked(False)
+        disabled_btn = QtViewerPushButton('delete_button')
+        disabled_btn.setEnabled(False)
+        button_row.addWidget(checked_btn)
+        button_row.addWidget(unchecked_btn)
+        button_row.addWidget(disabled_btn)
+        button_row.addStretch(1)
+        state_layout.addLayout(button_row)
+
+        disabled_row = QHBoxLayout()
+        disabled_label = QLabel('Disabled label')
+        disabled_label.setEnabled(False)
+        disabled_edit = QLineEdit('Disabled input')
+        disabled_edit.setEnabled(False)
+        disabled_check = QCheckBox('Disabled check')
+        disabled_check.setEnabled(False)
+        disabled_row.addWidget(disabled_label)
+        disabled_row.addWidget(disabled_edit)
+        disabled_row.addWidget(disabled_check)
+        disabled_row.addStretch(1)
+        state_layout.addLayout(disabled_row)
+
+        emphasized_frame = QFrame()
+        emphasized_frame.setProperty('emphasized', True)
+        emphasized_layout = QHBoxLayout()
+        emphasized_layout.setContentsMargins(8, 6, 8, 6)
+        emphasized_layout.addWidget(QLabel('Emphasized panel'))
+        emphasized_layout.addStretch(1)
+        emphasized_frame.setLayout(emphasized_layout)
+        state_layout.addWidget(emphasized_frame)
+
+        lay.addWidget(state_group)
+
+        console_group = QGroupBox('Console preview')
+        console_layout = QVBoxLayout()
+        console_group.setLayout(console_layout)
+
+        syntax_label = QLabel(f'Syntax style: {get_theme(theme).syntax_style}')
+        console_layout.addWidget(syntax_label)
+
+        console_container = QtConsole()
+        console_container_layout = QVBoxLayout()
+        console_container_layout.setContentsMargins(4, 4, 4, 4)
+        console_container.setLayout(console_container_layout)
+
+        console_text = QTextEdit()
+        console_text.setReadOnly(True)
+        console_text.setPlainText(
+            ">>> import napari\nprint('Hello theme!')\nHello theme!"
+        )
+        console_text.setMinimumHeight(90)
+        console_container_layout.addWidget(console_text)
+        console_layout.addWidget(console_container)
+
+        lay.addWidget(console_group)
+
     def screenshot(self, path=None):
         img = self.grab().toImage()
         if path is not None:
@@ -180,22 +254,11 @@ class SampleWidget(QWidget):
 
 def _rgb_string_to_hex(rgb_string: str) -> str:
     """Convert rgb() or rgba() CSS string to hex."""
-    if rgb_string.startswith('rgba('):
-        parts = rgb_string.lstrip('rgba(').rstrip(')').split(',')
-        r, g, b = (
-            int(parts[0].strip()),
-            int(parts[1].strip()),
-            int(parts[2].strip()),
-        )
-        return f'#{r:02x}{g:02x}{b:02x}'
-    if rgb_string.startswith('rgb('):
-        parts = rgb_string.lstrip('rgb(').rstrip(')').split(',')
-        r, g, b = (
-            int(parts[0].strip()),
-            int(parts[1].strip()),
-            int(parts[2].strip()),
-        )
-        return f'#{r:02x}{g:02x}{b:02x}'
+    if rgb_string.startswith('rgb'):
+        parts = rgb_string[rgb_string.find('(') + 1 : -1].split(',')
+        if len(parts) >= 3:
+            r, g, b = (int(p.strip()) for p in parts[:3])
+            return f'#{r:02x}{g:02x}{b:02x}'
     # Already hex or named color
     return rgb_string
 
@@ -279,12 +342,7 @@ class ThemeColorDisplay(QWidget):
 
     def __init__(self, theme: str = 'dark') -> None:
         super().__init__(None)
-        from napari.utils.theme import (
-            darken,
-            get_theme,
-            lighten,
-            opacity,
-        )
+        from napari.utils.theme import get_theme
 
         theme_obj = get_theme(theme)
         theme_dict = theme_obj.to_rgb_dict()
@@ -329,55 +387,6 @@ class ThemeColorDisplay(QWidget):
             base_grid.addWidget(row_widget, row, col)
 
         main_layout.addLayout(base_grid)
-
-        # --- Derived colors section ---
-        derived_label = QLabel('<h3>Derived Colors (QSS functions)</h3>')
-        main_layout.addWidget(derived_label)
-
-        derived_grid = QGridLayout()
-        derived_grid.setSpacing(10)
-
-        # Gather the derived colors actually used in the QSS
-        derived_colors: list[tuple[str, str, str]] = [
-            (
-                'darken(current, 10)',
-                darken(theme_dict['current'], 10),
-                'New points/shapes button background when checked',
-            ),
-            (
-                'darken(foreground, 20)',
-                darken(theme_dict['foreground'], 20),
-                'Disabled mode radio buttons background',
-            ),
-            (
-                'darken(background, 10)',
-                darken(theme_dict['background'], 10),
-                'Dock widget title bar hover state',
-            ),
-            (
-                'lighten(error, 10)',
-                lighten(theme_dict['error'], 10),
-                'Play button background during recording',
-            ),
-            (
-                'opacity(text, 90)',
-                opacity(theme_dict['text'], 90),
-                'Disabled widget text (slightly transparent)',
-            ),
-            (
-                'lighten(foreground, 5)',
-                lighten(theme_dict['foreground'], 5),
-                'Subtle highlight on layer controls',
-            ),
-        ]
-
-        for i, (role, color_val, desc) in enumerate(derived_colors):
-            hex_color = _rgb_string_to_hex(color_val)
-            row_widget = _make_swatch_row(role, hex_color, desc)
-            row, col = divmod(i, 3)
-            derived_grid.addWidget(row_widget, row, col)
-
-        main_layout.addLayout(derived_grid)
 
         # --- Font info ---
         info_label = QLabel(
