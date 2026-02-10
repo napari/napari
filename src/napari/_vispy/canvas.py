@@ -311,7 +311,7 @@ class VispyCanvas:
         return self._scene_canvas._backend.screen_changed
 
     def _on_bgcolor_change(self) -> None:
-        self.bgcolor = self.viewer.canvas.background_color
+        self._scene_canvas.bgcolor = self.viewer.canvas.background_color
 
     def _disconnect_events(self) -> None:
         disconnect_events(self.viewer.events, self)
