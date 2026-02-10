@@ -195,7 +195,7 @@ napari-console==0.1.4
     # via napari (pyproject.toml)
 napari-metadata==0.1.1
     # via napari (pyproject.toml)
-napari-plugin-engine==0.2.0
+napari-plugin-engine==0.2.1
     # via napari (pyproject.toml)
 napari-plugin-manager==0.1.10
     # via napari (pyproject.toml)

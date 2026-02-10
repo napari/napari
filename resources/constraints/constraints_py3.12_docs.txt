@@ -370,7 +370,7 @@ napari-meshio==0.0.2
     # via napari (pyproject.toml:docs)
 napari-metadata==0.1.1
     # via napari (pyproject.toml)
-napari-plugin-engine==0.2.0
+napari-plugin-engine==0.2.1
     # via napari (pyproject.toml)
 napari-plugin-manager==0.1.10
     # via
