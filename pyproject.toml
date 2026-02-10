@@ -180,8 +180,7 @@ gallery = [
     "h5netcdf[h5py]",
     "tifffile[codecs]",
     "meshio",
-    # can simplify to just >=0.4.2 once we stop running macos intel docs
-    "trackastra>=0.4.2 ; python_version < '3.13' or platform_system != 'Darwin' or platform_machine != 'x86_64'",
+    "trackastra>=0.4.2",
     "gdown", # to download some large example data files
 ]
 # needed to build docs
@@ -279,8 +278,7 @@ gallery = [
     "h5netcdf[h5py]",
     "tifffile[codecs]",
     "meshio",
-    # can simplify to just >=0.4.2 once we stop running macos intel docs
-    "trackastra>=0.4.2 ; python_version < '3.13' or platform_system != 'Darwin' or platform_machine != 'x86_64'",
+    "trackastra>=0.4.2",
     "gdown", # to download some large example data files
 ]
 # needed to build docs
