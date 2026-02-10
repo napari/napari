@@ -16,10 +16,7 @@ class Text(BaseText):
         super().__init__(*args, face=face, **kwargs)
 
     def get_width_height(self) -> tuple[float, float]:
-        width, height = get_text_width_height(self)
-        # TODO: figure out why these numbers are not correct. For now, we just
-        #       put some magic numbers that work for AlataPlus and our line height
-        return width * self.dpi_ratio * 1.33, height * self.dpi_ratio * 1.73
+        return get_text_width_height(self)
 
     @property
     def font_size(self) -> float:
@@ -34,5 +31,4 @@ class Text(BaseText):
     @property
     def dpi_ratio(self) -> float:
         # adjust for dpi: 72 is the "base dpi" around which font sizes are defined
-        # TODO: but for some reason 96 seems to give the correct ratio for me?
-        return (self.transforms.dpi or 96) / 96
+        return (self.transforms.dpi or 72) / 72
