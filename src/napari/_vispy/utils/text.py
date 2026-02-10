@@ -105,8 +105,7 @@ def get_text_width_height(text: Text) -> tuple[float, float]:
         raise TypeError('Text should either be a string or a list of strings')
 
     font = _load_font(size=text.font_size)
-    # still need some magic number for some reason... this gets close
-    font_height = sum(font.getmetrics()) * 0.92
+    font_height = sum(font.getmetrics()) * 0.81
 
     height = 0
     width = 0
@@ -117,11 +116,9 @@ def get_text_width_height(text: Text) -> tuple[float, float]:
 
         for lineno, line in enumerate(string.split('\n')):
             width = max(width, font.getlength(line))
-            height = max(
-                height,
-                (lineno + 1) * font_height
-                + (lineno * font_height * (1 - text.line_height)),
-            )
+            height_lines = font_height * (lineno + 1)
+            height_line_spacing = font_height * (text.line_height - 1) * lineno
+            height = max(height, height_lines + height_line_spacing)
 
     return width * text.dpi_ratio, height * text.dpi_ratio
 
