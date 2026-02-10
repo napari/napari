@@ -7,6 +7,7 @@ import numpy as np
 
 from napari._vispy.overlays.base import LayerOverlayMixin, VispyCanvasOverlay
 from napari._vispy.visuals.colormap import Colormap
+from napari.layers.utils.color_manager import ColorManager
 from napari.settings import get_settings
 from napari.utils.colormaps.colormap_utils import (
     _coerce_contrast_limits,
@@ -30,12 +31,16 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
         *,
         layer: Image | Surface | Points,
         overlay: Overlay,
+        color_manager: ColorManager,
         parent: Node | None = None,
     ) -> None:
         super().__init__(
             node=Colormap(), layer=layer, overlay=overlay, parent=parent
         )
         self.layer: Image | Surface | Points
+        self.color_manager = (
+            color_manager if color_manager is not None else self.layer
+        )
         self.x_size = 50
         self.y_size = 250
         self.x_offset = 7
@@ -43,7 +48,9 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
         # TODO: check with napari core whether image and surface layer always have contrast limits that are not None.
         # Checking with the points layer, this layer can have face_contrast_limits set to None.
         if getattr(self.layer, 'contrast_limits', None):
-            self.layer.events.contrast_limits.connect(self._on_data_change)
+            self.color_manager.events.contrast_limits.connect(
+                self._on_data_change
+            )
             self.layer.events.colormap.connect(self._on_colormap_change)
             self.layer.events.gamma.connect(self._on_gamma_change)
         else:
@@ -65,10 +72,7 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
         self.reset()
 
     def _check_contrast_limits_colorbar(self) -> None:
-        if not (
-            getattr(self.layer, 'contrast_limits', None)
-            or self.layer.face_contrast_limits
-        ):
+        if self.color_manager.contrast_limits is None:
             warnings.warn(
                 'Colorbar overlay is set to visible but the layer has no '
                 'contrast limits set. Hiding colorbar overlay.',
@@ -77,10 +81,7 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
             self.layer.colorbar.visible = False
 
     def _on_data_change(self) -> None:
-        if (
-            getattr(self.layer, 'contrast_limits', None)
-            or self.layer.face_contrast_limits
-        ):
+        if self.color_manager.contrast_limits is not None:
             # TODO: for initial implementation only focus on face_color of points layer and not border.
             dtype = (
                 getattr(self.layer, 'dtype', None)
@@ -88,8 +89,7 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
             )
             self.node.set_data_and_clim(
                 clim=_coerce_contrast_limits(
-                    getattr(self.layer, 'contrast_limits', None)
-                    or self.layer.face_contrast_limits
+                    self.color_manager.contrast_limits
                 ).contrast_limits,
                 dtype=dtype,
             )
