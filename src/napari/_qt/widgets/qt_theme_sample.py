@@ -230,36 +230,22 @@ class SampleWidget(QWidget):
         return QImg2array(img)
 
 
-def _rgb_string_to_hex(rgb_string: str) -> str:
-    """Convert rgb() or rgba() CSS string to hex."""
-    if rgb_string.startswith('rgb'):
-        parts = rgb_string[rgb_string.find('(') + 1 : -1].split(',')
-        if len(parts) >= 3:
-            r, g, b = (int(p.strip()) for p in parts[:3])
-            return f'#{r:02x}{g:02x}{b:02x}'
-    # Already hex or named color
-    return rgb_string
-
-
 class ColorSwatch(QFrame):
     """A single color swatch box."""
 
     def __init__(
         self,
-        hex_color: str,
+        color: str,
         parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
-        self.setObjectName('colorSwatch')
         self.setFixedSize(26, 26)
-        self.setStyleSheet(
-            f'#colorSwatch {{ background: {hex_color}; border: 1px solid #888; border-radius: 3px; }}'
-        )
+        self.setStyleSheet(f'background-color: {color};')
 
 
 def _make_swatch_row(
     role: str,
-    hex_color: str,
+    color: str,
     description: str,
 ) -> QWidget:
     """Create a row widget with a color swatch and label text."""
@@ -268,8 +254,8 @@ def _make_swatch_row(
     layout.setContentsMargins(0, 0, 0, 0)
     layout.setSpacing(8)
 
-    swatch = ColorSwatch(hex_color)
-    label_text = f'<b>{role}</b> &nbsp; {hex_color}'
+    swatch = ColorSwatch(color)
+    label_text = f'<b>{role}</b> &nbsp; {color}'
     if description:
         label_text += (
             f'<br/><span style="font-size: 9pt;">{description}</span>'
@@ -278,7 +264,7 @@ def _make_swatch_row(
     label = QLabel(label_text)
     label.setWordWrap(True)
 
-    tooltip = f'{role}: {hex_color}'
+    tooltip = f'{role}: {color}'
     if description:
         tooltip += f'\n{description}'
     container.setToolTip(tooltip)
@@ -337,10 +323,9 @@ def _build_color_swatches(theme: str) -> QGroupBox:
     ]
 
     for i, role in enumerate(color_roles):
-        color_val = theme_dict.get(role, '')
-        hex_color = _rgb_string_to_hex(str(color_val))
+        color_val = str(theme_dict.get(role, ''))
         desc = _COLOR_DESCRIPTIONS.get(role, '')
-        row_widget = _make_swatch_row(role, hex_color, desc)
+        row_widget = _make_swatch_row(role, color_val, desc)
         row, col = divmod(i, columns)
         grid.addWidget(row_widget, row, col)
 
