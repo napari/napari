@@ -64,7 +64,7 @@ dependencies = [
     "PyOpenGL>=3.1.5",
     "pywin32 ; platform_system == 'Windows'",
     "PyYAML>=6.0",
-    "qtpy>=2.3.1",
+    "qtpy>=2.4.0",
     "scikit-image[data]>=0.19.1",
     "scipy>=1.14.0",
     "superqt>=0.7.8",
