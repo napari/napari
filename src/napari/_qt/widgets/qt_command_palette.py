@@ -420,7 +420,9 @@ def _format_action_name(cmd: CommandRule) -> str:
     return desc
 
 
-def _iter_highlight_slices(query, text, min_len=2):
+def _iter_highlight_slices(
+    query: str, text: str, min_len: int = 2
+) -> Iterator[tuple[str, bool]]:
     """Get reasonable highlight approximation for fuzzy matched string.
 
     Will match all non-overlapping substrings bigger than min_len.
