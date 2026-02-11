@@ -16,7 +16,7 @@ from qtpy.QtWidgets import (
 )
 from superqt import QEnumComboBox, QLabeledDoubleSlider
 
-from napari._app_model.actions._file import add_new_points, add_new_shapes
+from napari._app_model.actions._file import new_points, new_shapes
 from napari._qt.dialogs.qt_modal import QtPopup
 from napari._qt.widgets.qt_dims_sorter import QtDimsSorter
 from napari._qt.widgets.qt_spinbox import QtSpinBox
@@ -74,13 +74,13 @@ class QtLayerButtons(QFrame):
         self.newPointsButton = QtViewerPushButton(
             'new_points',
             trans._('New points layer'),
-            partial(add_new_points, self.viewer),
+            partial(new_points, self.viewer),
         )
 
         self.newShapesButton = QtViewerPushButton(
             'new_shapes',
             trans._('New shapes layer'),
-            partial(add_new_shapes, self.viewer),
+            partial(new_shapes, self.viewer),
         )
         self.newLabelsButton = QtViewerPushButton(
             'new_labels',
@@ -285,13 +285,15 @@ class QtViewerButtons(QFrame):
             text='Controls perspective projection strength. 0 is orthographic, larger values increase perspective effect.',
         )
 
-        self.rx = labeled_double_slider(
+        self.rz = labeled_double_slider(
             parent=popup,
             value=self.viewer.camera.angles[0],
             value_range=(-180, 180),
             callback=partial(self._update_camera_angles, 0),
         )
 
+        # value_range is [-89, 89] because at >=+/-90 gimbal locks the camera.
+        # this is a known complication of calculation with Euler angles
         self.ry = labeled_double_slider(
             parent=popup,
             value=self.viewer.camera.angles[1],
@@ -299,7 +301,7 @@ class QtViewerButtons(QFrame):
             callback=partial(self._update_camera_angles, 1),
         )
 
-        self.rz = labeled_double_slider(
+        self.rx = labeled_double_slider(
             parent=popup,
             value=self.viewer.camera.angles[2],
             value_range=(-180, 180),
@@ -315,15 +317,15 @@ class QtViewerButtons(QFrame):
         grid_layout.addWidget(self.perspective, 2, 1)
         grid_layout.addWidget(perspective_help_symbol, 2, 2)
 
-        grid_layout.addWidget(QLabel(trans._('Angles    X:')), 3, 0)
-        grid_layout.addWidget(self.rx, 3, 1)
+        grid_layout.addWidget(QLabel(trans._('Angles    Z:')), 3, 0)
+        grid_layout.addWidget(self.rz, 3, 1)
         grid_layout.addWidget(angle_help_symbol, 3, 2)
 
-        grid_layout.addWidget(QLabel(trans._('             Y:')), 4, 0)
+        grid_layout.addWidget(QLabel(trans._('               Y:')), 4, 0)
         grid_layout.addWidget(self.ry, 4, 1)
 
-        grid_layout.addWidget(QLabel(trans._('             Z:')), 5, 0)
-        grid_layout.addWidget(self.rz, 5, 1)
+        grid_layout.addWidget(QLabel(trans._('               X:')), 5, 0)
+        grid_layout.addWidget(self.rx, 5, 1)
 
     def _add_shared_camera_controls(
         self,
@@ -488,7 +490,7 @@ class QtViewerButtons(QFrame):
         Parameters
         ----------
         idx : int
-            Index of the angle to update. In the order of (rx, ry, rz).
+            Index of the angle to update. In the euler order of (rz, ry, rx).
         value : float
             New angle value.
         """

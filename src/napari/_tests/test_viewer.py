@@ -176,9 +176,7 @@ def test_screenshot(make_napari_viewer, qtbot):
     # Take screenshot of the image canvas only
     # Test that flash animation does not occur
     screenshot = viewer.screenshot(canvas_only=True)
-    assert not hasattr(
-        viewer.window._qt_viewer._welcome_widget, '_flash_animation'
-    )
+    assert not hasattr(viewer.window._qt_viewer, '_flash_animation')
     assert screenshot.ndim == 3
 
     # Take screenshot with the viewer included
@@ -191,17 +189,13 @@ def test_screenshot(make_napari_viewer, qtbot):
 
     # test flash animation works
     screenshot = viewer.screenshot(canvas_only=True, flash=True)
-    assert hasattr(
-        viewer.window._qt_viewer._welcome_widget, '_flash_animation'
-    )
+    assert hasattr(viewer.window._qt_viewer, '_flash_animation')
 
     # Here we wait until the flash animation will be over for teardown.
     # We cannot wait on finished signal as _flash_animation may be already
     # removed when calling wait.
     qtbot.waitUntil(
-        lambda: not hasattr(
-            viewer.window._qt_viewer._welcome_widget, '_flash_animation'
-        )
+        lambda: not hasattr(viewer.window._qt_viewer, '_flash_animation')
     )
 
 
@@ -209,7 +203,6 @@ def test_screenshot(make_napari_viewer, qtbot):
 def test_changing_theme(make_napari_viewer):
     """Test changing the theme updates the full window."""
     viewer = make_napari_viewer(show=False)
-    viewer.window._qt_viewer.set_welcome_visible(False)
     viewer.add_points(data=None)
     size = viewer.window._qt_viewer.size()
     viewer.window._qt_viewer.setFixedSize(size)
@@ -462,8 +455,8 @@ def test_negative_translate(make_napari_viewer, qtbot):
 @pytest.mark.parametrize(
     ('axis_labels', 'expected_labels', 'expected_ndim'),
     [
-        ((), ('0', '1'), 2),
-        (('x',), ('0', 'x'), 2),
+        ((), ('-2', '-1'), 2),
+        (('x',), ('-2', 'x'), 2),
         (('y', 'x'), ('y', 'x'), 2),
         (('z', 'y', 'x'), ('z', 'y', 'x'), 3),
         (('t', 'z', 'y', 'x'), ('t', 'z', 'y', 'x'), 4),

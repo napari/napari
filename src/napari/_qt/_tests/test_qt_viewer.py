@@ -803,6 +803,8 @@ def test_label_colors_matching_widget_direct(
 
 def test_axis_labels(viewer_model: ViewerModel, qt_viewer: QtViewer) -> None:
     viewer_model.dims.ndisplay = 3
+    viewer_model.axes.visible = True
+
     layer = viewer_model.add_image(np.zeros((2, 2, 2)), scale=(1, 2, 4))
 
     layer_visual = qt_viewer.layer_to_visual[layer]
@@ -812,7 +814,7 @@ def test_axis_labels(viewer_model: ViewerModel, qt_viewer: QtViewer) -> None:
 
     layer_visual_size = vispy_image_scene_size(layer_visual)
     assert tuple(layer_visual_size) == (8, 4, 2)
-    assert tuple(axes_visual.node.text.text) == ('2', '1', '0')
+    assert tuple(axes_visual.node.text.text) == ('-1', '-2', '-3')
 
 
 def _find_margin(data: np.ndarray, additional_margin: int) -> tuple[int, int]:

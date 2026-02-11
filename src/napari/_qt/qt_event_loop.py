@@ -1,13 +1,16 @@
 from __future__ import annotations
 
 import os
+import platform
 import sys
+from pathlib import Path
 from typing import TYPE_CHECKING
 from warnings import warn
 
 from qtpy import PYQT5
-from qtpy.QtCore import QDir, Qt
-from qtpy.QtGui import QIcon
+from qtpy.QtCore import QDir, QRectF, QSize, Qt
+from qtpy.QtGui import QIcon, QPainter, QPixmap
+from qtpy.QtSvg import QSvgRenderer
 from qtpy.QtWidgets import QApplication, QWidget
 
 from napari import Viewer, __version__
@@ -22,21 +25,27 @@ from napari.resources._icons import _theme_path
 from napari.settings import get_settings
 from napari.utils import config, perf
 from napari.utils._logging import register_logger_to_napari_handler
+from napari.utils.logo import get_logo_path
 from napari.utils.notifications import (
     notification_manager,
     show_console_notification,
 )
 from napari.utils.perf import perf_config
-from napari.utils.theme import _themes
+from napari.utils.theme import _themes, get_system_theme
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from IPython import InteractiveShell
 
-NAPARI_ICON_PATH = os.path.join(
-    os.path.dirname(__file__), '..', 'resources', 'logo.png'
-)
 NAPARI_APP_ID = f'napari.napari.viewer.{__version__}'
+
+
+def get_icon_path() -> Path:
+    return get_logo_path(
+        logo=get_settings().appearance.logo,
+        template='padded' if platform.system() == 'Darwin' else 'plain',
+        theme=get_system_theme(),
+    )
 
 
 def set_app_id(app_id):
@@ -46,14 +55,33 @@ def set_app_id(app_id):
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(app_id)
 
 
-_defaults = {
-    'app_name': 'napari',
-    'app_version': __version__,
-    'icon': NAPARI_ICON_PATH,
-    'org_name': 'napari',
-    'org_domain': 'napari.org',
-    'app_id': NAPARI_APP_ID,
-}
+def _svg_path_to_icon(path: str | Path) -> QIcon:
+    """Generate QIcon object from svg file.
+
+    Generate icon with resolutions  16x16, 32x32, 48x48, 64x64 and 128x128
+    """
+    renderer = QSvgRenderer(str(path))
+    icon = QIcon()
+
+    for s in (16, 32, 48, 64, 128):
+        pixmap = QPixmap(QSize(s, s))
+        pixmap.fill(Qt.transparent)
+        painter = QPainter(pixmap)
+        renderer.render(painter, QRectF(0, 0, s, s))
+        painter.end()
+        icon.addPixmap(pixmap)
+    return icon
+
+
+def _get_defaults() -> dict:
+    return {
+        'app_name': 'napari',
+        'app_version': __version__,
+        'icon': get_icon_path(),
+        'org_name': 'napari',
+        'org_domain': 'napari.org',
+        'app_id': NAPARI_APP_ID,
+    }
 
 
 # store reference to QApplication to prevent garbage collection
@@ -141,7 +169,7 @@ def get_qapp(
     # napari defaults are all-or nothing.  If any of the keywords are used
     # then they are all used.
     set_values = {k for k, v in locals().items() if v}
-    kwargs = locals() if set_values else _defaults
+    kwargs = locals() if set_values else _get_defaults()
     global _app_ref
 
     app = QApplication.instance()
@@ -209,7 +237,7 @@ def get_qapp(
         app.installEventFilter(QtToolTipEventFilter())
 
     if app.windowIcon().isNull():
-        app.setWindowIcon(QIcon(kwargs.get('icon')))
+        app.setWindowIcon(_svg_path_to_icon(kwargs['icon']))
 
     if ipy_interactive is None:
         ipy_interactive = get_settings().application.ipy_interactive

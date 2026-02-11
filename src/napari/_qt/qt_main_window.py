@@ -34,7 +34,7 @@ from qtpy.QtCore import (
     Qt,
     Slot,
 )
-from qtpy.QtGui import QHideEvent, QIcon, QImage, QShowEvent
+from qtpy.QtGui import QHideEvent, QImage, QShowEvent
 from qtpy.QtWidgets import (
     QApplication,
     QDialog,
@@ -57,7 +57,8 @@ from napari._qt.dialogs.preferences_dialog import PreferencesDialog
 from napari._qt.dialogs.qt_activity_dialog import QtActivityDialog
 from napari._qt.dialogs.qt_notification import NapariQtNotification
 from napari._qt.qt_event_loop import (
-    NAPARI_ICON_PATH,
+    _svg_path_to_icon,
+    get_icon_path,
     get_qapp,
     quit_app as quit_app_,
 )
@@ -112,11 +113,6 @@ MenuStr = Literal[
 
 
 class _QtMainWindow(QMainWindow):
-    # This was added so that someone can patch
-    # `napari._qt.qt_main_window._QtMainWindow._window_icon`
-    # to their desired window icon
-    _window_icon = NAPARI_ICON_PATH
-
     # To track window instances and facilitate getting the "active" viewer...
     # We use this instead of QApplication.activeWindow for compatibility with
     # IPython usage. When you activate IPython, it will appear that there are
@@ -127,16 +123,22 @@ class _QtMainWindow(QMainWindow):
     # provider for dependency injection
     # See https://github.com/napari/napari/pull/4826
     def __init__(
-        self, viewer: 'Viewer', window: 'Window', parent=None
+        self,
+        viewer: 'Viewer',
+        window: 'Window',
+        parent=None,
+        show_welcome_screen=True,
     ) -> None:
         super().__init__(parent)
         self._ev = None
         self._window = window
         self._plugin_manager_dialog = None
-        self._qt_viewer = QtViewer(viewer, show_welcome_screen=True)
+        self._qt_viewer = QtViewer(
+            viewer, show_welcome_screen=show_welcome_screen
+        )
         self._quit_app = False
 
-        self.setWindowIcon(QIcon(self._window_icon))
+        get_qapp().setWindowIcon(_svg_path_to_icon(self._get_window_icon()))
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         center = QWidget(self)
         center.setLayout(QHBoxLayout())
@@ -158,8 +160,8 @@ class _QtMainWindow(QMainWindow):
         # this ia sa workaround for #5335 issue. The dict is used to not
         # collide shortcuts for close and close all windows
 
-        act_dlg = QtActivityDialog(self._qt_viewer._welcome_widget)
-        self._qt_viewer._welcome_widget.resized.connect(
+        act_dlg = QtActivityDialog(self._qt_viewer.canvas.native)
+        self._qt_viewer.canvas.native.resized.connect(
             act_dlg.move_to_bottom_right
         )
         act_dlg.hide()
@@ -189,6 +191,11 @@ class _QtMainWindow(QMainWindow):
         # were defined somewhere in the `_qt` module and imported in init_qactions
         init_qactions()
 
+        # only after qaction are initialized we can get all shortcuts and actions,
+        # so we have to force update the welcome screen here.
+        viewer.welcome_screen.events.shortcuts()
+        viewer.welcome_screen.events.tips()
+
         with contextlib.suppress(IndexError):
             viewer.cursor.events.position.disconnect(
                 viewer.update_status_from_cursor
@@ -206,6 +213,14 @@ class _QtMainWindow(QMainWindow):
         )
 
         self._command_palette = QCommandPalette(self)
+
+    def _get_window_icon(self) -> str:
+        if hasattr(self, '_window_icon'):
+            # This was added so that someone can patch
+            # `napari._qt.qt_main_window._QtMainWindow._window_icon`
+            # to their desired window icon
+            return self._window_icon
+        return str(get_icon_path())
 
     def _toggle_status_thread(self, event: Event):
         if event.value:
@@ -675,7 +690,13 @@ class Window:
         Window menu.
     """
 
-    def __init__(self, viewer: 'Viewer', *, show: bool = True) -> None:
+    def __init__(
+        self,
+        viewer: 'Viewer',
+        *,
+        show: bool = True,
+        show_welcome_screen: bool = True,
+    ) -> None:
         # create QApplication if it doesn't already exist
         qapp = get_qapp()
 
@@ -690,7 +711,9 @@ class Window:
         self._task_status_manager = TaskStatusManager()
 
         # Connect the Viewer and create the Main Window
-        self._qt_window = _QtMainWindow(viewer, self)
+        self._qt_window = _QtMainWindow(
+            viewer, self, show_welcome_screen=show_welcome_screen
+        )
         qapp.installEventFilter(self._qt_window)
 
         # connect theme events before collecting plugin-provided themes
@@ -718,6 +741,7 @@ class Window:
         get_settings().appearance.events.font_size.connect(
             self._update_theme_font_size
         )
+        get_settings().appearance.events.logo.connect(self._update_logo)
 
         self._add_viewer_dock_widget(self._qt_viewer.dockConsole, tabify=False)
         self._add_viewer_dock_widget(
@@ -832,7 +856,7 @@ class Window:
         warnings.warn(
             trans._(
                 'Public access to Window.qt_viewer is deprecated and will be removed in\n'
-                'v0.7.0. It is considered an "implementation detail" of the napari\napplication, '
+                'v0.8.0. It is considered an "implementation detail" of the napari\napplication, '
                 'not part of the napari viewer model. If your use case\n'
                 'requires access to qt_viewer, please open an issue to discuss.',
                 deferred=True,
@@ -1616,6 +1640,11 @@ class Window:
             self._qt_viewer.setStyleSheet(style_sheet)
             if self._qt_viewer._console:
                 self._qt_viewer._console._update_theme(style_sheet=style_sheet)
+
+    def _update_logo(self):
+        get_qapp().setWindowIcon(
+            _svg_path_to_icon(self._qt_window._get_window_icon())
+        )
 
     def _status_changed(self, event):
         """Update status bar.

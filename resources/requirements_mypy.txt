@@ -2,9 +2,9 @@
 #    uv pip compile --python-version 3.12 --output-file resources/requirements_mypy.txt resources/requirements_mypy.in
 annotated-types==0.7.0
     # via pydantic
-build==1.3.0
+build==1.4.0
     # via npe2
-certifi==2025.11.12
+certifi==2026.1.4
     # via requests
 charset-normalizer==3.4.4
     # via requests
@@ -14,7 +14,7 @@ docstring-parser==0.17.0
     # via magicgui
 idna==3.11
     # via requests
-librt==0.7.4
+librt==0.7.8
     # via mypy
 magicgui==0.10.1
     # via -r resources/requirements_mypy.in
@@ -28,17 +28,17 @@ mypy-extensions==1.1.0
     # via mypy
 npe2==0.7.9
     # via -r resources/requirements_mypy.in
-numpy==2.3.5
+numpy==2.4.2
     # via -r resources/requirements_mypy.in
-packaging==25.0
+packaging==26.0
     # via
     #   build
     #   qtpy
-pathspec==0.12.1
+pathspec==1.0.4
     # via mypy
 platformdirs==4.5.1
     # via npe2
-psygnal==0.15.0
+psygnal==0.15.1
     # via
     #   magicgui
     #   npe2
@@ -56,11 +56,11 @@ pygments==2.19.2
     #   superqt
 pyproject-hooks==1.2.0
     # via build
-pyqt6==6.10.1
+pyqt6==6.10.2
     # via -r resources/requirements_mypy.in
-pyqt6-qt6==6.10.1
+pyqt6-qt6==6.10.2
     # via pyqt6
-pyqt6-sip==13.10.3
+pyqt6-sip==13.11.0
     # via pyqt6
 pyyaml==6.0.3
     # via npe2
@@ -71,23 +71,23 @@ qtpy==2.4.3
     #   superqt
 requests==2.32.5
     # via pyconify
-rich==14.2.0
+rich==14.3.2
     # via
     #   npe2
     #   typer
 shellingham==1.5.4
     # via typer
-superqt==0.7.6
+superqt==0.7.7
     # via magicgui
 tomli-w==1.2.0
     # via npe2
-typer==0.20.0
+typer==0.21.1
     # via npe2
 types-pyyaml==6.0.12.20250915
     # via -r resources/requirements_mypy.in
-types-requests==2.32.4.20250913
+types-requests==2.32.4.20260107
     # via -r resources/requirements_mypy.in
-types-setuptools==80.9.0.20250822
+types-setuptools==80.10.0.20260124
     # via -r resources/requirements_mypy.in
 typing-extensions==4.15.0
     # via
@@ -100,7 +100,7 @@ typing-extensions==4.15.0
     #   typing-inspection
 typing-inspection==0.4.2
     # via pydantic
-urllib3==2.6.2
+urllib3==2.6.3
     # via
     #   requests
     #   types-requests

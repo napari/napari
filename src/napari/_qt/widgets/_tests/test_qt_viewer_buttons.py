@@ -6,6 +6,7 @@ from qtpy.QtWidgets import QApplication
 
 from napari._app_model._app import get_app_model
 from napari._qt.dialogs.qt_modal import QtPopup
+from napari._qt.widgets import qt_viewer_buttons as qt_viewer_buttons_
 from napari._qt.widgets.qt_viewer_buttons import QtViewerButtons
 from napari.components.viewer_model import ViewerModel
 from napari.utils.camera_orientations import (
@@ -212,18 +213,18 @@ def test_ndisplay_button_popup(qt_viewer_buttons, qtbot):
     assert viewer.camera.zoom == viewer_buttons.zoom.value() == 5
 
     # check viewer camera rotation value affects camera angles
-    assert viewer_buttons.rx
-    assert viewer_buttons.ry
     assert viewer_buttons.rz
-    viewer_buttons.rx.setValue(90)
+    assert viewer_buttons.ry
+    assert viewer_buttons.rx
+    viewer_buttons.rz.setValue(90)
     viewer_buttons.ry.setValue(45)
-    viewer_buttons.rz.setValue(0)
+    viewer_buttons.rx.setValue(0)
     assert (
         viewer.camera.angles
         == (
-            viewer_buttons.rx.value(),
-            viewer_buttons.ry.value(),
             viewer_buttons.rz.value(),
+            viewer_buttons.ry.value(),
+            viewer_buttons.rx.value(),
         )
         == (90, 45, 0)
     )
@@ -248,15 +249,15 @@ def test_ndisplay_button_popup(qt_viewer_buttons, qtbot):
     )
     assert viewer_buttons.zoom
     assert viewer.camera.zoom == viewer_buttons.zoom.value() == 2
-    assert viewer_buttons.rx
-    assert viewer_buttons.ry
     assert viewer_buttons.rz
+    assert viewer_buttons.ry
+    assert viewer_buttons.rx
     assert (
         viewer.camera.angles
         == (
-            viewer_buttons.rx.value(),
-            viewer_buttons.ry.value(),
             viewer_buttons.rz.value(),
+            viewer_buttons.ry.value(),
+            viewer_buttons.rx.value(),
         )
         == (0, 0, 90)
     )
@@ -290,12 +291,15 @@ def test_transpose_rotate_button(monkeypatch, qt_viewer_buttons, qtbot):
 
     # Monkeypatch the action_manager instance to prevent viewer error
     monkeypatch.setattr(
-        'napari._qt.widgets.qt_viewer_buttons.action_manager',
+        qt_viewer_buttons_,
+        'action_manager',
         action_manager_mock,
     )
-    modifiers = Qt.AltModifier
+    modifiers = Qt.KeyboardModifier.AltModifier
     qtbot.mouseClick(
-        viewer_buttons.transposeDimsButton, Qt.LeftButton, modifiers
+        viewer_buttons.transposeDimsButton,
+        Qt.MouseButton.LeftButton,
+        modifiers,
     )
     action_manager_mock.trigger.assert_called_with('napari:rotate_layers')
 
@@ -303,5 +307,7 @@ def test_transpose_rotate_button(monkeypatch, qt_viewer_buttons, qtbot):
     monkeypatch.setattr(
         'napari.utils.action_manager.ActionManager.trigger', trigger_mock
     )
-    qtbot.mouseClick(viewer_buttons.transposeDimsButton, Qt.LeftButton)
+    qtbot.mouseClick(
+        viewer_buttons.transposeDimsButton, Qt.MouseButton.LeftButton
+    )
     trigger_mock.assert_called_with('napari:transpose_axes')
