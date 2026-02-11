@@ -287,7 +287,7 @@ class QtDims(QWidget):
         # doing manual check here to avoid issue in StringEnum
         # see https://github.com/napari/napari/issues/754
         if loop_mode is not None:
-            _modes = LoopMode.keys()
+            _modes = {mode.name.lower() for mode in LoopMode}
             if loop_mode not in _modes:
                 raise ValueError(
                     trans._(
@@ -296,7 +296,7 @@ class QtDims(QWidget):
                         loop_mode=loop_mode,
                     )
                 )
-            loop_mode = LoopMode(loop_mode)
+            loop_mode = LoopMode[loop_mode.upper()]
 
         if axis >= self.dims.ndim:
             raise IndexError(trans._('axis argument out of range'))
