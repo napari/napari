@@ -52,7 +52,7 @@ from napari._qt.utils import QImg2array
 from napari.utils.io import imsave
 from napari.utils.theme import available_themes, get_theme
 
-blurb = """
+_BLURB = """
 <h3>Heading</h3>
 <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit,
 sed do eiusmod tempor incididunt ut labore et dolore magna
@@ -76,30 +76,28 @@ def _ensure_plugin_themes_loaded() -> bool:
 
 
 class TabDemo(QTabWidget):
-    def __init__(self, parent=None, emphasized=False) -> None:
+    def __init__(
+        self, parent: QWidget | None = None, emphasized=False
+    ) -> None:
         super().__init__(parent)
         self.setProperty('emphasized', emphasized)
         self.tab1 = QWidget()
-        self.tab1.setProperty('emphasized', emphasized)
         self.tab2 = QWidget()
-        self.tab2.setProperty('emphasized', emphasized)
+        for tab in (self.tab1, self.tab2):
+            tab.setProperty('emphasized', emphasized)
 
         self.addTab(self.tab1, 'Tab 1')
         self.addTab(self.tab2, 'Tab 2')
-        layout = QFormLayout()
+        layout = QFormLayout(self.tab1)
         layout.addRow('Height', QSpinBox())
         layout.addRow('Weight', QDoubleSpinBox())
-        self.setTabText(0, 'Tab 1')
-        self.tab1.setLayout(layout)
 
-        layout2 = QFormLayout()
-        sex = QHBoxLayout()
-        sex.addWidget(QRadioButton('Male'))
-        sex.addWidget(QRadioButton('Female'))
-        layout2.addRow(QLabel('Sex'), sex)
+        layout2 = QFormLayout(self.tab2)
+        sex_row = QHBoxLayout()
+        sex_row.addWidget(QRadioButton('Male'))
+        sex_row.addWidget(QRadioButton('Female'))
+        layout2.addRow(QLabel('Sex'), sex_row)
         layout2.addRow('Date of Birth', QLineEdit())
-        self.setTabText(1, 'Tab 2')
-        self.tab2.setLayout(layout2)
 
         self.setWindowTitle('tab demo')
         self.setMaximumHeight(100)
@@ -117,24 +115,22 @@ class SampleWidget(QWidget):
         self.setProperty('emphasized', emphasized)
         self.setStyleSheet(get_stylesheet(theme))
         content = QWidget()
-        lay = QVBoxLayout(content)
-        scroll = QScrollArea()
-        scroll.setWidgetResizable(True)
-        scroll.setHorizontalScrollBarPolicy(
+        content_layout = QVBoxLayout(content)
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setHorizontalScrollBarPolicy(
             Qt.ScrollBarPolicy.ScrollBarAlwaysOff
         )
-        scroll.setWidget(content)
-        outer = QVBoxLayout()
-        outer.setContentsMargins(0, 0, 0, 0)
-        outer.addWidget(scroll)
-        self.setLayout(outer)
-        lay.addWidget(_build_theme_header(theme))
+        scroll_area.setWidget(content)
+        outer_layout = QVBoxLayout(self)
+        outer_layout.setContentsMargins(0, 0, 0, 0)
+        outer_layout.addWidget(scroll_area)
+        content_layout.addWidget(_build_theme_header(theme))
 
         basics_group = QGroupBox('Controls')
-        basics_layout = QVBoxLayout()
+        basics_layout = QVBoxLayout(basics_group)
         basics_layout.setContentsMargins(8, 6, 8, 6)
         basics_layout.setSpacing(6)
-        basics_group.setLayout(basics_layout)
         basics_layout.addWidget(QPushButton('push button'))
         box = QComboBox()
         box.addItems(['a', 'b', 'c', 'cd'])
@@ -156,13 +152,13 @@ class SampleWidget(QWidget):
         sld = QSlider(Qt.Orientation.Horizontal)
         sld.setValue(50)
         basics_layout.addWidget(sld)
-        scroll = QScrollBar(Qt.Orientation.Horizontal)
-        scroll.setValue(50)
-        basics_layout.addWidget(scroll)
+        h_scrollbar = QScrollBar(Qt.Orientation.Horizontal)
+        h_scrollbar.setValue(50)
+        basics_layout.addWidget(h_scrollbar)
         basics_layout.addWidget(QRangeSlider(Qt.Orientation.Horizontal, self))
         text = QTextEdit()
         text.setMaximumHeight(80)
-        text.setHtml(blurb)
+        text.setHtml(_BLURB)
         basics_layout.addWidget(text)
         basics_layout.addWidget(QTimeEdit())
         edit = QLineEdit()
@@ -186,12 +182,11 @@ class SampleWidget(QWidget):
             QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum
         )
         basics_layout.addWidget(group_box)
-        lay.addWidget(basics_group)
+        content_layout.addWidget(basics_group)
 
         # Theme-derived states and accents
         state_group = QGroupBox('Theme state samples')
-        state_layout = QVBoxLayout()
-        state_group.setLayout(state_layout)
+        state_layout = QVBoxLayout(state_group)
 
         button_row = QHBoxLayout()
         button_row.addWidget(_make_state_button('checked', checked=True))
@@ -218,16 +213,15 @@ class SampleWidget(QWidget):
 
         emphasized_frame = QFrame()
         emphasized_frame.setProperty('emphasized', True)
-        emphasized_layout = QHBoxLayout()
+        emphasized_layout = QHBoxLayout(emphasized_frame)
         emphasized_layout.setContentsMargins(8, 6, 8, 6)
         emphasized_layout.addWidget(QLabel('Emphasized panel'))
         emphasized_layout.addStretch(1)
-        emphasized_frame.setLayout(emphasized_layout)
         state_layout.addWidget(emphasized_frame)
 
-        lay.addWidget(state_group)
+        content_layout.addWidget(state_group)
 
-        lay.addWidget(_build_color_swatches(theme))
+        content_layout.addWidget(_build_color_swatches(theme))
 
     def screenshot(self, path=None):
         img = self.grab().toImage()
