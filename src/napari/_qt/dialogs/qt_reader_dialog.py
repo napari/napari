@@ -12,7 +12,7 @@ from qtpy.QtWidgets import (
 )
 
 from napari.errors import ReaderPluginError
-from napari.plugins.utils import get_potential_readers
+from napari.plugins import _npe2
 from napari.settings import get_settings
 from napari.utils.translations import trans
 
@@ -235,7 +235,7 @@ def prepare_remaining_readers(
     ReaderPluginError
         raises previous error if no readers are left to try
     """
-    readers = get_potential_readers(paths[0])
+    readers = _npe2.get_readers(paths[0])
     # remove plugin we already tried e.g. preferred plugin
     if plugin_name in readers:
         del readers[plugin_name]
