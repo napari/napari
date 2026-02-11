@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING
 from weakref import WeakSet
 
 import numpy as np
+from qtpy.QtWidgets import QApplication
 from superqt.utils import qthrottled
 from vispy.scene import SceneCanvas as SceneCanvas_, ViewBox, Widget
 
@@ -1219,6 +1220,7 @@ class VispyCanvas:
         # needed for some Ubuntu py3.10 pyqt5 tests, but likely inconsistent behavior for other OS.
         # See: https://github.com/napari/napari/pull/7870#issuecomment-2997167180
         self.on_draw(None)
+        QApplication.instance().processEvents()
         return self.native.grabFramebuffer()
 
     def enable_dims_play(self, *args) -> None:

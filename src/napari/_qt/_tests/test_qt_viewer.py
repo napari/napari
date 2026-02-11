@@ -273,11 +273,9 @@ def test_export_figure_3d(
     img = qt_viewer.export_figure(flash=False)
     np.testing.assert_allclose(img.shape, (255, 258, 4), atol=1)
 
-    # FIXME: Changes introduced in #7870 slightly changed the timing and result in a blank canvas.
-    # Probably related to #8033. Because canvass size is still correct, we know it would look alright
     # The theme is dark, so the canvas will be white. Test that the image
     # has a white background, roughly more background than the data itself.
-    # assert (img[img > 250].shape[0] / img[img <= 200].shape[0]) > 0.5
+    assert (img[img > 250].shape[0] / img[img <= 200].shape[0]) > 0.5
 
 
 @pytest.mark.show_qt_viewer
