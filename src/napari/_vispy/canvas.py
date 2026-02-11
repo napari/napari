@@ -15,6 +15,7 @@ from superqt.utils import qthrottled
 from vispy.scene import SceneCanvas as SceneCanvas_, ViewBox, Widget
 
 from napari._vispy.camera import VispyCamera
+from napari._vispy.camera_inertia import CameraInertia
 from napari._vispy.mouse_event import NapariMouseEvent
 from napari._vispy.utils.cursor import QtCursorVisual
 from napari._vispy.utils.gl import get_max_texture_sizes
@@ -200,6 +201,10 @@ class VispyCanvas:
         self._instances.add(self)
 
         self._overlay_callbacks = {}
+
+        # Initialize camera inertia system
+        self._inertia = CameraInertia(self.viewer.camera, self.viewer.dims)
+
         self._last_viewbox_size = np.array((0, 0))
         self._needs_overlay_position_update = False
 
@@ -249,6 +254,9 @@ class VispyCanvas:
         self.viewer.camera.events.mouse_pan.connect(self._on_interactive)
         self.viewer.camera.events.mouse_zoom.connect(self._on_interactive)
         self.viewer.camera.events.zoom.connect(self._on_cursor)
+        self.viewer.camera.events.inertia.connect(
+            self._on_inertia_enabled_change
+        )
 
         self.viewer._zoom_box.events.zoom.connect(self._on_boxzoom)
         self.viewer.layers.events.reordered.connect(self._update_scenegraph)
@@ -428,6 +436,10 @@ class VispyCanvas:
             self.view.interactive = interactive
             self.grid.interactive = False
 
+    def _on_inertia_enabled_change(self) -> None:
+        """Update inertia system when camera.inertia_enabled changes."""
+        self._inertia.enabled = self.viewer.camera.inertia
+
     def _on_boxzoom(self, event):
         """Update zoom level."""
         box_size_canvas = np.abs(
@@ -573,6 +585,17 @@ class VispyCanvas:
         read_only_event = ReadOnlyWrapper(
             napari_event, exceptions=('handled',)
         )
+
+        # Handle camera inertia tracking
+        is_dragging = bool(getattr(napari_event, 'is_dragging', False))
+
+        if event.type == 'mouse_press':
+            self._inertia.on_press()
+        elif event.type == 'mouse_move' and is_dragging:
+            self._inertia.on_drag()
+        elif event.type == 'mouse_release':
+            self._inertia.on_release()
+
         mouse_callbacks(self.viewer, read_only_event)
 
         layer = self.viewer.layers.selection.active
