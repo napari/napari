@@ -34,7 +34,8 @@ class VispyWelcomeOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
             node=Welcome(), viewer=viewer, overlay=overlay, parent=parent
         )
         self.viewer.events.theme.connect(self._on_theme_change)
-        self.viewer.layers.events.connect(self._on_visible_change)
+        self.viewer.layers.events.inserted.connect(self._on_visible_change)
+        self.viewer.layers.events.removed.connect(self._on_visible_change)
 
         self.overlay.events.version.connect(self._on_version_change)
         self.overlay.events.shortcuts.connect(self._on_shortcuts_change)
