@@ -154,6 +154,8 @@ class QtViewerButtons(QFrame):
     ----------
     consoleButton : QtViewerPushButton
         Button to open iPython console within napari.
+    commandPaletteButton : QtViewerPushButton
+        Button to toggle the command palette.
     rollDimsButton : QtViewerPushButton
         Button to roll orientation of spatial dimensions in the napari viewer.
     transposeDimsButton : QtViewerPushButton
@@ -179,6 +181,12 @@ class QtViewerButtons(QFrame):
         self.consoleButton.setProperty('expanded', False)
         if in_ipython() or in_jupyter() or in_python_repl():
             self.consoleButton.setEnabled(False)
+
+        self.commandPaletteButton = QtViewerPushButton(
+            'command_palette',
+            trans._('Command Palette'),
+            action='napari:toggle_command_palette',
+        )
 
         rdb = QtViewerPushButton('roll', action='napari:roll_axes')
         self.rollDimsButton = rdb
@@ -226,6 +234,7 @@ class QtViewerButtons(QFrame):
         layout = QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self.consoleButton)
+        layout.addWidget(self.commandPaletteButton)
         layout.addWidget(self.ndisplayButton)
         layout.addWidget(self.rollDimsButton)
         layout.addWidget(self.transposeDimsButton)
