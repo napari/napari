@@ -16,21 +16,21 @@ QtViewerPushButton[mode="delete_button"] {
 
 QtViewerPushButton[mode="new_points"] {
   image: url("theme_{{ id }}:/new_points.svg");
-  border: 2px solid {{ background }};
+  border: 3px solid {{ background }};
 }
 
  QtViewerPushButton[mode="new_points"]:checked {
-  border: 2px solid {{ current }};
+  border: 3px solid {{ current }};
   background-color: {{ foreground }};
 }
 
 QtViewerPushButton[mode="new_shapes"] {
   image: url("theme_{{ id }}:/new_shapes.svg");
-  border: 2px solid {{ background }};
+  border: 3px solid {{ background }};
 }
 
 QtViewerPushButton[mode="new_shapes"]:checked {
-  border: 2px solid {{ current }};
+  border: 3px solid {{ current }};
   background-color: {{ foreground }};
 }
 
@@ -40,7 +40,7 @@ QtViewerPushButton[mode="warning"] {
 
 QtViewerPushButton[mode="new_labels"] {
   image: url("theme_{{ id }}:/new_labels.svg");
-  border: 2px solid {{ background }};
+  border: 3px solid {{ background }};
 }
 
 QtViewerPushButton[mode="console"] {
