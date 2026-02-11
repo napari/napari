@@ -2,13 +2,13 @@ from qtpy.QtCore import Qt
 from qtpy.QtGui import QPixmap
 from qtpy.QtWidgets import QSplashScreen
 
-from napari._qt.qt_event_loop import NAPARI_ICON_PATH, get_qapp
+from napari._qt.qt_event_loop import get_icon_path, get_qapp
 
 
 class NapariSplashScreen(QSplashScreen):
     def __init__(self, width=360) -> None:
         get_qapp()
-        pm = QPixmap(NAPARI_ICON_PATH).scaled(
+        pm = QPixmap(str(get_icon_path())).scaled(
             width,
             width,
             Qt.AspectRatioMode.KeepAspectRatio,

@@ -235,25 +235,31 @@ LAYERLIST_CONTEXT_ACTIONS: list[Action] = [
         id='napari.layer.bounding_box',
         title=trans._('Bounding Box'),
         callback=_layer_actions._toggle_bounding_box,
-        menus=[
-            {
-                'id': MenuId.LAYERS_CONTEXT_VISUALIZATION,
-            }
-        ],
+        menus=[MenuId.LAYERS_CONTEXT_VISUALIZATION, MenuId.LAYERS_VISUALIZE],
         enablement=LLSCK.num_selected_layers > 0,
+        toggled=ToggleRule(
+            get_current=_layer_actions._are_bounding_boxes_visible
+        ),
     ),
     Action(
         id='napari.layer.colorbar',
         title=trans._('Colorbar'),
         callback=_layer_actions._toggle_colorbar,
-        menus=[
-            {
-                'id': MenuId.LAYERS_CONTEXT_VISUALIZATION,
-            }
-        ],
+        menus=[MenuId.LAYERS_CONTEXT_VISUALIZATION, MenuId.LAYERS_MEASURE],
         enablement=(
             (LLSCK.num_selected_layers > 0)
             & LLSCK.all_selected_layers_support_colorbar
+        ),
+        toggled=ToggleRule(get_current=_layer_actions._are_colorbars_visible),
+    ),
+    Action(
+        id='napari.layer.name_overlay',
+        title=trans._('Name Overlay'),
+        callback=_layer_actions._toggle_name_overlay,
+        menus=[MenuId.LAYERS_CONTEXT_VISUALIZATION, MenuId.LAYERS_VISUALIZE],
+        enablement=(LLSCK.num_selected_layers > 0),
+        toggled=ToggleRule(
+            get_current=_layer_actions._are_name_overlays_visible
         ),
     ),
     Action(
