@@ -36,6 +36,7 @@ from qtpy.QtWidgets import (
     QRadioButton,
     QScrollArea,
     QScrollBar,
+    QSizePolicy,
     QSlider,
     QSpinBox,
     QTabWidget,
@@ -48,8 +49,8 @@ from superqt import QRangeSlider
 
 from napari._qt.qt_resources import get_stylesheet
 from napari._qt.utils import QImg2array
-from napari._qt.widgets.qt_viewer_buttons import QtViewerPushButton
 from napari.utils.io import imsave
+from napari.utils.theme import available_themes, get_theme
 
 blurb = """
 <h3>Heading</h3>
@@ -101,6 +102,13 @@ class TabDemo(QTabWidget):
         self.tab2.setLayout(layout2)
 
         self.setWindowTitle('tab demo')
+        self.setMaximumHeight(100)
+
+
+def _build_theme_header(theme: str) -> QLabel:
+    """Return a header label for the current theme."""
+    theme_obj = get_theme(theme)
+    return QLabel(f'<h2>{theme_obj.label} ({theme})</h2>')
 
 
 class SampleWidget(QWidget):
@@ -120,15 +128,21 @@ class SampleWidget(QWidget):
         outer.setContentsMargins(0, 0, 0, 0)
         outer.addWidget(scroll)
         self.setLayout(outer)
-        lay.addWidget(QPushButton('push button'))
+        lay.addWidget(_build_theme_header(theme))
+
+        basics_group = QGroupBox('Controls')
+        basics_layout = QVBoxLayout()
+        basics_layout.setContentsMargins(8, 6, 8, 6)
+        basics_layout.setSpacing(6)
+        basics_group.setLayout(basics_layout)
+        basics_layout.addWidget(QPushButton('push button'))
         box = QComboBox()
         box.addItems(['a', 'b', 'c', 'cd'])
-        lay.addWidget(box)
-        lay.addWidget(QFontComboBox())
+        basics_layout.addWidget(box)
+        basics_layout.addWidget(QFontComboBox())
 
         hbox = QHBoxLayout()
         chk = QCheckBox('tristate')
-        chk.setToolTip('I am a tooltip')
         chk.setTristate(True)
         chk.setCheckState(Qt.CheckState.PartiallyChecked)
         chk3 = QCheckBox('checked')
@@ -136,41 +150,43 @@ class SampleWidget(QWidget):
         hbox.addWidget(QCheckBox('unchecked'))
         hbox.addWidget(chk)
         hbox.addWidget(chk3)
-        lay.addLayout(hbox)
-
-        lay.addWidget(TabDemo(emphasized=emphasized))
+        basics_layout.addLayout(hbox)
+        basics_layout.addWidget(TabDemo(emphasized=emphasized))
 
         sld = QSlider(Qt.Orientation.Horizontal)
         sld.setValue(50)
-        lay.addWidget(sld)
+        basics_layout.addWidget(sld)
         scroll = QScrollBar(Qt.Orientation.Horizontal)
         scroll.setValue(50)
-        lay.addWidget(scroll)
-        lay.addWidget(QRangeSlider(Qt.Orientation.Horizontal, self))
+        basics_layout.addWidget(scroll)
+        basics_layout.addWidget(QRangeSlider(Qt.Orientation.Horizontal, self))
         text = QTextEdit()
-        text.setMaximumHeight(100)
+        text.setMaximumHeight(80)
         text.setHtml(blurb)
-        lay.addWidget(text)
-        lay.addWidget(QTimeEdit())
+        basics_layout.addWidget(text)
+        basics_layout.addWidget(QTimeEdit())
         edit = QLineEdit()
         edit.setPlaceholderText('LineEdit placeholder...')
-        lay.addWidget(edit)
-        lay.addWidget(QLabel('label'))
+        basics_layout.addWidget(edit)
         prog = QProgressBar()
         prog.setValue(50)
-        lay.addWidget(prog)
+        basics_layout.addWidget(prog)
         group_box = QGroupBox('Exclusive Radio Buttons')
         radio1 = QRadioButton('&Radio button 1')
         radio2 = QRadioButton('R&adio button 2')
         radio3 = QRadioButton('Ra&dio button 3')
         radio1.setChecked(True)
         hbox = QHBoxLayout()
+        hbox.setContentsMargins(10, 10, 10, 10)
         hbox.addWidget(radio1)
         hbox.addWidget(radio2)
         hbox.addWidget(radio3)
-        hbox.addStretch(1)
         group_box.setLayout(hbox)
-        lay.addWidget(group_box)
+        group_box.setSizePolicy(
+            QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum
+        )
+        basics_layout.addWidget(group_box)
+        lay.addWidget(basics_group)
 
         # Theme-derived states and accents
         state_group = QGroupBox('Theme state samples')
@@ -178,18 +194,12 @@ class SampleWidget(QWidget):
         state_group.setLayout(state_layout)
 
         button_row = QHBoxLayout()
-        checked_btn = QtViewerPushButton('new_points')
-        checked_btn.setCheckable(True)
-        checked_btn.setChecked(True)
-        checked_btn.setToolTip('Checked: uses darken(current, 10) in QSS')
-        unchecked_btn = QtViewerPushButton('new_shapes')
-        unchecked_btn.setCheckable(True)
-        unchecked_btn.setChecked(False)
-        disabled_btn = QtViewerPushButton('delete_button')
-        disabled_btn.setEnabled(False)
-        button_row.addWidget(checked_btn)
-        button_row.addWidget(unchecked_btn)
-        button_row.addWidget(disabled_btn)
+        button_row.addWidget(_make_state_button('checked', checked=True))
+        button_row.addWidget(_make_state_button('unchecked'))
+        button_row.addWidget(_make_state_button('disabled', enabled=False))
+        button_row.addWidget(
+            _make_state_button('current', checked=True, theme=theme)
+        )
         button_row.addStretch(1)
         state_layout.addLayout(button_row)
 
@@ -285,19 +295,33 @@ def _make_swatch_row(
     return container
 
 
+def _make_state_button(
+    label: str,
+    *,
+    checked: bool = False,
+    enabled: bool = True,
+    theme: str | None = None,
+) -> QPushButton:
+    """Create a minimal themed button for QSS state display."""
+    button = QPushButton(label)
+    button.setCheckable(True)
+    button.setChecked(checked)
+    button.setEnabled(enabled)
+    if label == 'current' and theme is not None:
+        button.setStyleSheet(
+            f'background-color: {get_theme(theme).current.as_rgb()};'
+        )
+    return button
+
+
 def _build_color_swatches(theme: str) -> QGroupBox:
     """Create a group box with labeled theme color swatches."""
-    from napari.utils.theme import get_theme
-
     theme_obj = get_theme(theme)
     theme_dict = theme_obj.to_rgb_dict()
 
     group = QGroupBox('Theme colors')
     layout = QVBoxLayout()
     group.setLayout(layout)
-
-    title_label = QLabel(f'<h3>{theme_obj.label} ({theme})</h3>')
-    layout.addWidget(title_label)
 
     grid = QGridLayout()
     grid.setSpacing(10)
@@ -349,7 +373,7 @@ _COLOR_DESCRIPTIONS: dict[str, str] = {
     'icon': 'Icon and button glyph colors',
     'warning': 'Warning messages and indicators',
     'error': 'Error messages and critical indicators',
-    'current': 'Active/selected layer highlight (the blue accent)',
+    'current': 'Active/selected layer highlight',
 }
 
 
@@ -358,7 +382,6 @@ if __name__ == '__main__':
     import logging
 
     from napari._qt.qt_event_loop import get_qapp
-    from napari.utils.theme import available_themes
 
     parser = argparse.ArgumentParser(
         description='Show napari theme sample widgets and color swatches.'
@@ -386,7 +409,7 @@ if __name__ == '__main__':
         w.adjustSize()
         screen = app.primaryScreen()
         max_height = (
-            screen.availableGeometry().height() - 40 if screen else 900
+            screen.availableGeometry().height() - 100 if screen else 900
         )
         w.setMaximumHeight(max_height)
         w.setGeometry(10 + 520 * n, 0, 520, max_height)
