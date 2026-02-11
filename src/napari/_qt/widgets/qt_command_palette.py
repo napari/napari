@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import re
 from collections.abc import Iterator, Mapping
+from difflib import SequenceMatcher
 from typing import TYPE_CHECKING, Any, cast
 
 from app_model.types import CommandRule, MenuItem
@@ -226,28 +226,21 @@ class QCommandLabel(QtW.QLabel):
         if input_text == '':
             return
         text = self.command_text()
-        words = input_text.split(' ')
-        pattern = re.compile('|'.join(words), re.IGNORECASE)
 
         output_texts: list[str] = []
-        last_end = 0
-        for match_obj in pattern.finditer(text):
-            output_texts.append(text[last_end : match_obj.start()])
-            word = match_obj.group()
-            colored_word = bold_colored(word, color)
-            output_texts.append(colored_word)
-            last_end = match_obj.end()
 
-        output_texts.append(text[last_end:])
+        for substring, highlighted in _iter_highlight_slices(input_text, text):
+            if highlighted:
+                substring = bold_colored(substring, color)
+            output_texts.append(substring)
+
         output_text = ''.join(output_texts)
         self.setText(output_text)
-        return
 
     def set_disabled(self) -> None:
         """Set the label to disabled."""
         text = self.command_text()
         self.setText(colored(text, self.DISABLED_COLOR))
-        return
 
 
 class QCommandList(QtW.QListView):
@@ -425,6 +418,39 @@ def _format_action_name(cmd: CommandRule) -> str:
     if title:
         return f'{title} > {desc}'
     return desc
+
+
+def _iter_highlight_slices(query, text, min_len=2):
+    """Get reasonable highlight approximation for fuzzy matched string.
+
+    Will match all non-overlapping substrings bigger than min_len.
+    It's not a correct representation of what the fuzzy matching does,
+    but should help visualize a bit what's being matched.
+    """
+    matcher = SequenceMatcher(None, query.lower(), text.lower())
+    blocks = matcher.get_matching_blocks()
+
+    pos = 0
+
+    for block in blocks:
+        if block.size < min_len:
+            continue
+
+        start = block.b
+        end = start + block.size
+
+        if pos < start:
+            # yield the unmatched region before this one
+            yield text[pos:start], False
+
+        # now we're at an actual matched region
+        yield text[start:end], True
+
+        pos = end
+
+    # trailing is unmatched
+    if pos < len(text):
+        yield text[pos:], False
 
 
 def _exec_action(action: CommandRule) -> Any:
