@@ -2,18 +2,13 @@
 
 This file and SampleWidget is useful for testing out themes from the command
 line or for generating screenshots of a sample widget to demonstrate a theme.
-ThemeColorDisplay shows all theme colors as labeled swatches with hex values,
-including derived colors (darken, lighten, opacity) used in the QSS.
+ThemeColorDisplay shows all theme colors as labeled swatches with hex values.
 
 Examples
 --------
 To use from the command line:
 
 $ python -m napari._qt.widgets.qt_theme_sample
-
-To include themes contributed by plugins:
-
-$ python -m napari._qt.widgets.qt_theme_sample --include-plugins
 
 To generate a screenshot within python:
 
@@ -60,7 +55,6 @@ from napari._qt.qt_resources import get_stylesheet
 from napari._qt.utils import QImg2array
 from napari._qt.widgets.qt_viewer_buttons import QtViewerPushButton
 from napari.utils.io import imsave
-from napari.utils.theme import get_theme
 
 blurb = """
 <h3>Heading</h3>
@@ -114,17 +108,23 @@ class TabDemo(QTabWidget):
         self.setWindowTitle('tab demo')
 
 
-class QtConsole(QWidget):
-    """Console-like container to pick up QtConsole QSS rules."""
-
-
 class SampleWidget(QWidget):
     def __init__(self, theme='dark', emphasized=False) -> None:
         super().__init__(None)
         self.setProperty('emphasized', emphasized)
         self.setStyleSheet(get_stylesheet(theme))
-        lay = QVBoxLayout()
-        self.setLayout(lay)
+        content = QWidget()
+        lay = QVBoxLayout(content)
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setHorizontalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+        )
+        scroll.setWidget(content)
+        outer = QVBoxLayout()
+        outer.setContentsMargins(0, 0, 0, 0)
+        outer.addWidget(scroll)
+        self.setLayout(outer)
         lay.addWidget(QPushButton('push button'))
         box = QComboBox()
         box.addItems(['a', 'b', 'c', 'cd'])
@@ -222,29 +222,6 @@ class SampleWidget(QWidget):
 
         lay.addWidget(state_group)
 
-        console_group = QGroupBox('Console preview')
-        console_layout = QVBoxLayout()
-        console_group.setLayout(console_layout)
-
-        syntax_label = QLabel(f'Syntax style: {get_theme(theme).syntax_style}')
-        console_layout.addWidget(syntax_label)
-
-        console_container = QtConsole()
-        console_container_layout = QVBoxLayout()
-        console_container_layout.setContentsMargins(4, 4, 4, 4)
-        console_container.setLayout(console_container_layout)
-
-        console_text = QTextEdit()
-        console_text.setReadOnly(True)
-        console_text.setPlainText(
-            ">>> import napari\nprint('Hello theme!')\nHello theme!"
-        )
-        console_text.setMinimumHeight(90)
-        console_container_layout.addWidget(console_text)
-        console_layout.addWidget(console_container)
-
-        lay.addWidget(console_group)
-
     def screenshot(self, path=None):
         img = self.grab().toImage()
         if path is not None:
@@ -331,13 +308,10 @@ _COLOR_DESCRIPTIONS: dict[str, str] = {
 class ThemeColorDisplay(QWidget):
     """Display all theme colors as labeled swatches with hex values.
 
-    Shows the base theme colors and commonly used derived colors
-    (darken, lighten, opacity) that appear in the QSS stylesheets.
-
     Parameters
     ----------
     theme : str
-        The napari theme id (e.g. 'dark', 'light').
+        The theme id (e.g. 'dark', 'light').
     """
 
     def __init__(self, theme: str = 'dark') -> None:
@@ -347,21 +321,16 @@ class ThemeColorDisplay(QWidget):
         theme_obj = get_theme(theme)
         theme_dict = theme_obj.to_rgb_dict()
 
-        # Main layout with title
         main_layout = QVBoxLayout()
         main_layout.setContentsMargins(16, 16, 16, 16)
         main_layout.setSpacing(20)
 
-        # Title
         title_label = QLabel(f'<h2>{theme_obj.label} ({theme})</h2>')
         main_layout.addWidget(title_label)
 
-        # --- Base colors section ---
-        base_label = QLabel('<h3>Base Theme Colors</h3>')
-        main_layout.addWidget(base_label)
-
         base_grid = QGridLayout()
         base_grid.setSpacing(10)
+        columns = 2
 
         color_roles = [
             'canvas',
@@ -383,7 +352,7 @@ class ThemeColorDisplay(QWidget):
             hex_color = _rgb_string_to_hex(str(color_val))
             desc = _COLOR_DESCRIPTIONS.get(role, '')
             row_widget = _make_swatch_row(role, hex_color, desc)
-            row, col = divmod(i, 3)
+            row, col = divmod(i, columns)
             base_grid.addWidget(row_widget, row, col)
 
         main_layout.addLayout(base_grid)
@@ -439,19 +408,16 @@ if __name__ == '__main__':
         nargs='*',
         help='Theme ids to display (default: all available themes).',
     )
-    parser.add_argument(
-        '--include-plugins',
-        action='store_true',
-        help='Discover npe2 plugin themes before listing available themes.',
-    )
     args = parser.parse_args()
 
-    if args.include_plugins:
-        _ensure_plugin_themes_loaded()
+    _ensure_plugin_themes_loaded()
 
     themes = args.themes if args.themes else available_themes()
     app = get_qapp()
     widgets = []
+    column_width = 520
+    max_sample_height = 640
+    max_color_height = 520
     for n, theme in enumerate(themes):
         try:
             w = SampleWidget(theme)
@@ -460,7 +426,10 @@ if __name__ == '__main__':
                 '%s is not a recognized theme', theme
             )
             continue
-        w.setGeometry(10 + 430 * n, 0, 425, 600)
+        w.adjustSize()
+        sample_height = min(max_sample_height, w.sizeHint().height())
+        w.setMaximumHeight(max_sample_height)
+        w.setGeometry(10 + column_width * n, 0, column_width, sample_height)
         w.setWindowTitle(f'Widgets — {theme}')
         w.show()
         widgets.append(w)
@@ -469,7 +438,15 @@ if __name__ == '__main__':
             c = ThemeColorDisplay(theme)
         except KeyError:
             continue
-        c.setGeometry(10 + 430 * n, 620, 600, 550)
+        c.adjustSize()
+        color_height = min(max_color_height, c.sizeHint().height())
+        c.setMaximumHeight(max_color_height)
+        c.setGeometry(
+            10 + column_width * n,
+            sample_height + 30,
+            column_width,
+            color_height,
+        )
         c.setWindowTitle(f'Theme Colors — {theme}')
         c.show()
         widgets.append(c)
