@@ -2,7 +2,7 @@
 
 This file and SampleWidget is useful for testing out themes from the command
 line or for generating screenshots of a sample widget to demonstrate a theme.
-ThemeColorDisplay shows all theme colors as labeled swatches with hex values.
+The sample widget includes labeled theme color swatches at the bottom.
 
 Examples
 --------
@@ -16,11 +16,6 @@ To generate a screenshot within python:
 >>> widg = SampleWidget(theme='dark')
 >>> screenshot = widg.screenshot()
 
-To view theme colors:
-
->>> from napari._qt.widgets.qt_theme_sample import ThemeColorDisplay
->>> widg = ThemeColorDisplay(theme='dark')
->>> screenshot = widg.screenshot()
 """
 
 from qtpy.QtCore import Qt
@@ -222,6 +217,8 @@ class SampleWidget(QWidget):
 
         lay.addWidget(state_group)
 
+        lay.addWidget(_build_color_swatches(theme))
+
     def screenshot(self, path=None):
         img = self.grab().toImage()
         if path is not None:
@@ -288,6 +285,57 @@ def _make_swatch_row(
     return container
 
 
+def _build_color_swatches(theme: str) -> QGroupBox:
+    """Create a group box with labeled theme color swatches."""
+    from napari.utils.theme import get_theme
+
+    theme_obj = get_theme(theme)
+    theme_dict = theme_obj.to_rgb_dict()
+
+    group = QGroupBox('Theme colors')
+    layout = QVBoxLayout()
+    group.setLayout(layout)
+
+    title_label = QLabel(f'<h3>{theme_obj.label} ({theme})</h3>')
+    layout.addWidget(title_label)
+
+    grid = QGridLayout()
+    grid.setSpacing(10)
+    columns = 2
+
+    color_roles = [
+        'canvas',
+        'console',
+        'background',
+        'foreground',
+        'primary',
+        'secondary',
+        'highlight',
+        'text',
+        'icon',
+        'warning',
+        'error',
+        'current',
+    ]
+
+    for i, role in enumerate(color_roles):
+        color_val = theme_dict.get(role, '')
+        hex_color = _rgb_string_to_hex(str(color_val))
+        desc = _COLOR_DESCRIPTIONS.get(role, '')
+        row_widget = _make_swatch_row(role, hex_color, desc)
+        row, col = divmod(i, columns)
+        grid.addWidget(row_widget, row, col)
+
+    layout.addLayout(grid)
+
+    info_label = QLabel(
+        f'<b>Font size:</b> {theme_dict.get("font_size", "?")} &nbsp;|&nbsp; '
+        f'<b>Syntax style:</b> {theme_dict.get("syntax_style", "?")}'
+    )
+    layout.addWidget(info_label)
+    return group
+
+
 # Descriptions for each theme color role
 _COLOR_DESCRIPTIONS: dict[str, str] = {
     'canvas': 'Canvas/viewport background (the main viewing area)',
@@ -303,94 +351,6 @@ _COLOR_DESCRIPTIONS: dict[str, str] = {
     'error': 'Error messages and critical indicators',
     'current': 'Active/selected layer highlight (the blue accent)',
 }
-
-
-class ThemeColorDisplay(QWidget):
-    """Display all theme colors as labeled swatches with hex values.
-
-    Parameters
-    ----------
-    theme : str
-        The theme id (e.g. 'dark', 'light').
-    """
-
-    def __init__(self, theme: str = 'dark') -> None:
-        super().__init__(None)
-        from napari.utils.theme import get_theme
-
-        theme_obj = get_theme(theme)
-        theme_dict = theme_obj.to_rgb_dict()
-
-        main_layout = QVBoxLayout()
-        main_layout.setContentsMargins(16, 16, 16, 16)
-        main_layout.setSpacing(20)
-
-        title_label = QLabel(f'<h2>{theme_obj.label} ({theme})</h2>')
-        main_layout.addWidget(title_label)
-
-        base_grid = QGridLayout()
-        base_grid.setSpacing(10)
-        columns = 2
-
-        color_roles = [
-            'canvas',
-            'console',
-            'background',
-            'foreground',
-            'primary',
-            'secondary',
-            'highlight',
-            'text',
-            'icon',
-            'warning',
-            'error',
-            'current',
-        ]
-
-        for i, role in enumerate(color_roles):
-            color_val = theme_dict.get(role, '')
-            hex_color = _rgb_string_to_hex(str(color_val))
-            desc = _COLOR_DESCRIPTIONS.get(role, '')
-            row_widget = _make_swatch_row(role, hex_color, desc)
-            row, col = divmod(i, columns)
-            base_grid.addWidget(row_widget, row, col)
-
-        main_layout.addLayout(base_grid)
-
-        # --- Font info ---
-        info_label = QLabel(
-            f'<b>Font size:</b> {theme_dict.get("font_size", "?")} &nbsp;|&nbsp; '
-            f'<b>Syntax style:</b> {theme_dict.get("syntax_style", "?")}'
-        )
-        main_layout.addWidget(info_label)
-
-        main_layout.addStretch()
-
-        # Use scroll area for overflow
-        scroll = QScrollArea()
-        scroll.setWidgetResizable(True)
-        scroll.setHorizontalScrollBarPolicy(
-            Qt.ScrollBarPolicy.ScrollBarAlwaysOff
-        )
-
-        scroll_widget = QWidget()
-        scroll_widget.setLayout(main_layout)
-        scroll.setWidget(scroll_widget)
-
-        # Outer layout
-        outer = QVBoxLayout()
-        outer.setContentsMargins(0, 0, 0, 0)
-        outer.addWidget(scroll)
-        self.setLayout(outer)
-
-        # Apply theme stylesheet to the whole widget
-        self.setStyleSheet(get_stylesheet(theme))
-
-    def screenshot(self, path=None):
-        img = self.grab().toImage()
-        if path is not None:
-            imsave(path, QImg2array(img))
-        return QImg2array(img)
 
 
 if __name__ == '__main__':
@@ -415,9 +375,6 @@ if __name__ == '__main__':
     themes = args.themes if args.themes else available_themes()
     app = get_qapp()
     widgets = []
-    column_width = 520
-    max_sample_height = 640
-    max_color_height = 520
     for n, theme in enumerate(themes):
         try:
             w = SampleWidget(theme)
@@ -427,28 +384,14 @@ if __name__ == '__main__':
             )
             continue
         w.adjustSize()
-        sample_height = min(max_sample_height, w.sizeHint().height())
-        w.setMaximumHeight(max_sample_height)
-        w.setGeometry(10 + column_width * n, 0, column_width, sample_height)
+        screen = app.primaryScreen()
+        max_height = (
+            screen.availableGeometry().height() - 40 if screen else 900
+        )
+        w.setMaximumHeight(max_height)
+        w.setGeometry(10 + 520 * n, 0, 520, max_height)
         w.setWindowTitle(f'Widgets — {theme}')
         w.show()
         widgets.append(w)
-
-        try:
-            c = ThemeColorDisplay(theme)
-        except KeyError:
-            continue
-        c.adjustSize()
-        color_height = min(max_color_height, c.sizeHint().height())
-        c.setMaximumHeight(max_color_height)
-        c.setGeometry(
-            10 + column_width * n,
-            sample_height + 30,
-            column_width,
-            color_height,
-        )
-        c.setWindowTitle(f'Theme Colors — {theme}')
-        c.show()
-        widgets.append(c)
     if widgets:
         app.exec_()
