@@ -116,11 +116,9 @@ class QtLayerButtons(QFrame):
         layout.addWidget(self.deleteButton)
         self.setLayout(layout)
 
-        # Connect to layer selection changes to highlight buttons
         self.viewer.layers.selection.events.changed.connect(
             self._on_selection_changed
         )
-        # Initialize button highlight state
         self._on_selection_changed()
 
     def _on_selection_changed(self, event=None) -> None:
