@@ -118,7 +118,7 @@ optional-base = [
     "zarr>=2.12.0", # needed by `builtins` (dask.array.from_zarr) to open zarr
     "aiohttp", # needed to open remote files by zarr, replace by extras once https://github.com/zarr-developers/zarr-python/issues/3453 is done
     "napari-metadata>=0.1.0",
-    "napari-plugin-manager>=0.1.10, <0.2.0",
+    "napari-plugin-manager >=0.1.10, <0.2.0",
 ]
 optional-numba = [
     "numba>=0.57.1,<=0.62.1 ; platform_system == 'Darwin' and platform_machine == 'x86_64'",

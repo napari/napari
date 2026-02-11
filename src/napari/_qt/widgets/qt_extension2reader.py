@@ -34,9 +34,8 @@ class Extension2ReaderTable(QWidget):
     def __init__(self, parent=None, npe2_readers=None) -> None:
         super().__init__(parent=parent)
 
-        registered_readers = _npe2.get_readers()
         if npe2_readers is None:
-            npe2_readers = registered_readers
+            npe2_readers = _npe2.get_readers()
 
         self._npe2_readers = npe2_readers
 
@@ -166,13 +165,22 @@ class Extension2ReaderTable(QWidget):
         readers = self._npe2_readers.copy()
         to_delete = []
         try:
-            ext = str(Path(new_pattern).suffix).lower()
-            _ = str(Path(new_pattern).with_suffix(ext))
-            compatible_readers = _npe2.get_readers(new_pattern)
+            # Running both the extension and the new_pattern through the `Path`
+            # module helps us avoid issues with empty or invalid paths on
+            # Windows (invalid patterns can occur when the user is in the
+            # process of typing a valid pattern).
+            # Either of these lines could throw a ValueError about
+            # empty names, which we catch below, and allow the user to continue
+            # typing. See PR #6107 and #8579 for more detail
+            ext = Path(new_pattern).suffix.lower()
+            _ = Path(new_pattern).with_suffix(ext)
         except ValueError as e:
             if 'empty name' not in str(e):
                 raise
             compatible_readers = {}
+        else:
+            compatible_readers = _npe2.get_readers(new_pattern)
+
         for plugin_name in readers:
             if plugin_name not in compatible_readers:
                 to_delete.append(plugin_name)

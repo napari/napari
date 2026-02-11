@@ -1,3 +1,5 @@
+uv.lock
+*leak-backref-graph*
 docs
 tmp
 # Byte-compiled / optimized / DLL files
