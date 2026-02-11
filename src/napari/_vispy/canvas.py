@@ -930,7 +930,9 @@ class VispyCanvas:
             # only create overlays when they are visible. If not, we connect the visible
             # event of this overlay to this method until it's finally visible
             if not overlay.visible:
-                overlay.events.visible.connect(self._update_viewer_overlays)
+                overlay.events.visible.connect(
+                    self._update_viewer_overlays, unique=True
+                )
                 continue
             overlay.events.visible.disconnect(self._update_viewer_overlays)
 
