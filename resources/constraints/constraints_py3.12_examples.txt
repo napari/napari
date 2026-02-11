@@ -239,7 +239,7 @@ nibabel==5.3.3
     # via nilearn
 nilearn==0.13.0
     # via napari (pyproject.toml:gallery)
-npe2==0.8.0
+npe2==0.8.1
     # via
     #   napari (pyproject.toml)
     #   napari-plugin-manager
