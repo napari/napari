@@ -9,7 +9,6 @@ import os
 import sys
 import warnings
 from ast import literal_eval
-from itertools import chain, repeat
 from pathlib import Path
 from textwrap import wrap
 from typing import Any
@@ -252,15 +251,12 @@ def _run() -> None:
             from napari.plugins import (
                 _initialize_plugins,
                 _npe2,
-                plugin_manager,
             )
 
             # if a plugin widget has been requested, this will fail immediately
             # if the requested plugin/widget is not available.
             _initialize_plugins()
-            plugin_manager.discover_widgets()
 
-            plugin_manager_plugins = []
             npe2_plugins = []
             for plugin in args.with_:
                 pname, *wnames = plugin
@@ -271,35 +267,11 @@ def _run() -> None:
                             wnames = wnames
                         break
 
-                for name2, (
-                    w_pname,
-                    wnames_dict,
-                ) in plugin_manager.iter_widgets():
-                    if name2 == 'dock' and pname == w_pname:
-                        plugin_manager_plugins.append(plugin)
-                        if '__all__' in wnames:
-                            # Plugin_manager iter_widgets return wnames as dict keys
-                            wnames = list(wnames_dict)
-                        warnings.warn(
-                            trans._(
-                                'Non-npe2 plugin {pname} detected. Disable tabify for this plugin.',
-                                deferred=True,
-                                pname=pname,
-                            ),
-                            RuntimeWarning,
-                            stacklevel=3,
-                        )
-                        break
-
                 if wnames:
                     for wname in wnames:
-                        _npe2.get_widget_contribution(
-                            pname, wname
-                        ) or plugin_manager.get_widget(pname, wname)
+                        _npe2.get_widget_contribution(pname, wname)
                 else:
-                    _npe2.get_widget_contribution(
-                        pname
-                    ) or plugin_manager.get_widget(pname)
+                    _npe2.get_widget_contribution(pname)
 
         from napari._qt.widgets.qt_splash_screen import NapariSplashScreen
 
@@ -343,37 +315,29 @@ def _run() -> None:
             )
 
         if args.with_:
-            # Non-npe2 plugins disappear on tabify or if tabified npe2 plugins are loaded after them.
-            # Therefore, read npe2 plugins first and do not tabify for non-npe2 plugins.
-            for plugin, tabify in chain(
-                zip(npe2_plugins, repeat(True)),
-                zip(plugin_manager_plugins, repeat(False)),
-            ):
+            for plugin in npe2_plugins:
                 pname, *wnames = plugin
                 if '__all__' in wnames:
-                    for name, (_pname, wnames_collection) in chain(
-                        _npe2.widget_iterator(), plugin_manager.iter_widgets()
-                    ):
+                    for name, (
+                        _pname,
+                        wnames_collection,
+                    ) in _npe2.widget_iterator():
                         if name == 'dock' and pname == _pname:
-                            if isinstance(wnames_collection, dict):
-                                # Plugin_manager iter_widgets return wnames as dict keys
-                                wnames = list(wnames_collection.keys())
-                            else:
-                                wnames = wnames_collection
+                            wnames = wnames_collection
                             break
 
                 if wnames:
                     first_dock_widget = viewer.window.add_plugin_dock_widget(
-                        pname, wnames[0], tabify=tabify
+                        pname, wnames[0], tabify=True
                     )[0]
                     for wname in wnames[1:]:
                         viewer.window.add_plugin_dock_widget(
-                            pname, wname, tabify=tabify
+                            pname, wname, tabify=True
                         )
                     first_dock_widget.show()
                     first_dock_widget.raise_()
                 else:
-                    viewer.window.add_plugin_dock_widget(pname, tabify=tabify)
+                    viewer.window.add_plugin_dock_widget(pname, tabify=True)
 
         # only necessary in bundled app, but see #3596
         from napari.utils.misc import (
@@ -390,9 +354,6 @@ def _run() -> None:
 def _run_plugin_module(mod, plugin_name):
     """Register `mod` as a plugin, find/create viewer, and run napari."""
     from napari import Viewer, run
-    from napari.plugins import plugin_manager
-
-    plugin_manager.register(mod, name=plugin_name)
 
     # now, check if a viewer was created, and if not, create one.
     for obj in mod.values():
@@ -409,11 +370,6 @@ def _run_plugin_module(mod, plugin_name):
         # used and cleaned up... if we eventually have "reusable viewers", we
         # can continue here
         return
-
-    # finally, if the file declared a dock widget, add it to the viewer.
-    dws = plugin_manager.hooks.napari_experimental_provide_dock_widget
-    if any(i.plugin_name == plugin_name for i in dws.get_hookimpls()):
-        _v.window.add_plugin_dock_widget(plugin_name)
 
     run()
 
