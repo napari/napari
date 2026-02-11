@@ -68,6 +68,7 @@ dependencies = [
     "scikit-image[data]>=0.19.1",
     "scipy>=1.14.0",
     "superqt>=0.7.4",
+    "thefuzz>=0.20",
     "tifffile>=2022.7.28",
     "toolz>=0.11.0",
     "tqdm>=4.56.0",
