@@ -5,9 +5,7 @@ from npe2 import DynamicPlugin
 
 from napari.plugins.utils import (
     MatchFlag,
-    get_all_readers,
     get_filename_patterns_for_reader,
-    get_potential_readers,
     get_preferred_reader,
     score_specificity,
 )
@@ -196,73 +194,6 @@ def test_get_preferred_reader_full_path(tmp_path, monkeypatch):
     assert get_preferred_reader(zarr_path) == 'fake-plugin'
     monkeypatch.chdir(tmp_path)
     assert get_preferred_reader('./my_file.zarr') == 'fake-plugin'
-
-
-def test_get_potential_readers_gives_napari(
-    builtins, tmp_plugin: DynamicPlugin
-):
-    @tmp_plugin.contribute.reader(filename_patterns=['*.tif'])
-    def read_tif(path): ...
-
-    readers = get_potential_readers('my_file.tif')
-    assert 'napari' in readers
-    assert 'builtins' not in readers
-
-
-def test_get_potential_readers_finds_readers(tmp_plugin: DynamicPlugin):
-    tmp2 = tmp_plugin.spawn(register=True)
-
-    @tmp_plugin.contribute.reader(filename_patterns=['*.tif'])
-    def read_tif(path): ...
-
-    @tmp2.contribute.reader(filename_patterns=['*.*'])
-    def read_all(path): ...
-
-    readers = get_potential_readers('my_file.tif')
-    assert len(readers) == 2
-
-
-def test_get_potential_readers_extension_case(tmp_plugin: DynamicPlugin):
-    @tmp_plugin.contribute.reader(filename_patterns=['*.tif'])
-    def read_tif(path): ...
-
-    readers = get_potential_readers('my_file.TIF')
-    assert len(readers) == 1
-
-
-def test_get_potential_readers_none_available():
-    assert not get_potential_readers('my_file.fake')
-
-
-def test_get_potential_readers_plugin_name_disp_name(
-    tmp_plugin: DynamicPlugin,
-):
-    @tmp_plugin.contribute.reader(filename_patterns=['*.fake'])
-    def read_tif(path): ...
-
-    readers = get_potential_readers('my_file.fake')
-    assert readers[tmp_plugin.name] == tmp_plugin.display_name
-
-
-def test_get_all_readers_gives_napari(builtins):
-    npe2_readers, npe1_readers = get_all_readers()
-    assert len(npe1_readers) == 0
-    assert len(npe2_readers) == 1
-    assert 'napari' in npe2_readers
-
-
-def test_get_all_readers(tmp_plugin: DynamicPlugin):
-    tmp2 = tmp_plugin.spawn(register=True)
-
-    @tmp_plugin.contribute.reader(filename_patterns=['*.fake'])
-    def read_tif(path): ...
-
-    @tmp2.contribute.reader(filename_patterns=['.fake2'])
-    def read_all(path): ...
-
-    npe2_readers, npe1_readers = get_all_readers()
-    assert len(npe2_readers) == 2
-    assert len(npe1_readers) == 0
 
 
 def test_get_filename_patterns_fake_plugin():
