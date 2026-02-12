@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import gc
 from collections.abc import Iterator
 from functools import partial
@@ -11,6 +12,7 @@ from typing import TYPE_CHECKING
 from weakref import WeakSet
 
 import numpy as np
+from OpenGL.error import GLError
 from superqt.utils import qthrottled
 from vispy.scene import SceneCanvas as SceneCanvas_, ViewBox, Widget
 
@@ -251,7 +253,7 @@ class VispyCanvas:
         self.viewer.camera.events.mouse_zoom.connect(self._on_interactive)
         self.viewer.camera.events.zoom.connect(self._on_cursor)
 
-        self.viewer._zoom_box.events.zoom.connect(self._on_boxzoom)
+        self.viewer._zoom_box.events.zoom_area.connect(self._on_boxzoom)
         self.viewer.layers.events.reordered.connect(self._update_scenegraph)
         self.viewer.layers.events.removed.connect(self._remove_layer)
         self.viewer.layers.events.begin_batch.connect(
@@ -429,12 +431,14 @@ class VispyCanvas:
             self.view.interactive = interactive
             self.grid.interactive = False
 
-    def _on_boxzoom(self, event):
+    def _on_boxzoom(
+        self, zoom_area: tuple[tuple[float, float], tuple[float, float]]
+    ) -> None:
         """Update zoom level."""
         box_size_canvas = np.abs(
             np.diff(self.viewer._zoom_box.position, axis=0)
         )
-        box_center_world = np.mean(event.value, axis=0)
+        box_center_world = np.mean(zoom_area, axis=0)
         ratio = np.min(self._current_viewbox_size / box_size_canvas)
         self.viewer.camera.zoom = self.viewer.camera.zoom * np.min(ratio)
         self.viewer.camera.center = box_center_world
@@ -845,7 +849,9 @@ class VispyCanvas:
         # If the GPU is still processing deletion commands from the removed layer, it can lead to
         # memory access violations when the scene graph is updated with new resources.
         # finish() ensures complete GPU synchronization before proceeding
-        self._scene_canvas.context.finish()
+        with contextlib.suppress(AttributeError, GLError):
+            # need to suppress the error because of implementation details of vispy
+            self._scene_canvas.context.finish()
 
         self._update_scenegraph()
 
@@ -886,8 +892,12 @@ class VispyCanvas:
         self._needs_overlay_position_update = True
 
     def _connect_canvas_overlay_events(self, overlay: Overlay) -> None:
-        overlay.events.position.connect(self._update_overlay_canvas_positions)
-        overlay.events.visible.connect(self._update_overlay_canvas_positions)
+        overlay.events.position.connect(
+            self._update_overlay_canvas_positions, unique=True
+        )
+        overlay.events.visible.connect(
+            self._update_overlay_canvas_positions, unique=True
+        )
 
     def _disconnect_canvas_overlay_events(self, overlay: Overlay) -> None:
         overlay.events.position.disconnect(
@@ -938,7 +948,9 @@ class VispyCanvas:
             # only create overlays when they are visible. If not, we connect the visible
             # event of this overlay to this method until it's finally visible
             if not overlay.visible:
-                overlay.events.visible.connect(self._update_viewer_overlays)
+                overlay.events.visible.connect(
+                    self._update_viewer_overlays, unique=True
+                )
                 continue
             overlay.events.visible.disconnect(self._update_viewer_overlays)
 
@@ -985,7 +997,9 @@ class VispyCanvas:
             # connect position callbacks
             if isinstance(overlay, CanvasOverlay):
                 self._connect_canvas_overlay_events(overlay)
-                overlay.events.gridded.connect(self._update_viewer_overlays)
+                overlay.events.gridded.connect(
+                    self._update_viewer_overlays, unique=True
+                )
 
         self._update_overlay_canvas_positions()
 
@@ -1019,7 +1033,9 @@ class VispyCanvas:
             # only create overlays when they are visible. If not, we connect the visible
             # event of this overlay to this method until it's finally visible
             if not overlay.visible:
-                overlay.events.visible.connect(self._overlay_callbacks[layer])
+                overlay.events.visible.connect(
+                    self._overlay_callbacks[layer], unique=True
+                )
                 continue
             overlay.events.visible.disconnect(self._overlay_callbacks[layer])
 

@@ -1,5 +1,4 @@
 import json
-from itertools import cycle
 
 import numpy as np
 import pytest
@@ -13,7 +12,7 @@ def test_default_categorical_colormap():
 
     color_cycle = cmap.fallback_color
     np.testing.assert_almost_equal(color_cycle.values, [[1, 1, 1, 1]])
-    np.testing.assert_almost_equal(next(color_cycle.cycle), [1, 1, 1, 1])
+    np.testing.assert_almost_equal(next(color_cycle), [1, 1, 1, 1])
 
 
 def test_categorical_colormap_direct():
@@ -66,8 +65,7 @@ def test_categorical_colormap_cycle():
 
 def test_categorical_colormap_cycle_as_dict():
     color_values = np.array([[1, 1, 1, 1], [1, 0, 0, 1]])
-    color_cycle = cycle(color_values)
-    fallback_color = {'values': color_values, 'cycle': color_cycle}
+    fallback_color = {'values': color_values}
     cmap = CategoricalColormap(fallback_color=fallback_color)
 
     # verify that no mapping between prop value and color has been set
@@ -75,16 +73,14 @@ def test_categorical_colormap_cycle_as_dict():
 
     # the values used to create the color cycle can be accessed via fallback color
     np.testing.assert_almost_equal(cmap.fallback_color.values, color_values)
-    np.testing.assert_almost_equal(
-        next(cmap.fallback_color.cycle), color_values[0]
-    )
+    np.testing.assert_almost_equal(next(cmap.fallback_color), color_values[0])
 
 
 fallback_colors = np.array([[1, 0, 0, 1], [0, 1, 0, 1]])
 
 
 def test_categorical_colormap_from_array():
-    cmap = CategoricalColormap.from_array(fallback_colors)
+    cmap = CategoricalColormap(fallback_color=fallback_colors)
     np.testing.assert_almost_equal(cmap.fallback_color.values, fallback_colors)
 
 
@@ -108,7 +104,7 @@ default_fallback_color = np.array([[1, 1, 1, 1]])
     ],
 )
 def test_categorical_colormap_from_dict(params, expected):
-    cmap = CategoricalColormap.from_dict(params)
+    cmap = CategoricalColormap(**params)
     np.testing.assert_equal(cmap.colormap, expected[0])
     np.testing.assert_almost_equal(cmap.fallback_color.values, expected[1])
 
@@ -139,7 +135,7 @@ def test_categorical_colormap_equality():
 )
 def test_categorical_colormap_serialization(params):
     cmap_1 = CategoricalColormap(**params)
-    cmap_json = cmap_1.json()
+    cmap_json = cmap_1.model_dump_json()
 
     json_dict = json.loads(cmap_json)
     cmap_2 = CategoricalColormap(**json_dict)

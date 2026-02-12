@@ -226,7 +226,7 @@ napari-console==0.1.4
     # via napari (pyproject.toml)
 napari-metadata==0.1.1
     # via napari (pyproject.toml)
-napari-plugin-engine==0.2.0
+napari-plugin-engine==0.2.1
     # via napari (pyproject.toml)
 napari-plugin-manager==0.1.10
     # via napari (pyproject.toml)
@@ -243,7 +243,7 @@ nibabel==5.3.3
     # via nilearn
 nilearn==0.12.1
     # via napari (pyproject.toml)
-npe2==0.7.9
+npe2==0.8.1
     # via
     #   napari (pyproject.toml)
     #   napari-plugin-manager
@@ -421,13 +421,20 @@ pydantic==2.12.5
     #   geff
     #   geff-spec
     #   npe2
+    #   pydantic-extra-types
+    #   pydantic-settings
 pydantic-core==2.41.5
     # via pydantic
+pydantic-extra-types==2.11.0
+    # via
+    #   napari (pyproject.toml)
+    #   npe2
+pydantic-settings==2.12.0
+    # via napari (pyproject.toml)
 pygetwindow==0.0.9
     # via pyautogui
 pygments==2.19.2
     # via
-    #   napari (pyproject.toml)
     #   ipython
     #   ipython-pygments-lexers
     #   pytest
@@ -491,6 +498,8 @@ python-dateutil==2.9.0.post0
     #   jupyter-client
     #   matplotlib
     #   pandas
+python-dotenv==1.2.1
+    # via pydantic-settings
 python3-xlib==0.15
     # via
     #   mouseinfo
@@ -501,7 +510,6 @@ pytz==2025.2
     # via pandas
 pyyaml==6.0.3
     # via
-    #   napari (pyproject.toml)
     #   dask
     #   npe2
     #   trackastra
@@ -568,7 +576,7 @@ sortedcontainers==2.4.0
     # via hypothesis
 stack-data==0.6.3
     # via ipython
-superqt==0.7.7
+superqt==0.7.8
     # via
     #   napari (pyproject.toml)
     #   magicgui
@@ -642,6 +650,7 @@ typing-extensions==4.15.0
     #   pint
     #   pydantic
     #   pydantic-core
+    #   pydantic-extra-types
     #   referencing
     #   superqt
     #   torch
@@ -649,7 +658,9 @@ typing-extensions==4.15.0
     #   typing-inspection
     #   virtualenv
 typing-inspection==0.4.2
-    # via pydantic
+    # via
+    #   pydantic
+    #   pydantic-settings
 tzdata==2025.3
     # via pandas
 urllib3==2.6.3
