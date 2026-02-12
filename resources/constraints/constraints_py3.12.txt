@@ -6,10 +6,10 @@ aiohttp==3.13.3
     # via napari (pyproject.toml)
 aiosignal==1.4.0
     # via aiohttp
+annotated-doc==0.0.4
+    # via typer
 annotated-types==0.7.0
-    # via
-    #   geff-spec
-    #   pydantic
+    # via pydantic
 app-model==0.5.1
     # via napari (pyproject.toml)
 appdirs==1.4.4
@@ -33,8 +33,6 @@ certifi==2026.1.4
     # via
     #   napari (pyproject.toml)
     #   requests
-chardet==5.2.0
-    # via trackastra
 charset-normalizer==3.4.4
     # via requests
 click==8.3.1
@@ -47,19 +45,16 @@ comm==0.2.3
     # via ipykernel
 contourpy==1.3.3
     # via matplotlib
-coverage==7.13.2
+coverage==7.13.4
     # via napari (pyproject.toml)
 cuda-bindings==12.9.4
     # via torch
-cuda-pathfinder==1.3.3
+cuda-pathfinder==1.3.4
     # via cuda-bindings
 cycler==0.12.1
     # via matplotlib
 dask==2026.1.2
-    # via
-    #   napari (pyproject.toml)
-    #   distributed
-    #   trackastra
+    # via napari (pyproject.toml)
 debugpy==1.8.20
     # via ipykernel
 decorator==5.2.1
@@ -72,8 +67,6 @@ docstring-parser==0.17.0
     #   magicgui
 donfig==0.8.1.post1
     # via zarr
-edt==3.1.0
-    # via trackastra
 executing==2.2.1
     # via stack-data
 filelock==3.20.3
@@ -92,33 +85,23 @@ frozenlist==1.8.0
     # via
     #   aiohttp
     #   aiosignal
-fsspec==2026.1.0
+fsspec==2026.2.0
     # via
     #   napari (pyproject.toml)
     #   dask
     #   torch
-geff==1.1.4.1.1
-    # via trackastra
-geff-spec==1.1.1
-    # via geff
-glasbey==0.3.0
-    # via napari (pyproject.toml)
 google-crc32c==1.8.0
     # via zarr
 heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.151.4
+hypothesis==6.151.6
     # via napari (pyproject.toml)
 idna==3.11
     # via
     #   requests
     #   yarl
-imagecodecs==2025.11.11
-    # via
-    #   tifffile
-    #   trackastra
 imageio==2.37.2
     # via
     #   napari (pyproject.toml)
@@ -133,7 +116,7 @@ ipykernel==6.31.0
     #   -r resources/constraints/version_denylist.txt
     #   napari-console
     #   qtconsole
-ipython==9.9.0
+ipython==9.10.0
     # via
     #   napari (pyproject.toml)
     #   ipykernel
@@ -145,14 +128,7 @@ ipython-pygments-lexers==1.1.1
 jedi==0.19.2
     # via ipython
 jinja2==3.1.6
-    # via
-    #   distributed
-    #   torch
-joblib==1.5.2
-    # via
-    #   nilearn
-    #   scikit-learn
-    #   trackastra
+    # via torch
 jsonschema==4.26.0
     # via napari (pyproject.toml)
 jsonschema-specifications==2025.9.1
@@ -184,8 +160,6 @@ lxml==6.0.2
     #   lxml-html-clean
 lxml-html-clean==0.4.3
     # via lxml
-lz4==4.4.5
-    # via trackastra
 magicgui==0.10.1
     # via napari (pyproject.toml)
 markdown-it-py==4.0.0
@@ -193,9 +167,7 @@ markdown-it-py==4.0.0
 markupsafe==3.0.3
     # via jinja2
 matplotlib==3.10.8
-    # via
-    #   napari (pyproject.toml)
-    #   glasbey
+    # via napari (pyproject.toml)
 matplotlib-inline==0.2.1
     # via
     #   ipykernel
@@ -226,38 +198,22 @@ nest-asyncio==1.6.0
     # via ipykernel
 networkx==3.6.1
     # via
-    #   geff
     #   scikit-image
     #   torch
-nibabel==5.3.3
-    # via nilearn
-nilearn==0.12.1
-    # via napari (pyproject.toml)
 npe2==0.8.1
     # via
     #   napari (pyproject.toml)
     #   napari-plugin-manager
 numba==0.63.1
-    # via
-    #   napari (pyproject.toml)
-    #   glasbey
-    #   trackastra
+    # via napari (pyproject.toml)
 numcodecs==0.16.5
-    # via
-    #   geff
-    #   zarr
+    # via zarr
 numpy==2.3.5
     # via
     #   napari (pyproject.toml)
     #   bermuda
     #   contourpy
     #   dask
-    #   edt
-    #   geff
-    #   geff-spec
-    #   glasbey
-    #   h5py
-    #   imagecodecs
     #   imageio
     #   matplotlib
     #   ml-dtypes
@@ -271,8 +227,6 @@ numpy==2.3.5
     #   scipy
     #   tensorstore
     #   tifffile
-    #   torchvision
-    #   trackastra
     #   triangle
     #   vispy
     #   xarray
@@ -336,10 +290,8 @@ packaging==26.0
 pandas==3.0.0
     # via
     #   napari (pyproject.toml)
-    #   nilearn
-    #   trackastra
     #   xarray
-parso==0.8.5
+parso==0.8.6
     # via jedi
 partd==1.4.2
     # via dask
@@ -347,18 +299,17 @@ partsegcore-compiled-backend==0.15.14
     # via napari (pyproject.toml)
 pexpect==4.9.0
     # via ipython
-pillow==12.1.0
+pillow==12.1.1
     # via
     #   napari (pyproject.toml)
     #   imageio
     #   matplotlib
     #   scikit-image
-    #   torchvision
 pint==0.25.2
     # via
     #   napari (pyproject.toml)
     #   napari-metadata
-pip==26.0
+pip==26.0.1
     # via napari-plugin-manager
 platformdirs==4.5.1
     # via
@@ -366,7 +317,6 @@ platformdirs==4.5.1
     #   npe2
     #   pint
     #   pooch
-    #   trackastra
     #   virtualenv
 pluggy==1.6.0
     # via
@@ -388,7 +338,6 @@ psutil==7.2.2
     # via
     #   napari (pyproject.toml)
     #   ipykernel
-    #   trackastra
 psygnal==0.15.1
     # via
     #   napari (pyproject.toml)
@@ -408,8 +357,6 @@ pydantic==2.12.5
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
     #   app-model
-    #   geff
-    #   geff-spec
     #   npe2
     #   pydantic-extra-types
     #   pydantic-settings
@@ -425,6 +372,7 @@ pygetwindow==0.0.9
     # via pyautogui
 pygments==2.19.2
     # via
+    #   napari (pyproject.toml)
     #   ipython
     #   ipython-pygments-lexers
     #   pytest
@@ -453,11 +401,11 @@ pyrect==0.2.0
     # via pygetwindow
 pyscreeze==1.0.1
     # via pyautogui
-pyside6==6.10.1
+pyside6==6.10.2
     # via napari (pyproject.toml)
-pyside6-addons==6.10.1
+pyside6-addons==6.10.2
     # via pyside6
-pyside6-essentials==6.10.1
+pyside6-essentials==6.10.2
     # via
     #   pyside6
     #   pyside6-addons
@@ -494,15 +442,15 @@ pytweening==1.2.0
     # via pyautogui
 pyyaml==6.0.3
     # via
+    #   napari (pyproject.toml)
     #   dask
     #   donfig
     #   npe2
-    #   trackastra
 pyzmq==27.1.0
     # via
     #   ipykernel
     #   jupyter-client
-qtconsole==5.7.0
+qtconsole==5.7.1
     # via
     #   napari (pyproject.toml)
     #   napari-console
@@ -523,7 +471,6 @@ requests==2.32.5
     # via
     #   pooch
     #   pyconify
-    #   trackastra
 rich==14.3.2
     # via
     #   napari (pyproject.toml)
@@ -535,24 +482,16 @@ rpds-py==0.30.0
     #   jsonschema
     #   referencing
 scikit-image==0.26.0
-    # via
-    #   napari (pyproject.toml)
-    #   trackastra
-scikit-learn==1.8.0
-    # via
-    #   glasbey
-    #   nilearn
+    # via napari (pyproject.toml)
 scipy==1.17.0
     # via
     #   napari (pyproject.toml)
     #   scikit-image
-    #   scikit-learn
-    #   trackastra
-setuptools==80.10.2
+setuptools==82.0.0
     # via torch
 shellingham==1.5.4
     # via typer
-shiboken6==6.10.1
+shiboken6==6.10.2
     # via
     #   pyside6
     #   pyside6-addons
@@ -570,9 +509,7 @@ superqt==0.7.8
     #   napari-plugin-manager
 sympy==1.14.0
     # via torch
-tblib==3.2.2
-    # via distributed
-tensorstore==0.1.80
+tensorstore==0.1.81
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
@@ -588,21 +525,12 @@ toolz==1.1.0
     #   dask
     #   partd
 torch==2.10.0
-    # via
-    #   napari (pyproject.toml:testing-extra)
-    #   torchvision
-    #   trackastra
-torchvision==0.25.0
-    # via trackastra
+    # via napari (pyproject.toml:testing-extra)
 tornado==6.5.4
     # via
     #   ipykernel
     #   jupyter-client
-tqdm==4.67.2
-    # via
-    #   napari (pyproject.toml)
-    #   trackastra
-trackastra==0.5.2
+tqdm==4.67.3
     # via napari (pyproject.toml)
 traitlets==5.14.3
     # via
@@ -616,10 +544,8 @@ triangle==20250106
     # via napari (pyproject.toml)
 triton==3.6.0
     # via torch
-typer==0.21.1
-    # via
-    #   geff
-    #   npe2
+typer==0.23.0
+    # via npe2
 typing-extensions==4.15.0
     # via
     #   napari (pyproject.toml)
@@ -637,7 +563,6 @@ typing-extensions==4.15.0
     #   referencing
     #   superqt
     #   torch
-    #   typer
     #   typing-inspection
     #   zarr
 typing-inspection==0.4.2
@@ -652,9 +577,9 @@ vispy==0.16.1
     # via
     #   napari (pyproject.toml)
     #   napari-svg
-wcwidth==0.5.3
+wcwidth==0.6.0
     # via prompt-toolkit
-wrapt==2.1.0
+wrapt==2.1.1
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
@@ -666,7 +591,3 @@ zarr==3.1.5
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
-    #   geff
-    #   geff-spec
-zict==3.0.0
-    # via distributed
