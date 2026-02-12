@@ -71,7 +71,7 @@ def test_add_layer(
     data: ArrayLike,
     ndim: int,
 ) -> None:
-    viewer_model.dims.ndisplay = np.clip(ndim, 2, 3)
+    viewer_model.dims.ndisplay = max(min(3, ndim), 2)
 
     add_layer_by_type(viewer_model, layer_class, data)
     check_viewer_functioning(viewer_model, qt_viewer, data, ndim)
@@ -1203,14 +1203,15 @@ def test_viewer_drag_to_zoom(
     """Test drag to zoom mouse binding."""
     canvas = qt_viewer.canvas
 
-    def zoom_callback(event):
+    def zoom_callback(data_positions):
         """Mock zoom callback to check zoom box visibility."""
-        data_positions = event.value
         assert len(data_positions) == 2, (
             'Zoom event should release two positions'
         )
 
-    viewer_model._zoom_box.events.zoom.connect(zoom_callback)
+    zoom_area_mock = mock.Mock(side_effect=zoom_callback)
+
+    viewer_model._zoom_box.events.zoom_area.connect(zoom_area_mock)
 
     # Add an image layer
     data = np.random.default_rng(0).random((10, 20))
@@ -1255,6 +1256,8 @@ def test_viewer_drag_to_zoom(
         'Zoom box should be hidden after release'
     )
 
+    assert zoom_area_mock.call_count == 1
+
 
 @pytest.mark.show_qt_viewer
 def test_viewer_drag_to_zoom_with_cancel(
@@ -1263,14 +1266,9 @@ def test_viewer_drag_to_zoom_with_cancel(
     """Test drag to zoom mouse binding."""
     canvas = qt_viewer.canvas
 
-    def zoom_callback(event):
-        """Mock zoom callback to check zoom box visibility."""
-        data_positions = event.value
-        assert len(data_positions) == 2, (
-            'Zoom event should release two positions'
-        )
+    zoom_area_mock = mock.Mock()
 
-    viewer_model._zoom_box.events.zoom.connect(zoom_callback)
+    viewer_model._zoom_box.events.zoom_area.connect(zoom_area_mock)
 
     # Add an image layer
     data = np.random.default_rng(0).random((10, 20))
@@ -1305,3 +1303,4 @@ def test_viewer_drag_to_zoom_with_cancel(
     assert viewer_model._zoom_box.position == ((0, 0), (0, 0)), (
         'Zoom box canvas positions should match the drag coordinates'
     )
+    zoom_area_mock.assert_not_called()

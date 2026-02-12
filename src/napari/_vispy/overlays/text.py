@@ -5,9 +5,14 @@ from napari._vispy.overlays.base import (
 )
 from napari._vispy.visuals.text import Text
 from napari.components._viewer_constants import CanvasPosition
+from napari.components.overlays import TextOverlay
 
 
 class _VispyBaseTextOverlay(VispyCanvasOverlay):
+    """Base class for vispy text overlays."""
+
+    overlay: TextOverlay
+
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
 

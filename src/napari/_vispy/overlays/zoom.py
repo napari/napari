@@ -17,6 +17,8 @@ if TYPE_CHECKING:
 class VispyZoomOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
     """Zoom box overlay.."""
 
+    overlay: ZoomOverlay
+
     def __init__(
         self,
         viewer: ViewerModel,

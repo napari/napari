@@ -7,16 +7,18 @@ import pint
 
 from napari._vispy.overlays.base import ViewerOverlayMixin, VispyCanvasOverlay
 from napari._vispy.visuals.scale_bar import ScaleBar
+from napari.components.overlays import ScaleBarOverlay
 from napari.utils._units import PREFERRED_VALUES
 
 
 class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
     """Scale bar in world coordinates."""
 
+    overlay: ScaleBarOverlay
+
     def __init__(self, *, viewer, overlay, parent=None) -> None:
         self._target_length = 150.0
         self._current_length = 150.0
-        self._current_color = (1, 1, 1, 1)
         self._scale = 1
         self._unit = pint.Quantity('1 pixel')
 

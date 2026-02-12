@@ -13,11 +13,13 @@ from napari.utils.colormaps.colormap_utils import (
 if TYPE_CHECKING:
     from vispy.scene import Node
 
-    from napari.components.overlays import Overlay
+    from napari.components.overlays import ColorBarOverlay, Overlay
     from napari.layers import Image, Surface
 
 
 class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
+    overlay: ColorBarOverlay
+
     def __init__(
         self,
         *,
