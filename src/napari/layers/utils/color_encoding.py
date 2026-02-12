@@ -7,8 +7,9 @@ from typing import (
 )
 
 import numpy as np
+from pydantic import Field, GetCoreSchemaHandler, TypeAdapter, field_validator
+from pydantic_core import core_schema
 
-from napari._pydantic_compat import Field, parse_obj_as, validator
 from napari.layers.utils.color_transformations import ColorType
 from napari.layers.utils.style_encoding import (
     StyleEncoding,
@@ -31,8 +32,12 @@ class ColorEncoding(StyleEncoding[ColorValue, ColorArray], Protocol):
     """Encodes colors from features."""
 
     @classmethod
-    def __get_validators__(cls):
-        yield cls.validate
+    def __get_pydantic_core_schema__(
+        cls, source, handler: GetCoreSchemaHandler
+    ):
+        return core_schema.no_info_after_validator_function(
+            cls.validate, core_schema.any_schema()
+        )
 
     @classmethod
     def validate(
@@ -64,14 +69,15 @@ class ColorEncoding(StyleEncoding[ColorValue, ColorArray], Protocol):
         if isinstance(value, ColorEncoding):
             return value
         if isinstance(value, dict):
-            return parse_obj_as(
+            return TypeAdapter(
                 Union[
                     ConstantColorEncoding,
                     ManualColorEncoding,
                     DirectColorEncoding,
                     NominalColorEncoding,
                     QuantitativeColorEncoding,
-                ],
+                ]
+            ).validate_python(
                 value,
             )
         try:
@@ -202,11 +208,13 @@ class QuantitativeColorEncoding(_DerivedStyleEncoding[ColorValue, ColorArray]):
             values = np.interp(values, contrast_limits, (0, 1))
         return self.colormap.map(values)
 
-    @validator('colormap', pre=True, always=True, allow_reuse=True)
+    @field_validator('colormap', mode='before')
+    @classmethod
     def _check_colormap(cls, colormap: ValidColormapArg) -> Colormap:
         return ensure_colormap(colormap)
 
-    @validator('contrast_limits', pre=True, always=True, allow_reuse=True)
+    @field_validator('contrast_limits', mode='before')
+    @classmethod
     def _check_contrast_limits(
         cls, contrast_limits
     ) -> tuple[float, float] | None:
