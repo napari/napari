@@ -23,7 +23,7 @@ jobs:
             - pooch
       - run:
           name: Clone docs repo into a subdirectory
-          command: git clone --depth=1 --branch pydantic2 git@github.com:brisvag/napari_docs.git docs
+          command: git clone --depth=1 git@github.com:napari/docs.git docs
       - run:
           name: Install qt libs + xvfb
           command: sudo apt-get update && sudo apt-get install -y xvfb libegl1 libdbus-1-3 libxkbcommon-x11-0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 libxcb-xinerama0 libxcb-xinput0 libxcb-xfixes0 x11-utils

@@ -24,6 +24,6 @@ jobs:
     with:
       main-repo: ${{ github.repository }}
       main-ref: ${{ github.sha }}
-      docs-repo: brisvag/napari_docs
-      docs-ref: pydantic2
+      docs-repo: napari/docs
+      docs-ref: main
       make_target: "html"
