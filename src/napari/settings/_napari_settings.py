@@ -118,4 +118,4 @@ if __name__ == '__main__':
         dest = Path(sys.argv[2]).expanduser().absolute()
     else:
         dest = Path(__file__).parent / 'napari.schema.json'
-    dest.write_text(NapariSettings.schema_json())
+    dest.write_text(NapariSettings.model_json_schema())

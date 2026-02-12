@@ -148,7 +148,7 @@ class FileConfigSettingsSource(PydanticBaseSettingsSource):
 
         filepath = self.current_state.get('config_path')
 
-        if filepath not in {_NOT_SET, None} and Path(filepath).exists():
+        if filepath is not None and Path(filepath).exists():
             sources.append(filepath)
 
         if not sources:
