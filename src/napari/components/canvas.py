@@ -1,6 +1,6 @@
 import numpy as np
+from pydantic import Field, PrivateAttr
 
-from napari._pydantic_compat import Field, PrivateAttr
 from napari.components.grid import GridCanvas
 from napari.components.overlays import (
     BrushCircleOverlay,
@@ -59,9 +59,9 @@ class Canvas(EventedModel):
     """
 
     background_color_override: ColorValue | None = None
-    grid: GridCanvas = Field(default_factory=GridCanvas, allow_mutation=False)
+    grid: GridCanvas = Field(default_factory=GridCanvas, frozen=True)
     overlay_tiling: OverlayTiling = Field(
-        default_factory=OverlayTiling, allow_mutation=False
+        default_factory=OverlayTiling, frozen=True
     )
     _overlays: EventedDict[str, CanvasOverlay] = PrivateAttr(
         default_factory=EventedDict
@@ -113,24 +113,24 @@ class Canvas(EventedModel):
         return viewbox_size
 
     @property
-    def scale_bar(self):
-        return self._overlays['scale_bar']
+    def scale_bar(self) -> ScaleBarOverlay:
+        return self._overlays['scale_bar']  # type: ignore[return-value]
 
     @property
-    def text(self):
-        return self._overlays['text']
+    def text(self) -> TextOverlay:
+        return self._overlays['text']  # type: ignore[return-value]
 
     @property
-    def welcome(self):
-        return self._overlays['welcome']
+    def welcome(self) -> WelcomeOverlay:
+        return self._overlays['welcome']  # type: ignore[return-value]
 
     @property
-    def _zoom_box(self):
-        return self._overlays['zoom']
+    def _zoom_box(self) -> ZoomOverlay:
+        return self._overlays['zoom']  # type: ignore[return-value]
 
     @property
-    def _brush_circle_overlay(self):
-        return self._overlays['brush_circle']
+    def _brush_circle_overlay(self) -> BrushCircleOverlay:
+        return self._overlays['brush_circle']  # type: ignore[return-value]
 
     def _update_viewer_grid(self):
         """Keep viewer grid settings up to date with settings values."""

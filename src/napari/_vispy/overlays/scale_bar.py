@@ -7,6 +7,7 @@ import pint
 
 from napari._vispy.overlays.base import ViewerOverlayMixin, VispyCanvasOverlay
 from napari._vispy.visuals.scale_bar import ScaleBar
+from napari.components.overlays import ScaleBarOverlay
 from napari.utils._units import PREFERRED_VALUES
 from napari.utils.color import ColorValue
 from napari.utils.colormaps.standardize_color import transform_color
@@ -15,6 +16,8 @@ from napari.utils.theme import get_theme
 
 class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
     """Scale bar in world coordinates."""
+
+    overlay: ScaleBarOverlay
 
     def __init__(self, *, viewer, overlay, parent=None) -> None:
         self._target_length = 150.0
@@ -148,7 +151,7 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
             if self.overlay.box:
                 # The box is visible - set the scale bar color to the negative of the
                 # box color.
-                color = 1 - box_color
+                color = ColorValue(1 - box_color)
                 color[-1] = 1
             else:
                 # set scale color negative of theme background.

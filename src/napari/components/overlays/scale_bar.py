@@ -1,6 +1,7 @@
 """Scale bar model."""
 
-from napari._pydantic_compat import Field
+from pydantic import Field
+
 from napari.components.overlays.base import CanvasOverlay
 from napari.utils.color import ColorValue
 

@@ -3,9 +3,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Literal, cast
 
 import numpy as np
+from pydantic import field_validator
 from scipy.spatial.transform import Rotation as R
 
-from napari._pydantic_compat import validator
 from napari.utils.camera_orientations import (
     DEFAULT_ORIENTATION_TYPED,
     DepthAxisOrientation,
@@ -62,8 +62,8 @@ class Camera(EventedModel):
         HorizontalAxisOrientation,
     ] = DEFAULT_ORIENTATION_TYPED
 
-    # validators
-    @validator('center', 'angles', pre=True, allow_reuse=True)
+    @field_validator('center', 'angles', mode='before')
+    @classmethod
     def _ensure_3_tuple(cls, v):
         return ensure_n_tuple(v, n=3)
 
