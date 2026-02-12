@@ -1,6 +1,5 @@
 """Text label model."""
 
-from napari._pydantic_compat import Field
 from napari.components._viewer_constants import CanvasPosition
 from napari.components.overlays.base import CanvasOverlay
 from napari.utils.color import ColorValue
@@ -25,9 +24,7 @@ class _BaseTextOverlay(CanvasOverlay):
         The rendering order of the overlay: lower numbers get rendered first.
     """
 
-    color: ColorValue = Field(
-        default_factory=lambda: ColorValue((0.8, 0.8, 0.8, 1.0))
-    )
+    color: ColorValue | None = None
     font_size: float = 10
 
 

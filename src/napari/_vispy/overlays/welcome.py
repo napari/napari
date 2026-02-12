@@ -9,8 +9,6 @@ from vispy.app.timer import Timer
 
 from napari._vispy.overlays.base import ViewerOverlayMixin, VispyCanvasOverlay
 from napari._vispy.visuals.welcome import Welcome
-from napari.utils.colormaps.standardize_color import transform_color
-from napari.utils.theme import get_theme
 
 if TYPE_CHECKING:
     from vispy.scene import Node
@@ -53,14 +51,8 @@ class VispyWelcomeOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         # TODO: use this box instead of the custom one
 
     def _on_theme_change(self) -> None:
-        if self.node.parent is not None and self.node.parent.canvas.bgcolor:
-            background_color = self.node.parent.canvas.bgcolor.rgba
-        else:
-            background_color = get_theme(self.viewer.theme).canvas.as_hex()
-            background_color = transform_color(background_color)[0]
-        color = np.subtract(1, background_color)
-        color[-1] = background_color[-1]
-        color *= 0.8  # dim a bit
+        color = self._get_fgcolor()
+        color[-1] *= 0.7  # dim a bit
         self.node.set_color(color)
 
     def _on_visible_change(self) -> None:

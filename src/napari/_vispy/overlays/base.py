@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import numpy as np
 from vispy.scene.visuals import Rectangle
 from vispy.visuals.transforms import MatrixTransform, STTransform
 
@@ -106,30 +107,40 @@ class VispyCanvasOverlay(VispyBaseOverlay):
         self.box.center = self.x_size / 2, self.y_size / 2
 
         if self.overlay.box_color is None:
-            if (
-                self.node.parent is not None
-                and self.node.parent.canvas.bgcolor
-            ):
-                background_color = ColorValue(
-                    self.node.parent.canvas.bgcolor.rgba
-                )
-            else:
-                background_color = ColorValue(
-                    get_theme(
-                        get_settings().appearance.theme
-                    ).canvas.as_rgb_tuple()
-                )
+            bgcolor = self._get_canvas_bgcolor()
+            # make the color a bit transparent
+            bgcolor[-1] *= 0.8
         else:
-            background_color = self.overlay.box_color
+            bgcolor = self.overlay.box_color
 
-        # make the color a bit transparent (copy to not override)
-        background_color = background_color.copy()
-        background_color[-1] *= 0.8
-
-        self.box.color = background_color
+        self.box.color = bgcolor
 
         self.box.order = self.node.order - 1
         self.box.transform = self.node.transform
+
+    def _get_canvas_bgcolor(self):
+        if self.node.parent is not None and self.node.parent.canvas.bgcolor:
+            return ColorValue(self.node.parent.canvas.bgcolor.rgba)
+
+        return ColorValue(
+            get_theme(get_settings().appearance.theme).canvas.as_rgb_tuple()
+        )
+
+    def _get_fgcolor(self):
+        if not self.overlay.box or self.overlay.box_color is None:
+            bgcolor = self._get_canvas_bgcolor()
+        else:
+            bgcolor = self.overlay.box_color
+        return self._contrasting_color(bgcolor)
+
+    def _contrasting_color(self, bgcolor):
+        opposite = 1 - bgcolor
+        # shift away from mid tones for better contrast
+        opposite = 0.5 + (opposite - 0.5) * 1.2
+        opposite = np.clip(opposite, 0, 1)
+        # don't change alpha
+        opposite[-1] = bgcolor[-1]
+        return opposite
 
     def _on_blending_change(self) -> None:
         self.box.set_gl_state(**BLENDING_MODES[self.overlay.blending])

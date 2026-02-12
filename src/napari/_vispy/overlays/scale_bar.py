@@ -26,6 +26,8 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
 
         self.overlay.events.color.connect(self._on_rendering_change)
         self.overlay.events.colored.connect(self._on_rendering_change)
+        self.overlay.events.box.connect(self._on_rendering_change)
+        self.overlay.events.box_color.connect(self._on_rendering_change)
         self.overlay.events.font_size.connect(self._on_font_size_change)
         self.overlay.events.ticks.connect(self._on_rendering_change)
         self.overlay.events.unit.connect(self._on_unit_change)
@@ -134,9 +136,14 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         if not self.overlay.visible:
             return
 
+        if self.overlay.colored:
+            color = self.overlay.color
+        else:
+            color = self._get_fgcolor()
+
         width, height = self.node.set_data(
             length=self._current_length,
-            color=self.overlay.color,
+            color=color,
             ticks=self.overlay.ticks,
             font_size=self.overlay.font_size,
         )
