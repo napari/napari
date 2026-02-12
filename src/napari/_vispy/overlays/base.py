@@ -147,6 +147,7 @@ class VispyCanvasOverlay(VispyBaseOverlay):
 
     def close(self) -> None:
         super().close()
+        self.box.parent = None
         self.canvas_position_callback = lambda: None
 
 
