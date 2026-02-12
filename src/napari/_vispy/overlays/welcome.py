@@ -38,6 +38,8 @@ class VispyWelcomeOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self.overlay.events.version.connect(self._on_version_change)
         self.overlay.events.shortcuts.connect(self._on_shortcuts_change)
         self.overlay.events.tips.connect(self._on_tips_change)
+        self.overlay.events.box.connect(self._on_theme_change)
+        self.overlay.events.box_color.connect(self._on_theme_change)
 
         self.node.canvas.native.resized.connect(self._on_position_change)
 
@@ -51,10 +53,13 @@ class VispyWelcomeOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         if self.node.canvas is not None:
             x, y = np.array(self.node.canvas.size)
             self.node.set_scale_and_position(x, y)
+            self.x_size = x
+            self.y_size = y
 
     def _on_box_change(self) -> None:
-        self.box.parent = None
-        # TODO: use this box instead of the custom one
+        super()._on_box_change()
+        # welcome uses some custom positioning with the transform
+        self.box.center = (0, 0)
 
     def _on_theme_change(self) -> None:
         color = self._get_fgcolor()
