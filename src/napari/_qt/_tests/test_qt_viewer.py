@@ -822,6 +822,8 @@ def test_label_colors_matching_widget_direct(
 
 def test_axis_labels(viewer_model: ViewerModel, qt_viewer: QtViewer) -> None:
     viewer_model.dims.ndisplay = 3
+    viewer_model.axes.visible = True
+
     layer = viewer_model.add_image(np.zeros((2, 2, 2)), scale=(1, 2, 4))
 
     layer_visual = qt_viewer.layer_to_visual[layer]

@@ -69,7 +69,8 @@ from napari.layers.surface._surface_key_bindings import surface_fun_to_mode
 from napari.layers.tracks._tracks_key_bindings import tracks_fun_to_mode
 from napari.layers.utils.stack_utils import split_channels
 from napari.layers.vectors._vectors_key_bindings import vectors_fun_to_mode
-from napari.plugins.utils import get_potential_readers, get_preferred_reader
+from napari.plugins import _npe2
+from napari.plugins.utils import get_preferred_reader
 from napari.settings import get_settings
 from napari.types import (
     FullLayerData,
@@ -1225,21 +1226,17 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         KeyError
             If `plugin` does not provide a sample named `sample`.
         """
-        from napari.plugins import _npe2, plugin_manager
-
         plugin_spec_reader = None
         data: None | SampleDataCreator | SampleData
         # try with npe2
         data, available = _npe2.get_sample_data(plugin, sample)
 
-        # then try with npe1
-        if data is None:
-            try:
-                data = plugin_manager._sample_data[plugin][sample]['data']
-            except KeyError:
-                available += list(plugin_manager.available_samples())
         # npe2 uri sample data, extract the path so we can use viewer.open
-        elif hasattr(data, '__self__') and hasattr(data.__self__, 'uri'):
+        if (
+            data is not None
+            and hasattr(data, '__self__')
+            and hasattr(data.__self__, 'uri')
+        ):
             if (
                 hasattr(data.__self__, 'reader_plugin')
                 and data.__self__.reader_plugin != reader_plugin
@@ -1489,7 +1486,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         _path = paths[0]
         # we want to display the paths nicely so make a help string here
         path_message = f'[{_path}], ...]' if len(paths) > 1 else _path
-        readers = get_potential_readers(_path)
+        readers = _npe2.get_readers(str(_path))
         if not readers:
             raise NoAvailableReaderError(
                 trans._(
@@ -1609,12 +1606,12 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             assert isinstance(p, str)
 
         if stack:
-            layer_data, hookimpl = read_data_with_plugins(
+            layer_data, plugin = read_data_with_plugins(
                 paths, plugin=plugin, stack=stack
             )
         else:
             assert len(paths) == 1
-            layer_data, hookimpl = read_data_with_plugins(
+            layer_data, plugin = read_data_with_plugins(
                 paths, plugin=plugin, stack=stack
             )
 
@@ -1634,7 +1631,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         # add each layer to the viewer
         added: list[Layer] = []  # for layers that get added
-        plugin = hookimpl.plugin_name if hookimpl else None
         for data, filename in zip(layer_data, filenames, strict=False):
             basename, _ext = os.path.splitext(os.path.basename(filename))
             # actually add the layer
