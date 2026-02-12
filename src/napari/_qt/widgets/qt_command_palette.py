@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, cast
 from app_model.types import CommandRule, MenuItem
 from qtpy import QtCore, QtGui, QtWidgets as QtW
 from qtpy.QtCore import Qt, Signal
-from thefuzz import fuzz, process
+from rapidfuzz import fuzz, process
 
 from napari._app_model import get_app_model
 from napari._app_model.context._context import get_context
@@ -382,6 +382,7 @@ class QCommandList(QtW.QListView):
             input_text,
             action_names,
             limit=100,
+            score_cutoff=50,
             scorer=fuzz.partial_token_sort_ratio,
             processor=lambda x: x.lower(),
         ):
