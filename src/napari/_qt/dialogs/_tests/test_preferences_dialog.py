@@ -57,8 +57,10 @@ def pref(qtbot):
 
 def test_prefdialog_populated(pref):
     subfields = filter(
-        lambda f: isinstance(ff := get_inner_type(f.annotation), type)
-        and issubclass(ff, BaseModel),
+        lambda f: (
+            isinstance(ff := get_inner_type(f.annotation), type)
+            and issubclass(ff, BaseModel)
+        ),
         NapariSettings.model_fields.values(),
     )
     assert pref._stack.count() == len(list(subfields))
