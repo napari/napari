@@ -178,7 +178,9 @@ gallery = [
     "nilearn",
     "xarray",
     "h5netcdf[h5py]",
+    "tifffile[codecs]",
     "meshio",
+    "trackastra>=0.4.2",
     "gdown", # to download some large example data files
 ]
 # needed to build docs
@@ -274,7 +276,9 @@ gallery = [
     "nilearn",
     "xarray",
     "h5netcdf[h5py]",
+    "tifffile[codecs]",
     "meshio",
+    "trackastra>=0.4.2",
     "gdown", # to download some large example data files
 ]
 # needed to build docs
