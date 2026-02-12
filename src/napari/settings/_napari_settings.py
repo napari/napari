@@ -112,10 +112,11 @@ class NapariSettings(EventedConfigFileSettings):
 
 
 if __name__ == '__main__':
+    import json
     import sys
 
     if len(sys.argv) > 2:
         dest = Path(sys.argv[2]).expanduser().absolute()
     else:
         dest = Path(__file__).parent / 'napari.schema.json'
-    dest.write_text(NapariSettings.model_json_schema())
+    dest.write_text(json.dumps(NapariSettings.model_json_schema()))
