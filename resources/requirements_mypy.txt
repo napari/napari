@@ -80,7 +80,7 @@ rich==14.3.2
     #   typer
 shellingham==1.5.4
     # via typer
-superqt==0.7.7
+superqt==0.7.8
     # via magicgui
 tomli-w==1.2.0
     # via npe2
