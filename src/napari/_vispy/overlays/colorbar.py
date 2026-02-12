@@ -49,6 +49,9 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
         self.overlay.events.color.connect(self._on_ticks_change)
 
         get_settings().appearance.events.theme.connect(self._on_data_change)
+        get_settings().appearance.events.font_size.connect(
+            self._on_ticks_change
+        )
 
         self.reset()
 
@@ -92,9 +95,15 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
             color = np.subtract(1, background_color)
             color[-1] = background_color[-1]
 
+        font_size = (
+            self.overlay.font_size
+            if self.overlay.font_size is not None
+            else get_settings().appearance.font_size
+        )
+
         text_width, text_height = self.node.set_ticks_and_get_text_size(
             tick_length=self.overlay.tick_length,
-            font_size=self.overlay.font_size,
+            font_size=font_size,
             clim=_coerce_contrast_limits(
                 self.layer.contrast_limits
             ).contrast_limits,

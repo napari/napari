@@ -6,6 +6,7 @@ from napari._vispy.overlays.base import (
 from napari._vispy.visuals.text import Text
 from napari.components._viewer_constants import CanvasPosition
 from napari.components.overlays import TextOverlay
+from napari.settings import get_settings
 
 
 class _VispyBaseTextOverlay(VispyCanvasOverlay):
@@ -16,11 +17,13 @@ class _VispyBaseTextOverlay(VispyCanvasOverlay):
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
 
-        self.node.font_size = self.overlay.font_size
         self.node.anchors = ('left', 'bottom')
 
         self.overlay.events.color.connect(self._on_color_change)
         self.overlay.events.font_size.connect(self._on_font_size_change)
+        get_settings().appearance.events.font_size.connect(
+            self._on_font_size_change
+        )
 
     def _connect_events(self):
         pass
@@ -40,7 +43,11 @@ class _VispyBaseTextOverlay(VispyCanvasOverlay):
         self.node.color = self.overlay.color
 
     def _on_font_size_change(self):
-        self.node.font_size = self.overlay.font_size
+        self.node.font_size = (
+            self.overlay.font_size
+            if self.overlay.font_size is not None
+            else get_settings().appearance.font_size
+        )
 
     def _on_position_change(self, event=None):
         position = self.overlay.position
@@ -59,7 +66,7 @@ class _VispyBaseTextOverlay(VispyCanvasOverlay):
             anchors = ('center', 'top')
 
         self.node.anchors = anchors
-        self.node.font_size = self.overlay.font_size
+        self._on_font_size_change()
 
         self.x_size, self.y_size = self.node.get_width_height()
 
