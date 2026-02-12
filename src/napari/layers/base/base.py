@@ -1444,7 +1444,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
                 data_displayed=True,
                 thumbnail=True,
                 highlight=True,
-                extent=False,
+                extent=True,
             )
 
     def _world_to_layer_dims(
