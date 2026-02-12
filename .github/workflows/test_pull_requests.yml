@@ -261,3 +261,10 @@ jobs:
         env:
           PR: 1  # prevents asv from running very compute-intensive benchmarks
           PIP_CONSTRAINT: ${{ github.workspace }}/resources/constraints/benchmark.txt
+
+      - name: Upload triangulation artifacts
+        if: failure()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: triangulation-benchmarks
+          path: /tmp/napari*
