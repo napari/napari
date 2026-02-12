@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 from vispy.app.timer import Timer
+from vispy.visuals.transforms import NullTransform
 
 from napari._vispy.overlays.base import ViewerOverlayMixin, VispyCanvasOverlay
 from napari._vispy.visuals.welcome import Welcome
@@ -55,11 +56,13 @@ class VispyWelcomeOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
             self.node.set_scale_and_position(x, y)
             self.x_size = x
             self.y_size = y
+        self._on_box_change()
 
     def _on_box_change(self) -> None:
         super()._on_box_change()
-        # welcome uses some custom positioning with the transform
-        self.box.center = (0, 0)
+        # welcome uses some custom positioning with the transform, so copying it
+        # over messes it up. We just set it to nothing.
+        self.box.transform = NullTransform()
 
     def _on_theme_change(self) -> None:
         color = self._get_fgcolor()
