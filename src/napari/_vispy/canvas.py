@@ -1105,7 +1105,6 @@ class VispyCanvas:
                     if not isinstance(overlay, CanvasOverlay):
                         continue
                     if layer.visible and is_visible_tileable(overlay):
-                        # TODO: this should check for tiling direction when it becomes settable
                         if (
                             '_left' in overlay.position
                             and getattr(
