@@ -7,7 +7,6 @@ QtViewerPushButton{
    min-height : 28px;
    max-height : 28px;
    padding: 0px;
-
 }
 
 QtViewerPushButton[mode="delete_button"] {
