@@ -11,7 +11,7 @@ from napari.layers import Points, Shapes
 from napari.layers.utils.string_encoding import ConstantStringEncoding
 
 if TYPE_CHECKING:
-    from vispy.visuals.text import Text
+    from napari._vispy.visuals.text import Text
 
 
 FONT_DIR = resources.files('napari') / 'resources' / 'fonts' / 'AlataPlus'
@@ -87,8 +87,9 @@ def _has_visible_text(layer: Points | Shapes) -> bool:
 
 
 @lru_cache
-def _load_font(size=10):
-    return FreeTypeFont(str(FONT_FILE), size=size)
+def _load_font(size: float = 10):
+    # TODO: font size can only be int here :/
+    return FreeTypeFont(str(FONT_FILE), size=int(size))
 
 
 def get_text_width_height(text: Text) -> tuple[float, float]:
