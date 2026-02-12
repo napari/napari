@@ -118,7 +118,7 @@ class VispyCanvasOverlay(VispyBaseOverlay):
         self.box.order = self.node.order - 1
         self.box.transform = self.node.transform
 
-    def _get_canvas_bgcolor(self):
+    def _get_canvas_bgcolor(self) -> ColorValue:
         if self.node.parent is not None and self.node.parent.canvas.bgcolor:
             return ColorValue(self.node.parent.canvas.bgcolor.rgba)
 
@@ -126,14 +126,14 @@ class VispyCanvasOverlay(VispyBaseOverlay):
             get_theme(get_settings().appearance.theme).canvas.as_rgb_tuple()
         )
 
-    def _get_fgcolor(self):
+    def _get_fgcolor(self) -> ColorValue:
         if not self.overlay.box or self.overlay.box_color is None:
             bgcolor = self._get_canvas_bgcolor()
         else:
             bgcolor = self.overlay.box_color
         return self._contrasting_color(bgcolor)
 
-    def _contrasting_color(self, bgcolor):
+    def _contrasting_color(self, bgcolor: ColorValue) -> ColorValue:
         opposite = 1 - bgcolor
         # shift away from mid tones for better contrast
         opposite = 0.5 + (opposite - 0.5) * 1.2
