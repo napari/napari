@@ -7,13 +7,14 @@ from vispy.scene.visuals import Rectangle
 from vispy.visuals.transforms import MatrixTransform, STTransform
 
 from napari._vispy.utils.gl import BLENDING_MODES
-from napari.components.overlays import Overlay
 from napari.settings import get_settings
 from napari.utils.color import ColorValue
 from napari.utils.events import disconnect_events
 from napari.utils.theme import get_theme
 
 if TYPE_CHECKING:
+    from napari.components.overlays import CanvasOverlay, Overlay, SceneOverlay
+    from napari.components.viewer_model import ViewerModel
     from napari.layers import Layer
     from napari.utils.events import Event
 
@@ -26,9 +27,11 @@ class VispyBaseOverlay:
     vispy backend, translating them into rendering.
     """
 
+    overlay: Overlay
+
     def __init__(self, *, overlay, node, parent=None) -> None:
         super().__init__()
-        self.overlay: Overlay = overlay
+        self.overlay = overlay
 
         self.node = node
         self.node.order = self.overlay.order
@@ -79,7 +82,10 @@ class VispyCanvasOverlay(VispyBaseOverlay):
     to update the position of all canvas overlays whenever necessary
     """
 
+    overlay: CanvasOverlay
+
     def __init__(self, *, overlay, node, parent=None) -> None:
+
         super().__init__(overlay=overlay, node=node, parent=parent)
         self.x_size = 0.0
         self.y_size = 0.0
@@ -87,10 +93,8 @@ class VispyCanvasOverlay(VispyBaseOverlay):
         self.overlay.events.position.connect(self._on_position_change)
         self.overlay.events.box.connect(self._on_box_change)
         self.overlay.events.box_color.connect(self._on_box_change)
-        # ensure to connect last cause we need to know the primary node's visiblity
-        self.overlay.events.visible.connect(
-            self._on_box_change, position='last'
-        )
+        # use lower priority cause we need to know the primary node's visibility
+        self.overlay.events.visible.connect(self._on_box_change, priority=-1)
         get_settings().appearance.events.theme.connect(self._on_box_change)
         self.canvas_position_callback = lambda: None
 
@@ -170,12 +174,16 @@ class VispySceneOverlay(VispyBaseOverlay):
     Vispy overlay backend for overlays that live in scene (2D or 3D) space.
     """
 
+    overlay: SceneOverlay
+
     def __init__(self, *, overlay, node, parent=None) -> None:
         super().__init__(overlay=overlay, node=node, parent=parent)
         self.node.transform = MatrixTransform()
 
 
 class LayerOverlayMixin:
+    layer: Layer
+
     def __init__(self, *, layer: Layer, overlay, node, parent=None) -> None:
         super().__init__(
             node=node,
@@ -196,6 +204,8 @@ class LayerOverlayMixin:
 
 
 class ViewerOverlayMixin:
+    viewer: ViewerModel
+
     def __init__(self, *, viewer, overlay, node, parent=None) -> None:
         super().__init__(
             node=node,
