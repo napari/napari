@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 from vispy.visuals.transforms import MatrixTransform, STTransform
 
 from napari._vispy.utils.gl import BLENDING_MODES
+from napari.components.overlays import Overlay
 from napari.utils.events import disconnect_events
 
 if TYPE_CHECKING:
@@ -22,7 +23,7 @@ class VispyBaseOverlay:
 
     def __init__(self, *, overlay, node, parent=None) -> None:
         super().__init__()
-        self.overlay = overlay
+        self.overlay: Overlay = overlay
 
         self.node = node
         self.node.order = self.overlay.order
@@ -50,7 +51,9 @@ class VispyBaseOverlay:
         self._on_blending_change()
 
     def close(self) -> None:
-        disconnect_events(self.overlay.events, self)
+        self.overlay.events.visible.disconnect(self._on_visible_change)
+        self.overlay.events.opacity.disconnect(self._on_opacity_change)
+        self.overlay.events.blending.disconnect(self._on_blending_change)
         self.node.transforms = MatrixTransform()
         self.node.parent = None
 

@@ -3,8 +3,9 @@ from string import Formatter
 from typing import Any, Literal, Protocol, Union, runtime_checkable
 
 import numpy as np
+from pydantic import GetCoreSchemaHandler, TypeAdapter
+from pydantic_core import core_schema
 
-from napari._pydantic_compat import parse_obj_as
 from napari.layers.utils.style_encoding import (
     StyleEncoding,
     _ConstantStyleEncoding,
@@ -30,12 +31,17 @@ class StringEncoding(StyleEncoding[StringValue, StringArray], Protocol):
     """Encodes strings from layer features."""
 
     @classmethod
-    def __get_validators__(cls):
-        yield cls.validate
+    def __get_pydantic_core_schema__(
+        cls, source, handler: GetCoreSchemaHandler
+    ):
+        return core_schema.no_info_after_validator_function(
+            cls.validate, core_schema.any_schema()
+        )
 
     @classmethod
     def validate(
-        cls, value: Union['StringEncoding', dict, str, Sequence[str]]
+        cls,
+        value: Union['StringEncoding', dict, str, Sequence[str]],
     ) -> 'StringEncoding':
         """Validates and coerces a value to a StringEncoding.
 
@@ -63,13 +69,14 @@ class StringEncoding(StyleEncoding[StringValue, StringArray], Protocol):
         if isinstance(value, StringEncoding):
             return value
         if isinstance(value, dict):
-            return parse_obj_as(
+            return TypeAdapter(
                 Union[
                     ConstantStringEncoding,
                     ManualStringEncoding,
                     DirectStringEncoding,
                     FormatStringEncoding,
-                ],
+                ]
+            ).validate_python(
                 value,
             )
         if isinstance(value, str):
@@ -78,7 +85,7 @@ class StringEncoding(StyleEncoding[StringValue, StringArray], Protocol):
             return DirectStringEncoding(feature=value)
         if isinstance(value, Sequence):
             return ManualStringEncoding(array=value, default=DEFAULT_STRING)
-        raise TypeError(
+        raise ValueError(
             trans._(
                 'value should be a StringEncoding, a dict, a string, a sequence of strings, or None',
                 deferred=True,
