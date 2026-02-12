@@ -87,9 +87,9 @@ def _has_visible_text(layer: Points | Shapes) -> bool:
 
 
 @lru_cache
-def _load_font(size: float = 10):
+def _load_font(size: int = 10):
     # TODO: font size can only be int here :/
-    return FreeTypeFont(str(FONT_FILE), size=int(size))
+    return FreeTypeFont(str(FONT_FILE), size=size)
 
 
 def get_text_width_height(text: Text) -> tuple[float, float]:
