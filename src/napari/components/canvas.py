@@ -1,3 +1,5 @@
+from typing import Any
+
 import numpy as np
 from pydantic import Field, PrivateAttr
 
@@ -68,7 +70,7 @@ class Canvas(EventedModel):
     )
     _size: tuple[int, int] = PrivateAttr((800, 600))
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
 
         self._update_viewer_grid()
@@ -92,10 +94,10 @@ class Canvas(EventedModel):
         )
 
     @property
-    def size(self):
+    def size(self) -> tuple[int, int]:
         return self._size
 
-    def viewbox_size(self, n_layers):
+    def viewbox_size(self, n_layers: int) -> tuple[int, int]:
         """Get the size of a single viewbox (whether grid is enabled or not).
 
         If grid.border_width > 0, that's accounted for too.
@@ -110,7 +112,7 @@ class Canvas(EventedModel):
             total_gap_space = spacing_pixels * (grid_shape - 1)
             available_space = self.size - total_gap_space
             viewbox_size = available_space / grid_shape
-        return viewbox_size
+        return tuple(viewbox_size)
 
     @property
     def scale_bar(self) -> ScaleBarOverlay:
@@ -132,7 +134,7 @@ class Canvas(EventedModel):
     def _brush_circle_overlay(self) -> BrushCircleOverlay:
         return self._overlays['brush_circle']  # type: ignore[return-value]
 
-    def _update_viewer_grid(self):
+    def _update_viewer_grid(self) -> None:
         """Keep viewer grid settings up to date with settings values."""
 
         settings = get_settings()
@@ -145,7 +147,7 @@ class Canvas(EventedModel):
         self.grid.spacing = settings.application.grid_spacing
 
     @property
-    def background_color(self):
+    def background_color(self) -> ColorValue:
         if self.background_color_override is not None:
             return self.background_color_override
 
