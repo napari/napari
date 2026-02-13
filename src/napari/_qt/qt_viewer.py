@@ -257,7 +257,7 @@ class QtViewer(QSplitter):
             self._add_layer(layer)
 
         # set up welcome screen
-        viewer.welcome_screen.visible = False
+        viewer.canvas.welcome.visible = False
         if tips is not None:
             viewer.canvas.welcome.tips = tips
 
