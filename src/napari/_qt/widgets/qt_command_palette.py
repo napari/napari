@@ -382,7 +382,7 @@ class QCommandList(QtW.QListView):
             action_names,
             limit=100,
             score_cutoff=60,
-            scorer=fuzz.WRatio,
+            scorer=fuzz.partial_token_sort_ratio,
             processor=utils.default_process,
         ):
             if score > 0:
