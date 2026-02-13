@@ -69,7 +69,7 @@ donfig==0.8.1.post1
     # via zarr
 executing==2.2.1
     # via stack-data
-filelock==3.20.3
+filelock==3.21.2
     # via
     #   torch
     #   virtualenv
@@ -311,7 +311,7 @@ pint==0.25.2
     #   napari-metadata
 pip==26.0.1
     # via napari-plugin-manager
-platformdirs==4.5.1
+platformdirs==4.7.0
     # via
     #   jupyter-core
     #   npe2
