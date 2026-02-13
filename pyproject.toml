@@ -128,7 +128,7 @@ optional-numba = [
 ]
 optional = [
     "napari[optional-base,optional-numba,bermuda]",
-    "triangle",
+    "triangle; python_version <= '3.13'",
 ]
 bermuda = [
     "bermuda>=0.1.5",
