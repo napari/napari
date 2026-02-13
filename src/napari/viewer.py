@@ -269,7 +269,7 @@ class Viewer(ViewerModel):
         # Disconnect changes to dims before removing layers one-by-one
         # to avoid any unnecessary slicing.
         disconnect_events(self.dims.events, self)
-        self.welcome_screen.visible = False
+        self.canvas.welcome.visible = False
         # Remove all the layers and overlays from the viewer
         self.layers.clear()
         # Close the main window
