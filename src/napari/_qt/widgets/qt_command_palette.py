@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 from collections.abc import Iterator, Mapping
-from difflib import SequenceMatcher
 from typing import TYPE_CHECKING, Any, cast
 
 from app_model.types import CommandRule, MenuItem
 from qtpy import QtCore, QtGui, QtWidgets as QtW
 from qtpy.QtCore import Qt, Signal
-from rapidfuzz import fuzz, process
+from rapidfuzz import fuzz, process, utils
 
 from napari._app_model import get_app_model
 from napari._app_model.context._context import get_context
@@ -382,9 +381,9 @@ class QCommandList(QtW.QListView):
             input_text,
             action_names,
             limit=100,
-            score_cutoff=50,
-            scorer=fuzz.partial_token_sort_ratio,
-            processor=lambda x: x.lower(),
+            score_cutoff=60,
+            scorer=fuzz.WRatio,
+            processor=utils.default_process,
         ):
             if score > 0:
                 if _enabled(command, self._app_model_context):
@@ -430,29 +429,56 @@ def _iter_highlight_slices(
     It's not a correct representation of what the fuzzy matching does,
     but should help visualize a bit what's being matched.
     """
-    matcher = SequenceMatcher(None, query.lower(), text.lower())
-    blocks = matcher.get_matching_blocks()
+    len_query = len(query)
+    len_text = len(text)
+
+    if min_len > len_query:
+        yield text, False
+        return
+
+    substrings = {
+        query.lower()[i:j]
+        for i in range(len_query)
+        for j in range(i + min_len, len_query + 1)
+    }
+
+    matches = []
 
     pos = 0
+    while pos < len_text:
+        longest = 0
 
-    for block in blocks:
-        if block.size < min_len:
-            continue
+        # prioritize matching longest substring first
+        for length in range(len_query, min_len - 1, -1):
+            if pos + length > len_text:
+                # overshooting
+                continue
+            if text.lower()[pos : pos + length] in substrings:
+                longest = length
+                break
 
-        start = block.b
-        end = start + block.size
+        if longest:
+            matches.append((pos, pos + longest))
+            pos += longest
+        else:
+            pos += 1
 
+    if not matches:
+        yield text, False
+        return
+
+    # yield slices from original text
+    pos = 0
+    for start, end in matches:
         if pos < start:
             # yield the unmatched region before this one
             yield text[pos:start], False
-
         # now we're at an actual matched region
         yield text[start:end], True
-
         pos = end
 
     # trailing is unmatched
-    if pos < len(text):
+    if pos < len_text:
         yield text[pos:], False
 
 
