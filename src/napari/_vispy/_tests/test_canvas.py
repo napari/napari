@@ -178,14 +178,12 @@ def test_tiling_canvas_overlays(qt_viewer):
     viewer.canvas.text.visible = True
     viewer.canvas.text.text = 'test'
     viewer.canvas.scale_bar.position = 'bottom_left'
-    viewer.canvas.text_overlay.position = 'bottom_left'
+    viewer.canvas.text.position = 'bottom_left'
 
     vispy_scale_bar = canvas._canvas_overlay_to_visual[
         viewer.canvas.scale_bar
     ][0]
-    vispy_text_overlay = canvas._canvas_overlay_to_visual[viewer.canvas.text][
-        0
-    ]
+    vispy_text = canvas._canvas_overlay_to_visual[viewer.canvas.text][0]
 
     padding = 10.0  # currently hardcoded
     y_max, x_max = canvas.size
@@ -193,8 +191,8 @@ def test_tiling_canvas_overlays(qt_viewer):
     scale_bar_y_size = vispy_scale_bar.y_size + padding
     scale_bar_x_size = vispy_scale_bar.x_size + padding
 
-    text_overlay_y_size = vispy_text_overlay.y_size + padding
-    text_overlay_x_size = vispy_text_overlay.x_size + padding
+    text_y_size = vispy_text.y_size + padding
+    text_x_size = vispy_text.x_size + padding
 
     # check vertical tiling works on the bottom right
     viewer.canvas.scale_bar.position = 'bottom_right'
@@ -202,13 +200,13 @@ def test_tiling_canvas_overlays(qt_viewer):
     canvas._update_overlay_canvas_positions()
 
     np.testing.assert_almost_equal(
-        vispy_text_overlay.node.transform.translate[0],
-        x_max - text_overlay_x_size,
+        vispy_text.node.transform.translate[0],
+        x_max - text_x_size,
         decimal=3,
     )
     np.testing.assert_almost_equal(
-        vispy_text_overlay.node.transform.translate[1],
-        y_max - text_overlay_y_size - scale_bar_y_size,
+        vispy_text.node.transform.translate[1],
+        y_max - text_y_size - scale_bar_y_size,
         decimal=3,
     )
 
@@ -216,13 +214,13 @@ def test_tiling_canvas_overlays(qt_viewer):
     viewer.canvas.scale_bar.position = 'top_right'
     canvas._update_overlay_canvas_positions()
     np.testing.assert_almost_equal(
-        vispy_text_overlay.node.transform.translate[0],
-        x_max - text_overlay_x_size,
+        vispy_text.node.transform.translate[0],
+        x_max - text_x_size,
         decimal=3,
     )
     np.testing.assert_almost_equal(
-        vispy_text_overlay.node.transform.translate[1],
-        y_max - text_overlay_y_size,
+        vispy_text.node.transform.translate[1],
+        y_max - text_y_size,
         decimal=3,
     )
 
@@ -230,12 +228,12 @@ def test_tiling_canvas_overlays(qt_viewer):
     viewer.canvas.text.position = 'top_right'
     canvas._update_overlay_canvas_positions()
     np.testing.assert_almost_equal(
-        vispy_text_overlay.node.transform.translate[0],
-        x_max - text_overlay_x_size - scale_bar_x_size,
+        vispy_text.node.transform.translate[0],
+        x_max - text_x_size - scale_bar_x_size,
         decimal=3,
     )
     np.testing.assert_almost_equal(
-        vispy_text_overlay.node.transform.translate[1],
+        vispy_text.node.transform.translate[1],
         0 + padding,
         decimal=3,
     )
