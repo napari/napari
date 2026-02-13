@@ -19,7 +19,7 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
     def __init__(self, *, viewer, overlay, parent=None) -> None:
         self._target_length = 150.0
         self._current_length = 150.0
-        self._scale = 1
+        self._scale = 1.0
         self._unit = pint.Quantity('1 pixel')
 
         super().__init__(

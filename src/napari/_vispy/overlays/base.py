@@ -100,7 +100,7 @@ class VispyCanvasOverlay(VispyBaseOverlay):
 
         self.box = Rectangle(center=(0, 0), border_width=0)
 
-    def _on_box_change(self):
+    def _on_box_change(self) -> None:
         if not self.overlay.box or not self.node.visible:
             self.box.parent = None
             return
