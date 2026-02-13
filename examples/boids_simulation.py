@@ -22,9 +22,8 @@ the gui via QTWidgets and napari's thread_worker.
 """
 
 try:
+    import dragon  # isort:skip
     import multiprocessing as mp  # Must be after import of dragon
-
-    import dragon
 
     mp.set_start_method("dragon")
 except (ImportError, ValueError):
@@ -277,6 +276,9 @@ def action_terminate_button(worker):
 
 
 def add_execution_control_buttons(viewer, worker):
+    widget = qtpy.QtWidgets.QWidget()
+    layout = qtpy.QtWidgets.QVBoxLayout()
+    widget.setLayout(layout)
     start_button = qtpy.QtWidgets.QPushButton("Start Sim")
     start_button.clicked.connect(partial(action_start_button, worker))
     pause_button = qtpy.QtWidgets.QPushButton("Pause")
@@ -288,7 +290,8 @@ def add_execution_control_buttons(viewer, worker):
     all_buttons = (start_button, pause_button, resume_button, stop_button)
     for button in all_buttons:
         worker.finished.connect(button.clicked.disconnect)
-        viewer.window.add_dock_widget(button)
+        layout.addWidget(button)
+    viewer.window.add_dock_widget(widget)
     return all_buttons
 
 
