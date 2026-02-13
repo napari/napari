@@ -72,6 +72,6 @@ uv pip compile --python-version ${pyv} --output-file ${constraints}/constraints_
 done
 
 
-uv pip compile --python-version 3.14 --output-file ${constraints}/constraints_py3.14_examples.txt "${upgrade_flag[@]}" ${pyproject_toml} ${constraints}/version_denylist.txt ${constraints}/version_denylist_examples.txt --group gallery "${flags[@]}"
-uv pip compile --python-version 3.14 --output-file ${constraints}/constraints_py3.14_docs.txt "${upgrade_flag[@]}" ${pyproject_toml} ${constraints}/version_denylist.txt ${constraints}/version_denylist_examples.txt --group docs "${flags[@]}"
+uv pip compile --python-version 3.12 --output-file ${constraints}/constraints_py3.12_examples.txt "${upgrade_flag[@]}" ${pyproject_toml} ${constraints}/version_denylist.txt ${constraints}/version_denylist_examples.txt --group gallery "${flags[@]}"
+uv pip compile --python-version 3.12 --output-file ${constraints}/constraints_py3.12_docs.txt "${upgrade_flag[@]}" ${pyproject_toml} ${constraints}/version_denylist.txt ${constraints}/version_denylist_examples.txt --group docs "${flags[@]}"
 uv pip compile --python-version 3.14 --output-file resources/requirements_mypy.txt "${upgrade_flag[@]}" resources/requirements_mypy.in

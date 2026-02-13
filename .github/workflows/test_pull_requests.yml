@@ -189,9 +189,9 @@ jobs:
     uses: ./.github/workflows/reusable_run_tox_test.yml
     needs: test_initial
     with:
-        toxenv: py314-linux-pyqt6-examples-cov
+        toxenv: py312-linux-pyqt6-examples-cov
         timeout: 60
-        python_version: 3.14
+        python_version: 3.12
         constraints_suffix: _examples
         coverage: cov
 
