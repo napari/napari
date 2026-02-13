@@ -187,12 +187,12 @@ fsspec==2026.1.0
     #   s3fs
     #   tifffile
     #   torch
+gdown==5.2.1
+    # via napari (pyproject.toml:docs)
 geff==1.1.4.1.1
     # via trackastra
 geff-spec==1.1.1
     # via geff
-gdown==5.2.1
-    # via napari (pyproject.toml:docs)
 glasbey==0.3.0
     # via napari (pyproject.toml:docs)
 google-crc32c==1.8.0
@@ -218,10 +218,10 @@ idna==3.11
     #   yarl
 imagecodecs==2026.1.14
     # via
-    #   tifffile
-    #   trackastra
     #   bioio-ome-tiff
     #   bioio-tifffile
+    #   tifffile
+    #   trackastra
 imageio==2.37.2
     # via
     #   napari (pyproject.toml)
@@ -572,7 +572,7 @@ partsegcore-compiled-backend==0.15.14
     # via napari (pyproject.toml)
 pexpect==4.9.0
     # via ipython
-pillow==12.1.0
+pillow==12.1.1
     # via
     #   napari (pyproject.toml)
     #   bioio-imageio
@@ -643,9 +643,9 @@ pydantic==2.12.5
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
     #   app-model
+    #   bioio-ome-tiff
     #   geff
     #   geff-spec
-    #   bioio-ome-tiff
     #   npe2
     #   ome-types
     #   pydantic-extra-types
@@ -667,6 +667,7 @@ pygetwindow==0.0.9
     # via pyautogui
 pygments==2.19.2
     # via
+    #   napari (pyproject.toml)
     #   accessible-pygments
     #   ipython
     #   ipython-pygments-lexers
@@ -745,6 +746,7 @@ pytweening==1.2.0
     # via pyautogui
 pyyaml==6.0.3
     # via
+    #   napari (pyproject.toml)
     #   bioio-ome-tiff
     #   dask
     #   distributed
@@ -923,6 +925,7 @@ threadpoolctl==3.6.0
 tifffile==2026.1.28
     # via
     #   napari (pyproject.toml)
+    #   napari (pyproject.toml:docs)
     #   bioio-ome-tiff
     #   bioio-tifffile
     #   scikit-image
@@ -949,9 +952,10 @@ tornado==6.5.4
 tqdm==4.67.2
     # via
     #   napari (pyproject.toml)
+    #   gdown
     #   trackastra
 trackastra==0.5.2
-    # via napari (pyproject.toml)
+    # via napari (pyproject.toml:docs)
 traitlets==5.14.3
     # via
     #   ipykernel
@@ -1061,9 +1065,9 @@ zarr==3.1.5
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
     #   napari (pyproject.toml:docs)
+    #   bioio-ome-zarr
     #   geff
     #   geff-spec
-    #   bioio-ome-zarr
     #   kerchunk
     #   ndevio
     #   tifffile

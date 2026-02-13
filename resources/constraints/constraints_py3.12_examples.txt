@@ -67,6 +67,7 @@ dask==2026.1.2
     #   napari (pyproject.toml)
     #   napari (pyproject.toml:gallery)
     #   distributed
+    #   trackastra
 debugpy==1.8.20
     # via ipykernel
 decorator==5.2.1
@@ -107,14 +108,12 @@ fsspec==2026.1.0
     #   napari (pyproject.toml)
     #   dask
     #   torch
+gdown==5.2.1
+    # via napari (pyproject.toml:gallery)
 geff==1.1.4.1.1
     # via trackastra
 geff-spec==1.1.1
     # via geff
-glasbey==0.3.0
-    # via napari (pyproject.toml)
-gdown==5.2.1
-    # via napari (pyproject.toml:gallery)
 glasbey==0.3.0
     # via napari (pyproject.toml:gallery)
 google-crc32c==1.8.0
@@ -171,6 +170,7 @@ joblib==1.5.3
     # via
     #   nilearn
     #   scikit-learn
+    #   trackastra
 jsonschema==4.26.0
     # via napari (pyproject.toml)
 jsonschema-specifications==2025.9.1
@@ -266,6 +266,7 @@ numba==0.63.1
     # via
     #   napari (pyproject.toml)
     #   glasbey
+    #   trackastra
 numcodecs==0.16.5
     # via
     #   geff
@@ -281,11 +282,9 @@ numpy==2.3.5
     #   geff
     #   geff-spec
     #   glasbey
-    #   h5py
-    #   imagecodecs
-    #   glasbey
     #   h5netcdf
     #   h5py
+    #   imagecodecs
     #   imageio
     #   matplotlib
     #   meshio
@@ -373,6 +372,7 @@ pandas==3.0.0
     # via
     #   napari (pyproject.toml)
     #   nilearn
+    #   trackastra
     #   xarray
 parso==0.8.5
     # via jedi
@@ -382,7 +382,7 @@ partsegcore-compiled-backend==0.15.14
     # via napari (pyproject.toml)
 pexpect==4.9.0
     # via ipython
-pillow==12.1.0
+pillow==12.1.1
     # via
     #   napari (pyproject.toml)
     #   imageio
@@ -462,6 +462,7 @@ pygetwindow==0.0.9
     # via pyautogui
 pygments==2.19.2
     # via
+    #   napari (pyproject.toml)
     #   ipython
     #   ipython-pygments-lexers
     #   pytest
@@ -533,6 +534,7 @@ pytweening==1.2.0
     # via pyautogui
 pyyaml==6.0.3
     # via
+    #   napari (pyproject.toml)
     #   dask
     #   distributed
     #   donfig
@@ -578,7 +580,9 @@ rpds-py==0.30.0
     #   jsonschema
     #   referencing
 scikit-image==0.26.0
-    # via napari (pyproject.toml)
+    # via
+    #   napari (pyproject.toml)
+    #   trackastra
 scikit-learn==1.8.0
     # via
     #   glasbey
@@ -589,6 +593,7 @@ scipy==1.17.0
     #   nilearn
     #   scikit-image
     #   scikit-learn
+    #   trackastra
 setuptools==80.10.2
     # via torch
 shellingham==1.5.4
@@ -626,6 +631,7 @@ threadpoolctl==3.6.0
 tifffile==2026.1.28
     # via
     #   napari (pyproject.toml)
+    #   napari (pyproject.toml:gallery)
     #   scikit-image
 tomli-w==1.2.0
     # via npe2
@@ -650,9 +656,10 @@ tornado==6.5.4
 tqdm==4.67.2
     # via
     #   napari (pyproject.toml)
+    #   gdown
     #   trackastra
 trackastra==0.5.2
-    # via napari (pyproject.toml)
+    # via napari (pyproject.toml:gallery)
 traitlets==5.14.3
     # via
     #   ipykernel
@@ -721,6 +728,7 @@ zarr==3.1.5
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
+    #   napari (pyproject.toml:gallery)
     #   geff
     #   geff-spec
 zict==3.0.0
