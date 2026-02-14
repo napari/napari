@@ -530,7 +530,7 @@ filterwarnings = [
   "ignore:Use Group.create_array instead.",
   "ignore:'asyncio.WindowsProactorEventLoopPolicy' is deprecated and slated for removal in Python 3.16:DeprecationWarning", # windows ipykernel issue #8666
   "ignore:'asyncio.WindowsSelectorEventLoopPolicy' is deprecated and slated for removal in Python 3.16:DeprecationWarning", # windows ipykernel issue #8666
-  "ignore:'asyncio.get_event_loop_policy' is deprecated and slated for removal in Python 3.16::DeprecationWarning",  # windows ipykernel issue #8666
+  "ignore:'asyncio.get_event_loop_policy' is deprecated and slated for removal in Python 3.16:DeprecationWarning",  # windows ipykernel issue #8666
 ]
 markers = [
     "examples: Test of examples",
