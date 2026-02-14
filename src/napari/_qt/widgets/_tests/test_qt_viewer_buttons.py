@@ -345,7 +345,7 @@ def test_layer_buttons_checked_on_selection(qt_layer_buttons):
     data_layer = viewer.add_image(np.random.random((10, 15)))
 
     # Selecting a layer should check the buttons (visual indicator)
-    viewer.layers.selection.active = data_layer
+    viewer.layers.selection = [data_layer]
     assert layer_buttons.newPointsButton.isChecked()
     assert layer_buttons.newShapesButton.isChecked()
 
