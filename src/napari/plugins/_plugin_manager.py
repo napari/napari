@@ -14,9 +14,9 @@ from napari_plugin_engine import (
     PluginManager as PluginManager,
 )
 from napari_plugin_engine.hooks import HookCaller
+from pydantic import ValidationError
 from typing_extensions import TypedDict
 
-from napari._pydantic_compat import ValidationError
 from napari.plugins import hook_specifications
 from napari.settings import get_settings
 from napari.types import AugmentedWidget, LayerData, SampleDict, WidgetCallable
@@ -217,11 +217,14 @@ class NapariPluginManager(PluginManager):
                         hook_impl = list(
                             filter(
                                 # plugin name has to match
-                                lambda impl: impl.plugin_name == plugin
-                                and (
-                                    # if we have a hook_impl_name it must match
-                                    not hook_impl_name
-                                    or impl.function.__name__ == hook_impl_name
+                                lambda impl: (
+                                    impl.plugin_name == plugin
+                                    and (
+                                        # if we have a hook_impl_name it must match
+                                        not hook_impl_name
+                                        or impl.function.__name__
+                                        == hook_impl_name
+                                    )
                                 ),
                                 hook_impls,
                             )
