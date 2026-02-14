@@ -6,6 +6,7 @@ from napari._vispy.overlays.base import (
 from napari._vispy.visuals.text import Text
 from napari.components._viewer_constants import CanvasPosition
 from napari.components.overlays import TextOverlay
+from napari.settings import get_settings
 
 
 class _VispyBaseTextOverlay(VispyCanvasOverlay):
@@ -23,6 +24,8 @@ class _VispyBaseTextOverlay(VispyCanvasOverlay):
         self.overlay.events.box.connect(self._on_color_change)
         self.overlay.events.box_color.connect(self._on_color_change)
         self.overlay.events.font_size.connect(self._on_font_size_change)
+
+        get_settings().appearance.events.theme.connect(self._on_color_change)
 
     def _connect_events(self):
         pass

@@ -43,8 +43,11 @@ class VispyBaseOverlay:
         if parent is not None:
             self.node.parent = parent
 
+    def _should_be_visible(self) -> bool:
+        return self.overlay.visible
+
     def _on_visible_change(self) -> None:
-        self.node.visible = self.overlay.visible
+        self.node.visible = self._should_be_visible()
 
     def _on_opacity_change(self) -> None:
         self.node.opacity = self.overlay.opacity
@@ -93,12 +96,14 @@ class VispyCanvasOverlay(VispyBaseOverlay):
         self.overlay.events.position.connect(self._on_position_change)
         self.overlay.events.box.connect(self._on_box_change)
         self.overlay.events.box_color.connect(self._on_box_change)
-        # use lower priority cause we need to know the primary node's visibility
-        self.overlay.events.visible.connect(self._on_box_change, priority=-1)
         get_settings().appearance.events.theme.connect(self._on_box_change)
         self.canvas_position_callback = lambda: None
 
         self.box = Rectangle(center=(0, 0), border_width=0)
+
+    def _on_visible_change(self) -> None:
+        super()._on_visible_change()
+        self._on_box_change()
 
     def _on_box_change(self) -> None:
         if not self.overlay.box or not self.node.visible:
@@ -193,10 +198,12 @@ class LayerOverlayMixin:
         self.layer = layer
         # need manual connection here because these overlays are not necessarily
         # always a child of the actual vispy node of the layer (eg, canvas overlays)
-        self.layer.events.visible.connect(self._on_visible_change)
+        self.layer.events.visible.connect(
+            self._on_visible_change, position='last'
+        )
 
-    def _on_visible_change(self) -> None:
-        self.node.visible = self.overlay.visible and self.layer.visible
+    def _should_be_visible(self) -> None:
+        return self.overlay.visible and self.layer.visible
 
     def close(self) -> None:
         disconnect_events(self.layer.events, self)
