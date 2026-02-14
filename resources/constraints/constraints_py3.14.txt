@@ -297,7 +297,7 @@ partsegcore-compiled-backend==0.15.14
     # via napari (pyproject.toml)
 pexpect==4.9.0
     # via ipython
-pillow==12.1.0
+pillow==12.1.1
     # via
     #   napari (pyproject.toml)
     #   imageio
@@ -370,6 +370,7 @@ pygetwindow==0.0.9
     # via pyautogui
 pygments==2.19.2
     # via
+    #   napari (pyproject.toml)
     #   ipython
     #   ipython-pygments-lexers
     #   pytest
@@ -439,6 +440,7 @@ pytweening==1.2.0
     # via pyautogui
 pyyaml==6.0.3
     # via
+    #   napari (pyproject.toml)
     #   dask
     #   donfig
     #   npe2

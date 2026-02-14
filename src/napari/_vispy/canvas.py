@@ -911,6 +911,8 @@ class VispyCanvas:
 
         else:
             vispy_overlay.node.parent = parent
+            if isinstance(overlay, CanvasOverlay):
+                vispy_overlay._on_box_change()
 
     def _update_viewer_overlays(self):
         """Update the viewer overlay visuals.
@@ -1052,6 +1054,8 @@ class VispyCanvas:
                     )
             else:
                 vispy_overlay.node.parent = parent
+                if isinstance(overlay, CanvasOverlay):
+                    vispy_overlay._on_box_change()
 
         self._update_overlay_canvas_positions()
 
