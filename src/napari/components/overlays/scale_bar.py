@@ -24,7 +24,7 @@ class ScaleBarOverlay(CanvasOverlay):
     background_color : np.ndarray
         Background color of canvas. If scale bar is not colored
         then it has the color opposite of this color.
-    font_size : int
+    font_size : float
         The font size (in points) of the text.
     box : bool
         If background box is visible or not.
@@ -50,6 +50,6 @@ class ScaleBarOverlay(CanvasOverlay):
     colored: bool = False
     color: ColorValue = Field(default_factory=lambda: ColorValue([1, 0, 1, 1]))
     ticks: bool = True
-    font_size: int = 10
+    font_size: float = 10
     unit: str | None = None
     length: float | None = None
