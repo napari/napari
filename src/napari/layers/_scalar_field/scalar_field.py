@@ -198,7 +198,7 @@ class ScalarFieldBase(Layer, ABC):
         opacity=1.0,
         plane=None,
         projection_mode='none',
-        rendering='mip',
+        rendering='attenuated_mip',
         rotate=None,
         scale=None,
         shear=None,

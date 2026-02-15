@@ -1,3 +1,5 @@
+import math
+
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QComboBox, QWidget
 from superqt import QLabeledDoubleSlider
@@ -13,6 +15,65 @@ from napari.layers.image._image_constants import (
 )
 from napari.utils.events.event_utils import connect_setattr
 from napari.utils.translations import trans
+
+_LOG_VALUE_MIN = 0.001
+_LOG_VALUE_MAX = 1.0
+
+
+def _log_value_to_slider_position(
+    value: float,
+    log_value_min: float = _LOG_VALUE_MIN,
+    log_value_max: float = _LOG_VALUE_MAX,
+) -> float:
+    """Convert a positive logarithmic value to a linear slider position."""
+    if value <= 0:
+        return 0.0
+    value = max(value, log_value_min)
+    value = min(value, log_value_max)
+    return math.log(value / log_value_min) / math.log(
+        log_value_max / log_value_min
+    )
+
+
+def _slider_position_to_log_value(
+    position: float,
+    log_value_min: float = _LOG_VALUE_MIN,
+    log_value_max: float = _LOG_VALUE_MAX,
+) -> float:
+    """Convert a linear slider position to a positive logarithmic value."""
+    if position <= 0:
+        return 0.0
+    return log_value_min * (log_value_max / log_value_min) ** position
+
+
+class _LogMappedQLabeledDoubleSlider(QLabeledDoubleSlider):
+    """A `QLabeledDoubleSlider` that displays/edits values on a log scale.
+
+    The internal slider position remains linear in [0, 1], while the public
+    value displayed and edited in the label is in [0, _LOG_VALUE_MAX]
+    mapped logarithmically for values > 0.
+    """
+
+    def __init__(self, orientation: Qt.Orientation, parent: QWidget) -> None:
+        super().__init__(orientation, parent=parent)
+        self.setMinimum(0)
+        self.setMaximum(_LOG_VALUE_MAX)
+        self.setSingleStep(_LOG_VALUE_MIN)
+        self.setDecimals(3)
+
+    def _setValue(self, value: float) -> None:
+        self._slider.setValue(_log_value_to_slider_position(float(value)))
+
+    def _on_slider_value_changed(self, v: float) -> None:
+        mapped_value = _slider_position_to_log_value(v)
+        self._label.setValue(mapped_value)
+        self.valueChanged.emit(mapped_value)
+
+    def setValue(self, value: float) -> None:
+        self._slider.setValue(_log_value_to_slider_position(float(value)))
+
+    def value(self) -> float:
+        return _slider_position_to_log_value(self._slider.value())
 
 
 class QtImageRenderControl(QtWidgetControlsBase):
@@ -78,16 +139,14 @@ class QtImageRenderControl(QtWidgetControlsBase):
 
         self.iso_threshold_label = QtWrappedLabel(trans._('iso threshold:'))
 
-        sld = QLabeledDoubleSlider(Qt.Orientation.Horizontal, parent=parent)
+        sld = _LogMappedQLabeledDoubleSlider(
+            Qt.Orientation.Horizontal, parent=parent
+        )
         sld.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        sld.setMinimum(0)
-        sld.setMaximum(0.5)
-        sld.setSingleStep(0.001)
         sld.setValue(self._layer.attenuation)
-        sld.setDecimals(3)
-        connect_setattr(sld.valueChanged, self._layer, 'attenuation')
-        self._callbacks.append(
-            attr_to_settr(self._layer, 'attenuation', sld, 'setValue')
+        sld.valueChanged.connect(self._on_attenuation_slider_moved)
+        self._layer.events.attenuation.connect(
+            self._on_layer_attenuation_change
         )
         self.attenuation_slider = sld
 
@@ -156,6 +215,15 @@ class QtImageRenderControl(QtWidgetControlsBase):
         attenuation_visible = rendering == ImageRendering.ATTENUATED_MIP
         self.attenuation_slider.setVisible(attenuation_visible)
         self.attenuation_label.setVisible(attenuation_visible)
+
+    def _on_attenuation_slider_moved(self, value: float) -> None:
+        """Receive attenuation value from log slider and set it on the layer."""
+        self._layer.attenuation = value
+
+    def _on_layer_attenuation_change(self) -> None:
+        """Receive layer attenuation change and update slider position."""
+        with qt_signals_blocked(self.attenuation_slider):
+            self.attenuation_slider.setValue(self._layer.attenuation)
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
         return [
