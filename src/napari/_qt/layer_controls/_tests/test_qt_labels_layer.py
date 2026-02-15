@@ -102,6 +102,28 @@ def test_changing_colormap_updates_colorbox(make_labels_controls):
     )
 
 
+def test_colorbox_updates_when_show_selected_label_enabled(
+    make_labels_controls,
+):
+    layer, qtctrl = make_labels_controls(colormap=_COLOR)
+    color_box = qtctrl._label_control.colorbox
+    layer.show_selected_label = True
+
+    layer.selected_label = 1
+    color_box.paintEvent(None)
+    np.testing.assert_equal(
+        color_box.color,
+        np.round(np.asarray(layer.colormap.map(1)) * 255),
+    )
+
+    layer.selected_label = 2
+    color_box.paintEvent(None)
+    np.testing.assert_equal(
+        color_box.color,
+        np.round(np.asarray(layer.colormap.map(2)) * 255),
+    )
+
+
 def test_selected_color_checkbox(make_labels_controls):
     """Tests that the 'selected color' checkbox sets the 'show_selected_label' property properly."""
     layer, qtctrl = make_labels_controls()
