@@ -625,6 +625,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         layers_extent = self.layers.extent
         extent = layers_extent.world
         scale = layers_extent.step
+        units = layers_extent.units
         scene_size = extent[1] - extent[0]
         corner = extent[0]
         shape = [
@@ -633,7 +634,9 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         ]
         dtype_str = get_settings().application.new_labels_dtype
         empty_labels = np.zeros(shape, dtype=dtype_str)
-        self.add_labels(empty_labels, translate=np.array(corner), scale=scale)  # type: ignore[attr-defined]
+        self.add_labels(  # type: ignore[attr-defined]
+            empty_labels, translate=np.array(corner), scale=scale, units=units
+        )
         # We define `add_labels` dynamically, so mypy doesn't know about it.
 
     def _on_layer_reload(self, event: Event) -> None:
@@ -696,6 +699,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             # TODO: can be optimized with dims.update(), but events need fixing
             self.dims.ndim = len(ranges)
             self.dims.range = ranges
+            self.dims.units = self.layers._units
 
         new_dim = self.dims.ndim
         dim_diff = new_dim - len(self.cursor.position)
