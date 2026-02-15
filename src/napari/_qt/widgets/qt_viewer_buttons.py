@@ -202,11 +202,11 @@ class QtViewerButtons(QFrame):
         )
         self.gridViewButton = gvb
         gvb.setCheckable(True)
-        gvb.setChecked(viewer.grid.enabled)
+        gvb.setChecked(viewer.canvas.grid.enabled)
         gvb.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         gvb.customContextMenuRequested.connect(self._open_grid_popup)
 
-        @self.viewer.grid.events.enabled.connect
+        @self.viewer.canvas.grid.events.enabled.connect
         def _set_grid_mode_checkstate(event):
             gvb.setChecked(event.value)
 
@@ -645,7 +645,10 @@ class QtViewerButtons(QFrame):
             New grid width value.
         """
 
-        self.viewer.grid.shape = (self.viewer.grid.shape[0], value)
+        self.viewer.canvas.grid.shape = (
+            self.viewer.canvas.grid.shape[0],
+            value,
+        )
 
     def _update_grid_stride(self, value):
         """Update stride in grid settings.
@@ -656,7 +659,7 @@ class QtViewerButtons(QFrame):
             New grid stride value.
         """
 
-        self.viewer.grid.stride = value
+        self.viewer.canvas.grid.stride = value
 
     def _update_grid_height(self, value):
         """Update height value in grid shape.
@@ -667,7 +670,10 @@ class QtViewerButtons(QFrame):
             New grid height value.
         """
 
-        self.viewer.grid.shape = (value, self.viewer.grid.shape[1])
+        self.viewer.canvas.grid.shape = (
+            value,
+            self.viewer.canvas.grid.shape[1],
+        )
 
     def _update_grid_spacing(self, value: float) -> None:
         """Update spacing value in grid settings.
@@ -677,7 +683,7 @@ class QtViewerButtons(QFrame):
         value : float
             New grid spacing value.
         """
-        self.viewer.grid.spacing = value
+        self.viewer.canvas.grid.spacing = value
 
 
 def _omit_viewer_args(constructor):

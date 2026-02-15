@@ -21,7 +21,7 @@ class VispyBaseOverlay:
     vispy backend, translating them into rendering.
     """
 
-    def __init__(self, *, overlay, node, parent=None) -> None:
+    def __init__(self, *, overlay, node, parent=None, **kwargs) -> None:
         super().__init__()
         self.overlay: Overlay = overlay
 
