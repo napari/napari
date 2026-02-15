@@ -14,7 +14,7 @@ class _BaseTextOverlay(CanvasOverlay):
     ----------
     color : np.ndarray
         A (4,) color array of the text overlay.
-    font_size : float
+    font_size : int
         The font size (in points) of the text.
     position : CanvasPosition
         The position of the overlay in the canvas.
@@ -29,7 +29,7 @@ class _BaseTextOverlay(CanvasOverlay):
     color: ColorValue = Field(
         default_factory=lambda: ColorValue((0.8, 0.8, 0.8, 1.0))
     )
-    font_size: float = 10
+    font_size: int | None = None
 
 
 class TextOverlay(_BaseTextOverlay):
