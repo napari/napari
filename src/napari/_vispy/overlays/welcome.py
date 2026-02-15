@@ -60,10 +60,14 @@ class VispyWelcomeOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         else:
             background_color = get_theme(self.viewer.theme).canvas.as_hex()
             background_color = transform_color(background_color)[0]
+
+        # ensure background is opaque
+        background_color[-1] = 1.0
+
         color = np.subtract(1, background_color)
         color[-1] = background_color[-1]
         color *= 0.8  # dim a bit
-        self.node.set_color(color)
+        self.node.set_color(color, background_color)
 
     def _on_visible_change(self) -> None:
         show = self.overlay.visible and not self.viewer.layers
