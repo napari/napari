@@ -227,7 +227,6 @@ numpy==2.3.5
     #   scipy
     #   tensorstore
     #   tifffile
-    #   triangle
     #   vispy
     #   xarray
     #   zarr
@@ -540,8 +539,6 @@ traitlets==5.14.3
     #   jupyter-core
     #   matplotlib-inline
     #   qtconsole
-triangle==20200424
-    # via napari (pyproject.toml)
 triton==3.6.0
     # via torch
 typer==0.23.1
