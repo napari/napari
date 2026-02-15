@@ -73,29 +73,65 @@ class QtLayerButtons(QFrame):
 
         self.newPointsButton = QtViewerPushButton(
             'new_points',
-            trans._('New points layer'),
+            trans._(
+                'Create a new points layer.\n'
+                'This button is highlighted if a layer is selected;\n'
+                'the new points layer will inherit the shape and scale of this layer\n'
+                'Deselect all layers to create a new points layer with the\n'
+                'full extent of all the data.'
+            ),
             partial(new_points, self.viewer),
         )
+        self.newPointsButton.setCheckable(True)
 
         self.newShapesButton = QtViewerPushButton(
             'new_shapes',
-            trans._('New shapes layer'),
+            trans._(
+                'Create a new shapes layer.\n'
+                'This button is highlighted if a layer is selected;\n'
+                'the new shapes layer will inherit the shape and scale of this layer\n'
+                'Deselect all layers to create a new shapes layer with the\n'
+                'full extent of all the data.'
+            ),
             partial(new_shapes, self.viewer),
         )
+        self.newShapesButton.setCheckable(True)
+
         self.newLabelsButton = QtViewerPushButton(
             'new_labels',
-            trans._('New labels layer'),
+            trans._(
+                'Create a new labels layer.\n'
+                'The new layer will inherit the scale and shape of the extent\n'
+                'of all the layers.'
+            ),
             self.viewer._new_labels,
         )
 
         layout = QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(2)
         layout.addWidget(self.newPointsButton)
         layout.addWidget(self.newShapesButton)
         layout.addWidget(self.newLabelsButton)
         layout.addStretch(0)
         layout.addWidget(self.deleteButton)
         self.setLayout(layout)
+
+        self.viewer.layers.selection.events.changed.connect(
+            self._on_selection_changed
+        )
+        self._on_selection_changed()
+
+    def _on_selection_changed(self, event=None) -> None:
+        """Update button checked state when layer selection changes.
+
+        When a layer is selected, some new layer buttons are checked
+        to indicate that creating a new layer will inherit properties from the
+        selected layer.
+        """
+        has_selection = bool(self.viewer.layers.selection)
+        self.newPointsButton.setChecked(has_selection)
+        self.newShapesButton.setChecked(has_selection)
 
 
 def labeled_double_slider(
