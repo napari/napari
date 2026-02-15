@@ -34,6 +34,10 @@ QtViewerPushButton[mode="console"] {
   image: url("theme_{{ id }}:/console.svg");
 }
 
+QtViewerPushButton[mode="command_palette"] {
+  image: url("theme_{{ id }}:/zoom.svg");
+}
+
 QtViewerPushButton[mode="roll"] {
   image: url("theme_{{ id }}:/roll.svg");
 }
