@@ -4,7 +4,12 @@ import inspect
 import itertools
 import os
 import warnings
-from collections.abc import Iterator, Mapping, MutableMapping, Sequence
+from collections.abc import (
+    Iterator,
+    Mapping,
+    MutableMapping,
+    Sequence,
+)
 from functools import lru_cache
 from pathlib import Path
 from typing import (
@@ -19,9 +24,9 @@ import numpy as np
 # This cannot be condition to TYPE_CHECKING or the stubgen fails
 # with undefined Context.
 from app_model.expressions import Context
+from pydantic import Field, PrivateAttr, field_validator
 
 from napari import layers
-from napari._pydantic_compat import Extra, Field, PrivateAttr, validator
 from napari.components._layer_slicer import _LayerSlicer
 from napari.components._viewer_mouse_bindings import (
     dims_scroll,
@@ -91,7 +96,7 @@ from napari.utils.events import (
 )
 from napari.utils.key_bindings import KeymapProvider
 from napari.utils.misc import ensure_list_of_layer_data_tuple, is_sequence
-from napari.utils.mouse_bindings import MousemapProvider
+from napari.utils.mouse_bindings import MousemapProviderPydantic
 from napari.utils.progress import progress
 from napari.utils.theme import available_themes, is_theme_available
 from napari.utils.translations import trans
@@ -132,7 +137,7 @@ DEFAULT_OVERLAYS = {
 
 
 # KeymapProvider & MousemapProvider should eventually be moved off the ViewerModel
-class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
+class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     """Viewer containing the rendered scene, layers, and controlling elements
     including dimension sliders, and control bars for color limits.
 
@@ -184,18 +189,18 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         objects.
     """
 
-    # Using allow_mutation=False means these attributes aren't settable and don't
+    # Using frozen=True means these attributes aren't settable and don't
     # have an event emitter associated with them
-    camera: Camera = Field(default_factory=Camera, allow_mutation=False)
-    cursor: Cursor = Field(default_factory=Cursor, allow_mutation=False)
-    dims: Dims = Field(default_factory=Dims, allow_mutation=False)
-    grid: GridCanvas = Field(default_factory=GridCanvas, allow_mutation=False)
+    camera: Camera = Field(default_factory=Camera, frozen=True)
+    cursor: Cursor = Field(default_factory=Cursor, frozen=True)
+    dims: Dims = Field(default_factory=Dims, frozen=True)
+    grid: GridCanvas = Field(default_factory=GridCanvas, frozen=True)
     layers: LayerList = Field(
-        default_factory=LayerList, allow_mutation=False
+        default_factory=LayerList, frozen=True
     )  # Need to create custom JSON encoder for layer!
     help: str = ''
-    status: Union[str, dict] = 'Ready'
-    tooltip: Tooltip = Field(default_factory=Tooltip, allow_mutation=False)
+    status: Union[str, Dict[str, str]] = 'Ready'
+    tooltip: Tooltip = Field(default_factory=Tooltip, frozen=True)
     theme: str = Field(default_factory=_current_theme)
     title: str = 'napari'
     # private track of overlays, only expose the old ones for backward compatibility
@@ -204,7 +209,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     )
     # 2-tuple indicating height and width
     _canvas_size: tuple[int, int] = (800, 600)
-    _ctx: Context
+    _ctx: Context = PrivateAttr()
     # To check if mouse is over canvas to avoid race conditions between
     # different events systems
     mouse_over_canvas: bool = False
@@ -217,13 +222,12 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self, title='napari', ndisplay=2, order=(), axis_labels=()
     ) -> None:
         # max_depth=0 means don't look for parent contexts.
-        from napari._app_model.context import create_context
 
         # FIXME: just like the LayerList, this object should ideally be created
         # elsewhere.  The app should know about the ViewerModel, but not vice versa.
-        self._ctx = create_context(self, max_depth=0)
+        # self._ctx = create_context(self, max_depth=0)
         # allow extra attributes during model initialization, useful for mixins
-        self.__config__.extra = Extra.allow
+        self.model_config['extra'] = 'allow'
         super().__init__(
             title=title,
             dims={
@@ -233,7 +237,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 'order': order,
             },
         )
-        self.__config__.extra = Extra.ignore
+        self.model_config['extra'] = 'ignore'
 
         settings = get_settings()
         self.tooltip.visible = settings.appearance.layer_tooltip_visibility
@@ -302,28 +306,28 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     # simple properties exposing overlays for backward compatibility
     @property
-    def axes(self):
-        return self._overlays['axes']
+    def axes(self) -> AxesOverlay:
+        return self._overlays['axes']  # type: ignore[return-value]
 
     @property
-    def scale_bar(self):
-        return self._overlays['scale_bar']
+    def scale_bar(self) -> ScaleBarOverlay:
+        return self._overlays['scale_bar']  # type: ignore[return-value]
 
     @property
-    def text_overlay(self):
-        return self._overlays['text']
+    def text_overlay(self) -> TextOverlay:
+        return self._overlays['text']  # type: ignore[return-value]
 
     @property
     def welcome_screen(self):
         return self._overlays['welcome']
 
     @property
-    def _zoom_box(self):
-        return self._overlays['zoom']
+    def _zoom_box(self) -> ZoomOverlay:
+        return self._overlays['zoom']  # type: ignore[return-value]
 
     @property
-    def _brush_circle_overlay(self):
-        return self._overlays['brush_circle']
+    def _brush_circle_overlay(self) -> BrushCircleOverlay:
+        return self._overlays['brush_circle']  # type: ignore[return-value]
 
     def _tooltip_visible_update(self, event):
         self.tooltip.visible = event.value
@@ -350,7 +354,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         )
         self.grid.spacing = settings.application.grid_spacing
 
-    @validator('theme', allow_reuse=True)
+    @field_validator('theme')
+    @classmethod
     def _valid_theme(cls, v):
         if not is_theme_available(v):
             raise ValueError(
@@ -374,7 +379,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         exclude = exclude.union(EXCLUDE_JSON)
         return super().json(exclude=exclude, **kwargs)
 
-    def dict(self, **kwargs):
+    def model_dump(self, **kwargs) -> dict[str, Any]:
         """Convert to a dictionary."""
         # Manually exclude the layer list and active layer which cannot be serialized at this point
         # and mouse and keybindings don't belong on model
@@ -382,7 +387,16 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         # https://github.com/samuelcolvin/pydantic/issues/660#issuecomment-642211017
         exclude = kwargs.pop('exclude', set())
         exclude = exclude.union(EXCLUDE_DICT)
-        return super().dict(exclude=exclude, **kwargs)
+        return super().model_dump(exclude=exclude, **kwargs)
+
+    def dict(self, **kwargs):
+        """Convert to a dictionary.
+
+        .. deprecated:: 0.7.0
+             `dict` will be removed in napari 0.8.0 it is replaced by
+             `model_dump` following pydantic 1 to 2 changes.
+        """
+        self.model_dump(**kwargs)
 
     def __hash__(self):
         return id(self)
