@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-import re
 from collections.abc import Iterator, Mapping
 from typing import TYPE_CHECKING, Any, cast
 
 from app_model.types import CommandRule, MenuItem
 from qtpy import QtCore, QtGui, QtWidgets as QtW
 from qtpy.QtCore import Qt, Signal
+from rapidfuzz import fuzz, process, utils
 
 from napari._app_model import get_app_model
 from napari._app_model.context._context import get_context
@@ -225,28 +225,21 @@ class QCommandLabel(QtW.QLabel):
         if input_text == '':
             return
         text = self.command_text()
-        words = input_text.split(' ')
-        pattern = re.compile('|'.join(words), re.IGNORECASE)
 
         output_texts: list[str] = []
-        last_end = 0
-        for match_obj in pattern.finditer(text):
-            output_texts.append(text[last_end : match_obj.start()])
-            word = match_obj.group()
-            colored_word = bold_colored(word, color)
-            output_texts.append(colored_word)
-            last_end = match_obj.end()
 
-        output_texts.append(text[last_end:])
+        for substring, highlighted in _iter_highlight_slices(input_text, text):
+            if highlighted:
+                substring = bold_colored(substring, color)
+            output_texts.append(substring)
+
         output_text = ''.join(output_texts)
         self.setText(output_text)
-        return
 
     def set_disabled(self) -> None:
         """Set the label to disabled."""
         text = self.command_text()
         self.setText(colored(text, self.DISABLED_COLOR))
-        return
 
 
 class QCommandList(QtW.QListView):
@@ -375,12 +368,26 @@ class QCommandList(QtW.QListView):
 
     def iter_top_hits(self, input_text: str) -> Iterator[CommandRule]:
         """Iterate over the top hits for the input text"""
+        if not input_text:
+            yield from [
+                c
+                for c in self.all_commands
+                if _enabled(c, self._app_model_context)
+            ]
+
         commands: list[tuple[float, CommandRule]] = []
-        for command in self.all_commands:
-            score = _match_score(command, input_text)
-            if score > 0.0:
+        action_names = {c: _format_action_name(c) for c in self.all_commands}
+        for _, score, command in process.extract(
+            input_text,
+            action_names,
+            limit=100,
+            score_cutoff=60,
+            scorer=fuzz.partial_token_sort_ratio,
+            processor=utils.default_process,
+        ):
+            if score > 0:
                 if _enabled(command, self._app_model_context):
-                    score += 10.0
+                    score += 100
                 commands.append((score, command))
         commands.sort(key=lambda x: x[0], reverse=True)
         for _, command in commands:
@@ -403,14 +410,6 @@ def _enabled(action: CommandRule, context: Mapping[str, Any]) -> bool:
         return False
 
 
-def _match_score(action: CommandRule, input_text: str) -> float:
-    """Return a match score (between 0 and 1) for the input text."""
-    name = _format_action_name(action).lower()
-    if all(word in name for word in input_text.lower().split(' ')):
-        return 1.0
-    return 0.0
-
-
 def _format_action_name(cmd: CommandRule) -> str:
     sep = ':' if ':' in cmd.id else '.'
     *contexts, _ = cmd.id.split(sep)
@@ -419,6 +418,68 @@ def _format_action_name(cmd: CommandRule) -> str:
     if title:
         return f'{title} > {desc}'
     return desc
+
+
+def _iter_highlight_slices(
+    query: str, text: str, min_len: int = 2
+) -> Iterator[tuple[str, bool]]:
+    """Get reasonable highlight approximation for fuzzy matched string.
+
+    Will match all non-overlapping substrings bigger than min_len.
+    It's not a correct representation of what the fuzzy matching does,
+    but should help visualize a bit what's being matched.
+    """
+    len_query = len(query)
+    len_text = len(text)
+
+    if min_len > len_query:
+        yield text, False
+        return
+
+    substrings = {
+        query.lower()[i:j]
+        for i in range(len_query)
+        for j in range(i + min_len, len_query + 1)
+    }
+
+    matches = []
+
+    pos = 0
+    while pos < len_text:
+        longest = 0
+
+        # prioritize matching longest substring first
+        for length in range(len_query, min_len - 1, -1):
+            if pos + length > len_text:
+                # overshooting
+                continue
+            if text.lower()[pos : pos + length] in substrings:
+                longest = length
+                break
+
+        if longest:
+            matches.append((pos, pos + longest))
+            pos += longest
+        else:
+            pos += 1
+
+    if not matches:
+        yield text, False
+        return
+
+    # yield slices from original text
+    pos = 0
+    for start, end in matches:
+        if pos < start:
+            # yield the unmatched region before this one
+            yield text[pos:start], False
+        # now we're at an actual matched region
+        yield text[start:end], True
+        pos = end
+
+    # trailing is unmatched
+    if pos < len_text:
+        yield text[pos:], False
 
 
 def _exec_action(action: CommandRule) -> Any:
