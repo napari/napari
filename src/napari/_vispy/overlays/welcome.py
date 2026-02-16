@@ -73,7 +73,9 @@ class VispyWelcomeOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
 
     def _on_theme_change(self) -> None:
         color = self._get_fgcolor()
-        color[-1] *= 0.7  # dim a bit
+        # dim a bit but keep opaque to avoid border artifacts
+        color[:3] *= 0.7
+        color[-1] = 1
         self.node.set_color(color)
 
     def _on_visible_change(self) -> None:
