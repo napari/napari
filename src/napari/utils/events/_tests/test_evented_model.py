@@ -785,3 +785,17 @@ def test_events_called_once():
     a_m.assert_called_once()
     b_m.assert_called_once()
     e_m.assert_called_once()
+
+
+def test_events_called():
+    class SampleClass(EventedModel):
+        a: int
+
+    s = SampleClass(a=1)
+
+    e_m = Mock()
+    s.events.connect(e_m)
+
+    s.a = 2
+
+    e_m.assert_called_once()
