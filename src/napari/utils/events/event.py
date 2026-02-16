@@ -951,6 +951,8 @@ class EmitterGroup(EventEmitter):
         self,
         source: Any = None,
         auto_connect: bool = False,
+        on_connect: Callable | None = None,
+        on_disconnect: Callable | None = None,
         **emitters: type[Event] | EventEmitter | None,
     ) -> None:
         EventEmitter.__init__(self, source)
@@ -958,6 +960,8 @@ class EmitterGroup(EventEmitter):
         self.auto_connect = auto_connect
         self.auto_connect_format = 'on_%s'
         self._emitters: dict[str, EventEmitter] = {}
+        self._on_connect = on_connect
+        self._on_disconnect = on_disconnect
         # whether the sub-emitters have been connected to the group:
         self._emitters_connected: bool = False
         self.add(**emitters)  # type: ignore
@@ -1106,9 +1110,12 @@ class EmitterGroup(EventEmitter):
         for arguments.
         """
         self._connect_emitters(True)
-        return EventEmitter.connect(
+        res = EventEmitter.connect(
             self, callback, ref, position, before, after
         )
+        if self._on_connect is not None:
+            self._on_connect()
+        return res
 
     def disconnect(self, callback: Callback | None = None):
         """Disconnect the callback from this group. See
@@ -1119,6 +1126,8 @@ class EmitterGroup(EventEmitter):
         ret = EventEmitter.disconnect(self, callback)
         if len(self._callbacks) == 0:
             self._connect_emitters(False)
+        if self._on_disconnect is not None:
+            self._on_disconnect()
         return ret
 
     def _connect_emitters(self, connect):

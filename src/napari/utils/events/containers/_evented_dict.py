@@ -63,12 +63,30 @@ class EventedDict(TypedMutableMapping[_K, _T]):
         # For inheritance: If the mro already provides an EmitterGroup, add...
         if hasattr(self, 'events') and isinstance(self.events, EmitterGroup):
             self.events.add(**_events)
+            self.events._on_connect = self._callback_connect
+            self.events._on_disconnect = self._callback_disconnect
         else:
             # otherwise create a new one
             self.events = EmitterGroup(
-                source=self, auto_connect=False, **_events
+                source=self,
+                auto_connect=False,
+                on_connect=self._callback_connect,
+                on_disconnect=self._callback_disconnect,
+                **_events,
             )
         super().__init__(data, basetype)
+
+    def _callback_connect(self):
+        if len(self.events.callbacks) == 1:
+            for item in self._dict.values():
+                self._connect_child_emitters(item)
+
+    def _callback_disconnect(self):
+        if self.events.callbacks:
+            return
+
+        for item in self._dict.values():
+            self._disconnect_child_emitters(item)
 
     def __setitem__(self, key: _K, value: _T) -> None:
         old = self._dict.get(key)
@@ -78,7 +96,8 @@ class EventedDict(TypedMutableMapping[_K, _T]):
             self.events.adding(key=key)
             super().__setitem__(key, value)
             self.events.added(key=key, value=value)
-            self._connect_child_emitters(value)
+            if self.events.callbacks:
+                self._connect_child_emitters(value)
         else:
             self.events.changing(key=key)
             super().__setitem__(key, value)
