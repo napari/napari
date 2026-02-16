@@ -217,7 +217,6 @@ def test_add_points_layer_with_different_range_updates_all_slices():
     assert viewer.dims.point == (0, 0)
 
 
-@pytest.mark.xfail(reason='https://github.com/napari/napari/issues/6198')
 def test_last_point_is_visible_in_viewport():
     viewer = ViewerModel()
 
@@ -247,7 +246,6 @@ def test_last_point_is_visible_in_viewport():
     np.testing.assert_array_equal(points._indices_view, [0])
 
 
-@pytest.mark.xfail(reason='https://github.com/napari/napari/issues/6199')
 def test_dimension_change_is_visible_in_viewport():
     viewer = ViewerModel()
 
