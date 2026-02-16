@@ -175,7 +175,9 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
     """
 
     # add private attributes for event emission
-    _events: EmitterGroup = PrivateAttr(default_factory=EmitterGroup)
+    _events: EmitterGroup = PrivateAttr(
+        default_factory=lambda: EmitterGroup(_connect_children=False)
+    )
 
     # mapping of name -> property obj for methods that are properties
     __properties__: ClassVar[dict[str, property]]
@@ -302,6 +304,9 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             # Again delay comparison to avoid having events caused by callback functions
             for name, new_value in to_emit:
                 getattr(self.events, name)(value=new_value)
+
+            if len(self.events.callbacks):
+                self.events(type_name=to_emit[0])
 
     def _setattr_impl(self, name: str, value: Any) -> None:
         if name not in getattr(self, 'events', {}):

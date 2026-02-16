@@ -762,3 +762,26 @@ def test_single_emit():
     c_m.assert_called_once()
     d_m.assert_called_once()
     e_m.assert_called_once()
+
+
+def test_events_called_once():
+    class SampleClass(EventedModel):
+        a: int
+
+        @property
+        def b(self):
+            return self.a * 2
+
+    s = SampleClass(a=1)
+    a_m = Mock()
+    b_m = Mock()
+    e_m = Mock()
+
+    s.events.a.connect(a_m)
+    s.events.b.connect(b_m)
+    s.events.connect(e_m)
+
+    s.a = 2
+    a_m.assert_called_once()
+    b_m.assert_called_once()
+    e_m.assert_called_once()
