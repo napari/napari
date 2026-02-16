@@ -159,7 +159,7 @@ executing==2.2.1
     # via stack-data
 fastjsonschema==2.21.2
     # via nbformat
-filelock==3.24.0
+filelock==3.24.2
     # via
     #   gdown
     #   torch
@@ -211,7 +211,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.151.6
+hypothesis==6.151.8
     # via napari (pyproject.toml)
 idna==3.11
     # via
@@ -591,7 +591,7 @@ pint==0.25.2
     #   ome-types
 pip==26.0.1
     # via napari-plugin-manager
-platformdirs==4.9.1
+platformdirs==4.9.2
     # via
     #   jupyter-core
     #   npe2
@@ -659,7 +659,7 @@ pydantic-extra-types==2.11.0
     #   napari (pyproject.toml)
     #   npe2
     #   ome-types
-pydantic-settings==2.12.0
+pydantic-settings==2.13.0
     # via napari (pyproject.toml)
 pydata-sphinx-theme==0.16.1
     # via napari-sphinx-theme
@@ -924,7 +924,7 @@ tensorstore==0.1.81
     #   napari (pyproject.toml)
 threadpoolctl==3.6.0
     # via scikit-learn
-tifffile==2026.1.28
+tifffile==2026.2.15
     # via
     #   napari (pyproject.toml)
     #   napari (pyproject.toml:docs)
@@ -1057,7 +1057,7 @@ xarray==2026.2.0
     #   ndevio
 xmlschema==4.3.1
     # via bioio-ome-tiff
-xsdata==26.1
+xsdata==26.2
     # via ome-types
 yarl==1.22.0
     # via aiohttp
