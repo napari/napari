@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 from vispy.scene.node import Node
-from vispy.scene.visuals import Polygon
+from vispy.scene.visuals import Polygon, Rectangle
 from vispy.util.svg import Document
 from vispy.visuals.transforms import STTransform
 
@@ -46,6 +46,7 @@ class Welcome(Node):
         self.logo_coords[:, 1] -= 130  # magic number shifting up logo
         super().__init__()
 
+        self.bg = Rectangle(center=[0, 0], parent=self, border_width=0)
         self.logo = Polygon(
             self.logo_coords, border_method='agg', border_width=2, parent=self
         )
@@ -87,7 +88,8 @@ class Welcome(Node):
 
         self.transform = STTransform()
 
-    def set_color(self, color: ColorValue) -> None:
+    def set_color(self, color: ColorValue, bg_color: ColorValue) -> None:
+        self.bg.color = bg_color
         self.logo.color = color
         self.logo.border_color = color
         self.header.color = color
@@ -160,6 +162,9 @@ class Welcome(Node):
         self.transform.translate = (x / 2, y / 2, 0, 0)
         scale = min(x, y) * 0.002  # magic number
         self.transform.scale = (scale, scale, 0, 0)
+
+        self.bg.width = x / scale
+        self.bg.height = y / scale
 
         for text in (
             self.header,
