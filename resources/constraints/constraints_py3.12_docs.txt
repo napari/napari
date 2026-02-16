@@ -2,7 +2,7 @@
 #    uv pip compile --python-version 3.12 --output-file resources/constraints/constraints_py3.12_docs.txt pyproject.toml resources/constraints/version_denylist.txt resources/constraints/version_denylist_examples.txt --group docs --extra pyqt6 --extra pyside6 --extra testing --group testing_extra --extra all_optional --exclude resources/constraints/napari_exclude.txt
 accessible-pygments==0.0.5
     # via pydata-sphinx-theme
-aiobotocore==3.1.2
+aiobotocore==3.1.3
     # via s3fs
 aiohappyeyeballs==2.6.1
     # via aiohttp
@@ -51,7 +51,7 @@ beautifulsoup4==4.14.3
     # via
     #   gdown
     #   pydata-sphinx-theme
-bermuda==0.1.6
+bermuda==0.1.7
     # via
     #   napari (pyproject.toml)
     #   napari (pyproject.toml:docs)
@@ -73,7 +73,7 @@ bioio-ome-zarr==3.2.2
     # via ndevio
 bioio-tifffile==1.3.0
     # via ndevio
-botocore==1.42.42
+botocore==1.42.49
     # via aiobotocore
 build==1.4.0
     # via npe2
@@ -159,7 +159,7 @@ executing==2.2.1
     # via stack-data
 fastjsonschema==2.21.2
     # via nbformat
-filelock==3.21.2
+filelock==3.24.0
     # via
     #   gdown
     #   torch
@@ -591,7 +591,7 @@ pint==0.25.2
     #   ome-types
 pip==26.0.1
     # via napari-plugin-manager
-platformdirs==4.7.0
+platformdirs==4.9.1
     # via
     #   jupyter-core
     #   npe2
@@ -974,7 +974,7 @@ triangle==20250106
     #   napari (pyproject.toml:docs)
 triton==3.6.0
     # via torch
-typer==0.23.0
+typer==0.23.1
     # via
     #   geff
     #   npe2
@@ -1045,7 +1045,7 @@ wrapt==2.1.1
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
     #   aiobotocore
-xarray==2026.1.0
+xarray==2026.2.0
     # via
     #   napari (pyproject.toml)
     #   napari (pyproject.toml:docs)

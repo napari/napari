@@ -23,7 +23,7 @@ attrs==25.4.0
     #   referencing
 babel==2.18.0
     # via napari (pyproject.toml)
-bermuda==0.1.6
+bermuda==0.1.7
     # via napari (pyproject.toml)
 build==1.4.0
     # via npe2
@@ -69,7 +69,7 @@ donfig==0.8.1.post1
     # via zarr
 executing==2.2.1
     # via stack-data
-filelock==3.21.2
+filelock==3.24.0
     # via
     #   torch
     #   virtualenv
@@ -311,7 +311,7 @@ pint==0.25.2
     #   napari-metadata
 pip==26.0.1
     # via napari-plugin-manager
-platformdirs==4.7.0
+platformdirs==4.9.1
     # via
     #   jupyter-core
     #   npe2
@@ -544,7 +544,7 @@ triangle==20250106
     # via napari (pyproject.toml)
 triton==3.6.0
     # via torch
-typer==0.23.0
+typer==0.23.1
     # via npe2
 typing-extensions==4.15.0
     # via
@@ -581,7 +581,7 @@ wrapt==2.1.1
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
-xarray==2026.1.0
+xarray==2026.2.0
     # via napari (pyproject.toml)
 yarl==1.22.0
     # via aiohttp
