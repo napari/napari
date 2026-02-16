@@ -389,11 +389,8 @@ class Shape(ABC):
                 path, text_path = _save_failed_triangulation(
                     data, backend='bermuda'
                 )
-
-                from importlib.metadata import version
-
                 raise RuntimeError(
-                    f'Triangulation with bermuda{version("bermuda")} failed. Data saved to {path} and {text_path}'
+                    f'Triangulation failed. Data saved to {path} and {text_path}'
                 ) from e
 
             self._edge_vertices = centers
