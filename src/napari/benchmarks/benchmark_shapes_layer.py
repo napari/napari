@@ -3,11 +3,12 @@
 # or the napari documentation on benchmarking
 # https://github.com/napari/napari/blob/main/docs/BENCHMARKS.md
 import itertools
+import pathlib
 from collections.abc import Callable
 from contextlib import suppress
 from enum import StrEnum, auto
 from functools import cache, wraps
-from typing import Any
+from typing import Any, Literal
 
 import numpy as np
 
@@ -46,6 +47,8 @@ except ImportError:
         def __repr__(self):
             return self.name
 
+
+data_path = pathlib.Path(__file__).parent / 'data'
 
 backends = list(TriangulationBackend)
 
@@ -690,10 +693,23 @@ class MeshTriangulationSuite(_BackendSelection):
             )
 
 
-@cache
-def non_convex_no_self_intersection_polygons(
-    n_shapes=5_000, n_points=32
+def _load_data_from_file_or_generate(
+    function: Callable, n_shapes: int, n_points: int
 ) -> list[np.ndarray]:
+    if n_shapes > 5000:
+        raise ValueError('n_shapes should be less than or equal to 5000')
+    file_path = data_path / f'{function.__name__}_5000_{n_points}.npz'
+    if not file_path.exists():
+        data = function(n_shapes, n_points)
+        np.savez_compressed(file_path, data=data)
+    else:
+        data = np.load(file_path)['data']
+    return list(data[:n_shapes])
+
+
+def non_convex_no_self_intersection_polygons_gen(
+    n_shapes=5_000, n_points=32
+) -> np.ndarray[tuple[int, int, Literal[2]]]:
     """
     Create a set of non-convex coordinates
 
@@ -712,13 +728,21 @@ def non_convex_no_self_intersection_polygons(
     rays = rays.reshape((1, -1, 2))
     rays = rays * rng.uniform(0.9, 1.1, (n_shapes, n_points, 2))
     center = center.reshape((-1, 1, 2))
-    return list(center + radius * rays)
+    return center + radius * rays
 
 
 @cache
-def self_intersecting_stars_polygons(
-    n_shapes=5_000, n_points=31
+def non_convex_no_self_intersection_polygons(
+    n_shapes=5_000, n_points=32
 ) -> list[np.ndarray]:
+    return _load_data_from_file_or_generate(
+        non_convex_no_self_intersection_polygons_gen, n_shapes, n_points
+    )
+
+
+def self_intersecting_stars_polygons_gen(
+    n_shapes=5_000, n_points=31
+) -> np.ndarray[tuple[int, int, Literal[2]]]:
     """
     Create a set of non-convex coordinates
 
@@ -739,13 +763,22 @@ def self_intersecting_stars_polygons(
     rays = rays.reshape((1, -1, 2))
     rays = rays * rng.uniform(0.9, 1.1, (n_shapes, n_points + 1, 2))
     center = center.reshape((-1, 1, 2))
-    return list(center + radius * rays)
+    return center + radius * rays
 
 
 @cache
-def self_intersecting_polygons(
+def self_intersecting_stars_polygons(
     n_shapes=5_000, n_points=31
 ) -> list[np.ndarray]:
+    assert n_points % 2 == 1
+    return _load_data_from_file_or_generate(
+        self_intersecting_stars_polygons_gen, n_shapes, n_points
+    )
+
+
+def self_intersecting_polygons_gen(
+    n_shapes=5_000, n_points=31
+) -> np.ndarray[tuple[int, int, Literal[2]]]:
     """
     Create a set of non-convex coordinates
 
@@ -765,11 +798,22 @@ def self_intersecting_polygons(
     rays = rays.reshape((1, -1, 2))
     rays = rays * rng.uniform(0.9, 1.1, (n_shapes, n_points + 1, 2))
     center = center.reshape((-1, 1, 2))
-    return list(center + radius * rays)
+    return center + radius * rays
 
 
 @cache
-def convex_polygons(n_shapes=5_000, n_points=32) -> list[np.ndarray]:
+def self_intersecting_polygons(
+    n_shapes=5_000, n_points=31
+) -> list[np.ndarray]:
+    assert n_points % 2 == 1
+    return _load_data_from_file_or_generate(
+        self_intersecting_polygons_gen, n_shapes, n_points
+    )
+
+
+def convex_polygons_gen(
+    n_shapes=5_000, n_points=32
+) -> np.ndarray[tuple[int, int, Literal[2]]]:
     """
     Create a set of convex coordinates
 
@@ -787,11 +831,19 @@ def convex_polygons(n_shapes=5_000, n_points=32) -> list[np.ndarray]:
     rays = np.stack([np.sin(phi), np.cos(phi)], axis=1)
     rays = rays.reshape((1, -1, 2))
     center = center.reshape((-1, 1, 2))
-    return list(center + radius * rays)
+    return center + radius * rays
 
 
 @cache
-def polygons_with_hole(n_shapes=5_000, n_points=32) -> list[np.ndarray]:
+def convex_polygons(n_shapes=5_000, n_points=32) -> list[np.ndarray]:
+    return _load_data_from_file_or_generate(
+        convex_polygons_gen, n_shapes, n_points
+    )
+
+
+def polygons_with_hole_gen(
+    n_shapes=5_000, n_points=32
+) -> np.ndarray[tuple[int, int, Literal[2]]]:
     """
     Create a set of polygon with hole
 
@@ -819,11 +871,19 @@ def polygons_with_hole(n_shapes=5_000, n_points=32) -> list[np.ndarray]:
     rays2 = np.stack([np.sin(phi2), np.cos(phi2)], axis=1) * radius // 2
     rays = np.concatenate([rays1, rays2]).reshape((1, -1, 2))
     center = center.reshape((-1, 1, 2))
-    return list(center + rays)
+    return center + rays
 
 
 @cache
-def polygons_with_holes(n_shapes=5_000, n_points=32) -> list[np.ndarray]:
+def polygons_with_hole(n_shapes=5_000, n_points=32) -> list[np.ndarray]:
+    return _load_data_from_file_or_generate(
+        polygons_with_hole_gen, n_shapes, n_points
+    )
+
+
+def polygons_with_holes_gen(
+    n_shapes=5_000, n_points=32
+) -> np.ndarray[tuple[int, int, Literal[2]]]:
     rng = np.random.default_rng(0)
     assert n_points > 20, (
         'n_points should be greater than 7 to generate a polygon with holes'
@@ -855,6 +915,13 @@ def polygons_with_holes(n_shapes=5_000, n_points=32) -> list[np.ndarray]:
 
     center = center.reshape((-1, 1, 2))
     return list(center + points)
+
+
+@cache
+def polygons_with_holes(n_shapes=5_000, n_points=32) -> list[np.ndarray]:
+    return _load_data_from_file_or_generate(
+        polygons_with_holes_gen, n_shapes, n_points
+    )
 
 
 if __name__ == '__main__':
