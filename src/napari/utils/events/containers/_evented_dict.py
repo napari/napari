@@ -111,6 +111,8 @@ class EventedDict(TypedMutableMapping[_K, _T]):
 
     def _disconnect_child_emitters(self, child: _T) -> None:
         """Disconnect all events from the child from the re-emitter."""
+        if isinstance(child, PsygnalModel):
+            child.events.disconnect(self._reemit_child_event_psygnal)
         if isinstance(child, SupportsEvents):
             child.events.disconnect(self._reemit_child_event)
 
