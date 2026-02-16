@@ -205,10 +205,9 @@ class QtViewerButtons(QFrame):
         gvb.setChecked(viewer.canvas.grid.enabled)
         gvb.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         gvb.customContextMenuRequested.connect(self._open_grid_popup)
-
-        @self.viewer.canvas.grid.events.enabled.connect
-        def _set_grid_mode_checkstate(event):
-            gvb.setChecked(event.value)
+        self.viewer.canvas.grid.events.enabled.connect(
+            self._update_grid_button
+        )
 
         ndb = QtViewerPushButton(
             'ndisplay_button', action='napari:toggle_ndisplay'
@@ -536,6 +535,9 @@ class QtViewerButtons(QFrame):
 
         # show popup
         pop.show_above_mouse()
+
+    def _update_grid_button(self, event):
+        self.gridViewButton.setChecked(event.value)
 
     def _open_grid_popup(self):
         """Open grid options pop up widget."""
