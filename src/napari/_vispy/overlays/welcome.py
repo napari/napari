@@ -10,6 +10,7 @@ from vispy.visuals.transforms import NullTransform
 
 from napari._vispy.overlays.base import ViewerOverlayMixin, VispyCanvasOverlay
 from napari._vispy.visuals.welcome import Welcome
+from napari.settings import get_settings
 
 if TYPE_CHECKING:
     from vispy.scene import Node
@@ -35,6 +36,8 @@ class VispyWelcomeOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self.viewer.events.theme.connect(self._on_theme_change)
         self.viewer.layers.events.inserted.connect(self._on_visible_change)
         self.viewer.layers.events.removed.connect(self._on_visible_change)
+
+        get_settings().appearance.events.theme.connect(self._on_theme_change)
 
         self.overlay.events.version.connect(self._on_version_change)
         self.overlay.events.shortcuts.connect(self._on_shortcuts_change)
@@ -63,6 +66,10 @@ class VispyWelcomeOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         # welcome uses some custom positioning with the transform, so copying it
         # over messes it up. We just set it to nothing.
         self.box.transform = NullTransform()
+        # always opaque box color, so we hide what's behind
+        bgcolor = self.box.color.rgba
+        bgcolor[-1] = 1
+        self.box.color = bgcolor
 
     def _on_theme_change(self) -> None:
         color = self._get_fgcolor()

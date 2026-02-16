@@ -2,7 +2,6 @@ from typing import Literal
 
 from napari import __version__
 from napari.components.overlays.base import CanvasOverlay
-from napari.utils.color import ColorValue
 
 
 class WelcomeOverlay(CanvasOverlay):
@@ -10,7 +9,6 @@ class WelcomeOverlay(CanvasOverlay):
 
     # not settable in this specific overlay
     position: None = None
-    box_color: ColorValue = ColorValue('black')
     # ensure it's on top of overlays with default value
     order: int = 10**6 + 10
     gridded: Literal[False] = False
