@@ -202,7 +202,7 @@ class LayerOverlayMixin:
             self._on_visible_change, position='last'
         )
 
-    def _should_be_visible(self) -> None:
+    def _should_be_visible(self) -> bool:
         return self.overlay.visible and self.layer.visible
 
     def close(self) -> None:
