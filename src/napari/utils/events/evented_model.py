@@ -306,7 +306,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
                 getattr(self.events, name)(value=new_value)
 
             if len(self.events.callbacks):
-                self.events(type_name=to_emit[0])
+                self.events(type_name=to_emit[0][0], value=to_emit[0][1])
 
     def _setattr_impl(self, name: str, value: Any) -> None:
         if name not in getattr(self, 'events', {}):
