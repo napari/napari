@@ -121,7 +121,7 @@ def get_text_width_height(text: Text) -> tuple[float, float]:
             height_line_spacing = font_height * (text.line_height - 1) * lineno
             height = max(height, height_lines + height_line_spacing)
 
-    return width * text.dpi_ratio, height * text.dpi_ratio
+    return width, height
 
 
 def register_napari_fonts() -> None:

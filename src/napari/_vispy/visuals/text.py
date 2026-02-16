@@ -16,19 +16,23 @@ class Text(BaseText):
         super().__init__(*args, face=face, **kwargs)
 
     def get_width_height(self) -> tuple[float, float]:
-        return get_text_width_height(self)
+        width, height = get_text_width_height(self)
+        return width * self.dpi_ratio, height * self.dpi_ratio
 
     @property
     def font_size(self) -> float:
-        return self._font_size
+        return self._font_size * self.dpi_ratio / (96 / 72)
 
     @font_size.setter
     def font_size(self, size: float) -> None:
-        adjusted_font_size = size / self.dpi_ratio
+        # 72 is the "base dpi" for vispy font sizes, but normally 96
+        # is considered the base dpi, resulting in mismatch between
+        # gui and canvas when font sizes are the same
+        adjusted_font_size = size * (96 / 72) / self.dpi_ratio
         self._font_size = max(0.0, adjusted_font_size)
         self.update()
 
     @property
     def dpi_ratio(self) -> float:
-        # adjust for dpi: 72 is the "base dpi" around which font sizes are defined
+        # 72 is the reference DPI around which vispy font sizes are defined
         return (self.transforms.dpi or 72) / 72
