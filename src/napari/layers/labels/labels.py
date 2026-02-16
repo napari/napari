@@ -795,7 +795,8 @@ class Labels(ScalarFieldBase):
         if self.selected_label != self.colormap.background_value:
             self.selected_label = self.colormap.background_value
         else:
-            self.selected_label = self._prev_selected_label
+            if self._prev_selected_label is not None:
+                self.selected_label = self._prev_selected_label
 
     @property
     def show_selected_label(self):
