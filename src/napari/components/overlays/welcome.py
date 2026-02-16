@@ -10,8 +10,9 @@ class WelcomeOverlay(CanvasOverlay):
 
     # not settable in this specific overlay
     position: None = None
+    box_color: ColorValue = ColorValue('black')
     # ensure it's on top of overlays with default value
-    order: int = 10**6 + 1
+    order: int = 10**6 + 10
     gridded: Literal[False] = False
     version: str = __version__
     shortcuts: tuple[str, ...] = (
