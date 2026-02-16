@@ -26,6 +26,7 @@ class _VispyBaseTextOverlay(VispyCanvasOverlay):
         self.overlay.events.font_size.connect(self._on_font_size_change)
 
         get_settings().appearance.events.theme.connect(self._on_color_change)
+        self.viewer.events.theme.connect(self._on_color_change)
 
     def _connect_events(self):
         pass

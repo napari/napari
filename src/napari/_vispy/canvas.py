@@ -1045,7 +1045,10 @@ class VispyCanvas:
 
             if vispy_overlay is None:
                 vispy_overlay = create_vispy_overlay(
-                    overlay=overlay, layer=layer, parent=parent
+                    overlay=overlay,
+                    layer=layer,
+                    viewer=self.viewer,
+                    parent=parent,
                 )
                 overlay_to_visual[overlay] = vispy_overlay
                 if isinstance(overlay, CanvasOverlay):

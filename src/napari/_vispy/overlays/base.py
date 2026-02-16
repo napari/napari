@@ -28,10 +28,12 @@ class VispyBaseOverlay:
     """
 
     overlay: Overlay
+    viewer: ViewerModel
 
-    def __init__(self, *, overlay, node, parent=None) -> None:
+    def __init__(self, *, overlay, viewer, node, parent=None) -> None:
         super().__init__()
         self.overlay = overlay
+        self.viewer = viewer
 
         self.node = node
         self.node.order = self.overlay.order
@@ -65,6 +67,7 @@ class VispyBaseOverlay:
         self.overlay.events.visible.disconnect(self._on_visible_change)
         self.overlay.events.opacity.disconnect(self._on_opacity_change)
         self.overlay.events.blending.disconnect(self._on_blending_change)
+        disconnect_events(self.viewer.events, self)
         self.node.transforms = MatrixTransform()
         self.node.parent = None
 
@@ -87,9 +90,11 @@ class VispyCanvasOverlay(VispyBaseOverlay):
 
     overlay: CanvasOverlay
 
-    def __init__(self, *, overlay, node, parent=None) -> None:
+    def __init__(self, *, overlay, viewer, node, parent=None) -> None:
 
-        super().__init__(overlay=overlay, node=node, parent=parent)
+        super().__init__(
+            overlay=overlay, viewer=viewer, node=node, parent=parent
+        )
         self.x_size = 0.0
         self.y_size = 0.0
         self.node.transform = STTransform()
@@ -97,6 +102,7 @@ class VispyCanvasOverlay(VispyBaseOverlay):
         self.overlay.events.box.connect(self._on_box_change)
         self.overlay.events.box_color.connect(self._on_box_change)
         get_settings().appearance.events.theme.connect(self._on_box_change)
+        self.viewer.events.theme.connect(self._on_box_change)
         self.canvas_position_callback = lambda: None
 
         self.box = Rectangle(center=(0, 0), border_width=0)
@@ -181,18 +187,23 @@ class VispySceneOverlay(VispyBaseOverlay):
 
     overlay: SceneOverlay
 
-    def __init__(self, *, overlay, node, parent=None) -> None:
-        super().__init__(overlay=overlay, node=node, parent=parent)
+    def __init__(self, *, overlay, viewer, node, parent=None) -> None:
+        super().__init__(
+            overlay=overlay, viewer=viewer, node=node, parent=parent
+        )
         self.node.transform = MatrixTransform()
 
 
 class LayerOverlayMixin:
     layer: Layer
 
-    def __init__(self, *, layer: Layer, overlay, node, parent=None) -> None:
+    def __init__(
+        self, *, overlay, layer: Layer, viewer, node, parent=None
+    ) -> None:
         super().__init__(
             node=node,
             overlay=overlay,
+            viewer=viewer,
             parent=parent,
         )
         self.layer = layer
@@ -211,16 +222,4 @@ class LayerOverlayMixin:
 
 
 class ViewerOverlayMixin:
-    viewer: ViewerModel
-
-    def __init__(self, *, viewer, overlay, node, parent=None) -> None:
-        super().__init__(
-            node=node,
-            overlay=overlay,
-            parent=parent,
-        )
-        self.viewer = viewer
-
-    def close(self) -> None:
-        disconnect_events(self.viewer.events, self)
-        super().close()
+    pass

@@ -13,6 +13,7 @@ from napari.utils.colormaps.colormap_utils import (
 if TYPE_CHECKING:
     from vispy.scene import Node
 
+    from napari.components import ViewerModel
     from napari.components.overlays import ColorBarOverlay, Overlay
     from napari.layers import Image, Surface
 
@@ -24,11 +25,16 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
         self,
         *,
         layer: Image | Surface,
+        viewer: ViewerModel,
         overlay: Overlay,
         parent: Node | None = None,
     ) -> None:
         super().__init__(
-            node=Colormap(), layer=layer, overlay=overlay, parent=parent
+            node=Colormap(),
+            layer=layer,
+            viewer=viewer,
+            overlay=overlay,
+            parent=parent,
         )
         self.layer: Image | Surface
         self.x_size = 50
@@ -45,6 +51,7 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
         self.overlay.events.color.connect(self._on_ticks_change)
 
         get_settings().appearance.events.theme.connect(self._on_data_change)
+        self.viewer.events.theme.connect(self._on_data_change)
 
         self.reset()
 

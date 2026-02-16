@@ -38,6 +38,7 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self.overlay.events.visible.connect(self._on_rendering_change)
 
         self.viewer.camera.events.zoom.connect(self._on_size_or_zoom_change)
+        self.viewer.events.theme.connect(self._on_rendering_change)
 
         get_settings().appearance.events.theme.connect(
             self._on_rendering_change
