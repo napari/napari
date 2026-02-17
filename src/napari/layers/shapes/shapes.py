@@ -68,6 +68,7 @@ from napari.layers.utils.text_manager import TextManager
 from napari.settings import get_settings
 from napari.types import LayerDataType
 from napari.utils.colormaps import Colormap, ValidColormapArg, ensure_colormap
+from napari.utils.colormaps.categorical_colormap_utils import ColorCycle
 from napari.utils.colormaps.colormap_utils import ColorType
 from napari.utils.colormaps.standardize_color import (
     hex_to_name,
@@ -356,8 +357,6 @@ class Shapes(Layer):
     _edge_color_property: str
     _face_color_cycle: npt.NDArray
     _edge_color_cycle: npt.NDArray
-    _face_color_cycle_values: npt.NDArray
-    _edge_color_cycle_values: npt.NDArray
     _face_color_mode: str
     _edge_color_mode: str
 
@@ -1004,7 +1003,7 @@ class Shapes(Layer):
 
         Can be a list of colors defined by name, RGB or RGBA
         """
-        return self._edge_color_cycle_values
+        return self._edge_color_cycle.values
 
     @edge_color_cycle.setter
     def edge_color_cycle(self, edge_color_cycle: list | np.ndarray):
@@ -1070,7 +1069,7 @@ class Shapes(Layer):
         """Union[np.ndarray, cycle]:  Color cycle for face_color
         Can be a list of colors defined by name, RGB or RGBA
         """
-        return self._face_color_cycle_values
+        return self._face_color_cycle.values
 
     @face_color_cycle.setter
     def face_color_cycle(self, face_color_cycle: np.ndarray | cycle):
@@ -1190,12 +1189,13 @@ class Shapes(Layer):
             The name of the attribute to set the color of.
             Should be 'edge' for edge_color or 'face' for face_color.
         """
-        transformed_color_cycle, transformed_colors = transform_color_cycle(
+        transformed_colors = transform_color_cycle(
             color_cycle=color_cycle,
             elem_name=f'{attribute}_color_cycle',
             default='white',
         )
-        setattr(self, f'_{attribute}_color_cycle_values', transformed_colors)
+        transformed_color_cycle = ColorCycle(transformed_colors)
+
         setattr(self, f'_{attribute}_color_cycle', transformed_color_cycle)
 
         if self._update_properties is True:
@@ -1633,18 +1633,18 @@ class Shapes(Layer):
                 'ndim': self.ndim,
                 'properties': self.properties,
                 'property_choices': self.property_choices,
-                'text': self.text.dict(),
+                'text': self.text.model_dump(),
                 'shape_type': self.shape_type,
                 'opacity': self.opacity,
                 'z_index': self.z_index,
                 'edge_width': self.edge_width,
                 'face_color': face_color,
                 'face_color_cycle': self.face_color_cycle,
-                'face_colormap': self.face_colormap.dict(),
+                'face_colormap': self.face_colormap.model_dump(),
                 'face_contrast_limits': self.face_contrast_limits,
                 'edge_color': edge_color,
                 'edge_color_cycle': self.edge_color_cycle,
-                'edge_colormap': self.edge_colormap.dict(),
+                'edge_colormap': self.edge_colormap.model_dump(),
                 'edge_contrast_limits': self.edge_contrast_limits,
                 'data': self.data,
                 'features': self.features,

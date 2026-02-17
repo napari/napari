@@ -1003,8 +1003,6 @@ class FeaturesTable(QWidget):
             return
 
         df = self.table.model().sourceModel().df
-        if df.empty:
-            return
 
         # Handle single layer case (no 'Layer' column)
         if len(self._selected_layers) == 1:

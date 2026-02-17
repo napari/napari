@@ -87,5 +87,5 @@ def drag_to_zoom(viewer, event):
     # only trigger zoom if the box is larger than a MIN_ZOOMBOX_SIZE in pixels
     distance = np.abs(np.array(press_pos) - np.array(move_pos))
     if not cancel and distance.min() > MIN_ZOOMBOX_SIZE:
-        viewer._zoom_box.events.zoom(value=(press_position, move_position))
+        viewer._zoom_box.zoom_area = (press_position, move_position)
     yield

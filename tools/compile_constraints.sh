@@ -67,7 +67,7 @@ pyproject_toml="pyproject.toml"
 constraints="resources/constraints"
 flags=(--quiet --extra pyqt6 --extra pyside6 --extra testing --group testing_extra --extra all_optional --exclude ${constraints}/napari_exclude.txt)
 
-for pyv in 3.10 3.11 3.12 3.13; do
+for pyv in 3.10 3.11 3.12 3.13 3.14; do
 uv pip compile --python-version ${pyv} --output-file ${constraints}/constraints_py${pyv}.txt "${upgrade_flag[@]}" ${pyproject_toml} ${constraints}/version_denylist.txt "${flags[@]}"
 done
 

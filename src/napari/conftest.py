@@ -216,11 +216,11 @@ def _fresh_settings(monkeypatch):
     from napari.utils.triangulation_backend import TriangulationBackend
 
     # prevent the developer's config file from being used if it exists
-    cp = NapariSettings.__private_attributes__['_config_path']
+    cp = NapariSettings.model_fields['config_path']
     monkeypatch.setattr(cp, 'default', None)
 
     monkeypatch.setattr(
-        ExperimentalSettings.__fields__['triangulation_backend'],
+        ExperimentalSettings.model_fields['triangulation_backend'],
         'default',
         TriangulationBackend.fastest_available,
     )
@@ -298,7 +298,7 @@ def builtins(npe2pm_: TestPluginManager):
 @pytest.fixture
 def tmp_plugin(npe2pm_: TestPluginManager):
     with npe2pm_.tmp_plugin() as plugin:
-        plugin.manifest.package_metadata = PackageMetadata(  # type: ignore[call-arg]
+        plugin.manifest.package_metadata = PackageMetadata(
             version='0.1.0', name='test'
         )
         plugin.manifest.display_name = 'Temp Plugin'

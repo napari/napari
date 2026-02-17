@@ -17,18 +17,25 @@ if TYPE_CHECKING:
     from vispy.util.event import Event
 
     from napari import Viewer
-    from napari.components.overlays import Overlay
+    from napari.components.overlays import WelcomeOverlay
 
 
 class VispyWelcomeOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
+    overlay: WelcomeOverlay
+
     def __init__(
-        self, *, viewer: Viewer, overlay: Overlay, parent: Node | None = None
+        self,
+        *,
+        viewer: Viewer,
+        overlay: WelcomeOverlay,
+        parent: Node | None = None,
     ) -> None:
         super().__init__(
             node=Welcome(), viewer=viewer, overlay=overlay, parent=parent
         )
         self.viewer.events.theme.connect(self._on_theme_change)
-        self.viewer.layers.events.connect(self._on_visible_change)
+        self.viewer.layers.events.inserted.connect(self._on_visible_change)
+        self.viewer.layers.events.removed.connect(self._on_visible_change)
 
         self.overlay.events.version.connect(self._on_version_change)
         self.overlay.events.shortcuts.connect(self._on_shortcuts_change)
@@ -53,10 +60,14 @@ class VispyWelcomeOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         else:
             background_color = get_theme(self.viewer.theme).canvas.as_hex()
             background_color = transform_color(background_color)[0]
+
+        # ensure background is opaque
+        background_color[-1] = 1.0
+
         color = np.subtract(1, background_color)
         color[-1] = background_color[-1]
         color *= 0.8  # dim a bit
-        self.node.set_color(color)
+        self.node.set_color(color, background_color)
 
     def _on_visible_change(self) -> None:
         show = self.overlay.visible and not self.viewer.layers
@@ -64,7 +75,17 @@ class VispyWelcomeOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         if show:
             self.tip_timer.start()
         else:
-            self.tip_timer.stop()
+            try:
+                self.tip_timer.stop()
+            except RuntimeError as e:  # pragma: no cover
+                if (
+                    'wrapped C/C++ object of type' not in e.args[0]
+                    and 'Internal C++ object' not in e.args[0]
+                ):
+                    # checking if the object is partially deleted. Otherwise
+                    # reraise exception. For more details see:
+                    # https://github.com/napari/napari/pull/5499
+                    raise
 
     def _on_version_change(self) -> None:
         self.node.set_version(self.overlay.version)

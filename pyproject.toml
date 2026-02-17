@@ -50,9 +50,9 @@ dependencies = [
     "lazy_loader>=0.3",
     "magicgui>=0.7.0",
     "napari-console>=0.1.4",
-    "napari-plugin-engine>=0.1.9",
+    "napari-plugin-engine>=0.2.1",
     "napari-svg>=0.1.8",
-    "npe2>=0.7.9",
+    "npe2>=0.8.1",
     "numpy>=1.24.2",
     "pandas>=1.3.3",
     "Pillow>=9.0",
@@ -60,14 +60,16 @@ dependencies = [
     "psutil>=5.9.0",
     "psygnal>=0.15.1",
     "pydantic>=2.8.0",
-    "pygments>=2.6.0",
+    "pygments>=2.13.0",
+    "pydantic-extra-types",
+    "pydantic-settings",
     "PyOpenGL>=3.1.5",
     "pywin32 ; platform_system == 'Windows'",
     "PyYAML>=6.0",
-    "qtpy>=2.3.1",
+    "qtpy>=2.4.0",
     "scikit-image[data]>=0.19.1",
     "scipy>=1.14.0",
-    "superqt>=0.7.4",
+    "superqt>=0.7.8",
     "tifffile>=2022.7.28",
     "toolz>=0.11.0",
     "tqdm>=4.56.0",
@@ -118,7 +120,7 @@ optional-base = [
     "zarr>=2.12.0", # needed by `builtins` (dask.array.from_zarr) to open zarr
     "aiohttp", # needed to open remote files by zarr, replace by extras once https://github.com/zarr-developers/zarr-python/issues/3453 is done
     "napari-metadata>=0.1.0",
-    "napari-plugin-manager >=0.1.9, <0.2.0",
+    "napari-plugin-manager >=0.1.10, <0.2.0",
 ]
 optional-numba = [
     "numba>=0.57.1,<=0.62.1 ; platform_system == 'Darwin' and platform_machine == 'x86_64'",
@@ -126,7 +128,7 @@ optional-numba = [
 ]
 optional = [
     "napari[optional-base,optional-numba,bermuda]",
-    "triangle",
+    "triangle; python_version <= '3.13'",  # there is no wheel for triangle on python 3.14 at the time and build from source causes problems.
 ]
 bermuda = [
     "bermuda>=0.1.5",
@@ -178,7 +180,9 @@ gallery = [
     "nilearn",
     "xarray",
     "h5netcdf[h5py]",
+    "tifffile[codecs]",
     "meshio",
+    "trackastra>=0.4.2",
     "gdown", # to download some large example data files
 ]
 # needed to build docs
@@ -274,7 +278,9 @@ gallery = [
     "nilearn",
     "xarray",
     "h5netcdf[h5py]",
+    "tifffile[codecs]",
     "meshio",
+    "trackastra>=0.4.2",
     "gdown", # to download some large example data files
 ]
 # needed to build docs
@@ -942,13 +948,6 @@ module = [
 ]
 check_untyped_defs = false
 disallow_untyped_defs = false
-
-[[tool.mypy.overrides]]
-module = [
-    "napari._pydantic_compat",
-]
-ignore_errors = true
-
 
 [tool.coverage.report]
 exclude_lines = [

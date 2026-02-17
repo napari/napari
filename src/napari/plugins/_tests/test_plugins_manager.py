@@ -37,7 +37,9 @@ def test_plugin_events(napari_plugin_manager):
     tnpm.events.disabled.connect(lambda e: disable_events.append(e))
 
     class Plugin:
-        pass
+        @napari_hook_implementation
+        def napari_get_reader(path):
+            return None
 
     tnpm.register(Plugin, name='Plugin')
     assert 'Plugin' in tnpm.plugins
