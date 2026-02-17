@@ -394,7 +394,7 @@ class Labels(ScalarFieldBase):
             properties=Event,
             selected_label=WarningEmitter(
                 trans._(
-                    'layer.events.selected_label is deprecated and will be removed in 0.8.0.'
+                    'layer.events.selected_label is deprecated and will be removed in 0.8.0. '
                     'Please use layer.selected_data.events.items_changed instead.',
                     deferred=True,
                 ),
