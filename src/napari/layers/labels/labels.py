@@ -432,9 +432,13 @@ class Labels(ScalarFieldBase):
         self._status = self.mode
         self._preserve_labels = False
 
+        # Keep deprecated `selected_label` wired to selection changes for
+        # backwards compatibility.
+        # `WarningEmitter.connect_from` is lazy, so the source event is only
+        # connected while `events.selected_label` has listeners.
         typing.cast(WarningEmitter, self.events.selected_label).connect_from(
             self.selected_data.events.items_changed
-        )  # For backwards compatibility
+        )
 
     def _slice_dtype(self):
         """Calculate dtype of data view based on data dtype and current colormap"""
