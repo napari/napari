@@ -57,8 +57,8 @@ class VispyBaseLayer(ABC, Generic[_L]):
         self._array_like = False
         self.node = node
         self.first_visible = False
-        self._units = layer.units
-        self._units_scale = (1,) * layer.ndim
+        self._world_units = layer.units
+        self._world_to_layer_units_scale = (1,) * layer.ndim
 
         (
             self.MAX_TEXTURE_SIZE_2D,
@@ -80,16 +80,16 @@ class VispyBaseLayer(ABC, Generic[_L]):
         )
 
     @property
-    def units(self) -> tuple[pint.Unit, ...]:
-        return self._units
+    def world_units(self) -> tuple[pint.Unit, ...]:
+        return self._world_units
 
-    @units.setter
-    def units(self, value: tuple[pint.Unit, ...] | None) -> None:
+    @world_units.setter
+    def world_units(self, value: tuple[pint.Unit, ...] | None) -> None:
         if value is None:
-            self._units = self.layer.units
-            self._units_scale = (1,) * self.layer.ndim
+            self._world_units = self.layer.units
+            self._world_to_layer_units_scale = (1,) * self.layer.ndim
         else:
-            self._units = value[-self.layer.ndim :]
+            self._world_units = value[-self.layer.ndim :]
             self._recalculate_units_scale()
         self._on_matrix_change()
 
@@ -99,14 +99,14 @@ class VispyBaseLayer(ABC, Generic[_L]):
         This is used to convert the layer's data coordinates to world coordinates.
         If self._units is None, then the scale is set to 1 for all dimensions.
         """
-        if self._units is None:
-            self._units_scale = (1,) * self.layer.ndim
+        if self._world_units is None:
+            self._world_to_layer_units_scale = (1,) * self.layer.ndim
             return
 
         reg = pint.get_application_registry()
-        self._units_scale = tuple(
+        self._world_to_layer_units_scale = tuple(
             reg.get_base_units(y)[0] / reg.get_base_units(x)[0]
-            for x, y in zip(self._units, self.layer.units, strict=False)
+            for x, y in zip(self._world_units, self.layer.units, strict=False)
         )
 
     @property
@@ -201,7 +201,9 @@ class VispyBaseLayer(ABC, Generic[_L]):
         # convert NumPy axis ordering to VisPy axis ordering
         # by reversing the axes order and flipping the linear
         # matrix
-        units_scale = [self._units_scale[x] for x in dims_displayed][::-1]
+        units_scale = [
+            self._world_to_layer_units_scale[x] for x in dims_displayed
+        ][::-1]
         translate = transform.translate[::-1] * units_scale
         matrix = transform.linear_matrix[::-1, ::-1].T * units_scale
 
