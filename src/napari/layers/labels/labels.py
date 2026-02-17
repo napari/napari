@@ -432,12 +432,9 @@ class Labels(ScalarFieldBase):
         self._status = self.mode
         self._preserve_labels = False
 
-        # Keep deprecated `selected_label` wired to selection changes for
-        # backwards compatibility.
-        # `WarningEmitter.connect_from` is lazy, so the source event is only
-        # connected while `events.selected_label` has listeners.
-        typing.cast(WarningEmitter, self.events.selected_label).connect_from(
-            self.selected_data.events.items_changed
+        # For backwards compatibility
+        self.selected_data.events.items_changed.connect(
+            lambda *args: self.events.selected_label()
         )
 
     def _slice_dtype(self):
