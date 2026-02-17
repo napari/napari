@@ -2125,8 +2125,18 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             )
             if any(s == 0 for s in display_shape):
                 return
-            if self.data_level != level or not np.array_equal(
-                self.corner_pixels, corners
+            # only update when level changes or
+            # when new view is outside current corner_pixels
+            if (
+                self.data_level != level
+                or np.any(
+                    corners[0, displayed_axes]
+                    < self.corner_pixels[0, displayed_axes]
+                )
+                or np.any(
+                    corners[1, displayed_axes]
+                    > self.corner_pixels[1, displayed_axes]
+                )
             ):
                 self._data_level = level
                 self.corner_pixels = corners
