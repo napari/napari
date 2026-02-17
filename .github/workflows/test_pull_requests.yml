@@ -227,6 +227,11 @@ jobs:
           qt: true
           wm: herbstluftwm
 
+      - name: Download benchmark data
+        run: |
+          wget https://drive.google.com/uc\?export\=download\&id\=1L2sb2cExwJ3R4sJ8PlyJOg1xfk7HJjc- -O data.zip
+          unzip data.zip -d src/napari/benchmarks/
+
       - uses: octokit/request-action@05a2312de9f8207044c4c9e41fe19703986acc13 # v2.x
         # here we get hash of the latest release commit to compare with PR
         id: latest_release

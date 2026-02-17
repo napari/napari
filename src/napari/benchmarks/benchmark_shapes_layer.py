@@ -698,6 +698,8 @@ def _load_data_from_file_or_generate(
 ) -> list[np.ndarray]:
     if n_shapes > 5000:
         raise ValueError('n_shapes should be less than or equal to 5000')
+    if not data_path.exists():
+        data_path.mkdir(parents=False)
     file_path = data_path / f'{function.__name__}_5000_{n_points}.npz'
     if not file_path.exists():
         data = function(n_shapes, n_points)
