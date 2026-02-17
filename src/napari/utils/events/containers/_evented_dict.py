@@ -73,12 +73,19 @@ class EventedDict(TypedMutableMapping[_K, _T]):
         super().__init__(data, basetype)
 
     def first_callback_connect(self):
-        if len(self.events.callbacks) == 1:
-            for item in self._dict.values():
-                self._connect_child_emitters(item)
+        """When the first callback is connected to `self.events`,
+        connect to all child emitters.
+        """
+        for item in self._dict.values():
+            self._connect_child_emitters(item)
 
     def last_callback_disconnect(self):
+        """When the last callback is disconnected from `self.events`, disconnect
+        from all child emitters.
+        """
         if self.events.callbacks:
+            # to not disconnect child emitters if there are
+            # still callbacks connected to this emitter
             return
 
         for item in self._dict.values():
@@ -134,7 +141,7 @@ class EventedDict(TypedMutableMapping[_K, _T]):
     def _connect_child_emitters(self, child: _T) -> None:
         """Connect all events from the child to be re-emitted."""
         if isinstance(child, PsygnalModel):
-            child.events.connect(self._reemit_child_event_psygnal)
+            child.events.connect(self._reemit_child_event_psygnal, unique=True)
         elif isinstance(child, SupportsEvents):
             # make sure the event source has been set on the child
             if child.events.source is None:
