@@ -76,7 +76,7 @@ jobs:
 
       - name: Download benchmark data
         run: |
-          wget "https://drive.google.com/uc?export=download&id=1L2sb2cExwJ3R4sJ8PlyJOg1xfk7HJjc-" -O data.zip
+          wget https://data.napari.dev/data.zip
           unzip data.zip -d src/napari/benchmarks/
           rm data.zip
 
