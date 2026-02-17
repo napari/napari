@@ -78,6 +78,7 @@ jobs:
         run: |
           wget "https://drive.google.com/uc?export=download&id=1L2sb2cExwJ3R4sJ8PlyJOg1xfk7HJjc-" -O data.zip
           unzip data.zip -d src/napari/benchmarks/
+          rm data.zip
 
       - name: Setup asv
         run: python -m pip install "asv[virtualenv]"
