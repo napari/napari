@@ -75,6 +75,7 @@ class VispyBaseLayer(ABC, Generic[_L]):
         self.layer.events.rotate.connect(self._on_matrix_change)
         self.layer.events.shear.connect(self._on_matrix_change)
         self.layer.events.affine.connect(self._on_matrix_change)
+        self.layer.events.units.connect(self._recalculate_units_scale)
         self.layer.experimental_clipping_planes.events.connect(
             self._on_experimental_clipping_planes_change
         )
