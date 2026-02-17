@@ -3,6 +3,7 @@ from unittest.mock import Mock
 
 import npe2
 import numpy as np
+import numpy.testing as npt
 import pytest
 
 from napari.components import LayerList
@@ -611,3 +612,20 @@ def test_layer_renamed_event_connection_management():
 
     layers.remove(layer)
     assert len(layer.events.name.callbacks) == 0
+
+
+def test_update_units_in_layer():
+    layer_n = Image(
+        np.zeros((5, 5)), name='image', scale=(500, 500), units=('um', 'um')
+    )
+    layer_u = Image(
+        np.zeros((5, 5)), name='image', scale=(0.5, 0.5), units=('um', 'um')
+    )
+
+    layer_list = LayerList([layer_u, layer_n])
+    npt.assert_array_equal(layer_list.extent.step, (0.500, 0.500))
+    assert layer_list.extent.units == layer_u.units
+
+    layer_n.units = ('nm', 'nm')
+    npt.assert_almost_equal(layer_list.extent.step, (500, 500))
+    assert layer_list.extent.units == layer_n.units

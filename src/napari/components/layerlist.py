@@ -472,12 +472,14 @@ class LayerList(SelectableEventedList[Layer]):
         )
 
     @staticmethod
-    def _get_units(layers: Iterable[Extent]) -> tuple[pint.Unit, ...] | None:
+    def _get_units(
+        layers_extent: list[Extent],
+    ) -> tuple[pint.Unit, ...] | None:
         """Get units for a given layer list.
 
         Parameters
         ----------
-        layers : list of Layer
+        layers_extent : list of Layer
             list of layers for which units should be calculated
 
         Returns
@@ -486,8 +488,7 @@ class LayerList(SelectableEventedList[Layer]):
             consistent units for selected layers.
             If cannot be determined, returns None.
         """
-        layers_ = list(layers)
-        if not layers_:
+        if not layers_extent:
             return None
 
         reg = pint.get_application_registry()
@@ -495,7 +496,7 @@ class LayerList(SelectableEventedList[Layer]):
         def cmp(u1: pint.Unit, u2: pint.Unit) -> bool:
             return reg.get_base_units(u1)[0] < reg.get_base_units(u2)[0]
 
-        def update_u_dkt(units_t: tuple[pint.Unit, ...]) -> None:
+        def update_u_dkt(units_l: tuple[pint.Unit, ...]) -> None:
             """Update the dimensionality_to_unit dictionary with the smallest units.
 
             Iterate over the units in units_t and for each dimensionality,
@@ -503,7 +504,7 @@ class LayerList(SelectableEventedList[Layer]):
             If it is not, or if the current unit is 'smaller' than the existing
             unit (as determined by the cmp function), update the dictionary.
             """
-            for u in units_t:
+            for u in units_l:
                 dim = u.dimensionality
                 if not (
                     dim in dimensionality_to_unit
@@ -516,14 +517,12 @@ class LayerList(SelectableEventedList[Layer]):
         # for each dimensionality of units (time, length, mass, etc.)
         # we will store the 'smallest' unit (e.g for nm and um, we will choose nm)
 
-        for extent in layers_:
-            if extent.units is None:
-                continue
+        for extent in layers_extent:
+            update_u_dkt(extent.units)
             for u1_, u2_ in zip(extent.units[::-1], units[::-1], strict=False):
                 if u1_.dimensionality != u2_.dimensionality:
                     return None
             if len(extent.units) > len(units):
-                update_u_dkt(extent.units[-len(units) :])
                 units = extent.units
         if not units:
             return None
