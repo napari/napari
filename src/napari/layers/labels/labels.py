@@ -434,8 +434,11 @@ class Labels(ScalarFieldBase):
 
         # For backwards compatibility
         self.selected_data.events.items_changed.connect(
-            lambda *args: self.events.selected_label()
+            self._on_selected_data_change
         )
+
+    def _on_selected_data_change(self, event):
+        self.events.selected_label()
 
     def _slice_dtype(self):
         """Calculate dtype of data view based on data dtype and current colormap"""
