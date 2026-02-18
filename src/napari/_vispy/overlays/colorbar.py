@@ -104,9 +104,6 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
         )
         self.y_size = self.overlay.size[1] + text_height / 2
 
-        # TODO: size setting needs to be smarted to properly account for
-        #       font size in order for the box to be properly set
-
         self._on_position_change()
 
     def reset(self) -> None:

@@ -209,9 +209,7 @@ class LayerOverlayMixin:
         self.layer = layer
         # need manual connection here because these overlays are not necessarily
         # always a child of the actual vispy node of the layer (eg, canvas overlays)
-        self.layer.events.visible.connect(
-            self._on_visible_change, position='last'
-        )
+        self.layer.events.visible.connect(self._on_visible_change)
 
     def _should_be_visible(self) -> bool:
         return self.overlay.visible and self.layer.visible
