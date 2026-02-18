@@ -109,7 +109,7 @@ pyqt5 = [
     "pyqt5-qt5<=5.15.2; sys_platform == 'Windows'",  # 5.15.2 is latest to build on Windows, required for `uv add` compatability as of uv 0.6.9
 ]
 pyqt = [
-    "napari[pyqt5]"
+    "napari[pyqt6]"
 ]
 qt = [
     "napari[pyqt]"
@@ -129,7 +129,7 @@ optional-numba = [
 ]
 optional = [
     "napari[optional-base,optional-numba,bermuda]",
-    "triangle",
+    "triangle; python_version <= '3.13'",  # there is no wheel for triangle on python 3.14 at the time and build from source causes problems.
 ]
 bermuda = [
     "bermuda>=0.1.5",

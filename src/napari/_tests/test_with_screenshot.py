@@ -408,6 +408,25 @@ def test_welcome(make_napari_viewer):
 
 @skip_on_win_ci
 @skip_local_popups
+def test_welcome_overlay_covers_other_overlays(make_napari_viewer):
+    """Test that Welcome overlay covers scale_bar and axes when no layers.
+
+    Regression test for https://github.com/napari/napari/issues/8642
+    """
+    viewer = make_napari_viewer(show=True, show_welcome_screen=True)
+    launch_screenshot = viewer.screenshot(canvas_only=True, flash=False)
+
+    viewer.scale_bar.visible = True
+    viewer.axes.visible = True
+
+    screenshot_with_overlays = viewer.screenshot(canvas_only=True, flash=False)
+
+    np.testing.assert_array_equal(launch_screenshot, screenshot_with_overlays)
+    viewer.welcome_screen.visible = False  # to stop timer
+
+
+@skip_on_win_ci
+@skip_local_popups
 def test_axes_visible(make_napari_viewer):
     """Test that something appears when axes become visible."""
     viewer = make_napari_viewer(show=True)
