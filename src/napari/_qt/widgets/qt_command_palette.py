@@ -431,7 +431,9 @@ def _format_action_name(cmd: CommandRule) -> str:
     return desc
 
 
-def _iter_matched_actions(input_text, action_names):
+def _iter_matched_actions(
+    input_text: str, action_names: dict[CommandRule, str]
+) -> Iterator[tuple[float, CommandRule]]:
     exp = get_settings().experimental
     if not exp.command_palette_fuzzy_search or find_spec('rapidfuzz') is None:
         # basic word matching
