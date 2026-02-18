@@ -239,7 +239,7 @@ class _SliceInput:
 
 
 def apply_units_to_transform(
-    data_to_world: Affine, units: Sequence[str] | None
+    data_to_world: Affine, world_units: Sequence[str] | None
 ) -> Affine:
     """Applies unit scaling to a data_to_world transform.
 
@@ -247,7 +247,7 @@ def apply_units_to_transform(
     ----------
     data_to_world : Affine
         The original data to world transform.
-    units : Sequence[str] | None
+    world_units : Sequence[str] | None
         The units for each dimension of the layer.
 
     Returns
@@ -255,17 +255,19 @@ def apply_units_to_transform(
     Affine
         The new data to world transform with unit scaling applied.
     """
-    if units is None:
+    if world_units is None:
         return data_to_world
 
     layer_units = data_to_world.units
-    if len(units) < len(layer_units):
+    if len(world_units) < len(layer_units):
         return data_to_world
 
     reg = pint.get_application_registry()
     scale = tuple(
         reg.get_base_units(x)[0] / reg.get_base_units(y)[0]
-        for x, y in zip(units[-len(layer_units) :], layer_units, strict=True)
+        for x, y in zip(
+            world_units[-len(layer_units) :], layer_units, strict=True
+        )
     )
     scale_matrix = np.diag(scale)
     new_linear = data_to_world.linear_matrix @ scale_matrix

@@ -640,6 +640,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         # We define `add_labels` dynamically, so mypy doesn't know about it.
 
     def _on_layer_reload(self, event: Event) -> None:
+        self.dims.units = self.layers.extent.units
         self._layer_slicer.submit(
             layers=[event.layer], dims=self.dims, force=True
         )
@@ -653,6 +654,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             List of layers to update. If none provided updates all.
         """
         layers = layers or self.layers
+        self.dims.units = self.layers.extent.units
         self._layer_slicer.submit(layers=layers, dims=self.dims)
         # If the currently selected layer is sliced asynchronously, then the value
         # shown with this position may be incorrect. See the discussion for more details:
@@ -857,6 +859,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         layer.events.cursor_size.connect(self._update_cursor_size)
         layer.events.data.connect(self._on_layers_change)
         layer.events.scale.connect(self._on_layers_change)
+        layer.events.extent.connect(self._on_layers_change)
         layer.events.translate.connect(self._on_layers_change)
         layer.events.rotate.connect(self._on_layers_change)
         layer.events.shear.connect(self._on_layers_change)
