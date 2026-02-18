@@ -70,7 +70,6 @@ dependencies = [
     "scikit-image[data]>=0.19.1",
     "scipy>=1.14.0",
     "superqt>=0.7.8",
-    "rapidfuzz>=3",
     "tifffile>=2022.7.28",
     "toolz>=0.11.0",
     "tqdm>=4.56.0",
@@ -122,6 +121,7 @@ optional-base = [
     "aiohttp", # needed to open remote files by zarr, replace by extras once https://github.com/zarr-developers/zarr-python/issues/3453 is done
     "napari-metadata>=0.1.0",
     "napari-plugin-manager >=0.1.10, <0.2.0",
+    "rapidfuzz>=3",  # fuzzy search in command palette
 ]
 optional-numba = [
     "numba>=0.57.1,<=0.62.1 ; platform_system == 'Darwin' and platform_machine == 'x86_64'",
