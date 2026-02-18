@@ -1,15 +1,17 @@
 from __future__ import annotations
 
 from collections.abc import Iterator, Mapping
+from importlib.util import find_spec
 from typing import TYPE_CHECKING, Any, cast
 
 from app_model.types import CommandRule, MenuItem
 from qtpy import QtCore, QtGui, QtWidgets as QtW
 from qtpy.QtCore import Qt, Signal
-from rapidfuzz import fuzz, process, utils
 
 from napari._app_model import get_app_model
 from napari._app_model.context._context import get_context
+from napari.settings import get_settings
+from napari.utils.notifications import show_warning
 
 if TYPE_CHECKING:
     from napari._qt.qt_main_window import _QtMainWindow
@@ -110,6 +112,14 @@ class QCommandPalette(QtW.QWidget):
 
         self.raise_()
         self._line.setFocus()
+
+        exp = get_settings().experimental
+        if exp.command_palette_fuzzy_search and find_spec('rapidfuzz') is None:
+            show_warning(
+                'Fuzzy command search is enabled in experimental settings, but '
+                'rapidfuzz is not installed. Falling back to simple word matching. '
+                'To suppress this warning, disable the setting or install rapidfuzz.'
+            )
         return
 
     def hide(self) -> None:
@@ -377,17 +387,10 @@ class QCommandList(QtW.QListView):
 
         commands: list[tuple[float, CommandRule]] = []
         action_names = {c: _format_action_name(c) for c in self.all_commands}
-        for _, score, command in process.extract(
-            input_text,
-            action_names,
-            limit=100,
-            score_cutoff=60,
-            scorer=fuzz.partial_token_sort_ratio,
-            processor=utils.default_process,
-        ):
+        for score, command in _iter_matched_actions(input_text, action_names):
             if score > 0:
                 if _enabled(command, self._app_model_context):
-                    score += 100
+                    score += 101
                 commands.append((score, command))
         commands.sort(key=lambda x: x[0], reverse=True)
         for _, command in commands:
@@ -410,6 +413,14 @@ def _enabled(action: CommandRule, context: Mapping[str, Any]) -> bool:
         return False
 
 
+def _match_score(action: CommandRule, input_text: str) -> float:
+    """Return a match score (between 0 and 1) for the input text."""
+    name = _format_action_name(action).lower()
+    if all(word in name for word in input_text.lower().split(' ')):
+        return 1.0
+    return 0.0
+
+
 def _format_action_name(cmd: CommandRule) -> str:
     sep = ':' if ':' in cmd.id else '.'
     *contexts, _ = cmd.id.split(sep)
@@ -420,15 +431,59 @@ def _format_action_name(cmd: CommandRule) -> str:
     return desc
 
 
+def _iter_matched_actions(input_text, action_names):
+    exp = get_settings().experimental
+    if not exp.command_palette_fuzzy_search or find_spec('rapidfuzz') is None:
+        # basic word matching
+        words = input_text.lower().split(' ')
+        for command, name in action_names.items():
+            name = name.lower()
+            if all(word in name for word in words):
+                yield 100, command
+            else:
+                yield 0, command
+        return
+
+    # fuzzy finding
+    from rapidfuzz import fuzz, process, utils
+
+    for _, score, command in process.extract(
+        input_text,
+        action_names,
+        limit=100,
+        score_cutoff=exp.command_palette_fuzzy_search_threshold,
+        scorer=fuzz.partial_token_sort_ratio,
+        processor=utils.default_process,
+    ):
+        yield score, command
+
+
 def _iter_highlight_slices(
     query: str, text: str, min_len: int = 2
 ) -> Iterator[tuple[str, bool]]:
-    """Get reasonable highlight approximation for fuzzy matched string.
+    """Get highlights for matches, or reasonable approximation for fuzzy matches.
 
     Will match all non-overlapping substrings bigger than min_len.
     It's not a correct representation of what the fuzzy matching does,
     but should help visualize a bit what's being matched.
     """
+    exp = get_settings().experimental
+    if not exp.command_palette_fuzzy_search or find_spec('rapidfuzz') is None:
+        # basic word matching
+        import re
+
+        words = query.split(' ')
+        pattern = re.compile('|'.join(words), re.IGNORECASE)
+        last_end = 0
+        for match_obj in pattern.finditer(text):
+            yield text[last_end : match_obj.start()], False
+            yield match_obj.group(), True
+            last_end = match_obj.end()
+        yield text[last_end:], False
+        return
+
+    # fancier substring matching for fuzzy finding
+
     len_query = len(query)
     len_text = len(text)
 
