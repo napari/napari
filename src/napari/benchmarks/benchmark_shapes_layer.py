@@ -4,6 +4,7 @@
 # https://github.com/napari/napari/blob/main/docs/BENCHMARKS.md
 import itertools
 import pathlib
+import sys
 from collections.abc import Callable
 from contextlib import suppress
 from enum import StrEnum, auto
@@ -702,6 +703,10 @@ def _load_data_from_file_or_generate(
         data_path.mkdir(parents=False)
     file_path = data_path / f'{function.__name__}_5000_{n_points}.npz'
     if not file_path.exists():
+        print(  # noqa: T201
+            f'Generating data for {function.__name__} to file {file_path}',
+            file=sys.stderr,
+        )
         data = function(n_shapes, n_points)
         np.savez_compressed(file_path, data=data)
     else:
