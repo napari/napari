@@ -1,3 +1,5 @@
+from pydantic import Field
+
 from napari.components._viewer_constants import CanvasPosition
 from napari.components.overlays.base import CanvasOverlay
 from napari.utils.color import ColorValue
@@ -36,3 +38,6 @@ class ColorBarOverlay(CanvasOverlay):
     tick_length: float = 5
     font_size: float = 10
     position: CanvasPosition = CanvasPosition.TOP_RIGHT
+    colormanager_attribute: str | None = Field(
+        default=None, frozen=True, repr=False
+    )

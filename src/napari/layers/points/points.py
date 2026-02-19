@@ -554,7 +554,16 @@ class Points(Layer):
 
         from napari.components.overlays import ColorBarOverlay
 
-        self._overlays.update({'colorbar': ColorBarOverlay()})
+        self._overlays.update(
+            {
+                'face_colorbar': ColorBarOverlay(
+                    colormanager_attribute='_face'
+                ),
+                'border_colorbar': ColorBarOverlay(
+                    colormanager_attribute='_border'
+                ),
+            }
+        )
 
     @property
     def data(self) -> np.ndarray:
