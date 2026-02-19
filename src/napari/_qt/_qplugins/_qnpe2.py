@@ -28,7 +28,11 @@ from napari._qt._qapp_model.injection._qproviders import (
 )
 from napari.errors.reader_errors import MultipleReaderError
 from napari.plugins import menu_item_template
-from napari.plugins._npe2 import _when_group_order, get_widget_contribution
+from napari.plugins._npe2 import (
+    _get_and_validate_icon,
+    _when_group_order,
+    get_widget_contribution,
+)
 from napari.utils.events import Event
 from napari.utils.translations import trans
 from napari.viewer import Viewer, ViewerModel
@@ -120,9 +124,13 @@ def _build_samples_submenu_actions(
         # To display '&' instead of creating a shortcut
         title = title.replace('&', '&&')
 
+        cmd = pm.instance().get_command(sample.command)
+        icon = _get_and_validate_icon(cmd, mf)
+
         action: Action = Action(
             id=f'{mf.name}:{sample.key}',
             title=title,
+            icon=icon,
             menus=[{'id': submenu_id, 'group': MenuGroup.NAVIGATION}],
             callback=_add_sample_partial,
         )
@@ -277,12 +285,16 @@ def _build_widgets_submenu_actions(
         # To display '&' instead of creating a shortcut
         title = title.replace('&', '&&')
 
+        cmd = pm.instance().get_command(widget.command)
+        icon = _get_and_validate_icon(cmd, mf)
+
         widget_actions.append(
             Action(
                 id=f'{mf.name}:{widget.display_name}',
                 title=title,
                 callback=_widget_callback,
                 menus=action_menus,
+                icon=icon,
                 toggled=ToggleRule(
                     get_current=_get_current_dock_status_partial
                 ),
