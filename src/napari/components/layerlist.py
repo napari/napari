@@ -281,7 +281,9 @@ class LayerList(SelectableEventedList[Layer]):
         -------
         extent_world : array, shape (2, D)
         """
-        return self._get_extent_world([layer.extent for layer in self])
+        return self._get_extent_world(
+            [layer.extent for layer in self], units=self.extent.units
+        )
 
     @cached_property
     def _extent_world_augmented(self) -> np.ndarray:
@@ -297,6 +299,7 @@ class LayerList(SelectableEventedList[Layer]):
         return self._get_extent_world(
             [layer._extent_augmented for layer in self],
             augmented=True,
+            units=self.extent.units,
         )
 
     def _get_min_and_max(self, mins_list, maxes_list):
