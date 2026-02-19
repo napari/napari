@@ -31,6 +31,8 @@ from napari.utils.events.event_utils import connect_setattr_value
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
+    from qtpy.QtGui import QResizeEvent
+
     from napari._qt.widgets.qt_dims import QtDims
 
 
@@ -64,14 +66,11 @@ class QtDimSliderWidget(QWidget):
     play_stopped = Signal()
     margins_changed = Signal(float)
 
-    def __init__(self, parent: QWidget, axis: int) -> None:
+    def __init__(self, parent: 'QtDims', axis: int) -> None:
         super().__init__(parent=parent)
         self.axis = axis
         self.qt_dims: QtDims = parent
         self.dims: Dims = parent.dims
-        self.axis_label = None
-        self.slider = None
-        self.play_button = None
         self.margins_popup = None
         self.curslice_label = QLineEdit(self)
         self.curslice_label.setToolTip(
@@ -102,17 +101,17 @@ class QtDimSliderWidget(QWidget):
             settings.application.events.playback_fps, self, 'fps'
         )
 
-        self._minframe = None
-        self._maxframe = None
+        self._minframe = 0
+        self._maxframe = 0
         self._loop_mode = settings.application.playback_mode
         connect_setattr_value(
             settings.application.events.playback_mode, self, 'loop_mode'
         )
 
         layout = QHBoxLayout()
-        self._create_axis_label_widget()
-        self._create_range_slider_widget()
-        self._create_play_button_widget()
+        self.axis_label = self._create_axis_label_widget()
+        self.slider = self._create_range_slider_widget()
+        self.play_button = self._create_play_button_widget()
 
         layout.addWidget(self.axis_label)
         layout.addWidget(self.play_button)
@@ -126,7 +125,7 @@ class QtDimSliderWidget(QWidget):
         self.setLayout(layout)
         self.dims.events.axis_labels.connect(self._pull_label)
 
-    def _set_slice_from_label(self):
+    def _set_slice_from_label(self) -> None:
         """Update the dims point based on the curslice_label."""
         # On teardown some tests fail on OSX with an `IndexError`
         try:
@@ -143,7 +142,7 @@ class QtDimSliderWidget(QWidget):
         self.qt_dims.setFocus()
         self.dims.set_current_step(self.axis, val)
 
-    def _create_axis_label_widget(self):
+    def _create_axis_label_widget(self) -> QElidingLineEdit:
         """Create the axis label widget which accompanies its slider."""
         label = QElidingLineEdit(self)
         label.setObjectName('axis_label')  # needed for _update_label
@@ -158,16 +157,16 @@ class QtDimSliderWidget(QWidget):
         label.setContentsMargins(0, 0, 2, 0)
         label.textChanged.connect(self._update_label)
         label.editingFinished.connect(self._clear_label_focus)
-        self.axis_label = label
+        return label
 
-    def _on_value_changed(self, value):
+    def _on_value_changed(self, value: int) -> None:
         """Slider changed to this new value.
 
         We split this out as a separate function for perfmon.
         """
         self.dims.set_current_step(self.axis, value)
 
-    def _create_range_slider_widget(self):
+    def _create_range_slider_widget(self) -> _ModifiedScrollBar:
         """Creates a range slider widget for a given axis."""
         # Set the maximum values of the range slider to be one step less than
         # the range of the layer as otherwise the slider can move beyond the
@@ -184,24 +183,24 @@ class QtDimSliderWidget(QWidget):
         # Listener to be used for sending events back to model:
         slider.valueChanged.connect(self._on_value_changed)
 
-        def slider_focused_listener():
-            self.dims.last_used = self.axis
-
         # linking focus listener to the last used:
-        slider.sliderPressed.connect(slider_focused_listener)
-        self.slider = slider
+        slider.sliderPressed.connect(self._slider_focused_listener)
+        return slider
 
-    def show_margins_popupup(self):
+    def _slider_focused_listener(self) -> None:
+        self.dims.last_used = self.axis
+
+    def show_margins_popup(self) -> None:
         self.margins_popup = QMarginSlidersPopup(self.dims, self.axis, self)
         self.margins_popup.setParent(self)
         self.margins_popup.show_above_mouse()
 
-    def _create_play_button_widget(self):
+    def _create_play_button_widget(self) -> 'QtPlayButton':
         """Creates the actual play button, which has the modal popup."""
-        self.play_button = QtPlayButton(
+        play_button = QtPlayButton(
             self.qt_dims, self.axis, fps=self._fps, mode=self._loop_mode
         )
-        self.play_button.setToolTip(
+        play_button.setToolTip(
             trans._('Right click on button for playback setting options.')
         )
         self.play_button.mode_combo.currentTextChanged.connect(
@@ -210,15 +209,16 @@ class QtDimSliderWidget(QWidget):
             )
         )
 
-        def fps_listener(*args):
-            fps = self.play_button.fpsspin.value()
-            fps *= -1 if self.play_button.reverse_check.isChecked() else 1
-            self.__class__.fps.fset(self, fps)
-
-        self.play_button.fpsspin.editingFinished.connect(fps_listener)
-        self.play_button.reverse_check.stateChanged.connect(fps_listener)
+        play_button.fpsspin.editingFinished.connect(self._fps_listener)
+        play_button.reverse_check.stateChanged.connect(self._fps_listener)
         self.play_stopped.connect(self.play_button._handle_stop)
         self.play_started.connect(self.play_button._handle_start)
+        return play_button
+
+    def _fps_listener(self, *_) -> None:
+        fps = self.play_button.fpsspin.value()
+        fps *= -1 if self.play_button.reverse_check.isChecked() else 1
+        self.__class__.fps.fset(self, fps)
 
     def _pull_label(self):
         """Updates the label LineEdit from the dims model."""
@@ -229,12 +229,12 @@ class QtDimSliderWidget(QWidget):
         """Update dimension slider label."""
         self.dims.set_axis_label(self.axis, self.axis_label.text())
 
-    def _clear_label_focus(self):
-        """Clear focus from dimension slider label."""
+    def _clear_label_focus(self) -> None:
+        """Clear focus from the dimension slider label."""
         self.axis_label.clearFocus()
         self.qt_dims.setFocus()
 
-    def _update_range(self):
+    def _update_range(self) -> None:
         """Updates range for slider."""
         displayed_sliders = self.qt_dims._displayed_sliders
 
@@ -263,23 +263,23 @@ class QtDimSliderWidget(QWidget):
             if self.margins_popup:
                 self.margins_popup._reset_sliders()
 
-    def _update_slider(self):
+    def _update_slider(self) -> None:
         """Update dimension slider."""
         self.slider.setValue(self.dims.current_step[self.axis])
         self._update_slice_labels()
 
-    def _update_slice_labels(self):
+    def _update_slice_labels(self) -> None:
         """Update slice labels to match current dimension slider position."""
         self.curslice_label.setText(str(self.dims.current_step[self.axis]))
         self.curslice_label.setAlignment(Qt.AlignmentFlag.AlignRight)
 
     @property
-    def fps(self):
+    def fps(self) -> int:
         """Frames per second for animation."""
         return self._fps
 
     @fps.setter
-    def fps(self, value):
+    def fps(self, value: int) -> None:
         """Frames per second for animation.
 
         Parameters
@@ -295,7 +295,7 @@ class QtDimSliderWidget(QWidget):
         self.fps_changed.emit(value)
 
     @property
-    def loop_mode(self):
+    def loop_mode(self) -> LoopMode:
         """Loop mode for animation.
 
         Loop mode enumeration napari._qt._constants.LoopMode
@@ -314,7 +314,7 @@ class QtDimSliderWidget(QWidget):
         return self._loop_mode
 
     @loop_mode.setter
-    def loop_mode(self, value):
+    def loop_mode(self, value: LoopMode | str):
         """Loop mode for animation.
 
         Parameters
@@ -341,14 +341,14 @@ class QtDimSliderWidget(QWidget):
         self.mode_changed.emit(str(value))
 
     @property
-    def frame_range(self):
+    def frame_range(self) -> tuple[int, int]:
         """Frame range for animation, as (minimum_frame, maximum_frame)."""
         frame_range = (self._minframe, self._maxframe)
         frame_range = frame_range if any(frame_range) else None
         return frame_range
 
     @frame_range.setter
-    def frame_range(self, value):
+    def frame_range(self, value: tuple[int, int]) -> None:
         """Frame range for animation, as (minimum_frame, maximum_frame).
 
         Parameters
@@ -370,7 +370,9 @@ class QtDimSliderWidget(QWidget):
         self._minframe, self._maxframe = value
         self.range_changed.emit(tuple(value))
 
-    def _update_play_settings(self, fps, loop_mode, frame_range):
+    def _update_play_settings(
+        self, fps, loop_mode: LoopMode, frame_range: tuple[int, int]
+    ) -> None:
         """Update settings for animation.
 
         Parameters
@@ -400,7 +402,7 @@ class QtDimSliderWidget(QWidget):
         if frame_range is not None:
             self.frame_range = frame_range
 
-    def resizeEvent(self, event):
+    def resizeEvent(self, event: 'QResizeEvent') -> None:
         """Emit a signal to inform about a size change."""
         self.size_changed.emit()
         super().resizeEvent(event)
@@ -423,7 +425,7 @@ class QtCustomDoubleSpinBox(QDoubleSpinBox):
         super().__init__(*args, *kwargs)
         self.valueChanged.connect(self.custom_change_event)
 
-    def custom_change_event(self, value):
+    def custom_change_event(self, value) -> None:
         """Emits editingFinished if valueChanged AND left mouse button is down.
         (i.e. when the user clicks on the spin buttons)
         Paramters
@@ -434,7 +436,7 @@ class QtCustomDoubleSpinBox(QDoubleSpinBox):
         if QApplication.mouseButtons() & Qt.MouseButton.LeftButton:
             self.editingFinished.emit()
 
-    def textFromValue(self, value):
+    def textFromValue(self, value: float) -> str:
         """This removes the decimal places if the float is an integer.
 
         Parameters
@@ -475,7 +477,12 @@ class QtPlayButton(QPushButton):
     play_requested = Signal(int)  # axis, fps
 
     def __init__(
-        self, qt_dims, axis, reverse=False, fps=10, mode=LoopMode.LOOP
+        self,
+        qt_dims,
+        axis,
+        reverse=False,
+        fps=10,
+        mode: LoopMode = LoopMode.LOOP,
     ) -> None:
         super().__init__()
         self.qt_dims_ref = ref(qt_dims)
