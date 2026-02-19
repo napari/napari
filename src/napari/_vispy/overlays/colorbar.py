@@ -20,13 +20,12 @@ if TYPE_CHECKING:
     from vispy.scene import Node
 
     from napari.components.overlays import ColorBarOverlay, Overlay
-    from napari.layers import Image, Points, Surface
+    from napari.layers import Layer
 
 
 class IntensityLayerWrapper:
-    def __init__(self, overlay, layer: Image | Surface):
+    def __init__(self, overlay, layer: Layer):
         self.layer = layer
-        self.overlay = overlay
 
     @property
     def contrast_limits(self) -> tuple[float, float]:
@@ -46,7 +45,7 @@ class ColorManagerWrapper:
         self.color_manager = color_manager
 
     @property
-    def contrast_limits(self) -> tuple[float, float]:
+    def contrast_limits(self) -> tuple[float, float] | None:
         return self.color_manager.contrast_limits
 
     @property
@@ -64,14 +63,14 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
     def __init__(
         self,
         *,
-        layer: Image | Surface | Points,
+        layer: Layer,
         overlay: Overlay,
         parent: Node | None = None,
     ) -> None:
         super().__init__(
             node=Colormap(), layer=layer, overlay=overlay, parent=parent
         )
-        self.layer: Image | Surface | Points
+        self.layer: Layer
         self.x_size = 50
         self.y_size = 250
         self.x_offset = 7
@@ -85,7 +84,7 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
                 self.overlay, color_manager
             )
             color_manager.events.contrast_limits.connect(self._on_data_change)
-            # connect other colormanager events
+            # TODO: connect other colormanager events
         else:
             self.source_wrapper = IntensityLayerWrapper(
                 self.overlay, self.layer
@@ -108,22 +107,41 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
 
         self.reset()
 
+        self._on_data_change()
+
+    def _on_visible_change(self) -> None:
+        super()._on_visible_change()
+        # necessary to update outdated values since we skip updating when
+        # invisible
+        self.reset()
+
     def _on_data_change(self) -> None:
-        self.node.set_data_and_clim(
-            clim=_coerce_contrast_limits(
-                self.source_wrapper.contrast_limits
-            ).contrast_limits,
-            dtype=self.source_wrapper.dtype,
-        )
+        # TODO: this branching is unfortunately necessary for now until we
+        #       support some kind of colorbar for categorical data
+        # currently unsupported path of categorical colormap
+        # we just make invisible and bail out, and everywhere else
+        # we make sure to not update things when invisible
+        clim = self.source_wrapper.contrast_limits
+        if clim is None:
+            self.node.visible = False
+        else:
+            self._on_visible_change()
+            self.node.set_data_and_clim(
+                clim=_coerce_contrast_limits(
+                    self.source_wrapper.contrast_limits
+                ).contrast_limits,
+                dtype=self.source_wrapper.dtype,
+            )
+
+    def _on_gamma_change(self) -> None:
+        if self.node.visible:
+            self.node.set_gamma(self.source_wrapper.gamma)
 
     def _on_colormap_change(self) -> None:
         colormap = (
             getattr(self.layer, 'colormap', None) or self.layer.face_colormap
         )
         self.node.set_cmap(_napari_cmap_to_vispy(colormap))
-
-    def _on_gamma_change(self) -> None:
-        self.node.set_gamma(self.source_wrapper.gamma)
 
     def _on_size_change(self) -> None:
         self.node.set_size(self.overlay.size)
