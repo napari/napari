@@ -1042,14 +1042,10 @@ class VispyCanvas:
                 parent = self.layer_to_visual[layer].node
 
             if vispy_overlay is None:
-                color_manager = (
-                    None if not getattr(layer, '_face', None) else layer._face
-                )
                 vispy_overlay = create_vispy_overlay(
                     overlay=overlay,
                     layer=layer,
                     parent=parent,
-                    color_manager=color_manager,
                 )
                 overlay_to_visual[overlay] = vispy_overlay
                 if isinstance(overlay, CanvasOverlay):
