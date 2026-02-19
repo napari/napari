@@ -120,6 +120,7 @@ class LayerList(SelectableEventedList[Layer]):
     """
 
     def __init__(self, data=()) -> None:
+        self._units = None
         super().__init__(
             data=data,
             basetype=Layer,
@@ -130,7 +131,6 @@ class LayerList(SelectableEventedList[Layer]):
         )
         self.events.inserted.connect(self._on_layer_inserted)
         self.events.removed.connect(self._on_layer_removed)
-        self._units = None
         self._create_contexts()
 
     def _on_layer_inserted(self, event: Event):
