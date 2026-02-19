@@ -784,9 +784,7 @@ class VispyCanvas:
         napari_layer._overlays.events.added.connect(overlay_callback)
         napari_layer._overlays.events.removed.connect(overlay_callback)
         napari_layer._overlays.events.changed.connect(overlay_callback)
-        napari_layer.events.units.connect(
-            self._dereferenced_world_units_update
-        )
+        napari_layer.events.units.connect(self._deferred_world_units_update)
         self._overlay_callbacks[napari_layer] = overlay_callback
         self.viewer.camera.events.angles.connect(vispy_layer._on_camera_move)
         self._update_world_units()
@@ -796,7 +794,7 @@ class VispyCanvas:
         vispy_layer._on_matrix_change()
         self._update_scenegraph()
 
-    def _dereferenced_world_units_update(self):
+    def _deferred_world_units_update(self):
         """Defer the world units update until the next draw event."""
         self._needs_world_units_update = True
 
@@ -828,7 +826,7 @@ class VispyCanvas:
         disconnect_events(
             layer._overlays.events, self._overlay_callbacks[layer]
         )
-        layer.events.units.disconnect(self._dereferenced_world_units_update)
+        layer.events.units.disconnect(self._deferred_world_units_update)
         del self._overlay_callbacks[layer]
 
         vispy_layer = self.layer_to_visual.pop(layer)
