@@ -263,6 +263,9 @@ class VispyCanvas:
         self.viewer.layers.events.end_batch.connect(
             self._resume_scene_graph_update
         )
+        self.viewer.layers.events.units.connect(
+            self._deferred_world_units_update
+        )
         self.viewer.grid.events.stride.connect(self._update_scenegraph)
         self.viewer.grid.events.shape.connect(self._update_scenegraph)
         self.viewer.grid.events.enabled.connect(self._update_scenegraph)

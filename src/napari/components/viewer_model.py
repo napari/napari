@@ -701,7 +701,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             # TODO: can be optimized with dims.update(), but events need fixing
             self.dims.ndim = len(ranges)
             self.dims.range = ranges
-            self.dims.units = self.layers._units
+            self.dims.units = self.layers.units
 
         new_dim = self.dims.ndim
         dim_diff = new_dim - len(self.cursor.position)

@@ -17,6 +17,7 @@ from napari.layers.utils.layer_utils import Extent, LLExtent
 from napari.utils.events import Event
 from napari.utils.events.containers import SelectableEventedList
 from napari.utils.naming import inc_name_count
+from napari.utils.transforms._units import get_units_from_name
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
@@ -69,6 +70,9 @@ class LayerList(SelectableEventedList[Layer]):
         emitted when the current item has changed.
     selection.events._current : (value: _T)
         emitted when the current item has changed. (Private event)
+    units: (value: tuple[pint.Unit, ...] | None)
+        emitted when the global overriding units for the layer list is changed.
+
 
     Notes
     -----
@@ -121,9 +125,12 @@ class LayerList(SelectableEventedList[Layer]):
             basetype=Layer,
             lookup={str: get_name},
         )
-        self.events.add(begin_batch=Event, end_batch=Event, renamed=Event)
+        self.events.add(
+            begin_batch=Event, end_batch=Event, renamed=Event, units=Event
+        )
         self.events.inserted.connect(self._on_layer_inserted)
         self.events.removed.connect(self._on_layer_removed)
+        self._units = None
         self._create_contexts()
 
     def _on_layer_inserted(self, event: Event):
@@ -255,6 +262,12 @@ class LayerList(SelectableEventedList[Layer]):
         self._clean_cache()
         new_layer.events.extent.connect(self._clean_cache)
         new_layer.events._extent_augmented.connect(self._clean_cache)
+        if self._units is not None and len(self._units) < new_layer.ndim:
+            warnings.warn(
+                'New layer has more dimensions than the current units, dropping extra units.',
+                stacklevel=2,
+            )
+            self.units = None
         super().insert(index, new_layer)
 
     def remove_selected(self):
@@ -282,7 +295,7 @@ class LayerList(SelectableEventedList[Layer]):
         extent_world : array, shape (2, D)
         """
         return self._get_extent_world(
-            [layer.extent for layer in self], units=self.extent.units
+            [layer.extent for layer in self], units=self.units
         )
 
     @cached_property
@@ -299,7 +312,7 @@ class LayerList(SelectableEventedList[Layer]):
         return self._get_extent_world(
             [layer._extent_augmented for layer in self],
             augmented=True,
-            units=self.extent.units,
+            units=self.units,
         )
 
     def _get_min_and_max(self, mins_list, maxes_list):
@@ -466,7 +479,7 @@ class LayerList(SelectableEventedList[Layer]):
             extent for selected layers
         """
         extent_list = [layer.extent for layer in layers]
-        units = self._get_units(extent_list)
+        units = self._units or self._get_units(extent_list)
         return LLExtent(
             data=None,
             world=self._get_extent_world(extent_list, units=units),
@@ -551,7 +564,7 @@ class LayerList(SelectableEventedList[Layer]):
         )
 
     @property
-    def _units(self) -> tuple[pint.Unit, ...] | None:
+    def units(self) -> tuple[pint.Unit, ...] | None:
         """Units of layers in world coordinates.
 
         Returns
@@ -559,7 +572,31 @@ class LayerList(SelectableEventedList[Layer]):
         units : tuple[pint.Unit, ...] or None
             Units of layers in world coordinates.
         """
-        return self.extent.units
+        return self._units or self.extent.units
+
+    @units.setter
+    def units(self, units: tuple[pint.Unit, ...] | None):
+        """Set override of units of layers in world coordinates.
+
+        Parameters
+        ----------
+        units : tuple[pint.Unit, ...] or None
+            Units to set for layers in world coordinates. If None, units are not changed.
+        """
+        if units is None:
+            self._units = None
+            self._clean_cache()
+            self.events.units(value=self.units)
+            return
+
+        if len(units) < self.ndim:
+            raise ValueError(
+                'Number of units must be at least the number of dimensions.'
+            )
+        units = get_units_from_name(units)
+        self._units = units
+        self._clean_cache()
+        self.events.units(value=self.units)
 
     @property
     def ndim(self) -> int:
