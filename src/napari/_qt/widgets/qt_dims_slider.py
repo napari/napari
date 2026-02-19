@@ -211,8 +211,8 @@ class QtDimSliderWidget(QWidget):
 
         play_button.fpsspin.editingFinished.connect(self._fps_listener)
         play_button.reverse_check.stateChanged.connect(self._fps_listener)
-        self.play_stopped.connect(self.play_button._handle_stop)
-        self.play_started.connect(self.play_button._handle_start)
+        self.play_stopped.connect(play_button._handle_stop)
+        self.play_started.connect(play_button._handle_start)
         return play_button
 
     def _fps_listener(self, *_) -> None:
