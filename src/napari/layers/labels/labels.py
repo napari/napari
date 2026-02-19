@@ -1721,7 +1721,7 @@ def _coerce_indices_for_vectorization(array, indices: list) -> tuple:
 
 
 class WrongSelectedLabelError(ValueError):
-    """Raised when the selected label is not in the data array."""
+    """Raised when the selected label is not in the range of data array dtype."""
 
     _MAX_DISPLAYED_INVALID_VALUES = 6
 
