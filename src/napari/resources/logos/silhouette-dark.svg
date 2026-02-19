@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="824"
+   height="824"
+   viewBox="0 0 824 824"
+   version="1.1"
+   id="svg22"
+   sodipodi:docname="silhouette-dark.svg"
+   inkscape:version="1.4.3 (0d15f75042, 2025-12-25)"
+   inkscape:export-filename="logo.png"
+   inkscape:export-xdpi="96"
+   inkscape:export-ydpi="96"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <sodipodi:namedview
+     id="namedview22"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="false"
+     inkscape:deskcolor="#d1d1d1"
+     showguides="true"
+     inkscape:zoom="0.32"
+     inkscape:cx="482.8125"
+     inkscape:cy="440.625"
+     inkscape:window-width="1407"
+     inkscape:window-height="703"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="svg22" />
+  <defs
+     id="defs19" />
+  <title
+     id="title19">Artboard 1</title>
+  <metadata
+     id="metadata13">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:title>Artboard 1</dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <path
+     class="silhouette"
+     d="M 113.3,188.39 C 105.13385,187.87904 97.294474,185.1065 90.06,179.43 83.80257,174.6342 78.578135,168.62405 74.7,161.76 69.863938,153.23489 65.883447,135.00919 58.39,123.87 53.956723,117.3475 47.466618,112.85815 41.61,107.76 36.341276,103.1305 29.408316,96.975635 25.51,86.75 20.070899,72.2968 25.364629,56.679938 30.7,46.2 39.581235,27.459928 60.011612,14.23427 80.19,19.78 c 6.623293,1.623772 12.542186,5.349832 16.87,10.62 4.56,5.64 6.4,12.73 7.89,22.34 1.32868,7.54009 1.10229,15.641087 4.22,22.73 2,4.2 5.82,6.65 8.33,8.27 6.54627,4.250824 16.16294,5.84073 28.93,4.9 6.94113,-0.804841 13.81247,-1.642201 20.68,0.15 14.33648,3.77191 19.47697,12.03733 22.59,25.67 1.07249,4.65199 3.85034,19.22617 0.09,32.1 -5.90028,19.26799 -22.00527,29.87139 -30.11,33.93 -19.6434,9.63269 -41.6221,8.32337 -46.38,7.9 z"
+     id="path20-5"
+     style="stroke-width:1.00006;stroke-dasharray:none;fill-opacity:1;fill:#ccb98f"
+     transform="matrix(3.9787542,0,0,3.9787542,-15.801455,-2e-6)" />
+</svg>
