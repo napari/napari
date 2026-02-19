@@ -3,6 +3,7 @@
 # or the napari documentation on benchmarking
 # https://github.com/napari/napari/blob/main/docs/BENCHMARKS.md
 import itertools
+import os
 import pathlib
 import sys
 from collections.abc import Callable
@@ -703,6 +704,10 @@ def _load_data_from_file_or_generate(
         data_path.mkdir(parents=False)
     file_path = data_path / f'{function.__name__}_5000_{n_points}.npz'
     if not file_path.exists():
+        if os.environ.get('CI') == '1':
+            raise RuntimeError(
+                f'Data file {file_path} does not exist. Please run the benchmark locally to generate the data file and upload it.'
+            )
         print(  # noqa: T201
             f'Generating data for {function.__name__} to file {file_path}',
             file=sys.stderr,
