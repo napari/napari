@@ -296,6 +296,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         self.layers.events.removed.connect(self._on_remove_layer)
         self.layers.events.reordered.connect(self._on_layers_change)
         self.layers.selection.events.active.connect(self._on_active_layer)
+        self.layers.events.units.connect(self._on_layers_change)
 
         # Add mouse callback
         self.mouse_wheel_callbacks.append(dims_scroll)
