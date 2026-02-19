@@ -262,12 +262,10 @@ class LayerList(SelectableEventedList[Layer]):
         self._clean_cache()
         new_layer.events.extent.connect(self._clean_cache)
         new_layer.events._extent_augmented.connect(self._clean_cache)
-        if self._units is not None and len(self._units) < new_layer.ndim:
-            warnings.warn(
-                'New layer has more dimensions than the current units, dropping extra units.',
-                stacklevel=2,
-            )
-            self.units = None
+        new_layer.events.data.connect(
+            self._trigger_check_ndim_and_maybe_clean_units
+        )
+        self._check_ndim_and_maybe_clean_units(new_layer.ndim)
         super().insert(index, new_layer)
 
     def remove_selected(self):
@@ -597,6 +595,18 @@ class LayerList(SelectableEventedList[Layer]):
         self._units = units
         self._clean_cache()
         self.events.units(value=self.units)
+
+    def _trigger_check_ndim_and_maybe_clean_units(self, event: Event):
+        """Trigger check of new layer's ndim and maybe clean units."""
+        self._check_ndim_and_maybe_clean_units(event.source.ndim)
+
+    def _check_ndim_and_maybe_clean_units(self, ndim: int):
+        if self._units is not None and ndim > len(self._units):
+            warnings.warn(
+                'New layer has more dimensions than the current units, dropping units override.',
+                stacklevel=2,
+            )
+            self.units = None
 
     @property
     def ndim(self) -> int:
