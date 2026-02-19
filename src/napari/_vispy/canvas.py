@@ -784,10 +784,7 @@ class VispyCanvas:
         napari_layer._overlays.events.added.connect(overlay_callback)
         napari_layer._overlays.events.removed.connect(overlay_callback)
         napari_layer._overlays.events.changed.connect(overlay_callback)
-        napari_layer.events.extent.connect(
-            self._dereferenced_world_units_update
-        )
-        napari_layer.events._extent_augmented.connect(
+        napari_layer.events.units.connect(
             self._dereferenced_world_units_update
         )
         self._overlay_callbacks[napari_layer] = overlay_callback
@@ -831,7 +828,7 @@ class VispyCanvas:
         disconnect_events(
             layer._overlays.events, self._overlay_callbacks[layer]
         )
-        layer.events.extent.disconnect(self._update_world_units)
+        layer.events.units.disconnect(self._dereferenced_world_units_update)
         del self._overlay_callbacks[layer]
 
         vispy_layer = self.layer_to_visual.pop(layer)
