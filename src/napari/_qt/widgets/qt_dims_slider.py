@@ -371,7 +371,7 @@ class QtDimSliderWidget(QWidget):
         self.range_changed.emit(tuple(value))
 
     def _update_play_settings(
-        self, fps, loop_mode: LoopMode, frame_range: tuple[int, int]
+        self, fps: float, loop_mode: LoopMode, frame_range: tuple[int, int]
     ) -> None:
         """Update settings for animation.
 
@@ -425,7 +425,7 @@ class QtCustomDoubleSpinBox(QDoubleSpinBox):
         super().__init__(*args, *kwargs)
         self.valueChanged.connect(self.custom_change_event)
 
-    def custom_change_event(self, value) -> None:
+    def custom_change_event(self, value: float) -> None:
         """Emits editingFinished if valueChanged AND left mouse button is down.
         (i.e. when the user clicks on the spin buttons)
         Paramters
