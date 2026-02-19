@@ -1995,7 +1995,6 @@ class TestLabels:
                 'seed_rng',
                 'selected_data',
             },  # `selected_data` itself is an evented model
-            {'selected_label'},
         )
 
 

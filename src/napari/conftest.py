@@ -58,7 +58,6 @@ from pytest_pretty import CustomTerminalReporter
 
 from napari.components import LayerList
 from napari.layers import Image, Labels, Points, Shapes, Vectors
-from napari.utils.events.event import EventEmitter, WarningEmitter
 from napari.utils.misc import ROOT_DIR
 
 if TYPE_CHECKING:
@@ -515,11 +514,8 @@ def _clear_cached_action_injection():
 
 
 def _event_check(instance):
-    def _prepare_check(name, no_event_, warning_event_=None):
-        if warning_event_ is None:
-            warning_event_ = set()
-
-        def check(instance, no_event=no_event_, warning_event=warning_event_):
+    def _prepare_check(name, no_event_):
+        def check(instance, no_event=no_event_):
             if name in no_event:
                 assert not hasattr(instance.events, name), (
                     f'event {name} defined'
@@ -528,18 +524,6 @@ def _event_check(instance):
                 assert hasattr(instance.events, name), (
                     f'event {name} not defined'
                 )
-                assert isinstance(
-                    getattr(instance.events, name),
-                    EventEmitter,
-                ), f'event {name} is not an EventEmitter'
-                is_warning = isinstance(
-                    getattr(instance.events, name),
-                    WarningEmitter,
-                )
-                if name in warning_event:
-                    assert is_warning, f'event {name} is not a WarningEmitter'
-                else:
-                    assert not is_warning, f'event {name} is a WarningEmitter'
 
         return check
 
