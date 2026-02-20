@@ -8,6 +8,7 @@ import pint
 from napari._vispy.overlays.base import ViewerOverlayMixin, VispyCanvasOverlay
 from napari._vispy.visuals.scale_bar import ScaleBar
 from napari.components.overlays import ScaleBarOverlay
+from napari.settings import get_settings
 from napari.utils._units import PREFERRED_VALUES
 from napari.utils.color import ColorValue
 from napari.utils.colormaps.standardize_color import transform_color
@@ -22,7 +23,6 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
     def __init__(self, *, viewer, overlay, parent=None) -> None:
         self._target_length = 150.0
         self._current_length = 150.0
-        self._current_color = (1, 1, 1, 1)
         self._scale = 1
         self._unit = pint.Quantity('1 pixel')
 
@@ -42,6 +42,10 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
 
         self.viewer.events.theme.connect(self._on_rendering_change)
         self.viewer.camera.events.zoom.connect(self._on_size_or_zoom_change)
+
+        get_settings().appearance.events.font_size.connect(
+            self._on_font_size_change
+        )
 
         self.reset()
 
@@ -174,12 +178,17 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         if not self.overlay.visible:
             return
         color, box_color = self._get_colors()
+        font_size = (
+            self.overlay.font_size
+            if self.overlay.font_size is not None
+            else get_settings().appearance.font_size
+        )
 
         width, height = self.node.set_data(
             length=self._current_length,
             color=color,
             ticks=self.overlay.ticks,
-            font_size=self.overlay.font_size,
+            font_size=font_size,
         )
         self.node.box.color = box_color
 
