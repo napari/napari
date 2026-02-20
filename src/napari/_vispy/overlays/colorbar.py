@@ -162,7 +162,7 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
         # set color to the negative of theme background.
         # the reason for using the `as_hex` here is to avoid
         # `UserWarning` which is emitted when RGB values are above 1
-        if not self.node.visible:
+        if self.source_wrapper.contrast_limits is None:
             return
 
         color = self.overlay.color
