@@ -766,33 +766,36 @@ class Labels(ScalarFieldBase):
     @selected_data.setter
     def selected_data(self, selected_data: Sequence[int]) -> None:
         if len(selected_data) == 0:
-            raise ValueError('At least one label must be selected.')
-        layer_dtype = get_dtype(self)
-        dtype_lims = get_dtype_limits(layer_dtype)
-        min_val = min(selected_data)
-        max_val = max(selected_data)
-
-        if dtype_lims[0] > min_val or dtype_lims[1] < max_val:
-            out_of_bounds_values = [
-                value
-                for value in selected_data
-                if value < dtype_lims[0] or value > dtype_lims[1]
-            ]
-            raise WrongSelectedLabelError(
-                dtype=layer_dtype,
-                invalid_values=out_of_bounds_values,
-                lower_bound=dtype_lims[0],
-                upper_bound=dtype_lims[1],
-            )
-        next_selected_label = next(reversed(selected_data))
-        self.colormap.selection = next_selected_label
-        if next_selected_label == self.colormap.background_value:
+            self.colormap.selection = self.colormap.background_value
             self._selected_color = None
+            self._selected_data.replace_selection([])
         else:
-            self._selected_color = self.colormap.map(next_selected_label)
-        self._selected_data.replace_selection(selected_data)
-        if self.show_selected_label:
-            self.refresh(extent=False)
+            layer_dtype = get_dtype(self)
+            dtype_lims = get_dtype_limits(layer_dtype)
+            min_val = min(selected_data)
+            max_val = max(selected_data)
+
+            if dtype_lims[0] > min_val or dtype_lims[1] < max_val:
+                out_of_bounds_values = [
+                    value
+                    for value in selected_data
+                    if value < dtype_lims[0] or value > dtype_lims[1]
+                ]
+                raise WrongSelectedLabelError(
+                    dtype=layer_dtype,
+                    invalid_values=out_of_bounds_values,
+                    lower_bound=dtype_lims[0],
+                    upper_bound=dtype_lims[1],
+                )
+            next_selected_label = next(reversed(selected_data))
+            self.colormap.selection = next_selected_label
+            if next_selected_label == self.colormap.background_value:
+                self._selected_color = None
+            else:
+                self._selected_color = self.colormap.map(next_selected_label)
+            self._selected_data.replace_selection(selected_data)
+            if self.show_selected_label:
+                self.refresh(extent=False)
 
     def swap_selected_and_background_labels(self) -> None:
         """Swap between the selected label and the background label."""

@@ -769,10 +769,7 @@ def test_selected_data_triggers_deprecated_selected_label_event():
 
 def test_selected_data_validation():
     labels = Labels(np.zeros((10, 10), dtype=np.uint8))
-    with pytest.raises(
-        ValueError, match=r'At least one label must be selected.'
-    ):
-        labels.selected_data = []
+
     with pytest.raises(WrongSelectedLabelError, match='The value 256'):
         labels.selected_data = [256, 2, 3]
     with pytest.raises(WrongSelectedLabelError, match='The value -1'):
