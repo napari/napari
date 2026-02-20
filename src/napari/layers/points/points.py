@@ -731,9 +731,14 @@ class Points(Layer):
         self.events.feature_defaults()
 
     @property
-    def colorbar(self):
+    def border_colorbar(self):
         """The colorbar associated with this layer's color manager."""
-        return self._overlays['colorbar']
+        return self._overlays['border_colorbar']
+
+    @property
+    def face_colorbar(self):
+        """The colorbar associated with this layer's color manager."""
+        return self._overlays['face_colorbar']
 
     @property
     def property_choices(self) -> dict[str, np.ndarray]:

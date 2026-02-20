@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from napari._vispy.overlays.base import LayerOverlayMixin, VispyCanvasOverlay
-from napari._vispy.visuals.colormap import Colormap
+from napari._vispy.visuals.colorbar import Colorbar
 from napari.layers.utils.color_manager import ColorManager
 from napari.settings import get_settings
 from napari.utils.colormaps.colormap_utils import (
@@ -21,6 +21,7 @@ if TYPE_CHECKING:
 
     from napari.components.overlays import ColorBarOverlay, Overlay
     from napari.layers import Layer
+    from napari.utils.colormaps import Colormap
 
 
 class IntensityLayerWrapper:
@@ -37,7 +38,11 @@ class IntensityLayerWrapper:
 
     @property
     def gamma(self) -> float:
-        return self.layer.gam
+        return self.layer.gamma
+
+    @property
+    def colormap(self) -> Colormap:
+        return self.layer.colormap
 
 
 class ColorManagerWrapper:
@@ -56,6 +61,11 @@ class ColorManagerWrapper:
     def gamma(self) -> float:
         return 1
 
+    @property
+    def colormap(self) -> Colormap:
+        # categorical colormap not yet supported
+        return self.color_manager.continuous_colormap
+
 
 class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
     overlay: ColorBarOverlay
@@ -68,7 +78,7 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
         parent: Node | None = None,
     ) -> None:
         super().__init__(
-            node=Colormap(), layer=layer, overlay=overlay, parent=parent
+            node=Colorbar(), layer=layer, overlay=overlay, parent=parent
         )
         self.layer: Layer
         self.x_size = 50
@@ -83,19 +93,21 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
             self.source_wrapper = ColorManagerWrapper(
                 self.overlay, color_manager
             )
-            color_manager.events.contrast_limits.connect(self._on_data_change)
+            color_manager.events.contrast_limits.connect(
+                self._on_data_change
+            )  # will it work to not have face_contrast_limits as that is what the clims are called??
             # TODO: connect other colormanager events
+            color_manager.events.continuous_colormap.connect(
+                self._on_colormap_change
+            )
+            # color_manager.events.gamma.connect(self._on_gamma_change)
         else:
             self.source_wrapper = IntensityLayerWrapper(
                 self.overlay, self.layer
             )
 
-            self.layer.events.face_contrast_limits.connect(
-                self._on_data_change
-            )
-            self.layer.events.face_colormap.connect(self._on_colormap_change)
-            self.layer.events.contrast_limits.connect(self._on_data_change)
             self.layer.events.colormap.connect(self._on_colormap_change)
+            self.layer.events.contrast_limits.connect(self._on_data_change)
             self.layer.events.gamma.connect(self._on_gamma_change)
 
         self.overlay.events.size.connect(self._on_size_change)
@@ -113,7 +125,8 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
         super()._on_visible_change()
         # necessary to update outdated values since we skip updating when
         # invisible
-        self.reset()
+        self._on_gamma_change()
+        self._on_ticks_change()
 
     def _on_data_change(self) -> None:
         # TODO: this branching is unfortunately necessary for now until we
@@ -138,9 +151,7 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
             self.node.set_gamma(self.source_wrapper.gamma)
 
     def _on_colormap_change(self) -> None:
-        colormap = (
-            getattr(self.layer, 'colormap', None) or self.layer.face_colormap
-        )
+        colormap = self.source_wrapper.colormap
         self.node.set_cmap(_napari_cmap_to_vispy(colormap))
 
     def _on_size_change(self) -> None:
@@ -151,46 +162,45 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
         # set color to the negative of theme background.
         # the reason for using the `as_hex` here is to avoid
         # `UserWarning` which is emitted when RGB values are above 1
-        if (
-            getattr(self.layer, 'contrast_limits', None)
-            or self.layer.face_contrast_limits
-        ):
-            color = self.overlay.color
-            if color is None:
-                if (
-                    self.node.parent is not None
-                    and self.node.parent.canvas.bgcolor
-                ):
-                    background_color = self.node.parent.canvas.bgcolor.rgba
-                else:
-                    background_color = get_theme(
-                        get_settings().appearance.theme
-                    ).canvas.as_hex()
-                    background_color = transform_color(background_color)[0]
-                color = np.subtract(1, background_color)
-                color[-1] = background_color[-1]
+        if not self.node.visible:
+            return
 
-            text_width, text_height = self.node.set_ticks_and_get_text_size(
-                tick_length=self.overlay.tick_length,
-                font_size=self.overlay.font_size,
-                clim=_coerce_contrast_limits(
-                    getattr(self.layer, 'contrast_limits', None)
-                    or self.layer.face_contrast_limits
-                ).contrast_limits,
-                color=color,
-            )
+        color = self.overlay.color
+        if color is None:
+            if (
+                self.node.parent is not None
+                and self.node.parent.canvas.bgcolor
+            ):
+                background_color = self.node.parent.canvas.bgcolor.rgba
+            else:
+                background_color = get_theme(
+                    get_settings().appearance.theme
+                ).canvas.as_hex()
+                background_color = transform_color(background_color)[0]
+            color = np.subtract(1, background_color)
+            color[-1] = background_color[-1]
 
-            # Calculate proper layout with explicit spacing constants
-            self.x_size = (
-                self.overlay.size[0]  # Colorbar width
-                + self.overlay.tick_length  # Tick marks length
-                + text_width  # Text width with margins
-            )
-            self.y_size = text_height
+        text_width, text_height = self.node.set_ticks_and_get_text_size(
+            tick_length=self.overlay.tick_length,
+            font_size=self.overlay.font_size,
+            clim=_coerce_contrast_limits(
+                self.source_wrapper.contrast_limits
+            ).contrast_limits,
+            color=color,
+        )
 
-            self._on_position_change()
+        # Calculate proper layout with explicit spacing constants
+        self.x_size = (
+            self.overlay.size[0]  # Colorbar width
+            + self.overlay.tick_length  # Tick marks length
+            + text_width  # Text width with margins
+        )
+        self.y_size = text_height
+
+        self._on_position_change()
 
     def reset(self) -> None:
         super().reset()
         self._on_data_change()
+        self._on_colormap_change()
         self._on_size_change()
