@@ -764,13 +764,18 @@ def test_single_emit():
     e_m.assert_called_once()
 
 
-def test_events_called_once():
+@pytest.mark.parametrize('field', ['a', 'b'])
+def test_events_called_once(field):
     class SampleClass(EventedModel):
         a: int
 
         @property
         def b(self):
             return self.a * 2
+
+        @b.setter
+        def b(self, value):
+            self.a = value // 2
 
     s = SampleClass(a=1)
     a_m = Mock()
@@ -781,10 +786,13 @@ def test_events_called_once():
     s.events.b.connect(b_m)
     s.events.connect(e_m)
 
-    s.a = 2
+    setattr(s, field, 4)
     a_m.assert_called_once()
     b_m.assert_called_once()
+    # prior #8672 th self.events will be called twice
     e_m.assert_called_once()
+    assert e_m.call_args.args[0].value == 4
+    assert e_m.call_args.args[0].type == field
 
 
 def test_events_called():
