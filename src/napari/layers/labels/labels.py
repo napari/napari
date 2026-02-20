@@ -739,6 +739,8 @@ class Labels(ScalarFieldBase):
     @property
     def selected_label(self):
         """int: Index of selected label."""
+        if len(self._selected_data) == 0:
+            return self.colormap.background_value
         return next(reversed(self._selected_data))
 
     @selected_label.setter
