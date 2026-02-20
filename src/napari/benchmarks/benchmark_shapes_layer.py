@@ -768,7 +768,7 @@ def self_intersecting_stars_polygons_gen(
     assert n_points % 2 == 1
     rng = np.random.default_rng(0)
     radius = 5000
-    center = rng.uniform(5000, 15000, (n_shapes, 2))
+    center = rng.uniform(7000, 17000, (n_shapes, 2))
     shift = np.floor(n_points / 2) + 1
     phi = np.linspace(0, 2 * np.pi, n_points + 1) * shift
     rays = np.stack([np.sin(phi), np.cos(phi)], axis=1)
