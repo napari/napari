@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from napari.utils.color import ColorValue
 
 
-class Colormap(Node):
+class ColorBar(Node):
     _box_data = np.array(
         [
             [0, 0],
@@ -66,11 +66,17 @@ class Colormap(Node):
         clim: tuple[float, float] = (0, 1),
         dtype: npt.DTypeLike = np.float32,
     ) -> None:
-        self.img.set_data(
-            np.linspace(
-                clim[1], clim[0], self._texture_size, dtype=dtype
-            ).reshape(-1, 1)
+        gradient = np.linspace(clim[1], clim[0], self._texture_size).reshape(
+            -1, 1
         )
+
+        if np.issubdtype(dtype, np.integer):
+            gradient = gradient.round()
+        if np.issubdtype(dtype, np.bool):
+            gradient = gradient.round()
+            dtype = np.uint8  # bool unsupported in vispy
+
+        self.img.set_data(gradient.astype(dtype))
         self.img.clim = clim
 
     def set_cmap(self, cmap: VispyColormap) -> None:
