@@ -432,23 +432,12 @@ class Labels(ScalarFieldBase):
         self._status = self.mode
         self._preserve_labels = False
 
+        # For backwards compatibility
         self.selected_data.events.items_changed.connect(
             self._on_selected_data_change
         )
 
     def _on_selected_data_change(self, event):
-        if len(self.selected_data) == 0:
-            warnings.warn(
-                trans._(
-                    'At least one label must be selected. Automatically selecting background label.',
-                    deferred=True,
-                )
-            )
-            with self.selected_data.events.items_changed.blocked():
-                self.selected_data.replace_selection(
-                    [self.colormap.background_value]
-                )
-        # For backwards compatibility
         self.events.selected_label()
 
     def _slice_dtype(self):
