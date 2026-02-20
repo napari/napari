@@ -280,7 +280,8 @@ class ColorManager(EventedModel):
             else:
                 show_warning(
                     f"Feature '{color}' looks like categorical data, since it contains "
-                    'less than 16 non-float unique values. Color mode set to cycle.'
+                    'less than 16 non-float unique values. Color mode set to cycle. '
+                    'If your data is not supposed to be categorical, convert it to floats.'
                 )
                 self.color_mode = ColorMode.CYCLE
         else:
@@ -600,7 +601,8 @@ class ColorManager(EventedModel):
                     else:
                         show_warning(
                             f"Feature '{color_values}' looks like categorical data, since it contains "
-                            'less than 16 non-float unique values. Color mode set to cycle.'
+                            'less than 16 non-float unique values. Color mode set to cycle. '
+                            'If your data is not supposed to be categorical, convert it to floats.'
                         )
                         color_mode = ColorMode.CYCLE
 
