@@ -57,9 +57,9 @@ roi_layer = viewer.add_shapes(
 )
 
 # add scale_bar with background box
-viewer.scale_bar.visible = True
-viewer.scale_bar.box = True
-# viewer.scale_bar.length = 150  # prevent dynamic adjustment of scale bar length
+viewer.canvas.scale_bar.visible = True
+viewer.canvas.scale_bar.box = True
+# viewer.canvas.scale_bar.length = 150  # prevent dynamic adjustment of scale bar length
 
 # Take screenshots of the rois.
 screenshot_rois = viewer.export_rois(rois)
@@ -79,8 +79,8 @@ for index, roi in enumerate(screenshot_rois):
 for index, roi in enumerate(screenshot_rois_scaled):
     viewer.add_image(roi, name=f'roi_{index}_scaled')
 
-viewer.grid.enabled = True
-viewer.grid.shape = (3, 3)
+viewer.canvas.grid.enabled = True
+viewer.canvas.grid.shape = (3, 3)
 
 
 if __name__ == '__main__':

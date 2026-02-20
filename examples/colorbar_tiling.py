@@ -22,13 +22,13 @@ for layer in layers:
 
 # set the scale bar to gridded mode so it appears in each grid box
 # have the position overlap with the default colorbar position
-viewer.scale_bar.visible = True
-viewer.scale_bar.position = 'top_right'
-viewer.scale_bar.gridded = True
+viewer.canvas.scale_bar.visible = True
+viewer.canvas.scale_bar.position = 'top_right'
+viewer.canvas.scale_bar.gridded = True
 
 # enable grid with stride 2 to get layers split two-by-two
-viewer.grid.enabled = True
-viewer.grid.stride = 2
+viewer.canvas.grid.enabled = True
+viewer.canvas.grid.stride = 2
 
 if __name__ == '__main__':
     napari.run()
