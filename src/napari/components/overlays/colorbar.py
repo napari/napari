@@ -39,6 +39,5 @@ class ColorBarOverlay(CanvasOverlay):
     font_size: float = 10
     position: CanvasPosition = CanvasPosition.TOP_RIGHT
     colormanager_attribute: str | None = Field(
-        default=None,
-        frozen=True,  # , repr=False
+        default=None, frozen=True, repr=False
     )
