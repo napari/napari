@@ -754,9 +754,10 @@ class Labels(ScalarFieldBase):
         # otherwise, clear it
         if selected_label == self.colormap.background_value:
             self._prev_selected_label = self.selected_label
+            self.selected_data = []
         else:
             self._prev_selected_label = None
-        self.selected_data = [selected_label]
+            self.selected_data = [selected_label]
 
     @property
     def selected_data(self) -> Selection[int]:
