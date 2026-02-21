@@ -693,7 +693,6 @@ module = [
     'napari._qt.widgets.qt_scrollbar',
     'napari._qt.widgets.qt_size_preview',
     'napari._qt.widgets.qt_spinbox',
-    'napari._qt.widgets.qt_splash_screen',
     'napari._qt.widgets.qt_theme_sample',
     'napari._qt.widgets.qt_tooltip',
     'napari._qt.widgets.qt_viewer_buttons',
