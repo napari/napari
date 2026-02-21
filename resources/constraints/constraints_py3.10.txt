@@ -78,7 +78,7 @@ executing==2.2.1
     # via stack-data
 fasteners==0.20
     # via zarr
-filelock==3.24.0
+filelock==3.24.2
     # via
     #   torch
     #   virtualenv
@@ -320,7 +320,7 @@ pint==0.24.4
     #   napari-metadata
 pip==26.0.1
     # via napari-plugin-manager
-platformdirs==4.9.1
+platformdirs==4.9.2
     # via
     #   jupyter-core
     #   npe2
@@ -375,7 +375,7 @@ pydantic-extra-types==2.11.0
     # via
     #   napari (pyproject.toml)
     #   npe2
-pydantic-settings==2.12.0
+pydantic-settings==2.13.0
     # via napari (pyproject.toml)
 pygetwindow==0.0.9
     # via pyautogui

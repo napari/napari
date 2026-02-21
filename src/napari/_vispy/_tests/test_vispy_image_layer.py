@@ -9,6 +9,7 @@ from napari._vispy.layers.image import VispyImageLayer
 from napari._vispy.utils.visual import create_vispy_overlay
 from napari.components.dims import Dims
 from napari.components.overlays import BoundingBoxOverlay
+from napari.components.viewer_model import ViewerModel
 from napari.layers import Image
 
 
@@ -148,7 +149,10 @@ def test_transforming_child_node(
     layer = VispyImageLayer(im_layer)
 
     overlay = create_vispy_overlay(
-        BoundingBoxOverlay(), layer=im_layer, parent=layer.node
+        BoundingBoxOverlay(),
+        layer=im_layer,
+        viewer=ViewerModel(),
+        parent=layer.node,
     )
     layer._on_matrix_change()
 
@@ -189,7 +193,10 @@ def test_transforming_child_node_pyramid(pyramid_layer):
     layer = VispyImageLayer(pyramid_layer)
 
     overlay = create_vispy_overlay(
-        BoundingBoxOverlay(), layer=pyramid_layer, parent=layer.node
+        BoundingBoxOverlay(),
+        layer=pyramid_layer,
+        viewer=ViewerModel(),
+        parent=layer.node,
     )
     layer._on_matrix_change()
 
