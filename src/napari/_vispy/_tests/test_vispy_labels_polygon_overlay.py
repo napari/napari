@@ -18,7 +18,7 @@ def test_vispy_labels_polygon_overlay(make_napari_viewer):
     layer = viewer.add_labels(data, opacity=0.5)
 
     vispy_labels_polygon = VispyLabelsPolygonOverlay(
-        layer=layer, overlay=labels_polygon
+        layer=layer, viewer=viewer, overlay=labels_polygon
     )
 
     assert vispy_labels_polygon._polygon.color.alpha == 0.5
