@@ -63,7 +63,7 @@ dependencies = [
     "pygments>=2.13.0",
     "pydantic-extra-types",
     "pydantic-settings",
-    "PyOpenGL>=3.1.5",
+    "PyOpenGL>=3.1.10",
     "pywin32 ; platform_system == 'Windows'",
     "PyYAML>=6.0",
     "qtpy>=2.4.0",
