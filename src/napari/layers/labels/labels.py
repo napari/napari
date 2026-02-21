@@ -579,7 +579,6 @@ class Labels(ScalarFieldBase):
         self._selected_color = self.get_color(self.selected_label)
         self._color_mode = color_mode
         self.events.colormap()  # Will update the LabelVispyColormap shader
-        self.events.selected_label()
         self.refresh(extent=False)
 
     @property
