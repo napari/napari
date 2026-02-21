@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from napari.utils.color import ColorValue
 
 
-class Colormap(Node):
+class Colorbar(Node):
     _box_data = np.array(
         [
             [0, 0],
