@@ -248,6 +248,10 @@ def _run() -> None:
         sys.argv.remove('--plugin')
 
     else:
+        from napari._qt.widgets.qt_splash_screen import NapariSplashScreen
+
+        splash = NapariSplashScreen()
+
         if args.with_:
             from napari.plugins import (
                 _initialize_plugins,
@@ -300,11 +304,6 @@ def _run() -> None:
                     _npe2.get_widget_contribution(
                         pname
                     ) or plugin_manager.get_widget(pname)
-
-        from napari._qt.widgets.qt_splash_screen import NapariSplashScreen
-
-        splash = NapariSplashScreen()
-        splash.close()  # will close once event loop starts
 
         # viewer _must_  be kept around.
         # it will be referenced by the global window only
@@ -384,6 +383,8 @@ def _run() -> None:
         if running_as_constructor_app():
             install_certifi_opener()
             maybe_patch_conda_exe()
+
+        splash.close()
         run(gui_exceptions=True)
 
 
