@@ -789,7 +789,7 @@ def test_events_called_once(field):
     setattr(s, field, 4)
     a_m.assert_called_once()
     b_m.assert_called_once()
-    # prior #8672 th self.events will be called twice
+    # prior to #8672 the self.events will be called twice
     e_m.assert_called_once()
     assert e_m.call_args.args[0].value == 4
     assert e_m.call_args.args[0].type == field
