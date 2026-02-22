@@ -74,6 +74,12 @@ jobs:
         with:
           qt: true
 
+      - name: Download benchmark data
+        run: |
+          wget https://data.napari.dev/triangulation-benchmark-shapes.zip
+          unzip triangulation-benchmark-shapes.zip -d src/napari/benchmarks/
+          rm triangulation-benchmark-shapes.zip
+
       - name: Setup asv
         run: python -m pip install "asv[virtualenv]"
         env:
