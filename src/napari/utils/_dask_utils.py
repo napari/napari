@@ -6,7 +6,6 @@ from collections.abc import Callable, Iterator
 from typing import Any
 
 import dask
-import dask.array as da
 from dask.cache import Cache
 
 #: dask.cache.Cache, optional : A dask cache for opportunistic caching
@@ -81,6 +80,8 @@ def resize_dask_cache(
 
 def _is_dask_data(data: Any) -> bool:
     """Return True if data is a dask array or a list/tuple of dask arrays."""
+    import dask.array as da
+
     return isinstance(data, da.Array) or (
         isinstance(data, collections.abc.Sequence)
         and any(isinstance(i, da.Array) for i in data)
