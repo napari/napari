@@ -892,7 +892,6 @@
     "napari/_qt/widgets/qt_range_slider_popup.py": [],
     "napari/_qt/widgets/qt_scrollbar.py": ["position"],
     "napari/_qt/widgets/qt_size_preview.py": ["m", "px", "horizontalAdvance"],
-    "napari/_qt/widgets/qt_splash_screen.py": [],
     "napari/_qt/widgets/qt_viewer_buttons.py": [
       "viewer",
       "napari:roll_axes",

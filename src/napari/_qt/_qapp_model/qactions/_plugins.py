@@ -6,7 +6,6 @@ from logging import getLogger
 from app_model.types import Action
 
 from napari._app_model.constants import MenuGroup, MenuId
-from napari._qt.dialogs.qt_plugin_report import QtPluginErrReporter
 from napari._qt.qt_main_window import Window
 from napari.utils.translations import trans
 
@@ -39,11 +38,6 @@ def _show_plugin_install_dialog(window: Window) -> None:
         window._qt_window._plugin_manager_dialog.exec_()
 
 
-def _show_plugin_err_reporter(window: Window) -> None:
-    """Show dialog that allows users to review and report plugin errors."""
-    QtPluginErrReporter(parent=window._qt_window).exec_()  # type: ignore [attr-defined]
-
-
 Q_PLUGINS_ACTIONS: list[Action] = [
     Action(
         id='napari.window.plugins.plugin_install_dialog',
@@ -57,20 +51,5 @@ Q_PLUGINS_ACTIONS: list[Action] = [
             }
         ],
         callback=_show_plugin_install_dialog,
-    ),
-    Action(
-        id='napari.window.plugins.plugin_err_reporter',
-        title=trans._('Plugin Errors...'),
-        menus=[
-            {
-                'id': MenuId.MENUBAR_PLUGINS,
-                'group': MenuGroup.PLUGINS,
-                'order': 2,
-            }
-        ],
-        callback=_show_plugin_err_reporter,
-        status_tip=trans._(
-            'Review stack traces for plugin exceptions and notify developers'
-        ),
-    ),
+    )
 ]

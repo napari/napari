@@ -951,11 +951,13 @@ class EmitterGroup(EventEmitter):
         self,
         source: Any = None,
         auto_connect: bool = False,
+        _connect_children: bool = True,
         **emitters: type[Event] | EventEmitter | None,
     ) -> None:
         EventEmitter.__init__(self, source)
 
         self.auto_connect = auto_connect
+        self._connect_children = _connect_children
         self.auto_connect_format = 'on_%s'
         self._emitters: dict[str, EventEmitter] = {}
         # whether the sub-emitters have been connected to the group:
@@ -1105,7 +1107,8 @@ class EmitterGroup(EventEmitter):
         See :func:`EventEmitter.connect() <vispy.event.EventEmitter.connect>`
         for arguments.
         """
-        self._connect_emitters(True)
+        if self._connect_children:
+            self._connect_emitters(True)
         return EventEmitter.connect(
             self, callback, ref, position, before, after
         )
