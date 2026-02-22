@@ -72,7 +72,8 @@ class ColorBar(Node):
 
         if np.issubdtype(dtype, np.integer):
             gradient = gradient.round()
-        if np.issubdtype(dtype, np.bool):
+        if np.issubdtype(dtype, np.bool_):
+            # np.bool_ instead of np.bool to support numpy<2
             gradient = gradient.round()
             dtype = np.uint8  # bool unsupported in vispy
 
