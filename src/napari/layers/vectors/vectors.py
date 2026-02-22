@@ -7,7 +7,11 @@ import pandas as pd
 
 from napari.layers.base import Layer, _LayerSlicingState
 from napari.layers.utils._color_manager_constants import ColorMode
-from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
+from napari.layers.utils._slice_input import (
+    _SliceInput,
+    _ThickNDSlice,
+    apply_units_to_transform,
+)
 from napari.layers.utils.color_manager import ColorManager
 from napari.layers.utils.color_transformations import ColorType
 from napari.layers.utils.layer_utils import _FeatureTable
@@ -809,9 +813,9 @@ class _VectorsSlicingState(_LayerSlicingState):
         # absorbs these performance issues here, but we can likely improve
         # things either by caching the world-to-data transform on the layer
         # or by lazily evaluating it in the slice task itself.
-        slice_indices = slice_input.data_slice(
-            self.layer._data_to_world.inverse
-        )
+        world_to_data = self.layer._data_to_world.inverse
+        world_to_data = apply_units_to_transform(world_to_data, dims.units)
+        slice_indices = slice_input.data_slice(world_to_data)
         return self.make_slice_request_internal(slice_input, slice_indices)
 
     def make_slice_request_internal(

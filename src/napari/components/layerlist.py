@@ -9,13 +9,15 @@ from functools import cached_property
 from typing import TYPE_CHECKING
 
 import numpy as np
+import pint
 
 from napari.components.dims import RangeTuple
 from napari.layers import Layer
-from napari.layers.utils.layer_utils import Extent
+from napari.layers.utils.layer_utils import Extent, LLExtent
 from napari.utils.events import Event
 from napari.utils.events.containers import SelectableEventedList
 from napari.utils.naming import inc_name_count
+from napari.utils.transforms._units import get_units_from_name
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
@@ -68,6 +70,9 @@ class LayerList(SelectableEventedList[Layer]):
         emitted when the current item has changed.
     selection.events._current : (value: _T)
         emitted when the current item has changed. (Private event)
+    units: (value: tuple[pint.Unit, ...] | None)
+        emitted when the global overriding units for the layer list is changed.
+
 
     Notes
     -----
@@ -115,12 +120,15 @@ class LayerList(SelectableEventedList[Layer]):
     """
 
     def __init__(self, data=()) -> None:
+        self._units = None
         super().__init__(
             data=data,
             basetype=Layer,
             lookup={str: get_name},
         )
-        self.events.add(begin_batch=Event, end_batch=Event, renamed=Event)
+        self.events.add(
+            begin_batch=Event, end_batch=Event, renamed=Event, units=Event
+        )
         self.events.inserted.connect(self._on_layer_inserted)
         self.events.removed.connect(self._on_layer_removed)
         self._create_contexts()
@@ -254,6 +262,10 @@ class LayerList(SelectableEventedList[Layer]):
         self._clean_cache()
         new_layer.events.extent.connect(self._clean_cache)
         new_layer.events._extent_augmented.connect(self._clean_cache)
+        new_layer.events.data.connect(
+            self._trigger_check_ndim_and_maybe_clean_units
+        )
+        self._check_ndim_and_maybe_clean_units(new_layer.ndim)
         super().insert(index, new_layer)
 
     def remove_selected(self):
@@ -280,7 +292,9 @@ class LayerList(SelectableEventedList[Layer]):
         -------
         extent_world : array, shape (2, D)
         """
-        return self._get_extent_world([layer.extent for layer in self])
+        return self._get_extent_world(
+            [layer.extent for layer in self], units=self.units
+        )
 
     @cached_property
     def _extent_world_augmented(self) -> np.ndarray:
@@ -296,6 +310,7 @@ class LayerList(SelectableEventedList[Layer]):
         return self._get_extent_world(
             [layer._extent_augmented for layer in self],
             augmented=True,
+            units=self.units,
         )
 
     def _get_min_and_max(self, mins_list, maxes_list):
@@ -332,7 +347,12 @@ class LayerList(SelectableEventedList[Layer]):
         # switch back to original order
         return min_v[::-1], max_v[::-1]
 
-    def _get_extent_world(self, layer_extent_list, augmented=False):
+    def _get_extent_world(
+        self,
+        layer_extent_list,
+        augmented: bool = False,
+        units: tuple[pint.Unit, ...] | None = None,
+    ) -> np.ndarray[tuple[int], np.dtype[np.float32]]:
         """Extent of layers in world coordinates.
 
         Default to 2D image-like with (0, 511) min/ max values if no data is present.
@@ -350,7 +370,15 @@ class LayerList(SelectableEventedList[Layer]):
                 min_v -= 0.5
                 max_v += 0.5
         else:
-            extrema = [extent.world for extent in layer_extent_list]
+            if units is None:
+                extrema = [extent.world for extent in layer_extent_list]
+            else:
+                extrema = [
+                    self._convert_scale_between_units(
+                        extent.world.T, extent.units, units
+                    ).T
+                    for extent in layer_extent_list
+                ]
             mins = [e[0] for e in extrema]
             maxs = [e[1] for e in extrema]
             min_v, max_v = self._get_min_and_max(mins, maxs)
@@ -380,14 +408,57 @@ class LayerList(SelectableEventedList[Layer]):
         # restore original order
         return np.nanmin(full_scales, axis=1)[::-1]
 
-    def _get_step_size(self, layer_extent_list):
-        if len(self) == 0:
-            return np.ones(self.ndim)
+    @staticmethod
+    def _convert_scale_between_units(
+        scale: np.ndarray[tuple[int], np.dtype[np.float32]],
+        from_units: tuple[pint.Unit, ...],
+        to_units: tuple[pint.Unit, ...],
+    ) -> np.ndarray:
+        """Convert units of scale to target units.
 
-        scales = [extent.step for extent in layer_extent_list]
+        Parameters
+        ----------
+        scale : np.ndarray
+            Scale to convert.
+        from_units : tuple[pint.Unit, ...]
+            Units of the scale.
+        to_units : tuple[pint.Unit, ...]
+            Target units.
+
+        Returns
+        -------
+        np.ndarray
+            Converted scale.
+        """
+        clipped_target_units = to_units[-len(from_units) :]
+        return np.array(
+            [
+                (s * u).to(cu).magnitude
+                for s, u, cu in zip(
+                    scale, from_units, clipped_target_units, strict=False
+                )
+            ]
+        )
+
+    def _get_step_size(
+        self,
+        layer_extent_list: list[Extent],
+        units: tuple[pint.Unit, ...] | None = None,
+    ):
+        if len(layer_extent_list) == 0:
+            return np.ones(self.ndim)
+        if units is None:
+            scales = [extent.step for extent in layer_extent_list]
+        else:
+            scales = [
+                self._convert_scale_between_units(
+                    extent.step, extent.units, units
+                )
+                for extent in layer_extent_list
+            ]
         return self._step_size_from_scales(scales)
 
-    def get_extent(self, layers: Iterable[Layer]) -> Extent:
+    def get_extent(self, layers: Iterable[Layer]) -> LLExtent:
         """
         Return extent for a given layer list.
 
@@ -402,18 +473,77 @@ class LayerList(SelectableEventedList[Layer]):
 
         Returns
         -------
-        extent : Extent
+        extent : LLExtent
             extent for selected layers
         """
         extent_list = [layer.extent for layer in layers]
-        return Extent(
+        units = self._units or self._get_units(extent_list)
+        return LLExtent(
             data=None,
-            world=self._get_extent_world(extent_list),
-            step=self._get_step_size(extent_list),
+            world=self._get_extent_world(extent_list, units=units),
+            step=self._get_step_size(extent_list, units=units),
+            units=units,
         )
 
+    @staticmethod
+    def _get_units(
+        layers_extent: list[Extent],
+    ) -> tuple[pint.Unit, ...] | None:
+        """Get units for a given layer list.
+
+        Parameters
+        ----------
+        layers_extent : list of Layer
+            list of layers for which units should be calculated
+
+        Returns
+        -------
+        units : list of pint.Unit or None
+            consistent units for selected layers.
+            If cannot be determined, returns None.
+        """
+        if not layers_extent:
+            return None
+
+        reg = pint.get_application_registry()
+
+        def cmp(u1: pint.Unit, u2: pint.Unit) -> bool:
+            return reg.get_base_units(u1)[0] < reg.get_base_units(u2)[0]
+
+        def update_u_dkt(units_l: tuple[pint.Unit, ...]) -> None:
+            """Update the dimensionality_to_unit dictionary with the smallest units.
+
+            Iterate over the units in units_t and for each dimensionality,
+            check if it is already in the dimensionality_to_unit dictionary.
+            If it is not, or if the current unit is 'smaller' than the existing
+            unit (as determined by the cmp function), update the dictionary.
+            """
+            for u in units_l:
+                dim = u.dimensionality
+                if not (
+                    dim in dimensionality_to_unit
+                    and cmp(dimensionality_to_unit[dim], u)
+                ):
+                    dimensionality_to_unit[dim] = u
+
+        units = ()
+        dimensionality_to_unit: dict[pint.util.UnitsContainer, pint.Unit] = {}
+        # for each dimensionality of units (time, length, mass, etc.)
+        # we will store the 'smallest' unit (e.g for nm and um, we will choose nm)
+
+        for extent in layers_extent:
+            update_u_dkt(extent.units)
+            for u1_, u2_ in zip(extent.units[::-1], units[::-1], strict=False):
+                if u1_.dimensionality != u2_.dimensionality:
+                    return None
+            if len(extent.units) > len(units):
+                units = extent.units
+        if not units:
+            return None
+        return tuple(dimensionality_to_unit[u.dimensionality] for u in units)
+
     @cached_property
-    def extent(self) -> Extent:
+    def extent(self) -> LLExtent:
         """
         Extent of layers in data and world coordinates.
 
@@ -430,6 +560,53 @@ class LayerList(SelectableEventedList[Layer]):
             RangeTuple(*x)
             for x in zip(ext.world[0], ext.world[1], ext.step, strict=False)
         )
+
+    @property
+    def units(self) -> tuple[pint.Unit, ...] | None:
+        """Units of layers in world coordinates.
+
+        Returns
+        -------
+        units : tuple[pint.Unit, ...] or None
+            Units of layers in world coordinates.
+        """
+        return self._units or self.extent.units
+
+    @units.setter
+    def units(self, units: tuple[pint.Unit, ...] | None):
+        """Set override of units of layers in world coordinates.
+
+        Parameters
+        ----------
+        units : tuple[pint.Unit, ...] or None
+            Units to set for layers in world coordinates. If None, units are not changed.
+        """
+        if units is None:
+            self._units = None
+            self._clean_cache()
+            self.events.units(value=self.units)
+            return
+
+        if len(units) < self.ndim:
+            raise ValueError(
+                'Number of units must be at least the number of dimensions.'
+            )
+        units = get_units_from_name(units)
+        self._units = units
+        self._clean_cache()
+        self.events.units(value=self.units)
+
+    def _trigger_check_ndim_and_maybe_clean_units(self, event: Event):
+        """Trigger check of new layer's ndim and maybe clean units."""
+        self._check_ndim_and_maybe_clean_units(event.source.ndim)
+
+    def _check_ndim_and_maybe_clean_units(self, ndim: int):
+        if self._units is not None and ndim > len(self._units):
+            warnings.warn(
+                'New layer has more dimensions than the current units, dropping units override.',
+                stacklevel=2,
+            )
+            self.units = None
 
     @property
     def ndim(self) -> int:
