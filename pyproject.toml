@@ -58,7 +58,7 @@ dependencies = [
     "Pillow>=10.0",
     "pint>=0.17",
     "psutil>=5.9.0",
-    "psygnal>=0.14.2",
+    "psygnal>=0.15.1",
     "pydantic>=2.8.0",
     "pygments>=2.13.0",
     "pydantic-extra-types",
