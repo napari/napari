@@ -17,6 +17,11 @@ repos:
   rev: 0.36.2
   hooks:
   - id: check-github-workflows
+- repo: https://github.com/zizmorcore/zizmor-pre-commit
+  rev: v1.12.1
+  hooks:
+  - id: zizmor
+    args: [--min-severity=high, --quiet, --no-progress]
 - repo: https://github.com/pre-commit/pre-commit-hooks
   rev: v6.0.0
   # .py files are skipped cause already checked by other hooks
