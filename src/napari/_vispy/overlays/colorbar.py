@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from napari._vispy.overlays.base import LayerOverlayMixin, VispyCanvasOverlay
-from napari._vispy.visuals.colormap import Colormap
+from napari._vispy.visuals.colorbar import ColorBar
 from napari.settings import get_settings
 from napari.utils.colormaps.colormap_utils import (
     _coerce_contrast_limits,
@@ -30,7 +30,7 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
         parent: Node | None = None,
     ) -> None:
         super().__init__(
-            node=Colormap(),
+            node=ColorBar(),
             layer=layer,
             viewer=viewer,
             overlay=overlay,
