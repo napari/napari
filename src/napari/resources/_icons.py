@@ -169,7 +169,6 @@ def build_theme_svgs(theme_name: str, source) -> str:
         theme_override={
             'warning': 'warning',
             'error': 'error',
-            'logo_silhouette': 'background',
         },
     )
     with (out / PLUGIN_FILE_NAME).open('w') as f:
