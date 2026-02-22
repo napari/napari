@@ -273,11 +273,6 @@ def _run() -> None:
                 else:
                     _npe2.get_widget_contribution(pname)
 
-        from napari._qt.widgets.qt_splash_screen import NapariSplashScreen
-
-        splash = NapariSplashScreen()
-        splash.close()  # will close once event loop starts
-
         # viewer _must_  be kept around.
         # it will be referenced by the global window only
         # once napari has finished starting
