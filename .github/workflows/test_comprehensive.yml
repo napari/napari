@@ -27,10 +27,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - name: "Set up Python 3.12"
+      - name: "Set up Python 3.14"
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
-          python-version: "3.12"
+          python-version: "3.14"
       - name: Install dependencies
         run: |
           pip install --upgrade pip
@@ -50,7 +50,7 @@ jobs:
       fail-fast: false
       matrix:
         platform: [ubuntu-latest, windows-2022]
-        python: ["3.10", "3.11", "3.12", "3.13"]
+        python: ["3.10", "3.11", "3.12", "3.13", "3.14"]
         backend: [pyqt5]
         include:
           - python: "3.11"
@@ -65,11 +65,11 @@ jobs:
           - python: "3.10"
             platform: ubuntu-22.04
             backend: headless
-          - python: "3.13"
+          - python: "3.14"
             platform: ubuntu-latest
             backend: pyqt6
             tox_extras: "testing_extra"
-          - python: "3.11"
+          - python: "3.12"
             platform: ubuntu-latest
             backend: pyside6
             tox_extras: "testing_extra"

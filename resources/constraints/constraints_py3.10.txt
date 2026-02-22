@@ -103,7 +103,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.151.6
+hypothesis==6.151.8
     # via napari (pyproject.toml)
 idna==3.11
     # via
