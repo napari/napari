@@ -14,6 +14,7 @@ import numpy as np
 import numpy.typing as npt
 import pandas as pd
 from PIL import Image, ImageDraw
+from psygnal.containers import Selection
 from scipy import ndimage as ndi
 
 from napari.layers._data_protocols import LayerDataProtocol
@@ -226,6 +227,9 @@ class Labels(ScalarFieldBase):
         isotropic Sobel gradient, which is smoother but more computationally expensive.
     selected_label : int
         Index of selected label. Can be greater than the current maximum label.
+    selected_data : Selection
+        Selection of labels used for display filtering when
+        ``show_selected_label=True``.
     mode : str
         Interactive mode. The normal, default mode is PAN_ZOOM, which
         allows for normal interactivity with the canvas.
@@ -390,6 +394,7 @@ class Labels(ScalarFieldBase):
             paint=Event,
             preserve_labels=Event,
             properties=Event,
+            selected_data=Event,
             selected_label=Event,
             show_selected_label=Event,
         )
@@ -412,6 +417,10 @@ class Labels(ScalarFieldBase):
         self._iso_gradient_mode = IsoCategoricalGradientMode(iso_gradient_mode)
 
         self._selected_label = 1
+        self._selected_data: Selection[int] = Selection([self._selected_label])
+        self._selected_data.events.items_changed.connect(
+            self._on_selected_data_changed
+        )
         self.colormap.selection = self._selected_label
         self.colormap.use_selection = self._show_selected_label
         self._prev_selected_label = None
@@ -743,12 +752,30 @@ class Labels(ScalarFieldBase):
             self._prev_selected_label = self.selected_label
         else:
             self._prev_selected_label = None
-        self.colormap.selection = selected_label
         self._selected_label = selected_label
+        self.selected_data.replace_selection([selected_label])
         self._selected_color = self.get_color(selected_label)
 
         self.events.selected_label()
 
+    @property
+    def selected_data(self) -> Selection[int]:
+        """Selection: labels selected for display filtering."""
+        return self._selected_data
+
+    @property
+    def _selected_display_label(self) -> int:
+        """Get the label that should be used for display based on the current selection.
+        If no labels are selected, return the background label.
+        Should be removed once we have the multiple label visualization."""
+        try:
+            return next(reversed(self.selected_data))
+        except StopIteration:
+            return self.colormap.background_value
+
+    def _on_selected_data_changed(self, added, removed) -> None:
+        self.colormap.selection = self._selected_display_label
+        self.events.selected_data()
         if self.show_selected_label:
             self.refresh(extent=False)
 
@@ -768,7 +795,7 @@ class Labels(ScalarFieldBase):
     def show_selected_label(self, show_selected):
         self._show_selected_label = show_selected
         self.colormap.use_selection = show_selected
-        self.colormap.selection = self.selected_label
+        self.colormap.selection = self._selected_display_label
         self.events.show_selected_label(show_selected_label=show_selected)
         self.refresh(extent=False)
 

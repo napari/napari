@@ -763,6 +763,31 @@ def test_show_selected_label():
     assert np.allclose(other_colors, none_color)
 
 
+def test_selected_label_updates_selected_data():
+    data = np.arange(9).reshape((3, 3))
+    layer = Labels(data)
+
+    layer.selected_data.replace_selection([2])
+    layer.selected_label = 4
+
+    assert layer.selected_data == {4}
+    assert next(reversed(layer.selected_data)) == 4
+
+
+def test_show_selected_label_uses_selected_data():
+    data = np.arange(5, dtype=np.int32)[:, np.newaxis].repeat(5, axis=1)
+    layer = Labels(data)
+    layer.selected_label = 1
+    layer.show_selected_label = True
+
+    layer.selected_data.replace_selection([3])
+
+    assert layer.selected_label == 1
+    assert layer.colormap.selection == 3
+    npt.assert_allclose(layer.get_color(3), layer.colormap.map(3))
+    npt.assert_allclose(layer.get_color(1), layer.get_color(None))
+
+
 def test_paint():
     """Test painting labels with different circle brush sizes."""
     np.random.seed(0)
