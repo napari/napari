@@ -778,14 +778,29 @@ def test_show_selected_label_uses_selected_data():
     data = np.arange(5, dtype=np.int32)[:, np.newaxis].repeat(5, axis=1)
     layer = Labels(data)
     layer.selected_label = 1
+    drawing_label_color = layer.get_color(layer.selected_label)
     layer.show_selected_label = True
 
     layer.selected_data.replace_selection([3])
 
     assert layer.selected_label == 1
     assert layer.colormap.selection == 3
-    npt.assert_allclose(layer.get_color(3), layer.colormap.map(3))
-    npt.assert_allclose(layer.get_color(1), layer.get_color(None))
+
+    # Display filtering follows selected_data.
+    mapped_colors = layer.colormap.map(data)
+    label_mask = data == 3
+    assert np.allclose(
+        np.asarray(mapped_colors[label_mask]),
+        np.asarray(layer.colormap.map(layer.colormap.selection)),
+    )
+    assert np.allclose(
+        np.asarray(mapped_colors[np.logical_not(label_mask)]),
+        0,
+    )
+
+    # get_color remains tied to the drawing label (selected_label).
+    npt.assert_allclose(layer.get_color(1), drawing_label_color)
+    npt.assert_allclose(layer.get_color(3), layer.get_color(None))
 
 
 def test_paint():
