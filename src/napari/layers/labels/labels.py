@@ -1026,16 +1026,19 @@ class Labels(ScalarFieldBase):
         self.thumbnail = color_array
 
     def get_color(self, label):
-        """Return the color corresponding to a specific label."""
-        colormap = self.colormap._cmap_without_selection()
+        """Return the color corresponding to a specific label.
+        Respect the selected_data and show_selected_label settings,
+        returning the background color if the label is not in selected_data
+        and show_selected_label is True.
+        """
         if label == self.colormap.background_value:
             col = None
         elif label is None or (
-            self.show_selected_label and label != self.selected_label
+            self.show_selected_label and label != self._selected_display_label
         ):
-            col = colormap.map(self.colormap.background_value)
+            col = self.colormap.map(self.colormap.background_value)
         else:
-            col = colormap.map(label)
+            col = self.colormap.map(label)
         return col
 
     def _reset_history(self, event=None):
