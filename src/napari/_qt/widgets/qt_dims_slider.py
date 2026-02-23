@@ -478,10 +478,10 @@ class QtPlayButton(QPushButton):
 
     def __init__(
         self,
-        qt_dims,
-        axis,
-        reverse=False,
-        fps=10,
+        qt_dims: QtDims,
+        axis: int,
+        reverse: bool = False,
+        fps: float = 10,
         mode: LoopMode = LoopMode.LOOP,
     ) -> None:
         super().__init__()
