@@ -46,7 +46,7 @@ class _ModifiedScrollBar(ModifiedScrollBar):
             The napari event that triggered this method.
         """
         if event.button() == Qt.MouseButton.RightButton:
-            self.parent().show_margins_popupup()
+            self.parent().show_margins_popup()
         else:
             super().mousePressEvent(event)
 
@@ -478,7 +478,7 @@ class QtPlayButton(QPushButton):
 
     def __init__(
         self,
-        qt_dims: QtDims,
+        qt_dims: 'QtDims',
         axis: int,
         reverse: bool = False,
         fps: float = 10,
