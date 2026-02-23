@@ -223,7 +223,12 @@ def show_only_layer_below(viewer: ViewerModel) -> None:
     )
 )
 def toggle_console_visibility(qt_viewer: QtViewer) -> None:
-    qt_viewer.toggle_console_visibility()
+    if hasattr(qt_viewer, 'toggle_console_visibility'):
+        qt_viewer.toggle_console_visibility()
+    else:
+        # old action_manager path :( :(, where
+        # toggle_console_visibility is treated as bound method...
+        qt_viewer.window._qt_viewer.toggle_console_visibility()
 
 
 @register_viewer_action(trans._('Press and hold for move camera mode'))
