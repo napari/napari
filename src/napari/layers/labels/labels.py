@@ -394,7 +394,6 @@ class Labels(ScalarFieldBase):
             paint=Event,
             preserve_labels=Event,
             properties=Event,
-            selected_data=Event,
             selected_label=Event,
             show_selected_label=Event,
         )
@@ -763,6 +762,12 @@ class Labels(ScalarFieldBase):
         """Selection: labels selected for display filtering."""
         return self._selected_data
 
+    @selected_data.setter
+    def selected_data(self, selected_data: Sequence[int] | Selection[int]):
+        # No sanity checks on the values, and the values outside of the dtype
+        # limits will just not be rendered, so we allow any integers to be set.
+        self._selected_data.replace_selection(selected_data)
+
     @property
     def _selected_display_label(self) -> int:
         """Get the label that should be used for display based on the current selection.
@@ -775,7 +780,6 @@ class Labels(ScalarFieldBase):
 
     def _on_selected_data_changed(self, added, removed) -> None:
         self.colormap.selection = self._selected_display_label
-        self.events.selected_data()
         if self.show_selected_label:
             self.refresh(extent=False)
 

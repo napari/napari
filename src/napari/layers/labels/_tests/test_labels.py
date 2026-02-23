@@ -4,6 +4,7 @@ import time
 from collections import defaultdict
 from dataclasses import dataclass
 from importlib.metadata import version
+from unittest.mock import Mock
 
 import numpy as np
 import numpy.testing as npt
@@ -722,6 +723,16 @@ def test_selecting_label_exception():
         labels.selected_label = 256
     with pytest.raises(WrongSelectedLabelError, match='The value -1'):
         labels.selected_label = -1
+
+
+def test_selected_data_refresh_when_filtering():
+    labels = Labels(np.zeros((5, 5), dtype=np.uint8))
+    labels.show_selected_label = True
+    labels.refresh = refresh_mock = Mock()
+
+    labels.selected_data = [1, 2]
+
+    refresh_mock.assert_called_once_with(extent=False)
 
 
 def test_label_color():
@@ -1943,7 +1954,13 @@ class TestLabels:
     def test_events_defined(self, event_define_check, obj):
         event_define_check(
             obj,
-            {'seed', 'num_colors', 'color', 'seed_rng'},
+            {
+                'seed',
+                'num_colors',
+                'color',
+                'seed_rng',
+                'selected_data',
+            },  # `selected_data` itself is an evented model
         )
 
 
