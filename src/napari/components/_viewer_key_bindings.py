@@ -1,10 +1,12 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Callable, Generator
+from collections.abc import Callable, Generator
+from typing import TYPE_CHECKING
 
 import numpy as np
 from app_model.types import KeyCode, KeyMod
 
+from napari.components.viewer_model import ViewerModel
 from napari.utils.action_manager import action_manager
 from napari.utils.notifications import show_info, show_warning
 from napari.utils.theme import available_themes, get_system_theme
@@ -12,12 +14,13 @@ from napari.utils.transforms import Affine
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
-    from napari.viewer import Viewer
-    from napari.components.viewer_model import ViewerModel
     from napari._qt.qt_viewer import QtViewer
+    from napari.viewer import Viewer
 
 
-def register_viewer_action(description: str, repeatable: bool=False) -> Callable[[Callable], Callable]:
+def register_viewer_action(
+    description: str, repeatable: bool = False
+) -> Callable[[Callable], Callable]:
     """
     Convenient decorator to register an action with the current ViewerModel
 
