@@ -38,7 +38,7 @@ packaging==26.0
     #   qtpy
 pathspec==1.0.4
     # via mypy
-platformdirs==4.9.1
+platformdirs==4.9.2
     # via npe2
 psygnal==0.15.1
     # via
