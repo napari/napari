@@ -898,6 +898,8 @@ sphinxcontrib-serializinghtml==2.0.0
     # via sphinx
 sphinxext-opengraph==0.13.0
     # via napari (pyproject.toml:docs)
+sphinxext-rediraffe==0.3.0
+    # via napari (pyproject.toml:docs)
 sqlalchemy==2.0.46
     # via jupyter-cache
 stack-data==0.6.3
