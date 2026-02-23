@@ -420,7 +420,7 @@ class Labels(ScalarFieldBase):
         self._selected_data.events.items_changed.connect(
             self._on_selected_data_changed
         )
-        self.colormap.selection = self._selected_label
+        self.colormap.selection = self._selected_display_label
         self.colormap.use_selection = self._show_selected_label
         self._prev_selected_label = None
         self._selected_color = self.get_color(self._selected_label)
