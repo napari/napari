@@ -343,9 +343,7 @@ class QtDimSliderWidget(QWidget):
     @property
     def frame_range(self) -> tuple[int, int]:
         """Frame range for animation, as (minimum_frame, maximum_frame)."""
-        frame_range = (self._minframe, self._maxframe)
-        frame_range = frame_range if any(frame_range) else None
-        return frame_range
+        return self._minframe, self._maxframe
 
     @frame_range.setter
     def frame_range(self, value: tuple[int, int]) -> None:
@@ -365,10 +363,13 @@ class QtDimSliderWidget(QWidget):
             raise ValueError(trans._('frame_range must have a length of 2'))
 
         if value is None:
-            value = (None, None)
+            value = (0, 0)
+
+        prev = self._minframe, self._maxframe
 
         self._minframe, self._maxframe = value
-        self.range_changed.emit(tuple(value))
+        if prev != value:
+            self.range_changed.emit(tuple(value))
 
     def _update_play_settings(
         self, fps: float, loop_mode: LoopMode, frame_range: tuple[int, int]
@@ -399,7 +400,7 @@ class QtDimSliderWidget(QWidget):
             self.fps = fps
         if loop_mode is not None:
             self.loop_mode = loop_mode
-        if frame_range is not None:
+        if frame_range != (0, 0):
             self.frame_range = frame_range
 
     def resizeEvent(self, event: 'QResizeEvent') -> None:
@@ -584,6 +585,10 @@ class AnimationThread(QThread):
         self._interval = 1
         self._slider: ref[QtDimSliderWidget] = lambda: None
         self._waiter = threading.Event()
+        self.frame_range = (0, 0)
+        self.dims_range = (0, 1, 1)
+        self.min_point = 0
+        self.max_point = 1
         self.current = 0
         self.step = 1
 
@@ -673,25 +678,27 @@ class AnimationThread(QThread):
         frame_range : tuple(int, int)
             Frame range as tuple/list with range (minimum_frame, maximum_frame)
         """
-        self.dimsrange = (0, self.dims.nsteps[self.axis], 1)
+        self.dims_range = (0, self.dims.nsteps[self.axis], 1)
+        if frame_range is None:
+            frame_range = (0, 0)
 
-        if frame_range is not None:
+        if frame_range != (0, 0):
             if frame_range[0] >= frame_range[1]:
                 raise ValueError(
                     trans._('frame_range[0] must be <= frame_range[1]')
                 )
-            if frame_range[0] < self.dimsrange[0]:
+            if frame_range[0] < self.dims_range[0]:
                 raise IndexError(trans._('frame_range[0] out of range'))
-            if frame_range[1] * self.dimsrange[2] >= self.dimsrange[1]:
+            if frame_range[1] * self.dims_range[2] >= self.dims_range[1]:
                 raise IndexError(trans._('frame_range[1] out of range'))
         self.frame_range = frame_range
 
-        if self.frame_range is not None:
+        if self.frame_range != (0, 0):
             self.min_point, self.max_point = self.frame_range
         else:
             self.min_point = 0
             self.max_point = int(
-                np.floor(self.dimsrange[1] - self.dimsrange[2])
+                np.floor(self.dims_range[1] - self.dims_range[2])
             )
         self.max_point += 1  # range is inclusive
 
@@ -702,13 +709,13 @@ class AnimationThread(QThread):
         Takes dims scale into account and restricts the animation to the
         requested frame_range, if entered.
         """
-        self.current += self.step * self.dimsrange[2]
+        self.current += self.step * self.dims_range[2]
         if self.current < self.min_point:
             if (
                 self.loop_mode == LoopMode.BACK_AND_FORTH
             ):  # 'loop_back_and_forth'
                 self.step *= -1
-                self.current = self.min_point + self.step * self.dimsrange[2]
+                self.current = self.min_point + self.step * self.dims_range[2]
             elif self.loop_mode == LoopMode.LOOP:  # 'loop'
                 self.current = self.max_point + self.current - self.min_point
             else:  # loop_mode == 'once'
@@ -719,7 +726,7 @@ class AnimationThread(QThread):
             ):  # 'loop_back_and_forth'
                 self.step *= -1
                 self.current = (
-                    self.max_point + 2 * self.step * self.dimsrange[2]
+                    self.max_point + 2 * self.step * self.dims_range[2]
                 )
             elif self.loop_mode == LoopMode.LOOP:  # 'loop'
                 self.current = self.min_point + self.current - self.max_point
