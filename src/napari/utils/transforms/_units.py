@@ -37,12 +37,12 @@ def get_units_from_name(units: None) -> None: ...
 
 
 @overload
-def get_units_from_name(units: str | pint.Unit) -> pint.Unit: ...
+def get_units_from_name(units: str | pint.Unit | None) -> pint.Unit: ...
 
 
 @overload
 def get_units_from_name(
-    units: Sequence[str | pint.Unit],
+    units: Sequence[str | pint.Unit | None],
 ) -> tuple[pint.Unit, ...]: ...
 
 
