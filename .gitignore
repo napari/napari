@@ -2,6 +2,7 @@ uv.lock
 *leak-backref-graph*
 docs
 tmp
+src/napari/benchmarks/data/*.npz
 # Byte-compiled / optimized / DLL files
 tools/vendored_modules.txt
 tools/matplotlib
