@@ -19,6 +19,16 @@ __all__ = (
 )
 
 
+def get_unit_from_name(unit: str | pint.Unit | None) -> pint.Unit:
+    if isinstance(unit, pint.Unit):
+        return unit
+    if unit is None:
+        return pint.get_application_registry().pixel
+    if isinstance(unit, str):
+        return pint.get_application_registry().parse_expression(unit).units
+    raise ValueError(f'Could not find unit {unit}')
+
+
 @overload
 def get_units_from_name(units: None) -> None: ...
 
@@ -37,16 +47,9 @@ def get_units_from_name(units: UnitsLike) -> UnitsInfo:
     """Convert a string or sequence of strings to pint units."""
     try:
         if isinstance(units, str):
-            return (
-                pint.get_application_registry().parse_expression(units).units
-            )
+            return get_unit_from_name(units)
         if isinstance(units, Sequence):
-            return tuple(
-                pint.get_application_registry().parse_expression(unit).units
-                if isinstance(unit, str)
-                else unit
-                for unit in units
-            )
+            return tuple(get_unit_from_name(u) for u in units)
     except AttributeError as e:
         raise ValueError(f'Could not find unit {units}') from e
     return units
