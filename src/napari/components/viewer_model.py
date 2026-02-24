@@ -64,6 +64,7 @@ from napari.layers import (
     Tracks,
     Vectors,
 )
+from napari.layers._scalar_field import ScalarFieldBase
 from napari.layers._source import Source, layer_source
 from napari.layers.image._image_key_bindings import image_fun_to_mode
 from napari.layers.image._image_utils import guess_labels
@@ -97,6 +98,7 @@ from napari.utils.events import (
 from napari.utils.key_bindings import KeymapProvider
 from napari.utils.misc import ensure_list_of_layer_data_tuple, is_sequence
 from napari.utils.mouse_bindings import MousemapProviderPydantic
+from napari.utils.notifications import show_warning
 from napari.utils.progress import progress
 from napari.utils.theme import available_themes, is_theme_available
 from napari.utils.translations import trans
@@ -622,19 +624,34 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
     def _new_labels(self) -> None:
         """Create new labels layer filling full world coordinates space."""
-        layers_extent = self.layers.extent
-        extent = layers_extent.world
-        scale = layers_extent.step
-        scene_size = extent[1] - extent[0]
-        corner = extent[0]
-        shape = [
-            np.round(s / sc).astype('int') + 1
-            for s, sc in zip(scene_size, scale, strict=False)
-        ]
-        dtype_str = get_settings().application.new_labels_dtype
-        empty_labels = np.zeros(shape, dtype=dtype_str)
-        self.add_labels(empty_labels, translate=np.array(corner), scale=scale)  # type: ignore[attr-defined]
-        # We define `add_labels` dynamically, so mypy doesn't know about it.
+        if isinstance(
+            base_layer := self.layers.selection.active, ScalarFieldBase
+        ):
+            layer = Labels(
+                data=np.zeros(
+                    base_layer.data.shape,
+                    dtype=get_settings().application.new_labels_dtype,
+                ),
+                scale=base_layer.scale,
+                translate=base_layer.translate,
+                rotate=base_layer.rotate,
+                shear=base_layer.shear,
+                units=base_layer.units,
+                affine=base_layer.affine,
+            )
+        elif len(self.layers) == 0:
+            layer = Labels(
+                data=np.zeros(
+                    (512, 512),
+                    dtype=get_settings().application.new_labels_dtype,
+                )
+            )
+        else:
+            show_warning(
+                'Cannot create new labels layer for non-scalar field layers.'
+            )
+            return
+        self.add_layer(layer)
 
     def _on_layer_reload(self, event: Event) -> None:
         self._layer_slicer.submit(
