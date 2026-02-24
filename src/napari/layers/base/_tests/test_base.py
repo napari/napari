@@ -53,6 +53,9 @@ def test_exception_on_invalid_units():
     with pytest.raises(ValueError, match='Could not find unit'):
         layer.units = (1, 1)
 
+    with pytest.raises(ValueError, match='Could not find unit'):
+        layer.units = 1
+
 
 def test_units_constructor():
     layer = SampleLayer(np.empty((10, 10)), units=('nm', 'nm'))
@@ -216,9 +219,3 @@ def test_invalidate_extent_shear():
     with layer._block_refresh():
         layer.shear = [1]
     npt.assert_array_equal(layer.extent.world, [[0, 0], [28, 19]])
-
-
-def test_set_units_none(units, expected):
-    layer = SampleLayer(np.empty((10, 10)), units=('nm', 'nm'))
-    layer.units = None
-    assert layer.units == (REG.pixel, REG.pixel)
