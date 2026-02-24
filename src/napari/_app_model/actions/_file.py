@@ -61,7 +61,6 @@ def add_new_points(viewer: 'ViewerModel') -> None:
     if not viewer.layers.selection:
         viewer.add_points(  # type: ignore[attr-defined]
             ndim=max(viewer.dims.ndim, 2),
-            scale=viewer.layers.extent.step,
         )
     else:
         extent = viewer.layers.get_extent(viewer.layers.selection)
@@ -75,7 +74,6 @@ def add_new_shapes(viewer: 'ViewerModel') -> None:
     if not viewer.layers.selection:
         viewer.add_shapes(  # type: ignore[attr-defined]
             ndim=max(viewer.dims.ndim, 2),
-            scale=viewer.layers.extent.step,
         )
     else:
         extent = viewer.layers.get_extent(viewer.layers.selection)
