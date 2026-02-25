@@ -4,24 +4,57 @@ Heart example
 
 Display an image with preset contrast limits and colormap, a segmentation mask and points with features.
 
-This example demonstrates how to load and display a subset of channels from a multi-channel 2D image with preset contrast limits and colormap.
+This example demonstrates how to load and display a subset of channels from a multi-channel 2D image with
+preset contrast limits and colormap.
 It adds a segmentation mask and points with features.
+
+Thanks to Krešimir Beštak for providing the image, segmentation mask and cell data for this example.
+The full dataset is available on Synapse: https://www.synapse.org/Synapse:syn51449054
+
+More information about the dataset can be found in *Wünnemann, F., Sicklinger, F., Bestak, K. et al.
+Spatial multiomics of acute myocardial infarction reveals immune cell infiltration through the endocardium.
+Nat Cardiovasc Res 4, 1345-1362 (2025). https://doi.org/10.1038/s44161-025-00717-y*
 
 .. tags:: visualization-basic
 """
 
+import os
+
+import dask.array
 import pandas as pd
+import pooch
 import tifffile
 
 import napari
 
+# download the data
+download = pooch.DOIDownloader(progressbar=True)
+doi = '10.5281/zenodo.13380203' #TODO change link to point to dataset on drive
+tmp_dir = pooch.os_cache('napari-heart-example')
+os.makedirs(tmp_dir, exist_ok=True)
+data_files = {
+    'tiff_image': 'image.tif',
+    'zarr_image': 'image.zarr',
+    'segmentation': 'segmentation.tif',
+    'cell_data': 'cell_data.csv',
+    'channel_color_metadata': 'channel_color_metadata.csv'
+}
+data_to_path = {}
+print(f'downloading data into {tmp_dir}')
+for id_, file_name in data_files.items():
+    res = pooch.retrieve(f'doi:{doi}/{file_name}', known_hash=None,  progressbar=True)
+    data_to_path[id_] = res
+
+
 # read in image, segmentation mask and cell data
-crop = tifffile.imread('/Users/margotchazotte/Documents/uni/PhD/napari_examples/heart_crop/image.tif')
-crop_mask = tifffile.imread('/Users/margotchazotte/Documents/uni/PhD/napari_examples/heart_crop/segmentation.tif')
-crop_cells = pd.read_csv('/Users/margotchazotte/Documents/uni/PhD/napari_examples/heart_crop/cell_data.csv')
+# image can be read in either as tiff or as zarr
+#crop = tifffile.imread(data_to_path['tiff_image'])
+crop = dask.array.from_zarr(data_to_path['zarr_image'])
+crop_mask = tifffile.imread(data_to_path['segmentation'])
+crop_cells = pd.read_csv(data_to_path['cell_data'])
 
 # read in metadata containing contrast limits, colormap and channel index for each channel that should be included
-channel_color_metadata = pd.read_csv('/Users/margotchazotte/Documents/uni/PhD/napari_examples/heart_crop/channel_color_metadata.csv')
+channel_color_metadata = pd.read_csv(data_to_path['channel_color_metadata'])
 
 # define colors for each cell type for the points layer
 color_cycle = {
@@ -71,4 +104,6 @@ viewer.add_points(
     size=30,
     face_color_cycle=color_cycle
 )
-napari.run()
+
+if __name__ == '__main__':
+    napari.run()
