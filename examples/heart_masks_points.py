@@ -1,6 +1,6 @@
 """
-Heart example
-=============
+Heart with multiple annotations
+===============================
 
 Display an image with preset contrast limits and colormap, a segmentation mask and points with features.
 
@@ -37,7 +37,7 @@ data_files = {
     'zarr_image': 'image.zarr',
     'segmentation': 'segmentation.tif',
     'cell_data': 'cell_data.csv',
-    'channel_color_metadata': 'channel_color_metadata.csv'
+    'channel_metadata': 'channel_metadata.csv'
 }
 data_to_path = {}
 print(f'downloading data into {tmp_dir}')
@@ -54,9 +54,9 @@ mask = tifffile.imread(data_to_path['segmentation'])
 cells = pd.read_csv(data_to_path['cell_data'])
 
 # read in metadata containing contrast limits, colormap and channel index for each channel that should be included
-channel_color_metadata = pd.read_csv(data_to_path['channel_color_metadata'])
+channel_metadata = pd.read_csv(data_to_path['channel_metadata'])
 
-# define colors for each cell type for the points layer
+# define colors for each cell type in the points layer
 color_cycle = {
     'Cardiomyocytes': '#0000ff',
     'Cardiomyocytes Ankrd1+': "#b5791a",
@@ -76,17 +76,17 @@ feature = { 'label': cells['label'],
            'cell_size': cells['cell_size'],
            'cell_type': cells['final_cell_type']}
 
-# create napari viewer and add image channel by channel with contrast limits and colormap according to channel_color_metadata
+# create napari viewer and add image channel by channel with contrast limits and colormap according to channel_metadata
 viewer = napari.Viewer()
-for idx, name in zip(channel_color_metadata['channel_index'], channel_color_metadata['name'], strict = True):
+for idx, name in zip(channel_metadata['channel_index'], channel_metadata['name'], strict = True):
     viewer.add_image(
         image[idx],
         name=name,
         rgb=False,
-        contrast_limits=[channel_color_metadata['contrast_min'][channel_color_metadata['channel_index'] == idx].values[0],
-                            channel_color_metadata['contrast_max'][channel_color_metadata['channel_index'] == idx].values[0]],
+        contrast_limits=[channel_metadata['contrast_min'][channel_metadata['channel_index'] == idx].values[0],
+                            channel_metadata['contrast_max'][channel_metadata['channel_index'] == idx].values[0]],
         blending='additive',
-        colormap=channel_color_metadata['colorhex'][channel_color_metadata['channel_index'] == idx].values[0],
+        colormap=channel_metadata['colorhex'][channel_metadata['channel_index'] == idx].values[0],
     )
 
 # add segmetation mask, optionally add features which can be displayed by plugins
