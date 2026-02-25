@@ -154,6 +154,11 @@ authors:
 - given-names: Peter
   family-names: Boone
   alias: boonepeter
+- given-names: Kresimir
+  family-names: Bestak
+  affiliation: Heidelberg University, Germany
+  orcid: https://orcid.org/0009-0009-8245-9846
+  alias: kbestak
 - given-names: Jordão
   family-names: Bragantini
   affiliation: Chan Zuckerberg Biohub
