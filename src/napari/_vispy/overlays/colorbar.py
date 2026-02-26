@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from napari._vispy.overlays.base import LayerOverlayMixin, VispyCanvasOverlay
+from napari._vispy.visuals.colorbar import ColorBar
 from napari.layers.utils.color_manager import ColorManager
 from napari.settings import get_settings
 from napari.utils.colormaps.colormap_utils import (
