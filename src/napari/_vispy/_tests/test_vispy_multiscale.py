@@ -41,6 +41,31 @@ def test_multiscale(make_napari_viewer):
     assert value[1] is None
 
 
+@skip_on_win_ci
+@skip_local_popups
+def test_multiscale_zoom_in_within_level_does_not_refresh(make_napari_viewer):
+    """Ensure zooming in within the same level does not trigger a refresh."""
+    viewer = make_napari_viewer(show=True)
+    view = viewer.window._qt_viewer
+
+    shapes = [(4000, 3000), (2000, 1500), (1000, 750), (500, 375)]
+    data = [np.ones(s) for s in shapes]
+    layer = viewer.add_image(data, multiscale=True, contrast_limits=[0, 1])
+
+    view.canvas.view.canvas.size = (800, 600)
+    view.canvas.view.camera.rect = [1000, 1000, 200, 150]
+    viewer.window._qt_viewer.canvas.on_draw(None)
+
+    assert layer.data_level == 0
+    initial_corners = layer.corner_pixels.copy()
+
+    view.canvas.view.camera.rect = [1000, 1000, 100, 75]
+    viewer.window._qt_viewer.canvas.on_draw(None)
+
+    assert layer.data_level == 0
+    np.testing.assert_array_equal(layer.corner_pixels, initial_corners)
+
+
 def test_3D_multiscale_image(make_napari_viewer):
     """Test rendering of 3D multiscale image uses lowest resolution."""
     viewer = make_napari_viewer()

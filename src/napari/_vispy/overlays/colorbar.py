@@ -78,7 +78,7 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
         parent: Node | None = None,
     ) -> None:
         super().__init__(
-            node=Colorbar(),
+            node=ColorBar(),
             layer=layer,
             viewer=viewer,
             overlay=overlay,
