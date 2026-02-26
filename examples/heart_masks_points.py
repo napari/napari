@@ -34,7 +34,6 @@ tmp_dir = pooch.os_cache('napari-heart-example')
 os.makedirs(tmp_dir, exist_ok=True)
 data_files = {
     #'tiff_image': 'image.tif', # uncomment if you want to load the image as tiff instead of zarr
-    'zarr_image': 'image.zarr',
     'segmentation': 'segmentation.tif',
     'cell_data': 'cell_data.csv',
     'channel_metadata': 'channel_metadata.csv'
@@ -48,8 +47,9 @@ for id_, file_name in data_files.items():
 
 # read in image, segmentation mask and cell data
 # image can be read in either as tiff or as zarr
-#image = tifffile.imread(data_to_path['tiff_image'])
-image = dask.array.from_zarr(data_to_path['zarr_image'])
+# image = tifffile.imread(data_to_path['tiff_image'])
+# zarr v3 array is streamed lazily over HTTP - no local download needed
+image = dask.array.from_zarr(f'{url}/image.zarr')
 mask = tifffile.imread(data_to_path['segmentation'])
 cells = pd.read_csv(data_to_path['cell_data'])
 
