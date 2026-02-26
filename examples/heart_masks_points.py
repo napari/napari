@@ -18,8 +18,6 @@ Nat Cardiovasc Res 4, 1345-1362 (2025). https://doi.org/10.1038/s44161-025-00717
 .. tags:: visualization-basic
 """
 
-import os
-
 import dask.array
 import pandas as pd
 import pooch
@@ -28,10 +26,8 @@ import tifffile
 import napari
 
 # download the data
-download = pooch.DOIDownloader(progressbar=True)
 url = 'https://data.napari.dev/heart_example_data'
 tmp_dir = pooch.os_cache('napari-heart-example')
-os.makedirs(tmp_dir, exist_ok=True)
 data_files = {
     #'tiff_image': 'image.tif', # uncomment if you want to load the image as tiff instead of zarr
     'segmentation': 'segmentation.tif',
@@ -44,6 +40,7 @@ for id_, file_name in data_files.items():
     res = pooch.retrieve(
         f'{url}/{file_name}',
         known_hash=None,
+        path=tmp_dir,
         progressbar=True
     )
     data_to_path[id_] = res
@@ -104,7 +101,7 @@ for idx, name in zip(
 viewer.add_labels(
     mask,
     name='Segmentation mask',
-    # features=feature
+    features=feature
 )
 
 # add points with features, colored by cell type
