@@ -97,7 +97,7 @@ for idx, name in zip(
         colormap=channel_metadata['colorhex'][channel_metadata['channel_index'] == idx].values[0],
     )
 
-# add segmetation mask, optionally add features which can be displayed by plugins
+# add segmentation mask, optionally add features which can be displayed by the built-in features widget or by plugins
 viewer.add_labels(
     mask,
     name='Segmentation mask',
