@@ -41,9 +41,12 @@ data_files = {
 data_to_path = {}
 print(f'downloading data into {tmp_dir}')
 for id_, file_name in data_files.items():
-    res = pooch.retrieve(f'{url}/{file_name}', known_hash=None,  progressbar=True)
+    res = pooch.retrieve(
+        f'{url}/{file_name}',
+        known_hash=None,
+        progressbar=True
+    )
     data_to_path[id_] = res
-
 
 # read in image, segmentation mask and cell data
 # image can be read in either as tiff or as zarr
@@ -72,28 +75,37 @@ color_cycle = {
     }
 
 # subset cell features to those that should be added to the points layer
-feature = { 'label': cells['label'],
-           'cell_size': cells['cell_size'],
-           'cell_type': cells['final_cell_type']}
+feature = {
+    'label': cells['label'],
+    'cell_size': cells['cell_size'],
+    'cell_type': cells['final_cell_type']
+}
 
 # create napari viewer and add image channel by channel with contrast limits and colormap according to channel_metadata
 viewer = napari.Viewer()
-for idx, name in zip(channel_metadata['channel_index'], channel_metadata['name'], strict = True):
+for idx, name in zip(
+    channel_metadata['channel_index'],
+    channel_metadata['name'],
+    strict = True
+):
     viewer.add_image(
         image[idx],
         name=name,
         rgb=False,
-        contrast_limits=[channel_metadata['contrast_min'][channel_metadata['channel_index'] == idx].values[0],
-                            channel_metadata['contrast_max'][channel_metadata['channel_index'] == idx].values[0]],
+        contrast_limits=[
+            channel_metadata['contrast_min'][channel_metadata['channel_index'] == idx].values[0],
+            channel_metadata['contrast_max'][channel_metadata['channel_index'] == idx].values[0],
+        ],
         blending='additive',
         colormap=channel_metadata['colorhex'][channel_metadata['channel_index'] == idx].values[0],
     )
 
 # add segmetation mask, optionally add features which can be displayed by plugins
-viewer.add_labels(mask,
-                  name='Segmentation mask',
-                  #features=feature
-                  )
+viewer.add_labels(
+    mask,
+    name='Segmentation mask',
+    # features=feature
+)
 
 # add points with features, colored by cell type
 viewer.add_points(
