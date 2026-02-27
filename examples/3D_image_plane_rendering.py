@@ -42,7 +42,7 @@ plane_layer = viewer.add_image(
 )
 viewer.axes.visible = True
 viewer.camera.angles = (0, -30, 35)
-viewer.camera.zoom = 5
+viewer.fit_to_view()
 viewer.text_overlay.text = trans._(
 """shift + click and drag to move the plane
 press 'x', 'y' or 'z' to orient the plane along that axis around the cursor
