@@ -639,6 +639,22 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
                 units=base_layer.units,
                 affine=base_layer.affine,
             )
+        elif self.layers.selection:
+            # non scalar field layer or more than one layer selected
+            layers_extent = self.layers.get_extent(self.layers.selection)
+            extent = layers_extent.world
+            scale = layers_extent.step
+            scene_size = extent[1] - extent[0]
+            corner = extent[0]
+            shape = [
+                np.round(s / sc).astype('int') + 1
+                for s, sc in zip(scene_size, scale, strict=False)
+            ]
+            dtype_str = get_settings().application.new_labels_dtype
+            empty_labels = np.zeros(shape, dtype=dtype_str)
+            layer = Labels(
+                data=empty_labels, translate=np.array(corner), scale=scale
+            )
         elif len(self.layers) == 0:
             layer = Labels(
                 data=np.zeros(
