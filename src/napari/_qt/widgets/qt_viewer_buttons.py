@@ -102,10 +102,11 @@ class QtLayerButtons(QFrame):
             'new_labels',
             trans._(
                 'Create a new labels layer.\n'
-                'This button is highlighted if a labels on image layer is selected;\n'
-                'the new labels layer will inherit the shape and all transforms of this layer.\n'
-                'If other layer type or multiple layers are selected, the new labels layer will span their extent.\n'
-                'If no layers are selected, the new (512, 512) labels layer is created\n'
+                'If a Labels or Image layer is selected, the newly created Labels layer\n'
+                'will inherit the shape and all transforms of the selected layer.\n'
+                'If any other layer type or multiple layers are selected, the resulting\n'
+                'Labels layer will span their extent. (Warning: could be huge!)\n'
+                'If no layers are selected, a new (512, 512) labels layer is created.\n'
             ),
             self.viewer._new_labels,
         )
