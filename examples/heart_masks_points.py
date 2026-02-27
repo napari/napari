@@ -2,7 +2,7 @@
 Heart with multiple annotations
 ===============================
 
-Display a multiplexed immunofluorescent image of a murine heart with 
+Display a multiplexed immunofluorescent image of a murine heart with
 preset contrast limits and colormap, as well as a segmentation mask and points with features.
 
 This example demonstrates how to load and display a subset of channels from a multi-channel 2D image with
@@ -98,11 +98,10 @@ for idx, name in zip(
         colormap=channel_metadata['colorhex'][channel_metadata['channel_index'] == idx].values[0],
     )
 
-# add segmentation mask, optionally add features which can be displayed by the built-in features widget or by plugins
+# add segmentation mask
 viewer.add_labels(
     mask,
     name='Segmentation mask',
-    features=feature
 )
 
 # add points with features, colored by cell type
