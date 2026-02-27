@@ -25,5 +25,9 @@ surface.normals.face.visible = True
 surface.normals.vertex.visible = True
 surface.wireframe.visible = True
 
+viewer.camera.orientation = ('away', 'down', 'right')
+viewer.camera.angles = (0, 20, 0)
+viewer.fit_to_view()
+
 if __name__ == '__main__':
     napari.run()
