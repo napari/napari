@@ -137,10 +137,10 @@ class QtLayerButtons(QFrame):
         has_selection = bool(self.viewer.layers.selection)
         self.newPointsButton.setChecked(has_selection)
         self.newShapesButton.setChecked(has_selection)
-        allow_labels = isinstance(
+        new_labels_inherit_shape = isinstance(
             self.viewer.layers.selection.active, ScalarFieldBase
         )
-        self.newLabelsButton.setChecked(allow_labels)
+        self.newLabelsButton.setChecked(new_labels_inherit_shape)
 
 
 def labeled_double_slider(
