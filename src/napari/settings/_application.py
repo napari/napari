@@ -51,6 +51,13 @@ class DaskSettings(EventedModel):
     )
 
 
+class LabelsDefaultSize(EventedModel):
+    width: int = Field(512, title='Width')
+    height: int = Field(512, title='Height')
+    depth: int = Field(1, title='Depth')
+    time: int = Field(1, title='Time')
+
+
 class ApplicationSettings(EventedModel):
     def __init__(self, **kwargs: Any):
         super().__init__(**kwargs)
@@ -276,6 +283,13 @@ class ApplicationSettings(EventedModel):
         title=trans._('New labels data type'),
         description=trans._(
             'data type for labels layers created with the "new labels" button.'
+        ),
+    )
+    new_labels_default_size: LabelsDefaultSize = Field(
+        default=LabelsDefaultSize(),
+        title=trans._('New labels default size'),
+        description=trans._(
+            'default size for labels layers created with the "new labels" button.'
         ),
     )
 
