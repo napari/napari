@@ -2,7 +2,8 @@
 Heart with multiple annotations
 ===============================
 
-Display an image with preset contrast limits and colormap, a segmentation mask and points with features.
+Display a multiplexed immunofluorescent image of a murine heart with 
+preset contrast limits and colormap, as well as a segmentation mask and points with features.
 
 This example demonstrates how to load and display a subset of channels from a multi-channel 2D image with
 preset contrast limits and colormap.
@@ -15,7 +16,7 @@ More information about the dataset can be found in Wünnemann, F., Sicklinger, F
 Spatial multiomics of acute myocardial infarction reveals immune cell infiltration through the endocardium.
 Nat Cardiovasc Res 4, 1345-1362 (2025). https://doi.org/10.1038/s44161-025-00717-y
 
-.. tags:: visualization-basic
+.. tags:: visualization-advanced, features-table
 """
 
 import dask.array
