@@ -109,6 +109,7 @@ class QtLayerButtons(QFrame):
             ),
             self.viewer._new_labels,
         )
+        self.newLabelsButton.setCheckable(True)
 
         layout = QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
@@ -135,11 +136,10 @@ class QtLayerButtons(QFrame):
         has_selection = bool(self.viewer.layers.selection)
         self.newPointsButton.setChecked(has_selection)
         self.newShapesButton.setChecked(has_selection)
-        allow_labels = (
-            isinstance(self.viewer.layers.selection.active, ScalarFieldBase)
-            or len(self.viewer.layers) == 0
+        allow_labels = isinstance(
+            self.viewer.layers.selection.active, ScalarFieldBase
         )
-        self.newLabelsButton.setEnabled(allow_labels)
+        self.newLabelsButton.setChecked(allow_labels)
 
 
 def labeled_double_slider(

@@ -42,6 +42,11 @@ QtViewerPushButton[mode="new_labels"] {
   border: 3px solid {{ background }};
 }
 
+QtViewerPushButton[mode="new_labels"]:checked {
+  border: 3px solid {{ current }};
+  background-color: {{ foreground }};
+}
+
 QtViewerPushButton[mode="console"] {
   image: url("theme_{{ id }}:/console.svg");
 }
