@@ -1,3 +1,4 @@
+import warnings
 from collections.abc import Sequence
 from copy import deepcopy
 from dataclasses import dataclass
@@ -30,7 +31,6 @@ from napari.utils.colormaps.categorical_colormap import CategoricalColormap
 from napari.utils.colormaps.colormap_utils import ColorType, ensure_colormap
 from napari.utils.events import EventedModel
 from napari.utils.events.custom_types import Array
-from napari.utils.notifications import show_warning
 from napari.utils.translations import trans
 
 
@@ -278,10 +278,11 @@ class ColorManager(EventedModel):
             if guess_continuous(properties[color]):
                 self.color_mode = ColorMode.COLORMAP
             else:
-                show_warning(
+                warnings.warn(
                     f"Feature '{color}' looks like categorical data, since it contains "
                     'less than 16 non-float unique values. Color mode set to cycle. '
-                    'If your data is not supposed to be categorical, convert it to floats.'
+                    'If your data is not supposed to be categorical, convert it to floats.',
+                    stacklevel=3,
                 )
                 self.color_mode = ColorMode.CYCLE
         else:
@@ -599,10 +600,11 @@ class ColorManager(EventedModel):
                     if guess_continuous(color_properties.values):
                         color_mode = ColorMode.COLORMAP
                     else:
-                        show_warning(
+                        warnings.warn(
                             f"Feature '{color_values}' looks like categorical data, since it contains "
                             'less than 16 non-float unique values. Color mode set to cycle. '
-                            'If your data is not supposed to be categorical, convert it to floats.'
+                            'If your data is not supposed to be categorical, convert it to floats.',
+                            stacklevel=3,
                         )
                         color_mode = ColorMode.CYCLE
 
