@@ -227,6 +227,12 @@ jobs:
           qt: true
           wm: herbstluftwm
 
+      - name: Download benchmark data
+        run: |
+          wget https://data.napari.dev/triangulation-benchmark-shapes.zip
+          unzip triangulation-benchmark-shapes.zip -d src/napari/benchmarks/
+          rm triangulation-benchmark-shapes.zip
+
       - uses: octokit/request-action@05a2312de9f8207044c4c9e41fe19703986acc13 # v2.x
         # here we get hash of the latest release commit to compare with PR
         id: latest_release

@@ -53,6 +53,9 @@ class VispyWelcomeOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
 
         self.reset()
 
+    def _should_be_visible(self) -> bool:
+        return bool(super()._should_be_visible() and not self.viewer.layers)
+
     def _on_position_change(self, event: Any = None) -> None:
         if self.node.canvas is not None:
             x, y = np.array(self.node.canvas.size)
@@ -79,7 +82,7 @@ class VispyWelcomeOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self.node.set_color(color)
 
     def _on_visible_change(self) -> None:
-        show = self.overlay.visible and not self.viewer.layers
+        show = self._should_be_visible()
         self.node.visible = show
         if show:
             self.tip_timer.start()
