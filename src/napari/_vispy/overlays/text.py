@@ -57,6 +57,7 @@ class _VispyBaseTextOverlay(VispyCanvasOverlay):
             if self.overlay.font_size is not None
             else get_settings().appearance.font_size
         )
+        self._on_position_change()
 
     def _on_position_change(self, event=None):
         position = self.overlay.position
@@ -75,7 +76,6 @@ class _VispyBaseTextOverlay(VispyCanvasOverlay):
             anchors = ('center', 'top')
 
         self.node.anchors = anchors
-        self._on_font_size_change()
 
         self.x_size, self.y_size = self.node.get_width_height()
 

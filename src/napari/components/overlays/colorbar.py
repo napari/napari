@@ -21,5 +21,5 @@ class ColorBarOverlay(CanvasOverlay):
     color: ColorValue | None = None
     size: tuple[float, float] = 25, 150
     tick_length: float = 5
-    font_size: int | None = None
+    font_size: float | None = None
     position: CanvasPosition = CanvasPosition.TOP_RIGHT
