@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import threading
 from typing import TYPE_CHECKING
 from weakref import ref
@@ -66,7 +68,7 @@ class QtDimSliderWidget(QWidget):
     play_stopped = Signal()
     margins_changed = Signal(float)
 
-    def __init__(self, parent: 'QtDims', axis: int) -> None:
+    def __init__(self, parent: QtDims, axis: int) -> None:
         super().__init__(parent=parent)
         self.axis = axis
         self.qt_dims: QtDims = parent
@@ -195,7 +197,7 @@ class QtDimSliderWidget(QWidget):
         self.margins_popup.setParent(self)
         self.margins_popup.show_above_mouse()
 
-    def _create_play_button_widget(self) -> 'QtPlayButton':
+    def _create_play_button_widget(self) -> QtPlayButton:
         """Creates the actual play button, which has the modal popup."""
         play_button = QtPlayButton(
             self.qt_dims, self.axis, fps=self._fps, mode=self._loop_mode
@@ -403,7 +405,7 @@ class QtDimSliderWidget(QWidget):
         if frame_range != (0, 0):
             self.frame_range = frame_range
 
-    def resizeEvent(self, event: 'QResizeEvent') -> None:
+    def resizeEvent(self, event: QResizeEvent) -> None:
         """Emit a signal to inform about a size change."""
         self.size_changed.emit()
         super().resizeEvent(event)
@@ -479,7 +481,7 @@ class QtPlayButton(QPushButton):
 
     def __init__(
         self,
-        qt_dims: 'QtDims',
+        qt_dims: QtDims,
         axis: int,
         reverse: bool = False,
         fps: float = 10,
