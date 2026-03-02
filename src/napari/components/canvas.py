@@ -150,6 +150,12 @@ class Canvas(EventedModel):
         if self.background_color_override is not None:
             return self.background_color_override.copy()
 
+        # TODO: ugly workaround to get access to viewer theme override
+        if hasattr(self, '_viewer'):
+            theme = self._viewer.theme
+        else:
+            theme = get_settings().appearance.theme
+
         return ColorValue(
-            get_theme(get_settings().appearance.theme).canvas.as_rgb_tuple()
+            np.array(get_theme(theme).canvas.as_rgb_tuple()) / 255
         )
