@@ -78,7 +78,7 @@ executing==2.2.1
     # via stack-data
 fasteners==0.20
     # via zarr
-filelock==3.24.2
+filelock==3.24.3
     # via
     #   torch
     #   virtualenv
@@ -103,7 +103,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.151.6
+hypothesis==6.151.9
     # via napari (pyproject.toml)
 idna==3.11
     # via
@@ -213,7 +213,7 @@ npe2==0.8.1
     # via
     #   napari (pyproject.toml)
     #   napari-plugin-manager
-numba==0.63.1
+numba==0.64.0
     # via napari (pyproject.toml)
 numcodecs==0.13.1
     # via zarr
@@ -375,7 +375,7 @@ pydantic-extra-types==2.11.0
     # via
     #   napari (pyproject.toml)
     #   npe2
-pydantic-settings==2.13.0
+pydantic-settings==2.13.1
     # via napari (pyproject.toml)
 pygetwindow==0.0.9
     # via pyautogui
@@ -485,7 +485,7 @@ requests==2.32.5
     # via
     #   pooch
     #   pyconify
-rich==14.3.2
+rich==14.3.3
     # via
     #   napari (pyproject.toml)
     #   npe2
@@ -561,7 +561,7 @@ triangle==20250106
     # via napari (pyproject.toml)
 triton==3.6.0
     # via torch
-typer==0.23.1
+typer==0.24.1
     # via npe2
 typing-extensions==4.15.0
     # via
@@ -591,7 +591,7 @@ tzdata==2025.3
     # via pandas
 urllib3==2.6.3
     # via requests
-virtualenv==20.36.1
+virtualenv==20.38.0
     # via napari (pyproject.toml)
 vispy==0.16.1
     # via

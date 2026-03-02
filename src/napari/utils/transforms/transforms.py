@@ -522,8 +522,6 @@ class Affine(Transform):
     @units.setter
     def units(self, units: Sequence[pint.Unit] | None) -> None:
         units = get_units_from_name(units)
-        if units is None:
-            units = (pint.get_application_registry().pixel,) * self.ndim
         if isinstance(units, pint.Unit):
             units = (units,) * self.ndim
         if len(units) != self.ndim:

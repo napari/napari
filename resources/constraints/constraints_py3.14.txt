@@ -69,7 +69,7 @@ donfig==0.8.1.post1
     # via zarr
 executing==2.2.1
     # via stack-data
-filelock==3.24.2
+filelock==3.24.3
     # via
     #   torch
     #   virtualenv
@@ -96,7 +96,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.151.6
+hypothesis==6.151.9
     # via napari (pyproject.toml)
 idna==3.11
     # via
@@ -204,11 +204,11 @@ npe2==0.8.1
     # via
     #   napari (pyproject.toml)
     #   napari-plugin-manager
-numba==0.63.1
+numba==0.64.0
     # via napari (pyproject.toml)
 numcodecs==0.16.5
     # via zarr
-numpy==2.3.5
+numpy==2.4.2
     # via
     #   napari (pyproject.toml)
     #   bermuda
@@ -286,7 +286,7 @@ packaging==26.0
     #   vispy
     #   xarray
     #   zarr
-pandas==3.0.0
+pandas==3.0.1
     # via
     #   napari (pyproject.toml)
     #   xarray
@@ -365,7 +365,7 @@ pydantic-extra-types==2.11.0
     # via
     #   napari (pyproject.toml)
     #   npe2
-pydantic-settings==2.13.0
+pydantic-settings==2.13.1
     # via napari (pyproject.toml)
 pygetwindow==0.0.9
     # via pyautogui
@@ -470,7 +470,7 @@ requests==2.32.5
     # via
     #   pooch
     #   pyconify
-rich==14.3.2
+rich==14.3.3
     # via
     #   napari (pyproject.toml)
     #   npe2
@@ -482,7 +482,7 @@ rpds-py==0.30.0
     #   referencing
 scikit-image==0.26.0
     # via napari (pyproject.toml)
-scipy==1.17.0
+scipy==1.17.1
     # via
     #   napari (pyproject.toml)
     #   scikit-image
@@ -512,7 +512,7 @@ tensorstore==0.1.81
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
-tifffile==2026.2.15
+tifffile==2026.2.20
     # via
     #   napari (pyproject.toml)
     #   scikit-image
@@ -541,7 +541,7 @@ traitlets==5.14.3
     #   qtconsole
 triton==3.6.0
     # via torch
-typer==0.23.1
+typer==0.24.1
     # via npe2
 typing-extensions==4.15.0
     # via
@@ -566,7 +566,7 @@ typing-inspection==0.4.2
     #   pydantic-settings
 urllib3==2.6.3
     # via requests
-virtualenv==20.36.1
+virtualenv==20.38.0
     # via napari (pyproject.toml)
 vispy==0.16.1
     # via
