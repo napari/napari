@@ -10,13 +10,13 @@ from vispy.visuals.transforms import NullTransform
 
 from napari._vispy.overlays.base import ViewerOverlayMixin, VispyCanvasOverlay
 from napari._vispy.visuals.welcome import Welcome
-from napari.settings import get_settings
 
 if TYPE_CHECKING:
     from vispy.scene import Node
     from vispy.util.event import Event
 
     from napari import Viewer
+    from napari.components.canvas import Canvas
     from napari.components.overlays import WelcomeOverlay
 
 
@@ -27,17 +27,19 @@ class VispyWelcomeOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self,
         *,
         viewer: Viewer,
+        canvas: Canvas,
         overlay: WelcomeOverlay,
         parent: Node | None = None,
     ) -> None:
         super().__init__(
-            node=Welcome(), viewer=viewer, overlay=overlay, parent=parent
+            node=Welcome(),
+            viewer=viewer,
+            canvas=canvas,
+            overlay=overlay,
+            parent=parent,
         )
-        self.viewer.events.theme.connect(self._on_theme_change)
         self.viewer.layers.events.inserted.connect(self._on_visible_change)
         self.viewer.layers.events.removed.connect(self._on_visible_change)
-
-        get_settings().appearance.events.theme.connect(self._on_theme_change)
 
         self.overlay.events.version.connect(self._on_version_change)
         self.overlay.events.shortcuts.connect(self._on_shortcuts_change)
@@ -45,7 +47,8 @@ class VispyWelcomeOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self.overlay.events.box.connect(self._on_theme_change)
         self.overlay.events.box_color.connect(self._on_theme_change)
 
-        self.node.canvas.native.resized.connect(self._on_position_change)
+        self.canvas.events.background_color.connect(self._on_theme_change)
+        self.canvas.events.size.connect(self._on_position_change)
 
         self.tips_iterator = cycle(["You're awesome!"])
         self.tip_timer = Timer(10, self.next_tip)

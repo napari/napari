@@ -16,7 +16,7 @@ from napari.components.overlays import (
 from napari.settings import get_settings
 from napari.utils.color import ColorValue
 from napari.utils.compat import StrEnum
-from napari.utils.events import EventedDict, EventedModel
+from napari.utils.events import Event, EventedDict, EventedModel
 from napari.utils.theme import get_theme
 
 DEFAULT_CANVAS_OVERLAYS = {
@@ -68,10 +68,11 @@ class Canvas(EventedModel):
     _overlays: EventedDict[str, CanvasOverlay] = PrivateAttr(
         default_factory=EventedDict
     )
-    _size: tuple[int, int] = PrivateAttr((800, 600))
+    size: tuple[int, int] = (800, 600)
 
     def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
+        self.events.add(_overlay_positions_changed=Event)
 
         self._update_viewer_grid()
 
@@ -89,13 +90,11 @@ class Canvas(EventedModel):
             self._update_viewer_grid
         )
 
+        settings.appearance.events.theme.connect(self.events.background_color)
+
         self._overlays.update(
             {k: v() for k, v in DEFAULT_CANVAS_OVERLAYS.items()}
         )
-
-    @property
-    def size(self) -> tuple[int, int]:
-        return self._size
 
     def viewbox_size(self, n_layers: int) -> tuple[int, int]:
         """Get the size of a single viewbox (whether grid is enabled or not).
@@ -149,7 +148,7 @@ class Canvas(EventedModel):
     @property
     def background_color(self) -> ColorValue:
         if self.background_color_override is not None:
-            return self.background_color_override
+            return self.background_color_override.copy()
 
         return ColorValue(
             get_theme(get_settings().appearance.theme).canvas.as_rgb_tuple()

@@ -242,7 +242,7 @@ class VispyCanvas:
         self._scene_canvas.events.mouse_press.connect(self._on_mouse_press)
         self._scene_canvas.events.mouse_release.connect(self._on_mouse_release)
         self._scene_canvas.events.mouse_wheel.connect(self._on_mouse_wheel)
-        self._scene_canvas.events.resize.connect(self.on_resize)
+        self._scene_canvas.events.resize.connect(self._on_vispy_resize)
         self._scene_canvas.events.draw.connect(self.on_draw, position='last')
         self.viewer.cursor.events.style.connect(self._on_cursor)
         self.viewer.cursor.events.size.connect(self._on_cursor)
@@ -290,6 +290,11 @@ class VispyCanvas:
             self._update_overlay_canvas_positions
         )
 
+        self.viewer.canvas.events._overlay_positions_changed.connect(
+            self._defer_canvas_overlay_position_update
+        )
+
+        self.viewer.canvas.events.size.connect(self._on_size_change)
         self.destroyed.connect(self._disconnect_events)
 
     @property
@@ -716,8 +721,8 @@ class VispyCanvas:
                 shape_threshold=self._current_viewbox_size[::-1],
             )
 
-    def on_resize(self, event: ResizeEvent) -> None:
-        """Called whenever canvas is resized.
+    def _on_vispy_resize(self, event: ResizeEvent) -> None:
+        """Called whenever canvas is resized on the vispy/gui side.
 
         Parameters
         ----------
@@ -728,7 +733,13 @@ class VispyCanvas:
         -------
         None
         """
-        self.viewer.canvas._size = self.size
+        with self.viewer.canvas.events.size.blocker(self._on_vispy_resize):
+            self.viewer.canvas.size = self.size
+
+    def _on_size_change(self) -> None:
+        """Called whenever the canvas model size is set to a new value."""
+        with self._scene_canvas.events.resize.blocker(self._on_size_change):
+            self.size = self.viewer.canvas.size
 
     def add_layer_visual_mapping(
         self, napari_layer: Layer, vispy_layer: VispyBaseLayer
@@ -964,10 +975,11 @@ class VispyCanvas:
 
                     parent = self.grid[row, col]
                     vispy_overlay = self._create_or_update_vispy_overlay(
-                        overlay, vispy_overlay, parent, viewer=self.viewer
-                    )
-                    vispy_overlay.canvas_position_callback = (
-                        self._defer_canvas_overlay_position_update
+                        overlay,
+                        vispy_overlay,
+                        parent,
+                        viewer=self.viewer,
+                        canvas=self.viewer.canvas,
                     )
                     if vispy_overlay not in vispy_overlays:
                         vispy_overlays.append(vispy_overlay)
@@ -975,10 +987,11 @@ class VispyCanvas:
                 parent = self.view
                 vispy_overlay = vispy_overlays[0] if vispy_overlays else None
                 vispy_overlay = self._create_or_update_vispy_overlay(
-                    overlay, vispy_overlay, parent, viewer=self.viewer
-                )
-                vispy_overlay.canvas_position_callback = (
-                    self._defer_canvas_overlay_position_update
+                    overlay,
+                    vispy_overlay,
+                    parent,
+                    viewer=self.viewer,
+                    canvas=self.viewer.canvas,
                 )
                 if vispy_overlay not in vispy_overlays:
                     vispy_overlays.append(vispy_overlay)
@@ -1037,24 +1050,16 @@ class VispyCanvas:
             else:
                 parent = self.layer_to_visual[layer].node
 
+            # we can pass canvas kwargs, it just gets discarded by scene overlays
             vispy_overlay = self._create_or_update_vispy_overlay(
-                overlay, vispy_overlay, parent, layer=layer
+                overlay,
+                vispy_overlay,
+                parent,
+                layer=layer,
+                canvas=self.viewer.canvas,
             )
 
             overlay_to_visual[overlay] = vispy_overlay
-            if isinstance(overlay, CanvasOverlay):
-                vispy_overlay.canvas_position_callback = (
-                    self._defer_canvas_overlay_position_update
-                )
-                vispy_overlay._on_box_change()
-
-            if vispy_overlay is None:
-                vispy_overlay = create_vispy_overlay(
-                    overlay=overlay,
-                    layer=layer,
-                    viewer=self.viewer,
-                    parent=parent,
-                )
 
         self._update_overlay_canvas_positions()
 
