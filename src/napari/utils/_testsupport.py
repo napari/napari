@@ -83,36 +83,6 @@ def fail_obj_graph(Klass):  # pragma: no cover
         )
 
 
-@pytest.fixture
-def napari_plugin_manager(monkeypatch):
-    """A napari plugin manager that blocks discovery by default.
-
-    Note you can still use `napari_plugin_manager.register()` to directly
-    register a plugin module, class or dict for testing.
-
-    Or, to re-enable global discovery, use:
-    `napari_plugin_manager.discovery_blocker.stop()`
-    """
-    import napari
-    import napari.plugins.io
-    from napari.plugins._plugin_manager import NapariPluginManager
-
-    pm = NapariPluginManager()
-
-    # make it so that internal requests for the plugin_manager
-    # get this test version for the duration of the test.
-    monkeypatch.setattr(napari.plugins, 'plugin_manager', pm)
-    with suppress(AttributeError):
-        monkeypatch.setattr(napari._qt.qt_main_window, 'plugin_manager', pm)
-    # prevent discovery of plugins in the environment
-    # you can still use `pm.register` to explicitly register something.
-    pm.discovery_blocker = patch.object(pm, 'discover')
-    pm.discovery_blocker.start()
-    pm._initialize()  # register our builtins
-    yield pm
-    pm.discovery_blocker.stop()
-
-
 GCPASS = 0
 
 
@@ -196,7 +166,6 @@ def make_napari_viewer(
     qtbot,
     request: 'FixtureRequest',
     mock_app_model,
-    napari_plugin_manager,
     monkeypatch,
 ):
     """A pytest fixture function that creates a napari viewer for use in testing.
@@ -230,10 +199,6 @@ def make_napari_viewer(
         the napari package.
         This can be made globally true by setting the 'NAPARI_STRICT_QT'
         environment variable.
-    block_plugin_discovery : bool, optional
-        Block discovery of non-builtin plugins.  Note: plugins can still be
-        manually registered by using the 'napari_plugin_manager' fixture and
-        the `napari_plugin_manager.register()` method. By default, True.
 
     Examples
     --------
@@ -241,9 +206,6 @@ def make_napari_viewer(
     ...     viewer = make_napari_viewer()
     ...     viewer.add_shapes()
     ...     assert len(viewer.layers) == 1
-
-    >>> def test_something_with_plugins(make_napari_viewer):
-    ...     viewer = make_napari_viewer(block_plugin_discovery=False)
 
     >>> def test_something_with_strict_qt_tests(make_napari_viewer):
     ...     viewer = make_napari_viewer(strict_qt=True)
@@ -314,16 +276,12 @@ def make_napari_viewer(
         *model_args,
         ViewerClass=Viewer,
         strict_qt=None,
-        block_plugin_discovery=True,
         **model_kwargs,
     ):
         if strict_qt is None:
             strict_qt = is_internal_test or os.getenv('NAPARI_STRICT_QT')
         nonlocal _strict
         _strict = strict_qt
-
-        if not block_plugin_discovery:
-            napari_plugin_manager.discovery_blocker.stop()
 
         should_show = request.config.getoption('--show-napari-viewer')
         model_kwargs['show'] = model_kwargs.pop('show', should_show)

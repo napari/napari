@@ -12,7 +12,6 @@ from napari import __main__
 def mock_run():
     """mock to prevent starting the event loop."""
     with (
-        mock.patch('napari._qt.widgets.qt_splash_screen.NapariSplashScreen'),
         mock.patch('napari.run'),
     ):
         yield napari.run
