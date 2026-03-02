@@ -656,18 +656,9 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
                 data=empty_labels, translate=np.array(corner), scale=scale
             )
         elif len(self.layers) == 0:
-            labels_default_size = (
-                get_settings().application.new_labels_default_size
-            )
-            shape = (
-                labels_default_size.time,
-                labels_default_size.depth,
-                labels_default_size.height,
-                labels_default_size.width,
-            )[-self.dims.ndim :]
             layer = Labels(
                 data=np.zeros(
-                    shape,
+                    (512, 512),
                     dtype=get_settings().application.new_labels_dtype,
                 )
             )
