@@ -876,7 +876,7 @@ class VispyCanvas:
 
     def _create_or_update_vispy_overlay(
         self, overlay, vispy_overlay, parent, **kwargs
-    ) -> None:
+    ) -> VispyBaseOverlay:
         if vispy_overlay is None:
             vispy_overlay = create_vispy_overlay(
                 overlay=overlay, parent=parent, **kwargs
@@ -1040,10 +1040,20 @@ class VispyCanvas:
             vispy_overlay = self._create_or_update_vispy_overlay(
                 overlay, vispy_overlay, parent, layer=layer
             )
+
             overlay_to_visual[overlay] = vispy_overlay
             if isinstance(overlay, CanvasOverlay):
                 vispy_overlay.canvas_position_callback = (
                     self._defer_canvas_overlay_position_update
+                )
+                vispy_overlay._on_box_change()
+
+            if vispy_overlay is None:
+                vispy_overlay = create_vispy_overlay(
+                    overlay=overlay,
+                    layer=layer,
+                    viewer=self.viewer,
+                    parent=parent,
                 )
 
         self._update_overlay_canvas_positions()

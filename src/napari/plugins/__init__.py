@@ -5,7 +5,6 @@ from npe2 import (
 )
 
 from napari.plugins import _npe2
-from napari.plugins._plugin_manager import NapariPluginManager
 from napari.settings import get_settings
 
 __all__ = ('menu_item_template', 'plugin_manager')
@@ -16,9 +15,6 @@ from napari.utils.theme import _install_npe2_themes
 # widget_name (plugin_name)
 menu_item_template = '{1} ({0})'
 """Template to use for namespacing a plugin item in the menu bar"""
-#: The main plugin manager instance for the `napari` plugin namespace.
-plugin_manager = NapariPluginManager()
-"""Main Plugin manager instance"""
 
 
 @lru_cache  # only call once
@@ -44,11 +40,5 @@ def _initialize_plugins() -> None:
     _from_npe2 = {m.name for m in _npe2pm.iter_manifests()}
     if 'napari' in _from_npe2:
         _from_npe2.update({'napari', 'builtins'})
-    plugin_manager._skip_packages = _from_npe2
-    plugin_manager._blocked.update(settings.plugins.disabled_plugins)
-
-    # prevent npe1 plugin_manager discovery
-    # (this doesn't prevent manual registration)
-    plugin_manager.discover = lambda *a, **k: None
 
     _install_npe2_themes()
