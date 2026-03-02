@@ -55,7 +55,7 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self._on_size_or_zoom_change(force=True)
 
     def _on_font_size_change(self):
-        self._on_size_or_zoom_change(force=True)
+        self._on_rendering_change()
 
     def _calculate_best_length(
         self, desired_length: float

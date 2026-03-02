@@ -8,6 +8,14 @@ class ColorBarOverlay(CanvasOverlay):
 
     Attributes
     ----------
+    color : np.ndarray
+        A (4,) color array of the text.
+    size: : 2-tuple of ints
+        Size of the colorbar rectangle (X, Y).
+    tick_length : float
+        Length of the tick marks.
+    font_size : float, optional
+        The font size (in points) of the text.
     position : CanvasPosition
         The position of the overlay in the canvas.
     visible : bool
