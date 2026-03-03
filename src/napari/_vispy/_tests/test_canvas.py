@@ -107,6 +107,24 @@ def test_layer_overlays(qt_viewer):
     assert len(canvas.view.scene.children) == scene_children
 
 
+def test_welcome_box_hidden_when_layers_present(qt_viewer):
+    viewer = qt_viewer.viewer
+    canvas = qt_viewer.canvas
+
+    viewer.welcome_screen.visible = True
+    vispy_welcome = canvas._overlay_to_visual[viewer.welcome_screen][0]
+
+    assert vispy_welcome.node.visible is True
+    assert vispy_welcome.box.parent is not None
+
+    viewer.add_image(np.zeros((8, 8)))
+
+    assert vispy_welcome.node.visible is False
+    assert vispy_welcome.box.parent is None
+
+    viewer.welcome_screen.visible = False
+
+
 def test_grid_mode(qt_viewer):
     viewer = qt_viewer.viewer
     canvas = qt_viewer.canvas
