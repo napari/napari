@@ -17,7 +17,10 @@ if TYPE_CHECKING:
 
     from napari._qt.containers._base_item_model import _BaseEventedItemModel
     from napari.utils.events import Event
-    from napari.utils.events.containers import SelectableEventedList
+    from napari.utils.events.containers import (
+        Selectable,
+        SelectableEventedList,
+    )
 
 
 class _BaseEventedItemView(Generic[ItemType]):
@@ -47,6 +50,7 @@ class _BaseEventedItemView(Generic[ItemType]):
     """
 
     # ########## Reimplemented Public Qt Functions ##################
+    _root: Selectable
 
     def model(self) -> _BaseEventedItemModel[ItemType]:  # for type hints
         return super().model()
@@ -75,8 +79,7 @@ class _BaseEventedItemView(Generic[ItemType]):
         desel = {i.data(ItemRole) for i in deselected.indexes()}
 
         if not self._root.selection.events.changed._emitting:
-            self._root.selection.update(sel)
-            self._root.selection.difference_update(desel)
+            self._root.selection._add_and_remove(add=sel, remove=desel)
         return super().selectionChanged(selected, deselected)
 
     # ###### Non-Qt methods added for SelectableEventedList Model ############
