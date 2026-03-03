@@ -340,17 +340,27 @@ def test_layer_buttons_checked_on_selection(qt_layer_buttons):
     viewer, layer_buttons = qt_layer_buttons
 
     # Initially no selection, buttons should not be checked
-    assert not layer_buttons.newPointsButton.isChecked()
-    assert not layer_buttons.newShapesButton.isChecked()
+    assert layer_buttons.newPointsButton.property('mode') == 'new_points'
+    assert layer_buttons.newShapesButton.property('mode') == 'new_shapes'
 
-    data_layer = viewer.add_image(np.random.random((10, 15)))
+    data_layer = viewer.add_image(np.zeros((10, 10)))
+    data_layer2 = viewer.add_image(np.zeros((10, 10)))
 
     # Selecting a layer should check the buttons (visual indicator)
     viewer.layers.selection = [data_layer]
-    assert layer_buttons.newPointsButton.isChecked()
-    assert layer_buttons.newShapesButton.isChecked()
+    assert layer_buttons.newPointsButton.property('mode') == 'new_points_one'
+    assert layer_buttons.newShapesButton.property('mode') == 'new_shapes_one'
+
+    viewer.layers.selection = [data_layer, data_layer2]
 
     # Clear selection and buttons should no longer be checked
+    assert (
+        layer_buttons.newPointsButton.property('mode') == 'new_points_multiple'
+    )
+    assert (
+        layer_buttons.newShapesButton.property('mode') == 'new_shapes_multiple'
+    )
+
     viewer.layers.selection.clear()
-    assert not layer_buttons.newPointsButton.isChecked()
-    assert not layer_buttons.newShapesButton.isChecked()
+    assert layer_buttons.newPointsButton.property('mode') == 'new_points'
+    assert layer_buttons.newShapesButton.property('mode') == 'new_shapes'
