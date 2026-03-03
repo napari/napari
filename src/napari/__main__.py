@@ -279,7 +279,8 @@ def _run() -> None:
         # but in the meantime if the garbage collector runs;
         # it will collect it and hang napari at start time.
         # in a way that is machine, os, time (and likely weather dependant).
-        viewer = Viewer()
+        # If files are being loaded, don't show the welcome screen
+        viewer = Viewer(show_welcome_screen=not bool(args.paths))
         _run_configured_startup_script()
 
         # For backwards compatibility
