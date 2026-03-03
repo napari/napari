@@ -81,6 +81,10 @@ def resize_dask_cache(
 def _is_dask_data(data: Any) -> bool:
     """Return True if data is a dask array or a list/tuple of dask arrays."""
     import dask.array as da
+    da = sys.modules.get('dask.array')
+    if da is None:
+        # dask.array not imported yet.
+        return False
 
     return isinstance(data, da.Array) or (
         isinstance(data, collections.abc.Sequence)
