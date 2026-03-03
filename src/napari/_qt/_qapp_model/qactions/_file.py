@@ -9,6 +9,7 @@ from app_model.types import (
     KeyMod,
     StandardKeyBinding,
 )
+from qtpy.QtWidgets import QApplication
 
 from napari._app_model.constants import MenuGroup, MenuId
 from napari._app_model.context import (
@@ -42,7 +43,13 @@ def _restart(window: Window):
 
 
 def _close_window(window: Window):
-    window._qt_window.close(quit_app=False, confirm_need=True)
+    active_window = QApplication.activeWindow()
+    if active_window is None:
+        return
+    if active_window is not window._qt_window:
+        active_window.close()
+    else:
+        window._qt_window.close(quit_app=False, confirm_need=True)
 
 
 def _close_app(window: Window):

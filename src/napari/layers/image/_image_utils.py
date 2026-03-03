@@ -1,15 +1,13 @@
 """guess_rgb, guess_multiscale, guess_labels."""
 
 import itertools
-from collections.abc import Callable, Sequence
+from collections.abc import Sequence
 from typing import Any, Literal
 
 import numpy as np
-import numpy.typing as npt
 
 from napari.layers._data_protocols import LayerDataProtocol
 from napari.layers._multiscale_data import MultiScaleData
-from napari.layers.image._image_constants import ImageProjectionMode
 from napari.utils.translations import trans
 
 
@@ -115,28 +113,3 @@ def guess_labels(data: Any) -> Literal['labels', 'image']:
         return 'labels'
 
     return 'image'
-
-
-def project_slice(
-    data: npt.NDArray, axis: tuple[int, ...], mode: ImageProjectionMode
-) -> npt.NDArray:
-    """Project a thick slice along axis based on mode."""
-    if all(data.shape[axis] == 1 for axis in axis):
-        # If all axes are of size 1, return the data as is
-        return data[
-            tuple(
-                slice(None) if i not in axis else 0 for i in range(data.ndim)
-            )
-        ]
-    func: Callable
-    if mode == ImageProjectionMode.SUM:
-        func = np.sum
-    elif mode == ImageProjectionMode.MEAN:
-        func = np.mean
-    elif mode == ImageProjectionMode.MAX:
-        func = np.max
-    elif mode == ImageProjectionMode.MIN:
-        func = np.min
-    else:
-        raise NotImplementedError(f'unimplemented projection: {mode}')
-    return func(data, tuple(axis))

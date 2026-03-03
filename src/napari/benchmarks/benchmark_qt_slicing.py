@@ -74,7 +74,11 @@ class AsyncImage2DSuite:
 
     def time_set_view_slice(self, *args):
         """Time to set view slice."""
-        self.layer._set_view_slice()
+        if hasattr(self.layer, '_slicing_state'):
+            self.layer._slicing_state._set_view_slice()
+        else:
+            # before https://github.com/napari/napari/pull/8254
+            self.layer._set_view_slice()
 
     def time_refresh(self, *args):
         """Time to refresh view."""
@@ -155,9 +159,9 @@ class QtViewerAsyncPointsAndImage2DSuite:
     timeout = 600
 
     skip_params = Skip(
-        if_in_pr=lambda n_points, latency, chunksize: n_points > 2**14
-        or chunksize > 512
-        or latency > 0,
+        if_in_pr=lambda n_points, latency, chunksize: (
+            n_points > 2**14 or chunksize > 512 or latency > 0
+        ),
     )
 
     def setup(self, n_points, latency, chunksize):

@@ -6,6 +6,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 import skimage.data
+from pooch import core
 from qtpy import API_NAME
 
 import napari
@@ -16,7 +17,7 @@ from napari.utils.notifications import notification_manager
 fpath = os.path.join(*__file__.split(os.path.sep)[-4:])
 if '--test-examples' not in sys.argv and fpath not in sys.argv:
     pytest.skip(
-        'Use `--test-examples` to test examples.', allow_module_level=True
+        'Use `napari/_tests/test_examples.py` to test examples.', allow_module_level=True
     )
 
 # not testing these examples
@@ -50,6 +51,17 @@ if os.getenv('CI') and os.name == 'nt' and API_NAME == 'PyQt5':
 
 if os.getenv('CI') and os.name == 'nt' and 'to_screenshot.py' in examples:
     examples.remove('to_screenshot.py')
+
+
+
+
+@pytest.fixture(autouse=True)
+def _mock_pooch(monkeypatch):
+    from napari.utils._examples_data import napari_choose_downloader
+
+    monkeypatch.setattr(core, 'choose_downloader', napari_choose_downloader)
+
+
 
 @pytest.fixture
 def _example_monkeypatch(monkeypatch):

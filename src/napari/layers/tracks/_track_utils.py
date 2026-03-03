@@ -76,7 +76,7 @@ class TrackManager:
         self._feature_table = _FeatureTable()
 
         self._data: npt.NDArray
-        self._order: list[int]
+        self._order: np.ndarray[tuple[int], np.dtype[np.integer]]
         self._kdtree: cKDTree
         self._points: npt.NDArray
         self._points_id: npt.NDArray
@@ -87,7 +87,7 @@ class TrackManager:
         self._track_connex: npt.NDArray | None = None
 
         self._graph: dict[int, list[int]] | None = None
-        self._graph_vertices = None
+        self._graph_vertices: npt.NDArray | None = None
         self._graph_connex: npt.NDArray | None = None
 
         # Parameters for hide_completed_tracks functionality
@@ -186,7 +186,7 @@ class TrackManager:
         features: dict[str, np.ndarray] | pd.DataFrame,
     ) -> None:
         self._feature_table.set_values(features, num_data=len(self.data))
-        self._feature_table.reorder(self._order)
+        self._feature_table.reorder(self._order)  # type: ignore[arg-type]
         if 'track_id' not in self._feature_table.values:
             self._feature_table.values['track_id'] = self.track_ids
 

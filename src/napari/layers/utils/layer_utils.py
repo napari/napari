@@ -8,6 +8,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     NamedTuple,
+    TypeVar,
 )
 
 import dask
@@ -53,12 +54,15 @@ class Extent(NamedTuple):
     step: np.ndarray
 
 
+TFunc = TypeVar('TFunc', bound=Callable)
+
+
 def register_layer_action(
     keymapprovider,
     description: str,
     repeatable: bool = False,
     shortcuts: str | list[str] | None = None,
-) -> Callable[[Callable], Callable]:
+) -> Callable[[TFunc], TFunc]:
     """
     Convenient decorator to register an action with the current Layers
 
@@ -87,7 +91,7 @@ def register_layer_action(
 
     """
 
-    def _inner(func: Callable) -> Callable:
+    def _inner(func: TFunc) -> TFunc:
         nonlocal shortcuts
         name = 'napari:' + func.__name__
 
@@ -114,7 +118,7 @@ def register_layer_attr_action(
     description: str,
     attribute_name: str,
     shortcuts=None,
-) -> Callable[[Callable], Callable]:
+) -> Callable[[TFunc], TFunc]:
     """
     Convenient decorator to register an action with the current Layers.
     This will get and restore attribute from function first argument.
@@ -143,7 +147,7 @@ def register_layer_attr_action(
 
     """
 
-    def _handle(func: Callable) -> Callable:
+    def _handle(func: TFunc) -> TFunc:
         sig = inspect.signature(func)
         try:
             first_variable_name = next(iter(sig.parameters))

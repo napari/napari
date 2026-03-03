@@ -2,14 +2,17 @@ import numpy as np
 
 from napari._vispy.overlays.base import ViewerOverlayMixin, VispySceneOverlay
 from napari._vispy.visuals.axes import Axes
+from napari.components.overlays import AxesOverlay
 from napari.utils.theme import get_theme
 
 
 class VispyAxesOverlay(ViewerOverlayMixin, VispySceneOverlay):
     """Axes indicating world coordinate origin and orientation."""
 
+    overlay: AxesOverlay
+
     def __init__(self, *, viewer, overlay, parent=None) -> None:
-        self._scale = 1
+        self._scale = 1.0
 
         # Target axes length in canvas pixels
         self._target_length = 80

@@ -1,5 +1,3 @@
-from itertools import cycle
-
 import numpy as np
 
 from napari.utils.colormaps.categorical_colormap_utils import (
@@ -10,17 +8,14 @@ from napari.utils.colormaps.categorical_colormap_utils import (
 
 def test_color_cycle():
     color_values = np.array([[1, 0, 0, 1], [0, 0, 1, 1]])
-    color_cycle = cycle(color_values)
-    cc_1 = ColorCycle(values=color_values, cycle=color_cycle)
-    cc_2 = ColorCycle(values=color_values, cycle=color_cycle)
+    cc_1 = ColorCycle(values=color_values)
+    cc_2 = ColorCycle(values=color_values)
 
     np.testing.assert_allclose(cc_1.values, color_values)
-    assert isinstance(cc_1.cycle, cycle)
     assert cc_1 == cc_2
 
     other_color_values = np.array([[1, 0, 0, 1], [1, 1, 1, 1]])
-    other_color_cycle = cycle(other_color_values)
-    cc_3 = ColorCycle(values=other_color_values, cycle=other_color_cycle)
+    cc_3 = ColorCycle(values=other_color_values)
     assert cc_1 != cc_3
 
     # verify that checking equality against another type works

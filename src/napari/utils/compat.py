@@ -9,4 +9,8 @@ else:
     from enum import Enum
 
     class StrEnum(str, Enum):
-        pass
+        def __str__(self):
+            return str(self.value)
+
+
+__all__ = ['StrEnum']

@@ -119,13 +119,17 @@ def _guess_zarr_path(path: str) -> bool:
 
 
 def read_zarr_dataset(path: str):
-    """Read a zarr dataset, including an array or a group of arrays.
+    """Read a local or HTTP remote zarr store
+
+    If the store is a single array, open it. If it's a group and local,
+    load it as a list of arrays. For remote groups, can't traverse the hierarchy
+    via HTTP, so inform the user to open an array directly.
+    If it's a group of groups, open the first group and inform the user.
 
     Parameters
     ----------
     path : str
-        Path to directory ending in '.zarr'. Path can contain either an array
-        or a group of arrays in the case of multiscale data.
+        Path or URL to a zarr store or directory.
 
     Returns
     -------
@@ -134,45 +138,86 @@ def read_zarr_dataset(path: str):
     shape : tuple
         Shape of array or first array in list
     """
+    from napari.utils.notifications import show_info
 
-    if _is_url(path):
-        image = da.from_zarr(path)
-        shape = image.shape
-        return image, shape
+    # For local paths, zarr.open can create a DirectoryStore on a non-existent
+    # path, so we check for existence first.
+    if not _is_url(path) and not os.path.exists(path):
+        raise FileNotFoundError(f"Path '{path}' does not exist.")
 
-    path = Path(path)
-    if (path / '.zarray').exists():
-        # load zarr array
-        image = da.from_zarr(path)
-        shape = image.shape
-    elif (path / '.zgroup').exists():
-        # else load zarr all arrays inside file, useful for multiscale data
-        image = [
-            read_zarr_dataset(subpath)[0]
-            for subpath in sorted(path.iterdir())
-            if not subpath.name.startswith('.') and subpath.is_dir()
-        ]
-        assert image, 'No arrays found in zarr group'
-        shape = image[0].shape
-    elif (path / 'zarr.json').exists():
-        # zarr v3
+    try:
         import zarr
 
-        data = zarr.open(store=path)
-        if isinstance(data, zarr.Array):
-            image = da.from_zarr(data)
-            shape = image.shape
-        else:
-            image = [data[k] for k in sorted(data)]
-            assert image, 'No arrays found in zarr group'
-            shape = image[0].shape
-    else:  # pragma: no cover
+        store = zarr.open(path, mode='r')
+    except Exception as e:
         raise ValueError(
             trans._(
-                'Not a zarr dataset or group: {path}', deferred=True, path=path
+                'Failed to open zarr store at {path}. Error: {error_message}',
+                deferred=True,
+                path=path,
+                error_message=str(e),
+            )
+        ) from e
+
+    # Arrays can be opened directly, local and remote
+    if isinstance(store, zarr.Array):
+        image = da.from_zarr(store)
+        return image, image.shape
+
+    # if we're here, it means the path wasn't a valid array, so we check if it's a valid group
+    if not isinstance(store, zarr.Group):
+        raise TypeError(
+            trans._(
+                'Unexpected zarr type: {type_}',
+                deferred=True,
+                type_=type(store).__name__,
             )
         )
-    return image, shape
+
+    # Remote zarr Groups cannot be traversed over HTTP
+    if _is_url(path):
+        raise ValueError(
+            trans._(
+                'Opening remote zarr Groups is not supported. Please provide a direct URL to a zarr Array.',
+                deferred=True,
+            )
+        )
+
+    group_keys = sorted(store.group_keys())
+
+    if group_keys:
+        # open the first group
+        group = store[group_keys[0]]
+
+        if len(group_keys) > 1:
+            # if there are multiple groups, inform the user
+            other_groups = group_keys[1:]
+            show_info(
+                trans._(
+                    'Multiple zarr Groups found in {path}. Opening group "{group}". Other groups: {other_groups}',
+                    deferred=True,
+                    path=path,
+                    group=group_keys[0],
+                    other_groups=', '.join(other_groups),
+                )
+            )
+    else:
+        # the store consists of a single group, so open it
+        group = store
+
+    array_keys = sorted(group.array_keys())
+    if not array_keys:
+        raise ValueError(
+            trans._(
+                'No arrays found in zarr group: {path}',
+                deferred=True,
+                path=path,
+            )
+        )
+
+    # Build list of arrays from arrays in the group
+    image = [da.from_zarr(group[k]) for k in array_keys]
+    return image, image[0].shape
 
 
 PathOrStr = Union[str, Path]

@@ -1,13 +1,15 @@
 from napari._vispy.overlays.base import LayerOverlayMixin, VispySceneOverlay
 from napari._vispy.visuals.interaction_box import InteractionBox
+from napari.components.overlays import SelectionBoxOverlay, TransformBoxOverlay
 from napari.layers.base._base_constants import InteractionBoxHandle
 
 
 class _VispyBoundingBoxOverlay(LayerOverlayMixin, VispySceneOverlay):
-    def __init__(self, *, layer, overlay, parent=None) -> None:
+    def __init__(self, *, layer, viewer, overlay, parent=None) -> None:
         super().__init__(
             node=InteractionBox(),
             layer=layer,
+            viewer=viewer,
             overlay=overlay,
             parent=parent,
         )
@@ -29,9 +31,12 @@ class _VispyBoundingBoxOverlay(LayerOverlayMixin, VispySceneOverlay):
 
 
 class VispySelectionBoxOverlay(_VispyBoundingBoxOverlay):
-    def __init__(self, *, layer, overlay, parent=None) -> None:
+    overlay: SelectionBoxOverlay
+
+    def __init__(self, *, layer, viewer, overlay, parent=None) -> None:
         super().__init__(
             layer=layer,
+            viewer=viewer,
             overlay=overlay,
             parent=parent,
         )
@@ -54,9 +59,12 @@ class VispySelectionBoxOverlay(_VispyBoundingBoxOverlay):
 
 
 class VispyTransformBoxOverlay(_VispyBoundingBoxOverlay):
-    def __init__(self, *, layer, overlay, parent=None) -> None:
+    overlay: TransformBoxOverlay
+
+    def __init__(self, *, layer, viewer, overlay, parent=None) -> None:
         super().__init__(
             layer=layer,
+            viewer=viewer,
             overlay=overlay,
             parent=parent,
         )
@@ -76,6 +84,7 @@ class VispyTransformBoxOverlay(_VispyBoundingBoxOverlay):
             )
             # invert axes for vispy
             top_left, bot_right = (tuple(point) for point in bounds.T[:, ::-1])
+            selected: int | slice | None
 
             if self.overlay.selected_handle == InteractionBoxHandle.INSIDE:
                 selected = slice(None)
