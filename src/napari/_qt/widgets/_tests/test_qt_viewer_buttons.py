@@ -70,38 +70,50 @@ def test_grid_view_button_popup(qt_viewer_buttons, qtbot):
 
     # check popup widgets were created
     assert viewer_buttons.grid_stride_box
-    assert viewer_buttons.grid_stride_box.value() == viewer.grid.stride
+    assert viewer_buttons.grid_stride_box.value() == viewer.canvas.grid.stride
     assert viewer_buttons.grid_width_box
-    assert viewer_buttons.grid_width_box.value() == viewer.grid.shape[1]
+    assert viewer_buttons.grid_width_box.value() == viewer.canvas.grid.shape[1]
     assert viewer_buttons.grid_height_box
-    assert viewer_buttons.grid_height_box.value() == viewer.grid.shape[0]
+    assert (
+        viewer_buttons.grid_height_box.value() == viewer.canvas.grid.shape[0]
+    )
     assert viewer_buttons.grid_spacing_box
-    assert viewer_buttons.grid_spacing_box.value() == viewer.grid.spacing
+    assert (
+        viewer_buttons.grid_spacing_box.value() == viewer.canvas.grid.spacing
+    )
 
     # check that widget controls value changes update viewer grid values
     viewer_buttons.grid_stride_box.setValue(2)
-    assert viewer_buttons.grid_stride_box.value() == viewer.grid.stride
+    assert viewer_buttons.grid_stride_box.value() == viewer.canvas.grid.stride
     viewer_buttons.grid_width_box.setValue(2)
-    assert viewer_buttons.grid_width_box.value() == viewer.grid.shape[1]
+    assert viewer_buttons.grid_width_box.value() == viewer.canvas.grid.shape[1]
     viewer_buttons.grid_height_box.setValue(2)
-    assert viewer_buttons.grid_height_box.value() == viewer.grid.shape[0]
+    assert (
+        viewer_buttons.grid_height_box.value() == viewer.canvas.grid.shape[0]
+    )
     viewer_buttons.grid_spacing_box.setValue(0.5)
-    assert viewer_buttons.grid_spacing_box.value() == viewer.grid.spacing
+    assert (
+        viewer_buttons.grid_spacing_box.value() == viewer.canvas.grid.spacing
+    )
 
     # check viewer grid values changes update popup widget controls values
-    viewer.grid.stride = 1
-    viewer.grid.shape = (-1, -1)
-    viewer.grid.spacing = 0.1
+    viewer.canvas.grid.stride = 1
+    viewer.canvas.grid.shape = (-1, -1)
+    viewer.canvas.grid.spacing = 0.1
     # popup needs to be relaunched to get widget controls with the new values
     for widget in QApplication.topLevelWidgets():
         if isinstance(widget, QtPopup):
             widget.close()
     viewer_buttons.gridViewButton.customContextMenuRequested.emit(QPoint())
-    assert viewer_buttons.grid_stride_box.value() == viewer.grid.stride
+    assert viewer_buttons.grid_stride_box.value() == viewer.canvas.grid.stride
     viewer_buttons.grid_width_box.setValue(2)
-    assert viewer_buttons.grid_width_box.value() == viewer.grid.shape[1]
-    assert viewer_buttons.grid_height_box.value() == viewer.grid.shape[0]
-    assert viewer_buttons.grid_spacing_box.value() == viewer.grid.spacing
+    assert viewer_buttons.grid_width_box.value() == viewer.canvas.grid.shape[1]
+    assert (
+        viewer_buttons.grid_height_box.value() == viewer.canvas.grid.shape[0]
+    )
+    assert (
+        viewer_buttons.grid_spacing_box.value() == viewer.canvas.grid.spacing
+    )
 
 
 def test_ndisplay_button_popup(qt_viewer_buttons, qtbot):

@@ -8,7 +8,6 @@ import pint
 from napari._vispy.overlays.base import ViewerOverlayMixin, VispyCanvasOverlay
 from napari._vispy.visuals.scale_bar import ScaleBar
 from napari.components.overlays import ScaleBarOverlay
-from napari.settings import get_settings
 from napari.utils._units import PREFERRED_VALUES
 
 
@@ -17,14 +16,18 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
 
     overlay: ScaleBarOverlay
 
-    def __init__(self, *, viewer, overlay, parent=None) -> None:
+    def __init__(self, *, viewer, canvas, overlay, parent=None) -> None:
         self._target_length = 150.0
         self._current_length = 150.0
         self._scale = 1.0
         self._unit = pint.Quantity('1 pixel')
 
         super().__init__(
-            node=ScaleBar(), viewer=viewer, overlay=overlay, parent=parent
+            node=ScaleBar(),
+            viewer=viewer,
+            canvas=canvas,
+            overlay=overlay,
+            parent=parent,
         )
 
         self.overlay.events.color.connect(self._on_rendering_change)
@@ -38,9 +41,7 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self.overlay.events.visible.connect(self._on_rendering_change)
 
         self.viewer.camera.events.zoom.connect(self._on_size_or_zoom_change)
-        self.viewer.events.theme.connect(self._on_rendering_change)
-
-        get_settings().appearance.events.theme.connect(
+        self.viewer.canvas.events.background_color.connect(
             self._on_rendering_change
         )
 

@@ -17,9 +17,7 @@ class ViewerModelToggleAction(Action):
         The command id of the action.
     title : str
         The title of the action. Prefer capital case.
-    viewer_attribute : str
-        The attribute of the viewer to toggle. (e.g. 'axes')
-    sub_attribute : str
+    attribute_path : str
         The attribute of the viewer attribute to toggle. (e.g. 'visible')
     **kwargs
         Additional keyword arguments to pass to the Action constructor.
@@ -29,8 +27,7 @@ class ViewerModelToggleAction(Action):
     >>> action = ViewerModelToggleAction(
     ...     id='some.command.id',
     ...     title='Toggle Axis Visibility',
-    ...     viewer_attribute='axes',
-    ...     sub_attribute='visible',
+    ...     attribute_path='axes.visible',
     ... )
     """
 
@@ -39,19 +36,23 @@ class ViewerModelToggleAction(Action):
         *,
         id: str,  # noqa: A002
         title: str,
-        viewer_attribute: str,
-        sub_attribute: str,
+        attribute_path: str,
         **kwargs: Any,
     ) -> None:
         def get_current(viewer: ViewerModel) -> bool:
             """return the current value of the viewer attribute"""
-            attr = getattr(viewer, viewer_attribute)
-            return getattr(attr, sub_attribute)
+            attr = viewer
+            for part in attribute_path.split('.'):
+                attr = getattr(attr, part)
+            return attr  # type: ignore[return-value]
 
         def toggle(viewer: ViewerModel) -> None:
             """toggle the viewer attribute"""
-            attr = getattr(viewer, viewer_attribute)
-            setattr(attr, sub_attribute, not getattr(attr, sub_attribute))
+            attr = viewer
+            parts = attribute_path.split('.')
+            for part in parts[:-1]:
+                attr = getattr(attr, part)
+            setattr(attr, parts[-1], not getattr(attr, parts[-1]))
 
         super().__init__(
             id=id,

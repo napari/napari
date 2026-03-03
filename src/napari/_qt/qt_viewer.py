@@ -207,7 +207,7 @@ class QtViewer(QSplitter):
             viewer=viewer,
             parent=self,
             key_map_handler=self._key_map_handler,
-            size=self.viewer._canvas_size,
+            size=self.viewer.canvas.size,
             autoswap=get_settings().experimental.autoswap_buffers,  # see #5734
         )
 
@@ -257,16 +257,16 @@ class QtViewer(QSplitter):
             self._add_layer(layer)
 
         # set up welcome screen
-        viewer.welcome_screen.visible = False
+        viewer.canvas.welcome.visible = False
         if tips is not None:
-            viewer.welcome_screen.tips = tips
+            viewer.canvas.welcome.tips = tips
 
     def showEvent(self, event):
         super().showEvent(event)
-        self.viewer.welcome_screen.visible = self._show_welcome_screen
+        self.viewer.canvas.welcome.visible = self._show_welcome_screen
 
     def hideEvent(self, event):
-        self.viewer.welcome_screen.visible = False
+        self.viewer.canvas.welcome.visible = False
 
     @property
     def show_welcome_screen(self) -> bool:
@@ -276,7 +276,7 @@ class QtViewer(QSplitter):
     @show_welcome_screen.setter
     def show_welcome_screen(self, value: bool):
         self._show_welcome_screen = value
-        self.viewer.welcome_screen.visible = value and self.isVisible()
+        self.viewer.canvas.welcome.visible = value and self.isVisible()
 
     @staticmethod
     def _update_dask_cache_settings(
@@ -947,7 +947,9 @@ class QtViewer(QSplitter):
                 )
 
             # adjust size by the scale, to return the size in real pixels
-            grid_shape = self.viewer.grid.actual_shape(len(self.viewer.layers))
+            grid_shape = self.viewer.canvas.grid.actual_shape(
+                len(self.viewer.layers)
+            )
             size = np.ceil(scene_size / extent_scale * grid_shape).astype(int)
 
         with self.resize_canvas(size, scale):

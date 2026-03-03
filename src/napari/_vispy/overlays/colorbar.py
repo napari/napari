@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING
 
 from napari._vispy.overlays.base import LayerOverlayMixin, VispyCanvasOverlay
 from napari._vispy.visuals.colorbar import ColorBar
-from napari.settings import get_settings
 from napari.utils.colormaps.colormap_utils import (
     _coerce_contrast_limits,
     _napari_cmap_to_vispy,
@@ -13,7 +12,7 @@ from napari.utils.colormaps.colormap_utils import (
 if TYPE_CHECKING:
     from vispy.scene import Node
 
-    from napari.components import ViewerModel
+    from napari.components.canvas import Canvas
     from napari.components.overlays import ColorBarOverlay, Overlay
     from napari.layers import Image, Surface
 
@@ -25,14 +24,14 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
         self,
         *,
         layer: Image | Surface,
-        viewer: ViewerModel,
+        canvas: Canvas,
         overlay: Overlay,
         parent: Node | None = None,
     ) -> None:
         super().__init__(
             node=ColorBar(),
             layer=layer,
-            viewer=viewer,
+            canvas=canvas,
             overlay=overlay,
             parent=parent,
         )
@@ -50,8 +49,7 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
         self.overlay.events.box_color.connect(self._on_ticks_change)
         self.overlay.events.color.connect(self._on_ticks_change)
 
-        get_settings().appearance.events.theme.connect(self._on_data_change)
-        self.viewer.events.theme.connect(self._on_data_change)
+        self.canvas.events.background_color.connect(self._on_data_change)
 
         self.reset()
 

@@ -23,56 +23,47 @@ toggle_action_details = [
     (
         'napari.window.view.toggle_viewer_axes',
         trans._('Axes Visible'),
-        'axes',
-        'visible',
+        'axes.visible',
     ),
     (
         'napari.window.view.toggle_viewer_axes_colored',
         trans._('Axes Colored'),
-        'axes',
-        'colored',
+        'axes.colored',
     ),
     (
         'napari.window.view.toggle_viewer_axes_labels',
         trans._('Axes Labels'),
-        'axes',
-        'labels',
+        'axes.labels',
     ),
     (
         'napari.window.view.toggle_viewer_axes_dashed',
         trans._('Axes Dashed'),
-        'axes',
-        'dashed',
+        'axes.dashed',
     ),
     (
         'napari.window.view.toggle_viewer_axes_arrows',
         trans._('Axes Arrows'),
-        'axes',
-        'arrows',
+        'axes.arrows',
     ),
     (
-        'napari.window.view.toggle_viewer_scale_bar',
+        'napari.window.view.toggle_viewer_canvas.scale_bar',
         trans._('Scale Bar Visible'),
-        'scale_bar',
-        'visible',
+        'canvas.scale_bar.visible',
     ),
     (
-        'napari.window.view.toggle_viewer_scale_bar_box',
+        'napari.window.view.toggle_viewer_canvas.scale_bar_box',
         trans._('Scale Bar Box'),
-        'scale_bar',
-        'box',
+        'canvas.scale_bar.box',
     ),
     (
-        'napari.window.view.toggle_viewer_scale_bar_colored',
+        'napari.window.view.toggle_viewer_canvas.scale_bar_colored',
         trans._('Scale Bar Colored'),
-        'scale_bar',
-        'colored',
+        'canvas.scale_bar.colored',
     ),
     (
-        'napari.window.view.toggle_viewer_scale_bar_ticks',
+        'napari.window.view.toggle_viewer_canvas.scale_bar_ticks',
         trans._('Scale Bar Ticks'),
-        'scale_bar',
-        'ticks',
+        'canvas.scale_bar.ticks',
     ),
 ]
 
@@ -177,13 +168,12 @@ VIEW_ACTIONS = [
     ),
 ]
 
-for cmd, cmd_title, viewer_attr, sub_attr in toggle_action_details:
+for cmd, cmd_title, attribute_path in toggle_action_details:
     VIEW_ACTIONS.append(
         ViewerModelToggleAction(
             id=cmd,
             title=cmd_title,
-            viewer_attribute=viewer_attr,
-            sub_attribute=sub_attr,
-            menus=[{'id': MENUID_DICT[viewer_attr]}],
+            attribute_path=attribute_path,
+            menus=[{'id': MENUID_DICT[attribute_path.split('.')[-2]]}],
         )
     )

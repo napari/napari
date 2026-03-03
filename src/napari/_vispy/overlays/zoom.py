@@ -9,6 +9,7 @@ from napari._vispy.visuals.interaction_box import InteractionBox
 from napari.settings import get_settings
 
 if TYPE_CHECKING:
+    from napari.components.canvas import Canvas
     from napari.components.overlays import ZoomOverlay
     from napari.components.viewer_model import ViewerModel
     from napari.utils.events import Event
@@ -22,12 +23,14 @@ class VispyZoomOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
     def __init__(
         self,
         viewer: ViewerModel,
+        canvas: Canvas,
         overlay: ZoomOverlay,
         parent: Optional[Any] = None,
     ):
         super().__init__(
             node=InteractionBox(),
             viewer=viewer,
+            canvas=canvas,
             overlay=overlay,
             parent=parent,
         )
