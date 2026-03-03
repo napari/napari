@@ -130,11 +130,10 @@ class QtLayerButtons(QFrame):
         button.update()
 
     def _on_selection_changed(self, event=None) -> None:
-        """Update button checked state when layer selection changes.
+        """Update button mode based on the selection state.
 
-        When a layer is selected, some new layer buttons are checked
-        to indicate that creating a new layer will inherit properties from the
-        selected layer.
+        This allows indicating which mode of buttons will be triggered after
+        clicking on it.
         """
         if self.viewer.layers.selection.active is not None:
             self._change_button_mode(self.newPointsButton, 'new_points_one')
