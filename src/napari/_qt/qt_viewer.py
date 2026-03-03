@@ -201,7 +201,6 @@ class QtViewer(QSplitter):
         self._dockConsole = None
         self._dockPerformance = None
         self._show_welcome_screen = show_welcome_screen
-        self._welcome_overlay_activated = False
 
         # This dictionary holds the corresponding vispy visual for each layer
         self.canvas = canvas_class(
@@ -228,10 +227,10 @@ class QtViewer(QSplitter):
         self.viewer.layers.events.inserted.connect(self._update_camera_depth)
         self.viewer.layers.events.removed.connect(self._update_camera_depth)
         self.viewer.layers.events.inserted.connect(
-            self._on_welcome_layers_change
+            self._update_welcome_visibility
         )
         self.viewer.layers.events.removed.connect(
-            self._on_welcome_layers_change
+            self._update_welcome_visibility
         )
         self.viewer.dims.events.ndisplay.connect(self._update_camera_depth)
         self.viewer.layers.selection.events.active.connect(
@@ -270,12 +269,14 @@ class QtViewer(QSplitter):
 
     def showEvent(self, event: Any) -> None:
         super().showEvent(event)
-        if self._show_welcome_screen:
+        if self._show_welcome_screen and not self.viewer.layers:
             with contextlib.suppress(ValueError, RuntimeError):
                 self.canvas.events.draw.disconnect(self._on_welcome_draw)
             self.canvas.events.draw.connect(
                 self._on_welcome_draw, position='last'
             )
+            return
+        self._update_welcome_visibility()
 
     def _on_welcome_draw(self, event: Any = None) -> None:
         """Defer welcome overlay until after first canvas draw.
@@ -287,21 +288,10 @@ class QtViewer(QSplitter):
             self.canvas.events.draw.disconnect(self._on_welcome_draw)
         # singleShot(0) defers the call to the next event loop
         # ensuring that welcome overlay occurs after first draw is fully processed.
-        QTimer.singleShot(0, self._activate_welcome)
+        QTimer.singleShot(0, self._update_welcome_visibility)
 
-    def _activate_welcome(self) -> None:
-        """Mark welcome overlay as initialized and update visibility."""
-        self._welcome_overlay_activated = True
-        self._update_welcome_visibility()
-
-    def _on_welcome_layers_change(self, event: Any = None) -> None:
-        """Recompute welcome visibility when layers are inserted/removed."""
-        self._update_welcome_visibility()
-
-    def _update_welcome_visibility(self) -> None:
+    def _update_welcome_visibility(self, event: Any = None) -> None:
         """Update welcome visibility from current viewer/widget state."""
-        if not self._welcome_overlay_activated:
-            return
         self.viewer.welcome_screen.visible = (
             self._show_welcome_screen
             and self.isVisible()
