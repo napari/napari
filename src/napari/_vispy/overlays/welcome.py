@@ -84,6 +84,7 @@ class VispyWelcomeOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
     def _on_visible_change(self) -> None:
         show = self._should_be_visible()
         self.node.visible = show
+        self._on_box_change()
         if show:
             self.tip_timer.start()
         else:
