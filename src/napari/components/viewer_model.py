@@ -98,7 +98,6 @@ from napari.utils.events import (
 from napari.utils.key_bindings import KeymapProvider
 from napari.utils.misc import ensure_list_of_layer_data_tuple, is_sequence
 from napari.utils.mouse_bindings import MousemapProviderPydantic
-from napari.utils.notifications import show_warning
 from napari.utils.progress import progress
 from napari.utils.theme import available_themes, is_theme_available
 from napari.utils.translations import trans
@@ -655,18 +654,13 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             layer = Labels(
                 data=empty_labels, translate=np.array(corner), scale=scale
             )
-        elif len(self.layers) == 0:
+        else:
             layer = Labels(
                 data=np.zeros(
                     (512, 512),
                     dtype=get_settings().application.new_labels_dtype,
                 )
             )
-        else:
-            show_warning(
-                'Cannot create new labels layer for non-scalar field layers.'
-            )
-            return
         self.add_layer(layer)
 
     def _on_layer_reload(self, event: Event) -> None:
