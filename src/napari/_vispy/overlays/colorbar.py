@@ -95,14 +95,10 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
             self.source_wrapper = ColorManagerWrapper(
                 self.overlay, color_manager
             )
-            color_manager.events.contrast_limits.connect(
-                self._on_data_change
-            )  # will it work to not have face_contrast_limits as that is what the clims are called??
-            # TODO: connect other colormanager events
+            color_manager.events.contrast_limits.connect(self._on_data_change)
             color_manager.events.continuous_colormap.connect(
                 self._on_colormap_change
             )
-            # color_manager.events.gamma.connect(self._on_gamma_change)
         else:
             self.source_wrapper = IntensityLayerWrapper(
                 self.overlay, self.layer
