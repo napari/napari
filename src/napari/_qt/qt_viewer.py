@@ -17,7 +17,7 @@ from typing import (
 from weakref import WeakSet, ref
 
 import numpy as np
-from qtpy.QtCore import QCoreApplication, QObject, Qt, QUrl
+from qtpy.QtCore import QCoreApplication, QObject, Qt, QTimer, QUrl
 from qtpy.QtGui import QGuiApplication, QImage
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 from superqt import ensure_main_thread
@@ -201,6 +201,7 @@ class QtViewer(QSplitter):
         self._dockConsole = None
         self._dockPerformance = None
         self._show_welcome_screen = show_welcome_screen
+        self._welcome_overlay_activated = False
 
         # This dictionary holds the corresponding vispy visual for each layer
         self.canvas = canvas_class(
@@ -226,6 +227,12 @@ class QtViewer(QSplitter):
         self._on_active_change()
         self.viewer.layers.events.inserted.connect(self._update_camera_depth)
         self.viewer.layers.events.removed.connect(self._update_camera_depth)
+        self.viewer.layers.events.inserted.connect(
+            self._on_welcome_layers_change
+        )
+        self.viewer.layers.events.removed.connect(
+            self._on_welcome_layers_change
+        )
         self.viewer.dims.events.ndisplay.connect(self._update_camera_depth)
         self.viewer.layers.selection.events.active.connect(
             self._on_active_change
@@ -261,11 +268,50 @@ class QtViewer(QSplitter):
         if tips is not None:
             viewer.welcome_screen.tips = tips
 
-    def showEvent(self, event):
+    def showEvent(self, event: Any) -> None:
         super().showEvent(event)
-        self.viewer.welcome_screen.visible = self._show_welcome_screen
+        if self._show_welcome_screen:
+            with contextlib.suppress(ValueError, RuntimeError):
+                self.canvas.events.draw.disconnect(self._on_welcome_draw)
+            self.canvas.events.draw.connect(
+                self._on_welcome_draw, position='last'
+            )
 
-    def hideEvent(self, event):
+    def _on_welcome_draw(self, event: Any = None) -> None:
+        """Defer welcome overlay until after first canvas draw.
+
+        VispyWelcomeOverlay inits all vispy visuals, so doing it synchronously
+        during QtViewer init causes a long delay before the window appears.
+        """
+        with contextlib.suppress(ValueError, RuntimeError):
+            self.canvas.events.draw.disconnect(self._on_welcome_draw)
+        # singleShot(0) defers the call to the next event loop
+        # ensuring that welcome overlay occurs after first draw is fully processed.
+        QTimer.singleShot(0, self._activate_welcome)
+
+    def _activate_welcome(self) -> None:
+        """Mark welcome overlay as initialized and update visibility."""
+        self._welcome_overlay_activated = True
+        self._update_welcome_visibility()
+
+    def _on_welcome_layers_change(self, event: Any = None) -> None:
+        """Recompute welcome visibility when layers are inserted/removed."""
+        self._update_welcome_visibility()
+
+    def _update_welcome_visibility(self) -> None:
+        """Update welcome visibility from current viewer/widget state."""
+        if not self._welcome_overlay_activated:
+            return
+        self.viewer.welcome_screen.visible = (
+            self._show_welcome_screen
+            and self.isVisible()
+            and not self.viewer.layers
+        )
+
+    def hideEvent(self, event: Any) -> None:
+        super().hideEvent(event)
+        with contextlib.suppress(ValueError, RuntimeError):
+            self.canvas.events.draw.disconnect(self._on_welcome_draw)
         self.viewer.welcome_screen.visible = False
 
     @property
@@ -276,7 +322,7 @@ class QtViewer(QSplitter):
     @show_welcome_screen.setter
     def show_welcome_screen(self, value: bool):
         self._show_welcome_screen = value
-        self.viewer.welcome_screen.visible = value and self.isVisible()
+        self._update_welcome_visibility()
 
     @staticmethod
     def _update_dask_cache_settings(
