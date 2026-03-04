@@ -1,4 +1,3 @@
-import warnings
 from collections.abc import Sequence
 from copy import deepcopy
 from dataclasses import dataclass
@@ -275,15 +274,9 @@ class ColorManager(EventedModel):
                 values=properties[color],
                 current_value=current_properties[color][0],
             )
-            if guess_continuous(properties[color]):
+            if guess_continuous(properties[color], feature_name=color):
                 self.color_mode = ColorMode.COLORMAP
             else:
-                warnings.warn(
-                    f"Feature '{color}' looks like categorical data, since it contains "
-                    'less than 16 non-float unique values. Color mode set to cycle. '
-                    'If your data is not supposed to be categorical, convert it to floats.',
-                    stacklevel=3,
-                )
                 self.color_mode = ColorMode.CYCLE
         else:
             transformed_color = transform_color_with_defaults(
@@ -597,15 +590,9 @@ class ColorManager(EventedModel):
                         name=color_values, values=properties[color_values]
                     )
                 if color_mode is None:
-                    if guess_continuous(color_properties.values):
+                    if guess_continuous(color_properties.values, color_values):
                         color_mode = ColorMode.COLORMAP
                     else:
-                        warnings.warn(
-                            f"Feature '{color_values}' looks like categorical data, since it contains "
-                            'less than 16 non-float unique values. Color mode set to cycle. '
-                            'If your data is not supposed to be categorical, convert it to floats.',
-                            stacklevel=3,
-                        )
                         color_mode = ColorMode.CYCLE
 
                 color_kwargs.update(
