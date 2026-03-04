@@ -50,7 +50,7 @@ conda activate napari-env
 python -m pip install "napari[all]"
 ```
 
-If you prefer conda over pip, you can replace the last line with: `conda install -c conda-forge napari pyqt`
+If you prefer conda over pip, you can replace the last line with: `conda install -c conda-forge napari pyqt6`
 
 See here for the full [installation guide](https://napari.org/stable/tutorials/fundamentals/installation.html).
 
