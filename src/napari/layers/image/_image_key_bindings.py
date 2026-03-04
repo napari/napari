@@ -29,6 +29,12 @@ def register_image_mode_action(
     return register_layer_attr_action(Image, description, 'mode')
 
 
+@register_image_action(trans._('Apply auto-contrast'))
+def auto_contrast_once(layer: Image) -> None:
+    """Apply auto-contrast."""
+    layer.reset_contrast_limits()
+
+
 @register_image_action(trans._('Orient plane normal along z-axis'))
 def orient_plane_normal_along_z(layer: Image) -> None:
     orient_plane_normal_around_cursor(layer, plane_normal=(1, 0, 0))
