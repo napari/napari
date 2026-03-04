@@ -39,8 +39,8 @@ class AppearanceSettings(EventedModel):
         title='Logo variant',
         description='Select which logo variant to use.',
     )
-    font: str | None = Field(
-        None,
+    font: str = Field(
+        '',
         title=trans._('Font'),
         description=trans._('Select the user interface font face.'),
     )

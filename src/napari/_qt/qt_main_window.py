@@ -1605,7 +1605,7 @@ class Window:
                 extra_variables.update(
                     {'font_size': f'{settings.appearance.font_size}pt'}
                 )
-            if extra_variables['font'] is None:
+            if not extra_variables['font']:
                 extra_variables['font'] = QFontDatabase.systemFont(
                     QFontDatabase.GeneralFont
                 ).family()
