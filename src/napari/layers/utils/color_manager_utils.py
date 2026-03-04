@@ -36,6 +36,7 @@ def guess_continuous(color_map: np.ndarray, feature_name: str) -> bool:
                 f"Feature '{feature_name}' looks like categorical data, since it contains "
                 'less than 16 integer unique values. Color mode set to cycle. '
                 'If your data is not supposed to be categorical, convert it to floats.',
+                RuntimeWarning,
                 stacklevel=4,
             )
             return False
