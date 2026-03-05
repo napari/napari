@@ -188,12 +188,19 @@ class LayerDelegate(QStyledItemDelegate):
         painter.drawPixmap(lock_rect, colored_icon.pixmap(lock_rect.size()))
 
     def _lock_icon_rect(self, option, index):
-        """Return the QRect for the lock icon."""
+        """Return the QRect for the lock icon.
+
+        Placed to the left of the layer-type decoration icon (18px + 4px
+        margin from the right edge) so that it does not overlap.
+        """
         from qtpy.QtCore import QRect
 
         rect = option.rect
         icon_size = 16
-        x = rect.right() - icon_size - 4
+        # type icon occupies ~18px at the right edge with some padding;
+        # offset lock icon to avoid overlap.
+        type_icon_reserved = 22
+        x = rect.right() - type_icon_reserved - icon_size - 2
         y = rect.top() + (rect.height() - icon_size) // 2
         return QRect(x, y, icon_size, icon_size)
 
