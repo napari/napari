@@ -1306,8 +1306,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             'translate': list(self.translate),
             'units': self.units,
             'visible': self.visible,
-            'locked': self.locked,
-            'lock_permanent': self.lock_permanent,
         }
         return base_dict
 

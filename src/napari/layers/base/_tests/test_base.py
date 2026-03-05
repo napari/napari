@@ -238,11 +238,12 @@ def test_layer_locked_setter():
     mock.assert_not_called()
 
 
-def test_layer_locked_in_base_state():
+def test_layer_locked_not_in_base_state():
+    """locked is not in _get_base_state to avoid TypeError on layer conversion."""
     layer = SampleLayer(np.empty((10, 10)))
     layer.locked = True
     state = layer._get_base_state()
-    assert state['locked'] is True
+    assert 'locked' not in state
 
 
 def test_layer_locked_constructor():
@@ -275,8 +276,8 @@ def test_layer_lock_permanent_setter():
     assert not layer.locked
 
 
-def test_layer_lock_permanent_in_base_state():
+def test_layer_lock_permanent_not_in_base_state():
+    """lock_permanent is not in _get_base_state to avoid TypeError on layer conversion."""
     layer = SampleLayer(np.empty((10, 10)), lock_permanent=True)
     state = layer._get_base_state()
-    assert state['lock_permanent'] is True
-    assert state['locked'] is True
+    assert 'lock_permanent' not in state
