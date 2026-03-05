@@ -272,3 +272,32 @@ def test_get_ray_intersections_miss():
     )
     assert start_point is None
     assert end_point is None
+
+
+def test_layer_locked_default():
+    layer = SampleLayer(np.empty((10, 10)))
+    assert not layer.locked
+
+
+def test_layer_locked_setter():
+    layer = SampleLayer(np.empty((10, 10)))
+    mock = Mock()
+    layer.events.locked.connect(mock)
+    layer.locked = True
+    mock.assert_called_once()
+    assert layer.locked
+    mock.reset_mock()
+    layer.locked = True  # same value should not re-emit
+    mock.assert_not_called()
+
+
+def test_layer_locked_in_base_state():
+    layer = SampleLayer(np.empty((10, 10)))
+    layer.locked = True
+    state = layer._get_base_state()
+    assert state['locked'] is True
+
+
+def test_layer_locked_constructor():
+    layer = SampleLayer(np.empty((10, 10)), locked=True)
+    assert layer.locked

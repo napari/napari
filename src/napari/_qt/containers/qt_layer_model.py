@@ -11,6 +11,7 @@ from napari.utils.translations import trans
 
 ThumbnailRole = Qt.UserRole + 2
 LoadedRole = Qt.UserRole + 3
+LockRole = Qt.UserRole + 4
 
 
 class QtLayerListModel(QtListModel[Layer]):
@@ -59,6 +60,8 @@ class QtLayerListModel(QtListModel[Layer]):
             )
         if role == LoadedRole:
             return layer_loaded
+        if role == LockRole:
+            return getattr(layer, 'locked', False)
         # normally you'd put the icon in DecorationRole, but we do that in the
         # # LayerDelegate which is aware of the theme.
         # if role == Qt.ItemDataRole.DecorationRole:  # icon to show
@@ -79,6 +82,10 @@ class QtLayerListModel(QtListModel[Layer]):
             self.getItem(index).visible = (
                 Qt.CheckState(value) == Qt.CheckState.Checked
             )
+        elif role == LockRole:
+            self.getItem(index).locked = bool(value)
+            self.dataChanged.emit(index, index, [LockRole])
+            return True
         elif role == Qt.ItemDataRole.EditRole:
             self.getItem(index).name = value
             role = Qt.ItemDataRole.DisplayRole
@@ -106,6 +113,7 @@ class QtLayerListModel(QtListModel[Layer]):
             'visible': Qt.ItemDataRole.CheckStateRole,
             'name': Qt.ItemDataRole.DisplayRole,
             'loaded': LoadedRole,
+            'locked': LockRole,
         }.get(event.type)
         roles = [role] if role is not None else []
         row = self.index(event.index)
