@@ -552,6 +552,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         units=None,
         visible=True,
         locked: bool = False,
+        lock_permanent: bool = False,
     ):
         super().__init__()
 
@@ -636,6 +637,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self.corner_pixels = np.zeros((2, ndim), dtype=int)
         self._editable = True
         self._locked = bool(locked)
+        self._lock_permanent = bool(lock_permanent)
+        if self._lock_permanent:
+            self._locked = True
         self._array_like = False
 
         self._thumbnail_shape = (32, 32, 4)
@@ -998,10 +1002,23 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
     @locked.setter
     def locked(self, locked: bool) -> None:
+        if self._lock_permanent and not locked:
+            return  # cannot unlock a permanently locked layer
         if self._locked == locked:
             return
         self._locked = bool(locked)
         self.events.locked()
+
+    @property
+    def lock_permanent(self) -> bool:
+        """bool: Whether the layer lock is permanent (cannot be unlocked via UI)."""
+        return self._lock_permanent
+
+    @lock_permanent.setter
+    def lock_permanent(self, value: bool) -> None:
+        self._lock_permanent = bool(value)
+        if self._lock_permanent:
+            self.locked = True
 
     def _reset_editable(self) -> None:
         """Reset this layer's editable state based on layer properties."""
@@ -1290,6 +1307,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             'units': self.units,
             'visible': self.visible,
             'locked': self.locked,
+            'lock_permanent': self.lock_permanent,
         }
         return base_dict
 

@@ -305,6 +305,9 @@ class LayerDelegate(QStyledItemDelegate):
         ):
             lock_rect = self._lock_icon_rect(option, index)
             if lock_rect.contains(event.pos()):
+                layer = index.data(ItemRole)
+                if getattr(layer, 'lock_permanent', False):
+                    return True  # permanently locked, ignore click
                 current_locked = index.data(LockRole)
                 model.setData(index, not current_locked, LockRole)
                 return True
