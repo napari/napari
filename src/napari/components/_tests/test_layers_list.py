@@ -573,3 +573,28 @@ def test_readd_layers():
     with pytest.raises(ValueError, match='already present'):
         layers[:3] = layers[:]
     assert set(layers) == set(imgs)
+
+
+def test_remove_selected_skips_locked():
+    """Locked layers should not be removed by remove_selected."""
+    layers = LayerList()
+    layer_a = Image(np.random.random((10, 10)), name='a')
+    layer_b = Image(np.random.random((10, 10)), name='b')
+    layers.append(layer_a)
+    layers.append(layer_b)
+    layer_a.locked = True
+    layers.selection = {layer_a, layer_b}
+    layers.remove_selected()
+    assert len(layers) == 1
+    assert layers[0] is layer_a
+
+
+def test_remove_selected_all_locked():
+    """When all selected layers are locked, none should be removed."""
+    layers = LayerList()
+    layer = Image(np.random.random((10, 10)), name='a')
+    layers.append(layer)
+    layer.locked = True
+    layers.selection = {layer}
+    layers.remove_selected()
+    assert len(layers) == 1

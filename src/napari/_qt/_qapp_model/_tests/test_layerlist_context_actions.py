@@ -39,5 +39,11 @@ def test_layer_actions_ctx_menu_execute_command(
     ]:
         with pytest.raises(ValueError, match=r'at least one'):
             app.commands.execute_command(command_id)
+    elif command_id in [
+        'napari.layer.lock_selected',
+        'napari.layer.unlock_selected',
+    ]:
+        # lock/unlock on empty selection is a no-op
+        app.commands.execute_command(command_id)
     else:
         app.commands.execute_command(command_id)
