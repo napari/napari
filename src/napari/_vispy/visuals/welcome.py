@@ -56,7 +56,6 @@ class Welcome(Node):
             pos=[0, 0],
             anchor_x='center',
             anchor_y='bottom',
-            method='gpu',
             font_manager=self._font_manager,
             parent=self,
         )
@@ -66,7 +65,6 @@ class Welcome(Node):
             pos=[-80, 60],
             anchor_x='right',
             anchor_y='bottom',
-            method='gpu',
             font_manager=self._font_manager,
             parent=self,
         )
@@ -76,7 +74,6 @@ class Welcome(Node):
             pos=[-60, 60],
             anchor_x='left',
             anchor_y='bottom',
-            method='gpu',
             font_manager=self._font_manager,
             parent=self,
         )
@@ -86,7 +83,6 @@ class Welcome(Node):
             pos=[0, 160],
             anchor_x='center',
             anchor_y='bottom',
-            method='gpu',
             font_manager=self._font_manager,
             parent=self,
         )
