@@ -815,7 +815,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
     @property
     def locked(self) -> bool:
-        """bool: Whether the layer is locked (protected from deletion)."""
+        """bool: Whether the layer is locked (protected from deletion).
+
+        .. versionadded:: 0.6.7
+        """
         return self._locked
 
     @locked.setter
@@ -829,7 +832,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
     @property
     def lock_permanent(self) -> bool:
-        """bool: Whether the layer lock is permanent (cannot be unlocked via UI)."""
+        """bool: Whether the layer lock is permanent (cannot be unlocked via UI).
+
+        .. versionadded:: 0.6.7
+        """
         return self._lock_permanent
 
     @lock_permanent.setter
