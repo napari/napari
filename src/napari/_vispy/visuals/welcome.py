@@ -10,6 +10,7 @@ import numpy as np
 from vispy.scene.node import Node
 from vispy.scene.visuals import Polygon
 from vispy.util.svg import Document
+from vispy.visuals.text.text import FontManager
 from vispy.visuals.transforms import STTransform
 
 from napari._app_model import get_app_model
@@ -45,6 +46,7 @@ class Welcome(Node):
         # move it up
         self.logo_coords[:, 1] -= 130  # magic number shifting up logo
         super().__init__()
+        self._font_manager = FontManager(method='gpu')
 
         self.logo = Polygon(
             self.logo_coords, border_method='agg', border_width=2, parent=self
@@ -55,6 +57,7 @@ class Welcome(Node):
             anchor_x='center',
             anchor_y='bottom',
             method='gpu',
+            font_manager=self._font_manager,
             parent=self,
         )
         self.shortcut_keybindings = Text(
@@ -64,6 +67,7 @@ class Welcome(Node):
             anchor_x='right',
             anchor_y='bottom',
             method='gpu',
+            font_manager=self._font_manager,
             parent=self,
         )
         self.shortcut_descriptions = Text(
@@ -73,6 +77,7 @@ class Welcome(Node):
             anchor_x='left',
             anchor_y='bottom',
             method='gpu',
+            font_manager=self._font_manager,
             parent=self,
         )
         self.tip = Text(
@@ -82,6 +87,7 @@ class Welcome(Node):
             anchor_x='center',
             anchor_y='bottom',
             method='gpu',
+            font_manager=self._font_manager,
             parent=self,
         )
 
