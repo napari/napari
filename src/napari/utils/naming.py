@@ -5,9 +5,9 @@ import re
 from collections import ChainMap, ChainMap as ChainMapType
 from collections.abc import Callable
 from types import FrameType, TracebackType
-from typing import (
-    Any,
-)
+from typing import Any
+
+from typing_extensions import Self
 
 from napari.utils.misc import ROOT_DIR, formatdoc
 
@@ -98,7 +98,7 @@ class CallerFrame:
         self.namespace = ChainMap()
         self.names = ()
 
-    def __enter__(self) -> 'CallerFrame':
+    def __enter__(self) -> Self:
         frame = inspect.currentframe()
         try:
             # See issue #1635 regarding potential AttributeError

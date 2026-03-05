@@ -17,24 +17,32 @@ def convert_image_to_coordinates(vectors: npt.NDArray) -> npt.NDArray:
 
     Returns
     -------
-    coords : (N, 2, D) array
+    coord_vectors : (N, 2, D) array
         A list of N vectors with start point and projections of the vector
         in D dimensions.
     """
-    # create coordinate spacing for image
-    spacing = [list(range(r)) for r in vectors.shape[:-1]]
-    grid = np.meshgrid(*spacing)
-
-    # create empty vector of necessary shape
     nvect = np.prod(vectors.shape[:-1])
-    coords = np.empty((nvect, 2, vectors.ndim - 1), dtype=np.float32)
+    ndim = vectors.shape[-1]
 
-    # assign coordinates to all pixels
-    for i, g in enumerate(grid):
-        coords[:, 0, i] = g.flatten()
-    coords[:, 1, :] = np.reshape(vectors, (-1, vectors.ndim - 1))
+    # create coordinate spacing for image
+    spacing = [np.arange(r) for r in vectors.shape[:-1]]
+    grid = np.meshgrid(*spacing, indexing='ij')
+    coordinates = np.stack([np.reshape(idx, -1) for idx in grid], axis=-1)
 
-    return coords
+    # the corresponding projections come directly from the given vectors data
+    # TODO: consider whether it might be good to check for sparsity and
+    # only include nonzero vectors. This can have up-front performance cost but may
+    # lead to (significant) performance and memory savings
+    projections = np.reshape(vectors, (nvect, ndim))
+    # TODO: consider whether it might be good to check for sparsity and
+    # only include nonzero vectors. Up front performance cost but can
+    # lead to (significant) performance and memory savings
+    projections = np.reshape(vectors, (nvect, ndim))
+
+    # stack them along axis 1
+    coord_vectors = np.stack([coordinates, projections], axis=1)
+
+    return coord_vectors
 
 
 def fix_data_vectors(

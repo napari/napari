@@ -245,7 +245,7 @@ def convert_vispy_colormap(colormap, name='vispy'):
 
 def _napari_cmap_to_vispy(colormap: Colormap) -> VispyColormap:
     """Convert a napari colormap to its equivalent vispy colormap."""
-    cmap_args = colormap.dict()
+    cmap_args = colormap.model_dump()
     cmap_args.pop('name')
     cmap_args['bad_color'] = cmap_args.pop('nan_color')
     return VispyColormap(**cmap_args)
@@ -718,8 +718,8 @@ AVAILABLE_COLORMAPS_LOCK = Lock()
 # blending of multiple channels.
 MAGENTA_GREEN = ['magenta', 'green']
 RGB = ['red', 'green', 'blue']
+CMYBGR = ['cyan', 'magenta', 'yellow', 'blue', 'green', 'red']
 CYMRGB = ['cyan', 'yellow', 'magenta', 'red', 'green', 'blue']
-
 
 AVAILABLE_LABELS_COLORMAPS = {
     'lodisc-50': label_colormap(50),

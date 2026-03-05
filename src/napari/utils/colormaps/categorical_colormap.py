@@ -1,8 +1,8 @@
 from typing import Any
 
 import numpy as np
+from pydantic import Field, field_serializer, model_validator
 
-from napari._pydantic_compat import Field
 from napari.utils.color import ColorValue
 from napari.utils.colormaps.categorical_colormap_utils import (
     ColorCycle,
@@ -10,7 +10,6 @@ from napari.utils.colormaps.categorical_colormap_utils import (
 )
 from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils.events import EventedModel
-from napari.utils.translations import trans
 
 
 class CategoricalColormap(EventedModel):
@@ -60,52 +59,43 @@ class CategoricalColormap(EventedModel):
                 for index in sorted(int(x) for x in indices_to_add)
             ]
             for prop in props_to_add:
-                new_color = next(self.fallback_color.cycle)
+                new_color = next(self.fallback_color)
                 self.colormap[prop] = ColorValue(new_color)
         # map the colors
         colors = np.array([self.colormap[x] for x in color_properties])
         return colors
 
+    @model_validator(mode='before')
     @classmethod
-    def from_array(cls, fallback_color):
-        return cls(fallback_color=fallback_color)
-
-    @classmethod
-    def from_dict(cls, params: dict):
-        if ('colormap' in params) or ('fallback_color' in params):
-            if 'colormap' in params:
-                colormap = {
-                    k: transform_color(v)[0]
-                    for k, v in params['colormap'].items()
-                }
+    def _validate_args(cls, values):
+        if isinstance(values, dict):
+            if ('colormap' in values) or ('fallback_color' in values):
+                if 'colormap' in values:
+                    colormap = {
+                        k: transform_color(v)[0]
+                        for k, v in values['colormap'].items()
+                    }
+                else:
+                    colormap = {}
+                fallback_color = values.get('fallback_color', 'white')
             else:
-                colormap = {}
-            fallback_color = params.get('fallback_color', 'white')
+                colormap = {
+                    k: transform_color(v)[0] for k, v in values.items()
+                }
+                fallback_color = 'white'
+        elif isinstance(values, list | np.ndarray):
+            colormap = {}
+            fallback_color = values
+            values = {}
         else:
-            colormap = {k: transform_color(v)[0] for k, v in params.items()}
-            fallback_color = 'white'
-
-        return cls(colormap=colormap, fallback_color=fallback_color)
-
-    @classmethod
-    def __get_validators__(cls):
-        yield cls.validate_type
-
-    @classmethod
-    def validate_type(cls, val):
-        if isinstance(val, cls):
-            return val
-        if isinstance(val, list | np.ndarray):
-            return cls.from_array(val)
-        if isinstance(val, dict):
-            return cls.from_dict(val)
-
-        raise TypeError(
-            trans._(
-                'colormap should be an array or dict',
-                deferred=True,
+            raise ValueError(  # noqa: TRY004
+                f'Invalid input type for CategoricalColormap: {type(values)}'
             )
-        )
+
+        values['colormap'] = colormap
+        values['fallback_color'] = fallback_color
+
+        return values
 
     def __eq__(self, other):
         return (
@@ -115,3 +105,18 @@ class CategoricalColormap(EventedModel):
                 self.fallback_color.values, other.fallback_color.values
             )
         )
+
+    @field_serializer('colormap', when_used='json')
+    def _serialize_colormap(self, colormap):
+        return {
+            k: v.tolist() if isinstance(v, np.ndarray) else v
+            for k, v in colormap.items()
+        }
+
+    @field_serializer('fallback_color', when_used='json')
+    def _serialize_fallback_color(self, fallback_color):
+        return {
+            'values': fallback_color.values.tolist()
+            if isinstance(fallback_color.values, np.ndarray)
+            else fallback_color.values,
+        }

@@ -21,6 +21,7 @@ def test_imshow_signature_consistency():
     del imshow_parameters['viewer']
     del viewer_parameters['self']
     del viewer_parameters['kwargs']
+    del viewer_parameters['show_welcome_screen']
 
     # Ensure both have the same parameter names
     assert imshow_parameters.keys() == viewer_parameters.keys()

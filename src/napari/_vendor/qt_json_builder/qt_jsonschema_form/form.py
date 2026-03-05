@@ -26,7 +26,6 @@ class WidgetBuilder:
             "object": widgets.ObjectSchemaWidget,
             "horizontal_object": widgets.HorizontalObjectSchemaWidget,
             "enum": widgets.EnumSchemaWidget,
-            "plugins": widgets.PluginWidget,
             "shortcuts": widgets.ShortcutsWidget,
             "extension2reader": widgets.Extension2ReaderWidget,
             "highlight": widgets.HighlightPreviewWidget,

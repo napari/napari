@@ -236,15 +236,16 @@ def create_worker(
         if hasattr(worker.signals, 'aborted'):
             worker.aborted.connect(
                 partial(
-                    lambda task_status_id,
-                    function: window._update_task_status(
-                        task_status_id,
-                        Status.CANCELLED,
-                        description=trans._(
-                            '{func} execution cancelled',
-                            deferred=True,
-                            func=function,
-                        ),
+                    lambda task_status_id, function: (
+                        window._update_task_status(
+                            task_status_id,
+                            Status.CANCELLED,
+                            description=trans._(
+                                '{func} execution cancelled',
+                                deferred=True,
+                                func=function,
+                            ),
+                        )
                     ),
                     worker_status_id,
                     func,

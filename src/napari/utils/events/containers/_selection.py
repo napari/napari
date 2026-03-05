@@ -1,21 +1,22 @@
-from collections.abc import Generator, Iterable
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Generic,
-    TypeVar,
-    Union,
-)
+from collections import deque
+from collections.abc import Iterable, MutableSet
+from types import GeneratorType
+from typing import Any, Generic, TypeVar, Union, get_args
+
+from pydantic import GetCoreSchemaHandler
+from pydantic_core import core_schema
+from pydantic_core.core_schema import DictSchema, TypedDictSchema
 
 from napari.utils.events.containers._set import EventedSet
 from napari.utils.events.event import EmitterGroup
-from napari.utils.translations import trans
-
-if TYPE_CHECKING:
-    from napari._pydantic_compat import ModelField
 
 _T = TypeVar('_T')
 _S = TypeVar('_S')
+
+
+def sequence_like(v: Any) -> bool:
+    """Check whether an object is sequence-like."""
+    return isinstance(v, (list, tuple, set, frozenset, GeneratorType, deque))
 
 
 class Selection(EventedSet[_T]):
@@ -144,18 +145,64 @@ class Selection(EventedSet[_T]):
         self.add(obj)
 
     @classmethod
-    def __get_validators__(cls) -> Generator:
-        yield cls.validate
+    def __get_pydantic_core_schema__(
+        cls, source: Any, handler: GetCoreSchemaHandler
+    ) -> core_schema.CoreSchema:
+        instance_schema = core_schema.is_instance_schema(cls)
+
+        args = get_args(source)
+        dict_schema: DictSchema | TypedDictSchema
+        if args:
+            item_schema = handler.generate_schema(args[0])
+            mutableset_t_schema = handler.generate_schema(MutableSet[args[0]])  # type: ignore
+            current_schema = core_schema.union_schema(
+                [item_schema, core_schema.none_schema()]
+            )
+            dict_schema = core_schema.typed_dict_schema(
+                {
+                    'selection': core_schema.typed_dict_field(
+                        core_schema.list_schema(item_schema)
+                    ),
+                    '_current': core_schema.typed_dict_field(
+                        current_schema, required=False
+                    ),
+                }
+            )
+        else:
+            mutableset_t_schema = handler.generate_schema(MutableSet)
+            dict_schema = core_schema.dict_schema(
+                keys_schema=core_schema.str_schema(),
+                values_schema=core_schema.any_schema(),
+            )
+
+        input_schema = core_schema.union_schema(
+            [mutableset_t_schema, dict_schema]
+        )
+
+        non_instance_schema = core_schema.no_info_after_validator_function(
+            cls._validate_selection, input_schema
+        )
+
+        def _serialize(v: Selection) -> dict:
+            return {
+                'selection': EventedSet(v)._json_encode(),
+                '_current': v._current,
+            }
+
+        serialize = core_schema.plain_serializer_function_ser_schema(
+            _serialize,
+            when_used='json',
+        )
+        return core_schema.union_schema(
+            [instance_schema, non_instance_schema], serialization=serialize
+        )
 
     @classmethod
-    def validate(
+    def _validate_selection(
         cls,
-        v: Union['Selection', dict],  # type: ignore[override]
-        field: 'ModelField',
+        v: Union['Selection', dict],
     ) -> 'Selection':
         """Pydantic validator."""
-        from napari._pydantic_compat import sequence_like
-
         if isinstance(v, dict):
             data = v.get('selection', [])
             current = v.get('_current', None)
@@ -166,38 +213,6 @@ class Selection(EventedSet[_T]):
             data = v
             current = None
 
-        if not sequence_like(data):
-            raise TypeError(
-                trans._(
-                    'Value is not a valid sequence: {data}',
-                    deferred=True,
-                    data=data,
-                )
-            )
-
-        # no type parameter was provided, just return
-        if not field.sub_fields:
-            obj = cls(data=data)
-            obj._current_ = current
-            return obj
-
-        # Selection[type] parameter was provided.  Validate contents
-        type_field = field.sub_fields[0]
-        errors = []
-        for i, v_ in enumerate(data):
-            _, error = type_field.validate(v_, {}, loc=f'[{i}]')
-            if error:
-                errors.append(error)
-        if current is not None:
-            _, error = type_field.validate(current, {}, loc='current')
-            if error:
-                errors.append(error)
-
-        if errors:
-            from napari._pydantic_compat import ValidationError
-
-            raise ValidationError(errors, cls)  # type: ignore [arg-type]
-            # need to be fixed when migrate to pydantic 2
         obj = cls(data=data)
         obj._current_ = current
         return obj

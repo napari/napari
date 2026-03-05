@@ -4,6 +4,7 @@ import pytest
 import zarr
 
 from napari.layers import Image
+from napari.layers.base._base_constants import Blending
 from napari.layers.utils.stack_utils import (
     images_to_stack,
     merge_rgb,
@@ -206,6 +207,44 @@ def test_split_and_merge_rgba():
     assert (rgb_image.data[3] == 4).all()
 
 
+@pytest.mark.parametrize(
+    'stack_blending', [blending.value for blending in Blending]
+)
+def test_split_rgb_blending(stack_blending):
+    """Test blending settings on a split RGB image."""
+    # Make an RGB
+    data = np.random.randint(0, 100, (10, 128, 128, 3))
+    stack = Image(data)
+    stack.blending = stack_blending
+
+    # split the RGB into 3 images
+    images = split_rgb(stack)
+    blendings = [image.blending for image in images]
+    assert blendings == [stack_blending, 'additive', 'additive']
+
+
+@pytest.mark.parametrize(
+    'stack_blending', [blending.value for blending in Blending]
+)
+def test_split_rgba_blending(stack_blending):
+    """Test blending settings on a split RGBA image."""
+    # Make an RGBA
+    data = np.random.randint(0, 100, (10, 128, 128, 4))
+    stack = Image(data)
+    stack.blending = stack_blending
+
+    # split the rgb into 4 images
+    images = split_rgb(stack, with_alpha=True)
+    blendings = [image.blending for image in images]
+    # multiplicative should be assigned to alpha channel
+    assert blendings == [
+        stack_blending,
+        'additive',
+        'additive',
+        'multiplicative',
+    ]
+
+
 @pytest.fixture(
     params=[
         {
@@ -356,15 +395,7 @@ def test_images_to_stack_lazy_arrays(input_array, expected_type):
     """Test that images_to_stack handles numpy, dask, and zarr arrays correctly."""
     data = input_array
     images = [Image(data) for _ in range(3)]
-
-    if isinstance(input_array, zarr.Array):
-        with pytest.warns(
-            UserWarning,
-            match='zarr array cannot be stacked lazily, using dask array to stack.',
-        ):
-            stack = images_to_stack(images)
-    else:
-        stack = images_to_stack(images)
+    stack = images_to_stack(images)
 
     assert not stack.multiscale
     assert isinstance(stack.data, expected_type)
@@ -389,15 +420,7 @@ def test_images_to_stack_lazy_multiscale_arrays(input_array, expected_type):
         data = [input_array, input_array[::2, ::2]]
 
     images = [Image(data) for _ in range(3)]
-
-    if isinstance(input_array, zarr.Array):
-        with pytest.warns(
-            UserWarning,
-            match='zarr array cannot be stacked lazily, using dask array to stack.',
-        ):
-            stack = images_to_stack(images)
-    else:
-        stack = images_to_stack(images)
+    stack = images_to_stack(images)
 
     assert stack.multiscale
     assert isinstance(stack.data[0], expected_type)
@@ -426,14 +449,7 @@ def test_slice_from_axis_different_array_types(
 
     axis, element = 1, 2
     expected_shape = (3, 4)
-
-    if array_type == 'zarr':
-        with pytest.warns(
-            UserWarning, match='zarr array cannot be sliced lazily'
-        ):
-            result = slice_from_axis(data, axis=axis, element=element)
-    else:
-        result = slice_from_axis(data, axis=axis, element=element)
+    result = slice_from_axis(data, axis=axis, element=element)
 
     # Check result type and shape
     assert isinstance(result, expected_result_type)

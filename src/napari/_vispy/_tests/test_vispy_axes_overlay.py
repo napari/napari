@@ -11,7 +11,7 @@ def test_init_with_2d_display_of_2_dimensions():
 
     axes_view = VispyAxesOverlay(viewer=viewer, overlay=axes_model)
 
-    assert tuple(axes_view.node.text.text) == ('1', '0')
+    assert tuple(axes_view.node.text.text) == ('-1', '-2')
 
 
 def test_init_with_2d_display_of_3_dimensions():
@@ -22,7 +22,7 @@ def test_init_with_2d_display_of_3_dimensions():
 
     axes_view = VispyAxesOverlay(viewer=viewer, overlay=axes_model)
 
-    assert tuple(axes_view.node.text.text) == ('2', '1')
+    assert tuple(axes_view.node.text.text) == ('-1', '-2')
 
 
 def test_init_with_3d_display_of_2_dimensions():
@@ -33,7 +33,7 @@ def test_init_with_3d_display_of_2_dimensions():
 
     axes_view = VispyAxesOverlay(viewer=viewer, overlay=axes_model)
 
-    assert tuple(axes_view.node.text.text) == ('1', '0')
+    assert tuple(axes_view.node.text.text) == ('-1', '-2')
 
 
 def test_init_with_3d_display_of_3_dimensions():
@@ -44,4 +44,4 @@ def test_init_with_3d_display_of_3_dimensions():
 
     axes_view = VispyAxesOverlay(viewer=viewer, overlay=axes_model)
 
-    assert tuple(axes_view.node.text.text) == ('2', '1', '0')
+    assert tuple(axes_view.node.text.text) == ('-1', '-2', '-3')

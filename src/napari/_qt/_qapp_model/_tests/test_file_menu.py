@@ -6,6 +6,7 @@ from app_model.types import MenuItem, SubmenuItem
 from npe2 import DynamicPlugin
 from npe2.manifest.contributions import SampleDataURI
 from qtpy.QtGui import QGuiApplication
+from qtpy.QtWidgets import QApplication
 
 from napari._app_model import get_app_model
 from napari._app_model.constants import MenuId
@@ -310,20 +311,15 @@ def test_open_with_plugin(
     )
 
 
-def test_preference_dialog(make_napari_viewer):
+def test_preference_dialog(make_napari_viewer, mock_qt_method):
     """Test preferences action can be triggered."""
     make_napari_viewer()
     app = get_app_model()
 
-    # Check action command execution
-    with (
-        mock.patch(
-            'napari._qt.qt_main_window.PreferencesDialog.show'
-        ) as mock_pref_dialog_show,
-    ):
-        app.commands.execute_command(
-            'napari.window.file.show_preferences_dialog'
-        )
+    mock_pref_dialog_show = mock_qt_method(
+        'napari._qt.qt_main_window.PreferencesDialog.show'
+    )
+    app.commands.execute_command('napari.window.file.show_preferences_dialog')
     mock_pref_dialog_show.assert_called_once()
 
 
@@ -496,9 +492,14 @@ def test_restart(make_napari_viewer, action_id, patch_method):
         ),
     ],
 )
-def test_close(make_napari_viewer, action_id, patch_method, method_params):
+def test_close(
+    make_napari_viewer, action_id, patch_method, method_params, monkeypatch
+):
     """Test close/exit actions can be triggered."""
-    make_napari_viewer()
+    v = make_napari_viewer()
+    monkeypatch.setattr(
+        QApplication, 'activeWindow', lambda: v.window._qt_window
+    )
     app = get_app_model()
     quit_app, confirm_need = method_params
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import itertools
 import typing
 import warnings
@@ -12,6 +13,7 @@ import numpy as np
 from napari.components.dims import RangeTuple
 from napari.layers import Layer
 from napari.layers.utils.layer_utils import Extent
+from napari.utils.events import Event
 from napari.utils.events.containers import SelectableEventedList
 from napari.utils.naming import inc_name_count
 from napari.utils.translations import trans
@@ -56,6 +58,9 @@ class LayerList(SelectableEventedList[Layer]):
         ``value``
     reordered : (value: self)
         emitted when the list is reordered (eg. moved/reversed).
+    renamed : (index: int)
+        emitted when a layer in the list is renamed, providing the index
+        of the layer.
     selection.events.changed : (added: Set[_T], removed: Set[_T])
         emitted when the set changes, includes item(s) that have been added
         and/or removed from the set.
@@ -115,7 +120,26 @@ class LayerList(SelectableEventedList[Layer]):
             basetype=Layer,
             lookup={str: get_name},
         )
+        self.events.add(begin_batch=Event, end_batch=Event, renamed=Event)
+        self.events.inserted.connect(self._on_layer_inserted)
+        self.events.removed.connect(self._on_layer_removed)
         self._create_contexts()
+
+    def _on_layer_inserted(self, event: Event):
+        """Connect to layer events when a new layer is inserted."""
+        layer = event.value
+        layer.events.name.connect(self._on_layer_renamed)
+
+    def _on_layer_removed(self, event: Event):
+        """Disconnect from layer events when a layer is removed."""
+        layer = event.value
+        layer.events.name.disconnect(self._on_layer_renamed)
+
+    def _on_layer_renamed(self, event: Event):
+        """Re-emit layer name changes from a layer as a LayerList event."""
+        layer = event.source
+        index = self.index(layer)
+        self.events.renamed(index=index)
 
     def _create_contexts(self):
         """Create contexts to manage enabled/visible action/menu states.
@@ -264,7 +288,8 @@ class LayerList(SelectableEventedList[Layer]):
         # Remember locked layers that should survive deletion.
         remaining_locked = locked & set(self)
         self.selection.intersection_update(deletable)
-        super().remove_selected()
+        with self.batched_update():
+            super().remove_selected()
         # super().remove_selected() may auto-select a neighbor; replace
         # selection with only the surviving locked layers for determinism.
         if remaining_locked:
@@ -503,37 +528,12 @@ class LayerList(SelectableEventedList[Layer]):
     ) -> list[str]:
         """Save all or only selected layers to a path using writer plugins.
 
-        If ``plugin`` is not provided and only one layer is targeted, then we
-        directly call the corresponding``napari_write_<layer_type>`` hook (see
-        :ref:`single layer writer hookspecs <write-single-layer-hookspecs>`)
-        which will loop through implementations and stop when the first one
-        returns a non-``None`` result. The order in which implementations are
-        called can be changed with the Plugin sorter in the GUI or with the
-        corresponding hook's
-        :meth:`~napari.plugins._hook_callers._HookCaller.bring_to_front`
-        method.
-
-        If ``plugin`` is not provided and multiple layers are targeted,
-        then we call
-        :meth:`~napari.plugins.hook_specifications.napari_get_writer` which
-        loops through plugins to find the first one that knows how to handle
-        the combination of layers and is able to write the file. If no plugins
-        offer :meth:`~napari.plugins.hook_specifications.napari_get_writer` for
-        that combination of layers then the default
-        :meth:`~napari.plugins.hook_specifications.napari_get_writer` will
-        create a folder and call ``napari_write_<layer_type>`` for each layer
-        using the ``Layer.name`` variable to modify the path such that the
-        layers are written to unique files in the folder.
-
-        If ``plugin`` is provided and a single layer is targeted, then we
-        call the ``napari_write_<layer_type>`` for that plugin, and if it fails
-        we error.
-
-        If ``plugin`` is provided and multiple layers are targeted, then
-        we call we call
-        :meth:`~napari.plugins.hook_specifications.napari_get_writer` for
-        that plugin, and if it doesn`t return a ``WriterFunction`` we error,
-        otherwise we call it and if that fails if it we error.
+        If ``plugin`` is provided, we attempt to write with that plugin.
+        If ``plugin`` is not provided, we call the first compatible writer for
+        the given layer(s) and path.
+        If any errors occur during writing, they are raised. If the given ``plugin``
+        does not provide a compatible writer or does not write any files, or
+        if there are no compatible writers available, a warning will be issued.
 
         Parameters
         ----------
@@ -544,9 +544,8 @@ class LayerList(SelectableEventedList[Layer]):
         selected : bool
             Optional flag to only save selected layers. False by default.
         plugin : str, optional
-            Name of the plugin to use for saving. If None then all plugins
-            corresponding to appropriate hook specification will be looped
-            through to find the first one that can save the data.
+            Name of the plugin to use for saving. If None then the first compatible
+            writer (if one exists), will be used.
         _writer : WriterContribution, optional
             private: npe2 specific writer override.
 
@@ -573,3 +572,16 @@ class LayerList(SelectableEventedList[Layer]):
             return []
 
         return save_layers(path, layers, plugin=plugin, _writer=_writer)
+
+    def clear(self):
+        """Remove all layers from viewer."""
+        with self.batched_update():
+            super().clear()
+
+    @contextlib.contextmanager
+    def batched_update(self):
+        try:
+            self.events.begin_batch()
+            yield
+        finally:
+            self.events.end_batch()
