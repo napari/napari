@@ -338,3 +338,11 @@ def test_paint_lock_icon_unlocked(qtbot):
     view, _image = make_qt_layer_list_with_layer(qtbot)
     view.viewport().update()
     qtbot.wait(100)
+
+
+def test_paint_lock_permanent(qtbot):
+    """Painting permanently locked layer should not raise errors."""
+    view, image = make_qt_layer_list_with_layer(qtbot)
+    image.lock_permanent = True
+    view.viewport().update()
+    qtbot.wait(100)

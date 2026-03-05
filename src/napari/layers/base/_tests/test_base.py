@@ -248,3 +248,35 @@ def test_layer_locked_in_base_state():
 def test_layer_locked_constructor():
     layer = SampleLayer(np.empty((10, 10)), locked=True)
     assert layer.locked
+
+
+def test_layer_lock_permanent_default():
+    layer = SampleLayer(np.empty((10, 10)))
+    assert not layer.lock_permanent
+
+
+def test_layer_lock_permanent_prevents_unlock():
+    layer = SampleLayer(np.empty((10, 10)), lock_permanent=True)
+    assert layer.locked
+    assert layer.lock_permanent
+    layer.locked = False  # should be ignored
+    assert layer.locked  # still locked
+
+
+def test_layer_lock_permanent_setter():
+    layer = SampleLayer(np.empty((10, 10)))
+    layer.lock_permanent = True
+    assert layer.locked
+    assert layer.lock_permanent
+    layer.locked = False  # ignored
+    assert layer.locked
+    layer.lock_permanent = False
+    layer.locked = False  # now allowed
+    assert not layer.locked
+
+
+def test_layer_lock_permanent_in_base_state():
+    layer = SampleLayer(np.empty((10, 10)), lock_permanent=True)
+    state = layer._get_base_state()
+    assert state['lock_permanent'] is True
+    assert state['locked'] is True
