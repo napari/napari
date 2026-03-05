@@ -55,7 +55,6 @@ class Welcome(Node):
             anchor_x='center',
             anchor_y='bottom',
             method='gpu',
-            parent=self,
         )
         self.shortcut_keybindings = Text(
             text='',
@@ -64,7 +63,6 @@ class Welcome(Node):
             anchor_x='right',
             anchor_y='bottom',
             method='gpu',
-            parent=self,
         )
         self.shortcut_descriptions = Text(
             text='',
@@ -73,7 +71,6 @@ class Welcome(Node):
             anchor_x='left',
             anchor_y='bottom',
             method='gpu',
-            parent=self,
         )
         self.tip = Text(
             text='',
@@ -82,10 +79,18 @@ class Welcome(Node):
             anchor_x='center',
             anchor_y='bottom',
             method='gpu',
-            parent=self,
         )
 
         self.transform = STTransform()
+
+    def delayed_init(self) -> None:
+        for text in (
+            self.header,
+            self.shortcut_keybindings,
+            self.shortcut_descriptions,
+            self.tip,
+        ):
+            text.parent = self
 
     def set_color(self, color: ColorValue) -> None:
         self.logo.color = color

@@ -13,6 +13,7 @@ from weakref import WeakSet
 
 import numpy as np
 from OpenGL.error import GLError
+from qtpy.QtCore import QTimer
 from superqt.utils import qthrottled
 from vispy.scene import SceneCanvas as SceneCanvas_, ViewBox, Widget
 
@@ -903,6 +904,10 @@ class VispyCanvas:
                 overlay=overlay, viewer=self.viewer, parent=parent
             )
             self._overlay_to_visual[overlay].append(vispy_overlay)
+            if delayed_init := getattr(
+                vispy_overlay.node, 'delayed_init', None
+            ):
+                QTimer.singleShot(100, delayed_init)
 
             if isinstance(overlay, CanvasOverlay):
                 vispy_overlay.canvas_position_callback = (
