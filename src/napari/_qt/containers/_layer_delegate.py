@@ -47,7 +47,11 @@ from napari._app_model.constants import MenuId
 from napari._app_model.context import get_context
 from napari._qt._qapp_model import build_qmodel_menu
 from napari._qt.containers._base_item_model import ItemRole
-from napari._qt.containers.qt_layer_model import LoadedRole, ThumbnailRole
+from napari._qt.containers.qt_layer_model import (
+    LoadedRole,
+    LockRole,
+    ThumbnailRole,
+)
 from napari._qt.qt_resources import QColoredSVGIcon
 from napari.resources import LOADING_GIF_PATH
 
@@ -102,6 +106,8 @@ class LayerDelegate(QStyledItemDelegate):
         self._paint_loading(painter, option, index)
         # paint the thumbnail
         self._paint_thumbnail(painter, option, index)
+        # paint the lock icon
+        self._paint_lock_icon(painter, option, index)
 
     def get_layer_icon(
         self, option: QStyleOptionViewItem, index: QtCore.QModelIndex
@@ -167,6 +173,29 @@ class LayerDelegate(QStyledItemDelegate):
             thumb_rect.setHeight(h)
             image = index.data(ThumbnailRole)
             painter.drawPixmap(thumb_rect, QPixmap.fromImage(image))
+
+    def _paint_lock_icon(self, painter, option, index):
+        """Paint lock/lock_open icon based on layer's locked state."""
+        locked = index.data(LockRole)
+        icon_name = 'lock' if locked else 'lock_open'
+        try:
+            icon = QColoredSVGIcon.from_resources(icon_name)
+        except (ValueError, FileNotFoundError):
+            return
+        bg = option.palette.color(option.palette.ColorRole.Window).red()
+        colored_icon = icon.colored(theme='dark' if bg < 128 else 'light')
+        lock_rect = self._lock_icon_rect(option, index)
+        painter.drawPixmap(lock_rect, colored_icon.pixmap(lock_rect.size()))
+
+    def _lock_icon_rect(self, option, index):
+        """Return the QRect for the lock icon."""
+        from qtpy.QtCore import QRect
+
+        rect = option.rect
+        icon_size = 16
+        x = rect.right() - icon_size - 4
+        y = rect.top() + (rect.height() - icon_size) // 2
+        return QRect(x, y, icon_size, icon_size)
 
     def createEditor(
         self,
@@ -261,6 +290,17 @@ class LayerDelegate(QStyledItemDelegate):
             )
             if check_rect.contains(event.pos()):
                 self._alt_click_layer = lambda: None
+
+        # lock icon click toggle
+        if (
+            event.type() == QMouseEvent.MouseButtonRelease
+            and event.button() == Qt.MouseButton.LeftButton
+        ):
+            lock_rect = self._lock_icon_rect(option, index)
+            if lock_rect.contains(event.pos()):
+                current_locked = index.data(LockRole)
+                model.setData(index, not current_locked, LockRole)
+                return True
 
         # refer all other events to the QStyledItemDelegate
         return super().editorEvent(event, model, option, index)

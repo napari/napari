@@ -250,6 +250,16 @@ def _project(ll: LayerList, axis: int = 0, mode: str = 'max') -> None:
     ll.append(new)
 
 
+def _lock_selected_layers(ll: LayerList) -> None:
+    for lay in ll.selection:
+        lay.locked = True
+
+
+def _unlock_selected_layers(ll: LayerList) -> None:
+    for lay in ll.selection:
+        lay.locked = False
+
+
 def _toggle_bounding_box(ll: LayerList) -> None:
     for layer in ll.selection:
         layer.bounding_box.visible = not layer.bounding_box.visible
