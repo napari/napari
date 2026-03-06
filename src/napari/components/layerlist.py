@@ -13,7 +13,7 @@ import pint
 
 from napari.components.dims import RangeTuple
 from napari.layers import Layer
-from napari.layers.utils.layer_utils import Extent, LLExtent
+from napari.layers.utils.layer_utils import Extent, LayerListExtent
 from napari.utils.events import Event
 from napari.utils.events.containers import SelectableEventedList
 from napari.utils.naming import inc_name_count
@@ -458,7 +458,7 @@ class LayerList(SelectableEventedList[Layer]):
             ]
         return self._step_size_from_scales(scales)
 
-    def get_extent(self, layers: Iterable[Layer]) -> LLExtent:
+    def get_extent(self, layers: Iterable[Layer]) -> LayerListExtent:
         """
         Return extent for a given layer list.
 
@@ -473,12 +473,12 @@ class LayerList(SelectableEventedList[Layer]):
 
         Returns
         -------
-        extent : LLExtent
+        extent : LayerListExtent
             extent for selected layers
         """
         extent_list = [layer.extent for layer in layers]
         units = self._units or self._get_units(extent_list)
-        return LLExtent(
+        return LayerListExtent(
             data=None,
             world=self._get_extent_world(extent_list, units=units),
             step=self._get_step_size(extent_list, units=units),
@@ -490,7 +490,7 @@ class LayerList(SelectableEventedList[Layer]):
         layers_extent: list[Extent],
     ) -> tuple[pint.Unit, ...] | None:
         """Get units for a given list of layer extents.
-        
+
         Given extents could be of all layers in the `LayerList` or only a subset.
 
         Parameters
@@ -545,7 +545,7 @@ class LayerList(SelectableEventedList[Layer]):
         return tuple(dimensionality_to_unit[u.dimensionality] for u in units)
 
     @cached_property
-    def extent(self) -> LLExtent:
+    def extent(self) -> LayerListExtent:
         """
         Extent of layers in data and world coordinates.
 

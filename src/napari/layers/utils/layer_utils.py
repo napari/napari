@@ -56,7 +56,7 @@ class Extent(NamedTuple):
     units: tuple[pint.Unit, ...]
 
 
-class LLExtent(NamedTuple):
+class LayerListExtent(NamedTuple):
     """Extent of coordinates in a local data space and world space.
 
     Each extent is a (2, D) array that stores the minimum and maximum coordinate
