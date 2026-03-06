@@ -6,7 +6,7 @@ import typing
 import warnings
 from collections.abc import Iterable
 from functools import cached_property
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 import numpy as np
 import pint
@@ -282,7 +282,9 @@ class LayerList(SelectableEventedList[Layer]):
             layer.visible = not layer.visible
 
     @cached_property
-    def _extent_world(self) -> np.ndarray:
+    def _extent_world(
+        self,
+    ) -> np.ndarray[tuple[Literal[2], int], np.dtype[np.float64]]:
         """Extent of layers in world coordinates.
 
         Default to 2D with (-0.5, 511.5) min/ max values if no data is present.
@@ -297,7 +299,9 @@ class LayerList(SelectableEventedList[Layer]):
         )
 
     @cached_property
-    def _extent_world_augmented(self) -> np.ndarray:
+    def _extent_world_augmented(
+        self,
+    ) -> np.ndarray[tuple[Literal[2], int], np.dtype[np.float64]]:
         """Extent of layers in world coordinates.
 
         Default to 2D with (-0.5, 511.5) min/ max values if no data is present.
@@ -352,7 +356,7 @@ class LayerList(SelectableEventedList[Layer]):
         layer_extent_list,
         augmented: bool = False,
         units: tuple[pint.Unit, ...] | None = None,
-    ) -> np.ndarray[tuple[int], np.dtype[np.float32]]:
+    ) -> np.ndarray[tuple[Literal[2], int], np.dtype[np.float32]]:
         """Extent of layers in world coordinates.
 
         Default to 2D image-like with (0, 511) min/ max values if no data is present.

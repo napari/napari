@@ -629,3 +629,22 @@ def test_update_units_in_layer():
     layer_n.units = ('nm', 'nm')
     npt.assert_almost_equal(layer_list.extent.step, (500, 500))
     assert layer_list.extent.units == layer_n.units
+
+
+def test_incompatible_units():
+    layer_u = Image(np.zeros((5, 5)), units=('um', 'um'))
+    layer_px = Image(np.zeros((5, 5)), units=('pixels', 'pixels'))
+    layer_list = LayerList([layer_u, layer_px])
+    assert layer_list.extent.units is None
+    npt.assert_array_equal(layer_list._step_size, (1, 1))
+
+
+def test_extent_world():
+    """Test world extent after adding layers."""
+    image_1 = Image(np.zeros((7, 5)))
+    image_2 = Image(np.zeros((5, 7)))
+    ll = LayerList([image_1, image_2])
+    npt.assert_array_equal(ll._extent_world, ((0, 0), (6, 6)))
+    npt.assert_array_equal(
+        ll._extent_world_augmented, ((-0.5, -0.5), (6.5, 6.5))
+    )
