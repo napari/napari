@@ -639,6 +639,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
                 shear=base_layer.shear,
                 units=base_layer.units,
                 affine=base_layer.affine,
+                name=base_layer.name + ' - Labels',
             )
         elif self.layers.selection:
             # non scalar field layer or more than one layer selected
