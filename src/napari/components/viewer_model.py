@@ -628,7 +628,9 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         ):
             layer = Labels(
                 data=np.zeros(
-                    base_layer.data.shape,
+                    base_layer.data.shape[
+                        : base_layer.ndim
+                    ],  # use :base_layer.ndim to cut channels from rgb images
                     dtype=get_settings().application.new_labels_dtype,
                 ),
                 scale=base_layer.scale,
