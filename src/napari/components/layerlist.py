@@ -300,13 +300,10 @@ class LayerList(SelectableEventedList[Layer]):
         if not deletable:
             return
         self.unlink_layers(deletable)
-        # Remember locked layers that should survive deletion.
         remaining_locked = locked & set(self)
         self.selection.intersection_update(deletable)
         with self.batched_update():
             super().remove_selected()
-        # super().remove_selected() may auto-select a neighbor; replace
-        # selection with only the surviving locked layers for determinism.
         if remaining_locked:
             self.selection.clear()
             self.selection.update(remaining_locked)
