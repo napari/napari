@@ -154,6 +154,11 @@ authors:
 - given-names: Peter
   family-names: Boone
   alias: boonepeter
+- given-names: Kresimir
+  family-names: Bestak
+  affiliation: Heidelberg University, Germany
+  orcid: https://orcid.org/0009-0009-8245-9846
+  alias: kbestak
 - given-names: Jordão
   family-names: Bragantini
   affiliation: Chan Zuckerberg Biohub
@@ -174,6 +179,11 @@ authors:
     CNRS, Palaiseau, France
   orcid: https://orcid.org/0000-0002-9441-9173
   alias: ClementCaporal
+- given-names: Margot
+  family-names: Chazotte
+  affiliation: Heidelberg University, Germany
+  orcid: https://orcid.org/0009-0007-4901-5173
+  alias: MargotCh
 - given-names: Ian
   family-names: Coccimiglio
   affiliation: Unaffiliated
@@ -243,6 +253,11 @@ authors:
   affiliation: Swiss Federal Institute of Technology (EPFL), Lausanne, Switzerland
   orcid: https://orcid.org/0000-0002-3656-2449
   alias: jeylau
+- given-names: Samuel
+  family-names: Le Meur-Diebolt
+  affiliation: University College London
+  orcid: https://orcid.org/0000-0002-9788-7263
+  alias: sdiebolt
 - given-names: Gregor
   family-names: Lichtner
   affiliation: Universitätsmedizin Greifswald

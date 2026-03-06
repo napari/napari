@@ -956,11 +956,13 @@ class EmitterGroup(EventEmitter):
         self,
         source: Any = None,
         auto_connect: bool = False,
+        _connect_children: bool = True,
         **emitters: type[Event] | EventEmitter | None,
     ) -> None:
         EventEmitter.__init__(self, source)
 
         self.auto_connect = auto_connect
+        self._connect_children = _connect_children
         self.auto_connect_format = 'on_%s'
         self._emitters: dict[str, EventEmitter] = {}
         # whether the sub-emitters have been connected to the group:
@@ -1114,7 +1116,8 @@ class EmitterGroup(EventEmitter):
         method, and if so, it calls it.
         """
         is_first_callback = len(self._callbacks) == 0
-        self._connect_emitters(True)
+        if self._connect_children:
+            self._connect_emitters(True)
         res = EventEmitter.connect(
             self, callback, ref, position, before, after
         )

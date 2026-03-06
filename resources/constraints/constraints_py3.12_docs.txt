@@ -2,7 +2,7 @@
 #    uv pip compile --python-version 3.12 --output-file resources/constraints/constraints_py3.12_docs.txt pyproject.toml resources/constraints/version_denylist.txt resources/constraints/version_denylist_examples.txt --group docs --extra pyqt6 --extra pyside6 --extra testing --group testing_extra --extra all_optional --exclude resources/constraints/napari_exclude.txt
 accessible-pygments==0.0.5
     # via pydata-sphinx-theme
-aiobotocore==3.1.3
+aiobotocore==3.2.0
     # via s3fs
 aiohappyeyeballs==2.6.1
     # via aiohttp
@@ -73,17 +73,17 @@ bioio-ome-zarr==3.2.2
     # via ndevio
 bioio-tifffile==1.3.0
     # via ndevio
-botocore==1.42.49
+botocore==1.42.55
     # via aiobotocore
 build==1.4.0
     # via npe2
 cachey==0.2.1
     # via napari (pyproject.toml)
-certifi==2026.1.4
+certifi==2026.2.25
     # via
     #   napari (pyproject.toml)
     #   requests
-chardet==5.2.0
+chardet==6.0.0.post1
     # via trackastra
 charset-normalizer==3.4.4
     # via requests
@@ -111,7 +111,7 @@ coverage==7.13.4
     # via napari (pyproject.toml)
 cuda-bindings==12.9.4
     # via torch
-cuda-pathfinder==1.3.4
+cuda-pathfinder==1.4.0
     # via cuda-bindings
 cycler==0.12.1
     # via matplotlib
@@ -151,7 +151,7 @@ docutils-stubs==0.0.22
     # via napari-sphinx-theme
 donfig==0.8.1.post1
     # via zarr
-edt==3.1.0
+edt==3.1.1
     # via trackastra
 elementpath==5.1.1
     # via xmlschema
@@ -159,9 +159,10 @@ executing==2.2.1
     # via stack-data
 fastjsonschema==2.21.2
     # via nbformat
-filelock==3.24.0
+filelock==3.25.0
     # via
     #   gdown
+    #   python-discovery
     #   torch
     #   virtualenv
 flexcache==0.3
@@ -199,7 +200,7 @@ glasbey==0.3.0
     # via napari (pyproject.toml:docs)
 google-crc32c==1.8.0
     # via zarr
-greenlet==3.3.1
+greenlet==3.3.2
     # via sqlalchemy
 h11==0.16.0
     # via uvicorn
@@ -211,7 +212,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.151.6
+hypothesis==6.151.9
     # via napari (pyproject.toml)
 idna==3.11
     # via
@@ -309,7 +310,7 @@ lazy-loader==0.4
     # via
     #   napari (pyproject.toml)
     #   scikit-image
-linkify-it-py==2.0.3
+linkify-it-py==2.1.0
     # via napari (pyproject.toml:docs)
 llvmlite==0.46.0
     # via numba
@@ -323,7 +324,7 @@ lxml==6.0.2
     #   napari (pyproject.toml:docs)
     #   lxml-html-clean
     #   ome-types
-lxml-html-clean==0.4.3
+lxml-html-clean==0.4.4
     # via lxml
 lz4==4.4.5
     # via trackastra
@@ -416,9 +417,9 @@ nbformat==5.10.4
     #   jupyter-cache
     #   myst-nb
     #   nbclient
-ndev-settings==0.4.0
+ndev-settings==0.4.1
     # via ndevio
-ndevio==0.8.0
+ndevio==0.9.0
     # via napari (pyproject.toml:docs)
 nest-asyncio==1.6.0
     # via ipykernel
@@ -435,7 +436,7 @@ npe2==0.8.1
     # via
     #   napari (pyproject.toml)
     #   napari-plugin-manager
-numba==0.63.1
+numba==0.64.0
     # via
     #   napari (pyproject.toml)
     #   napari (pyproject.toml:docs)
@@ -446,7 +447,7 @@ numcodecs==0.16.5
     #   geff
     #   kerchunk
     #   zarr
-numpy==2.3.5
+numpy==2.4.2
     # via
     #   napari (pyproject.toml)
     #   bermuda
@@ -560,7 +561,7 @@ packaging==26.0
     #   vispy
     #   xarray
     #   zarr
-pandas==3.0.0
+pandas==3.0.1
     # via
     #   napari (pyproject.toml)
     #   nilearn
@@ -591,12 +592,13 @@ pint==0.25.2
     #   ome-types
 pip==26.0.1
     # via napari-plugin-manager
-platformdirs==4.9.1
+platformdirs==4.9.2
     # via
     #   jupyter-core
     #   npe2
     #   pint
     #   pooch
+    #   python-discovery
     #   trackastra
     #   virtualenv
 pluggy==1.6.0
@@ -659,7 +661,7 @@ pydantic-extra-types==2.11.0
     #   napari (pyproject.toml)
     #   npe2
     #   ome-types
-pydantic-settings==2.12.0
+pydantic-settings==2.13.1
     # via napari (pyproject.toml)
 pydata-sphinx-theme==0.16.1
     # via napari-sphinx-theme
@@ -738,7 +740,9 @@ python-dateutil==2.9.0.post0
     #   jupyter-client
     #   matplotlib
     #   pandas
-python-dotenv==1.2.1
+python-discovery==1.1.0
+    # via virtualenv
+python-dotenv==1.2.2
     # via pydantic-settings
 python3-xlib==0.15
     # via
@@ -792,7 +796,7 @@ requests==2.32.5
     #   pyconify
     #   sphinx
     #   trackastra
-rich==14.3.2
+rich==14.3.3
     # via
     #   napari (pyproject.toml)
     #   meshio
@@ -816,7 +820,7 @@ scikit-learn==1.8.0
     # via
     #   glasbey
     #   nilearn
-scipy==1.17.0
+scipy==1.17.1
     # via
     #   napari (pyproject.toml)
     #   nilearn
@@ -864,6 +868,7 @@ sphinx==7.4.7
     #   sphinx-tags
     #   sphinxcontrib-mermaid
     #   sphinxext-opengraph
+    #   sphinxext-rediraffe
 sphinx-autobuild==2025.8.25
     # via napari (pyproject.toml:docs)
 sphinx-autodoc-typehints==1.12.0
@@ -898,7 +903,9 @@ sphinxcontrib-serializinghtml==2.0.0
     # via sphinx
 sphinxext-opengraph==0.13.0
     # via napari (pyproject.toml:docs)
-sqlalchemy==2.0.46
+sphinxext-rediraffe==0.3.0
+    # via napari (pyproject.toml:docs)
+sqlalchemy==2.0.47
     # via jupyter-cache
 stack-data==0.6.3
     # via ipython
@@ -924,7 +931,7 @@ tensorstore==0.1.81
     #   napari (pyproject.toml)
 threadpoolctl==3.6.0
     # via scikit-learn
-tifffile==2026.1.28
+tifffile==2026.2.24
     # via
     #   napari (pyproject.toml)
     #   napari (pyproject.toml:docs)
@@ -974,7 +981,7 @@ triangle==20250106
     #   napari (pyproject.toml:docs)
 triton==3.6.0
     # via torch
-typer==0.23.1
+typer==0.24.1
     # via
     #   geff
     #   npe2
@@ -1017,7 +1024,7 @@ typing-inspection==0.4.2
     # via
     #   pydantic
     #   pydantic-settings
-uc-micro-py==1.0.3
+uc-micro-py==2.0.0
     # via linkify-it-py
 ujson==5.11.0
     # via kerchunk
@@ -1026,9 +1033,9 @@ urllib3==2.6.3
     #   botocore
     #   distributed
     #   requests
-uvicorn==0.40.0
+uvicorn==0.41.0
     # via sphinx-autobuild
-virtualenv==20.36.1
+virtualenv==21.1.0
     # via napari (pyproject.toml)
 vispy==0.16.1
     # via
@@ -1057,9 +1064,9 @@ xarray==2026.2.0
     #   ndevio
 xmlschema==4.3.1
     # via bioio-ome-tiff
-xsdata==26.1
+xsdata==26.2
     # via ome-types
-yarl==1.22.0
+yarl==1.23.0
     # via aiohttp
 zarr==3.1.5
     # via

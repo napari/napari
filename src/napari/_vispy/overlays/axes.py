@@ -12,7 +12,7 @@ class VispyAxesOverlay(ViewerOverlayMixin, VispySceneOverlay):
     overlay: AxesOverlay
 
     def __init__(self, *, viewer, overlay, parent=None) -> None:
-        self._scale = 1
+        self._scale = 1.0
 
         # Target axes length in canvas pixels
         self._target_length = 80
