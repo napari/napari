@@ -260,10 +260,9 @@ class LayerList(SelectableEventedList[Layer]):
         """Remove selected layers from LayerList, but first unlink them."""
         if not self.selection:
             return
-        li_ = list(self.selection)
+        self.unlink_layers(self.selection)
         with self.batched_update():
             super().remove_selected()
-        self.unlink_layers(li_)
 
     def toggle_selected_visibility(self):
         """Toggle visibility of selected layers"""
