@@ -106,7 +106,7 @@ class QtLayerButtons(QFrame):
                 'will inherit the shape and all transforms of the selected layer.\n'
                 'If any other layer type or multiple layers are selected, the resulting\n'
                 'Labels layer will span their extent. (Warning: could be huge!)\n'
-                'If no layers are selected, a new (512, 512) labels layer is created.\n'
+                'If layers are present in the Viewer but none are selected, the Labels button is disabled.\n'
             ),
             self.viewer._new_labels,
         )
