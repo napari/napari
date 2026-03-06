@@ -140,6 +140,14 @@ class _LayerSlicingState(ABC):
         with self.dask_optimized_slicing():
             self._set_view_slice()
 
+    def _slice_indices(
+        self, slice_input: _SliceInput, dims: Dims
+    ) -> _ThickNDSlice[float | int]:
+        """Get the indices of the current slice in the full data array."""
+        world_to_data = self.layer._data_to_world.inverse
+        world_to_data = apply_units_to_transform(world_to_data, dims.units)
+        return slice_input.data_slice(world_to_data)
+
     @property
     def data_slice(self) -> _ThickNDSlice:
         """Slice in data coordinates."""

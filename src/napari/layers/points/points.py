@@ -41,7 +41,6 @@ from napari.layers.utils._color_manager_constants import ColorMode
 from napari.layers.utils._slice_input import (
     _SliceInput,
     _ThickNDSlice,
-    apply_units_to_transform,
 )
 from napari.layers.utils.color_manager import ColorManager
 from napari.layers.utils.color_transformations import ColorType
@@ -2470,9 +2469,7 @@ class _PointsSlicingState(_LayerSlicingState):
         slice_input = self.make_slice_input(dims)
         # See Image._make_slice_request to understand why we evaluate this here
         # instead of using `self._data_slice`.
-        world_to_data = self.layer._data_to_world.inverse
-        world_to_data = apply_units_to_transform(world_to_data, dims.units)
-        data_slice = slice_input.data_slice(world_to_data)
+        data_slice = self._slice_indices(slice_input, dims)
         return self.make_slice_request_internal(slice_input, data_slice)
 
     def make_slice_request_internal(

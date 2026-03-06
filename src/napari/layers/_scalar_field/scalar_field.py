@@ -25,7 +25,6 @@ from napari.layers.image._image_utils import guess_multiscale
 from napari.layers.utils._slice_input import (
     _SliceInput,
     _ThickNDSlice,
-    apply_units_to_transform,
 )
 from napari.layers.utils.plane import SlicingPlane
 from napari.types import LayerDataType
@@ -714,12 +713,10 @@ class ScalarFieldSlicingState(_LayerSlicingState):
         # absorbs these performance issues here, but we can likely improve
         # things either by caching the world-to-data transform on the layer
         # or by lazily evaluating it in the slice task itself.
-        world_to_data = self.layer._data_to_world.inverse
-        world_to_data = apply_units_to_transform(world_to_data, dims.units)
-        indices = slice_input.data_slice(world_to_data)
+        data_slice = self._slice_indices(slice_input, dims)
         return self._make_slice_request_internal(
             slice_input=slice_input,
-            data_slice=indices,
+            data_slice=data_slice,
             dask_indexer=self.dask_optimized_slicing,
         )
 
