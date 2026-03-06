@@ -5,7 +5,7 @@ from unittest import mock
 import pytest
 
 import napari
-from napari import __main__
+from napari import _main as __main__
 
 
 @pytest.fixture
@@ -44,7 +44,7 @@ def test_cli_parses_unknowns(mock_run, monkeypatch, make_napari_viewer):
         assert kwargs['contrast_limits'] == (0, 1)
 
     # testing all the variants of literal_evals
-    with mock.patch('napari.__main__.Viewer', return_value=mocked_viewer):
+    with mock.patch('napari._main.Viewer', return_value=mocked_viewer):
         monkeypatch.setattr(
             napari.components.viewer_model.ViewerModel, 'open', assert_kwargs
         )
@@ -105,7 +105,7 @@ def test_cli_passes_kwargs(
     v = make_napari_viewer()
 
     with (
-        mock.patch('napari.__main__.Viewer', return_value=v),
+        mock.patch('napari._main.Viewer', return_value=v),
         monkeypatch.context() as m,
     ):
         m.setattr(sys, 'argv', ['n', 'file', '--name', 'some name'])
@@ -129,7 +129,7 @@ def test_cli_passes_kwargs_stack(
     v = make_napari_viewer()
 
     with (
-        mock.patch('napari.__main__.Viewer', return_value=v),
+        mock.patch('napari._main.Viewer', return_value=v),
         monkeypatch.context() as m,
     ):
         m.setattr(
@@ -183,7 +183,7 @@ def test_cli_retains_viewer_ref(mock_run, monkeypatch, make_napari_viewer):
         m.setattr(sys, 'argv', ['napari', 'path/to/file.tif'])
         # return our local v
         with mock.patch(
-            'napari.__main__.Viewer', return_value=mocked_viewer
+            'napari._main.Viewer', return_value=mocked_viewer
         ) as mock_viewer:
             ref_count = sys.getrefcount(
                 mocked_viewer
