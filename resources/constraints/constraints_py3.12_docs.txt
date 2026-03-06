@@ -2,7 +2,7 @@
 #    uv pip compile --python-version 3.12 --output-file resources/constraints/constraints_py3.12_docs.txt pyproject.toml resources/constraints/version_denylist.txt resources/constraints/version_denylist_examples.txt --group docs --extra pyqt6 --extra pyside6 --extra testing --group testing_extra --extra all_optional --exclude resources/constraints/napari_exclude.txt
 accessible-pygments==0.0.5
     # via pydata-sphinx-theme
-aiobotocore==3.1.3
+aiobotocore==3.2.0
     # via s3fs
 aiohappyeyeballs==2.6.1
     # via aiohttp
@@ -73,13 +73,13 @@ bioio-ome-zarr==3.2.2
     # via ndevio
 bioio-tifffile==1.3.0
     # via ndevio
-botocore==1.42.49
+botocore==1.42.55
     # via aiobotocore
 build==1.4.0
     # via npe2
 cachey==0.2.1
     # via napari (pyproject.toml)
-certifi==2026.1.4
+certifi==2026.2.25
     # via
     #   napari (pyproject.toml)
     #   requests
@@ -111,7 +111,7 @@ coverage==7.13.4
     # via napari (pyproject.toml)
 cuda-bindings==12.9.4
     # via torch
-cuda-pathfinder==1.3.4
+cuda-pathfinder==1.4.0
     # via cuda-bindings
 cycler==0.12.1
     # via matplotlib
@@ -151,7 +151,7 @@ docutils-stubs==0.0.22
     # via napari-sphinx-theme
 donfig==0.8.1.post1
     # via zarr
-edt==3.1.0
+edt==3.1.1
     # via trackastra
 elementpath==5.1.1
     # via xmlschema
@@ -159,9 +159,10 @@ executing==2.2.1
     # via stack-data
 fastjsonschema==2.21.2
     # via nbformat
-filelock==3.24.3
+filelock==3.25.0
     # via
     #   gdown
+    #   python-discovery
     #   torch
     #   virtualenv
 flexcache==0.3
@@ -309,7 +310,7 @@ lazy-loader==0.4
     # via
     #   napari (pyproject.toml)
     #   scikit-image
-linkify-it-py==2.0.3
+linkify-it-py==2.1.0
     # via napari (pyproject.toml:docs)
 llvmlite==0.46.0
     # via numba
@@ -323,7 +324,7 @@ lxml==6.0.2
     #   napari (pyproject.toml:docs)
     #   lxml-html-clean
     #   ome-types
-lxml-html-clean==0.4.3
+lxml-html-clean==0.4.4
     # via lxml
 lz4==4.4.5
     # via trackastra
@@ -597,6 +598,7 @@ platformdirs==4.9.2
     #   npe2
     #   pint
     #   pooch
+    #   python-discovery
     #   trackastra
     #   virtualenv
 pluggy==1.6.0
@@ -738,7 +740,9 @@ python-dateutil==2.9.0.post0
     #   jupyter-client
     #   matplotlib
     #   pandas
-python-dotenv==1.2.1
+python-discovery==1.1.0
+    # via virtualenv
+python-dotenv==1.2.2
     # via pydantic-settings
 python3-xlib==0.15
     # via
@@ -864,6 +868,7 @@ sphinx==7.4.7
     #   sphinx-tags
     #   sphinxcontrib-mermaid
     #   sphinxext-opengraph
+    #   sphinxext-rediraffe
 sphinx-autobuild==2025.8.25
     # via napari (pyproject.toml:docs)
 sphinx-autodoc-typehints==1.12.0
@@ -900,7 +905,7 @@ sphinxext-opengraph==0.13.0
     # via napari (pyproject.toml:docs)
 sphinxext-rediraffe==0.3.0
     # via napari (pyproject.toml:docs)
-sqlalchemy==2.0.46
+sqlalchemy==2.0.47
     # via jupyter-cache
 stack-data==0.6.3
     # via ipython
@@ -926,7 +931,7 @@ tensorstore==0.1.81
     #   napari (pyproject.toml)
 threadpoolctl==3.6.0
     # via scikit-learn
-tifffile==2026.2.20
+tifffile==2026.2.24
     # via
     #   napari (pyproject.toml)
     #   napari (pyproject.toml:docs)
@@ -1019,7 +1024,7 @@ typing-inspection==0.4.2
     # via
     #   pydantic
     #   pydantic-settings
-uc-micro-py==1.0.3
+uc-micro-py==2.0.0
     # via linkify-it-py
 ujson==5.11.0
     # via kerchunk
@@ -1030,7 +1035,7 @@ urllib3==2.6.3
     #   requests
 uvicorn==0.41.0
     # via sphinx-autobuild
-virtualenv==20.38.0
+virtualenv==21.1.0
     # via napari (pyproject.toml)
 vispy==0.16.1
     # via
@@ -1061,7 +1066,7 @@ xmlschema==4.3.1
     # via bioio-ome-tiff
 xsdata==26.2
     # via ome-types
-yarl==1.22.0
+yarl==1.23.0
     # via aiohttp
 zarr==3.1.5
     # via

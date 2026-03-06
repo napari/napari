@@ -277,6 +277,7 @@ def test_toggle_ndisplay(mock_app_model, qt_viewer_buttons, qtbot):
     with app.injection_store.register(
         providers=[
             (lambda: viewer, Viewer, 100),
+            (lambda: viewer, ViewerModel, 100),
         ]
     ):
         qtbot.mouseClick(viewer_buttons.ndisplayButton, Qt.LeftButton)

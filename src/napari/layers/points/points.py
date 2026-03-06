@@ -424,6 +424,7 @@ class Points(Layer):
         self._value = None
         self._value_stored = None
         self._highlight_index = []
+        # indices of highlighted points in current view
         self._highlight_box = None
         self._mode = Mode.PAN_ZOOM
         self._status = self.mode
@@ -1474,15 +1475,25 @@ class Points(Layer):
         return mode
 
     @property
-    def _indices_view(self):
+    def _indices_view(self) -> np.ndarray[tuple[int], np.dtype[np.int64]]:
+        """Indices of points in view."""
         return self._slicing_state._indices_view
 
     @property
-    def _selected_view(self):
+    def _selected_view(self) -> list[int]:
+        """Indices of selected points within the currently viewed slice"""
         return self._slicing_state._selected_view
 
     @property
-    def _view_size_scale(self):
+    def _view_size_scale(
+        self,
+    ) -> float | np.ndarray[tuple[int], np.dtype[np.float64]]:
+        """Scale factor for view size calculations
+
+        It is 1 if out_of_slice_display is False.
+        For out_of_slice_display=True, it is the scale factor for the
+        points to reduce size of visible points out of rendering slice
+        """
         return self._slicing_state._view_size_scale
 
     @property
@@ -2438,7 +2449,9 @@ class _PointsSlicingState(_LayerSlicingState):
         # Indices of selected points within the currently viewed slice
         self._selected_view = []
         # initialize view data
-        self._view_size_scale = []
+        self._view_size_scale: (
+            float | np.ndarray[tuple[int], np.dtype[np.float64]]
+        ) = 1.0
 
     def _set_view_slice(self) -> None:
         """Sets the view given the indices to slice with."""
@@ -2511,6 +2524,7 @@ class _PointsSlicingState(_LayerSlicingState):
 
     @property
     def _indices_view(self):
+        """Indices of the points in the currently viewed slice."""
         return self.__indices_view
 
     @_indices_view.setter
