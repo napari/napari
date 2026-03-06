@@ -1,11 +1,14 @@
 from typing import Any
 
 from vispy.scene.visuals import Text as BaseText
+from vispy.visuals.text.text import FontManager
 
 from napari._vispy.utils.text import (
     get_text_width_height,
     register_napari_fonts,
 )
+
+FONT_MANAGER = FontManager(method='gpu')
 
 
 class Text(BaseText):
@@ -13,7 +16,7 @@ class Text(BaseText):
         self, *args: Any, face: str = 'AlataPlus', **kwargs: Any
     ) -> None:
         register_napari_fonts()
-        super().__init__(*args, face=face, **kwargs)
+        super().__init__(*args, face=face, font_manager=FONT_MANAGER, **kwargs)
 
     def get_width_height(self) -> tuple[float, float]:
         width, height = get_text_width_height(self)
