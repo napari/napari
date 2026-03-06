@@ -489,17 +489,19 @@ class LayerList(SelectableEventedList[Layer]):
     def _get_units(
         layers_extent: list[Extent],
     ) -> tuple[pint.Unit, ...] | None:
-        """Get units for a given layer list.
+        """Get units for a given list of layer extents.
+        
+        Given extents could be of all layers in the `LayerList` or only a subset.
 
         Parameters
         ----------
-        layers_extent : list of Layer
-            list of layers for which units should be calculated
+        layers_extent : list of layer Extent
+            list of layer extents for which units should be calculated
 
         Returns
         -------
         units : list of pint.Unit or None
-            consistent units for selected layers.
+            consistent units for given layer extents.
             If cannot be determined, returns None.
         """
         if not layers_extent:
