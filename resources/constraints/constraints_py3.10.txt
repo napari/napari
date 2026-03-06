@@ -33,7 +33,7 @@ build==1.4.0
     # via npe2
 cachey==0.2.1
     # via napari (pyproject.toml)
-certifi==2026.1.4
+certifi==2026.2.25
     # via
     #   napari (pyproject.toml)
     #   requests
@@ -53,7 +53,7 @@ coverage==7.13.4
     # via napari (pyproject.toml)
 cuda-bindings==12.9.4
     # via torch
-cuda-pathfinder==1.3.4
+cuda-pathfinder==1.4.0
     # via cuda-bindings
 cycler==0.12.1
     # via matplotlib
@@ -78,8 +78,9 @@ executing==2.2.1
     # via stack-data
 fasteners==0.20
     # via zarr
-filelock==3.24.3
+filelock==3.25.0
     # via
+    #   python-discovery
     #   torch
     #   virtualenv
 flexcache==0.3
@@ -167,7 +168,7 @@ lxml==6.0.2
     # via
     #   napari (pyproject.toml)
     #   lxml-html-clean
-lxml-html-clean==0.4.3
+lxml-html-clean==0.4.4
     # via lxml
 magicgui==0.10.1
     # via napari (pyproject.toml)
@@ -326,6 +327,7 @@ platformdirs==4.9.2
     #   npe2
     #   pint
     #   pooch
+    #   python-discovery
     #   virtualenv
 pluggy==1.6.0
     # via
@@ -445,7 +447,9 @@ python-dateutil==2.9.0.post0
     #   jupyter-client
     #   matplotlib
     #   pandas
-python-dotenv==1.2.1
+python-discovery==1.1.0
+    # via virtualenv
+python-dotenv==1.2.2
     # via pydantic-settings
 python3-xlib==0.15
     # via
@@ -591,7 +595,7 @@ tzdata==2025.3
     # via pandas
 urllib3==2.6.3
     # via requests
-virtualenv==20.38.0
+virtualenv==21.1.0
     # via napari (pyproject.toml)
 vispy==0.16.1
     # via
@@ -605,7 +609,7 @@ wrapt==2.1.1
     #   napari (pyproject.toml)
 xarray==2025.6.1
     # via napari (pyproject.toml)
-yarl==1.22.0
+yarl==1.23.0
     # via aiohttp
 zarr==2.18.3
     # via
