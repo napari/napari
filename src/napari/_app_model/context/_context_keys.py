@@ -20,12 +20,6 @@ class ContextNamespace(_ContextNamespace, Generic[A]):
             setattr(self, k, get(event.source))
 
     def refresh(self, source: A) -> None:
-        """Re-evaluate all getter functions with the given source value.
-
-        Unlike ``update(event)``, this accepts the source object directly
-        and does not require an Event wrapper. Use this when context needs
-        to be re-evaluated in response to a non-selection event (e.g.,
-        a layer property change that doesn't alter the selection).
-        """
+        """Re-evaluate all getter functions without requiring an Event."""
         for k, get in self._getters.items():
             setattr(self, k, get(source))
