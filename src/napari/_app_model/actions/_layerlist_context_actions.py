@@ -253,6 +253,32 @@ LAYERLIST_CONTEXT_ACTIONS: list[Action] = [
         toggled=ToggleRule(get_current=_layer_actions._are_colorbars_visible),
     ),
     Action(
+        id='napari.layer.border_colorbar',
+        title=trans._('Border Colorbar'),
+        callback=_layer_actions._toggle_border_colorbar,
+        menus=[MenuId.LAYERS_CONTEXT_VISUALIZATION, MenuId.LAYERS_MEASURE],
+        enablement=(
+            (LLSCK.num_selected_layers > 0)
+            & LLSCK.all_selected_layers_support_border_colorbar
+        ),
+        toggled=ToggleRule(
+            get_current=_layer_actions._are_border_colorbars_visible
+        ),
+    ),
+    Action(
+        id='napari.layer.face_colorbar',
+        title=trans._('Face Colorbar'),
+        callback=_layer_actions._toggle_face_colorbar,
+        menus=[MenuId.LAYERS_CONTEXT_VISUALIZATION, MenuId.LAYERS_MEASURE],
+        enablement=(
+            (LLSCK.num_selected_layers > 0)
+            & LLSCK.all_selected_layers_support_face_colorbar
+        ),
+        toggled=ToggleRule(
+            get_current=_layer_actions._are_face_colorbars_visible
+        ),
+    ),
+    Action(
         id='napari.layer.name_overlay',
         title=trans._('Name Overlay'),
         callback=_layer_actions._toggle_name_overlay,
