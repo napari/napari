@@ -4,7 +4,7 @@ This module provides the `imshow` function.
 """
 
 import inspect
-from typing import Any
+from typing import Any, overload
 
 from napari.components.dims import Dims
 from napari.layers import Image
@@ -75,6 +75,88 @@ def _make_viewer_then(
     return viewer, added
 
 
+@overload
+def imshow(
+    data,
+    *,
+    channel_axis: None = ...,
+    affine=...,
+    axis_labels=...,
+    attenuation=...,
+    blending=...,
+    cache=...,
+    colormap=...,
+    contrast_limits=...,
+    custom_interpolation_kernel_2d=...,
+    depiction=...,
+    experimental_clipping_planes=...,
+    gamma=...,
+    interpolation2d=...,
+    interpolation3d=...,
+    iso_threshold=...,
+    metadata=...,
+    multiscale=...,
+    name=...,
+    opacity=...,
+    plane=...,
+    projection_mode=...,
+    rendering=...,
+    rgb=...,
+    rotate=...,
+    scale=...,
+    shear=...,
+    translate=...,
+    units=...,
+    visible=...,
+    viewer=...,
+    title=...,
+    ndisplay=...,
+    order=...,
+    show=...,
+) -> tuple[Viewer, Image]: ...
+
+
+@overload
+def imshow(
+    data,
+    *,
+    channel_axis: int,
+    affine=...,
+    axis_labels=...,
+    attenuation=...,
+    blending=...,
+    cache=...,
+    colormap=...,
+    contrast_limits=...,
+    custom_interpolation_kernel_2d=...,
+    depiction=...,
+    experimental_clipping_planes=...,
+    gamma=...,
+    interpolation2d=...,
+    interpolation3d=...,
+    iso_threshold=...,
+    metadata=...,
+    multiscale=...,
+    name=...,
+    opacity=...,
+    plane=...,
+    projection_mode=...,
+    rendering=...,
+    rgb=...,
+    rotate=...,
+    scale=...,
+    shear=...,
+    translate=...,
+    units=...,
+    visible=...,
+    viewer=...,
+    title=...,
+    ndisplay=...,
+    order=...,
+    show=...,
+) -> tuple[Viewer, tuple[Image, ...]]: ...
+
+
 def imshow(
     data,
     *,
@@ -112,7 +194,7 @@ def imshow(
     ndisplay=2,
     order=(),
     show=True,
-) -> tuple[Viewer, list['Image']]:
+) -> tuple[Viewer, Image | tuple[Image, ...]]:
     """Load data into an Image layer and return the Viewer and Layer.
 
     Parameters
@@ -245,7 +327,7 @@ def imshow(
     -------
     viewer : napari.Viewer
         The created or passed viewer.
-    layer(s) : napari.layers.Image or List[napari.layers.Image]
+    layer(s) : napari.layers.Image or tuple of napari.layers.Image
         The added layer(s). (May be more than one if the ``channel_axis`` keyword
         argument is given.
     """
