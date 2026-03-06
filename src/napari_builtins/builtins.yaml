@@ -1,5 +1,7 @@
 display_name: napari builtins
 name: napari
+# TODO: npe2 does not accept light/dark icons, despite appmodel supporting it
+icon: napari.resources.logos:silhouette-dark.svg
 
 contributions:
   commands:

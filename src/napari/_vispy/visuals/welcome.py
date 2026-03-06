@@ -14,10 +14,10 @@ from vispy.visuals.transforms import STTransform
 
 from napari._app_model import get_app_model
 from napari._vispy.visuals.text import Text
-from napari.resources import get_icon_path
 from napari.settings import get_settings
 from napari.utils.action_manager import action_manager
 from napari.utils.interactions import Shortcut
+from napari.utils.logo import _LOGO_SILHOUETTE
 
 if TYPE_CHECKING:
     from napari.utils.color import ColorValue
@@ -29,9 +29,7 @@ class Welcome(Node):
     def __init__(self) -> None:
         old_level = vispy_logger.level
         vispy_logger.setLevel(logging.ERROR)
-        self.logo_coords = (
-            Document(get_icon_path('logo_silhouette')).paths[0].vertices[0][0]
-        )
+        self.logo_coords = Document(_LOGO_SILHOUETTE).paths[0].vertices[0][0]
         vispy_logger.setLevel(old_level)
         self.logo_coords = self.logo_coords[
             :, :2

@@ -3,12 +3,14 @@ from functools import lru_cache
 from importlib import resources
 from pathlib import Path
 
+_LOGO_DIR = Path(resources.files('napari').joinpath('resources', 'logos'))  # type: ignore
+_LOGO_SILHOUETTE = _LOGO_DIR / 'silhouette-dark.svg'
+
 
 @lru_cache
 def available_logos() -> list[str]:
-    logo_dir = Path(resources.files('napari').joinpath('resources', 'logos'))  # type: ignore
     variants = ['auto']
-    for logo in Path(logo_dir).glob('*-plain-light.svg'):
+    for logo in Path(_LOGO_DIR).glob('*-plain-light.svg'):
         variants.append(logo.stem.rsplit('-', 2)[0])
     return sorted(variants)
 
@@ -48,7 +50,6 @@ def _get_seasonal_logo(today: date | None = None, theme: str = 'dark') -> str:
 def get_logo_path(
     logo: str, template: str, theme: str, today: date | None = None
 ) -> Path:
-    logo_dir = Path(resources.files('napari').joinpath('resources', 'logos'))  # type: ignore
     if logo not in available_logos():
         raise ValueError(
             f'logo must be one one {set(available_logos())}; got {logo}'
@@ -65,4 +66,4 @@ def get_logo_path(
     if logo == 'auto':
         logo = _get_seasonal_logo(today=today, theme=theme)
 
-    return logo_dir / f'{logo}-{template}-{theme}.svg'
+    return _LOGO_DIR / f'{logo}-{template}-{theme}.svg'
