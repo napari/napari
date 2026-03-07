@@ -21,10 +21,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - name: Set up Python 3.12
+      - name: Set up Python 3.14
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
-          python-version: 3.12
+          python-version: 3.14
       - name: Install dependencies
         run: |
           pip install --upgrade pip
@@ -41,7 +41,7 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
-          python-version: "3.12"
+          python-version: "3.14"
           cache-dependency-path: pyproject.toml
           cache: 'pip'
       - name: Install Dependencies
@@ -49,7 +49,7 @@ jobs:
       - name: Install Napari dev
         run: pip install -e .  --group build
         env:
-          PIP_CONSTRAINT: resources/constraints/constraints_py3.12.txt
+          PIP_CONSTRAINT: resources/constraints/constraints_py3.14.txt
       - name: Make Typestubs
         run: |
           make typestubs
@@ -112,25 +112,26 @@ jobs:
       fail-fast: false
       matrix:
         platform: [ ubuntu-latest ]
-        python: [ "3.13" ]
+        python: [ "3.14" ]
         backend: [ "pyqt5,pyqt6" ]
         coverage: [ cov ]
         include:
-          # Windows py310
-          - python: "3.11"
+          # when changing these, try to keep full coverage of supported
+          # python versions so we test at least once everywhere
+          - python: "3.10"
             platform: windows-2022
             backend: pyqt5
             coverage: no_cov
-          - python: "3.13"
+          - python: "3.14"
             platform: windows-2022
             backend: pyqt6
             coverage: cov
-          - python: "3.13"
+          - python: "3.14"
             platform: macos-15-intel
             backend: pyqt5_no_numba
             coverage: no_cov
             timeout-minutes: 60
-          - python: "3.13"
+          - python: "3.14"
             platform: macos-latest
             backend: pyqt6
             coverage: no_cov
@@ -141,29 +142,30 @@ jobs:
             backend: pyqt5
             MIN_REQ: 1
             coverage: cov
-          - python: "3.12"
+          # [all] extras
+          - python: "3.13"
             platform: ubuntu-22.04
             backend: pyqt6
             coverage: cov
             tox_extras: "all_optional"
           # test without any Qt backends
-          - python: "3.11"
+          - python: "3.12"
             platform: ubuntu-22.04
             backend: headless
             coverage: no_cov
           # test with torch
-          - python: "3.13"
+          - python: "3.11"
             platform: ubuntu-latest
             backend: pyqt6
             coverage: cov
             tox_extras: "testing_extra"
           # test with no numba
-          - python: "3.13"
+          - python: "3.14"
             platform: ubuntu-latest
             backend: pyqt6_no_numba
             coverage: cov
           # pyside6 test
-          - python: "3.13"
+          - python: "3.14"
             platform: ubuntu-latest
             backend: pyside6
             coverage: cov
