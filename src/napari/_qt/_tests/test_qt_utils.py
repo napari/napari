@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, Literal
 import numpy as np
 import pytest
 from qtpy.QtCore import QByteArray, QObject, Signal
-from qtpy.QtGui import QColor
+from qtpy.QtGui import QColor, QFont
 from qtpy.QtWidgets import QColorDialog, QMainWindow
 
 from napari._qt.utils import (
@@ -16,6 +16,7 @@ from napari._qt.utils import (
     qbytearray_to_str,
     qt_might_be_rich_text,
     qt_signals_blocked,
+    rasterize_text_blocks_to_array,
     str_to_qbytearray,
 )
 from napari.utils._proxies import PublicOnlyProxy
@@ -93,6 +94,36 @@ def test_qbytearray_to_str_and_back(qtbot):
 
     qbyte = widget.saveState()
     assert str_to_qbytearray(qbytearray_to_str(qbyte)) == qbyte
+
+
+@pytest.mark.usefixtures('qapp')
+def test_rasterize_text_blocks_to_array():
+    font = QFont()
+    font.setPixelSize(18)
+    array, origin = rasterize_text_blocks_to_array(
+        [('hello', 0, 0, 'center'), ('world', 12, 25, 'left')],
+        font=font,
+        line_height=1.15,
+        color=(255, 255, 255, 255),
+        raster_scale=2,
+        padding=1,
+    )
+
+    assert array.ndim == 3
+    assert array.shape[-1] == 4
+    assert array[..., 3].max() > 0
+    assert len(origin) == 2
+
+
+@pytest.mark.usefixtures('qapp')
+def test_rasterize_text_blocks_to_array_empty():
+    font = QFont()
+    font.setPixelSize(18)
+    array, origin = rasterize_text_blocks_to_array(
+        [('', 0, 0, 'center')], font=font
+    )
+    np.testing.assert_array_equal(array, np.zeros((1, 1, 4), dtype=np.uint8))
+    assert origin == (0.0, 0.0)
 
 
 def test_add_flash_animation(qtbot):

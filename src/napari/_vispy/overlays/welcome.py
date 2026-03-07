@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-from itertools import cycle
-from random import sample
+from random import choice
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
-from vispy.app.timer import Timer
 from vispy.visuals.transforms import NullTransform
 
 from napari._vispy.overlays.base import ViewerOverlayMixin, VispyCanvasOverlay
@@ -14,7 +12,6 @@ from napari.settings import get_settings
 
 if TYPE_CHECKING:
     from vispy.scene import Node
-    from vispy.util.event import Event
 
     from napari import Viewer
     from napari.components.overlays import WelcomeOverlay
@@ -22,6 +19,7 @@ if TYPE_CHECKING:
 
 class VispyWelcomeOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
     overlay: WelcomeOverlay
+    _DEFAULT_TIP = "You're awesome!"
 
     def __init__(
         self,
@@ -47,9 +45,7 @@ class VispyWelcomeOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
 
         self.node.canvas.native.resized.connect(self._on_position_change)
 
-        self.tips_iterator = cycle(["You're awesome!"])
-        self.tip_timer = Timer(10, self.next_tip)
-        self.next_tip()
+        self._tips = (self._DEFAULT_TIP,)
 
         self.reset()
 
@@ -82,22 +78,12 @@ class VispyWelcomeOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self.node.set_color(color)
 
     def _on_visible_change(self) -> None:
+        """Update visibility and pick one tip when the overlay is shown."""
         show = self._should_be_visible()
+        was_visible = self.node.visible
         self.node.visible = show
-        if show:
-            self.tip_timer.start()
-        else:
-            try:
-                self.tip_timer.stop()
-            except RuntimeError as e:  # pragma: no cover
-                if (
-                    'wrapped C/C++ object of type' not in e.args[0]
-                    and 'Internal C++ object' not in e.args[0]
-                ):
-                    # checking if the object is partially deleted. Otherwise
-                    # reraise exception. For more details see:
-                    # https://github.com/napari/napari/pull/5499
-                    raise
+        if show and not was_visible:
+            self.next_tip()
 
     def _on_version_change(self) -> None:
         self.node.set_version(self.overlay.version)
@@ -106,15 +92,14 @@ class VispyWelcomeOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self.node.set_shortcuts(self.overlay.shortcuts)
 
     def _on_tips_change(self) -> None:
-        if self.overlay.tips:
-            self.tips_iterator = cycle(
-                sample(self.overlay.tips, len(self.overlay.tips))
-            )
-        else:
-            self.tips_iterator = cycle(["You're awesome!"])
+        """Refresh available tips and update visible tip immediately."""
+        self._tips = tuple(self.overlay.tips) or (self._DEFAULT_TIP,)
+        if self.node.visible:
+            self.next_tip()
 
-    def next_tip(self, event: Event | None = None) -> None:
-        self.node.set_tip(next(self.tips_iterator))
+    def next_tip(self) -> None:
+        """Select and display exactly one random tip from the current tip set."""
+        self.node.set_tip(choice(self._tips))
 
     def reset(self) -> None:
         super().reset()
@@ -122,8 +107,6 @@ class VispyWelcomeOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self._on_version_change()
         self._on_shortcuts_change()
         self._on_tips_change()
-        self.next_tip()
 
     def close(self) -> None:
-        self.tip_timer.stop()
         super().close()
