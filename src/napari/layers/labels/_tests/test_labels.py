@@ -4,6 +4,7 @@ import time
 from collections import defaultdict
 from dataclasses import dataclass
 from importlib.metadata import version
+from unittest.mock import Mock
 
 import numpy as np
 import numpy.testing as npt
@@ -722,6 +723,85 @@ def test_selecting_label_exception():
         labels.selected_label = 256
     with pytest.raises(WrongSelectedLabelError, match='The value -1'):
         labels.selected_label = -1
+
+
+def test_selected_data_update_and_events():
+    """Changing selected_data updates selection state and emits an event."""
+    labels = Labels(np.zeros((10, 10), dtype=np.uint8))
+    callback = Mock()
+    labels.selected_data.events.items_changed.connect(callback)
+
+    labels.selected_data = [1, 2]
+
+    callback.assert_called_once()
+    assert set(labels.selected_data) == {1, 2}
+    assert labels.colormap.selection == labels.selected_label
+    assert np.allclose(
+        labels._selected_color, labels.get_color(labels.selected_label)
+    )
+
+
+def test_selected_data_updates_selected_color_when_filtering():
+    labels = Labels(np.arange(4, dtype=np.uint8)[None, :])
+    labels.show_selected_label = True
+
+    labels.selected_data = [1, 2]
+
+    assert labels.selected_label == 2
+    assert np.allclose(labels._selected_color, labels.colormap.map(2))
+
+
+def test_selected_data_triggers_deprecated_selected_label_event():
+    """selected_data should still fire the deprecated selected_label event."""
+    labels = Labels(np.zeros((10, 10), dtype=np.uint8))
+    callback = Mock()
+
+    with pytest.warns(
+        FutureWarning,
+        match='Please use layer.selected_data.events.items_changed instead',
+    ):
+        labels.events.selected_label.connect(callback)
+
+    labels.selected_data = [3]
+
+    callback.assert_called_once()
+
+
+def test_selected_data_validation():
+    labels = Labels(np.zeros((10, 10), dtype=np.uint8))
+
+    with pytest.raises(WrongSelectedLabelError, match='The value 256'):
+        labels.selected_data = [256, 2, 3]
+    with pytest.raises(WrongSelectedLabelError, match='The value -1'):
+        labels.selected_data = [-1, 0, 3]
+
+
+def test_selected_data_validation_reports_both_out_of_bounds_values():
+    labels = Labels(np.zeros((10, 10), dtype=np.uint8))
+    with pytest.raises(
+        WrongSelectedLabelError,
+        match=r'The values -1, 256 are out of bounds',
+    ):
+        labels.selected_data = [-1, 0, 256]
+
+
+def test_selected_data_validation_truncates_many_out_of_bounds_values():
+    labels = Labels(np.zeros((10, 10), dtype=np.uint8))
+    with pytest.raises(
+        WrongSelectedLabelError,
+        match=r'The values -3, -2, -1, \.\.\., 259, 260, 261 are out of bounds',
+    ):
+        labels.selected_data = [-3, -2, -1, 256, 257, 258, 259, 260, 261]
+
+
+def test_selected_data_refresh_when_filtering():
+    labels = Labels(np.zeros((5, 5), dtype=np.uint8))
+    labels.show_selected_label = True
+    labels.refresh = refresh_mock = Mock()
+
+    labels.selected_data = [1, 2]
+
+    refresh_mock.assert_called_once_with(extent=False)
 
 
 def test_label_color():
@@ -1905,7 +1985,13 @@ class TestLabels:
     def test_events_defined(self, event_define_check, obj):
         event_define_check(
             obj,
-            {'seed', 'num_colors', 'color', 'seed_rng'},
+            {
+                'seed',
+                'num_colors',
+                'color',
+                'seed_rng',
+                'selected_data',
+            },  # `selected_data` itself is an evented model
         )
 
 
