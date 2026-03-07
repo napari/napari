@@ -15,24 +15,24 @@ Toggle the visibility of each layer to compare the difference.
 .. tags:: visualization-nD, layers
 """
 
-import numpy as np
 from skimage import data
 
 import napari
 
-# Subsample Z by 4x to simulate strongly anisotropic data
+# cells3d has voxel spacing approximately (0.29, 0.26, 0.26) in (z, y, x).
+# We subsample z by 4 and x by 2 to simulate more strongly anisotropic data.
+# After subsampling, the effective voxel spacing becomes (1.16, 0.26, 0.52),
+# which we pass to ``scale`` as the physical pixel size.
 cells = data.cells3d()
-nuclei = np.ascontiguousarray(cells[::4, 1])
+nuclei = cells[::4, 1, :, ::2]
 
-# Z voxel spacing is ~4.5x larger than XY after subsampling
-scale = (4.5, 1, 1)
+scale = (1.16, 0.26, 0.52)
 
 viewer = napari.Viewer(ndisplay=3)
 
 viewer.add_image(
     nuclei,
     name='no scale',
-    rendering='mip',
     blending='additive',
     colormap='magenta',
 )
@@ -40,14 +40,18 @@ viewer.add_image(
 viewer.add_image(
     nuclei,
     name='with scale',
-    rendering='mip',
     blending='additive',
     colormap='green',
     scale=scale,
 )
 
-viewer.camera.angles = (-25, 25, -140)
-viewer.camera.zoom = 1.5
+viewer.layers['no scale'].bounding_box.line_color = 'magenta'
+viewer.layers['no scale'].bounding_box.visible = True
+viewer.layers['with scale'].bounding_box.line_color = 'green'
+viewer.layers['with scale'].bounding_box.visible = True
+
+viewer.camera.angles = (-45, 0, -60)
+viewer.fit_to_view()
 
 if __name__ == '__main__':
     napari.run()
