@@ -82,7 +82,7 @@ class QtLayerButtons(QFrame):
             ),
             partial(new_points, self.viewer),
         )
-        self.newPointsButton.setCheckable(True)
+        # self.newPointsButton.setCheckable(True)
 
         self.newShapesButton = QtViewerPushButton(
             'new_shapes',
@@ -95,7 +95,6 @@ class QtLayerButtons(QFrame):
             ),
             partial(new_shapes, self.viewer),
         )
-        self.newShapesButton.setCheckable(True)
 
         self.newLabelsButton = QtViewerPushButton(
             'new_labels',
@@ -122,16 +121,33 @@ class QtLayerButtons(QFrame):
         )
         self._on_selection_changed()
 
-    def _on_selection_changed(self, event=None) -> None:
-        """Update button checked state when layer selection changes.
+    @staticmethod
+    def _change_button_mode(button: 'QtViewerPushButton', mode: str) -> None:
+        """Change the mode of a button."""
+        button.setProperty('mode', mode)
+        button.style().unpolish(button)
+        button.style().polish(button)
+        button.update()
 
-        When a layer is selected, some new layer buttons are checked
-        to indicate that creating a new layer will inherit properties from the
-        selected layer.
+    def _on_selection_changed(self, event=None) -> None:
+        """Update button mode based on the selection state.
+
+        This allows indicating which mode of buttons will be triggered after
+        clicking on it.
         """
-        has_selection = bool(self.viewer.layers.selection)
-        self.newPointsButton.setChecked(has_selection)
-        self.newShapesButton.setChecked(has_selection)
+        if self.viewer.layers.selection.active is not None:
+            self._change_button_mode(self.newPointsButton, 'new_points_one')
+            self._change_button_mode(self.newShapesButton, 'new_shapes_one')
+        elif self.viewer.layers.selection:
+            self._change_button_mode(
+                self.newPointsButton, 'new_points_multiple'
+            )
+            self._change_button_mode(
+                self.newShapesButton, 'new_shapes_multiple'
+            )
+        else:
+            self._change_button_mode(self.newPointsButton, 'new_points')
+            self._change_button_mode(self.newShapesButton, 'new_shapes')
 
 
 def labeled_double_slider(
