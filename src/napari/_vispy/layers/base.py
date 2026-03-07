@@ -100,10 +100,6 @@ class VispyBaseLayer(ABC, Generic[_L]):
         This is used to convert the layer's data coordinates to world coordinates.
         If self._units is None, then the scale is set to 1 for all dimensions.
         """
-        if self._world_units is None:
-            self._world_to_layer_units_scale = (1,) * self.layer.ndim
-            return
-
         reg = pint.get_application_registry()
         self._world_to_layer_units_scale = tuple(
             reg.get_base_units(y)[0] / reg.get_base_units(x)[0]

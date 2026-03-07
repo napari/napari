@@ -5,10 +5,13 @@ import npe2
 import numpy as np
 import numpy.testing as npt
 import pytest
+from pint import get_application_registry
 
 from napari.components import LayerList
 from napari.layers import Image
 from napari.layers.utils._link_layers import get_linked_layers
+
+REG = get_application_registry()
 
 
 def test_empty_layers_list():
@@ -648,3 +651,62 @@ def test_extent_world():
     npt.assert_array_equal(
         ll._extent_world_augmented, ((-0.5, -0.5), (6.5, 6.5))
     )
+
+
+def test_default_extent_world():
+    """Test default extent after adding layers."""
+    ll = LayerList()
+    npt.assert_array_equal(ll._extent_world, ((0, 0), (511, 511)))
+    npt.assert_array_equal(
+        ll._extent_world_augmented, ((-0.5, -0.5), (511.5, 511.5))
+    )
+
+
+def test_overload_units():
+    layer_1 = Image(np.zeros((5, 5)), units=('um', 'um'))
+    layer_2 = Image(np.zeros((5, 5)), units=('um', 'um'))
+    layer_list = LayerList([layer_1, layer_2])
+    assert layer_list.extent.units == (REG.um, REG.um)
+    assert layer_list.units == (REG.um, REG.um)
+
+    layer_1.units = ('nm', 'nm')
+    assert layer_list.units == (REG.nm, REG.nm)
+    assert layer_list.extent.units == (REG.nm, REG.nm)
+    assert layer_list._get_units([x.extent for x in layer_list]) == (
+        REG.nm,
+        REG.nm,
+    )
+
+
+def test_warn_units_dimensions1():
+    layer_1 = Image(np.zeros((5, 5)), units=('um', 'um'))
+    layer_2 = Image(np.zeros((3, 5, 5)), units=('um', 'um', 'um'))
+
+    layer_list = LayerList([layer_1])
+
+    assert layer_list.units == (REG.um, REG.um)
+    layer_list.units = ('nm', 'nm')
+    assert layer_list.units == (REG.nm, REG.nm)
+
+    with pytest.warns(
+        UserWarning,
+        match='New layer has more dimensions than the current units, dropping units override',
+    ):
+        layer_list.append(layer_2)
+
+    assert layer_list.units == (REG.um, REG.um, REG.um)
+
+
+def test_warn_units_dimensions2():
+    layer_1 = Image(np.zeros((5, 5)), units=('um', 'um'))
+    layer_2 = Image(np.zeros((3, 5, 5)), units=('um', 'um', 'um'))
+
+    layer_list = LayerList([layer_1, layer_2])
+
+    with pytest.raises(
+        ValueError,
+        match='Number of units must be at least the number of dimensions',
+    ):
+        layer_list.units = ('nm', 'nm')
+
+    assert layer_list.units == (REG.um, REG.um, REG.um)

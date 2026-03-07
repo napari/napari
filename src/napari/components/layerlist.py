@@ -265,8 +265,8 @@ class LayerList(SelectableEventedList[Layer]):
         new_layer.events.data.connect(
             self._trigger_check_ndim_and_maybe_clean_units
         )
-        self._check_ndim_and_maybe_clean_units(new_layer.ndim)
         super().insert(index, new_layer)
+        self._check_ndim_and_maybe_clean_units(new_layer.ndim)
 
     def remove_selected(self):
         """Remove selected layers from LayerList, but first unlink them."""
@@ -545,7 +545,7 @@ class LayerList(SelectableEventedList[Layer]):
             if len(extent.units) > len(units):
                 units = extent.units
         if not units:
-            return None
+            return None  # pragma: no cover
         return tuple(dimensionality_to_unit[u.dimensionality] for u in units)
 
     @cached_property
