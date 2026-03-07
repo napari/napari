@@ -193,6 +193,16 @@ class _ScalarFieldSliceRequest:
         The slicing coordinates and margins in data space.
     others
         See the corresponding attributes in `Layer` and `Image`.
+    thumbnail_level_data : np.ndarray | None
+        Pre-materialized numpy array of the thumbnail level.
+        Used for the multiscale thumbnail and also for
+        the image tile when requested level is thumbnail_level
+    home_level : int | None
+        Data level index of the 'home' level used by reset_view()
+        whose pre-materialized data may be used when available.
+    home_level_data : np.ndarray | None
+        Pre-materialized numpy array of the home level;
+        used when ``home_level`` is set and requested level is home_level
     id : int
         The identifier of this slice request.
     """
@@ -209,6 +219,9 @@ class _ScalarFieldSliceRequest:
     thumbnail_level: int = field(repr=False)
     level_shapes: np.ndarray = field(repr=False)
     downsample_factors: np.ndarray = field(repr=False)
+    thumbnail_level_data: np.ndarray | None = field(default=None, repr=False)
+    home_level: int | None = field(default=None, repr=False)
+    home_level_data: np.ndarray | None = field(default=None, repr=False)
     id: int = field(default_factory=_next_request_id)
 
     def __call__(self) -> _ScalarFieldSliceResponse:
@@ -256,7 +269,19 @@ class _ScalarFieldSliceRequest:
         for d in self.slice_input.displayed:
             scale[d] = self.downsample_factors[level][d]
 
-        data = self.data[level]
+        thumb_source = self.thumbnail_level_data
+        if thumb_source is None:
+            thumb_source = self.data[self.thumbnail_level]
+        if (
+            self.home_level is not None
+            and level == self.home_level
+            and self.home_level_data is not None
+        ):
+            data = self.home_level_data
+        elif level == self.thumbnail_level:
+            data = thumb_source
+        else:
+            data = self.data[level]
 
         translate = np.zeros(self.slice_input.ndim)
         disp_slice = [slice(None) for _ in data.shape]
@@ -291,7 +316,7 @@ class _ScalarFieldSliceRequest:
 
         thumbnail_data_slice = self._thick_slice_at_level(self.thumbnail_level)
         thumbnail_data = self._project_thick_slice(
-            self.data[self.thumbnail_level], thumbnail_data_slice
+            thumb_source, thumbnail_data_slice
         )
         thumbnail_data = np.transpose(thumbnail_data, order)
         thumbnail = _ScalarFieldView.from_view(thumbnail_data)
