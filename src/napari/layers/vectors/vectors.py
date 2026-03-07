@@ -1,9 +1,8 @@
 import warnings
 from copy import copy
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
-import pandas as pd
 
 from napari.layers.base import Layer, _LayerSlicingState
 from napari.layers.utils._color_manager_constants import ColorMode
@@ -25,6 +24,9 @@ from napari.utils.colormaps import Colormap, ValidColormapArg
 from napari.utils.events import Event
 from napari.utils.events.custom_types import Array
 from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    import pandas as pd
 
 
 class Vectors(Layer):
@@ -374,7 +376,7 @@ class Vectors(Layer):
     @features.setter
     def features(
         self,
-        features: dict[str, np.ndarray] | pd.DataFrame,
+        features: 'dict[str, np.ndarray] | pd.DataFrame',
     ) -> None:
         self._feature_table.set_values(features, num_data=len(self.data))
         if self._edge.color_properties is not None:
@@ -418,7 +420,7 @@ class Vectors(Layer):
 
     @feature_defaults.setter
     def feature_defaults(
-        self, defaults: dict[str, Any] | pd.DataFrame
+        self, defaults: 'dict[str, Any] | pd.DataFrame'
     ) -> None:
         self._feature_table.set_defaults(defaults)
         self.events.feature_defaults()
