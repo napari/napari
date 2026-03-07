@@ -21,12 +21,12 @@ import napari
 
 # cells3d has voxel spacing approximately (0.29, 0.26, 0.26) in (z, y, x).
 # We subsample z by 4 and x by 2 to simulate more strongly anisotropic data.
-# After subsampling, the effective voxel spacing becomes (1.16, 0.26, 0.52),
-# which we pass to ``scale`` as the physical pixel size.
+# After subsampling, the effective voxel spacing becomes (1.16, 0.26, 0.52).
+# The ratio is approximately (4.5, 1, 2), which we pass to ``scale``.
 cells = data.cells3d()
 nuclei = cells[::4, 1, :, ::2]
 
-scale = (1.16, 0.26, 0.52)
+scale = (4.5, 1, 2)
 
 viewer = napari.Viewer(ndisplay=3)
 
