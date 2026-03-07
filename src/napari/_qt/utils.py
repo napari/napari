@@ -16,12 +16,22 @@ from qtpy.QtCore import (
     QByteArray,
     QCoreApplication,
     QObject,
+    QPointF,
     QPropertyAnimation,
     QSocketNotifier,
     Qt,
     QThread,
 )
-from qtpy.QtGui import QColor, QCursor, QDrag, QImage, QPainter, QPixmap
+from qtpy.QtGui import (
+    QColor,
+    QCursor,
+    QDrag,
+    QFont,
+    QFontMetricsF,
+    QImage,
+    QPainter,
+    QPixmap,
+)
 from qtpy.QtWidgets import (
     QColorDialog,
     QGraphicsColorizeEffect,
@@ -140,6 +150,124 @@ def QImg2array(
     # reversed.
     arr = arr[:, :, [2, 1, 0, 3]]
     return arr
+
+
+def _coerce_qcolor(color: QColor | Sequence[int]) -> QColor:
+    """Normalize a color input to a QColor instance."""
+    if isinstance(color, QColor):
+        return QColor(color)
+    if len(color) == 3:
+        red, green, blue = color
+        alpha = 255
+    elif len(color) == 4:
+        red, green, blue, alpha = color
+    else:
+        raise ValueError('color must have 3 (RGB) or 4 (RGBA) components')
+    return QColor(int(red), int(green), int(blue), int(alpha))
+
+
+def rasterize_text_blocks_to_array(
+    text_blocks: Sequence[
+        tuple[str, float, float, Literal['left', 'center', 'right']]
+    ],
+    *,
+    font: QFont,
+    line_height: float = 1.0,
+    color: QColor | Sequence[int] = (255, 255, 255, 255),
+    raster_scale: float = 1.0,
+    padding: float = 0.0,
+) -> tuple[
+    np.ndarray[tuple[int, int, Literal[4]], np.dtype[np.uint8]],
+    tuple[float, float],
+]:
+    """Rasterize anchored text blocks to an RGBA array and local origin.
+
+    Parameters
+    ----------
+    text_blocks : sequence
+        A sequence of `(text, anchor_x, anchor_y, alignment)` tuples.
+        `anchor_y` denotes the bottom of the multiline block in local units.
+    font : QFont
+        Font used for text rendering.
+    line_height : float, optional
+        Line-height multiplier applied to font metrics.
+    color : QColor or sequence of int, optional
+        Text color in RGB or RGBA 0-255 values.
+    raster_scale : float, optional
+        Supersampling scale factor applied during rasterization.
+    padding : float, optional
+        Extra local-space padding around the computed text bounds.
+
+    Returns
+    -------
+    array : np.ndarray
+        Rasterized RGBA array with shape `(height, width, 4)`.
+    origin : tuple[float, float]
+        Local-space origin where the raster should be placed.
+    """
+    if raster_scale <= 0:
+        raise ValueError('raster_scale must be > 0')
+    if line_height <= 0:
+        raise ValueError('line_height must be > 0')
+
+    metrics = QFontMetricsF(font)
+    line_height_px = metrics.height() * line_height
+    ascent = metrics.ascent()
+    descent = metrics.descent()
+
+    line_runs: list[tuple[str, float, float]] = []
+    min_x = min_y = np.inf
+    max_x = max_y = -np.inf
+    for text, anchor_x, anchor_y, alignment in text_blocks:
+        if not text:
+            continue
+
+        lines = text.split('\n')
+        block_height = metrics.height() + (len(lines) - 1) * line_height_px
+        block_top = anchor_y * raster_scale - block_height
+        anchor_x *= raster_scale
+
+        for idx, line in enumerate(lines):
+            line_width = metrics.horizontalAdvance(line)
+            if alignment == 'left':
+                line_x = anchor_x
+            elif alignment == 'right':
+                line_x = anchor_x - line_width
+            else:
+                line_x = anchor_x - line_width / 2
+
+            baseline = block_top + ascent + idx * line_height_px
+            line_runs.append((line, line_x, baseline))
+            min_x = min(min_x, line_x)
+            min_y = min(min_y, baseline - ascent)
+            max_x = max(max_x, line_x + line_width)
+            max_y = max(max_y, baseline + descent)
+
+    if not line_runs:
+        return np.zeros((1, 1, 4), dtype=np.uint8), (0.0, 0.0)
+
+    padding_px = padding * raster_scale
+    min_x -= padding_px
+    min_y -= padding_px
+    max_x += padding_px
+    max_y += padding_px
+
+    width = max(1, int(np.ceil(max_x - min_x)))
+    height = max(1, int(np.ceil(max_y - min_y)))
+    image = QImage(width, height, QImage.Format_ARGB32)
+    image.fill(0)
+
+    painter = QPainter(image)
+    painter.setRenderHint(QPainter.TextAntialiasing, True)
+    painter.setFont(font)
+    painter.setPen(_coerce_qcolor(color))
+    for line, line_x, baseline in line_runs:
+        painter.drawText(QPointF(line_x - min_x, baseline - min_y), line)
+    painter.end()
+
+    origin = (min_x / raster_scale, min_y / raster_scale)
+    # copy to detach from QImage memory managed by Qt
+    return QImg2array(image).copy(), origin
 
 
 @contextmanager
