@@ -49,6 +49,7 @@ from napari.utils._magicgui import (
     add_layers_to_viewer,
     get_layers,
 )
+from napari.utils._proxies import ReadOnlyWrapper
 from napari.utils.events import EmitterGroup, Event, EventedDict
 from napari.utils.geometry import (
     find_front_back_face,
@@ -671,6 +672,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             visible=Event,
             _extent_augmented=Event,
             _overlays=Event,
+            locked=Event,
         )
         self.name = name
         self.mode = mode
@@ -2083,7 +2085,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         shape_threshold : tuple
             Requested shape of field of view in data coordinates.
         """
-        self.scale_factor = scale_factor
+        with self._bypass_lock():
+            self.scale_factor = scale_factor
 
         displayed_axes = self._slice_input.displayed
 
@@ -2139,7 +2142,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
                 )
             ):
                 self._data_level = level
-                self.corner_pixels = corners
+                with self._bypass_lock():
+                    self.corner_pixels = corners
                 self.refresh(extent=False, thumbnail=False)
         else:
             # set the data_level so that it is the lowest resolution in 3d view
@@ -2157,7 +2161,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
                     data_bbox_int, displayed_extent[0], displayed_extent[1]
                 )
                 corners[:, displayed_axes] = data_bbox_clipped
-            self.corner_pixels = corners
+            with self._bypass_lock():
+                self.corner_pixels = corners
 
     def _get_source_info(self) -> dict:
         components = {}
@@ -2437,6 +2442,46 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     ) -> _LayerSlicingState:
         """Return a LayerSlicer instance appropriate for this layer."""
         raise NotImplementedError
+
+    @property
+    def locked(self) -> bool:
+        # getattr needed here to ensure during layer initialization this can still work
+        # (subclasses call super().__init__ after this needs to trigger)
+        return getattr(self, '_locked', False)
+
+    @locked.setter
+    def locked(self, value: bool) -> None:
+        self._locked = bool(value)
+        self.events.locked()
+
+    @contextmanager
+    def _bypass_lock(self):
+        prev, self.locked = self.locked, False
+        yield
+        self.locked = prev
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        if (
+            name != 'locked'
+            and not name.startswith('_')
+            and getattr(self, '_locked', False)
+        ):
+            raise RuntimeError(
+                'Locked layer. To unlock, set layer.locked to False'
+            )
+        super().__setattr__(name, value)
+
+    def __getattribute__(self, name: str) -> Any:
+        attr = super().__getattribute__(name)
+        if name == 'locked' or name.startswith('_'):
+            return attr
+        # TODO: if we always give a readonly wrapper, it causes long cascades that propagate
+        #       the wrapper to places we don't want. For now, it's best to only wrap
+        #       user-facing elements that could be modified inplace without going through
+        #       Layer.__setattr__ (such as modifying sub-models or Layer.data)
+        if self.locked and (hasattr(attr, 'events') or name in ('data',)):
+            attr = ReadOnlyWrapper(attr)
+        return attr
 
 
 mgui.register_type(type_=list[Layer], return_callback=add_layers_to_viewer)

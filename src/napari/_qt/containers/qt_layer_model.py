@@ -11,6 +11,7 @@ from napari.utils.translations import trans
 
 ThumbnailRole = Qt.UserRole + 2
 LoadedRole = Qt.UserRole + 3
+LockedRole = Qt.UserRole + 4
 
 
 class QtLayerListModel(QtListModel[Layer]):
@@ -59,6 +60,8 @@ class QtLayerListModel(QtListModel[Layer]):
             )
         if role == LoadedRole:
             return layer_loaded
+        if role == LockedRole:
+            return layer.locked
         # normally you'd put the icon in DecorationRole, but we do that in the
         # # LayerDelegate which is aware of the theme.
         # if role == Qt.ItemDataRole.DecorationRole:  # icon to show
