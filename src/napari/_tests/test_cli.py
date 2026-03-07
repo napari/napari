@@ -12,7 +12,6 @@ from napari import __main__
 def mock_run():
     """mock to prevent starting the event loop."""
     with (
-        mock.patch('napari._qt.widgets.qt_splash_screen.NapariSplashScreen'),
         mock.patch('napari.run'),
     ):
         yield napari.run
@@ -89,7 +88,7 @@ def test_cli_runscript(monkeypatch, tmp_path, make_napari_viewer):
 
     with monkeypatch.context() as m:
         m.setattr(sys, 'argv', ['napari', str(script)])
-        m.setattr(__main__, 'Viewer', lambda: v)
+        m.setattr(__main__, 'Viewer', mock.Mock(return_value=v))
         m.setattr(
             'qtpy.QtWidgets.QApplication.exec_', lambda *_: None
         )  # revent event loop if run this test standalone

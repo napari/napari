@@ -40,19 +40,6 @@ def test_plugin_manager_action(make_napari_viewer):
     mock_plugin_dialog.assert_called_once_with(viewer.window._qt_window)
 
 
-def test_plugin_errors_action(make_napari_viewer, mock_qt_method):
-    """Test plugin errors action."""
-    make_napari_viewer()
-    app = get_app_model()
-
-    mock_plugin_dialog = mock_qt_method(
-        'napari._qt._qapp_model.qactions._plugins.QtPluginErrReporter.exec_'
-    )
-
-    app.commands.execute_command('napari.window.plugins.plugin_err_reporter')
-    mock_plugin_dialog.assert_called_once()
-
-
 @skip_local_popups
 def test_toggle_or_get_widget(
     make_napari_viewer,

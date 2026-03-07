@@ -23,7 +23,7 @@ viewer.add_image(blobs, name='blobs', scale=(2, 1, 1))
 viewer.add_labels(labeled, name='blob ID', scale=(2, 1, 1))
 pts = viewer.add_points()
 
-viewer.camera.angles = (0, -65, 85)
+viewer.camera.angles = (0, -50, 50)
 pts.mode = 'add'
 
 if __name__ == '__main__':

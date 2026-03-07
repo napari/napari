@@ -5,10 +5,11 @@ from napari._vispy.visuals.bounding_box import BoundingBox
 
 
 class VispyBoundingBoxOverlay(LayerOverlayMixin, VispySceneOverlay):
-    def __init__(self, *, layer, overlay, parent=None):
+    def __init__(self, *, layer, viewer, overlay, parent=None):
         super().__init__(
             node=BoundingBox(),
             layer=layer,
+            viewer=viewer,
             overlay=overlay,
             parent=parent,
         )
