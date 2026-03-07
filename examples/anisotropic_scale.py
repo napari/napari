@@ -5,9 +5,9 @@ Anisotropic data with scale
 Display a 3D image with anisotropic voxel spacing using the ``scale``
 parameter so that the volume appears with correct proportions.
 
-Microscopy data is often anisotropic: the voxel spacing along the Z axis
-is larger than along X and Y.  Without ``scale``, napari treats every
-voxel as a unit cube and the volume looks compressed along Z.
+Microscopy data is often anisotropic: the voxel spacing differs across
+axes.  Without ``scale``, napari treats every voxel as a unit cube and
+the volume appears with incorrect proportions.
 Setting ``scale`` to the real voxel dimensions corrects this.
 
 Toggle the visibility of each layer to compare the difference.
