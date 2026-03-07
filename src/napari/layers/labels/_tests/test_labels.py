@@ -4,6 +4,7 @@ import time
 from collections import defaultdict
 from dataclasses import dataclass
 from importlib.metadata import version
+from unittest.mock import Mock
 
 import numpy as np
 import numpy.testing as npt
@@ -724,6 +725,16 @@ def test_selecting_label_exception():
         labels.selected_label = -1
 
 
+def test_selected_data_refresh_when_filtering():
+    labels = Labels(np.zeros((5, 5), dtype=np.uint8))
+    labels.show_selected_label = True
+    labels.refresh = refresh_mock = Mock()
+
+    labels.selected_data = [1, 2]
+
+    refresh_mock.assert_called_once_with(extent=False)
+
+
 def test_label_color():
     """Test getting label color."""
     np.random.seed(0)
@@ -761,6 +772,44 @@ def test_show_selected_label():
     other_labels = np.unique(layer.data)[2:]
     other_colors = np.array([layer.get_color(x) for x in other_labels])
     assert np.allclose(other_colors, none_color)
+
+
+def test_selected_label_updates_selected_data():
+    data = np.arange(9).reshape((3, 3))
+    layer = Labels(data)
+
+    layer.selected_data.replace_selection([2])
+    layer.selected_label = 4
+
+    assert layer.selected_data == {4}
+    assert next(reversed(layer.selected_data)) == 4
+
+
+def test_show_selected_label_uses_selected_data():
+    data = np.arange(5, dtype=np.int32)[:, np.newaxis].repeat(5, axis=1)
+    layer = Labels(data)
+    layer.selected_label = 1
+    layer.show_selected_label = True
+
+    layer.selected_data.replace_selection([3])
+
+    assert layer.selected_label == 1
+    assert layer.colormap.selection == 3
+
+    # Display filtering follows selected_data.
+    mapped_colors = layer.colormap.map(data)
+    label_mask = data == 3
+    assert np.allclose(
+        np.asarray(mapped_colors[label_mask]),
+        np.asarray(layer.colormap.map(layer.colormap.selection)),
+    )
+    assert np.allclose(
+        np.asarray(mapped_colors[np.logical_not(label_mask)]),
+        0,
+    )
+
+    npt.assert_allclose(layer.get_color(1), layer.get_color(None))
+    assert not np.allclose(layer.get_color(3), layer.get_color(None))
 
 
 def test_paint():
@@ -1905,7 +1954,13 @@ class TestLabels:
     def test_events_defined(self, event_define_check, obj):
         event_define_check(
             obj,
-            {'seed', 'num_colors', 'color', 'seed_rng'},
+            {
+                'seed',
+                'num_colors',
+                'color',
+                'seed_rng',
+                'selected_data',
+            },  # `selected_data` itself is an evented model
         )
 
 
