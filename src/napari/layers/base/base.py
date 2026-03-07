@@ -124,10 +124,9 @@ class _LayerSlicingState(ABC):
     def __init__(self, layer: Layer, data: LayerDataType, cache: bool):
         self.layer = layer
         self.dask_optimized_slicing = configure_dask(data, cache)
-        # Defined here because _update_draw (on Layer) reads them;
+        # Defined here because _update_draw (on Layer) reads it;
         # only populated by multiscale scalar-field layers.
         self._home_level: int | None = None
-        self._home_level_data: np.ndarray | None = None
         self._slice_input = _SliceInput(
             ndisplay=2,
             world_slice=_ThickNDSlice.make_full(ndim=self.ndim),
@@ -2129,11 +2128,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             # for the full-extent / skip-refresh optimisation.
             if self._slicing_state._home_level is None:
                 self._slicing_state._home_level = level
-                # Only materialise this level if it isn't the thumbnail
-                if level != self._thumbnail_level:
-                    self._slicing_state._home_level_data = np.asarray(
-                        self._data[level]
-                    )
             home_level = self._slicing_state._home_level
             is_fully_cached = level == lowest_level or (
                 home_level is not None and level == home_level
