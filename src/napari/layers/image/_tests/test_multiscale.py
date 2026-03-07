@@ -547,28 +547,34 @@ def _draw(layer, corners, canvas=(10, 10)):
 
 
 def test_home_equals_thumbnail_no_double_store():
-    """When the viewport selects the lowest level, home_level_data
-    should be None because thumbnail_level_data already covers it."""
+    """When the viewport selects the lowest level:
+    home_level == thumbnail_level
+    so only one materializer cache entry is used.
+    """
     layer = _make_multiscale_layer()
     # Canvas (10,10) with full FOV → selects level 2 (5, 5) = thumbnail
     _draw(layer, [[-11, -11], [31, 31]])
     ss = layer._slicing_state
     assert ss._home_level == 2
     assert ss._home_level == layer._thumbnail_level
-    assert ss._home_level_data is None
+    # Only one cache entry: thumbnail and home are the same level
+    assert layer._level_materializer.cache_info().currsize == 1
 
 
 def test_home_differs_from_thumbnail_stores_data_and_uses_full_extent():
-    """When the viewport selects a level above the lowest, the home
-    level data should be materialized as a numpy array and use full extent."""
+    """When the viewport selects a level above the lowest, both thumbnail
+    and home level data are cached and the full extent is used."""
     layer = _make_multiscale_layer()
     # Canvas (10,10) with tight FOV → selects level 0 (20, 20)
     _draw(layer, [[5, 5], [15, 15]])
     ss = layer._slicing_state
     assert ss._home_level == 0
     assert ss._home_level != layer._thumbnail_level
-    assert isinstance(ss._home_level_data, np.ndarray)
-    assert ss._home_level_data.shape == (20, 20)
+    # Both thumbnail_level and home_level are cached (two distinct levels)
+    assert layer._level_materializer.cache_info().currsize == 2
+    home_data = layer._level_materializer(ss._home_level)
+    assert isinstance(home_data, np.ndarray)
+    assert home_data.shape == (20, 20)
     np.testing.assert_equal(layer.corner_pixels, [[0, 0], [19, 19]])
 
 
@@ -605,6 +611,8 @@ def test_data_replacement_resets_home_level():
     _draw(layer, [[5, 5], [15, 15]])
     assert layer._slicing_state._home_level == 0
 
+    old_materializer = layer._level_materializer
     layer.data = [np.zeros((30, 30)), np.zeros((15, 15))]
     assert layer._slicing_state._home_level is None
-    assert layer._slicing_state._home_level_data is None
+    # Data replacement creates a fresh materializer; old cache is abandoned
+    assert layer._level_materializer is not old_materializer
