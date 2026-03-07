@@ -560,12 +560,19 @@ def compute_multiscale_level(
     """
     # Scale shape by downsample factors
     scaled_shape = requested_shape / downsample_factors
+    active_dims = requested_shape > shape_threshold
 
     # Find the highest level (lowest resolution) allowed
-    locations = np.argwhere(np.all(scaled_shape > shape_threshold, axis=1))
-    level = locations[-1][0] if len(locations) > 0 else 0
-    return level
+    if np.any(active_dims):
+        locations = np.argwhere(
+            np.all((scaled_shape > shape_threshold)[:, active_dims], axis=1))
+    else:
+        locations = np.array([[0]])
 
+    if len(locations) > 0:
+        return locations[-1][0]
+    else:
+        return 0
 
 def compute_multiscale_level_and_corners(
     corner_pixels, shape_threshold, downsample_factors
