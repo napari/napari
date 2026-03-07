@@ -97,7 +97,7 @@ class ColorBar(Node):
     def set_ticks_and_get_text_size(
         self,
         tick_length: float,
-        font_size: int,
+        font_size: float,
         clim: tuple[float, float],
         color: ColorValue,
     ) -> tuple[float, float]:
