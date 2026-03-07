@@ -173,6 +173,7 @@ class LayerList(SelectableEventedList[Layer]):
 
     def _process_delete_item(self, item: Layer):
         super()._process_delete_item(item)
+        self.unlink_layers([item])
         item.events.extent.disconnect(self._clean_cache)
         item.events._extent_augmented.disconnect(self._clean_cache)
         self._clean_cache()
@@ -260,7 +261,6 @@ class LayerList(SelectableEventedList[Layer]):
         """Remove selected layers from LayerList, but first unlink them."""
         if not self.selection:
             return
-        self.unlink_layers(self.selection)
         with self.batched_update():
             super().remove_selected()
 
