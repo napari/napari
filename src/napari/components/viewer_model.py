@@ -296,6 +296,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         self.layers.events.removed.connect(self._on_remove_layer)
         self.layers.events.reordered.connect(self._on_layers_change)
         self.layers.selection.events.active.connect(self._on_active_layer)
+        self.layers.events.units.connect(self._on_layers_change)
 
         # Add mouse callback
         self.mouse_wheel_callbacks.append(dims_scroll)
@@ -625,6 +626,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         layers_extent = self.layers.extent
         extent = layers_extent.world
         scale = layers_extent.step
+        units = layers_extent.units
         scene_size = extent[1] - extent[0]
         corner = extent[0]
         shape = [
@@ -633,10 +635,13 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         ]
         dtype_str = get_settings().application.new_labels_dtype
         empty_labels = np.zeros(shape, dtype=dtype_str)
-        self.add_labels(empty_labels, translate=np.array(corner), scale=scale)  # type: ignore[attr-defined]
+        self.add_labels(  # type: ignore[attr-defined]
+            empty_labels, translate=np.array(corner), scale=scale, units=units
+        )
         # We define `add_labels` dynamically, so mypy doesn't know about it.
 
     def _on_layer_reload(self, event: Event) -> None:
+        self.dims.units = self.layers.extent.units
         self._layer_slicer.submit(
             layers=[event.layer], dims=self.dims, force=True
         )
@@ -650,6 +655,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             List of layers to update. If none provided updates all.
         """
         layers = layers or self.layers
+        self.dims.units = self.layers.extent.units
         self._layer_slicer.submit(layers=layers, dims=self.dims)
         # If the currently selected layer is sliced asynchronously, then the value
         # shown with this position may be incorrect. See the discussion for more details:
@@ -696,6 +702,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             # TODO: can be optimized with dims.update(), but events need fixing
             self.dims.ndim = len(ranges)
             self.dims.range = ranges
+            self.dims.units = self.layers.units
 
         new_dim = self.dims.ndim
         dim_diff = new_dim - len(self.cursor.position)
@@ -853,6 +860,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         layer.events.cursor_size.connect(self._update_cursor_size)
         layer.events.data.connect(self._on_layers_change)
         layer.events.scale.connect(self._on_layers_change)
+        layer.events.units.connect(self._on_layers_change)
         layer.events.translate.connect(self._on_layers_change)
         layer.events.rotate.connect(self._on_layers_change)
         layer.events.shear.connect(self._on_layers_change)
