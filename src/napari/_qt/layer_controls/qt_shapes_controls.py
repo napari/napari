@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
 from napari._qt.layer_controls.widgets import (
     QtFaceColorControl,
+    QtOutSliceCheckBoxControl,
     QtTextVisibilityControl,
 )
 from napari._qt.layer_controls.widgets._shapes import (
@@ -35,6 +36,8 @@ class QtShapesControls(QtLayerControls):
         Widget that wraps a slider controlling line edge width of layer.
     _face_color_control : napari._qt.layer_controls.widgets.QtFaceColorControl
         Widget that wraps a ColorSwatchEdit controlling current face color of the layer.
+    _out_slice_checkbox_control : napari._qt.layer_controls.widgets.QtOutSliceCheckBoxControl
+        Widget that wraps a checkbox controlling out of slice display.
     _text_visibility_control : napari._qt.layer_controls.widgets.QtTextVisibilityControl
         WIdget that wraps a checkbox controlling if text on the layer is visible or not.
     delete_button : qtpy.QtWidgets.QtModePushButton
@@ -214,6 +217,10 @@ class QtShapesControls(QtLayerControls):
         self._add_widget_controls(self._face_color_control)
         self._text_visibility_control = QtTextVisibilityControl(self, layer)
         self._add_widget_controls(self._text_visibility_control)
+        self._out_slice_checkbox_control = QtOutSliceCheckBoxControl(
+            self, layer
+        )
+        self._add_widget_controls(self._out_slice_checkbox_control)
 
     def _on_mode_change(self, event):
         """Update ticks in checkbox widgets when shapes layer mode changed.

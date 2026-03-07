@@ -203,6 +203,11 @@ class Shapes(Layer):
         If not provided, the default units are assumed to be pixels.
     visible : bool
         Whether the layer visual is currently being displayed.
+    out_of_slice_display : bool
+        If True, renders shapes that are not entirely on the current slice.
+        Shapes will be visible in 2D view if the current slice falls within
+        the shape's extent range in the non-displayed dimensions. This is
+        especially useful for 3D paths and polygons that span multiple slices.
     z_index : int or list
         Specifier of z order priority. Shapes with higher z order are
         displayed ontop of others. If a list is supplied it must be the
@@ -238,6 +243,8 @@ class Shapes(Layer):
         Color of the shape face. Numeric color values should be RGB(A).
     edge_width : (N, ) list of float
         Edge width for each shape.
+    out_of_slice_display : bool
+        If True, renders shapes not entirely on the current slice.
     z_index : (N, ) list of int
         z-index for each shape.
     current_edge_width : float
@@ -458,6 +465,7 @@ class Shapes(Layer):
         metadata=None,
         name=None,
         opacity=0.7,
+        out_of_slice_display=False,
         projection_mode='none',
         properties=None,
         property_choices=None,
@@ -519,7 +527,10 @@ class Shapes(Layer):
             highlight=Event,
             features=Event,
             feature_defaults=Event,
+            out_of_slice_display=Event,
         )
+
+        self._out_of_slice_display = out_of_slice_display
 
         # Flag set to false to block thumbnail refresh
         self._allow_thumbnail_update = True
@@ -544,6 +555,7 @@ class Shapes(Layer):
             self._current_edge_width = 1
 
         self._data_view = ShapeList(ndisplay=self._slice_input.ndisplay)
+        self._data_view.out_of_slice_display = self._out_of_slice_display
         self._data_view.slice_key = np.array(self._data_slice.point)[
             self._slice_input.not_displayed
         ]
@@ -743,6 +755,7 @@ class Shapes(Layer):
 
         self.events.data(**kwargs)
         self._data_view = ShapeList(ndisplay=self._slice_input.ndisplay)
+        self._data_view.out_of_slice_display = self._out_of_slice_display
         self._data_view.slice_key = np.array(self._data_slice.point)[
             self._slice_input.not_displayed
         ]
@@ -861,6 +874,17 @@ class Shapes(Layer):
         """Determine number of dimensions of the layer."""
         ndim = self.ndim if self.nshapes == 0 else self.data[0].shape[1]
         return ndim
+
+    @property
+    def out_of_slice_display(self) -> bool:
+        """bool: renders shapes slightly out of slice."""
+        return self._out_of_slice_display
+
+    @out_of_slice_display.setter
+    def out_of_slice_display(self, out_of_slice_display: bool) -> None:
+        self._out_of_slice_display = bool(out_of_slice_display)
+        self.events.out_of_slice_display()
+        self.refresh(extent=False)
 
     @property
     def _extent_data(self) -> np.ndarray:
@@ -1649,6 +1673,7 @@ class Shapes(Layer):
                 'data': self.data,
                 'features': self.features,
                 'feature_defaults': self.feature_defaults,
+                'out_of_slice_display': self.out_of_slice_display,
             }
         )
         return state
@@ -2445,6 +2470,7 @@ class Shapes(Layer):
             ]
             if not np.array_equal(slice_key, self._data_view.slice_key):
                 self.selected_data = set()
+            self._data_view.out_of_slice_display = self._out_of_slice_display
             self._data_view.slice_key = slice_key
 
     def interaction_box(self, index: int | Iterable[int]) -> BoxArray | None:
