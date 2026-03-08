@@ -278,7 +278,8 @@ def _run() -> None:
         # but in the meantime if the garbage collector runs;
         # it will collect it and hang napari at start time.
         # in a way that is machine, os, time (and likely weather dependant).
-        viewer = Viewer()
+        # don't show viewer until we've processed all the args
+        viewer = Viewer(show=False)
         _run_configured_startup_script()
 
         # For backwards compatibility
@@ -342,6 +343,8 @@ def _run() -> None:
         if running_as_constructor_app():
             install_certifi_opener()
             maybe_patch_conda_exe()
+        # now that we've processed all the args, show viewer
+        viewer.show()
         run(gui_exceptions=True)
 
 
