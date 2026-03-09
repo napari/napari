@@ -1429,7 +1429,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
                                 stack=_stack,
                             )
                         )
-                    except (ValueError, Exception) as e:
+                    except (ValueError, Exception):
                         # If reading failed, check whether the path
                         # simply doesn't exist and raise a clearer error.
                         self._raise_if_not_found(_path)
