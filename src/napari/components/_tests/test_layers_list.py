@@ -7,7 +7,7 @@ import pytest
 
 from napari.components import LayerList
 from napari.layers import Image
-from napari.layers.utils._link_layers import get_linked_layers
+from napari.layers.utils._link_layers import get_linked_layers, layer_is_linked
 
 
 def test_empty_layers_list():
@@ -611,3 +611,26 @@ def test_layer_renamed_event_connection_management():
 
     layers.remove(layer)
     assert len(layer.events.name.callbacks) == 0
+
+
+def test_unlink_on_delete():
+    """Test that unlinking a layer from the list removes the layer from the
+    viewer."""
+    layer1 = Image(np.zeros((5, 5)), name='image1')
+    layer2 = Image(np.zeros((5, 5)), name='image2')
+    layer3 = Image(np.zeros((5, 5)), name='image3')
+    ll = LayerList([layer1, layer2, layer3])
+    ll.link_layers([layer1, layer2, layer3])
+    assert layer_is_linked(layer1)
+    assert layer_is_linked(layer2)
+    assert layer_is_linked(layer3)
+    del ll['image3']
+
+    assert layer_is_linked(layer1)
+    assert layer_is_linked(layer2)
+    assert not layer_is_linked(layer3)
+
+    ll.remove(layer2)
+    assert not layer_is_linked(layer1)
+    assert not layer_is_linked(layer2)
+    assert not layer_is_linked(layer3)
