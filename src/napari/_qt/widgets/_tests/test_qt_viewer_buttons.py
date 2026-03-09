@@ -342,25 +342,33 @@ def test_layer_buttons_checked_on_selection(qt_layer_buttons):
     # Initially no selection, buttons should not be checked
     assert layer_buttons.newPointsButton.property('mode') == 'new_points'
     assert layer_buttons.newShapesButton.property('mode') == 'new_shapes'
+    assert layer_buttons.newPointsButton.property('selection_state') == 'none'
+    assert layer_buttons.newShapesButton.property('selection_state') == 'none'
 
     data_layer = viewer.add_image(np.zeros((10, 10)))
     data_layer2 = viewer.add_image(np.zeros((10, 10)))
 
-    # Selecting a layer should check the buttons (visual indicator)
+    # Selecting a single layer: buttons indicate single-layer inheritance
     viewer.layers.selection = [data_layer]
-    assert layer_buttons.newPointsButton.property('mode') == 'new_points_one'
-    assert layer_buttons.newShapesButton.property('mode') == 'new_shapes_one'
+    assert layer_buttons.newPointsButton.property('mode') == 'new_points'
+    assert layer_buttons.newShapesButton.property('mode') == 'new_shapes'
+    assert (
+        layer_buttons.newPointsButton.property('selection_state') == 'single'
+    )
+    assert (
+        layer_buttons.newShapesButton.property('selection_state') == 'single'
+    )
 
+    # Selecting multiple layers: buttons indicate multi-layer inheritance
     viewer.layers.selection = [data_layer, data_layer2]
+    assert layer_buttons.newPointsButton.property('mode') == 'new_points'
+    assert layer_buttons.newShapesButton.property('mode') == 'new_shapes'
+    assert layer_buttons.newPointsButton.property('selection_state') == 'multi'
+    assert layer_buttons.newShapesButton.property('selection_state') == 'multi'
 
-    # Clear selection and buttons should no longer be checked
-    assert (
-        layer_buttons.newPointsButton.property('mode') == 'new_points_multiple'
-    )
-    assert (
-        layer_buttons.newShapesButton.property('mode') == 'new_shapes_multiple'
-    )
-
+    # Clearing selection: buttons return to default state
     viewer.layers.selection.clear()
     assert layer_buttons.newPointsButton.property('mode') == 'new_points'
     assert layer_buttons.newShapesButton.property('mode') == 'new_shapes'
+    assert layer_buttons.newPointsButton.property('selection_state') == 'none'
+    assert layer_buttons.newShapesButton.property('selection_state') == 'none'

@@ -121,32 +121,30 @@ class QtLayerButtons(QFrame):
         self._on_selection_changed()
 
     @staticmethod
-    def _change_button_mode(button: 'QtViewerPushButton', mode: str) -> None:
-        """Change the mode of a button."""
-        button.setProperty('mode', mode)
+    def _change_button_selection_state(
+        button: 'QtViewerPushButton', state: str
+    ) -> None:
+        """Change the selection state of a new-layer button."""
+        button.setProperty('selection_state', state)
         button.style().unpolish(button)
         button.style().polish(button)
         button.update()
 
     def _on_selection_changed(self, event=None) -> None:
-        """Update button mode based on the selection state.
+        """Update button selection state based on the layer selection.
 
         This allows indicating which mode of buttons will be triggered after
         clicking on it.
         """
         if self.viewer.layers.selection.active is not None:
-            self._change_button_mode(self.newPointsButton, 'new_points_one')
-            self._change_button_mode(self.newShapesButton, 'new_shapes_one')
+            self._change_button_selection_state(self.newPointsButton, 'single')
+            self._change_button_selection_state(self.newShapesButton, 'single')
         elif self.viewer.layers.selection:
-            self._change_button_mode(
-                self.newPointsButton, 'new_points_multiple'
-            )
-            self._change_button_mode(
-                self.newShapesButton, 'new_shapes_multiple'
-            )
+            self._change_button_selection_state(self.newPointsButton, 'multi')
+            self._change_button_selection_state(self.newShapesButton, 'multi')
         else:
-            self._change_button_mode(self.newPointsButton, 'new_points')
-            self._change_button_mode(self.newShapesButton, 'new_shapes')
+            self._change_button_selection_state(self.newPointsButton, 'none')
+            self._change_button_selection_state(self.newShapesButton, 'none')
 
 
 def labeled_double_slider(
