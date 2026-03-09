@@ -1396,24 +1396,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             else [os.fspath(p) for p in path]
         )
 
-        # Validate that local paths exist before attempting to read.
-        # URLs are skipped since they can't be checked with os.path.exists.
-        from urllib.parse import urlparse
-
-        for p in paths_:
-            p_str = str(p)
-            parsed = urlparse(p_str)
-            if not (parsed.scheme and parsed.netloc) and not os.path.exists(
-                p_str
-            ):
-                raise FileNotFoundError(
-                    trans._(
-                        'Path {path!r} does not exist.',
-                        deferred=True,
-                        path=p_str,
-                    )
-                )
-
         paths: Sequence[PathOrPaths] = paths_
         # If stack is a bool and True, add an additional layer of nesting.
         if isinstance(stack, bool) and stack:
@@ -1437,15 +1419,21 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
                 # If _path is not a list already, make it a list.
                 _path = [_path] if not isinstance(_path, list) else _path
                 if plugin:
-                    added.extend(
-                        self._add_layers_with_plugins(
-                            _path,
-                            kwargs=kwargs,
-                            plugin=plugin,
-                            layer_type=layer_type,
-                            stack=_stack,
+                    try:
+                        added.extend(
+                            self._add_layers_with_plugins(
+                                _path,
+                                kwargs=kwargs,
+                                plugin=plugin,
+                                layer_type=layer_type,
+                                stack=_stack,
+                            )
                         )
-                    )
+                    except (ValueError, Exception) as e:
+                        # If reading failed, check whether the path
+                        # simply doesn't exist and raise a clearer error.
+                        self._raise_if_not_found(_path)
+                        raise
                 # no plugin choice was made
                 else:
                     layers = self._open_or_raise_error(
@@ -1454,6 +1442,29 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
                     added.extend(layers)
 
         return added
+
+    @staticmethod
+    def _raise_if_not_found(paths: list[PathLike]) -> None:
+        """Raise FileNotFoundError if any local path does not exist.
+
+        URLs are skipped since they cannot be validated with
+        ``os.path.exists``.
+        """
+        from urllib.parse import urlparse
+
+        for p in paths:
+            p_str = str(p)
+            parsed = urlparse(p_str)
+            if not (parsed.scheme and parsed.netloc) and not os.path.exists(
+                p_str
+            ):
+                raise FileNotFoundError(
+                    trans._(
+                        'Path {path!r} does not exist.',
+                        deferred=True,
+                        path=p_str,
+                    )
+                )
 
     def _open_or_raise_error(
         self,
