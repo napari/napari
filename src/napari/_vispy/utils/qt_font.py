@@ -84,12 +84,17 @@ def _load_glyph_qt(
 
         # Convert QImage to numpy array
         # QImage has stride/bytesPerLine that may not equal width due to alignment
-        ptr = image.bits()
+        ptr = image.constBits()
+        if ptr is None:
+            raise RuntimeError(
+                f'Failed to get image bits for character {char}'
+            )
         ptr.setsize(image.sizeInBytes())
         bytes_per_line = image.bytesPerLine()
 
         # Create array with proper stride, then extract only the actual image data
-        full_array = np.frombuffer(ptr, dtype=np.uint8).reshape(
+        # Type ignore: voidptr is a valid buffer but not recognized by mypy
+        full_array = np.frombuffer(ptr, dtype=np.uint8).reshape(  # type: ignore[call-overload]
             (height, bytes_per_line)
         )
         bitmap = full_array[:, :width].copy()
@@ -104,12 +109,13 @@ def _load_glyph_qt(
         top = int(-bounding_rect.top() + padding)
 
     # Create glyph dict in vispy format
-    glyph = {
+    kerning_dict: dict[str, float] = {}
+    glyph: dict[str, Any] = {
         'char': char,
         'offset': (left, top),
         'bitmap': bitmap,
         'advance': advance,
-        'kerning': {},
+        'kerning': kerning_dict,
     }
     glyphs_dict[char] = glyph
 
@@ -158,7 +164,7 @@ class QtTextureFont:
         # spread/border at the high-res for SDF calculation
         self._spread = 32
         assert self._spread % self.ratio == 0
-        self._glyphs = {}
+        self._glyphs: dict[str, dict[str, Any]] = {}
 
         # Create and cache Qt font and metrics objects
         self._qfont = QFont(self._font['face'], self._font['size'])
@@ -246,7 +252,7 @@ class QtFontManager:
     """
 
     def __init__(self, method: str = 'cpu') -> None:
-        self._fonts = {}
+        self._fonts: dict[str, QtTextureFont] = {}
         if not isinstance(method, str) or method not in ('cpu', 'gpu'):
             raise ValueError(
                 f'method must be "cpu" or "gpu", got {method} ({type(method)})'
