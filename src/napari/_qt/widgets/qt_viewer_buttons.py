@@ -125,6 +125,7 @@ class QtLayerButtons(QFrame):
         self.viewer.layers.selection.events.changed.connect(
             self._on_selection_changed
         )
+        self.viewer.layers.events.removed.connect(self._on_selection_changed)
         self._on_selection_changed()
 
     def _on_selection_changed(self, event=None) -> None:
