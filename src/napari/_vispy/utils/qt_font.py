@@ -62,13 +62,13 @@ def _load_glyph_qt(
         top = int(metrics.ascent())
     else:
         # Create QImage to render the glyph
-        image = QImage(width, height, QImage.Format_Grayscale8)
-        image.fill(Qt.black)
+        image = QImage(width, height, QImage.Format.Format_Grayscale8)
+        image.fill(Qt.GlobalColor.black)
 
         # Render the character
         painter = QPainter(image)
         painter.setFont(qfont)
-        painter.setPen(Qt.white)
+        painter.setPen(Qt.GlobalColor.white)
 
         # Position the character in the image
         # Qt's drawText(x, y, text) places the baseline at y
