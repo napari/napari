@@ -121,9 +121,3 @@ def get_text_width_height(text: Text) -> tuple[float, float]:
             height = max(height, height_lines + height_line_spacing)
 
     return width, height
-
-
-def register_napari_fonts() -> None:
-    from vispy.util.fonts import register_vispy_font
-
-    register_vispy_font(FONT_DIR, 'AlataPlus', False, False)

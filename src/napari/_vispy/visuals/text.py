@@ -6,7 +6,6 @@ from vispy.scene.visuals import Text as BaseText
 from napari._vispy.utils.qt_font import QtFontManager
 from napari._vispy.utils.text import (
     get_text_width_height,
-    register_napari_fonts,
 )
 
 # Global Qt-based font manager instance shared across all Text visuals
@@ -40,8 +39,6 @@ class Text(BaseText):
         if use_qt_fonts:
             kwargs['font_manager'] = get_qt_font_manager()
             kwargs['face'] = QGuiApplication.font().family()
-        else:
-            register_napari_fonts()
         super().__init__(*args, **kwargs)
 
     def get_width_height(self) -> tuple[float, float]:
