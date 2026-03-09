@@ -1396,6 +1396,24 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             else [os.fspath(p) for p in path]
         )
 
+        # Validate that local paths exist before attempting to read.
+        # URLs are skipped since they can't be checked with os.path.exists.
+        from urllib.parse import urlparse
+
+        for p in paths_:
+            p_str = str(p)
+            parsed = urlparse(p_str)
+            if not (parsed.scheme and parsed.netloc) and not os.path.exists(
+                p_str
+            ):
+                raise FileNotFoundError(
+                    trans._(
+                        'Path {path!r} does not exist.',
+                        deferred=True,
+                        path=p_str,
+                    )
+                )
+
         paths: Sequence[PathOrPaths] = paths_
         # If stack is a bool and True, add an additional layer of nesting.
         if isinstance(stack, bool) and stack:
