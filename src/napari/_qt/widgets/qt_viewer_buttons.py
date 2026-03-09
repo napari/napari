@@ -77,9 +77,9 @@ class QtLayerButtons(QFrame):
             trans._(
                 'Create a new points layer.\n'
                 'This button is highlighted if a layer is selected;\n'
-                'the new points layer will inherit the shape and scale of this layer\n'
-                'Deselect all layers to create a new points layer with the\n'
-                'full extent of all the data.'
+                'the new points layer will inherit the shape and all transforms of this layer.\n'
+                'If multiple layers are selected, the new points layer will span their extent.\n'
+                'If no layers are selected, the new points layer will have no scale/transform.\n'
             ),
             partial(new_points, self.viewer),
         )
@@ -90,9 +90,9 @@ class QtLayerButtons(QFrame):
             trans._(
                 'Create a new shapes layer.\n'
                 'This button is highlighted if a layer is selected;\n'
-                'the new shapes layer will inherit the shape and scale of this layer\n'
-                'Deselect all layers to create a new shapes layer with the\n'
-                'full extent of all the data.'
+                'the new shapes layer will inherit the shape and all transforms of this layer.\n'
+                'If multiple layers are selected, the new shapes layer will span their extent.\n'
+                'If no layers are selected, the new points layer will have no scale/transform.\n'
             ),
             partial(new_shapes, self.viewer),
         )
