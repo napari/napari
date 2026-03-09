@@ -97,6 +97,14 @@ def _clean_themes():
             del theme._themes[name]
 
 
+@pytest.fixture(autouse=True)
+def _clean_font_manager():
+    from napari._vispy.visuals import text
+
+    yield
+    text._qt_font_manager = None
+
+
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)
 def pytest_runtest_makereport(item, call):
     # https://docs.pytest.org/en/latest/example/simple.html#making-test-result-information-available-in-fixtures
