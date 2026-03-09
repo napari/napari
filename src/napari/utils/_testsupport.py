@@ -102,6 +102,7 @@ def _clean_font_manager():
     try:
         from napari._vispy.visuals import text
     except ImportError:
+        yield
         return
 
     yield
