@@ -20,14 +20,12 @@ QtViewerPushButton[mode="new_points"] {
 
 QtViewerPushButton[mode="new_points_one"] {
   image: url("theme_{{ id }}:/new_points.svg");
-  border: 3px solid {{ current }};
-  background-color: {{ foreground }};
+  border: 3px solid {{ darken(current, 5) }};
 }
 
 QtViewerPushButton[mode="new_points_multiple"] {
   image: url("theme_{{ id }}:/new_points.svg");
-  border: 3px solid {{ warning }};
-  background-color: {{ foreground }};
+  border: 3px solid {{ lighten(current, 20) }};
 }
 
 QtViewerPushButton[mode="new_shapes"] {
@@ -37,14 +35,12 @@ QtViewerPushButton[mode="new_shapes"] {
 
 QtViewerPushButton[mode="new_shapes_one"] {
   image: url("theme_{{ id }}:/new_shapes.svg");
-  border: 3px solid {{ current }};
-  background-color: {{ foreground }};
+  border: 3px solid {{ darken(current, 5) }};
 }
 
 QtViewerPushButton[mode="new_shapes_multiple"] {
   image: url("theme_{{ id }}:/new_shapes.svg");
-  border: 3px solid {{ warning }};
-  background-color: {{ foreground }};
+  border: 3px solid {{ lighten(current, 20) }};
 }
 
 QtViewerPushButton[mode="warning"] {
