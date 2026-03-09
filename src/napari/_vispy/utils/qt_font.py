@@ -89,7 +89,9 @@ def _load_glyph_qt(
             raise RuntimeError(
                 f'Failed to get image bits for character {char}'
             )
-        ptr.setsize(image.sizeInBytes())
+        if hasattr(ptr, 'setsize'):
+            ptr.setsize(image.sizeInBytes())
+
         bytes_per_line = image.bytesPerLine()
 
         # Create array with proper stride, then extract only the actual image data
