@@ -99,7 +99,10 @@ def _clean_themes():
 
 @pytest.fixture(autouse=True)
 def _clean_font_manager():
-    from napari._vispy.visuals import text
+    try:
+        from napari._vispy.visuals import text
+    except ImportError:
+        return
 
     yield
     text._qt_font_manager = None
