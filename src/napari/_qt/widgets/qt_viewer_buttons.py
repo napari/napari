@@ -82,7 +82,6 @@ class QtLayerButtons(QFrame):
             ),
             partial(new_points, self.viewer),
         )
-        # self.newPointsButton.setCheckable(True)
 
         self.newShapesButton = QtViewerPushButton(
             'new_shapes',
