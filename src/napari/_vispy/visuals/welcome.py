@@ -54,7 +54,6 @@ class Welcome(Node):
             pos=[0, 0],
             anchor_x='center',
             anchor_y='bottom',
-            method='gpu',
             parent=self,
         )
         self.shortcut_keybindings = Text(
@@ -63,7 +62,6 @@ class Welcome(Node):
             pos=[-80, 60],
             anchor_x='right',
             anchor_y='bottom',
-            method='gpu',
             parent=self,
         )
         self.shortcut_descriptions = Text(
@@ -72,7 +70,6 @@ class Welcome(Node):
             pos=[-60, 60],
             anchor_x='left',
             anchor_y='bottom',
-            method='gpu',
             parent=self,
         )
         self.tip = Text(
@@ -81,7 +78,6 @@ class Welcome(Node):
             pos=[0, 160],
             anchor_x='center',
             anchor_y='bottom',
-            method='gpu',
             parent=self,
         )
 
@@ -167,7 +163,7 @@ class Welcome(Node):
             self.shortcut_descriptions,
             self.tip,
         ):
-            text.font_size = max(scale * 10, 10)
+            text.font_size = max(scale * 8, 10)
 
     def set_gl_state(self, *args: Any, **kwargs: Any) -> None:
         for node in self.children:

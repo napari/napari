@@ -1,19 +1,48 @@
 from typing import Any
 
+from qtpy.QtGui import QGuiApplication
 from vispy.scene.visuals import Text as BaseText
 
+from napari._vispy.utils.qt_font import QtFontManager
 from napari._vispy.utils.text import (
     get_text_width_height,
     register_napari_fonts,
 )
 
+# Global Qt-based font manager instance shared across all Text visuals
+_qt_font_manager = None
+
+
+def get_qt_font_manager(method: str = 'cpu') -> QtFontManager:
+    """Get or create the global Qt font manager instance.
+
+    Parameters
+    ----------
+    method : str, optional
+        Rendering method ('cpu' or 'gpu'). Default is 'cpu'.
+
+    Returns
+    -------
+    QtFontManager
+        The global Qt font manager instance.
+    """
+    global _qt_font_manager
+    if _qt_font_manager is None:
+        _qt_font_manager = QtFontManager(method=method)
+    return _qt_font_manager
+
 
 class Text(BaseText):
     def __init__(
-        self, *args: Any, face: str = 'AlataPlus', **kwargs: Any
+        self, *args: Any, use_qt_fonts: bool = True, **kwargs: Any
     ) -> None:
-        register_napari_fonts()
-        super().__init__(*args, face=face, **kwargs)
+        # If using Qt fonts, pass the Qt font manager to the base class
+        if use_qt_fonts:
+            kwargs['font_manager'] = get_qt_font_manager()
+            kwargs['face'] = QGuiApplication.font().family()
+        else:
+            register_napari_fonts()
+        super().__init__(*args, **kwargs)
 
     def get_width_height(self) -> tuple[float, float]:
         width, height = get_text_width_height(self)
