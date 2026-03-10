@@ -21,6 +21,7 @@ from napari._qt.dialogs.qt_modal import QtPopup
 from napari._qt.widgets.qt_dims_sorter import QtDimsSorter
 from napari._qt.widgets.qt_spinbox import QtSpinBox
 from napari._qt.widgets.qt_tooltip import QtToolTipLabel
+from napari.layers._scalar_field import ScalarFieldBase
 from napari.utils.action_manager import action_manager
 from napari.utils.camera_orientations import (
     DepthAxisOrientation,
@@ -99,11 +100,15 @@ class QtLayerButtons(QFrame):
             'new_labels',
             trans._(
                 'Create a new labels layer.\n'
-                'The new layer will inherit the scale and shape of the extent\n'
-                'of all the layers.'
+                'If a Labels or Image layer is selected, the newly created Labels layer\n'
+                'will inherit the shape and all transforms of the selected layer.\n'
+                'If any other layer type or multiple layers are selected, the resulting\n'
+                'Labels layer will span their extent. (Warning: could be huge!)\n'
+                'If layers are present in the Viewer but none are selected, the Labels button is disabled.\n'
             ),
             self.viewer._new_labels,
         )
+        self.newLabelsButton.setCheckable(True)
 
         layout = QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
@@ -118,6 +123,7 @@ class QtLayerButtons(QFrame):
         self.viewer.layers.selection.events.changed.connect(
             self._on_selection_changed
         )
+        self.viewer.layers.events.removed.connect(self._on_selection_changed)
         self._on_selection_changed()
 
     @staticmethod
