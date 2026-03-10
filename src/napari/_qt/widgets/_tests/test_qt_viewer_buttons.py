@@ -369,9 +369,15 @@ def test_layer_buttons_checked_on_selection(qt_layer_buttons):
     viewer.layers.selection = [data_layer, data_layer2]
     assert layer_buttons.newPointsButton.property('mode') == 'new_points'
     assert layer_buttons.newShapesButton.property('mode') == 'new_shapes'
-    assert layer_buttons.newPointsButton.property('selection_state') == 'multi'
-    assert layer_buttons.newShapesButton.property('selection_state') == 'multi'
-    assert layer_buttons.newLabelsButton.property('selection_state') == 'multi'
+    assert (
+        layer_buttons.newPointsButton.property('selection_state') == 'multiple'
+    )
+    assert (
+        layer_buttons.newShapesButton.property('selection_state') == 'multiple'
+    )
+    assert (
+        layer_buttons.newLabelsButton.property('selection_state') == 'multiple'
+    )
 
     # Clearing selection: buttons return to default state
     viewer.layers.selection.clear()
