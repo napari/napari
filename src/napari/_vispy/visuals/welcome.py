@@ -78,7 +78,7 @@ class Welcome(Node):
         rgba = np.clip(np.asarray(color), 0, 1)
         if len(rgba) == 3:
             rgba = np.append(rgba, 1)
-        self._text_color = tuple(round(float(c) * 255) for c in rgba[:4])
+        self._text_color = tuple((rgba[:4] * 255).astype(int))
         self._update_text_texture()
 
     def set_version(self, version: str) -> None:
