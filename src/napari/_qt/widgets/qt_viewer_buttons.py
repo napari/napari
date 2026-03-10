@@ -138,37 +138,37 @@ class QtLayerButtons(QFrame):
         """
         if self.viewer.layers.selection.active is not None:
             self.newPointsButton._change_selection_state(
-                ButtonSelectionState.SINGLE
+                LayerCreationState.FULL
             )
             self.newShapesButton._change_selection_state(
-                ButtonSelectionState.SINGLE
+                LayerCreationState.FULL
             )
             if isinstance(
                 self.viewer.layers.selection.active, ScalarFieldBase
             ):
-                state = ButtonSelectionState.SINGLE
+                state = LayerCreationState.FULL
             else:
-                state = ButtonSelectionState.MULTIPLE
+                state = LayerCreationState.PARTIAL
             self.newLabelsButton._change_selection_state(state)
         elif self.viewer.layers.selection:
             self.newPointsButton._change_selection_state(
-                ButtonSelectionState.MULTIPLE
+                LayerCreationState.PARTIAL
             )
             self.newShapesButton._change_selection_state(
-                ButtonSelectionState.MULTIPLE
+                LayerCreationState.PARTIAL
             )
             self.newLabelsButton._change_selection_state(
-                ButtonSelectionState.MULTIPLE
+                LayerCreationState.PARTIAL
             )
         else:
             self.newPointsButton._change_selection_state(
-                ButtonSelectionState.NONE
+                LayerCreationState.NONE
             )
             self.newShapesButton._change_selection_state(
-                ButtonSelectionState.NONE
+                LayerCreationState.NONE
             )
             self.newLabelsButton._change_selection_state(
-                ButtonSelectionState.NONE
+                LayerCreationState.NONE
             )
 
         self.newLabelsButton.setEnabled(
@@ -790,10 +790,10 @@ def _omit_viewer_args(constructor):
     return _func
 
 
-class ButtonSelectionState(StrEnum):
+class LayerCreationState(StrEnum):
     NONE = 'none'
-    SINGLE = 'single'
-    MULTIPLE = 'multiple'
+    FULL = 'full'
+    PARTIAL = 'partial'
 
 
 class QtViewerPushButton(QPushButton):
@@ -831,11 +831,9 @@ class QtViewerPushButton(QPushButton):
                 action, self, extra_tooltip_text=extra_tooltip_text
             )
 
-    def _change_selection_state(
-        self, state: str | ButtonSelectionState
-    ) -> None:
+    def _change_selection_state(self, state: str | LayerCreationState) -> None:
         """Change the selection state of a new-layer button."""
-        self.setProperty('selection_state', ButtonSelectionState(state).value)
+        self.setProperty('creation_state', LayerCreationState(state).value)
         self._refresh_qss()
 
     def _refresh_qss(self) -> None:
