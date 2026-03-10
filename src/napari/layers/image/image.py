@@ -695,7 +695,7 @@ class _ImageSlicingState(ScalarFieldSlicingState):
                 dtype=self.layer.dtype,
             )
         super()._update_slice_response(response)
-        if self.layer._should_calc_clims:
+        if self.layer._should_calc_clims and not response.empty:
             self.layer.reset_contrast_limits_range()
             self.layer.reset_contrast_limits()
             self.layer._should_calc_clims = False
