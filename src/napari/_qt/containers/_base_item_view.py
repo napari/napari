@@ -17,10 +17,7 @@ if TYPE_CHECKING:
 
     from napari._qt.containers._base_item_model import _BaseEventedItemModel
     from napari.utils.events import Event
-    from napari.utils.events.containers import (
-        Selectable,
-        SelectableEventedList,
-    )
+    from napari.utils.events.containers import SelectableEventedList
 
 
 class _BaseEventedItemView(Generic[ItemType]):
@@ -50,7 +47,7 @@ class _BaseEventedItemView(Generic[ItemType]):
     """
 
     # ########## Reimplemented Public Qt Functions ##################
-    _root: Selectable
+    _root: SelectableEventedList[ItemType]
 
     def model(self) -> _BaseEventedItemModel[ItemType]:  # for type hints
         return super().model()
