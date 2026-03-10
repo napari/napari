@@ -611,3 +611,39 @@ def test_layer_renamed_event_connection_management():
 
     layers.remove(layer)
     assert len(layer.events.name.callbacks) == 0
+
+
+def test_remove_selected_skips_locked():
+    """Locked layers should not be removed by remove_selected."""
+    layers = LayerList()
+    layer_a = Image(np.random.random((10, 10)), name='a')
+    layer_b = Image(np.random.random((10, 10)), name='b')
+    layers.append(layer_a)
+    layers.append(layer_b)
+    layer_a.locked = True
+    layers.selection = {layer_a, layer_b}
+    layers.remove_selected()
+    assert len(layers) == 1
+    assert layers[0] is layer_a
+
+
+def test_remove_selected_all_locked():
+    """When all selected layers are locked, none should be removed."""
+    layers = LayerList()
+    layer = Image(np.random.random((10, 10)), name='a')
+    layers.append(layer)
+    layer.locked = True
+    layers.selection = {layer}
+    layers.remove_selected()
+    assert len(layers) == 1
+
+
+def test_lock_permanent_prevents_unlock():
+    """A permanently locked layer cannot be unlocked."""
+    layers = LayerList()
+    layer = Image(np.random.random((10, 10)), name='a')
+    layers.append(layer)
+    layer.lock_permanent = True
+    assert layer.locked
+    layer.locked = False
+    assert layer.locked  # still locked

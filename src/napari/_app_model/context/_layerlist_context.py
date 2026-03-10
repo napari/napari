@@ -40,6 +40,18 @@ class LayerListContextKeys(ContextNamespace['Layer']):
     )
 
 
+def _any_locked(s: LayerSel) -> bool:
+    return bool(s and any(getattr(x, 'locked', False) for x in s))
+
+
+def _all_locked(s: LayerSel) -> bool:
+    return bool(s and all(getattr(x, 'locked', False) for x in s))
+
+
+def _any_permanently_locked(s: LayerSel) -> bool:
+    return bool(s and any(getattr(x, 'lock_permanent', False) for x in s))
+
+
 def _all_linked(s: LayerSel) -> bool:
     from napari.layers.utils._link_layers import layer_is_linked
 
@@ -332,4 +344,19 @@ class LayerListSelectionContextKeys(ContextNamespace['LayerSel']):
         False,
         trans._('True when the active layer can have a Features table.'),
         _active_supports_features,
+    )
+    any_selected_layers_locked = ContextKey(
+        False,
+        trans._('True when any selected layer is locked.'),
+        _any_locked,
+    )
+    all_selected_layers_locked = ContextKey(
+        False,
+        trans._('True when all selected layers are locked.'),
+        _all_locked,
+    )
+    any_selected_layers_permanently_locked = ContextKey(
+        False,
+        trans._('True when any selected layer is permanently locked.'),
+        _any_permanently_locked,
     )

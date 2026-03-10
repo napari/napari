@@ -219,3 +219,65 @@ def test_invalidate_extent_shear():
     with layer._block_refresh():
         layer.shear = [1]
     npt.assert_array_equal(layer.extent.world, [[0, 0], [28, 19]])
+
+
+def test_layer_locked_default():
+    layer = SampleLayer(np.empty((10, 10)))
+    assert not layer.locked
+
+
+def test_layer_locked_setter():
+    layer = SampleLayer(np.empty((10, 10)))
+    mock = Mock()
+    layer.events.locked.connect(mock)
+    layer.locked = True
+    mock.assert_called_once()
+    assert layer.locked
+    mock.reset_mock()
+    layer.locked = True  # same value should not re-emit
+    mock.assert_not_called()
+
+
+def test_layer_locked_not_in_base_state():
+    """locked is not in _get_base_state to avoid TypeError on layer conversion."""
+    layer = SampleLayer(np.empty((10, 10)))
+    layer.locked = True
+    state = layer._get_base_state()
+    assert 'locked' not in state
+
+
+def test_layer_locked_constructor():
+    layer = SampleLayer(np.empty((10, 10)), locked=True)
+    assert layer.locked
+
+
+def test_layer_lock_permanent_default():
+    layer = SampleLayer(np.empty((10, 10)))
+    assert not layer.lock_permanent
+
+
+def test_layer_lock_permanent_prevents_unlock():
+    layer = SampleLayer(np.empty((10, 10)), lock_permanent=True)
+    assert layer.locked
+    assert layer.lock_permanent
+    layer.locked = False  # should be ignored
+    assert layer.locked  # still locked
+
+
+def test_layer_lock_permanent_setter():
+    layer = SampleLayer(np.empty((10, 10)))
+    layer.lock_permanent = True
+    assert layer.locked
+    assert layer.lock_permanent
+    layer.locked = False  # ignored
+    assert layer.locked
+    layer.lock_permanent = False
+    layer.locked = False  # now allowed
+    assert not layer.locked
+
+
+def test_layer_lock_permanent_not_in_base_state():
+    """lock_permanent is not in _get_base_state to avoid TypeError on layer conversion."""
+    layer = SampleLayer(np.empty((10, 10)), lock_permanent=True)
+    state = layer._get_base_state()
+    assert 'lock_permanent' not in state
