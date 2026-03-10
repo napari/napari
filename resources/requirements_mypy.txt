@@ -8,7 +8,7 @@ build==1.4.0
     # via npe2
 certifi==2026.2.25
     # via requests
-charset-normalizer==3.4.4
+charset-normalizer==3.4.5
     # via requests
 click==8.3.1
     # via typer
@@ -30,7 +30,7 @@ mypy-extensions==1.1.0
     # via mypy
 npe2==0.8.1
     # via -r resources/requirements_mypy.in
-numpy==2.4.2
+numpy==2.4.3
     # via -r resources/requirements_mypy.in
 packaging==26.0
     # via
@@ -38,7 +38,7 @@ packaging==26.0
     #   qtpy
 pathspec==1.0.4
     # via mypy
-platformdirs==4.9.2
+platformdirs==4.9.4
     # via npe2
 psygnal==0.15.1
     # via
@@ -82,7 +82,7 @@ rich==14.3.3
     #   typer
 shellingham==1.5.4
     # via typer
-superqt==0.7.8
+superqt==0.8.0
     # via magicgui
 tomli-w==1.2.0
     # via npe2
