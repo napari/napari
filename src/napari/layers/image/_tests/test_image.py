@@ -5,6 +5,7 @@ import pytest
 import xarray as xr
 
 from napari._tests.utils import check_layer_world_data_extent
+from napari.components import ViewerModel
 from napari.components.dims import Dims
 from napari.layers import Image
 from napari.layers.image._image_constants import ImageRendering
@@ -997,6 +998,38 @@ def test_adjust_contrast_limits_range_set_data():
     assert not np.array_equal(
         img_lay._slice.image.view, img_lay._slice.image.raw
     )
+
+
+_OOB_TRANSLATE_DATA = np.random.default_rng(0).uniform(500, 1000, (3, 6, 6))
+
+
+@pytest.mark.parametrize(
+    'data',
+    [
+        da.from_array(_OOB_TRANSLATE_DATA),
+        xr.DataArray(_OOB_TRANSLATE_DATA),
+    ],
+    ids=['dask', 'xarray'],
+)
+def test_contrast_limits_non_numpy_out_of_bounds_translate(data):
+    """Non-numpy arrays with a translate that places world origin outside the
+    data extent should still compute contrast_limits from the actual data.
+
+    Regression test for https://github.com/napari/napari/issues/8755.
+    """
+    # translate=[1, 0, 0] with scale=[0.3, ...] places the data at z ∈ [1, 1.9];
+    # world coordinate 0 is outside the data extent on the non-displayed z axis,
+    # so the first slice (at world origin) is out-of-bounds and returns an empty
+    # response. Adding the layer to a ViewerModel causes dims.point to be clipped
+    # to the valid range, firing a valid slice that triggers contrast computation.
+    v = ViewerModel()
+    layer = v.add_image(data, scale=[0.3, 0.1, 0.1], translate=[1.0, 0.0, 0.0])
+    # Numpy takes the eager path in __init__ and is always correct, so we use it as the
+    # reference.
+    ref = v.add_image(
+        _OOB_TRANSLATE_DATA, scale=[0.3, 0.1, 0.1], translate=[1.0, 0.0, 0.0]
+    )
+    npt.assert_allclose(layer.contrast_limits, ref.contrast_limits)
 
 
 def test_thick_slice_multiscale():
