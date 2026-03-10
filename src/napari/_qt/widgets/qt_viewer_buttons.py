@@ -134,6 +134,11 @@ class QtLayerButtons(QFrame):
     ) -> None:
         """Change the selection state of a new-layer button."""
         button.setProperty('selection_state', state)
+        QtLayerButtons._refresh_button_qss(button)
+
+    @staticmethod
+    def _refresh_button_qss(button: 'QtViewerPushButton') -> None:
+        """Refresh the button's QSS (Qt Style Sheet)."""
         button.style().unpolish(button)
         button.style().polish(button)
         button.update()
