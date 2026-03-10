@@ -14,12 +14,13 @@ from weakref import WeakSet
 import numpy as np
 from OpenGL.error import GLError
 from superqt.utils import qthrottled
-from vispy.scene import SceneCanvas as SceneCanvas_, ViewBox, Widget
+from vispy.scene import Grid, SceneCanvas as SceneCanvas_, ViewBox, Widget
 
 from napari._vispy.camera import VispyCamera
 from napari._vispy.mouse_event import NapariMouseEvent
 from napari._vispy.utils.cursor import QtCursorVisual
 from napari._vispy.utils.gl import get_max_texture_sizes
+from napari._vispy.utils.qt_font import QtFontManager
 from napari._vispy.utils.visual import create_vispy_overlay
 from napari.components._viewer_constants import CanvasPosition
 from napari.components.overlays import CanvasOverlay
@@ -167,6 +168,8 @@ class VispyCanvas:
         self,
         viewer: ViewerModel,
         key_map_handler: KeymapHandler,
+        font_manager: QtFontManager,
+        font_family: str,
         *args,
         **kwargs,
     ) -> None:
@@ -176,18 +179,20 @@ class VispyCanvas:
         self.max_texture_sizes = None
         self._last_theme_color = None
         self._background_color_override = None
+        self._font_manager = font_manager
+        self._overly_font = font_family
         self.viewer = viewer
         self._scene_canvas = NapariSceneCanvas(
             *args, keys=None, vsync=True, **kwargs
         )
 
-        self.view = self.central_widget.add_view(border_width=0)
+        self.view: ViewBox = self.central_widget.add_view(border_width=0)
         self.view.order = 100  # ensure it's always drawn on top
         self.camera = VispyCamera(
             self.view, self.viewer.camera, self.viewer.dims
         )
 
-        self.grid = self.central_widget.add_grid(
+        self.grid: Grid = self.central_widget.add_grid(
             border_width=0,
         )
         self.grid_views = []
@@ -894,13 +899,20 @@ class VispyCanvas:
         )
 
     def _create_or_update_vispy_viewer_overlay(
-        self, overlay, vispy_overlay, view
+        self,
+        overlay: Overlay,
+        vispy_overlay: VispyBaseOverlay | None,
+        view: ViewBox,
     ) -> None:
         parent = view if isinstance(overlay, CanvasOverlay) else view.scene
 
         if vispy_overlay is None:
             vispy_overlay = create_vispy_overlay(
-                overlay=overlay, viewer=self.viewer, parent=parent
+                overlay=overlay,
+                viewer=self.viewer,
+                parent=parent,
+                font_manager=self._font_manager,
+                font_family=self._overly_font,
             )
             self._overlay_to_visual[overlay].append(vispy_overlay)
 
@@ -971,7 +983,7 @@ class VispyCanvas:
                         # no overlays should be displayed in empty viewboxes
                         continue
 
-                    view = self.grid[row, col]
+                    view: ViewBox = self.grid[row, col]
                     self._create_or_update_vispy_viewer_overlay(
                         overlay, vispy_overlay, view
                     )

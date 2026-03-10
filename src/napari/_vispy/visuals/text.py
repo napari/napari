@@ -1,6 +1,5 @@
 from typing import Any
 
-from qtpy.QtGui import QGuiApplication
 from vispy.scene.visuals import Text as BaseText
 
 from napari._vispy.utils.qt_font import QtFontManager
@@ -10,6 +9,8 @@ from napari._vispy.utils.text import (
 
 # Global Qt-based font manager instance shared across all Text visuals
 _qt_font_manager = None
+
+_FONT_FAMILY = 'OpenSans'
 
 
 def get_qt_font_manager(method: str = 'cpu') -> QtFontManager:
@@ -32,13 +33,10 @@ def get_qt_font_manager(method: str = 'cpu') -> QtFontManager:
 
 
 class Text(BaseText):
-    def __init__(
-        self, *args: Any, use_qt_fonts: bool = True, **kwargs: Any
-    ) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         # If using Qt fonts, pass the Qt font manager to the base class
-        if use_qt_fonts:
-            kwargs['font_manager'] = get_qt_font_manager()
-            kwargs['face'] = QGuiApplication.font().family()
+        if 'face' not in kwargs:
+            kwargs['face'] = _FONT_FAMILY
         super().__init__(*args, **kwargs)
 
     def get_width_height(self) -> tuple[float, float]:
