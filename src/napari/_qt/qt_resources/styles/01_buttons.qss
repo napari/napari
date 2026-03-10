@@ -48,9 +48,12 @@ QtViewerPushButton[mode="new_labels"] {
   border: 3px solid {{ background }};
 }
 
-QtViewerPushButton[mode="new_labels"]:checked {
-  border: 3px solid {{ current }};
-  background-color: {{ foreground }};
+QtViewerPushButton[mode="new_labels"][selection_state="single"] {
+  border: 3px solid {{ darken(current, 5) }};
+}
+
+QtViewerPushButton[mode="new_labels"][selection_state="multi"] {
+  border: 3px solid {{ lighten(current, 20) }};
 }
 
 QtViewerPushButton[mode="console"] {

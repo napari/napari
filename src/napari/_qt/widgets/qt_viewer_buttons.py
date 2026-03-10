@@ -107,7 +107,10 @@ class QtLayerButtons(QFrame):
             ),
             self.viewer._new_labels,
         )
-        self.newLabelsButton.setCheckable(True)
+        # Labels button disabled when there are layers present but none are selected
+        self.newLabelsButton.setEnabled(
+            not self._layers_present_and_none_selected()
+        )
 
         layout = QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
@@ -136,7 +139,7 @@ class QtLayerButtons(QFrame):
         button.update()
 
     def _on_selection_changed(self, event=None) -> None:
-        """Update button selection state based on the layer selection.
+        """Update button selection/enablement state based on the layer selection.
 
         This allows indicating which mode of buttons will be triggered after
         clicking on it.
@@ -144,12 +147,25 @@ class QtLayerButtons(QFrame):
         if self.viewer.layers.selection.active is not None:
             self._change_button_selection_state(self.newPointsButton, 'single')
             self._change_button_selection_state(self.newShapesButton, 'single')
+            self._change_button_selection_state(self.newLabelsButton, 'single')
         elif self.viewer.layers.selection:
             self._change_button_selection_state(self.newPointsButton, 'multi')
             self._change_button_selection_state(self.newShapesButton, 'multi')
+            self._change_button_selection_state(self.newLabelsButton, 'multi')
         else:
             self._change_button_selection_state(self.newPointsButton, 'none')
             self._change_button_selection_state(self.newShapesButton, 'none')
+            self._change_button_selection_state(self.newLabelsButton, 'none')
+
+        self.newLabelsButton.setEnabled(
+            not self._layers_present_and_none_selected()
+        )
+
+    def _layers_present_and_none_selected(self) -> bool:
+        """Check if there are layers present but none selected."""
+        return bool(self.viewer.layers) and not bool(
+            self.viewer.layers.selection
+        )
 
 
 def labeled_double_slider(
