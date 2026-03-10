@@ -63,12 +63,14 @@ def add_new_points(viewer: 'ViewerModel') -> None:
         viewer.add_points(  # type: ignore[attr-defined]
             ndim=ndim,
             scale=(1,) * ndim,
+            units=viewer.layers.extent.units,
         )
     else:
         extent = viewer.layers.get_extent(viewer.layers.selection)
         viewer.add_points(  # type: ignore[attr-defined]
             ndim=len(extent.step),
             scale=extent.step,
+            units=viewer.layers.extent.units,
         )
 
 
@@ -78,12 +80,14 @@ def add_new_shapes(viewer: 'ViewerModel') -> None:
         viewer.add_shapes(  # type: ignore[attr-defined]
             ndim=ndim,
             scale=(1,) * ndim,
+            units=viewer.layers.extent.units,
         )
     else:
         extent = viewer.layers.get_extent(viewer.layers.selection)
         viewer.add_shapes(  # type: ignore[attr-defined]
             ndim=len(extent.step),
             scale=extent.step,
+            units=viewer.layers.extent.units,
         )
 
 
