@@ -21,6 +21,7 @@ from napari._qt.dialogs.qt_modal import QtPopup
 from napari._qt.widgets.qt_dims_sorter import QtDimsSorter
 from napari._qt.widgets.qt_spinbox import QtSpinBox
 from napari._qt.widgets.qt_tooltip import QtToolTipLabel
+from napari.layers._scalar_field import ScalarFieldBase
 from napari.utils.action_manager import action_manager
 from napari.utils.camera_orientations import (
     DepthAxisOrientation,
@@ -76,9 +77,9 @@ class QtLayerButtons(QFrame):
             trans._(
                 'Create a new points layer.\n'
                 'This button is highlighted if a layer is selected;\n'
-                'the new points layer will inherit the shape and scale of this layer\n'
-                'Deselect all layers to create a new points layer with the\n'
-                'full extent of all the data.'
+                'the new points layer will inherit the shape and all transforms of this layer.\n'
+                'If multiple layers are selected, the new points layer will span their extent.\n'
+                'If no layers are selected, the new points layer will have no scale/transform.\n'
             ),
             partial(new_points, self.viewer),
         )
@@ -89,9 +90,9 @@ class QtLayerButtons(QFrame):
             trans._(
                 'Create a new shapes layer.\n'
                 'This button is highlighted if a layer is selected;\n'
-                'the new shapes layer will inherit the shape and scale of this layer\n'
-                'Deselect all layers to create a new shapes layer with the\n'
-                'full extent of all the data.'
+                'the new shapes layer will inherit the shape and all transforms of this layer.\n'
+                'If multiple layers are selected, the new shapes layer will span their extent.\n'
+                'If no layers are selected, the new points layer will have no scale/transform.\n'
             ),
             partial(new_shapes, self.viewer),
         )
@@ -101,11 +102,15 @@ class QtLayerButtons(QFrame):
             'new_labels',
             trans._(
                 'Create a new labels layer.\n'
-                'The new layer will inherit the scale and shape of the extent\n'
-                'of all the layers.'
+                'If a Labels or Image layer is selected, the newly created Labels layer\n'
+                'will inherit the shape and all transforms of the selected layer.\n'
+                'If any other layer type or multiple layers are selected, the resulting\n'
+                'Labels layer will span their extent. (Warning: could be huge!)\n'
+                'If layers are present in the Viewer but none are selected, the Labels button is disabled.\n'
             ),
             self.viewer._new_labels,
         )
+        self.newLabelsButton.setCheckable(True)
 
         layout = QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
@@ -120,6 +125,7 @@ class QtLayerButtons(QFrame):
         self.viewer.layers.selection.events.changed.connect(
             self._on_selection_changed
         )
+        self.viewer.layers.events.removed.connect(self._on_selection_changed)
         self._on_selection_changed()
 
     def _on_selection_changed(self, event=None) -> None:
@@ -132,6 +138,13 @@ class QtLayerButtons(QFrame):
         has_selection = bool(self.viewer.layers.selection)
         self.newPointsButton.setChecked(has_selection)
         self.newShapesButton.setChecked(has_selection)
+        new_labels_inherit_shape = isinstance(
+            self.viewer.layers.selection.active, ScalarFieldBase
+        )
+        self.newLabelsButton.setChecked(new_labels_inherit_shape)
+        self.newLabelsButton.setEnabled(
+            has_selection or not self.viewer.layers
+        )
 
 
 def labeled_double_slider(

@@ -33,7 +33,7 @@ certifi==2026.2.25
     # via
     #   napari (pyproject.toml)
     #   requests
-charset-normalizer==3.4.4
+charset-normalizer==3.4.5
     # via requests
 click==8.3.1
     # via
@@ -49,7 +49,7 @@ coverage==7.13.4
     # via napari (pyproject.toml)
 cuda-bindings==12.9.4
     # via torch
-cuda-pathfinder==1.4.0
+cuda-pathfinder==1.4.1
     # via cuda-bindings
 cycler==0.12.1
     # via matplotlib
@@ -117,7 +117,7 @@ ipykernel==6.31.0
     #   -r resources/constraints/version_denylist.txt
     #   napari-console
     #   qtconsole
-ipython==9.10.0
+ipython==9.11.0
     # via
     #   napari (pyproject.toml)
     #   ipykernel
@@ -147,7 +147,7 @@ kiwisolver==1.4.9
     # via
     #   matplotlib
     #   vispy
-lazy-loader==0.4
+lazy-loader==0.5
     # via
     #   napari (pyproject.toml)
     #   scikit-image
@@ -209,7 +209,7 @@ numba==0.64.0
     # via napari (pyproject.toml)
 numcodecs==0.16.5
     # via zarr
-numpy==2.4.2
+numpy==2.4.3
     # via
     #   napari (pyproject.toml)
     #   bermuda
@@ -312,7 +312,7 @@ pint==0.25.2
     #   napari-metadata
 pip==26.0.1
     # via napari-plugin-manager
-platformdirs==4.9.2
+platformdirs==4.9.4
     # via
     #   jupyter-core
     #   npe2
@@ -434,7 +434,7 @@ python-dateutil==2.9.0.post0
     #   jupyter-client
     #   matplotlib
     #   pandas
-python-discovery==1.1.0
+python-discovery==1.1.1
     # via virtualenv
 python-dotenv==1.2.2
     # via pydantic-settings
@@ -506,7 +506,7 @@ sortedcontainers==2.4.0
     # via hypothesis
 stack-data==0.6.3
     # via ipython
-superqt==0.7.8
+superqt==0.8.0
     # via
     #   napari (pyproject.toml)
     #   magicgui
@@ -517,7 +517,7 @@ tensorstore==0.1.81
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
-tifffile==2026.2.24
+tifffile==2026.3.3
     # via
     #   napari (pyproject.toml)
     #   scikit-image
@@ -581,7 +581,7 @@ vispy==0.16.1
     #   napari-svg
 wcwidth==0.6.0
     # via prompt-toolkit
-wrapt==2.1.1
+wrapt==2.1.2
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)

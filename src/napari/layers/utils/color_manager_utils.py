@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -12,7 +13,7 @@ if TYPE_CHECKING:
     from napari.layers.utils.color_manager import ColorManager
 
 
-def guess_continuous(color_map: np.ndarray) -> bool:
+def guess_continuous(color_map: np.ndarray, feature_name: str) -> bool:
     """Guess if the property is continuous (return True) or categorical (return False)
 
     The property is guessed as continuous if it is a float or contains over 16 elements.
@@ -27,11 +28,21 @@ def guess_continuous(color_map: np.ndarray) -> bool:
     continuous : bool
         True of the property is guessed to be continuous, False if not.
     """
-    # if the property is a floating type, guess continuous
-    return issubclass(color_map.dtype.type, np.floating) or (
-        len(np.unique(color_map)) > 16
-        and issubclass(color_map.dtype.type, np.integer)
-    )
+    if issubclass(color_map.dtype.type, np.floating):
+        return True
+    if issubclass(color_map.dtype.type, np.integer):
+        if len(np.unique(color_map)) < 16:
+            warnings.warn(
+                f"Feature '{feature_name}' looks like categorical data, since it contains "
+                'less than 16 integer unique values. Color mode set to cycle. '
+                'If your data is not supposed to be categorical, convert it to floats.',
+                RuntimeWarning,
+                stacklevel=4,
+            )
+            return False
+        return True
+    # anything else is categorical
+    return False
 
 
 def is_color_mapped(color, properties):
