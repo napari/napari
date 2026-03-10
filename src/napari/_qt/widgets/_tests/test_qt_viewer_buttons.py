@@ -344,6 +344,9 @@ def test_layer_buttons_checked_on_selection(qt_layer_buttons):
     assert layer_buttons.newShapesButton.property('mode') == 'new_shapes'
     assert layer_buttons.newPointsButton.property('selection_state') == 'none'
     assert layer_buttons.newShapesButton.property('selection_state') == 'none'
+    assert layer_buttons.newLabelsButton.property('selection_state') == 'none'
+    # no layers in the viewer, labels button is enabled
+    assert layer_buttons.newLabelsButton.isEnabled()
 
     data_layer = viewer.add_image(np.zeros((10, 10)))
     data_layer2 = viewer.add_image(np.zeros((10, 10)))
@@ -358,6 +361,9 @@ def test_layer_buttons_checked_on_selection(qt_layer_buttons):
     assert (
         layer_buttons.newShapesButton.property('selection_state') == 'single'
     )
+    assert (
+        layer_buttons.newLabelsButton.property('selection_state') == 'single'
+    )
 
     # Selecting multiple layers: buttons indicate multi-layer inheritance
     viewer.layers.selection = [data_layer, data_layer2]
@@ -365,6 +371,7 @@ def test_layer_buttons_checked_on_selection(qt_layer_buttons):
     assert layer_buttons.newShapesButton.property('mode') == 'new_shapes'
     assert layer_buttons.newPointsButton.property('selection_state') == 'multi'
     assert layer_buttons.newShapesButton.property('selection_state') == 'multi'
+    assert layer_buttons.newLabelsButton.property('selection_state') == 'multi'
 
     # Clearing selection: buttons return to default state
     viewer.layers.selection.clear()
@@ -372,3 +379,6 @@ def test_layer_buttons_checked_on_selection(qt_layer_buttons):
     assert layer_buttons.newShapesButton.property('mode') == 'new_shapes'
     assert layer_buttons.newPointsButton.property('selection_state') == 'none'
     assert layer_buttons.newShapesButton.property('selection_state') == 'none'
+    assert layer_buttons.newLabelsButton.property('selection_state') == 'none'
+    # layers present but none selected, labels button is disabled
+    assert not layer_buttons.newLabelsButton.isEnabled()
