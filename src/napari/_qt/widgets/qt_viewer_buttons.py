@@ -1,5 +1,5 @@
 import warnings
-from enum import Enum, EnumMeta, StrEnum
+from enum import Enum, EnumMeta
 from functools import partial, wraps
 from typing import TYPE_CHECKING
 
@@ -30,6 +30,7 @@ from napari.utils.camera_orientations import (
     VerticalAxisOrientation,
     VerticalAxisOrientationStr,
 )
+from napari.utils.compat import StrEnum
 from napari.utils.misc import in_ipython, in_jupyter, in_python_repl
 from napari.utils.translations import trans
 
