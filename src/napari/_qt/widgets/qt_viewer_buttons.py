@@ -21,6 +21,7 @@ from napari._qt.dialogs.qt_modal import QtPopup
 from napari._qt.widgets.qt_dims_sorter import QtDimsSorter
 from napari._qt.widgets.qt_spinbox import QtSpinBox
 from napari._qt.widgets.qt_tooltip import QtToolTipLabel
+from napari.layers._scalar_field import ScalarFieldBase
 from napari.utils.action_manager import action_manager
 from napari.utils.camera_orientations import (
     DepthAxisOrientation,
@@ -142,9 +143,13 @@ class QtLayerButtons(QFrame):
             self.newShapesButton._change_selection_state(
                 ButtonSelectionState.SINGLE
             )
-            self.newLabelsButton._change_selection_state(
-                ButtonSelectionState.SINGLE
-            )
+            if isinstance(
+                self.viewer.layers.selection.active, ScalarFieldBase
+            ):
+                state = ButtonSelectionState.SINGLE
+            else:
+                state = ButtonSelectionState.MULTIPLE
+            self.newLabelsButton._change_selection_state(state)
         elif self.viewer.layers.selection:
             self.newPointsButton._change_selection_state(
                 ButtonSelectionState.MULTIPLE
