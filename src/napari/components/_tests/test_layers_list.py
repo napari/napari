@@ -710,3 +710,28 @@ def test_warn_units_dimensions2():
         layer_list.units = ('nm', 'nm')
 
     assert layer_list.units == (REG.um, REG.um, REG.um)
+
+
+def test_cannot_override_unit_when_inconsistent_layers():
+    layer_1 = Image(np.zeros((5, 5)), units=('um', 'um'))
+    layer_2 = Image(np.zeros((5, 5)), units=('s', 'nm'))
+    layer_list = LayerList([layer_1, layer_2])
+    assert layer_list.units is None
+    with pytest.raises(
+        ValueError,
+        match='Cannot set units when layers have inconsistent dimensionality',
+    ):
+        layer_list.units = ('nm', 'nm')
+    assert layer_list.units is None
+
+
+def test_warn_incompatible_overriding_units():
+    layer_1 = Image(np.zeros((5, 5)), units=('um', 'um'))
+    layer_list = LayerList([layer_1])
+    assert layer_list.units == (REG.um, REG.um)
+    with pytest.raises(
+        ValueError, match='On axis -2 units must be consistent'
+    ):
+        layer_list.units = ('s', 'nm')
+
+    assert layer_list.units == (REG.um, REG.um)

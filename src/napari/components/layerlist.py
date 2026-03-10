@@ -558,6 +558,8 @@ class LayerList(SelectableEventedList[Layer]):
         units : tuple[pint.Unit, ...] or None
             Units of layers in world coordinates.
         """
+        if self.extent.units is None:
+            return None
         return self._units or self.extent.units
 
     @units.setter
@@ -575,11 +577,26 @@ class LayerList(SelectableEventedList[Layer]):
             self.events.units(value=self.units)
             return
 
+        if self.extent.units is None:
+            raise ValueError(
+                'Cannot set units when layers have inconsistent dimensionality.'
+            )
+
         if len(units) < self.ndim:
             raise ValueError(
                 'Number of units must be at least the number of dimensions.'
             )
         units = get_units_from_name(units)
+        for i, (new_unit, old_unit) in enumerate(
+            zip(units[::-1], self.units[::-1], strict=False), start=1
+        ):
+            if new_unit.dimensionality != old_unit.dimensionality:
+                text = (
+                    f'On axis -{i} units must be consistent across all dimensions.'
+                    f'The new dimensionality is {new_unit.dimensionality} '
+                    f'while the previous dimensionality was {old_unit.dimensionality}.'
+                )
+                raise ValueError(text)
         self._units = units
         self._clean_cache()
         self.events.units(value=self.units)
