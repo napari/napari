@@ -1,5 +1,5 @@
 import warnings
-from enum import Enum, EnumMeta
+from enum import Enum, EnumMeta, StrEnum
 from functools import partial, wraps
 from typing import TYPE_CHECKING
 
@@ -128,14 +128,6 @@ class QtLayerButtons(QFrame):
         self.viewer.layers.events.removed.connect(self._on_selection_changed)
         self._on_selection_changed()
 
-    @staticmethod
-    def _change_button_selection_state(
-        button: 'QtViewerPushButton', state: str
-    ) -> None:
-        """Change the selection state of a new-layer button."""
-        button.setProperty('selection_state', state)
-        button._refresh_qss()
-
     def _on_selection_changed(self, event=None) -> None:
         """Update button selection/enablement state based on the layer selection.
 
@@ -143,17 +135,17 @@ class QtLayerButtons(QFrame):
         clicking on it.
         """
         if self.viewer.layers.selection.active is not None:
-            self._change_button_selection_state(self.newPointsButton, 'single')
-            self._change_button_selection_state(self.newShapesButton, 'single')
-            self._change_button_selection_state(self.newLabelsButton, 'single')
+            self.newPointsButton._change_selection_state('single')
+            self.newShapesButton._change_selection_state('single')
+            self.newLabelsButton._change_selection_state('single')
         elif self.viewer.layers.selection:
-            self._change_button_selection_state(self.newPointsButton, 'multi')
-            self._change_button_selection_state(self.newShapesButton, 'multi')
-            self._change_button_selection_state(self.newLabelsButton, 'multi')
+            self.newPointsButton._change_selection_state('multi')
+            self.newShapesButton._change_selection_state('multi')
+            self.newLabelsButton._change_selection_state('multi')
         else:
-            self._change_button_selection_state(self.newPointsButton, 'none')
-            self._change_button_selection_state(self.newShapesButton, 'none')
-            self._change_button_selection_state(self.newLabelsButton, 'none')
+            self.newPointsButton._change_selection_state('none')
+            self.newShapesButton._change_selection_state('none')
+            self.newLabelsButton._change_selection_state('none')
 
         self.newLabelsButton.setEnabled(
             not self._layers_present_and_none_selected()
@@ -789,6 +781,11 @@ class QtViewerPushButton(QPushButton):
         action name to be triggered on button click
     """
 
+    class SelectionState(StrEnum):
+        NONE = 'none'
+        SINGLE = 'single'
+        MULTI = 'multi'
+
     @_omit_viewer_args
     def __init__(
         self,
@@ -808,6 +805,12 @@ class QtViewerPushButton(QPushButton):
             action_manager.bind_button(
                 action, self, extra_tooltip_text=extra_tooltip_text
             )
+
+    def _change_selection_state(self, state: str) -> None:
+        """Change the selection state of a new-layer button."""
+        # convert to str enum to validate
+        self.setProperty('selection_state', self.SelectionState(state).value)
+        self._refresh_qss()
 
     def _refresh_qss(self) -> None:
         """Refresh the button's QSS (Qt Style Sheet)."""
