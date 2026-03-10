@@ -24,6 +24,8 @@ if TYPE_CHECKING:
     from npe2.manifest.io import WriterContribution
     from typing_extensions import Self
 
+__all__ = ('LayerList',)
+
 
 def get_name(layer: Layer) -> str:
     """Return the name of a layer."""
@@ -512,33 +514,13 @@ class LayerList(SelectableEventedList[Layer]):
             return None
 
         reg = pint.get_application_registry()
-
-        def cmp(u1: pint.Unit, u2: pint.Unit) -> bool:
-            return reg.get_base_units(u1)[0] < reg.get_base_units(u2)[0]
-
-        def update_u_dkt(units_l: tuple[pint.Unit, ...]) -> None:
-            """Update the dimensionality_to_unit dictionary with the smallest units.
-
-            Iterate over the units in units_t and for each dimensionality,
-            check if it is already in the dimensionality_to_unit dictionary.
-            If it is not, or if the current unit is 'smaller' than the existing
-            unit (as determined by the cmp function), update the dictionary.
-            """
-            for u in units_l:
-                dim = u.dimensionality
-                if not (
-                    dim in dimensionality_to_unit
-                    and cmp(dimensionality_to_unit[dim], u)
-                ):
-                    dimensionality_to_unit[dim] = u
-
         units = ()
         dimensionality_to_unit: dict[pint.util.UnitsContainer, pint.Unit] = {}
         # for each dimensionality of units (time, length, mass, etc.)
         # we will store the 'smallest' unit (e.g for nm and um, we will choose nm)
 
         for extent in layers_extent:
-            update_u_dkt(extent.units)
+            update_u_dkt(extent.units, dimensionality_to_unit, reg)
             for u1_, u2_ in zip(extent.units[::-1], units[::-1], strict=False):
                 if u1_.dimensionality != u2_.dimensionality:
                     return None
@@ -736,3 +718,56 @@ class LayerList(SelectableEventedList[Layer]):
             yield
         finally:
             self.events.end_batch()
+
+
+def cmp(u1: pint.Unit, u2: pint.Unit, registry: pint.UnitRegistry) -> bool:
+    """
+    Compare two units using pint register
+
+    Parameters
+    ----------
+    u1: pint.Unit
+        first unit to compare
+    u2: pint.Unit
+        second unit to compare
+    registry: pint.UnitRegistry
+        unit registry used for unit comparison
+
+    Returns
+    -------
+    bool
+        True if u1 is smaller than u2, False otherwise
+
+    """
+    return registry.get_base_units(u1)[0] < registry.get_base_units(u2)[0]
+
+
+def update_u_dkt(
+    units_l: Iterable[pint.Unit],
+    dimensionality_to_unit: dict[pint.util.UnitsContainer, pint.Unit],
+    registry: pint.UnitRegistry,
+) -> None:
+    """Update the dimensionality_to_unit dictionary with the smallest units.
+
+    Iterate over the units in units_t and for each dimensionality,
+    check if it is already in the dimensionality_to_unit dictionary.
+    If it is not, or if the current unit is 'smaller' than the existing
+    unit (as determined by the cmp function), update the dictionary
+
+    Parameters
+    ----------
+
+    units_l : iterable of pint.Unit
+        sequence of units to be checked and possibly updated
+    dimensionality_to_unit : dict
+        dictionary mapping dimensionality to the smallest unit
+    registry : pint.UnitRegistry
+        unit registry used for unit comparison
+    """
+    for u in units_l:
+        dim = u.dimensionality
+        if not (
+            dim in dimensionality_to_unit
+            and cmp(dimensionality_to_unit[dim], u, registry)
+        ):
+            dimensionality_to_unit[dim] = u
