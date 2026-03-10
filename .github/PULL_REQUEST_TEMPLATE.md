@@ -11,6 +11,10 @@ please link to it with "Depends on #PR-number" or "Depends on org/repo#PR-number
 an improvement, or something else? Why is it necessary? If relevant, please add
 a screenshot or a screen capture: "An image is worth a thousand words!" -->
 
+<!-- AI Policy
+The [napari AI use policy and guidelines](https://napari.org/dev/developers/contributing/ai.html) should be read and followed when using AI tools to assist with development.
+-->
+
 <!-- Final Checklist
 - My PR is the minimum possible work for the desired functionality
 - I have commented my code, particularly in hard-to-understand areas
