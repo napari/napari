@@ -180,7 +180,7 @@ class VispyCanvas:
         self._last_theme_color = None
         self._background_color_override = None
         self._font_manager = font_manager
-        self._overly_font = font_family
+        self._overlay_font = font_family
         self.viewer = viewer
         self._scene_canvas = NapariSceneCanvas(
             *args, keys=None, vsync=True, **kwargs
@@ -912,7 +912,7 @@ class VispyCanvas:
                 viewer=self.viewer,
                 parent=parent,
                 font_manager=self._font_manager,
-                font_family=self._overly_font,
+                font_family=self._overlay_font,
             )
             self._overlay_to_visual[overlay].append(vispy_overlay)
 

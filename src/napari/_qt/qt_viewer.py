@@ -203,14 +203,14 @@ class QtViewer(QSplitter):
         self._dockPerformance = None
         self._show_welcome_screen = show_welcome_screen
         self._font_manager = QtFontManager()
-        self._overly_font = QGuiApplication.font().family()
+        self._overlay_font = QGuiApplication.font().family()
 
         # This dictionary holds the corresponding vispy visual for each layer
         self.canvas = canvas_class(
             viewer=viewer,
             parent=self,
             font_manager=self._font_manager,
-            font_family=self._overly_font,
+            font_family=self._overlay_font,
             key_map_handler=self._key_map_handler,
             size=self.viewer._canvas_size,
             autoswap=get_settings().experimental.autoswap_buffers,  # see #5734
@@ -1460,7 +1460,7 @@ class QtViewer(QSplitter):
 
     def overlay_font(self) -> str:
         """Return the font used for overlays."""
-        return self._overly_font
+        return self._overlay_font
 
 
 if TYPE_CHECKING:
