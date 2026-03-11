@@ -4,7 +4,6 @@ import inspect
 import itertools
 import os
 import warnings
-from urllib.parse import urlparse
 from collections.abc import (
     Iterator,
     Mapping,
@@ -19,6 +18,7 @@ from typing import (
     Union,
     cast,
 )
+from urllib.parse import urlparse
 
 import numpy as np
 
@@ -1401,7 +1401,10 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         for p in paths_:
             p_str = str(p)
             parsed = urlparse(p_str)
-            if not (parsed.scheme and parsed.netloc) and not Path(p_str).exists():
+            if (
+                not (parsed.scheme and parsed.netloc)
+                and not Path(p_str).exists()
+            ):
                 raise FileNotFoundError(
                     trans._(
                         'Path {path!r} does not exist.',
