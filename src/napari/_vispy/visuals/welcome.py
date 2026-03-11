@@ -4,31 +4,34 @@ import logging
 import re
 import textwrap
 import warnings
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
+from qtpy.QtGui import QFont, QGuiApplication
 from vispy.scene.node import Node
-from vispy.scene.visuals import Polygon
+from vispy.scene.visuals import Image, Polygon
 from vispy.util.svg import Document
 from vispy.visuals.transforms import STTransform
 
 from napari._app_model import get_app_model
-from napari._vispy.visuals.text import Text
 from napari.resources import get_icon_path
 from napari.settings import get_settings
 from napari.utils.action_manager import action_manager
 from napari.utils.interactions import Shortcut
 
 if TYPE_CHECKING:
-    from vispy.visuals.text.text import FontManager
-
     from napari.utils.color import ColorValue
 
 vispy_logger = logging.getLogger('vispy')
 
 
 class Welcome(Node):
-    def __init__(self, font_manager: FontManager, face: str) -> None:
+    _BASE_FONT_SIZE = 14
+    _LINE_HEIGHT = 1.4
+    _TEXT_PADDING = 2
+    _TEXT_RASTER_SCALE = 4
+
+    def __init__(self) -> None:
         old_level = vispy_logger.level
         vispy_logger.setLevel(logging.ERROR)
         self.logo_coords = (
@@ -51,61 +54,39 @@ class Welcome(Node):
         self.logo = Polygon(
             self.logo_coords, border_method='agg', border_width=2, parent=self
         )
-        self.header = Text(
-            text='',
-            pos=[0, 0],
-            anchor_x='center',
-            anchor_y='bottom',
-            parent=self,
-            font_manager=font_manager,
-            face=face,
+        self.logo.transform = STTransform()
+        self.text_image = Image(
+            np.zeros((1, 1, 4), dtype=np.uint8), parent=self
         )
-        self.shortcut_keybindings = Text(
-            text='',
-            line_height=1.15,
-            pos=[-80, 60],
-            anchor_x='right',
-            anchor_y='bottom',
-            parent=self,
-            font_manager=font_manager,
-            face=face,
-        )
-        self.shortcut_descriptions = Text(
-            text='',
-            line_height=1.15,
-            pos=[-60, 60],
-            anchor_x='left',
-            anchor_y='bottom',
-            parent=self,
-            font_manager=font_manager,
-            face=face,
-        )
-        self.tip = Text(
-            text='',
-            line_height=1.15,
-            pos=[0, 160],
-            anchor_x='center',
-            anchor_y='bottom',
-            parent=self,
-            font_manager=font_manager,
-            face=face,
-        )
+        self.text_image.transform = STTransform()
+        self.text_image.interpolation = 'linear'
 
         self.transform = STTransform()
+        self._scale = 1.0
+        self._text_origin = np.zeros(2, dtype=float)
+        self._text_color = (255, 255, 255, 255)
+        self._text_raster_cache_key: tuple[Any, ...] | None = None
+
+        self._header = ''
+        self._shortcut_keys = ''
+        self._shortcut_descriptions = ''
+        self._tip = ''
 
     def set_color(self, color: ColorValue) -> None:
         self.logo.color = color
         self.logo.border_color = color
-        self.header.color = color
-        self.shortcut_keybindings.color = color
-        self.shortcut_descriptions.color = color
-        self.tip.color = color
+        rgba = np.clip(np.asarray(color), 0, 1)
+        if len(rgba) == 3:
+            rgba = np.append(rgba, 1)
+        self._text_color = tuple((rgba[:4] * 255).astype(int))
+        self._update_text_texture()
 
     def set_version(self, version: str) -> None:
-        self.header.text = (
+        self._header = (
             f'napari {version}\n\n'
             'Drag file(s) here to open, or use the shortcuts below:'
         )
+        self._update_text_texture()
 
     def set_shortcuts(self, commands: tuple[str, ...]) -> None:
         shortcuts = {}
@@ -117,8 +98,9 @@ class Welcome(Node):
                 shortcuts[shortcut] = command
 
         # TODO: use template strings in the future
-        self.shortcut_keybindings.text = '\n'.join(shortcuts.keys())
-        self.shortcut_descriptions.text = '\n'.join(shortcuts.values())
+        self._shortcut_keys = '\n'.join(shortcuts.keys())
+        self._shortcut_descriptions = '\n'.join(shortcuts.values())
+        self._update_text_texture()
 
     def set_tip(self, tip: str) -> None:
         # TODO: this should use template strings in the future
@@ -134,9 +116,119 @@ class Welcome(Node):
             if shortcut:
                 tip = re.sub(match.group(), str(shortcut), tip)
 
-        # wrap tip so it's not clipped
-        self.tip.text = 'Did you know?\n' + '\n'.join(
-            textwrap.wrap(tip, break_on_hyphens=False)
+        # wrap tip so it's not clipped; width reduced proportionally with font size
+        self._tip = 'Did you know?\n' + '\n'.join(
+            textwrap.wrap(tip, width=60, break_on_hyphens=False)
+        )
+        self._update_text_texture()
+
+    def _font_compensation(self) -> float:
+        """Return a size multiplier to keep text crisp at small canvas scales.
+
+        This counteracts the actual scaling/transform, preventing text from
+        getting too small, aiming to keep the text size near the default
+        font size for legibility.
+        Note: Capped at 8x to avoid absurdly large textures when the canvas is
+        extremely small (e.g. a minimised or unit-test window).
+        """
+        if self._scale <= 0:
+            return 1
+        if self._scale < 1:
+            return min(8.0, round(1 / self._scale, 2))
+        return 1
+
+    def _text_blocks(
+        self,
+    ) -> tuple[
+        tuple[str, float, float, Literal['left', 'center', 'right']], ...
+    ]:
+        """Return text content with anchor points and alignment in local coords.
+
+        Coordinate system
+        -----------------
+        The canvas is centred at (0, 0) with y increasing *downward* (screen
+        coords).  Each ``(text, anchor_x, anchor_y, align)`` tuple places the
+        *bottom* edge of a text block at ``(anchor_x, anchor_y)``.  Text
+        extends *upward* (to more-negative y) from that anchor.  To move a
+        block lower on screen, increase anchor_y; to raise it, decrease it.
+        """
+        return (
+            (self._header, 0, 40, 'center'),
+            (self._shortcut_keys, -95, 120, 'right'),
+            (self._shortcut_descriptions, -70, 120, 'left'),
+            (self._tip, 0, 220, 'center'),
+        )
+
+    def _render_text_texture(self) -> tuple[np.ndarray, tuple[float, float]]:
+        """Render current welcome text into a Qt-backed RGBA texture and origin."""
+        from napari._qt.utils import rasterize_text_blocks_to_array
+
+        raster_scale = self._TEXT_RASTER_SCALE
+        font = QFont(QGuiApplication.font())
+        # Safely try to set Antialiasing, if not set
+        prefer_antialias = getattr(QFont, 'PreferAntialias', None)
+        if prefer_antialias is None:
+            style_strategy_enum = getattr(QFont, 'StyleStrategy', None)
+            if style_strategy_enum is not None:
+                prefer_antialias = getattr(
+                    style_strategy_enum, 'PreferAntialias', None
+                )
+        if prefer_antialias is not None:
+            font.setStyleStrategy(font.styleStrategy() | prefer_antialias)
+        font.setPixelSize(
+            max(
+                1,
+                round(
+                    self._BASE_FONT_SIZE
+                    * self._font_compensation()
+                    * raster_scale
+                ),
+            )
+        )
+        return rasterize_text_blocks_to_array(
+            self._text_blocks(),
+            font=font,
+            line_height=self._LINE_HEIGHT,
+            color=self._text_color,
+            raster_scale=raster_scale,
+            padding=self._TEXT_PADDING,
+        )
+
+    def _update_text_texture(self) -> None:
+        """Re-rasterize text only when cached content/style inputs changed."""
+        cache_key = (
+            self._header,
+            self._shortcut_keys,
+            self._shortcut_descriptions,
+            self._tip,
+            self._text_color,
+            self._font_compensation(),
+        )
+        if cache_key == self._text_raster_cache_key:
+            self._update_text_transform()
+            return
+
+        text_data, origin = self._render_text_texture()
+        self.text_image.set_data(text_data)
+        self._text_origin = np.asarray(origin)
+        self._text_raster_cache_key = cache_key
+        self._update_text_transform()
+
+    def _update_text_transform(self) -> None:
+        """Apply scene transform for the raster texture using local text origin."""
+        scale = self._scale
+        raster_scale = self._TEXT_RASTER_SCALE
+        self.text_image.transform.scale = (
+            scale / raster_scale,
+            scale / raster_scale,
+            1,
+            1,
+        )
+        self.text_image.transform.translate = (
+            self._text_origin[0] * scale,
+            self._text_origin[1] * scale,
+            0,
+            0,
         )
 
     @staticmethod
@@ -165,15 +257,9 @@ class Welcome(Node):
     def set_scale_and_position(self, x: float, y: float) -> None:
         self.transform.translate = (x / 2, y / 2, 0, 0)
         scale = min(x, y) * 0.002  # magic number
-        self.transform.scale = (scale, scale, 0, 0)
-
-        for text in (
-            self.header,
-            self.shortcut_keybindings,
-            self.shortcut_descriptions,
-            self.tip,
-        ):
-            text.font_size = max(scale * 8, 10)
+        self._scale = scale
+        self.logo.transform.scale = (scale, scale, 1, 1)
+        self._update_text_texture()
 
     def set_gl_state(self, *args: Any, **kwargs: Any) -> None:
         for node in self.children:
