@@ -1022,7 +1022,9 @@ def test_contrast_limits_non_numpy_out_of_bounds_translate(data):
     layer = Image(data, scale=[0.3, 0.1, 0.1], translate=[1.0, 0.0, 0.0])
     # Numpy takes the eager path in __init__ and is always correct; use it as
     # the reference.
-    ref = Image(_OOB_TRANSLATE_DATA, scale=[0.3, 0.1, 0.1], translate=[1.0, 0.0, 0.0])
+    ref = Image(
+        _OOB_TRANSLATE_DATA, scale=[0.3, 0.1, 0.1], translate=[1.0, 0.0, 0.0]
+    )
     npt.assert_allclose(layer.contrast_limits, ref.contrast_limits)
 
 
