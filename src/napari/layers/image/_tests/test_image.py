@@ -5,7 +5,6 @@ import pytest
 import xarray as xr
 
 from napari._tests.utils import check_layer_world_data_extent
-from napari.components import ViewerModel
 from napari.components.dims import Dims
 from napari.layers import Image
 from napari.layers.image._image_constants import ImageRendering
@@ -1019,16 +1018,11 @@ def test_contrast_limits_non_numpy_out_of_bounds_translate(data):
     """
     # translate=[1, 0, 0] with scale=[0.3, ...] places the data at z ∈ [1, 1.9];
     # world coordinate 0 is outside the data extent on the non-displayed z axis,
-    # so the first slice (at world origin) is out-of-bounds and returns an empty
-    # response. Adding the layer to a ViewerModel causes dims.point to be clipped
-    # to the valid range, firing a valid slice that triggers contrast computation.
-    v = ViewerModel()
-    layer = v.add_image(data, scale=[0.3, 0.1, 0.1], translate=[1.0, 0.0, 0.0])
-    # Numpy takes the eager path in __init__ and is always correct, so we use it as the
-    # reference.
-    ref = v.add_image(
-        _OOB_TRANSLATE_DATA, scale=[0.3, 0.1, 0.1], translate=[1.0, 0.0, 0.0]
-    )
+    # so the initial slice point (world origin) is out of bounds.
+    layer = Image(data, scale=[0.3, 0.1, 0.1], translate=[1.0, 0.0, 0.0])
+    # Numpy takes the eager path in __init__ and is always correct; use it as
+    # the reference.
+    ref = Image(_OOB_TRANSLATE_DATA, scale=[0.3, 0.1, 0.1], translate=[1.0, 0.0, 0.0])
     npt.assert_allclose(layer.contrast_limits, ref.contrast_limits)
 
 
