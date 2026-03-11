@@ -1,13 +1,16 @@
 import warnings
 from copy import copy
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
 import pandas as pd
 
 from napari.layers.base import Layer, _LayerSlicingState
 from napari.layers.utils._color_manager_constants import ColorMode
-from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
+from napari.layers.utils._slice_input import (
+    _SliceInput,
+    _ThickNDSlice,
+)
 from napari.layers.utils.color_manager import ColorManager
 from napari.layers.utils.color_transformations import ColorType
 from napari.layers.utils.layer_utils import _FeatureTable
@@ -25,6 +28,9 @@ from napari.utils.colormaps import Colormap, ValidColormapArg
 from napari.utils.events import Event
 from napari.utils.events.custom_types import Array
 from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    from napari.components.dims import Dims
 
 
 class Vectors(Layer):
@@ -799,7 +805,7 @@ class _VectorsSlicingState(_LayerSlicingState):
         response = request()
         self._update_slice_response(response)
 
-    def make_slice_request(self, dims) -> _VectorSliceRequest:
+    def make_slice_request(self, dims: 'Dims') -> _VectorSliceRequest:
         """Make a Vectors slice request based on the given dims and these data."""
         slice_input = self.make_slice_input(dims)
         # TODO: [see Image]
@@ -809,10 +815,8 @@ class _VectorsSlicingState(_LayerSlicingState):
         # absorbs these performance issues here, but we can likely improve
         # things either by caching the world-to-data transform on the layer
         # or by lazily evaluating it in the slice task itself.
-        slice_indices = slice_input.data_slice(
-            self.layer._data_to_world.inverse
-        )
-        return self.make_slice_request_internal(slice_input, slice_indices)
+        data_slice = self._slice_indices(slice_input, dims)
+        return self.make_slice_request_internal(slice_input, data_slice)
 
     def make_slice_request_internal(
         self, slice_input: _SliceInput, data_slice: _ThickNDSlice
