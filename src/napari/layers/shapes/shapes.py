@@ -1345,7 +1345,7 @@ class Shapes(Layer):
             Should be 'edge' for edge_color or 'face' for face_color.
         """
         if self._is_color_mapped(color):
-            if guess_continuous(self.properties[color]):
+            if guess_continuous(self.properties[color], feature_name=color):
                 setattr(self, f'_{attribute}_color_mode', ColorMode.COLORMAP)
             else:
                 setattr(self, f'_{attribute}_color_mode', ColorMode.CYCLE)
@@ -1433,7 +1433,7 @@ class Shapes(Layer):
             The calculated values for setting edge or face_color
         """
         if self._is_color_mapped(color):
-            if guess_continuous(self.properties[color]):
+            if guess_continuous(self.properties[color], feature_name=color):
                 setattr(self, f'_{attribute}_color_mode', ColorMode.COLORMAP)
             else:
                 setattr(self, f'_{attribute}_color_mode', ColorMode.CYCLE)
