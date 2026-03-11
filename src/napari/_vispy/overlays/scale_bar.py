@@ -1,15 +1,24 @@
+from __future__ import annotations
+
 import bisect
 from decimal import Decimal
 from math import floor, log
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pint
 
 from napari._vispy.overlays.base import ViewerOverlayMixin, VispyCanvasOverlay
 from napari._vispy.visuals.scale_bar import ScaleBar
-from napari.components.overlays import ScaleBarOverlay
+from napari.components.overlays import Overlay, ScaleBarOverlay
 from napari.settings import get_settings
 from napari.utils._units import PREFERRED_VALUES
+
+if TYPE_CHECKING:
+    from vispy.scene import ViewBox
+    from vispy.visuals.text.text import FontManager
+
+    from napari.components import ViewerModel
 
 
 class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
@@ -17,14 +26,27 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
 
     overlay: ScaleBarOverlay
 
-    def __init__(self, *, viewer, overlay, parent=None) -> None:
+    def __init__(
+        self,
+        *,
+        viewer: ViewerModel,
+        overlay: Overlay,
+        parent: ViewBox | None = None,
+        font_manager: FontManager | None = None,
+        font_family: str = 'OpenSans',
+    ) -> None:
         self._target_length = 150.0
         self._current_length = 150.0
         self._scale = 1.0
         self._unit = pint.Quantity('1 pixel')
 
         super().__init__(
-            node=ScaleBar(), viewer=viewer, overlay=overlay, parent=parent
+            node=ScaleBar(font_manager=font_manager, font_family=font_family),
+            viewer=viewer,
+            overlay=overlay,
+            parent=parent,
+            font_manager=font_manager,
+            font_family=font_family,
         )
 
         self.overlay.events.color.connect(self._on_rendering_change)
