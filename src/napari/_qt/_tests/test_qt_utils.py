@@ -143,6 +143,29 @@ def test_rasterize_text_blocks_fixed_line_spacing():
     assert array.shape[0] == expected_height
 
 
+@pytest.mark.usefixtures('qapp')
+def test_rasterize_text_blocks_uses_pixel_size_for_extra_leading():
+    font = QFont()
+    font.setPixelSize(20)
+    metrics = QFontMetricsF(font)
+    font_height = metrics.ascent() + metrics.descent()
+    line_height = 1.25
+    expected_height = int(
+        np.ceil(
+            font_height + (font_height + (line_height - 1) * font.pixelSize())
+        )
+    )
+    array, _ = rasterize_text_blocks_to_array(
+        [('Hg\nHg', 0, 0, 'left')],
+        font=font,
+        line_height=line_height,
+        raster_scale=1,
+        padding=0,
+    )
+
+    assert array.shape[0] == expected_height
+
+
 def test_add_flash_animation(qtbot):
     widget = QMainWindow()
     qtbot.addWidget(widget)

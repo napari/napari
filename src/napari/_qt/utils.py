@@ -213,11 +213,9 @@ def rasterize_text_blocks_to_array(
     metrics = QFontMetricsF(font)
     ascent = metrics.ascent()
     descent = metrics.descent()
-    # Avoid platform-specific leading in line advance calculations.
-    # This keeps multiline spacing consistent across backends/OSes.
-    font_height = max(1.0, ascent + descent)
+    # use pixelSize directly for font height, eliminating platform-specific leading
+    font_height = max(1.0, float(font.pixelSize()))
     line_height_px = font_height * line_height
-
     line_runs: list[tuple[str, float, float]] = []
     min_x = min_y = np.inf
     max_x = max_y = -np.inf

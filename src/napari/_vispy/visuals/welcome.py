@@ -27,7 +27,7 @@ vispy_logger = logging.getLogger('vispy')
 
 class Welcome(Node):
     _BASE_FONT_SIZE = 14
-    _LINE_HEIGHT = 1.15
+    _LINE_HEIGHT = 1.4
     _TEXT_PADDING = 2
     _TEXT_RASTER_SCALE = 4
 
