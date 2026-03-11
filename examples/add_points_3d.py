@@ -26,7 +26,10 @@ points = np.array(centroids)
 viewer = napari.Viewer(ndisplay=3)
 viewer.add_image(blobs, name='blobs', scale=(2, 1, 1))
 viewer.add_labels(labeled, name='blob ID', scale=(2, 1, 1))
-pts = viewer.add_points(points, name='centroids', size=5, scale=(2, 1, 1))
+pts = viewer.add_points(
+    points, name='centroids', size=5, scale=(2, 1, 1),
+    blending='translucent_no_depth',
+)
 
 viewer.camera.angles = (0, -50, 50)
 pts.mode = 'add'
