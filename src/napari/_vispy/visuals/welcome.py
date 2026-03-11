@@ -125,7 +125,10 @@ class Welcome(Node):
     def _font_compensation(self) -> float:
         """Return a size multiplier to keep text crisp at small canvas scales.
 
-        Capped at 8x to avoid absurdly large textures when the canvas is
+        This counteracts the actual scaling/transform, preventing text from
+        getting too small, aiming to keep the text size near the default
+        font size for legibility.
+        Note: Capped at 8x to avoid absurdly large textures when the canvas is
         extremely small (e.g. a minimised or unit-test window).
         """
         if self._scale <= 0:
@@ -162,6 +165,16 @@ class Welcome(Node):
 
         raster_scale = self._TEXT_RASTER_SCALE
         font = QFont(QGuiApplication.font())
+        # Safely try to set Antialiasing, if not set
+        prefer_antialias = getattr(QFont, 'PreferAntialias', None)
+        if prefer_antialias is None:
+            style_strategy_enum = getattr(QFont, 'StyleStrategy', None)
+            if style_strategy_enum is not None:
+                prefer_antialias = getattr(
+                    style_strategy_enum, 'PreferAntialias', None
+                )
+        if prefer_antialias is not None:
+            font.setStyleStrategy(font.styleStrategy() | prefer_antialias)
         font.setPixelSize(
             max(
                 1,
