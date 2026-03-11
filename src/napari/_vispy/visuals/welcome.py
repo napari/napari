@@ -20,8 +20,6 @@ from napari.utils.action_manager import action_manager
 from napari.utils.interactions import Shortcut
 
 if TYPE_CHECKING:
-    from vispy.visuals.text.text import FontManager
-
     from napari.utils.color import ColorValue
 
 vispy_logger = logging.getLogger('vispy')
