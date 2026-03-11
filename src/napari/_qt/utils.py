@@ -211,9 +211,12 @@ def rasterize_text_blocks_to_array(
         raise ValueError('line_height must be > 0')
 
     metrics = QFontMetricsF(font)
-    line_height_px = metrics.height() * line_height
     ascent = metrics.ascent()
     descent = metrics.descent()
+    # Avoid platform-specific leading in line advance calculations.
+    # This keeps multiline spacing consistent across backends/OSes.
+    font_height = max(1.0, ascent + descent)
+    line_height_px = font_height * line_height
 
     line_runs: list[tuple[str, float, float]] = []
     min_x = min_y = np.inf
@@ -223,7 +226,7 @@ def rasterize_text_blocks_to_array(
             continue
 
         lines = text.split('\n')
-        block_height = metrics.height() + (len(lines) - 1) * line_height_px
+        block_height = font_height + (len(lines) - 1) * line_height_px
         block_top = anchor_y * raster_scale - block_height
         anchor_x *= raster_scale
 

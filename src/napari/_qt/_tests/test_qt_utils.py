@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, Literal
 import numpy as np
 import pytest
 from qtpy.QtCore import QByteArray, QObject, Signal
-from qtpy.QtGui import QColor, QFont
+from qtpy.QtGui import QColor, QFont, QFontMetricsF
 from qtpy.QtWidgets import QColorDialog, QMainWindow
 
 from napari._qt.utils import (
@@ -124,6 +124,23 @@ def test_rasterize_text_blocks_to_array_empty():
     )
     np.testing.assert_array_equal(array, np.zeros((1, 1, 4), dtype=np.uint8))
     assert origin == (0.0, 0.0)
+
+
+@pytest.mark.usefixtures('qapp')
+def test_rasterize_text_blocks_fixed_line_spacing():
+    font = QFont()
+    font.setPixelSize(20)
+    metrics = QFontMetricsF(font)
+    expected_height = int(np.ceil(2 * (metrics.ascent() + metrics.descent())))
+    array, _ = rasterize_text_blocks_to_array(
+        [('Hg\nHg', 0, 0, 'left')],
+        font=font,
+        line_height=1,
+        raster_scale=1,
+        padding=0,
+    )
+
+    assert array.shape[0] == expected_height
 
 
 def test_add_flash_animation(qtbot):
