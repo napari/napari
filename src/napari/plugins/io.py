@@ -62,21 +62,6 @@ def read_data_with_plugins(
     if not stack:
         assert len(paths) == 1
 
-    from pathlib import Path
-    from urllib.parse import urlparse
-
-    for p in paths:
-        p_str = str(p)
-        parsed = urlparse(p_str)
-        if not (parsed.scheme and parsed.netloc) and not Path(p_str).exists():
-            raise FileNotFoundError(
-                trans._(
-                    'Path {path!r} does not exist.',
-                    deferred=True,
-                    path=p_str,
-                )
-            )
-
     res = _npe2.read(paths, plugin, stack=stack)
     if res is not None:
         ld_, reader = res
