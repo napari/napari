@@ -104,6 +104,8 @@ You can see details of [the project roadmap here](https://napari.org/stable/road
 
 Contributions are encouraged! See [CONTRIBUTING.md](https://github.com/napari/napari/blob/main/CONTRIBUTING.md) for resources to get started.
 
+If you want to contribute to or edit our documentation, please go to [napari/docs](https://github.com/napari/docs).
+
 ## code of conduct
 
 `napari` has a [Code of Conduct](https://napari.org/stable/community/code_of_conduct.html) that should be honored by everyone who participates in the `napari` community.

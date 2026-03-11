@@ -13,6 +13,8 @@ a screenshot or a screen capture: "An image is worth a thousand words!" -->
 
 <!-- AI Policy
 The [napari AI use policy and guidelines](https://napari.org/dev/developers/contributing/ai.html) should be read and followed when using AI tools to assist with development.
+
+TLDR: We are humans who enjoy working with other humans. You may use whatever tools you like, but you are ultimately responsible for the changes you submit. Don’t submit changes you haven’t carefully read through yourself, and let us have a conversation with you, not a chatbot.
 -->
 
 <!-- Final Checklist
