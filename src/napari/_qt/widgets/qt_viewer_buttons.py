@@ -31,6 +31,7 @@ from napari.utils.camera_orientations import (
     VerticalAxisOrientation,
     VerticalAxisOrientationStr,
 )
+from napari.utils.compat import StrEnum
 from napari.utils.misc import in_ipython, in_jupyter, in_python_repl
 from napari.utils.translations import trans
 
@@ -83,7 +84,6 @@ class QtLayerButtons(QFrame):
             ),
             partial(new_points, self.viewer),
         )
-        self.newPointsButton.setCheckable(True)
 
         self.newShapesButton = QtViewerPushButton(
             'new_shapes',
@@ -96,7 +96,6 @@ class QtLayerButtons(QFrame):
             ),
             partial(new_shapes, self.viewer),
         )
-        self.newShapesButton.setCheckable(True)
 
         self.newLabelsButton = QtViewerPushButton(
             'new_labels',
@@ -110,7 +109,10 @@ class QtLayerButtons(QFrame):
             ),
             self.viewer._new_labels,
         )
-        self.newLabelsButton.setCheckable(True)
+        # Labels button disabled when there are layers present but none are selected
+        self.newLabelsButton.setEnabled(
+            not self._layers_present_and_none_selected()
+        )
 
         layout = QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
@@ -129,21 +131,54 @@ class QtLayerButtons(QFrame):
         self._on_selection_changed()
 
     def _on_selection_changed(self, event=None) -> None:
-        """Update button checked state when layer selection changes.
+        """Update button selection/enablement state based on the layer selection.
 
-        When a layer is selected, some new layer buttons are checked
-        to indicate that creating a new layer will inherit properties from the
-        selected layer.
+        This allows indicating which mode of buttons will be triggered after
+        clicking on it.
         """
-        has_selection = bool(self.viewer.layers.selection)
-        self.newPointsButton.setChecked(has_selection)
-        self.newShapesButton.setChecked(has_selection)
-        new_labels_inherit_shape = isinstance(
-            self.viewer.layers.selection.active, ScalarFieldBase
-        )
-        self.newLabelsButton.setChecked(new_labels_inherit_shape)
+        if self.viewer.layers.selection.active is not None:
+            self.newPointsButton._change_selection_state(
+                LayerCreationState.FULL
+            )
+            self.newShapesButton._change_selection_state(
+                LayerCreationState.FULL
+            )
+            if isinstance(
+                self.viewer.layers.selection.active, ScalarFieldBase
+            ):
+                state = LayerCreationState.FULL
+            else:
+                state = LayerCreationState.PARTIAL
+            self.newLabelsButton._change_selection_state(state)
+        elif self.viewer.layers.selection:
+            self.newPointsButton._change_selection_state(
+                LayerCreationState.PARTIAL
+            )
+            self.newShapesButton._change_selection_state(
+                LayerCreationState.PARTIAL
+            )
+            self.newLabelsButton._change_selection_state(
+                LayerCreationState.PARTIAL
+            )
+        else:
+            self.newPointsButton._change_selection_state(
+                LayerCreationState.NONE
+            )
+            self.newShapesButton._change_selection_state(
+                LayerCreationState.NONE
+            )
+            self.newLabelsButton._change_selection_state(
+                LayerCreationState.NONE
+            )
+
         self.newLabelsButton.setEnabled(
-            has_selection or not self.viewer.layers
+            not self._layers_present_and_none_selected()
+        )
+
+    def _layers_present_and_none_selected(self) -> bool:
+        """Check if there are layers present but none selected."""
+        return bool(self.viewer.layers) and not bool(
+            self.viewer.layers.selection
         )
 
 
@@ -755,6 +790,12 @@ def _omit_viewer_args(constructor):
     return _func
 
 
+class LayerCreationState(StrEnum):
+    NONE = 'none'
+    FULL = 'full'
+    PARTIAL = 'partial'
+
+
 class QtViewerPushButton(QPushButton):
     """Push button.
 
@@ -789,3 +830,14 @@ class QtViewerPushButton(QPushButton):
             action_manager.bind_button(
                 action, self, extra_tooltip_text=extra_tooltip_text
             )
+
+    def _change_selection_state(self, state: str | LayerCreationState) -> None:
+        """Change the selection state of a new-layer button."""
+        self.setProperty('creation_state', LayerCreationState(state).value)
+        self._refresh_qss()
+
+    def _refresh_qss(self) -> None:
+        """Refresh the button's QSS (Qt Style Sheet)."""
+        self.style().unpolish(self)
+        self.style().polish(self)
+        self.update()

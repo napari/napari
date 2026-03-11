@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import warnings
+from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Generic, TypeVar
 
 import numpy as np
+import pint
+from typing_extensions import Self
 
 from napari.utils.misc import reorder_after_dim_reduction
 from napari.utils.transforms import Affine
@@ -81,7 +84,7 @@ class _ThickNDSlice(Generic[_T]):
         )
 
     @classmethod
-    def from_dims(cls, dims: Dims):
+    def from_dims(cls, dims: Dims) -> Self:
         """Generate from a Dims object's point and margins."""
         return cls.make_full(dims.point, dims.margin_left, dims.margin_right)
 
@@ -233,3 +236,43 @@ class _SliceInput:
         )
         # Check that displayed subspace is null
         return all(abs(v) < 1e-8 for v in displayed_mapped_subspace)
+
+
+def apply_units_to_transform(
+    data_to_world: Affine, world_units: Sequence[str] | None
+) -> Affine:
+    """Applies unit scaling to a data_to_world transform.
+
+    Parameters
+    ----------
+    data_to_world : Affine
+        The original data to world transform.
+    world_units : Sequence[str] | None
+        The units for each dimension of the layer.
+
+    Returns
+    -------
+    Affine
+        The new data to world transform with unit scaling applied.
+    """
+    if world_units is None:
+        return data_to_world
+
+    layer_units = data_to_world.units
+    if len(world_units) < len(layer_units):
+        return data_to_world
+
+    reg = pint.get_application_registry()
+    scale = tuple(
+        reg.get_base_units(x)[0] / reg.get_base_units(y)[0]
+        for x, y in zip(
+            world_units[-len(layer_units) :], layer_units, strict=True
+        )
+    )
+    scale_matrix = np.diag(scale)
+    new_linear = data_to_world.linear_matrix @ scale_matrix
+    return Affine(
+        ndim=data_to_world.ndim,
+        linear_matrix=new_linear,
+        translate=data_to_world.translate,
+    )
