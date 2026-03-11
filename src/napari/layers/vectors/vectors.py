@@ -30,6 +30,7 @@ from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     import pandas as pd
+
     from napari.components.dims import Dims
 
 
