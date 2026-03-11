@@ -106,6 +106,8 @@ Contributions are encouraged! See [CONTRIBUTING.md](https://github.com/napari/na
 
 If you want to contribute to or edit our documentation, please go to [napari/docs](https://github.com/napari/docs).
 
+Visit our [project weather report dashboard](https://napari.org/weather-report/) to see metrics and how development is progressing.
+
 ## code of conduct
 
 `napari` has a [Code of Conduct](https://napari.org/stable/community/code_of_conduct.html) that should be honored by everyone who participates in the `napari` community.

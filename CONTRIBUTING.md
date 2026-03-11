@@ -11,5 +11,3 @@ Read our [contributing guide](https://napari.org/dev/developers/contributing/ind
 The [AI use policy and guidelines](https://napari.org/dev/developers/contributing/ai.html) should be read and followed when using AI tools to assist with development.
 
 If you want to contribute to or edit our documentation, go to [napari/docs](https://github.com/napari/docs) and also read our [documentation contributing guide](https://napari.org/dev/developers/contributing/documentation/index.html).
-
-Visit our [project weather report dashboard](https://napari.org/weather-report/) to see metrics and how development is progressing.
