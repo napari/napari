@@ -34,6 +34,7 @@ from napari.utils.interactions import (
     mouse_release_callbacks,
     mouse_wheel_callbacks,
 )
+from napari.utils.notifications import show_warning
 from napari.utils.theme import get_theme
 
 if TYPE_CHECKING:
@@ -204,6 +205,7 @@ class VispyCanvas:
         self._overlay_callbacks = {}
         self._last_viewbox_size = np.array((0, 0))
         self._needs_overlay_position_update = False
+        self._needs_world_units_update = False
 
         self.bgcolor = transform_color(
             get_theme(self.viewer.theme).canvas.as_hex()
@@ -260,6 +262,9 @@ class VispyCanvas:
         )
         self.viewer.layers.events.end_batch.connect(
             self._resume_scene_graph_update
+        )
+        self.viewer.layers.events.units.connect(
+            self._deferred_world_units_update
         )
         self.viewer.grid.events.stride.connect(self._update_scenegraph)
         self.viewer.grid.events.shape.connect(self._update_scenegraph)
@@ -714,6 +719,10 @@ class VispyCanvas:
             self._update_overlay_canvas_positions()
             self._needs_overlay_position_update = False
 
+        if self._needs_world_units_update:
+            self._update_world_units()
+            self._needs_world_units_update = False
+
         # sync all cameras
         for camera in (self.camera, *self.grid_cameras):
             camera.on_draw(event)
@@ -778,13 +787,29 @@ class VispyCanvas:
         napari_layer._overlays.events.added.connect(overlay_callback)
         napari_layer._overlays.events.removed.connect(overlay_callback)
         napari_layer._overlays.events.changed.connect(overlay_callback)
+        napari_layer.events.units.connect(self._deferred_world_units_update)
         self._overlay_callbacks[napari_layer] = overlay_callback
         self.viewer.camera.events.angles.connect(vispy_layer._on_camera_move)
+        self._update_world_units()
 
         # we need to trigger _on_matrix_change once after adding the overlays so that
         # all children nodes are assigned the correct transforms
         vispy_layer._on_matrix_change()
         self._update_scenegraph()
+
+    def _deferred_world_units_update(self):
+        """Defer the world units update until the next draw event."""
+        self._needs_world_units_update = True
+
+    def _update_world_units(self):
+        """Update the units of the canvas and all layers."""
+        units = self.viewer.layers.extent.units
+        if units is None:
+            show_warning(
+                'Inconsistent units across layers; units will not be used for rendering.'
+            )
+        for vispy_layer in self.layer_to_visual.values():
+            vispy_layer.world_units = units
 
     def _remove_layer(self, event: Event) -> None:
         """Upon receiving event closes the Vispy visual, deletes it and reorders the still existing layers.
@@ -804,6 +829,7 @@ class VispyCanvas:
         disconnect_events(
             layer._overlays.events, self._overlay_callbacks[layer]
         )
+        layer.events.units.disconnect(self._deferred_world_units_update)
         del self._overlay_callbacks[layer]
 
         vispy_layer = self.layer_to_visual.pop(layer)
