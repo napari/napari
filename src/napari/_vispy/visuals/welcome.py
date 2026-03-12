@@ -13,6 +13,7 @@ from vispy.util.svg import Document
 from vispy.visuals.transforms import STTransform
 
 from napari._app_model import get_app_model
+from napari._vispy.utils.text import get_text_metrics
 from napari._vispy.visuals.text import Text
 from napari.resources import get_icon_path
 from napari.settings import get_settings
@@ -48,15 +49,12 @@ class Welcome(Node):
         self.logo_coords[:, 1] -= 130  # magic number shifting up logo
         super().__init__()
 
-        self.base_font_size = 10
-
         self.logo = Polygon(
             self.logo_coords, border_method='agg', border_width=2, parent=self
         )
         self.header = Text(
             text='',
-            line_height=1.5,
-            font_size=10,
+            line_height=1.65,
             pos=[0, 0],
             anchor_x='center',
             anchor_y='bottom',
@@ -64,11 +62,13 @@ class Welcome(Node):
             font_manager=font_manager,
             face=face,
         )
+
+        self.font_height = get_text_metrics(self.header).height()
+
         self.shortcut_keybindings = Text(
             text='',
             line_height=1.15,
-            font_size=10,
-            pos=[-80, 5.5 * self.base_font_size],
+            pos=[-80, 2.75 * self.font_height],
             anchor_x='right',
             anchor_y='bottom',
             parent=self,
@@ -78,8 +78,7 @@ class Welcome(Node):
         self.shortcut_descriptions = Text(
             text='',
             line_height=1.15,
-            font_size=10,
-            pos=[-60, 5.5 * self.base_font_size],
+            pos=[-60, 2.75 * self.font_height],
             anchor_x='left',
             anchor_y='bottom',
             parent=self,
@@ -89,8 +88,7 @@ class Welcome(Node):
         self.tip = Text(
             text='',
             line_height=1.15,
-            font_size=10,
-            pos=[0, 16 * self.base_font_size],
+            pos=[0, 7.5 * self.font_height],
             anchor_x='center',
             anchor_y='bottom',
             parent=self,
@@ -180,7 +178,7 @@ class Welcome(Node):
             self.shortcut_descriptions,
             self.tip,
         ):
-            text.font_size = max(scale * 8, self.base_font_size)
+            text.font_size = max(scale * 8, 10)
 
     def set_gl_state(self, *args: Any, **kwargs: Any) -> None:
         for node in self.children:
