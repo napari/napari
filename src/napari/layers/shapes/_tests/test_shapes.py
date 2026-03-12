@@ -61,16 +61,16 @@ def test_empty_shapes_with_features():
     https://github.com/napari/napari/issues/5634
     """
     shapes = Shapes(
-        features={'a': np.empty(0, int)},
-        feature_defaults={'a': 0},
+        features={'a': np.empty(0, str)},
+        feature_defaults={'a': 'x'},
         face_color='a',
         face_color_cycle=list('rgb'),
     )
 
     shapes.add_rectangles([[0, 0], [1, 1]])
-    shapes.feature_defaults['a'] = 1
+    shapes.feature_defaults['a'] = 'y'
     shapes.add_rectangles([[1, 1], [2, 2]])
-    shapes.feature_defaults = {'a': 2}
+    shapes.feature_defaults = {'a': 'z'}
     shapes.add_rectangles([[2, 2], [3, 3]])
 
     assert_colors_equal(shapes.face_color, list('rgb'))
