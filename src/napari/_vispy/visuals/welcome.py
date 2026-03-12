@@ -48,11 +48,15 @@ class Welcome(Node):
         self.logo_coords[:, 1] -= 130  # magic number shifting up logo
         super().__init__()
 
+        self.base_font_size = 10
+
         self.logo = Polygon(
             self.logo_coords, border_method='agg', border_width=2, parent=self
         )
         self.header = Text(
             text='',
+            line_height=1.5,
+            font_size=10,
             pos=[0, 0],
             anchor_x='center',
             anchor_y='bottom',
@@ -63,7 +67,8 @@ class Welcome(Node):
         self.shortcut_keybindings = Text(
             text='',
             line_height=1.15,
-            pos=[-80, 60],
+            font_size=10,
+            pos=[-80, 5.5 * self.base_font_size],
             anchor_x='right',
             anchor_y='bottom',
             parent=self,
@@ -73,7 +78,8 @@ class Welcome(Node):
         self.shortcut_descriptions = Text(
             text='',
             line_height=1.15,
-            pos=[-60, 60],
+            font_size=10,
+            pos=[-60, 5.5 * self.base_font_size],
             anchor_x='left',
             anchor_y='bottom',
             parent=self,
@@ -83,7 +89,8 @@ class Welcome(Node):
         self.tip = Text(
             text='',
             line_height=1.15,
-            pos=[0, 160],
+            font_size=10,
+            pos=[0, 16 * self.base_font_size],
             anchor_x='center',
             anchor_y='bottom',
             parent=self,
@@ -103,7 +110,7 @@ class Welcome(Node):
 
     def set_version(self, version: str) -> None:
         self.header.text = (
-            f'napari {version}\n\n'
+            f'napari {version}\n'
             'Drag file(s) here to open, or use the shortcuts below:'
         )
 
@@ -173,7 +180,7 @@ class Welcome(Node):
             self.shortcut_descriptions,
             self.tip,
         ):
-            text.font_size = max(scale * 8, 10)
+            text.font_size = max(scale * 8, self.base_font_size)
 
     def set_gl_state(self, *args: Any, **kwargs: Any) -> None:
         for node in self.children:
