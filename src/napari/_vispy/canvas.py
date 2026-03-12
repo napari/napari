@@ -65,7 +65,7 @@ class NapariSceneCanvas(SceneCanvas_):
     """Vispy SceneCanvas used to allow for ignoring mouse wheel events with modifiers."""
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, dpi=150, **kwargs)
+        super().__init__(*args, **kwargs)
 
         orig_enterEvent = self.native.enterEvent
         orig_leaveEvent = self.native.leaveEvent
