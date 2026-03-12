@@ -12,6 +12,7 @@ from napari._app_model.constants import MenuGroup, MenuId
 from napari._qt.dialogs.qt_about import QtAbout
 from napari._qt.qt_main_window import Window
 from napari._qt.widgets.qt_logger import LogWidget
+from napari._qt.widgets.qt_tips import TipsWidget
 from napari.utils.translations import trans
 
 
@@ -23,6 +24,10 @@ def _show_logs(window: Window):
     window.add_dock_widget(
         LogWidget(), name='logger', area='bottom', tabify=True
     )
+
+
+def _show_tips(window: Window):
+    window.add_dock_widget(TipsWidget(), name='Tips and Tricks', area='bottom')
 
 
 v = parse(__version__)
@@ -73,6 +78,13 @@ Q_HELP_ACTIONS: list[Action] = [
         title=trans._('Tutorials'),
         callback=partial(web_open, url=HELP_URLS['tutorials']),
         menus=[{'id': MenuId.MENUBAR_HELP}],
+    ),
+    Action(
+        id='napari.window.help.tips',
+        title=trans._('Tips and Tricks'),
+        callback=_show_tips,
+        menus=[{'id': MenuId.MENUBAR_HELP}],
+        status_tip=trans._('Show some quick napari tips and tricks'),
     ),
     Action(
         id='napari.window.help.layers_guide',
