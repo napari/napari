@@ -54,8 +54,8 @@ class Welcome(Node):
         )
         self.header = Text(
             text='',
-            line_height=1.65,
-            pos=[0, 0],
+            line_height=1.75,
+            pos=[0, -10],
             anchor_x='center',
             anchor_y='bottom',
             parent=self,
