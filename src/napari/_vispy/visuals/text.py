@@ -45,9 +45,15 @@ class Text(BaseText):
 
     @property
     def font_size(self) -> float:
-        return self._font_size
+        return self._font_size * self.dpi_ratio
 
     @font_size.setter
     def font_size(self, size: float) -> None:
-        self._font_size = max(0.0, size)
+        adjusted_font_size = size / self.dpi_ratio
+        self._font_size = max(0.0, adjusted_font_size)
         self.update()
+
+    @property
+    def dpi_ratio(self) -> float:
+        dpi = self.transforms.dpi or 96
+        return dpi / 96
