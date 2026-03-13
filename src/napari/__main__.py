@@ -13,6 +13,7 @@ from textwrap import wrap
 from typing import Any
 
 from napari import Viewer
+from napari._qt.qt_event_loop import get_qapp
 from napari.errors import ReaderPluginError
 from napari.utils._startup_script import _run_configured_startup_script
 from napari.utils.misc import maybe_patch_conda_exe
@@ -209,9 +210,6 @@ def parse_sys_argv():
 
 
 def _run() -> None:
-    from napari import run
-    from napari.settings import get_settings
-
     """Main program."""
     args, kwargs = parse_sys_argv()
 
@@ -225,6 +223,8 @@ def _run() -> None:
     )
 
     if args.reset:
+        from napari.settings import get_settings
+
         if args.settings_path:
             settings = get_settings(path=args.settings_path)
         else:
@@ -244,6 +244,10 @@ def _run() -> None:
         # which emits "WARNING: No such plugin for spec 'builtins'"
         # so remove --plugin from sys.argv to prevent that warning
         sys.argv.remove('--plugin')
+
+    from napari._qt.qt_event_loop import show_splash_screen
+
+    splash = show_splash_screen()
 
     if args.with_:
         from napari.plugins import (
@@ -342,8 +346,17 @@ def _run() -> None:
     if running_as_constructor_app():
         install_certifi_opener()
         maybe_patch_conda_exe()
+
     # now that we've processed all the args, show viewer
     viewer.show()
+
+    # hide the splash screen once the viewer is shown
+    app = get_qapp()
+    app.processEvents()
+    splash.close()
+
+    from napari import run
+
     run(gui_exceptions=True)
 
 

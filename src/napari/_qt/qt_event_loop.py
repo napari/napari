@@ -11,7 +11,11 @@ from qtpy import PYQT5
 from qtpy.QtCore import QDir, QRectF, QSize, Qt
 from qtpy.QtGui import QIcon, QPainter, QPixmap
 from qtpy.QtSvg import QSvgRenderer
-from qtpy.QtWidgets import QApplication, QWidget
+from qtpy.QtWidgets import (
+    QApplication,
+    QLabel,
+    QWidget,
+)
 
 from napari import Viewer, __version__
 from napari._qt._qapp_model.injection._qproviders import register_qt_types
@@ -361,6 +365,45 @@ def _try_enable_ipython_gui(gui='qt'):
         shell.enable_gui(gui)
 
 
+def show_splash_screen():
+    app = get_qapp()
+
+    # init a set size pixmap, smaller than svg document
+    size = QSize(400, 400)
+    pixmap = QPixmap(size)
+    pixmap.fill(Qt.GlobalColor.transparent)
+    # render logo
+    logo = get_icon_path()
+    painter = QPainter(pixmap)
+    renderer = QSvgRenderer(str(logo))
+    renderer.render(painter)
+    painter.end()
+
+    # set up a splash screen. For some reason, a HEAVY delay is introduced by using
+    # QSplashScreen. I could not track down the reason. It appears we can obtain
+    # essentially the same behaviour with flags, but without the slowdown.
+
+    splash = QWidget()
+    splash.setWindowFlags(
+        Qt.WindowType.SplashScreen
+        | Qt.WindowType.FramelessWindowHint
+        | Qt.WindowType.WindowStaysOnTopHint
+    )
+    splash.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+
+    label = QLabel(splash)
+    label.setPixmap(pixmap)
+    label.adjustSize()
+    label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+    # TODO: we can add TIPS here! see #8762
+
+    splash.show()
+    # process events here ensures it's shown asap
+    app.processEvents()
+    return splash
+
+
 def run(
     *, force=False, gui_exceptions=False, max_loop_level=1, _func_name='run'
 ):
@@ -435,6 +478,7 @@ def run(
             stacklevel=2,
         )
         return
+
     with (
         notification_manager,
         _maybe_allow_interrupt(app),
