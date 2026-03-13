@@ -178,7 +178,7 @@ class Welcome(Node):
             self.shortcut_descriptions,
             self.tip,
         ):
-            text.font_size = max(scale * 8, 10)
+            text.font_size = max(scale / self.header.dpi_ratio * 8, 10)
 
     def set_gl_state(self, *args: Any, **kwargs: Any) -> None:
         for node in self.children:
