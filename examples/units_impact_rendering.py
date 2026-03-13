@@ -1,5 +1,5 @@
 """
-Layer Units Impact Rendering
+Layer units impact rendering
 ============================
 
 This example demonstrates how units can impact rendering in napari.
