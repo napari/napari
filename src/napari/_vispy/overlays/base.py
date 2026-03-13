@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
+from weakref import ref
 
 import numpy as np
 from vispy.scene.visuals import Rectangle
@@ -44,7 +45,7 @@ class VispyBaseOverlay:
     ) -> None:
         super().__init__()
         self.overlay = overlay
-        self.canvas = canvas
+        self._canvas = ref(canvas)
 
         self.node = node
         self.node.order = self.overlay.order
@@ -63,6 +64,10 @@ class VispyBaseOverlay:
     @property
     def font_manager(self) -> FontManager:
         return self.canvas.font_manager()
+
+    @property
+    def canvas(self) -> VispyCanvas:
+        return self._canvas()
 
     @property
     def font_family(self) -> str:
