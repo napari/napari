@@ -47,7 +47,6 @@ if TYPE_CHECKING:
     from vispy.app.backends._qt import CanvasBackendDesktop
     from vispy.app.canvas import DrawEvent, MouseEvent, ResizeEvent
     from vispy.scene import Node
-    from vispy.visuals.text.text import FontManager
 
     from napari._vispy.layers.base import VispyBaseLayer
     from napari._vispy.overlays.base import VispyBaseOverlay
@@ -1428,7 +1427,7 @@ class VispyCanvas:
         self._pause_scene_graph = False
         self._clean_and_update_scenegraph()
 
-    def font_manager(self) -> FontManager:
+    def font_manager(self) -> QtFontManager:
         """Return the font manager for this viewer."""
         return self._font_manager
 

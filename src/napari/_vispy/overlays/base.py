@@ -15,9 +15,9 @@ from napari.utils.theme import get_theme
 
 if TYPE_CHECKING:
     from vispy.scene import Node, ViewBox
-    from vispy.visuals.text.text import FontManager
 
     from napari._vispy.canvas import VispyCanvas
+    from napari._vispy.utils.qt_font import QtFontManager
     from napari.components.overlays import CanvasOverlay, Overlay, SceneOverlay
     from napari.components.viewer_model import ViewerModel
     from napari.layers import Layer
@@ -62,7 +62,7 @@ class VispyBaseOverlay:
         return self.canvas.viewer
 
     @property
-    def font_manager(self) -> FontManager:
+    def font_manager(self) -> QtFontManager:
         return self.canvas.font_manager()
 
     @property
