@@ -347,7 +347,7 @@ napari = "napari.utils._testsupport"
 napari_builtins = "napari_builtins:builtins.yaml"
 
 [project.scripts]
-napari = "napari.__main__:main"
+napari = "napari_builtins._main:main"
 
 [tool.setuptools]
 zip-safe = false
