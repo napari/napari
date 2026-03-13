@@ -135,3 +135,36 @@ def test_double_click_to_zoom(layer_shape):
     # Assert nothing has changed
     assert viewer.camera.zoom == initial_zoom
     assert np.allclose(viewer.camera.center, (0, 0, 0))
+
+
+def test_layers_scroll_selection():
+    viewer = ViewerModel()
+    data = np.zeros((10, 10))
+    viewer.add_image(data)
+    viewer.add_image(data)
+    viewer.add_image(data)
+
+    # start with middle layer selected
+    viewer.layers.selection.active = viewer.layers[1]
+    assert viewer.layers.selection.active is viewer.layers[1]
+
+    # scroll forward (non-inverted) with Alt -> select next
+    event = read_only_mouse_event(
+        delta=[0, 1.0],
+        modifiers=['Alt'],
+        native=WheelEvent(False),
+        type='wheel',
+    )
+    mouse_wheel_callbacks(viewer, event)
+    assert viewer.layers.selection.active is viewer.layers[2]
+
+    # reset to middle and scroll backward (inverted) -> select previous
+    viewer.layers.selection.active = viewer.layers[1]
+    event = read_only_mouse_event(
+        delta=[0, 1.0],
+        modifiers=['Alt'],
+        native=WheelEvent(True),
+        type='wheel',
+    )
+    mouse_wheel_callbacks(viewer, event)
+    assert viewer.layers.selection.active is viewer.layers[0]
