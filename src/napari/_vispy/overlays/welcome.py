@@ -24,9 +24,7 @@ class VispyWelcomeOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
 
     def __init__(self, *, canvas: VispyCanvas, **kwargs) -> None:
         super().__init__(
-            node=Welcome(
-                font_manager=canvas.font_manager(), face=canvas.overlay_font()
-            ),
+            node=Welcome(canvas=canvas),
             canvas=canvas,
             **kwargs,
         )

@@ -1,4 +1,6 @@
-from typing import Any
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
 
 from vispy.scene.visuals import Text as BaseText
 
@@ -10,12 +12,19 @@ from napari._vispy.utils.text import (
 
 _FONT_FAMILY = 'OpenSans'
 
+if TYPE_CHECKING:
+    from napari._vispy.canvas import VispyCanvas
+
 
 class Text(BaseText):
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
+    def __init__(
+        self, *args: Any, canvas: VispyCanvas | None = None, **kwargs: Any
+    ) -> None:
         # If using Qt fonts, pass the Qt font manager to the base class
-        if 'face' not in kwargs:
-            kwargs['face'] = _FONT_FAMILY
+        if canvas is not None:
+            kwargs['font_manager'] = canvas.font_manager()
+            kwargs['face'] = canvas.overlay_font()
+
         super().__init__(*args, **kwargs)
 
     def get_width_height(self) -> tuple[float, float]:

@@ -23,10 +23,7 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
         self, *, layer: Image | Surface, canvas: VispyCanvas, **kwargs
     ) -> None:
         super().__init__(
-            node=ColorBar(
-                font_manager=canvas.font_manager(),
-                font_family=canvas.overlay_font(),
-            ),
+            node=ColorBar(canvas=canvas),
             layer=layer,
             canvas=canvas,
             **kwargs,
