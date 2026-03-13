@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Protocol
-from weakref import ref
 
 from vispy.visuals.filters.clipping_planes import PlanesClipper
 
 if TYPE_CHECKING:
     from vispy.visuals.filters import Filter
 
-    from napari._vispy.canvas import VispyCanvas
+    from napari._vispy.utils.qt_font import FontInfo
 
 
 class _PVisual(Protocol):
@@ -28,10 +27,10 @@ class ClippingPlanesMixin:
     and provides property getter and setter
     """
 
-    def __init__(self: _PVisual, *args, canvas: VispyCanvas, **kwargs) -> None:
+    def __init__(self: _PVisual, *args, font_info: FontInfo, **kwargs) -> None:
         clip_filter = PlanesClipper()
         self._clip_filter = clip_filter
-        self._napari_canvas = ref(canvas)
+        self.font_info = font_info
         super().__init__(*args, **kwargs)
 
         self.attach(clip_filter)

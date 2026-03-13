@@ -13,17 +13,17 @@ from napari._vispy.utils.text import (
 _FONT_FAMILY = 'OpenSans'
 
 if TYPE_CHECKING:
-    from napari._vispy.canvas import VispyCanvas
+    from napari._vispy.utils.qt_font import FontInfo
 
 
 class Text(BaseText):
     def __init__(
-        self, *args: Any, canvas: VispyCanvas | None = None, **kwargs: Any
+        self, *args: Any, font_info: FontInfo | None = None, **kwargs: Any
     ) -> None:
         # If using Qt fonts, pass the Qt font manager to the base class
-        if canvas is not None:
-            kwargs['font_manager'] = canvas.font_manager()
-            kwargs['face'] = canvas.overlay_font()
+        if font_info is not None:
+            kwargs['font_manager'] = font_info.font_manager
+            kwargs['face'] = font_info.face
 
         super().__init__(*args, **kwargs)
 

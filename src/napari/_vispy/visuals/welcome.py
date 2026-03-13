@@ -56,7 +56,7 @@ class Welcome(Node):
             anchor_x='center',
             anchor_y='bottom',
             parent=self,
-            canvas=canvas,
+            font_info=canvas.font_info(),
         )
         self.shortcut_keybindings = Text(
             text='',
@@ -65,7 +65,7 @@ class Welcome(Node):
             anchor_x='right',
             anchor_y='bottom',
             parent=self,
-            canvas=canvas,
+            font_info=canvas.font_info(),
         )
         self.shortcut_descriptions = Text(
             text='',
@@ -74,7 +74,7 @@ class Welcome(Node):
             anchor_x='left',
             anchor_y='bottom',
             parent=self,
-            canvas=canvas,
+            font_info=canvas.font_info(),
         )
         self.tip = Text(
             text='',
@@ -83,7 +83,7 @@ class Welcome(Node):
             anchor_x='center',
             anchor_y='bottom',
             parent=self,
-            canvas=canvas,
+            font_info=canvas.font_info(),
         )
 
         self.transform = STTransform()

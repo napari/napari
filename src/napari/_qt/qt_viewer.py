@@ -690,7 +690,9 @@ class QtViewer(QSplitter):
         layer : napari.layers.Layer
             Layer to be added.
         """
-        vispy_layer = create_vispy_layer(layer, canvas=self.canvas)
+        vispy_layer = create_vispy_layer(
+            layer, font_info=self.canvas.font_info()
+        )
 
         # QtPoll is experimental.
         if self._qt_poll is not None:

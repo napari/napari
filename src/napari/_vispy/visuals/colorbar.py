@@ -43,7 +43,7 @@ class ColorBar(Node):
         self.ticks._text = Text(
             font_size=self.ticks.tick_font_size,
             color=self.ticks.text_color,
-            canvas=canvas,
+            font_info=canvas.font_info(),
         )
         self.ticks.add_subvisual(self.ticks._text)
 

@@ -47,7 +47,7 @@ class ScaleBar(Compound):
             anchor_x='center',
             anchor_y='bottom',
             font_size=10,
-            canvas=canvas,
+            font_info=canvas.font_info(),
         )
         self.line = Line(
             connect='segments', method='gl', width=3, antialias=True

@@ -201,7 +201,7 @@ class Axes(Compound):
                     font_size=10,
                     anchor_x='center',
                     anchor_y='center',
-                    canvas=canvas,
+                    font_info=canvas.font_info(),
                 ),
             ]
         )

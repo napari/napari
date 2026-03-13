@@ -105,7 +105,7 @@ class _VispyBaseTextOverlay(VispyCanvasOverlay):
 class _VispyViewerTextOverlay(ViewerOverlayMixin, _VispyBaseTextOverlay):
     def __init__(self, canvas: VispyCanvas, **kwargs):
         super().__init__(
-            node=Text(pos=(0, 0), canvas=canvas),
+            node=Text(pos=(0, 0), font_info=canvas.font_info()),
             canvas=canvas,
             **kwargs,
         )
@@ -117,7 +117,7 @@ class _VispyViewerTextOverlay(ViewerOverlayMixin, _VispyBaseTextOverlay):
 class _VispyLayerTextOverlay(LayerOverlayMixin, _VispyBaseTextOverlay):
     def __init__(self, canvas: VispyCanvas, **kwargs):
         super().__init__(
-            node=Text(pos=(0, 0), canvas=canvas),
+            node=Text(pos=(0, 0), font_info=canvas.font_info()),
             canvas=canvas,
             **kwargs,
         )
