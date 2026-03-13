@@ -13,7 +13,6 @@ class WelcomeOverlay(CanvasOverlay):
     order: int = 10**6 + 10
     gridded: Literal[False] = False
     version: str = __version__
-    font_size: float = 10
     shortcuts: tuple[str, ...] = (
         'napari.window.file._image_from_clipboard',
         'napari.window.file.open_files_dialog',
