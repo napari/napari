@@ -19,11 +19,11 @@ QtViewerPushButton[mode="new_points"] {
 }
 
 QtViewerPushButton[mode="new_points"][creation_state="full"] {
-  border: 3px solid {{ darken(current, 5) }};
+  border: 3px solid {{ lighten(current, 20) }};
 }
 
 QtViewerPushButton[mode="new_points"][creation_state="partial"] {
-  border: 3px solid {{ lighten(current, 20) }};
+  border: 3px solid {{ darken(current, 5) }};
 }
 
 QtViewerPushButton[mode="new_shapes"] {
@@ -32,11 +32,11 @@ QtViewerPushButton[mode="new_shapes"] {
 }
 
 QtViewerPushButton[mode="new_shapes"][creation_state="full"] {
-  border: 3px solid {{ darken(current, 5) }};
+  border: 3px solid {{ lighten(current, 20) }};
 }
 
 QtViewerPushButton[mode="new_shapes"][creation_state="partial"] {
-  border: 3px solid {{ lighten(current, 20) }};
+  border: 3px solid {{ darken(current, 5) }};
 }
 
 QtViewerPushButton[mode="warning"] {
@@ -49,11 +49,11 @@ QtViewerPushButton[mode="new_labels"] {
 }
 
 QtViewerPushButton[mode="new_labels"][creation_state="full"] {
-  border: 3px solid {{ darken(current, 5) }};
+  border: 3px solid {{ lighten(current, 20) }};
 }
 
 QtViewerPushButton[mode="new_labels"][creation_state="partial"] {
-  border: 3px solid {{ lighten(current, 20) }};
+  border: 3px solid {{ darken(current, 5) }};
 }
 
 QtViewerPushButton[mode="console"] {
