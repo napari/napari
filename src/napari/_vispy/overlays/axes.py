@@ -32,6 +32,7 @@ class VispyAxesOverlay(ViewerOverlayMixin, VispySceneOverlay):
 
         super().__init__(
             node=Axes(canvas=canvas),
+            canvas=canvas,
             **kwargs,
         )
         self.overlay.events.colored.connect(self._on_data_change)
