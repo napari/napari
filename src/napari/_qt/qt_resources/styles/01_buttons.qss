@@ -23,10 +23,6 @@ QtViewerPushButton[mode="new_shapes"] {
   border: 3px solid {{ background }};
 }
 
-QtViewerPushButton[mode="warning"] {
-  image: url("theme_{{ id }}:/warning.svg");
-}
-
 QtViewerPushButton[mode="new_labels"] {
   image: url("theme_{{ id }}:/new_labels.svg");
   border: 3px solid {{ background }};
@@ -42,6 +38,10 @@ QtViewerPushButton[mode="new_points"][creation_state="partial"],
 QtViewerPushButton[mode="new_shapes"][creation_state="partial"],
 QtViewerPushButton[mode="new_labels"][creation_state="partial"] {
   border: 3px solid {{ darken(current, 5) }};
+}
+
+QtViewerPushButton[mode="warning"] {
+  image: url("theme_{{ id }}:/warning.svg");
 }
 
 QtViewerPushButton[mode="console"] {
