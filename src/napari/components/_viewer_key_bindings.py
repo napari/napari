@@ -231,6 +231,11 @@ def toggle_console_visibility(qt_viewer: QtViewer) -> None:
         qt_viewer.window._qt_viewer.toggle_console_visibility()  # type: ignore[attr-defined]
 
 
+@register_viewer_action(trans._('Toggle command palette'))
+def toggle_command_palette(viewer: Viewer):
+    viewer.window._toggle_command_palette()
+
+
 @register_viewer_action(trans._('Press and hold for move camera mode'))
 def hold_for_pan_zoom(viewer: ViewerModel) -> Generator[None, None, None]:
     selected_layer = viewer.layers.selection.active
