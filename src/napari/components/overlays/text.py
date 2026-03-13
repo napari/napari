@@ -12,7 +12,7 @@ class _BaseTextOverlay(CanvasOverlay):
     ----------
     color : np.ndarray
         A (4,) color array of the text overlay.
-    font_size : float
+    font_size : float, optional
         The font size (in points) of the text.
     position : CanvasPosition
         The position of the overlay in the canvas.
@@ -25,7 +25,7 @@ class _BaseTextOverlay(CanvasOverlay):
     """
 
     color: ColorValue | None = None
-    font_size: float = 10
+    font_size: float | None = None
 
 
 class TextOverlay(_BaseTextOverlay):
@@ -35,7 +35,7 @@ class TextOverlay(_BaseTextOverlay):
     ----------
     color : np.ndarray
         A (4,) color array of the text overlay.
-    font_size : float
+    font_size : float, optional
         The font size (in points) of the text.
     text : str
         Text to be displayed in the canvas.
@@ -59,7 +59,7 @@ class LayerNameOverlay(_BaseTextOverlay):
     ----------
     color : np.ndarray
         A (4,) color array of the text overlay.
-    font_size : float
+    font_size : float, optional
         The font size (in points) of the text.
     position : CanvasPosition
         The position of the overlay in the canvas.
@@ -81,7 +81,7 @@ class CurrentSliceOverlay(_BaseTextOverlay):
     ----------
     color : np.ndarray
         A (4,) color array of the text overlay.
-    font_size : float
+    font_size : float, optional
         The font size (in points) of the text.
     position : CanvasPosition
         The position of the overlay in the canvas.
