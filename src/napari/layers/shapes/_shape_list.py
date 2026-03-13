@@ -434,6 +434,7 @@ class ShapeList:
         self.shapes: list[Shape] = []
         self._displayed = np.array([])
         self._slice_key = np.array([])
+        self.out_of_slice_display = False
         self.displayed_vertices = np.array([], dtype=CoordinateDtype)
         self.displayed_vertices_to_shape_num = np.array([], dtype=IndexDtype)
         self.displayed_indices = np.array([], dtype=IndexDtype)
@@ -772,12 +773,27 @@ class ShapeList:
         # max values stored in the shapes slice key.
         slice_key = np.array([self.slice_key, self.slice_key])
 
-        # Slice key must exactly match mins and maxs of shape as then the
-        # shape is entirely contained within the current slice.
         if len(self.shapes) > 0:
-            self._displayed = np.all(
-                np.abs(self.slice_keys - slice_key) < 0.5, axis=(1, 2)
-            )
+            if self.out_of_slice_display:
+                # Show shapes where the current slice falls within the
+                # shape's extent range in each non-displayed dimension.
+                # slice_keys shape: (N, 2, P) where [i, 0, :] = mins, [i, 1, :] = maxs
+                # slice_key[0] = current slice position for each non-displayed dim
+                mins = self.slice_keys[:, 0, :]  # (N, P)
+                maxs = self.slice_keys[:, 1, :]  # (N, P)
+                current = slice_key[0]  # (P,)
+                # Shape is displayed if current slice is within [min-0.5, max+0.5]
+                # for all non-displayed dimensions
+                self._displayed = np.all(
+                    (current >= mins - 0.5) & (current <= maxs + 0.5),
+                    axis=1,
+                )
+            else:
+                # Slice key must exactly match mins and maxs of shape as then the
+                # shape is entirely contained within the current slice.
+                self._displayed = np.all(
+                    np.abs(self.slice_keys - slice_key) < 0.5, axis=(1, 2)
+                )
         else:
             self._displayed = np.array([])
         disp_indices: IndexArray = np.nonzero(self._displayed)[0]  # type: ignore[assignment]
