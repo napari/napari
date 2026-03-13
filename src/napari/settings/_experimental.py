@@ -39,7 +39,7 @@ class ExperimentalSettings(EventedSettings):
     )
     autoswap_buffers: bool = Field(
         False,
-        title=trans._('Enable autoswapping rendering buffers.'),
+        title=trans._('Enable autoswapping rendering buffers'),
         description=trans._(
             'Autoswapping rendering buffers improves quality by reducing tearing artifacts, while sacrificing some performance.'
         ),
@@ -118,6 +118,27 @@ class ExperimentalSettings(EventedSettings):
             'This option was removed in napari 0.6.0. Use \n'
             '"triangulation backend" instead.'
         ),
+    )
+
+    command_palette_fuzzy_search: bool = Field(
+        default=True,
+        title='Enable fuzzy search in the command palette',
+        description=(
+            'When searching for commands via the command palette, use fuzzy finding\n'
+            'instead of matching exact words.'
+        ),
+    )
+
+    command_palette_fuzzy_search_threshold: int = Field(
+        default=60,
+        title='Similarity threshold (%) for fuzzy search in the command palette',
+        description=(
+            "When searching commands via the command palette, if a command's similarity\n"
+            "to the query is lower than this threshold, it won't be shown as a match.\n"
+            'Set this value to -1 to disable fuzzy search.'
+        ),
+        ge=0,
+        le=100,
     )
 
     class NapariConfig:
