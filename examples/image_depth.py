@@ -4,6 +4,10 @@ Image depth
 
 Display a 3D image and 3D points layer to show how napari handles depth.
 
+The default blending for images is `translucent_no_depth`, which places objects
+on the same rendering "plane". Here, we use `translucent` allows us to see the effect
+of depth.
+
 .. tags:: visualization-basic
 """
 
@@ -14,8 +18,6 @@ import napari
 im_data = np.zeros((50, 50, 50))
 im_data[30:40, 25:35, 25:35] = 1
 viewer = napari.Viewer()
-# default blending for images is `translucent_no_depth`
-# `translucent` allows us to see the effect
 layer = viewer.add_image(im_data, colormap='magenta', rendering='iso', blending='translucent')
 viewer.add_image(im_data, colormap='green', rendering='iso', blending='translucent', translate=(30, 0, 0))
 
