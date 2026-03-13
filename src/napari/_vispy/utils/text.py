@@ -136,8 +136,8 @@ def get_text_width_height(text: Text) -> tuple[float, float]:
     metrics = get_text_metrics(text)
     font_height = metrics.height()
 
-    height = 0
-    width = 0
+    height = 0.0
+    width = 0.0
 
     for string in strings:
         if string == '':
