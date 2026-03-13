@@ -31,10 +31,7 @@ class VispyAxesOverlay(ViewerOverlayMixin, VispySceneOverlay):
         self._target_length = 80
 
         super().__init__(
-            node=Axes(
-                font_manager=canvas.font_manager(),
-                font_family=canvas.overlay_font(),
-            ),
+            node=Axes(canvas=canvas),
             **kwargs,
         )
         self.overlay.events.colored.connect(self._on_data_change)
