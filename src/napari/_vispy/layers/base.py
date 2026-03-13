@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
-from typing import Generic, TypeVar, cast
+from typing import TYPE_CHECKING, Generic, TypeVar, cast
+from weakref import ref
 
 import numpy as np
 import pint
@@ -9,6 +12,9 @@ from vispy.visuals.transforms import MatrixTransform
 from napari._vispy.utils.gl import BLENDING_MODES, get_max_texture_sizes
 from napari.layers import Layer
 from napari.utils.events import disconnect_events
+
+if TYPE_CHECKING:
+    from napari._vispy.canvas import VispyCanvas
 
 _L = TypeVar('_L', bound=Layer)
 
@@ -49,11 +55,14 @@ class VispyBaseLayer(ABC, Generic[_L]):
 
     layer: _L
 
-    def __init__(self, layer: _L, node: VisualNode) -> None:
+    def __init__(
+        self, layer: _L, node: VisualNode, canvas: VispyCanvas
+    ) -> None:
         super().__init__()
         self.events = None  # Some derived classes have events.
 
         self.layer = layer
+        self._canvas = ref(canvas)
         self._array_like = False
         self.node = node
         self.first_visible = False

@@ -30,10 +30,7 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self._unit = pint.Quantity('1 pixel')
 
         super().__init__(
-            node=ScaleBar(
-                font_manager=canvas.font_manager(),
-                font_family=canvas.overlay_font(),
-            ),
+            node=ScaleBar(canvas=canvas),
             canvas=canvas,
             **kwargs,
         )

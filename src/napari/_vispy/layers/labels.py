@@ -195,12 +195,15 @@ def _select_colormap_texture(
 class VispyLabelsLayer(VispyScalarFieldBaseLayer):
     layer: 'Labels'
 
-    def __init__(self, layer, node=None, texture_format='r8') -> None:
+    def __init__(
+        self, layer, node=None, texture_format='r8', **kwargs
+    ) -> None:
         super().__init__(
             layer,
             node=node,
             texture_format=texture_format,
             layer_node_class=LabelLayerNode,
+            **kwargs,
         )
 
         self.layer.events.labels_update.connect(self._on_partial_labels_update)

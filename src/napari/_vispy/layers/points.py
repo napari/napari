@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import numpy as np
 
 from napari._vispy.layers.base import VispyBaseLayer
@@ -8,13 +12,18 @@ from napari.settings import get_settings
 from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils.events import disconnect_events
 
+if TYPE_CHECKING:
+    from napari._vispy.canvas import VispyCanvas
+    from napari.layers import Points
+
 
 class VispyPointsLayer(VispyBaseLayer):
     node: PointsVisual
+    layer: Points
 
-    def __init__(self, layer) -> None:
-        node = PointsVisual()
-        super().__init__(layer, node)
+    def __init__(self, layer, canvas: VispyCanvas) -> None:
+        node = PointsVisual(canvas=canvas)
+        super().__init__(layer, node, canvas=canvas)
 
         self.layer.events.symbol.connect(self._on_data_change)
         self.layer.events.border_width.connect(self._on_data_change)
