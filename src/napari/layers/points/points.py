@@ -1414,13 +1414,6 @@ class Points(Layer):
             ) is not None:
                 self.current_symbol = unique_symbol
 
-            unique_properties = {}
-            for k, v in self.properties.items():
-                unique_properties[k] = _unique_element(v[index])
-
-            if all(p is not None for p in unique_properties.values()):
-                self.current_properties = unique_properties
-
         self._set_highlight()
 
     def interaction_box(self, index: list[int]) -> np.ndarray | None:
