@@ -1454,14 +1454,6 @@ class QtViewer(QSplitter):
             imsave(path, img)
         return img
 
-    def font_manager(self) -> QtFontManager:
-        """Return the font manager for this viewer."""
-        return self._font_manager
-
-    def overlay_font(self) -> str:
-        """Return the font used for overlays."""
-        return self._overlay_font
-
 
 if TYPE_CHECKING:
     from napari._qt.experimental.qt_poll import QtPoll

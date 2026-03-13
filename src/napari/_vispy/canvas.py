@@ -47,6 +47,7 @@ if TYPE_CHECKING:
     from vispy.app.backends._qt import CanvasBackendDesktop
     from vispy.app.canvas import DrawEvent, MouseEvent, ResizeEvent
     from vispy.scene import Node
+    from vispy.visuals.text.text import FontManager
 
     from napari._vispy.layers.base import VispyBaseLayer
     from napari._vispy.overlays.base import VispyBaseOverlay
@@ -935,10 +936,8 @@ class VispyCanvas:
         if vispy_overlay is None:
             vispy_overlay = create_vispy_overlay(
                 overlay=overlay,
-                viewer=self.viewer,
+                canvas=self,
                 parent=parent,
-                font_manager=self._font_manager,
-                font_family=self._overlay_font,
             )
             self._overlay_to_visual[overlay].append(vispy_overlay)
 
@@ -1085,7 +1084,7 @@ class VispyCanvas:
                 vispy_overlay = create_vispy_overlay(
                     overlay=overlay,
                     layer=layer,
-                    viewer=self.viewer,
+                    canvas=self,
                     parent=parent,
                 )
                 overlay_to_visual[overlay] = vispy_overlay
@@ -1352,7 +1351,7 @@ class VispyCanvas:
             for layer in self.viewer.layers:
                 self._update_layer_overlays(layer)
             self._on_interactive()
-        self.on_draw(None)
+        self.on_draw()
 
     def _setup_single_view(self):
         for vispy_layer in self.layer_to_visual.values():
@@ -1428,3 +1427,11 @@ class VispyCanvas:
     def _resume_scene_graph_update(self):
         self._pause_scene_graph = False
         self._clean_and_update_scenegraph()
+
+    def font_manager(self) -> FontManager:
+        """Return the font manager for this viewer."""
+        return self._font_manager
+
+    def overlay_font(self) -> str:
+        """Return the font used for overlays."""
+        return self._overlay_font

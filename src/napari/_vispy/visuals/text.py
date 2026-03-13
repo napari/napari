@@ -2,34 +2,13 @@ from typing import Any
 
 from vispy.scene.visuals import Text as BaseText
 
-from napari._vispy.utils.qt_font import QtFontManager
 from napari._vispy.utils.text import (
     get_text_width_height,
 )
 
 # Global Qt-based font manager instance shared across all Text visuals
-_qt_font_manager = None
 
 _FONT_FAMILY = 'OpenSans'
-
-
-def get_qt_font_manager(method: str = 'cpu') -> QtFontManager:
-    """Get or create the global Qt font manager instance.
-
-    Parameters
-    ----------
-    method : str, optional
-        Rendering method ('cpu' or 'gpu'). Default is 'cpu'.
-
-    Returns
-    -------
-    QtFontManager
-        The global Qt font manager instance.
-    """
-    global _qt_font_manager
-    if _qt_font_manager is None:
-        _qt_font_manager = QtFontManager(method=method)
-    return _qt_font_manager
 
 
 class Text(BaseText):
