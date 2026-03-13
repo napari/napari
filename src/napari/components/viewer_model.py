@@ -138,6 +138,21 @@ DEFAULT_OVERLAYS = {
 }
 
 
+def _validate_paths_exist(paths: list[PathLike]) -> None:
+    """Raise FileNotFoundError if any local (non-URL) path does not exist."""
+    for p in paths:
+        p_str = str(p)
+        parsed = urlparse(p_str)
+        if not (parsed.scheme and parsed.netloc) and not Path(p_str).exists():
+            raise FileNotFoundError(
+                trans._(
+                    'Path {path!r} does not exist.',
+                    deferred=True,
+                    path=p_str,
+                )
+            )
+
+
 # KeymapProvider & MousemapProvider should eventually be moved off the ViewerModel
 class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     """Viewer containing the rendered scene, layers, and controlling elements
@@ -1436,21 +1451,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             else [os.fspath(p) for p in path]
         )
 
-        # Check that all local (non-URL) paths exist before proceeding.
-        for p in paths_:
-            p_str = str(p)
-            parsed = urlparse(p_str)
-            if (
-                not (parsed.scheme and parsed.netloc)
-                and not Path(p_str).exists()
-            ):
-                raise FileNotFoundError(
-                    trans._(
-                        'Path {path!r} does not exist.',
-                        deferred=True,
-                        path=p_str,
-                    )
-                )
+        _validate_paths_exist(paths_)
 
         paths: Sequence[PathOrPaths] = paths_
         # If stack is a bool and True, add an additional layer of nesting.

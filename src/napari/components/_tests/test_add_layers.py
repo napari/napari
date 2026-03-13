@@ -76,10 +76,13 @@ def test_plugin_returns_nothing():
 
 
 @patch(
+    'napari.components.viewer_model._validate_paths_exist',
+)
+@patch(
     'napari.plugins.io.read_data_with_plugins',
     MagicMock(return_value=([(img,)], TEST_PLUGIN_NAME)),
 )
-def test_viewer_open():
+def test_viewer_open(_mock_validate):
     """Test that a plugin to returning an image adds stuff to the viewer."""
     viewer = ViewerModel()
     assert len(viewer.layers) == 0
