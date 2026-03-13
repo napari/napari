@@ -169,7 +169,7 @@ class Welcome(Node):
 
     def set_scale_and_position(self, x: float, y: float) -> None:
         self.transform.translate = (x / 2, y / 2, 0, 0)
-        scale = min(x, y) * 0.002  # magic number
+        scale = min(x, y) / self.font_height * 0.04  # magic number
         self.transform.scale = (scale, scale, 0, 0)
 
         for text in (
