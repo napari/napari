@@ -102,7 +102,7 @@ You can see details of [the project roadmap here](https://napari.org/stable/road
 
 ## contributing
 
-Contributions are encouraged! Please read our [contributing guide](https://napari.org/dev/developers/contributing/index.html) to get started. Given that we're in an early stage, you may want to reach out on our [GitHub Issues](https://github.com/napari/napari/issues) before jumping in. 
+Contributions are encouraged! See [CONTRIBUTING.md](https://github.com/napari/napari/blob/main/CONTRIBUTING.md) for resources to get started.
 
 If you want to contribute to or edit our documentation, please go to [napari/docs](https://github.com/napari/docs).
 
