@@ -664,6 +664,16 @@ def test_adding_incompatible_layer_emits_none_units_event():
     assert callback.call_args.args[0].value is None
 
 
+def test_adding_compatible_layer_without_units_change_does_not_emit_units_event():
+    layer_list = LayerList([Image(np.zeros((5, 5)), units=('nm', 'nm'))])
+    callback = Mock()
+
+    layer_list.events.units.connect(callback)
+    layer_list.append(Image(np.zeros((5, 5)), units=('um', 'um')))
+
+    callback.assert_not_called()
+
+
 def test_removing_incompatible_layer_emits_units_event():
     layer_u = Image(np.zeros((5, 5)), units=('um', 'um'))
     layer_px = Image(np.zeros((5, 5)), units=('pixels', 'pixels'))
@@ -675,6 +685,18 @@ def test_removing_incompatible_layer_emits_units_event():
 
     callback.assert_called_once()
     assert callback.call_args.args[0].value == (REG.um, REG.um)
+
+
+def test_removing_compatible_layer_without_units_change_does_not_emit_units_event():
+    layer_nm = Image(np.zeros((5, 5)), units=('nm', 'nm'))
+    layer_um = Image(np.zeros((5, 5)), units=('um', 'um'))
+    layer_list = LayerList([layer_nm, layer_um])
+    callback = Mock()
+
+    layer_list.events.units.connect(callback)
+    layer_list.remove(layer_um)
+
+    callback.assert_not_called()
 
 
 def test_removing_last_layer_emits_none_units_event():
