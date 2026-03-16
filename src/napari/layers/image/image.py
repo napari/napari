@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 import typing
 import warnings
 from collections.abc import Sequence
@@ -26,6 +27,7 @@ from napari.layers.image._image_constants import (
 from napari.layers.image._image_utils import guess_rgb
 from napari.layers.image._slice import _ImageSliceRequest
 from napari.layers.intensity_mixin import IntensityVisualizationMixin
+from napari.layers.utils._slice_input import _ThickNDSlice
 from napari.layers.utils.layer_utils import calc_data_range
 from napari.types import LayerDataType
 from napari.utils._dtype import get_dtype_limits, normalize_dtype
@@ -335,6 +337,23 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
             self._iso_threshold = cmin + (cmax - cmin) / 2
         else:
             self._iso_threshold = iso_threshold
+
+    def _post_init(self) -> None:
+        # Clip the initial slice point to the data's world extent so the first
+        # refresh never produces an out-of-bounds empty response when translate
+        # places the world origin outside the data extent.
+        shape = self.data[-1].shape if self.multiscale else self.data.shape
+        data_corners = np.array(
+            [[0] * self.ndim, [s - 1 for s in shape[-self.ndim :]]],
+            dtype=float,
+        )
+        world_corners = self._data_to_world(data_corners)
+        point = tuple(np.clip(0.0, world_corners.min(0), world_corners.max(0)))
+        self._slicing_state._slice_input = dataclasses.replace(
+            self._slicing_state._slice_input,
+            world_slice=_ThickNDSlice.make_full(point=point, ndim=self.ndim),
+        )
+        super()._post_init()
 
     @property
     def rendering(self) -> str:
