@@ -53,6 +53,7 @@ class Welcome(Node):
         self.logo = Polygon(
             self.logo_coords, border_method='agg', border_width=2, parent=self
         )
+        self.logo.transform = STTransform()
         self.header = Text(
             text='',
             line_height=1.75,
@@ -174,7 +175,8 @@ class Welcome(Node):
         self.transform.scale = (scale, scale, 0, 0)
         # we don't want the logo to be affected by dpi ratio which is included in
         # font_height, so we undo that
-        self.logo.transform.scale = 1 / self.header.dpi_ratio
+        logo_scale = 1 / self.header.dpi_ratio
+        self.logo.transform.scale = (logo_scale, logo_scale, 0, 0)
 
         for text in (
             self.header,
