@@ -28,26 +28,27 @@ if TYPE_CHECKING:
 vispy_logger = logging.getLogger('vispy')
 
 
+def _load_logo() -> np.ndarray:
+    # load logo (disabling logging for some svg reading warnings)
+    old_level = vispy_logger.level
+    vispy_logger.setLevel(logging.ERROR)
+    coords = Document(get_icon_path('logo_silhouette')).paths[0].vertices[0][0]
+    vispy_logger.setLevel(old_level)
+    # drop z: causes issues with polygon agg mode
+    coords = coords[:, :2]
+    # center
+    coords -= (np.max(coords, axis=0) + np.min(coords, axis=0)) / 2
+    return coords
+
+
 class Welcome(Node):
     def __init__(self, font_manager: FontManager, face: str) -> None:
-        old_level = vispy_logger.level
-        vispy_logger.setLevel(logging.ERROR)
-        self.logo_coords = (
-            Document(get_icon_path('logo_silhouette')).paths[0].vertices[0][0]
-        )
-        vispy_logger.setLevel(old_level)
-        self.logo_coords = self.logo_coords[
-            :, :2
-        ]  # drop z: causes issues with polygon agg mode
-        # center
-        self.logo_coords -= (
-            np.max(self.logo_coords, axis=0) + np.min(self.logo_coords, axis=0)
-        ) / 2
-        # make it smaller
-        self.logo_coords /= 4
-        # move it up
-        self.logo_coords[:, 1] -= 130  # magic number shifting up logo
+        self.logo_coords = _load_logo()
         super().__init__()
+
+        # make logo smaller and move it up (magic number)
+        self.logo_coords /= 4
+        self.logo_coords[:, 1] -= 130
 
         self.logo = Polygon(
             self.logo_coords, border_method='agg', border_width=2, parent=self
@@ -171,6 +172,9 @@ class Welcome(Node):
         self.transform.translate = (x / 2, y / 2, 0, 0)
         scale = min(x, y) / self.font_height * 0.04  # magic number
         self.transform.scale = (scale, scale, 0, 0)
+        # we don't want the logo to be affected by dpi ratio which is included in
+        # font_height, so we undo that
+        self.logo.transform.scale = 1 / self.header.dpi_ratio
 
         for text in (
             self.header,
@@ -178,7 +182,7 @@ class Welcome(Node):
             self.shortcut_descriptions,
             self.tip,
         ):
-            text.font_size = max(scale / self.header.dpi_ratio * 8, 10)
+            text.font_size = max(scale * 8, 10)
 
     def set_gl_state(self, *args: Any, **kwargs: Any) -> None:
         for node in self.children:
