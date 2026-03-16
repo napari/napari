@@ -806,6 +806,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     @mode.setter
     def mode(self, mode: Mode | str) -> None:
         mode_enum = self._mode_setter_helper(mode)
+        if not self.support_mode(mode_enum):
+            return
         if mode_enum == self._mode:
             return
         self._mode = mode_enum
@@ -2455,6 +2457,15 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     ) -> _LayerSlicingState:
         """Return a LayerSlicer instance appropriate for this layer."""
         raise NotImplementedError
+
+    @classmethod
+    def support_mode(cls, mode: str | StringEnum) -> bool:
+        """Return whether this layer supports the given mode.
+
+        It is to allow plugin to limit the supported modes
+        for plugin created layers
+        """
+        return mode in cls._modeclass
 
 
 mgui.register_type(type_=list[Layer], return_callback=add_layers_to_viewer)
