@@ -260,6 +260,10 @@ class QtViewer(QSplitter):
 
         for layer in self.viewer.layers:
             self._add_layer(layer)
+        # fire units update after layers are added on QtViewer init,
+        # to ensure units are correct on the canvas even if the viewer
+        # starts with layers (i.e. before events are connected).
+        self.canvas._update_world_units()
 
         # set up welcome screen
         viewer.welcome_screen.visible = False
