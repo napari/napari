@@ -144,6 +144,10 @@ class LayerList(SelectableEventedList[Layer]):
         """Disconnect from layer events when a layer is removed."""
         layer = event.value
         layer.events.name.disconnect(self._on_layer_renamed)
+        # Effective world units depend on current layer membership, so removing
+        # a layer can restore or invalidate unit consistency.
+        # So fire a units event to trigger any necessary updates.
+        self.events.units(value=self.units)
 
     def _on_layer_renamed(self, event: Event):
         """Re-emit layer name changes from a layer as a LayerList event."""
