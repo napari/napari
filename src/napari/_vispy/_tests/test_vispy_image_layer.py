@@ -215,11 +215,16 @@ def test_transforming_child_node_pyramid(pyramid_layer):
         shape_threshold=(10, 10),
     )
 
+    # After the translate the branch expands corners to the full level extent
+    # (is_fully_cached=True), so tile2data.translate=[0,0] and the master
+    # node sits at world_translate - 0.5 = (-10.5, -10.5).  The overlay is
+    # positioned at the data origin in the master frame, giving (0.5, 0.5)
+    # relative to the master; the absolute world position is unchanged.
     npt.assert_array_almost_equal(
-        layer.node.transform.matrix[-1][:2], (-0.5, -0.5)
+        layer.node.transform.matrix[-1][:2], (-10.5, -10.5)
     )
     npt.assert_array_almost_equal(
-        overlay.node.transform.matrix[-1][:2], (-9.5, -9.5)
+        overlay.node.transform.matrix[-1][:2], (0.5, 0.5)
     )
 
 

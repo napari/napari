@@ -449,7 +449,7 @@ def test_multiscale_data_protocol():
 @pytest.mark.parametrize(
     ('corner_pixels_world', 'exp_level', 'exp_corner_pixels_data'),
     [
-        ([[5, 5], [15, 15]], 0, [[5, 5], [15, 15]]),
+        ([[5, 5], [15, 15]], 0, [[0, 0], [19, 19]]),
         # Multiscale level selection uses > rather than >= so use -1 and 21
         # instead of 0 and 20 to ensure that the FOV is big enough.
         ([[-1, -1], [21, 21]], 1, [[0, 0], [9, 9]]),
@@ -498,3 +498,121 @@ def test_update_draw_variable_canvas_size_fixed_fov(
 
     assert layer.data_level == exp_level
     np.testing.assert_equal(layer.corner_pixels, exp_corner_pixels_data)
+
+
+def test_update_draw_lowest_level_keeps_full_view(monkeypatch):
+    shapes = [(20, 20), (10, 10), (5, 5)]
+    data = [np.zeros(s) for s in shapes]
+    layer = Image(data, multiscale=True)
+    refresh_calls = []
+
+    def _record_refresh(*args, **kwargs):
+        refresh_calls.append(kwargs)
+
+    monkeypatch.setattr(layer, 'refresh', _record_refresh)
+
+    # First update selects the coarsest level.
+    layer._update_draw(
+        scale_factor=1,
+        corner_pixels_displayed=np.array([[-11, -11], [31, 31]]),
+        shape_threshold=(10, 10),
+    )
+    assert layer.data_level == 2
+    np.testing.assert_equal(layer.corner_pixels, [[0, 0], [4, 4]])
+    refresh_count = len(refresh_calls)
+
+    # Panning while staying on the coarsest level should not trigger reslicing.
+    layer._update_draw(
+        scale_factor=1,
+        corner_pixels_displayed=np.array([[-9, -9], [33, 33]]),
+        shape_threshold=(10, 10),
+    )
+    assert layer.data_level == 2
+    np.testing.assert_equal(layer.corner_pixels, [[0, 0], [4, 4]])
+    assert len(refresh_calls) == refresh_count
+
+
+def _make_multiscale_layer(shapes=((20, 20), (10, 10), (5, 5))):
+    """Helper: create a multiscale Image from the given level shapes."""
+    return Image([np.zeros(s) for s in shapes], multiscale=True)
+
+
+def _draw(layer, corners, canvas=(10, 10)):
+    """Helper: call _update_draw with the given world-space corners."""
+    layer._update_draw(
+        scale_factor=1,
+        corner_pixels_displayed=np.array(corners),
+        shape_threshold=canvas,
+    )
+
+
+def test_home_equals_thumbnail_no_double_store():
+    """When the viewport selects the lowest level:
+    home_level == thumbnail_level
+    so only one materializer cache entry is used.
+    """
+    layer = _make_multiscale_layer()
+    # Canvas (10,10) with full FOV → selects level 2 (5, 5) = thumbnail
+    _draw(layer, [[-11, -11], [31, 31]])
+    ss = layer._slicing_state
+    assert ss._home_level == 2
+    assert ss._home_level == layer._thumbnail_level
+    # Only one cache entry: thumbnail and home are the same level
+    assert layer._level_materializer.cache_info().currsize == 1
+
+
+def test_home_differs_from_thumbnail_stores_data_and_uses_full_extent():
+    """When the viewport selects a level above the lowest, both thumbnail
+    and home level data are cached and the full extent is used."""
+    layer = _make_multiscale_layer()
+    # Canvas (10,10) with tight FOV → selects level 0 (20, 20)
+    _draw(layer, [[5, 5], [15, 15]])
+    ss = layer._slicing_state
+    assert ss._home_level == 0
+    assert ss._home_level != layer._thumbnail_level
+    # Both thumbnail_level and home_level are cached (two distinct levels)
+    assert layer._level_materializer.cache_info().currsize == 2
+    home_data = layer._level_materializer(ss._home_level)
+    assert isinstance(home_data, np.ndarray)
+    assert home_data.shape == (20, 20)
+    np.testing.assert_equal(layer.corner_pixels, [[0, 0], [19, 19]])
+
+
+def test_home_level_set_once():
+    """Home level is frozen after the first draw — zooming to a
+    different level must not change it."""
+    layer = _make_multiscale_layer()
+    _draw(layer, [[5, 5], [15, 15]])  # level 0
+    assert layer._slicing_state._home_level == 0
+
+    _draw(layer, [[-11, -11], [31, 31]])  # level 2
+    assert layer._slicing_state._home_level == 0  # unchanged
+
+
+def test_pan_at_home_level_skips_refresh(monkeypatch):
+    """Panning within the home level must not trigger a refresh
+    because the full extent is already uploaded."""
+    layer = _make_multiscale_layer()
+    _draw(layer, [[5, 5], [15, 15]])  # initial draw at home level
+
+    refresh_calls = []
+    monkeypatch.setattr(
+        layer, 'refresh', lambda *a, **kw: refresh_calls.append(1)
+    )
+
+    # Pan while still on the same level — should not trigger refresh.
+    _draw(layer, [[3, 3], [13, 13]])
+    assert layer.data_level == 0
+    assert len(refresh_calls) == 0
+
+
+def test_data_replacement_resets_home_level():
+    layer = _make_multiscale_layer()
+    _draw(layer, [[5, 5], [15, 15]])
+    assert layer._slicing_state._home_level == 0
+
+    old_materializer = layer._level_materializer
+    layer.data = [np.zeros((30, 30)), np.zeros((15, 15))]
+    assert layer._slicing_state._home_level is None
+    # Data replacement creates a fresh materializer; old cache is abandoned
+    assert layer._level_materializer is not old_materializer
