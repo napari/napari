@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from napari._vispy.overlays.base import (
     LayerOverlayMixin,
     ViewerOverlayMixin,
@@ -7,6 +11,9 @@ from napari._vispy.visuals.text import Text
 from napari.components._viewer_constants import CanvasPosition
 from napari.components.overlays import TextOverlay
 from napari.settings import get_settings
+
+if TYPE_CHECKING:
+    from napari._vispy.canvas import VispyCanvas
 
 
 class _VispyBaseTextOverlay(VispyCanvasOverlay):
@@ -96,11 +103,10 @@ class _VispyBaseTextOverlay(VispyCanvasOverlay):
 
 
 class _VispyViewerTextOverlay(ViewerOverlayMixin, _VispyBaseTextOverlay):
-    def __init__(self, **kwargs):
-        font_manager = kwargs.get('font_manager')
-        font_family = kwargs.get('font_family', 'OpenSans')
+    def __init__(self, canvas: VispyCanvas, **kwargs):
         super().__init__(
-            node=Text(pos=(0, 0), font_manager=font_manager, face=font_family),
+            node=Text(pos=(0, 0), font_info=canvas.font_info()),
+            canvas=canvas,
             **kwargs,
         )
 
@@ -109,8 +115,12 @@ class _VispyViewerTextOverlay(ViewerOverlayMixin, _VispyBaseTextOverlay):
 
 
 class _VispyLayerTextOverlay(LayerOverlayMixin, _VispyBaseTextOverlay):
-    def __init__(self, **kwargs):
-        super().__init__(node=Text(pos=(0, 0)), **kwargs)
+    def __init__(self, canvas: VispyCanvas, **kwargs):
+        super().__init__(
+            node=Text(pos=(0, 0), font_info=canvas.font_info()),
+            canvas=canvas,
+            **kwargs,
+        )
 
         self._connect_events()
         self.reset()

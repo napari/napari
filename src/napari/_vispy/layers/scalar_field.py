@@ -41,6 +41,7 @@ class VispyScalarFieldBaseLayer(VispyBaseLayer[ScalarFieldBase]):
         node=None,
         texture_format='auto',
         layer_node_class=ScalarFieldLayerNode,
+        **kwargs,
     ) -> None:
         # Use custom node from caller, or our standard image/volume nodes.
         self._layer_node = layer_node_class(
@@ -48,7 +49,7 @@ class VispyScalarFieldBaseLayer(VispyBaseLayer[ScalarFieldBase]):
         )
 
         # Default to 2D (image) node.
-        super().__init__(layer, self._layer_node.get_node(2))
+        super().__init__(layer, self._layer_node.get_node(2), **kwargs)
 
         self._array_like = True
         self._data = np.empty(0)

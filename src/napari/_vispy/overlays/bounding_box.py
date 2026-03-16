@@ -5,15 +5,8 @@ from napari._vispy.visuals.bounding_box import BoundingBox
 
 
 class VispyBoundingBoxOverlay(LayerOverlayMixin, VispySceneOverlay):
-    def __init__(self, *, layer, viewer, overlay, parent=None, **kwargs):
-        super().__init__(
-            node=BoundingBox(),
-            layer=layer,
-            viewer=viewer,
-            overlay=overlay,
-            parent=parent,
-            **kwargs,
-        )
+    def __init__(self, **kwargs):
+        super().__init__(node=BoundingBox(), **kwargs)
         self.layer.events.set_data.connect(self._on_bounds_change)
         self.overlay.events.lines.connect(self._on_lines_change)
         self.overlay.events.line_thickness.connect(

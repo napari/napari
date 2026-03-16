@@ -3,6 +3,7 @@ import pytest
 
 from napari._tests.utils import skip_on_win_ci
 from napari._vispy.layers.image import VispyImageLayer
+from napari._vispy.utils.qt_font import FontInfo
 from napari.components.dims import Dims
 from napari.layers.image import Image
 
@@ -81,7 +82,7 @@ def test_clipping_planes_dims():
     image_layer = Image(
         np.zeros((2, 2, 2)), experimental_clipping_planes=clipping_planes
     )
-    vispy_layer = VispyImageLayer(image_layer)
+    vispy_layer = VispyImageLayer(image_layer, font_info=FontInfo())
     napari_clip = image_layer.experimental_clipping_planes.as_array()
     # needed to get volume node
     image_layer._slice_dims(Dims(ndim=3, ndisplay=3))

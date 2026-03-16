@@ -16,12 +16,12 @@ class VispySurfaceLayer(VispyBaseLayer):
     here https://github.com/vispy/vispy/blob/main/vispy/visuals/mesh.py
     """
 
-    def __init__(self, layer) -> None:
+    def __init__(self, layer, **kwargs) -> None:
         node = SurfaceVisual()
         self._texture_filter = None
         self._light_direction = (1, 1, 1)
         self._meshdata = None
-        super().__init__(layer, node)
+        super().__init__(layer, node, **kwargs)
 
         self.layer.events.colormap.connect(self._on_colormap_change)
         self.layer.events.contrast_limits.connect(

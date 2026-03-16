@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
+from weakref import ref
 
 import numpy as np
 from vispy.scene.visuals import Rectangle
@@ -14,8 +15,9 @@ from napari.utils.theme import get_theme
 
 if TYPE_CHECKING:
     from vispy.scene import Node, ViewBox
-    from vispy.visuals.text.text import FontManager
 
+    from napari._vispy.canvas import VispyCanvas
+    from napari._vispy.utils.qt_font import QtFontManager
     from napari.components.overlays import CanvasOverlay, Overlay, SceneOverlay
     from napari.components.viewer_model import ViewerModel
     from napari.layers import Layer
@@ -31,23 +33,19 @@ class VispyBaseOverlay:
     """
 
     overlay: Overlay
-    viewer: ViewerModel
+    canvas: VispyCanvas
 
     def __init__(
         self,
         *,
         overlay: Overlay,
-        viewer: ViewerModel,
+        canvas: VispyCanvas,
         node: Node,
         parent: ViewBox | None = None,
-        font_manager: FontManager | None = None,
-        font_family: str = 'OpenSans',
     ) -> None:
         super().__init__()
         self.overlay = overlay
-        self.viewer = viewer
-        self.font_manager = font_manager
-        self.font_family = font_family
+        self._canvas = ref(canvas)
 
         self.node = node
         self.node.order = self.overlay.order
@@ -58,6 +56,23 @@ class VispyBaseOverlay:
 
         if parent is not None:
             self.node.parent = parent
+
+    @property
+    def viewer(self) -> ViewerModel:
+        return self.canvas.viewer
+
+    @property
+    def font_manager(self) -> QtFontManager:
+        return self.canvas.font_manager()
+
+    @property
+    def canvas(self) -> VispyCanvas:
+        return self._canvas()
+
+    @property
+    def font_family(self) -> str:
+        """Default font family for overlays."""
+        return self.canvas.overlay_font()
 
     def _should_be_visible(self) -> bool:
         return self.overlay.visible
@@ -104,13 +119,9 @@ class VispyCanvasOverlay(VispyBaseOverlay):
 
     overlay: CanvasOverlay
 
-    def __init__(
-        self, *, overlay, viewer, node, parent=None, **kwargs
-    ) -> None:
+    def __init__(self, **kwargs) -> None:
 
-        super().__init__(
-            overlay=overlay, viewer=viewer, node=node, parent=parent, **kwargs
-        )
+        super().__init__(**kwargs)
         self.x_size = 0.0
         self.y_size = 0.0
         self.node.transform = STTransform()
@@ -203,26 +214,16 @@ class VispySceneOverlay(VispyBaseOverlay):
 
     overlay: SceneOverlay
 
-    def __init__(
-        self, *, overlay, viewer, node, parent=None, **kwargs
-    ) -> None:
-        super().__init__(
-            overlay=overlay, viewer=viewer, node=node, parent=parent, **kwargs
-        )
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
         self.node.transform = MatrixTransform()
 
 
 class LayerOverlayMixin:
     layer: Layer
 
-    def __init__(
-        self, *, overlay, layer: Layer, viewer, node, parent=None, **kwargs
-    ) -> None:
+    def __init__(self, *, layer: Layer, **kwargs) -> None:
         super().__init__(
-            node=node,
-            overlay=overlay,
-            viewer=viewer,
-            parent=parent,
             **kwargs,
         )
         self.layer = layer

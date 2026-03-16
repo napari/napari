@@ -690,7 +690,9 @@ class QtViewer(QSplitter):
         layer : napari.layers.Layer
             Layer to be added.
         """
-        vispy_layer = create_vispy_layer(layer)
+        vispy_layer = create_vispy_layer(
+            layer, font_info=self.canvas.font_info()
+        )
 
         # QtPoll is experimental.
         if self._qt_poll is not None:
@@ -1453,14 +1455,6 @@ class QtViewer(QSplitter):
         if path is not None:
             imsave(path, img)
         return img
-
-    def font_manager(self) -> QtFontManager:
-        """Return the font manager for this viewer."""
-        return self._font_manager
-
-    def overlay_font(self) -> str:
-        """Return the font used for overlays."""
-        return self._overlay_font
 
 
 if TYPE_CHECKING:

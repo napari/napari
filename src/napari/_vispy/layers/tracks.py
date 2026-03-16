@@ -1,5 +1,12 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from napari._vispy.layers.base import VispyBaseLayer
 from napari._vispy.visuals.tracks import TracksVisual
+
+if TYPE_CHECKING:
+    from napari._vispy.canvas import VispyCanvas
 
 
 class VispyTracksLayer(VispyBaseLayer):
@@ -9,9 +16,9 @@ class VispyTracksLayer(VispyBaseLayer):
 
     """
 
-    def __init__(self, layer) -> None:
-        node = TracksVisual()
-        super().__init__(layer, node)
+    def __init__(self, layer, canvas: VispyCanvas) -> None:
+        node = TracksVisual(canvas=canvas)
+        super().__init__(layer, node, canvas=canvas)
 
         self.layer.events.tail_width.connect(self._on_appearance_change)
         self.layer.events.tail_length.connect(self._on_appearance_change)
