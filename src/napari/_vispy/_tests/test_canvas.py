@@ -256,3 +256,18 @@ def test_world_units_restored_after_removing_inconsistent_layer(qt_viewer):
     # _update_world_units() was triggered by on_draw() during the
     # removal, and the shared world units (nm) were restored.
     assert vispy_im1._world_units == (reg.nm, reg.nm)
+
+
+def test_world_units_applied_to_inserted_layer_via_layerlist_event(qt_viewer):
+    from pint import get_application_registry
+
+    reg = get_application_registry()
+
+    viewer = qt_viewer.viewer
+    canvas = qt_viewer.canvas
+
+    viewer.add_image(np.zeros((10, 10)), units=('um', 'um'))
+    image_nm = viewer.add_image(np.zeros((10, 10)), units=('nm', 'nm'))
+
+    assert viewer.layers.extent.units == (reg.nm, reg.nm)
+    assert canvas.layer_to_visual[image_nm]._world_units == (reg.nm, reg.nm)
