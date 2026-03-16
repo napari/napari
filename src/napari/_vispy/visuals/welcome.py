@@ -20,15 +20,13 @@ from napari.utils.action_manager import action_manager
 from napari.utils.interactions import Shortcut
 
 if TYPE_CHECKING:
-    from vispy.visuals.text.text import FontManager
-
     from napari.utils.color import ColorValue
 
 vispy_logger = logging.getLogger('vispy')
 
 
 class Welcome(Node):
-    def __init__(self, font_manager: FontManager, face: str) -> None:
+    def __init__(self, font_manager_cache_key) -> None:
         old_level = vispy_logger.level
         vispy_logger.setLevel(logging.ERROR)
         self.logo_coords = (
@@ -57,8 +55,7 @@ class Welcome(Node):
             anchor_x='center',
             anchor_y='bottom',
             parent=self,
-            font_manager=font_manager,
-            face=face,
+            font_manager_cache_key=font_manager_cache_key,
         )
         self.shortcut_keybindings = Text(
             text='',
@@ -67,8 +64,7 @@ class Welcome(Node):
             anchor_x='right',
             anchor_y='bottom',
             parent=self,
-            font_manager=font_manager,
-            face=face,
+            font_manager_cache_key=font_manager_cache_key,
         )
         self.shortcut_descriptions = Text(
             text='',
@@ -77,8 +73,7 @@ class Welcome(Node):
             anchor_x='left',
             anchor_y='bottom',
             parent=self,
-            font_manager=font_manager,
-            face=face,
+            font_manager_cache_key=font_manager_cache_key,
         )
         self.tip = Text(
             text='',
@@ -87,8 +82,7 @@ class Welcome(Node):
             anchor_x='center',
             anchor_y='bottom',
             parent=self,
-            font_manager=font_manager,
-            face=face,
+            font_manager_cache_key=font_manager_cache_key,
         )
 
         self.transform = STTransform()

@@ -1,5 +1,4 @@
 import numpy as np
-from vispy.visuals.text.text import FontManager
 
 from napari._vispy.overlays.base import ViewerOverlayMixin, VispySceneOverlay
 from napari._vispy.visuals.axes import Axes
@@ -18,8 +17,6 @@ class VispyAxesOverlay(ViewerOverlayMixin, VispySceneOverlay):
         viewer,
         overlay,
         parent=None,
-        font_manager: FontManager | None = None,
-        font_family: str = 'OpenSans',
     ) -> None:
         self._scale = 1.0
 
@@ -27,12 +24,10 @@ class VispyAxesOverlay(ViewerOverlayMixin, VispySceneOverlay):
         self._target_length = 80
 
         super().__init__(
-            node=Axes(font_manager=font_manager, font_family=font_family),
+            node=Axes(font_manager_cache_key=viewer),
             viewer=viewer,
             overlay=overlay,
             parent=parent,
-            font_manager=font_manager,
-            font_family=font_family,
         )
         self.overlay.events.colored.connect(self._on_data_change)
         self.overlay.events.dashed.connect(self._on_data_change)

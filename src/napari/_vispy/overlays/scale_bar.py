@@ -16,7 +16,6 @@ from napari.utils._units import PREFERRED_VALUES
 
 if TYPE_CHECKING:
     from vispy.scene import ViewBox
-    from vispy.visuals.text.text import FontManager
 
     from napari.components import ViewerModel
 
@@ -32,8 +31,6 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         viewer: ViewerModel,
         overlay: Overlay,
         parent: ViewBox | None = None,
-        font_manager: FontManager | None = None,
-        font_family: str = 'OpenSans',
     ) -> None:
         self._target_length = 150.0
         self._current_length = 150.0
@@ -41,12 +38,10 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self._unit = pint.Quantity('1 pixel')
 
         super().__init__(
-            node=ScaleBar(font_manager=font_manager, font_family=font_family),
+            node=ScaleBar(font_manager_cache_key=viewer),
             viewer=viewer,
             overlay=overlay,
             parent=parent,
-            font_manager=font_manager,
-            font_family=font_family,
         )
 
         self.overlay.events.color.connect(self._on_rendering_change)

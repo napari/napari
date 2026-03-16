@@ -97,10 +97,8 @@ class _VispyBaseTextOverlay(VispyCanvasOverlay):
 
 class _VispyViewerTextOverlay(ViewerOverlayMixin, _VispyBaseTextOverlay):
     def __init__(self, **kwargs):
-        font_manager = kwargs.get('font_manager')
-        font_family = kwargs.get('font_family', 'OpenSans')
         super().__init__(
-            node=Text(pos=(0, 0), font_manager=font_manager, face=font_family),
+            node=Text(pos=(0, 0), font_manager_cache_key=kwargs['viewer']),
             **kwargs,
         )
 
@@ -110,7 +108,10 @@ class _VispyViewerTextOverlay(ViewerOverlayMixin, _VispyBaseTextOverlay):
 
 class _VispyLayerTextOverlay(LayerOverlayMixin, _VispyBaseTextOverlay):
     def __init__(self, **kwargs):
-        super().__init__(node=Text(pos=(0, 0)), **kwargs)
+        super().__init__(
+            node=Text(pos=(0, 0), font_manager_cache_key=kwargs['viewer']),
+            **kwargs,
+        )
 
         self._connect_events()
         self.reset()
