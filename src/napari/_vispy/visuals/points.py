@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from vispy.scene.visuals import Compound, Line
+from vispy.scene.visuals import Compound
 
 from napari._vispy.visuals.clipping_planes_mixin import ClippingPlanesMixin
 from napari._vispy.visuals.markers import Markers
@@ -15,7 +15,6 @@ class PointsVisual(ClippingPlanesMixin, Compound):
     Components:
         - Markers for points (vispy.MarkersVisual)
         - Markers for selection highlights (vispy.MarkersVisual)
-        - Lines for highlights (vispy.LineVisual)
         - Text labels (vispy.TextVisual)
     """
 
@@ -24,7 +23,6 @@ class PointsVisual(ClippingPlanesMixin, Compound):
             [
                 Markers(),
                 Markers(),
-                Line(antialias=True),
                 Text(),
             ]
         )
@@ -41,14 +39,9 @@ class PointsVisual(ClippingPlanesMixin, Compound):
         return self._subvisuals[1]
 
     @property
-    def highlight_lines(self) -> Line:
-        """Highlight lines visual"""
-        return self._subvisuals[2]
-
-    @property
     def text(self) -> Text:
         """Text labels visual"""
-        return self._subvisuals[3]
+        return self._subvisuals[2]
 
     @property
     def scaling(self) -> bool:

@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 
 @lru_cache
-def generate_interaction_box_vertices(
+def generate_interaction_box_handles(
     top_left: tuple[float, float],
     bot_right: tuple[float, float],
     handles: bool = True,
@@ -85,7 +85,7 @@ def generate_transform_box_from_layer(
 
     # generates in vispy canvas pos, so invert x and y, and then go back
     top_left, bot_right = (tuple(point) for point in bounds.T[:, ::-1])
-    return generate_interaction_box_vertices(
+    return generate_interaction_box_handles(
         top_left, bot_right, handles=True, rotation=True
     )[:, ::-1]
 

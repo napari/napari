@@ -6,6 +6,9 @@ from typing import TYPE_CHECKING, TypeVar
 import numpy as np
 
 from napari.layers.base import ActionType
+from napari.layers.base._base_mouse_bindings import (
+    highlight_selection_box_handles,
+)
 from napari.layers.points._points_utils import _points_in_box_3d, points_in_box
 from napari.utils.events import Event
 
@@ -29,10 +32,11 @@ def select(layer: Points, event: Event) -> Generator[None, None, None]:
     to any existing selection, otherwise these will become the only selected
     points.
     """
-    # on press
-    modify_selection = (
-        'Shift' in event.modifiers or 'Control' in event.modifiers
-    )
+    if 'Shift' in event.modifiers:
+        yield from _transform_selection_box(layer, event)
+        return
+
+    modify_selection = 'Control' in event.modifiers
 
     # Get value under the cursor, for points, this is the index of the highlighted
     # if any, or None.
@@ -124,6 +128,31 @@ def select(layer: Points, event: Event) -> Generator[None, None, None]:
     layer._set_highlight(force=True)
 
 
+def _transform_selection_box(
+    layer: Points, event: Event
+) -> Generator[None, None, None]:
+    if len(event.dims_displayed) != 2:
+        return
+    _start_pos = np.array(event.position)[event.dims_displayed]
+
+    box = layer._overlays['selection_box']
+    box.handles = True
+    box.visible = True
+
+    highlight_selection_box_handles(layer, event)
+    _nearby_handle = box.selected_handle
+    yield
+
+    while event.type == 'mouse_move':
+        # do stuff
+        yield
+        # finish up
+
+    box.visible = False
+    box.handles = False
+    box.selected_handle = None
+
+
 DRAG_DIST_THRESHOLD = 5
 
 
@@ -149,7 +178,21 @@ def add(layer: Points, event: Event) -> Generator[None, None, None]:
 
 def highlight(layer: Points, event: Event) -> None:
     """Highlight hovered points."""
-    layer._set_highlight()
+    box = layer._overlays['selection_box']
+    # TODO: how to make this appear/disappear on clicking shift
+    #       instead of on mouse move? Separate key binding just on shift?
+    if 'Shift' in event.modifiers:
+        if layer.selected_data:
+            box.handles = True
+            box.visible = True
+            # TODO: this needs to work with any dims and order, currently hardcoded.
+            #       Probably also shouldn't be selected_view
+            box.update_from_points(layer.data[layer._selected_view][:, -2:])
+            highlight_selection_box_handles(layer, event)
+    else:
+        box.visible = False
+        box.handles = False
+        box.selected_handle = None
 
 
 _T = TypeVar('_T')

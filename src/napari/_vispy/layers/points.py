@@ -145,24 +145,6 @@ class VispyPointsLayer(VispyBaseLayer):
             face_color=transform_color('transparent'),
         )
 
-        if (
-            self.layer._highlight_box is None
-            or 0 in self.layer._highlight_box.shape
-        ):
-            pos = np.zeros((1, 3))
-            highlight_thickness = 0
-        else:
-            pos = self.layer._highlight_box
-            # add z=0 if 2d (see #6819)
-            if pos.shape[1] == 2:
-                pos = np.pad(pos, ((0, 0), (1, 0)))
-
-        self.node.highlight_lines.set_data(
-            pos=pos[:, ::-1],
-            color=highlight_color,
-            width=highlight_thickness,
-        )
-
         self.node.update()
 
     def _update_text(self, *, update_node=True):
@@ -192,11 +174,6 @@ class VispyPointsLayer(VispyBaseLayer):
 
         text_blending_kwargs = BLENDING_MODES[self.layer.text.blending]
         self.node.text.set_gl_state(**text_blending_kwargs)
-
-        # selection box is always without depth
-        box_blending_kwargs = BLENDING_MODES['translucent_no_depth']
-        self.node.highlight_lines.set_gl_state(**box_blending_kwargs)
-
         self.node.update()
 
     def _on_antialiasing_change(self):

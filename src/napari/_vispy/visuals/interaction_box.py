@@ -6,7 +6,7 @@ from vispy.scene.visuals import Compound, Line
 
 from napari._vispy.visuals.markers import Markers
 from napari.layers.utils.interaction_box import (
-    generate_interaction_box_vertices,
+    generate_interaction_box_handles,
 )
 
 
@@ -82,7 +82,7 @@ class InteractionBox(Compound):
         rotation : bool
             Whether to show the rotation handle. Default is True.
         """
-        vertices = generate_interaction_box_vertices(
+        vertices = generate_interaction_box_handles(
             top_left, bot_right, handles=handles, rotation=rotation
         )
 
@@ -102,6 +102,8 @@ class InteractionBox(Compound):
             if selected is not None:
                 marker_edges[selected] = self._highlight_width
 
+            # TODO: why is this not always showing correctly highlughted markers
+            #       despite the edge width being set to the correct value?
             self.markers.set_data(
                 pos=vertices,
                 size=self._marker_size,

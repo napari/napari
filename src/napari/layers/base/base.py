@@ -24,7 +24,7 @@ from napari.layers.base._base_constants import (
     Mode,
 )
 from napari.layers.base._base_mouse_bindings import (
-    highlight_box_handles,
+    highlight_transform_box_handles,
     transform_with_box,
 )
 from napari.layers.utils._slice_input import (
@@ -521,7 +521,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
     _move_modes: ClassVar[dict[StringEnum, ModeCallable]] = {
         Mode.PAN_ZOOM: no_op,
-        Mode.TRANSFORM: highlight_box_handles,
+        Mode.TRANSFORM: highlight_transform_box_handles,
     }
     _cursor_modes: ClassVar[dict[StringEnum, str]] = {
         Mode.PAN_ZOOM: 'standard',
@@ -1559,10 +1559,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
         else:
             value = None
-        # This should be removed as soon as possible, it is still
-        # used in Points and Shapes.
-        if self.mode != 'pan_zoom':
-            self._value = value
         return value
 
     def _get_value_3d(
