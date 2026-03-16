@@ -642,6 +642,28 @@ def test_incompatible_units():
     npt.assert_array_equal(layer_list._step_size, (1, 1))
 
 
+def test_adding_first_layer_emits_units_event():
+    layer_list = LayerList()
+    callback = Mock()
+
+    layer_list.events.units.connect(callback)
+    layer_list.append(Image(np.zeros((5, 5)), units=('um', 'um')))
+
+    callback.assert_called_once()
+    assert callback.call_args.args[0].value == (REG.um, REG.um)
+
+
+def test_adding_incompatible_layer_emits_none_units_event():
+    layer_list = LayerList([Image(np.zeros((5, 5)), units=('um', 'um'))])
+    callback = Mock()
+
+    layer_list.events.units.connect(callback)
+    layer_list.append(Image(np.zeros((5, 5)), units=('pixels', 'pixels')))
+
+    callback.assert_called_once()
+    assert callback.call_args.args[0].value is None
+
+
 def test_removing_incompatible_layer_emits_units_event():
     layer_u = Image(np.zeros((5, 5)), units=('um', 'um'))
     layer_px = Image(np.zeros((5, 5)), units=('pixels', 'pixels'))
