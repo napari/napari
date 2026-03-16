@@ -92,7 +92,7 @@ def generate_transform_box_from_layer(
 
 def calculate_bounds_from_contained_points(
     points: np.ndarray,
-) -> tuple[tuple[float, float], tuple[float, float]]:
+) -> tuple[tuple[float, float], tuple[float, float]] | None:
     """
     Calculate the top-left and bottom-right corners of an axis-aligned bounding box.
 
@@ -113,12 +113,7 @@ def calculate_bounds_from_contained_points(
     if points.ndim != 2:
         raise ValueError('only 2D coordinates are accepted')
 
-    x0 = points[:, 0].min()
-    x1 = points[:, 0].max()
-    y0 = points[:, 1].min()
-    y1 = points[:, 1].max()
-
-    return (x0, x1), (y0, y1)
+    return tuple(points.min(axis=0)), tuple(points.max(axis=0))
 
 
 def get_nearby_handle(
