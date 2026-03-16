@@ -139,17 +139,12 @@ class LayerList(SelectableEventedList[Layer]):
         """Connect to layer events when a new layer is inserted."""
         layer = event.value
         layer.events.name.connect(self._on_layer_renamed)
-        # Effective world units depend on current layer membership, so adding a
-        # layer can restore or invalidate unit consistency.
         self.events.units(value=self.units)
 
     def _on_layer_removed(self, event: Event):
         """Disconnect from layer events when a layer is removed."""
         layer = event.value
         layer.events.name.disconnect(self._on_layer_renamed)
-        # Effective world units depend on current layer membership, so removing
-        # a layer can restore or invalidate unit consistency.
-        # So fire a units event to trigger any necessary updates.
         self.events.units(value=self.units)
 
     def _on_layer_renamed(self, event: Event):
