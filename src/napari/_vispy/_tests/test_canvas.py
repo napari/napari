@@ -271,3 +271,20 @@ def test_world_units_applied_to_inserted_layer_via_layerlist_event(qt_viewer):
 
     assert viewer.layers.extent.units == (reg.nm, reg.nm)
     assert canvas.layer_to_visual[image_nm]._world_units == (reg.nm, reg.nm)
+
+
+def test_inserted_layer_receives_shared_world_units_when_units_unchanged(
+    qt_viewer,
+):
+    from pint import get_application_registry
+
+    reg = get_application_registry()
+
+    viewer = qt_viewer.viewer
+    canvas = qt_viewer.canvas
+
+    viewer.add_image(np.zeros((10, 10)), units=('nm', 'nm'))
+    image_um = viewer.add_image(np.zeros((10, 10)), units=('um', 'um'))
+
+    assert viewer.layers.extent.units == (reg.nm, reg.nm)
+    assert canvas.layer_to_visual[image_um]._world_units == (reg.nm, reg.nm)
