@@ -194,6 +194,14 @@ def _all_support_colorbar(s: LayerSel) -> bool:
     return bool(s and all(hasattr(x, 'colorbar') for x in s))
 
 
+def _all_support_border_colorbar(s: LayerSel) -> bool:
+    return bool(s and all(hasattr(x, 'border_colorbar') for x in s))
+
+
+def _all_support_face_colorbar(s: LayerSel) -> bool:
+    return bool(s and all(hasattr(x, 'face_colorbar') for x in s))
+
+
 class LayerListSelectionContextKeys(ContextNamespace['LayerSel']):
     """Available context keys relating to the selection in a LayerList.
 
@@ -322,6 +330,16 @@ class LayerListSelectionContextKeys(ContextNamespace['LayerSel']):
         False,
         trans._('True when all selected layers support a colorbar.'),
         _all_support_colorbar,
+    )
+    all_selected_layers_support_border_colorbar = ContextKey(
+        False,
+        trans._('True when all selected layers support a border colorbar.'),
+        _all_support_border_colorbar,
+    )
+    all_selected_layers_support_face_colorbar = ContextKey(
+        False,
+        trans._('True when all selected layers support a face colorbar.'),
+        _all_support_face_colorbar,
     )
     selected_empty_shapes_layer = ContextKey(
         False,
