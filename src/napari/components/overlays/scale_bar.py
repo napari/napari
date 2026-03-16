@@ -50,6 +50,6 @@ class ScaleBarOverlay(CanvasOverlay):
     colored: bool = False
     color: ColorValue = Field(default_factory=lambda: ColorValue([1, 0, 1, 1]))
     ticks: bool = True
-    font_size: float = 10
+    font_size: float | None = None
     unit: str | None = None
     length: float | None = None
