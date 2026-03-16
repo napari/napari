@@ -103,3 +103,22 @@ def test_evented_dict_subclass():
     assert hasattr(dct, 'events')
     assert 'boom' in dct.events.emitters
     assert dct == {'A': 1, 'B': 2}
+
+
+def test_callback_presence():
+    """Verifies callback presence after connection and disconnection"""
+    e_obj = E()
+    root = EventedDict()
+    mock = Mock()
+
+    root['A'] = e_obj
+    assert len(root.events.callbacks) == 0
+    assert len(e_obj.events.test.callbacks) == 0
+
+    root.events.connect(mock)
+    assert len(root.events.callbacks) == 1
+    assert len(e_obj.events.test.callbacks) == 1
+
+    root.events.disconnect(mock)
+    assert len(root.events.callbacks) == 0
+    assert len(e_obj.events.test.callbacks) == 0
