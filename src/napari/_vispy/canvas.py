@@ -844,6 +844,7 @@ class VispyCanvas:
 
         self._update_layer_overlays(layer)
         del self._layer_overlay_to_visual[layer]
+        self._deferred_world_units_update()
         if self._pause_scene_graph:
             return
         self._clean_and_update_scenegraph()
