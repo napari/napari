@@ -552,7 +552,8 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
             color_array = self.colormap.map(downsampled.ravel())
             colormapped = color_array.reshape((*downsampled.shape, 4))
             colormapped[..., 3] *= self.opacity
-        self.thumbnail = colormapped
+        with self._bypass_lock():
+            self.thumbnail = colormapped
 
     def _calc_data_range(
         self, mode: Literal['data', 'slice'] = 'data'
