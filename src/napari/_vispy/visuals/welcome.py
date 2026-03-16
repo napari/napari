@@ -13,6 +13,7 @@ from vispy.util.svg import Document
 from vispy.visuals.transforms import STTransform
 
 from napari._app_model import get_app_model
+from napari._vispy.utils.text import get_text_metrics
 from napari._vispy.visuals.text import Text
 from napari.resources import get_icon_path
 from napari.settings import get_settings
@@ -53,17 +54,21 @@ class Welcome(Node):
         )
         self.header = Text(
             text='',
-            pos=[0, 0],
+            line_height=1.75,
+            pos=[0, -10],
             anchor_x='center',
             anchor_y='bottom',
             parent=self,
             font_manager=font_manager,
             face=face,
         )
+
+        self.font_height = get_text_metrics(self.header).height()
+
         self.shortcut_keybindings = Text(
             text='',
             line_height=1.15,
-            pos=[-80, 60],
+            pos=[-80, 2.75 * self.font_height],
             anchor_x='right',
             anchor_y='bottom',
             parent=self,
@@ -73,7 +78,7 @@ class Welcome(Node):
         self.shortcut_descriptions = Text(
             text='',
             line_height=1.15,
-            pos=[-60, 60],
+            pos=[-60, 2.75 * self.font_height],
             anchor_x='left',
             anchor_y='bottom',
             parent=self,
@@ -83,7 +88,7 @@ class Welcome(Node):
         self.tip = Text(
             text='',
             line_height=1.15,
-            pos=[0, 160],
+            pos=[0, 7.5 * self.font_height],
             anchor_x='center',
             anchor_y='bottom',
             parent=self,
@@ -103,7 +108,7 @@ class Welcome(Node):
 
     def set_version(self, version: str) -> None:
         self.header.text = (
-            f'napari {version}\n\n'
+            f'napari {version}\n'
             'Drag file(s) here to open, or use the shortcuts below:'
         )
 
@@ -164,7 +169,9 @@ class Welcome(Node):
 
     def set_scale_and_position(self, x: float, y: float) -> None:
         self.transform.translate = (x / 2, y / 2, 0, 0)
-        scale = min(x, y) * 0.002  # magic number
+        scale = (
+            min(x, y) / self.font_height / self.header.dpi_ratio * 0.04
+        )  # magic number
         self.transform.scale = (scale, scale, 0, 0)
 
         for text in (
@@ -173,7 +180,7 @@ class Welcome(Node):
             self.shortcut_descriptions,
             self.tip,
         ):
-            text.font_size = max(scale * 8, 10)
+            text.font_size = max(scale / self.header.dpi_ratio * 8, 10)
 
     def set_gl_state(self, *args: Any, **kwargs: Any) -> None:
         for node in self.children:
