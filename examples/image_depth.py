@@ -5,8 +5,8 @@ Image depth
 Display a 3D image and 3D points layer to show how napari handles depth.
 
 The default blending for images is `translucent_no_depth`, which places objects
-on the same rendering "plane". Here, we use `translucent` allows us to see the effect
-of depth.
+on the same rendering "plane". Here, we use `translucent` which allows us to see the effect
+of camera depth.
 
 .. tags:: visualization-basic
 """
