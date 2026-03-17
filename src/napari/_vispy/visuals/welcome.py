@@ -54,6 +54,7 @@ class Welcome(Node):
             self.logo_coords, border_method='agg', border_width=2, parent=self
         )
         self.logo.transform = STTransform()
+
         self.header = Text(
             text='',
             line_height=1.75,
@@ -64,6 +65,7 @@ class Welcome(Node):
             font_manager=font_manager,
             face=face,
         )
+        self.header.transform = STTransform()
 
         self.font_height = get_text_metrics(self.header).height()
 
@@ -77,6 +79,8 @@ class Welcome(Node):
             font_manager=font_manager,
             face=face,
         )
+        self.shortcut_keybindings.transform = STTransform()
+
         self.shortcut_descriptions = Text(
             text='',
             line_height=1.15,
@@ -87,6 +91,8 @@ class Welcome(Node):
             font_manager=font_manager,
             face=face,
         )
+        self.shortcut_descriptions.transform = STTransform()
+
         self.tip = Text(
             text='',
             line_height=1.15,
@@ -97,8 +103,7 @@ class Welcome(Node):
             font_manager=font_manager,
             face=face,
         )
-
-        self.transform = STTransform()
+        self.tip.transform = STTransform()
 
     def set_color(self, color: ColorValue) -> None:
         self.logo.color = color
@@ -170,21 +175,23 @@ class Welcome(Node):
         return shortcut, command
 
     def set_scale_and_position(self, x: float, y: float) -> None:
-        self.transform.translate = (x / 2, y / 2, 0, 0)
-        scale = min(x, y) / self.font_height * 0.04  # magic number
-        self.transform.scale = (scale, scale, 0, 0)
+        trans = (x / 2, y / 2, 0, 0)
         # we don't want the logo to be affected by dpi ratio which is included in
-        # font_height, so we undo that
-        logo_scale = 1 / self.header.dpi_ratio
+        # font_height, so we scale it separately
+        logo_scale = min(x, y) * 0.002  # magic number
+        self.logo.transform.translate = trans
         self.logo.transform.scale = (logo_scale, logo_scale, 0, 0)
 
+        text_scale = min(x, y) / self.font_height * 0.04  # magic number
         for text in (
             self.header,
             self.shortcut_keybindings,
             self.shortcut_descriptions,
             self.tip,
         ):
-            text.font_size = max(scale * 8, 10)
+            text.font_size = text_scale * 8
+            text.transform.translate = trans
+            text.transform.scale = (text_scale, text_scale, 0, 0)
 
     def set_gl_state(self, *args: Any, **kwargs: Any) -> None:
         for node in self.children:
