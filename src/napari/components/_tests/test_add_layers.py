@@ -82,7 +82,7 @@ def test_plugin_returns_nothing():
     'napari.plugins.io.read_data_with_plugins',
     MagicMock(return_value=([(img,)], TEST_PLUGIN_NAME)),
 )
-def test_viewer_open(_mock_validate):
+def test_viewer_open(_mock_validate):  # noqa: PT019
     """Test that a plugin to returning an image adds stuff to the viewer."""
     viewer = ViewerModel()
     assert len(viewer.layers) == 0
