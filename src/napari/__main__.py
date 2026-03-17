@@ -36,7 +36,7 @@ class PluginInfoAction(argparse.Action):
         logging.basicConfig(level=logging.WARNING)
         from npe2 import cli
 
-        cli.list(
+        cli.list_(
             fields='name,version,npe2,contributions',
             sort='name',
             format='table',
