@@ -1,7 +1,7 @@
 import numbers
 import typing
 import warnings
-from collections.abc import Callable, Iterable, Sequence, Set as AbstractSet
+from collections.abc import Callable, Iterable
 from copy import deepcopy
 from itertools import cycle
 from typing import (
@@ -321,9 +321,6 @@ class Points(Layer):
         Four corners of any box either around currently selected points or
         being created during a drag action. Starting in the top left and
         going clockwise.
-    _drag_start : list or None
-        Coordinates of first cursor click during a drag action. Gets reset to
-        None after dragging is done.
     """
 
     _slicing_state: '_PointsSlicingState'
@@ -422,7 +419,6 @@ class Points(Layer):
         self._mode = Mode.PAN_ZOOM
         self._status = self.mode
 
-        self._is_selecting = False
         self._clipboard = {}
 
         super().__init__(
@@ -1986,39 +1982,6 @@ class Points(Layer):
     def remove_selected(self) -> None:
         """Remove all selected points."""
         self.remove(list(self.selected_data))
-
-    def _move(
-        self,
-        selection_indices: AbstractSet[int],
-        position: Sequence[float]
-        | np.ndarray[tuple[int], np.dtype[np.floating]],
-    ) -> None:
-        """Move points relative to drag start location.
-
-        Parameters
-        ----------
-        selection_indices : Sequence[int]
-            Integer indices of points to move in self.data
-        position : tuple
-            Position to move points to in data coordinates.
-        """
-        if len(selection_indices) > 0:
-            selection_indices = list(selection_indices)
-            disp = list(self._slice_input.displayed)
-            self._set_drag_start(selection_indices, position)
-            center = self.data[np.ix_(selection_indices, disp)].mean(axis=0)
-            shift = np.array(position)[disp] - center - self._drag_start
-            self.data[np.ix_(selection_indices, disp)] = (
-                self.data[np.ix_(selection_indices, disp)] + shift
-            )
-            self.refresh()
-            self.events.data(
-                value=self.data,
-                action=ActionType.CHANGED,
-                data_indices=tuple(selection_indices),
-                vertex_indices=((),),
-            )
-            self.events.features()
 
     def _paste_data(self) -> None:
         """Paste any point from clipboard and select them."""
