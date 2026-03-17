@@ -7,7 +7,6 @@ QtViewerPushButton{
    min-height : 28px;
    max-height : 28px;
    padding: 0px;
-
 }
 
 QtViewerPushButton[mode="delete_button"] {
@@ -16,10 +15,28 @@ QtViewerPushButton[mode="delete_button"] {
 
 QtViewerPushButton[mode="new_points"] {
   image: url("theme_{{ id }}:/new_points.svg");
+  border: 3px solid {{ background }};
+}
+
+QtViewerPushButton[mode="new_points"][creation_state="full"] {
+  border: 3px solid {{ darken(current, 5) }};
+}
+
+QtViewerPushButton[mode="new_points"][creation_state="partial"] {
+  border: 3px solid {{ lighten(current, 20) }};
 }
 
 QtViewerPushButton[mode="new_shapes"] {
   image: url("theme_{{ id }}:/new_shapes.svg");
+  border: 3px solid {{ background }};
+}
+
+QtViewerPushButton[mode="new_shapes"][creation_state="full"] {
+  border: 3px solid {{ darken(current, 5) }};
+}
+
+QtViewerPushButton[mode="new_shapes"][creation_state="partial"] {
+  border: 3px solid {{ lighten(current, 20) }};
 }
 
 QtViewerPushButton[mode="warning"] {
@@ -28,6 +45,15 @@ QtViewerPushButton[mode="warning"] {
 
 QtViewerPushButton[mode="new_labels"] {
   image: url("theme_{{ id }}:/new_labels.svg");
+  border: 3px solid {{ background }};
+}
+
+QtViewerPushButton[mode="new_labels"][creation_state="full"] {
+  border: 3px solid {{ darken(current, 5) }};
+}
+
+QtViewerPushButton[mode="new_labels"][creation_state="partial"] {
+  border: 3px solid {{ lighten(current, 20) }};
 }
 
 QtViewerPushButton[mode="console"] {

@@ -130,7 +130,7 @@ def _add_layer_to_viewer(
     source: dict | None = None,
 ) -> None:
     if layer is not None and (viewer := viewer or _provide_viewer()):
-        layer._source = layer.source.copy(update=source or {})
+        layer._source = layer.source.model_copy(update=source or {})
         viewer.add_layer(layer)
 
 

@@ -2,11 +2,11 @@
 
 import collections.abc
 import contextlib
+import sys
 from collections.abc import Callable, Iterator
 from typing import Any
 
 import dask
-import dask.array as da
 from dask.cache import Cache
 
 #: dask.cache.Cache, optional : A dask cache for opportunistic caching
@@ -81,6 +81,12 @@ def resize_dask_cache(
 
 def _is_dask_data(data: Any) -> bool:
     """Return True if data is a dask array or a list/tuple of dask arrays."""
+
+    da = sys.modules.get('dask.array')
+    if da is None:
+        # dask.array not imported yet.
+        return False
+
     return isinstance(data, da.Array) or (
         isinstance(data, collections.abc.Sequence)
         and any(isinstance(i, da.Array) for i in data)
@@ -121,6 +127,8 @@ def configure_dask(data: Any, cache: bool = True) -> DaskIndexer:
     ----------
     data : Any
         data, as passed to a ``Layer.__init__`` method.
+    cache: bool
+        Whether to use the global dask cache.  If False, no cache will be used
 
     Returns
     -------
@@ -143,6 +151,8 @@ def configure_dask(data: Any, cache: bool = True) -> DaskIndexer:
     def dask_optimized_slicing(
         memfrac: float = 0.5,
     ) -> Iterator[tuple[Any, Any]]:
+        # For debug from where the delayed slicer is called
+        # add "scheduler": "synchronous" to opts
         opts = {'optimization.fuse.active': False}
         with dask.config.set(opts) as cfg, _cache as c:
             yield cfg, c

@@ -12,6 +12,7 @@ validate_2_tuple = validate_n_seq(2)
 
 if TYPE_CHECKING:
     from napari.layers._scalar_field.scalar_field import ScalarFieldBase
+    from napari.layers.surface import Surface
 
 
 class IntensityVisualizationMixin:
@@ -55,7 +56,7 @@ class IntensityVisualizationMixin:
 
         self._overlays.update({'colorbar': ColorBarOverlay()})
 
-    def reset_contrast_limits(self: 'ScalarFieldBase', mode=None):
+    def reset_contrast_limits(self: 'ScalarFieldBase | Surface', mode=None):
         """Scale contrast limits to data range"""
         mode = mode or self._auto_contrast_source
         self.contrast_limits = self._calc_data_range(mode)

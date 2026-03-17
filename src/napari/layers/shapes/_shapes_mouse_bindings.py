@@ -264,6 +264,7 @@ def _add_line_rectangle_ellipse(
         String indicating the type of shape to be added.
     """
     # on press
+    layer._is_creating = True
     # reset layer._aspect_ratio for a new shape
     layer._aspect_ratio = 1
     # Start drawing rectangle / ellipse / line

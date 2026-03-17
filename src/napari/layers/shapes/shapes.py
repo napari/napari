@@ -3,15 +3,14 @@ from collections.abc import Callable, Collection, Iterable, Sized
 from contextlib import contextmanager
 from copy import copy, deepcopy
 from itertools import cycle
-from typing import Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import numpy as np
 import numpy.typing as npt
-import pandas as pd
 from psygnal.containers import Selection
 from vispy.color import get_color_names
 
-from napari.layers.base import Layer, no_op
+from napari.layers.base import Layer, _LayerSlicingState, no_op
 from napari.layers.base._base_constants import ActionType
 from napari.layers.base._base_mouse_bindings import (
     highlight_box_handles,
@@ -66,7 +65,9 @@ from napari.layers.utils.interactivity_utils import (
 from napari.layers.utils.layer_utils import _FeatureTable, _unique_element
 from napari.layers.utils.text_manager import TextManager
 from napari.settings import get_settings
+from napari.types import LayerDataType
 from napari.utils.colormaps import Colormap, ValidColormapArg, ensure_colormap
+from napari.utils.colormaps.categorical_colormap_utils import ColorCycle
 from napari.utils.colormaps.colormap_utils import ColorType
 from napari.utils.colormaps.standardize_color import (
     hex_to_name,
@@ -78,6 +79,9 @@ from napari.utils.events.custom_types import Array
 from napari.utils.misc import ensure_iterable
 from napari.utils.notifications import show_warning
 from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    import pandas as pd
 
 DEFAULT_COLOR_CYCLE = np.array([[1, 0, 1, 1], [0, 1, 0, 1]])
 
@@ -102,7 +106,7 @@ class Shapes(Layer):
         provided scale, rotate, and shear values.
     axis_labels : tuple of str, optional
         Dimension names of the layer data.
-        If not provided, axis_labels will be set to (..., 'axis -2', 'axis -1').
+        If not provided, axis_labels will be set to (..., '-2', '-1').
     blending : str
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
@@ -355,8 +359,6 @@ class Shapes(Layer):
     _edge_color_property: str
     _face_color_cycle: npt.NDArray
     _edge_color_cycle: npt.NDArray
-    _face_color_cycle_values: npt.NDArray
-    _edge_color_cycle_values: npt.NDArray
     _face_color_mode: str
     _edge_color_mode: str
 
@@ -796,7 +798,7 @@ class Shapes(Layer):
     @features.setter
     def features(
         self,
-        features: dict[str, np.ndarray] | pd.DataFrame,
+        features: 'dict[str, np.ndarray] | pd.DataFrame',
     ) -> None:
         self._feature_table.set_values(features, num_data=self.nshapes)
         if self._face_color_property and (
@@ -838,7 +840,7 @@ class Shapes(Layer):
 
     @feature_defaults.setter
     def feature_defaults(
-        self, defaults: dict[str, Any] | pd.DataFrame
+        self, defaults: 'dict[str, Any] | pd.DataFrame'
     ) -> None:
         self._feature_table.set_defaults(defaults)
         self.events.current_properties()
@@ -1003,7 +1005,7 @@ class Shapes(Layer):
 
         Can be a list of colors defined by name, RGB or RGBA
         """
-        return self._edge_color_cycle_values
+        return self._edge_color_cycle.values
 
     @edge_color_cycle.setter
     def edge_color_cycle(self, edge_color_cycle: list | np.ndarray):
@@ -1069,7 +1071,7 @@ class Shapes(Layer):
         """Union[np.ndarray, cycle]:  Color cycle for face_color
         Can be a list of colors defined by name, RGB or RGBA
         """
-        return self._face_color_cycle_values
+        return self._face_color_cycle.values
 
     @face_color_cycle.setter
     def face_color_cycle(self, face_color_cycle: np.ndarray | cycle):
@@ -1189,12 +1191,13 @@ class Shapes(Layer):
             The name of the attribute to set the color of.
             Should be 'edge' for edge_color or 'face' for face_color.
         """
-        transformed_color_cycle, transformed_colors = transform_color_cycle(
+        transformed_colors = transform_color_cycle(
             color_cycle=color_cycle,
             elem_name=f'{attribute}_color_cycle',
             default='white',
         )
-        setattr(self, f'_{attribute}_color_cycle_values', transformed_colors)
+        transformed_color_cycle = ColorCycle(transformed_colors)
+
         setattr(self, f'_{attribute}_color_cycle', transformed_color_cycle)
 
         if self._update_properties is True:
@@ -1266,7 +1269,9 @@ class Shapes(Layer):
         return self._selected_data
 
     @selected_data.setter
-    def selected_data(self, selected_data: Collection[int]) -> None:
+    def selected_data(
+        self, selected_data: Collection[int | np.integer]
+    ) -> None:
         self._selected_data.replace_selection(selected_data)
 
     def _on_selection_changed(self, added, removed):
@@ -1340,7 +1345,7 @@ class Shapes(Layer):
             Should be 'edge' for edge_color or 'face' for face_color.
         """
         if self._is_color_mapped(color):
-            if guess_continuous(self.properties[color]):
+            if guess_continuous(self.properties[color], feature_name=color):
                 setattr(self, f'_{attribute}_color_mode', ColorMode.COLORMAP)
             else:
                 setattr(self, f'_{attribute}_color_mode', ColorMode.CYCLE)
@@ -1428,7 +1433,7 @@ class Shapes(Layer):
             The calculated values for setting edge or face_color
         """
         if self._is_color_mapped(color):
-            if guess_continuous(self.properties[color]):
+            if guess_continuous(self.properties[color], feature_name=color):
                 setattr(self, f'_{attribute}_color_mode', ColorMode.COLORMAP)
             else:
                 setattr(self, f'_{attribute}_color_mode', ColorMode.CYCLE)
@@ -1630,18 +1635,18 @@ class Shapes(Layer):
                 'ndim': self.ndim,
                 'properties': self.properties,
                 'property_choices': self.property_choices,
-                'text': self.text.dict(),
+                'text': self.text.model_dump(),
                 'shape_type': self.shape_type,
                 'opacity': self.opacity,
                 'z_index': self.z_index,
                 'edge_width': self.edge_width,
                 'face_color': face_color,
                 'face_color_cycle': self.face_color_cycle,
-                'face_colormap': self.face_colormap.dict(),
+                'face_colormap': self.face_colormap.model_dump(),
                 'face_contrast_limits': self.face_contrast_limits,
                 'edge_color': edge_color,
                 'edge_color_cycle': self.edge_color_cycle,
-                'edge_colormap': self.edge_colormap.dict(),
+                'edge_colormap': self.edge_colormap.model_dump(),
                 'edge_contrast_limits': self.edge_contrast_limits,
                 'data': self.data,
                 'features': self.features,
@@ -1736,15 +1741,18 @@ class Shapes(Layer):
         self._mode = mode
         self.events.mode(mode=mode)
 
-        draw_modes = {
+        non_draw_modes = {
             Mode.SELECT,
             Mode.DIRECT,
             Mode.VERTEX_INSERT,
             Mode.VERTEX_REMOVE,
+            Mode.PAN_ZOOM,
         }
 
-        # don't update thumbnail on mode changes
-        if not (mode in draw_modes and self._mode in draw_modes):
+        if mode not in non_draw_modes:
+            self.selected_data.clear()
+
+        if self._is_creating:
             # Shapes._finish_drawing() calls Shapes.refresh() via Shapes._update_dims()
             # so we need to block thumbnail update from here
             # TODO: this is not great... ideally we should no longer need this blocking system
@@ -3312,3 +3320,15 @@ class Shapes(Layer):
         labels = self._data_view.to_labels(labels_shape=labels_shape)
 
         return labels
+
+    def _get_layer_slicing_state(
+        self, data: LayerDataType, cache: bool
+    ) -> '_ShapesSlicingState':
+        return _ShapesSlicingState(layer=self, data=data, cache=cache)
+
+
+class _ShapesSlicingState(_LayerSlicingState):
+    layer: Shapes
+
+    def _set_view_slice(self):
+        self.layer._set_view_slice()

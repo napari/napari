@@ -12,6 +12,8 @@ def test_viewer_overlays(qt_viewer):
     canvas = qt_viewer.canvas
 
     for overlay in viewer._overlays.values():
+        # vispy overlays only exist if they are visible at least once
+        overlay.visible = True
         if isinstance(overlay, CanvasOverlay):
             assert all(
                 visual.node in canvas.view.children
@@ -27,7 +29,7 @@ def test_viewer_overlays(qt_viewer):
         k: list(v) for k, v in canvas._overlay_to_visual.items()
     }
 
-    new_overlay = ScaleBarOverlay()
+    new_overlay = ScaleBarOverlay(visible=True)
     viewer._overlays['test'] = new_overlay
 
     assert new_overlay in canvas._overlay_to_visual
@@ -46,6 +48,8 @@ def test_viewer_overlays(qt_viewer):
     viewer._overlays.pop('test')
     assert new_overlay not in canvas._overlay_to_visual
     assert new_overlay_node not in canvas.view.children
+
+    viewer.welcome_screen.visible = False  # just for proper test cleanup
 
 
 def test_layer_overlays(qt_viewer):
@@ -146,6 +150,8 @@ def test_tiling_canvas_overlays(qt_viewer):
     viewer.scale_bar.visible = True
     viewer.text_overlay.visible = True
     viewer.text_overlay.text = 'test'
+    viewer.scale_bar.position = 'bottom_left'
+    viewer.text_overlay.position = 'bottom_left'
 
     vispy_scale_bar = canvas._overlay_to_visual[viewer.scale_bar][0]
     vispy_text_overlay = canvas._overlay_to_visual[viewer.text_overlay][0]

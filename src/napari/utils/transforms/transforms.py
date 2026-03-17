@@ -506,7 +506,7 @@ class Affine(Transform):
     @axis_labels.setter
     def axis_labels(self, axis_labels: Sequence[str] | None) -> None:
         if axis_labels is None:
-            axis_labels = tuple(f'axis {i}' for i in range(-self.ndim, 0))
+            axis_labels = tuple(str(i) for i in range(-self.ndim, 0))
         if len(axis_labels) != self.ndim:
             raise ValueError(
                 f'{axis_labels=} must have length ndim={self.ndim}.'
@@ -522,8 +522,6 @@ class Affine(Transform):
     @units.setter
     def units(self, units: Sequence[pint.Unit] | None) -> None:
         units = get_units_from_name(units)
-        if units is None:
-            units = (pint.get_application_registry().pixel,) * self.ndim
         if isinstance(units, pint.Unit):
             units = (units,) * self.ndim
         if len(units) != self.ndim:
@@ -575,7 +573,7 @@ class Affine(Transform):
         )
 
     @property
-    def rotate(self) -> npt.NDArray:
+    def rotate(self) -> np.ndarray[tuple[int, int], np.dtype[np.float64]]:
         """Return the rotation of the transform."""
         self._setup_decompose_linear_matrix_cache()
         return self._cache_dict['decompose_linear_matrix'][0]
@@ -660,7 +658,8 @@ class Affine(Transform):
         """Return the inverse transform."""
         if 'inverse' not in self._cache_dict:
             self._cache_dict['inverse'] = Affine(
-                affine_matrix=np.linalg.inv(self.affine_matrix)
+                affine_matrix=np.linalg.inv(self.affine_matrix),
+                units=self.units,
             )
         return self._cache_dict['inverse']
 

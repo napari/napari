@@ -819,9 +819,7 @@ def test_not_mutable_fields(field):
     with pytest.raises((TypeError, ValueError)) as err:
         setattr(viewer, field, 'test')
 
-    assert 'has allow_mutation set to False and cannot be assigned' in str(
-        err.value
-    )
+    assert 'Field is frozen' in str(err.value)
 
 
 @pytest.mark.parametrize(('Layer', 'data', 'ndim'), layer_test_data)

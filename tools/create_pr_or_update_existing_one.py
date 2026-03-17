@@ -1,3 +1,9 @@
+# /// script
+# requires-python = ">=3.12"
+# dependencies = [
+#     "requests>=2.32.5",
+# ]
+# ///
 """
 This file contains the code to create a PR or update an existing one based on the state of the current branch.
 """
@@ -348,7 +354,7 @@ def main():
     if event_name in {'schedule', 'workflow_dispatch'}:
         logging.info('Creating PR')
         create_pr_with_push(branch_name, access_token)
-    elif event_name == 'issue_comment':
+    elif event_name in {'issue_comment', 'workflow_call'}:
         logging.info('Updating PR')
         update_pr(branch_name)
     elif event_name == 'pull_request':

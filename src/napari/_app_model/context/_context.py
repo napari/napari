@@ -84,8 +84,8 @@ class SettingsAwareContext(Context):
             if splits:
                 while splits:
                     val = getattr(val, splits.pop(0))
-                if hasattr(val, 'dict'):
-                    val = val.dict()
+                if hasattr(val, 'model_dump'):
+                    val = val.model_dump()
                 return val
         return super().__missing__(key)
 

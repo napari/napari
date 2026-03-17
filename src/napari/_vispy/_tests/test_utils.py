@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
+from pydantic import ValidationError
 from qtpy.QtCore import Qt
 
-from napari._pydantic_compat import ValidationError
 from napari._vispy.utils.cursor import QtCursorVisual
 from napari._vispy.utils.visual import get_view_direction_in_scene_coordinates
 from napari.components._viewer_constants import CursorStyle

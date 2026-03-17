@@ -14,11 +14,9 @@ from typing import (
 
 import numpy as np
 import numpy.typing as npt
-import pandas as pd
 from psygnal.containers import Selection
-from scipy.stats import gmean
 
-from napari.layers.base import Layer, no_op
+from napari.layers.base import Layer, _LayerSlicingState, no_op
 from napari.layers.base._base_constants import ActionType
 from napari.layers.base._base_mouse_bindings import (
     highlight_box_handles,
@@ -39,7 +37,10 @@ from napari.layers.points._points_utils import (
 )
 from napari.layers.points._slice import _PointSliceRequest, _PointSliceResponse
 from napari.layers.utils._color_manager_constants import ColorMode
-from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
+from napari.layers.utils._slice_input import (
+    _SliceInput,
+    _ThickNDSlice,
+)
 from napari.layers.utils.color_manager import ColorManager
 from napari.layers.utils.color_transformations import ColorType
 from napari.layers.utils.interactivity_utils import (
@@ -51,6 +52,7 @@ from napari.layers.utils.layer_utils import (
     _unique_element,
 )
 from napari.layers.utils.text_manager import TextManager
+from napari.types import LayerDataType
 from napari.utils.colormaps import Colormap, ValidColormapArg
 from napari.utils.colormaps.standardize_color import hex_to_name, rgb_to_hex
 from napari.utils.events import Event
@@ -60,6 +62,8 @@ from napari.utils.transforms import Affine
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
+    import pandas as pd
+
     from napari.components.dims import Dims
 
 DEFAULT_COLOR_CYCLE = np.array([[1, 0, 1, 1], [0, 1, 0, 1]])
@@ -85,7 +89,7 @@ class Points(Layer):
         Amount of antialiasing in canvas pixels.
     axis_labels : tuple of str, optional
         Dimension names of the layer data.
-        If not provided, axis_labels will be set to (..., 'axis -2', 'axis -1').
+        If not provided, axis_labels will be set to (..., '-2', '-1').
     blending : str
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
@@ -325,6 +329,8 @@ class Points(Layer):
         None after dragging is done.
     """
 
+    _slicing_state: '_PointsSlicingState'
+
     _modeclass = Mode
     _projectionclass = PointsProjectionMode
 
@@ -414,12 +420,11 @@ class Points(Layer):
         self._selected_data_stored = set()
         self._selected_data_history = set()
         self._selected_data: Selection[int] = Selection()
-        # Indices of selected points within the currently viewed slice
-        self._selected_view = []
         # Index of hovered point
         self._value = None
         self._value_stored = None
         self._highlight_index = []
+        # indices of highlighted points in current view
         self._highlight_box = None
         self._mode = Mode.PAN_ZOOM
         self._status = self.mode
@@ -427,10 +432,6 @@ class Points(Layer):
         self._drag_start: Optional[np.ndarray] = None
         self._drag_normal: Optional[np.ndarray] = None
         self._drag_up: Optional[np.ndarray] = None
-
-        # initialize view data
-        self.__indices_view = np.empty(0, int)
-        self._view_size_scale = []
 
         self._drag_box: Optional[np.ndarray] = None
         self._drag_box_stored: Optional[np.ndarray] = None
@@ -552,6 +553,7 @@ class Points(Layer):
 
         # Trigger generation of view slice and thumbnail
         self.refresh(extent=False)
+        self._slicing_state.slice_done.connect(self._refresh_highlight)
 
     @property
     def data(self) -> np.ndarray:
@@ -666,7 +668,7 @@ class Points(Layer):
             self.events.highlight()
 
     @property
-    def features(self) -> pd.DataFrame:
+    def features(self) -> 'pd.DataFrame':
         """Dataframe-like features table.
 
         It is an implementation detail that this is a `pandas.DataFrame`. In the future,
@@ -686,7 +688,7 @@ class Points(Layer):
     @features.setter
     def features(
         self,
-        features: dict[str, np.ndarray] | pd.DataFrame,
+        features: 'dict[str, np.ndarray] | pd.DataFrame',
     ) -> None:
         self._feature_table.set_values(features, num_data=len(self.data))
         self._update_color_manager(
@@ -700,7 +702,7 @@ class Points(Layer):
         self.events.features()
 
     @property
-    def feature_defaults(self) -> pd.DataFrame:
+    def feature_defaults(self) -> 'pd.DataFrame':
         """Dataframe-like with one row of feature default values.
 
         See `features` for more details on the type of this property.
@@ -709,7 +711,7 @@ class Points(Layer):
 
     @feature_defaults.setter
     def feature_defaults(
-        self, defaults: dict[str, Any] | pd.DataFrame
+        self, defaults: 'dict[str, Any] | pd.DataFrame'
     ) -> None:
         self._feature_table.set_defaults(defaults)
         current_properties = self.current_properties
@@ -751,7 +753,7 @@ class Points(Layer):
 
     @properties.setter
     def properties(
-        self, properties: dict[str, Array] | pd.DataFrame | None
+        self, properties: 'dict[str, Array] | pd.DataFrame | None'
     ) -> None:
         self.features = properties
 
@@ -1343,7 +1345,7 @@ class Points(Layer):
                     else [self.current_face_color]
                 ),
                 'face_color_cycle': self.face_color_cycle,
-                'face_colormap': self.face_colormap.dict(),
+                'face_colormap': self.face_colormap.model_dump(),
                 'face_contrast_limits': self.face_contrast_limits,
                 'border_color': (
                     self.border_color
@@ -1351,11 +1353,11 @@ class Points(Layer):
                     else [self.current_border_color]
                 ),
                 'border_color_cycle': self.border_color_cycle,
-                'border_colormap': self.border_colormap.dict(),
+                'border_colormap': self.border_colormap.model_dump(),
                 'border_contrast_limits': self.border_contrast_limits,
                 'properties': self.properties,
                 'property_choices': self.property_choices,
-                'text': self.text.dict(),
+                'text': self.text.model_dump(),
                 'out_of_slice_display': self.out_of_slice_display,
                 'n_dimensional': self.out_of_slice_display,
                 'size': self.size,
@@ -1379,14 +1381,7 @@ class Points(Layer):
     @selected_data.setter
     def selected_data(self, selected_data: Iterable[int]) -> None:
         self._selected_data.replace_selection(selected_data)
-
-        self._selected_view = list(
-            np.intersect1d(
-                np.array(list(self._selected_data)),
-                self._indices_view,
-                return_indices=True,
-            )[2]
-        )
+        self._slicing_state.update_selected_view()
 
         # Update properties based on selected points
         if not len(self._selected_data):
@@ -1480,15 +1475,26 @@ class Points(Layer):
         return mode
 
     @property
-    def _indices_view(self):
-        return self.__indices_view
+    def _indices_view(self) -> np.ndarray[tuple[int], np.dtype[np.int64]]:
+        """Indices of points in view."""
+        return self._slicing_state._indices_view
 
-    @_indices_view.setter
-    def _indices_view(self, value):
-        if len(self._shown) == 0:
-            self.__indices_view = np.empty(0, int)
-        else:
-            self.__indices_view = value[self.shown[value]]
+    @property
+    def _selected_view(self) -> list[int]:
+        """Indices of selected points within the currently viewed slice"""
+        return self._slicing_state._selected_view
+
+    @property
+    def _view_size_scale(
+        self,
+    ) -> float | np.ndarray[tuple[int], np.dtype[np.float64]]:
+        """Scale factor for view size calculations
+
+        It is 1 if out_of_slice_display is False.
+        For out_of_slice_display=True, it is the scale factor for the
+        points to reduce size of visible points out of rendering slice
+        """
+        return self._slicing_state._view_size_scale
 
     @property
     def _view_data(self) -> np.ndarray:
@@ -1817,67 +1823,6 @@ class Points(Layer):
             bounding_box=bounding_box,
         )
         return start_point, end_point
-
-    def _set_view_slice(self) -> None:
-        """Sets the view given the indices to slice with."""
-
-        # The new slicing code makes a request from the existing state and
-        # executes the request on the calling thread directly.
-        # For async slicing, the calling thread will not be the main thread.
-        request = self._make_slice_request_internal(
-            self._slice_input, self._data_slice
-        )
-        response = request()
-        self._update_slice_response(response)
-
-    def _make_slice_request(self, dims: 'Dims') -> _PointSliceRequest:
-        """Make a Points slice request based on the given dims and these data."""
-        slice_input = self._make_slice_input(dims)
-        # See Image._make_slice_request to understand why we evaluate this here
-        # instead of using `self._data_slice`.
-        data_slice = slice_input.data_slice(self._data_to_world.inverse)
-        return self._make_slice_request_internal(slice_input, data_slice)
-
-    def _make_slice_request_internal(
-        self, slice_input: _SliceInput, data_slice: _ThickNDSlice
-    ) -> _PointSliceRequest:
-        return _PointSliceRequest(
-            slice_input=slice_input,
-            data=self.data,
-            data_slice=data_slice,
-            projection_mode=self.projection_mode,
-            out_of_slice_display=self.out_of_slice_display,
-            size=self.size,
-        )
-
-    def _update_slice_response(self, response: _PointSliceResponse) -> None:
-        """Handle a slicing response."""
-        self._slice_input = response.slice_input
-        indices = response.indices
-        scale = response.scale
-
-        # Update the _view_size_scale in accordance to the self._indices_view setter.
-        # If out_of_slice_display is False, scale is a number and not an array.
-        # Therefore we have an additional if statement checking for
-        # self._view_size_scale being an integer.
-        if not isinstance(scale, np.ndarray):
-            self._view_size_scale = scale
-        elif len(self._shown) == 0:
-            self._view_size_scale = np.empty(0, int)
-        else:
-            self._view_size_scale = scale[self.shown[indices]]
-
-        self._indices_view = np.array(indices, dtype=int)
-        # get the selected points that are in view
-        self._selected_view = list(
-            np.intersect1d(
-                np.array(list(self._selected_data)),
-                self._indices_view,
-                return_indices=True,
-            )[2]
-        )
-        with self.events.highlight.blocker():
-            self._set_highlight(force=True)
 
     def _set_highlight(self, force: bool = False) -> None:
         """Render highlights of shapes including boundaries, vertices,
@@ -2252,7 +2197,7 @@ class Points(Layer):
                 ),
             )
 
-            self._selected_view = list(
+            self._slicing_state._selected_view = list(
                 range(npoints, npoints + len(self._clipboard['data']))
             )
             self._selected_data.update(
@@ -2307,6 +2252,8 @@ class Points(Layer):
         np.ndarray
             The output binary mask array of the given shape containing this layer's points as balls.
         """
+        from scipy.stats import gmean  # only import if needed
+
         if data_to_world is None:
             data_to_world = self._data_to_world
         mask = np.zeros(shape, dtype=bool)
@@ -2479,3 +2426,108 @@ class Points(Layer):
             and v[value] is not None
             and not (isinstance(v[value], float) and np.isnan(v[value]))
         ]
+
+    def _get_layer_slicing_state(
+        self, data: LayerDataType, cache: bool
+    ) -> '_PointsSlicingState':
+        return _PointsSlicingState(layer=self, data=data, cache=cache)
+
+    def _set_view_slice(self):
+        raise NotImplementedError
+
+    def _refresh_highlight(self):
+        with self.events.highlight.blocker():
+            self._set_highlight(force=True)
+
+
+class _PointsSlicingState(_LayerSlicingState):
+    layer: Points
+
+    def __init__(self, layer: Layer, data: LayerDataType, cache: bool):
+        super().__init__(layer, data, cache)
+        self.__indices_view = np.empty(0, int)
+        # Indices of selected points within the currently viewed slice
+        self._selected_view = []
+        # initialize view data
+        self._view_size_scale: (
+            float | np.ndarray[tuple[int], np.dtype[np.float64]]
+        ) = 1.0
+
+    def _set_view_slice(self) -> None:
+        """Sets the view given the indices to slice with."""
+
+        # The new slicing code makes a request from the existing state and
+        # executes the request on the calling thread directly.
+        # For async slicing, the calling thread will not be the main thread.
+        request = self.make_slice_request_internal(
+            self._slice_input, self.data_slice
+        )
+        response = request()
+        self._update_slice_response(response)
+
+    def _make_slice_request(self, dims: 'Dims') -> _PointSliceRequest:
+        """Make a Points slice request based on the given dims and these data."""
+        slice_input = self.make_slice_input(dims)
+        # See Image._make_slice_request to understand why we evaluate this here
+        # instead of using `self._data_slice`.
+        data_slice = self._slice_indices(slice_input, dims)
+        return self.make_slice_request_internal(slice_input, data_slice)
+
+    def make_slice_request_internal(
+        self, slice_input: _SliceInput, data_slice: _ThickNDSlice
+    ) -> _PointSliceRequest:
+        return _PointSliceRequest(
+            slice_input=slice_input,
+            data=self.layer.data,
+            data_slice=data_slice,
+            projection_mode=self.layer.projection_mode,
+            out_of_slice_display=self.layer.out_of_slice_display,
+            size=self.layer.size,
+        )
+
+    def _update_slice_response(self, response: _PointSliceResponse) -> None:
+        """Handle a slicing response."""
+        self._slice_input = response.slice_input
+        indices = response.indices
+        scale = response.scale
+
+        # Update the _view_size_scale in accordance to the self._indices_view setter.
+        # If out_of_slice_display is False, scale is a number and not an array.
+        # Therefore we have an additional if statement checking for
+        # self._view_size_scale being an integer.
+        if not isinstance(scale, np.ndarray):
+            self._view_size_scale = scale
+        elif len(self.layer.shown) == 0:
+            self._view_size_scale = np.empty(0, int)
+        else:
+            self._view_size_scale = scale[self.layer.shown[indices]]
+
+        self._indices_view = np.array(indices, dtype=int)
+        # get the selected points that are in view
+
+        # WARNING This `with` will be removed in future
+        with self.layer.events.highlight.blocker():
+            self.update_selected_view()
+
+    def update_selected_view(self):
+        self._selected_view = list(
+            np.intersect1d(
+                np.array(list(self.layer._selected_data)),
+                self._indices_view,
+                return_indices=True,
+            )[2]
+        )
+        # WARNING This will be removed in future
+        self.layer._set_highlight(force=True)
+
+    @property
+    def _indices_view(self):
+        """Indices of the points in the currently viewed slice."""
+        return self.__indices_view
+
+    @_indices_view.setter
+    def _indices_view(self, value):
+        if len(self.layer.shown) == 0:
+            self.__indices_view = np.empty(0, int)
+        else:
+            self.__indices_view = value[self.layer.shown[value]]

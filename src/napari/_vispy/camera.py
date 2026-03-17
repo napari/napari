@@ -56,7 +56,13 @@ class VispyCamera:
             rotation = Rotation.from_quat([q.x, q.y, q.z, q.w])
             # see #8281 for why this is yzx. In short: longstanding vispy bug.
             angles = rotation.as_euler('yzx', degrees=True)
-            return self._camera.from_legacy_angles(tuple(angles))
+            # undo vispy quirks (rotation of 90 digrees and lefthanded y axis)
+            angles = (angles - (0, 0, 90)) * (1, -1, 1)
+            # flip handedness so the rotation is always righthanded even with axis flipping
+            angles = angles * np.where(
+                self._camera._vispy_flipped_axes(ndisplay=3), -1, 1
+            )
+            return tuple(angles)
 
         return (0, 0, 0)
 
@@ -67,7 +73,12 @@ class VispyCamera:
 
         # Only update angles if current camera is 3D camera
         if isinstance(self._view.camera, MouseToggledArcballCamera):
-            angles = self._camera.to_legacy_angles(angles)
+            # flip handedness so the rotation is always righthanded even with axis flipping
+            angles = angles * np.where(
+                self._camera._vispy_flipped_axes(ndisplay=3), -1, 1
+            )
+            # undo vispy quirks (rotation of 90 digrees and lefthanded y axis)
+            angles = (np.array(angles) * (1, -1, 1)) + (0, 0, 90)
             # see #8281 for why this is yzx. In short: longstanding vispy bug.
             rotation = Rotation.from_euler('yzx', angles, degrees=True)
             # Create and set quaternion

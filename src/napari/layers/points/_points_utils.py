@@ -298,7 +298,4 @@ def coerce_symbols(
     if isinstance(symbol, str | Symbol):
         return np.array([symbol_conversion(symbol)], dtype=object)
 
-    if not isinstance(symbol, np.ndarray):
-        symbol = np.array(symbol)
-
-    return fast_dict_get(symbol, SYMBOL_DICT)
+    return fast_dict_get(np.asanyarray(symbol), SYMBOL_DICT)

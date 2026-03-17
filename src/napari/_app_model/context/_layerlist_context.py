@@ -15,8 +15,6 @@ from napari.utils.translations import trans
 if TYPE_CHECKING:
     from weakref import ReferenceType
 
-    from numpy.typing import DTypeLike
-
     from napari.components.layerlist import LayerList
     from napari.layers import Layer
     from napari.utils.events import Selection
@@ -155,7 +153,7 @@ def _same_shape(s: LayerSel) -> bool:
     return len({tuple(getattr(x.data, 'shape', ())) for x in s}) == 1
 
 
-def _active_dtype(s: LayerSel) -> DTypeLike:
+def _active_dtype(s: LayerSel) -> str | None:
     dtype = None
     if s.active:
         with contextlib.suppress(AttributeError):
