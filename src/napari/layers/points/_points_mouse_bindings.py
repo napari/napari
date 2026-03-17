@@ -143,6 +143,8 @@ def _move_selection(
         )
         layer.events.features()
         box = layer._overlays['selection_box']
+        # TODO: this needs to work with any dims and order, currently hardcoded.
+        #       Probably also shouldn't be selected_view
         box.update_from_points(layer.data[layer._selected_view][:, -2:])
         yield
 
@@ -194,6 +196,8 @@ def _resize_selection(
             vertex_indices=((),),
         )
         layer.events.features()
+        # TODO: this needs to work with any dims and order, currently hardcoded.
+        #       Probably also shouldn't be selected_view
         box.update_from_points(layer.data[selected_displayed])
         yield
 
