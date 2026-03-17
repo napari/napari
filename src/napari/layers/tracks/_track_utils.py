@@ -1,12 +1,16 @@
+from typing import TYPE_CHECKING
+
 import numpy as np
 import numpy.typing as npt
-import pandas as pd
 from scipy.sparse import coo_matrix
 from scipy.spatial import cKDTree
 
 from napari.layers.utils.layer_utils import _FeatureTable
 from napari.utils.events.custom_types import Array
 from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    import pandas as pd
 
 
 class TrackManager:
@@ -163,7 +167,7 @@ class TrackManager:
         self._track_end_times = None
 
     @property
-    def features(self) -> pd.DataFrame:
+    def features(self) -> 'pd.DataFrame':
         """Dataframe-like features table.
 
         It is an implementation detail that this is a `pandas.DataFrame`. In the future,
@@ -183,7 +187,7 @@ class TrackManager:
     @features.setter
     def features(
         self,
-        features: dict[str, np.ndarray] | pd.DataFrame,
+        features: 'dict[str, np.ndarray] | pd.DataFrame',
     ) -> None:
         self._feature_table.set_values(features, num_data=len(self.data))
         self._feature_table.reorder(self._order)  # type: ignore[arg-type]
