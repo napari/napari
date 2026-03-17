@@ -23,6 +23,7 @@ class ClippingPlanesControls(QWidget):
         lay = QVBoxLayout()
         self.setLayout(lay)
 
+        # TODO: update bgcolor in sync with main canvas
         self.canvas = SceneCanvas(keys=None, size=(300, 300), vsync=True)
 
         self.info = QLabel(
@@ -30,11 +31,10 @@ class ClippingPlanesControls(QWidget):
             'Select a layer in the layerlist, then \n'
             'click/drag below to move its clipping planes.\n'
         )
-        self.planes_enabled = QToggleSwitch('enabled')
-        self.planes_enabled.setChecked(True)
+        self.planes_locked = QToggleSwitch('Lock planes.')
 
         lay.addWidget(self.info)
-        lay.addWidget(self.planes_enabled)
+        lay.addWidget(self.planes_locked)
         lay.addWidget(self.canvas.native)
 
         self.view = self.canvas.central_widget.add_view()
@@ -59,8 +59,10 @@ class ClippingPlanesControls(QWidget):
         self.viewer.layers.selection.events.connect(self._on_extent_change)
         self.canvas.events.mouse_move.connect(self._on_mouse)
         self.canvas.events.mouse_press.connect(self._on_mouse)
-        self.planes_enabled.toggled.connect(self._update_planes)
+        self.canvas.events.resize.connect(self._on_size_change)
+        self.planes_locked.toggled.connect(self._update_lock)
 
+        self._update_lock()
         self._on_extent_change()
 
     def _on_extent_change(self):
@@ -98,6 +100,18 @@ class ClippingPlanesControls(QWidget):
         extent_displayed = extent_all[list(self.viewer.dims.displayed)]
         diameter = np.linalg.norm(extent_displayed)
         self.view.camera.depth_value = 128 * diameter
+
+    def _update_lock(self):
+        locked = self.planes_locked.isChecked()
+        self.canvas.native.setVisible(not locked)
+        if not locked:
+            self._update_planes()
+
+    def _on_size_change(self, event=None):
+        X = self.canvas.size[0] / 2
+        self.lines[0].transform.translate = (X + self._offsets[0], 0, 0)
+        self.lines[1].transform.translate = (X + self._offsets[1], 0, 0)
+        self._on_camera_change()
 
     def _on_camera_change(self):
         if self.box is None:
@@ -152,6 +166,8 @@ class ClippingPlanesControls(QWidget):
         self._update_planes()
 
     def _on_mouse(self, event=None):
+        if self.planes_locked.isChecked():
+            return
         if self.viewer.layers.selection and (
             event.type == 'mouse_press' or event.button == 1
         ):
@@ -168,6 +184,8 @@ class ClippingPlanesControls(QWidget):
             self._update_planes()
 
     def _update_planes(self):
+        if self.planes_locked.isChecked():
+            return
         planes_world = []
         for offset in self._offsets:
             zoom = np.min(
@@ -201,7 +219,7 @@ class ClippingPlanesControls(QWidget):
                     {
                         'position': data_pos,
                         'normal': data_norm,
-                        'enabled': self.planes_enabled.isChecked(),
+                        'enabled': True,
                     }
                 )
             layer.experimental_clipping_planes = planes_data
