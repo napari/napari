@@ -38,13 +38,13 @@ QtViewerPushButton[mode="new_labels"]:disabled {
 QtViewerPushButton[mode="new_points"][creation_state="full"],
 QtViewerPushButton[mode="new_shapes"][creation_state="full"],
 QtViewerPushButton[mode="new_labels"][creation_state="full"] {
-  border: 3px solid {{ lighten(current, 10) }};
+  border: 3px solid {{ current }};
 }
 
 QtViewerPushButton[mode="new_points"][creation_state="partial"],
 QtViewerPushButton[mode="new_shapes"][creation_state="partial"],
 QtViewerPushButton[mode="new_labels"][creation_state="partial"] {
-  border: 3px dashed {{ darken(current, 10) }};
+  border: 3px solid {{ highlight }};
 }
 
 QtViewerPushButton[mode="warning"] {
