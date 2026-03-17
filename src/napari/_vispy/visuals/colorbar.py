@@ -12,7 +12,6 @@ if TYPE_CHECKING:
 
     import numpy.typing as npt
     from vispy.color import Colormap as VispyColormap
-    from vispy.visuals.text.text import FontManager
 
     from napari.utils.color import ColorValue
 
@@ -30,8 +29,7 @@ class ColorBar(Node):
 
     def __init__(
         self,
-        font_manager: FontManager | None = None,
-        font_family: str = 'OpenSans',
+        font_manager_cache_key,
     ) -> None:
         super().__init__()
         self.ticks = Axis(
@@ -47,8 +45,7 @@ class ColorBar(Node):
         self.ticks._text = Text(
             font_size=self.ticks.tick_font_size,
             color=self.ticks.text_color,
-            font_manager=font_manager,
-            face=font_family,
+            font_manager_cache_key=font_manager_cache_key,
         )
         self.ticks.add_subvisual(self.ticks._text)
 

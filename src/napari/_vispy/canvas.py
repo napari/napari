@@ -20,7 +20,6 @@ from napari._vispy.camera import VispyCamera
 from napari._vispy.mouse_event import NapariMouseEvent
 from napari._vispy.utils.cursor import QtCursorVisual
 from napari._vispy.utils.gl import get_max_texture_sizes
-from napari._vispy.utils.qt_font import QtFontManager
 from napari._vispy.utils.visual import create_vispy_overlay
 from napari.components._viewer_constants import CanvasPosition
 from napari.components.overlays import CanvasOverlay
@@ -169,8 +168,6 @@ class VispyCanvas:
         self,
         viewer: ViewerModel,
         key_map_handler: KeymapHandler,
-        font_manager: QtFontManager,
-        font_family: str,
         *args,
         **kwargs,
     ) -> None:
@@ -180,8 +177,6 @@ class VispyCanvas:
         self.max_texture_sizes = None
         self._last_theme_color = None
         self._background_color_override = None
-        self._font_manager = font_manager
-        self._overlay_font = font_family
         self.viewer = viewer
         self._scene_canvas = NapariSceneCanvas(
             *args, keys=None, vsync=True, **kwargs
@@ -937,8 +932,6 @@ class VispyCanvas:
                 overlay=overlay,
                 viewer=self.viewer,
                 parent=parent,
-                font_manager=self._font_manager,
-                font_family=self._overlay_font,
             )
             self._overlay_to_visual[overlay].append(vispy_overlay)
 

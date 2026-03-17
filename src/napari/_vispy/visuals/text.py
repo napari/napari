@@ -1,4 +1,5 @@
 from typing import Any
+from weakref import WeakKeyDictionary
 
 from vispy.scene.visuals import Text as BaseText
 
@@ -7,13 +8,10 @@ from napari._vispy.utils.text import (
     get_text_width_height,
 )
 
-# Global Qt-based font manager instance shared across all Text visuals
-_qt_font_manager = None
-
-_FONT_FAMILY = 'OpenSans'
+FM_CACHE = WeakKeyDictionary()
 
 
-def get_qt_font_manager(method: str = 'cpu') -> QtFontManager:
+def get_qt_font_manager(cache_key: Any, method: str = 'cpu') -> QtFontManager:
     """Get or create the global Qt font manager instance.
 
     Parameters
@@ -26,17 +24,16 @@ def get_qt_font_manager(method: str = 'cpu') -> QtFontManager:
     QtFontManager
         The global Qt font manager instance.
     """
-    global _qt_font_manager
-    if _qt_font_manager is None:
-        _qt_font_manager = QtFontManager(method=method)
-    return _qt_font_manager
+    if cache_key not in FM_CACHE:
+        FM_CACHE[cache_key] = QtFontManager(method)
+    return FM_CACHE[cache_key]
 
 
 class Text(BaseText):
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        # If using Qt fonts, pass the Qt font manager to the base class
-        if 'face' not in kwargs:
-            kwargs['face'] = _FONT_FAMILY
+    def __init__(
+        self, *args: Any, font_manager_cache_key: Any, **kwargs: Any
+    ) -> None:
+        kwargs['font_manager'] = get_qt_font_manager(font_manager_cache_key)
         super().__init__(*args, **kwargs)
 
     def get_width_height(self) -> tuple[float, float]:
