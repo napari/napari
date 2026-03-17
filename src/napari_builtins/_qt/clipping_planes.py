@@ -118,12 +118,21 @@ class ClippingPlanesControls(QWidget):
         )
         self.camera_model.set_view_direction(side, up)
 
-        angles = self.camera_model.to_legacy_angles(self.camera_model.angles)
+        # --------------------------------------------------------
+        # this section is copied from VispyCamera logic
+        # flip handedness so the rotation is always righthanded even with axis flipping
+        angles = self.camera_model.angles * np.where(
+            self.camera_model._vispy_flipped_axes(ndisplay=3), -1, 1
+        )
+        # undo vispy quirks (rotation of 90 digrees and lefthanded y axis)
+        angles = (np.array(angles) * (1, -1, 1)) + (0, 0, 90)
         # see #8281 for why this is yzx. In short: longstanding vispy bug.
         rotation = Rotation.from_euler('yzx', angles, degrees=True)
+
         # Create and set quaternion
         q = Quaternion(*rotation.as_quat(scalar_first=True))
         self.view.camera._quaternion = q
+        # --------------------------------------------------------
 
         VISPY_DEFAULT_ORIENTATION_3D = ('right', 'down', 'away')  # xyz
         self.view.camera.flip = tuple(
