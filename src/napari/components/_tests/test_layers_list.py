@@ -738,7 +738,7 @@ def test_warn_incompatible_overriding_units():
 
 
 def test_unlink_on_delete():
-    """Test that unlinking a layer from the list removes the layer from the
+    """Test that layer is unlinked after user removes the layer from the
     viewer."""
     layer1 = Image(np.zeros((5, 5)), name='image1')
     layer2 = Image(np.zeros((5, 5)), name='image2')
