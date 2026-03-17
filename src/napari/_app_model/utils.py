@@ -5,6 +5,9 @@ from app_model.types import Action, MenuItem, SubmenuItem
 
 from napari._app_model import get_app_model
 from napari._app_model.constants import MenuGroup, MenuId
+from napari.settings import get_settings
+from napari.utils.action_manager import action_manager
+from napari.utils.interactions import Shortcut
 
 MenuOrSubmenu = Union[MenuItem, SubmenuItem]
 
@@ -125,3 +128,27 @@ def get_dummy_action(menu_id: MenuId) -> tuple[Action, str]:
         palette=False,
     )
     return action, context_key
+
+
+def get_command_shortcut_and_description(
+    command_id: str,
+) -> tuple[str | None, str | None]:
+    """Get the command shortcut and description from a command id."""
+    app = get_app_model()
+    all_shortcuts = get_settings().shortcuts.shortcuts
+    keybinding = app.keybindings.get_keybinding(command_id)
+
+    shortcut = title = None
+    if keybinding is not None:
+        shortcut = Shortcut(keybinding.keybinding).platform
+        title = app.commands[command_id].title
+    else:
+        # might be an action_manager action
+        keybinding = all_shortcuts.get(command_id, [None])[0]
+        if keybinding is not None:
+            shortcut = Shortcut(keybinding).platform
+            title = action_manager._actions[command_id].description
+        else:
+            shortcut = title = None
+
+    return shortcut, title

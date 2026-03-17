@@ -1,9 +1,7 @@
 from __future__ import annotations
 
 import logging
-import re
 import textwrap
-import warnings
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
@@ -12,12 +10,10 @@ from vispy.scene.visuals import Polygon
 from vispy.util.svg import Document
 from vispy.visuals.transforms import STTransform
 
-from napari._app_model import get_app_model
+from napari._app_model.utils import get_command_shortcut_and_description
 from napari._vispy.visuals.text import Text
 from napari.resources import get_icon_path
-from napari.settings import get_settings
-from napari.utils.action_manager import action_manager
-from napari.utils.interactions import Shortcut
+from napari.utils.tips import format_tip
 
 if TYPE_CHECKING:
     from vispy.visuals.text.text import FontManager
@@ -110,57 +106,21 @@ class Welcome(Node):
     def set_shortcuts(self, commands: tuple[str, ...]) -> None:
         shortcuts = {}
         for command_id in commands:
-            shortcut, command = self._command_shortcut_and_description(
+            shortcut, command = get_command_shortcut_and_description(
                 command_id
             )
             if shortcut is not None and command is not None:
                 shortcuts[shortcut] = command
 
-        # TODO: use template strings in the future
         self.shortcut_keybindings.text = '\n'.join(shortcuts.keys())
         self.shortcut_descriptions.text = '\n'.join(shortcuts.values())
 
     def set_tip(self, tip: str) -> None:
-        # TODO: this should use template strings in the future
-        for match in re.finditer(r'{(.*?)}', tip):
-            command_id = match.group(1)
-            shortcut, _ = self._command_shortcut_and_description(command_id)
-            # this can be none at launch (not yet initialized), will be updated after
-            if shortcut is None:
-                # maybe it was just a direct keybinding given
-                with warnings.catch_warnings():
-                    warnings.simplefilter('ignore')
-                    shortcut = Shortcut(command_id).platform
-            if shortcut:
-                tip = re.sub(match.group(), str(shortcut), tip)
-
         # wrap tip so it's not clipped
+        tip = format_tip(tip)
         self.tip.text = 'Did you know?\n' + '\n'.join(
             textwrap.wrap(tip, break_on_hyphens=False)
         )
-
-    @staticmethod
-    def _command_shortcut_and_description(
-        command_id: str,
-    ) -> tuple[str | None, str | None]:
-        app = get_app_model()
-        all_shortcuts = get_settings().shortcuts.shortcuts
-        keybinding = app.keybindings.get_keybinding(command_id)
-
-        shortcut = command = None
-        if keybinding is not None:
-            shortcut = Shortcut(keybinding.keybinding).platform
-            command = app.commands[command_id].title
-        else:
-            # might be an action_manager action
-            keybinding = all_shortcuts.get(command_id, [None])[0]
-            if keybinding is not None:
-                shortcut = Shortcut(keybinding).platform
-                command = action_manager._actions[command_id].description
-            else:
-                shortcut = command = None
-
-        return shortcut, command
 
     def set_scale_and_position(self, x: float, y: float) -> None:
         self.transform.translate = (x / 2, y / 2, 0, 0)
