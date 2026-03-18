@@ -671,6 +671,28 @@ def test_create_non_empty_viewer_model(qtbot: QtBot) -> None:
     gc.collect()
 
 
+def test_create_non_empty_viewer_model_initializes_world_units(
+    qtbot: QtBot,
+) -> None:
+    from pint import get_application_registry
+
+    reg = get_application_registry()
+    viewer_model = ViewerModel()
+    image_um = viewer_model.add_image(np.zeros((10, 10)), units=('um', 'um'))
+    viewer_model.layers.units = ('nm', 'nm')
+
+    viewer = QtViewer(viewer=viewer_model)
+    qtbot.addWidget(
+        viewer, before_close_func=lambda widget: widget._instances.clear()
+    )
+
+    assert viewer_model.layers.units == (reg.nm, reg.nm)
+    assert viewer.canvas.layer_to_visual[image_um]._world_units == (
+        reg.nm,
+        reg.nm,
+    )
+
+
 def _update_data(
     layer: Labels,
     label: int,
