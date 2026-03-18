@@ -253,9 +253,8 @@ def test_world_units_restored_after_removing_inconsistent_layer(qt_viewer):
     # Remove the incompatible layer.
     viewer.layers.remove(labels)
 
-    # _update_world_units() was triggered by on_draw() during the
-    # removal, and the shared world units (nm) were restored.
-    assert vispy_im1._world_units == (reg.nm, reg.nm)
+    canvas.on_draw(None)
+    assert vispy_im1.world_units == (reg.nm, reg.nm)
 
 
 def test_world_units_applied_to_inserted_layer_via_layerlist_event(qt_viewer):
@@ -270,7 +269,7 @@ def test_world_units_applied_to_inserted_layer_via_layerlist_event(qt_viewer):
     image_nm = viewer.add_image(np.zeros((10, 10)), units=('nm', 'nm'))
 
     assert viewer.layers.extent.units == (reg.nm, reg.nm)
-    assert canvas.layer_to_visual[image_nm]._world_units == (reg.nm, reg.nm)
+    assert canvas.layer_to_visual[image_nm].world_units == (reg.nm, reg.nm)
 
 
 def test_inserted_layer_receives_shared_world_units_when_units_unchanged(
@@ -287,4 +286,4 @@ def test_inserted_layer_receives_shared_world_units_when_units_unchanged(
     image_um = viewer.add_image(np.zeros((10, 10)), units=('um', 'um'))
 
     assert viewer.layers.extent.units == (reg.nm, reg.nm)
-    assert canvas.layer_to_visual[image_um]._world_units == (reg.nm, reg.nm)
+    assert canvas.layer_to_visual[image_um].world_units == (reg.nm, reg.nm)
