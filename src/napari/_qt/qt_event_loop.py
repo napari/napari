@@ -167,6 +167,10 @@ def get_qapp(
     is set.
 
     """
+    # start logger so we can retrieve early log info if log level was set
+    # before this point. TODO: We could put this elsewhere?
+    register_logger_to_napari_handler('')
+
     # napari defaults are all-or nothing.  If any of the keywords are used
     # then they are all used.
     set_values = {k for k, v in locals().items() if v}
@@ -438,6 +442,5 @@ def run(
     with (
         notification_manager,
         _maybe_allow_interrupt(app),
-        register_logger_to_napari_handler(''),
     ):
         app.exec_()
