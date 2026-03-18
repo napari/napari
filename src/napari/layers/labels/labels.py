@@ -776,9 +776,9 @@ class Labels(ScalarFieldBase):
         """Get the label that should be used for display based on the current selection.
         If no labels are selected, return the background label.
         Should be removed once we have the multiple label visualization."""
-        try:
+        if self.selected_data:
             return next(reversed(self.selected_data))
-        except StopIteration:
+        else:
             return self.colormap.background_value
 
     def _on_selected_data_changed(self, added, removed) -> None:
