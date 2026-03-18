@@ -4,9 +4,11 @@ Layer units impact rendering
 
 This example demonstrates how units can impact rendering in napari.
 Two layers are added with different scales, however by specifying the units,
-napari is able to render them in the same physical space by the unit-aware
-library Pint. The first layer is in nanometers and the second layer is
+napari is able to render them in the same physical space using the unit-aware
+library Pint [1]_. The first layer is in nanometers and the second layer is
 in micrometers, but they are rendered in the same physical space because 1 μm = 1000 nm.
+
+.. [1] https://pint.readthedocs.io/en/stable/
 
 .. tags:: visualization-advanced, layers
 """
