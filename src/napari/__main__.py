@@ -5,6 +5,7 @@ napari command line viewer.
 import argparse
 import contextlib
 import logging
+import subprocess
 import sys
 import warnings
 from ast import literal_eval
@@ -13,7 +14,6 @@ from textwrap import wrap
 from typing import Any
 
 from napari import Viewer
-from napari._qt.qt_event_loop import get_qapp
 from napari.errors import ReaderPluginError
 from napari.utils._startup_script import _run_configured_startup_script
 from napari.utils.misc import maybe_patch_conda_exe
@@ -233,6 +233,14 @@ def _run() -> None:
         settings.save()
         sys.exit('Resetting settings to default values.\n')
 
+    splash_proc = subprocess.Popen(
+        [
+            sys.executable,
+            '-m',
+            'napari._splash',
+        ]
+    )
+
     if args.plugin:
         # make sure plugin is only used when files are specified
         if not args.paths:
@@ -244,10 +252,6 @@ def _run() -> None:
         # which emits "WARNING: No such plugin for spec 'builtins'"
         # so remove --plugin from sys.argv to prevent that warning
         sys.argv.remove('--plugin')
-
-    from napari._qt.qt_event_loop import show_splash_screen
-
-    splash = show_splash_screen()
 
     if args.with_:
         from napari.plugins import (
@@ -352,9 +356,9 @@ def _run() -> None:
     viewer.welcome_screen.visible = True
 
     # hide the splash screen once the viewer is shown
-    app = get_qapp()
-    app.processEvents()
-    splash.close()
+    from qtpy.QtCore import QTimer
+
+    QTimer.singleShot(100, splash_proc.terminate)
 
     from napari import run
 
