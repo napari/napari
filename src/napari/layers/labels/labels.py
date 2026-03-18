@@ -800,6 +800,8 @@ class Labels(ScalarFieldBase):
 
     @show_selected_label.setter
     def show_selected_label(self, show_selected):
+        if self._show_selected_label == show_selected:
+            return
         self._show_selected_label = show_selected
         self.colormap.use_selection = show_selected
         self.colormap.selection = self._selected_display_label
