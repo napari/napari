@@ -64,6 +64,7 @@ from napari.layers import (
     Tracks,
     Vectors,
 )
+from napari.layers._scalar_field import ScalarFieldBase
 from napari.layers._source import Source, layer_source
 from napari.layers.image._image_key_bindings import image_fun_to_mode
 from napari.layers.image._image_utils import guess_labels
@@ -296,6 +297,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         self.layers.events.removed.connect(self._on_remove_layer)
         self.layers.events.reordered.connect(self._on_layers_change)
         self.layers.selection.events.active.connect(self._on_active_layer)
+        self.layers.events.units.connect(self._on_layers_change)
 
         # Add mouse callback
         self.mouse_wheel_callbacks.append(dims_scroll)
@@ -622,21 +624,55 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
     def _new_labels(self) -> None:
         """Create new labels layer filling full world coordinates space."""
-        layers_extent = self.layers.extent
-        extent = layers_extent.world
-        scale = layers_extent.step
-        scene_size = extent[1] - extent[0]
-        corner = extent[0]
-        shape = [
-            np.round(s / sc).astype('int') + 1
-            for s, sc in zip(scene_size, scale, strict=False)
-        ]
-        dtype_str = get_settings().application.new_labels_dtype
-        empty_labels = np.zeros(shape, dtype=dtype_str)
-        self.add_labels(empty_labels, translate=np.array(corner), scale=scale)  # type: ignore[attr-defined]
-        # We define `add_labels` dynamically, so mypy doesn't know about it.
+        if isinstance(
+            base_layer := self.layers.selection.active, ScalarFieldBase
+        ):
+            layer = Labels(
+                data=np.zeros(
+                    base_layer.data.shape[
+                        : base_layer.ndim
+                    ],  # use :base_layer.ndim to cut channels from rgb images
+                    dtype=get_settings().application.new_labels_dtype,
+                ),
+                scale=base_layer.scale,
+                translate=base_layer.translate,
+                rotate=base_layer.rotate,
+                shear=base_layer.shear,
+                units=base_layer.units,
+                affine=base_layer.affine,
+                name=base_layer.name + ' - Labels',
+            )
+        elif self.layers.selection:
+            # non scalar field layer or more than one layer selected
+            layers_extent = self.layers.get_extent(self.layers.selection)
+            extent = layers_extent.world
+            scale = layers_extent.step
+            units = layers_extent.units
+            scene_size = extent[1] - extent[0]
+            corner = extent[0]
+            shape = [
+                np.round(s / sc).astype('int') + 1
+                for s, sc in zip(scene_size, scale, strict=False)
+            ]
+            dtype_str = get_settings().application.new_labels_dtype
+            empty_labels = np.zeros(shape, dtype=dtype_str)
+            layer = Labels(
+                data=empty_labels,
+                translate=np.array(corner),
+                scale=scale,
+                units=units,
+            )
+        else:
+            layer = Labels(
+                data=np.zeros(
+                    (512, 512),
+                    dtype=get_settings().application.new_labels_dtype,
+                )
+            )
+        self.add_layer(layer)
 
     def _on_layer_reload(self, event: Event) -> None:
+        self.dims.units = self.layers.extent.units
         self._layer_slicer.submit(
             layers=[event.layer], dims=self.dims, force=True
         )
@@ -650,6 +686,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             List of layers to update. If none provided updates all.
         """
         layers = layers or self.layers
+        self.dims.units = self.layers.extent.units
         self._layer_slicer.submit(layers=layers, dims=self.dims)
         # If the currently selected layer is sliced asynchronously, then the value
         # shown with this position may be incorrect. See the discussion for more details:
@@ -696,6 +733,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             # TODO: can be optimized with dims.update(), but events need fixing
             self.dims.ndim = len(ranges)
             self.dims.range = ranges
+            self.dims.units = self.layers.units
 
         new_dim = self.dims.ndim
         dim_diff = new_dim - len(self.cursor.position)
@@ -853,6 +891,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         layer.events.cursor_size.connect(self._update_cursor_size)
         layer.events.data.connect(self._on_layers_change)
         layer.events.scale.connect(self._on_layers_change)
+        layer.events.units.connect(self._on_layers_change)
         layer.events.translate.connect(self._on_layers_change)
         layer.events.rotate.connect(self._on_layers_change)
         layer.events.shear.connect(self._on_layers_change)

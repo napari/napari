@@ -9,7 +9,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional, Union
 from urllib.parse import urlparse
 
-import dask.array as da
 import imageio.v3 as iio
 import numpy as np
 import requests
@@ -138,6 +137,8 @@ def read_zarr_dataset(path: str):
     shape : tuple
         Shape of array or first array in list
     """
+    import dask.array as da
+
     from napari.utils.notifications import show_info
 
     # For local paths, zarr.open can create a DirectoryStore on a non-existent
@@ -306,6 +307,8 @@ def magic_imread(
                 shape = image.shape
                 dtype = image.dtype
             if use_dask:
+                import dask.array as da
+
                 image = da.from_delayed(
                     delayed(imread)(filename), shape=shape, dtype=dtype
                 )
@@ -320,6 +323,8 @@ def magic_imread(
         image = images[0]
     elif stack:
         if use_dask:
+            import dask.array as da
+
             image = da.stack(images)
         else:
             try:

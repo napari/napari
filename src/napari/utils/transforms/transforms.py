@@ -522,8 +522,6 @@ class Affine(Transform):
     @units.setter
     def units(self, units: Sequence[pint.Unit] | None) -> None:
         units = get_units_from_name(units)
-        if units is None:
-            units = (pint.get_application_registry().pixel,) * self.ndim
         if isinstance(units, pint.Unit):
             units = (units,) * self.ndim
         if len(units) != self.ndim:
@@ -660,7 +658,8 @@ class Affine(Transform):
         """Return the inverse transform."""
         if 'inverse' not in self._cache_dict:
             self._cache_dict['inverse'] = Affine(
-                affine_matrix=np.linalg.inv(self.affine_matrix)
+                affine_matrix=np.linalg.inv(self.affine_matrix),
+                units=self.units,
             )
         return self._cache_dict['inverse']
 

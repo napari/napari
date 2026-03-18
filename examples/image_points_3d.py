@@ -20,6 +20,7 @@ membranes, nuclei = viewer.add_image(
 )
 viewer.add_points(pts)
 viewer.camera.angles = (10, -20, 130)
+viewer.fit_to_view()
 
 if __name__ == '__main__':
     napari.run()

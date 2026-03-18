@@ -20,13 +20,15 @@ from napari.utils.action_manager import action_manager
 from napari.utils.interactions import Shortcut
 
 if TYPE_CHECKING:
+    from vispy.visuals.text.text import FontManager
+
     from napari.utils.color import ColorValue
 
 vispy_logger = logging.getLogger('vispy')
 
 
 class Welcome(Node):
-    def __init__(self) -> None:
+    def __init__(self, font_manager: FontManager, face: str) -> None:
         old_level = vispy_logger.level
         vispy_logger.setLevel(logging.ERROR)
         self.logo_coords = (
@@ -54,8 +56,9 @@ class Welcome(Node):
             pos=[0, 0],
             anchor_x='center',
             anchor_y='bottom',
-            method='gpu',
             parent=self,
+            font_manager=font_manager,
+            face=face,
         )
         self.shortcut_keybindings = Text(
             text='',
@@ -63,8 +66,9 @@ class Welcome(Node):
             pos=[-80, 60],
             anchor_x='right',
             anchor_y='bottom',
-            method='gpu',
             parent=self,
+            font_manager=font_manager,
+            face=face,
         )
         self.shortcut_descriptions = Text(
             text='',
@@ -72,8 +76,9 @@ class Welcome(Node):
             pos=[-60, 60],
             anchor_x='left',
             anchor_y='bottom',
-            method='gpu',
             parent=self,
+            font_manager=font_manager,
+            face=face,
         )
         self.tip = Text(
             text='',
@@ -81,8 +86,9 @@ class Welcome(Node):
             pos=[0, 160],
             anchor_x='center',
             anchor_y='bottom',
-            method='gpu',
             parent=self,
+            font_manager=font_manager,
+            face=face,
         )
 
         self.transform = STTransform()
@@ -167,7 +173,7 @@ class Welcome(Node):
             self.shortcut_descriptions,
             self.tip,
         ):
-            text.font_size = max(scale * 10, 10)
+            text.font_size = max(scale * 8, 10)
 
     def set_gl_state(self, *args: Any, **kwargs: Any) -> None:
         for node in self.children:

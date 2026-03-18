@@ -99,16 +99,16 @@ def test_empty_vectors_with_features():
     https://github.com/napari/napari/issues/5634
     """
     vectors = Vectors(
-        features={'a': np.empty(0, int)},
-        feature_defaults={'a': 0},
+        features={'a': np.empty(0, str)},
+        feature_defaults={'a': 'x'},
         edge_color='a',
         edge_color_cycle=list('rgb'),
     )
 
     vectors.data = np.concatenate((vectors.data, [[[0, 0], [1, 1]]]))
-    vectors.feature_defaults['a'] = 1
+    vectors.feature_defaults['a'] = 'y'
     vectors.data = np.concatenate((vectors.data, [[[1, 1], [2, 2]]]))
-    vectors.feature_defaults = {'a': 2}
+    vectors.feature_defaults = {'a': 'z'}
     vectors.data = np.concatenate((vectors.data, [[[2, 2], [3, 3]]]))
 
     assert_colors_equal(vectors.edge_color, list('rgb'))

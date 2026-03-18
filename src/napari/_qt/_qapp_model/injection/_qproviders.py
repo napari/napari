@@ -8,6 +8,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from napari import components, layers, viewer
+from napari._app_model import get_app_model
 from napari.utils._proxies import PublicOnlyProxy
 from napari.utils.translations import trans
 from napari.viewer import ViewerModel
@@ -100,6 +101,17 @@ def _provide_active_layer() -> layers.Layer | None:
 
 def _provide_active_layer_list() -> components.LayerList | None:
     return v.layers if (v := _provide_viewer()) else None
+
+
+def register_qt_types() -> None:
+    from napari._qt.qt_viewer import QtViewer
+
+    app = get_app_model()
+    if 'QtViewer' not in app.injection_store.namespace:
+        app.injection_store.namespace = {
+            **app.injection_store.namespace,
+            'QtViewer': QtViewer,
+        }
 
 
 # syntax could be simplified after

@@ -105,7 +105,7 @@ class ActionManager:
         name: str,
         command: Callable,
         description: str,
-        keymapprovider: KeymapProvider | None,
+        keymapprovider: type[KeymapProvider] | None,
         repeatable: bool = False,
     ):
         """

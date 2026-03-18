@@ -6,13 +6,13 @@ from collections import deque
 from collections.abc import Callable, Generator, Sequence
 from contextlib import contextmanager
 from typing import (
+    TYPE_CHECKING,
     Any,
     ClassVar,
 )
 
 import numpy as np
 import numpy.typing as npt
-import pandas as pd
 from PIL import Image, ImageDraw
 from psygnal.containers import Selection
 from scipy import ndimage as ndi
@@ -72,6 +72,9 @@ from napari.utils.events.custom_types import Array
 from napari.utils.misc import StringEnum, _is_array_type
 from napari.utils.naming import magic_name
 from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    import pandas as pd
 
 __all__ = ('Labels',)
 
