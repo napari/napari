@@ -14,7 +14,7 @@ import pint
 from napari.components.dims import RangeTuple
 from napari.layers import Layer
 from napari.layers.utils.layer_utils import Extent, LayerListExtent
-from napari.utils.events import EmitterGroup, Event
+from napari.utils.events import Event
 from napari.utils.events.containers import SelectableEventedList
 from napari.utils.naming import inc_name_count
 from napari.utils.transforms._units import get_units_from_name
@@ -123,18 +123,13 @@ class LayerList(SelectableEventedList[Layer]):
 
     def __init__(self, data=()) -> None:
         self._units = None
-        self.events = EmitterGroup(
-            source=self,
-            auto_connect=False,
-            begin_batch=Event,
-            end_batch=Event,
-            renamed=Event,
-            units=Event,
-        )
         super().__init__(
             data=data,
             basetype=Layer,
             lookup={str: get_name},
+        )
+        self.events.add(
+            begin_batch=Event, end_batch=Event, renamed=Event, units=Event
         )
         self.events.inserted.connect(self._on_layer_inserted)
         self.events.removed.connect(self._on_layer_removed)
@@ -266,7 +261,6 @@ class LayerList(SelectableEventedList[Layer]):
         (value,) = self._ensure_unique((value,))
         new_layer = self._type_check(value)
         new_layer.name = self._coerce_name(new_layer.name)
-        old_units = self.units
         self._clean_cache()
         new_layer.events.extent.connect(self._clean_cache)
         new_layer.events._extent_augmented.connect(self._clean_cache)
@@ -274,15 +268,7 @@ class LayerList(SelectableEventedList[Layer]):
             self._trigger_check_ndim_and_maybe_clean_units
         )
         super().insert(index, new_layer)
-        if old_units != self.units:
-            self.events.units(value=self.units)
         self._check_ndim_and_maybe_clean_units(new_layer.ndim)
-
-    def __delitem__(self, key) -> None:
-        old_units = self.units
-        super().__delitem__(key)
-        if old_units != self.units:
-            self.events.units(value=self.units)
 
     def remove_selected(self):
         """Remove selected layers from LayerList, but first unlink them."""
