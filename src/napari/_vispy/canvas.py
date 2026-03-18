@@ -809,7 +809,7 @@ class VispyCanvas:
     def _update_world_units(self):
         """Update the units of the canvas and all layers."""
         units = self.viewer.layers.extent.units
-        if units is None:
+        if units is None and len(self.viewer.layers) > 0:
             show_warning(
                 'Inconsistent units across layers; units will not be used for rendering.'
             )
