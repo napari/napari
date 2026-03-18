@@ -778,8 +778,7 @@ class Labels(ScalarFieldBase):
         Should be removed once we have the multiple label visualization."""
         if self.selected_data:
             return next(reversed(self.selected_data))
-        else:
-            return self.colormap.background_value
+        return self.colormap.background_value
 
     def _on_selected_data_changed(self, added, removed) -> None:
         self.colormap.selection = self._selected_display_label
