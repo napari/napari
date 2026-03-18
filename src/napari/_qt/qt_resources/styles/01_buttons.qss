@@ -44,7 +44,7 @@ QtViewerPushButton[mode="new_labels"][creation_state="full"] {
 QtViewerPushButton[mode="new_points"][creation_state="partial"],
 QtViewerPushButton[mode="new_shapes"][creation_state="partial"],
 QtViewerPushButton[mode="new_labels"][creation_state="partial"] {
-  border: 3px solid {{ highlight }};
+  border: 3px solid {{ secondary }};
 }
 
 QtViewerPushButton[mode="warning"] {
