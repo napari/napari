@@ -1088,6 +1088,8 @@ class VispyCanvas:
                     layer=layer,
                     viewer=self.viewer,
                     parent=parent,
+                    font_manager=self._font_manager,
+                    font_family=self._overlay_font,
                 )
                 overlay_to_visual[overlay] = vispy_overlay
                 if isinstance(overlay, CanvasOverlay):
