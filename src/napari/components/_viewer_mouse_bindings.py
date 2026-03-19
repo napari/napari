@@ -87,9 +87,8 @@ def drag_to_zoom(viewer, event):
     # only trigger zoom if the box is larger than a MIN_ZOOMBOX_SIZE in pixels
     distance = np.abs(np.array(press_pos) - np.array(move_pos))
     if not cancel and distance.min() > MIN_ZOOMBOX_SIZE:
-        # Slice to the last two coordinates (displayed axes) so that the
-        # 2-tuple constraint on ZoomOverlay.zoom_area is satisfied even when
-        # the viewer has more than 2 dimensions (e.g. ndim=3, ndisplay=2).
+        # Slice to the last two coordinates (displayed axes) for cases where
+        # ndim>2 and ndisplay=2
         viewer._zoom_box.zoom_area = (
             press_position[-2:],
             move_position[-2:],
