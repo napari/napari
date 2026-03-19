@@ -43,184 +43,184 @@ if TYPE_CHECKING:
 # Mixin must come before Layer
 class Surface(IntensityVisualizationMixin, Layer):
     """
-        Surface layer renders meshes onto the canvas.
+    Surface layer renders meshes onto the canvas.
 
-        Surfaces may be colored by:
-            * setting `vertex_values`, which colors the surface with the selected
-              `colormap` (default is uniform ones)
-            * setting `vertex_colors`, which replaces/overrides any color from
-              `vertex_values`
-            * setting both `texture` and `texcoords`, which blends a the value from
-              a texture (image) with the underlying color from `vertex_values` or
-              `vertex_colors`. Blending is achieved by multiplying the texture
-              color by the underlying color - an underlying value of "white" will
-              result in the unaltered texture color.
+    Surfaces may be colored by:
+        * setting `vertex_values`, which colors the surface with the selected
+          `colormap` (default is uniform ones)
+        * setting `vertex_colors`, which replaces/overrides any color from
+          `vertex_values`
+        * setting both `texture` and `texcoords`, which blends a the value from
+          a texture (image) with the underlying color from `vertex_values` or
+          `vertex_colors`. Blending is achieved by multiplying the texture
+          color by the underlying color - an underlying value of "white" will
+          result in the unaltered texture color.
 
-        Parameters
-        ----------
-        data : 2-tuple or 3-tuple of array
-            The first element of the tuple is an (N, D) array of vertices of
-            mesh triangles.
+    Parameters
+    ----------
+    data : 2-tuple or 3-tuple of array
+        The first element of the tuple is an (N, D) array of vertices of
+        mesh triangles.
 
-            The second is an (M, 3) array of int of indices of the mesh triangles.
+        The second is an (M, 3) array of int of indices of the mesh triangles.
 
-            The optional third element is the (K0, ..., KL, N) array of values
-            (vertex_values) used to color vertices where the additional L
-            dimensions are used to color the same mesh with different values. If
-            not provided, it defaults to ones.
-        affine : n-D array or napari.utils.transforms.Affine
-    (N+1, N+1) affine transformation matrix in homogeneous coordinates.
-            The first (N, N) entries correspond to a linear transform and
-            the final column is a length N translation vector and a 1 or a napari
-            `Affine` transform object. Applied as an extra transform on top of the
-            provided scale, rotate, and shear values.
-        axis_labels : tuple of str, optional
-            Dimension names of the layer data.
-            If not provided, axis_labels will be set to (..., '-2', '-1').
-        blending : str
-            One of a list of preset blending modes that determines how RGB and
-            alpha values of the layer visual get mixed. Allowed values are
-            {'opaque', 'translucent', and 'additive'}.
-        cache : bool
-            Whether slices of out-of-core datasets should be cached upon retrieval.
-            Currently, this only applies to dask arrays.
-        colormap : str, napari.utils.Colormap, tuple, dict
-            Colormap to use for luminance images. If a string must be the name
-            of a supported colormap from vispy or matplotlib. If a tuple the
-            first value must be a string to assign as a name to a colormap and
-            the second item must be a Colormap. If a dict the key must be a
-            string to assign as a name to a colormap and the value must be a
-            Colormap.
-        contrast_limits : list (2,)
-            Color limits to be used for determining the colormap bounds for
-            luminance images. If not passed is calculated as the min and max of
-            the image.
-        experimental_clipping_planes : list of dicts, list of ClippingPlane, or ClippingPlaneList
-            Each dict defines a clipping plane in 3D in data coordinates.
-            Valid dictionary keys are {'position', 'normal', and 'enabled'}.
-            Values on the negative side of the normal are discarded if the plane is enabled.
-        feature_defaults : dict[str, Any] or Dataframe-like
-            The default value of each feature in a table with one row.
-        features : dict[str, array-like] or Dataframe-like
-            Features table where each row corresponds to a shape and each column
-            is a feature.
-        gamma : float
-            Gamma correction for determining colormap linearity. Defaults to 1.
-        metadata : dict
-            Layer metadata.
-        name : str
-            Name of the layer.
-        normals : None, dict or SurfaceNormals
-            Whether and how to display the face and vertex normals of the surface mesh.
-        opacity : float
-            Opacity of the layer visual, between 0.0 and 1.0.
-        projection_mode : str
-            How data outside the viewed dimensions but inside the thick Dims slice will
-            be projected onto the viewed dimenions.
-        rotate : float, 3-tuple of float, or n-D array.
-            If a float convert into a 2D rotation matrix using that value as an
-            angle. If 3-tuple convert into a 3D rotation matrix, using a yaw,
-            pitch, roll convention. Otherwise assume an nD rotation. Angles are
-            assumed to be in degrees. They can be converted from radians with
-            np.degrees if needed.
-        scale : tuple of float
-            Scale factors for the layer.
-        shading : str, Shading
-            One of a list of preset shading modes that determine the lighting model
-            using when rendering the surface in 3D.
+        The optional third element is the (K0, ..., KL, N) array of values
+        (vertex_values) used to color vertices where the additional L
+        dimensions are used to color the same mesh with different values. If
+        not provided, it defaults to ones.
+    affine : n-D array or napari.utils.transforms.Affine
+        (N+1, N+1) affine transformation matrix in homogeneous coordinates.
+        The first (N, N) entries correspond to a linear transform and
+        the final column is a length N translation vector and a 1 or a napari
+        `Affine` transform object. Applied as an extra transform on top of the
+        provided scale, rotate, and shear values.
+    axis_labels : tuple of str, optional
+        Dimension names of the layer data.
+        If not provided, axis_labels will be set to (..., '-2', '-1').
+    blending : str
+        One of a list of preset blending modes that determines how RGB and
+        alpha values of the layer visual get mixed. Allowed values are
+        {'opaque', 'translucent', and 'additive'}.
+    cache : bool
+        Whether slices of out-of-core datasets should be cached upon retrieval.
+        Currently, this only applies to dask arrays.
+    colormap : str, napari.utils.Colormap, tuple, dict
+        Colormap to use for luminance images. If a string must be the name
+        of a supported colormap from vispy or matplotlib. If a tuple the
+        first value must be a string to assign as a name to a colormap and
+        the second item must be a Colormap. If a dict the key must be a
+        string to assign as a name to a colormap and the value must be a
+        Colormap.
+    contrast_limits : list (2,)
+        Color limits to be used for determining the colormap bounds for
+        luminance images. If not passed is calculated as the min and max of
+        the image.
+    experimental_clipping_planes : list of dicts, list of ClippingPlane, or ClippingPlaneList
+        Each dict defines a clipping plane in 3D in data coordinates.
+        Valid dictionary keys are {'position', 'normal', and 'enabled'}.
+        Values on the negative side of the normal are discarded if the plane is enabled.
+    feature_defaults : dict[str, Any] or Dataframe-like
+        The default value of each feature in a table with one row.
+    features : dict[str, array-like] or Dataframe-like
+        Features table where each row corresponds to a shape and each column
+        is a feature.
+    gamma : float
+        Gamma correction for determining colormap linearity. Defaults to 1.
+    metadata : dict
+        Layer metadata.
+    name : str
+        Name of the layer.
+    normals : None, dict or SurfaceNormals
+        Whether and how to display the face and vertex normals of the surface mesh.
+    opacity : float
+        Opacity of the layer visual, between 0.0 and 1.0.
+    projection_mode : str
+        How data outside the viewed dimensions but inside the thick Dims slice will
+        be projected onto the viewed dimenions.
+    rotate : float, 3-tuple of float, or n-D array.
+        If a float convert into a 2D rotation matrix using that value as an
+        angle. If 3-tuple convert into a 3D rotation matrix, using a yaw,
+        pitch, roll convention. Otherwise assume an nD rotation. Angles are
+        assumed to be in degrees. They can be converted from radians with
+        np.degrees if needed.
+    scale : tuple of float
+        Scale factors for the layer.
+    shading : str, Shading
+        One of a list of preset shading modes that determine the lighting model
+        using when rendering the surface in 3D.
 
-            * ``Shading.NONE``
-              Corresponds to ``shading='none'``.
-            * ``Shading.FLAT``
-              Corresponds to ``shading='flat'``.
-            * ``Shading.SMOOTH``
-              Corresponds to ``shading='smooth'``.
-        shear : 1-D array or n-D array
-            Either a vector of upper triangular values, or an nD shear matrix with
-            ones along the main diagonal.
-        texcoords: (N, 2) array
-            2D coordinates for each vertex, mapping into the texture.
-            The number of texture coords must match the number of vertices (N).
-            Coordinates should be in [0.0, 1.0] and are scaled to sample the 2D
-            texture. Coordinates outside this range will wrap, but this behavior
-            should be considered an implementation detail: there are no plans to
-            change it, but it's a feature of the underlying vispy visual.
-        texture: (I, J) or (I, J, C) array
-            A 2D texture to be mapped onto the mesh using `texcoords`.
-            C may be 3 (RGB) or 4 (RGBA) channels for a color texture.
-        translate : tuple of float
-            Translation values for the layer
-        units : tuple of str or pint.Unit, optional
-            Units of the layer data in world coordinates.
-            If not provided, the default units are assumed to be pixels.
-        vertex_colors: (N, C) or (K0, ..., KL, N, C) array of color values
-            Take care that the (optional) L additional dimensions match those of
-            vertex_values for proper slicing.
-            C may be 3 (RGB) or 4 (RGBA) channels..
-        visible : bool
-            Whether the layer visual is currently being displayed.
-        wireframe : None, dict or SurfaceWireframe
-            Whether and how to display the edges of the surface mesh with a wireframe.
-
-
-        Attributes
-        ----------
-        data : 3-tuple of array
-            The first element of the tuple is an (N, D) array of vertices of
-            mesh triangles. The second is an (M, 3) array of int of indices
-            of the mesh triangles. The third element is the (K0, ..., KL, N)
-            array of values used to color vertices where the additional L
-            dimensions are used to color the same mesh with different values.
-        axis_labels : tuple of str
-            Dimension names of the layer data.
-        vertices : (N, D) array
-            Vertices of mesh triangles.
-        faces : (M, 3) array of int
-            Indices of mesh triangles.
-        vertex_values : (K0, ..., KL, N) array
-            Values used to color vertices.
-        features : DataFrame-like
-            Features table where each row corresponds to a vertex and each column
-            is a feature.
-        feature_defaults : DataFrame-like
-            Stores the default value of each feature in a table with one row.
-        colormap : str, napari.utils.Colormap, tuple, dict
-            Colormap to use for luminance images. If a string must be the name
-            of a supported colormap from vispy or matplotlib. If a tuple the
-            first value must be a string to assign as a name to a colormap and
-            the second item must be a Colormap. If a dict the key must be a
-            string to assign as a name to a colormap and the value must be a
-            Colormap.
-        contrast_limits : list (2,)
-            Color limits to be used for determining the colormap bounds for
-            luminance images. If not passed is calculated as the min and max of
-            the image.
-        shading: str
-            One of a list of preset shading modes that determine the lighting model
-            using when rendering the surface.
-
-            * ``'none'``
-            * ``'flat'``
-            * ``'smooth'``
-        gamma : float
-            Gamma correction for determining colormap linearity.
-        wireframe : SurfaceWireframe
-            Whether and how to display the edges of the surface mesh with a wireframe.
-        normals : SurfaceNormals
-            Whether and how to display the face and vertex normals of the surface mesh.
-        units: tuple of pint.Unit
-            Units of the layer data in world coordinates.
+        * ``Shading.NONE``
+          Corresponds to ``shading='none'``.
+        * ``Shading.FLAT``
+          Corresponds to ``shading='flat'``.
+        * ``Shading.SMOOTH``
+          Corresponds to ``shading='smooth'``.
+    shear : 1-D array or n-D array
+        Either a vector of upper triangular values, or an nD shear matrix with
+        ones along the main diagonal.
+    texcoords: (N, 2) array
+        2D coordinates for each vertex, mapping into the texture.
+        The number of texture coords must match the number of vertices (N).
+        Coordinates should be in [0.0, 1.0] and are scaled to sample the 2D
+        texture. Coordinates outside this range will wrap, but this behavior
+        should be considered an implementation detail: there are no plans to
+        change it, but it's a feature of the underlying vispy visual.
+    texture: (I, J) or (I, J, C) array
+        A 2D texture to be mapped onto the mesh using `texcoords`.
+        C may be 3 (RGB) or 4 (RGBA) channels for a color texture.
+    translate : tuple of float
+        Translation values for the layer
+    units : tuple of str or pint.Unit, optional
+        Units of the layer data in world coordinates.
+        If not provided, the default units are assumed to be pixels.
+    vertex_colors: (N, C) or (K0, ..., KL, N, C) array of color values
+        Take care that the (optional) L additional dimensions match those of
+        vertex_values for proper slicing.
+        C may be 3 (RGB) or 4 (RGBA) channels..
+    visible : bool
+        Whether the layer visual is currently being displayed.
+    wireframe : None, dict or SurfaceWireframe
+        Whether and how to display the edges of the surface mesh with a wireframe.
 
 
-        Notes
-        -----
-        _view_vertices : (M, 2) or (M, 3) array
-            The coordinates of the vertices given the viewed dimensions.
-        _view_faces : (P, 3) array
-            The integer indices of the vertices that form the triangles
-            in the currently viewed slice.
-        _colorbar : array
-            Colorbar for current colormap.
+    Attributes
+    ----------
+    data : 3-tuple of array
+        The first element of the tuple is an (N, D) array of vertices of
+        mesh triangles. The second is an (M, 3) array of int of indices
+        of the mesh triangles. The third element is the (K0, ..., KL, N)
+        array of values used to color vertices where the additional L
+        dimensions are used to color the same mesh with different values.
+    axis_labels : tuple of str
+        Dimension names of the layer data.
+    vertices : (N, D) array
+        Vertices of mesh triangles.
+    faces : (M, 3) array of int
+        Indices of mesh triangles.
+    vertex_values : (K0, ..., KL, N) array
+        Values used to color vertices.
+    features : DataFrame-like
+        Features table where each row corresponds to a vertex and each column
+        is a feature.
+    feature_defaults : DataFrame-like
+        Stores the default value of each feature in a table with one row.
+    colormap : str, napari.utils.Colormap, tuple, dict
+        Colormap to use for luminance images. If a string must be the name
+        of a supported colormap from vispy or matplotlib. If a tuple the
+        first value must be a string to assign as a name to a colormap and
+        the second item must be a Colormap. If a dict the key must be a
+        string to assign as a name to a colormap and the value must be a
+        Colormap.
+    contrast_limits : list (2,)
+        Color limits to be used for determining the colormap bounds for
+        luminance images. If not passed is calculated as the min and max of
+        the image.
+    shading: str
+        One of a list of preset shading modes that determine the lighting model
+        using when rendering the surface.
+
+        * ``'none'``
+        * ``'flat'``
+        * ``'smooth'``
+    gamma : float
+        Gamma correction for determining colormap linearity.
+    wireframe : SurfaceWireframe
+        Whether and how to display the edges of the surface mesh with a wireframe.
+    normals : SurfaceNormals
+        Whether and how to display the face and vertex normals of the surface mesh.
+    units: tuple of pint.Unit
+        Units of the layer data in world coordinates.
+
+
+    Notes
+    -----
+    _view_vertices : (M, 2) or (M, 3) array
+        The coordinates of the vertices given the viewed dimensions.
+    _view_faces : (P, 3) array
+        The integer indices of the vertices that form the triangles
+        in the currently viewed slice.
+    _colorbar : array
+        Colorbar for current colormap.
     """
 
     _projectionclass: type[StringEnum] = SurfaceProjectionMode
