@@ -722,7 +722,11 @@ class Surface(IntensityVisualizationMixin, Layer):
             triangles=mesh_triangles,
         )
 
-        if intersection_index is None or intersection is None:
+        if (
+            intersection_index is None
+            or intersection is None
+            or self._view_vertex_values is None
+        ):
             return None, None
 
         # add the full nD coords to intersection

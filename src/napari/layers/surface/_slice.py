@@ -1,3 +1,4 @@
+import warnings
 from dataclasses import dataclass, field
 
 import numpy as np
@@ -69,15 +70,7 @@ class _SurfaceSliceRequest:
     def __call__(self) -> _SurfaceSliceResponse:
         # Return early if no data
         if len(self.data) == 0:
-            return _SurfaceSliceResponse(
-                vertices=np.empty((0, self.slice_input.ndisplay), dtype=int),
-                faces=np.empty((0, 3), dtype=int),
-                values=None,
-                vertex_colors=None,
-                texcoords=None,
-                slice_input=self.slice_input,
-                request_id=self.id,
-            )
+            return self._empty_response()
 
         not_disp = list(self.slice_input.not_displayed)
         if not not_disp:
@@ -91,7 +84,8 @@ class _SurfaceSliceRequest:
                 request_id=self.id,
             )
 
-        point, m_left, m_right = self.data_slice[not_disp].as_array()
+        # do the slicing based on the point and margins
+        point, m_left, m_right = self.data_slice.as_array()
 
         if self.projection_mode == 'none':
             low = point.copy()
@@ -107,19 +101,42 @@ class _SurfaceSliceRequest:
         high[too_thin_slice] += 0.5
 
         vert_orig = self.data[0]
-        vertices_not_disp = vert_orig[:, not_disp]
+        disp = list(self.slice_input.displayed)
+        # the presence of vertex_values can add extra dimensions to the layer
+        # which are not present in the data itself. We need to adjust for this
+        # by offsetting the dim number by the amount of extra dims
+        values_orig = self.data[2]
+        extra_dims = values_orig.ndim - 1
+        if any(d < extra_dims for d in disp):
+            warnings.warn(
+                'All extra dimensions corresponding to vertex values must be non-displayed dimensions. '
+                'Data cannot be shown.',
+                UserWarning,
+                stacklevel=2,
+            )
+            return self._empty_response()
 
+        disp_for_vert = [d - extra_dims for d in disp if d >= extra_dims]
+        not_disp_for_vert = [
+            d - extra_dims for d in not_disp if d >= extra_dims
+        ]
+
+        # actually do the slicing (for vertices)
+        low_vert = low[range(extra_dims, vert_orig.shape[1])][
+            not_disp_for_vert
+        ]
+        high_vert = high[range(extra_dims, vert_orig.shape[1])][
+            not_disp_for_vert
+        ]
+
+        vertices_not_disp = vert_orig[:, not_disp_for_vert]
         inside_slice = np.all(
-            (vertices_not_disp >= low) & (vertices_not_disp <= high), axis=1
+            (vertices_not_disp >= low_vert) & (vertices_not_disp <= high_vert),
+            axis=1,
         )
         valid_vertices = np.argwhere(inside_slice).reshape(-1)
 
-        disp = list(self.slice_input.displayed)
-        # vertices may have lower dimensionality than vertex values and colors
-        # so we select only the relevant dims
-        vertices_disp = vert_orig[
-            :, [d for d in disp if d in range(vert_orig.shape[1])]
-        ]
+        vertices_disp = vert_orig[:, disp_for_vert]
         vertices = vertices_disp[valid_vertices]
 
         # mapping of old vertex indices to new vertex indices. Indexing at
@@ -133,14 +150,21 @@ class _SurfaceSliceRequest:
         valid_faces = self.data[1][valid_faces_mask]
         faces = old_to_new[valid_faces]
 
-        values = vertex_colors = None
-        # values = self.data[2][disp][valid_vertices] if len(self.data) == 3 else None
-        # vertex_colors = self.vertex_colors[disp][valid_vertices] if self.vertex_colors is not None else None
-        texcoords = (
-            self.texcoords[valid_vertices]
-            if self.texcoords is not None
-            else None
-        )
+        values = vertex_colors = texcoords = None
+
+        # we can only get here if all the values/colors extra dimensions are not displayed
+        # which simplifies the logic (order still matters). We still need to remove non-displayed
+        # dimensions that relate do the vertices and not to the values/colors.
+        not_disp_for_values = [d for d in not_disp if d < extra_dims]
+        slice_values = tuple(point[not_disp_for_values].astype(int))
+
+        if self.vertex_colors is not None:
+            vertex_colors = self.vertex_colors[slice_values][valid_vertices]
+        elif len(self.data) == 3:
+            values = values_orig[slice_values][valid_vertices]
+
+        if self.texcoords is not None:
+            texcoords = self.texcoords[valid_vertices]
 
         return _SurfaceSliceResponse(
             vertices=vertices,
@@ -148,6 +172,17 @@ class _SurfaceSliceRequest:
             values=values,
             vertex_colors=vertex_colors,
             texcoords=texcoords,
+            slice_input=self.slice_input,
+            request_id=self.id,
+        )
+
+    def _empty_response(self) -> _SurfaceSliceResponse:
+        return _SurfaceSliceResponse(
+            vertices=np.empty((0, self.slice_input.ndisplay), dtype=int),
+            faces=np.empty((0, 3), dtype=int),
+            values=None,
+            vertex_colors=None,
+            texcoords=None,
             slice_input=self.slice_input,
             request_id=self.id,
         )

@@ -214,3 +214,4 @@ class VispySurfaceLayer(VispyBaseLayer):
         self._on_wireframe_color_change()
         self._on_face_normals_change()
         self._on_vertex_normals_change()
+        self._on_camera_move()
