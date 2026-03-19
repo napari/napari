@@ -11,7 +11,6 @@ from urllib.parse import urlparse
 
 import imageio.v3 as iio
 import numpy as np
-import requests
 from dask import delayed
 
 from napari.utils.misc import abspath_or_url
@@ -703,6 +702,7 @@ def load_and_execute_python_code(script_path: str) -> list['LayerData']:
     """
     if _is_url(script_path):
         # download the script from the URL
+        import requests
 
         response = requests.get(_git_provider_url_to_raw_url(script_path))
         response.raise_for_status()
