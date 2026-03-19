@@ -317,10 +317,6 @@ class Points(Layer):
     _selected_view :
         Integer indices of selected points in the currently viewed slice within
         the `_view_data` array.
-    _selected_box : array (4, 2) or None
-        Four corners of any box either around currently selected points or
-        being created during a drag action. Starting in the top left and
-        going clockwise.
     """
 
     _slicing_state: '_PointsSlicingState'
