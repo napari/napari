@@ -4,6 +4,7 @@ from napari._vispy.overlays.base import LayerOverlayMixin, VispySceneOverlay
 from napari._vispy.visuals.interaction_box import InteractionBox
 from napari.components.overlays import SelectionBoxOverlay, TransformBoxOverlay
 from napari.layers.base._base_constants import InteractionBoxHandle
+from napari.settings import get_settings
 
 
 class _VispyBoundingBoxOverlay(LayerOverlayMixin, VispySceneOverlay):
@@ -51,8 +52,20 @@ class VispySelectionBoxOverlay(_VispyBoundingBoxOverlay):
         self.overlay.events.bounds.connect(self._on_bounds_change)
         self.overlay.events.handles.connect(self._on_bounds_change)
         self.overlay.events.selected_handle.connect(self._on_bounds_change)
+        get_settings().appearance.highlight.events.connect(
+            self._on_settings_change
+        )
 
         self.reset()
+
+    def _on_settings_change(self):
+        self.node.highlight_color = (
+            get_settings().appearance.highlight.highlight_color
+        )
+        self.node.highlight_width = (
+            get_settings().appearance.highlight.highlight_thickness
+        )
+        self._on_bounds_change()
 
     def _on_bounds_change(self):
         if self.layer._slice_input.ndisplay == 2:
@@ -70,6 +83,10 @@ class VispySelectionBoxOverlay(_VispyBoundingBoxOverlay):
                 handles=self.overlay.handles,
                 selected=selected,
             )
+
+    def reset(self):
+        super().reset()
+        self._on_settings_change()
 
 
 class VispyTransformBoxOverlay(_VispyBoundingBoxOverlay):
