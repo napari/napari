@@ -9,8 +9,8 @@ from napari.utils.events.custom_types import Array
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
-    from scipy.spatial import cKDTree
     import pandas as pd
+    from scipy.spatial import cKDTree
 
 
 class TrackManager:
