@@ -148,7 +148,7 @@ def test_highlight_with_out_of_slice_display():
 
     # Verify the preconditions that cause the bug:
     # all 5 points in view, scale is a per-point array, only 1 highlighted
-    assert len(layer._indices_view) == 5
+    assert len(layer._view_indices) == 5
     assert isinstance(layer._view_size_scale, np.ndarray)
     assert len(layer._highlight_index) == 1
 
