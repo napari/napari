@@ -125,6 +125,7 @@ class VispyCanvasOverlay(VispyBaseOverlay):
         self.overlay.events.box_color.connect(self._on_box_change)
 
         self.canvas.events.background_color.connect(self._on_box_change)
+        self.canvas.overlay_tiling.events.padding.connect(self._on_box_change)
 
         self.box = Rectangle(center=(0, 0), border_width=0)
 
@@ -139,10 +140,9 @@ class VispyCanvasOverlay(VispyBaseOverlay):
 
         self.box.parent = self.node.parent
 
-        # TODO: this should be related to tiling padding
-        padding = 8
-        self.box.width = self.x_size + padding
-        self.box.height = self.y_size + padding
+        pad_x, pad_y = np.array(self.canvas.overlay_tiling.padding) * 0.8
+        self.box.width = self.x_size + pad_x
+        self.box.height = self.y_size + pad_y
         self.box.center = self.x_size / 2, self.y_size / 2
 
         if self.overlay.box_color is None:
