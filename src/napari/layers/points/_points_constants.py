@@ -121,7 +121,11 @@ class PointsProjectionMode(StringEnum):
 
         * NONE: ignore slice thickness, only using the dims point
         * ALL: project all points in the slice onto displayed dimensions
+        * RESCALE: rescale visualized point sizes based on the size of the intersection
+            of the point with the thick slice. A point coordinates may be outside the slice
+            and still be shown (with a smaller size) if it intersects with the thick slice
     """
 
     NONE = auto()
     ALL = auto()
+    RESCALE = auto()

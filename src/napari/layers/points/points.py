@@ -138,9 +138,6 @@ class Points(Layer):
         is a feature.
     metadata : dict
         Layer metadata.
-    n_dimensional : bool
-        This property will soon be deprecated in favor of 'out_of_slice_display'.
-        Use that instead.
     name : str
         Name of the layer. If not provided then will be guessed using heuristics.
     opacity : float
@@ -385,7 +382,6 @@ class Points(Layer):
         feature_defaults=None,
         features=None,
         metadata=None,
-        n_dimensional=None,
         name=None,
         opacity=1.0,
         out_of_slice_display=False,
@@ -473,7 +469,6 @@ class Points(Layer):
             symbol=Event,
             current_symbol=Event,
             out_of_slice_display=Event,
-            n_dimensional=Event,
             highlight=Event,
             shading=Event,
             antialiasing=Event,
@@ -534,11 +529,6 @@ class Points(Layer):
             categorical_colormap=face_color_cycle,
             properties=color_properties,
         )
-
-        if n_dimensional is not None:
-            self._out_of_slice_display = n_dimensional
-        else:
-            self._out_of_slice_display = out_of_slice_display
 
         # Save the point style params
         self.size = size
@@ -840,19 +830,7 @@ class Points(Layer):
     def out_of_slice_display(self, out_of_slice_display: bool) -> None:
         self._out_of_slice_display = bool(out_of_slice_display)
         self.events.out_of_slice_display()
-        self.events.n_dimensional()
         self.refresh(extent=False)
-
-    @property
-    def n_dimensional(self) -> bool:
-        """
-        This property will soon be deprecated in favor of `out_of_slice_display`. Use that instead.
-        """
-        return self._out_of_slice_display
-
-    @n_dimensional.setter
-    def n_dimensional(self, value: bool) -> None:
-        self.out_of_slice_display = value
 
     @property
     def symbol(self) -> np.ndarray:
@@ -1359,7 +1337,6 @@ class Points(Layer):
                 'property_choices': self.property_choices,
                 'text': self.text.model_dump(),
                 'out_of_slice_display': self.out_of_slice_display,
-                'n_dimensional': self.out_of_slice_display,
                 'size': self.size,
                 'ndim': self.ndim,
                 'data': self.data,
@@ -2481,53 +2458,19 @@ class _PointsSlicingState(_LayerSlicingState):
             data=self.layer.data,
             data_slice=data_slice,
             projection_mode=self.layer.projection_mode,
-            out_of_slice_display=self.layer.out_of_slice_display,
             size=self.layer.size,
+            shown=self.layer.shown,
+            selected=self.layer.selected_data,
         )
 
     def _update_slice_response(self, response: _PointSliceResponse) -> None:
         """Handle a slicing response."""
         self._slice_input = response.slice_input
-        indices = response.indices
-        scale = response.scale
-
-        # Update the _view_size_scale in accordance to the self._indices_view setter.
-        # If out_of_slice_display is False, scale is a number and not an array.
-        # Therefore we have an additional if statement checking for
-        # self._view_size_scale being an integer.
-        if not isinstance(scale, np.ndarray):
-            self._view_size_scale = scale
-        elif len(self.layer.shown) == 0:
-            self._view_size_scale = np.empty(0, int)
-        else:
-            self._view_size_scale = scale[self.layer.shown[indices]]
-
-        self._indices_view = np.array(indices, dtype=int)
-        # get the selected points that are in view
+        self._view_data = response.data
+        self._view_size = response.size
+        self._view_selected = response.selected
+        self._view_symbol = response.symbol
 
         # WARNING This `with` will be removed in future
         with self.layer.events.highlight.blocker():
-            self.update_selected_view()
-
-    def update_selected_view(self):
-        self._selected_view = list(
-            np.intersect1d(
-                np.array(list(self.layer._selected_data)),
-                self._indices_view,
-                return_indices=True,
-            )[2]
-        )
-        # WARNING This will be removed in future
-        self.layer._set_highlight(force=True)
-
-    @property
-    def _indices_view(self):
-        """Indices of the points in the currently viewed slice."""
-        return self.__indices_view
-
-    @_indices_view.setter
-    def _indices_view(self, value):
-        if len(self.layer.shown) == 0:
-            self.__indices_view = np.empty(0, int)
-        else:
-            self.__indices_view = value[self.layer.shown[value]]
+            self.layer._set_highlight(force=True)
