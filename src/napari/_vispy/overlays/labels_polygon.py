@@ -52,6 +52,7 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
         canvas: Canvas,
         overlay: LabelsPolygonOverlay,
         parent=None,
+        **kwargs,
     ):
         points = [(0, 0), (1, 1)]
 
@@ -77,6 +78,7 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
             viewer=viewer,
             overlay=overlay,
             parent=parent,
+            **kwargs,
         )
 
         self.layer.mouse_move_callbacks.append(self._on_mouse_move)

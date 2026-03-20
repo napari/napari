@@ -54,31 +54,44 @@ def running_as_constructor_app() -> bool:
 
 def in_jupyter() -> bool:
     """Return true if we're running in jupyter notebook/lab or qtconsole."""
-    with contextlib.suppress(ImportError):
-        from IPython import get_ipython
-
-        return get_ipython().__class__.__name__ == 'ZMQInteractiveShell'
-    return False
+    # check if IPython is imported already
+    ipy = sys.modules.get('IPython')
+    if ipy is None:
+        return False
+    get_ipython = ipy.get_ipython
+    shell = get_ipython()
+    return (
+        shell is not None and shell.__class__.__name__ == 'ZMQInteractiveShell'
+    )
 
 
 def in_ipython() -> bool:
     """Return true if we're running in an IPython interactive shell."""
-    with contextlib.suppress(ImportError):
-        from IPython import get_ipython
-
-        return get_ipython().__class__.__name__ == 'TerminalInteractiveShell'
-    return False
+    # check if IPython is imported already
+    ipy = sys.modules.get('IPython')
+    if ipy is None:
+        return False
+    get_ipython = ipy.get_ipython
+    shell = get_ipython()
+    return (
+        shell is not None
+        and shell.__class__.__name__ == 'TerminalInteractiveShell'
+    )
 
 
 def in_python_repl() -> bool:
     """Return true if we're running in a Python REPL."""
-    with contextlib.suppress(ImportError):
-        from IPython import get_ipython
-
-        return get_ipython().__class__.__name__ == 'NoneType' and hasattr(
-            sys, 'ps1'
-        )
-    return False
+    # check if IPython is imported already
+    ipy = sys.modules.get('IPython')
+    if ipy is None:
+        return hasattr(sys, 'ps1')
+    get_ipython = ipy.get_ipython
+    shell = get_ipython()
+    return (
+        shell is not None
+        and shell.__class__.__name__ == 'NoneType'
+        and hasattr(sys, 'ps1')
+    )
 
 
 def str_to_rgb(arg: str) -> list[int]:

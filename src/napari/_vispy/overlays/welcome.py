@@ -14,8 +14,9 @@ from napari._vispy.visuals.welcome import Welcome
 if TYPE_CHECKING:
     from vispy.scene import Node
     from vispy.util.event import Event
+    from vispy.visuals.text.text import FontManager
 
-    from napari import Viewer
+    from napari.components import ViewerModel
     from napari.components.canvas import Canvas
     from napari.components.overlays import WelcomeOverlay
 
@@ -26,17 +27,21 @@ class VispyWelcomeOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
     def __init__(
         self,
         *,
-        viewer: Viewer,
+        viewer: ViewerModel,
         canvas: Canvas,
         overlay: WelcomeOverlay,
+        font_manager: FontManager | None = None,
+        font_family: str = 'OpenSans',
         parent: Node | None = None,
     ) -> None:
         super().__init__(
-            node=Welcome(),
+            node=Welcome(font_manager=font_manager, face=font_family),
             viewer=viewer,
             canvas=canvas,
             overlay=overlay,
             parent=parent,
+            font_manager=font_manager,
+            font_family=font_family,
         )
         self.viewer.layers.events.inserted.connect(self._on_visible_change)
         self.viewer.layers.events.removed.connect(self._on_visible_change)

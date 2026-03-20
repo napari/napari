@@ -11,6 +11,7 @@ from napari.utils.colormaps.colormap_utils import (
 
 if TYPE_CHECKING:
     from vispy.scene import Node
+    from vispy.visuals.text.text import FontManager
 
     from napari.components.canvas import Canvas
     from napari.components.overlays import ColorBarOverlay, Overlay
@@ -27,13 +28,17 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
         canvas: Canvas,
         overlay: Overlay,
         parent: Node | None = None,
+        font_manager: FontManager | None = None,
+        font_family: str = 'OpenSans',
     ) -> None:
         super().__init__(
-            node=ColorBar(),
+            node=ColorBar(font_manager=font_manager, font_family=font_family),
             layer=layer,
             canvas=canvas,
             overlay=overlay,
             parent=parent,
+            font_manager=font_manager,
+            font_family=font_family,
         )
         self.layer: Image | Surface
         self.x_size = 50

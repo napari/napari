@@ -33,6 +33,7 @@ from napari._qt.widgets.qt_viewer_buttons import (
     QtViewerButtons,
 )
 from napari._qt.widgets.qt_viewer_dock_widget import QtViewerDockWidget
+from napari._vispy.utils.qt_font import QtFontManager
 from napari.components.camera import Camera
 from napari.components.layerlist import LayerList
 from napari.errors import MultipleReaderError, ReaderPluginError
@@ -201,11 +202,15 @@ class QtViewer(QSplitter):
         self._dockConsole = None
         self._dockPerformance = None
         self._show_welcome_screen = show_welcome_screen
+        self._font_manager = QtFontManager()
+        self._overlay_font = QGuiApplication.font().family()
 
         # This dictionary holds the corresponding vispy visual for each layer
         self.canvas = canvas_class(
             viewer=viewer,
             parent=self,
+            font_manager=self._font_manager,
+            font_family=self._overlay_font,
             key_map_handler=self._key_map_handler,
             size=self.viewer.canvas.size,
             autoswap=get_settings().experimental.autoswap_buffers,  # see #5734
@@ -1450,6 +1455,14 @@ class QtViewer(QSplitter):
         if path is not None:
             imsave(path, img)
         return img
+
+    def font_manager(self) -> QtFontManager:
+        """Return the font manager for this viewer."""
+        return self._font_manager
+
+    def overlay_font(self) -> str:
+        """Return the font used for overlays."""
+        return self._overlay_font
 
 
 if TYPE_CHECKING:

@@ -4,7 +4,7 @@ from napari._vispy.overlays.base import ViewerOverlayMixin, VispyCanvasOverlay
 
 
 class VispyBrushCircleOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
-    def __init__(self, *, viewer, canvas, overlay, parent=None):
+    def __init__(self, *, viewer, canvas, overlay, parent=None, **kwargs):
         self._white_circle = Ellipse(
             center=(0, 0),
             color=(0, 0, 0, 0.0),
@@ -24,6 +24,7 @@ class VispyBrushCircleOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
             canvas=canvas,
             overlay=overlay,
             parent=parent,
+            **kwargs,
         )
 
         self._last_mouse_pos = None
