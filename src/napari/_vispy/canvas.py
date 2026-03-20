@@ -926,6 +926,8 @@ class VispyCanvas:
                 font_manager=self._font_manager,
                 font_family=self._overlay_font,
                 parent=parent,
+                viewer=self.viewer,
+                canvas=self.viewer.canvas,
                 **kwargs,
             )
         else:
@@ -951,7 +953,6 @@ class VispyCanvas:
                 overlay,
                 vispy_overlay,
                 parent,
-                viewer=self.viewer,
             )
             self._scene_overlay_to_visual[overlay] = vispy_overlay
 
@@ -1017,8 +1018,6 @@ class VispyCanvas:
                         overlay,
                         vispy_overlay,
                         parent,
-                        viewer=self.viewer,
-                        canvas=self.viewer.canvas,
                     )
                     if vispy_overlay not in vispy_overlays:
                         vispy_overlays.append(vispy_overlay)
@@ -1029,8 +1028,6 @@ class VispyCanvas:
                     overlay,
                     vispy_overlay,
                     parent,
-                    viewer=self.viewer,
-                    canvas=self.viewer.canvas,
                 )
                 if vispy_overlay not in vispy_overlays:
                     vispy_overlays.append(vispy_overlay)
@@ -1095,7 +1092,6 @@ class VispyCanvas:
                 vispy_overlay,
                 parent,
                 layer=layer,
-                canvas=self.viewer.canvas,
             )
 
             overlay_to_visual[overlay] = vispy_overlay

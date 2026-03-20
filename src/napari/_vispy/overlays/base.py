@@ -257,6 +257,7 @@ class ViewerOverlayMixin:
         super().__init__(
             node=node,
             overlay=overlay,
+            viewer=viewer,
             parent=parent,
             **kwargs,
         )

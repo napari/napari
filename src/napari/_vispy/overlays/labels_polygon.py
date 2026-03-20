@@ -11,9 +11,7 @@ from napari.layers.labels._labels_utils import mouse_event_to_labels_coordinate
 from napari.settings import get_settings
 
 if TYPE_CHECKING:
-    from napari.components.canvas import Canvas
     from napari.components.overlays import LabelsPolygonOverlay
-    from napari.components.viewer_model import ViewerModel
     from napari.layers import Labels
 
 
@@ -46,12 +44,6 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
 
     def __init__(
         self,
-        *,
-        layer: Labels,
-        viewer: ViewerModel,
-        canvas: Canvas,
-        overlay: LabelsPolygonOverlay,
-        parent=None,
         **kwargs,
     ):
         points = [(0, 0), (1, 1)]
@@ -74,10 +66,6 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
 
         super().__init__(
             node=Compound([self._polygon, self._nodes, self._line]),
-            layer=layer,
-            viewer=viewer,
-            overlay=overlay,
-            parent=parent,
             **kwargs,
         )
 
