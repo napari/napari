@@ -58,6 +58,7 @@ class _VispyBaseTextOverlay(VispyCanvasOverlay):
 
     def _on_font_size_change(self):
         self.node.font_size = self.overlay.font_size
+        self._on_position_change()
 
     def _on_position_change(self, event=None):
         position = self.overlay.position

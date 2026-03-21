@@ -110,6 +110,17 @@ def _get_qt_font_metrics(
     return QFontMetricsF(qfont)
 
 
+def get_text_metrics(text: Text) -> QFontMetricsF:
+    """Get qt font metrics from a text visual."""
+    face = (
+        text.face if hasattr(text, 'face') else QGuiApplication.font().family()
+    )
+    bold = text.bold if hasattr(text, 'bold') else False
+    italic = text.italic if hasattr(text, 'italic') else False
+
+    return _get_qt_font_metrics(face, int(text.font_size), bold, italic)
+
+
 def get_text_width_height(text: Text) -> tuple[float, float]:
     """Get the width and height of a vispy text visual in screen pixels.
 

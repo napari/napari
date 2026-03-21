@@ -104,6 +104,11 @@ class ColorBar(Node):
         clim: tuple[float, float],
         color: ColorValue,
     ) -> tuple[float, float]:
+        # offset everything down by half the height of the font
+        # so we don't spill at the top with the tick text
+        for visual in (self.img, self.box, self.ticks):
+            visual.transform.translate = (0, font_size / 2)
+
         self.box.set_data(color=color)
         self.ticks.axis_color = color
         self.ticks.text_color = color
