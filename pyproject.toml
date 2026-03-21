@@ -469,6 +469,10 @@ ignore = [
 [tool.ruff.lint.flake8-builtins]
 builtins-allowed-modules = ["io", "types", "threading"]
 
+[tool.ruff.lint.flake8-type-checking]
+runtime-evaluated-base-classes = ["pydantic.BaseModel"]
+quote-annotations = true
+
 [tool.ruff.lint.pyupgrade]
 keep-runtime-typing = true
 
