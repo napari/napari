@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+from collections.abc import Generator
+from contextlib import contextmanager
 from functools import lru_cache
 from itertools import chain
 
 from app_model import Application
+from in_n_out import Store
 
 from napari._app_model.actions._file import FILE_ACTIONS, FILE_SUBMENUS
 from napari._app_model.actions._layerlist_context_actions import (
@@ -15,6 +18,19 @@ from napari._app_model.actions._view import VIEW_ACTIONS, VIEW_SUBMENUS
 APP_NAME = 'napari'
 
 
+class NapariStore(Store):
+    """A singleton (per name) class representing the Napari application."""
+
+    @contextmanager
+    def _add_to_namespace(
+        self, name: str, value: object
+    ) -> Generator[None, None, None]:
+        namespace = self.namespace.copy()
+        self.namespace = {**namespace, name: value}
+        yield
+        self.namespace = namespace
+
+
 class NapariApplication(Application):
     """A singleton (per name) class representing the Napari application.
 
@@ -24,6 +40,8 @@ class NapariApplication(Application):
     registering actions and menus.
     """
 
+    injection_store: NapariStore
+
     def __init__(self, app_name=APP_NAME) -> None:
         # raise_synchronous_exceptions means that commands triggered via
         # ``execute_command`` will immediately raise exceptions. Normally,
@@ -32,7 +50,11 @@ class NapariApplication(Application):
         # exceptions with `.result()`, for now, raising immediately should
         # prevent any unexpected silent errors.  We can turn it off later if we
         # adopt asynchronous command execution.
-        super().__init__(app_name, raise_synchronous_exceptions=True)
+        super().__init__(
+            app_name,
+            raise_synchronous_exceptions=True,
+            injection_store_class=NapariStore,
+        )
 
         self.injection_store.namespace = _napari_names  # type: ignore [assignment]
 
