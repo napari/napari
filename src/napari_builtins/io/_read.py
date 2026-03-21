@@ -7,7 +7,6 @@ from contextlib import contextmanager, suppress
 from glob import glob
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional, Union
-from urllib.parse import urlparse
 
 import imageio.v3 as iio
 import numpy as np
@@ -58,6 +57,8 @@ def _git_provider_url_to_raw_url(filename: str) -> str:
     str
         The raw file URL.
     """
+    from urllib.parse import urlparse
+
     parsed_url = urlparse(filename)
     # For a GitLab file URL that contains `blob/` replace with `raw`
     if 'gitlab' in parsed_url.netloc:
@@ -702,11 +703,13 @@ def load_and_execute_python_code(script_path: str) -> list['LayerData']:
     """
     if _is_url(script_path):
         # download the script from the URL
-        import requests
 
-        response = requests.get(_git_provider_url_to_raw_url(script_path))
-        response.raise_for_status()
-        code = response.text
+        from urllib.request import urlopen
+
+        raw_url = _git_provider_url_to_raw_url(script_path)
+        with urlopen(raw_url) as response:
+            encoding = response.headers.get_content_charset() or 'utf-8'
+            code = response.read().decode(encoding)
     else:
         code = Path(script_path).read_text()
     execute_python_code(code, script_path)
