@@ -13,7 +13,7 @@ from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils.events import disconnect_events
 
 if TYPE_CHECKING:
-    from napari._vispy.canvas import VispyCanvas
+    from napari._vispy.utils.qt_font import FontInfo
     from napari.layers import Points
 
 
@@ -21,9 +21,9 @@ class VispyPointsLayer(VispyBaseLayer):
     node: PointsVisual
     layer: Points
 
-    def __init__(self, layer, canvas: VispyCanvas) -> None:
-        node = PointsVisual(canvas=canvas)
-        super().__init__(layer, node, canvas=canvas)
+    def __init__(self, layer, font_info: FontInfo) -> None:
+        node = PointsVisual(font_info=font_info)
+        super().__init__(layer, node, font_info=font_info)
 
         self.layer.events.symbol.connect(self._on_data_change)
         self.layer.events.border_width.connect(self._on_data_change)
