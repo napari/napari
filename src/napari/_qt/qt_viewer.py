@@ -33,6 +33,7 @@ from napari._qt.widgets.qt_viewer_buttons import (
     QtViewerButtons,
 )
 from napari._qt.widgets.qt_viewer_dock_widget import QtViewerDockWidget
+from napari._qt.widgets.qt_welcome import QtWidgetOverlay
 from napari._vispy.utils.qt_font import QtFontManager
 from napari.components.camera import Camera
 from napari.components.layerlist import LayerList
@@ -216,9 +217,17 @@ class QtViewer(QSplitter):
             autoswap=get_settings().experimental.autoswap_buffers,  # see #5734
         )
 
+        self._welcome_widget = QtWidgetOverlay(
+            self, self.canvas.native, tips=tips
+        )
+        self._welcome_widget.set_welcome_visible(show_welcome_screen)
+        self._welcome_widget.leave.connect(self._leave_canvas)
+        self._welcome_widget.enter.connect(self._enter_canvas)
+
         main_widget = QWidget()
         main_layout = QVBoxLayout()
         main_layout.setContentsMargins(0, 2, 0, 2)
+        main_layout.addWidget(self._welcome_widget)
         main_layout.addWidget(self.dims)
         main_layout.setSpacing(0)
         main_widget.setLayout(main_layout)
@@ -232,6 +241,8 @@ class QtViewer(QSplitter):
         self.viewer.layers.events.inserted.connect(self._update_camera_depth)
         self.viewer.layers.events.removed.connect(self._update_camera_depth)
         self.viewer.dims.events.ndisplay.connect(self._update_camera_depth)
+        self.viewer.layers.events.inserted.connect(self._update_welcome_screen)
+        self.viewer.layers.events.removed.connect(self._update_welcome_screen)
         self.viewer.layers.selection.events.active.connect(
             self._on_active_change
         )
@@ -261,17 +272,13 @@ class QtViewer(QSplitter):
         for layer in self.viewer.layers:
             self._add_layer(layer)
 
-        # set up welcome screen
-        viewer.welcome_screen.visible = False
-        if tips is not None:
-            viewer.welcome_screen.tips = tips
-
     def showEvent(self, event):
         super().showEvent(event)
-        self.viewer.welcome_screen.visible = self._show_welcome_screen
+        self._update_welcome_screen()
 
     def hideEvent(self, event):
-        self.viewer.welcome_screen.visible = False
+        self._welcome_widget.set_welcome_visible(False)
+        super().hideEvent(event)
 
     @property
     def show_welcome_screen(self) -> bool:
@@ -281,7 +288,7 @@ class QtViewer(QSplitter):
     @show_welcome_screen.setter
     def show_welcome_screen(self, value: bool):
         self._show_welcome_screen = value
-        self.viewer.welcome_screen.visible = value and self.isVisible()
+        self._update_welcome_screen()
 
     @staticmethod
     def _update_dask_cache_settings(
@@ -403,6 +410,15 @@ class QtViewer(QSplitter):
         """enable status on canvas enter"""
         self.viewer.status = 'Ready'
         self.viewer.mouse_over_canvas = True
+
+    def _update_welcome_screen(self):
+        """Update welcome screen display based on layer count."""
+        show_welcome = (
+            self._show_welcome_screen
+            and self.isVisible()
+            and not self.viewer.layers
+        )
+        self._welcome_widget.set_welcome_visible(show_welcome)
 
     def _ensure_connect(self):
         # lazy load console
@@ -962,7 +978,7 @@ class QtViewer(QSplitter):
             if flash:
                 from napari._qt.utils import add_flash_animation
 
-                add_flash_animation(self)
+                add_flash_animation(self._welcome_widget)
 
             return img
 
@@ -1156,6 +1172,18 @@ class QtViewer(QSplitter):
         self.viewerButtons.consoleButton.style().polish(
             self.viewerButtons.consoleButton
         )
+
+    def set_welcome_visible(self, visible):
+        """Directly show or hide the welcome screen widget.
+
+        Unlike the ``show_welcome_screen`` property setter, this method does
+        not modify the ``_show_welcome_screen`` preference and bypasses the
+        layer-count / visibility guards in ``_update_welcome_screen``.  It is
+        intended for use in tests that need to exercise the welcome widget in
+        isolation (e.g. verifying tip-refresh behaviour) without creating a
+        fully-visible viewer.
+        """
+        self._welcome_widget.set_welcome_visible(visible)
 
     def keyPressEvent(self, event):
         """Called whenever a key is pressed.

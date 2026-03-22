@@ -383,50 +383,6 @@ def test_labels_painting(make_napari_viewer):
 
 @skip_on_win_ci
 @skip_local_popups
-def test_welcome(make_napari_viewer):
-    """Test that something visible on launch."""
-    viewer = make_napari_viewer(show=True, show_welcome_screen=True)
-
-    # Check something is visible
-    screenshot = viewer.screenshot(canvas_only=True, flash=False)
-    assert len(viewer.layers) == 0
-    assert screenshot[..., :-1].max() > 0
-
-    # Check adding zeros image makes it go away
-    viewer.add_image(np.zeros((1, 1)))
-    screenshot = viewer.screenshot(canvas_only=True, flash=False)
-    assert len(viewer.layers) == 1
-    assert screenshot[..., :-1].max() == 0
-
-    # Remove layer and check something is visible again
-    viewer.layers.pop(0)
-    screenshot = viewer.screenshot(canvas_only=True, flash=False)
-    assert len(viewer.layers) == 0
-    assert screenshot[..., :-1].max() > 0
-    viewer.welcome_screen.visible = False  # to stop timer
-
-
-@skip_on_win_ci
-@skip_local_popups
-def test_welcome_overlay_covers_other_overlays(make_napari_viewer):
-    """Test that Welcome overlay covers scale_bar and axes when no layers.
-
-    Regression test for https://github.com/napari/napari/issues/8642
-    """
-    viewer = make_napari_viewer(show=True, show_welcome_screen=True)
-    launch_screenshot = viewer.screenshot(canvas_only=True, flash=False)
-
-    viewer.scale_bar.visible = True
-    viewer.axes.visible = True
-
-    screenshot_with_overlays = viewer.screenshot(canvas_only=True, flash=False)
-
-    np.testing.assert_array_equal(launch_screenshot, screenshot_with_overlays)
-    viewer.welcome_screen.visible = False  # to stop timer
-
-
-@skip_on_win_ci
-@skip_local_popups
 def test_axes_visible(make_napari_viewer):
     """Test that something appears when axes become visible."""
     viewer = make_napari_viewer(show=True)

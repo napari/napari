@@ -159,8 +159,8 @@ class _QtMainWindow(QMainWindow):
         # this ia sa workaround for #5335 issue. The dict is used to not
         # collide shortcuts for close and close all windows
 
-        act_dlg = QtActivityDialog(self._qt_viewer.canvas.native)
-        self._qt_viewer.canvas.native.resized.connect(
+        act_dlg = QtActivityDialog(self._qt_viewer._welcome_widget)
+        self._qt_viewer._welcome_widget.resized.connect(
             act_dlg.move_to_bottom_right
         )
         act_dlg.hide()
@@ -189,11 +189,7 @@ class _QtMainWindow(QMainWindow):
         # this is the line that initializes any Qt-based app-model Actions that
         # were defined somewhere in the `_qt` module and imported in init_qactions
         init_qactions()
-
-        # only after qaction are initialized we can get all shortcuts and actions,
-        # so we have to force update the welcome screen here.
-        viewer.welcome_screen.events.shortcuts()
-        viewer.welcome_screen.events.tips()
+        self._qt_viewer._welcome_widget.refresh()
 
         with contextlib.suppress(IndexError):
             viewer.cursor.events.position.disconnect(

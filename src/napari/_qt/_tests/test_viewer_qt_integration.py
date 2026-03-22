@@ -151,6 +151,59 @@ def test_qt_viewer(make_napari_viewer):
     assert np.sum(view.dims._displayed_sliders) == 0
 
 
+def test_welcome_widget_visibility(make_napari_viewer):
+    # Welcome screen shown when no layers and show_welcome_screen=True
+    viewer = make_napari_viewer(show=True, show_welcome_screen=True)
+    view = viewer.window._qt_viewer
+
+    assert view._welcome_widget.currentIndex() == 1
+
+    viewer.add_image(np.zeros((1, 1)))
+    assert view._welcome_widget.currentIndex() == 0
+
+    viewer.layers.pop(0)
+    assert view._welcome_widget.currentIndex() == 1
+
+    # Canvas shown when show_welcome_screen=False (default)
+    viewer2 = make_napari_viewer(show=True, show_welcome_screen=False)
+    view2 = viewer2.window._qt_viewer
+    assert view2._welcome_widget.currentIndex() == 0
+
+
+def test_welcome_screen_property_setter(make_napari_viewer):
+    """Toggling the show_welcome_screen property correctly updates the widget."""
+    viewer = make_napari_viewer(show=True, show_welcome_screen=False)
+    view = viewer.window._qt_viewer
+
+    assert view._welcome_widget.currentIndex() == 0
+
+    view.show_welcome_screen = True
+    assert view._welcome_widget.currentIndex() == 1
+
+    view.show_welcome_screen = False
+    assert view._welcome_widget.currentIndex() == 0
+
+
+def test_welcome_widget_shows_random_tip(make_napari_viewer):
+    viewer = make_napari_viewer(show=False, show_welcome_screen=True)
+    view = viewer.window._qt_viewer
+    welcome = view._welcome_widget
+    welcome._overlay.set_tips(('first tip', 'second tip'))
+
+    with patch(
+        'napari._qt.widgets.qt_welcome.choice',
+        side_effect=['first tip', 'second tip'],
+    ):
+        view.set_welcome_visible(True)
+        assert welcome._overlay._tip_label.text() == 'Did you know?\nfirst tip'
+
+        view.set_welcome_visible(False)
+        view.set_welcome_visible(True)
+        assert (
+            welcome._overlay._tip_label.text() == 'Did you know?\nsecond tip'
+        )
+
+
 def test_qt_viewer_with_console(make_napari_viewer):
     """Test instantiating console from viewer."""
     viewer = make_napari_viewer()
@@ -250,11 +303,17 @@ def test_qt_viewer_clipboard_with_flash(make_napari_viewer, qtbot):
     assert not clipboard_image.isNull()
 
     # ensure the flash effect is applied
-    assert viewer.window._qt_viewer.graphicsEffect() is not None
-    assert hasattr(viewer.window._qt_viewer, '_flash_animation')
+    assert (
+        viewer.window._qt_viewer._welcome_widget.graphicsEffect() is not None
+    )
+    assert hasattr(
+        viewer.window._qt_viewer._welcome_widget, '_flash_animation'
+    )
     qtbot.wait(500)  # wait for the animation to finish
-    assert viewer.window._qt_viewer.graphicsEffect() is None
-    assert not hasattr(viewer.window._qt_viewer, '_flash_animation')
+    assert viewer.window._qt_viewer._welcome_widget.graphicsEffect() is None
+    assert not hasattr(
+        viewer.window._qt_viewer._welcome_widget, '_flash_animation'
+    )
 
     # clear clipboard and grab image from application view
     QGuiApplication.clipboard().clear()
@@ -291,8 +350,10 @@ def test_qt_viewer_clipboard_without_flash(make_napari_viewer):
     assert not clipboard_image.isNull()
 
     # ensure the flash effect is not applied
-    assert viewer.window._qt_viewer.graphicsEffect() is None
-    assert not hasattr(viewer.window._qt_viewer, '_flash_animation')
+    assert viewer.window._qt_viewer._welcome_widget.graphicsEffect() is None
+    assert not hasattr(
+        viewer.window._qt_viewer._welcome_widget, '_flash_animation'
+    )
 
     # clear clipboard and grab image from application view
     QGuiApplication.clipboard().clear()
@@ -306,7 +367,9 @@ def test_qt_viewer_clipboard_without_flash(make_napari_viewer):
 
     # ensure the flash effect is not applied
     assert viewer.window._qt_window.graphicsEffect() is None
-    assert not hasattr(viewer.window._qt_viewer, '_flash_animation')
+    assert not hasattr(
+        viewer.window._qt_viewer._welcome_widget, '_flash_animation'
+    )
 
 
 @pytest.mark.parametrize('theme', available_themes())
