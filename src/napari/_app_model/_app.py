@@ -65,6 +65,19 @@ class NapariApplication(Application):
             chain(LAYERLIST_CONTEXT_SUBMENUS, VIEW_SUBMENUS, FILE_SUBMENUS)
         )
 
+    @contextmanager
+    def register_with_namespace(self, name: str, obj: object):
+        def provider() -> object:
+            return obj
+
+        with (
+            self.injection_store._add_to_namespace(name, obj.__class__),
+            self.injection_store.register(
+                providers=[(provider, obj.__class__)]
+            ),
+        ):
+            yield
+
     @classmethod
     def get_app_model(cls, app_name: str = APP_NAME) -> NapariApplication:
         """Get the Napari Application singleton.

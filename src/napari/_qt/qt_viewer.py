@@ -250,9 +250,7 @@ class QtViewer(QSplitter):
         )
 
         # bind shortcuts stored in settings last.
-        with get_app_model().injection_store._add_to_namespace(
-            'QtViewer', self
-        ):
+        with get_app_model().register_with_namespace('QtViewer', self):
             # we overwrite global injection namespace to ensure that correct QtViewer will be provided.
             self._bind_shortcuts()
 
