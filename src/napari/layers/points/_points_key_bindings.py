@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from app_model.types import KeyCode, KeyMod
+from app_model.types import KeyBinding, KeyCode, KeyMod
 
 from napari.layers.points._points_constants import Mode
 from napari.layers.points.points import Points
@@ -16,7 +16,7 @@ from napari.utils.notifications import show_info
 from napari.utils.translations import trans
 
 
-def shortcuts() -> dict[str, list[str]]:
+def shortcuts() -> dict[str, list[KeyBinding]]:
     return get_settings().shortcuts.shortcuts
 
 
