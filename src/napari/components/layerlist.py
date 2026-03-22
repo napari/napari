@@ -185,6 +185,7 @@ class LayerList(SelectableEventedList[Layer]):
         super()._process_delete_item(item)
         item.events.extent.disconnect(self._clean_cache)
         item.events._extent_augmented.disconnect(self._clean_cache)
+        self.unlink_layers([item])
         self._clean_cache()
 
     def _clean_cache(self):

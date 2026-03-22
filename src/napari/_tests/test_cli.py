@@ -195,3 +195,14 @@ def test_cli_retains_viewer_ref(mock_run, monkeypatch, make_napari_viewer):
                 __main__._run()
             mock_viewer.assert_called_once()
             mock_viewer_open.assert_called_once()
+
+
+def test_cli_plugin_info(monkeypatch):
+    """--plugin-info delegates to npe2.cli.list_ and exits."""
+    monkeypatch.setattr(sys, 'argv', ['napari', '--plugin-info'])
+    with (
+        mock.patch('npe2.cli.list_') as mock_list,
+        pytest.raises(SystemExit),
+    ):
+        __main__._run()
+    mock_list.assert_called_once()
