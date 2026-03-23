@@ -4,7 +4,7 @@ import subprocess
 import sys
 
 
-def show_error_dialog_windows(message: str, title: str = 'Error') -> None:
+def _show_error_dialog_windows(message: str, title: str = 'Error') -> None:
     import ctypes
 
     # Display a message box with the error message
@@ -12,7 +12,7 @@ def show_error_dialog_windows(message: str, title: str = 'Error') -> None:
     ctypes.windll.user32.MessageBoxW(0, message, title, 1)  # type: ignore[attr-defined]
 
 
-def show_error_dialog_mac(message: str, title: str = 'Error') -> None:
+def _show_error_dialog_mac(message: str, title: str = 'Error') -> None:
     # Escape quotes for AppleScript
     msg = message.replace('"', '\\"')
     ttl = title.replace('"', '\\"')
@@ -22,7 +22,7 @@ def show_error_dialog_mac(message: str, title: str = 'Error') -> None:
     subprocess.run(['osascript', '-e', script], check=False)
 
 
-def show_error_dialog_linux(message: str, title: str = 'Error') -> None:
+def _show_error_dialog_linux(message: str, title: str = 'Error') -> None:
     # Must have a GUI session
     if not (os.environ.get('DISPLAY') or os.environ.get('WAYLAND_DISPLAY')):
         return
@@ -58,18 +58,18 @@ def show_startup_error_dialog(exc: Exception) -> None:
     if sys.stdout is None:  # when run without terminal
         # if windows us ctypes to show a message box
         if sys.platform == 'win32':
-            show_error_dialog_windows(message, title)
+            _show_error_dialog_windows(message, title)
         elif sys.platform == 'darwin':
-            show_error_dialog_mac(message, title)
+            _show_error_dialog_mac(message, title)
         elif sys.platform == 'linux':
-            show_error_dialog_linux(message, title)
+            _show_error_dialog_linux(message, title)
 
 
 def main() -> None:
     try:
         from napari._main import main as main_function
     except Exception as e:
-        message_exception(e)
+        show_startup_error_dialog(e)
         raise
     else:
         main_function()
