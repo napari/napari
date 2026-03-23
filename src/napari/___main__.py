@@ -44,7 +44,15 @@ def show_error_dialog_linux(message: str, title: str = 'Error') -> None:
         )
 
 
-def message_exception(exc: Exception) -> None:
+def show_startup_error_dialog(exc: Exception) -> None:
+    """Display a native OS error dialog before napari has started.
+
+    Use this function to report fatal exceptions that occur during application
+    startup. Works gracefully across Windows, macOS, and Linux when napari
+    is not launched from the terminal.
+    
+    Note: After successful startup, napari's error handling and logging are used.
+    """
     title = 'Startup Error'
     message = f'An error occurred while starting napari.\n\nexc: {exc}'
     if sys.stdout is None:  # when run without terminal
