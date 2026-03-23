@@ -56,7 +56,7 @@ class Welcome(Node):
         self.logo.transform = STTransform()
 
         self.text = Text(
-            line_height=1.75,
+            line_height=1.2,
             anchor_x='center',
             anchor_y='bottom',
             parent=self,
@@ -69,12 +69,19 @@ class Welcome(Node):
 
         self.text_components = {
             'version': '',
+            'shortcut_header': 'Drag file(s) here to open, or use the shortcuts below:',
             'shortcut_keybindings': '',
             'shortcut_descriptions': '',
             'tip': '',
         }
         self._update_text()
-        self.text.pos = [[0, 0], [10, 10], [20, 20], [30, 30]]
+        self.text.pos = [
+            [0, -10],
+            [0, self.font_height * 1.5],
+            [-100, self.font_height * 2.75],
+            [50, self.font_height * 2.75],
+            [0, 8 * self.font_height],
+        ]
 
     def set_color(self, color: ColorValue) -> None:
         self.logo.color = color
@@ -85,10 +92,7 @@ class Welcome(Node):
         self.text.text = list(self.text_components.values())
 
     def set_version(self, version: str) -> None:
-        self.text_components['version'] = (
-            f'napari {version}\n'
-            'Drag file(s) here to open, or use the shortcuts below:'
-        )
+        self.text_components['version'] = f'napari {version}\n'
         self._update_text()
 
     def set_shortcuts(self, commands: tuple[str, ...]) -> None:
