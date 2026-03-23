@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 import re
-import textwrap
 import warnings
 from typing import TYPE_CHECKING, Any
 
@@ -106,10 +105,12 @@ class Welcome(Node):
 
         # TODO: use template strings in the future
         self.text_components['shortcut_keybindings'] = '\n'.join(
-            shortcuts.keys()
+            # shortcuts.keys()
+            ['aaaaaaaaa'] * 4
         )
         self.text_components['shortcut_descriptions'] = '\n'.join(
-            shortcuts.values()
+            # shortcuts.values()
+            ['aaaaaaaaaaaaaaaaa'] * 4
         )
         self._update_text()
 
@@ -129,7 +130,8 @@ class Welcome(Node):
 
         # wrap tip so it's not clipped
         self.text_components['tip'] = 'Did you know?\n' + '\n'.join(
-            textwrap.wrap(tip, break_on_hyphens=False)
+            # textwrap.wrap(tip, break_on_hyphens=False)
+            ['aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'] * 2
         )
         self._update_text()
 
