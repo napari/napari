@@ -55,69 +55,41 @@ class Welcome(Node):
         )
         self.logo.transform = STTransform()
 
-        self.header = Text(
-            text='',
+        self.text = Text(
             line_height=1.75,
-            pos=[0, -10],
             anchor_x='center',
             anchor_y='bottom',
             parent=self,
             font_manager=font_manager,
             face=face,
         )
-        self.header.transform = STTransform()
+        self.text.transform = STTransform()
 
-        self.font_height = get_text_metrics(self.header).height()
+        self.font_height = get_text_metrics(self.text).height()
 
-        self.shortcut_keybindings = Text(
-            text='',
-            line_height=1.15,
-            pos=[-80, 2.75 * self.font_height],
-            anchor_x='right',
-            anchor_y='bottom',
-            parent=self,
-            font_manager=font_manager,
-            face=face,
-        )
-        self.shortcut_keybindings.transform = STTransform()
-
-        self.shortcut_descriptions = Text(
-            text='',
-            line_height=1.15,
-            pos=[-60, 2.75 * self.font_height],
-            anchor_x='left',
-            anchor_y='bottom',
-            parent=self,
-            font_manager=font_manager,
-            face=face,
-        )
-        self.shortcut_descriptions.transform = STTransform()
-
-        self.tip = Text(
-            text='',
-            line_height=1.15,
-            pos=[0, 7.5 * self.font_height],
-            anchor_x='center',
-            anchor_y='bottom',
-            parent=self,
-            font_manager=font_manager,
-            face=face,
-        )
-        self.tip.transform = STTransform()
+        self.text_components = {
+            'version': '',
+            'shortcut_keybindings': '',
+            'shortcut_descriptions': '',
+            'tip': '',
+        }
+        self._update_text()
+        self.text.pos = [[0, 0], [10, 10], [20, 20], [30, 30]]
 
     def set_color(self, color: ColorValue) -> None:
         self.logo.color = color
         self.logo.border_color = color
-        self.header.color = color
-        self.shortcut_keybindings.color = color
-        self.shortcut_descriptions.color = color
-        self.tip.color = color
+        self.text.color = color
+
+    def _update_text(self) -> None:
+        self.text.text = list(self.text_components.values())
 
     def set_version(self, version: str) -> None:
-        self.header.text = (
+        self.text_components['version'] = (
             f'napari {version}\n'
             'Drag file(s) here to open, or use the shortcuts below:'
         )
+        self._update_text()
 
     def set_shortcuts(self, commands: tuple[str, ...]) -> None:
         shortcuts = {}
@@ -129,8 +101,13 @@ class Welcome(Node):
                 shortcuts[shortcut] = command
 
         # TODO: use template strings in the future
-        self.shortcut_keybindings.text = '\n'.join(shortcuts.keys())
-        self.shortcut_descriptions.text = '\n'.join(shortcuts.values())
+        self.text_components['shortcut_keybindings'] = '\n'.join(
+            shortcuts.keys()
+        )
+        self.text_components['shortcut_descriptions'] = '\n'.join(
+            shortcuts.values()
+        )
+        self._update_text()
 
     def set_tip(self, tip: str) -> None:
         # TODO: this should use template strings in the future
@@ -147,9 +124,10 @@ class Welcome(Node):
                 tip = re.sub(match.group(), str(shortcut), tip)
 
         # wrap tip so it's not clipped
-        self.tip.text = 'Did you know?\n' + '\n'.join(
+        self.text_components['tip'] = 'Did you know?\n' + '\n'.join(
             textwrap.wrap(tip, break_on_hyphens=False)
         )
+        self._update_text()
 
     @staticmethod
     def _command_shortcut_and_description(
@@ -183,15 +161,9 @@ class Welcome(Node):
         self.logo.transform.scale = (logo_scale, logo_scale, 0, 0)
 
         text_scale = min(x, y) / self.font_height * 0.04  # magic number
-        for text in (
-            self.header,
-            self.shortcut_keybindings,
-            self.shortcut_descriptions,
-            self.tip,
-        ):
-            text.font_size = text_scale * 8
-            text.transform.translate = trans
-            text.transform.scale = (text_scale, text_scale, 0, 0)
+        self.text.font_size = text_scale * 8
+        self.text.transform.translate = trans
+        self.text.transform.scale = (text_scale, text_scale, 0, 0)
 
     def set_gl_state(self, *args: Any, **kwargs: Any) -> None:
         for node in self.children:
