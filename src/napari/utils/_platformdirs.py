@@ -7,7 +7,7 @@ from functools import partial
 from importlib.metadata import version
 from pathlib import Path
 
-import appdirs
+import platformdirs
 from packaging.version import InvalidVersion, parse as parse_version
 
 __all__ = (
@@ -20,7 +20,7 @@ __all__ = (
 
 PREFIX_PATH = os.path.realpath(sys.prefix)
 
-UV_POSSIBLE_PATH = appdirs.user_cache_dir('uv')
+UV_POSSIBLE_PATH = platformdirs.user_cache_dir('uv')
 
 if PREFIX_PATH.startswith(UV_POSSIBLE_PATH):
     environment_marker = os.path.join(
@@ -38,19 +38,19 @@ _appauthor = False
 # an earlier version, we should leave off the version.
 
 user_data_dir: Callable[[], str] = partial(
-    appdirs.user_data_dir, _appname, _appauthor
+    platformdirs.user_data_dir, _appname, _appauthor
 )
 user_config_dir: Callable[[], str] = partial(
-    appdirs.user_config_dir, _appname, _appauthor, environment_marker
+    platformdirs.user_config_dir, _appname, _appauthor, environment_marker
 )
 user_cache_dir: Callable[[], str] = partial(
-    appdirs.user_cache_dir, _appname, _appauthor, environment_marker
+    platformdirs.user_cache_dir, _appname, _appauthor, environment_marker
 )
 user_state_dir: Callable[[], str] = partial(
-    appdirs.user_state_dir, _appname, _appauthor
+    platformdirs.user_state_dir, _appname, _appauthor
 )
 user_log_dir: Callable[[], str] = partial(
-    appdirs.user_log_dir, _appname, _appauthor
+    platformdirs.user_log_dir, _appname, _appauthor
 )
 
 
