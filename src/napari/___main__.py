@@ -50,7 +50,7 @@ def show_startup_error_dialog(exc: Exception) -> None:
     Use this function to report fatal exceptions that occur during application
     startup. Works gracefully across Windows, macOS, and Linux when napari
     is not launched from the terminal.
-    
+
     Note: After successful startup, napari's error handling and logging are used.
     """
     title = 'Startup Error'
