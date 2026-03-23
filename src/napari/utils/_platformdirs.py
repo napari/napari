@@ -6,6 +6,7 @@ from collections.abc import Callable
 from functools import partial
 from importlib.metadata import version
 from pathlib import Path
+from typing import Literal
 
 import platformdirs
 from packaging.version import InvalidVersion, parse as parse_version
@@ -29,8 +30,8 @@ if PREFIX_PATH.startswith(UV_POSSIBLE_PATH):
 else:
     environment_marker = f'{os.path.basename(PREFIX_PATH)}_{hashlib.sha1(PREFIX_PATH.encode()).hexdigest()}'
 
-_appname = 'napari'
-_appauthor = False
+_APPNAME = 'napari'
+_APPAUTHOR: Literal[False] = False
 
 
 # all of these also take an optional "version" argument ... but if we want
@@ -38,19 +39,19 @@ _appauthor = False
 # an earlier version, we should leave off the version.
 
 user_data_dir: Callable[[], str] = partial(
-    platformdirs.user_data_dir, _appname, _appauthor
+    platformdirs.user_data_dir, _APPNAME, _APPAUTHOR
 )
 user_config_dir: Callable[[], str] = partial(
-    platformdirs.user_config_dir, _appname, _appauthor, environment_marker
+    platformdirs.user_config_dir, _APPNAME, _APPAUTHOR, environment_marker
 )
 user_cache_dir: Callable[[], str] = partial(
-    platformdirs.user_cache_dir, _appname, _appauthor, environment_marker
+    platformdirs.user_cache_dir, _APPNAME, _APPAUTHOR, environment_marker
 )
 user_state_dir: Callable[[], str] = partial(
-    platformdirs.user_state_dir, _appname, _appauthor
+    platformdirs.user_state_dir, _APPNAME, _APPAUTHOR
 )
 user_log_dir: Callable[[], str] = partial(
-    platformdirs.user_log_dir, _appname, _appauthor
+    platformdirs.user_log_dir, _APPNAME, _APPAUTHOR
 )
 
 
