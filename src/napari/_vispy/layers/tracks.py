@@ -6,7 +6,7 @@ from napari._vispy.layers.base import VispyBaseLayer
 from napari._vispy.visuals.tracks import TracksVisual
 
 if TYPE_CHECKING:
-    from napari._vispy.canvas import VispyCanvas
+    from napari._vispy.utils.qt_font import FontInfo
 
 
 class VispyTracksLayer(VispyBaseLayer):
@@ -16,9 +16,9 @@ class VispyTracksLayer(VispyBaseLayer):
 
     """
 
-    def __init__(self, layer, canvas: VispyCanvas) -> None:
-        node = TracksVisual(canvas=canvas)
-        super().__init__(layer, node, canvas=canvas)
+    def __init__(self, layer, font_info: FontInfo) -> None:
+        node = TracksVisual(font_info=font_info)
+        super().__init__(layer, node, font_info=font_info)
 
         self.layer.events.tail_width.connect(self._on_appearance_change)
         self.layer.events.tail_length.connect(self._on_appearance_change)

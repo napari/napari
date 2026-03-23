@@ -6,7 +6,9 @@ import pytest
 from pint import get_application_registry
 
 from napari._vispy._tests.utils import vispy_image_scene_size
+from napari._vispy.canvas import CanvasInfo
 from napari._vispy.layers.image import VispyImageLayer
+from napari._vispy.utils.qt_font import FontInfo
 from napari._vispy.utils.visual import create_vispy_overlay
 from napari.components.dims import Dims
 from napari.components.overlays import BoundingBoxOverlay
@@ -22,7 +24,7 @@ def test_3d_slice_of_2d_image_with_order(order):
     with any order should make a small square when displayed in 3D.
     """
     image = Image(np.zeros((4, 2)), scale=(1, 2))
-    vispy_image = VispyImageLayer(image)
+    vispy_image = VispyImageLayer(image, font_info=FontInfo())
 
     image._slice_dims(Dims(ndim=3, ndisplay=3, order=order))
 
@@ -38,7 +40,7 @@ def test_2d_slice_of_3d_image_with_order(order):
     with any order should make a small square when displayed in 2D.
     """
     image = Image(np.zeros((8, 4, 2)), scale=(1, 2, 4))
-    vispy_image = VispyImageLayer(image)
+    vispy_image = VispyImageLayer(image, font_info=FontInfo())
 
     image._slice_dims(Dims(ndim=3, ndisplay=2, order=order))
 
@@ -54,7 +56,7 @@ def test_3d_slice_of_3d_image_with_order(order):
     with any order should make a small cube when displayed in 3D.
     """
     image = Image(np.zeros((8, 4, 2)), scale=(1, 2, 4))
-    vispy_image = VispyImageLayer(image)
+    vispy_image = VispyImageLayer(image, font_info=FontInfo())
 
     image._slice_dims(Dims(ndim=3, ndisplay=3, order=order))
 
@@ -70,7 +72,7 @@ def test_3d_slice_of_4d_image_with_order(order):
     with any order should make a small cube when displayed in 3D.
     """
     image = Image(np.zeros((16, 8, 4, 2)), scale=(1, 2, 4, 8))
-    vispy_image = VispyImageLayer(image)
+    vispy_image = VispyImageLayer(image, font_info=FontInfo())
 
     image._slice_dims(Dims(ndim=4, ndisplay=3, order=order))
 
@@ -87,7 +89,7 @@ def test_no_float32_texture_support(monkeypatch):
         'napari._vispy.layers.image.get_gl_extensions', lambda: ''
     )
     image = Image(np.zeros((16, 8, 4, 2), dtype='uint8'), scale=(1, 2, 4, 8))
-    VispyImageLayer(image)
+    VispyImageLayer(image, font_info=FontInfo())
 
 
 @pytest.fixture
@@ -101,7 +103,7 @@ def pyramid_layer() -> Image:
 
 
 def test_base_create(im_layer):
-    VispyImageLayer(im_layer)
+    VispyImageLayer(im_layer, font_info=FontInfo())
 
 
 def set_translate(layer):
@@ -147,12 +149,13 @@ def no_op(layer):
 def test_transforming_child_node(
     im_layer, translate, exp_translate, rotate, exp_rotate
 ):
-    layer = VispyImageLayer(im_layer)
+    canvas_info = CanvasInfo(viewer=ViewerModel())
+    layer = VispyImageLayer(im_layer, font_info=canvas_info)
 
     overlay = create_vispy_overlay(
         BoundingBoxOverlay(),
         layer=im_layer,
-        viewer=ViewerModel(),
+        canvas_info=canvas_info,
         parent=layer.node,
     )
     layer._on_matrix_change()
@@ -191,12 +194,13 @@ def test_transforming_child_node(
 
 
 def test_transforming_child_node_pyramid(pyramid_layer):
-    layer = VispyImageLayer(pyramid_layer)
+    canvas_info = CanvasInfo(viewer=ViewerModel())
+    layer = VispyImageLayer(pyramid_layer, font_info=canvas_info)
 
     overlay = create_vispy_overlay(
         BoundingBoxOverlay(),
         layer=pyramid_layer,
-        viewer=ViewerModel(),
+        canvas_info=canvas_info,
         parent=layer.node,
     )
     layer._on_matrix_change()
@@ -231,13 +235,14 @@ def test_node_origin_is_consistent_with_multiscale(
 ):
     """See https://github.com/napari/napari/issues/6320"""
     scales = (scale,) * ndim
+    font_info = FontInfo()
 
     # Define multi-scale image data with two levels where the
     # higher resolution is twice as high as the lower resolution.
     image = Image(
         data=[np.zeros((8,) * ndim), np.zeros((4,) * ndim)], scale=scales
     )
-    vispy_image = VispyImageLayer(image)
+    vispy_image = VispyImageLayer(image, font_info=font_info)
 
     # Take a full slice at the highest resolution.
     image.corner_pixels = np.array([[0] * ndim, [8] * ndim])
@@ -262,8 +267,9 @@ def test_node_origin_is_consistent_with_multiscale(
 
 def test_world_units_impact_scale():
     nm = get_application_registry().nm
+    font_info = FontInfo()
     image = Image(np.zeros((10, 10)), units=('um', 'um'))
-    vispy_image = VispyImageLayer(image)
+    vispy_image = VispyImageLayer(image, font_info=font_info)
 
     assert vispy_image._world_to_layer_units_scale == (1, 1)
 

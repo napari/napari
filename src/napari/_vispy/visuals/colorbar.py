@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     import numpy.typing as npt
     from vispy.color import Colormap as VispyColormap
 
-    from napari._vispy import VispyCanvas
+    from napari._vispy.canvas import CanvasInfo
     from napari.utils.color import ColorValue
 
 
@@ -28,7 +28,7 @@ class ColorBar(Node):
         ]
     )
 
-    def __init__(self, canvas: VispyCanvas) -> None:
+    def __init__(self, canvas_info: CanvasInfo) -> None:
         super().__init__()
         self.ticks = Axis(
             pos=self._box_data[2:4],
@@ -43,7 +43,7 @@ class ColorBar(Node):
         self.ticks._text = Text(
             font_size=self.ticks.tick_font_size,
             color=self.ticks.text_color,
-            font_info=canvas.font_info(),
+            font_info=canvas_info,
         )
         self.ticks.add_subvisual(self.ticks._text)
 

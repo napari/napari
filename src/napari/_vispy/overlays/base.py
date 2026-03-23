@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from weakref import ref
 
 import numpy as np
 from vispy.scene.visuals import Rectangle
@@ -16,7 +15,7 @@ from napari.utils.theme import get_theme
 if TYPE_CHECKING:
     from vispy.scene import Node, ViewBox
 
-    from napari._vispy.canvas import VispyCanvas
+    from napari._vispy.canvas import CanvasInfo
     from napari._vispy.utils.qt_font import QtFontManager
     from napari.components.overlays import CanvasOverlay, Overlay, SceneOverlay
     from napari.components.viewer_model import ViewerModel
@@ -33,19 +32,18 @@ class VispyBaseOverlay:
     """
 
     overlay: Overlay
-    canvas: VispyCanvas
 
     def __init__(
         self,
         *,
         overlay: Overlay,
-        canvas: VispyCanvas,
+        canvas_info: CanvasInfo,
         node: Node,
         parent: ViewBox | None = None,
     ) -> None:
         super().__init__()
         self.overlay = overlay
-        self._canvas = ref(canvas)
+        self._canvas_info = canvas_info
 
         self.node = node
         self.node.order = self.overlay.order
@@ -59,20 +57,20 @@ class VispyBaseOverlay:
 
     @property
     def viewer(self) -> ViewerModel:
-        return self.canvas.viewer
+        return self.canvas_info.viewer
 
     @property
     def font_manager(self) -> QtFontManager:
-        return self.canvas.font_manager()
+        return self.canvas_info.font_manager
 
     @property
-    def canvas(self) -> VispyCanvas:
-        return self._canvas()
+    def canvas_info(self) -> CanvasInfo:
+        return self._canvas_info
 
     @property
     def font_family(self) -> str:
         """Default font family for overlays."""
-        return self.canvas.overlay_font()
+        return self.canvas_info.face
 
     def _should_be_visible(self) -> bool:
         return self.overlay.visible

@@ -4,6 +4,7 @@ from vispy.geometry import MeshData
 from vispy.visuals.filters import TextureFilter
 
 from napari._vispy.layers.base import VispyBaseLayer
+from napari._vispy.utils.qt_font import FontInfo
 from napari._vispy.visuals.surface import SurfaceVisual
 from napari.utils.colormaps.colormap_utils import _napari_cmap_to_vispy
 
@@ -16,12 +17,12 @@ class VispySurfaceLayer(VispyBaseLayer):
     here https://github.com/vispy/vispy/blob/main/vispy/visuals/mesh.py
     """
 
-    def __init__(self, layer, **kwargs) -> None:
-        node = SurfaceVisual()
+    def __init__(self, layer, font_info: FontInfo, **kwargs) -> None:
+        node = SurfaceVisual(font_info=font_info)
         self._texture_filter = None
         self._light_direction = (1, 1, 1)
         self._meshdata = None
-        super().__init__(layer, node, **kwargs)
+        super().__init__(layer, node, font_info=font_info, **kwargs)
 
         self.layer.events.colormap.connect(self._on_colormap_change)
         self.layer.events.contrast_limits.connect(

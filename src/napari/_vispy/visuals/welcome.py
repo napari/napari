@@ -21,7 +21,7 @@ from napari.utils.action_manager import action_manager
 from napari.utils.interactions import Shortcut
 
 if TYPE_CHECKING:
-    from napari._vispy import VispyCanvas
+    from napari._vispy.canvas import CanvasInfo
     from napari.utils.color import ColorValue
 
 vispy_logger = logging.getLogger('vispy')
@@ -41,7 +41,7 @@ def _load_logo() -> np.ndarray:
 
 
 class Welcome(Node):
-    def __init__(self, canvas: VispyCanvas) -> None:
+    def __init__(self, canvas_info: CanvasInfo) -> None:
         self.logo_coords = _load_logo()
         super().__init__()
 
@@ -61,7 +61,7 @@ class Welcome(Node):
             anchor_x='center',
             anchor_y='bottom',
             parent=self,
-            font_info=canvas.font_info(),
+            font_info=canvas_info,
         )
         self.header.transform = STTransform()
 
@@ -74,7 +74,7 @@ class Welcome(Node):
             anchor_x='right',
             anchor_y='bottom',
             parent=self,
-            font_info=canvas.font_info(),
+            font_info=canvas_info,
         )
         self.shortcut_keybindings.transform = STTransform()
 
@@ -85,7 +85,7 @@ class Welcome(Node):
             anchor_x='left',
             anchor_y='bottom',
             parent=self,
-            font_info=canvas.font_info(),
+            font_info=canvas_info,
         )
         self.shortcut_descriptions.transform = STTransform()
 
@@ -96,7 +96,7 @@ class Welcome(Node):
             anchor_x='center',
             anchor_y='bottom',
             parent=self,
-            font_info=canvas.font_info(),
+            font_info=canvas_info,
         )
         self.tip.transform = STTransform()
 

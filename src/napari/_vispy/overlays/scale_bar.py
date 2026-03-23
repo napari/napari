@@ -15,7 +15,7 @@ from napari.settings import get_settings
 from napari.utils._units import PREFERRED_VALUES
 
 if TYPE_CHECKING:
-    from napari._vispy.canvas import VispyCanvas
+    from napari._vispy.canvas import CanvasInfo
 
 
 class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
@@ -23,15 +23,15 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
 
     overlay: ScaleBarOverlay
 
-    def __init__(self, *, canvas: VispyCanvas, **kwargs) -> None:
+    def __init__(self, *, canvas_info: CanvasInfo, **kwargs) -> None:
         self._target_length = 150.0
         self._current_length = 150.0
         self._scale = 1.0
         self._unit = pint.Quantity('1 pixel')
 
         super().__init__(
-            node=ScaleBar(canvas=canvas),
-            canvas=canvas,
+            node=ScaleBar(canvas_info=canvas_info),
+            canvas_info=canvas_info,
             **kwargs,
         )
 

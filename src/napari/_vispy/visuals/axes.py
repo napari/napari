@@ -11,7 +11,7 @@ from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
-    from napari._vispy.canvas import VispyCanvas
+    from napari._vispy.canvas import CanvasInfo
 
 
 def make_dashed_line(num_dashes, axis):
@@ -136,7 +136,7 @@ def color_arrowheads(colors, num_segments):
 class Axes(Compound):
     def __init__(
         self,
-        canvas: VispyCanvas,
+        canvas_info: CanvasInfo,
     ) -> None:
         self._num_segments_arrowhead = 100
         # CMYRGB for 6 axes data in x, y, z, ... ordering
@@ -201,7 +201,7 @@ class Axes(Compound):
                     font_size=10,
                     anchor_x='center',
                     anchor_y='center',
-                    font_info=canvas.font_info(),
+                    font_info=canvas_info,
                 ),
             ]
         )
