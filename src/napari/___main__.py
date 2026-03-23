@@ -57,14 +57,15 @@ def message_exception(exc: Exception) -> None:
             show_error_dialog_linux(message, title)
 
 
-def main():
+def main() -> None:
     try:
         from napari._main import main as main_function
     except Exception as e:
         message_exception(e)
         raise
     else:
-        sys.exit(main_function())
+        main_function()
+        sys.exit(0)
 
 
 if __name__ == '__main__':
