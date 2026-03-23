@@ -16,7 +16,6 @@ if TYPE_CHECKING:
     from vispy.scene import Node, ViewBox
 
     from napari._vispy.canvas import CanvasInfo
-    from napari._vispy.utils.qt_font import QtFontManager
     from napari.components.overlays import CanvasOverlay, Overlay, SceneOverlay
     from napari.components.viewer_model import ViewerModel
     from napari.layers import Layer
@@ -60,17 +59,8 @@ class VispyBaseOverlay:
         return self.canvas_info.viewer
 
     @property
-    def font_manager(self) -> QtFontManager:
-        return self.canvas_info.font_manager
-
-    @property
     def canvas_info(self) -> CanvasInfo:
         return self._canvas_info
-
-    @property
-    def font_family(self) -> str:
-        """Default font family for overlays."""
-        return self.canvas_info.face
 
     def _should_be_visible(self) -> bool:
         return self.overlay.visible
