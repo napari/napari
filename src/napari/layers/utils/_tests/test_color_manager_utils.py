@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 from napari.layers.utils.color_manager_utils import (
     guess_continuous,
@@ -8,16 +9,19 @@ from napari.layers.utils.color_manager_utils import (
 
 def test_guess_continuous():
     continuous_annotation = np.array([1, 2, 3], dtype=np.float32)
-    assert guess_continuous(continuous_annotation)
+    assert guess_continuous(continuous_annotation, feature_name='test')
 
     categorical_annotation_1 = np.array([True, False], dtype=bool)
-    assert not guess_continuous(categorical_annotation_1)
+    assert not guess_continuous(categorical_annotation_1, feature_name='test')
 
     categorical_annotation_2 = np.array([1, 2, 3], dtype=int)
-    assert not guess_continuous(categorical_annotation_2)
+    with pytest.warns(RuntimeWarning, match='looks like categorical'):
+        assert not guess_continuous(
+            categorical_annotation_2, feature_name='test'
+        )
 
     categorical_annotation_3 = np.arange(20, dtype=int)
-    assert guess_continuous(categorical_annotation_3)
+    assert guess_continuous(categorical_annotation_3, feature_name='test')
 
 
 def test_is_colormapped_string():

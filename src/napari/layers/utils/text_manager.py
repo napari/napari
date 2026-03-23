@@ -4,7 +4,6 @@ from copy import deepcopy
 from typing import Any, Union
 
 import numpy as np
-import pandas as pd
 from pydantic import PositiveFloat, field_validator
 
 from napari.layers.base._base_constants import Blending
@@ -183,7 +182,7 @@ class TextManager(EventedModel):
             DeprecationWarning,
             stacklevel=2,
         )
-        features = pd.DataFrame(
+        features = _validate_features(
             {
                 name: np.repeat(value, n_text, axis=0)
                 for name, value in properties.items()

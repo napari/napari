@@ -14,7 +14,6 @@ from typing import (
 
 import numpy as np
 import numpy.typing as npt
-import pandas as pd
 from psygnal.containers import Selection
 
 from napari.layers.base import Layer, _LayerSlicingState, no_op
@@ -38,7 +37,10 @@ from napari.layers.points._points_utils import (
 )
 from napari.layers.points._slice import _PointSliceRequest, _PointSliceResponse
 from napari.layers.utils._color_manager_constants import ColorMode
-from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
+from napari.layers.utils._slice_input import (
+    _SliceInput,
+    _ThickNDSlice,
+)
 from napari.layers.utils.color_manager import ColorManager
 from napari.layers.utils.color_transformations import ColorType
 from napari.layers.utils.interactivity_utils import (
@@ -60,6 +62,8 @@ from napari.utils.transforms import Affine
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
+    import pandas as pd
+
     from napari.components.dims import Dims
 
 DEFAULT_COLOR_CYCLE = np.array([[1, 0, 1, 1], [0, 1, 0, 1]])
@@ -664,7 +668,7 @@ class Points(Layer):
             self.events.highlight()
 
     @property
-    def features(self) -> pd.DataFrame:
+    def features(self) -> 'pd.DataFrame':
         """Dataframe-like features table.
 
         It is an implementation detail that this is a `pandas.DataFrame`. In the future,
@@ -684,7 +688,7 @@ class Points(Layer):
     @features.setter
     def features(
         self,
-        features: dict[str, np.ndarray] | pd.DataFrame,
+        features: 'dict[str, np.ndarray] | pd.DataFrame',
     ) -> None:
         self._feature_table.set_values(features, num_data=len(self.data))
         self._update_color_manager(
@@ -698,7 +702,7 @@ class Points(Layer):
         self.events.features()
 
     @property
-    def feature_defaults(self) -> pd.DataFrame:
+    def feature_defaults(self) -> 'pd.DataFrame':
         """Dataframe-like with one row of feature default values.
 
         See `features` for more details on the type of this property.
@@ -707,7 +711,7 @@ class Points(Layer):
 
     @feature_defaults.setter
     def feature_defaults(
-        self, defaults: dict[str, Any] | pd.DataFrame
+        self, defaults: 'dict[str, Any] | pd.DataFrame'
     ) -> None:
         self._feature_table.set_defaults(defaults)
         current_properties = self.current_properties
@@ -749,7 +753,7 @@ class Points(Layer):
 
     @properties.setter
     def properties(
-        self, properties: dict[str, Array] | pd.DataFrame | None
+        self, properties: 'dict[str, Array] | pd.DataFrame | None'
     ) -> None:
         self.features = properties
 
@@ -2466,7 +2470,7 @@ class _PointsSlicingState(_LayerSlicingState):
         slice_input = self.make_slice_input(dims)
         # See Image._make_slice_request to understand why we evaluate this here
         # instead of using `self._data_slice`.
-        data_slice = slice_input.data_slice(self.layer._data_to_world.inverse)
+        data_slice = self._slice_indices(slice_input, dims)
         return self.make_slice_request_internal(slice_input, data_slice)
 
     def make_slice_request_internal(
