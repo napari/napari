@@ -9,7 +9,7 @@ from napari._vispy.visuals.interaction_box import InteractionBox
 from napari.settings import get_settings
 
 if TYPE_CHECKING:
-    from napari.components.overlays import ZoomOverlay
+    from napari.components.overlays import Overlay, ZoomOverlay
     from napari.utils.events import Event
 
 
@@ -18,7 +18,7 @@ class VispyZoomOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
 
     overlay: ZoomOverlay
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Overlay) -> None:
         super().__init__(node=InteractionBox(), **kwargs)
 
         self.overlay.events.position.connect(self._on_position_change)

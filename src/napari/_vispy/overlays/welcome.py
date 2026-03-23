@@ -15,14 +15,14 @@ from napari.settings import get_settings
 if TYPE_CHECKING:
     from vispy.util.event import Event
 
-    from napari._vispy import CanvasInfo
-    from napari.components.overlays import WelcomeOverlay
+    from napari._vispy.canvas import CanvasInfo
+    from napari.components.overlays import Overlay, WelcomeOverlay
 
 
 class VispyWelcomeOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
     overlay: WelcomeOverlay
 
-    def __init__(self, *, canvas_info: CanvasInfo, **kwargs) -> None:
+    def __init__(self, *, canvas_info: CanvasInfo, **kwargs: Overlay) -> None:
         super().__init__(
             node=Welcome(canvas_info=canvas_info),
             canvas_info=canvas_info,

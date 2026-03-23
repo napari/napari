@@ -12,7 +12,7 @@ from napari.utils.colormaps.colormap_utils import (
 
 if TYPE_CHECKING:
     from napari._vispy.canvas import CanvasInfo
-    from napari.components.overlays import ColorBarOverlay
+    from napari.components.overlays import ColorBarOverlay, Overlay
     from napari.layers import Image, Surface
 
 
@@ -20,7 +20,11 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
     overlay: ColorBarOverlay
 
     def __init__(
-        self, *, layer: Image | Surface, canvas_info: CanvasInfo, **kwargs
+        self,
+        *,
+        layer: Image | Surface,
+        canvas_info: CanvasInfo,
+        **kwargs: Overlay,
     ) -> None:
         super().__init__(
             node=ColorBar(canvas_info=canvas_info),
