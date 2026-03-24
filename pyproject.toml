@@ -441,7 +441,7 @@ select = [
     "T20", # flake8-print
 ]
 ignore = [
-    "E501", "TC001", "TC002",
+    "E501", "TC001",
     "A003", # flake8-builtins - we have class attributes violating these rule
     "COM812", # flake8-commas - we don't like adding comma on single line of arguments
     "COM819", # conflicts with ruff-format
@@ -471,7 +471,7 @@ builtins-allowed-modules = ["io", "types", "threading"]
 
 [tool.ruff.lint.flake8-type-checking]
 runtime-evaluated-base-classes = ["pydantic.BaseModel", "pydantic.ConfigDict"]
-quote-annotations = true
+#quote-annotations = true
 
 [tool.ruff.lint.pyupgrade]
 keep-runtime-typing = true
