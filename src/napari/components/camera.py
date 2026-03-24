@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, Literal, cast
 
 import numpy as np
 from pydantic import field_validator
-from scipy.spatial.transform import Rotation as R
 
 from napari.utils.camera_orientations import (
     DEFAULT_ORIENTATION_TYPED,
@@ -75,6 +74,8 @@ class Camera(EventedModel):
         3-tuple. This direction is in 3D scene coordinates, the world coordinate
         system for three currently displayed dimensions.
         """
+        from scipy.spatial.transform import Rotation as R
+
         # once we're in scene-land, we pretend to be in xyz space (axes names don't
         # mean anything after all...) which simplifies the logic a lot.
         rotation = R.from_euler('xyz', self.angles, degrees=True)
@@ -90,6 +91,8 @@ class Camera(EventedModel):
         3-tuple. This direction is in 3D scene coordinates, the world coordinate
         system for three currently displayed dimensions.
         """
+        from scipy.spatial.transform import Rotation as R
+
         # once we're in scene-land, we pretend to be in xyz space (axes names don't
         # mean anything after all...) which simplifies the logic a lot.
         rotation = R.from_euler('xyz', self.angles, degrees=True)
@@ -123,6 +126,8 @@ class Camera(EventedModel):
             to (0, -1, 0) unless the view direction is parallel to the y-axis,
             in which case will default to (-1, 0, 0).
         """
+        from scipy.spatial.transform import Rotation as R
+
         # project up onto view so we can remove the parallel component
         projection = np.dot(up_direction, view_direction) * np.array(
             view_direction
