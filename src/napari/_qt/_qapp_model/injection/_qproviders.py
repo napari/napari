@@ -5,6 +5,7 @@ Any non-Qt providers should be added inside `napari/_app_model/injection/`.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from napari import components, layers, viewer
@@ -116,7 +117,7 @@ def register_qt_types() -> None:
 
 # syntax could be simplified after
 # https://github.com/tlambert03/in-n-out/issues/31
-QPROVIDERS = [
+QPROVIDERS: list[tuple[Callable]] = [
     (_provide_viewer,),
     (_provide_viewer_model,),
     (_provide_qt_viewer,),

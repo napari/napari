@@ -6,9 +6,7 @@ import sys
 import traceback
 import warnings
 import weakref
-from collections.abc import Sequence
 from pathlib import Path
-from types import FrameType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -62,6 +60,9 @@ from napari_builtins.io import imsave_extensions
 from napari._vispy import VispyCanvas, create_vispy_layer  # isort:skip
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+    from types import FrameType
+
     from napari_console import QtConsole
     from npe2.manifest.contributions import WriterContribution
 

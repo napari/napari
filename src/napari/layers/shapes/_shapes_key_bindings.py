@@ -1,4 +1,6 @@
-from collections.abc import Callable, Generator
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 import numpy as np
 from app_model.types import KeyCode
@@ -14,6 +16,9 @@ from napari.layers.utils.layer_utils import (
 )
 from napari.utils.notifications import show_info
 from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Generator
 
 
 @Shapes.bind_key(KeyCode.Shift, overwrite=True)
