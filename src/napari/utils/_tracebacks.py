@@ -1,10 +1,15 @@
+from __future__ import annotations
+
 import re
 import sys
-from collections.abc import Callable, Generator
+from typing import TYPE_CHECKING
 
 import numpy as np
 
 from napari.types import ExcInfo
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Generator
 
 
 def get_tb_formatter() -> Callable[[ExcInfo, bool, str], str]:

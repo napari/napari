@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import contextlib
-from collections.abc import Callable
 from functools import partial
 from typing import TYPE_CHECKING, Optional
 from weakref import ref
@@ -13,6 +12,7 @@ from napari.utils._dtype import normalize_dtype
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from weakref import ReferenceType
 
     from napari.components.layerlist import LayerList

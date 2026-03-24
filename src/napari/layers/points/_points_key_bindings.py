@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 from app_model.types import KeyCode, KeyMod
 
@@ -14,6 +14,9 @@ from napari.settings import get_settings
 from napari.utils.interactions import Shortcut
 from napari.utils.notifications import show_info
 from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 def shortcuts() -> dict[str, list[str]]:

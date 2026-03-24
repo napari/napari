@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import warnings
-from collections.abc import Sequence
 from logging import getLogger
 from typing import TYPE_CHECKING, Any
 
@@ -12,6 +11,8 @@ from napari.utils.translations import trans
 
 logger = getLogger(__name__)
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from npe2.manifest.contributions import WriterContribution
 
 
