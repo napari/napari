@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from collections.abc import Generator
 from contextlib import contextmanager
 from functools import lru_cache
 from itertools import chain
+from typing import TYPE_CHECKING
 
 from app_model import Application
 from in_n_out import Store
@@ -14,6 +14,9 @@ from napari._app_model.actions._layerlist_context_actions import (
     LAYERLIST_CONTEXT_SUBMENUS,
 )
 from napari._app_model.actions._view import VIEW_ACTIONS, VIEW_SUBMENUS
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
 
 APP_NAME = 'napari'
 
