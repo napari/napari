@@ -1,12 +1,15 @@
 """MutableMapping that emits events when altered."""
 
-from collections.abc import Mapping, Sequence
+from typing import TYPE_CHECKING
 
 from psygnal import EmissionInfo, EventedModel as PsygnalModel
 
 from napari.utils.events.containers._dict import _K, _T, TypedMutableMapping
 from napari.utils.events.event import EmitterGroup, Event
 from napari.utils.events.types import SupportsEvents
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping, Sequence
 
 
 class EventedDict(TypedMutableMapping[_K, _T]):
@@ -48,8 +51,8 @@ class EventedDict(TypedMutableMapping[_K, _T]):
 
     def __init__(
         self,
-        data: Mapping[_K, _T] | None = None,
-        basetype: type[_T] | Sequence[type[_T]] = (),
+        data: 'Mapping[_K, _T] | None' = None,
+        basetype: 'type[_T] | Sequence[type[_T]]' = (),
     ) -> None:
         _events = {
             'changing': None,
