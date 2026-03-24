@@ -66,12 +66,11 @@ class ClippingPlanesControls(QWidget):
         self._on_extent_change()
 
     def _on_extent_change(self):
-        displayed = self.viewer.dims.displayed
-        if len(displayed) == 2 or not self.viewer.layers.selection:
-            self.view.visible = False
+        self._update_lock()
+        if self._locked:
             return
+        displayed = self.viewer.dims.displayed
 
-        self.view.visible = True
         if self.box is not None:
             self.box.parent = None
 
@@ -79,6 +78,9 @@ class ClippingPlanesControls(QWidget):
             self.viewer.layers.selection
         ).world[:, displayed]
         sizes = extents[1] - extents[0]
+        if len(sizes) == 2:
+            # 3D view but only 2D layers, add z
+            sizes = np.pad(sizes, (1, 0))
         self.box = Box(
             *sizes[::-1],  # swap for vispy
             face_colors=np.repeat([[0, 1, 1]], 12, axis=0),
@@ -102,10 +104,14 @@ class ClippingPlanesControls(QWidget):
         self.view.camera.depth_value = 128 * diameter
 
     def _update_lock(self):
-        locked = self.planes_locked.isChecked()
-        self.canvas.native.setVisible(not locked)
-        if not locked:
-            self._update_planes()
+        self._locked = (
+            self.viewer.dims.ndisplay == 2
+            or not self.viewer.layers.selection
+            or self.planes_locked.isChecked()
+        )
+        self.canvas.native.setVisible(not self._locked)
+        self.view.visible = not self._locked
+        self._update_planes()
 
     def _on_size_change(self, event=None):
         X = self.canvas.size[0] / 2
@@ -114,7 +120,7 @@ class ClippingPlanesControls(QWidget):
         self._on_camera_change()
 
     def _on_camera_change(self):
-        if self.box is None:
+        if self._locked or self.box is None:
             return
 
         # I don't understand why this is needed to align to the napaari view,
@@ -166,7 +172,7 @@ class ClippingPlanesControls(QWidget):
         self._update_planes()
 
     def _on_mouse(self, event=None):
-        if self.planes_locked.isChecked():
+        if self._locked:
             return
         if self.viewer.layers.selection and (
             event.type == 'mouse_press' or event.button == 1
@@ -184,7 +190,7 @@ class ClippingPlanesControls(QWidget):
             self._update_planes()
 
     def _update_planes(self):
-        if self.planes_locked.isChecked():
+        if self._locked:
             return
         planes_world = []
         for offset in self._offsets:
