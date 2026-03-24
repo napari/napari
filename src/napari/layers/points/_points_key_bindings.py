@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from app_model.types import KeyCode, KeyMod
+from app_model.types import KeyBinding, KeyCode, KeyMod
 
 from napari.layers.points._points_constants import Mode
 from napari.layers.points.points import Points
@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
 
-def shortcuts() -> dict[str, list[str]]:
+def shortcuts() -> dict[str, list[KeyBinding]]:
     return get_settings().shortcuts.shortcuts
 
 
