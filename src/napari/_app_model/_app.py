@@ -22,8 +22,7 @@ APP_NAME = 'napari'
 
 
 class NapariStore(Store):
-    """A store of a singleton class which represents the Napari application with temporary namespace overrides.
-    """
+    """A store of a singleton class which represents the Napari application with temporary namespace overrides."""
 
     @contextmanager
     def _add_to_namespace(
