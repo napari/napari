@@ -21,6 +21,7 @@ from typing import (
 from urllib.parse import urlparse
 
 import numpy as np
+from app_model.expressions import Context
 
 # This cannot be condition to TYPE_CHECKING or the stubgen fails
 # with undefined Context.
@@ -103,7 +104,6 @@ from napari.utils.theme import available_themes, is_theme_available
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
-    from app_model.expressions import Context
     from npe2.types import SampleDataCreator
 
 
