@@ -5,7 +5,6 @@ Any non-Qt providers should be added inside `napari/_app_model/injection/`.
 
 from __future__ import annotations
 
-from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from napari import components, layers, viewer
@@ -15,6 +14,8 @@ from napari.utils.translations import trans
 from napari.viewer import ViewerModel
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from napari._qt.qt_main_window import Window
     from napari._qt.qt_viewer import QtViewer
 
