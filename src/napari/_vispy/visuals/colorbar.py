@@ -12,6 +12,7 @@ if TYPE_CHECKING:
 
     import numpy.typing as npt
     from vispy.color import Colormap as VispyColormap
+    from vispy.visuals.text.text import FontManager
 
     from napari.utils.color import ColorValue
 
@@ -27,7 +28,11 @@ class ColorBar(Node):
         ]
     )
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        font_manager: FontManager | None = None,
+        font_family: str = 'OpenSans',
+    ) -> None:
         super().__init__()
         self.ticks = Axis(
             pos=self._box_data[2:4],
@@ -40,7 +45,10 @@ class ColorBar(Node):
         # override to use our class which works better with hidpi
         self.ticks.remove_subvisual(self.ticks._text)
         self.ticks._text = Text(
-            font_size=self.ticks.tick_font_size, color=self.ticks.text_color
+            font_size=self.ticks.tick_font_size,
+            color=self.ticks.text_color,
+            font_manager=font_manager,
+            face=font_family,
         )
         self.ticks.add_subvisual(self.ticks._text)
 
@@ -101,6 +109,11 @@ class ColorBar(Node):
         clim: tuple[float, float],
         color: ColorValue,
     ) -> tuple[float, float]:
+        # offset everything down by half the height of the font
+        # so we don't spill at the top with the tick text
+        for visual in (self.img, self.box, self.ticks):
+            visual.transform.translate = (0, font_size / 2)
+
         self.box.set_data(color=color)
         self.ticks.axis_color = color
         self.ticks.text_color = color

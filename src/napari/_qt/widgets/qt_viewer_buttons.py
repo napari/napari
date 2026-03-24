@@ -1,6 +1,6 @@
 import warnings
 from enum import Enum, EnumMeta
-from functools import partial, wraps
+from functools import wraps
 from typing import TYPE_CHECKING
 
 from qtpy.QtCore import QEvent, Qt
@@ -21,6 +21,7 @@ from napari._qt.dialogs.qt_modal import QtPopup
 from napari._qt.widgets.qt_dims_sorter import QtDimsSorter
 from napari._qt.widgets.qt_spinbox import QtSpinBox
 from napari._qt.widgets.qt_tooltip import QtToolTipLabel
+from napari.layers._scalar_field import ScalarFieldBase
 from napari.utils.action_manager import action_manager
 from napari.utils.camera_orientations import (
     DepthAxisOrientation,
@@ -30,6 +31,7 @@ from napari.utils.camera_orientations import (
     VerticalAxisOrientation,
     VerticalAxisOrientationStr,
 )
+from napari.utils.compat import StrEnum
 from napari.utils.misc import in_ipython, in_jupyter, in_python_repl
 from napari.utils.translations import trans
 
@@ -76,35 +78,40 @@ class QtLayerButtons(QFrame):
             trans._(
                 'Create a new points layer.\n'
                 'This button is highlighted if a layer is selected;\n'
-                'the new points layer will inherit the shape and scale of this layer\n'
-                'Deselect all layers to create a new points layer with the\n'
-                'full extent of all the data.'
+                'the new points layer will inherit the shape and all transforms of this layer.\n'
+                'If multiple layers are selected, the new points layer will span their extent.\n'
+                'If no layers are selected, the new points layer will have no scale/transform.\n'
             ),
-            partial(new_points, self.viewer),
+            self._new_points,
         )
-        self.newPointsButton.setCheckable(True)
 
         self.newShapesButton = QtViewerPushButton(
             'new_shapes',
             trans._(
                 'Create a new shapes layer.\n'
                 'This button is highlighted if a layer is selected;\n'
-                'the new shapes layer will inherit the shape and scale of this layer\n'
-                'Deselect all layers to create a new shapes layer with the\n'
-                'full extent of all the data.'
+                'the new shapes layer will inherit the shape and all transforms of this layer.\n'
+                'If multiple layers are selected, the new shapes layer will span their extent.\n'
+                'If no layers are selected, the new points layer will have no scale/transform.\n'
             ),
-            partial(new_shapes, self.viewer),
+            self._new_shapes,
         )
-        self.newShapesButton.setCheckable(True)
 
         self.newLabelsButton = QtViewerPushButton(
             'new_labels',
             trans._(
                 'Create a new labels layer.\n'
-                'The new layer will inherit the scale and shape of the extent\n'
-                'of all the layers.'
+                'If a Labels or Image layer is selected, the newly created Labels layer\n'
+                'will inherit the shape and all transforms of the selected layer.\n'
+                'If any other layer type or multiple layers are selected, the resulting\n'
+                'Labels layer will span their extent. (Warning: could be huge!)\n'
+                'If layers are present in the Viewer but none are selected, the Labels button is disabled.\n'
             ),
             self.viewer._new_labels,
+        )
+        # Labels button disabled when there are layers present but none are selected
+        self.newLabelsButton.setEnabled(
+            not self._layers_present_and_none_selected()
         )
 
         layout = QHBoxLayout()
@@ -120,18 +127,65 @@ class QtLayerButtons(QFrame):
         self.viewer.layers.selection.events.changed.connect(
             self._on_selection_changed
         )
+        self.viewer.layers.events.removed.connect(self._on_selection_changed)
         self._on_selection_changed()
 
-    def _on_selection_changed(self, event=None) -> None:
-        """Update button checked state when layer selection changes.
+    def _new_points(self):
+        new_points(self.viewer)
 
-        When a layer is selected, some new layer buttons are checked
-        to indicate that creating a new layer will inherit properties from the
-        selected layer.
+    def _new_shapes(self):
+        new_shapes(self.viewer)
+
+    def _on_selection_changed(self, event=None) -> None:
+        """Update button selection/enablement state based on the layer selection.
+
+        This allows indicating which mode of buttons will be triggered after
+        clicking on it.
         """
-        has_selection = bool(self.viewer.layers.selection)
-        self.newPointsButton.setChecked(has_selection)
-        self.newShapesButton.setChecked(has_selection)
+        if self.viewer.layers.selection.active is not None:
+            self.newPointsButton._change_selection_state(
+                LayerCreationState.FULL
+            )
+            self.newShapesButton._change_selection_state(
+                LayerCreationState.FULL
+            )
+            if isinstance(
+                self.viewer.layers.selection.active, ScalarFieldBase
+            ):
+                state = LayerCreationState.FULL
+            else:
+                state = LayerCreationState.PARTIAL
+            self.newLabelsButton._change_selection_state(state)
+        elif self.viewer.layers.selection:
+            self.newPointsButton._change_selection_state(
+                LayerCreationState.PARTIAL
+            )
+            self.newShapesButton._change_selection_state(
+                LayerCreationState.PARTIAL
+            )
+            self.newLabelsButton._change_selection_state(
+                LayerCreationState.PARTIAL
+            )
+        else:
+            self.newPointsButton._change_selection_state(
+                LayerCreationState.NONE
+            )
+            self.newShapesButton._change_selection_state(
+                LayerCreationState.NONE
+            )
+            self.newLabelsButton._change_selection_state(
+                LayerCreationState.NONE
+            )
+
+        self.newLabelsButton.setEnabled(
+            not self._layers_present_and_none_selected()
+        )
+
+    def _layers_present_and_none_selected(self) -> bool:
+        """Check if there are layers present but none selected."""
+        return bool(self.viewer.layers) and not bool(
+            self.viewer.layers.selection
+        )
 
 
 def labeled_double_slider(
@@ -156,7 +210,7 @@ def enum_combobox(
     parent: QtPopup,
     enum_class: EnumMeta,
     current_enum: Enum,
-    callback: 'Callable[[],Any] | Callable[[Enum],Any]',
+    callback: 'Callable[[],Any] | Callable[[Enum],Any] | Callable[[str],Any]',
 ) -> QEnumComboBox:
     """Create an enum combobox widget."""
     combo = QEnumComboBox(parent, enum_class=enum_class)
@@ -303,6 +357,18 @@ class QtViewerButtons(QFrame):
         )
         popup.show()
 
+    def _update_first_camera_angle(self, value: float) -> None:
+        """Update the camera angle along axis 0."""
+        self._update_camera_angles(0, value)
+
+    def _update_second_camera_angle(self, value: float) -> None:
+        """Update the camera angle along axis 1."""
+        self._update_camera_angles(1, value)
+
+    def _update_third_camera_angle(self, value: float) -> None:
+        """Update the camera angle along axis 2."""
+        self._update_camera_angles(2, value)
+
     def _add_3d_camera_controls(
         self,
         popup: QtPopup,
@@ -325,7 +391,7 @@ class QtViewerButtons(QFrame):
             parent=popup,
             value=self.viewer.camera.angles[0],
             value_range=(-180, 180),
-            callback=partial(self._update_camera_angles, 0),
+            callback=self._update_first_camera_angle,
         )
 
         # value_range is [-89, 89] because at >=+/-90 gimbal locks the camera.
@@ -334,14 +400,14 @@ class QtViewerButtons(QFrame):
             parent=popup,
             value=self.viewer.camera.angles[1],
             value_range=(-89, 89),
-            callback=partial(self._update_camera_angles, 1),
+            callback=self._update_second_camera_angle,
         )
 
         self.rx = labeled_double_slider(
             parent=popup,
             value=self.viewer.camera.angles[2],
             value_range=(-180, 180),
-            callback=partial(self._update_camera_angles, 2),
+            callback=self._update_third_camera_angle,
         )
 
         angle_help_symbol = help_tooltip(
@@ -386,6 +452,24 @@ class QtViewerButtons(QFrame):
         grid_layout.addWidget(self.zoom, 1, 1)
         grid_layout.addWidget(zoom_help_symbol, 1, 2)
 
+    def _update_verical_axis_orientation(
+        self, value: VerticalAxisOrientationStr
+    ) -> None:
+        """Update the vertical axis orientation of the camera."""
+        self._update_orientation(VerticalAxisOrientation, value)
+
+    def _update_horizontal_axis_orientation(
+        self, value: HorizontalAxisOrientationStr
+    ) -> None:
+        """Update the horizontal axis orientation of the camera."""
+        self._update_orientation(HorizontalAxisOrientation, value)
+
+    def _update_depth_axis_orientation(
+        self, value: DepthAxisOrientationStr
+    ) -> None:
+        """Update the depth axis orientation of the camera."""
+        self._update_orientation(DepthAxisOrientation, value)
+
     def _add_orientation_controls(
         self,
         popup: QtPopup,
@@ -400,18 +484,14 @@ class QtViewerButtons(QFrame):
             parent=popup,
             enum_class=VerticalAxisOrientation,
             current_enum=self.viewer.camera.orientation[1],
-            callback=partial(
-                self._update_orientation, VerticalAxisOrientation
-            ),
+            callback=self._update_verical_axis_orientation,
         )
 
         self.horizontal_combo = enum_combobox(
             parent=popup,
             enum_class=HorizontalAxisOrientation,
             current_enum=self.viewer.camera.orientation[2],
-            callback=partial(
-                self._update_orientation, HorizontalAxisOrientation
-            ),
+            callback=self._update_horizontal_axis_orientation,
         )
 
         if self.viewer.dims.ndisplay == 2:
@@ -427,9 +507,7 @@ class QtViewerButtons(QFrame):
                 parent=popup,
                 enum_class=DepthAxisOrientation,
                 current_enum=self.viewer.camera.orientation[0],
-                callback=partial(
-                    self._update_orientation, DepthAxisOrientation
-                ),
+                callback=self._update_depth_axis_orientation,
             )
 
             orientation_layout.addWidget(self.depth_combo)
@@ -742,6 +820,12 @@ def _omit_viewer_args(constructor):
     return _func
 
 
+class LayerCreationState(StrEnum):
+    NONE = 'none'
+    FULL = 'full'
+    PARTIAL = 'partial'
+
+
 class QtViewerPushButton(QPushButton):
     """Push button.
 
@@ -776,3 +860,14 @@ class QtViewerPushButton(QPushButton):
             action_manager.bind_button(
                 action, self, extra_tooltip_text=extra_tooltip_text
             )
+
+    def _change_selection_state(self, state: str | LayerCreationState) -> None:
+        """Change the selection state of a new-layer button."""
+        self.setProperty('creation_state', LayerCreationState(state).value)
+        self._refresh_qss()
+
+    def _refresh_qss(self) -> None:
+        """Refresh the button's QSS (Qt Style Sheet)."""
+        self.style().unpolish(self)
+        self.style().polish(self)
+        self.update()

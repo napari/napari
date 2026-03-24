@@ -68,16 +68,16 @@ def test_empty_points_with_features():
     https://github.com/napari/napari/issues/5634
     """
     points = Points(
-        features={'a': np.empty(0, int)},
-        feature_defaults={'a': 0},
+        features={'a': np.empty(0, str)},
+        feature_defaults={'a': 'x'},
         face_color='a',
         face_color_cycle=list('rgb'),
     )
 
     points.add([0, 0])
-    points.feature_defaults['a'] = 1
+    points.feature_defaults['a'] = 'y'
     points.add([50, 50])
-    points.feature_defaults = {'a': 2}
+    points.feature_defaults = {'a': 'z'}
     points.add([100, 100])
 
     assert_colors_equal(points.face_color, list('rgb'))
@@ -1436,19 +1436,21 @@ def test_color_cycle(attribute, color_cycle):
 def test_color_cycle_dict(attribute):
     """Test setting border/face color with a color cycle dict"""
     data = np.array([[0, 0], [100, 0], [0, 100]])
-    properties = {'my_colors': [2, 6, 3]}
+    properties = {'my_colors': ['b', 'x', 'c']}
     points_kwargs = {
         'properties': properties,
         f'{attribute}_color': 'my_colors',
-        f'{attribute}_color_cycle': {1: 'green', 2: 'red', 3: 'blue'},
+        f'{attribute}_color_cycle': {'a': 'green', 'b': 'red', 'c': 'blue'},
     }
     layer = Points(data, **points_kwargs)
 
     color_manager = getattr(layer, f'_{attribute}')
     color_cycle_map = color_manager.categorical_colormap.colormap
-    np.testing.assert_allclose(color_cycle_map[2], [1, 0, 0, 1])  # 2 is red
-    np.testing.assert_allclose(color_cycle_map[3], [0, 0, 1, 1])  # 3 is blue
-    np.testing.assert_allclose(color_cycle_map[6], [1, 1, 1, 1])  # 6 is white
+    np.testing.assert_allclose(color_cycle_map['b'], [1, 0, 0, 1])  # b is red
+    np.testing.assert_allclose(color_cycle_map['c'], [0, 0, 1, 1])  # c is blue
+    np.testing.assert_allclose(
+        color_cycle_map['x'], [1, 1, 1, 1]
+    )  # unkown (x) is white
 
 
 @pytest.mark.parametrize('attribute', ['border', 'face'])
