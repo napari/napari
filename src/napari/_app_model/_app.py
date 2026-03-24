@@ -52,7 +52,14 @@ class NapariApplication(Application):
         method (provided by the app_model library) to retrieve the application
         instance by name.
         """
-        return Application.get_app(app_name) or cls()
+        app = Application.get_app(app_name)
+        if app is None:
+            return cls()
+        if not isinstance(app, NapariApplication):
+            raise TypeError(
+                f'Application `{app_name}` is not a NapariApplication'
+            )
+        return app
 
 
 @lru_cache(maxsize=1)

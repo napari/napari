@@ -1,8 +1,9 @@
+from __future__ import annotations
+
 import warnings
 from collections.abc import Callable, Collection, Iterable, Sized
 from contextlib import contextmanager
 from copy import copy, deepcopy
-from itertools import cycle
 from typing import TYPE_CHECKING, Any, ClassVar
 
 import numpy as np
@@ -81,6 +82,8 @@ from napari.utils.notifications import show_warning
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
+    from itertools import cycle
+
     import pandas as pd
 
 DEFAULT_COLOR_CYCLE = np.array([[1, 0, 1, 1], [0, 1, 0, 1]])
@@ -366,7 +369,7 @@ class Shapes(Layer):
     # in the thumbnail
     _max_shapes_thumbnail = 100
 
-    _drag_modes: ClassVar[dict[Mode, Callable[['Shapes', Event], Any]]] = {
+    _drag_modes: ClassVar[dict[Mode, Callable[[Shapes, Event], Any]]] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: transform_with_box,
         Mode.SELECT: select,
@@ -382,7 +385,7 @@ class Shapes(Layer):
         Mode.ADD_POLYGON_LASSO: add_path_polygon_lasso,
     }
 
-    _move_modes: ClassVar[dict[Mode, Callable[['Shapes', Event], Any]]] = {
+    _move_modes: ClassVar[dict[Mode, Callable[[Shapes, Event], Any]]] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: highlight_box_handles,
         Mode.SELECT: highlight,
@@ -399,7 +402,7 @@ class Shapes(Layer):
     }
 
     _double_click_modes: ClassVar[
-        dict[Mode, Callable[['Shapes', Event], Any]]
+        dict[Mode, Callable[[Shapes, Event], Any]]
     ] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: no_op,
@@ -798,7 +801,7 @@ class Shapes(Layer):
     @features.setter
     def features(
         self,
-        features: 'dict[str, np.ndarray] | pd.DataFrame',
+        features: dict[str, np.ndarray] | pd.DataFrame,
     ) -> None:
         self._feature_table.set_values(features, num_data=self.nshapes)
         if self._face_color_property and (
@@ -840,7 +843,7 @@ class Shapes(Layer):
 
     @feature_defaults.setter
     def feature_defaults(
-        self, defaults: 'dict[str, Any] | pd.DataFrame'
+        self, defaults: dict[str, Any] | pd.DataFrame
     ) -> None:
         self._feature_table.set_defaults(defaults)
         self.events.current_properties()
@@ -3323,7 +3326,7 @@ class Shapes(Layer):
 
     def _get_layer_slicing_state(
         self, data: LayerDataType, cache: bool
-    ) -> '_ShapesSlicingState':
+    ) -> _ShapesSlicingState:
         return _ShapesSlicingState(layer=self, data=data, cache=cache)
 
 
