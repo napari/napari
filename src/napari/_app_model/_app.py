@@ -22,7 +22,8 @@ APP_NAME = 'napari'
 
 
 class NapariStore(Store):
-    """A singleton (per name) class representing the Napari application."""
+    """A store of a singleton class which represents the Napari application with temporary namespace overrides.
+    """
 
     @contextmanager
     def _add_to_namespace(
@@ -30,8 +31,10 @@ class NapariStore(Store):
     ) -> Generator[None, None, None]:
         namespace = self.namespace.copy()
         self.namespace = {**namespace, name: value}
-        yield
-        self.namespace = namespace
+        try:
+            yield
+        finally:
+            self.namespace = namespace
 
 
 class NapariApplication(Application):
