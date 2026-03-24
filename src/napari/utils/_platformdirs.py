@@ -1,15 +1,19 @@
+from __future__ import annotations
+
 import hashlib
 import os
 import shutil
 import sys
-from collections.abc import Callable
 from functools import partial
 from importlib.metadata import version
 from pathlib import Path
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 
 import platformdirs
 from packaging.version import InvalidVersion, parse as parse_version
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 __all__ = (
     'user_cache_dir',
