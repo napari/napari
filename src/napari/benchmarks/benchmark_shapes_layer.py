@@ -2,15 +2,16 @@
 # https://asv.readthedocs.io/en/latest/writing_benchmarks.html
 # or the napari documentation on benchmarking
 # https://github.com/napari/napari/blob/main/docs/BENCHMARKS.md
+from __future__ import annotations
+
 import itertools
 import os
 import pathlib
 import sys
-from collections.abc import Callable
 from contextlib import suppress
 from enum import StrEnum, auto
 from functools import cache, wraps
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
 
@@ -24,6 +25,9 @@ from napari.utils.interactions import (
     mouse_press_callbacks,
     mouse_release_callbacks,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 try:
     from .utils import Skip

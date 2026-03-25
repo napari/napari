@@ -1,8 +1,7 @@
 import inspect
 import operator
-from collections.abc import Sequence
 from enum import auto
-from typing import Any, ClassVar, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Any, ClassVar, Protocol, runtime_checkable
 from unittest.mock import Mock
 
 import dask.array as da
@@ -17,6 +16,9 @@ from napari._pydantic_util import NapariConfigDict
 from napari.utils.events import EmitterGroup, EventedModel
 from napari.utils.events.custom_types import Array
 from napari.utils.misc import StringEnum
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 
 def test_creating_empty_evented_model():
@@ -462,7 +464,7 @@ class T(EventedModel):
         return [self.a, self.b]
 
     @c.setter
-    def c(self, val: Sequence[int]):
+    def c(self, val: 'Sequence[int]'):
         self.a, self.b = val
 
     @property
