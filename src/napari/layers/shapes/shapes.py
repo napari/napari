@@ -21,6 +21,7 @@ from napari.layers.shapes._accelerated_triangulate_dispatch import (
     warmup_numba_cache,
 )
 from napari.layers.shapes._shape_list import ShapeList
+from napari.layers.shapes._slice import _ShapeSliceRequest, _ShapeSliceResponse
 from napari.layers.shapes._shapes_constants import (
     Box,
     ColorMode,
@@ -85,6 +86,9 @@ if TYPE_CHECKING:
     from itertools import cycle
 
     import pandas as pd
+
+    from napari.components.dims import Dims
+    from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
 
 DEFAULT_COLOR_CYCLE = np.array([[1, 0, 1, 1], [0, 1, 0, 1]])
 
@@ -528,9 +532,6 @@ class Shapes(Layer):
 
         # Flag set to false to block thumbnail refresh
         self._allow_thumbnail_update = True
-
-        self._display_order_stored = []
-        self._ndisplay_stored = self._slice_input.ndisplay
 
         self._feature_table = _FeatureTable.from_layer(
             features=features,
@@ -2358,8 +2359,8 @@ class Shapes(Layer):
 
             self._add_shapes_to_view(shape_inputs, self._data_view)
 
-        self._display_order_stored = copy(self._slice_input.order)
-        self._ndisplay_stored = copy(self._slice_input.ndisplay)
+        self._slicing_state._display_order_stored = copy(self._slice_input.order)
+        self._slicing_state._ndisplay_stored = self._slice_input.ndisplay
         self._update_dims()
 
     def _add_shapes_to_view(self, shape_inputs, data_view: ShapeList):
@@ -2429,28 +2430,7 @@ class Shapes(Layer):
         return self._vertex_size * self._normalized_scale_factor / 2
 
     def _set_view_slice(self):
-        """Set the view given the slicing indices."""
-        with self._data_view.batched_updates():
-            ndisplay = self._slice_input.ndisplay
-            if ndisplay != self._ndisplay_stored:
-                self.selected_data = set()
-                self._data_view.ndisplay = min(self.ndim, ndisplay)
-                self._ndisplay_stored = ndisplay
-                self._clipboard = {}
-
-            if self._slice_input.order != self._display_order_stored:
-                self.selected_data = set()
-                self._data_view.update_dims_order(self._slice_input.order)
-                self._display_order_stored = copy(self._slice_input.order)
-                # Clear clipboard if dimensions swap
-                self._clipboard = {}
-
-            slice_key = np.array(self._data_slice.point)[
-                self._slice_input.not_displayed
-            ]
-            if not np.array_equal(slice_key, self._data_view.slice_key):
-                self.selected_data = set()
-            self._data_view.slice_key = slice_key
+        raise NotImplementedError
 
     def interaction_box(self, index: int | Iterable[int]) -> BoxArray | None:
         """Create the interaction box around a shape or list of shapes.
@@ -3333,5 +3313,58 @@ class Shapes(Layer):
 class _ShapesSlicingState(_LayerSlicingState):
     layer: Shapes
 
-    def _set_view_slice(self):
-        self.layer._set_view_slice()
+    def __init__(self, layer: Layer, data: LayerDataType, cache: bool):
+        super().__init__(layer, data, cache)
+        self._ndisplay_stored: int = self._slice_input.ndisplay
+        self._display_order_stored: tuple[int, ...] = ()
+
+    def _set_view_slice(self) -> None:
+        """Set the view given the current slicing state."""
+        request = self.make_slice_request_internal(
+            self._slice_input, self.data_slice
+        )
+        response = request()
+        self._update_slice_response(response)
+
+    def make_slice_request(self, dims: 'Dims') -> _ShapeSliceRequest:
+        """Make a Shapes slice request based on the given dims and this data."""
+        slice_input = self.make_slice_input(dims)
+        data_slice = self._slice_indices(slice_input, dims)
+        return self.make_slice_request_internal(slice_input, data_slice)
+
+    def make_slice_request_internal(
+        self,
+        slice_input: '_SliceInput',
+        data_slice: '_ThickNDSlice',
+    ) -> _ShapeSliceRequest:
+        """Make a Shapes slice request from pre-computed slice inputs."""
+        return _ShapeSliceRequest(
+            slice_input=slice_input,
+            data_slice=data_slice,
+            slice_keys=self.layer._data_view.slice_keys,
+        )
+
+    def _update_slice_response(self, response: _ShapeSliceResponse) -> None:
+        """Handle a slicing response by updating the data view."""
+        self._slice_input = response.slice_input
+        ndisplay = response.slice_input.ndisplay
+        order = response.slice_input.order
+
+        with self.layer._data_view.batched_updates():
+            if ndisplay != self._ndisplay_stored:
+                self.layer.selected_data = set()
+                self.layer._data_view.ndisplay = min(self.layer.ndim, ndisplay)
+                self._ndisplay_stored = ndisplay
+                self.layer._clipboard = {}
+
+            if order != self._display_order_stored:
+                self.layer.selected_data = set()
+                self.layer._data_view.update_dims_order(order)
+                self._display_order_stored = order
+                # Clear clipboard if dimensions swap
+                self.layer._clipboard = {}
+
+            slice_key = response.slice_key
+            if not np.array_equal(slice_key, self.layer._data_view.slice_key):
+                self.layer.selected_data = set()
+            self.layer._data_view.slice_key = slice_key

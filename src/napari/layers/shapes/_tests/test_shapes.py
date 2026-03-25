@@ -2674,3 +2674,84 @@ def test_finish_drawing_called_when_is_creating():
         layer.mode = 'select'
         mock_finish.assert_called_once()
     assert not layer._is_creating
+
+
+@pytest.mark.parametrize(
+    ('slice_point', 'expected_indices'),
+    [
+        # Shape 0 at dim0=0, shape 1 at dim0=1 - slice at 0 shows only shape 0
+        ((0, np.nan, np.nan), [0]),
+        # Slice at 1 shows only shape 1
+        ((1, np.nan, np.nan), [1]),
+        # Slice at 0.4 is close enough to 0 (tolerance 0.5) to show shape 0
+        ((0.4, np.nan, np.nan), [0]),
+        # Slice at 0.6 is close enough to 1 (tolerance 0.5) to show shape 1
+        ((0.6, np.nan, np.nan), [1]),
+        # Slice at 0.5 is exactly equidistant - neither matches
+        ((0.5, np.nan, np.nan), []),
+    ],
+)
+def test_shape_slice_request_response(slice_point, expected_indices):
+    """Test shapes slicing with request and response."""
+    from napari.layers.utils._slice_input import _ThickNDSlice
+
+    # Create 3D shapes: first dim is the slice dimension
+    shapes_data = [
+        np.array([[0, 0, 0], [0, 0, 10], [0, 10, 10], [0, 10, 0]]),
+        np.array([[1, 0, 0], [1, 0, 10], [1, 10, 10], [1, 10, 0]]),
+    ]
+    layer = Shapes(shapes_data)
+
+    # Set up 3D layer sliced along first dimension
+    layer._slice_dims(
+        Dims(
+            ndim=3,
+            ndisplay=2,
+            range=((0, 10, 1), (0, 10, 1), (0, 10, 1)),
+            point=(0, 0, 0),
+        )
+    )
+
+    data_slice = _ThickNDSlice.make_full(point=slice_point)
+
+    request = layer._slicing_state.make_slice_request_internal(
+        layer._slice_input, data_slice
+    )
+    response = request()
+
+    np.testing.assert_array_equal(response.indices, expected_indices)
+
+
+def test_shape_slice_request_all_displayed():
+    """Test shapes slicing when all dimensions are displayed."""
+    from napari.layers.utils._slice_input import _ThickNDSlice
+
+    shapes_data = [
+        np.array([[0, 0], [0, 10], [10, 10], [10, 0]]),
+        np.array([[5, 5], [5, 15], [15, 15], [15, 5]]),
+    ]
+    layer = Shapes(shapes_data)
+    # In 2D (ndisplay == ndim), all shapes are visible
+    data_slice = _ThickNDSlice.make_full(point=(np.nan, np.nan))
+
+    request = layer._slicing_state.make_slice_request_internal(
+        layer._slice_input, data_slice
+    )
+    response = request()
+
+    np.testing.assert_array_equal(response.indices, [0, 1])
+
+
+def test_shape_slice_request_empty_layer():
+    """Test shapes slicing on an empty layer."""
+    from napari.layers.utils._slice_input import _ThickNDSlice
+
+    layer = Shapes()
+    data_slice = _ThickNDSlice.make_full(point=(np.nan, np.nan))
+
+    request = layer._slicing_state.make_slice_request_internal(
+        layer._slice_input, data_slice
+    )
+    response = request()
+
+    assert len(response.indices) == 0
