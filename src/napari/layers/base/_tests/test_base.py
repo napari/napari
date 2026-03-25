@@ -219,3 +219,37 @@ def test_invalidate_extent_shear():
     with layer._block_refresh():
         layer.shear = [1]
     npt.assert_array_equal(layer.extent.world, [[0, 0], [28, 19]])
+
+
+def test_get_ray_intersections_anisotropic_no_typeerror():
+    """Regression test for #8285.
+
+    With highly anisotropic data, find_front_back_face may find only one
+    of the two bounding-box faces (front or back) that the ray passes
+    through.  Previously ``_get_ray_intersections`` only returned early
+    when *both* normals were None, so a single None was forwarded to
+    ``intersect_line_with_axis_aligned_bounding_box_3d`` which raised
+    ``TypeError: 'NoneType' object is not subscriptable``.
+    """
+    # Highly anisotropic 3D layer (small z, large y/x) — reproduces
+    # the exact geometry from the issue traceback.
+    data = np.zeros((5, 5000, 5000))
+    layer = SampleLayer(data)
+
+    # Position and direction taken from the issue traceback (data coords).
+    # This combination makes find_front_back_face return front=None,
+    # back=[1,0,0] — i.e. only one face is identified.
+    position = np.array([5.10589, 3717.37829, 3671.51104])
+    view_direction = np.array([-1.97862e-04, -6.36407e-01, 7.71354e-01])
+    dims_displayed = [0, 1, 2]
+
+    # Should not raise TypeError; returns (None, None) when only one
+    # face normal is found
+    start_point, end_point = layer.get_ray_intersections(
+        position,
+        view_direction=view_direction,
+        dims_displayed=dims_displayed,
+        world=False,
+    )
+    assert start_point is None
+    assert end_point is None
