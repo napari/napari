@@ -7,9 +7,13 @@ from napari._vispy.visuals.cursor_locator import CursorLocator
 class VispyCursorLocatorOverlay(ViewerOverlayMixin, VispySceneOverlay):
     """Overlay indicating the position of the cursor in the world."""
 
-    def __init__(self, *, viewer, overlay, parent=None) -> None:
+    def __init__(self, *, viewer, overlay, parent=None, **kwargs) -> None:
         super().__init__(
-            node=CursorLocator(), viewer=viewer, overlay=overlay, parent=parent
+            node=CursorLocator(),
+            viewer=viewer,
+            overlay=overlay,
+            parent=parent,
+            **kwargs,
         )
         self.viewer.cursor.events.position.connect(self._on_cursor_move)
 
