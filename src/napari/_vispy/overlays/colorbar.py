@@ -93,6 +93,7 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
         self.x_size = 50
         self.y_size = 250
 
+        self.source_wrapper: IntensityLayerWrapper | ColorManagerWrapper
         if self.overlay.colormanager_attribute is not None:
             color_manager = getattr(
                 self.layer, self.overlay.colormanager_attribute
