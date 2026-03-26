@@ -4,11 +4,13 @@ annotated-doc==0.0.4
     # via typer
 annotated-types==0.7.0
     # via pydantic
+app-model==0.5.1
+    # via -r resources/requirements_mypy.in
 build==1.4.0
     # via npe2
 certifi==2026.2.25
     # via requests
-charset-normalizer==3.4.4
+charset-normalizer==3.4.6
     # via requests
 click==8.3.1
     # via typer
@@ -16,6 +18,8 @@ docstring-parser==0.17.0
     # via magicgui
 idna==3.11
     # via requests
+in-n-out==0.2.1
+    # via app-model
 librt==0.8.1
     # via mypy
 magicgui==0.10.1
@@ -30,7 +34,7 @@ mypy-extensions==1.1.0
     # via mypy
 npe2==0.8.1
     # via -r resources/requirements_mypy.in
-numpy==2.4.2
+numpy==2.4.3
     # via -r resources/requirements_mypy.in
 packaging==26.0
     # via
@@ -38,10 +42,11 @@ packaging==26.0
     #   qtpy
 pathspec==1.0.4
     # via mypy
-platformdirs==4.9.2
+platformdirs==4.9.4
     # via npe2
 psygnal==0.15.1
     # via
+    #   app-model
     #   magicgui
     #   npe2
 pyconify==0.2.1
@@ -49,11 +54,12 @@ pyconify==0.2.1
 pydantic==2.12.5
     # via
     #   -r resources/requirements_mypy.in
+    #   app-model
     #   npe2
     #   pydantic-extra-types
 pydantic-core==2.41.5
     # via pydantic
-pydantic-extra-types==2.11.0
+pydantic-extra-types==2.11.1
     # via npe2
 pygments==2.19.2
     # via
@@ -65,7 +71,7 @@ pyqt6==6.10.2
     # via -r resources/requirements_mypy.in
 pyqt6-qt6==6.10.2
     # via pyqt6
-pyqt6-sip==13.11.0
+pyqt6-sip==13.11.1
     # via pyqt6
 pyyaml==6.0.3
     # via npe2
@@ -82,7 +88,7 @@ rich==14.3.3
     #   typer
 shellingham==1.5.4
     # via typer
-superqt==0.7.8
+superqt==0.8.0
     # via magicgui
 tomli-w==1.2.0
     # via npe2
@@ -96,6 +102,7 @@ types-setuptools==82.0.0.20260210
     # via -r resources/requirements_mypy.in
 typing-extensions==4.15.0
     # via
+    #   app-model
     #   magicgui
     #   mypy
     #   pydantic

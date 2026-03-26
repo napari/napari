@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Generator, Iterable
 from typing import TYPE_CHECKING, TypeVar
 
 from napari.utils.events.containers._selectable_list import (
@@ -9,6 +8,8 @@ from napari.utils.events.containers._selectable_list import (
 from napari.utils.tree.node import Node
 
 if TYPE_CHECKING:
+    from collections.abc import Generator, Iterable
+
     from napari.utils.events.containers._nested_list import MaybeNestedIndex
 
 NodeType = TypeVar('NodeType', bound=Node)

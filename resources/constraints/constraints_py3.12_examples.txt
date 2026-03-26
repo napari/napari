@@ -37,9 +37,9 @@ certifi==2026.2.25
     # via
     #   napari (pyproject.toml)
     #   requests
-chardet==6.0.0.post1
+chardet==7.1.0
     # via trackastra
-charset-normalizer==3.4.4
+charset-normalizer==3.4.6
     # via requests
 click==8.3.1
     # via
@@ -60,7 +60,7 @@ coverage==7.13.4
     # via napari (pyproject.toml)
 cuda-bindings==12.9.4
     # via torch
-cuda-pathfinder==1.4.0
+cuda-pathfinder==1.4.2
     # via cuda-bindings
 cycler==0.12.1
     # via matplotlib
@@ -88,7 +88,7 @@ edt==3.1.1
     # via trackastra
 executing==2.2.1
     # via stack-data
-filelock==3.25.0
+filelock==3.25.2
     # via
     #   gdown
     #   python-discovery
@@ -98,7 +98,7 @@ flexcache==0.3
     # via pint
 flexparser==0.4
     # via pint
-fonttools==4.61.1
+fonttools==4.62.1
     # via matplotlib
 freetype-py==2.5.1
     # via vispy
@@ -123,7 +123,7 @@ google-crc32c==1.8.0
     # via zarr
 h5netcdf==1.8.1
     # via napari (pyproject.toml:gallery)
-h5py==3.15.1
+h5py==3.16.0
     # via h5netcdf
 heapdict==1.0.1
     # via cachey
@@ -135,11 +135,11 @@ idna==3.11
     # via
     #   requests
     #   yarl
-imagecodecs==2026.1.14
+imagecodecs==2026.3.6
     # via
     #   tifffile
     #   trackastra
-imageio==2.37.2
+imageio==2.37.3
     # via
     #   napari (pyproject.toml)
     #   napari-svg
@@ -153,7 +153,7 @@ ipykernel==6.31.0
     #   -r resources/constraints/version_denylist.txt
     #   napari-console
     #   qtconsole
-ipython==9.10.0
+ipython==9.11.0
     # via
     #   napari (pyproject.toml)
     #   ipykernel
@@ -187,11 +187,11 @@ jupyter-core==5.9.1
     #   ipykernel
     #   jupyter-client
     #   qtconsole
-kiwisolver==1.4.9
+kiwisolver==1.5.0
     # via
     #   matplotlib
     #   vispy
-lazy-loader==0.4
+lazy-loader==0.5
     # via
     #   napari (pyproject.toml)
     #   scikit-image
@@ -242,11 +242,11 @@ multidict==6.7.1
     #   yarl
 napari-console==0.1.4
     # via napari (pyproject.toml)
-napari-metadata==0.1.1
+napari-metadata==0.2.0
     # via napari (pyproject.toml)
 napari-plugin-engine==0.2.1
     # via napari (pyproject.toml)
-napari-plugin-manager==0.1.10
+napari-plugin-manager==0.1.11
     # via napari (pyproject.toml)
 napari-svg==0.2.1
     # via napari (pyproject.toml)
@@ -257,7 +257,7 @@ networkx==3.6.1
     #   geff
     #   scikit-image
     #   torch
-nibabel==5.3.3
+nibabel==5.4.2
     # via nilearn
 nilearn==0.13.1
     # via napari (pyproject.toml:gallery)
@@ -274,7 +274,7 @@ numcodecs==0.16.5
     # via
     #   geff
     #   zarr
-numpy==2.4.2
+numpy==2.4.3
     # via
     #   napari (pyproject.toml)
     #   bermuda
@@ -398,7 +398,7 @@ pint==0.25.2
     #   napari-metadata
 pip==26.0.1
     # via napari-plugin-manager
-platformdirs==4.9.2
+platformdirs==4.9.4
     # via
     #   jupyter-core
     #   npe2
@@ -456,7 +456,7 @@ pydantic==2.12.5
     #   pydantic-settings
 pydantic-core==2.41.5
     # via pydantic
-pydantic-extra-types==2.11.0
+pydantic-extra-types==2.11.1
     # via
     #   napari (pyproject.toml)
     #   npe2
@@ -489,7 +489,7 @@ pyqt6==6.10.2
     # via napari (pyproject.toml)
 pyqt6-qt6==6.10.2
     # via pyqt6
-pyqt6-sip==13.11.0
+pyqt6-sip==13.11.1
     # via pyqt6
 pyrect==0.2.0
     # via pygetwindow
@@ -528,7 +528,7 @@ python-dateutil==2.9.0.post0
     #   jupyter-client
     #   matplotlib
     #   pandas
-python-discovery==1.1.0
+python-discovery==1.1.3
     # via virtualenv
 python-dotenv==1.2.2
     # via pydantic-settings
@@ -600,7 +600,7 @@ scipy==1.17.1
     #   scikit-image
     #   scikit-learn
     #   trackastra
-setuptools==82.0.0
+setuptools==82.0.1
     # via torch
 shellingham==1.5.4
     # via typer
@@ -619,7 +619,7 @@ soupsieve==2.8.3
     # via beautifulsoup4
 stack-data==0.6.3
     # via ipython
-superqt==0.7.8
+superqt==0.8.0
     # via
     #   napari (pyproject.toml)
     #   magicgui
@@ -628,13 +628,13 @@ sympy==1.14.0
     # via torch
 tblib==3.2.2
     # via distributed
-tensorstore==0.1.81
+tensorstore==0.1.82
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
 threadpoolctl==3.6.0
     # via scikit-learn
-tifffile==2026.2.24
+tifffile==2026.3.3
     # via
     #   napari (pyproject.toml)
     #   napari (pyproject.toml:gallery)
@@ -654,7 +654,7 @@ torch==2.10.0
     #   trackastra
 torchvision==0.25.0
     # via trackastra
-tornado==6.5.4
+tornado==6.5.5
     # via
     #   distributed
     #   ipykernel
@@ -691,6 +691,7 @@ typing-extensions==4.15.0
     #   flexcache
     #   flexparser
     #   magicgui
+    #   napari-metadata
     #   nibabel
     #   numcodecs
     #   pint
@@ -711,7 +712,7 @@ urllib3==2.6.3
     # via
     #   distributed
     #   requests
-virtualenv==21.1.0
+virtualenv==21.2.0
     # via napari (pyproject.toml)
 vispy==0.16.1
     # via
@@ -719,7 +720,7 @@ vispy==0.16.1
     #   napari-svg
 wcwidth==0.6.0
     # via prompt-toolkit
-wrapt==2.1.1
+wrapt==2.1.2
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)

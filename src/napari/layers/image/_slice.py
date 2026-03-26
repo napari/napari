@@ -1,4 +1,4 @@
-from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 import numpy as np
 import numpy.typing as npt
@@ -6,6 +6,9 @@ import numpy.typing as npt
 from napari.layers._scalar_field._slice import _ScalarFieldSliceRequest
 from napari.layers.image._image_constants import ImageProjectionMode
 from napari.types import ArrayLike
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 class _ImageSliceRequest(_ScalarFieldSliceRequest):

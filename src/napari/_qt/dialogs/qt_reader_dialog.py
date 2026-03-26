@@ -30,7 +30,13 @@ class QtReaderDialog(QDialog):
     ) -> None:
         if readers is None:
             readers = {}
+        style_sheet = None
+        if parent is not None and not parent.isVisible():
+            style_sheet = parent.styleSheet()
+            parent = None
         super().__init__(parent)
+        if style_sheet:
+            self.setStyleSheet(style_sheet)
         self.setObjectName('Choose reader')
         self.setWindowTitle(trans._('Choose reader'))
         self._current_file = pth
