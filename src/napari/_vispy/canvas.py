@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import contextlib
 import gc
-from collections.abc import Iterator
 from functools import partial
 from itertools import zip_longest
 from types import MethodType
@@ -39,7 +38,7 @@ from napari.utils.notifications import show_warning
 from napari.utils.theme import get_theme
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Iterator
 
     import numpy.typing as npt
     from qtpy.QtCore import Qt, pyqtBoundSignal
@@ -795,7 +794,7 @@ class VispyCanvas:
         napari_layer.events.units.connect(self._deferred_world_units_update)
         self._overlay_callbacks[napari_layer] = overlay_callback
         self.viewer.camera.events.angles.connect(vispy_layer._on_camera_move)
-        self._update_world_units()
+        self._deferred_world_units_update()
 
         # we need to trigger _on_matrix_change once after adding the overlays so that
         # all children nodes are assigned the correct transforms
@@ -809,7 +808,7 @@ class VispyCanvas:
     def _update_world_units(self):
         """Update the units of the canvas and all layers."""
         units = self.viewer.layers.extent.units
-        if units is None:
+        if units is None and len(self.viewer.layers) > 0:
             show_warning(
                 'Inconsistent units across layers; units will not be used for rendering.'
             )
@@ -844,6 +843,7 @@ class VispyCanvas:
 
         self._update_layer_overlays(layer)
         del self._layer_overlay_to_visual[layer]
+        self._deferred_world_units_update()
         if self._pause_scene_graph:
             return
         self._clean_and_update_scenegraph()

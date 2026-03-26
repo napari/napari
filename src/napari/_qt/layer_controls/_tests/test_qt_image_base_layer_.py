@@ -155,7 +155,7 @@ def test_tensorstore_clim_popup(qtbot):
 
 
 def test_blending_opacity_slider(qtbot):
-    """Tests whether opacity slider is disabled for minimum and opaque blending."""
+    """Tests whether opacity slider is disabled for minimum, opaque, and multiplicative blending."""
     layer = Image(np.random.rand(8, 8))
     qtctrl = QtLayerControls(layer)
     qtbot.addWidget(qtctrl)
@@ -176,6 +176,14 @@ def test_blending_opacity_slider(qtbot):
     # set the blending back to 'translucent' confirm the slider is enabled
     layer.blending = 'translucent'
     assert layer.blending == 'translucent'
+    assert qtctrl._opacity_blending_controls.opacity_slider.isEnabled()
+    # set multiplicative blending, the opacity slider should be disabled
+    layer.blending = 'multiplicative'
+    assert layer.blending == 'multiplicative'
+    assert not qtctrl._opacity_blending_controls.opacity_slider.isEnabled()
+    # set the blending back to 'additive' confirm the slider is enabled
+    layer.blending = 'additive'
+    assert layer.blending == 'additive'
     assert qtctrl._opacity_blending_controls.opacity_slider.isEnabled()
 
 

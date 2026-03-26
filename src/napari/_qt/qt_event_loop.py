@@ -3,7 +3,6 @@ from __future__ import annotations
 import os
 import platform
 import sys
-from pathlib import Path
 from typing import TYPE_CHECKING
 from warnings import warn
 
@@ -39,6 +38,8 @@ from napari.utils.theme import _themes, get_system_theme
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from IPython import InteractiveShell
 
 NAPARI_APP_ID = f'napari.napari.viewer.{__version__}'
