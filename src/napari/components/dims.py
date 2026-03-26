@@ -8,6 +8,7 @@ from typing import (
 )
 
 import numpy as np
+import pint
 from pydantic import field_validator, model_validator
 
 from napari.utils.events import EventedModel
@@ -100,6 +101,7 @@ class Dims(EventedModel):
     margin_left: tuple[float, ...] = ()
     margin_right: tuple[float, ...] = ()
     point: tuple[float, ...] = ()
+    units: tuple[pint.Unit, ...] | None = None
 
     last_used: int = 0
 

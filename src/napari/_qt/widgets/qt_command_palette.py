@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Iterator, Mapping
 from importlib.util import find_spec
 from typing import TYPE_CHECKING, Any, cast
 
@@ -14,6 +13,8 @@ from napari.settings import get_settings
 from napari.utils.notifications import show_warning
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator, Mapping
+
     from napari._qt.qt_main_window import _QtMainWindow
 
 

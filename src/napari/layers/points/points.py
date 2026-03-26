@@ -1,9 +1,9 @@
+from __future__ import annotations
+
 import numbers
 import typing
 import warnings
-from collections.abc import Callable, Iterable, Sequence, Set as AbstractSet
 from copy import copy, deepcopy
-from itertools import cycle
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -14,7 +14,6 @@ from typing import (
 
 import numpy as np
 import numpy.typing as npt
-import pandas as pd
 from psygnal.containers import Selection
 
 from napari.layers.base import Layer, _LayerSlicingState, no_op
@@ -38,7 +37,10 @@ from napari.layers.points._points_utils import (
 )
 from napari.layers.points._slice import _PointSliceRequest, _PointSliceResponse
 from napari.layers.utils._color_manager_constants import ColorMode
-from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
+from napari.layers.utils._slice_input import (
+    _SliceInput,
+    _ThickNDSlice,
+)
 from napari.layers.utils.color_manager import ColorManager
 from napari.layers.utils.color_transformations import ColorType
 from napari.layers.utils.interactivity_utils import (
@@ -60,6 +62,16 @@ from napari.utils.transforms import Affine
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
+    from collections.abc import (
+        Callable,
+        Iterable,
+        Sequence,
+        Set as AbstractSet,
+    )
+    from itertools import cycle
+
+    import pandas as pd
+
     from napari.components.dims import Dims
 
 DEFAULT_COLOR_CYCLE = np.array([[1, 0, 1, 1], [0, 1, 0, 1]])
@@ -325,19 +337,19 @@ class Points(Layer):
         None after dragging is done.
     """
 
-    _slicing_state: '_PointsSlicingState'
+    _slicing_state: _PointsSlicingState
 
     _modeclass = Mode
     _projectionclass = PointsProjectionMode
 
-    _drag_modes: ClassVar[dict[Mode, Callable[['Points', Event], Any]]] = {
+    _drag_modes: ClassVar[dict[Mode, Callable[[Points, Event], Any]]] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: transform_with_box,
         Mode.ADD: add,
         Mode.SELECT: select,
     }
 
-    _move_modes: ClassVar[dict[Mode, Callable[['Points', Event], Any]]] = {
+    _move_modes: ClassVar[dict[Mode, Callable[[Points, Event], Any]]] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: highlight_box_handles,
         Mode.ADD: no_op,
@@ -420,6 +432,7 @@ class Points(Layer):
         self._value = None
         self._value_stored = None
         self._highlight_index = []
+        # indices of highlighted points in current view
         self._highlight_box = None
         self._mode = Mode.PAN_ZOOM
         self._status = self.mode
@@ -1470,15 +1483,25 @@ class Points(Layer):
         return mode
 
     @property
-    def _indices_view(self):
+    def _indices_view(self) -> np.ndarray[tuple[int], np.dtype[np.int64]]:
+        """Indices of points in view."""
         return self._slicing_state._indices_view
 
     @property
-    def _selected_view(self):
+    def _selected_view(self) -> list[int]:
+        """Indices of selected points within the currently viewed slice"""
         return self._slicing_state._selected_view
 
     @property
-    def _view_size_scale(self):
+    def _view_size_scale(
+        self,
+    ) -> float | np.ndarray[tuple[int], np.dtype[np.float64]]:
+        """Scale factor for view size calculations
+
+        It is 1 if out_of_slice_display is False.
+        For out_of_slice_display=True, it is the scale factor for the
+        points to reduce size of visible points out of rendering slice
+        """
         return self._slicing_state._view_size_scale
 
     @property
@@ -2414,7 +2437,7 @@ class Points(Layer):
 
     def _get_layer_slicing_state(
         self, data: LayerDataType, cache: bool
-    ) -> '_PointsSlicingState':
+    ) -> _PointsSlicingState:
         return _PointsSlicingState(layer=self, data=data, cache=cache)
 
     def _set_view_slice(self):
@@ -2434,7 +2457,9 @@ class _PointsSlicingState(_LayerSlicingState):
         # Indices of selected points within the currently viewed slice
         self._selected_view = []
         # initialize view data
-        self._view_size_scale = []
+        self._view_size_scale: (
+            float | np.ndarray[tuple[int], np.dtype[np.float64]]
+        ) = 1.0
 
     def _set_view_slice(self) -> None:
         """Sets the view given the indices to slice with."""
@@ -2448,12 +2473,12 @@ class _PointsSlicingState(_LayerSlicingState):
         response = request()
         self._update_slice_response(response)
 
-    def _make_slice_request(self, dims: 'Dims') -> _PointSliceRequest:
+    def _make_slice_request(self, dims: Dims) -> _PointSliceRequest:
         """Make a Points slice request based on the given dims and these data."""
         slice_input = self.make_slice_input(dims)
         # See Image._make_slice_request to understand why we evaluate this here
         # instead of using `self._data_slice`.
-        data_slice = slice_input.data_slice(self.layer._data_to_world.inverse)
+        data_slice = self._slice_indices(slice_input, dims)
         return self.make_slice_request_internal(slice_input, data_slice)
 
     def make_slice_request_internal(
@@ -2505,6 +2530,7 @@ class _PointsSlicingState(_LayerSlicingState):
 
     @property
     def _indices_view(self):
+        """Indices of the points in the currently viewed slice."""
         return self.__indices_view
 
     @_indices_view.setter

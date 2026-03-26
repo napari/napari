@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import typing
 import warnings
-from collections.abc import Sequence
 from typing import Any, Literal, cast
 
 import numpy as np
@@ -34,6 +33,8 @@ from napari.utils.colormaps.colormap_utils import _coerce_contrast_limits
 from napari.utils.translations import trans
 
 if typing.TYPE_CHECKING:
+    from collections.abc import Sequence
+
     import numpy.typing as npt
     import pint
 
