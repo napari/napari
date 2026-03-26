@@ -143,9 +143,7 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
         else:
             self._on_visible_change()
             self.node.set_data_and_clim(
-                clim=_coerce_contrast_limits(
-                    self.source_wrapper.contrast_limits
-                ).contrast_limits,
+                clim=_coerce_contrast_limits(clim).contrast_limits,
                 dtype=self.source_wrapper.dtype,
             )
 
