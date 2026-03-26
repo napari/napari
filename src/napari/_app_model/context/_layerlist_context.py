@@ -200,6 +200,8 @@ def _all_support_border_colorbar(s: LayerSel) -> bool:
 
 def _all_support_face_colorbar(s: LayerSel) -> bool:
     return bool(s and all(hasattr(x, 'face_colorbar') for x in s))
+
+
 A = TypeVar('A')
 
 
