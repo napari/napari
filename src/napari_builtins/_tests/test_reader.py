@@ -1,5 +1,4 @@
-from collections.abc import Callable
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 import imageio.v3 as iio
 import npe2
@@ -9,9 +8,13 @@ import tifffile
 
 from napari_builtins.io._write import write_csv
 
+if TYPE_CHECKING:
+    from collections.abc import Callable
+    from pathlib import Path
+
 
 @pytest.fixture
-def save_image(tmp_path: Path):
+def save_image(tmp_path: 'Path'):
     """Create a temporary file."""
 
     def _save(filename: str, data: np.ndarray | None = None):
@@ -32,7 +35,7 @@ def save_image(tmp_path: Path):
 
 @pytest.mark.parametrize('ext', ['.tif', '.npy', '.png', '.jpg'])
 @pytest.mark.parametrize('stack', [False, True])
-def test_reader_plugin_tif(save_image: Callable[..., Path], ext, stack):
+def test_reader_plugin_tif(save_image: 'Callable[..., Path]', ext, stack):
     """Test the builtin reader plugin reads a temporary file."""
     files = [
         str(save_image(f'test_{i}{ext}')) for i in range(5 if stack else 1)
@@ -55,7 +58,7 @@ def test_animated_gif_reader(save_image):
 def test_reader_plugin_url():
     layer_data = npe2.read(
         [
-            'https://github.com/napari/napari/raw/main/src/napari/resources/logo.png'
+            'https://github.com/napari/docs/raw/main/docs/_static/images/nf-logo.png'
         ],
         stack=False,
     )

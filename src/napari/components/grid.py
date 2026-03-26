@@ -1,4 +1,6 @@
-from collections.abc import Iterator
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 import numpy as np
 
@@ -9,6 +11,9 @@ from napari.settings._application import (
     GridWidth,
 )
 from napari.utils.events import EventedModel
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
 
 class GridCanvas(EventedModel):
@@ -41,13 +46,10 @@ class GridCanvas(EventedModel):
             ``spacing`` was added in 0.6.0.
     """
 
-    # fields
-    # See https://github.com/pydantic/pydantic/issues/156 for why
-    # these need a type: ignore comment
-    stride: GridStride = 1  # type: ignore[valid-type]
-    shape: tuple[GridHeight, GridWidth] = (-1, -1)  # type: ignore[valid-type]
+    stride: GridStride = 1
+    shape: tuple[GridHeight, GridWidth] = (-1, -1)
     enabled: bool = False
-    spacing: GridSpacing = 0.0  # type: ignore[valid-type]
+    spacing: GridSpacing = 0.0
 
     def actual_shape(self, nlayers: int = 1) -> tuple[int, int]:
         """Return the actual shape of the grid.

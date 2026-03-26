@@ -36,7 +36,7 @@ import os
 import sys
 import threading
 from concurrent.futures import ThreadPoolExecutor
-from contextlib import suppress
+from contextlib import contextmanager, suppress
 from datetime import timedelta
 from functools import partial
 from itertools import chain
@@ -44,6 +44,7 @@ from multiprocessing.pool import ThreadPool
 from pathlib import Path
 from time import perf_counter
 from typing import TYPE_CHECKING
+from unittest.mock import MagicMock
 from weakref import WeakKeyDictionary
 
 import dask.threaded
@@ -214,11 +215,11 @@ def _fresh_settings(monkeypatch):
     from napari.utils.triangulation_backend import TriangulationBackend
 
     # prevent the developer's config file from being used if it exists
-    cp = NapariSettings.__private_attributes__['_config_path']
+    cp = NapariSettings.model_fields['config_path']
     monkeypatch.setattr(cp, 'default', None)
 
     monkeypatch.setattr(
-        ExperimentalSettings.__fields__['triangulation_backend'],
+        ExperimentalSettings.model_fields['triangulation_backend'],
         'default',
         TriangulationBackend.fastest_available,
     )
@@ -281,9 +282,6 @@ def napari_svg_name():
 @pytest.fixture(autouse=True)
 def npe2pm_(npe2pm, monkeypatch):
     """Autouse npe2 & npe1 mock plugin managers with no registered plugins."""
-    from napari.plugins import NapariPluginManager
-
-    monkeypatch.setattr(NapariPluginManager, 'discover', lambda *_, **__: None)
     return npe2pm
 
 
@@ -296,7 +294,7 @@ def builtins(npe2pm_: TestPluginManager):
 @pytest.fixture
 def tmp_plugin(npe2pm_: TestPluginManager):
     with npe2pm_.tmp_plugin() as plugin:
-        plugin.manifest.package_metadata = PackageMetadata(  # type: ignore[call-arg]
+        plugin.manifest.package_metadata = PackageMetadata(
             version='0.1.0', name='test'
         )
         plugin.manifest.display_name = 'Temp Plugin'
@@ -428,6 +426,75 @@ def qt_viewer(
     return qt_viewer_
 
 
+@pytest.fixture
+def mock_qt_method(monkeypatch):
+    """Since PySide6 6.10, the tests deterministically segfault when mocking
+    methods of Qt objects using `unittest.mock.Mock` (or `MagicMock`) directly.
+
+    This fixture provides a workaround for this by wrapping the mock in a function.
+    Should be used as a replacement of `monkeypatch.setattr` and `mock.patch`
+
+    FUTURE NOTE: Similar to `mock_qt_method_ctx `, it might be worth
+     adding `qtbot.addWidget` when the first argument is a `QObject` in the future.
+    Currently, this fixture is only used in tests where that look not necessary.
+    """
+
+    def _mock_fun(obj: str | object, method: str | None = None):
+        mock = MagicMock()
+
+        def _mocked_method(_self, *args, **kwargs):
+            return mock(*args, **kwargs)
+
+        if method is None:
+            monkeypatch.setattr(obj, _mocked_method)
+        else:
+            monkeypatch.setattr(obj, method, _mocked_method)
+        return mock
+
+    return _mock_fun
+
+
+@pytest.fixture
+def mock_qt_method_ctx(monkeypatch, qtbot):
+    """Since PySide6 6.10, the tests deterministically segfault when mocking
+    methods of Qt objects using `unittest.mock.Mock` (or `MagicMock`) directly.
+
+    This fixture provides a workaround for this by wrapping the mock in a function.
+    Should be used as a replacement of `monkeypatch.context` and `object.patch`
+
+    When the mocking is performed before creating the Qt object, the
+    mocking function will get access to the created `object` using the first
+    argument of the mocked method and will check if the object has no parent.
+    In such case, the created `QWidget` will be added to `qtbot` using
+    `qtbot.add_widget`.
+    """
+    from qtpy.QtWidgets import QWidget
+
+    @contextmanager
+    def _mock_fun(obj: str | object, method: str | None = None):
+        mock = MagicMock()
+
+        def _mocked_method(*args, **kwargs):
+            if (
+                len(args) > 0
+                and isinstance(args[0], QWidget)
+                and args[0].parent() is None
+            ):
+                qtbot.add_widget(args[0])
+                args = args[1:]
+
+            return mock(*args, **kwargs)
+
+        with monkeypatch.context() as m:
+            if method is None:
+                m.setattr(obj, _mocked_method)
+            else:
+                m.setattr(obj, method, _mocked_method)
+            yield mock
+
+    return _mock_fun
+
+
 @pytest.fixture(autouse=True)
 def _clear_cached_action_injection():
     """Automatically clear cached property `Action.injected`.
@@ -543,6 +610,27 @@ def _disable_notification_dismiss_timer(monkeypatch):
 
         # disable slide in animation
         monkeypatch.setattr(NapariQtNotification, 'slide_in', lambda x: None)
+
+
+@pytest.fixture(autouse=True)
+def _prevent_thread(request, monkeypatch):
+    if 'allow_animation_thread' in request.keywords:
+        return
+    if 'qt_dims' in request.fixturenames or 'ref_view' in request.fixturenames:
+        return
+
+    if 'qtbot' not in request.fixturenames:
+        return
+
+    from napari._qt.widgets.qt_dims_slider import AnimationThread
+
+    def fake_start(self):
+        raise RuntimeError(
+            'QtDims animation thread should not be started outside of tests '
+            "without using the 'qt_dims' fixture."
+        )
+
+    monkeypatch.setattr(AnimationThread, 'start', fake_start)
 
 
 @pytest.fixture

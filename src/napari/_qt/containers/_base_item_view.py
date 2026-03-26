@@ -47,6 +47,7 @@ class _BaseEventedItemView(Generic[ItemType]):
     """
 
     # ########## Reimplemented Public Qt Functions ##################
+    _root: SelectableEventedList[ItemType]
 
     def model(self) -> _BaseEventedItemModel[ItemType]:  # for type hints
         return super().model()
@@ -75,8 +76,7 @@ class _BaseEventedItemView(Generic[ItemType]):
         desel = {i.data(ItemRole) for i in deselected.indexes()}
 
         if not self._root.selection.events.changed._emitting:
-            self._root.selection.update(sel)
-            self._root.selection.difference_update(desel)
+            self._root.selection._add_and_remove(add=sel, remove=desel)
         return super().selectionChanged(selected, deselected)
 
     # ###### Non-Qt methods added for SelectableEventedList Model ############

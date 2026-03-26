@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Generator
+from typing import TYPE_CHECKING
 
 import napari
 from napari.layers.base._base_constants import Mode
@@ -16,6 +16,9 @@ from napari.utils.action_manager import action_manager
 from napari.utils.events import Event
 from napari.utils.translations import trans
 
+if TYPE_CHECKING:
+    from collections.abc import Callable, Generator
+
 
 def register_image_action(
     description: str, repeatable: bool = False
@@ -27,6 +30,12 @@ def register_image_mode_action(
     description: str,
 ) -> Callable[[Callable], Callable]:
     return register_layer_attr_action(Image, description, 'mode')
+
+
+@register_image_action(trans._('Apply auto-contrast'))
+def auto_contrast_once(layer: Image) -> None:
+    """Apply auto-contrast."""
+    layer.reset_contrast_limits()
 
 
 @register_image_action(trans._('Orient plane normal along z-axis'))

@@ -18,17 +18,21 @@ white color array, since it seems unreasonable to crash the entire napari
 session due to mis-represented colors.
 """
 
+from __future__ import annotations
+
 import functools
 import types
 import warnings
-from collections.abc import Callable, Sequence
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 from vispy.color import ColorArray, get_color_dict, get_color_names
 from vispy.color.color_array import _string_to_rgb
 
 from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
 
 
 def transform_color(colors: Any) -> np.ndarray:

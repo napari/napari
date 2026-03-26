@@ -1,5 +1,6 @@
 import numpy as np
-from vispy.scene.visuals import Compound, Line, Rectangle
+from vispy.scene.visuals import Compound, Line
+from vispy.visuals.text.text import FontManager
 
 from napari._vispy.visuals.text import Text
 
@@ -15,7 +16,11 @@ class ScaleBar(Compound):
     - Padding
     """
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        font_manager: FontManager | None = None,
+        font_family: str = 'OpenSans',
+    ) -> None:
         # Layout constants
         self.PADDING = 6  # Space around the entire scale bar
         self.TICK_LENGTH = 11  # Height of tick marks (odd numbers look better)
@@ -33,47 +38,42 @@ class ScaleBar(Compound):
         )
 
         self._color = (1, 1, 1, 1)
-        self._box_color = (0, 0, 0, 1)
 
-        self.box = Rectangle(center=[0.5, 0.5], width=100, height=36)
         self.text = Text(
             text='1px',
             pos=[0.5, 0.5],
             anchor_x='center',
             anchor_y='bottom',
             font_size=10,
+            face=font_family,
+            font_manager=font_manager,
         )
-        self.line = Line(connect='segments', method='gl', width=3)
+        self.line = Line(
+            connect='segments', method='gl', width=3, antialias=True
+        )
         # order matters (last is drawn on top)
-        super().__init__([self.box, self.text, self.line])
+        super().__init__([self.text, self.line])
 
     def _calculate_layout(self, length: float) -> dict:
         """Calculate all layout dimensions and positions."""
         # Text dimensions
         text_width, text_height = self.text.get_width_height()
-        # add some extra padding between the scale bar and text
-        text_height *= 1.1
 
-        # Box dimensions
-        box_width = max(
-            length + 2 * self.PADDING,  # Space for line + padding
-            text_width + 2 * self.PADDING,  # Space for text + padding
-        )
-        box_height = (
-            self.PADDING  # Top padding
-            + text_height  # Text height
-            + self.TICK_LENGTH  # Line + ticks height
-            + self.PADDING  # Bottom padding
-        )
+        # ceil so there's no flickering due to slight differences between
+        # the heigh of the various digits
+        text_height = np.ceil(text_height)
 
-        # Element positions (Y coordinates from top of box)
-        text_y = self.PADDING
-        line_center_y = self.PADDING + text_height + (self.TICK_LENGTH / 2)
+        width = max(
+            length + self.line.width,
+            text_width,
+        )
+        height = text_height + self.TICK_LENGTH
+
+        line_center_y = text_height + (self.TICK_LENGTH / 2)
 
         return {
-            'box_width': box_width,
-            'box_height': box_height,
-            'text_y': text_y,
+            'width': width,
+            'height': height,
             'line_center_y': line_center_y,
         }
 
@@ -91,21 +91,16 @@ class ScaleBar(Compound):
         self.line.set_data(
             pos=line_data * (length / 2, self.TICK_LENGTH / 2)
             + (
-                layout['box_width'] / 2,  # Center horizontally
+                layout['width'] / 2,  # Center horizontally
                 layout['line_center_y'],  # Position vertically
             ),
             color=color,
         )
 
-        # Set up the background box
-        self.box.width = layout['box_width']
-        self.box.height = layout['box_height']
-        self.box.center = layout['box_width'] / 2, layout['box_height'] / 2
-
         # Position the text
-        self.text.pos = layout['box_width'] / 2, layout['text_y']
+        self.text.pos = layout['width'] / 2, 0
         self.text.color = color
 
         # Return dimensions for the overlay system
         # Extra padding needed for proper canvas positioning (not sure why padding is needed here, ugh)
-        return layout['box_width'], layout['box_height'] + self.PADDING
+        return layout['width'], layout['height']

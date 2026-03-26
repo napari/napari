@@ -3,7 +3,6 @@ from unittest.mock import Mock, patch
 import pytest
 from magicgui import magic_factory, magicgui
 from magicgui.widgets import Container
-from napari_plugin_engine import napari_hook_implementation
 from npe2 import DynamicPlugin
 from qtpy.QtWidgets import QWidget
 
@@ -76,33 +75,6 @@ dwidget_args = {
     'bad_tuple1': (QWidget_example, 1),
     'bad_double_tuple': ((QWidget_example, {}), (Widg2, {})),
 }
-
-
-# napari_plugin_manager from _testsupport.py
-# monkeypatch, request, recwarn fixtures are from pytest
-@pytest.mark.parametrize('arg', dwidget_args.values(), ids=dwidget_args.keys())
-def test_dock_widget_registration(
-    arg, napari_plugin_manager, request, recwarn
-):
-    """Test that dock widgets get validated and registered correctly."""
-
-    class Plugin:
-        @napari_hook_implementation
-        def napari_experimental_provide_dock_widget():
-            return arg
-
-    napari_plugin_manager.register(Plugin, name='Plugin')
-    napari_plugin_manager.discover_widgets()
-    widgets = napari_plugin_manager._dock_widgets
-
-    if '[bad_' in request.node.name:
-        assert len(recwarn) == 1
-        assert not widgets
-    else:
-        assert len(recwarn) == 0
-        assert widgets['Plugin']['Q Widget_example'][0] == QWidget_example
-        if 'tuple_list' in request.node.name:
-            assert widgets['Plugin']['Widg2'][0] == Widg2
 
 
 def test_inject_viewer_proxy(make_napari_viewer):

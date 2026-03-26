@@ -82,6 +82,5 @@ for index, roi in enumerate(screenshot_rois_scaled):
 viewer.grid.enabled = True
 viewer.grid.shape = (3, 3)
 
-
 if __name__ == '__main__':
     napari.run()

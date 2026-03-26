@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 from qtpy.QtCore import Qt, Signal
 from qtpy.QtWidgets import (
@@ -15,10 +16,9 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
+from napari.plugins import _npe2
 from napari.plugins.utils import (
-    get_all_readers,
     get_filename_patterns_for_reader,
-    get_potential_readers,
 )
 from napari.settings import get_settings
 from napari.utils.translations import trans
@@ -31,19 +31,13 @@ class Extension2ReaderTable(QWidget):
 
     valueChanged = Signal(int)
 
-    def __init__(
-        self, parent=None, npe2_readers=None, npe1_readers=None
-    ) -> None:
+    def __init__(self, parent=None, npe2_readers=None) -> None:
         super().__init__(parent=parent)
 
-        npe2, npe1 = get_all_readers()
         if npe2_readers is None:
-            npe2_readers = npe2
-        if npe1_readers is None:
-            npe1_readers = npe1
+            npe2_readers = _npe2.get_readers()
 
         self._npe2_readers = npe2_readers
-        self._npe1_readers = npe1_readers
 
         self._table = QTableWidget()
         self._table.setShowGrid(False)
@@ -117,7 +111,7 @@ class Extension2ReaderTable(QWidget):
 
         self._new_reader_dropdown = QComboBox()
         for i, (plugin_name, display_name) in enumerate(
-            sorted(dict(self._npe2_readers, **self._npe1_readers).items())
+            sorted(self._npe2_readers.items())
         ):
             self._add_reader_choice(i, plugin_name, display_name)
 
@@ -171,19 +165,28 @@ class Extension2ReaderTable(QWidget):
         readers = self._npe2_readers.copy()
         to_delete = []
         try:
-            compatible_readers = get_potential_readers(new_pattern)
+            # Running both the extension and the new_pattern through the `Path`
+            # module helps us avoid issues with empty or invalid paths on
+            # Windows (invalid patterns can occur when the user is in the
+            # process of typing a valid pattern).
+            # Either of these lines could throw a ValueError about
+            # empty names, which we catch below, and allow the user to continue
+            # typing. See PR #6107 and #8579 for more detail
+            ext = Path(new_pattern).suffix.lower()
+            _ = Path(new_pattern).with_suffix(ext)
         except ValueError as e:
             if 'empty name' not in str(e):
                 raise
             compatible_readers = {}
+        else:
+            compatible_readers = _npe2.get_readers(new_pattern)
+
         for plugin_name in readers:
             if plugin_name not in compatible_readers:
                 to_delete.append(plugin_name)
 
         for reader in to_delete:
             del readers[reader]
-
-        readers.update(self._npe1_readers)
 
         for i, (plugin_name, display_name) in enumerate(
             sorted(readers.items())

@@ -23,8 +23,12 @@ from napari.utils.action_manager import action_manager
 from napari.utils.events import disconnect_events
 from napari.utils.translations import trans
 
-# opaque and minimum blending do not support changing alpha (opacity)
-NO_OPACITY_BLENDING_MODES = {str(Blending.MINIMUM), str(Blending.OPAQUE)}
+# opaque, minimum, and multiplicative blending do not support changing alpha (opacity)
+NO_OPACITY_BLENDING_MODES = {
+    str(Blending.MINIMUM),
+    str(Blending.OPAQUE),
+    str(Blending.MULTIPLICATIVE),
+}
 
 
 class LayerFormLayout(QFormLayout):

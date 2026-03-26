@@ -1,1 +1,4 @@
 napari_gui/_version.py export-subst
+
+# Shell scripts should always use LF line endings, otherwise bash commands will fail on Windows with CRLF
+*.sh text eol=lf

@@ -3,7 +3,7 @@ from __future__ import annotations
 import contextlib
 from collections.abc import Callable
 from functools import partial
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, TypeVar, cast
 from weakref import ref
 
 from app_model.expressions import ContextKey
@@ -14,8 +14,6 @@ from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from weakref import ReferenceType
-
-    from numpy.typing import DTypeLike
 
     from napari.components.layerlist import LayerList
     from napari.layers import Layer
@@ -155,7 +153,7 @@ def _same_shape(s: LayerSel) -> bool:
     return len({tuple(getattr(x.data, 'shape', ())) for x in s}) == 1
 
 
-def _active_dtype(s: LayerSel) -> DTypeLike:
+def _active_dtype(s: LayerSel) -> str | None:
     dtype = None
     if s.active:
         with contextlib.suppress(AttributeError):
@@ -194,6 +192,27 @@ def _active_supports_features(s: LayerSel) -> bool:
 
 def _all_support_colorbar(s: LayerSel) -> bool:
     return bool(s and all(hasattr(x, 'colorbar') for x in s))
+
+
+A = TypeVar('A')
+
+
+class CallableContextKey(ContextKey[A, bool]):
+    """A context key that is a callable."""
+
+    def __init__(
+        self,
+        default_value: bool,
+        description: str,
+        getter: Callable[[A], Callable[[], bool]] | None = None,
+        **kwargs: str,
+    ) -> None:
+        super().__init__(
+            default_value=default_value,
+            description=description,
+            getter=cast(Callable[[A], bool], getter),
+            **kwargs,
+        )
 
 
 class LayerListSelectionContextKeys(ContextNamespace['LayerSel']):
@@ -325,7 +344,7 @@ class LayerListSelectionContextKeys(ContextNamespace['LayerSel']):
         trans._('True when all selected layers support a colorbar.'),
         _all_support_colorbar,
     )
-    selected_empty_shapes_layer = ContextKey(
+    selected_empty_shapes_layer = CallableContextKey(
         False,
         trans._('True when there is a shapes layer without data selected.'),
         _empty_shapes_layer_selected,

@@ -1,15 +1,15 @@
+from __future__ import annotations
+
 import csv
 import itertools
 import os
 import re
-from collections.abc import Sequence
 from contextlib import contextmanager, suppress
 from glob import glob
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional, Union
 from urllib.parse import urlparse
 
-import dask.array as da
 import imageio.v3 as iio
 import numpy as np
 import requests
@@ -20,6 +20,8 @@ from napari.utils.notifications import notification_manager
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from napari import Viewer
     from napari.types import FullLayerData, LayerData, ReaderFunction
 
@@ -138,6 +140,8 @@ def read_zarr_dataset(path: str):
     shape : tuple
         Shape of array or first array in list
     """
+    import dask.array as da
+
     from napari.utils.notifications import show_info
 
     # For local paths, zarr.open can create a DirectoryStore on a non-existent
@@ -306,6 +310,8 @@ def magic_imread(
                 shape = image.shape
                 dtype = image.dtype
             if use_dask:
+                import dask.array as da
+
                 image = da.from_delayed(
                     delayed(imread)(filename), shape=shape, dtype=dtype
                 )
@@ -320,6 +326,8 @@ def magic_imread(
         image = images[0]
     elif stack:
         if use_dask:
+            import dask.array as da
+
             image = da.stack(images)
         else:
             try:
@@ -339,7 +347,7 @@ def magic_imread(
 
 def _points_csv_to_layerdata(
     table: np.ndarray, column_names: list[str]
-) -> 'FullLayerData':
+) -> FullLayerData:
     """Convert table data and column names from a csv file to Points LayerData.
 
     Parameters
@@ -379,7 +387,7 @@ def _points_csv_to_layerdata(
 
 def _shapes_csv_to_layerdata(
     table: np.ndarray, column_names: list[str]
-) -> 'FullLayerData':
+) -> FullLayerData:
     """Convert table data and column names from a csv file to Shapes LayerData.
 
     Parameters
@@ -513,7 +521,7 @@ csv_reader_functions = {
 
 def csv_to_layer_data(
     path: str, require_type: str | None = None
-) -> Optional['FullLayerData']:
+) -> Optional[FullLayerData]:
     """Return layer data from a CSV file if detected as a valid type.
 
     Parameters
@@ -554,7 +562,7 @@ def csv_to_layer_data(
     return None  # only reachable if it is a valid layer type without a reader
 
 
-def _csv_reader(path: str | Sequence[str]) -> list['LayerData']:
+def _csv_reader(path: str | Sequence[str]) -> list[LayerData]:
     if isinstance(path, str):
         layer_data = csv_to_layer_data(path, require_type=None)
         return [layer_data] if layer_data else []
@@ -565,13 +573,13 @@ def _csv_reader(path: str | Sequence[str]) -> list['LayerData']:
     ]
 
 
-def _magic_imreader(path: str) -> list['LayerData']:
+def _magic_imreader(path: str) -> list[LayerData]:
     return [(magic_imread(path),)]
 
 
 def napari_get_reader(
     path: str | list[str],
-) -> 'ReaderFunction':
+) -> ReaderFunction:
     """Our internal fallback file reader at the end of the reader plugin chain.
 
     This will assume that the filepath is an image, and will pass all of the
@@ -674,7 +682,7 @@ def filter_variables(variables: dict[str, Any]) -> dict[str, Any]:
 
 
 def _add_dropped_scripts_to_console(
-    variables: dict[str, Any], viewer: 'Viewer | None'
+    variables: dict[str, Any], viewer: Viewer | None
 ) -> None:
     if viewer is None:
         return
@@ -688,7 +696,7 @@ def _add_dropped_scripts_to_console(
         console.push(variables)
 
 
-def load_and_execute_python_code(script_path: str) -> list['LayerData']:
+def load_and_execute_python_code(script_path: str) -> list[LayerData]:
     """Load and execute Python code from a file.
 
     Parameters
@@ -745,7 +753,7 @@ def execute_python_code(code: str, script_path: str | Path) -> None:
             notification_manager.receive_error(type(e), e, e.__traceback__)
 
 
-def napari_get_py_reader(path: str) -> 'ReaderFunction | None':
+def napari_get_py_reader(path: str) -> ReaderFunction | None:
     """Return a reader function for Python files.
 
     This function is used to read Python files and execute their content.

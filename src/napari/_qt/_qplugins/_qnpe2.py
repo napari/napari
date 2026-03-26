@@ -7,10 +7,8 @@ from __future__ import annotations
 
 import inspect
 from functools import partial
-from itertools import chain
 from typing import (
     TYPE_CHECKING,
-    Any,
     cast,
 )
 
@@ -29,7 +27,7 @@ from napari._qt._qapp_model.injection._qproviders import (
     _provide_window_or_raise,
 )
 from napari.errors.reader_errors import MultipleReaderError
-from napari.plugins import menu_item_template, plugin_manager
+from napari.plugins import menu_item_template
 from napari.plugins._npe2 import _when_group_order, get_widget_contribution
 from napari.utils.events import Event
 from napari.utils.translations import trans
@@ -41,151 +39,6 @@ if TYPE_CHECKING:
     from npe2.types import WidgetCreator
 
     from napari.qt import QtViewer
-
-
-# TODO: This is a separate function from `_build_samples_submenu_actions` so it
-# can be easily deleted once npe1 is no longer supported.
-def _rebuild_npe1_samples_menu() -> None:  # pragma: no cover
-    """Register submenu and actions for all npe1 plugins, clearing all first."""
-    app = get_app_model()
-    # Unregister all existing npe1 sample menu actions and submenus
-    if unreg := plugin_manager._unreg_sample_submenus:
-        unreg()
-    if unreg := plugin_manager._unreg_sample_actions:
-        unreg()
-
-    sample_actions: list[Action] = []
-    sample_submenus: list[Any] = []
-    for plugin_name, samples in plugin_manager._sample_data.items():
-        multiprovider = len(samples) > 1
-        if multiprovider:
-            submenu_id = f'napari/file/samples/{plugin_name}'
-            submenu = (
-                MenuId.FILE_SAMPLES,
-                SubmenuItem(submenu=submenu_id, title=trans._(plugin_name)),
-            )
-            sample_submenus.append(submenu)
-        else:
-            submenu_id = MenuId.FILE_SAMPLES
-
-        for sample_name, sample_dict in samples.items():
-            _add_sample_partial = partial(
-                _add_sample,
-                plugin=plugin_name,
-                sample=sample_name,
-            )
-
-            display_name = sample_dict['display_name'].replace('&', '&&')
-            if multiprovider:
-                title = display_name
-            else:
-                title = menu_item_template.format(plugin_name, display_name)
-
-            action: Action = Action(
-                id=f'{plugin_name}:{display_name}',
-                title=title,
-                menus=[{'id': submenu_id, 'group': MenuGroup.NAVIGATION}],
-                callback=_add_sample_partial,
-            )
-            sample_actions.append(action)
-
-    if sample_submenus:
-        unreg_sample_submenus = app.menus.append_menu_items(sample_submenus)
-        plugin_manager._unreg_sample_submenus = unreg_sample_submenus
-    if sample_actions:
-        unreg_sample_actions = app.register_actions(sample_actions)
-        plugin_manager._unreg_sample_actions = unreg_sample_actions
-
-
-# TODO: This should be deleted once npe1 is no longer supported.
-def _toggle_or_get_widget_npe1(
-    plugin: str,
-    widget_name: str,
-    name: str,
-    hook_type: str,
-) -> None:  # pragma: no cover
-    """Toggle if widget already built otherwise return widget for npe1."""
-    window = _provide_window_or_raise(
-        msg='Note that widgets cannot be opened in headless mode.'
-    )
-
-    if window and (dock_widget := window._wrapped_dock_widgets.get(name)):
-        dock_widget.setVisible(not dock_widget.isVisible())
-        return
-
-    if hook_type == 'dock':
-        window.add_plugin_dock_widget(plugin, widget_name)
-    else:
-        window._add_plugin_function_widget(plugin, widget_name)
-
-
-def _rebuild_npe1_plugins_menu() -> None:
-    """Register widget submenu and actions for all npe1 plugins, clearing all first."""
-    app = get_app_model()
-
-    # Unregister all existing npe1 plugin menu actions and submenus
-    if unreg := plugin_manager._unreg_plugin_submenus:
-        unreg()
-    if unreg := plugin_manager._unreg_plugin_actions:
-        unreg()
-
-    widget_actions: list[Action] = []
-    widget_submenus: list[Any] = []
-    for hook_type, (plugin_name, widgets) in chain(
-        plugin_manager.iter_widgets()
-    ):
-        multiprovider = len(widgets) > 1
-        if multiprovider:
-            submenu_id = f'napari/plugins/{plugin_name}'
-            submenu = (
-                MenuId.MENUBAR_PLUGINS,
-                SubmenuItem(
-                    submenu=submenu_id,
-                    title=trans._(plugin_name),
-                    group=MenuGroup.PLUGIN_MULTI_SUBMENU,
-                ),
-            )
-            widget_submenus.append(submenu)
-        else:
-            submenu_id = MenuId.MENUBAR_PLUGINS
-
-        for widget_name in widgets:
-            full_name = menu_item_template.format(plugin_name, widget_name)
-            title = widget_name if multiprovider else full_name
-
-            _widget_callback = partial(
-                _toggle_or_get_widget_npe1,
-                plugin=plugin_name,
-                widget_name=widget_name,
-                name=full_name,
-                hook_type=hook_type,
-            )
-            _get_current_dock_status_partial = partial(
-                _get_current_dock_status,
-                full_name=full_name,
-            )
-            action: Action = Action(
-                id=f'{plugin_name}:{widget_name.replace("&", "&&")}',
-                title=title.replace('&', '&&'),
-                menus=[
-                    {
-                        'id': submenu_id,
-                        'group': MenuGroup.PLUGIN_SINGLE_CONTRIBUTIONS,
-                    }
-                ],
-                callback=_widget_callback,
-                toggled=ToggleRule(
-                    get_current=_get_current_dock_status_partial
-                ),
-            )
-            widget_actions.append(action)
-
-    if widget_submenus:
-        unreg_plugin_submenus = app.menus.append_menu_items(widget_submenus)
-        plugin_manager._unreg_plugin_submenus = unreg_plugin_submenus
-    if widget_actions:
-        unreg_plugin_actions = app.register_actions(widget_actions)
-        plugin_manager._unreg_plugin_actions = unreg_plugin_actions
 
 
 def _get_contrib_parent_menu(

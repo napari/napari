@@ -29,7 +29,7 @@ v = parse(__version__)
 VERSION = 'dev' if v.is_devrelease or v.is_prerelease else str(v.base_version)
 
 HELP_URLS: dict[str, str] = {
-    'getting_started': f'https://napari.org/{VERSION}/tutorials/start_index.html',
+    'getting_started': f'https://napari.org/{VERSION}/getting_started/start_index.html',
     'tutorials': f'https://napari.org/{VERSION}/tutorials/index.html',
     'layers_guide': f'https://napari.org/{VERSION}/howtos/layers/index.html',
     'examples_gallery': f'https://napari.org/{VERSION}/gallery.html',

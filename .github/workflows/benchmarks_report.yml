@@ -11,7 +11,7 @@ name: "Benchmarks - Report"
 
 on:
   workflow_run:
-    workflows: [Benchmarks]
+    workflows: [Benchmarks, "Benchmark Trigger by Label"]
     types:
       - completed
 

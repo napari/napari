@@ -1,9 +1,8 @@
 import warnings
 from collections import OrderedDict, defaultdict
-from collections.abc import Iterable
 from functools import lru_cache
 from threading import Lock
-from typing import NamedTuple, Union
+from typing import TYPE_CHECKING, NamedTuple, Union
 
 import numpy as np
 import skimage.color as colorconv
@@ -28,6 +27,9 @@ from napari.utils.colormaps.inverse_colormaps import inverse_cmaps
 from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils.colormaps.vendored.cm import cmap_d
 from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
 
 # All parsable input color types that a user can provide
 ColorType = Union[list, tuple, np.ndarray, str, Color, ColorArray]
@@ -245,7 +247,7 @@ def convert_vispy_colormap(colormap, name='vispy'):
 
 def _napari_cmap_to_vispy(colormap: Colormap) -> VispyColormap:
     """Convert a napari colormap to its equivalent vispy colormap."""
-    cmap_args = colormap.dict()
+    cmap_args = colormap.model_dump()
     cmap_args.pop('name')
     cmap_args['bad_color'] = cmap_args.pop('nan_color')
     return VispyColormap(**cmap_args)
@@ -727,7 +729,7 @@ AVAILABLE_LABELS_COLORMAPS = {
 
 
 def _increment_unnamed_colormap(
-    existing: Iterable[str], name: str = '[unnamed colormap]'
+    existing: 'Iterable[str]', name: str = '[unnamed colormap]'
 ) -> tuple[str, str]:
     """Increment name for unnamed colormap.
 

@@ -11,11 +11,7 @@ from collections import defaultdict
 from collections.abc import Callable, Generator, Hashable, Mapping, Sequence
 from contextlib import contextmanager
 from functools import cached_property
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    ClassVar,
-)
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import magicgui as mgui
 import numpy as np
@@ -31,7 +27,11 @@ from napari.layers.base._base_mouse_bindings import (
     highlight_box_handles,
     transform_with_box,
 )
-from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
+from napari.layers.utils._slice_input import (
+    _SliceInput,
+    _ThickNDSlice,
+    apply_units_to_transform,
+)
 from napari.layers.utils.interactivity_utils import (
     drag_data_to_projected_distance,
 )
@@ -45,6 +45,7 @@ from napari.layers.utils.layer_utils import (
 )
 from napari.layers.utils.plane import ClippingPlane, ClippingPlaneList
 from napari.settings import get_settings
+from napari.types import LayerDataType
 from napari.utils._dask_utils import configure_dask
 from napari.utils._magicgui import (
     add_layer_to_viewer,
@@ -71,12 +72,14 @@ if TYPE_CHECKING:
     import numpy.typing as npt
 
     from napari.components.dims import Dims
-    from napari.components.overlays.base import Overlay
+    from napari.components.overlays import BoundingBoxOverlay, Overlay
     from napari.layers._source import Source
 
+from psygnal import Signal
 
 logger = logging.getLogger('napari.layers.base.base')
 
+__all__ = ('Layer', '_LayerSlicingState', 'no_op')
 
 Array1dOfInts = np.ndarray[tuple[int], np.dtype[np.integer]]
 ListOrArrayOfInts = list[int] | Array1dOfInts
@@ -101,7 +104,6 @@ def no_op(layer: Layer, event: Event) -> None:
     None
 
     """
-    return
 
 
 class PostInit(ABCMeta):
@@ -115,6 +117,216 @@ class PostInit(ABCMeta):
         obj = super().__call__(*args, **kwargs)
         obj._post_init()
         return obj
+
+
+class _LayerSlicingState(ABC):
+    layer: Layer
+    slice_done = Signal()
+    loaded_data = Signal()
+
+    def __init__(self, layer: Layer, data: LayerDataType, cache: bool):
+        self.layer = layer
+        self.dask_optimized_slicing = configure_dask(data, cache)
+        self._slice_input = _SliceInput(
+            ndisplay=2,
+            world_slice=_ThickNDSlice.make_full(ndim=self.ndim),
+            order=tuple(range(self.ndim)),
+        )
+        self._loaded: bool = True
+        self._last_slice_id: int = -1
+        self._units: tuple[pint.Unit, ...] | None = None
+
+    def set_view_slice(self) -> None:
+        with self.dask_optimized_slicing():
+            self._set_view_slice()
+
+    def _slice_indices(
+        self, slice_input: _SliceInput, dims: Dims
+    ) -> _ThickNDSlice[float | int]:
+        """Get the indices of the current slice in the full data array."""
+        world_to_data = self.layer._data_to_world.inverse
+        world_to_data = apply_units_to_transform(world_to_data, dims.units)
+        return slice_input.data_slice(world_to_data)
+
+    @property
+    def data_slice(self) -> _ThickNDSlice:
+        """Slice in data coordinates."""
+        if len(self._slice_input.not_displayed) == 0:
+            # all dims are displayed dimensions
+            # early return to avoid evaluating data_to_world.inverse
+            return _ThickNDSlice.make_full(point=(np.nan,) * self.ndim)
+
+        world_to_data = self.layer._data_to_world.inverse
+        world_to_data = apply_units_to_transform(world_to_data, self._units)
+
+        return self._slice_input.data_slice(world_to_data=world_to_data)
+
+    def update_dims(self):
+        self._slice_input = self._slice_input.with_ndim(self.ndim)
+
+    def set_slice_input_from_dims(self, dims: Dims, force: bool) -> bool:
+        slice_input = self.make_slice_input(dims)
+        self._units = dims.units
+        return self.set_slice_input(slice_input, force)
+
+    def set_slice_input(self, slice_input: _SliceInput, force: bool) -> bool:
+        if self._slice_input == slice_input and not force:
+            return False
+        self._slice_input = copy.deepcopy(slice_input)
+        if self.layer.visible and not force:
+            # We check if layer is visible to not trigger obsolete access to data
+            self.set_view_slice()
+        return True
+
+    @property
+    def ndim(self) -> int:
+        return self.layer.ndim
+
+    def make_slice_input(
+        self,
+        dims: Dims,
+    ) -> _SliceInput:
+        world_slice = _ThickNDSlice[float].from_dims(dims)
+        order_array = (
+            np.arange(dims.ndim)
+            if dims.order is None
+            else np.asarray(dims.order)
+        )
+        order: tuple[int, ...] = tuple(
+            self._world_to_layer_dims(
+                world_dims=order_array,
+                ndim_world=dims.ndim,
+            )
+        )
+
+        return _SliceInput(
+            ndisplay=dims.ndisplay,
+            world_slice=world_slice[-self.ndim :],
+            order=order[-self.ndim :],
+        )
+
+    def _world_to_layer_dims(
+        self,
+        *,
+        world_dims: Sequence[int] | Array1dOfInts,
+        ndim_world: int,
+    ) -> Array1dOfInts:
+        """Map world dimensions to layer dimensions while maintaining order.
+
+        This is used to map dimensions from the full world space defined by ``Dims``
+        to the subspace that a layer inhabits, so that those can be used to index the
+        layer's data and associated coordinates.
+
+        For example a world ``Dims.order`` of [2, 1, 0, 3] would map to [0, 1] for a
+        layer with two dimensions and [1, 0, 2] for a layer with three dimensions
+        as those correspond to the relative order of the last two and three world dimensions
+        respectively.
+
+        Let's keep in mind a few facts:
+
+         - each dimension index is present exactly once.
+         - the lowest represented dimension index will be 0
+
+        That is to say both the `world_dims` input and return results are _some_
+        permutation of 0...N
+
+        Examples
+        --------
+
+        `[2, 1, 0, 3]`  sliced in N=2 dimensions.
+
+          - we want to keep the N=2 dimensions with the biggest index
+          - `[2, None, None, 3]`
+          - we filter the None
+          - `[2, 3]`
+          - reindex so that the lowest dimension is 0 by subtracting 2 from all indices
+          - `[0, 1]`
+
+          `[2, 1, 0, 3]`  sliced in N=3 dimensions.
+
+          - we want to keep the N=3 dimensions with the biggest index
+          - `[2, 1, None, 3]`
+          - we filter the None
+          - `[2, 1, 3]`
+          - reindex so that the lowest dimension is 0 by subtracting 1 from all indices
+          - `[1, 0, 2]`
+
+        Conveniently if the world (layer) dimension is bigger than our displayed
+        dims, we can return everything
+
+
+
+        Parameters
+        ----------
+        world_dims : ndarray
+            The world dimensions.
+        ndim_world : int
+            The number of dimensions in the world coordinate system.
+
+        Returns
+        -------
+        ndarray
+            The corresponding layer dimensions with the same ordering as the given world dimensions.
+        """
+        return self._world_to_layer_dims_impl(
+            world_dims, ndim_world, self.ndim
+        )
+
+    @staticmethod
+    def _world_to_layer_dims_impl(
+        world_dims: Sequence[int] | Array1dOfInts,
+        ndim_world: int,
+        ndim: int,
+    ) -> Array1dOfInts:
+        """
+        Static for ease of testing
+        """
+        offset = ndim_world - ndim
+        order = np.array(world_dims)
+        if offset == 0:
+            return order
+        if offset < 0:
+            return np.concatenate((np.arange(-offset), order - offset))
+
+        return order[order >= offset] - offset
+
+    @abstractmethod
+    def _set_view_slice(self):
+        raise NotImplementedError
+
+    @property
+    def loaded(self) -> bool:
+        """True if this layer is fully loaded in memory, False otherwise.
+
+        Layers that only support sync slicing are always fully loaded.
+        Layers that support async slicing can be temporarily not loaded
+        while slicing is occurring.
+        """
+        return self._loaded
+
+    def _set_loaded(self, loaded: bool) -> None:
+        """Set the loaded state and notify a change with the loaded event."""
+        if self._loaded != loaded:
+            self._loaded = loaded
+            self.loaded_data.emit()
+
+    def _set_unloaded_slice_id(self, slice_id: int) -> None:
+        """Set this layer to be unloaded and associated with a pending slice ID.
+
+        This is private but accessed externally because it is related to slice
+        state, which is intended to be moved off the layer in the future.
+        """
+        self._last_slice_id = slice_id
+        self._set_loaded(False)
+
+    def _update_loaded_slice_id(self, slice_id: int) -> None:
+        """Potentially update the loaded state based on the given completed slice ID.
+
+        This is private but accessed externally because it is related to slice
+        state, which is intended to be moved off the layer in the future.
+        """
+        if self._last_slice_id == slice_id:
+            self._set_loaded(True)
 
 
 @mgui.register_type(choices=get_layers, return_callback=add_layer_to_viewer)
@@ -135,7 +347,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         provided scale, rotate, and shear values.
     axis_labels : tuple of str, optional
         Dimension names of the layer data.
-        If not provided, axis_labels will be set to (..., 'axis -2', 'axis -1').
+        If not provided, axis_labels will be set to (..., '-2', '-1').
     blending : str
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
@@ -383,14 +595,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self._refresh_blocked = False
         self._ndim = ndim
 
-        self._slice_input = _SliceInput(
-            ndisplay=2,
-            world_slice=_ThickNDSlice.make_full(ndim=ndim),
-            order=tuple(range(ndim)),
-        )
-        self._loaded: bool = True
-        self._last_slice_id: int = -1
-
         # Create a transform chain consisting of four transforms:
         # 1. `tile2data`: An initial transform only needed to display tiles
         #   of an image. It maps pixels of the tile into the coordinate space
@@ -444,6 +648,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             SelectionBoxOverlay,
             TransformBoxOverlay,
         )
+        from napari.components.overlays.text import LayerNameOverlay
 
         self._overlays: EventedDict[str, Overlay] = EventedDict()
 
@@ -489,8 +694,14 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
                 'transform_box': TransformBoxOverlay(),
                 'selection_box': SelectionBoxOverlay(),
                 'bounding_box': BoundingBoxOverlay(),
+                'layer_name': LayerNameOverlay(),
             }
         )
+        self._slicing_state = self._get_layer_slicing_state(data, cache)
+
+    @property
+    def _slice_input(self):
+        return self._slicing_state._slice_input
 
     def _post_init(self):
         """Post init hook for subclasses to use."""
@@ -681,37 +892,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
     @property
     def loaded(self) -> bool:
-        """True if this layer is fully loaded in memory, False otherwise.
-
-        Layers that only support sync slicing are always fully loaded.
-        Layers that support async slicing can be temporarily not loaded
-        while slicing is occurring.
-        """
-        return self._loaded
-
-    def _set_loaded(self, loaded: bool) -> None:
-        """Set the loaded state and notify a change with the loaded event."""
-        if self._loaded != loaded:
-            self._loaded = loaded
-            self.events.loaded()
-
-    def _set_unloaded_slice_id(self, slice_id: int) -> None:
-        """Set this layer to be unloaded and associated with a pending slice ID.
-
-        This is private but accessed externally because it is related to slice
-        state, which is intended to be moved off the layer in the future.
-        """
-        self._last_slice_id = slice_id
-        self._set_loaded(False)
-
-    def _update_loaded_slice_id(self, slice_id: int) -> None:
-        """Potentially update the loaded state based on the given completed slice ID.
-
-        This is private but accessed externally because it is related to slice
-        state, which is intended to be moved off the layer in the future.
-        """
-        if self._last_slice_id == slice_id:
-            self._set_loaded(True)
+        """bool: Whether the layer has been loaded into memory."""
+        return self._slicing_state.loaded
 
     @property
     def opacity(self) -> float:
@@ -880,7 +1062,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self.events.translate()
 
     @property
-    def rotate(self) -> npt.NDArray:
+    def rotate(self) -> np.ndarray[tuple[int, int], np.dtype[np.float64]]:
         """array: Rotation matrix in world coordinates."""
         return self._transforms['data2physical'].rotate
 
@@ -935,9 +1117,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             new_axes = range(ndim - old_ndim)
             self._transforms = self._transforms.expand_dims(new_axes)
 
-        self._slice_input = self._slice_input.with_ndim(ndim)
-
         self._ndim = ndim
+        self._slicing_state.update_dims()
 
         self.refresh()
 
@@ -1021,6 +1202,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             data=extent_data,
             world=extent_world,
             step=abs(data_to_world.scale),
+            units=self.units,
         )
 
     @cached_property
@@ -1043,6 +1225,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             data=extent_data,
             world=extent_world,
             step=abs(data_to_world.scale),
+            units=self.units,
         )
 
     def _clear_extent(self) -> None:
@@ -1056,14 +1239,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     @property
     def _data_slice(self) -> _ThickNDSlice:
         """Slice in data coordinates."""
-        if len(self._slice_input.not_displayed) == 0:
-            # all dims are displayed dimensions
-            # early return to avoid evaluating data_to_world.inverse
-            return _ThickNDSlice.make_full(point=(np.nan,) * self.ndim)
-
-        return self._slice_input.data_slice(
-            self._data_to_world.inverse,
-        )
+        return self._slicing_state.data_slice
 
     @abstractmethod
     def _get_ndim(self) -> int:
@@ -1085,7 +1261,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             'axis_labels': self.axis_labels,
             'blending': self.blending,
             'experimental_clipping_planes': [
-                plane.dict() for plane in self.experimental_clipping_planes
+                plane.model_dump()
+                for plane in self.experimental_clipping_planes
             ],
             'metadata': self.metadata,
             'name': self.name,
@@ -1233,12 +1410,15 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             self._experimental_clipping_planes.append(plane)
 
     @property
-    def bounding_box(self) -> Overlay:
-        return self._overlays['bounding_box']
+    def bounding_box(self) -> BoundingBoxOverlay:
+        return self._overlays['bounding_box']  # type: ignore[return-value]
+
+    @property
+    def name_overlay(self) -> Overlay:
+        return self._overlays['layer_name']
 
     def set_view_slice(self) -> None:
-        with self.dask_optimized_slicing():
-            self._set_view_slice()
+        self._slicing_state.set_view_slice()
 
     @abstractmethod
     def _set_view_slice(self):
@@ -1267,9 +1447,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             dims,
             force,
         )
-        slice_input = self._make_slice_input(dims)
-        if force or (self._slice_input != slice_input):
-            self._slice_input = slice_input
+        changed = self._slicing_state.set_slice_input_from_dims(dims, force)
+        if force or changed:
             self._refresh_sync(
                 data_displayed=True,
                 thumbnail=True,
@@ -1277,34 +1456,18 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
                 extent=True,
             )
 
-    def _make_slice_input(
+    def _world_to_layer_dims(
         self,
-        dims: Dims,
-    ) -> _SliceInput:
-        world_ndim: int = self.ndim if dims is None else dims.ndim
-        if dims is None:
-            # if no dims is given, "world" has same dimensionality of self
-            # this happens for example if a layer is not in a viewer
-            # in this case, we assume all dims are displayed dimensions
-            world_slice = _ThickNDSlice.make_full((np.nan,) * self.ndim)
-        else:
-            world_slice = _ThickNDSlice.from_dims(dims)
-        order_array = (
-            np.arange(world_ndim)
-            if dims.order is None
-            else np.asarray(dims.order)
-        )
-        order = tuple(
-            self._world_to_layer_dims(
-                world_dims=order_array,
-                ndim_world=world_ndim,
-            )
-        )
+        *,
+        world_dims: Sequence[int] | Array1dOfInts,
+        ndim_world: int,
+    ) -> Array1dOfInts:
+        """For docs to build
 
-        return _SliceInput(
-            ndisplay=dims.ndisplay,
-            world_slice=world_slice[-self.ndim :],
-            order=order[-self.ndim :],
+        Remove after clean guides/rendering notebook
+        """
+        return self._slicing_state._world_to_layer_dims(
+            world_dims=world_dims, ndim_world=ndim_world
         )
 
     @abstractmethod
@@ -1398,7 +1561,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             value = None
         # This should be removed as soon as possible, it is still
         # used in Points and Shapes.
-        self._value = value
+        if self.mode != 'pan_zoom':
+            self._value = value
         return value
 
     def _get_value_3d(
@@ -1522,13 +1686,15 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             self.events.reload(layer=self)
         # Otherwise, slice immediately on the calling thread.
         else:
-            self._refresh_sync(
-                thumbnail=thumbnail,
-                data_displayed=data_displayed,
-                highlight=highlight,
-                extent=extent,
-                force=force,
-            )
+            if self.visible:
+                self.set_view_slice()
+                self._refresh_sync(
+                    thumbnail=thumbnail,
+                    data_displayed=data_displayed,
+                    highlight=highlight,
+                    extent=extent,
+                    force=force,
+                )
 
     def _refresh_sync(
         self,
@@ -1545,7 +1711,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         if extent:
             self._clear_extent()
         if data_displayed:
-            self.set_view_slice()
             self.events.set_data()
         if thumbnail:
             self._update_thumbnail()
@@ -1632,7 +1797,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
         affine * (rotate * shear * scale + translate)
         """
-        return self._transforms[1:3].simplified
+        res = self._transforms[1:3].simplified
+        res.units = self.units
+        return res
 
     def _world_to_data_ray(self, vector: npt.ArrayLike) -> npt.NDArray:
         """Convert a vector defining an orientation from world coordinates to data coordinates.
@@ -1716,86 +1883,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         transformed_vector /= np.linalg.norm(transformed_vector)
 
         return transformed_vector
-
-    def _world_to_layer_dims(
-        self, *, world_dims: npt.NDArray, ndim_world: int
-    ) -> np.ndarray:
-        """Map world dimensions to layer dimensions while maintaining order.
-
-        This is used to map dimensions from the full world space defined by ``Dims``
-        to the subspace that a layer inhabits, so that those can be used to index the
-        layer's data and associated coordinates.
-
-        For example a world ``Dims.order`` of [2, 1, 0, 3] would map to [0, 1] for a
-        layer with two dimensions and [1, 0, 2] for a layer with three dimensions
-        as those correspond to the relative order of the last two and three world dimensions
-        respectively.
-
-        Let's keep in mind a few facts:
-
-         - each dimension index is present exactly once.
-         - the lowest represented dimension index will be 0
-
-        That is to say both the `world_dims` input and return results are _some_
-        permutation of 0...N
-
-        Examples
-        --------
-
-        `[2, 1, 0, 3]`  sliced in N=2 dimensions.
-
-          - we want to keep the N=2 dimensions with the biggest index
-          - `[2, None, None, 3]`
-          - we filter the None
-          - `[2, 3]`
-          - reindex so that the lowest dimension is 0 by subtracting 2 from all indices
-          - `[0, 1]`
-
-          `[2, 1, 0, 3]`  sliced in N=3 dimensions.
-
-          - we want to keep the N=3 dimensions with the biggest index
-          - `[2, 1, None, 3]`
-          - we filter the None
-          - `[2, 1, 3]`
-          - reindex so that the lowest dimension is 0 by subtracting 1 from all indices
-          - `[1, 0, 2]`
-
-        Conveniently if the world (layer) dimension is bigger than our displayed
-        dims, we can return everything
-
-
-
-        Parameters
-        ----------
-        world_dims : ndarray
-            The world dimensions.
-        ndim_world : int
-            The number of dimensions in the world coordinate system.
-
-        Returns
-        -------
-        ndarray
-            The corresponding layer dimensions with the same ordering as the given world dimensions.
-        """
-        return self._world_to_layer_dims_impl(
-            world_dims, ndim_world, self.ndim
-        )
-
-    @staticmethod
-    def _world_to_layer_dims_impl(
-        world_dims: npt.NDArray, ndim_world: int, ndim: int
-    ) -> npt.NDArray:
-        """
-        Static for ease of testing
-        """
-        offset = ndim_world - ndim
-        order = np.array(world_dims)
-        if offset == 0:
-            return order
-        if offset < 0:
-            return np.concatenate((np.arange(-offset), order - offset))
-
-        return order[order >= offset] - offset
 
     def _display_bounding_box(self, dims_displayed: list[int]) -> npt.NDArray:
         """An axis aligned (ndisplay, 2) bounding box around the data"""
@@ -2056,8 +2143,18 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             )
             if any(s == 0 for s in display_shape):
                 return
-            if self.data_level != level or not np.array_equal(
-                self.corner_pixels, corners
+            # only update when level changes or
+            # when new view is outside current corner_pixels
+            if (
+                self.data_level != level
+                or np.any(
+                    corners[0, displayed_axes]
+                    < self.corner_pixels[0, displayed_axes]
+                )
+                or np.any(
+                    corners[1, displayed_axes]
+                    > self.corner_pixels[1, displayed_axes]
+                )
             ):
                 self._data_level = level
                 self.corner_pixels = corners
@@ -2351,6 +2448,13 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
                     layer_type=layer_type,
                 )
             ) from exc
+
+    @abstractmethod
+    def _get_layer_slicing_state(
+        self, data: LayerDataType, cache: bool
+    ) -> _LayerSlicingState:
+        """Return a LayerSlicer instance appropriate for this layer."""
+        raise NotImplementedError
 
 
 mgui.register_type(type_=list[Layer], return_callback=add_layers_to_viewer)
