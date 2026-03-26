@@ -20,12 +20,12 @@ if TYPE_CHECKING:
 
     from napari.components import ViewerModel
     from napari.components.overlays import ColorBarOverlay, Overlay
-    from napari.layers import Layer
+    from napari.layers import Image, Layer, Surface
     from napari.utils.colormaps import Colormap
 
 
 class IntensityLayerWrapper:
-    def __init__(self, layer: Layer):
+    def __init__(self, layer: Image | Surface):
         self.layer = layer
 
     @property
