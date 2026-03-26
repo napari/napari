@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 
 
 class IntensityLayerWrapper:
-    def __init__(self, overlay, layer: Layer):
+    def __init__(self, layer: Layer):
         self.layer = layer
 
     @property
@@ -45,7 +45,7 @@ class IntensityLayerWrapper:
 
 
 class ColorManagerWrapper:
-    def __init__(self, overlay, color_manager: ColorManager):
+    def __init__(self, color_manager: ColorManager):
         self.color_manager = color_manager
 
     @property
@@ -92,17 +92,13 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
             color_manager = getattr(
                 self.layer, self.overlay.colormanager_attribute
             )
-            self.source_wrapper = ColorManagerWrapper(
-                self.overlay, color_manager
-            )
+            self.source_wrapper = ColorManagerWrapper(color_manager)
             color_manager.events.contrast_limits.connect(self._on_data_change)
             color_manager.events.continuous_colormap.connect(
                 self._on_colormap_change
             )
         else:
-            self.source_wrapper = IntensityLayerWrapper(
-                self.overlay, self.layer
-            )
+            self.source_wrapper = IntensityLayerWrapper(self.layer)
 
             self.layer.events.colormap.connect(self._on_colormap_change)
             self.layer.events.contrast_limits.connect(self._on_data_change)
