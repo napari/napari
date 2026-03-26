@@ -567,7 +567,7 @@ class VispyCanvas:
 
         napari_event = NapariMouseEvent(
             event=event,
-            view_direction=self._calculate_view_direction(event.pos),
+            view_direction=np.asarray(self.viewer.camera.view_direction),
             up_direction=self.viewer.camera.calculate_nd_up_direction(
                 self.viewer.dims.ndim, self.viewer.dims.displayed
             ),
@@ -579,7 +579,6 @@ class VispyCanvas:
         )
 
         # Update the cursor position
-        self.viewer.cursor._view_direction = napari_event.view_direction
         self.viewer.cursor.position = napari_event.position
 
         # Put a read only wrapper on the event

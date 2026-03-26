@@ -793,6 +793,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         tooltip_text = ''
         selection = self.layers.selection
         active = selection.active
+        view_direction = np.asarray(self.camera.view_direction)
         # TODO: this doesn't work well yet with grid mode (and is broken by wide borders too)
 
         # Compute the tooltip first since it is always needed.
@@ -803,7 +804,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         ):
             tooltip_text = active._get_tooltip_text(
                 np.asarray(self.cursor.position),
-                view_direction=self.cursor._view_direction,
+                view_direction=view_direction,
                 dims_displayed=list(self.dims.displayed),
                 world=True,
             )
@@ -817,7 +818,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         ):
             status = active.get_status(
                 self.cursor.position,
-                view_direction=self.cursor._view_direction,
+                view_direction=view_direction,
                 dims_displayed=list(self.dims.displayed),
                 world=True,
             )
@@ -835,7 +836,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
                 continue
             status = layer.get_status(
                 self.cursor.position,
-                view_direction=self.cursor._view_direction,
+                view_direction=view_direction,
                 dims_displayed=list(self.dims.displayed),
                 world=True,
             )

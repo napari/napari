@@ -1,5 +1,3 @@
-import numpy as np
-
 from napari.components._viewer_constants import CursorStyle
 from napari.utils.events import EventedModel
 
@@ -30,10 +28,6 @@ class Cursor(EventedModel):
             * pointing: A finger for pointing
             * standard: The standard cursor
             # crosshair: A crosshair
-    _view_direction : Optional[np.ndarray]
-        The vector describing the direction of the camera in the scene
-        in world coordinates.
-        This is None when viewing in 2D.
     """
 
     # fields
@@ -42,4 +36,3 @@ class Cursor(EventedModel):
     scaled: bool = True
     size: float = 1.0
     style: CursorStyle = CursorStyle.STANDARD
-    _view_direction: np.ndarray | None = None

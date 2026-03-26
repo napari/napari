@@ -259,3 +259,5 @@ class Camera(EventedModel):
                 )
             ),
         )
+
+    # TODO: cache view direction
