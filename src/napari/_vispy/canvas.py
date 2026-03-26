@@ -1251,49 +1251,6 @@ class VispyCanvas:
 
         self._needs_overlay_position_update = False
 
-    def _calculate_view_direction(
-        self, event_pos: tuple[float, float]
-    ) -> npt.NDArray[np.float64] | None:
-        """calculate view direction by ray shot from the camera"""
-        # this method is only implemented for 3 dimension
-        if self.viewer.dims.ndisplay == 2:
-            return None
-
-        if self.viewer.dims.ndim == 2:
-            return self.viewer.camera.calculate_nd_view_direction(
-                self.viewer.dims.ndim, self.viewer.dims.displayed
-            )
-        x, y = event_pos
-        w, h = self.size
-        nd = self.viewer.dims.ndisplay
-
-        view = self._get_viewbox_at(event_pos)[0] or self.view
-        # combine the viewbox transform wit the scene transform
-        # so each viewbox in grid mode maps back to the main scene
-        transform = view.transform * view.scene.transform
-
-        # map click pos to scene coordinates
-        click_scene = transform.imap([x, y, 0, 1])
-        # canvas center at infinite far z- (eye position in canvas coordinates)
-        eye_canvas = [w / 2, h / 2, -1e10, 1]
-        # map eye pos to scene coordinates
-        eye_scene = transform.imap(eye_canvas)
-        # homogeneous coordinate to cartesian
-        click_scene = click_scene[0:nd] / click_scene[nd]
-        # homogeneous coordinate to cartesian
-        eye_scene = eye_scene[0:nd] / eye_scene[nd]
-
-        # calculate direction of the ray
-        d = click_scene - eye_scene
-        d = d[0:nd]
-        d = d / np.linalg.norm(d)
-        # xyz to zyx
-        d: list[float] = list(d[::-1])
-        # convert to nd view direction
-        view_direction_nd = np.zeros(self.viewer.dims.ndim, dtype=np.float64)
-        view_direction_nd[list(self.viewer.dims.displayed)] = d
-        return view_direction_nd
-
     def screenshot(self) -> QImage:
         """Return a QImage based on what is shown in the viewer."""
         # ensure on_draw is run to bring everything up to date
