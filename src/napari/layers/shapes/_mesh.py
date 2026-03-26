@@ -69,9 +69,6 @@ class Mesh:
     triangles: TriangleArray
     triangles_z_order: ZOrderArray
     triangles_colors: ShapeColorArray
-    displayed_triangles: TriangleArray
-    displayed_triangles_colors: ShapeColorArray
-    displayed_triangles_to_shape_index: IndexArray
     vertices_index: IndexArray
     triangles_index: IndexArray
 
@@ -93,12 +90,6 @@ class Mesh:
         self.triangles_index = np.zeros(1, dtype=IndexDtype)
         self.triangles_colors = np.empty((0, 4), dtype=ShapeColorDtype)  # type: ignore[assignment]
         self.triangles_z_order = np.empty(0, dtype=ZOrderDtype)
-
-        self.displayed_triangles = np.empty((0, 3), dtype=TriangleDtype)  # type: ignore[assignment]
-        self.displayed_triangles_to_shape_index = np.zeros(1, dtype=IndexDtype)
-        self.displayed_triangles_colors = np.empty(  # type: ignore[assignment]
-            (0, 4), dtype=ShapeColorDtype
-        )
 
     @property
     def ndisplay(self) -> int:

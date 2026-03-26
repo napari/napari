@@ -20,7 +20,7 @@ from napari.layers.base._base_mouse_bindings import (
 from napari.layers.shapes._accelerated_triangulate_dispatch import (
     warmup_numba_cache,
 )
-from napari.layers.shapes._shape_list import ShapeList
+from napari.layers.shapes._shape_list import ShapeList, ShapeListSlice
 from napari.layers.shapes._slice import _ShapeSliceRequest, _ShapeSliceResponse
 from napari.layers.shapes._shapes_constants import (
     Box,
@@ -550,6 +550,7 @@ class Shapes(Layer):
             self._current_edge_width = 1
 
         self._data_view = ShapeList(ndisplay=self._slice_input.ndisplay)
+        self._data_view._on_slice_updated = self._slicing_state._set_slice_view
         self._data_view.slice_key = np.array(self._data_slice.point)[
             self._slice_input.not_displayed
         ]
@@ -749,6 +750,7 @@ class Shapes(Layer):
 
         self.events.data(**kwargs)
         self._data_view = ShapeList(ndisplay=self._slice_input.ndisplay)
+        self._data_view._on_slice_updated = self._slicing_state._set_slice_view
         self._data_view.slice_key = np.array(self._data_slice.point)[
             self._slice_input.not_displayed
         ]
@@ -1661,7 +1663,7 @@ class Shapes(Layer):
 
     @property
     def _indices_view(self):
-        return np.where(self._data_view._displayed)[0]
+        return self._slicing_state._slice_view.indices
 
     @property
     def _view_text(self) -> np.ndarray:
@@ -2461,17 +2463,18 @@ class Shapes(Layer):
             elif len(index) == 1:
                 box = copy(self._data_view.shapes[next(iter(index))]._box)
             else:
+                slice_view = self._slicing_state._slice_view
                 displayed_shape_indices = [
-                    i for i in index if self._data_view._displayed[i]
+                    i for i in index if slice_view.displayed[i]
                 ]
                 if not displayed_shape_indices:
                     box = None
                 else:
                     mask = np.isin(
-                        self._data_view.displayed_vertices_to_shape_num,
+                        slice_view.displayed_vertices_to_shape_num,
                         displayed_shape_indices,
                     )
-                    verts = self._data_view.displayed_vertices[mask]
+                    verts = slice_view.displayed_vertices[mask]
                     box = create_box(verts)
         else:
             box = copy(self._data_view.shapes[index]._box)
@@ -2614,11 +2617,12 @@ class Shapes(Layer):
                 ]
             ):
                 # If in one of these mode show the vertices of the shape itself
+                slice_view = self._slicing_state._slice_view
                 inds = np.isin(
-                    self._data_view.displayed_vertices_to_shape_num,
+                    slice_view.displayed_vertices_to_shape_num,
                     list(self.selected_data),
                 )
-                vertices = self._data_view.displayed_vertices[inds][:, ::-1]
+                vertices = slice_view.displayed_vertices[inds][:, ::-1]
                 # If currently adding path don't show box over last vertex
                 if self._mode == Mode.ADD_POLYLINE:
                     vertices = vertices[:-1]
@@ -2788,6 +2792,7 @@ class Shapes(Layer):
                 zoom_factor=zoom_factor,
                 offset=offset[-2:],
                 max_shapes=self._max_shapes_thumbnail,
+                slice_view=self._slicing_state._slice_view,
             )
 
             self.thumbnail = colormapped
@@ -3017,11 +3022,12 @@ class Shapes(Layer):
                 [Mode.DIRECT, Mode.VERTEX_INSERT, Mode.VERTEX_REMOVE]
             ):
                 # Check if inside vertex of shape
+                slice_view = self._slicing_state._slice_view
                 selected_vertex_mask = np.isin(
-                    self._data_view.displayed_vertices_to_shape_num,
+                    slice_view.displayed_vertices_to_shape_num,
                     selected_index,
                 )
-                vertices = self._data_view.displayed_vertices[
+                vertices = slice_view.displayed_vertices[
                     selected_vertex_mask
                 ]
                 distances = abs(vertices - coord)
@@ -3032,11 +3038,11 @@ class Shapes(Layer):
                 ).nonzero()[0]
                 if len(matches) > 0:
                     index = selected_vertex_mask.nonzero()[0][matches[-1]]
-                    shape = self._data_view.displayed_vertices_to_shape_num[
+                    shape = slice_view.displayed_vertices_to_shape_num[
                         index
                     ]
                     vals, idx = np.unique(
-                        self._data_view.displayed_vertices_to_shape_num,
+                        slice_view.displayed_vertices_to_shape_num,
                         return_index=True,
                     )
                     shape_in_list = list(vals).index(shape)
@@ -3044,7 +3050,7 @@ class Shapes(Layer):
 
         if value is None:
             # Check if mouse inside shape
-            shape = self._data_view.inside(coord)
+            shape = self._slicing_state._slice_view.inside(coord)
             value = (shape, None)
 
         return value
@@ -3126,7 +3132,7 @@ class Shapes(Layer):
             end_point=end_point,
             dims_displayed=dims_displayed,
         )
-        value, intersection = self._data_view._inside_3d(
+        value, intersection = self._slicing_state._slice_view._inside_3d(
             start_position, ray_direction
         )
 
@@ -3317,6 +3323,13 @@ class _ShapesSlicingState(_LayerSlicingState):
         super().__init__(layer, data, cache)
         self._ndisplay_stored: int = self._slice_input.ndisplay
         self._display_order_stored: tuple[int, ...] = ()
+        self._slice_view: ShapeListSlice = ShapeListSlice.empty(
+            self._slice_input.ndisplay
+        )
+
+    def _set_slice_view(self, slice_view: ShapeListSlice) -> None:
+        """Callback invoked by ShapeList when the slice view is recomputed."""
+        self._slice_view = slice_view
 
     def _set_view_slice(self) -> None:
         """Set the view given the current slicing state."""

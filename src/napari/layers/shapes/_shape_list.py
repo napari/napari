@@ -1,5 +1,5 @@
 import typing
-from collections.abc import Generator, Iterable, Sequence
+from collections.abc import Callable, Generator, Iterable, Sequence
 from contextlib import contextmanager
 from functools import cached_property, wraps
 from itertools import repeat
@@ -83,6 +83,310 @@ class MeshArrayDict(TypedDict):
 
 
 _SizeInformation = tuple[int, int, int, int, int]
+
+
+class ShapeListSlice:
+    """The result of slicing a :class:`ShapeList`.
+
+    All information about the *current* slice state lives here; the parent
+    :class:`ShapeList` only holds full, unsliced data.
+
+    Parameters
+    ----------
+    displayed : np.ndarray
+        Boolean array of length N (number of shapes). ``True`` for shapes that
+        are visible in the current slice.
+    displayed_vertices : np.ndarray
+        (M, D) array of vertices of the currently-visible shapes only.
+    displayed_vertices_to_shape_num : np.ndarray
+        Length-M array mapping each vertex to the index of its shape.
+    displayed_index : np.ndarray
+        Length-K array of vertex-index starts for the displayed shapes.
+    mesh_displayed_triangles : np.ndarray
+        (P, 3) array of triangle vertex indices for the displayed shapes.
+    mesh_displayed_triangles_colors : np.ndarray
+        (P, 4) RGBA colour array for the displayed triangles.
+    mesh_displayed_triangles_to_shape_index : np.ndarray
+        Length-P array mapping each displayed triangle to its shape index.
+    all_shapes : list of Shape
+        Reference to the full ``ShapeList.shapes`` list, used for
+        ``inside`` checks.
+    all_mesh_vertices : np.ndarray
+        Reference to the full mesh-vertex array, used for 3-D intersection
+        and box-selection tests.
+    all_mesh_triangles : np.ndarray
+        Reference to the full mesh-triangle array, used for box-selection
+        tests.
+    all_mesh_triangles_index : np.ndarray
+        Per-shape triangle-offset index array, used for box-selection tests.
+    """
+
+    def __init__(
+        self,
+        displayed: np.ndarray,
+        displayed_vertices: 'CoordinateArray',
+        displayed_vertices_to_shape_num: 'IndexArray',
+        displayed_index: 'IndexArray',
+        mesh_displayed_triangles: 'TriangleArray',
+        mesh_displayed_triangles_colors: 'ShapeColorArray',
+        mesh_displayed_triangles_to_shape_index: 'IndexArray',
+        all_shapes: list,
+        all_mesh_vertices: 'CoordinateArray',
+        all_mesh_triangles: 'TriangleArray',
+        all_mesh_triangles_index: 'IndexArray',
+    ) -> None:
+        self.displayed = displayed
+        self.displayed_vertices = displayed_vertices
+        self.displayed_vertices_to_shape_num = displayed_vertices_to_shape_num
+        self.displayed_index = displayed_index
+        self.mesh_displayed_triangles = mesh_displayed_triangles
+        self.mesh_displayed_triangles_colors = mesh_displayed_triangles_colors
+        self.mesh_displayed_triangles_to_shape_index = (
+            mesh_displayed_triangles_to_shape_index
+        )
+        self._all_shapes = all_shapes
+        self._all_mesh_vertices = all_mesh_vertices
+        self._all_mesh_triangles = all_mesh_triangles
+        self._all_mesh_triangles_index = all_mesh_triangles_index
+
+    @property
+    def indices(self) -> np.ndarray:
+        """Integer array of indices of the displayed shapes."""
+        return np.where(self.displayed)[0]
+
+    @cached_property
+    def _visible_shapes(self) -> 'list[tuple[int, Shape]]':
+        """List of ``(index, shape)`` pairs for currently-visible shapes."""
+        return [(int(i), self._all_shapes[i]) for i in self.indices]
+
+    @cached_property
+    def _bounding_boxes(
+        self,
+    ) -> tuple[np.ndarray, np.ndarray]:
+        """Pair of (min, max) bounding-box arrays for visible shapes."""
+        data = np.array([s[1].bounding_box for s in self._visible_shapes])
+        ndisplay = (
+            self._all_mesh_vertices.shape[1]
+            if self._all_mesh_vertices.ndim > 1 and self._all_mesh_vertices.shape[0] > 0
+            else 2
+        )
+        if data.size == 0:
+            return np.empty((0, ndisplay)), np.empty((0, ndisplay))
+        return data[:, 0], data[:, 1]
+
+    @cached_property
+    def _visible_shapes_indices(self) -> np.ndarray:
+        """Array of visible shape indices."""
+        return self.indices
+
+    def inside(self, coord: np.ndarray) -> 'int | None':
+        """Determine if any visible shape contains the given coordinate.
+
+        Parameters
+        ----------
+        coord : sequence of float
+            Image coordinates to check.
+
+        Returns
+        -------
+        shape : int | None
+            Index of the shape at *coord*, or ``None``.
+        """
+        if not self._all_shapes:
+            return None
+        bounding_boxes = self._bounding_boxes
+        if bounding_boxes[0].size == 0:
+            return None
+        in_bbox = np.all(
+            (bounding_boxes[0] <= coord) * (bounding_boxes[1] >= coord),
+            axis=1,
+        )
+        inside_indices = np.flatnonzero(in_bbox)
+        if inside_indices.size == 0:
+            return None
+        try:
+            z_index = [
+                self._visible_shapes[i][1].z_index for i in inside_indices
+            ]
+            pos = np.argsort(z_index)
+            return self._visible_shapes[
+                next(
+                    inside_indices[p]
+                    for p in pos[::-1]
+                    if np.any(
+                        inside_triangles(
+                            self._visible_shapes[inside_indices[p]][
+                                1
+                            ]._all_triangles()
+                            - coord
+                        )
+                    )
+                )
+            ][0]
+        except StopIteration:
+            return None
+
+    def _triangle_intersection(
+        self,
+        triangle_indices: np.ndarray,
+        ray_position: np.ndarray,
+        ray_direction: np.ndarray,
+    ) -> np.ndarray:
+        """Find the intersection of a ray with specified displayed triangles.
+
+        Parameters
+        ----------
+        triangle_indices : np.ndarray
+            Boolean or integer array indexing into
+            ``self.mesh_displayed_triangles``.
+        ray_position : np.ndarray
+            (3,) starting point of the ray in layer coordinates.
+        ray_direction : np.ndarray
+            (3,) direction of the ray in layer coordinates.
+
+        Returns
+        -------
+        intersection_points : np.ndarray
+            (n, 3) array of intersection points.
+        """
+        triangles = self._all_mesh_vertices[self.mesh_displayed_triangles]
+        intersected_triangles = triangles[triangle_indices]
+        return intersect_line_with_triangles(
+            line_point=ray_position,
+            line_direction=ray_direction,
+            triangles=intersected_triangles,
+        )
+
+    def _inside_3d(
+        self,
+        ray_position: np.ndarray,
+        ray_direction: np.ndarray,
+    ) -> 'tuple[int | None, np.ndarray | None]':
+        """Determine whether a ray intersects any visible shape.
+
+        Parameters
+        ----------
+        ray_position : np.ndarray
+            (3,) starting point of the ray in layer coordinates.
+        ray_direction : np.ndarray
+            (3,) direction of the ray in layer coordinates.
+
+        Returns
+        -------
+        shape : int | None
+            Index of the intersected shape, or ``None``.
+        intersection_point : np.ndarray | None
+            3-D intersection coordinates, or ``None``.
+        """
+        triangles = self._all_mesh_vertices[self.mesh_displayed_triangles]
+        inside = line_in_triangles_3d(
+            line_point=ray_position,
+            line_direction=ray_direction,
+            triangles=triangles,
+        )
+        if not np.any(inside):
+            return None, None
+
+        intersection_points = self._triangle_intersection(
+            triangle_indices=inside,
+            ray_position=ray_position,
+            ray_direction=ray_direction,
+        )
+        start_to_intersection = intersection_points - ray_position
+        distances = np.linalg.norm(start_to_intersection, axis=1)
+        closest_shape_index = np.argmin(distances)
+        shape = self.mesh_displayed_triangles_to_shape_index[inside][
+            closest_shape_index
+        ]
+        intersection = intersection_points[closest_shape_index]
+        return int(shape), intersection
+
+    def shapes_in_box(
+        self, corners: 'np.ndarray[tuple[Literal[2], Literal[2]], np.dtype]'
+    ) -> list[int]:
+        """Determine which visible shapes are inside an axis-aligned box.
+
+        Parameters
+        ----------
+        corners : np.ndarray
+            2×2 array of two corners defining the axis-aligned selection box.
+
+        Returns
+        -------
+        shapes : list of int
+            Indices of the visible shapes that lie inside the box.
+        """
+        shape_mins, shape_maxs = self._bounding_boxes
+        if shape_mins.shape[0] == 0:
+            return []
+
+        selection_min = np.min(corners, axis=0)
+        selection_max = np.max(corners, axis=0)
+
+        # If the box encompasses all shapes, return them directly.
+        layer_min = np.min(shape_mins, axis=0)
+        layer_max = np.max(shape_maxs, axis=0)
+        if np.all(selection_min <= layer_min) and np.all(
+            selection_max >= layer_max
+        ):
+            return self._visible_shapes_indices.tolist()
+
+        # Get shapes with bounding boxes intersecting the selection box.
+        intersects_mask = np.all(
+            shape_maxs >= selection_min, axis=1
+        ) & np.all(shape_mins <= selection_max, axis=1)
+
+        intersecting_indices = self._visible_shapes_indices[intersects_mask]
+
+        if intersecting_indices.size == 0:
+            return []
+
+        shape_mins = shape_mins[intersects_mask]
+        shape_maxs = shape_maxs[intersects_mask]
+
+        shapes_full_in_mask = np.all(
+            shape_maxs <= selection_max, axis=1
+        ) & np.all(shape_mins >= selection_min, axis=1)
+
+        return [
+            int(num)
+            for num, full_in in zip(
+                intersecting_indices, shapes_full_in_mask, strict=True
+            )
+            if full_in
+            or triangles_intersect_box(
+                self._all_mesh_vertices[
+                    self._all_mesh_triangles[
+                        slice(
+                            self._all_mesh_triangles_index[num],
+                            self._all_mesh_triangles_index[num + 1],
+                        )
+                    ]
+                ],
+                corners,
+            ).any()
+        ]
+
+    @classmethod
+    def empty(cls, ndisplay: int = 2) -> 'ShapeListSlice':
+        """Return an empty slice (no shapes visible)."""
+        return cls(
+            displayed=np.array([]),
+            displayed_vertices=np.empty((0, ndisplay), dtype=CoordinateDtype),
+            displayed_vertices_to_shape_num=np.array([], dtype=IndexDtype),
+            displayed_index=np.empty(0, dtype=IndexDtype),
+            mesh_displayed_triangles=np.empty((0, 3), dtype=TriangleDtype),
+            mesh_displayed_triangles_colors=np.empty(
+                (0, 4), dtype=ShapeColorDtype
+            ),
+            mesh_displayed_triangles_to_shape_index=np.zeros(
+                1, dtype=IndexDtype
+            ),
+            all_shapes=[],
+            all_mesh_vertices=np.empty((0, ndisplay), dtype=CoordinateDtype),
+            all_mesh_triangles=np.empty((0, 3), dtype=TriangleDtype),
+            all_mesh_triangles_index=np.zeros(1, dtype=IndexDtype),
+        )
 
 
 def _ensure_color_arrays(shapes, face_colors=None, edge_colors=None):
@@ -432,11 +736,7 @@ class ShapeList:
     ) -> None:
         self._ndisplay = ndisplay
         self.shapes: list[Shape] = []
-        self._displayed = np.array([])
         self._slice_key = np.array([])
-        self.displayed_vertices = np.array([], dtype=CoordinateDtype)
-        self.displayed_vertices_to_shape_num = np.array([], dtype=IndexDtype)
-        self.displayed_indices = np.array([], dtype=IndexDtype)
         self._vertices = np.empty((0, self.ndisplay), dtype=CoordinateDtype)
         self._vertices_index: IndexArray = np.zeros(1, dtype=IndexDtype)
         self._z_index: IndexArray = np.empty(0, dtype=IndexDtype)
@@ -446,6 +746,9 @@ class ShapeList:
 
         self._edge_color: ShapeColorArray = np.empty((0, 4))  # type: ignore[assignment]
         self._face_color: ShapeColorArray = np.empty((0, 4))  # type: ignore[assignment]
+
+        # Optional callback invoked every time the slice view is recomputed.
+        self._on_slice_updated: Callable[['ShapeListSlice'], None] | None = None
 
         # counter for the depth of re entrance of the context manager.
         self.__batched_level = 0
@@ -710,56 +1013,13 @@ class ShapeList:
         slice_key = list(slice_key)
         if not np.array_equal(self._slice_key, slice_key):
             self._slice_key = slice_key
-            self._clear_cache()
             self._update_displayed()
 
-    def _update_displayed_triangles_to_shape_index(
-        self, displayed_indices: IndexArray
-    ) -> None:
-        """Update the displayed triangles to shape index mapping."""
-        if (
-            self._mesh.displayed_triangles_to_shape_index.shape[0]
-            != self._mesh.displayed_triangles.shape[0]
-        ):
-            self._mesh.displayed_triangles_to_shape_index = np.full(
-                self._mesh.displayed_triangles.shape[0], -1, dtype=IndexDtype
-            )
-        shift_idx = 0
-        for i in displayed_indices:
-            begin = self._mesh.triangles_index[i]
-            end = self._mesh.triangles_index[i + 1]
-            elem_num = end - begin
-            self._mesh.displayed_triangles_to_shape_index[
-                shift_idx : shift_idx + elem_num
-            ] = i
-            shift_idx += elem_num
-
-    def _update_displayed_vertices_to_shape_num(
-        self, displayed_indices: IndexArray
-    ) -> None:
-        """Update the displayed vertices to shape index mapping."""
-        if (
-            self.displayed_vertices_to_shape_num.shape[0]
-            != self.displayed_vertices.shape[0]
-        ):
-            self.displayed_vertices_to_shape_num = np.full(
-                self.displayed_vertices.shape[0], -1, dtype=IndexDtype
-            )
-        shift_idx = 0
-        for i in displayed_indices:
-            begin = self._vertices_index[i]
-            end = self._vertices_index[i + 1]
-            elem_num = end - begin
-            self.displayed_vertices_to_shape_num[
-                shift_idx : shift_idx + elem_num
-            ] = i
-            shift_idx += elem_num
-
     def _update_displayed(self) -> None:
-        """Update the displayed data based on the slice key.
+        """Recompute the slice view and notify via the registered callback.
 
-        This method must be called from within the `batched_updates` context
-        manager:
+        This method must be called from within the ``batched_updates`` context
+        manager.
         """
         assert self.__batched_level >= 1, (
             'call _update_displayed from within self.batched_updates context manager'
@@ -768,19 +1028,47 @@ class ShapeList:
             self.__update_displayed_called += 1
             return
 
-        # The list slice key is repeated to check against both the min and
-        # max values stored in the shapes slice key.
-        slice_key = np.array([self.slice_key, self.slice_key])
+        slice_view = self.compute_slice(self._slice_key)
+        if self._on_slice_updated is not None:
+            self._on_slice_updated(slice_view)
 
-        # Slice key must exactly match mins and maxs of shape as then the
-        # shape is entirely contained within the current slice.
-        if len(self.shapes) > 0:
-            self._displayed = np.all(
-                np.abs(self.slice_keys - slice_key) < 0.5, axis=(1, 2)
-            )
+    def compute_slice(self, slice_key) -> 'ShapeListSlice':
+        """Compute and return the visible shapes for the given *slice_key*.
+
+        Parameters
+        ----------
+        slice_key : array-like
+            Coordinates in the non-displayed dimensions used to determine
+            which shapes are visible.
+
+        Returns
+        -------
+        ShapeListSlice
+            Object holding all slice-specific display data.
+        """
+        slice_key = list(slice_key)
+
+        if len(self.shapes) == 0:
+            return ShapeListSlice.empty(self.ndisplay)
+
+        # Determine which shapes are visible in this slice.
+        if not slice_key:
+            # No non-displayed dimensions → every shape is visible.
+            displayed = np.ones(len(self.shapes), dtype=bool)
         else:
-            self._displayed = np.array([])
-        disp_indices: IndexArray = np.nonzero(self._displayed)[0]  # type: ignore[assignment]
+            # A shape is visible if the current slice_key falls within the
+            # shape's min–max range for every non-displayed dimension.
+            # self.slice_keys has shape (N, 2, P):
+            #   axis 1 index 0 = per-shape minimum values
+            #   axis 1 index 1 = per-shape maximum values
+            sk = np.asarray(slice_key)
+            displayed = np.all(
+                (self.slice_keys[:, 0, :] - 0.5 <= sk)
+                & (sk <= self.slice_keys[:, 1, :] + 0.5),
+                axis=1,
+            )
+
+        disp_indices: IndexArray = np.nonzero(displayed)[0]  # type: ignore[assignment]
 
         z_order = self._mesh.triangles_z_order
 
@@ -794,19 +1082,61 @@ class ShapeList:
             triangle_ranges = self._mesh_triangles_range_seq(disp_indices)
             vertices_range = self._vertices_range_seq(disp_indices)
 
-        self._mesh.displayed_triangles = self._mesh.triangles[
+        mesh_displayed_triangles: TriangleArray = self._mesh.triangles[
             z_order[triangle_ranges]
         ]
 
-        self._update_displayed_triangles_to_shape_index(disp_indices)
+        # Build triangle → shape index mapping.
+        n_tri = mesh_displayed_triangles.shape[0]
+        mesh_displayed_triangles_to_shape_index: IndexArray = np.full(
+            n_tri, -1, dtype=IndexDtype
+        )
+        shift_idx = 0
+        for i in disp_indices:
+            begin = self._mesh.triangles_index[i]
+            end = self._mesh.triangles_index[i + 1]
+            elem_num = end - begin
+            mesh_displayed_triangles_to_shape_index[
+                shift_idx : shift_idx + elem_num
+            ] = i
+            shift_idx += elem_num
 
-        self._mesh.displayed_triangles_colors = self._mesh.triangles_colors[
-            z_order[triangle_ranges]
-        ]
+        mesh_displayed_triangles_colors: ShapeColorArray = (
+            self._mesh.triangles_colors[z_order[triangle_ranges]]
+        )
 
-        self.displayed_vertices = self._vertices[vertices_range]
-        self._update_displayed_vertices_to_shape_num(disp_indices)
-        self.displayed_index = self._vertices_index[disp_indices]
+        displayed_vertices: CoordinateArray = self._vertices[vertices_range]
+
+        # Build vertex → shape index mapping.
+        n_vert = displayed_vertices.shape[0]
+        displayed_vertices_to_shape_num: IndexArray = np.full(
+            n_vert, -1, dtype=IndexDtype
+        )
+        shift_idx = 0
+        for i in disp_indices:
+            begin = self._vertices_index[i]
+            end = self._vertices_index[i + 1]
+            elem_num = end - begin
+            displayed_vertices_to_shape_num[
+                shift_idx : shift_idx + elem_num
+            ] = i
+            shift_idx += elem_num
+
+        displayed_index: IndexArray = self._vertices_index[disp_indices]
+
+        return ShapeListSlice(
+            displayed=displayed,
+            displayed_vertices=displayed_vertices,
+            displayed_vertices_to_shape_num=displayed_vertices_to_shape_num,
+            displayed_index=displayed_index,
+            mesh_displayed_triangles=mesh_displayed_triangles,
+            mesh_displayed_triangles_colors=mesh_displayed_triangles_colors,
+            mesh_displayed_triangles_to_shape_index=mesh_displayed_triangles_to_shape_index,
+            all_shapes=self.shapes,
+            all_mesh_vertices=self._mesh.vertices,
+            all_mesh_triangles=self._mesh.triangles,
+            all_mesh_triangles_index=self._mesh.triangles_index,
+        )
 
     def add(
         self,
@@ -997,7 +1327,6 @@ class ShapeList:
         if z_refresh:
             # Set z_order
             self._update_z_order()
-        self._clear_cache()
 
     def _extend_meshes(self, face_colors, edge_colors, arrays: MeshArrayDict):
         """Assemble mesh properties from filled arrays.
@@ -1123,7 +1452,6 @@ class ShapeList:
         if z_refresh:
             # Set z_order
             self._update_z_order()
-        self._clear_cache()
 
     @_batch_dec
     def remove_all(self):
@@ -1355,8 +1683,6 @@ class ShapeList:
             self._z_index = np.delete(self._z_index, indices)
             self._update_z_order()
 
-        self._clear_cache()
-
     @_batch_dec
     def _update_mesh_vertices(self, index, edge=False, face=False):
         """Updates the mesh vertex data and vertex data for a single shape
@@ -1438,7 +1764,6 @@ class ShapeList:
             indices = self._vertices_slice(index)
             self._vertices[indices] = shape.data_displayed
             self._update_displayed()
-        self._clear_cache()
 
     @_batch_dec
     def _update_z_order(self):
@@ -1710,7 +2035,6 @@ class ShapeList:
         self.shapes[index].transform(transform)
         self.update(index)
         self._update_z_order()
-        self._clear_cache()
 
     def outline(
         self, indices: int | Sequence[int]
@@ -1824,231 +2148,6 @@ class ShapeList:
             np.concatenate(triangles_blocks),
         )
 
-    def shapes_in_box(
-        self, corners: np.ndarray[tuple[Literal[2], Literal[2]]]
-    ) -> list[int]:
-        """Determines which shapes, if any, are inside an axis-aligned box.
-
-        Looks only at displayed shapes
-
-        Parameters
-        ----------
-        corners : np.ndarray
-            2x2 array of two corners that will be used to create an
-            axis-aligned box.
-
-        Returns
-        -------
-        shapes : list of ints
-            List of shapes that are inside the box.
-        """
-        shape_mins, shape_maxs = self._bounding_boxes
-        if shape_mins.shape[0] == 0:
-            return []
-
-        selection_min = np.min(corners, axis=0)
-        selection_max = np.max(corners, axis=0)
-
-        # If the box encompasses all shapes, just get them directly
-        layer_min = np.min(shape_mins, axis=0)
-        layer_max = np.max(shape_maxs, axis=0)
-        if np.all(selection_min <= layer_min) and np.all(
-            selection_max >= layer_max
-        ):
-            return self._visible_shapes_indices.tolist()
-
-        # Get shapes with bounding boxes intersecting the selection box
-        intersects_mask = np.all(shape_maxs >= selection_min, axis=1) & np.all(
-            shape_mins <= selection_max, axis=1
-        )
-
-        intersecting_indices = self._visible_shapes_indices[intersects_mask]
-
-        if intersecting_indices.size == 0:
-            return []
-
-        shape_mins = shape_mins[intersects_mask]
-        shape_maxs = shape_maxs[intersects_mask]
-
-        shapes_full_in_mask = np.all(
-            shape_maxs <= selection_max, axis=1
-        ) & np.all(shape_mins >= selection_min, axis=1)
-
-        return [
-            num
-            for num, full_in in zip(
-                intersecting_indices, shapes_full_in_mask, strict=True
-            )
-            if full_in
-            or triangles_intersect_box(
-                self._mesh.vertices[
-                    self._mesh.triangles[self._mesh_triangles_slice(num)]
-                ],
-                corners,
-            ).any()
-        ]
-
-    @cached_property
-    def _visible_shapes(self) -> list[tuple[int, Shape]]:
-        slice_key = self.slice_key
-        if len(slice_key):
-            return [
-                (i, s)
-                for i, s in enumerate(self.shapes)
-                if (
-                    np.all(s.slice_key[0] <= slice_key)
-                    and np.all(slice_key <= s.slice_key[1])
-                )
-            ]
-        return list(enumerate(self.shapes))
-
-    @cached_property
-    def _bounding_boxes(
-        self,
-    ) -> tuple[
-        np.ndarray[tuple[int, Literal[2, 3]]],
-        np.ndarray[tuple[int, Literal[2, 3]]],
-    ]:
-        data = np.array([s[1].bounding_box for s in self._visible_shapes])
-        if data.size == 0:
-            return np.empty((0, self.ndisplay)), np.empty((0, self.ndisplay))  # type: ignore[return-value]
-        return data[:, 0], data[:, 1]
-
-    @cached_property
-    def _visible_shapes_indices(
-        self,
-    ) -> np.ndarray[tuple[int], np.dtype[IndexDtype]]:
-        return np.array([s[0] for s in self._visible_shapes])
-
-    def inside(self, coord):
-        """Determines if any shape at given coord by looking inside triangle
-        meshes. Looks only at displayed shapes
-
-        Parameters
-        ----------
-        coord : sequence of float
-            Image coordinates to check if any shapes are at.
-
-        Returns
-        -------
-        shape : int | None
-            Index of shape if any that is at the coordinates. Returns `None`
-            if no shape is found.
-        """
-        if not self.shapes:
-            return None
-        bounding_boxes = self._bounding_boxes
-        in_bbox = np.all(
-            (bounding_boxes[0] <= coord) * (bounding_boxes[1] >= coord),
-            axis=1,
-        )
-        inside_indices = np.flatnonzero(in_bbox)
-        if inside_indices.size == 0:
-            return None
-        try:
-            z_index = [
-                self._visible_shapes[i][1].z_index for i in inside_indices
-            ]
-            pos = np.argsort(z_index)
-            return self._visible_shapes[
-                next(
-                    inside_indices[p]
-                    for p in pos[::-1]
-                    if np.any(
-                        inside_triangles(
-                            self._visible_shapes[inside_indices[p]][
-                                1
-                            ]._all_triangles()
-                            - coord
-                        )
-                    )
-                )
-            ][0]
-        except StopIteration:
-            return None
-
-    def _inside_3d(self, ray_position: np.ndarray, ray_direction: np.ndarray):
-        """Determines if any shape is intersected by a ray by looking inside triangle
-        meshes. Looks only at displayed shapes.
-
-        Parameters
-        ----------
-        ray_position : np.ndarray
-            (3,) array containing the location that was clicked. This
-            should be in the same coordinate system as the vertices.
-        ray_direction : np.ndarray
-            (3,) array describing the direction camera is pointing in
-            the scene. This should be in the same coordinate system as
-            the vertices.
-
-        Returns
-        -------
-        shape : int | None
-            Index of shape if any that is at the coordinates. Returns `None`
-            if no shape is found.
-        intersection_point : Optional[np.ndarray]
-            The point where the ray intersects the mesh face. If there was
-            no intersection, returns None.
-        """
-        triangles = self._mesh.vertices[self._mesh.displayed_triangles]
-        inside = line_in_triangles_3d(
-            line_point=ray_position,
-            line_direction=ray_direction,
-            triangles=triangles,
-        )
-        # intersected_shapes = self._mesh.displayed_triangles_index[inside, 0]
-        if not np.any(inside):
-            return None, None
-
-        intersection_points = self._triangle_intersection(
-            triangle_indices=inside,
-            ray_position=ray_position,
-            ray_direction=ray_direction,
-        )
-        start_to_intersection = intersection_points - ray_position
-        distances = np.linalg.norm(start_to_intersection, axis=1)
-        closest_shape_index = np.argmin(distances)
-        shape = self._mesh.displayed_triangles_to_shape_index[inside][
-            closest_shape_index
-        ]
-        intersection = intersection_points[closest_shape_index]
-        return shape, intersection
-
-    def _triangle_intersection(
-        self,
-        triangle_indices: np.ndarray,
-        ray_position: np.ndarray,
-        ray_direction: np.ndarray,
-    ):
-        """Find the intersection of a ray with specified triangles.
-
-        Parameters
-        ----------
-        triangle_indices : np.ndarray
-            (n,) array of shape indices to find the intersection with the ray. The indices should
-            correspond with self._mesh.displayed_triangles.
-        ray_position : np.ndarray
-            (3,) array with the coordinate of the starting point of the ray in layer coordinates.
-            Only provide the 3 displayed dimensions.
-        ray_direction : np.ndarray
-            (3,) array of the normal direction of the ray in layer coordinates.
-            Only provide the 3 displayed dimensions.
-
-        Returns
-        -------
-        intersection_points : np.ndarray
-            (n x 3) array of the intersection of the ray with each of the specified shapes in layer coordinates.
-            Only the 3 displayed dimensions are provided.
-        """
-        triangles = self._mesh.vertices[self._mesh.displayed_triangles]
-        intersected_triangles = triangles[triangle_indices]
-        intersection_points = intersect_line_with_triangles(
-            line_point=ray_position,
-            line_direction=ray_direction,
-            triangles=intersected_triangles,
-        )
-        return intersection_points
-
     def to_masks(self, mask_shape=None, zoom_factor=1, offset=(0, 0)):
         """Returns N binary masks, one for each shape, embedded in an array of
         shape `mask_shape`.
@@ -2072,7 +2171,10 @@ class ShapeList:
             N shapes
         """
         if mask_shape is None:
-            mask_shape = self.displayed_vertices.max(axis=0).astype('int')
+            if self._vertices.size > 0:
+                mask_shape = self._vertices.max(axis=0).astype('int')
+            else:
+                return np.zeros((0,), dtype=bool)
 
         masks = np.array(
             [
@@ -2108,7 +2210,10 @@ class ShapeList:
             integer up to N for points inside the corresponding shape.
         """
         if labels_shape is None:
-            labels_shape = self.displayed_vertices.max(axis=0).astype(int)
+            if self._vertices.size > 0:
+                labels_shape = self._vertices.max(axis=0).astype(int)
+            else:
+                return np.zeros((0,), dtype=int)
 
         labels = np.zeros(labels_shape, dtype=int)
 
@@ -2121,7 +2226,12 @@ class ShapeList:
         return labels
 
     def to_colors(
-        self, colors_shape=None, zoom_factor=1, offset=(0, 0), max_shapes=None
+        self,
+        colors_shape=None,
+        zoom_factor=1,
+        offset=(0, 0),
+        max_shapes=None,
+        slice_view: 'ShapeListSlice | None' = None,
     ):
         """Rasterize shapes to an RGBA image array.
 
@@ -2133,7 +2243,7 @@ class ShapeList:
         ----------
         colors_shape : np.ndarray | tuple | None
             2-tuple defining shape of colors image to be generated. If non
-            specified, takes the max of all the vertiecs
+            specified, takes the max of all the vertices
         zoom_factor : float
             Premultiplier applied to coordinates before generating mask. Used
             for generating as downsampled mask.
@@ -2145,6 +2255,9 @@ class ShapeList:
             If the number of shapes in view exceeds max_shapes, max_shapes shapes
             will be randomly selected from the in view shapes. If set to None, no
             maximum is applied. The default value is None.
+        slice_view : ShapeListSlice | None
+            The current slice view. If provided, only the shapes visible in this
+            slice will be rendered. If ``None``, all shapes are rendered.
 
         Returns
         -------
@@ -2153,13 +2266,22 @@ class ShapeList:
             value of the shape for points inside the corresponding shape.
         """
         if colors_shape is None:
-            colors_shape = self.displayed_vertices.max(axis=0).astype(int)
+            if slice_view is not None and slice_view.displayed_vertices.size > 0:
+                colors_shape = slice_view.displayed_vertices.max(axis=0).astype(int)
+            elif self._vertices.size > 0:
+                colors_shape = self._vertices.max(axis=0).astype(int)
+            else:
+                return np.zeros((1, 1, 4), dtype=float)
 
         colors = np.zeros((*colors_shape, 4), dtype=float)
         colors[..., 3] = 1
 
         z_order = self._z_order
-        shapes_in_view = np.argwhere(self._displayed)
+        if slice_view is not None:
+            displayed = slice_view.displayed
+        else:
+            displayed = np.ones(len(self.shapes), dtype=bool)
+        shapes_in_view = np.argwhere(displayed)
         z_order_in_view_mask = np.isin(z_order, shapes_in_view)
         z_order_in_view = z_order[z_order_in_view_mask]
 
@@ -2180,7 +2302,3 @@ class ShapeList:
 
         return colors
 
-    def _clear_cache(self):
-        self.__dict__.pop('_bounding_boxes', None)
-        self.__dict__.pop('_visible_shapes', None)
-        self.__dict__.pop('_visible_shapes_indices', None)

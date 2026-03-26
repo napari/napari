@@ -41,8 +41,9 @@ class VispyShapesLayer(VispyBaseLayer):
         self._on_data_change()
 
     def _on_data_change(self):
-        faces = self.layer._data_view._mesh.displayed_triangles
-        colors = self.layer._data_view._mesh.displayed_triangles_colors
+        slice_view = self.layer._slicing_state._slice_view
+        faces = slice_view.mesh_displayed_triangles
+        colors = slice_view.mesh_displayed_triangles_colors
         vertices = self.layer._data_view._mesh.vertices
 
         # Note that the indices of the vertices need to be reversed to

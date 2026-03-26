@@ -141,7 +141,7 @@ def select(layer: Shapes, event: MouseEvent) -> Generator[None, None, None]:
         else:
             layer.selected_data = set()
     elif layer._is_selecting:
-        layer.selected_data = layer._data_view.shapes_in_box(layer._drag_box)
+        layer.selected_data = layer._slicing_state._slice_view.shapes_in_box(layer._drag_box)
         layer._is_selecting = False
         layer._set_highlight()
 

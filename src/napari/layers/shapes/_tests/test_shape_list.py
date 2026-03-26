@@ -203,8 +203,8 @@ def test_inside():
 
     shape_list = ShapeList()
     shape_list.add([shape1, shape2, shape3])
-    shape_list.slice_key = (1,)
-    assert shape_list.inside((0.5, 0.5)) == 1
+    slice_view = shape_list.compute_slice((1,))
+    assert slice_view.inside((0.5, 0.5)) == 1
 
 
 def test_visible_shapes_4d():
@@ -241,21 +241,17 @@ def test_visible_shapes_4d():
     )
 
     shape_list = ShapeList()
-    # set slice_key first to avoid empty array broadcasting error
-    shape_list.slice_key = np.array([0, 0])
     shape_list.add([shape1, shape2, shape3])
 
     # at (0,0) - should show shape1 and shape3
-    shape_list.slice_key = np.array([0, 0])
-    visible = shape_list._visible_shapes
+    visible = shape_list.compute_slice(np.array([0, 0]))._visible_shapes
     assert len(visible) == 2
     visible_shapes = [v[1] for v in visible]
     assert shape1 in visible_shapes
     assert shape3 in visible_shapes
 
     # at (0,1) - should show shape2 and shape3
-    shape_list.slice_key = np.array([0, 1])
-    visible = shape_list._visible_shapes
+    visible = shape_list.compute_slice(np.array([0, 1]))._visible_shapes
     assert len(visible) == 2
     visible_shapes = [v[1] for v in visible]
     assert shape2 in visible_shapes
@@ -349,10 +345,11 @@ def test_update_face_color(shape_li, new_color):
 
     # Check if the face color has been updated
     npt.assert_array_equal(shape_li.face_color, expected_color)
+    slice_view = shape_li.compute_slice(shape_li._slice_key)
     assert (
         np.count_nonzero(
             np.all(
-                shape_li._mesh.displayed_triangles_colors == expected_color[0],
+                slice_view.mesh_displayed_triangles_colors == expected_color[0],
                 axis=1,
             )
         )
@@ -382,10 +379,11 @@ def test_update_edge_color(shape_li, new_color):
     shape_li.update_edge_colors(range(4), new_color)
     # Check if the edge color has been updated
     npt.assert_array_equal(shape_li.edge_color, expected_color)
+    slice_view = shape_li.compute_slice(shape_li._slice_key)
     assert (
         np.count_nonzero(
             np.all(
-                shape_li._mesh.displayed_triangles_colors == expected_color[0],
+                slice_view.mesh_displayed_triangles_colors == expected_color[0],
                 axis=1,
             )
         )
@@ -397,8 +395,8 @@ def test_update_edge_color(shape_li, new_color):
 
 
 def test_multi_layer_data(shape_li_3d):
-    shape_li_3d.slice_key = (1,)
-    assert shape_li_3d._mesh.displayed_triangles_colors.shape[0] == 20
+    slice_view = shape_li_3d.compute_slice((1,))
+    assert slice_view.mesh_displayed_triangles_colors.shape[0] == 20
 
 
 LAYER_COUNT = 16
@@ -454,9 +452,9 @@ def test_proper_shape_position(
 ):
     sl = ShapeList(multi_z_rectangles)
     sl.ndisplay = 2
-    sl.slice_key = (slice_,)
-    assert sl._mesh.displayed_triangles_colors.shape[0] == 160
+    slice_view = sl.compute_slice((slice_,))
+    assert slice_view.mesh_displayed_triangles_colors.shape[0] == 160
     npt.assert_array_equal(
-        sl._mesh.displayed_triangles,
+        slice_view.mesh_displayed_triangles,
         triangles_slice + slice_ * simple_rectangle.vertices_count,
     )
