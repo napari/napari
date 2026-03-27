@@ -736,7 +736,6 @@ class ShapeList:
     ) -> None:
         self._ndisplay = ndisplay
         self.shapes: list[Shape] = []
-        self._slice_key = np.array([])
         self._vertices = np.empty((0, self.ndisplay), dtype=CoordinateDtype)
         self._vertices_index: IndexArray = np.zeros(1, dtype=IndexDtype)
         self._z_index: IndexArray = np.empty(0, dtype=IndexDtype)
@@ -749,6 +748,10 @@ class ShapeList:
 
         # Optional callback invoked every time the slice view is recomputed.
         self._on_slice_updated: Callable[['ShapeListSlice'], None] | None = None
+
+        # Optional provider called by _update_displayed() to get the current
+        # non-displayed-dimension coordinates. Set by the owning Shapes layer.
+        self._slice_key_provider: Callable[[], np.ndarray] | None = None
 
         # counter for the depth of re entrance of the context manager.
         self.__batched_level = 0
@@ -1002,19 +1005,6 @@ class ShapeList:
         """list of int: z-index for each shape."""
         return [s.z_index for s in self.shapes]
 
-    @property
-    def slice_key(self):
-        """list: slice key for slicing n-dimensional shapes."""
-        return self._slice_key
-
-    @slice_key.setter
-    @_batch_dec
-    def slice_key(self, slice_key):
-        slice_key = list(slice_key)
-        if not np.array_equal(self._slice_key, slice_key):
-            self._slice_key = slice_key
-            self._update_displayed()
-
     def _update_displayed(self) -> None:
         """Recompute the slice view and notify via the registered callback.
 
@@ -1028,7 +1018,12 @@ class ShapeList:
             self.__update_displayed_called += 1
             return
 
-        slice_view = self.compute_slice(self._slice_key)
+        slice_key = (
+            self._slice_key_provider()
+            if self._slice_key_provider is not None
+            else np.array([])
+        )
+        slice_view = self.compute_slice(slice_key)
         if self._on_slice_updated is not None:
             self._on_slice_updated(slice_view)
 

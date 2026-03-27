@@ -551,7 +551,8 @@ class Shapes(Layer):
 
         self._data_view = ShapeList(ndisplay=self._slice_input.ndisplay)
         self._data_view._on_slice_updated = self._slicing_state._set_slice_view
-        self._data_view.slice_key = np.array(self._data_slice.point)[
+        self._data_view._slice_key_provider = self._slicing_state._get_slice_key
+        self._slicing_state._slice_key = np.array(self._data_slice.point)[
             self._slice_input.not_displayed
         ]
 
@@ -751,7 +752,8 @@ class Shapes(Layer):
         self.events.data(**kwargs)
         self._data_view = ShapeList(ndisplay=self._slice_input.ndisplay)
         self._data_view._on_slice_updated = self._slicing_state._set_slice_view
-        self._data_view.slice_key = np.array(self._data_slice.point)[
+        self._data_view._slice_key_provider = self._slicing_state._get_slice_key
+        self._slicing_state._slice_key = np.array(self._data_slice.point)[
             self._slice_input.not_displayed
         ]
         self._add_shapes(
@@ -3329,6 +3331,13 @@ class _ShapesSlicingState(_LayerSlicingState):
         self._slice_view: ShapeListSlice = ShapeListSlice.empty(
             self._slice_input.ndisplay
         )
+        # The current slice key (non-displayed dimension coordinates).
+        # Owned here so that ShapeList carries no slicing state.
+        self._slice_key: np.ndarray = np.array([])
+
+    def _get_slice_key(self) -> np.ndarray:
+        """Return the current slice key; used as a provider by ShapeList."""
+        return self._slice_key
 
     def _set_slice_view(self, slice_view: ShapeListSlice) -> None:
         """Callback invoked by ShapeList when the slice view is recomputed."""
@@ -3381,6 +3390,7 @@ class _ShapesSlicingState(_LayerSlicingState):
                 self.layer._clipboard = {}
 
             slice_key = response.slice_key
-            if not np.array_equal(slice_key, self.layer._data_view.slice_key):
+            if not np.array_equal(slice_key, self._slice_key):
                 self.layer.selected_data = set()
-            self.layer._data_view.slice_key = slice_key
+            self._slice_key = slice_key
+            self.layer._data_view._update_displayed()
