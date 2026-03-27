@@ -169,7 +169,7 @@ def paste_shape(layer: Shapes) -> None:
 )
 def select_shapes_in_slice(layer: Shapes) -> None:
     """Select/Deselect all shapes in the current view slice."""
-    new_selected = set(np.nonzero(layer._data_view._displayed)[0])
+    new_selected = set(layer._slicing_state._slice_view.indices)
 
     if new_selected.issubset(layer.selected_data):
         # If all visible shapes are already selected, deselect them

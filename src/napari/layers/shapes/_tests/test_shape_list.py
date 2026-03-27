@@ -62,7 +62,8 @@ def test_reset_bounding_box_rotation():
     shape_list = ShapeList()
     shape_list.add(shape)
     npt.assert_array_almost_equal(
-        shape_list._bounding_boxes, np.array([[[-0.5, -0.5]], [[10.5, 10.5]]])
+        shape_list.compute_slice(shape_list._slice_key)._bounding_boxes,
+        np.array([[[-0.5, -0.5]], [[10.5, 10.5]]]),
     )
     shape_list.rotate(0, 45, (5, 5))
     p = 5 * np.sqrt(2) + 0.5
@@ -70,7 +71,8 @@ def test_reset_bounding_box_rotation():
         shape.bounding_box, np.array([[5 - p, 5 - p], [5 + p, 5 + p]])
     )
     npt.assert_array_almost_equal(
-        shape_list._bounding_boxes, shape.bounding_box[:, np.newaxis, :]
+        shape_list.compute_slice(shape_list._slice_key)._bounding_boxes,
+        shape.bounding_box[:, np.newaxis, :],
     )
 
 
@@ -80,14 +82,16 @@ def test_reset_bounding_box_shift():
     shape_list = ShapeList()
     shape_list.add(shape)
     npt.assert_array_almost_equal(
-        shape_list._bounding_boxes, shape.bounding_box[:, np.newaxis, :]
+        shape_list.compute_slice(shape_list._slice_key)._bounding_boxes,
+        shape.bounding_box[:, np.newaxis, :],
     )
     shape_list.shift(0, np.array([5, 5]))
     npt.assert_array_almost_equal(
         shape.bounding_box, np.array([[4.5, 4.5], [15.5, 15.5]])
     )
     npt.assert_array_almost_equal(
-        shape_list._bounding_boxes, shape.bounding_box[:, np.newaxis, :]
+        shape_list.compute_slice(shape_list._slice_key)._bounding_boxes,
+        shape.bounding_box[:, np.newaxis, :],
     )
 
 
@@ -97,14 +101,16 @@ def test_reset_bounding_box_scale():
     shape_list = ShapeList()
     shape_list.add(shape)
     npt.assert_array_almost_equal(
-        shape_list._bounding_boxes, shape.bounding_box[:, np.newaxis, :]
+        shape_list.compute_slice(shape_list._slice_key)._bounding_boxes,
+        shape.bounding_box[:, np.newaxis, :],
     )
     shape_list.scale(0, 2, (5, 5))
     npt.assert_array_almost_equal(
         shape.bounding_box, np.array([[-5.5, -5.5], [15.5, 15.5]])
     )
     npt.assert_array_almost_equal(
-        shape_list._bounding_boxes, shape.bounding_box[:, np.newaxis, :]
+        shape_list.compute_slice(shape_list._slice_key)._bounding_boxes,
+        shape.bounding_box[:, np.newaxis, :],
     )
 
 
