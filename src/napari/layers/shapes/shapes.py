@@ -2432,6 +2432,9 @@ class Shapes(Layer):
         return self._vertex_size * self._normalized_scale_factor / 2
 
     def _set_view_slice(self):
+        # Required by the Layer ABC contract. The actual slicing is performed
+        # by _ShapesSlicingState._set_view_slice(), which is invoked via
+        # Layer.set_view_slice() → self._slicing_state.set_view_slice().
         raise NotImplementedError
 
     def interaction_box(self, index: int | Iterable[int]) -> BoxArray | None:

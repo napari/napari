@@ -349,7 +349,7 @@ class ShapeListSlice:
         ) & np.all(shape_mins >= selection_min, axis=1)
 
         return [
-            int(num)
+            num
             for num, full_in in zip(
                 intersecting_indices, shapes_full_in_mask, strict=True
             )
