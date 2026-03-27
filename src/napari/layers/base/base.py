@@ -2062,7 +2062,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         for i in range(3):
             if np.abs(view_dir[i]) < 1e-10:
                 # Ray is parallel to this slab
-                if click_pos_data[i] < bb_min[i] or click_pos_data[i] > bb_max[i]:
+                if (
+                    click_pos_data[i] < bb_min[i]
+                    or click_pos_data[i] > bb_max[i]
+                ):
                     return None, None
             else:
                 t1 = (bb_min[i] - click_pos_data[i]) / view_dir[i]
