@@ -221,30 +221,48 @@ def test_invalidate_extent_shear():
     npt.assert_array_equal(layer.extent.world, [[0, 0], [28, 19]])
 
 
-def test_get_ray_intersections_anisotropic_no_typeerror():
+def test_get_ray_intersections_anisotropic():
     """Regression test for #8285.
 
-    With highly anisotropic data, find_front_back_face may find only one
-    of the two bounding-box faces (front or back) that the ray passes
-    through.  Previously ``_get_ray_intersections`` only returned early
-    when *both* normals were None, so a single None was forwarded to
-    ``intersect_line_with_axis_aligned_bounding_box_3d`` which raised
-    ``TypeError: 'NoneType' object is not subscriptable``.
+    With highly anisotropic data (small z, large y/x) the old
+    face-detection approach failed to identify both bounding-box faces,
+    causing a TypeError.  The slab-based intersection now handles
+    arbitrary aspect ratios and returns valid intersection points.
     """
-    # Highly anisotropic 3D layer (small z, large y/x) — reproduces
-    # the exact geometry from the issue traceback.
     data = np.zeros((5, 5000, 5000))
     layer = SampleLayer(data)
 
-    # Position and direction taken from the issue traceback (data coords).
-    # This combination makes find_front_back_face return front=None,
-    # back=[1,0,0] — i.e. only one face is identified.
+    # Position and direction from the original issue traceback.
     position = np.array([5.10589, 3717.37829, 3671.51104])
     view_direction = np.array([-1.97862e-04, -6.36407e-01, 7.71354e-01])
     dims_displayed = [0, 1, 2]
 
-    # Should not raise TypeError; returns (None, None) when only one
-    # face normal is found
+    # The ray does intersect the bounding box, so we expect valid points
+    start_point, end_point = layer.get_ray_intersections(
+        position,
+        view_direction=view_direction,
+        dims_displayed=dims_displayed,
+        world=False,
+    )
+    assert start_point is not None
+    assert end_point is not None
+    # Both points should lie on the bounding box faces
+    bb_min = np.array([0, 0, 0])
+    bb_max = np.array([6, 5001, 5001])  # extent is shape + 1
+    for pt in (start_point, end_point):
+        assert np.all(pt >= bb_min - 1e-6) and np.all(pt <= bb_max + 1e-6)
+
+
+def test_get_ray_intersections_miss():
+    """Ray that misses the bounding box entirely returns (None, None)."""
+    data = np.zeros((5, 5, 5))
+    layer = SampleLayer(data)
+
+    # Position far outside, direction pointing away
+    position = np.array([100.0, 100.0, 100.0])
+    view_direction = np.array([1.0, 0.0, 0.0])
+    dims_displayed = [0, 1, 2]
+
     start_point, end_point = layer.get_ray_intersections(
         position,
         view_direction=view_direction,

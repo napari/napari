@@ -53,10 +53,6 @@ from napari.utils._magicgui import (
     get_layers,
 )
 from napari.utils.events import EmitterGroup, Event, EventedDict
-from napari.utils.geometry import (
-    find_front_back_face,
-    intersect_line_with_axis_aligned_bounding_box_3d,
-)
 from napari.utils.key_bindings import KeymapProvider
 from napari.utils.migrations import _DeprecatingDict
 from napari.utils.misc import StringEnum
@@ -2055,25 +2051,30 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             view_dir = view_direction[dims_displayed]
             click_pos_data = position[dims_displayed]
 
-        # Determine the front and back faces
-        front_face_normal, back_face_normal = find_front_back_face(
-            click_pos_data, bounding_box, view_dir
-        )
-        if front_face_normal is None or back_face_normal is None:
-            # click does not intersect the data bounding box
-            return None, None
+        # Ray-AABB intersection via the slab method.
+        # For each axis we compute the t-values where the ray crosses the
+        # min and max planes.  The intersection interval is [t_min, t_max];
+        # if t_min > t_max the ray misses the box.
+        bb_min = bounding_box[:, 0]
+        bb_max = bounding_box[:, 1]
+        t_min = -np.inf
+        t_max = np.inf
+        for i in range(3):
+            if np.abs(view_dir[i]) < 1e-10:
+                # Ray is parallel to this slab
+                if click_pos_data[i] < bb_min[i] or click_pos_data[i] > bb_max[i]:
+                    return None, None
+            else:
+                t1 = (bb_min[i] - click_pos_data[i]) / view_dir[i]
+                t2 = (bb_max[i] - click_pos_data[i]) / view_dir[i]
+                t_near, t_far = min(t1, t2), max(t1, t2)
+                t_min = max(t_min, t_near)
+                t_max = min(t_max, t_far)
+                if t_min > t_max:
+                    return None, None
 
-        # Calculate ray-bounding box face intersections
-        start_point_displayed_dimensions = (
-            intersect_line_with_axis_aligned_bounding_box_3d(
-                click_pos_data, view_dir, bounding_box, front_face_normal
-            )
-        )
-        end_point_displayed_dimensions = (
-            intersect_line_with_axis_aligned_bounding_box_3d(
-                click_pos_data, view_dir, bounding_box, back_face_normal
-            )
-        )
+        start_point_displayed_dimensions = click_pos_data + t_min * view_dir
+        end_point_displayed_dimensions = click_pos_data + t_max * view_dir
 
         # add the coordinates for the axes not displayed
         start_point = position.copy()
