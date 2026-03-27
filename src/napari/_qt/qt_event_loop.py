@@ -24,7 +24,6 @@ from napari._qt.utils import _maybe_allow_interrupt
 from napari.resources._icons import _theme_path
 from napari.settings import get_settings
 from napari.utils import config, perf
-from napari.utils._logging import register_logger_to_napari_handler
 from napari.utils.logo import get_logo_path
 from napari.utils.notifications import (
     notification_manager,
@@ -168,10 +167,6 @@ def get_qapp(
     is set.
 
     """
-    # start logger so we can retrieve early log info if log level was set
-    # before this point. TODO: We could put this elsewhere?
-    register_logger_to_napari_handler('')
-
     # napari defaults are all-or nothing.  If any of the keywords are used
     # then they are all used.
     set_values = {k for k, v in locals().items() if v}

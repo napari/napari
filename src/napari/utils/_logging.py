@@ -113,6 +113,16 @@ def register_logger_to_napari_handler(
     logger.addHandler(LOG_HANDLER)
 
 
+def _deregister_logger_from_napari_handler(
+    module: str,
+) -> None:
+    """
+    Register a specific module's logger to use our custom log handler.
+    """
+    logger = logging.getLogger(module)
+    logger.removeHandler(LOG_HANDLER)
+
+
 def _html_tag_for_level(level_name: str, level_value: int) -> str:
     """
     Generate html tag for the appropriate logging level.

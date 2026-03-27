@@ -87,6 +87,7 @@ from napari.types import (
     PathOrPaths,
     SampleData,
 )
+from napari.utils._logging import register_logger_to_napari_handler
 from napari.utils._register import create_func as create_add_method
 from napari.utils.action_manager import action_manager
 from napari.utils.colormaps import ensure_colormap
@@ -238,6 +239,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     def __init__(
         self, title='napari', ndisplay=2, order=(), axis_labels=()
     ) -> None:
+        register_logger_to_napari_handler('')
         # max_depth=0 means don't look for parent contexts.
 
         # FIXME: just like the LayerList, this object should ideally be created
@@ -445,18 +447,26 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     ) -> None:
         """Reset the camera and fit the current layers to the canvas.
 
-        Resets the angles of the camera, adjust the camera zoom,
-        and centers the view so that all layers are visible,
-        accounting for the current grid mode and margin.
+                Resets the angles of the camera, adjust the camera zoom,
+                and centers the view so that all layers are visible,
+                accounting for the current grid mode and margin.
 
-        Parameters
-        ----------
-        margin : float in [0, 1)
-            Margin as fraction of the canvas, showing blank space around the
-            data. Default is 0.05 (5% of the canvas).
-        reset_camera_angle : bool
-            Whether to reset the camera angles to (0, 0, 0) before fitting
-            to view. Default is True.
+                Parameters
+        I can't tomorrow ...
+        17m
+        ￼
+        ￼
+        EP
+        ⁨Eymeline Pageot⁩
+        not sure the big rain and cold from yesterday was a good thing for wild garlic...
+        15m
+                ----------
+                margin : float in [0, 1)
+                    Margin as fraction of the canvas, showing blank space around the
+                    data. Default is 0.05 (5% of the canvas).
+                reset_camera_angle : bool
+                    Whether to reset the camera angles to (0, 0, 0) before fitting
+                    to view. Default is True.
         """
         if self.dims.ndisplay == 3 and reset_camera_angle:
             self.camera.angles = (0, 0, 0)
