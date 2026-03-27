@@ -3,7 +3,6 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import overload
 
-import numpy as np
 import numpy.typing as npt
 
 from napari.layers._data_protocols import LayerDataProtocol, assert_protocol

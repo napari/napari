@@ -10,7 +10,6 @@ import numpy as np
 from scipy import ndimage as ndi
 
 from napari.layers._data_protocols import LayerDataProtocol
-from napari.layers._multiscale_data import MultiScaleData
 from napari.layers._scalar_field._slice import _ScalarFieldSliceResponse
 from napari.layers._scalar_field.scalar_field import (
     ScalarFieldBase,
@@ -25,6 +24,7 @@ from napari.layers.image._image_constants import (
 from napari.layers.image._image_utils import guess_rgb
 from napari.layers.image._slice import _ImageSliceRequest
 from napari.layers.intensity_mixin import IntensityVisualizationMixin
+from napari.layers.multiscale_data import MultiScaleData
 from napari.layers.utils.layer_utils import calc_data_range
 from napari.types import LayerDataType
 from napari.utils._dtype import get_dtype_limits, normalize_dtype
