@@ -199,7 +199,7 @@ def is_valid_spatial_in_clipboard() -> bool:
     )
 
 
-Q_LAYERLIST_CONTEXT_ACTIONS = [
+Q_LAYERLIST_CONTEXT_ACTIONS: list[Action] = [
     Action(
         id='napari.layer.copy_all_to_clipboard',
         title=trans._('Copy all to clipboard'),

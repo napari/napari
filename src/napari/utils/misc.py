@@ -11,7 +11,6 @@ import os
 import re
 import sys
 import warnings
-from collections.abc import Callable, Iterable, Iterator, Sequence
 from enum import Enum, EnumMeta
 from os import fspath, path as os_path
 from pathlib import Path
@@ -29,6 +28,8 @@ from napari.utils.translations import trans
 _sentinel = object()
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Iterable, Iterator, Sequence
+
     import packaging.version
 
 

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import warnings
-from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Generic, TypeVar
 
@@ -14,6 +13,8 @@ from napari.utils.transforms import Affine
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     import numpy.typing as npt
 
     from napari.components.dims import Dims
