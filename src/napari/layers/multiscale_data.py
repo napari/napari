@@ -86,6 +86,9 @@ class MultiScaleData(Sequence[LayerDataProtocol]):
         """Number of multiscale levels."""
         return self.nlevels
 
+    def __eq__(self, other) -> bool:
+        return self._data == other
+
     def __repr__(self) -> str:
         return (
             f'<MultiScaleData at {hex(id(self))}. '
