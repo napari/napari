@@ -567,7 +567,9 @@ class VispyCanvas:
 
         napari_event = NapariMouseEvent(
             event=event,
-            view_direction=np.asarray(self.viewer.camera.view_direction),
+            view_direction=self.viewer.camera.calculate_nd_view_direction(
+                self.viewer.dims.ndim, self.viewer.dims.displayed
+            ),
             up_direction=self.viewer.camera.calculate_nd_up_direction(
                 self.viewer.dims.ndim, self.viewer.dims.displayed
             ),
