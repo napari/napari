@@ -187,7 +187,7 @@ def test_random_3D_timeseries_surface():
 
     # If a values axis is made to be a displayed axis then no data should be
     # shown
-    with pytest.warns(UserWarning, match='Assigning multiple data per vertex'):
+    with pytest.warns(UserWarning, match='must be non-displayed dimensions'):
         layer._slice_dims(Dims(ndim=4, ndisplay=3, order=(3, 0, 1, 2)))
     assert len(layer._view_vertices) == 0
 
