@@ -550,8 +550,7 @@ class Shapes(Layer):
             self._current_edge_width = 1
 
         self._data_view = ShapeList(ndisplay=self._slice_input.ndisplay)
-        self._data_view._on_slice_updated = self._slicing_state._set_slice_view
-        self._data_view._slice_key_provider = self._slicing_state._get_slice_key
+        self._data_view._on_changed = self._slicing_state._on_shape_list_changed
         self._slicing_state._slice_key = np.array(self._data_slice.point)[
             self._slice_input.not_displayed
         ]
@@ -751,8 +750,7 @@ class Shapes(Layer):
 
         self.events.data(**kwargs)
         self._data_view = ShapeList(ndisplay=self._slice_input.ndisplay)
-        self._data_view._on_slice_updated = self._slicing_state._set_slice_view
-        self._data_view._slice_key_provider = self._slicing_state._get_slice_key
+        self._data_view._on_changed = self._slicing_state._on_shape_list_changed
         self._slicing_state._slice_key = np.array(self._data_slice.point)[
             self._slice_input.not_displayed
         ]
@@ -905,7 +903,7 @@ class Shapes(Layer):
         self._current_edge_width = edge_width
         if self._update_properties:
             # To avoid performance cost of repeated update calls, we batch the updates
-            with self._data_view.batched_updates():
+            with self._data_view.batched_changes():
                 for i in self.selected_data:
                     self._data_view.update_edge_width(i, edge_width)
         self.events.edge_width()
@@ -920,7 +918,7 @@ class Shapes(Layer):
     def current_edge_color(self, edge_color):
         self._current_edge_color = transform_color(edge_color)
         if self._update_properties:
-            with self._data_view.batched_updates():
+            with self._data_view.batched_changes():
                 for i in self.selected_data:
                     self._data_view.update_edge_color(
                         i, self._current_edge_color
@@ -1238,7 +1236,7 @@ class Shapes(Layer):
             widths = width
         else:
             widths = [width for _ in range(self.nshapes)]
-        with self._data_view.batched_updates():
+        with self._data_view.batched_changes():
             for i, width in enumerate(widths):
                 self._data_view.update_edge_width(i, width)
 
@@ -3335,13 +3333,16 @@ class _ShapesSlicingState(_LayerSlicingState):
         # Owned here so that ShapeList carries no slicing state.
         self._slice_key: np.ndarray = np.array([])
 
-    def _get_slice_key(self) -> np.ndarray:
-        """Return the current slice key; used as a provider by ShapeList."""
-        return self._slice_key
+    def _on_shape_list_changed(self) -> None:
+        """Called by ShapeList whenever its data changes.
 
-    def _set_slice_view(self, slice_view: ShapeListSlice) -> None:
-        """Callback invoked by ShapeList when the slice view is recomputed."""
-        self._slice_view = slice_view
+        Recomputes the slice view using the current slice key.  This is the
+        single place where slicing logic is triggered; ``ShapeList`` itself
+        knows nothing about slicing.
+        """
+        self._slice_view = ShapeListSlice.from_shape_list(
+            self.layer._data_view, self._slice_key
+        )
 
     def _set_view_slice(self) -> None:
         """Set the view given the current slicing state."""
@@ -3375,7 +3376,7 @@ class _ShapesSlicingState(_LayerSlicingState):
         ndisplay = response.slice_input.ndisplay
         order = response.slice_input.order
 
-        with self.layer._data_view.batched_updates():
+        with self.layer._data_view.batched_changes():
             if ndisplay != self._ndisplay_stored:
                 self.layer.selected_data = set()
                 self.layer._data_view.ndisplay = min(self.layer.ndim, ndisplay)
@@ -3393,4 +3394,4 @@ class _ShapesSlicingState(_LayerSlicingState):
             if not np.array_equal(slice_key, self._slice_key):
                 self.layer.selected_data = set()
             self._slice_key = slice_key
-            self.layer._data_view._update_displayed()
+            self.layer._data_view._notify_changed()

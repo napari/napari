@@ -2,7 +2,7 @@ import numpy as np
 import numpy.testing as npt
 import pytest
 
-from napari.layers.shapes._shape_list import ShapeList
+from napari.layers.shapes._shape_list import ShapeList, ShapeListSlice
 from napari.layers.shapes._shapes_models import Path, Polygon, Rectangle
 
 
@@ -62,7 +62,7 @@ def test_reset_bounding_box_rotation():
     shape_list = ShapeList()
     shape_list.add(shape)
     npt.assert_array_almost_equal(
-        shape_list.compute_slice([])._bounding_boxes,
+        ShapeListSlice.from_shape_list(shape_list, [])._bounding_boxes,
         np.array([[[-0.5, -0.5]], [[10.5, 10.5]]]),
     )
     shape_list.rotate(0, 45, (5, 5))
@@ -71,7 +71,7 @@ def test_reset_bounding_box_rotation():
         shape.bounding_box, np.array([[5 - p, 5 - p], [5 + p, 5 + p]])
     )
     npt.assert_array_almost_equal(
-        shape_list.compute_slice([])._bounding_boxes,
+        ShapeListSlice.from_shape_list(shape_list, [])._bounding_boxes,
         shape.bounding_box[:, np.newaxis, :],
     )
 
@@ -82,7 +82,7 @@ def test_reset_bounding_box_shift():
     shape_list = ShapeList()
     shape_list.add(shape)
     npt.assert_array_almost_equal(
-        shape_list.compute_slice([])._bounding_boxes,
+        ShapeListSlice.from_shape_list(shape_list, [])._bounding_boxes,
         shape.bounding_box[:, np.newaxis, :],
     )
     shape_list.shift(0, np.array([5, 5]))
@@ -90,7 +90,7 @@ def test_reset_bounding_box_shift():
         shape.bounding_box, np.array([[4.5, 4.5], [15.5, 15.5]])
     )
     npt.assert_array_almost_equal(
-        shape_list.compute_slice([])._bounding_boxes,
+        ShapeListSlice.from_shape_list(shape_list, [])._bounding_boxes,
         shape.bounding_box[:, np.newaxis, :],
     )
 
@@ -101,7 +101,7 @@ def test_reset_bounding_box_scale():
     shape_list = ShapeList()
     shape_list.add(shape)
     npt.assert_array_almost_equal(
-        shape_list.compute_slice([])._bounding_boxes,
+        ShapeListSlice.from_shape_list(shape_list, [])._bounding_boxes,
         shape.bounding_box[:, np.newaxis, :],
     )
     shape_list.scale(0, 2, (5, 5))
@@ -109,7 +109,7 @@ def test_reset_bounding_box_scale():
         shape.bounding_box, np.array([[-5.5, -5.5], [15.5, 15.5]])
     )
     npt.assert_array_almost_equal(
-        shape_list.compute_slice([])._bounding_boxes,
+        ShapeListSlice.from_shape_list(shape_list, [])._bounding_boxes,
         shape.bounding_box[:, np.newaxis, :],
     )
 
@@ -209,7 +209,7 @@ def test_inside():
 
     shape_list = ShapeList()
     shape_list.add([shape1, shape2, shape3])
-    slice_view = shape_list.compute_slice((1,))
+    slice_view = ShapeListSlice.from_shape_list(shape_list, (1,))
     assert slice_view.inside((0.5, 0.5)) == 1
 
 
@@ -250,14 +250,14 @@ def test_visible_shapes_4d():
     shape_list.add([shape1, shape2, shape3])
 
     # at (0,0) - should show shape1 and shape3
-    visible = shape_list.compute_slice(np.array([0, 0]))._visible_shapes
+    visible = ShapeListSlice.from_shape_list(shape_list, np.array([0, 0]))._visible_shapes
     assert len(visible) == 2
     visible_shapes = [v[1] for v in visible]
     assert shape1 in visible_shapes
     assert shape3 in visible_shapes
 
     # at (0,1) - should show shape2 and shape3
-    visible = shape_list.compute_slice(np.array([0, 1]))._visible_shapes
+    visible = ShapeListSlice.from_shape_list(shape_list, np.array([0, 1]))._visible_shapes
     assert len(visible) == 2
     visible_shapes = [v[1] for v in visible]
     assert shape2 in visible_shapes
@@ -351,7 +351,7 @@ def test_update_face_color(shape_li, new_color):
 
     # Check if the face color has been updated
     npt.assert_array_equal(shape_li.face_color, expected_color)
-    slice_view = shape_li.compute_slice([])
+    slice_view = ShapeListSlice.from_shape_list(shape_li, [])
     assert (
         np.count_nonzero(
             np.all(
@@ -385,7 +385,7 @@ def test_update_edge_color(shape_li, new_color):
     shape_li.update_edge_colors(range(4), new_color)
     # Check if the edge color has been updated
     npt.assert_array_equal(shape_li.edge_color, expected_color)
-    slice_view = shape_li.compute_slice([])
+    slice_view = ShapeListSlice.from_shape_list(shape_li, [])
     assert (
         np.count_nonzero(
             np.all(
@@ -401,7 +401,7 @@ def test_update_edge_color(shape_li, new_color):
 
 
 def test_multi_layer_data(shape_li_3d):
-    slice_view = shape_li_3d.compute_slice((1,))
+    slice_view = ShapeListSlice.from_shape_list(shape_li_3d, (1,))
     assert slice_view.mesh_displayed_triangles_colors.shape[0] == 20
 
 
@@ -458,7 +458,7 @@ def test_proper_shape_position(
 ):
     sl = ShapeList(multi_z_rectangles)
     sl.ndisplay = 2
-    slice_view = sl.compute_slice((slice_,))
+    slice_view = ShapeListSlice.from_shape_list(sl, (slice_,))
     assert slice_view.mesh_displayed_triangles_colors.shape[0] == 160
     npt.assert_array_equal(
         slice_view.mesh_displayed_triangles,

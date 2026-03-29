@@ -388,6 +388,121 @@ class ShapeListSlice:
             all_mesh_triangles_index=np.zeros(1, dtype=IndexDtype),
         )
 
+    @classmethod
+    def from_shape_list(
+        cls, shape_list: 'ShapeList', slice_key
+    ) -> 'ShapeListSlice':
+        """Compute and return the visible shapes for the given *slice_key*.
+
+        This is the authoritative place for all slicing logic; ``ShapeList``
+        itself holds no slicing state and does not know when this is called.
+
+        Parameters
+        ----------
+        shape_list : ShapeList
+            The shape list whose data will be sliced.
+        slice_key : array-like
+            Coordinates in the non-displayed dimensions used to determine
+            which shapes are visible.
+
+        Returns
+        -------
+        ShapeListSlice
+            Object holding all slice-specific display data.
+        """
+        slice_key = list(slice_key)
+
+        if len(shape_list.shapes) == 0:
+            return cls.empty(shape_list.ndisplay)
+
+        # Determine which shapes are visible in this slice.
+        if not slice_key:
+            # No non-displayed dimensions → every shape is visible.
+            displayed = np.ones(len(shape_list.shapes), dtype=bool)
+        else:
+            # A shape is visible if the current slice_key falls within the
+            # shape's min–max range for every non-displayed dimension.
+            # shape_list.slice_keys has shape (N, 2, P):
+            #   axis 1 index 0 = per-shape minimum values
+            #   axis 1 index 1 = per-shape maximum values
+            sk = np.asarray(slice_key)
+            displayed = np.all(
+                (shape_list.slice_keys[:, 0, :] - 0.5 <= sk)
+                & (sk <= shape_list.slice_keys[:, 1, :] + 0.5),
+                axis=1,
+            )
+
+        disp_indices: IndexArray = np.nonzero(displayed)[0]  # type: ignore[assignment]
+
+        z_order = shape_list._mesh.triangles_z_order
+
+        if disp_indices.size == 0:
+            triangle_ranges = np.array([], dtype=np.int64)
+            vertices_range = np.array([], dtype=np.int64)
+        else:
+            triangle_ranges = shape_list._mesh_triangles_range_seq(
+                disp_indices
+            )
+            vertices_range = shape_list._vertices_range_seq(disp_indices)
+
+        mesh_displayed_triangles: TriangleArray = shape_list._mesh.triangles[
+            z_order[triangle_ranges]
+        ]
+
+        # Build triangle → shape index mapping.
+        n_tri = mesh_displayed_triangles.shape[0]
+        mesh_displayed_triangles_to_shape_index: IndexArray = np.full(
+            n_tri, -1, dtype=IndexDtype
+        )
+        shift_idx = 0
+        for i in disp_indices:
+            begin = shape_list._mesh.triangles_index[i]
+            end = shape_list._mesh.triangles_index[i + 1]
+            elem_num = end - begin
+            mesh_displayed_triangles_to_shape_index[
+                shift_idx : shift_idx + elem_num
+            ] = i
+            shift_idx += elem_num
+
+        mesh_displayed_triangles_colors: ShapeColorArray = (
+            shape_list._mesh.triangles_colors[z_order[triangle_ranges]]
+        )
+
+        displayed_vertices: CoordinateArray = shape_list._vertices[
+            vertices_range
+        ]
+
+        # Build vertex → shape index mapping.
+        n_vert = displayed_vertices.shape[0]
+        displayed_vertices_to_shape_num: IndexArray = np.full(
+            n_vert, -1, dtype=IndexDtype
+        )
+        shift_idx = 0
+        for i in disp_indices:
+            begin = shape_list._vertices_index[i]
+            end = shape_list._vertices_index[i + 1]
+            elem_num = end - begin
+            displayed_vertices_to_shape_num[
+                shift_idx : shift_idx + elem_num
+            ] = i
+            shift_idx += elem_num
+
+        displayed_index: IndexArray = shape_list._vertices_index[disp_indices]
+
+        return cls(
+            displayed=displayed,
+            displayed_vertices=displayed_vertices,
+            displayed_vertices_to_shape_num=displayed_vertices_to_shape_num,
+            displayed_index=displayed_index,
+            mesh_displayed_triangles=mesh_displayed_triangles,
+            mesh_displayed_triangles_colors=mesh_displayed_triangles_colors,
+            mesh_displayed_triangles_to_shape_index=mesh_displayed_triangles_to_shape_index,
+            all_shapes=shape_list.shapes,
+            all_mesh_vertices=shape_list._mesh.vertices,
+            all_mesh_triangles=shape_list._mesh.triangles,
+            all_mesh_triangles_index=shape_list._mesh.triangles_index,
+        )
+
 
 def _ensure_color_arrays(shapes, face_colors=None, edge_colors=None):
     """Return as many face and edge colors as there are shapes in the input.
@@ -668,12 +783,12 @@ def _fill_arrays(
 
 def _batch_dec(meth):
     """
-    Decorator to apply `self.batched_updates` to the current method.
+    Decorator to apply `self.batched_changes` to the current method.
     """
 
     @wraps(meth)
     def _wrapped(self, *args, **kwargs):
-        with self.batched_updates():
+        with self.batched_changes():
             return meth(self, *args, **kwargs)
 
     return _wrapped
@@ -746,19 +861,17 @@ class ShapeList:
         self._edge_color: ShapeColorArray = np.empty((0, 4))  # type: ignore[assignment]
         self._face_color: ShapeColorArray = np.empty((0, 4))  # type: ignore[assignment]
 
-        # Optional callback invoked every time the slice view is recomputed.
-        self._on_slice_updated: Callable[['ShapeListSlice'], None] | None = None
-
-        # Optional provider called by _update_displayed() to get the current
-        # non-displayed-dimension coordinates. Set by the owning Shapes layer.
-        self._slice_key_provider: Callable[[], np.ndarray] | None = None
+        # Optional callback invoked whenever the shape data changes.
+        # Set by the owning Shapes layer; ``ShapeList`` knows nothing about
+        # what the callback does or about slicing.
+        self._on_changed: Callable[[], None] | None = None
 
         # counter for the depth of re entrance of the context manager.
         self.__batched_level = 0
         self.__batch_force_call = False
 
-        # Counter of number of time _update_displayed has been requested
-        self.__update_displayed_called = 0
+        # Counter of number of times _notify_changed has been requested
+        self.__changed_called = 0
         if not isinstance(data, Sequence):
             data = list(data)
         self.add(data)
@@ -870,37 +983,34 @@ class ShapeList:
         return slice(start, start + shape.edge_triangles_count)
 
     @contextmanager
-    def batched_updates(self) -> Generator[None, None, None]:
+    def batched_changes(self) -> Generator[None, None, None]:
         """
-        Reentrant context manager to batch the display update
+        Reentrant context manager to batch change notifications.
 
-        `_update_displayed()` is called at _most_ once on exit of the context
-        manager.
+        ``_notify_changed()`` fires at *most* once on exit of the outermost
+        context manager.
 
-        There are two reason for this:
+        There are two reasons for this:
 
          1. Some updates are triggered by events, but sometimes multiple pieces
             of data that trigger events must be set before the data can be
-            recomputed. For example changing number of dimension cause broacast
+            recomputed. For example changing number of dimension cause broadcast
             error on partially update structures.
-         2. Performance. Ideally we want to update the display only once.
+         2. Performance. Ideally we want to notify observers only once.
 
-        If no direct or indirect call to `_update_displayed()` are made inside
-        the context manager, no the update logic is not called on exit.
-
-
-
+        If no direct or indirect call to ``_notify_changed()`` is made inside
+        the context manager, the notification is not fired on exit.
         """
         assert self.__batched_level >= 0
         self.__batched_level += 1
         try:
             yield
         finally:
-            if self.__batched_level == 1 and self.__update_displayed_called:
+            if self.__batched_level == 1 and self.__changed_called:
                 self.__batch_force_call = True
-                self._update_displayed()
+                self._notify_changed()
                 self.__batch_force_call = False
-                self.__update_displayed_called = 0
+                self.__changed_called = 0
             self.__batched_level -= 1
 
         assert self.__batched_level >= 0
@@ -926,7 +1036,7 @@ class ShapeList:
         face_color = self._face_color
         edge_color = self._edge_color
 
-        with self.batched_updates():
+        with self.batched_changes():
             for shape in shapes:
                 shape.ndisplay = self.ndisplay
             self.remove_all()
@@ -993,7 +1103,7 @@ class ShapeList:
         update_method = getattr(self, f'update_{attribute}_colors')
         indices = np.arange(len(colors))
         update_method(indices, colors, update=False)
-        self._update_displayed()
+        self._notify_changed()
 
     @property
     def edge_widths(self) -> list[float]:
@@ -1005,133 +1115,24 @@ class ShapeList:
         """list of int: z-index for each shape."""
         return [s.z_index for s in self.shapes]
 
-    def _update_displayed(self) -> None:
-        """Recompute the slice view and notify via the registered callback.
+    def _notify_changed(self) -> None:
+        """Notify that the shape data has changed.
 
-        This method must be called from within the ``batched_updates`` context
+        Fires ``_on_changed()`` when called at the outermost nesting level of
+        a :meth:`batched_changes` context manager.
+
+        This method must be called from within the ``batched_changes`` context
         manager.
         """
         assert self.__batched_level >= 1, (
-            'call _update_displayed from within self.batched_updates context manager'
+            'call _notify_changed from within self.batched_changes context manager'
         )
         if not self.__batch_force_call:
-            self.__update_displayed_called += 1
+            self.__changed_called += 1
             return
 
-        slice_key = (
-            self._slice_key_provider()
-            if self._slice_key_provider is not None
-            else np.array([])
-        )
-        slice_view = self.compute_slice(slice_key)
-        if self._on_slice_updated is not None:
-            self._on_slice_updated(slice_view)
-
-    def compute_slice(self, slice_key) -> 'ShapeListSlice':
-        """Compute and return the visible shapes for the given *slice_key*.
-
-        Parameters
-        ----------
-        slice_key : array-like
-            Coordinates in the non-displayed dimensions used to determine
-            which shapes are visible.
-
-        Returns
-        -------
-        ShapeListSlice
-            Object holding all slice-specific display data.
-        """
-        slice_key = list(slice_key)
-
-        if len(self.shapes) == 0:
-            return ShapeListSlice.empty(self.ndisplay)
-
-        # Determine which shapes are visible in this slice.
-        if not slice_key:
-            # No non-displayed dimensions → every shape is visible.
-            displayed = np.ones(len(self.shapes), dtype=bool)
-        else:
-            # A shape is visible if the current slice_key falls within the
-            # shape's min–max range for every non-displayed dimension.
-            # self.slice_keys has shape (N, 2, P):
-            #   axis 1 index 0 = per-shape minimum values
-            #   axis 1 index 1 = per-shape maximum values
-            sk = np.asarray(slice_key)
-            displayed = np.all(
-                (self.slice_keys[:, 0, :] - 0.5 <= sk)
-                & (sk <= self.slice_keys[:, 1, :] + 0.5),
-                axis=1,
-            )
-
-        disp_indices: IndexArray = np.nonzero(displayed)[0]  # type: ignore[assignment]
-
-        z_order = self._mesh.triangles_z_order
-
-        triangle_ranges: IndexArray | slice
-        vertices_range: IndexArray | slice
-
-        if disp_indices.size == 0:
-            triangle_ranges = np.array([], dtype=np.int64)
-            vertices_range = np.array([], dtype=np.int64)
-        else:
-            triangle_ranges = self._mesh_triangles_range_seq(disp_indices)
-            vertices_range = self._vertices_range_seq(disp_indices)
-
-        mesh_displayed_triangles: TriangleArray = self._mesh.triangles[
-            z_order[triangle_ranges]
-        ]
-
-        # Build triangle → shape index mapping.
-        n_tri = mesh_displayed_triangles.shape[0]
-        mesh_displayed_triangles_to_shape_index: IndexArray = np.full(
-            n_tri, -1, dtype=IndexDtype
-        )
-        shift_idx = 0
-        for i in disp_indices:
-            begin = self._mesh.triangles_index[i]
-            end = self._mesh.triangles_index[i + 1]
-            elem_num = end - begin
-            mesh_displayed_triangles_to_shape_index[
-                shift_idx : shift_idx + elem_num
-            ] = i
-            shift_idx += elem_num
-
-        mesh_displayed_triangles_colors: ShapeColorArray = (
-            self._mesh.triangles_colors[z_order[triangle_ranges]]
-        )
-
-        displayed_vertices: CoordinateArray = self._vertices[vertices_range]
-
-        # Build vertex → shape index mapping.
-        n_vert = displayed_vertices.shape[0]
-        displayed_vertices_to_shape_num: IndexArray = np.full(
-            n_vert, -1, dtype=IndexDtype
-        )
-        shift_idx = 0
-        for i in disp_indices:
-            begin = self._vertices_index[i]
-            end = self._vertices_index[i + 1]
-            elem_num = end - begin
-            displayed_vertices_to_shape_num[
-                shift_idx : shift_idx + elem_num
-            ] = i
-            shift_idx += elem_num
-
-        displayed_index: IndexArray = self._vertices_index[disp_indices]
-
-        return ShapeListSlice(
-            displayed=displayed,
-            displayed_vertices=displayed_vertices,
-            displayed_vertices_to_shape_num=displayed_vertices_to_shape_num,
-            displayed_index=displayed_index,
-            mesh_displayed_triangles=mesh_displayed_triangles,
-            mesh_displayed_triangles_colors=mesh_displayed_triangles_colors,
-            mesh_displayed_triangles_to_shape_index=mesh_displayed_triangles_to_shape_index,
-            all_shapes=self.shapes,
-            all_mesh_vertices=self._mesh.vertices,
-            all_mesh_triangles=self._mesh.triangles,
-            all_mesh_triangles_index=self._mesh.triangles_index,
-        )
+        if self._on_changed is not None:
+            self._on_changed()
 
     def add(
         self,
@@ -1459,7 +1460,7 @@ class ShapeList:
         self._edge_color = np.empty((0, 4), dtype=ShapeColorDtype)  # type: ignore[assignment]
         self._face_color = np.empty((0, 4), dtype=ShapeColorDtype)  # type: ignore[assignment]
         self._mesh.clear()
-        self._update_displayed()
+        self._notify_changed()
 
     @_batch_dec
     def update(self, index: int) -> None:
@@ -1467,7 +1468,7 @@ class ShapeList:
         self._update_vertices(index)
         self._update_mesh_triangles(index)
         self._update_mesh_vertices(index, edge=True, face=True)
-        self._update_displayed()
+        self._notify_changed()
 
     def _update_vertices(self, index: int) -> None:
         shape = self.shapes[index]
@@ -1750,7 +1751,7 @@ class ShapeList:
             )
             self._mesh.vertices_centers[indices] = shape._edge_vertices
             self._mesh.vertices_offsets[indices] = shape._edge_offsets
-            self._update_displayed()
+            self._notify_changed()
 
         if face:
             indices = self._mesh_vertices_face_slice(index)
@@ -1758,7 +1759,7 @@ class ShapeList:
             self._mesh.vertices_centers[indices] = shape._face_vertices
             indices = self._vertices_slice(index)
             self._vertices[indices] = shape.data_displayed
-            self._update_displayed()
+            self._notify_changed()
 
     @_batch_dec
     def _update_z_order(self):
@@ -1775,7 +1776,7 @@ class ShapeList:
                 np.arange(idx[z], idx[z] + counts[z]) for z in self._z_order
             ]
             self._mesh.triangles_z_order = np.concatenate(triangles_z_order)
-        self._update_displayed()
+        self._notify_changed()
 
     def edit(
         self, index, data, face_color=None, edge_color=None, new_type=None
@@ -1862,7 +1863,7 @@ class ShapeList:
         indices = self._mesh_triangles_edge_slice(index)
         self._mesh.triangles_colors[indices] = self._edge_color[index]
         if update:
-            self._update_displayed()
+            self._notify_changed()
 
     @_batch_dec
     def update_edge_colors(
@@ -1882,7 +1883,7 @@ class ShapeList:
         for i, color in zip(indices, edge_colors_, strict=False):
             self.update_edge_color(i, color, update=False)
         if update:
-            self._update_displayed()
+            self._notify_changed()
 
     @_batch_dec
     def update_face_color(
@@ -1904,7 +1905,7 @@ class ShapeList:
         indices = self._mesh_triangles_face_slice(index)
         self._mesh.triangles_colors[indices] = face_color
         if update:
-            self._update_displayed()
+            self._notify_changed()
 
     @_batch_dec
     def update_face_colors(
@@ -1925,7 +1926,7 @@ class ShapeList:
         for i, color in zip(indices, face_colors_, strict=False):
             self.update_face_color(i, color, update=False)
         if update:
-            self._update_displayed()
+            self._notify_changed()
 
     def update_dims_order(self, dims_order):
         """Updates dimensions order for all shapes.
