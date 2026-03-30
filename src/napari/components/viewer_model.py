@@ -239,7 +239,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     def __init__(
         self, title='napari', ndisplay=2, order=(), axis_labels=()
     ) -> None:
-        register_logger_to_napari_handler('')
+        register_logger_to_napari_handler()
         # max_depth=0 means don't look for parent contexts.
 
         # FIXME: just like the LayerList, this object should ideally be created

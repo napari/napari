@@ -99,7 +99,7 @@ LOG_HANDLER.setLevel(logging.DEBUG)
 
 
 def register_logger_to_napari_handler(
-    module: str,
+    module: str = '',
 ) -> None:
     """
     Register a specific module's logger to use our custom log handler.
@@ -114,7 +114,7 @@ def register_logger_to_napari_handler(
 
 
 def _deregister_logger_from_napari_handler(
-    module: str,
+    module: str = '',
 ) -> None:
     """
     Register a specific module's logger to use our custom log handler.
