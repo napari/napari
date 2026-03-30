@@ -447,26 +447,18 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     ) -> None:
         """Reset the camera and fit the current layers to the canvas.
 
-                Resets the angles of the camera, adjust the camera zoom,
-                and centers the view so that all layers are visible,
-                accounting for the current grid mode and margin.
+        Resets the angles of the camera, adjust the camera zoom,
+        and centers the view so that all layers are visible,
+        accounting for the current grid mode and margin.
 
-                Parameters
-        I can't tomorrow ...
-        17m
-        ￼
-        ￼
-        EP
-        ⁨Eymeline Pageot⁩
-        not sure the big rain and cold from yesterday was a good thing for wild garlic...
-        15m
-                ----------
-                margin : float in [0, 1)
-                    Margin as fraction of the canvas, showing blank space around the
-                    data. Default is 0.05 (5% of the canvas).
-                reset_camera_angle : bool
-                    Whether to reset the camera angles to (0, 0, 0) before fitting
-                    to view. Default is True.
+        Parameters
+        ----------
+        margin : float in [0, 1)
+            Margin as fraction of the canvas, showing blank space around the
+            data. Default is 0.05 (5% of the canvas).
+        reset_camera_angle : bool
+            Whether to reset the camera angles to (0, 0, 0) before fitting
+            to view. Default is True.
         """
         if self.dims.ndisplay == 3 and reset_camera_angle:
             self.camera.angles = (0, 0, 0)
