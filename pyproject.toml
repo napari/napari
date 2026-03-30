@@ -485,6 +485,7 @@ multiline-quotes = "double"
 [tool.ruff.lint.flake8-tidy-imports]
 # Disallow all relative imports.
 ban-relative-imports = "all"
+# Expensive imports should be lazy loaded within functions instead of module
 banned-module-level-imports = ["scipy", "pandas", "dask.array"]
 
 [tool.ruff.lint.isort]
