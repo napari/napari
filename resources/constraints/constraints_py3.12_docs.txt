@@ -669,7 +669,7 @@ pydeps==3.0.2
     # via napari (pyproject.toml:docs)
 pygetwindow==0.0.9
     # via pyautogui
-pygments==2.19.2
+pygments==2.20.0
     # via
     #   napari (pyproject.toml)
     #   accessible-pygments
