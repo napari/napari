@@ -465,6 +465,7 @@ ignore = [
 "examples/**" = ["ICN001", "INP001", "T20", "LOG015", "TID253"]
 "**/vendored/**" = ["TID"]
 "src/napari/benchmarks/**" = ["RUF012", "TID252", "TID253"]
+"src/napari_builtins/**" = ["TID253"]
 
 [tool.ruff.lint.flake8-builtins]
 builtins-allowed-modules = ["io", "types", "threading"]
