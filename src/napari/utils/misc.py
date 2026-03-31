@@ -243,7 +243,7 @@ if sys.version_info >= (3, 11):
     from enum import StrEnum
 else:
 
-    class StrEnum(str, Enum):  # type: ignore[no-redef]
+    class StrEnum(str, Enum):
         """Enum where members are also (and must be) strings."""
 
         def __new__(cls, *values: str) -> Self:
@@ -273,11 +273,9 @@ else:
 
 
 class StringEnumMeta(EnumMeta):
-    def __getitem__(self, item: object) -> StringEnum:
+    def __getitem__(self, item: str) -> StringEnum:  # type: ignore[override]
         """Case-insensitive name lookup: MyEnum['tHiNg'] -> MyEnum.THING."""
-        if isinstance(item, str):
-            item = item.upper()
-        return super().__getitem__(item)  # type: ignore[return-value]
+        return super().__getitem__(item.upper())
 
 
 class StringEnum(StrEnum, metaclass=StringEnumMeta):
