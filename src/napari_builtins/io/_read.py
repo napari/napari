@@ -4,6 +4,7 @@ import csv
 import itertools
 import os
 import re
+import tokenize
 from contextlib import contextmanager, suppress
 from glob import glob
 from pathlib import Path
@@ -696,6 +697,12 @@ def _add_dropped_scripts_to_console(
         console.push(variables)
 
 
+def _read_python_source(script_path: str | Path) -> str:
+    """Read Python source using Python's own source decoding rules."""
+    with tokenize.open(script_path) as file:
+        return file.read()
+
+
 def load_and_execute_python_code(script_path: str) -> list[LayerData]:
     """Load and execute Python code from a file.
 
@@ -711,7 +718,7 @@ def load_and_execute_python_code(script_path: str) -> list[LayerData]:
         response.raise_for_status()
         code = response.text
     else:
-        code = Path(script_path).read_text()
+        code = _read_python_source(script_path)
     execute_python_code(code, script_path)
     return [(None,)]
 
