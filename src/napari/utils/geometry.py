@@ -688,7 +688,7 @@ def find_front_back_face(
 
     bbox_face_coords = bounding_box_to_face_vertices(bounding_box)
     for k, v in FACE_NORMALS.items():
-        if np.dot(view_dir, v) < -0.001:
+        if np.dot(view_dir, v) < 0:
             if line_in_quadrilateral_3d(
                 click_pos, view_dir, bbox_face_coords[k]
             ):
