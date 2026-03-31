@@ -46,10 +46,11 @@ def _run_configured_startup_script() -> None:
         return
 
     from napari_builtins.io._read import (
+        _read_python_source,
         execute_python_code,
     )
 
-    script_code = script_path.read_text()
+    script_code = _read_python_source(script_path)
     start_time = time.time()
 
     execute_python_code(script_code, script_path)
