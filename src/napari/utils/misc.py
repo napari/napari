@@ -288,6 +288,9 @@ class StringEnum(StrEnum, metaclass=StringEnumMeta):
         """Assign the lower-cased member name as its value."""
         return name.lower()
 
+    def __str__(self) -> str:
+        return self.value
+
     @classmethod
     def _missing_(cls, value: object) -> StringEnum | None:
         if isinstance(value, StringEnum):
