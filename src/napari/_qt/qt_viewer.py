@@ -54,7 +54,6 @@ from napari.utils.misc import in_ipython, in_jupyter
 from napari.utils.naming import CallerFrame
 from napari.utils.notifications import show_info
 from napari.utils.translations import trans
-from napari_builtins.io import imsave_extensions
 
 from napari._vispy import VispyCanvas, create_vispy_layer  # isort:skip
 
@@ -89,52 +88,6 @@ def _npe2_decode_selected_filter(
         if entry.startswith(selected_filter):
             return writer
     return None
-
-
-def _extension_string_for_layers(
-    layers: Sequence[Layer],
-) -> tuple[str, list[WriterContribution]]:
-    """Return an extension string and the list of corresponding writers.
-
-    The extension string is a ";;" delimeted string of entries. Each entry
-    has a brief description of the file type and a list of extensions.
-
-    The writers, when provided, are the npe2.manifest.io.WriterContribution
-    objects. There is one writer per entry in the extension string. If npe2
-    is not importable, the list of writers will be empty.
-    """
-    # try to use npe2
-    ext_str, writers = _npe2.file_extensions_string_for_layers(layers)
-    if ext_str:
-        return ext_str, writers
-
-    # fallback to old behavior
-
-    if len(layers) == 1:
-        selected_layer = layers[0]
-        # single selected layer.
-        if selected_layer._type_string == 'image':
-            ext = imsave_extensions()
-
-            ext_list = [f'*{val}' for val in ext]
-            ext_str = ';;'.join(ext_list)
-
-            ext_str = trans._(
-                'All Files (*);; Image file types:;;{ext_str}',
-                ext_str=ext_str,
-            )
-
-        elif selected_layer._type_string == 'points':
-            ext_str = trans._('All Files (*);; *.csv;;')
-
-        else:
-            # layer other than image or points
-            ext_str = trans._('All Files (*);;')
-
-    else:
-        # multiple layers.
-        ext_str = trans._('All Files (*);;')
-    return ext_str, []
 
 
 class QtViewer(QSplitter):
@@ -782,7 +735,7 @@ class QtViewer(QSplitter):
             raise OSError(trans._('Nothing to save'))
 
         # prepare list of extensions for drop down menu.
-        ext_str, writers = _extension_string_for_layers(
+        ext_str, writers = _npe2.file_extensions_string_for_layers(
             list(self.viewer.layers.selection)
             if selected
             else self.viewer.layers

@@ -1009,3 +1009,9 @@ layers = ["napari.qt","napari.components"]
 ignore_imports = [
     "napari.plugins._npe2 -> napari._qt._qplugins",
 ]
+
+[[tool.importlinter.contracts]]
+name = "Block import from napari_builtins in napari core"
+type = "forbidden"
+source_modules = "napari"
+forbidden_modules = ["napari_builtins"]
