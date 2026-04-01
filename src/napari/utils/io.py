@@ -7,14 +7,14 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
-from napari._qt import qt_event_loop
 from napari._version import __version__
 from napari.utils.notifications import notification_manager, show_warning
 from napari.utils.translations import trans
-from napari.viewer import Viewer, current_viewer
 
 if TYPE_CHECKING:
     from pathlib import Path
+
+    from napari.viewer import Viewer
 
 _SCRIPT_NAMESPACES = {}
 # This is a global dictionary to store the namespace for scripts that are
@@ -153,6 +153,7 @@ def execute_python_code(
         Path to the script file from which the code is executed.
         Used to store the namespace in the _SCRIPT_NAMESPACES.
     """
+    from napari.viewer import current_viewer
 
     with _patched_viewer_new(), _noop_napari_run():
         try:
@@ -177,6 +178,7 @@ def execute_python_code(
 @contextmanager
 def _patched_viewer_new():
     """Context manager to patch the viewer's new method."""
+    from napari.viewer import Viewer, current_viewer
 
     original_new = Viewer.__new__
     original_init = Viewer.__init__
@@ -225,6 +227,8 @@ def _noop_napari_run():
     to always return True, causing a fast exit from napari.run()
     without a new event loop.
     """
+    from napari._qt import qt_event_loop
+
     original_ipython_check = qt_event_loop._ipython_has_eventloop
 
     def patched_ipython_check() -> bool:
