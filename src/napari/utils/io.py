@@ -1,15 +1,30 @@
+from __future__ import annotations
+
 import os
 import struct
-import warnings
+from contextlib import contextmanager
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
+from napari._qt import qt_event_loop
 from napari._version import __version__
-from napari.utils.notifications import show_warning
+from napari.utils.notifications import notification_manager, show_warning
 from napari.utils.translations import trans
+from napari.viewer import Viewer, current_viewer
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
+_SCRIPT_NAMESPACES = {}
+# This is a global dictionary to store the namespace for scripts that are
+# executed using drag and drop or the Python file reader.
+# The content is a mapping from the script path to the namespace.
+# The dict should not be overwritten but only modified, as
+# it may be broken the execution of scripts that are already running.
 
 
-def imsave(filename: str, data: 'np.ndarray'):
+def imsave(filename: str, data: np.ndarray):
     """Custom implementation of imsave to avoid skimage dependency.
 
     Parameters
@@ -123,25 +138,129 @@ def imsave_tiff(filename, data):
             )
 
 
-def __getattr__(name: str):
-    if name in {
-        'imsave_extensions',
-        'write_csv',
-        'read_csv',
-        'csv_to_layer_data',
-        'read_zarr_dataset',
-    }:
-        warnings.warn(
-            trans._(
-                '{name} was moved from napari.utils.io in v0.4.17. Import it from napari_builtins.io instead.',
-                deferred=True,
-                name=name,
-            ),
-            FutureWarning,
-            stacklevel=2,
-        )
-        import napari_builtins.io
+def execute_python_code(
+    code: str, script_path: str | Path | None = None
+) -> None:
+    """Execute Python code in the current viewer's context.
 
-        return getattr(napari_builtins.io, name)
+    Store the executed cod variables in _SCRIPT_NAMESPACES dict
 
-    raise AttributeError(f'module {__name__} has no attribute {name}')
+    Parameters
+    ----------
+    code: str
+        python code to be executed
+    script_path: str | Path
+        Path to the script file from which the code is executed.
+        Used to store the namespace in the _SCRIPT_NAMESPACES.
+    """
+
+    with _patched_viewer_new(), _noop_napari_run():
+        try:
+            viewer = current_viewer()
+            script_namespace = _SCRIPT_NAMESPACES.setdefault(script_path, {})
+            # The `__name__` variable is storing the name of the module.
+            # If a module is imported, it is set to the module name.
+            # If a module is executed with `python -m ...` or
+            # `python script.py` it is set to '__main__'.
+            # If code is executed with `exec(code, namespace)` it is set to `builtins` if
+            # `__name__` is not set in the namespace.
+            # So ww set it to `__main__` to execute `if __name__ == '__main__':` blocks
+            script_namespace['__name__'] = '__main__'
+            exec(code, script_namespace)
+            _add_variables_to_viewer_console(
+                _SCRIPT_NAMESPACES[script_path], viewer
+            )
+        except BaseException as e:  # noqa: BLE001
+            notification_manager.receive_error(type(e), e, e.__traceback__)
+
+
+@contextmanager
+def _patched_viewer_new():
+    """Context manager to patch the viewer's new method."""
+
+    original_new = Viewer.__new__
+    original_init = Viewer.__init__
+
+    def patched_init(self, *args, **kwargs):
+        Viewer.__init__ = original_init
+
+    def patched_new(cls, *args, **kwargs):
+        ndisplay = None
+        if len(kwargs) == 1 and 'ndisplay' in kwargs:
+            ndisplay = kwargs.pop('ndisplay')
+
+        if not kwargs and not args:
+            viewer = current_viewer()
+            if ndisplay is not None:
+                viewer.dims.ndisplay = ndisplay
+            if viewer is not None:
+                Viewer.__new__ = original_new
+                return viewer
+        Viewer.__init__ = original_init
+        return original_new(cls)
+
+    Viewer.__new__ = patched_new
+    Viewer.__init__ = patched_init
+    try:
+        yield
+    finally:
+        Viewer.__new__ = original_new
+        Viewer.__init__ = original_init
+
+
+@contextmanager
+def _noop_napari_run():
+    """Context manager to patch napari.run to always be a no-op.
+
+    napari.run() executes the Qt event loop, *except* when napari
+    is running in IPython and therefore IPython's Qt integration
+    already has the event loop.
+
+    When running a script by dragging-and-dropping onto a
+    running napari Viewer, we already have an event loop, so we
+    should not start a new nested loop, even though we are not
+    in IPython.
+
+    This context manager temporarily patches the IPython check
+    to always return True, causing a fast exit from napari.run()
+    without a new event loop.
+    """
+    original_ipython_check = qt_event_loop._ipython_has_eventloop
+
+    def patched_ipython_check() -> bool:
+        """A patched ipython_check that always returns True.
+
+        napari's script running from drag-and-dropping a script
+        into a viewer uses this patch to prevent nested event loops.
+        """
+        return True
+
+    qt_event_loop._ipython_has_eventloop = patched_ipython_check
+    try:
+        yield
+    finally:
+        qt_event_loop._ipython_has_eventloop = original_ipython_check
+
+
+def _filter_variables(variables: dict[str, Any]) -> dict[str, Any]:
+    res = variables.copy()
+    res.pop('viewer', None)
+    res.pop(
+        '__name__', None
+    )  # Remove the __name__ variable to not affect the console
+    return res
+
+
+def _add_variables_to_viewer_console(
+    variables: dict[str, Any], viewer: Viewer | None
+) -> None:
+    if viewer is None:
+        return
+
+    variables = _filter_variables(variables)
+
+    if viewer.window._qt_viewer._console is None:
+        viewer.window._qt_viewer.add_to_console_backlog(variables)
+    else:
+        console = viewer.window._qt_viewer._console
+        console.push(variables)
