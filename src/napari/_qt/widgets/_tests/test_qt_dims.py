@@ -1,5 +1,6 @@
 import os
 from sys import platform
+from unittest.mock import patch
 
 import numpy as np
 import pytest
@@ -289,6 +290,32 @@ def test_update_dims_labels(qtbot):
     view.setFixedWidth(250)
     assert first_label.text() == view.dims.axis_labels[0]
     assert first_label._elidedText() == view.dims.axis_labels[0]
+
+
+def test_model_axis_label_updates_do_not_write_back(qtbot):
+    """Programmatic model updates should not re-enter through QLineEdit signals."""
+    dims = Dims(ndim=4)
+    view = QtDims(dims)
+    qtbot.addWidget(view)
+
+    calls = []
+    original = Dims.set_axis_label
+
+    def wrapped(self, axis, label):
+        calls.append((axis, label))
+        return original(self, axis, label)
+
+    with patch.object(Dims, 'set_axis_label', wrapped):
+        dims.axis_labels = ('T', 'Z', 'Y', 'X')
+
+    assert dims.axis_labels == ('T', 'Z', 'Y', 'X')
+    assert [widget.axis_label.text() for widget in view.slider_widgets] == [
+        'T',
+        'Z',
+        'Y',
+        'X',
+    ]
+    assert calls == []
 
 
 def test_slider_press_updates_last_used(qtbot):
