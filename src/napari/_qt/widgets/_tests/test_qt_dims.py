@@ -347,3 +347,19 @@ def test_play_button(qtbot, mock_qt_method_ctx, qt_dims):
     button.mode_combo.setCurrentText('once')
     assert slider.loop_mode == button.mode_combo.currentText() == 'once'
     qtbot.waitUntil(qt_dims._animation_thread.isFinished)
+
+
+def test_loop_mode_model_update_emits_once(qtbot):
+    dims = Dims(ndim=3)
+    view = QtDims(dims)
+    qtbot.addWidget(view)
+    slider = view.slider_widgets[0]
+
+    observed = []
+    slider.mode_changed.connect(observed.append)
+
+    slider.loop_mode = 'once'
+
+    assert slider.loop_mode == 'once'
+    assert slider.play_button.mode_combo.currentText() == 'once'
+    assert observed == ['once']
