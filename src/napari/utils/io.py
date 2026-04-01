@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
     from napari.viewer import Viewer
 
-_SCRIPT_NAMESPACES = {}
+_SCRIPT_NAMESPACES: dict[str | Path, dict[str, Any]] = {}
 # This is a global dictionary to store the namespace for scripts that are
 # executed using drag and drop or the Python file reader.
 # The content is a mapping from the script path to the namespace.
@@ -138,9 +138,7 @@ def imsave_tiff(filename, data):
             )
 
 
-def execute_python_code(
-    code: str, script_path: str | Path | None = None
-) -> None:
+def execute_python_code(code: str, script_path: str | Path = '') -> None:
     """Execute Python code in the current viewer's context.
 
     Store the executed cod variables in _SCRIPT_NAMESPACES dict
@@ -194,7 +192,7 @@ def _patched_viewer_new():
         if not kwargs and not args:
             viewer = current_viewer()
             if ndisplay is not None:
-                viewer.dims.ndisplay = ndisplay
+                viewer.dims.ndisplay = ndisplay  # type: ignore
             if viewer is not None:
                 Viewer.__new__ = original_new
                 return viewer
