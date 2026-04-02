@@ -1,6 +1,7 @@
+from pydantic import Field
+from pydantic_settings import SettingsConfigDict
 from typing_extensions import TypedDict
 
-from napari._pydantic_compat import Field
 from napari.settings._base import EventedSettings
 from napari.utils.translations import trans
 
@@ -16,13 +17,6 @@ CallOrderDict = dict[str, list[PluginHookOption]]
 
 
 class PluginsSettings(EventedSettings):
-    call_order: CallOrderDict = Field(
-        default_factory=dict,
-        title=trans._('Plugin sort order'),
-        description=trans._(
-            'Sort plugins for each action in the order to be called.',
-        ),
-    )
     disabled_plugins: set[str] = Field(
         set(),
         title=trans._('Disabled plugins'),
@@ -45,8 +39,7 @@ class PluginsSettings(EventedSettings):
         ),
     )
 
-    class Config:
-        use_enum_values = False
+    model_config = SettingsConfigDict(use_enum_values=False)
 
     class NapariConfig:
         # Napari specific configuration

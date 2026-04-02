@@ -31,8 +31,8 @@ class ContextMapping(collections.abc.Mapping):
     `ContextMapping` object.
     """
 
-    def __init__(self, initial_values: collections.abc.Mapping):
-        self._initial_context_mapping = initial_values
+    def __init__(self, initial_values: collections.abc.Mapping | None):
+        self._initial_context_mapping = initial_values or {}
         self._evaluated_context_mapping: dict[str, Any] = {}
 
     def __getitem__(self, key):
@@ -84,8 +84,8 @@ class SettingsAwareContext(Context):
             if splits:
                 while splits:
                     val = getattr(val, splits.pop(0))
-                if hasattr(val, 'dict'):
-                    val = val.dict()
+                if hasattr(val, 'model_dump'):
+                    val = val.model_dump()
                 return val
         return super().__missing__(key)
 

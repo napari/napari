@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import gc
 import weakref
-from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -10,6 +9,8 @@ import numpy as np
 from napari._tests.utils import skip_local_popups, skip_on_win_ci
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from pytestqt.qtbot import QtBot
 
     from napari import Viewer

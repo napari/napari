@@ -1,6 +1,8 @@
 import numpy as np
-from vispy.scene.visuals import Compound, Line, Mesh, Text
+from vispy.scene.visuals import Compound, Line, Mesh
+from vispy.visuals.text.text import FontManager
 
+from napari._vispy.visuals.text import Text
 from napari.layers.shapes._shapes_utils import triangulate_ellipse
 from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils.translations import trans
@@ -126,7 +128,11 @@ def color_arrowheads(colors, num_segments):
 
 
 class Axes(Compound):
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        font_manager: FontManager | None = None,
+        font_family: str = 'OpenSans',
+    ) -> None:
         self._num_segments_arrowhead = 100
         # CMYRGB for 6 axes data in x, y, z, ... ordering
         self._default_color = [
@@ -183,13 +189,15 @@ class Axes(Compound):
 
         super().__init__(
             [
-                Line(connect='segments', method='gl', width=3),
+                Line(connect='segments', method='gl', width=3, antialias=True),
                 Mesh(),
                 Text(
                     text='1',
                     font_size=10,
                     anchor_x='center',
                     anchor_y='center',
+                    face=font_family,
+                    font_manager=font_manager,
                 ),
             ]
         )

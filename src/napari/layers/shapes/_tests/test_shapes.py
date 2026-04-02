@@ -1,12 +1,12 @@
 from copy import copy
 from itertools import cycle, islice
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import numpy as np
 import pandas as pd
 import pytest
+from pydantic import ValidationError
 
-from napari._pydantic_compat import ValidationError
 from napari._tests.utils import (
     assert_colors_equal,
     check_layer_world_data_extent,
@@ -61,16 +61,16 @@ def test_empty_shapes_with_features():
     https://github.com/napari/napari/issues/5634
     """
     shapes = Shapes(
-        features={'a': np.empty(0, int)},
-        feature_defaults={'a': 0},
+        features={'a': np.empty(0, str)},
+        feature_defaults={'a': 'x'},
         face_color='a',
         face_color_cycle=list('rgb'),
     )
 
     shapes.add_rectangles([[0, 0], [1, 1]])
-    shapes.feature_defaults['a'] = 1
+    shapes.feature_defaults['a'] = 'y'
     shapes.add_rectangles([[1, 1], [2, 2]])
-    shapes.feature_defaults = {'a': 2}
+    shapes.feature_defaults = {'a': 'z'}
     shapes.add_rectangles([[2, 2], [3, 3]])
 
     assert_colors_equal(shapes.face_color, list('rgb'))
@@ -2630,3 +2630,47 @@ def test_clean_selection_on_set_data():
 def test_docstring():
     validate_all_params_in_docstring(Shapes)
     validate_kwargs_sorted(Shapes)
+
+
+def test_finish_drawing_not_called_when_leaving_add_mode_not_drawing():
+    """_finish_drawing should NOT be called when leaving ADD_* modes if not actively drawing."""
+
+    layer = Shapes()
+    layer.mode = 'add_rectangle'
+
+    with patch.object(layer, '_finish_drawing') as mock_finish:
+        layer.mode = 'pan_zoom'
+        mock_finish.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    ('initial_mode', 'target_mode'),
+    [
+        ('select', 'pan_zoom'),
+        ('pan_zoom', 'select'),
+    ],
+)
+def test_finish_drawing_not_called_select_pan_zoom(initial_mode, target_mode):
+    """_finish_drawing should not be called for SELECT <-> PAN_ZOOM."""
+
+    layer = Shapes()
+    layer.mode = initial_mode
+
+    with patch.object(layer, '_finish_drawing') as mock_finish:
+        layer.mode = target_mode
+        mock_finish.assert_not_called()
+
+
+def test_finish_drawing_called_when_is_creating():
+    """_finish_drawing should be called if _is_creating is True."""
+
+    layer = Shapes()
+    layer.mode = 'add_rectangle'
+    layer._is_creating = True
+
+    with patch.object(
+        layer, '_finish_drawing', wraps=layer._finish_drawing
+    ) as mock_finish:
+        layer.mode = 'select'
+        mock_finish.assert_called_once()
+    assert not layer._is_creating

@@ -2,7 +2,6 @@ import warnings
 
 import numpy as np
 from qtpy.QtCore import Slot
-from qtpy.QtGui import QFont, QFontMetrics
 from qtpy.QtWidgets import QSizePolicy, QVBoxLayout, QWidget
 
 from napari._qt.widgets.qt_dims_slider import (
@@ -53,7 +52,9 @@ class QtDims(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(3)
         self.setLayout(layout)
-        self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+        self.setSizePolicy(
+            QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed
+        )
 
         # Update the number of sliders now that the dims have been added
         self._update_nsliders()
@@ -180,7 +181,7 @@ class QtDims(QWidget):
                 if length > width:
                     width = length
         # gui width of a string of length `width`
-        fm = QFontMetrics(QFont('', 0))
+        fm = self.fontMetrics()
         width = fm.boundingRect('8' * width).width()
         for labl in self.findChildren(QWidget, 'slice_label'):
             labl.setFixedWidth(width + 6)

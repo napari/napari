@@ -1,4 +1,6 @@
-from collections.abc import Sequence
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 import numpy as np
 import numpy.typing as npt
@@ -10,6 +12,9 @@ from napari.layers.points._points_constants import (
 )
 from napari.utils.geometry import project_points_onto_plane
 from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 
 def _create_box_from_corners_3d(
@@ -298,7 +303,4 @@ def coerce_symbols(
     if isinstance(symbol, str | Symbol):
         return np.array([symbol_conversion(symbol)], dtype=object)
 
-    if not isinstance(symbol, np.ndarray):
-        symbol = np.array(symbol)
-
-    return fast_dict_get(symbol, SYMBOL_DICT)
+    return fast_dict_get(np.asanyarray(symbol), SYMBOL_DICT)

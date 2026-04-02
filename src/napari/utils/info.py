@@ -285,6 +285,7 @@ def sys_info(as_html: bool = False) -> str:
         except PackageNotFoundError:
             text += f'  - {name} not installed<br>'
 
+    _config_path: str | Path | None
     try:
         from napari.settings import get_settings
 
