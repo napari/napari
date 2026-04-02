@@ -18,6 +18,7 @@ from napari.utils.misc import (
     ensure_sequence_of_iterables,
     is_iterable,
     pick_equality_operator,
+    str_to_rgb,
 )
 
 ITERABLE = (0, 1, 2)
@@ -270,3 +271,16 @@ def test_ensure_list_of_layer_data_tuple(input_data, expected):
 )
 def test_is_iterable(data, expected):
     assert is_iterable(data) == expected
+
+
+def test_str_to_rgb_warns_and_parses():
+    with pytest.warns(FutureWarning, match='str_to_rgb is deprecated'):
+        assert str_to_rgb('rgb(1, 2, 3)') == [1, 2, 3]
+
+
+def test_str_to_rgb_raises_on_invalid_input():
+    with (
+        pytest.warns(FutureWarning, match='str_to_rgb is deprecated'),
+        pytest.raises(ValueError, match=r"arg not in format 'rgb\\(x,y,z\\)'"),
+    ):
+        str_to_rgb('not-rgb')

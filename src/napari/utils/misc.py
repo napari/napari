@@ -96,7 +96,19 @@ def in_python_repl() -> bool:
 
 
 def str_to_rgb(arg: str) -> list[int]:
-    """Convert an rgb string 'rgb(x,y,z)' to a list of ints [x,y,z]."""
+    """Convert an rgb string 'rgb(x,y,z)' to a list of ints [x,y,z].
+
+    .. deprecated:: 0.6.4
+        `str_to_rgb` is deprecated and will be removed in a future release.
+        Please migrate away from this utility. The function currently
+        retains its behavior but will warn on use.
+    """
+    warnings.warn(
+        'napari.utils.misc.str_to_rgb is deprecated and will be removed in a future release.',
+        FutureWarning,
+        stacklevel=2,
+    )
+
     match = re.match(r'rgb\((\d+),\s*(\d+),\s*(\d+)\)', arg)
     if match is None:
         raise ValueError("arg not in format 'rgb(x,y,z)'")
