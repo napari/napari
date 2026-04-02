@@ -189,7 +189,11 @@ def generate_module_stub(module: str | ModuleType, save=True) -> str:
         with open(file_path, 'w') as f:
             f.write(pyi)
         subprocess.run(['ruff', 'format', file_path])
-        subprocess.run(['ruff', 'check', file_path], check=True)
+        # Ignored rules:
+        # - ICN001 `numpy` should be imported as `np`
+        subprocess.run(
+            ['ruff', 'check', '--ignore', 'ICN001', file_path], check=True
+        )
 
     return pyi
 
