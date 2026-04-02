@@ -118,7 +118,9 @@ class QtReaderDialog(QDialog):
         layout.addWidget(self.persist_checkbox)
 
         # note for users on how to reset the reader preference
-        reset_label = QLabel(trans._('Manage saved readers in Preferences > Plugins'))
+        reset_label = QLabel(
+            trans._('Manage saved readers in Preferences > Plugins')
+        )
         reset_label.setWordWrap(True)
         layout.addWidget(reset_label)
         layout.addWidget(self.btn_box)
