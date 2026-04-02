@@ -217,7 +217,8 @@ def _noop_napari_run():
 
     If launching a script by dragging-and-dropping onto a
     running napari Viewer, an event loop exists, so we
-    should not start a new nested event loop. This applies whether or not IPython is running.
+    should not start a new nested event loop.
+    This applies whether or not IPython is running.
 
     This context manager temporarily patches the IPython check
     to always return True, causing a fast exit from napari.run()
