@@ -1,13 +1,13 @@
+from __future__ import annotations
+
 import warnings
 from collections.abc import Callable, Collection, Iterable, Sized
 from contextlib import contextmanager
 from copy import copy, deepcopy
-from itertools import cycle
-from typing import Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import numpy as np
 import numpy.typing as npt
-import pandas as pd
 from psygnal.containers import Selection
 from vispy.color import get_color_names
 
@@ -80,6 +80,11 @@ from napari.utils.events.custom_types import Array
 from napari.utils.misc import ensure_iterable
 from napari.utils.notifications import show_warning
 from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    from itertools import cycle
+
+    import pandas as pd
 
 DEFAULT_COLOR_CYCLE = np.array([[1, 0, 1, 1], [0, 1, 0, 1]])
 
@@ -364,7 +369,7 @@ class Shapes(Layer):
     # in the thumbnail
     _max_shapes_thumbnail = 100
 
-    _drag_modes: ClassVar[dict[Mode, Callable[['Shapes', Event], Any]]] = {
+    _drag_modes: ClassVar[dict[Mode, Callable[[Shapes, Event], Any]]] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: transform_with_box,
         Mode.SELECT: select,
@@ -380,7 +385,7 @@ class Shapes(Layer):
         Mode.ADD_POLYGON_LASSO: add_path_polygon_lasso,
     }
 
-    _move_modes: ClassVar[dict[Mode, Callable[['Shapes', Event], Any]]] = {
+    _move_modes: ClassVar[dict[Mode, Callable[[Shapes, Event], Any]]] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: highlight_box_handles,
         Mode.SELECT: highlight,
@@ -397,7 +402,7 @@ class Shapes(Layer):
     }
 
     _double_click_modes: ClassVar[
-        dict[Mode, Callable[['Shapes', Event], Any]]
+        dict[Mode, Callable[[Shapes, Event], Any]]
     ] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: no_op,
@@ -1343,7 +1348,7 @@ class Shapes(Layer):
             Should be 'edge' for edge_color or 'face' for face_color.
         """
         if self._is_color_mapped(color):
-            if guess_continuous(self.properties[color]):
+            if guess_continuous(self.properties[color], feature_name=color):
                 setattr(self, f'_{attribute}_color_mode', ColorMode.COLORMAP)
             else:
                 setattr(self, f'_{attribute}_color_mode', ColorMode.CYCLE)
@@ -1431,7 +1436,7 @@ class Shapes(Layer):
             The calculated values for setting edge or face_color
         """
         if self._is_color_mapped(color):
-            if guess_continuous(self.properties[color]):
+            if guess_continuous(self.properties[color], feature_name=color):
                 setattr(self, f'_{attribute}_color_mode', ColorMode.COLORMAP)
             else:
                 setattr(self, f'_{attribute}_color_mode', ColorMode.CYCLE)
@@ -3321,7 +3326,7 @@ class Shapes(Layer):
 
     def _get_layer_slicing_state(
         self, data: LayerDataType, cache: bool
-    ) -> '_ShapesSlicingState':
+    ) -> _ShapesSlicingState:
         return _ShapesSlicingState(layer=self, data=data, cache=cache)
 
 

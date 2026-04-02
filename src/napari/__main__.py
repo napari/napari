@@ -36,7 +36,7 @@ class PluginInfoAction(argparse.Action):
         logging.basicConfig(level=logging.WARNING)
         from npe2 import cli
 
-        cli.list(
+        cli.list_(
             fields='name,version,npe2,contributions',
             sort='name',
             format='table',
@@ -245,104 +245,106 @@ def _run() -> None:
         # so remove --plugin from sys.argv to prevent that warning
         sys.argv.remove('--plugin')
 
-    else:
-        if args.with_:
-            from napari.plugins import (
-                _initialize_plugins,
-                _npe2,
-            )
-
-            # if a plugin widget has been requested, this will fail immediately
-            # if the requested plugin/widget is not available.
-            _initialize_plugins()
-
-            npe2_plugins = []
-            for plugin in args.with_:
-                pname, *wnames = plugin
-                for name, (w_pname, wnames) in _npe2.widget_iterator():
-                    if name == 'dock' and pname == w_pname:
-                        npe2_plugins.append(plugin)
-                        if '__all__' in wnames:
-                            wnames = wnames
-                        break
-
-                if wnames:
-                    for wname in wnames:
-                        _npe2.get_widget_contribution(pname, wname)
-                else:
-                    _npe2.get_widget_contribution(pname)
-
-        # viewer _must_  be kept around.
-        # it will be referenced by the global window only
-        # once napari has finished starting
-        # but in the meantime if the garbage collector runs;
-        # it will collect it and hang napari at start time.
-        # in a way that is machine, os, time (and likely weather dependant).
-        viewer = Viewer()
-        _run_configured_startup_script()
-
-        # For backwards compatibility
-        # If the --stack option is provided without additional arguments
-        # just set stack to True similar to the previous store_true action
-        if args.stack and len(args.stack) == 1 and len(args.stack[0]) == 0:
-            warnings.warn(
-                trans._(
-                    "The usage of the --stack option as a boolean is deprecated. Please use '--stack file1 file2 .. fileN' instead. It is now also possible to specify multiple stacks of files to stack '--stack file1 file2 --stack file3 file4 file5 --stack ..'. This warning will become an error in version 0.5.0.",
-                ),
-                DeprecationWarning,
-                stacklevel=3,
-            )
-            args.stack = True
-        try:
-            viewer._window._qt_viewer._qt_open(
-                args.paths,
-                stack=args.stack,
-                plugin=args.plugin,
-                layer_type=args.layer_type,
-                **kwargs,
-            )
-        except ReaderPluginError:
-            logging.getLogger('napari').exception(
-                'Loading %s with %s failed with errors',
-                args.paths,
-                args.plugin,
-            )
-
-        if args.with_:
-            for plugin in npe2_plugins:
-                pname, *wnames = plugin
-                if '__all__' in wnames:
-                    for name, (
-                        _pname,
-                        wnames_collection,
-                    ) in _npe2.widget_iterator():
-                        if name == 'dock' and pname == _pname:
-                            wnames = wnames_collection
-                            break
-
-                if wnames:
-                    first_dock_widget = viewer.window.add_plugin_dock_widget(
-                        pname, wnames[0], tabify=True
-                    )[0]
-                    for wname in wnames[1:]:
-                        viewer.window.add_plugin_dock_widget(
-                            pname, wname, tabify=True
-                        )
-                    first_dock_widget.show()
-                    first_dock_widget.raise_()
-                else:
-                    viewer.window.add_plugin_dock_widget(pname, tabify=True)
-
-        # only necessary in bundled app, but see #3596
-        from napari.utils.misc import (
-            install_certifi_opener,
-            running_as_constructor_app,
+    if args.with_:
+        from napari.plugins import (
+            _initialize_plugins,
+            _npe2,
         )
 
-        if running_as_constructor_app():
-            install_certifi_opener()
-            maybe_patch_conda_exe()
-        run(gui_exceptions=True)
+        # if a plugin widget has been requested, this will fail immediately
+        # if the requested plugin/widget is not available.
+        _initialize_plugins()
+
+        npe2_plugins = []
+        for plugin in args.with_:
+            pname, *wnames = plugin
+            for name, (w_pname, wnames) in _npe2.widget_iterator():
+                if name == 'dock' and pname == w_pname:
+                    npe2_plugins.append(plugin)
+                    if '__all__' in wnames:
+                        wnames = wnames
+                    break
+
+            if wnames:
+                for wname in wnames:
+                    _npe2.get_widget_contribution(pname, wname)
+            else:
+                _npe2.get_widget_contribution(pname)
+
+    # viewer _must_  be kept around.
+    # it will be referenced by the global window only
+    # once napari has finished starting
+    # but in the meantime if the garbage collector runs;
+    # in a way that is machine, os, time (and likely weather dependant).
+    # it will collect it and hang napari at start time.
+    # don't show viewer until we've processed all the args
+    viewer = Viewer(show=False)
+    _run_configured_startup_script()
+
+    # For backwards compatibility
+    # If the --stack option is provided without additional arguments
+    # just set stack to True similar to the previous store_true action
+    if args.stack and len(args.stack) == 1 and len(args.stack[0]) == 0:
+        warnings.warn(
+            trans._(
+                "The usage of the --stack option as a boolean is deprecated. Please use '--stack file1 file2 .. fileN' instead. It is now also possible to specify multiple stacks of files to stack '--stack file1 file2 --stack file3 file4 file5 --stack ..'. This warning will become an error in version 0.5.0.",
+            ),
+            DeprecationWarning,
+            stacklevel=3,
+        )
+        args.stack = True
+    try:
+        viewer._window._qt_viewer._qt_open(
+            args.paths,
+            stack=args.stack,
+            plugin=args.plugin,
+            layer_type=args.layer_type,
+            **kwargs,
+        )
+    except ReaderPluginError:
+        logging.getLogger('napari').exception(
+            'Loading %s with %s failed with errors',
+            args.paths,
+            args.plugin,
+        )
+
+    if args.with_:
+        for plugin in npe2_plugins:
+            pname, *wnames = plugin
+            if '__all__' in wnames:
+                for name, (
+                    _pname,
+                    wnames_collection,
+                ) in _npe2.widget_iterator():
+                    if name == 'dock' and pname == _pname:
+                        wnames = wnames_collection
+                        break
+
+            if wnames:
+                first_dock_widget = viewer.window.add_plugin_dock_widget(
+                    pname, wnames[0], tabify=True
+                )[0]
+                for wname in wnames[1:]:
+                    viewer.window.add_plugin_dock_widget(
+                        pname, wname, tabify=True
+                    )
+                first_dock_widget.show()
+                first_dock_widget.raise_()
+            else:
+                viewer.window.add_plugin_dock_widget(pname, tabify=True)
+
+    # only necessary in bundled app, but see #3596
+    from napari.utils.misc import (
+        install_certifi_opener,
+        running_as_constructor_app,
+    )
+
+    if running_as_constructor_app():
+        install_certifi_opener()
+        maybe_patch_conda_exe()
+    # now that we've processed all the args, show viewer
+    viewer.show()
+    run(gui_exceptions=True)
 
 
 def _run_plugin_module(mod, plugin_name):

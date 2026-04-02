@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Generator
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -14,6 +13,8 @@ from napari.utils.transforms import Affine
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Generator
+
     from napari._qt.qt_viewer import QtViewer
     from napari.viewer import Viewer
 
