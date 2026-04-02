@@ -141,15 +141,15 @@ def imsave_tiff(filename, data):
 def execute_python_code(code: str, script_path: str | Path = '') -> None:
     """Execute Python code in the current viewer's context.
 
-    Store the executed cod variables in _SCRIPT_NAMESPACES dict
+    Store the execution code in _SCRIPT_NAMESPACES dict
 
     Parameters
     ----------
     code: str
-        python code to be executed
+        The script's Python source code
     script_path: str | Path
-        Path to the script file from which the code is executed.
-        Used to store the namespace in the _SCRIPT_NAMESPACES.
+        Path to the script file.
+        Used to store the script's namespace in the _SCRIPT_NAMESPACES.
     """
     from napari.viewer import current_viewer
 
@@ -178,11 +178,11 @@ def _patched_viewer_new():
     """Context manager to patch the viewer's new method."""
     from napari.viewer import Viewer, current_viewer
 
-    original_new = Viewer.__new__
-    original_init = Viewer.__init__
+    _saved_new = Viewer.__new__
+    _saved_init = Viewer.__init__
 
     def patched_init(self, *args, **kwargs):
-        Viewer.__init__ = original_init
+        Viewer.__init__ = _saved_init
 
     def patched_new(cls, *args, **kwargs):
         ndisplay = None
@@ -194,32 +194,31 @@ def _patched_viewer_new():
             if ndisplay is not None:
                 viewer.dims.ndisplay = ndisplay  # type: ignore
             if viewer is not None:
-                Viewer.__new__ = original_new
+                Viewer.__new__ = _saved_new
                 return viewer
-        Viewer.__init__ = original_init
-        return original_new(cls)
+        Viewer.__init__ = _saved_init
+        return _saved_new(cls)
 
     Viewer.__new__ = patched_new
     Viewer.__init__ = patched_init
     try:
         yield
     finally:
-        Viewer.__new__ = original_new
-        Viewer.__init__ = original_init
+        Viewer.__new__ = _saved_new
+        Viewer.__init__ = _saved_init
 
 
 @contextmanager
 def _noop_napari_run():
-    """Context manager to patch napari.run to always be a no-op.
+    """Context manager used to patch napari.run to be a no-op.
 
     napari.run() executes the Qt event loop, *except* when napari
     is running in IPython and therefore IPython's Qt integration
     already has the event loop.
 
-    When running a script by dragging-and-dropping onto a
-    running napari Viewer, we already have an event loop, so we
-    should not start a new nested loop, even though we are not
-    in IPython.
+    If launching a script by dragging-and-dropping onto a
+    running napari Viewer, an event loop exists, so we
+    should not start a new nested event loop. This applies whether or not IPython is running.
 
     This context manager temporarily patches the IPython check
     to always return True, causing a fast exit from napari.run()
