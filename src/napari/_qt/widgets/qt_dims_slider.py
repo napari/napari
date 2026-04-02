@@ -44,7 +44,7 @@ class _ModifiedScrollBar(ModifiedScrollBar):
             The napari event that triggered this method.
         """
         if event.button() == Qt.MouseButton.RightButton:
-            self.parent().show_margins_popupup()
+            self.parent().show_margins_popup()
         else:
             super().mousePressEvent(event)
 
@@ -191,7 +191,7 @@ class QtDimSliderWidget(QWidget):
         slider.sliderPressed.connect(slider_focused_listener)
         self.slider = slider
 
-    def show_margins_popupup(self):
+    def show_margins_popup(self):
         if self.margins_popup is None:
             self.margins_popup = QMarginSlidersPopup(
                 self.dims, self.axis, self
