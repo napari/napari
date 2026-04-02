@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import itertools
 import logging
-from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -15,6 +14,8 @@ from napari.utils.misc import ensure_iterable, ensure_sequence_of_iterables
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from napari.types import ArrayLike, FullLayerData
 
 logger = logging.getLogger(__name__)
