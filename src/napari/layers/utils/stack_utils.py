@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 import itertools
-import warnings
-from collections.abc import Sequence
 import logging
+from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
 import numpy as np
