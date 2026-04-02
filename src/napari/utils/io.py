@@ -163,7 +163,7 @@ def execute_python_code(code: str, script_path: str | Path = '') -> None:
             # `python script.py` it is set to '__main__'.
             # If code is executed with `exec(code, namespace)` it is set to `builtins` if
             # `__name__` is not set in the namespace.
-            # So ww set it to `__main__` to execute `if __name__ == '__main__':` blocks
+            # So we set it to `__main__` to execute `if __name__ == '__main__':` blocks
             script_namespace['__name__'] = '__main__'
             exec(code, script_namespace)
             _add_variables_to_viewer_console(
