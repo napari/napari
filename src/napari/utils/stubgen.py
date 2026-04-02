@@ -98,8 +98,7 @@ def generate_function_stub(func) -> tuple[set[str], str]:
         imports.update(set(_iter_imports(hint)))
     imports -= {'typing'}
 
-    doc = f'"""{func.__doc__}"""' if func.__doc__ else '...'
-    return imports, f'def {func.__name__}{sig}:\n    {doc}\n'
+    return imports, f'def {func.__name__}{sig}:\n    {"..."}\n'
 
 
 def _get_subclass_methods(cls: type[Any]) -> set[str]:
@@ -139,8 +138,7 @@ def generate_class_stubs(cls: type) -> tuple[set[str], str]:
         attrs.append(f'{name}: {hint.replace("builtins.", "")}')
         imports.update(set(_iter_imports(type_)))
 
-    doc = f'"""{cls.__doc__.lstrip()}"""' if cls.__doc__ else '...'
-    stub = f'class {cls.__name__}({bases}):\n    {doc}\n'
+    stub = f'class {cls.__name__}({bases}):\n    {"..."}\n'
     stub += textwrap.indent('\n'.join(attrs), '    ')
     stub += '\n' + textwrap.indent('\n'.join(methods), '    ')
 
