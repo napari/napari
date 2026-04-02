@@ -16,12 +16,11 @@ if TYPE_CHECKING:
 
     from napari.viewer import Viewer
 
+# Stores namespace associated with a script executed by drag and drop
+# or the Python file reader. It maps the script path to the
+# namespace. This global dict should only be modified; overwriting
+# it may break other scripts that are already running.
 _SCRIPT_NAMESPACES: dict[str | Path, dict[str, Any]] = {}
-# This is a global dictionary to store the namespace for scripts that are
-# executed using drag and drop or the Python file reader.
-# The content is a mapping from the script path to the namespace.
-# The dict should not be overwritten but only modified, as
-# it may be broken the execution of scripts that are already running.
 
 
 def imsave(filename: str, data: np.ndarray):
