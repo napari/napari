@@ -178,7 +178,7 @@ jobs:
 
   test_pixi:
     name: test pixi
-    uses: ./.github/workflows/reusable_run_tox_test.yml
+    uses: ./.github/workflows/reusable_pixi_test.yml
     needs: test_initial
     strategy:
       fail-fast: false
