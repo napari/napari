@@ -6,6 +6,7 @@ from napari.utils.colormaps.colormap_utils import (
     CoercedContrastLimits,
     _coerce_contrast_limits,
     label_colormap,
+    make_default_color_array,
 )
 
 FIRST_COLORS = [
@@ -45,6 +46,19 @@ def test_label_colormap_exception():
         ValueError, match=r'.*Only up to 2\*\*16=65535 colors are supported'
     ):
         label_colormap(2**16 + 1)
+
+
+def test_make_default_color_array_deprecated():
+    with pytest.warns(
+        DeprecationWarning,
+        match=(
+            'make_default_color_array is deprecated and will be removed in a '
+            'future release. Use an explicit array such as '
+            r'np\.array\(\[0, 0, 0, 1\]\) instead\.'
+        ),
+    ):
+        arr = make_default_color_array()
+    assert np.array_equal(arr, np.array([0, 0, 0, 1]))
 
 
 def test_coerce_contrast_limits_with_valid_input():
