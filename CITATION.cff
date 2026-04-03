@@ -458,5 +458,10 @@ authors:
   affiliation: Katana Labs
   orcid: https://orcid.org/0000-0002-6165-4679
   alias: zoccoler
+- given-names: Aniket Singh
+  family-names: Yadav
+  affiliation: Galgotias University
+  orcid: https://orcid.org/0009-0004-4883-3797
+  alias: Aniketsy
 repository-code: https://github.com/napari/napari
 license: BSD-3-Clause
