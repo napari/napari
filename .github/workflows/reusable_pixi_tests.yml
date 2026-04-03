@@ -13,6 +13,10 @@ on:
         required: false
         type: string
         default: "headless"
+      timeout:
+        required: false
+        type: number
+        default: 40
 
 jobs:
   test:
