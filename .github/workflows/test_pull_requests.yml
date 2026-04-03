@@ -176,6 +176,22 @@ jobs:
       tox_extras: ${{ matrix.tox_extras }}
       timeout: ${{ matrix.timeout-minutes || 40 }}
 
+  test_pixi:
+    name: test pixi
+    uses: ./.github/workflows/reusable_run_tox_test.yml
+    needs: test_initial
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [ ubuntu-latest ]
+        python: [ "313" ]
+        backend: [ "pyqt6" ]
+    with:
+      python_version: ${{ matrix.python }}
+      platform: ${{ matrix.platform }}
+      qt_backend: ${{ matrix.backend }}
+      timeout: ${{ matrix.timeout-minutes || 40 }}
+
 
   test_pip_install:
     needs: test_initial

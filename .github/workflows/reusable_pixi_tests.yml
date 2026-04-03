@@ -1,0 +1,36 @@
+name: reusable_pixi_tests.yml
+on:
+  workflow_call:
+    inputs:
+      python_version:
+        required: true
+        type: string
+      platform:
+        required: false
+        type: string
+        default: "ubuntu-latest"
+      qt_backend:
+        required: false
+        type: string
+        default: "headless"
+
+jobs:
+  test:
+    runs-on: ${{ inputs.platform }}
+    steps:
+      - name: Setup headless display
+        uses: pyvista/setup-headless-display-action@7d84ae825e6d9297a8e99bdbbae20d1b919a0b19 # v4.2
+        with:
+          qt: true
+          wm: herbstluftwm
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: prefix-dev/setup-pixi@a0af7a228712d6121d37aba47adf55c1332c9c2e # v0.9.4
+        with:
+          cache: true
+
+      - name: Generate pixi.toml
+        run: python tools/generate_pixi_toml.py
+
+      - name: Run tests
+        timeout-minutes: ${{ inputs.timeout }}
+        run: pixi run -e py${{ inputs.python_version }}-${{ inputs.qt_backend }} test
