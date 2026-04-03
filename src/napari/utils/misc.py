@@ -25,8 +25,6 @@ import numpy.typing as npt
 
 from napari.utils.translations import trans
 
-_sentinel = object()
-
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator, Sequence
 
