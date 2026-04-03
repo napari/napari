@@ -281,6 +281,6 @@ def test_str_to_rgb_warns_and_parses():
 def test_str_to_rgb_raises_on_invalid_input():
     with (
         pytest.warns(FutureWarning, match='str_to_rgb is deprecated'),
-        pytest.raises(ValueError, match=r"arg not in format 'rgb\\(x,y,z\\)'"),
+        pytest.raises(ValueError, match=r"arg not in format 'rgb\(x,y,z\)'"),
     ):
         str_to_rgb('not-rgb')
