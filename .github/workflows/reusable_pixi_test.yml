@@ -1,4 +1,4 @@
-name: reusable_pixi_tests.yml
+name: Test using dependencies from conda via pixi
 on:
   workflow_call:
     inputs:
