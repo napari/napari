@@ -49,9 +49,9 @@ layer_outside = viewer.add_shapes(
 )
 
 # add scale_bar with background box
-viewer.scale_bar.visible = True
-viewer.scale_bar.box = True
-# viewer.scale_bar.length = 150  # prevent dynamic adjustment of scale bar length
+viewer.canvas.scale_bar.visible = True
+viewer.canvas.scale_bar.box = True
+# viewer.canvas.scale_bar.length = 150  # prevent dynamic adjustment of scale bar length
 
 
 # Take screenshots and export figures in 'light' theme, to show the canvas
@@ -93,8 +93,8 @@ viewer.add_image(figure_no_outside_shape, rgb=True, name='figure_no_outside_shap
 viewer.add_image(figure_zoomed, rgb=True, name='figure_zoomed')
 viewer.add_image(figure, rgb=True, name='figure')
 
-viewer.grid.enabled = True
-viewer.grid.shape = (2, 3)
+viewer.canvas.grid.enabled = True
+viewer.canvas.grid.shape = (2, 3)
 
 if __name__ == '__main__':
     napari.run()

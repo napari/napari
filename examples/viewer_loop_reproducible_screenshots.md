@@ -67,8 +67,8 @@ viewer.dims.ndisplay = 3
 viewer.axes.visible = True
 viewer.axes.colored = False
 viewer.axes.labels = False
-viewer.text_overlay.visible = True
-viewer.text_overlay.text = "Hello World!"
+viewer.canvas.text.visible = True
+viewer.canvas.text.text = "Hello World!"
 
 # Not yet implemented, but can be added as soon as this feature exisits (syntax might change): 
 # viewer.controls.visible = False
@@ -93,7 +93,7 @@ def loop_run():
 def update_layer(image_text_tuple):
     image, text = image_text_tuple
     viewer.layers["result"].data = image
-    viewer.text_overlay.text = text
+    viewer.canvas.text.text = text
     make_screenshot(viewer)
 ```
 
