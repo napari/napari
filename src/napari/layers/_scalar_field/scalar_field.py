@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import types
 from abc import ABC, abstractmethod
-from collections.abc import Sequence
 from contextlib import nullcontext
 from typing import TYPE_CHECKING, cast
 
@@ -22,7 +21,10 @@ from napari.layers.image._image_mouse_bindings import (
     set_plane_position as plane_double_click_callback,
 )
 from napari.layers.image._image_utils import guess_multiscale
-from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
+from napari.layers.utils._slice_input import (
+    _SliceInput,
+    _ThickNDSlice,
+)
 from napari.layers.utils.plane import SlicingPlane
 from napari.types import LayerDataType
 from napari.utils._dask_utils import DaskIndexer
@@ -37,6 +39,8 @@ from napari.utils.transforms import Affine
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from napari.components import Dims
 
 
@@ -710,10 +714,10 @@ class ScalarFieldSlicingState(_LayerSlicingState):
         # absorbs these performance issues here, but we can likely improve
         # things either by caching the world-to-data transform on the layer
         # or by lazily evaluating it in the slice task itself.
-        indices = slice_input.data_slice(self.layer._data_to_world.inverse)
+        data_slice = self._slice_indices(slice_input, dims)
         return self._make_slice_request_internal(
             slice_input=slice_input,
-            data_slice=indices,
+            data_slice=data_slice,
             dask_indexer=self.dask_optimized_slicing,
         )
 

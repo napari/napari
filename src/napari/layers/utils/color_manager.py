@@ -274,7 +274,7 @@ class ColorManager(EventedModel):
                 values=properties[color],
                 current_value=current_properties[color][0],
             )
-            if guess_continuous(properties[color]):
+            if guess_continuous(properties[color], feature_name=color):
                 self.color_mode = ColorMode.COLORMAP
             else:
                 self.color_mode = ColorMode.CYCLE
@@ -590,7 +590,7 @@ class ColorManager(EventedModel):
                         name=color_values, values=properties[color_values]
                     )
                 if color_mode is None:
-                    if guess_continuous(color_properties.values):
+                    if guess_continuous(color_properties.values, color_values):
                         color_mode = ColorMode.COLORMAP
                     else:
                         color_mode = ColorMode.CYCLE

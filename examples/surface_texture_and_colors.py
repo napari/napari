@@ -67,9 +67,8 @@ viewer.add_layer(flat_spot)
 viewer.add_layer(plasma_spot)
 viewer.add_layer(rainbow_spot)
 
-viewer.camera.center = (0.0, 0.0, 0.0)
-viewer.camera.angles = (25.0, -50.0, -125.0)
-viewer.camera.zoom = 150
+viewer.camera.angles = (10, 50, 180)
+viewer.fit_to_view()
 
 
 if __name__ == '__main__':

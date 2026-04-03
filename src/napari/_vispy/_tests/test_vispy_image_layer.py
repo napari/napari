@@ -3,6 +3,7 @@ from itertools import permutations
 import numpy as np
 import numpy.testing as npt
 import pytest
+from pint import get_application_registry
 
 from napari._vispy._tests.utils import vispy_image_scene_size
 from napari._vispy.layers.image import VispyImageLayer
@@ -257,3 +258,19 @@ def test_node_origin_is_consistent_with_multiscale(
     # full high and low resolution slices should always map to the same
     # scene origin, since this defines the start of the visible extent.
     np.testing.assert_array_equal(high_res_origin, low_res_origin)
+
+
+def test_world_units_impact_scale():
+    nm = get_application_registry().nm
+    image = Image(np.zeros((10, 10)), units=('um', 'um'))
+    vispy_image = VispyImageLayer(image)
+
+    assert vispy_image._world_to_layer_units_scale == (1, 1)
+
+    vispy_image.world_units = (nm, nm)
+    npt.assert_array_almost_equal(
+        vispy_image._world_to_layer_units_scale, (1000, 1000)
+    )
+
+    vispy_image.world_units = None
+    assert vispy_image._world_to_layer_units_scale == (1, 1)

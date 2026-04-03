@@ -3,15 +3,14 @@ Custom Qt widgets that serve as native objects that the public-facing elements
 wrap.
 """
 
+from __future__ import annotations
+
 import contextlib
 import inspect
 import os
 import sys
 import time
-import uuid
 import warnings
-from collections.abc import Callable, Mapping, MutableMapping, Sequence
-from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -93,6 +92,10 @@ from napari.utils.theme import _themes, get_system_theme
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
+    import uuid
+    from collections.abc import Callable, Mapping, MutableMapping, Sequence
+    from pathlib import Path
+
     from magicgui.widgets import Widget
     from qtpy.QtGui import QImage
 
@@ -116,15 +119,15 @@ class _QtMainWindow(QMainWindow):
     # We use this instead of QApplication.activeWindow for compatibility with
     # IPython usage. When you activate IPython, it will appear that there are
     # *no* active windows, so we want to track the most recently active windows
-    _instances: ClassVar[list['_QtMainWindow']] = []
+    _instances: ClassVar[list[_QtMainWindow]] = []
 
     # `window` is passed through on construction, so it's available to a window
     # provider for dependency injection
     # See https://github.com/napari/napari/pull/4826
     def __init__(
         self,
-        viewer: 'Viewer',
-        window: 'Window',
+        viewer: Viewer,
+        window: Window,
         parent=None,
         show_welcome_screen=True,
     ) -> None:
@@ -266,11 +269,11 @@ class _QtMainWindow(QMainWindow):
         ) is not None:
             self._qt_viewer.viewer.help = active.help
 
-    def statusBar(self) -> 'ViewerStatusBar':
+    def statusBar(self) -> ViewerStatusBar:
         return super().statusBar()
 
     @classmethod
-    def current(cls) -> Optional['_QtMainWindow']:
+    def current(cls) -> Optional[_QtMainWindow]:
         return cls._instances[-1] if cls._instances else None
 
     @classmethod
@@ -691,7 +694,7 @@ class Window:
 
     def __init__(
         self,
-        viewer: 'Viewer',
+        viewer: Viewer,
         *,
         show: bool = True,
         show_welcome_screen: bool = True,
@@ -1112,7 +1115,7 @@ class Window:
 
     def add_dock_widget(
         self,
-        widget: Union[QWidget, 'Widget'],
+        widget: Union[QWidget, Widget],
         *,
         name: str = '',
         area: str | None = None,
@@ -1243,7 +1246,7 @@ class Window:
         return self._wrapped_dock_widgets
 
     @property
-    def dock_widgets(self) -> Mapping[str, 'QWidget | Widget']:
+    def dock_widgets(self) -> Mapping[str, QWidget | Widget]:
         """Read-only mapping of widgets docked in napari window.
 
         Notes
@@ -1665,7 +1668,7 @@ class Window:
         flash: bool = True,
         canvas_only: bool = False,
         fit_to_data_extent: bool = False,
-    ) -> 'QImage':
+    ) -> QImage:
         """Capture screenshot of the currently displayed viewer.
 
         Parameters
@@ -1904,7 +1907,7 @@ class Window:
             update_save_history(dial.selectedFiles()[0])
 
 
-def _instantiate_dock_widget(wdg_cls, viewer: 'Viewer'):
+def _instantiate_dock_widget(wdg_cls, viewer: Viewer):
     # if the signature is looking a for a napari viewer, pass it.
     from napari.viewer import Viewer, ViewerModel
 
@@ -1943,7 +1946,7 @@ class InnerWidgetMappingProxy(MappingProxy):
     without exposing the QDockWidget itself.
     """
 
-    def __getitem__(self, key, /) -> 'QWidget | Widget':
+    def __getitem__(self, key, /) -> QWidget | Widget:
         """Get the inner widget of the QDockWidget."""
         return self._wrapped[key].inner_widget()
 

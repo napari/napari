@@ -1,10 +1,8 @@
 import warnings
-from collections.abc import Sequence
 from copy import deepcopy
-from typing import Any, Union
+from typing import TYPE_CHECKING, Any, Union
 
 import numpy as np
-import pandas as pd
 from pydantic import PositiveFloat, field_validator
 
 from napari.layers.base._base_constants import Blending
@@ -25,6 +23,9 @@ from napari.layers.utils.style_encoding import _get_style_values
 from napari.utils.events import Event, EventedModel
 from napari.utils.events.custom_types import Array
 from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 
 class TextManager(EventedModel):
@@ -183,7 +184,7 @@ class TextManager(EventedModel):
             DeprecationWarning,
             stacklevel=2,
         )
-        features = pd.DataFrame(
+        features = _validate_features(
             {
                 name: np.repeat(value, n_text, axis=0)
                 for name, value in properties.items()
@@ -309,7 +310,7 @@ class TextManager(EventedModel):
     def _from_layer(
         cls,
         *,
-        text: Union['TextManager', dict, str, Sequence[str], None],
+        text: Union['TextManager', dict, str, 'Sequence[str]', None],
         features: Any,
     ) -> 'TextManager':
         """Create a TextManager from a layer.

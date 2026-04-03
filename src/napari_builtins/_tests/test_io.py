@@ -1,7 +1,6 @@
 import csv
 import os
-from pathlib import Path
-from typing import NamedTuple
+from typing import TYPE_CHECKING, NamedTuple
 from unittest.mock import MagicMock
 from uuid import uuid4
 
@@ -24,6 +23,9 @@ from napari_builtins.io._read import (
 )
 from napari_builtins.io._write import write_csv
 
+if TYPE_CHECKING:
+    from pathlib import Path
+
 
 class ImageSpec(NamedTuple):
     shape: tuple[int, ...]
@@ -41,7 +43,7 @@ ZARR1 = ImageSpec((10, 20, 20), 'uint8', '.zarr')
 
 
 @pytest.fixture
-def write_spec(tmp_path: Path):
+def write_spec(tmp_path: 'Path'):
     def writer(spec: ImageSpec):
         image = np.random.random(spec.shape).astype(spec.dtype)
         fname = tmp_path / f'{uuid4()}{spec.ext}'

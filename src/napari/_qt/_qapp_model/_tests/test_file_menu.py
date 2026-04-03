@@ -39,9 +39,14 @@ def test_sample_data_triggers_reader_dialog(
     app = get_app_model()
     # Configures `app`, registers actions and initializes plugins
     make_napari_viewer()
-    with mock.patch(
-        'napari._qt.dialogs.qt_reader_dialog.handle_gui_reading'
-    ) as mock_read:
+    with (
+        mock.patch(
+            'napari.components.viewer_model._validate_paths_exist',
+        ),
+        mock.patch(
+            'napari._qt.dialogs.qt_reader_dialog.handle_gui_reading'
+        ) as mock_read,
+    ):
         app.commands.execute_command('tmp_plugin:tmp-sample')
 
     # assert that handle gui reading was called

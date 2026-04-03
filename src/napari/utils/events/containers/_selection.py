@@ -135,6 +135,16 @@ class Selection(EventedSet[_T]):
             self._current = None
         super().clear()
 
+    def _add_and_remove(self, add: Iterable[_T], remove: Iterable[_T]) -> None:
+        """Add and remove obj from selection."""
+        self._set.update(add)
+        self._set.difference_update(remove)
+        self._update_active()
+        self._emit_change(
+            added=set(add),
+            removed=set(remove),
+        )
+
     def toggle(self, obj: _T) -> None:
         """Toggle selection state of obj."""
         self.symmetric_difference_update({obj})

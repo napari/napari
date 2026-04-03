@@ -51,34 +51,29 @@ def drag_to_zoom(viewer, event):
     holding the `Alt` key to create a zoom box. When the mouse is released,
     the camera zooms into the selected region.
     """
-    if 'Alt' not in event.modifiers:
+    if 'Alt' not in event.modifiers or event.type != 'mouse_press':
         return
 
     # on mouse press
-    press_pos, press_position = None, None
-    if event.type == 'mouse_press':
-        viewer._zoom_box.visible = True
-        press_pos = event.pos[::-1]
-        press_position = event.position
-        viewer._zoom_box.position = (press_pos, press_pos)
-        yield
-        event.handled = True
-
-    # on mouse move
+    viewer._zoom_box.visible = True
+    press_pos = event.pos[::-1]
+    press_position = event.position
     move_pos = press_pos
     move_position = press_position
-    cancel = False
+    viewer._zoom_box.position = (press_pos, press_pos)
+    yield
+    event.handled = True
+
+    # on mouse move
     while event.type == 'mouse_move':
-        if press_pos is None:
-            continue
-        if 'Alt' in event.modifiers:
-            move_pos = event.pos[::-1]
-            viewer._zoom_box.position = (press_pos, move_pos)
-            move_position = event.position
-        else:
-            # if Alt is released, cancel the zoom box
-            cancel = True
-            break
+        if 'Alt' not in event.modifiers:
+            viewer._zoom_box.visible = False
+            yield
+            return
+
+        move_pos = event.pos[::-1]
+        viewer._zoom_box.position = (press_pos, move_pos)
+        move_position = event.position
         yield
 
     # on mouse release
@@ -86,6 +81,11 @@ def drag_to_zoom(viewer, event):
 
     # only trigger zoom if the box is larger than a MIN_ZOOMBOX_SIZE in pixels
     distance = np.abs(np.array(press_pos) - np.array(move_pos))
-    if not cancel and distance.min() > MIN_ZOOMBOX_SIZE:
-        viewer._zoom_box.zoom_area = (press_position, move_position)
+    if distance.min() > MIN_ZOOMBOX_SIZE:
+        # Slice to the last two coordinates (displayed axes) for cases where
+        # ndim>2 and ndisplay=2
+        viewer._zoom_box.zoom_area = (
+            press_position[-2:],
+            move_position[-2:],
+        )
     yield

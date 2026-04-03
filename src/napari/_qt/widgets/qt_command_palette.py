@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Iterator, Mapping
 from typing import TYPE_CHECKING, Any, cast
 
 from app_model.types import CommandRule, MenuItem
@@ -12,6 +11,8 @@ from napari._app_model import get_app_model
 from napari._app_model.context._context import get_context
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator, Mapping
+
     from napari._qt.qt_main_window import _QtMainWindow
 
 

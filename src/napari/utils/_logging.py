@@ -3,7 +3,6 @@ from __future__ import annotations
 import logging
 import sys
 from collections import deque
-from collections.abc import Generator
 from contextlib import contextmanager
 from typing import TYPE_CHECKING
 
@@ -13,6 +12,7 @@ _LOG_SEPARATOR = '<NAPARI_LOG_SEPARATOR>'
 
 
 if TYPE_CHECKING:
+    from collections.abc import Generator
     from typing import Any
 
 

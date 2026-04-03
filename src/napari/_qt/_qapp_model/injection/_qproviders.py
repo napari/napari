@@ -14,6 +14,8 @@ from napari.utils.translations import trans
 from napari.viewer import ViewerModel
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from napari._qt.qt_main_window import Window
     from napari._qt.qt_viewer import QtViewer
 
@@ -116,7 +118,7 @@ def register_qt_types() -> None:
 
 # syntax could be simplified after
 # https://github.com/tlambert03/in-n-out/issues/31
-QPROVIDERS = [
+QPROVIDERS: list[tuple[Callable]] = [
     (_provide_viewer,),
     (_provide_viewer_model,),
     (_provide_qt_viewer,),

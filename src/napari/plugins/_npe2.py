@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from collections.abc import Iterator, Sequence
 from importlib import resources
 from typing import (
     TYPE_CHECKING,
@@ -16,6 +15,8 @@ from npe2.manifest import contributions
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator, Sequence
+
     from npe2.manifest import PluginManifest
     from npe2.manifest.contributions import WriterContribution
     from npe2.plugin_manager import PluginName
