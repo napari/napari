@@ -536,7 +536,7 @@ class Labels(ScalarFieldBase):
         self.cursor_size = self._calculate_cursor_size()
         self.events.brush_size()
 
-    def _calculate_cursor_size(self):
+    def _calculate_cursor_size(self) -> int:
         # Convert from brush size in data coordinates to
         # cursor size in world coordinates
         scale = self._data_to_world.scale
@@ -654,7 +654,7 @@ class Labels(ScalarFieldBase):
             label_index = {i: i for i in range(features.shape[0])}
         return label_index
 
-    def _is_default_colors(self, color):
+    def _is_default_colors(self, color: dict) -> bool:
         """Returns True if color contains only default colors, otherwise False.
 
         Default colors are black for `None` and transparent for
@@ -862,7 +862,7 @@ class Labels(ScalarFieldBase):
         """
         return vispy_texture_dtype(data)
 
-    def _partial_labels_refresh(self):
+    def _partial_labels_refresh(self) -> None:
         """Prepares and displays only an updated part of the labels."""
 
         if self._updated_slice is None or not self._slicing_state.loaded:
@@ -1023,7 +1023,7 @@ class Labels(ScalarFieldBase):
             col = self.colormap.map(label)
         return col
 
-    def _reset_history(self, event=None):
+    def _reset_history(self, event: Event | None = None) -> None:
         self._undo_history = deque(maxlen=self._history_limit)
         self._redo_history = deque(maxlen=self._history_limit)
         self._staged_history = []
@@ -1129,7 +1129,9 @@ class Labels(ScalarFieldBase):
             self._redo_history, self._undo_history, undoing=False
         )
 
-    def fill(self, coord, new_label, refresh=True):
+    def fill(
+        self, coord: Sequence[float], new_label: int, refresh: bool = True
+    ) -> None:
         """Replace an existing label with a new label, either just at the
         connected component if the `contiguous` flag is `True` or everywhere
         if it is `False`, working in the number of dimensions specified by
