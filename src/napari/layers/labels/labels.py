@@ -9,6 +9,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     ClassVar,
+    TypeAlias,
 )
 
 import numpy as np
@@ -76,6 +77,8 @@ if TYPE_CHECKING:
     import pandas as pd
 
 __all__ = ('Labels',)
+
+HistoryItem: TypeAlias = tuple[npt.NDArray, npt.NDArray, npt.NDArray]
 
 
 class Labels(ScalarFieldBase):
@@ -419,12 +422,17 @@ class Labels(ScalarFieldBase):
         self.colormap.use_selection = self._show_selected_label
         self._prev_selected_label = None
         self._selected_color = self.get_color(self._selected_label)
-        self._updated_slice = None
+        self._updated_slice: tuple[slice, ...] | None = None
         if colormap is not None:
             self._set_colormap(colormap)
 
         self._status = self.mode
         self._preserve_labels = False
+
+        self._undo_history: deque[HistoryItem]
+        self._redo_history: deque[HistoryItem]
+        self._staged_history: list[HistoryItem]
+        self._block_history: bool
 
     def _slice_dtype(self):
         """Calculate dtype of data view based on data dtype and current colormap"""
@@ -802,12 +810,13 @@ class Labels(ScalarFieldBase):
         In ERASE mode the cursor functions similarly to PAINT mode, but to
         paint with background label, which effectively removes the label.
         """
-        return Layer.mode.fget(self)
+        return super().mode
 
     # Only overriding to change the docstring of the setter above
     @mode.setter
     def mode(self, mode):
-        Layer.mode.fset(self, mode)
+        # See https://github.com/python/mypy/issues/16426 for type ignore reason
+        Layer.mode.fset(self, mode)  # type: ignore[attr-defined]
 
     def _mode_setter_helper(self, mode):
         mode = super()._mode_setter_helper(mode)
@@ -1106,7 +1115,7 @@ class Labels(ScalarFieldBase):
         after.append(list(reversed(history_item)))
         for prev_indices, prev_values, next_values in reversed(history_item):
             values = prev_values if undoing else next_values
-            self.data[prev_indices] = values
+            self.data[prev_indices] = values  # type: ignore[index]
 
         self.refresh()
 
@@ -1180,6 +1189,7 @@ class Labels(ScalarFieldBase):
                 )
 
         match_indices_local = np.nonzero(matches)
+        match_indices: Sequence[npt.NDArray]
         if self.ndim not in {2, self.n_edit_dimensions}:
             n_idx = len(match_indices_local[0])
             match_indices = []
@@ -1193,11 +1203,11 @@ class Labels(ScalarFieldBase):
         else:
             match_indices = match_indices_local
 
-        match_indices = _coerce_indices_for_vectorization(
+        match_indices_tuple = _coerce_indices_for_vectorization(
             self.data, match_indices
         )
 
-        self.data_setitem(match_indices, new_label, refresh)
+        self.data_setitem(match_indices_tuple, new_label, refresh)
 
     def _draw(self, new_label, last_cursor_coord, coordinates):
         """Paint into coordinates, accounting for mode and cursor movement.
@@ -1456,7 +1466,7 @@ class Labels(ScalarFieldBase):
         )
 
         # update the labels image
-        self.data[indices] = value
+        self.data[indices] = value  # type: ignore[index]
 
         pt_not_disp = self._get_pt_not_disp()
         displayed_indices = index_in_slice(
@@ -1669,7 +1679,7 @@ class _LabelsSlicingState(ScalarFieldSlicingState):
     _slice_request_class = _LabelsSliceRequest
 
 
-def _coerce_indices_for_vectorization(array, indices: list) -> tuple:
+def _coerce_indices_for_vectorization(array, indices: Sequence) -> tuple:
     """Coerces indices so that they can be used for vectorized indexing in the given data array."""
     if _is_array_type(array, 'xarray.DataArray'):
         # Fix indexing for xarray if necessary
