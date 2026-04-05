@@ -146,7 +146,7 @@ jobs:
           python tools/split_qt_backend.py 2 ${{ inputs.qt_backend }} >> "$GITHUB_ENV"
           python tools/split_qt_backend.py 3 ${{ inputs.qt_backend }} >> "$GITHUB_ENV"
 
-      - name: Test with tox main
+      - name: Test with tox main qt_backend
         timeout-minutes: ${{ inputs.timeout }}
         shell: bash
         run: |
@@ -158,7 +158,7 @@ jobs:
           BACKEND: ${{ env.MAIN }}
           TOX_WORK_DIR: .tox
 
-      - name: Test with tox second
+      - name: Test with tox second qt_backend
         timeout-minutes: ${{ inputs.timeout }}
         if : ${{ env.SECOND != 'none' }}
         shell: bash
@@ -169,7 +169,7 @@ jobs:
           BACKEND: ${{ env.SECOND }}
           NAPARI_TEST_SUBSET: qt
 
-      - name: Test with tox third
+      - name: Test with tox third qt_backend
         timeout-minutes: ${{ inputs.timeout }}
         if : ${{ env.THIRD != 'none' }}
         shell: bash
@@ -180,7 +180,7 @@ jobs:
           BACKEND: ${{ env.THIRD }}
           NAPARI_TEST_SUBSET: qt
 
-      - name: Test with tox fourth
+      - name: Test with tox fourth qt_backend
         timeout-minutes: ${{ inputs.timeout }}
         if: ${{ env.FOURTH != 'none' }}
         shell: bash
