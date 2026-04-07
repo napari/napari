@@ -259,14 +259,11 @@ def generate_pixi_toml(pyproject_data):
     lines.append('# Pytest tasks matching tox environments')
 
     # Note: Python 3.14 is excluded as it's not fully available on conda-forge yet
-    python_versions = ['310', '311', '312', '313']
+    python_versions = ['311', '312', '313']
     backends = [
         'pyqt5',
         'pyqt6',
         'pyside6',
-        'headless',
-        'pyqt6-no-numba',
-        'pyqt5-no-numba',
     ]
 
     for py_ver in python_versions:
@@ -317,15 +314,12 @@ def generate_pixi_toml(pyproject_data):
         for backend in backends:
             env_name = f'py{py_ver}-{backend}'
             features = ['testing']
-            if backend in ['pyqt5', 'pyqt5-no-numba']:
+            if backend in ['pyqt5']:
                 features.append('pyqt5')
-            elif backend in ['pyqt6', 'pyqt6-no-numba']:
+            elif backend in ['pyqt6']:
                 features.append('pyqt6')
             elif backend == 'pyside6':
                 features.append('pyside6')
-
-            if backend not in ['pyqt5-no-numba', 'pyqt6-no-numba', 'headless']:
-                features.append('optional-numba')
 
             features.append(env_name)
 
