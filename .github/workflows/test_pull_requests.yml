@@ -185,7 +185,7 @@ jobs:
       matrix:
         platform: [ ubuntu-latest ]
         python: [ "313" ]
-        backend: [ "pyqt6" ]
+        backend: [ "pyside6" ]
     with:
       python_version: ${{ matrix.python }}
       platform: ${{ matrix.platform }}
