@@ -341,6 +341,13 @@ def color_dict_to_colormap(colors):
         Mapping of Label to color control point within colormap
     """
 
+    warnings.warn(
+        'color_dict_to_colormap is deprecated and will be removed in a future '
+        'release. Construct a Colormap and label-to-control mapping directly.',
+        category=FutureWarning,
+        stacklevel=2,
+    )
+
     MAX_DISTINCT_COLORS = LUT_len
 
     control_colors = np.unique(list(colors.values()), axis=0)

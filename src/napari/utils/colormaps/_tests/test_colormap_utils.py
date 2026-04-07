@@ -5,6 +5,7 @@ import pytest
 from napari.utils.colormaps.colormap_utils import (
     CoercedContrastLimits,
     _coerce_contrast_limits,
+    color_dict_to_colormap,
     label_colormap,
 )
 
@@ -111,3 +112,18 @@ def test_coerce_contrast_limits_small_values():
     npt.assert_allclose(
         result.contrast_limits, result.coerce_data(np.array(contrast_limits))
     )
+
+
+def test_color_dict_to_colormap_deprecated_and_returns_values():
+    colors = {
+        1: np.array([1.0, 0.0, 0.0, 1.0]),
+        2: np.array([0.0, 1.0, 0.0, 1.0]),
+    }
+    with pytest.warns(
+        FutureWarning, match='color_dict_to_colormap is deprecated'
+    ):
+        cmap, mapping = color_dict_to_colormap(colors)
+
+    assert hasattr(cmap, 'map')
+    assert isinstance(mapping, dict)
+    assert set(mapping.keys()) == set(colors.keys())
