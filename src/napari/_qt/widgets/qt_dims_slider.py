@@ -192,9 +192,12 @@ class QtDimSliderWidget(QWidget):
     def _slider_focused_listener(self) -> None:
         self.dims.last_used = self.axis
 
-    def show_margins_popup(self) -> None:
-        self.margins_popup = QMarginSlidersPopup(self.dims, self.axis, self)
-        self.margins_popup.setParent(self)
+    def show_margins_popup(self):
+        if self.margins_popup is None:
+            self.margins_popup = QMarginSlidersPopup(
+                self.dims, self.axis, self
+            )
+            self.margins_popup.setParent(self)
         self.margins_popup.show_above_mouse()
 
     def _create_play_button_widget(self) -> QtPlayButton:
