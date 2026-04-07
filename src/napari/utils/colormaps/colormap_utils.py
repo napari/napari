@@ -342,7 +342,7 @@ def color_dict_to_colormap(colors):
     """
 
     warnings.warn(
-        'color_dict_to_colormap is deprecated and will be removed in a future '
+        'color_dict_to_colormap is deprecated and will be removed in a 0.8.0 '
         'release. Construct a Colormap and label-to-control mapping directly.',
         category=FutureWarning,
         stacklevel=2,
