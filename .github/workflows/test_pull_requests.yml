@@ -190,7 +190,6 @@ jobs:
       python_version: ${{ matrix.python }}
       platform: ${{ matrix.platform }}
       qt_backend: ${{ matrix.backend }}
-      timeout: ${{ matrix.timeout-minutes || 40 }}
 
 
   test_pip_install:
