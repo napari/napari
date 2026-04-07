@@ -35,9 +35,6 @@ if TYPE_CHECKING:
     import packaging.version
     from typing_extensions import Self
 
-# TODO: what's this?
-_sentinel = object()
-
 
 ROOT_DIR = os_path.dirname(os_path.dirname(__file__))
 
