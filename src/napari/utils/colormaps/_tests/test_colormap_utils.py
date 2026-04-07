@@ -52,9 +52,8 @@ def test_make_default_color_array_deprecated():
     with pytest.warns(
         DeprecationWarning,
         match=(
-            'make_default_color_array is deprecated and will be removed in a '
-            'future release. Use an explicit array such as '
-            r'np\.array\(\[0, 0, 0, 1\]\) instead\.'
+            r'make_default_color_array is deprecated in 0\.7\.1 and will be removed in 0\.8\.0 release\. '
+            r'Use an explicit array such as np\.array\(\[0, 0, 0, 1\]\) instead\.'
         ),
     ):
         arr = make_default_color_array()
