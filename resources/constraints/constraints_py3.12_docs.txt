@@ -6,7 +6,7 @@ aiobotocore==3.3.0
     # via s3fs
 aiohappyeyeballs==2.6.1
     # via aiohttp
-aiohttp==3.13.4
+aiohttp==3.13.5
     # via
     #   napari (pyproject.toml)
     #   aiobotocore
@@ -31,9 +31,7 @@ anyio==4.13.0
 app-model==0.5.1
     # via napari (pyproject.toml)
 appdirs==1.4.4
-    # via
-    #   napari (pyproject.toml)
-    #   ndev-settings
+    # via ndev-settings
 asttokens==3.0.1
     # via stack-data
 attrs==26.1.0
@@ -85,9 +83,9 @@ certifi==2026.2.25
     #   requests
 chardet==7.4.0.post2
     # via trackastra
-charset-normalizer==3.4.6
+charset-normalizer==3.4.7
     # via requests
-click==8.3.1
+click==8.3.2
     # via
     #   dask
     #   distributed
@@ -111,7 +109,7 @@ coverage==7.13.5
     # via napari (pyproject.toml)
 cuda-bindings==13.2.0
     # via torch
-cuda-pathfinder==1.5.0
+cuda-pathfinder==1.5.1
     # via cuda-bindings
 cuda-toolkit==13.0.2
     # via torch
@@ -214,7 +212,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.151.10
+hypothesis==6.151.11
     # via napari (pyproject.toml)
 idna==3.11
     # via
@@ -302,7 +300,7 @@ jupyter-core==5.9.1
     #   nbclient
     #   nbformat
     #   qtconsole
-kerchunk==0.2.9
+kerchunk==0.2.10
     # via tifffile
 kiwisolver==1.5.0
     # via
@@ -314,7 +312,7 @@ lazy-loader==0.5
     #   scikit-image
 linkify-it-py==2.1.0
     # via napari (pyproject.toml:docs)
-llvmlite==0.46.0
+llvmlite==0.47.0
     # via numba
 locket==1.0.0
     # via
@@ -419,7 +417,7 @@ nbformat==5.10.4
     #   jupyter-cache
     #   myst-nb
     #   nbclient
-ndev-settings==0.4.1
+ndev-settings==0.4.2
     # via ndevio
 ndevio==0.9.1
     # via napari (pyproject.toml:docs)
@@ -434,11 +432,11 @@ nibabel==5.4.2
     # via nilearn
 nilearn==0.13.1
     # via napari (pyproject.toml:docs)
-npe2==0.8.1
+npe2==0.8.2
     # via
     #   napari (pyproject.toml)
     #   napari-plugin-manager
-numba==0.64.0
+numba==0.65.0
     # via
     #   napari (pyproject.toml)
     #   napari (pyproject.toml:docs)
@@ -563,7 +561,7 @@ packaging==26.0
     #   vispy
     #   xarray
     #   zarr
-pandas==3.0.1
+pandas==3.0.2
     # via
     #   napari (pyproject.toml)
     #   nilearn
@@ -577,7 +575,7 @@ partsegcore-compiled-backend==0.15.14
     # via napari (pyproject.toml)
 pexpect==4.9.0
     # via ipython
-pillow==12.1.1
+pillow==12.2.0
     # via
     #   napari (pyproject.toml)
     #   bioio-imageio
@@ -596,6 +594,7 @@ pip==26.0.1
     # via napari-plugin-manager
 platformdirs==4.9.4
     # via
+    #   napari (pyproject.toml)
     #   jupyter-core
     #   npe2
     #   pint
@@ -658,14 +657,14 @@ pydantic==2.12.5
     #   pydantic-settings
 pydantic-core==2.41.5
     # via pydantic
-pydantic-extra-types==2.11.1
+pydantic-extra-types==2.11.2
     # via
     #   napari (pyproject.toml)
     #   npe2
     #   ome-types
 pydantic-settings==2.13.1
     # via napari (pyproject.toml)
-pydata-sphinx-theme==0.16.1
+pydata-sphinx-theme==0.17.0
     # via napari-sphinx-theme
 pydeps==3.0.2
     # via napari (pyproject.toml:docs)
@@ -696,9 +695,9 @@ pyperclip==1.11.0
     # via mouseinfo
 pyproject-hooks==1.2.0
     # via build
-pyqt6==6.10.2
+pyqt6==6.11.0
     # via napari (pyproject.toml)
-pyqt6-qt6==6.10.2
+pyqt6-qt6==6.11.0
     # via pyqt6
 pyqt6-sip==13.11.1
     # via pyqt6
@@ -790,7 +789,7 @@ referencing==0.37.0
     # via
     #   jsonschema
     #   jsonschema-specifications
-requests==2.33.0
+requests==2.33.1
     # via
     #   gdown
     #   nilearn
@@ -907,7 +906,7 @@ sphinxext-opengraph==0.13.0
     # via napari (pyproject.toml:docs)
 sphinxext-rediraffe==0.3.0
     # via napari (pyproject.toml:docs)
-sqlalchemy==2.0.48
+sqlalchemy==2.0.49
     # via jupyter-cache
 stack-data==0.6.3
     # via ipython
@@ -966,7 +965,7 @@ tqdm==4.67.3
     #   napari (pyproject.toml)
     #   gdown
     #   trackastra
-trackastra==0.5.2
+trackastra==0.5.3
     # via napari (pyproject.toml:docs)
 traitlets==5.14.3
     # via
@@ -992,7 +991,7 @@ types-docutils==0.21.0.20250728
     # via
     #   napari-sphinx-theme
     #   types-pygments
-types-pygments==2.19.0.20251121
+types-pygments==2.20.0.20260406
     # via napari-sphinx-theme
 typing-extensions==4.15.0
     # via
@@ -1037,7 +1036,7 @@ urllib3==2.6.3
     #   botocore
     #   distributed
     #   requests
-uvicorn==0.42.0
+uvicorn==0.43.0
     # via sphinx-autobuild
 virtualenv==21.2.0
     # via napari (pyproject.toml)

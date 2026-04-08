@@ -325,8 +325,11 @@ def low_discrepancy_image(image, seed=0.5, margin=1 / 256) -> np.ndarray:
 
 
 def color_dict_to_colormap(colors):
-    """
-    Generate a color map based on the given color dictionary
+    """Generate a color map based on the given color dictionary.
+
+    .. deprecated:: 0.7.1
+        ``color_dict_to_colormap`` is deprecated as of ``0.7.1`` and will be
+        removed in ``0.8.0``.
 
     Parameters
     ----------
@@ -340,6 +343,13 @@ def color_dict_to_colormap(colors):
     label_color_index : dict of int
         Mapping of Label to color control point within colormap
     """
+
+    warnings.warn(
+        'color_dict_to_colormap is deprecated in 0.7.1 and will be removed in '
+        '0.8.0 release. Construct a Colormap and label-to-control mapping directly.',
+        category=FutureWarning,
+        stacklevel=2,
+    )
 
     MAX_DISTINCT_COLORS = LUT_len
 
