@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import types
 from abc import ABC, abstractmethod
-from collections.abc import Sequence
 from contextlib import nullcontext
 from typing import TYPE_CHECKING, cast
 
@@ -40,6 +39,8 @@ from napari.utils.transforms import Affine
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from napari.components import Dims
 
 

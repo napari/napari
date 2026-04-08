@@ -296,7 +296,7 @@ def sys_info(as_html: bool = False) -> str:
         )
         _config_path = get_settings().config_path
     except ValueError:
-        from napari.utils._appdirs import user_config_dir
+        from napari.utils._platformdirs import user_config_dir
 
         _async_setting = str(os.getenv('NAPARI_ASYNC', 'False'))
         _autoswap_buffers = str(os.getenv('NAPARI_AUTOSWAP', 'False'))

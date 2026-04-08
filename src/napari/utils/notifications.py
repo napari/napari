@@ -8,10 +8,13 @@ import warnings
 from collections.abc import Callable, Sequence
 from datetime import datetime
 from enum import auto
-from types import TracebackType
+from typing import TYPE_CHECKING
 
 from napari.utils.events import Event, EventEmitter
 from napari.utils.misc import StringEnum
+
+if TYPE_CHECKING:
+    from types import TracebackType
 
 name2num = {
     'error': 40,

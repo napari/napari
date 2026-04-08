@@ -18,6 +18,7 @@ from typing import (
     Union,
     cast,
 )
+from urllib.parse import urlparse
 
 import numpy as np
 
@@ -135,6 +136,21 @@ DEFAULT_OVERLAYS = {
     'zoom': ZoomOverlay,
     'current_slice': CurrentSliceOverlay,
 }
+
+
+def _validate_paths_exist(paths: list[PathLike]) -> None:
+    """Raise FileNotFoundError if any local (non-URL) path does not exist."""
+    for p in paths:
+        p_str = str(p)
+        parsed = urlparse(p_str)
+        if not (parsed.scheme and parsed.netloc) and not Path(p_str).exists():
+            raise FileNotFoundError(
+                trans._(
+                    'Path {path!r} does not exist.',
+                    deferred=True,
+                    path=p_str,
+                )
+            )
 
 
 # KeymapProvider & MousemapProvider should eventually be moved off the ViewerModel
@@ -1434,6 +1450,8 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             if isinstance(path, Path | str)
             else [os.fspath(p) for p in path]
         )
+
+        _validate_paths_exist(paths_)
 
         paths: Sequence[PathOrPaths] = paths_
         # If stack is a bool and True, add an additional layer of nesting.

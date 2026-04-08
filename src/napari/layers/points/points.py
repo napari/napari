@@ -1,9 +1,9 @@
+from __future__ import annotations
+
 import numbers
 import typing
 import warnings
-from collections.abc import Callable, Iterable, Sequence, Set as AbstractSet
 from copy import copy, deepcopy
-from itertools import cycle
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -14,7 +14,6 @@ from typing import (
 
 import numpy as np
 import numpy.typing as npt
-import pandas as pd
 from psygnal.containers import Selection
 
 from napari.layers.base import Layer, _LayerSlicingState, no_op
@@ -63,6 +62,16 @@ from napari.utils.transforms import Affine
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
+    from collections.abc import (
+        Callable,
+        Iterable,
+        Sequence,
+        Set as AbstractSet,
+    )
+    from itertools import cycle
+
+    import pandas as pd
+
     from napari.components.dims import Dims
 
 DEFAULT_COLOR_CYCLE = np.array([[1, 0, 1, 1], [0, 1, 0, 1]])
@@ -328,19 +337,19 @@ class Points(Layer):
         None after dragging is done.
     """
 
-    _slicing_state: '_PointsSlicingState'
+    _slicing_state: _PointsSlicingState
 
     _modeclass = Mode
     _projectionclass = PointsProjectionMode
 
-    _drag_modes: ClassVar[dict[Mode, Callable[['Points', Event], Any]]] = {
+    _drag_modes: ClassVar[dict[Mode, Callable[[Points, Event], Any]]] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: transform_with_box,
         Mode.ADD: add,
         Mode.SELECT: select,
     }
 
-    _move_modes: ClassVar[dict[Mode, Callable[['Points', Event], Any]]] = {
+    _move_modes: ClassVar[dict[Mode, Callable[[Points, Event], Any]]] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: highlight_box_handles,
         Mode.ADD: no_op,
@@ -465,6 +474,8 @@ class Points(Layer):
             border_width_is_relative=Event,
             face_color=Event,
             current_face_color=Event,
+            face_contrast_limits=Event,
+            face_colormap=Event,
             border_color=Event,
             current_border_color=Event,
             properties=Event,
@@ -553,6 +564,19 @@ class Points(Layer):
         # Trigger generation of view slice and thumbnail
         self.refresh(extent=False)
         self._slicing_state.slice_done.connect(self._refresh_highlight)
+
+        from napari.components.overlays import ColorBarOverlay
+
+        self._overlays.update(
+            {
+                'face_colorbar': ColorBarOverlay(
+                    colormanager_attribute='_face'
+                ),
+                'border_colorbar': ColorBarOverlay(
+                    colormanager_attribute='_border'
+                ),
+            }
+        )
 
     @property
     def data(self) -> np.ndarray:
@@ -718,6 +742,16 @@ class Points(Layer):
         self._face._update_current_properties(current_properties)
         self.events.current_properties()
         self.events.feature_defaults()
+
+    @property
+    def border_colorbar(self):
+        """The colorbar associated with this layer's color manager."""
+        return self._overlays['border_colorbar']
+
+    @property
+    def face_colorbar(self):
+        """The colorbar associated with this layer's color manager."""
+        return self._overlays['face_colorbar']
 
     @property
     def property_choices(self) -> dict[str, np.ndarray]:
@@ -2428,7 +2462,7 @@ class Points(Layer):
 
     def _get_layer_slicing_state(
         self, data: LayerDataType, cache: bool
-    ) -> '_PointsSlicingState':
+    ) -> _PointsSlicingState:
         return _PointsSlicingState(layer=self, data=data, cache=cache)
 
     def _set_view_slice(self):
@@ -2464,7 +2498,7 @@ class _PointsSlicingState(_LayerSlicingState):
         response = request()
         self._update_slice_response(response)
 
-    def _make_slice_request(self, dims: 'Dims') -> _PointSliceRequest:
+    def _make_slice_request(self, dims: Dims) -> _PointSliceRequest:
         """Make a Points slice request based on the given dims and these data."""
         slice_input = self.make_slice_input(dims)
         # See Image._make_slice_request to understand why we evaluate this here

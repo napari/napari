@@ -97,9 +97,12 @@ import copy
 import logging
 import os
 import subprocess
-from multiprocessing.managers import SharedMemoryManager
+from typing import TYPE_CHECKING
 
 from napari.components.experimental.monitor._utils import base64_encoded_json
+
+if TYPE_CHECKING:
+    from multiprocessing.managers import SharedMemoryManager
 
 LOGGER = logging.getLogger('napari.monitor')
 
@@ -145,7 +148,7 @@ class MonitorService:
     those.
     """
 
-    def __init__(self, config: dict, manager: SharedMemoryManager) -> None:
+    def __init__(self, config: dict, manager: 'SharedMemoryManager') -> None:
         super().__init__()
         self._config = config
         self._manager = manager

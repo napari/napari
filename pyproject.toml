@@ -41,7 +41,6 @@ license-files = [
     "LICENSE",
 ]
 dependencies = [
-    "appdirs>=1.4.4",
     "app-model>=0.5.0,<0.6.0",
     "cachey>=0.2.1",
     "certifi>=2018.1.18",
@@ -58,6 +57,7 @@ dependencies = [
     "pandas>=1.3.3",
     "Pillow>=10.0",
     "pint>=0.17",
+    "platformdirs>=4.3.0",
     "psutil>=5.9.0",
     "psygnal>=0.14.2",
     "pydantic>=2.8.0",
@@ -166,7 +166,7 @@ testing = [
     "IPython>=7.25.0",
     "qtconsole>=4.5.1",
     "rich>=12.0.0",
-    "napari[optional-base]",
+    "napari[optional-base, bermuda]",
 ]
 testing_extra = [
     "torch>=1.10.2",
@@ -265,7 +265,7 @@ testing = [
     "IPython>=7.25.0",
     "qtconsole>=4.5.1",
     "rich>=12.0.0",
-    "napari[optional-base]",
+    "napari[optional-base, bermuda]",
 ]
 testing_extra = [
     "torch>=1.10.2",
@@ -441,7 +441,7 @@ select = [
     "T20", # flake8-print
 ]
 ignore = [
-    "E501", "TC001", "TC002", "TC003",
+    "E501", "TC001", "TC002",
     "A003", # flake8-builtins - we have class attributes violating these rule
     "COM812", # flake8-commas - we don't like adding comma on single line of arguments
     "COM819", # conflicts with ruff-format
@@ -468,6 +468,10 @@ ignore = [
 
 [tool.ruff.lint.flake8-builtins]
 builtins-allowed-modules = ["io", "types", "threading"]
+
+[tool.ruff.lint.flake8-type-checking]
+runtime-evaluated-base-classes = ["pydantic.BaseModel", "pydantic.ConfigDict"]
+quote-annotations = true
 
 [tool.ruff.lint.pyupgrade]
 keep-runtime-typing = true

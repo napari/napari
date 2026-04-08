@@ -6,9 +6,7 @@ import sys
 import traceback
 import warnings
 import weakref
-from collections.abc import Sequence
 from pathlib import Path
-from types import FrameType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -22,6 +20,7 @@ from qtpy.QtGui import QGuiApplication, QImage
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 from superqt import ensure_main_thread
 
+from napari._app_model import get_app_model
 from napari._qt.containers import QtLayerList
 from napari._qt.dialogs.qt_reader_dialog import handle_gui_reading
 from napari._qt.dialogs.screenshot_dialog import ScreenshotDialog
@@ -33,6 +32,7 @@ from napari._qt.widgets.qt_viewer_buttons import (
     QtViewerButtons,
 )
 from napari._qt.widgets.qt_viewer_dock_widget import QtViewerDockWidget
+from napari._vispy.utils.qt_font import QtFontManager
 from napari.components.camera import Camera
 from napari.components.layerlist import LayerList
 from napari.errors import MultipleReaderError, ReaderPluginError
@@ -60,6 +60,9 @@ from napari_builtins.io import imsave_extensions
 from napari._vispy import VispyCanvas, create_vispy_layer  # isort:skip
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+    from types import FrameType
+
     from napari_console import QtConsole
     from npe2.manifest.contributions import WriterContribution
 
@@ -201,11 +204,15 @@ class QtViewer(QSplitter):
         self._dockConsole = None
         self._dockPerformance = None
         self._show_welcome_screen = show_welcome_screen
+        self._font_manager = QtFontManager()
+        self._overlay_font = QGuiApplication.font().family()
 
         # This dictionary holds the corresponding vispy visual for each layer
         self.canvas = canvas_class(
             viewer=viewer,
             parent=self,
+            font_manager=self._font_manager,
+            font_family=self._overlay_font,
             key_map_handler=self._key_map_handler,
             size=self.viewer._canvas_size,
             autoswap=get_settings().experimental.autoswap_buffers,  # see #5734
@@ -244,7 +251,9 @@ class QtViewer(QSplitter):
         )
 
         # bind shortcuts stored in settings last.
-        self._bind_shortcuts()
+        with get_app_model().register_with_namespace('QtViewer', self):
+            # we overwrite global injection namespace to ensure that correct QtViewer will be provided.
+            self._bind_shortcuts()
 
         settings = get_settings()
         self._update_dask_cache_settings(settings.application.dask)
@@ -1448,6 +1457,14 @@ class QtViewer(QSplitter):
         if path is not None:
             imsave(path, img)
         return img
+
+    def font_manager(self) -> QtFontManager:
+        """Return the font manager for this viewer."""
+        return self._font_manager
+
+    def overlay_font(self) -> str:
+        """Return the font used for overlays."""
+        return self._overlay_font
 
 
 if TYPE_CHECKING:
