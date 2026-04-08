@@ -1191,7 +1191,7 @@ class Labels(ScalarFieldBase):
                 )
 
         match_indices_local = np.nonzero(matches)
-        match_indices: Sequence[npt.NDArray]
+        match_indices: Sequence[npt.NDArray[np.intp]]
         if self.ndim not in {2, self.n_edit_dimensions}:
             n_idx = len(match_indices_local[0])
             match_indices = []
@@ -1681,7 +1681,9 @@ class _LabelsSlicingState(ScalarFieldSlicingState):
     _slice_request_class = _LabelsSliceRequest
 
 
-def _coerce_indices_for_vectorization(array, indices: Sequence) -> tuple:
+def _coerce_indices_for_vectorization(
+    array, indices: Sequence[int | npt.NDArray[np.intp]]
+) -> tuple:
     """Coerces indices so that they can be used for vectorized indexing in the given data array."""
     if _is_array_type(array, 'xarray.DataArray'):
         # Fix indexing for xarray if necessary
