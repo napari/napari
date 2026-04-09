@@ -14,6 +14,7 @@ from typing import (
 import numpy as np
 import numpy.typing as npt
 from PIL import Image, ImageDraw
+from psygnal.containers import Selection
 from scipy import ndimage as ndi
 
 from napari.layers._data_protocols import LayerDataProtocol
@@ -229,6 +230,9 @@ class Labels(ScalarFieldBase):
         isotropic Sobel gradient, which is smoother but more computationally expensive.
     selected_label : int
         Index of selected label. Can be greater than the current maximum label.
+    selected_data : Selection
+        Selection of labels used for display filtering when
+        ``show_selected_label=True``.
     mode : str
         Interactive mode. The normal, default mode is PAN_ZOOM, which
         allows for normal interactivity with the canvas.
@@ -415,7 +419,11 @@ class Labels(ScalarFieldBase):
         self._iso_gradient_mode = IsoCategoricalGradientMode(iso_gradient_mode)
 
         self._selected_label = 1
-        self.colormap.selection = self._selected_label
+        self._selected_data: Selection[int] = Selection([self._selected_label])
+        self._selected_data.events.items_changed.connect(
+            self._on_selected_data_changed
+        )
+        self.colormap.selection = self._selected_display_label
         self.colormap.use_selection = self._show_selected_label
         self._prev_selected_label = None
         self._selected_color = self.get_color(self._selected_label)
@@ -582,7 +590,6 @@ class Labels(ScalarFieldBase):
         self._selected_color = self.get_color(self.selected_label)
         self._color_mode = color_mode
         self.events.colormap()  # Will update the LabelVispyColormap shader
-        self.events.selected_label()
         self.refresh(extent=False)
 
     @property
@@ -747,12 +754,34 @@ class Labels(ScalarFieldBase):
             self._prev_selected_label = self.selected_label
         else:
             self._prev_selected_label = None
-        self.colormap.selection = selected_label
         self._selected_label = selected_label
+        self.selected_data.replace_selection([selected_label])
         self._selected_color = self.get_color(selected_label)
 
         self.events.selected_label()
 
+    @property
+    def selected_data(self) -> Selection[int]:
+        """Selection: labels selected for display filtering."""
+        return self._selected_data
+
+    @selected_data.setter
+    def selected_data(self, selected_data: Sequence[int] | Selection[int]):
+        # No sanity checks on the values, and the values outside of the dtype
+        # limits will just not be rendered, so we allow any integers to be set.
+        self._selected_data.replace_selection(selected_data)
+
+    @property
+    def _selected_display_label(self) -> int:
+        """Get the label that should be used for display based on the current selection.
+        If no labels are selected, return the background label.
+        Should be removed once we have the multiple label visualization."""
+        if self.selected_data:
+            return next(reversed(self.selected_data))
+        return self.colormap.background_value
+
+    def _on_selected_data_changed(self, added, removed) -> None:
+        self.colormap.selection = self._selected_display_label
         if self.show_selected_label:
             self.refresh(extent=False)
 
@@ -770,9 +799,11 @@ class Labels(ScalarFieldBase):
 
     @show_selected_label.setter
     def show_selected_label(self, show_selected):
+        if self._show_selected_label == show_selected:
+            return
         self._show_selected_label = show_selected
         self.colormap.use_selection = show_selected
-        self.colormap.selection = self.selected_label
+        self.colormap.selection = self._selected_display_label
         self.events.show_selected_label(show_selected_label=show_selected)
         self.refresh(extent=False)
 
@@ -1003,11 +1034,15 @@ class Labels(ScalarFieldBase):
         self.thumbnail = color_array
 
     def get_color(self, label):
-        """Return the color corresponding to a specific label."""
+        """Return the color corresponding to a specific label.
+        Respect the selected_data and show_selected_label settings,
+        returning the background color if the label is not in selected_data
+        and show_selected_label is True.
+        """
         if label == self.colormap.background_value:
             col = None
         elif label is None or (
-            self.show_selected_label and label != self.selected_label
+            self.show_selected_label and label != self._selected_display_label
         ):
             col = self.colormap.map(self.colormap.background_value)
         else:
