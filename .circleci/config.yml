@@ -69,6 +69,7 @@ jobs:
             - docs/docs/_build/html/
 workflows:
   filter-paths:
+    setup: true
     jobs:
       - path-filtering/filter:
           base-revision: main
