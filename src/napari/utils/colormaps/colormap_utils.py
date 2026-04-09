@@ -971,6 +971,18 @@ def _colormap_from_colors(
 
 
 def make_default_color_array():
+    """Return the default RGBA color array.
+
+    .. deprecated:: 0.7.1
+        This helper is deprecated and will be removed in a future release.
+        Use an explicit array such as ``np.array([0, 0, 0, 1])`` instead.
+    """
+    warnings.warn(
+        'make_default_color_array is deprecated in 0.7.1 and will be removed in 0.8.0 release.'
+        ' Use an explicit array such as np.array([0, 0, 0, 1]) instead.',
+        DeprecationWarning,
+        stacklevel=2,
+    )
     return np.array([0, 0, 0, 1])
 
 
