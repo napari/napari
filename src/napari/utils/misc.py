@@ -15,7 +15,7 @@ import os
 import re
 import sys
 import warnings
-from enum import Enum
+from enum import Enum, EnumMeta
 from os import fspath, path as os_path
 from pathlib import Path
 from typing import (
@@ -281,7 +281,13 @@ else:
             return name.lower()
 
 
-class StringEnum(StrEnum):
+class StringEnumMeta(EnumMeta):
+    def __getitem__(self, item: str) -> StringEnum:  # type: ignore[override]
+        """Case-insensitive name lookup: MyEnum['tHiNg'] -> MyEnum.THING."""
+        return super().__getitem__(item.upper())
+
+
+class StringEnum(StrEnum, metaclass=StringEnumMeta):
     @staticmethod
     def _generate_next_value_(
         name: str, start: int, count: int, last_values: list[str]
@@ -339,11 +345,6 @@ class StringEnum(StrEnum):
     @classmethod
     def keys(cls) -> list[str]:
         return list(map(str, cls))
-
-    @classmethod
-    def __class_getitem__(cls, item: str) -> StringEnum:
-        """Case-insensitive name lookup: MyEnum['tHiNg'] -> MyEnum.THING."""
-        return super().__getitem__(item.upper())
 
 
 camel_to_snake_pattern = re.compile(r'(.)([A-Z][a-z]+)')
