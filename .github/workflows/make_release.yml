@@ -55,7 +55,8 @@ jobs:
 
   create-release:
     needs: [extract_release_notes, build-and-inspect-package]
-
+    permissions:
+      contents: write
     name: Create Release
     runs-on: ubuntu-latest
     if: github.repository == 'napari/napari'
