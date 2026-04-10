@@ -1009,3 +1009,7 @@ layers = ["napari.qt","napari.components"]
 ignore_imports = [
     "napari.plugins._npe2 -> napari._qt._qplugins",
 ]
+
+
+[tool.check-wheel-contents]
+toplevel = ["napari", "napari_builtins"]
