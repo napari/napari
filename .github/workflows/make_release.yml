@@ -36,7 +36,7 @@ jobs:
       - name: Get latest relese
         if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
         run: |
-          echo "tag_=$(gh release view --json tagName --jq '.tagName | ltrimstr(\"v\")')" >> "$GITHUB_ENV"
+          echo "tag_=$(gh release view --repo napari/napari --json tagName --jq '.tagName | ltrimstr(\"v\")')" >> "$GITHUB_ENV"
         env:
           GH_TOKEN: ${{ github.token }}
 
