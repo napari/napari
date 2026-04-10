@@ -121,7 +121,7 @@ def _build_samples_submenu_actions(
         title = title.replace('&', '&&')
 
         action: Action = Action(
-            id=f'{mf.name}:{sample.key}',
+            id=f'{mf.name}.{sample.key}',
             title=title,
             menus=[{'id': submenu_id, 'group': MenuGroup.NAVIGATION}],
             callback=_add_sample_partial,
@@ -279,7 +279,7 @@ def _build_widgets_submenu_actions(
 
         widget_actions.append(
             Action(
-                id=f'{mf.name}:{widget.display_name}',
+                id=f'{mf.name}.{widget.display_name}',
                 title=title,
                 callback=_widget_callback,
                 menus=action_menus,
