@@ -29,7 +29,7 @@ jobs:
         with:
           repository: napari/docs
           path: docs
-      - name: Get tag from github ref
+      - name: Get release tag from github ref
         if: startsWith(github.ref, 'refs/tags/v')
         run: |
           echo "tag_=${GITHUB_REF/refs\/tags\/v/}" >> "$GITHUB_ENV"
@@ -74,7 +74,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.repository == 'napari/napari'
     steps:
-      - name: Download built artifact to dist/
+      - name: Download build artifact to dist/
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: Packages
@@ -99,8 +99,8 @@ jobs:
           files: |
             dist/*
 
-  upload-to-pypi:
-    name: Upload package to PyPI
+  publish-to-pypi:
+    name: Publish release to PyPI
     needs: [extract_release_notes, build-and-inspect-package]
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
