@@ -204,6 +204,7 @@ class ScalarFieldBase(Layer, ABC):
     _colormaps = AVAILABLE_COLORMAPS
     _interpolation2d: Interpolation
     _interpolation3d: Interpolation
+    _level_materializer: Callable[[int], np.ndarray] | None
 
     def __init__(
         self,
@@ -777,7 +778,7 @@ class ScalarFieldSlicingState(_LayerSlicingState):
             self.layer.multiscale and self.layer._get_ndim() == 2
         )
         thumbnail_level = self.layer._thumbnail_level
-        if is_2d_multiscale:
+        if is_2d_multiscale and self.layer._level_materializer:
             thumbnail_level_data = self.layer._level_materializer(
                 thumbnail_level
             )
