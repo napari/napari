@@ -250,7 +250,8 @@ def test_get_ray_intersections_anisotropic():
     bb_min = np.array([0, 0, 0])
     bb_max = np.array([6, 5001, 5001])  # extent is shape + 1
     for pt in (start_point, end_point):
-        assert np.all(pt >= bb_min - 1e-6) and np.all(pt <= bb_max + 1e-6)
+        assert np.all(pt >= bb_min - 1e-6)
+        assert np.all(pt <= bb_max + 1e-6)
 
 
 def test_get_ray_intersections_miss():
