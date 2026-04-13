@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import struct
+import warnings
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any
 
@@ -135,6 +136,26 @@ def imsave_tiff(filename, data):
                 compressionargs={'level': 1},
                 bigtiff=True,
             )
+
+
+def __getattr__(name: str):
+    if name in {
+        'imsave_extensions',
+        'write_csv',
+        'read_csv',
+        'csv_to_layer_data',
+        'read_zarr_dataset',
+    }:
+        warnings.warn(
+            trans._(
+                '{name} was moved from napari.utils.io in v0.4.17. Import it from napari_builtins.io instead.',
+                deferred=True,
+                name=name,
+            ),
+            FutureWarning,
+            stacklevel=2,
+        )
+        import napari_builtins.io  # noqa
 
 
 def execute_python_code(code: str, script_path: str | Path = '') -> None:
