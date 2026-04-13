@@ -68,7 +68,7 @@ jobs:
 
       - name: Copy Release Notes
         run: |
-          cp ${RELEASE_NOTES_PATH} release_notes.md
+          cp "${RELEASE_NOTES_PATH}" release_notes.md
         env:
           RELEASE_NOTES_PATH: ${{ env.release_notes_path }}
 
