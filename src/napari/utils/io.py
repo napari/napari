@@ -156,7 +156,7 @@ def execute_python_code(code: str, script_path: str | Path = '') -> None:
         try:
             patched_viewer = current_viewer()
             script_namespace = _SCRIPT_NAMESPACES.setdefault(script_path, {})
-            
+
             # The `__name__` variable stores the module name.
             # If a module is imported, set `__name__` to the module name.
             # If a module is executed with `python -m ...` or
