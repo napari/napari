@@ -340,10 +340,13 @@ class QtDimSliderWidget(QWidget):
                 has been reached.
         """
         value = LoopMode(value)
+        if self._loop_mode == value:
+            return
         self._loop_mode = value
-        self.play_button.mode_combo.setCurrentText(
-            str(value).replace('_', ' ')
-        )
+        with qt_signals_blocked(self.play_button.mode_combo):
+            self.play_button.mode_combo.setCurrentText(
+                str(value).replace('_', ' ')
+            )
         self.mode_changed.emit(str(value))
 
     @property
