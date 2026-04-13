@@ -27,7 +27,7 @@ beautifulsoup4==4.14.3
     # via gdown
 bermuda==0.1.7
     # via napari (pyproject.toml)
-build==1.4.2
+build==1.4.3
     # via npe2
 cachey==0.2.1
     # via napari (pyproject.toml)
@@ -35,7 +35,7 @@ certifi==2026.2.25
     # via
     #   napari (pyproject.toml)
     #   requests
-chardet==7.4.0.post2
+chardet==7.4.2
     # via trackastra
 charset-normalizer==3.4.7
     # via requests
@@ -58,7 +58,7 @@ coverage==7.13.5
     # via napari (pyproject.toml)
 cuda-bindings==13.2.0
     # via torch
-cuda-pathfinder==1.5.1
+cuda-pathfinder==1.5.2
     # via cuda-bindings
 cuda-toolkit==13.0.2
     # via torch
@@ -111,9 +111,9 @@ fsspec==2026.3.0
     #   napari (pyproject.toml)
     #   dask
     #   torch
-gdown==5.2.1
+gdown==6.0.0
     # via napari (pyproject.toml:gallery)
-geff==1.1.4.1.1
+geff==1.1.5.1.1
     # via trackastra
 geff-spec==1.1.1
     # via geff
@@ -129,7 +129,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.151.11
+hypothesis==6.151.13
     # via napari (pyproject.toml)
 idna==3.11
     # via
@@ -201,7 +201,7 @@ locket==1.0.0
     # via
     #   distributed
     #   partd
-lxml==6.0.2
+lxml==6.0.4
     # via
     #   napari (pyproject.toml)
     #   lxml-html-clean
@@ -209,7 +209,7 @@ lxml-html-clean==0.4.4
     # via lxml
 lz4==4.4.5
     # via trackastra
-magicgui==0.10.1
+magicgui==0.10.2
     # via napari (pyproject.toml)
 markdown-it-py==4.0.0
     # via rich
@@ -398,7 +398,7 @@ pint==0.25.3
     #   napari-metadata
 pip==26.0.1
     # via napari-plugin-manager
-platformdirs==4.9.4
+platformdirs==4.9.6
     # via
     #   napari (pyproject.toml)
     #   jupyter-core
@@ -506,7 +506,7 @@ pyside6-essentials==6.11.0
     #   pyside6-addons
 pysocks==1.7.1
     # via requests
-pytest==9.0.2
+pytest==9.0.3
     # via
     #   napari (pyproject.toml)
     #   pytest-json-report
@@ -529,7 +529,7 @@ python-dateutil==2.9.0.post0
     #   jupyter-client
     #   matplotlib
     #   pandas
-python-discovery==1.2.1
+python-discovery==1.2.2
     # via virtualenv
 python-dotenv==1.2.2
     # via pydantic-settings
@@ -575,7 +575,7 @@ requests==2.33.1
     #   pooch
     #   pyconify
     #   trackastra
-rich==14.3.3
+rich==15.0.0
     # via
     #   napari (pyproject.toml)
     #   meshio
@@ -636,7 +636,7 @@ tensorstore==0.1.82
     #   napari (pyproject.toml)
 threadpoolctl==3.6.0
     # via scikit-learn
-tifffile==2026.3.3
+tifffile==2026.4.11
     # via
     #   napari (pyproject.toml)
     #   napari (pyproject.toml:gallery)
@@ -714,7 +714,7 @@ urllib3==2.6.3
     # via
     #   distributed
     #   requests
-virtualenv==21.2.0
+virtualenv==21.2.1
     # via napari (pyproject.toml)
 vispy==0.16.1
     # via
