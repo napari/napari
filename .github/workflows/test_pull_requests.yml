@@ -11,6 +11,8 @@ concurrency:
   group: test-${{ github.ref }}
   cancel-in-progress: true
 
+permissions: {}
+
 env:
   COLUMNS: 120
 
