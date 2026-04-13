@@ -89,6 +89,7 @@ def pypi_to_conda_name(pkg_name):
         'PyQt5': 'pyqt',
         'docstring-parser': 'docstring_parser',
         'docstring_parser': 'docstring_parser',
+        'qtconsole': 'qtconsole-base',
     }
 
     # Check if there's a specific mapping
