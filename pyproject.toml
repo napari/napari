@@ -1018,3 +1018,6 @@ name = "Block imports from napari_builtins in napari core"
 type = "forbidden"
 source_modules = "napari"
 forbidden_modules = ["napari_builtins"]
+ignore_imports = [
+    "napari.utils.io -> napari_builtins"  # to be removed in 0.8.0
+]
