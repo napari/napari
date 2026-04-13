@@ -143,10 +143,10 @@ jobs:
         # FOURTH=none
         shell: bash
         run: |
-          python tools/split_qt_backend.py 0 ${INPUTS_QT_BACKEND} >> "$GITHUB_ENV"
-          python tools/split_qt_backend.py 1 ${INPUTS_QT_BACKEND} >> "$GITHUB_ENV"
-          python tools/split_qt_backend.py 2 ${INPUTS_QT_BACKEND} >> "$GITHUB_ENV"
-          python tools/split_qt_backend.py 3 ${INPUTS_QT_BACKEND} >> "$GITHUB_ENV"
+          python tools/split_qt_backend.py 0 "${INPUTS_QT_BACKEND}" >> "$GITHUB_ENV"
+          python tools/split_qt_backend.py 1 "${INPUTS_QT_BACKEND}" >> "$GITHUB_ENV"
+          python tools/split_qt_backend.py 2 "${INPUTS_QT_BACKEND}" >> "$GITHUB_ENV"
+          python tools/split_qt_backend.py 3 "${INPUTS_QT_BACKEND}" >> "$GITHUB_ENV"
         env:
           INPUTS_QT_BACKEND: ${{ inputs.qt_backend }}
 
@@ -154,9 +154,9 @@ jobs:
         timeout-minutes: ${{ inputs.timeout }}
         shell: bash
         run: |
-          echo ${MAIN}
+          echo "${MAIN}"
           tox --version
-          python -m tox run --installpkg ${WHEEL_PATH} -- --basetemp=.pytest_tmp
+          python -m tox run --installpkg "${WHEEL_PATH}" -- --basetemp=.pytest_tmp
           rm -r .tox
         env:
           BACKEND: ${{ env.MAIN }}
@@ -167,7 +167,7 @@ jobs:
         if : ${{ env.SECOND != 'none' }}
         shell: bash
         run: |
-          python -m tox run --installpkg ${WHEEL_PATH} -- --basetemp=.pytest_tmp
+          python -m tox run --installpkg "${WHEEL_PATH}" -- --basetemp=.pytest_tmp
           rm -r .tox
         env:
           BACKEND: ${{ env.SECOND }}
@@ -178,7 +178,7 @@ jobs:
         if : ${{ env.THIRD != 'none' }}
         shell: bash
         run: |
-          python -m tox run --installpkg ${WHEEL_PATH} -- --basetemp=.pytest_tmp
+          python -m tox run --installpkg "${WHEEL_PATH}" -- --basetemp=.pytest_tmp
           rm -r .tox
         env:
           BACKEND: ${{ env.THIRD }}
@@ -189,7 +189,7 @@ jobs:
         if: ${{ env.FOURTH != 'none' }}
         shell: bash
         run: |
-          python -m tox run --installpkg ${WHEEL_PATH} -- --basetemp=.pytest_tmp
+          python -m tox run --installpkg "${WHEEL_PATH}" -- --basetemp=.pytest_tmp
           rm -r .tox
         env:
           BACKEND: ${{ env.FOURTH }}

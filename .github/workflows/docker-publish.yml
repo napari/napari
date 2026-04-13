@@ -99,6 +99,6 @@ jobs:
 
       - name: Test Docker image
         run: |
-          docker run --rm --entrypoint=/bin/bash ${STEPS_DOCKER_BUILD_OUTPUTS_IMAGEID} -ec "python3 -m napari --version"
+          docker run --rm --entrypoint=/bin/bash "${STEPS_DOCKER_BUILD_OUTPUTS_IMAGEID}" -ec "python3 -m napari --version"
         env:
           STEPS_DOCKER_BUILD_OUTPUTS_IMAGEID: ${{ steps.docker_build.outputs.imageid }}
