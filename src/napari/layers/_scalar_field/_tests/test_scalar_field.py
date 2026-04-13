@@ -40,7 +40,7 @@ def test_3d_multiscale_thumbnail_not_prematerialized():
 def test_single_scale_no_prematerialization():
     """Single-scale images should not materialize and cache."""
     layer = Image(np.random.random((32, 32)))
-    assert layer._level_materializer.cache_info().currsize == 0
+    assert layer._level_materializer is None
 
 
 def test_multiscale_thumbnail_uses_prematerialized_data():

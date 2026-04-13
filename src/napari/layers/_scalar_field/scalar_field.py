@@ -54,15 +54,14 @@ def _make_level_materializer(
     """Return an ``lru_cache``'d function that materializes levels of *data*.
 
     The returned callable accepts a single ``level`` integer and returns
-    ``np.asarray(data[level])``, caching up to two results (enough for the
-    thumbnail level and the home level without eviction during a single slice
-    call).
+    ``np.asarray(data[level])``, caching the thumbnail level for reuse across
+    slice requests.
 
     Creating a new materializer for replacement data automatically abandons
     the old cache; no explicit ``cache_clear()`` is required.
     """
 
-    @lru_cache(maxsize=2)
+    @lru_cache(maxsize=1)
     def _materializer(level: int) -> np.ndarray:
         return np.asarray(data[level])
 
@@ -404,21 +403,24 @@ class ScalarFieldBase(Layer, ABC):
         self.refresh(extent=False)
 
     def _reset_thumbnail_level_data(self) -> None:
-        """Set thumbnail level and create a fresh level materializer.
+        """Set thumbnail level and refresh the multiscale level materializer.
 
         Called once during ``__init__`` and again whenever ``data`` is
         replaced.  Creating a new :func:`_make_level_materializer` for the
         replacement data automatically abandons the old cache — no explicit
-        cache invalidation is required.
+        cache invalidation is required. Single-scale layers do not create a
+        level materializer.
         """
         data = self._data
-        self._thumbnail_level = (
-            len(data) - 1 if isinstance(data, MultiScaleData) else 0
-        )
-        # Rebinding creates a fresh lru_cache; the old closure and its cached
-        # arrays become eligible for garbage collection immediately.
-        self._level_materializer = _make_level_materializer(data)
-        self._slicing_state._home_level = None
+        if isinstance(data, MultiScaleData):
+            self._thumbnail_level = len(data) - 1
+            # Rebinding creates a fresh lru_cache; the old closure and its
+            # cached arrays become eligible for garbage collection
+            # immediately.
+            self._level_materializer = _make_level_materializer(data)
+        else:
+            self._thumbnail_level = 0
+            self._level_materializer = None
 
     def _update_dims(self) -> None:
         """Extend base _update_dims to keep thumbnail level data in sync.
@@ -775,19 +777,12 @@ class ScalarFieldSlicingState(_LayerSlicingState):
             self.layer.multiscale and self.layer._get_ndim() == 2
         )
         thumbnail_level = self.layer._thumbnail_level
-        home_level = self._home_level
         if is_2d_multiscale:
             thumbnail_level_data = self.layer._level_materializer(
                 thumbnail_level
             )
-            home_level_data = (
-                self.layer._level_materializer(home_level)
-                if home_level is not None and home_level != thumbnail_level
-                else None
-            )
         else:
             thumbnail_level_data = None
-            home_level_data = None
         return self._slice_request_class(
             slice_input=slice_input,
             data=self.layer.data,
@@ -802,8 +797,6 @@ class ScalarFieldSlicingState(_LayerSlicingState):
             level_shapes=self.layer.level_shapes,
             downsample_factors=self.layer.downsample_factors,
             thumbnail_level_data=thumbnail_level_data,
-            home_level=home_level,
-            home_level_data=home_level_data,
         )
 
     def _update_slice_response(
