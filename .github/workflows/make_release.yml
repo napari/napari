@@ -51,7 +51,6 @@ jobs:
       - name: Find Release Notes
         id: release_notes
         run: |
-          TAG="${{ env.tag_ }}"  # clean tag
           VER="${TAG/a*/}"  # remove alpha identifier
           VER="${VER/b*/}"  # remove beta identifier
           VER="${VER/rc*/}"  # remove rc identifier
@@ -63,10 +62,15 @@ jobs:
           echo tag: "${TAG}"
           echo release_notes_path: "${RELEASE_NOTES_PATH}"
           ls docs/docs/release
+        env:
+          TAG: ${{ env.tag_ }}
+
 
       - name: Copy Release Notes
         run: |
-          cp ${{ env.release_notes_path }} release_notes.md
+          cp ${RELEASE_NOTES_PATH} release_notes.md
+        env:
+          RELEASE_NOTES_PATH: ${{ env.release_notes_path }}
 
       - name: Upload Release Notes
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
