@@ -458,13 +458,14 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "src/napari/_vispy/__init__.py" = ["E402"]
-"**/_tests/*.py" = ["B011", "INP001", "TRY301", "B018", "RUF012"]
+"**/_tests/*.py" = ["B011", "INP001", "TRY301", "B018", "RUF012", "TID253"]
 "src/napari/utils/_testsupport.py" = ["B011"]
 "tools/validate_strings.py" = ["F401"]
 "tools/**" = ["INP001", "T20", "LOG015"]
-"examples/**" = ["ICN001", "INP001", "T20", "LOG015"]
+"examples/**" = ["ICN001", "INP001", "T20", "LOG015", "TID253"]
 "**/vendored/**" = ["TID"]
-"src/napari/benchmarks/**" = ["RUF012", "TID252"]
+"src/napari/benchmarks/**" = ["RUF012", "TID252", "TID253"]
+"src/napari_builtins/**" = ["TID253"]
 
 [tool.ruff.lint.flake8-builtins]
 builtins-allowed-modules = ["io", "types", "threading"]
@@ -484,6 +485,8 @@ multiline-quotes = "double"
 [tool.ruff.lint.flake8-tidy-imports]
 # Disallow all relative imports.
 ban-relative-imports = "all"
+# Expensive imports should be lazy loaded within functions instead of module
+banned-module-level-imports = ["scipy", "pandas", "dask.array"]
 
 [tool.ruff.lint.isort]
 known-first-party=['napari']

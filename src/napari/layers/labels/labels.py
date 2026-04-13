@@ -15,7 +15,6 @@ from typing import (
 import numpy as np
 import numpy.typing as npt
 from PIL import Image, ImageDraw
-from scipy import ndimage as ndi
 
 from napari.layers._data_protocols import LayerDataProtocol
 from napari.layers._multiscale_data import MultiScaleData
@@ -984,6 +983,8 @@ class Labels(ScalarFieldBase):
         like adjusting gamma or changing the data based on the contrast
         limits.
         """
+        from scipy import ndimage as ndi
+
         if not self._slicing_state.loaded or self._slice.empty:
             # ASYNC_TODO: Do not compute the thumbnail until we are loaded.
             # Is there a nicer way to prevent this from getting called?
@@ -1147,6 +1148,8 @@ class Labels(ScalarFieldBase):
             Whether to refresh view slice or not. Set to False to batch paint
             calls.
         """
+        from scipy import ndimage as ndi
+
         int_coord = tuple(np.round(coord).astype(int))
         # If requested fill location is outside data shape then return
         if np.any(np.less(int_coord, 0)) or np.any(
