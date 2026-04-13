@@ -154,19 +154,20 @@ def execute_python_code(code: str, script_path: str | Path = '') -> None:
 
     with _patched_viewer_new(), _noop_napari_run():
         try:
-            viewer = current_viewer()
+            patched_viewer = current_viewer()
             script_namespace = _SCRIPT_NAMESPACES.setdefault(script_path, {})
-            # The `__name__` variable is storing the name of the module.
-            # If a module is imported, it is set to the module name.
+            
+            # The `__name__` variable stores the module name.
+            # If a module is imported, set `__name__` to the module name.
             # If a module is executed with `python -m ...` or
-            # `python script.py` it is set to '__main__'.
-            # If code is executed with `exec(code, namespace)` it is set to `builtins` if
-            # `__name__` is not set in the namespace.
-            # So we set it to `__main__` to execute `if __name__ == '__main__':` blocks
+            # `python script.py`, set `__name__` to '__main__'.
+            # If `__name__` is not already set in the namespace and
+            # code will be executed with `exec(code, namespace)`, set `__name__` to `builtins`.
+            # Set `__main__` to execute `if __name__ == '__main__':` blocks
             script_namespace['__name__'] = '__main__'
             exec(code, script_namespace)
             _add_variables_to_viewer_console(
-                _SCRIPT_NAMESPACES[script_path], viewer
+                _SCRIPT_NAMESPACES[script_path], patched_viewer
             )
         except BaseException as e:  # noqa: BLE001
             notification_manager.receive_error(type(e), e, e.__traceback__)
