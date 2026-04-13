@@ -8,6 +8,7 @@ The generated pixi.toml will include pytest tasks similar to those in tox.ini:
 - py{311,312,313}-{pyqt5,pyqt6,pyside6}
 """
 
+import sys
 from pathlib import Path
 
 try:
@@ -115,7 +116,17 @@ def generate_pixi_toml(pyproject_data):
     lines.append('[workspace]')
     lines.append(f'name = "{project_name}"')
     lines.append('channels = ["conda-forge"]')
-    lines.append('platforms = ["linux-64", "osx-64", "osx-arm64", "win-64"]\n')
+
+    platforms_by_host = {
+        'linux': ['linux-64'],
+        'darwin': ['osx-64', 'osx-arm64'],
+        'win32': ['win-64'],
+    }
+
+    platforms = platforms_by_host.get(
+        sys.platform, ['linux-64', 'osx-64', 'osx-arm64', 'win-64']
+    )
+    lines.append(f'platforms = {platforms!r}\n')
 
     # Main dependencies from pyproject.toml
     lines.append('[dependencies]')
