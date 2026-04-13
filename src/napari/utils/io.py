@@ -155,7 +155,11 @@ def __getattr__(name: str):
             FutureWarning,
             stacklevel=2,
         )
-        import napari_builtins.io  # noqa
+        import napari_builtins.io
+
+        return getattr(napari_builtins.io, name)
+
+    raise AttributeError(f'module {__name__} has no attribute {name}')
 
 
 def execute_python_code(code: str, script_path: str | Path = '') -> None:
