@@ -304,6 +304,8 @@ def generate_pixi_toml(pyproject_data):
             pytest_cmd += f' --json-report-file=report-{env_name}.json'
             pytest_cmd += ' --save-leaked-object-graph'
 
+            # pytest_cmd += ' src/napari/_vispy/_tests/test_vispy_points_layer.py6'
+
             lines.append(f'[feature.{env_name}.tasks]')
             lines.append(f'test = "{pytest_cmd}"')
             lines.append('')
