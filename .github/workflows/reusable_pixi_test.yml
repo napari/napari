@@ -39,6 +39,14 @@ jobs:
       - name: Generate pixi.toml
         run: python tools/generate_pixi_toml.py
 
+      - name: Install dependencies
+        run: |
+          pixi install -e py${PYTHON_VERSION}-${QT_BACKEND}
+          pixi list -e py${PYTHON_VERSION}-${QT_BACKEND}
+        env:
+          PYTHON_VERSION: ${{ inputs.python_version }}
+          QT_BACKEND: ${{ inputs.qt_backend }}
+
       - name: Run tests
         timeout-minutes: ${{ inputs.timeout }}
         run: pixi run -e py${PYTHON_VERSION}-${QT_BACKEND} test
