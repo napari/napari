@@ -228,7 +228,8 @@ class QtDimSliderWidget(QWidget):
     def _pull_label(self):
         """Updates the label LineEdit from the dims model."""
         label = self.dims.axis_labels[self.axis]
-        self.axis_label.setText(label)
+        with qt_signals_blocked(self.axis_label):
+            self.axis_label.setText(label)
 
     def _update_label(self):
         """Update dimension slider label."""
