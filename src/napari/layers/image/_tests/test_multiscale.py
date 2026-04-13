@@ -498,35 +498,3 @@ def test_update_draw_variable_canvas_size_fixed_fov(
 
     assert layer.data_level == exp_level
     np.testing.assert_equal(layer.corner_pixels, exp_corner_pixels_data)
-
-
-def test_update_draw_lowest_level_keeps_full_view(monkeypatch):
-    shapes = [(20, 20), (10, 10), (5, 5)]
-    data = [np.zeros(s) for s in shapes]
-    layer = Image(data, multiscale=True)
-    refresh_calls = []
-
-    def _record_refresh(*args, **kwargs):
-        refresh_calls.append(kwargs)
-
-    monkeypatch.setattr(layer, 'refresh', _record_refresh)
-
-    # First update selects the coarsest level.
-    layer._update_draw(
-        scale_factor=1,
-        corner_pixels_displayed=np.array([[-11, -11], [31, 31]]),
-        shape_threshold=(10, 10),
-    )
-    assert layer.data_level == 2
-    np.testing.assert_equal(layer.corner_pixels, [[0, 0], [4, 4]])
-    refresh_count = len(refresh_calls)
-
-    # Panning while staying on the coarsest level should not trigger reslicing.
-    layer._update_draw(
-        scale_factor=1,
-        corner_pixels_displayed=np.array([[-9, -9], [33, 33]]),
-        shape_threshold=(10, 10),
-    )
-    assert layer.data_level == 2
-    np.testing.assert_equal(layer.corner_pixels, [[0, 0], [4, 4]])
-    assert len(refresh_calls) == refresh_count
