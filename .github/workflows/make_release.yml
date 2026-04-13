@@ -72,7 +72,7 @@ jobs:
           name: release_notes
           path: release_notes.md
 
-  create-release:
+  create-github-release:
     needs: [extract_release_notes, build-and-inspect-package]
     permissions:
       contents: write
