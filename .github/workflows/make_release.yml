@@ -9,16 +9,22 @@ on:
 
 name: Create Release
 
+permissions: {}
+
 jobs:
   build-and-inspect-package:
     name: Build & inspect package.
     runs-on: ubuntu-latest
-
+    permissions:
+      attestations: write
+      id-token: write
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
       - uses: hynek/build-and-inspect-python-package@fe0a0fb1925ca263d076ca4f2c13e93a6e92a33e  # v2.17.0
+        with:
+          attest-build-provenance-github: 'true'
 
   extract_release_notes:
     name: Extract release notes
