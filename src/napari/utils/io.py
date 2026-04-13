@@ -148,7 +148,7 @@ def __getattr__(name: str):
     }:
         warnings.warn(
             trans._(
-                '{name} was moved from napari.utils.io in v0.4.17. Import it from napari_builtins.io instead.',
+                '{name} was moved to napari_builtins.io and will be removed from here in v0.8.0.',
                 deferred=True,
                 name=name,
             ),
