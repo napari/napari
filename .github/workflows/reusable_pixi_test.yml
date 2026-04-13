@@ -18,6 +18,8 @@ on:
         type: number
         default: 40
 
+permissions: {}
+
 jobs:
   test:
     runs-on: ${{ inputs.platform }}
@@ -28,6 +30,8 @@ jobs:
           qt: true
           wm: herbstluftwm
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
       - uses: prefix-dev/setup-pixi@a0af7a228712d6121d37aba47adf55c1332c9c2e # v0.9.4
         with:
           run-install: false
@@ -37,4 +41,7 @@ jobs:
 
       - name: Run tests
         timeout-minutes: ${{ inputs.timeout }}
-        run: pixi run -e py${{ inputs.python_version }}-${{ inputs.qt_backend }} test
+        run: pixi run -e py${PYTHON_VERSION}-${QT_BACKEND} test
+        env:
+          PYTHON_VERSION: ${{ inputs.python_version }}
+          QT_BACKEND: ${{ inputs.qt_backend }}
