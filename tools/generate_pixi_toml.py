@@ -222,7 +222,7 @@ def generate_pixi_toml(pyproject_data):
     lines.append('[feature.testing.dependencies]')
     testing_deps = dependency_groups.get('testing', [])
     seen_packages = set()
-    pypi_deps = []
+    pypi_deps = ['pytest-pystack']
 
     # First add dependencies from optional-base (required by testing)
     optional_base_deps = optional_deps.get('optional-base', [])
@@ -303,7 +303,14 @@ def generate_pixi_toml(pyproject_data):
             pytest_cmd += f' --json-report-file=report-{env_name}.json'
             pytest_cmd += ' --save-leaked-object-graph'
 
-            # pytest_cmd += ' src/napari/_vispy/_tests/test_vispy_points_layer.py6'
+            if sys.platform == 'linux':
+                pytest_cmd += (
+                    ' --pystack-threshold=60 --pystack-args=\\"--native-all\\"'
+                )
+
+            # pytest_cmd += (
+            #     ' src/napari/_qt/widgets/_tests/test_shortcut_editor_widget.py'
+            # )
 
             lines.append(f'[feature.{env_name}.tasks]')
             lines.append(f'test = "{pytest_cmd}"')
