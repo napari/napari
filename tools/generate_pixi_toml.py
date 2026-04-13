@@ -5,7 +5,7 @@ This script is reading pyproject.toml and generates a pixi.toml file
 Each dependency group and extras should be mapped to a separate feature.
 
 The generated pixi.toml will include pytest tasks similar to those in tox.ini:
-- py{310,311,312,313,314}-{linux,macos,windows}-{pyqt5,pyqt6,pyside6,headless,pyqt6_no_numba,pyqt5_no_numba}-{cov,no_cov}
+- py{311,312,313}-{pyqt5,pyqt6,pyside6}
 """
 
 from pathlib import Path
@@ -59,6 +59,16 @@ def parse_dependency_spec(dep_spec):
     # No version constraint found, just extract package name without extras
     pkg_name = dep_spec.split('[')[0].strip()
     return (pkg_name, '*')
+
+
+def extract_lower_bound(version_spec):
+    """Extract a lower-bound style constraint from a version spec string."""
+    for constraint in (part.strip() for part in version_spec.split(',')):
+        if constraint.startswith(('>=', '==', '~=')):
+            return constraint
+        if constraint.startswith('>'):
+            return f'>={constraint[1:].strip()}'
+    return None
 
 
 def pypi_to_conda_name(pkg_name):
@@ -176,17 +186,15 @@ def generate_pixi_toml(pyproject_data):
     # Feature for numba optional dependency
     lines.append('[feature.optional-numba.dependencies]')
     numba_deps = optional_deps.get('optional-numba', [])
-    if numba_deps:
-        for dep in numba_deps:
-            if 'numba' in dep.lower() and ';' not in dep:
-                # Extract the most general constraint (without platform conditionals)
-                pkg_name, version = parse_dependency_spec(dep)
-                lines.append(f'numba = "{version}"')
-                break
-        else:
-            lines.append('numba = ">=0.57.1"')
-    else:
-        lines.append('numba = ">=0.57.1"')
+    numba_version = None
+    for dep in numba_deps:
+        if not isinstance(dep, str) or 'numba' not in dep.lower():
+            continue
+        _, version = parse_dependency_spec(dep)
+        numba_version = extract_lower_bound(version)
+        if numba_version:
+            break
+    lines.append(f'numba = "{numba_version or "*"}"')
     lines.append('')
 
     # Feature for testing dependencies
@@ -270,24 +278,6 @@ def generate_pixi_toml(pyproject_data):
         for backend in backends:
             env_name = f'py{py_ver}-{backend}'
 
-            # Determine features needed
-            features = ['testing']
-            if backend == 'pyqt5':
-                features.append('pyqt5')
-                features.append('optional-numba')
-            elif backend == 'pyqt6':
-                features.append('pyqt6')
-                features.append('optional-numba')
-            elif backend == 'pyside6':
-                features.append('pyside6')
-                features.append('optional-numba')
-            elif backend == 'pyqt5-no-numba':
-                features.append('pyqt5')
-            elif backend == 'pyqt6-no-numba':
-                features.append('pyqt6')
-            elif backend == 'headless':
-                features.append('optional-numba')
-
             # Build pytest command
             pytest_cmd = 'python -m pytest'
 
@@ -296,10 +286,7 @@ def generate_pixi_toml(pyproject_data):
             # if platform == "linux":
             #     pytest_cmd += ' --pystack-threshold=60 --pystack-args="--native-all"'
 
-            if backend == 'headless':
-                pytest_cmd += ' --ignore src/napari/_vispy --ignore src/napari/_qt --ignore src/napari/_tests --ignore tools --ignore src/napari_builtins/_qt'
-            else:
-                pytest_cmd += ' --ignore tools'
+            pytest_cmd += ' --ignore tools'
 
             pytest_cmd += f' --json-report-file=report-{env_name}.json'
             pytest_cmd += ' --save-leaked-object-graph'
@@ -318,10 +305,13 @@ def generate_pixi_toml(pyproject_data):
             features = ['testing']
             if backend in ['pyqt5']:
                 features.append('pyqt5')
+                features.append('optional-numba')
             elif backend in ['pyqt6']:
                 features.append('pyqt6')
+                features.append('optional-numba')
             elif backend == 'pyside6':
                 features.append('pyside6')
+                features.append('optional-numba')
 
             features.append(env_name)
 
