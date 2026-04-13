@@ -44,6 +44,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
 
       # Login against a Docker registry except on PR
       # https://github.com/docker/login-action
@@ -97,4 +99,6 @@ jobs:
 
       - name: Test Docker image
         run: |
-          docker run --rm --entrypoint=/bin/bash ${{ steps.docker_build.outputs.imageid }} -ec "python3 -m napari --version"
+          docker run --rm --entrypoint=/bin/bash ${STEPS_DOCKER_BUILD_OUTPUTS_IMAGEID} -ec "python3 -m napari --version"
+        env:
+          STEPS_DOCKER_BUILD_OUTPUTS_IMAGEID: ${{ steps.docker_build.outputs.imageid }}
