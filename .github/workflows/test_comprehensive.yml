@@ -121,7 +121,7 @@ jobs:
         with:
           token: ${{ secrets.GHA_TOKEN_BOT_REPO_WORKFLOW }}
           # explicitly set persist-credentials: 'true' to push changes to bot repo
-          persist-credentials: true   
+          persist-credentials: true
       - name: Synchronize bot repository
         run: |
           git remote add napari-bot https://github.com/napari-bot/napari.git

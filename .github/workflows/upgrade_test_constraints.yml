@@ -106,7 +106,7 @@ jobs:
           token: ${{ secrets.GHA_TOKEN_BOT_REPO }}
           # Set credentials explicity to 'true'
           # In this scenario, push changes to the bot repo to allow a user, who is not a collaborator,
-          # to get the changes without access to artifacts. 
+          # to get the changes without access to artifacts.
           # This allows a contributor to manually open a PR to their fork.
           persist-credentials: 'true'
 
