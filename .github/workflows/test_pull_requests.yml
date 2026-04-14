@@ -240,7 +240,7 @@ jobs:
           unzip triangulation-benchmark-shapes.zip -d src/napari/benchmarks/
           rm triangulation-benchmark-shapes.zip
 
-      - uses: octokit/request-action@10df4beff76ddd0c48b0e983ecde429e7174dfd3 # v2.x
+      - uses: octokit/request-action@45eef13998ff762839b0a0de9bbcf41970fd056d # v2.x
         # here we get hash of the latest release commit to compare with PR
         id: latest_release
         with:
