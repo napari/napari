@@ -89,11 +89,12 @@ jobs:
         if: github.event_name != 'issue_comment' && github.event_name != 'pull_request'
         run: |
           echo "FULL_NAME=${{ github.repository }}" >> "$GITHUB_ENV"
-          echo "BRANCH=${{ github.ref_name }}" >> "$GITHUB_ENV"
+          echo "BRANCH=${GITHUB_REF_NAME}" >> "$GITHUB_ENV"
 
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Clone target repo (remote)
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -103,6 +104,7 @@ jobs:
           repository: ${{ env.FULL_NAME }}
           ref: ${{ env.BRANCH }}
           token: ${{ secrets.GHA_TOKEN_BOT_REPO }}
+          persist-credentials: false
 
       - name: Clone target repo (pull request)
         # we need separate step as passing empty token to actions/checkout@v4 will not work
@@ -110,6 +112,7 @@ jobs:
         if: github.event_name == 'pull_request'
         with:
           path: napari_repo  # place in a named directory
+          persist-credentials: false
 
       - name: Clone target repo (main)
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -119,6 +122,7 @@ jobs:
           repository: ${{ env.FULL_NAME }}
           ref: ${{ env.BRANCH }}
           token: ${{ secrets.GHA_TOKEN_BOT_REPO }}
+          persist-credentials: false
 
       - name: Add napari-bot/napari to napari_repo upstreams
         run: |
@@ -127,7 +131,7 @@ jobs:
           git remote add napari-bot https://github.com/napari-bot/napari.git
           git remote -v
       - name: Set up Python 3.12
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7
         with:
           python-version: "3.12"
 
