@@ -25,8 +25,6 @@ import numpy.typing as npt
 
 from napari.utils.translations import trans
 
-_sentinel = object()
-
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator, Sequence
 
@@ -96,7 +94,19 @@ def in_python_repl() -> bool:
 
 
 def str_to_rgb(arg: str) -> list[int]:
-    """Convert an rgb string 'rgb(x,y,z)' to a list of ints [x,y,z]."""
+    """Convert an rgb string 'rgb(x,y,z)' to a list of ints [x,y,z].
+
+    .. deprecated:: 0.7.1
+        `str_to_rgb` is deprecated and will be removed in a future release.
+        Please migrate away from this utility. The function currently
+        retains its behavior but will warn on use.
+    """
+    warnings.warn(
+        'napari.utils.misc.str_to_rgb is deprecated in 0.7.1 and will be removed in 0.8.0 release.',
+        FutureWarning,
+        stacklevel=2,
+    )
+
     match = re.match(r'rgb\((\d+),\s*(\d+),\s*(\d+)\)', arg)
     if match is None:
         raise ValueError("arg not in format 'rgb(x,y,z)'")
