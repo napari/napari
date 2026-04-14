@@ -127,7 +127,7 @@ jobs:
           ref: ${{ env.BRANCH }}
           token: ${{ secrets.GHA_TOKEN_BOT_REPO }}
           # Explicitly persist credentials and set to 'true'
-          # This action pushes changes to the bot repo and then opens a PR to the main (napari?, artifacts?) repo.
+          # This action pushes changes to the bot repo and then opens a PR to the napari repo.
           persist-credentials: 'true'
 
       - name: Add napari-bot/napari to napari_repo upstreams
