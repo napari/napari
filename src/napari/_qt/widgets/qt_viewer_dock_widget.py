@@ -158,7 +158,9 @@ class QtViewerDockWidget(QDockWidget):
             self, title=self.name, close_btn=close_btn
         )
         self.setTitleBarWidget(self.title)
-        self.visibilityChanged.connect(self._on_visibility_changed)
+        self.topLevelChanged.connect(
+            self._on_visibility_changed
+        )  # emits during floating/docking events
 
         self.dockLocationChanged.connect(self._update_default_dock_area)
 
