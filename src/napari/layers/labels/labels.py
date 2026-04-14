@@ -594,6 +594,7 @@ class Labels(ScalarFieldBase):
         data = self._ensure_int_labels(data)
         self._data = data
         self._ndim = len(self._data.shape)
+        self._reset_thumbnail_level_data()
         self._update_dims()
         self.events.data(value=self.data)
         self._reset_editable()
