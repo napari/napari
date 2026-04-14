@@ -1,5 +1,6 @@
 import numpy as np
 
+from napari.components import Dims
 from napari.layers import Image
 from napari.layers._scalar_field.scalar_field import ScalarFieldBase
 from napari.utils._test_utils import (
@@ -28,13 +29,10 @@ def test_multiscale_thumbnail_level_prematerialized():
 
 
 def test_3d_multiscale_thumbnail_not_prematerialized():
-    """3D multiscale images should not materialize and cache:
-    the materializer cache is empty at init and volumes are
-    deferred until first use.
-    """
+    """3D multiscale images should not create a level materializer: volumes can be too large."""
     data = [np.random.random((16, 128, 128)), np.random.random((8, 64, 64))]
     layer = Image(data, multiscale=True)
-    assert layer._level_materializer.cache_info().currsize == 0
+    assert layer._level_materializer is None
 
 
 def test_single_scale_no_prematerialization():
@@ -43,10 +41,8 @@ def test_single_scale_no_prematerialization():
     assert layer._level_materializer is None
 
 
-def test_multiscale_thumbnail_uses_prematerialized_data():
-    """Slice request should receive the pre-materialized thumbnail data."""
-    from napari.components import Dims
-
+def test_multiscale_slice_request_receives_preselected_sources():
+    """Slice requests should receive the preselected sources."""
     data = [np.random.random((64, 64)), np.random.random((32, 32))]
     layer = Image(data, multiscale=True)
     dims = Dims(
@@ -55,18 +51,36 @@ def test_multiscale_thumbnail_uses_prematerialized_data():
         range=tuple((0, s - 1, 1) for s in data[0].shape),
     )
     request = layer._slicing_state._make_slice_request(dims)
-    assert request.thumbnail_level_data is not None
+    assert layer.data_level == layer._thumbnail_level
+    # slice request should re-use thumbnail source when possible
+    assert request.data_level_data is request.thumbnail_source
     np.testing.assert_array_equal(
-        request.thumbnail_level_data, data[layer._thumbnail_level]
+        request.thumbnail_source, data[layer._thumbnail_level]
+    )
+
+
+def test_multiscale_slice_request_keeps_non_thumbnail_image_source():
+    """Non-thumbnail views should keep their own level."""
+    data = [np.random.random((64, 64)), np.random.random((32, 32))]
+    layer = Image(data, multiscale=True)
+    layer.data_level = 0
+    dims = Dims(
+        ndim=2,
+        ndisplay=2,
+        range=tuple((0, s - 1, 1) for s in data[0].shape),
+    )
+    request = layer._slicing_state._make_slice_request(dims)
+    assert request.data_level_data is data[0]
+    np.testing.assert_array_equal(
+        request.thumbnail_source, data[layer._thumbnail_level]
     )
 
 
 def test_thumbnail_level_data_refreshed_on_data_replacement():
     """Replacing layer.data must bind a fresh materializer for the new data
     so slices never read from the old dataset."""
-    rng = np.random.default_rng(42)
-    data1 = [rng.random((64, 64)), rng.random((32, 32))]
-    data2 = [rng.random((90, 90)), rng.random((45, 45)), rng.random((22, 22))]
+    data1 = [np.zeros((64, 64)), np.zeros((32, 32))]
+    data2 = [np.ones((90, 90)), np.ones((45, 45)), np.ones((22, 22))]
 
     layer = Image(data1, multiscale=True)
     assert layer._thumbnail_level == 1
@@ -82,26 +96,20 @@ def test_thumbnail_level_data_refreshed_on_data_replacement():
 
 
 def test_thumbnail_level_data_uses_new_data_ndim_2d_to_3d():
-    """Replacing 2D data with 3D should create a fresh materializer that
-    wraps the new 3D data (cache is empty until first use)."""
+    """Replacing 2D data with 3D should set materializer to None — 3D volumes
+    are left as lazy data-array references."""
     from napari.layers._multiscale_data import MultiScaleData
 
-    rng = np.random.default_rng(7)
-    data2d = [rng.random((64, 64)), rng.random((32, 32))]
-    data3d = [rng.random((16, 64, 64)), rng.random((8, 32, 32))]
+    data2d = [np.zeros((64, 64)), np.zeros((32, 32))]
+    data3d = [np.ones((16, 64, 64)), np.ones((8, 32, 32))]
 
     layer = Image(data2d, multiscale=True)
-    old_materializer = layer._level_materializer
+    assert layer._level_materializer is not None  # 2D: materializer present
 
     layer._data = MultiScaleData(data3d)
     layer._reset_thumbnail_level_data()
 
-    assert layer._level_materializer is not old_materializer
-    assert layer._level_materializer.cache_info().currsize == 0
-    np.testing.assert_array_equal(
-        layer._level_materializer(layer._thumbnail_level),
-        data3d[layer._thumbnail_level],
-    )
+    assert layer._level_materializer is None  # 3D: no materializer
 
 
 def test_thumbnail_level_data_uses_new_data_ndim_3d_to_2d():
@@ -109,9 +117,8 @@ def test_thumbnail_level_data_uses_new_data_ndim_3d_to_2d():
     the new 2D data."""
     from napari.layers._multiscale_data import MultiScaleData
 
-    rng = np.random.default_rng(8)
-    data3d = [rng.random((16, 64, 64)), rng.random((8, 32, 32))]
-    data2d = [rng.random((64, 64)), rng.random((32, 32))]
+    data3d = [np.zeros((16, 64, 64)), np.zeros((8, 32, 32))]
+    data2d = [np.ones((64, 64)), np.ones((32, 32))]
 
     layer = Image(data3d, multiscale=True)
     old_materializer = layer._level_materializer
@@ -127,8 +134,7 @@ def test_thumbnail_level_data_uses_new_data_ndim_3d_to_2d():
 
 def test_rgb_2d_multiscale_prematerialized():
     """RGB (H, W, 3) multiscale images materialise correctly via the closure."""
-    rng = np.random.default_rng(99)
-    data = [rng.random((128, 128, 3)), rng.random((64, 64, 3))]
+    data = [np.ones((128, 128, 3)), np.ones((64, 64, 3))]
     layer = Image(data, multiscale=True, rgb=True)
 
     assert layer.ndim == 2  # spatial dims only
