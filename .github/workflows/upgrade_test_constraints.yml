@@ -111,6 +111,7 @@ jobs:
         if: github.event_name == 'pull_request'
         with:
           path: napari_repo  # place in a named directory
+          persist-credentials: false  # not relevant, as pull_request trigger does not allow pushing, only to make zizmor happy.
 
       - name: Clone target repo (main)
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
