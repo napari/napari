@@ -654,6 +654,26 @@ class Extension2ReaderWidget(SchemaWidgetMixin, Extension2ReaderTable):
         self.opacity.setOpacity(1)
 
 
+class FontSchemaWidget(SchemaWidgetMixin, QtWidgets.QFontComboBox):
+    @state_property
+    def state(self) -> str:
+        return self.currentText()
+
+    @state.setter
+    def state(self, state: str):
+        self.setCurrentText(state)
+
+    def configure(self):
+        self.setInsertPolicy(QtWidgets.QFontComboBox.NoInsert)
+        self.activated.connect(self.on_changed.emit)
+        self.opacity = QtWidgets.QGraphicsOpacityEffect(self)
+        self.setGraphicsEffect(self.opacity)
+        self.opacity.setOpacity(1)
+
+    def setDescription(self, description: str):
+        self.description = description
+
+
 class FontSizeSchemaWidget(SchemaWidgetMixin, QtFontSizeWidget):
     @state_property
     def state(self) -> int:
