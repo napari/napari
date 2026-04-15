@@ -675,8 +675,18 @@ def test_contour_local_updates():
 
     layer.data_setitem(np.nonzero(painting_mask), 1, refresh=True)
 
-    assert np.array_equiv(
-        (layer._slice.image.view > 0), get_contours(painting_mask, 1, 0)
+    _assert_contour_view_matches_data(layer)
+
+
+def _assert_contour_view_matches_data(layer: Labels) -> None:
+    npt.assert_array_equal(
+        layer._slice.image.view > 0,
+        get_contours(
+            np.asarray(layer.data),
+            layer.contour,
+            layer.colormap.background_value,
+        )
+        > 0,
     )
 
 
@@ -1046,6 +1056,61 @@ def test_paint_polygon_2d_in_3d():
     assert np.array_equiv(data[[0, 2], :], 0)
 
 
+def test_paint_contour_local_updates():
+    data = np.array(
+        [
+            [1, 0, 1, 0, 0, 3, 3],
+            [0, 0, 2, 3, 1, 3, 1],
+            [0, 3, 3, 3, 3, 3, 1],
+            [0, 2, 0, 2, 3, 1, 1],
+            [1, 3, 1, 1, 2, 2, 1],
+            [1, 1, 1, 0, 1, 2, 0],
+            [1, 1, 0, 1, 0, 0, 1],
+        ],
+        dtype=np.int32,
+    )
+    layer = Labels(data)
+    layer.contour = 1
+    layer.brush_size = 1
+
+    layer.paint((5, 1), 2)
+
+    _assert_contour_view_matches_data(layer)
+
+
+def test_paint_contour_local_updates_thick():
+    data = np.zeros((40, 40), dtype=np.uint8)
+    data[10:30, 10:30] = 1
+    layer = Labels(data)
+    layer.contour = 5
+    layer.brush_size = 1
+
+    layer.paint((20, 30), 1)
+
+    _assert_contour_view_matches_data(layer)
+
+
+def test_paint_polygon_contour_local_updates():
+    data = np.array(
+        [
+            [0, 3, 0, 2, 2, 0, 1],
+            [0, 3, 2, 0, 3, 2, 0],
+            [1, 0, 2, 2, 0, 0, 1],
+            [0, 2, 3, 2, 3, 3, 1],
+            [1, 1, 0, 1, 2, 1, 3],
+            [2, 2, 2, 3, 1, 2, 2],
+            [3, 2, 2, 2, 0, 1, 1],
+        ],
+        dtype=np.int32,
+    )
+    layer = Labels(data)
+    layer.contour = 1
+
+    layer.paint_polygon([[4, 1], [4, 3], [1, 3], [1, 0]], 2)
+
+    _assert_contour_view_matches_data(layer)
+
+
 def test_fill():
     """Test filling labels with different brush sizes."""
     np.random.seed(0)
@@ -1059,6 +1124,38 @@ def test_fill():
     layer.fill([0, 0], 3)
     assert np.unique(layer.data[:5, :5]) == 3
     assert np.unique(layer.data[5:10, 5:10]) == 2
+
+
+def test_fill_contiguous_uses_face_connectivity():
+    data = np.array([[0, 1], [1, 0]], dtype=np.uint8)
+    layer = Labels(data)
+    layer.contiguous = True
+
+    layer.fill((0, 0), 2)
+
+    npt.assert_array_equal(layer.data, np.array([[2, 1], [1, 0]]))
+
+
+def test_fill_contour_local_updates():
+    data = np.array(
+        [
+            [3, 3, 3, 1, 2, 3, 2],
+            [3, 2, 2, 1, 3, 0, 2],
+            [2, 3, 2, 1, 1, 1, 1],
+            [2, 3, 0, 3, 2, 1, 2],
+            [2, 1, 1, 2, 2, 2, 1],
+            [3, 1, 1, 3, 1, 0, 2],
+            [2, 0, 0, 1, 3, 1, 3],
+        ],
+        dtype=np.int32,
+    )
+    layer = Labels(data)
+    layer.contour = 1
+    layer.contiguous = True
+
+    layer.fill((1, 1), 3)
+
+    _assert_contour_view_matches_data(layer)
 
 
 def test_fill_swap_with_preserve_labels():
@@ -1104,8 +1201,8 @@ def test_fill_3d_batch_refresh():
     """Test batch fill operations with refresh=False on different slices.
 
     Regression test ensuring the bounding box merge correctly handles
-    slice(None) that can be produced by fill operations, and that batch
-    fill operations across different slices work correctly.
+    mixed int/slice dirty regions from bbox-based fill operations, and
+    that batch fill operations across different slices work correctly.
     """
     data = np.zeros((10, 20, 20), dtype=np.uint32)
     # Create distinct regions on different Z slices
@@ -1141,15 +1238,33 @@ def test_fill_3d_batch_refresh():
     assert np.all(data[7, 5:10, 5:10] == 30)
 
 
-def test_fill_entire_volume_slice_none_regression():
-    """Test fill doesn't crash when all pixels have same label with n_edit_dimensions > ndisplay.
+def test_data_setitem_after_paint_batch_refresh():
+    data = np.zeros((10, 20, 20), dtype=np.uint32)
+    layer = Labels(data)
+    layer.brush_size = 5
+
+    layer.paint((5, 10, 10), 1, refresh=False)
+    layer.data_setitem(
+        (np.array([5]), np.array([10]), np.array([10])),
+        2,
+        refresh=False,
+    )
+
+    assert layer._updated_slice is not None
+    assert isinstance(layer._updated_slice[0], slice)
+
+    layer._partial_labels_refresh()
+    assert data[5, 10, 10] == 2
+
+
+def test_fill_entire_volume_with_more_edit_dims_than_displayed():
+    """Test full-volume fill with more edit dims than displayed.
 
     Regression test for bug triggered when:
     1. All pixels in the volume have the same label (creates entirely True mask)
     2. contiguous=False (fill all pixels with that label, not just connected)
     3. n_edit_dimensions > ndisplay (painting in more dims than displayed)
-    4. Fill creates slice(None) for entire painted dimensions
-    5. The bounds check tries to compare None with current_pos and crashes
+    4. The painted region spans the full working volume
     """
     # Create 3D volume with ALL pixels set to same label
     data = np.full((10, 10, 10), 1, dtype=np.uint32)
@@ -1416,6 +1531,27 @@ def test_fill_with_xarray():
     # saved for undo has the expected vectorized shape and values.
     undo_data = layer._undo_history[0][0][1]
     np.testing.assert_array_equal(undo_data, np.zeros((4, 4)))
+
+
+def test_fill_sparse_history_storage():
+    data = np.zeros((10, 10), dtype=np.uint8)
+    data[(0, 0, 9, 9), (0, 9, 0, 9)] = 1
+    original = data.copy()
+    layer = Labels(data)
+    layer.contiguous = False
+
+    layer.fill((0, 0), 2)
+
+    history_indices, old_values, new_values = layer._undo_history[0][0]
+    assert isinstance(history_indices[0], np.ndarray)
+    assert isinstance(history_indices[1], np.ndarray)
+    npt.assert_array_equal(old_values, np.ones((4,), dtype=np.uint8))
+    assert new_values == 2
+
+    layer.undo()
+    npt.assert_array_equal(layer.data, original)
+    layer.redo()
+    assert np.count_nonzero(layer.data == 2) == 4
 
 
 @pytest.mark.parametrize(

@@ -930,14 +930,15 @@ class Labels(ScalarFieldBase):
             )
             return None
 
-        expanded_slice = expand_slice(data_slice, labels.shape, 1)
+        contour_offset = max(1, int(self.contour))
+        expanded_slice = expand_slice(data_slice, labels.shape, contour_offset)
         sliced_labels = get_contours(
             labels[expanded_slice],
             self.contour,
             self.colormap.background_value,
         )
 
-        # Remove the latest one-pixel border from the result
+        # Remove the border that was added to compute thick contours locally.
         delta_slice = tuple(
             slice(s1.start - s2.start, s1.stop - s2.start)
             for s1, s2 in zip(data_slice, expanded_slice, strict=False)
@@ -1090,11 +1091,14 @@ class Labels(ScalarFieldBase):
 
               * **Slice-based** (new paint/fill methods): tuple of slices/ints
                 defining a bounding box, e.g., ``(0, slice(5, 10), slice(5, 10))``
-              * **Array-based** (data_setitem): tuple of coordinate arrays for
-                fancy indexing, e.g., ``(array([0,1]), array([2,3]))``
+              * **Array-based** (data_setitem or sparse bbox edits): tuple of
+                coordinate arrays, optionally mixed with integer indices for
+                collapsed dimensions, e.g.,
+                ``(5, array([0, 1]), array([2, 3]))``
 
             - **old_values**: Array of values before the change. Shape matches
-              the indexing expression (2D array for slice-based, 1D for array-based)
+              the indexing expression (N-D array for slice-based, 1D for
+              array-based)
             - **new_values**: Value(s) after the change. Can be a scalar, 1D array,
               or N-D array matching old_values shape
 
@@ -1103,7 +1107,8 @@ class Labels(ScalarFieldBase):
         Both indexing formats are supported for backward compatibility. The
         slice-based format (used by paint/fill methods) is more efficient for
         large brush sizes and contiguous regions. The array-based format is
-        preserved for the public ``data_setitem`` API.
+        still used by the public ``data_setitem`` API and by sparse bbox edits
+        when it is cheaper than snapshotting the full region.
         """
         self._redo_history.clear()
         if self._block_history:
@@ -1160,8 +1165,8 @@ class Labels(ScalarFieldBase):
         """Replace an existing label with a new label.
 
         This replaces the label at the cursor position with `new_label`.
-        If `contiguous` is True, only the connected component is replaced,
-        using skimage.segmentation.flood
+        If `contiguous` is True, only the orthogonally connected component is
+        replaced using ``skimage.segmentation.flood(..., connectivity=1)``.
         Otherwise, all pixels with the same label are replaced.
 
         Parameters
@@ -1269,7 +1274,7 @@ class Labels(ScalarFieldBase):
         slice_coord = tuple(int_coord[d] for d in dims_to_paint)
 
         if self.contiguous:
-            mask = flood(labels, slice_coord)
+            mask = flood(labels, slice_coord, connectivity=1)
         else:
             mask = labels == old_label
 
@@ -1709,6 +1714,51 @@ class Labels(ScalarFieldBase):
 
         return slice(merged_start, merged_stop)
 
+    def _expand_updated_slice_for_contour(
+        self, updated_slice: tuple[int | np.integer | slice, ...]
+    ) -> tuple[int | slice, ...]:
+        """Expand dirty slices so contour refresh includes the full contour halo."""
+        if self.contour < 1:
+            return tuple(updated_slice)
+
+        contour_offset = max(1, int(self.contour))
+        expanded_slice: list[int | slice] = []
+        for axis_slice, axis_size in zip(
+            updated_slice, self.data.shape, strict=False
+        ):
+            if isinstance(axis_slice, (int, np.integer)):
+                expanded_slice.append(int(axis_slice))
+                continue
+
+            start = 0 if axis_slice.start is None else axis_slice.start
+            stop = axis_size if axis_slice.stop is None else axis_slice.stop
+            expanded_slice.append(
+                slice(
+                    max(0, start - contour_offset),
+                    min(axis_size, stop + contour_offset),
+                    axis_slice.step,
+                )
+            )
+
+        return tuple(expanded_slice)
+
+    def _accumulate_updated_slice(
+        self, updated_slice: tuple[int | np.integer | slice, ...]
+    ) -> None:
+        """Merge a newly dirtied region into the pending partial refresh."""
+        updated_slice = self._expand_updated_slice_for_contour(updated_slice)
+
+        if self._updated_slice is None:
+            self._updated_slice = tuple(updated_slice)
+            return
+
+        self._updated_slice = tuple(
+            self._merge_slices(old, new)
+            for old, new in zip(
+                self._updated_slice, updated_slice, strict=False
+            )
+        )
+
     def _paint_region_with_mask(
         self,
         slice_key: tuple,
@@ -1748,11 +1798,11 @@ class Labels(ScalarFieldBase):
         if region_data is None:
             region_data = np.asarray(self.data[slice_key])
 
-        painted = self._apply_mask_to_data(
+        effective_mask = self._apply_mask_to_data(
             region_data, mask, new_label, slice_key
         )
 
-        if not painted:
+        if effective_mask is None:
             return
 
         self.data[slice_key] = region_data  # type: ignore[index]
@@ -1760,22 +1810,11 @@ class Labels(ScalarFieldBase):
         # Update caches (raw and view) for non-shared memory backends
         # This handles mapping the N-D painted region to the currently displayed slice
         self._refresh_caches_from_region(
-            region_data, slice_key, dims_to_paint, mask, new_label
+            region_data, slice_key, dims_to_paint, effective_mask, new_label
         )
 
         # Accumulate updated slices for batch painting (refresh=False)
-        if self._updated_slice is None:
-            self._updated_slice = slice_key
-        else:
-            # Merge the bounding boxes
-            new_slice_list = [
-                self._merge_slices(old, new)
-                for old, new in zip(
-                    self._updated_slice, slice_key, strict=False
-                )
-            ]
-
-            self._updated_slice = tuple(new_slice_list)
+        self._accumulate_updated_slice(slice_key)
 
         if refresh:
             self._partial_labels_refresh()
@@ -1818,13 +1857,13 @@ class Labels(ScalarFieldBase):
         mask: np.ndarray,
         new_label: int,
         volume_slice: Any,
-    ) -> bool:
+    ) -> np.ndarray | None:
         """Paint within a data region using a boolean mask.
 
         This method operates on the data array in-place, using boolean mask
-        indexing. Importantly, *both the data and the mask arrays* are modified
-        in-place. It handles preserve_labels logic and optimization to skip
-        unchanged pixels. The return indicates if any pixels were painted.
+        indexing. It handles preserve_labels logic and optimization to skip
+        unchanged pixels. The return value is the effective mask of pixels that
+        were actually painted.
 
         Parameters
         ----------
@@ -1833,7 +1872,6 @@ class Labels(ScalarFieldBase):
             This array is modified IN PLACE.
         mask : np.ndarray
             Boolean mask indicating which pixels to paint, with shape matching data.
-            The mask is also modified in-place during processing for efficiency.
         new_label : int
             Label value to paint.
         volume_slice : Any
@@ -1841,29 +1879,92 @@ class Labels(ScalarFieldBase):
 
         Returns
         -------
-        bool
-            True if any pixels were painted, False otherwise.
+        np.ndarray | None
+            Boolean mask of the pixels that were painted, or None if the
+            operation made no changes.
 
         Notes
         -----
         - Saves to undo/redo history
         - Does NOT update caches or refresh display (caller's responsibility)
         """
+        effective_mask = np.array(mask, copy=True)
+
         if self.preserve_labels:
             keep_mask = self._account_for_preserving_labels(data, new_label)
             if not np.any(keep_mask):
-                return False
-            mask &= keep_mask
+                return None
+            effective_mask &= keep_mask
 
-        mask &= data != new_label
-        if not np.any(mask):
+        effective_mask &= data != new_label
+        if not np.any(effective_mask):
+            return None
+
+        self._save_history(
+            self._history_atom_for_mask_paint(
+                volume_slice, data, effective_mask, new_label
+            )
+        )
+        data[effective_mask] = new_label
+
+        return effective_mask
+
+    @staticmethod
+    def _sparse_history_is_smaller(
+        region_data: np.ndarray, mask: np.ndarray
+    ) -> bool:
+        """Return True when sparse history is cheaper than bbox snapshots."""
+        changed_count = int(np.count_nonzero(mask))
+        if changed_count == 0 or changed_count == region_data.size:
             return False
 
-        old_values = data.copy()
-        data[mask] = new_label
-        self._save_history((volume_slice, old_values, data.copy()))
+        dense_bytes = 2 * region_data.nbytes
+        sparse_bytes = changed_count * (
+            region_data.ndim * np.dtype(np.intp).itemsize
+            + region_data.dtype.itemsize
+        )
+        return sparse_bytes < dense_bytes
 
-        return True
+    def _history_atom_for_mask_paint(
+        self,
+        volume_slice: tuple[int | slice, ...],
+        region_data: np.ndarray,
+        mask: np.ndarray,
+        new_label: int,
+    ) -> tuple[tuple[Any, ...], np.ndarray, int | np.ndarray]:
+        """Build an undo history atom for a bbox-based edit."""
+        if self._sparse_history_is_smaller(region_data, mask):
+            return self._sparse_history_atom_for_mask_paint(
+                volume_slice, region_data, mask, new_label
+            )
+
+        old_values = region_data.copy()
+        new_values = old_values.copy()
+        new_values[mask] = new_label
+        return volume_slice, old_values, new_values
+
+    @staticmethod
+    def _sparse_history_atom_for_mask_paint(
+        volume_slice: tuple[int | slice, ...],
+        region_data: np.ndarray,
+        mask: np.ndarray,
+        new_label: int,
+    ) -> tuple[tuple[Any, ...], np.ndarray, int]:
+        """Build sparse undo history when only a small fraction of the bbox changed."""
+        mask_indices = np.nonzero(mask)
+        history_indices: list[Any] = []
+        mask_axis = 0
+
+        for axis_slice in volume_slice:
+            if isinstance(axis_slice, slice):
+                start = 0 if axis_slice.start is None else axis_slice.start
+                history_indices.append(mask_indices[mask_axis] + start)
+                mask_axis += 1
+            else:
+                history_indices.append(int(axis_slice))
+
+        old_values = np.array(region_data[mask], copy=True)
+        return tuple(history_indices), old_values, new_label
 
     def _refresh_caches_from_region(
         self,
@@ -1920,6 +2021,9 @@ class Labels(ScalarFieldBase):
             and np.shares_memory(self.data, self._slice.image.raw)
         ):
             self._slice.image.raw[tuple(view_slices)] = visible_data
+
+        if self.contour > 0:
+            return
 
         # Update texture view cache by compute new color only once
         new_color = self.colormap._data_to_texture(
@@ -1981,17 +2085,12 @@ class Labels(ScalarFieldBase):
                 if d in paint_dim_to_idx:
                     # Painted but not displayed: check bounds and extract slice
                     sl = slice_key[d]
-                    # Handle slice(None) which means the entire dimension
-                    if sl.start is None:
-                        # Full range - always contains current_pos
-                        region_slices[paint_dim_to_idx[d]] = current_pos
-                    elif not (sl.start <= current_pos < sl.stop):
+                    if not (sl.start <= current_pos < sl.stop):
                         return None  # Painted region is outside visible slice
-                    else:
-                        # Convert position to index within region_data
-                        region_slices[paint_dim_to_idx[d]] = int(
-                            current_pos - sl.start
-                        )
+                    # Convert position to index within region_data
+                    region_slices[paint_dim_to_idx[d]] = int(
+                        current_pos - sl.start
+                    )
                 elif slice_key[d] != current_pos:
                     # Not painted, not displayed: must match exactly
                     return None
@@ -2133,28 +2232,13 @@ class Labels(ScalarFieldBase):
             for axis_indices in indices
         )
 
-        if self.contour > 0:
-            # Expand the slice by 1 pixel as the changes can go beyond
-            # the original slice because of the morphological dilation
-            # (1 pixel because get_contours always applies 1 pixel dilation)
-            updated_slice = expand_slice(updated_slice, self.data.shape, 1)
-        else:
+        if self.contour == 0:
             # update data view
             self._slice.image.view[displayed_indices] = (
                 self.colormap._data_to_texture(visible_values)
             )
 
-        if self._updated_slice is None:
-            self._updated_slice = updated_slice
-        else:
-            self._updated_slice = tuple(
-                [
-                    slice(min(s1.start, s2.start), max(s1.stop, s2.stop))
-                    for s1, s2 in zip(
-                        updated_slice, self._updated_slice, strict=False
-                    )
-                ]
-            )
+        self._accumulate_updated_slice(updated_slice)
 
         if refresh is True:
             self._partial_labels_refresh()
