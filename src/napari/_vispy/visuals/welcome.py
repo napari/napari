@@ -160,9 +160,9 @@ class Welcome(Node):
             command = app.commands[command_id].title
         else:
             # might be an action_manager action
-            keybinding = all_shortcuts.get(command_id, [None])[0]
-            if keybinding is not None:
-                shortcut = Shortcut(keybinding).platform
+            keybinding_ = all_shortcuts.get(command_id, [None])[0]
+            if keybinding_ is not None:
+                shortcut = Shortcut(keybinding_).platform
                 command = action_manager._actions[command_id].description
             else:
                 shortcut = command = None

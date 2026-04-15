@@ -1,5 +1,6 @@
-from collections.abc import Iterable, Sequence
-from typing import Generic, TypeVar, overload
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Generic, TypeVar, overload
 
 import numpy as np
 import numpy.typing as npt
@@ -23,6 +24,9 @@ from napari.utils.transforms.transform_utils import (
     translate_to_vector,
 )
 from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable, Sequence
 
 
 class Transform:
@@ -54,7 +58,7 @@ class Transform:
         return self.func(coords)
 
     @property
-    def inverse(self) -> 'Transform':
+    def inverse(self) -> Transform:
         if self._inverse_func is None:
             raise ValueError(
                 trans._('Inverse function was not provided.', deferred=True)
@@ -65,11 +69,11 @@ class Transform:
             )
         return self._cache_dict['inverse']
 
-    def compose(self, transform: 'Transform') -> 'Transform':
+    def compose(self, transform: Transform) -> Transform:
         """Return the composite of this transform and the provided one."""
         return TransformChain([self, transform])
 
-    def set_slice(self, axes: Sequence[int]) -> 'Transform':
+    def set_slice(self, axes: Sequence[int]) -> Transform:
         """Return a transform subset to the visible dimensions.
 
         Parameters
@@ -86,7 +90,7 @@ class Transform:
             trans._('Cannot subset arbitrary transforms.', deferred=True)
         )
 
-    def expand_dims(self, axes: Sequence[int]) -> 'Transform':
+    def expand_dims(self, axes: Sequence[int]) -> Transform:
         """Return a transform with added axes for non-visible dimensions.
 
         Parameters
@@ -152,7 +156,7 @@ class TransformChain(EventedList[_T], Transform, Generic[_T]):
     def __getitem__(self, key: str) -> _T: ...
 
     @overload
-    def __getitem__(self, key: slice) -> 'TransformChain[_T]': ...
+    def __getitem__(self, key: slice) -> TransformChain[_T]: ...
 
     def __getitem__(self, key):
         if f'getitem_{key}' not in self._cache_dict:
@@ -175,7 +179,7 @@ class TransformChain(EventedList[_T], Transform, Generic[_T]):
         self._clean_cache()
 
     @property
-    def inverse(self) -> 'TransformChain':
+    def inverse(self) -> TransformChain:
         """Return the inverse transform chain."""
         if 'inverse' not in self._cache_dict:
             self._cache_dict['inverse'] = TransformChain(
@@ -213,7 +217,7 @@ class TransformChain(EventedList[_T], Transform, Generic[_T]):
             )
         return self._cache_dict['simplified']
 
-    def set_slice(self, axes: Sequence[int]) -> 'TransformChain':
+    def set_slice(self, axes: Sequence[int]) -> TransformChain:
         """Return a transform chain subset to the visible dimensions.
 
         Parameters
@@ -228,7 +232,7 @@ class TransformChain(EventedList[_T], Transform, Generic[_T]):
         """
         return TransformChain([tf.set_slice(axes) for tf in self])
 
-    def expand_dims(self, axes: Sequence[int]) -> 'TransformChain':
+    def expand_dims(self, axes: Sequence[int]) -> TransformChain:
         """Return a transform chain with added axes for non-visible dimensions.
 
         Parameters
@@ -304,11 +308,11 @@ class ScaleTranslate(Transform):
         return out
 
     @property
-    def inverse(self) -> 'ScaleTranslate':
+    def inverse(self) -> ScaleTranslate:
         """Return the inverse transform."""
         return ScaleTranslate(1 / self.scale, -1 / self.scale * self.translate)
 
-    def compose(self, transform: 'Transform') -> 'Transform':
+    def compose(self, transform: Transform) -> Transform:
         """Return the composite of this transform and the provided one."""
         if not isinstance(transform, ScaleTranslate):
             super().compose(transform)
@@ -316,7 +320,7 @@ class ScaleTranslate(Transform):
         translate = self.translate + self.scale * transform.translate
         return ScaleTranslate(scale, translate)
 
-    def set_slice(self, axes: Sequence[int]) -> 'ScaleTranslate':
+    def set_slice(self, axes: Sequence[int]) -> ScaleTranslate:
         """Return a transform subset to the visible dimensions.
 
         Parameters
@@ -333,7 +337,7 @@ class ScaleTranslate(Transform):
             self.scale[axes], self.translate[axes], name=self.name
         )
 
-    def expand_dims(self, axes: Sequence[int]) -> 'ScaleTranslate':
+    def expand_dims(self, axes: Sequence[int]) -> ScaleTranslate:
         """Return a transform with added axes for non-visible dimensions.
 
         Parameters
@@ -654,7 +658,7 @@ class Affine(Transform):
         return self.affine_matrix
 
     @property
-    def inverse(self) -> 'Affine':
+    def inverse(self) -> Affine:
         """Return the inverse transform."""
         if 'inverse' not in self._cache_dict:
             self._cache_dict['inverse'] = Affine(
@@ -664,10 +668,10 @@ class Affine(Transform):
         return self._cache_dict['inverse']
 
     @overload
-    def compose(self, transform: 'Affine') -> 'Affine': ...
+    def compose(self, transform: Affine) -> Affine: ...
 
     @overload
-    def compose(self, transform: 'Transform') -> 'Transform': ...
+    def compose(self, transform: Transform) -> Transform: ...
 
     def compose(self, transform):
         """Return the composite of this transform and the provided one."""
@@ -676,7 +680,7 @@ class Affine(Transform):
         affine_matrix = self.affine_matrix @ transform.affine_matrix
         return Affine(affine_matrix=affine_matrix)
 
-    def set_slice(self, axes: Sequence[int]) -> 'Affine':
+    def set_slice(self, axes: Sequence[int]) -> Affine:
         """Return a transform subset to the visible dimensions.
 
         Parameters
@@ -705,9 +709,7 @@ class Affine(Transform):
             axis_labels=axes_labels,
         )
 
-    def replace_slice(
-        self, axes: Sequence[int], transform: 'Affine'
-    ) -> 'Affine':
+    def replace_slice(self, axes: Sequence[int], transform: Affine) -> Affine:
         """Returns a transform where the transform at the indicated n dimensions is replaced with another n-dimensional transform
 
         Parameters
@@ -742,7 +744,7 @@ class Affine(Transform):
             name=self.name,
         )
 
-    def expand_dims(self, axes: Sequence[int]) -> 'Affine':
+    def expand_dims(self, axes: Sequence[int]) -> Affine:
         """Return a transform with added axes for non-visible dimensions.
 
         Parameters
@@ -920,7 +922,7 @@ class CompositeAffine(Affine):
             )
         )
 
-    def set_slice(self, axes: Sequence[int]) -> 'CompositeAffine':
+    def set_slice(self, axes: Sequence[int]) -> CompositeAffine:
         return CompositeAffine(
             scale=self._scale[axes],
             translate=self._translate[axes],
@@ -932,7 +934,7 @@ class CompositeAffine(Affine):
             axis_labels=[self.axis_labels[i] for i in axes],
         )
 
-    def expand_dims(self, axes: Sequence[int]) -> 'CompositeAffine':
+    def expand_dims(self, axes: Sequence[int]) -> CompositeAffine:
         n = len(axes) + len(self.scale)
         not_axes = [i for i in range(n) if i not in axes]
         rotate = np.eye(n)

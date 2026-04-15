@@ -1,5 +1,6 @@
+from __future__ import annotations
+
 import warnings
-from collections.abc import Generator
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -15,10 +16,12 @@ from napari.utils.transforms import Affine
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
+    from collections.abc import Generator
+
     from napari.layers.base import Layer
 
 
-def highlight_box_handles(layer: 'Layer', event: Event) -> None:
+def highlight_box_handles(layer: Layer, event: Event) -> None:
     """
     Highlight the hovered handle of a TransformBox.
     """
@@ -42,7 +45,7 @@ def highlight_box_handles(layer: 'Layer', event: Event) -> None:
 
 
 def _translate_with_box(
-    layer: 'Layer',
+    layer: Layer,
     initial_affine: Affine,
     initial_mouse_pos: npt.NDArray,
     mouse_pos: npt.NDArray,
@@ -56,7 +59,7 @@ def _translate_with_box(
 
 
 def _rotate_with_box(
-    layer: 'Layer',
+    layer: Layer,
     initial_affine: Affine,
     initial_mouse_pos: npt.NDArray,
     initial_handle_coords: npt.NDArray,
@@ -96,7 +99,7 @@ def _rotate_with_box(
 
 
 def _scale_with_box(
-    layer: 'Layer',
+    layer: Layer,
     initial_affine: Affine,
     initial_world_to_data: Affine,
     initial_data2physical: Affine,
@@ -171,7 +174,7 @@ def _scale_with_box(
 
 
 def transform_with_box(
-    layer: 'Layer', event: Event
+    layer: Layer, event: Event
 ) -> Generator[None, None, None]:
     """
     Translate, rescale or rotate a layer by dragging a TransformBox handle.

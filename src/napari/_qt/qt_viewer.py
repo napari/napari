@@ -6,9 +6,7 @@ import sys
 import traceback
 import warnings
 import weakref
-from collections.abc import Sequence
 from pathlib import Path
-from types import FrameType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -22,6 +20,7 @@ from qtpy.QtGui import QGuiApplication, QImage
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 from superqt import ensure_main_thread
 
+from napari._app_model import get_app_model
 from napari._qt.containers import QtLayerList
 from napari._qt.dialogs.qt_reader_dialog import handle_gui_reading
 from napari._qt.dialogs.screenshot_dialog import ScreenshotDialog
@@ -61,6 +60,9 @@ from napari_builtins.io import imsave_extensions
 from napari._vispy import VispyCanvas, create_vispy_layer  # isort:skip
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+    from types import FrameType
+
     from napari_console import QtConsole
     from npe2.manifest.contributions import WriterContribution
 
@@ -249,7 +251,9 @@ class QtViewer(QSplitter):
         )
 
         # bind shortcuts stored in settings last.
-        self._bind_shortcuts()
+        with get_app_model().register_with_namespace('QtViewer', self):
+            # we overwrite global injection namespace to ensure that correct QtViewer will be provided.
+            self._bind_shortcuts()
 
         settings = get_settings()
         self._update_dask_cache_settings(settings.application.dask)

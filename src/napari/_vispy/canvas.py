@@ -5,7 +5,6 @@ from __future__ import annotations
 import contextlib
 import dataclasses
 import gc
-from collections.abc import Iterator
 from functools import partial
 from itertools import zip_longest
 from types import MethodType
@@ -40,7 +39,7 @@ from napari.utils.notifications import show_warning
 from napari.utils.theme import get_theme
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Iterator
 
     import numpy.typing as npt
     from qtpy.QtCore import Qt, pyqtBoundSignal
