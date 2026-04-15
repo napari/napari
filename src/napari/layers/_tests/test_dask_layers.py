@@ -4,6 +4,7 @@ import dask
 import dask.array as da
 import numpy as np
 import pytest
+import xarray as xr
 
 from napari import layers
 from napari.components import ViewerModel
@@ -90,7 +91,6 @@ def test_xarray_dataarray_backed_by_dask_creates_cache():
     an xarray.DataArray backed by a dask array was not triggering dask
     optimizations.
     """
-    xr = pytest.importorskip('xarray')
     resize_dask_cache(1)
     assert _dask_utils._DASK_CACHE.cache.available_bytes == 1
     original = dask.config.get('optimization.fuse.active', None)
