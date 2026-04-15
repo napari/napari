@@ -2,6 +2,7 @@ from collections.abc import Callable, Iterable, Mapping, Sequence
 from functools import partial, wraps
 from pathlib import Path
 from types import TracebackType
+import warnings
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -129,6 +130,9 @@ def image_reader_to_layerdata_reader(
 ) -> ReaderFunction:
     """Convert a PathLike -> ArrayLike function to a PathLike -> LayerData.
 
+    .. deprecated:: 0.7.1
+        This helper is deprecated and will be removed in 8.0.
+
     Parameters
     ----------
     func : Callable[[PathLike], ArrayLike]
@@ -142,6 +146,11 @@ def image_reader_to_layerdata_reader(
         as a list of LayerData: List[Tuple[ArrayLike]]
 
     """
+    warnings.warn(
+        'image_reader_to_layerdata_reader is deprecated in 0.7.1 and will be removed in 0.8.0 release.',
+        FutureWarning,
+        stacklevel=2,
+    )
 
     @wraps(func)
     def reader_function(*args, **kwargs) -> list[LayerData]:
