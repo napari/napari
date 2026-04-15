@@ -9,6 +9,8 @@ from napari._vispy.visuals.interaction_box import InteractionBox
 from napari.settings import get_settings
 
 if TYPE_CHECKING:
+    from vispy.visuals.text.text import FontManager
+
     from napari.components.overlays import ZoomOverlay
     from napari.components.viewer_model import ViewerModel
     from napari.utils.events import Event
@@ -17,24 +19,30 @@ if TYPE_CHECKING:
 class VispyZoomOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
     """Zoom box overlay.."""
 
+    overlay: ZoomOverlay
+
     def __init__(
         self,
         viewer: ViewerModel,
         overlay: ZoomOverlay,
         parent: Optional[Any] = None,
+        font_manager: FontManager | None = None,
+        font_family: str = 'OpenSans',
     ):
         super().__init__(
             node=InteractionBox(),
             viewer=viewer,
             overlay=overlay,
             parent=parent,
+            font_manager=font_manager,
+            font_family=font_family,
         )
 
         self.overlay.events.position.connect(self._on_position_change)
 
-        self._on_visible_change()
+        self.reset()
 
-    def _on_position_change(self, _evt: Optional[Event] = None) -> None:
+    def _on_position_change(self, event: Optional[Event] = None) -> None:
         """Change position."""
         settings = get_settings()
         self.node._highlight_width = (

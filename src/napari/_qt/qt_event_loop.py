@@ -3,7 +3,6 @@ from __future__ import annotations
 import os
 import platform
 import sys
-from pathlib import Path
 from typing import TYPE_CHECKING
 from warnings import warn
 
@@ -14,6 +13,7 @@ from qtpy.QtSvg import QSvgRenderer
 from qtpy.QtWidgets import QApplication, QWidget
 
 from napari import Viewer, __version__
+from napari._qt._qapp_model.injection._qproviders import register_qt_types
 from napari._qt.dialogs.qt_notification import NapariQtNotification
 from napari._qt.qt_event_filters import QtToolTipEventFilter
 from napari._qt.qthreading import (
@@ -35,16 +35,19 @@ from napari.utils.theme import _themes, get_system_theme
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from IPython import InteractiveShell
 
-NAPARI_ICON_PATH = str(
-    get_logo_path(
+NAPARI_APP_ID = f'napari.napari.viewer.{__version__}'
+
+
+def get_icon_path() -> Path:
+    return get_logo_path(
         logo=get_settings().appearance.logo,
         template='padded' if platform.system() == 'Darwin' else 'plain',
         theme=get_system_theme(),
     )
-)
-NAPARI_APP_ID = f'napari.napari.viewer.{__version__}'
 
 
 def set_app_id(app_id):
@@ -72,14 +75,15 @@ def _svg_path_to_icon(path: str | Path) -> QIcon:
     return icon
 
 
-_defaults = {
-    'app_name': 'napari',
-    'app_version': __version__,
-    'icon': NAPARI_ICON_PATH,
-    'org_name': 'napari',
-    'org_domain': 'napari.org',
-    'app_id': NAPARI_APP_ID,
-}
+def _get_defaults() -> dict:
+    return {
+        'app_name': 'napari',
+        'app_version': __version__,
+        'icon': get_icon_path(),
+        'org_name': 'napari',
+        'org_domain': 'napari.org',
+        'app_id': NAPARI_APP_ID,
+    }
 
 
 # store reference to QApplication to prevent garbage collection
@@ -167,7 +171,7 @@ def get_qapp(
     # napari defaults are all-or nothing.  If any of the keywords are used
     # then they are all used.
     set_values = {k for k, v in locals().items() if v}
-    kwargs = locals() if set_values else _defaults
+    kwargs = locals() if set_values else _get_defaults()
     global _app_ref
 
     app = QApplication.instance()
@@ -263,6 +267,7 @@ def get_qapp(
             QDir.addSearchPath(f'theme_{name}', str(_theme_path(name)))
 
         register_threadworker_processors()
+        register_qt_types()
 
         notification_manager.notification_ready.connect(
             NapariQtNotification.show_notification

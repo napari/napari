@@ -1,6 +1,7 @@
 from typing import Union, cast
 
-from napari._pydantic_compat import Field
+from pydantic import AliasChoices, Field
+
 from napari.settings._fields import Logo, Theme
 from napari.utils.events.evented_model import ComparisonDelayer, EventedModel
 from napari.utils.theme import available_themes, get_theme
@@ -31,7 +32,7 @@ class AppearanceSettings(EventedModel):
         Theme('dark'),
         title=trans._('Theme'),
         description=trans._('Select the user interface theme.'),
-        env='napari_theme',
+        validation_alias=AliasChoices('theme', 'napari_theme'),
     )
     logo: Logo = Field(
         Logo('auto'),
@@ -69,7 +70,7 @@ class AppearanceSettings(EventedModel):
         self, values: Union['EventedModel', dict], recurse: bool = True
     ) -> None:
         if isinstance(values, self.__class__):
-            values = values.dict()
+            values = values.model_dump()
         values = cast(dict, values)
 
         # Check if a font_size change is needed when changing theme:
@@ -116,4 +117,6 @@ class AppearanceSettings(EventedModel):
         added (either by a plugin or directly by the user) the enum is updated in
         place, ensuring that Preferences dialog can still be opened.
         """
-        self.schema()['properties']['theme'].update(enum=available_themes())
+        self.model_json_schema()['properties']['theme'].update(
+            enum=available_themes()
+        )

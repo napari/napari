@@ -64,7 +64,7 @@ class InteractionBox(Compound):
         top_left: tuple[float, float],
         bot_right: tuple[float, float],
         handles: bool = True,
-        selected: int | None = None,
+        selected: int | slice | None = None,
         rotation: bool = True,
     ) -> None:
         """Update the visualized interaction box with new data.
@@ -77,7 +77,7 @@ class InteractionBox(Compound):
             The bottom right corner of the interaction box.
         handles : bool
             Whether to show the handles of the interaction box.
-        selected : int | None
+        selected : int | slice | None
             The index of the selected handle. If None, no handle is selected.
         rotation : bool
             Whether to show the rotation handle. Default is True.

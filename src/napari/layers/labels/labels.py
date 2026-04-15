@@ -6,16 +6,14 @@ from collections import deque
 from collections.abc import Callable, Generator, Sequence
 from contextlib import contextmanager
 from typing import (
+    TYPE_CHECKING,
     Any,
     ClassVar,
 )
 
 import numpy as np
 import numpy.typing as npt
-import pandas as pd
 from PIL import Image, ImageDraw
-from scipy import ndimage as ndi
-from skimage.segmentation import flood
 
 from napari.layers._data_protocols import LayerDataProtocol
 from napari.layers._multiscale_data import MultiScaleData
@@ -70,6 +68,9 @@ from napari.utils.events.custom_types import Array
 from napari.utils.misc import StringEnum
 from napari.utils.naming import magic_name
 from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    import pandas as pd
 
 __all__ = ('Labels',)
 
@@ -707,9 +708,10 @@ class Labels(ScalarFieldBase):
                 'rendering': self.rendering,
                 'iso_gradient_mode': self.iso_gradient_mode,
                 'depiction': self.depiction,
-                'plane': self.plane.dict(),
+                'plane': self.plane.model_dump(),
                 'experimental_clipping_planes': [
-                    plane.dict() for plane in self.experimental_clipping_planes
+                    plane.model_dump()
+                    for plane in self.experimental_clipping_planes
                 ],
                 'data': self.data,
                 'features': self.features,
@@ -987,6 +989,8 @@ class Labels(ScalarFieldBase):
         like adjusting gamma or changing the data based on the contrast
         limits.
         """
+        from scipy import ndimage as ndi
+
         if not self._slicing_state.loaded or self._slice.empty:
             # ASYNC_TODO: Do not compute the thumbnail until we are loaded.
             # Is there a nicer way to prevent this from getting called?

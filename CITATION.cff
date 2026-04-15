@@ -117,6 +117,11 @@ authors:
   affiliation: Monash University
   orcid: https://orcid.org/0000-0003-0630-1819
   alias: jnahlers
+- given-names: Sesan
+  family-names: Ajina
+  alias: Olusesan
+  affiliation: iLABS, Inc.
+  orcid: https://orcid.org/0000-0003-2910-1190
 - given-names: Daniel
   family-names: Althviz Moré
   affiliation: Quansight
@@ -149,6 +154,11 @@ authors:
 - given-names: Peter
   family-names: Boone
   alias: boonepeter
+- given-names: Kresimir
+  family-names: Bestak
+  affiliation: Heidelberg University, Germany
+  orcid: https://orcid.org/0009-0009-8245-9846
+  alias: kbestak
 - given-names: Jordão
   family-names: Bragantini
   affiliation: Chan Zuckerberg Biohub
@@ -169,6 +179,11 @@ authors:
     CNRS, Palaiseau, France
   orcid: https://orcid.org/0000-0002-9441-9173
   alias: ClementCaporal
+- given-names: Margot
+  family-names: Chazotte
+  affiliation: Heidelberg University, Germany
+  orcid: https://orcid.org/0009-0007-4901-5173
+  alias: MargotCh
 - given-names: Ian
   family-names: Coccimiglio
   affiliation: Unaffiliated
@@ -228,6 +243,11 @@ authors:
   family-names: Hutchings
   affiliation: University College London
   alias: katherine-hutchings
+- given-names: Hiroki
+  family-names: Kawai
+  affiliation: The University of Tokyo / LPIXEL Inc.
+  orcid: https://orcid.org/0000-0002-7129-2384
+  alias: hiroalchem
 - given-names: Robert
   family-names: Kozar
   affiliation: Naval Nuclear Laboratory
@@ -238,6 +258,11 @@ authors:
   affiliation: Swiss Federal Institute of Technology (EPFL), Lausanne, Switzerland
   orcid: https://orcid.org/0000-0002-3656-2449
   alias: jeylau
+- given-names: Samuel
+  family-names: Le Meur-Diebolt
+  affiliation: University College London
+  orcid: https://orcid.org/0000-0002-9788-7263
+  alias: sdiebolt
 - given-names: Gregor
   family-names: Lichtner
   affiliation: Universitätsmedizin Greifswald
@@ -298,6 +323,11 @@ authors:
   family-names: Nauroth-Kreß
   affiliation: University Hospital Würzburg - Institute of Neuroradiology
   alias: Chris-N-K
+- given-names: Peter
+  family-names: Newstein
+  affiliation: University of Oregon
+  orcid: https://orcid.org/0000-0003-2966-783X
+  alias: pnewstein
 - given-names: Horst A.
   family-names: Obenhaus
   affiliation: Kavli Institute for Systems Neuroscience at NTNU, Trondheim, Norway
@@ -331,6 +361,11 @@ authors:
   affiliation: Quansight
   orcid: https://orcid.org/0000-0002-1214-4680
   alias: goanpeca
+- given-names: Jasper
+  family-names: Phelps
+  affiliation: EPFL
+  orcid: https://orcid.org/0000-0001-8033-258X
+  alias: jasper-tms
 - given-names: Andrea
   family-names: Pierré
   affiliation: Brown University
@@ -413,6 +448,11 @@ authors:
   affiliation: European Molecular Biology Laboratory (EMBL)
   orcid: https://orcid.org/0000-0002-4652-0795
   alias: qin-yu
+- given-names: Liudeng
+  family-names: Zhang
+  affiliation: Baylor College of Medicine
+  orcid: https://orcid.org/0009-0009-4530-4685
+  alias: LiudengZhang
 - given-names: Rubin
   family-names: Zhao
   affiliation: Chinese Academy of Sciences - SIAT, Shenzhen, China
@@ -428,5 +468,10 @@ authors:
   affiliation: Katana Labs
   orcid: https://orcid.org/0000-0002-6165-4679
   alias: zoccoler
+- given-names: Aniket Singh
+  family-names: Yadav
+  affiliation: Galgotias University
+  orcid: https://orcid.org/0009-0004-4883-3797
+  alias: Aniketsy
 repository-code: https://github.com/napari/napari
 license: BSD-3-Clause

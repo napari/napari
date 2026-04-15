@@ -4,11 +4,9 @@ from __future__ import annotations
 
 import typing
 import warnings
-from collections.abc import Sequence
 from typing import Any, Literal, cast
 
 import numpy as np
-from scipy import ndimage as ndi
 
 from napari.layers._data_protocols import LayerDataProtocol
 from napari.layers._multiscale_data import MultiScaleData
@@ -34,6 +32,8 @@ from napari.utils.colormaps.colormap_utils import _coerce_contrast_limits
 from napari.utils.translations import trans
 
 if typing.TYPE_CHECKING:
+    from collections.abc import Sequence
+
     import numpy.typing as npt
     import pint
 
@@ -386,13 +386,13 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
             {
                 'rgb': self.rgb,
                 'multiscale': self.multiscale,
-                'colormap': self.colormap.dict(),
+                'colormap': self.colormap.model_dump(),
                 'contrast_limits': self.contrast_limits,
                 'interpolation2d': self.interpolation2d,
                 'interpolation3d': self.interpolation3d,
                 'rendering': self.rendering,
                 'depiction': self.depiction,
-                'plane': self.plane.dict(),
+                'plane': self.plane.model_dump(),
                 'iso_threshold': self.iso_threshold,
                 'attenuation': self.attenuation,
                 'gamma': self.gamma,
@@ -492,10 +492,11 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
 
     def _update_thumbnail(self) -> None:
         """Update thumbnail with current image data and colormap."""
-        # don't bother updating thumbnail if we don't have any data
-        # this also avoids possible dtype mismatch issues below
-        # for example np.clip may raise an OverflowError (in numpy 2.0)
+        from scipy import ndimage as ndi
+
+        # black thumbnail if there is no data in the slice
         if self._slice.empty:
+            self.thumbnail = np.zeros(self._thumbnail_shape, self.dtype)
             return
 
         image = self._slice.thumbnail.raw

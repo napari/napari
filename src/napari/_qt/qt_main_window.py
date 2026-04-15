@@ -3,16 +3,14 @@ Custom Qt widgets that serve as native objects that the public-facing elements
 wrap.
 """
 
+from __future__ import annotations
+
 import contextlib
 import inspect
 import os
-import platform
 import sys
 import time
-import uuid
 import warnings
-from collections.abc import Callable, Mapping, MutableMapping, Sequence
-from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -58,8 +56,8 @@ from napari._qt.dialogs.preferences_dialog import PreferencesDialog
 from napari._qt.dialogs.qt_activity_dialog import QtActivityDialog
 from napari._qt.dialogs.qt_notification import NapariQtNotification
 from napari._qt.qt_event_loop import (
-    NAPARI_ICON_PATH,
     _svg_path_to_icon,
+    get_icon_path,
     get_qapp,
     quit_app as quit_app_,
 )
@@ -75,7 +73,6 @@ from napari._qt.widgets.qt_viewer_dock_widget import (
 from napari._qt.widgets.qt_viewer_status_bar import ViewerStatusBar
 from napari.plugins import (
     menu_item_template as plugin_menu_item_template,
-    plugin_manager,
 )
 from napari.plugins._npe2 import index_npe1_adapters
 from napari.settings import get_settings
@@ -95,6 +92,10 @@ from napari.utils.theme import _themes, get_system_theme
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
+    import uuid
+    from collections.abc import Callable, Mapping, MutableMapping, Sequence
+    from pathlib import Path
+
     from magicgui.widgets import Widget
     from qtpy.QtGui import QImage
 
@@ -114,24 +115,19 @@ MenuStr = Literal[
 
 
 class _QtMainWindow(QMainWindow):
-    # This was added so that someone can patch
-    # `napari._qt.qt_main_window._QtMainWindow._window_icon`
-    # to their desired window icon
-    _window_icon = NAPARI_ICON_PATH
-
     # To track window instances and facilitate getting the "active" viewer...
     # We use this instead of QApplication.activeWindow for compatibility with
     # IPython usage. When you activate IPython, it will appear that there are
     # *no* active windows, so we want to track the most recently active windows
-    _instances: ClassVar[list['_QtMainWindow']] = []
+    _instances: ClassVar[list[_QtMainWindow]] = []
 
     # `window` is passed through on construction, so it's available to a window
     # provider for dependency injection
     # See https://github.com/napari/napari/pull/4826
     def __init__(
         self,
-        viewer: 'Viewer',
-        window: 'Window',
+        viewer: Viewer,
+        window: Window,
         parent=None,
         show_welcome_screen=True,
     ) -> None:
@@ -144,7 +140,7 @@ class _QtMainWindow(QMainWindow):
         )
         self._quit_app = False
 
-        get_qapp().setWindowIcon(_svg_path_to_icon(self._window_icon))
+        get_qapp().setWindowIcon(_svg_path_to_icon(self._get_window_icon()))
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         center = QWidget(self)
         center.setLayout(QHBoxLayout())
@@ -197,11 +193,10 @@ class _QtMainWindow(QMainWindow):
         # were defined somewhere in the `_qt` module and imported in init_qactions
         init_qactions()
 
-        # only after qaction are initialized we can get all shortcuts, so we have
-        # to force update the welcome screen here. TODO: UGLYYYY
-        self._qt_viewer.canvas._overlay_to_visual[
-            self._qt_viewer.viewer.welcome_screen
-        ][0].reset()
+        # only after qaction are initialized we can get all shortcuts and actions,
+        # so we have to force update the welcome screen here.
+        viewer.welcome_screen.events.shortcuts()
+        viewer.welcome_screen.events.tips()
 
         with contextlib.suppress(IndexError):
             viewer.cursor.events.position.disconnect(
@@ -220,6 +215,14 @@ class _QtMainWindow(QMainWindow):
         )
 
         self._command_palette = QCommandPalette(self)
+
+    def _get_window_icon(self) -> str:
+        if hasattr(self, '_window_icon'):
+            # This was added so that someone can patch
+            # `napari._qt.qt_main_window._QtMainWindow._window_icon`
+            # to their desired window icon
+            return self._window_icon
+        return str(get_icon_path())
 
     def _toggle_status_thread(self, event: Event):
         if event.value:
@@ -266,11 +269,11 @@ class _QtMainWindow(QMainWindow):
         ) is not None:
             self._qt_viewer.viewer.help = active.help
 
-    def statusBar(self) -> 'ViewerStatusBar':
+    def statusBar(self) -> ViewerStatusBar:
         return super().statusBar()
 
     @classmethod
-    def current(cls) -> Optional['_QtMainWindow']:
+    def current(cls) -> Optional[_QtMainWindow]:
         return cls._instances[-1] if cls._instances else None
 
     @classmethod
@@ -691,7 +694,7 @@ class Window:
 
     def __init__(
         self,
-        viewer: 'Viewer',
+        viewer: Viewer,
         *,
         show: bool = True,
         show_welcome_screen: bool = True,
@@ -1094,18 +1097,6 @@ class Window:
         if result := _npe2.get_widget_contribution(plugin_name, widget_name):
             widget_class, widget_name = result
 
-        if widget_class is None:
-            widget_class, dock_kwargs = plugin_manager.get_widget(
-                plugin_name, widget_name
-            )
-
-        if not widget_name:
-            # if widget_name wasn't provided, `get_widget` will have
-            # ensured that there is a single widget available.
-            widget_name = next(
-                iter(plugin_manager._wrapped_dock_widgets[plugin_name])
-            )
-
         full_name = plugin_menu_item_template.format(plugin_name, widget_name)
         if full_name in self._wrapped_dock_widgets:
             dock_widget = self._wrapped_dock_widgets[full_name]
@@ -1122,32 +1113,9 @@ class Window:
         )
         return dock_widget, wdg
 
-    def _add_plugin_function_widget(self, plugin_name: str, widget_name: str):
-        """Add plugin function widget if not already added.
-
-        Parameters
-        ----------
-        plugin_name : str
-            Name of a plugin providing a widget
-        widget_name : str, optional
-            Name of a widget provided by `plugin_name`. If `None`, and the
-            specified plugin provides only a single widget, that widget will be
-            returned, otherwise a ValueError will be raised, by default None
-        """
-        full_name = plugin_menu_item_template.format(plugin_name, widget_name)
-        if full_name in self._wrapped_dock_widgets:
-            return None
-
-        func = plugin_manager._function_widgets[plugin_name][widget_name]
-
-        # Add function widget
-        return self.add_function_widget(
-            func, name=full_name, area=None, allowed_areas=None
-        )
-
     def add_dock_widget(
         self,
-        widget: Union[QWidget, 'Widget'],
+        widget: Union[QWidget, Widget],
         *,
         name: str = '',
         area: str | None = None,
@@ -1278,7 +1246,7 @@ class Window:
         return self._wrapped_dock_widgets
 
     @property
-    def dock_widgets(self) -> Mapping[str, 'QWidget | Widget']:
+    def dock_widgets(self) -> Mapping[str, QWidget | Widget]:
         """Read-only mapping of widgets docked in napari window.
 
         Notes
@@ -1641,17 +1609,8 @@ class Window:
                 self._qt_viewer._console._update_theme(style_sheet=style_sheet)
 
     def _update_logo(self):
-        from napari.utils.logo import get_logo_path
-        from napari.utils.theme import get_system_theme
-
-        path = get_logo_path(
-            logo=get_settings().appearance.logo,
-            template='padded' if platform.system() == 'Darwin' else 'plain',
-            theme=get_system_theme(),
-        )
-        self._qt_window._window_icon = path
         get_qapp().setWindowIcon(
-            _svg_path_to_icon(self._qt_window._window_icon)
+            _svg_path_to_icon(self._qt_window._get_window_icon())
         )
 
     def _status_changed(self, event):
@@ -1709,7 +1668,7 @@ class Window:
         flash: bool = True,
         canvas_only: bool = False,
         fit_to_data_extent: bool = False,
-    ) -> 'QImage':
+    ) -> QImage:
         """Capture screenshot of the currently displayed viewer.
 
         Parameters
@@ -1948,7 +1907,7 @@ class Window:
             update_save_history(dial.selectedFiles()[0])
 
 
-def _instantiate_dock_widget(wdg_cls, viewer: 'Viewer'):
+def _instantiate_dock_widget(wdg_cls, viewer: Viewer):
     # if the signature is looking a for a napari viewer, pass it.
     from napari.viewer import Viewer, ViewerModel
 
@@ -1987,7 +1946,7 @@ class InnerWidgetMappingProxy(MappingProxy):
     without exposing the QDockWidget itself.
     """
 
-    def __getitem__(self, key, /) -> 'QWidget | Widget':
+    def __getitem__(self, key, /) -> QWidget | Widget:
         """Get the inner widget of the QDockWidget."""
         return self._wrapped[key].inner_widget()
 

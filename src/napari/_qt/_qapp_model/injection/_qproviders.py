@@ -8,11 +8,14 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from napari import components, layers, viewer
+from napari._app_model import get_app_model
 from napari.utils._proxies import PublicOnlyProxy
 from napari.utils.translations import trans
 from napari.viewer import ViewerModel
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from napari._qt.qt_main_window import Window
     from napari._qt.qt_viewer import QtViewer
 
@@ -102,9 +105,20 @@ def _provide_active_layer_list() -> components.LayerList | None:
     return v.layers if (v := _provide_viewer()) else None
 
 
+def register_qt_types() -> None:
+    from napari._qt.qt_viewer import QtViewer
+
+    app = get_app_model()
+    if 'QtViewer' not in app.injection_store.namespace:
+        app.injection_store.namespace = {
+            **app.injection_store.namespace,
+            'QtViewer': QtViewer,
+        }
+
+
 # syntax could be simplified after
 # https://github.com/tlambert03/in-n-out/issues/31
-QPROVIDERS = [
+QPROVIDERS: list[tuple[Callable]] = [
     (_provide_viewer,),
     (_provide_viewer_model,),
     (_provide_qt_viewer,),

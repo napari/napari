@@ -7,7 +7,10 @@ from qtpy.QtWidgets import QApplication
 from napari._app_model._app import get_app_model
 from napari._qt.dialogs.qt_modal import QtPopup
 from napari._qt.widgets import qt_viewer_buttons as qt_viewer_buttons_
-from napari._qt.widgets.qt_viewer_buttons import QtViewerButtons
+from napari._qt.widgets.qt_viewer_buttons import (
+    QtLayerButtons,
+    QtViewerButtons,
+)
 from napari.components.viewer_model import ViewerModel
 from napari.utils.camera_orientations import (
     DepthAxisOrientation,
@@ -213,18 +216,18 @@ def test_ndisplay_button_popup(qt_viewer_buttons, qtbot):
     assert viewer.camera.zoom == viewer_buttons.zoom.value() == 5
 
     # check viewer camera rotation value affects camera angles
-    assert viewer_buttons.rx
-    assert viewer_buttons.ry
     assert viewer_buttons.rz
-    viewer_buttons.rx.setValue(90)
+    assert viewer_buttons.ry
+    assert viewer_buttons.rx
+    viewer_buttons.rz.setValue(90)
     viewer_buttons.ry.setValue(45)
-    viewer_buttons.rz.setValue(0)
+    viewer_buttons.rx.setValue(0)
     assert (
         viewer.camera.angles
         == (
-            viewer_buttons.rx.value(),
-            viewer_buttons.ry.value(),
             viewer_buttons.rz.value(),
+            viewer_buttons.ry.value(),
+            viewer_buttons.rx.value(),
         )
         == (90, 45, 0)
     )
@@ -249,15 +252,15 @@ def test_ndisplay_button_popup(qt_viewer_buttons, qtbot):
     )
     assert viewer_buttons.zoom
     assert viewer.camera.zoom == viewer_buttons.zoom.value() == 2
-    assert viewer_buttons.rx
-    assert viewer_buttons.ry
     assert viewer_buttons.rz
+    assert viewer_buttons.ry
+    assert viewer_buttons.rx
     assert (
         viewer.camera.angles
         == (
-            viewer_buttons.rx.value(),
-            viewer_buttons.ry.value(),
             viewer_buttons.rz.value(),
+            viewer_buttons.ry.value(),
+            viewer_buttons.rx.value(),
         )
         == (0, 0, 90)
     )
@@ -274,6 +277,7 @@ def test_toggle_ndisplay(mock_app_model, qt_viewer_buttons, qtbot):
     with app.injection_store.register(
         providers=[
             (lambda: viewer, Viewer, 100),
+            (lambda: viewer, ViewerModel, 100),
         ]
     ):
         qtbot.mouseClick(viewer_buttons.ndisplayButton, Qt.LeftButton)
@@ -311,3 +315,73 @@ def test_transpose_rotate_button(monkeypatch, qt_viewer_buttons, qtbot):
         viewer_buttons.transposeDimsButton, Qt.MouseButton.LeftButton
     )
     trigger_mock.assert_called_with('napari:transpose_axes')
+
+
+@pytest.fixture
+def qt_layer_buttons(qtbot):
+    # create viewer model and buttons
+    viewer = ViewerModel()
+    layer_buttons = QtLayerButtons(viewer)
+    qtbot.addWidget(layer_buttons)
+
+    yield viewer, layer_buttons
+
+    # close still open popup widgets
+    for widget in QApplication.topLevelWidgets():
+        if isinstance(widget, QtPopup):
+            widget.close()
+    layer_buttons.close()
+
+
+def test_layer_buttons_checked_on_selection(qt_layer_buttons):
+    """Test that new points/shapes buttons are checked when a layer is selected."""
+    import numpy as np
+
+    viewer, layer_buttons = qt_layer_buttons
+
+    # Initially no selection, buttons should not be checked
+    assert layer_buttons.newPointsButton.property('mode') == 'new_points'
+    assert layer_buttons.newShapesButton.property('mode') == 'new_shapes'
+    assert layer_buttons.newPointsButton.property('creation_state') == 'none'
+    assert layer_buttons.newShapesButton.property('creation_state') == 'none'
+    assert layer_buttons.newLabelsButton.property('creation_state') == 'none'
+    # no layers in the viewer, labels button is enabled
+    assert layer_buttons.newLabelsButton.isEnabled()
+
+    data_layer = viewer.add_image(np.zeros((10, 10)))
+    data_layer2 = viewer.add_image(np.zeros((10, 10)))
+    points_layer = viewer.add_points(ndim=2, size=10)
+
+    # Selecting a single layer: buttons indicate single-layer inheritance
+    viewer.layers.selection = [data_layer]
+    assert layer_buttons.newPointsButton.property('creation_state') == 'full'
+    assert layer_buttons.newShapesButton.property('creation_state') == 'full'
+    assert layer_buttons.newLabelsButton.property('creation_state') == 'full'
+
+    viewer.layers.selection = [points_layer]
+
+    assert layer_buttons.newPointsButton.property('creation_state') == 'full'
+    assert layer_buttons.newShapesButton.property('creation_state') == 'full'
+    assert (
+        layer_buttons.newLabelsButton.property('creation_state') == 'partial'
+    )
+
+    # Selecting multiple layers: buttons indicate multi-layer inheritance
+    viewer.layers.selection = [data_layer, data_layer2]
+    assert (
+        layer_buttons.newPointsButton.property('creation_state') == 'partial'
+    )
+    assert (
+        layer_buttons.newShapesButton.property('creation_state') == 'partial'
+    )
+    assert (
+        layer_buttons.newLabelsButton.property('creation_state') == 'partial'
+    )
+
+    # Clearing selection: buttons return to default state
+    viewer.layers.selection.clear()
+    assert layer_buttons.newPointsButton.property('creation_state') == 'none'
+    assert layer_buttons.newShapesButton.property('creation_state') == 'none'
+    assert layer_buttons.newLabelsButton.property('creation_state') == 'none'
+    # layers present but none selected, labels button is disabled
+    assert not layer_buttons.newLabelsButton.isEnabled()

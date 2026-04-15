@@ -11,7 +11,6 @@ import os
 import re
 import sys
 import warnings
-from collections.abc import Callable, Iterable, Iterator, Sequence
 from enum import Enum, EnumMeta
 from os import fspath, path as os_path
 from pathlib import Path
@@ -26,9 +25,9 @@ import numpy.typing as npt
 
 from napari.utils.translations import trans
 
-_sentinel = object()
-
 if TYPE_CHECKING:
+    from collections.abc import Callable, Iterable, Iterator, Sequence
+
     import packaging.version
 
 
@@ -54,35 +53,60 @@ def running_as_constructor_app() -> bool:
 
 def in_jupyter() -> bool:
     """Return true if we're running in jupyter notebook/lab or qtconsole."""
-    with contextlib.suppress(ImportError):
-        from IPython import get_ipython
-
-        return get_ipython().__class__.__name__ == 'ZMQInteractiveShell'
-    return False
+    # check if IPython is imported already
+    ipy = sys.modules.get('IPython')
+    if ipy is None:
+        return False
+    get_ipython = ipy.get_ipython
+    shell = get_ipython()
+    return (
+        shell is not None and shell.__class__.__name__ == 'ZMQInteractiveShell'
+    )
 
 
 def in_ipython() -> bool:
     """Return true if we're running in an IPython interactive shell."""
-    with contextlib.suppress(ImportError):
-        from IPython import get_ipython
-
-        return get_ipython().__class__.__name__ == 'TerminalInteractiveShell'
-    return False
+    # check if IPython is imported already
+    ipy = sys.modules.get('IPython')
+    if ipy is None:
+        return False
+    get_ipython = ipy.get_ipython
+    shell = get_ipython()
+    return (
+        shell is not None
+        and shell.__class__.__name__ == 'TerminalInteractiveShell'
+    )
 
 
 def in_python_repl() -> bool:
     """Return true if we're running in a Python REPL."""
-    with contextlib.suppress(ImportError):
-        from IPython import get_ipython
-
-        return get_ipython().__class__.__name__ == 'NoneType' and hasattr(
-            sys, 'ps1'
-        )
-    return False
+    # check if IPython is imported already
+    ipy = sys.modules.get('IPython')
+    if ipy is None:
+        return hasattr(sys, 'ps1')
+    get_ipython = ipy.get_ipython
+    shell = get_ipython()
+    return (
+        shell is not None
+        and shell.__class__.__name__ == 'NoneType'
+        and hasattr(sys, 'ps1')
+    )
 
 
 def str_to_rgb(arg: str) -> list[int]:
-    """Convert an rgb string 'rgb(x,y,z)' to a list of ints [x,y,z]."""
+    """Convert an rgb string 'rgb(x,y,z)' to a list of ints [x,y,z].
+
+    .. deprecated:: 0.7.1
+        `str_to_rgb` is deprecated and will be removed in a future release.
+        Please migrate away from this utility. The function currently
+        retains its behavior but will warn on use.
+    """
+    warnings.warn(
+        'napari.utils.misc.str_to_rgb is deprecated in 0.7.1 and will be removed in 0.8.0 release.',
+        FutureWarning,
+        stacklevel=2,
+    )
+
     match = re.match(r'rgb\((\d+),\s*(\d+),\s*(\d+)\)', arg)
     if match is None:
         raise ValueError("arg not in format 'rgb(x,y,z)'")

@@ -3,9 +3,9 @@ from unittest.mock import Mock
 
 import numpy as np
 import pytest
+from pydantic import ValidationError
 
 from napari import Viewer, layers
-from napari._pydantic_compat import ValidationError
 from napari._tests.utils import (
     add_layer_by_type,
     check_view_transform_consistency,

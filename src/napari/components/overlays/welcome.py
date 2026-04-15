@@ -7,9 +7,10 @@ from napari.components.overlays.base import CanvasOverlay
 class WelcomeOverlay(CanvasOverlay):
     """Welcome screen overlay."""
 
-    visible: bool = True
     # not settable in this specific overlay
     position: None = None
+    # ensure it's on top of overlays with default value
+    order: int = 10**6 + 10
     gridded: Literal[False] = False
     version: str = __version__
     shortcuts: tuple[str, ...] = (
