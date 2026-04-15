@@ -72,7 +72,7 @@ def test_dask_array_creates_cache():
     layer2.set_view_slice()
 
 
-def test_list_of_dask_arrays_doesnt_create_cache():
+def test_list_of_dask_arrays_creates_cache():
     """Test that adding a list of dask array also creates a dask cache."""
     resize_dask_cache(1)  # in case other tests created it
     assert _dask_utils._DASK_CACHE.cache.available_bytes == 1
@@ -81,6 +81,50 @@ def test_list_of_dask_arrays_doesnt_create_cache():
     assert _dask_utils._DASK_CACHE.cache.available_bytes > 100
     assert not _dask_utils._DASK_CACHE.active
     assert dask.config.get('optimization.fuse.active', None) == original
+
+
+def test_xarray_dataarray_backed_by_dask_creates_cache():
+    """xarray DataArrays wrapping dask should get the same cache/fusion opts.
+
+    Regression test for https://github.com/napari/napari/issues/8878 where passing
+    an xarray.DataArray backed by a dask array was not triggering dask
+    optimizations.
+    """
+    xr = pytest.importorskip('xarray')
+    resize_dask_cache(1)
+    assert _dask_utils._DASK_CACHE.cache.available_bytes == 1
+    original = dask.config.get('optimization.fuse.active', None)
+
+    da_arr = da.ones((100, 100))
+    xr_arr = xr.DataArray(da_arr)
+
+    def mock_set_view_slice():
+        assert dask.config.get('optimization.fuse.active') is False
+
+    layer = layers.Image(xr_arr)
+    layer._set_view_slice = mock_set_view_slice
+    layer.set_view_slice()
+
+    # cache must have been allocated and task fusion must have been turned off
+    assert _dask_utils._DASK_CACHE.cache.available_bytes > 100
+    assert not _dask_utils._DASK_CACHE.active
+    assert dask.config.get('optimization.fuse.active', None) == original
+
+
+def test_xarray_dataarray_backed_by_numpy_no_cache():
+    """xarray DataArrays wrapping numpy should NOT trigger dask cache setup."""
+    xr = pytest.importorskip('xarray')
+    resize_dask_cache(1)
+    assert _dask_utils._DASK_CACHE.cache.available_bytes == 1
+
+    np_arr = np.ones((100, 100))
+    xr_arr = xr.DataArray(np_arr)
+
+    assert not _dask_utils._is_dask_data(xr_arr)
+    _ = layers.Image(xr_arr)
+    # numpy-backed xarray should not trigger cache resize
+    assert _dask_utils._DASK_CACHE.cache.available_bytes == 1
+    assert not _dask_utils._DASK_CACHE.active
 
 
 @pytest.fixture
