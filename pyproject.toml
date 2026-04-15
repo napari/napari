@@ -41,7 +41,6 @@ license-files = [
     "LICENSE",
 ]
 dependencies = [
-    "appdirs>=1.4.4",
     "app-model>=0.5.0,<0.6.0",
     "cachey>=0.2.1",
     "certifi>=2018.1.18",
@@ -58,6 +57,7 @@ dependencies = [
     "pandas>=1.3.3",
     "Pillow>=10.0",
     "pint>=0.17",
+    "platformdirs>=4.3.0",
     "psutil>=5.9.0",
     "psygnal>=0.14.2",
     "pydantic>=2.8.0",
@@ -208,7 +208,7 @@ docs = [
     "sphinxext-opengraph[social-cards]",
     "sphinxext-rediraffe",
     "myst-nb",
-    "napari-sphinx-theme>=1.0.0",
+    "napari-sphinx-theme>=1.1.0",
     "matplotlib",
     "lxml[html_clean]>5",
     "imageio-ffmpeg",
@@ -307,7 +307,7 @@ docs = [
     "sphinxext-opengraph[social-cards]",
     "sphinxext-rediraffe",
     "myst-nb",
-    "napari-sphinx-theme>=1.0.0",
+    "napari-sphinx-theme>=1.1.0",
     "matplotlib",
     "lxml[html_clean]>5",
     "imageio-ffmpeg",
@@ -373,7 +373,7 @@ napari_builtins = [
 
 [tool.setuptools_scm]
 write_to = "src/napari/_version.py"
-fallback_version = "0.6.4.dev0"
+fallback_version = "0.7.1.dev0"
 
 [tool.check-manifest]
 ignore = [
@@ -458,13 +458,14 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "src/napari/_vispy/__init__.py" = ["E402"]
-"**/_tests/*.py" = ["B011", "INP001", "TRY301", "B018", "RUF012"]
+"**/_tests/*.py" = ["B011", "INP001", "TRY301", "B018", "RUF012", "TID253"]
 "src/napari/utils/_testsupport.py" = ["B011"]
 "tools/validate_strings.py" = ["F401"]
 "tools/**" = ["INP001", "T20", "LOG015"]
-"examples/**" = ["ICN001", "INP001", "T20", "LOG015"]
+"examples/**" = ["ICN001", "INP001", "T20", "LOG015", "TID253"]
 "**/vendored/**" = ["TID"]
-"src/napari/benchmarks/**" = ["RUF012", "TID252"]
+"src/napari/benchmarks/**" = ["RUF012", "TID252", "TID253"]
+"src/napari_builtins/**" = ["TID253"]
 
 [tool.ruff.lint.flake8-builtins]
 builtins-allowed-modules = ["io", "types", "threading"]
@@ -484,6 +485,8 @@ multiline-quotes = "double"
 [tool.ruff.lint.flake8-tidy-imports]
 # Disallow all relative imports.
 ban-relative-imports = "all"
+# Expensive imports should be lazy loaded within functions instead of module
+banned-module-level-imports = ["scipy", "pandas", "dask.array"]
 
 [tool.ruff.lint.isort]
 known-first-party=['napari']
@@ -1009,3 +1012,7 @@ layers = ["napari.qt","napari.components"]
 ignore_imports = [
     "napari.plugins._npe2 -> napari._qt._qplugins",
 ]
+
+
+[tool.check-wheel-contents]
+toplevel = ["napari", "napari_builtins"]

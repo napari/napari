@@ -34,8 +34,10 @@ class Camera(EventedModel):
     angles : 3-tuple
         Euler angles of camera in 3D viewing (rx, ry, rz), in degrees.
         Only used during 3D viewing.
-        Note that Euler angles's intrinsic degeneracy means different
-        sets of Euler angles may lead to the same view.
+        Euler angles in 3D do not uniquely represent an orientation, so
+        different angle triplets can produce the same view.
+        Stored or returned angle values may differ from those that were set,
+        while still representing an equivalent camera orientation.
     perspective : float
         Perspective (aka "field of view" in vispy) of the camera (if 3D).
     mouse_pan : bool
