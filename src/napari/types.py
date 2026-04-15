@@ -1,8 +1,8 @@
+import warnings
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from functools import partial, wraps
 from pathlib import Path
 from types import TracebackType
-import warnings
 from typing import (
     TYPE_CHECKING,
     Any,
