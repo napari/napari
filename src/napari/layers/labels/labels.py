@@ -1231,6 +1231,8 @@ class Labels(ScalarFieldBase):
                 The data within the bounding box.
             Returns None if the fill operation is invalid.
         """
+        from skimage.segmentation import flood
+
         int_coord = tuple(np.round(coord).astype(int))
         # If requested fill location is outside data shape then return
         if np.any(np.less(int_coord, 0)) or np.any(
