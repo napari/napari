@@ -508,7 +508,7 @@ def test_image_reader_to_layerdata_reader_deprecated_and_wraps_result():
         return np.array([[1, 2], [3, 4]])
 
     with pytest.warns(
-        FutureWarning,
+        DeprecationWarning,
         match='image_reader_to_layerdata_reader is deprecated in 0.7.1 and will be removed in 0.8.0 release.',
     ):
         wrapped = types.image_reader_to_layerdata_reader(_read)
