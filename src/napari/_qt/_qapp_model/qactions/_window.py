@@ -24,7 +24,7 @@ toggle_action_details = [
         trans._('Toggle layer controls panel'),
     ),
     (
-        'napari:window:toggle_layer_list',
+        'napari.window.toggle_layer_list',
         trans._('Layer List'),
         'dockLayerList',
         trans._('Toggle layer list panel'),
