@@ -208,7 +208,7 @@ docs = [
     "sphinxext-opengraph[social-cards]",
     "sphinxext-rediraffe",
     "myst-nb",
-    "napari-sphinx-theme>=1.0.0",
+    "napari-sphinx-theme>=1.1.0",
     "matplotlib",
     "lxml[html_clean]>5",
     "imageio-ffmpeg",
@@ -307,7 +307,7 @@ docs = [
     "sphinxext-opengraph[social-cards]",
     "sphinxext-rediraffe",
     "myst-nb",
-    "napari-sphinx-theme>=1.0.0",
+    "napari-sphinx-theme>=1.1.0",
     "matplotlib",
     "lxml[html_clean]>5",
     "imageio-ffmpeg",
@@ -373,7 +373,7 @@ napari_builtins = [
 
 [tool.setuptools_scm]
 write_to = "src/napari/_version.py"
-fallback_version = "0.6.4.dev0"
+fallback_version = "0.7.1.dev0"
 
 [tool.check-manifest]
 ignore = [
@@ -1021,3 +1021,6 @@ forbidden_modules = ["napari_builtins"]
 ignore_imports = [
     "napari.utils.io -> napari_builtins"  # to be removed in 0.8.0
 ]
+
+[tool.check-wheel-contents]
+toplevel = ["napari", "napari_builtins"]
