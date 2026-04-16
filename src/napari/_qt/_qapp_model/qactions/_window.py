@@ -12,7 +12,7 @@ Q_WINDOW_ACTIONS: list[Action] = []
 
 toggle_action_details = [
     (
-        'napari:window:toggle_window_console',
+        'napari.window.toggle_window_console',
         trans._('Console'),
         'dockConsole',
         trans._('Toggle console panel'),
