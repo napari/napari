@@ -155,7 +155,10 @@ class QtViewerDockWidget(QDockWidget):
 
         # custom title bar
         self.title = QtCustomTitleBar(
-            self, title=self.name, close_btn=close_btn
+            self,
+            title=self.name,
+            vertical=area in {'top', 'bottom'},
+            close_btn=close_btn,
         )
         self.setTitleBarWidget(self.title)
         self.topLevelChanged.connect(
