@@ -131,7 +131,7 @@ def image_reader_to_layerdata_reader(
     """Convert a PathLike -> ArrayLike function to a PathLike -> LayerData.
 
     .. deprecated:: 0.7.1
-        This helper is deprecated and will be removed in 8.0.
+        This helper is deprecated and will be removed in 0.8.0.
 
     Parameters
     ----------
