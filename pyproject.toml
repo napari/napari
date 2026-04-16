@@ -373,7 +373,7 @@ napari_builtins = [
 
 [tool.setuptools_scm]
 write_to = "src/napari/_version.py"
-fallback_version = "0.6.4.dev0"
+fallback_version = "0.7.1.dev0"
 
 [tool.check-manifest]
 ignore = [
@@ -1012,3 +1012,7 @@ layers = ["napari.qt","napari.components"]
 ignore_imports = [
     "napari.plugins._npe2 -> napari._qt._qplugins",
 ]
+
+
+[tool.check-wheel-contents]
+toplevel = ["napari", "napari_builtins"]
