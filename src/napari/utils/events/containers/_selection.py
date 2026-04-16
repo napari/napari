@@ -1,14 +1,16 @@
 from collections import deque
 from collections.abc import Iterable, MutableSet
 from types import GeneratorType
-from typing import Any, Generic, TypeVar, Union, get_args
+from typing import TYPE_CHECKING, Any, Generic, TypeVar, Union, get_args
 
 from pydantic import GetCoreSchemaHandler
 from pydantic_core import core_schema
-from pydantic_core.core_schema import DictSchema, TypedDictSchema
 
 from napari.utils.events.containers._set import EventedSet
 from napari.utils.events.event import EmitterGroup
+
+if TYPE_CHECKING:
+    from pydantic_core.core_schema import DictSchema, TypedDictSchema
 
 _T = TypeVar('_T')
 _S = TypeVar('_S')
