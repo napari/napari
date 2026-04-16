@@ -148,7 +148,7 @@ def image_reader_to_layerdata_reader(
     """
     warnings.warn(
         'image_reader_to_layerdata_reader is deprecated in 0.7.1 and will be removed in 0.8.0 release.',
-        FutureWarning,
+        DeprecationWarning,
         stacklevel=2,
     )
 
