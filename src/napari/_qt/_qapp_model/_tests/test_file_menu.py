@@ -1,9 +1,11 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 from unittest import mock
 
 import numpy as np
 import pytest
 from app_model.types import MenuItem, SubmenuItem
-from npe2 import DynamicPlugin
 from npe2.manifest.contributions import SampleDataURI
 from qtpy.QtGui import QGuiApplication
 from qtpy.QtWidgets import QApplication
@@ -14,6 +16,9 @@ from napari._qt._qapp_model._tests.utils import get_submenu_action
 from napari.layers import Image
 from napari.plugins._tests.test_npe2 import mock_pm  # noqa: F401
 from napari.utils.action_manager import action_manager
+
+if TYPE_CHECKING:
+    from npe2 import DynamicPlugin
 
 
 def test_sample_data_triggers_reader_dialog(

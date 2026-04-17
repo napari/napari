@@ -14,8 +14,9 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           path: napari-from-github
+          persist-credentials: false
       - name: Cache pooch downloads
-        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v4
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
         with:
           path: |
             ${{ github.workspace }}/.cache/scikit-image
@@ -50,7 +51,7 @@ jobs:
 
       - name: Install napari from wheel
         run: |
-          pip install "${{ env.WHEEL_PATH }}[pyqt]"
+          pip install "${WHEEL_PATH}[pyqt]"
           pip install --group napari-from-github/pyproject.toml:testing
         shell:
             bash
