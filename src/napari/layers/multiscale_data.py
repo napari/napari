@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import overload
 
+import numpy as np
 import numpy.typing as npt
 
 from napari.layers._data_protocols import LayerDataProtocol, assert_protocol
@@ -81,6 +82,13 @@ class MultiScaleData(Sequence[LayerDataProtocol]):
     ) -> LayerDataProtocol | Sequence[LayerDataProtocol]:
         """Get individual multiscale levels."""
         return self._data[key]
+
+    def __array__(self) -> npt.NDArray:
+        """Get numpy array of the lowest resolution level."""
+        # TODO:
+        # deprecate this, and replace with a more verbose API
+        # like get_level_array(self, level: int) -> npt.ndarray
+        return np.asarray(self._data[-1])
 
     def __len__(self) -> int:
         """Number of multiscale levels."""
