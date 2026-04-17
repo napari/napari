@@ -1,7 +1,7 @@
 from typing import Any
 
 import numpy as np
-from qtpy.QtWidgets import QWidget
+from vispy.scene import ViewBox
 
 from napari import Viewer
 from napari._vispy.overlays.base import LayerOverlayMixin, VispySceneOverlay
@@ -20,7 +20,7 @@ class VispyBoundingBoxOverlay(LayerOverlayMixin, VispySceneOverlay):
         layer: ScalarFieldBase,
         viewer: Viewer,
         overlay: BoundingBoxOverlay,
-        parent: QWidget | None = None,
+        parent: ViewBox | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(

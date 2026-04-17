@@ -958,8 +958,6 @@ warn_unused_ignores = false
 
 [[tool.mypy.overrides]]
 module = [
-    "napari._vispy.overlays.bounding_box",
-    "napari._vispy.overlays.brush_circle",
     "napari.utils._test_utils",
 ]
 disallow_untyped_defs = false
