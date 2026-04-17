@@ -53,9 +53,9 @@ def test_multiscale_slice_request_receives_preselected_sources():
     request = layer._slicing_state._make_slice_request(dims)
     assert layer.data_level == layer._thumbnail_level
     # slice request should re-use thumbnail source when possible
-    assert request.data_level_data is request.thumbnail_source
+    assert request.data_at_data_level is request.data_at_thumbnail_level
     np.testing.assert_array_equal(
-        request.thumbnail_source, data[layer._thumbnail_level]
+        request.data_at_thumbnail_level, data[layer._thumbnail_level]
     )
 
 
@@ -70,9 +70,9 @@ def test_multiscale_slice_request_keeps_non_thumbnail_image_source():
         range=tuple((0, s - 1, 1) for s in data[0].shape),
     )
     request = layer._slicing_state._make_slice_request(dims)
-    assert request.data_level_data is data[0]
+    assert request.data_at_data_level is data[0]
     np.testing.assert_array_equal(
-        request.thumbnail_source, data[layer._thumbnail_level]
+        request.data_at_thumbnail_level, data[layer._thumbnail_level]
     )
 
 

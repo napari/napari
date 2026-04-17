@@ -775,23 +775,25 @@ class ScalarFieldSlicingState(_LayerSlicingState):
 
         thumbnail_level = self.layer._thumbnail_level
         if self.layer._level_materializer:
-            thumbnail_source = self.layer._level_materializer(thumbnail_level)
+            data_at_thumbnail_level = self.layer._level_materializer(
+                thumbnail_level
+            )
         elif self.layer.multiscale:
-            thumbnail_source = data[thumbnail_level]
+            data_at_thumbnail_level = data[thumbnail_level]
         else:
-            thumbnail_source = data
+            data_at_thumbnail_level = data
 
         if not self.layer.multiscale:
-            data_level_data = data
+            data_at_data_level = data
         elif data_level == thumbnail_level:
-            data_level_data = thumbnail_source
+            data_at_data_level = data_at_thumbnail_level
         else:
-            data_level_data = data[data_level]
+            data_at_data_level = data[data_level]
 
         return self._slice_request_class(
             slice_input=slice_input,
-            data_level_data=data_level_data,
-            thumbnail_source=thumbnail_source,
+            data_at_data_level=data_at_data_level,
+            data_at_thumbnail_level=data_at_thumbnail_level,
             dtype=self.layer.dtype,
             dask_indexer=dask_indexer,
             data_slice=data_slice,

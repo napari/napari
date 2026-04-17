@@ -190,9 +190,9 @@ class _ScalarFieldSliceRequest:
     ----------
     slice_input : _SliceInput
         Describes the slicing plane or bounding box in the layer's dimensions.
-    data_level_data : Any
+    data_at_data_level : Any
         The pre-selected data source accounting for the current data level.
-    thumbnail_source : Any
+    data_at_thumbnail_level : Any
         The pre-selected data source for the thumbnail.
     dtype : DTypeLike
         The dtype of the layer's data.
@@ -205,8 +205,8 @@ class _ScalarFieldSliceRequest:
     """
 
     slice_input: _SliceInput
-    data_level_data: Any = field(repr=False)
-    thumbnail_source: Any = field(repr=False)
+    data_at_data_level: Any = field(repr=False)
+    data_at_thumbnail_level: Any = field(repr=False)
     dtype: DTypeLike = field(repr=False)
     dask_indexer: DaskIndexer
     data_slice: _ThickNDSlice
@@ -237,7 +237,9 @@ class _ScalarFieldSliceRequest:
 
     def _call_single_scale(self) -> _ScalarFieldSliceResponse:
         order = self._get_order()
-        data = self._project_thick_slice(self.data_level_data, self.data_slice)
+        data = self._project_thick_slice(
+            self.data_at_data_level, self.data_slice
+        )
         data = np.transpose(data, order)
         image = _ScalarFieldView.from_view(data)
         # `Layer.multiscale` is mutable so we need to pass back the identity
@@ -260,7 +262,7 @@ class _ScalarFieldSliceRequest:
         for d in self.slice_input.displayed:
             scale[d] = self.downsample_factors[self.data_level][d]
 
-        data = self.data_level_data
+        data = self.data_at_data_level
 
         translate = np.zeros(self.slice_input.ndim)
         disp_slice = [slice(None) for _ in data.shape]
@@ -295,7 +297,7 @@ class _ScalarFieldSliceRequest:
 
         thumbnail_data_slice = self._thick_slice_at_level(self.thumbnail_level)
         thumbnail_data = self._project_thick_slice(
-            self.thumbnail_source, thumbnail_data_slice
+            self.data_at_thumbnail_level, thumbnail_data_slice
         )
         thumbnail_data = np.transpose(thumbnail_data, order)
         thumbnail = _ScalarFieldView.from_view(thumbnail_data)
