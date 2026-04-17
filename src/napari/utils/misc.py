@@ -1,3 +1,7 @@
+# StrEnum is only available in Python 3.11+; a vendored version
+# from backports.strenum is used for older versions.
+# Source: https://github.com/ethanfurman/backports.strenum
+# License: https://docs.python.org/3/license.html
 """Miscellaneous utility functions."""
 
 from __future__ import annotations
@@ -29,6 +33,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator, Sequence
 
     import packaging.version
+    from typing_extensions import Self
 
 
 ROOT_DIR = os_path.dirname(os_path.dirname(__file__))
@@ -243,33 +248,64 @@ def formatdoc(obj):
     return obj
 
 
+if sys.version_info >= (3, 11):
+    from enum import StrEnum
+else:
+
+    class StrEnum(str, Enum):
+        """Enum where members are also (and must be) strings."""
+
+        def __new__(cls, *values: str) -> Self:
+            if len(values) > 3:
+                raise TypeError(f'too many arguments for str(): {values!r}')
+            if len(values) == 1 and not isinstance(values[0], str):
+                raise TypeError(f'{values[0]!r} is not a string')
+            if len(values) >= 2 and not isinstance(values[1], str):
+                raise TypeError(
+                    f'encoding must be a string, not {values[1]!r}'
+                )
+            if len(values) == 3 and not isinstance(values[2], str):
+                raise TypeError(f'errors must be a string, not {values[2]!r}')
+            value = str(*values)
+            member = str.__new__(cls, value)
+            member._value_ = value
+            return member
+
+        __str__ = str.__str__
+
+        @staticmethod
+        def _generate_next_value_(
+            name: str, start: int, count: int, last_values: list[str]
+        ) -> str:
+            """Return the lower-cased version of the member name."""
+            return name.lower()
+
+
 class StringEnumMeta(EnumMeta):
-    def __getitem__(self, item):
-        """set the item name case to uppercase for name lookup"""
-        if isinstance(item, str):
-            item = item.upper()
+    def __getitem__(self, item: str) -> StringEnum:  # type: ignore[override]
+        """Case-insensitive name lookup: MyEnum['tHiNg'] -> MyEnum.THING."""
+        return super().__getitem__(item.upper())
 
-        return super().__getitem__(item)
 
-    def __call__(
-        cls,
-        value,
-        names=None,
-        *,
-        module=None,
-        qualname=None,
-        type=None,  # noqa: A002
-        start=1,
-    ):
-        """set the item value case to lowercase for value lookup"""
-        # simple value lookup
-        if names is None:
-            if isinstance(value, str):
-                return super().__call__(value.lower())
-            if isinstance(value, cls):
-                return value
+class StringEnum(StrEnum, metaclass=StringEnumMeta):
+    @staticmethod
+    def _generate_next_value_(
+        name: str, start: int, count: int, last_values: list[str]
+    ) -> str:
+        """Assign the lower-cased member name as its value."""
+        return name.lower()
 
-            raise ValueError(
+    def __str__(self) -> str:
+        return self.value
+
+    @classmethod
+    def _missing_(cls, value: object) -> StringEnum | None:
+        if isinstance(value, StringEnum):
+            # ruff suggests to use TypeError for when
+            # a value is of the wrong type,
+            # but tests expect ValueError,
+            # so tests win here
+            raise ValueError(  # noqa: TRY004
                 trans._(
                     '{class_name} may only be called with a `str` or an instance of {class_name}. Got {dtype}',
                     deferred=True,
@@ -277,42 +313,38 @@ class StringEnumMeta(EnumMeta):
                     dtype=builtins.type(value),
                 )
             )
-
-        # otherwise create new Enum class
-        return cls._create_(
-            value,
-            names,
-            module=module,
-            qualname=qualname,
-            type=type,
-            start=start,
+        if isinstance(value, str):
+            for member in cls:
+                if member.value == value.lower():
+                    return member
+            return None
+        raise ValueError(
+            trans._(
+                '{class_name} may only be called with a `str` or an instance of {class_name}. Got {dtype}',
+                deferred=True,
+                class_name=cls,
+                dtype=builtins.type(value),
+            )
         )
-
-    def keys(self) -> list[str]:
-        return list(map(str, self))
-
-
-class StringEnum(Enum, metaclass=StringEnumMeta):
-    @staticmethod
-    def _generate_next_value_(name: str, start, count, last_values) -> str:
-        """autonaming function assigns each value its own name as a value"""
-        return name.lower()
-
-    def __str__(self) -> str:
-        """String representation: The string method returns the lowercase
-        string of the Enum name
-        """
-        return self.value
 
     def __eq__(self, other: object) -> bool:
         if type(self) is type(other):
             return self is other
+        if isinstance(other, StringEnum):
+            return False
         if isinstance(other, str):
             return str(self) == other
         return False
 
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
+
     def __hash__(self) -> int:
         return hash(str(self))
+
+    @classmethod
+    def keys(cls) -> list[str]:
+        return list(map(str, cls))
 
 
 camel_to_snake_pattern = re.compile(r'(.)([A-Z][a-z]+)')
