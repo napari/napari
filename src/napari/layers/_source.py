@@ -8,12 +8,13 @@ from weakref import ReferenceType
 
 from magicgui.widgets import FunctionGui
 from pydantic import BaseModel, ConfigDict, field_validator
-from typing_extensions import Self
 
 from napari.layers.base.base import Layer
 
 if TYPE_CHECKING:
     from collections.abc import Generator
+
+    from typing_extensions import Self
 
 
 class Source(BaseModel):
