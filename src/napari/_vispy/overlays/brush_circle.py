@@ -1,9 +1,17 @@
+from typing import TYPE_CHECKING
+
 from vispy.scene.visuals import Compound, Ellipse
 
 from napari._vispy.overlays.base import ViewerOverlayMixin, VispyCanvasOverlay
+from napari.utils.events import Event
+
+if TYPE_CHECKING:
+    from napari.components.overlays.brush_circle import BrushCircleOverlay
 
 
 class VispyBrushCircleOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
+    overlay: 'BrushCircleOverlay'
+
     def __init__(self, *, viewer, overlay, parent=None, **kwargs):
         self._white_circle = Ellipse(
             center=(0, 0),
@@ -44,7 +52,7 @@ class VispyBrushCircleOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
     def _on_position_change(self, event=None):
         self._set_position(self.overlay.position)
 
-    def _on_size_change(self, event=None):
+    def _on_size_change(self, event: Event | None = None) -> None:
         self._white_circle.radius = self.overlay.size / 2
         self._black_circle.radius = self._white_circle.radius - 1
 
@@ -60,7 +68,7 @@ class VispyBrushCircleOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         if self.overlay.visible:
             self.overlay.position = event.pos.tolist()
 
-    def _set_position(self, pos):
+    def _set_position(self, pos: tuple[int, int]) -> None:
         if not self.overlay.position_is_frozen:
             self.node.transform.translate = [pos[0], pos[1], 0, 0]
 
@@ -83,7 +91,7 @@ class VispyBrushCircleOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
             else:
                 self.node.visible = False
 
-    def reset(self):
+    def reset(self) -> None:
         super().reset()
         self._on_size_change()
         self._last_mouse_pos = None
