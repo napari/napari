@@ -9,3 +9,4 @@ def test_scale_bar_instantiation(make_napari_viewer):
     assert vispy_scale_bar.overlay.length is None
     model.length = 50
     assert vispy_scale_bar.overlay.length == 50
+    assert vispy_scale_bar.overlay.unit == 'px'
