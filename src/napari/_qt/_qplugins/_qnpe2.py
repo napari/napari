@@ -121,7 +121,7 @@ def _build_samples_submenu_actions(
         title = title.replace('&', '&&')
 
         action: Action = Action(
-            id=sample.command,
+            id=f'{mf.name}.{sample.key}',
             title=title,
             menus=[{'id': submenu_id, 'group': MenuGroup.NAVIGATION}],
             callback=_add_sample_partial,
