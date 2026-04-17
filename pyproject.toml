@@ -883,7 +883,6 @@ module = [
     "napari._vispy.layers.shapes",
     "napari._vispy.layers.surface",
     "napari.components._viewer_key_bindings",
-    "napari.layers.labels.labels",
     "napari.layers.surface.surface",
     "napari.layers.tracks.tracks",
     "napari.layers.utils.layer_utils",
@@ -892,6 +891,14 @@ module = [
     "napari.utils.misc",
 ]
 check_untyped_defs = false
+disallow_incomplete_defs = false
+disallow_untyped_calls = false
+disallow_untyped_defs = false
+
+[[tool.mypy.overrides]]
+module = [
+    "napari.layers.labels.labels",
+]
 disallow_incomplete_defs = false
 disallow_untyped_calls = false
 disallow_untyped_defs = false
