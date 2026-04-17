@@ -456,7 +456,7 @@ def _command_to_name(cmd: CommandRule) -> str:
     return desc
 
 
-def _action_to_aliases(action_name: str) -> list[str, ...]:
+def _action_to_aliases(action_name: str) -> list[str]:
     return [
         re.sub(word, alias, action_name, flags=re.IGNORECASE)
         for word, alias in _COMMON_ALIASES.items()
