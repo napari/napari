@@ -4,7 +4,7 @@ Add labels with features
 
 Display a labels layer with various features
 
-.. tags:: layers, analysis
+.. tags:: layers, analysis, features-table
 """
 
 
@@ -30,7 +30,8 @@ cleared = remove_small_objects(clear_border(bw), 20)
 label_image = label(cleared)
 
 # initialise viewer with coins image
-viewer = napari.view_image(image, name='coins', rgb=False)
+viewer = napari.Viewer()
+layer = viewer.add_image(image, name='coins', rgb=False)
 
 # get the size of each coin (first element is background area)
 label_areas = np.bincount(label_image.ravel())[1:]

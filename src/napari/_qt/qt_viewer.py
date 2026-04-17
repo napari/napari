@@ -1,25 +1,26 @@
 from __future__ import annotations
 
+import contextlib
 import logging
 import sys
 import traceback
 import warnings
 import weakref
-from collections.abc import Sequence
 from pathlib import Path
-from types import FrameType
 from typing import (
     TYPE_CHECKING,
     Any,
+    Literal,
 )
 from weakref import WeakSet, ref
 
 import numpy as np
 from qtpy.QtCore import QCoreApplication, QObject, Qt, QUrl
-from qtpy.QtGui import QGuiApplication
+from qtpy.QtGui import QGuiApplication, QImage
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 from superqt import ensure_main_thread
 
+from napari._app_model import get_app_model
 from napari._qt.containers import QtLayerList
 from napari._qt.dialogs.qt_reader_dialog import handle_gui_reading
 from napari._qt.dialogs.screenshot_dialog import ScreenshotDialog
@@ -31,7 +32,7 @@ from napari._qt.widgets.qt_viewer_buttons import (
     QtViewerButtons,
 )
 from napari._qt.widgets.qt_viewer_dock_widget import QtViewerDockWidget
-from napari._qt.widgets.qt_welcome import QtWidgetOverlay
+from napari._vispy.utils.qt_font import QtFontManager
 from napari.components.camera import Camera
 from napari.components.layerlist import LayerList
 from napari.errors import MultipleReaderError, ReaderPluginError
@@ -41,6 +42,7 @@ from napari.settings import get_settings
 from napari.settings._application import DaskSettings
 from napari.utils import config, perf, resize_dask_cache
 from napari.utils.action_manager import action_manager
+from napari.utils.geometry import get_center_bbox
 from napari.utils.history import (
     get_open_history,
     get_save_history,
@@ -53,11 +55,13 @@ from napari.utils.misc import in_ipython, in_jupyter
 from napari.utils.naming import CallerFrame
 from napari.utils.notifications import show_info
 from napari.utils.translations import trans
-from napari_builtins.io import imsave_extensions
 
 from napari._vispy import VispyCanvas, create_vispy_layer  # isort:skip
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+    from types import FrameType
+
     from napari_console import QtConsole
     from npe2.manifest.contributions import WriterContribution
 
@@ -87,52 +91,6 @@ def _npe2_decode_selected_filter(
     return None
 
 
-def _extension_string_for_layers(
-    layers: Sequence[Layer],
-) -> tuple[str, list[WriterContribution]]:
-    """Return an extension string and the list of corresponding writers.
-
-    The extension string is a ";;" delimeted string of entries. Each entry
-    has a brief description of the file type and a list of extensions.
-
-    The writers, when provided, are the npe2.manifest.io.WriterContribution
-    objects. There is one writer per entry in the extension string. If npe2
-    is not importable, the list of writers will be empty.
-    """
-    # try to use npe2
-    ext_str, writers = _npe2.file_extensions_string_for_layers(layers)
-    if ext_str:
-        return ext_str, writers
-
-    # fallback to old behavior
-
-    if len(layers) == 1:
-        selected_layer = layers[0]
-        # single selected layer.
-        if selected_layer._type_string == 'image':
-            ext = imsave_extensions()
-
-            ext_list = [f'*{val}' for val in ext]
-            ext_str = ';;'.join(ext_list)
-
-            ext_str = trans._(
-                'All Files (*);; Image file types:;;{ext_str}',
-                ext_str=ext_str,
-            )
-
-        elif selected_layer._type_string == 'points':
-            ext_str = trans._('All Files (*);; *.csv;;')
-
-        else:
-            # layer other than image or points
-            ext_str = trans._('All Files (*);;')
-
-    else:
-        # multiple layers.
-        ext_str = trans._('All Files (*);;')
-    return ext_str, []
-
-
 class QtViewer(QSplitter):
     """Qt view for the napari Viewer model.
 
@@ -140,12 +98,12 @@ class QtViewer(QSplitter):
     ----------
     viewer : napari.components.ViewerModel
         Napari viewer containing the rendered scene, layers, and controls.
-    show_welcome_screen : bool, optional
-        Flag to show a welcome message when no layers are present in the
-        canvas. Default is `False`.
     canvas_class : napari._vispy.canvas.VispyCanvas
         The VispyCanvas class providing the Vispy SceneCanvas. Users can also
         have a custom canvas here.
+    show_welcome_screen : bool, optional
+        Flag to show a welcome message when no layers are present in the
+        canvas. Default is `False`.
 
     Attributes
     ----------
@@ -164,8 +122,6 @@ class QtViewer(QSplitter):
         A QtPoll object required for the monitor.
     _remote_manager : napari.components.experimental.remote.RemoteManager
         A remote manager processing commands from remote clients and sending out messages when polled.
-    _welcome_widget : napari._qt.widgets.qt_welcome.QtWidgetOverlay
-        QtWidgetOverlay providing the stacked widgets for the welcome page.
     """
 
     _instances = WeakSet()
@@ -175,12 +131,11 @@ class QtViewer(QSplitter):
         viewer: ViewerModel,
         show_welcome_screen: bool = False,
         canvas_class: type[VispyCanvas] = VispyCanvas,
+        tips: Sequence | None = None,
     ) -> None:
         super().__init__()
         self._instances.add(self)
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
-
-        self._show_welcome_screen = show_welcome_screen
 
         QCoreApplication.setAttribute(
             Qt.AA_UseStyleSheetPropagationInWidgetStyles, True
@@ -201,27 +156,24 @@ class QtViewer(QSplitter):
         self._dockLayerControls = None
         self._dockConsole = None
         self._dockPerformance = None
+        self._show_welcome_screen = show_welcome_screen
+        self._font_manager = QtFontManager()
+        self._overlay_font = QGuiApplication.font().family()
 
         # This dictionary holds the corresponding vispy visual for each layer
         self.canvas = canvas_class(
             viewer=viewer,
             parent=self,
+            font_manager=self._font_manager,
+            font_family=self._overlay_font,
             key_map_handler=self._key_map_handler,
             size=self.viewer._canvas_size,
             autoswap=get_settings().experimental.autoswap_buffers,  # see #5734
         )
 
-        # Stacked widget to provide a welcome page
-        self._welcome_widget = QtWidgetOverlay(self, self.canvas.native)
-        self._welcome_widget.set_welcome_visible(show_welcome_screen)
-        self._welcome_widget.sig_dropped.connect(self.dropEvent)
-        self._welcome_widget.leave.connect(self._leave_canvas)
-        self._welcome_widget.enter.connect(self._enter_canvas)
-
         main_widget = QWidget()
         main_layout = QVBoxLayout()
         main_layout.setContentsMargins(0, 2, 0, 2)
-        main_layout.addWidget(self._welcome_widget)
         main_layout.addWidget(self.dims)
         main_layout.setSpacing(0)
         main_widget.setLayout(main_layout)
@@ -235,8 +187,6 @@ class QtViewer(QSplitter):
         self.viewer.layers.events.inserted.connect(self._update_camera_depth)
         self.viewer.layers.events.removed.connect(self._update_camera_depth)
         self.viewer.dims.events.ndisplay.connect(self._update_camera_depth)
-        self.viewer.layers.events.inserted.connect(self._update_welcome_screen)
-        self.viewer.layers.events.removed.connect(self._update_welcome_screen)
         self.viewer.layers.selection.events.active.connect(
             self._on_active_change
         )
@@ -254,7 +204,9 @@ class QtViewer(QSplitter):
         )
 
         # bind shortcuts stored in settings last.
-        self._bind_shortcuts()
+        with get_app_model().register_with_namespace('QtViewer', self):
+            # we overwrite global injection namespace to ensure that correct QtViewer will be provided.
+            self._bind_shortcuts()
 
         settings = get_settings()
         self._update_dask_cache_settings(settings.application.dask)
@@ -265,6 +217,28 @@ class QtViewer(QSplitter):
 
         for layer in self.viewer.layers:
             self._add_layer(layer)
+
+        # set up welcome screen
+        viewer.welcome_screen.visible = False
+        if tips is not None:
+            viewer.welcome_screen.tips = tips
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        self.viewer.welcome_screen.visible = self._show_welcome_screen
+
+    def hideEvent(self, event):
+        self.viewer.welcome_screen.visible = False
+
+    @property
+    def show_welcome_screen(self) -> bool:
+        """bool: Whether to show the welcome screen when there are no layers."""
+        return self._show_welcome_screen
+
+    @show_welcome_screen.setter
+    def show_welcome_screen(self, value: bool):
+        self._show_welcome_screen = value
+        self.viewer.welcome_screen.visible = value and self.isVisible()
 
     @staticmethod
     def _update_dask_cache_settings(
@@ -525,6 +499,9 @@ class QtViewer(QSplitter):
             with warnings.catch_warnings():
                 warnings.filterwarnings('ignore')
                 console = QtConsole(self.viewer, style_sheet=self.styleSheet())
+                # Override actions shortcuts that collide with default napari shortcuts
+                # See napari/napari#8183
+                console.print_action.setShortcut('')
                 console.push(
                     {'napari': napari, 'action_manager': action_manager}
                 )
@@ -590,10 +567,12 @@ class QtViewer(QSplitter):
             if layer := weak_layer():
                 # Update the layer slice state to temporarily support behavior
                 # that depends on it.
-                layer._update_slice_response(response)
+                layer._slicing_state._update_slice_response(response)
                 # Update the layer's loaded state before everything else,
                 # because they may rely on its updated value.
-                layer._update_loaded_slice_id(response.request_id)
+                layer._slicing_state._update_loaded_slice_id(
+                    response.request_id
+                )
                 # The rest of `Layer.refresh` after `set_view_slice`, where
                 # `set_data` notifies the corresponding vispy layer of the new
                 # slice.
@@ -657,7 +636,8 @@ class QtViewer(QSplitter):
         # clipping in perspective projection, while still preserving enough
         # bit depth in the depth buffer to avoid artifacts. See discussion at:
         # https://github.com/napari/napari/pull/7529#issuecomment-2594203871
-        self.canvas.camera._3D_camera.depth_value = 128 * diameter
+        for camera in [self.canvas.camera] + self.canvas.grid_cameras:
+            camera._3D_camera.depth_value = 128 * diameter
 
     def _add_layer(self, layer):
         """When a layer is added, set its parent and order.
@@ -758,7 +738,7 @@ class QtViewer(QSplitter):
             raise OSError(trans._('Nothing to save'))
 
         # prepare list of extensions for drop down menu.
-        ext_str, writers = _extension_string_for_layers(
+        ext_str, writers = _npe2.file_extensions_string_for_layers(
             list(self.viewer.layers.selection)
             if selected
             else self.viewer.layers
@@ -821,32 +801,14 @@ class QtViewer(QSplitter):
 
             update_save_history(saved[0])
 
-    def _update_welcome_screen(self):
-        """Update welcome screen display based on layer count."""
-        if self._show_welcome_screen:
-            self._welcome_widget.set_welcome_visible(not self.viewer.layers)
-
-    def _screenshot(self, flash=True):
-        """Capture a screenshot of the Vispy canvas.
-
-        Parameters
-        ----------
-        flash : bool
-            Flag to indicate whether flash animation should be shown after
-            the screenshot was captured.
-        """
-        img = self.canvas.screenshot()
-        if flash:
-            from napari._qt.utils import add_flash_animation
-
-            # Here we are actually applying the effect to the `_welcome_widget`
-            # and not # the `native` widget because it does not work on the
-            # `native` widget. It's probably because the widget is in a stack
-            # with the `QtWelcomeWidget`.
-            add_flash_animation(self._welcome_widget)
-        return img
-
-    def screenshot(self, path=None, flash=True) -> np.ndarray:
+    def screenshot(
+        self,
+        path: str | None = None,
+        flash: bool = True,
+        size: tuple[int, int] | None = None,
+        scale: float = 1.0,
+        fit_to_data_extent: bool = False,
+    ) -> np.ndarray[tuple[int, int, Literal[4]], np.dtype[np.uint8]]:
         """Take currently displayed screen and convert to an image array.
 
         Parameters
@@ -856,6 +818,58 @@ class QtViewer(QSplitter):
         flash : bool
             Flag to indicate whether flash animation should be shown after
             the screenshot was captured.
+        size : tuple[int, int]
+            Size (resolution height x width) of the screenshot.
+        scale : float
+            Scale factor used to increase resolution of canvas for the screenshot.
+            By default, the currently displayed resolution.
+        fit_to_data_extent: bool
+            Tightly fit the canvas around the data to prevent margins from
+            showing in the screenshot. If False, a screenshot of the currently
+            visible canvas will be generated.
+
+        Returns
+        -------
+        image : array
+            Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
+            upper-left corner of the rendered region.
+        """
+        img = QImg2array(
+            self._screenshot(
+                flash=flash,
+                size=size,
+                scale=scale,
+                fit_to_data_extent=fit_to_data_extent,
+            )
+        )
+        if path is not None:
+            imsave(path, img)
+
+        return img
+
+    def _screenshot(
+        self,
+        flash: bool = True,
+        size: tuple[int, int] | None = None,
+        scale: float = 1.0,
+        fit_to_data_extent: bool = False,
+    ) -> QImage:
+        """Take currently displayed screen and convert to an image array.
+
+        Parameters
+        ----------
+        flash : bool
+            Flag to indicate whether flash animation should be shown after
+            the screenshot was captured.
+        size : tuple[int, int]
+            Size (resolution height x width) of the screenshot.
+        scale : float
+            Scale factor used to increase resolution of canvas for the screenshot.
+            By default, the currently displayed resolution.
+        fit_to_data_extent: bool
+            Tightly fit the canvas around the data to prevent margins from
+            showing in the screenshot. If False, a screenshot of the currently
+            visible canvas will be generated.
 
         Returns
         -------
@@ -864,10 +878,79 @@ class QtViewer(QSplitter):
             upper-left corner of the rendered region.
         """
 
-        img = QImg2array(self._screenshot(flash))
-        if path is not None:
-            imsave(path, img)  # scikit-image imsave method
-        return img
+        if size is not None and len(size) != 2:
+            raise ValueError(
+                trans._(
+                    'screenshot size must be 2 values, got {len_size}',
+                    deferred=True,
+                    len_size=len(size),
+                )
+            )
+
+        try:
+            self.viewer._layer_slicer.wait_until_idle(timeout=5)
+        except TimeoutError as e:  # pragma: no cover
+            raise TimeoutError(
+                'Slicing was too slow. Wait for all layers to load before taking a screenshot, '
+                'or disable async slicing in Preferences->Experimental.'
+            ) from e
+
+        if fit_to_data_extent:
+            # Use the same scene parameter calculations as in viewer_model.fit_to_view
+            ndisplay = self.viewer.dims.ndisplay
+            extent, scene_size, _ = self.viewer._get_scene_parameters()
+            extent_scale = min(self.viewer.layers.extent.step[-ndisplay:])
+
+            if ndisplay == 3:
+                scene_size = self.viewer._calculate_bounding_box(
+                    extent=extent,
+                    view_direction=self.viewer.camera.view_direction,
+                    up_direction=self.viewer.camera.up_direction,
+                )
+
+            # adjust size by the scale, to return the size in real pixels
+            grid_shape = self.viewer.grid.actual_shape(len(self.viewer.layers))
+            size = np.ceil(scene_size / extent_scale * grid_shape).astype(int)
+
+        with self.resize_canvas(size, scale):
+            if fit_to_data_extent:
+                self.viewer.fit_to_view(margin=0)
+            img = self.canvas.screenshot()
+            if flash:
+                from napari._qt.utils import add_flash_animation
+
+                add_flash_animation(self)
+
+            return img
+
+    @contextlib.contextmanager
+    def resize_canvas(self, size: tuple[int, int] | None, scale: float):
+        """Temporarily, safely, resize the canvas
+
+        Parameters
+        ----------
+        size: (int, int)
+            New canvas size in pixels. Often calculated based on data size.
+        scale: float
+            Scale factor to modify final canvas size.
+        """
+        canvas = self.canvas
+        prev_size = canvas.size
+        camera = self.viewer.camera
+        old_center = camera.center
+        old_zoom = camera.zoom
+        if size is not None:
+            size = np.asarray(size) / self.devicePixelRatio()
+        else:
+            size = np.asarray(prev_size)
+        size = (size * scale).astype(np.int64)
+        canvas.size = tuple(size)
+        try:
+            yield
+        finally:
+            canvas.size = prev_size
+            camera.center = old_center
+            camera.zoom = old_zoom
 
     def clipboard(self, flash=True):
         """Take a screenshot of the currently displayed screen and copy the
@@ -1031,11 +1114,6 @@ class QtViewer(QSplitter):
             self.viewerButtons.consoleButton
         )
 
-    def set_welcome_visible(self, visible):
-        """Show welcome screen widget."""
-        self._show_welcome_screen = visible
-        self._welcome_widget.set_welcome_visible(visible)
-
     def keyPressEvent(self, event):
         """Called whenever a key is pressed.
 
@@ -1190,6 +1268,156 @@ class QtViewer(QSplitter):
             self.console.close()
         self.dockConsole.deleteLater()
         event.accept()
+
+    def export_rois(
+        self,
+        rois: list[np.ndarray],
+        paths: str | Path | list[str | Path] | None = None,
+        scale: float = 1.0,
+    ):
+        """Export the given rectangular rois to specified file paths.
+
+        For each shape, moves the camera to the center of the shape
+        and adjust the canvas size to fit the shape.
+        Note: The shape height and width can be of type float.
+        However, the canvas size only accepts a tuple of integers.
+        This can result in slight misalignment.
+
+        Parameters
+        ----------
+        rois: list[np.ndarray]
+            A list of arrays  with each being of shape (4, 2) representing
+            a rectangular roi.
+        paths: str, Path, list[str, Path], optional
+            Where to save the rois. If a string or a Path, a directory will
+            be created if it does not exist yet and screenshots will be
+            saved with filename `roi_{n}.png` where n is the nth roi. If
+            paths is a list of either string or paths, these need to be the
+            full paths of where to store each individual roi. In this case
+            the length of the list and the number of rois must match.
+            If None, the screenshots will only be returned and not saved
+            to disk.
+        scale: float, optional
+            Scale factor used to increase resolution of canvas for the screenshot.
+            By default, uses the displayed scale.
+
+        Returns
+        -------
+        screenshot_list: list
+            The list with roi screenshots.
+
+        """
+        if any(roi.shape[-2:] != (4, 2) for roi in rois):
+            raise ValueError(
+                'ROI found with invalid shape, all rois must have shape (4, 2), i.e. have 4 corners defined in 2 '
+                'dimensions. 3D is not supported.'
+            )
+        if (
+            paths is not None
+            and isinstance(paths, list)
+            and len(paths) != len(rois)
+        ):
+            raise ValueError(
+                trans._(
+                    'The number of file paths does not match the number of ROI shapes',
+                    deferred=True,
+                )
+            )
+
+        if isinstance(paths, str | Path):
+            storage_dir = Path(paths).expanduser()
+            storage_dir.mkdir(parents=True, exist_ok=True)
+            paths = [storage_dir / f'roi_{n}.png' for n in range(len(rois))]
+
+        if self.viewer.dims.ndisplay > 2:
+            raise NotImplementedError(
+                "'export_rois' is not implemented for 3D view."
+            )
+
+        screenshot_list = []
+        camera = self.viewer.camera
+        start_camera_center = camera.center
+        start_camera_zoom = camera.zoom
+        canvas = self.canvas
+        prev_size = canvas.size
+
+        visible_dims = list(self.viewer.dims.displayed)
+        step = min(self.viewer.layers.extent.step[visible_dims])
+
+        for index, roi in enumerate(rois):
+            center_coord, height, width = get_center_bbox(roi)
+            camera.center = center_coord
+            canvas.size = (int(height / step), int(width / step))
+
+            camera.zoom = 1 / step
+            path = paths[index] if paths is not None else None
+            screenshot_list.append(
+                self.screenshot(path=path, scale=scale, flash=False)
+            )
+
+        canvas.size = prev_size
+        camera.center = start_camera_center
+        camera.zoom = start_camera_zoom
+
+        return screenshot_list
+
+    def export_figure(
+        self,
+        path: str | None = None,
+        scale: float = 1,
+        flash=True,
+    ) -> np.ndarray:
+        """Export an image of the full extent of the displayed layer data.
+
+        This function finds a tight boundary around the data, resets the view
+        around that boundary (and, when scale=1, such that 1 captured pixel is
+        equivalent to one data pixel), takes a screenshot, then restores the
+        previous zoom and canvas sizes.
+
+        Parameters
+        ----------
+        path : str, optional
+            Filename for saving screenshot image.
+        scale : float
+            Scale factor used to increase resolution of canvas for the
+            screenshot. By default, a scale of 1.
+        flash : bool
+            Flag to indicate whether flash animation should be shown after
+            the screenshot was captured.
+            By default, True.
+
+        Returns
+        -------
+        image : array
+            Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
+            upper-left corner of the rendered region.
+        """
+        if not isinstance(scale, float | int):
+            raise TypeError(
+                trans._(
+                    'Scale must be a float or an int.',
+                    deferred=True,
+                )
+            )
+
+        img = QImg2array(
+            self._screenshot(
+                scale=scale,
+                flash=flash,
+                fit_to_data_extent=True,
+            )
+        )
+        if path is not None:
+            imsave(path, img)
+        return img
+
+    def font_manager(self) -> QtFontManager:
+        """Return the font manager for this viewer."""
+        return self._font_manager
+
+    def overlay_font(self) -> str:
+        """Return the font used for overlays."""
+        return self._overlay_font
 
 
 if TYPE_CHECKING:

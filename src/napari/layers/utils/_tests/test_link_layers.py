@@ -187,11 +187,11 @@ def test_link_layers_with_images_then_loaded_not_linked():
     """See https://github.com/napari/napari/issues/6372"""
     l1 = layers.Image(np.zeros((5, 5)))
     l2 = layers.Image(np.ones((5, 5)))
-    assert l1.loaded
-    assert l2.loaded
+    assert l1._slicing_state.loaded
+    assert l2._slicing_state.loaded
 
     link_layers([l1, l2])
-    l1._set_loaded(False)
+    l1._slicing_state._set_loaded(False)
 
-    assert not l1.loaded
-    assert l2.loaded
+    assert not l1._slicing_state.loaded
+    assert l2._slicing_state.loaded

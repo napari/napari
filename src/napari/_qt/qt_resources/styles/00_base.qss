@@ -408,6 +408,16 @@ QSlider::sub-page:horizontal {
     border-radius: 2px;
 }
 
+/* TODO: doesn't work :( */
+QSlider#invertedSlider::sub-page:horizontal {
+    background: {{ secondary }};
+    border-radius: 2px;
+}
+
+QSlider#invertedSlider::add-page:horizontal {
+    background: {{ primary }};
+    border-radius: 2px;
+}
 
 QWidget[emphasized="true"] QSlider::groove:horizontal {
    background: {{ primary }};

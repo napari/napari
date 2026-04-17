@@ -2,17 +2,20 @@
 # from napari.utils.events import Event
 # from napari.utils.colormaps import AVAILABLE_COLORMAPS
 
-from typing import Any
+from typing import TYPE_CHECKING, Any, Optional
 from warnings import warn
 
 import numpy as np
-import pandas as pd
 
-from napari.layers.base import Layer
+from napari.layers.base import Layer, _LayerSlicingState
 from napari.layers.tracks._track_utils import TrackManager
+from napari.types import LayerDataType
 from napari.utils.colormaps import AVAILABLE_COLORMAPS, Colormap
 from napari.utils.events import Event
 from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    import pandas as pd
 
 
 class Tracks(Layer):
@@ -32,7 +35,7 @@ class Tracks(Layer):
         provided scale, rotate, and shear values.
     axis_labels : tuple of str, optional
         Dimension names of the layer data.
-        If not provided, axis_labels will be set to (..., 'axis -2', 'axis -1').
+        If not provided, axis_labels will be set to (..., '-2', '-1').
     blending : str
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
@@ -66,6 +69,9 @@ class Tracks(Layer):
         See examples/tracks_3d_with_graph.py
     head_length : float
         Length of the positive (forward in time) tails in units of time.
+    hide_completed_tracks : bool
+        If True, tracks that have completed before the current time point are not
+        displayed, regardless of the value of `tail_length`.
     metadata : dict
         Layer metadata.
     name : str
@@ -105,6 +111,7 @@ class Tracks(Layer):
     # The max number of tracks that will ever be used to render the thumbnail
     # If more tracks are present then they are randomly subsampled
     _max_tracks_thumbnail = 1024
+    _slicing_state: '_TracksSlicingState'
 
     def __init__(
         self,
@@ -121,6 +128,7 @@ class Tracks(Layer):
         features=None,
         graph=None,
         head_length: int = 0,
+        hide_completed_tracks: bool = False,
         metadata=None,
         name=None,
         opacity=1.0,
@@ -174,6 +182,7 @@ class Tracks(Layer):
             properties=Event,
             rebuild_tracks=Event,
             rebuild_graph=Event,
+            hide_completed_tracks=Event,
         )
 
         # track manager deals with data slicing, graph building and properties
@@ -181,7 +190,7 @@ class Tracks(Layer):
 
         self._track_colors: np.ndarray | None = None
         self._colormaps_dict = colormaps_dict or {}  # additional colormaps
-        self._color_by = color_by  # default color by ID
+        self._color_by = 'track_id'  # default color by ID
         self._colormap = colormap
 
         # use this to update shaders when the displayed dims change
@@ -195,12 +204,14 @@ class Tracks(Layer):
         self.tail_width = tail_width
         self.tail_length = tail_length
         self.head_length = head_length
+        self.hide_completed_tracks = hide_completed_tracks
         self.display_id = False
         self.display_tail = True
         self.display_graph = True
 
         # set the data, features, and graph
         self.data = data
+        self._color_by = color_by
         if properties is not None:
             self.properties = properties
         else:
@@ -214,6 +225,8 @@ class Tracks(Layer):
 
         # reset the display before returning
         self._current_displayed_dims = None
+        self._slicing_state.slice_done.connect(self.events.rebuild_tracks)
+        self._slicing_state.slice_done.connect(self.events.rebuild_graph)
 
     @property
     def _extent_data(self) -> np.ndarray:
@@ -228,7 +241,7 @@ class Tracks(Layer):
         else:
             maxs = np.max(self.data, axis=0)
             mins = np.min(self.data, axis=0)
-            extrema = np.vstack([mins, maxs])  # type: ignore[assignment]
+            extrema = np.vstack([mins, maxs])
         return extrema[:, 1:]
 
     def _get_ndim(self) -> int:
@@ -256,23 +269,13 @@ class Tracks(Layer):
                 'tail_length': self.tail_length,
                 'head_length': self.head_length,
                 'features': self.features,
+                'hide_completed_tracks': self.hide_completed_tracks,
             }
         )
         return state
 
     def _set_view_slice(self) -> None:
-        """Sets the view given the indices to slice with."""
-
-        # if the displayed dims have changed, update the shader data
-        dims_displayed = self._slice_input.displayed
-        if dims_displayed != self._current_displayed_dims:
-            # store the new dims
-            self._current_displayed_dims = dims_displayed
-            # fire the events to update the shaders
-            self.events.rebuild_tracks()
-            self.events.rebuild_graph()
-
-        return
+        raise NotImplementedError
 
     def _get_value(self, position) -> int | None:
         """Value of the data at a position in data coordinates.
@@ -344,26 +347,12 @@ class Tracks(Layer):
     @property
     def _view_data(self):
         """return a view of the data"""
-        return self._pad_display_data(self._manager.track_vertices)
+        return self._slicing_state._view_data
 
     @property
     def _view_graph(self):
         """return a view of the graph"""
-        return self._pad_display_data(self._manager.graph_vertices)
-
-    def _pad_display_data(self, vertices):
-        """pad display data when moving between 2d and 3d"""
-        if vertices is None:
-            return None
-
-        data = vertices[:, self._slice_input.displayed]
-        # if we're only displaying two dimensions, then pad the display dim
-        # with zeros
-        if self._slice_input.ndisplay == 2:
-            data = np.pad(data, ((0, 0), (0, 1)), 'constant')
-            return data[:, (1, 0, 2)]  # y, x, z -> x, y, z
-
-        return data[:, (2, 1, 0)]  # z, y, x -> x, y, z
+        return self._slicing_state._view_graph
 
     @property
     def current_time(self) -> int | None:
@@ -412,7 +401,7 @@ class Tracks(Layer):
         self._reset_editable()
 
     @property
-    def features(self) -> pd.DataFrame:
+    def features(self) -> 'pd.DataFrame':
         """Dataframe-like features table.
 
         It is an implementation detail that this is a `pandas.DataFrame`. In the future,
@@ -432,7 +421,7 @@ class Tracks(Layer):
     @features.setter
     def features(
         self,
-        features: dict[str, np.ndarray] | pd.DataFrame,
+        features: 'dict[str, np.ndarray] | pd.DataFrame',
     ) -> None:
         self._manager.features = features
         self._check_color_by_in_features()
@@ -463,7 +452,7 @@ class Tracks(Layer):
         """Set the track graph."""
         # Ignored type, because mypy can't handle different signatures
         # on getters and setters; see https://github.com/python/mypy/issues/3004
-        self._manager.graph = graph  # type: ignore[assignment]
+        self._manager.graph = graph
         self._manager.build_graph()
         self.events.rebuild_graph()
 
@@ -476,6 +465,18 @@ class Tracks(Layer):
     def tail_width(self, tail_width: float) -> None:
         self._tail_width: float = np.clip(tail_width, 0.5, self._max_width)
         self.events.tail_width()
+
+    @property
+    def hide_completed_tracks(self) -> bool:
+        """bool: If True, tracks that have completed before the current time
+        point are not displayed, regardless of the value of `tail_length`.
+        """
+        return self._hide_completed_tracks
+
+    @hide_completed_tracks.setter
+    def hide_completed_tracks(self, hide_completed_tracks: bool) -> None:
+        self._hide_completed_tracks: bool = hide_completed_tracks
+        self.events.hide_completed_tracks()
 
     @property
     def tail_length(self) -> int:
@@ -609,6 +610,9 @@ class Tracks(Layer):
     @property
     def track_connex(self) -> np.ndarray | None:
         """vertex connections for drawing track lines"""
+        # Update manager state before getting track_connex
+        self._manager.hide_completed_tracks = self._hide_completed_tracks
+        self._manager.current_time = self.current_time
         return self._manager.track_connex
 
     @property
@@ -657,7 +661,7 @@ class Tracks(Layer):
         if not labels:
             return None, (None, None)
 
-        padded_positions = self._pad_display_data(positions)
+        padded_positions = self._slicing_state._pad_display_data(positions)
         return labels, padded_positions
 
     def _check_color_by_in_features(self) -> None:
@@ -674,3 +678,51 @@ class Tracks(Layer):
             )
             self._color_by = 'track_id'
             self.events.color_by()
+
+    def _get_layer_slicing_state(
+        self, data: LayerDataType, cache: bool
+    ) -> '_TracksSlicingState':
+        return _TracksSlicingState(layer=self, data=data, cache=cache)
+
+
+class _TracksSlicingState(_LayerSlicingState):
+    layer: Tracks
+
+    def __init__(self, layer: Tracks, data: LayerDataType, cache: bool):
+        super().__init__(layer=layer, data=data, cache=cache)
+        self._current_displayed_dims: Optional[list[int]] = None
+
+    def _set_view_slice(self) -> None:
+        """Sets the view given the indices to slice with."""
+
+        # if the displayed dims have changed, update the shader data
+        dims_displayed = self._slice_input.displayed
+        if dims_displayed != self._current_displayed_dims:
+            # store the new dims
+            self._current_displayed_dims = dims_displayed
+            # fire the events to update the shaders
+            self.slice_done()
+
+    def _pad_display_data(self, vertices):
+        """pad display data when moving between 2d and 3d"""
+        if vertices is None:
+            return None
+
+        data = vertices[:, self._slice_input.displayed]
+        # if we're only displaying two dimensions, then pad the display dim
+        # with zeros
+        if self._slice_input.ndisplay == 2:
+            data = np.pad(data, ((0, 0), (0, 1)), 'constant')
+            return data[:, (1, 0, 2)]  # y, x, z -> x, y, z
+
+        return data[:, (2, 1, 0)]  # z, y, x -> x, y, z
+
+    @property
+    def _view_data(self):
+        """return a view of the data"""
+        return self._pad_display_data(self.layer._manager.track_vertices)
+
+    @property
+    def _view_graph(self):
+        """return a view of the graph"""
+        return self._pad_display_data(self.layer._manager.graph_vertices)

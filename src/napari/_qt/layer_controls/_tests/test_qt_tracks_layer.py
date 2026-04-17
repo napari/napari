@@ -23,32 +23,41 @@ def properties() -> dict[str, list]:
 def test_tracks_controls_color_by(null_data, properties, qtbot):
     """Check updating of the color_by combobox."""
     inital_color_by = 'time'
-    with pytest.warns(UserWarning) as wrn:
-        layer = Tracks(
-            null_data, properties=properties, color_by=inital_color_by
-        )
-    assert "Previous color_by key 'time' not present" in str(wrn[0].message)
+    layer = Tracks(null_data, properties=properties, color_by=inital_color_by)
     controls = QtTracksControls(layer)
     qtbot.addWidget(controls)
 
     # verify the color_by argument is initialized correctly
     assert layer.color_by == inital_color_by
-    assert controls.color_by_combobox.currentText() == inital_color_by
+    assert (
+        controls._color_properties_combobox_control.color_by_combobox.currentText()
+        == inital_color_by
+    )
 
     # update color_by from the layer model
     layer_update_color_by = 'speed'
     layer.color_by = layer_update_color_by
     assert layer.color_by == layer_update_color_by
-    assert controls.color_by_combobox.currentText() == layer_update_color_by
+    assert (
+        controls._color_properties_combobox_control.color_by_combobox.currentText()
+        == layer_update_color_by
+    )
 
     # update color_by from the qt controls
     qt_update_color_by = 'track_id'
-    speed_index = controls.color_by_combobox.findText(
-        qt_update_color_by, Qt.MatchFixedString
+    speed_index = (
+        controls._color_properties_combobox_control.color_by_combobox.findText(
+            qt_update_color_by, Qt.MatchFixedString
+        )
     )
-    controls.color_by_combobox.setCurrentIndex(speed_index)
+    controls._color_properties_combobox_control.color_by_combobox.setCurrentIndex(
+        speed_index
+    )
     assert layer.color_by == qt_update_color_by
-    assert controls.color_by_combobox.currentText() == qt_update_color_by
+    assert (
+        controls._color_properties_combobox_control.color_by_combobox.currentText()
+        == qt_update_color_by
+    )
 
 
 @pytest.mark.parametrize('color_by', ['track_id', 'speed'])
@@ -60,7 +69,10 @@ def test_color_by_same_after_properties_change(
     layer.color_by = color_by
     controls = QtTracksControls(layer)
     qtbot.addWidget(controls)
-    assert controls.color_by_combobox.currentText() == color_by
+    assert (
+        controls._color_properties_combobox_control.color_by_combobox.currentText()
+        == color_by
+    )
 
     # Change the properties value by removing the time column.
     layer.properties = {
@@ -69,7 +81,10 @@ def test_color_by_same_after_properties_change(
     }
 
     assert layer.color_by == color_by
-    assert controls.color_by_combobox.currentText() == color_by
+    assert (
+        controls._color_properties_combobox_control.color_by_combobox.currentText()
+        == color_by
+    )
 
 
 def test_color_by_missing_after_properties_change(
@@ -80,7 +95,10 @@ def test_color_by_missing_after_properties_change(
     layer.color_by = 'time'
     controls = QtTracksControls(layer)
     qtbot.addWidget(controls)
-    assert controls.color_by_combobox.currentText() == 'time'
+    assert (
+        controls._color_properties_combobox_control.color_by_combobox.currentText()
+        == 'time'
+    )
 
     # Change the properties value by removing the time column.
     with pytest.warns(
@@ -93,7 +111,10 @@ def test_color_by_missing_after_properties_change(
         }
 
     assert layer.color_by == 'track_id'
-    assert controls.color_by_combobox.currentText() == 'track_id'
+    assert (
+        controls._color_properties_combobox_control.color_by_combobox.currentText()
+        == 'track_id'
+    )
 
 
 def test_update_max_tail_length(null_data, properties, qtbot):
@@ -103,11 +124,17 @@ def test_update_max_tail_length(null_data, properties, qtbot):
     qtbot.addWidget(controls)
 
     # verify the max_length argument is initialized correctly
-    assert controls.tail_length_slider.maximum() == layer._max_length
+    assert (
+        controls._tail_length_slider_control.tail_length_slider.maximum()
+        == layer._max_length
+    )
 
     # update max_length beyond the current value
     layer.tail_length = layer._max_length + 200
-    assert controls.tail_length_slider.maximum() == layer._max_length
+    assert (
+        controls._tail_length_slider_control.tail_length_slider.maximum()
+        == layer._max_length
+    )
 
 
 def test_update_max_head_length(null_data, properties, qtbot):
@@ -117,8 +144,14 @@ def test_update_max_head_length(null_data, properties, qtbot):
     qtbot.addWidget(controls)
 
     # verify the max_length argument is initialized correctly
-    assert controls.head_length_slider.maximum() == layer._max_length
+    assert (
+        controls._head_length_slider_control.head_length_slider.maximum()
+        == layer._max_length
+    )
 
     # update max_length beyond the current value
     layer.head_length = layer._max_length + 200
-    assert controls.head_length_slider.maximum() == layer._max_length
+    assert (
+        controls._head_length_slider_control.head_length_slider.maximum()
+        == layer._max_length
+    )

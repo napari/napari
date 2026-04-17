@@ -15,7 +15,8 @@ from skimage.color import rgb2gray
 import napari
 
 # add the image
-viewer = napari.view_image(rgb2gray(data.astronaut()))
+viewer = napari.Viewer()
+layer = viewer.add_image(rgb2gray(data.astronaut()))
 # add the points
 points = np.array([[100, 100], [200, 200], [333, 111]])
 size = np.array([10, 20, 20])

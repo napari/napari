@@ -431,9 +431,6 @@ def test_grid():
     assert viewer.grid.actual_shape(6) == (1, 1)
     assert viewer.grid.stride == 1
     assert viewer.grid.spacing == 0
-    translations = [layer._translate_grid for layer in viewer.layers]
-    expected_translations = np.zeros((6, 2))
-    np.testing.assert_allclose(translations, expected_translations)
 
     # enter grid view
     viewer.grid.enabled = True
@@ -441,41 +438,6 @@ def test_grid():
     assert viewer.grid.actual_shape(6) == (2, 3)
     assert viewer.grid.stride == 1
     assert viewer.grid.spacing == 0
-    translations = [layer._translate_grid for layer in viewer.layers]
-    expected_translations = [
-        [0, 0],
-        [0, 15],
-        [0, 30],
-        [15, 0],
-        [15, 15],
-        [15, 30],
-    ]
-    np.testing.assert_allclose(translations, expected_translations[::-1])
-
-    # test grid spacing, translation will be proportionally 0.1 larger: (0.1 * 15) = 16.5
-    viewer.grid.spacing = 0.1
-    assert viewer.grid.spacing == 0.1
-    translations = [layer._translate_grid for layer in viewer.layers]
-    expected_translations = [
-        [0, 0],
-        [0, 16.5],
-        [0, 33],
-        [16.5, 0],
-        [16.5, 16.5],
-        [16.5, 33],
-    ]
-    np.testing.assert_allclose(translations, expected_translations[::-1])
-    # reset spacing to make remaining translation calculations easier
-    viewer.grid.spacing = 0
-    # return to stack view
-    viewer.grid.enabled = False
-    assert not viewer.grid.enabled
-    assert viewer.grid.actual_shape(6) == (1, 1)
-    assert viewer.grid.stride == 1
-    assert viewer.grid.spacing == 0
-    translations = [layer._translate_grid for layer in viewer.layers]
-    expected_translations = np.zeros((6, 2))
-    np.testing.assert_allclose(translations, expected_translations)
 
     # reenter grid view with new stride
     viewer.grid.stride = -2
@@ -484,16 +446,6 @@ def test_grid():
     assert viewer.grid.actual_shape(6) == (2, 2)
     assert viewer.grid.stride == -2
     assert viewer.grid.spacing == 0
-    translations = [layer._translate_grid for layer in viewer.layers]
-    expected_translations = [
-        [0, 0],
-        [0, 0],
-        [0, 15],
-        [0, 15],
-        [15, 0],
-        [15, 0],
-    ]
-    np.testing.assert_allclose(translations, expected_translations)
 
 
 def test_add_remove_layer_dims_change():
@@ -751,17 +703,17 @@ def test_camera():
 
     assert viewer.dims.ndisplay == 2
     assert viewer.camera.center == (0, 7, 9.5)
-    assert viewer.camera.angles == (0, 0, 90)
+    assert viewer.camera.angles == (0, 0, 0)
 
     viewer.dims.ndisplay = 3
     assert viewer.dims.ndisplay == 3
     assert viewer.camera.center == (4.5, 7, 9.5)
-    assert viewer.camera.angles == (0, 0, 90)
+    assert viewer.camera.angles == (0, 0, 0)
 
     viewer.dims.ndisplay = 2
     assert viewer.dims.ndisplay == 2
     assert viewer.camera.center == (0, 7, 9.5)
-    assert viewer.camera.angles == (0, 0, 90)
+    assert viewer.camera.angles == (0, 0, 0)
 
 
 def test_update_scale():
@@ -867,9 +819,7 @@ def test_not_mutable_fields(field):
     with pytest.raises((TypeError, ValueError)) as err:
         setattr(viewer, field, 'test')
 
-    assert 'has allow_mutation set to False and cannot be assigned' in str(
-        err.value
-    )
+    assert 'Field is frozen' in str(err.value)
 
 
 @pytest.mark.parametrize(('Layer', 'data', 'ndim'), layer_test_data)
@@ -912,6 +862,17 @@ def test_open_or_get_error_no_plugin():
         NoAvailableReaderError, match='No plugin found capable of reading'
     ):
         viewer._open_or_raise_error(['my_file.fake'])
+
+
+def test_open_nonexistent_file():
+    """Assert FileNotFoundError is raised for nonexistent local paths."""
+    viewer = ViewerModel()
+
+    with pytest.raises(FileNotFoundError, match='does not exist'):
+        viewer.open('/tmp/nonexistent_file_abc123.png')
+
+    with pytest.raises(FileNotFoundError, match='does not exist'):
+        viewer.open(['/tmp/fake_a.tif', '/tmp/fake_b.tif'], stack=True)
 
 
 def test_open_or_get_error_builtins(builtins: DynamicPlugin, tmp_path):
@@ -977,11 +938,13 @@ def test_open_or_get_error_no_prefered_plugin_many_available(
 
     get_settings().plugins.extension2reader = {'*.fake': 'not-a-plugin'}
 
-    with pytest.warns(RuntimeWarning, match="Can't find not-a-plugin plugin"):
-        with pytest.raises(
+    with (
+        pytest.warns(RuntimeWarning, match="Can't find not-a-plugin plugin"),
+        pytest.raises(
             MultipleReaderError, match='Multiple plugins found capable'
-        ):
-            viewer._open_or_raise_error(['my_file.fake'])
+        ),
+    ):
+        viewer._open_or_raise_error(['my_file.fake'])
 
 
 def test_open_or_get_error_preferred_fails(builtins, tmp_path):
@@ -991,7 +954,7 @@ def test_open_or_get_error_preferred_fails(builtins, tmp_path):
     get_settings().plugins.extension2reader = {'*.npy': builtins.name}
 
     with pytest.raises(
-        ReaderPluginError, match='Tried opening with napari, but failed.'
+        ReaderPluginError, match='Tried opening with napari, but failed'
     ):
         viewer._open_or_raise_error([str(pth)])
 
@@ -1020,7 +983,7 @@ def test_open_sample_null_layer_sentinel(tmp_plugin):
 
     with pytest.raises(
         ValueError,
-        match='Sample "return_null_layer" from plugin "tmp_plugin" did not return any valid layer data tuples.',
+        match='Sample "return_null_layer" from plugin "tmp_plugin" did not return any valid layer data tuples',
     ):
         viewer.open_sample('tmp_plugin', 'return_null_layer')
 
@@ -1095,7 +1058,7 @@ def test_get_status_text():
             'source_type': '',
             'value': '0; a: 1',
         },
-        'a: 1',
+        '0\na: 1',
     )
     viewer.update_status_from_cursor()
     assert viewer.status == {
@@ -1107,7 +1070,7 @@ def test_get_status_text():
         'source_type': '',
         'value': '0; a: 1',
     }
-    assert viewer.tooltip.text == 'a: 1'
+    assert viewer.tooltip.text == '0\na: 1'
 
 
 def test_reset_view():
@@ -1116,7 +1079,7 @@ def test_reset_view():
     viewer.add_image(np.random.random((10, 10, 10)))
     viewer.camera.angles = (45, 30, 60)
     viewer.reset_view()
-    assert viewer.camera.angles == (0, 0, 90)
+    assert viewer.camera.angles == (0, 0, 0)
 
     viewer.camera.angles = (45, 30, 60)
     viewer.reset_view(reset_camera_angle=False)
@@ -1179,31 +1142,6 @@ def test_fit_to_view_2d_data_in_3d_view():
     assert viewer.camera.angles == (45, 30, 60)
 
 
-def test_fit_to_view_grid():
-    """Test grid view adjusts zoom appropriately."""
-    viewer = ViewerModel()
-    for _ in range(4):
-        viewer.add_image(np.random.random((10, 10)))
-
-    viewer.fit_to_view()
-    default_zoom = viewer.camera.zoom
-
-    # enable grid and reset view
-    viewer.grid.enabled = True
-    viewer.fit_to_view()
-    grid_zoom = viewer.camera.zoom
-
-    # check zoom is less with grid enabled
-    assert grid_zoom < default_zoom
-
-    # space grid apart, then reset view
-    viewer.grid.spacing = 0.2
-    viewer.fit_to_view()
-    spaced_grid_zoom = viewer.camera.zoom
-
-    assert spaced_grid_zoom < grid_zoom
-
-
 def test_fit_to_view_handles_no_layers():
     """Test fit_to_view with no layers."""
     viewer = ViewerModel()
@@ -1211,5 +1149,5 @@ def test_fit_to_view_handles_no_layers():
     viewer.fit_to_view()
     # Default values should be set
     np.testing.assert_allclose(viewer.camera.center, (0, 255.5, 255.5))
-    np.testing.assert_allclose(viewer.camera.angles, (0, 0, 90))
+    np.testing.assert_allclose(viewer.camera.angles, (0, 0, 0))
     assert viewer.camera.zoom > 0

@@ -1,53 +1,79 @@
+from __future__ import annotations
+
 import bisect
 from decimal import Decimal
 from math import floor, log
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pint
 
 from napari._vispy.overlays.base import ViewerOverlayMixin, VispyCanvasOverlay
 from napari._vispy.visuals.scale_bar import ScaleBar
-from napari.utils._units import PREFERRED_VALUES, get_unit_registry
-from napari.utils.colormaps.standardize_color import transform_color
-from napari.utils.theme import get_theme
+from napari.components.overlays import Overlay, ScaleBarOverlay
+from napari.settings import get_settings
+from napari.utils._units import PREFERRED_VALUES
+
+if TYPE_CHECKING:
+    from vispy.scene import ViewBox
+    from vispy.visuals.text.text import FontManager
+
+    from napari.components import ViewerModel
 
 
 class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
     """Scale bar in world coordinates."""
 
-    def __init__(self, *, viewer, overlay, parent=None) -> None:
+    overlay: ScaleBarOverlay
+
+    def __init__(
+        self,
+        *,
+        viewer: ViewerModel,
+        overlay: Overlay,
+        parent: ViewBox | None = None,
+        font_manager: FontManager | None = None,
+        font_family: str = 'OpenSans',
+    ) -> None:
         self._target_length = 150.0
-        self._scale = 1
-        self._unit: pint.Unit
+        self._current_length = 150.0
+        self._scale = 1.0
+        self._unit = pint.Quantity('1 pixel')
 
         super().__init__(
-            node=ScaleBar(), viewer=viewer, overlay=overlay, parent=parent
+            node=ScaleBar(font_manager=font_manager, font_family=font_family),
+            viewer=viewer,
+            overlay=overlay,
+            parent=parent,
+            font_manager=font_manager,
+            font_family=font_family,
         )
-        self.x_size = 150  # will be updated on zoom anyways
-        # need to change from defaults because the anchor is in the center
-        self.y_offset = 7  # padding from the bottom edge
-        self.y_size = 18  # half the box height
 
-        self.overlay.events.box.connect(self._on_box_change)
-        self.overlay.events.box_color.connect(self._on_data_change)
-        self.overlay.events.color.connect(self._on_data_change)
-        self.overlay.events.colored.connect(self._on_data_change)
-        self.overlay.events.font_size.connect(self._on_text_change)
-        self.overlay.events.ticks.connect(self._on_data_change)
+        self.overlay.events.color.connect(self._on_rendering_change)
+        self.overlay.events.colored.connect(self._on_rendering_change)
+        self.overlay.events.box.connect(self._on_rendering_change)
+        self.overlay.events.box_color.connect(self._on_rendering_change)
+        self.overlay.events.font_size.connect(self._on_font_size_change)
+        self.overlay.events.ticks.connect(self._on_rendering_change)
         self.overlay.events.unit.connect(self._on_unit_change)
-        self.overlay.events.length.connect(self._on_length_change)
+        self.overlay.events.length.connect(self._on_size_or_zoom_change)
+        self.overlay.events.visible.connect(self._on_rendering_change)
 
-        self.viewer.events.theme.connect(self._on_data_change)
-        self.viewer.camera.events.zoom.connect(self._on_zoom_change)
+        self.viewer.camera.events.zoom.connect(self._on_size_or_zoom_change)
+        self.viewer.events.theme.connect(self._on_rendering_change)
+
+        get_settings().appearance.events.theme.connect(
+            self._on_rendering_change
+        )
 
         self.reset()
 
     def _on_unit_change(self):
-        self._unit = get_unit_registry()(self.overlay.unit)
-        self._on_zoom_change(force=True)
+        self._unit = pint.get_application_registry()(self.overlay.unit)
+        self._on_size_or_zoom_change(force=True)
 
-    def _on_length_change(self):
-        self._on_zoom_change(force=True)
+    def _on_font_size_change(self):
+        self._on_size_or_zoom_change(force=True)
 
     def _calculate_best_length(
         self, desired_length: float
@@ -88,7 +114,7 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
             # return the last index.
             index -= 1
         new_value: float = PREFERRED_VALUES[index]
-        if new_quantity.dimensionless and new_quantity.magnitude < 1:
+        if new_quantity.dimensionless:
             # using Decimal is necessary to avoid `4.999999e-6`
             # at really small scale.
             new_value = float(
@@ -102,8 +128,8 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         new_quantity = new_value * new_quantity.units
         return new_length, new_quantity
 
-    def _on_zoom_change(self, *, force: bool = False):
-        """Update axes length based on zoom scale."""
+    def _on_size_or_zoom_change(self, *, force: bool = False):
+        """Update length based on scale bar size and zoom."""
 
         # If scale has not changed, do not redraw
         scale = 1 / self.viewer.camera.zoom
@@ -129,88 +155,40 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
                 target_world_pixels_rounded / scale_canvas2world
             )
 
-        scale = target_canvas_pixels
+        self._current_length = target_canvas_pixels
 
         # Update scalebar and text
-        self.node.transform.scale = [scale, 1, 1, 1]
         self.node.text.text = f'{new_dim:g~#P}'
-        self.x_size = scale  # needed to offset properly
-        super()._on_position_change()
+        self._on_rendering_change()
 
-    def _on_data_change(self):
-        """Change color and data of scale bar and box."""
-        color = self.overlay.color
-        box_color = self.overlay.box_color
+    def _on_rendering_change(self):
+        """Change color and other rendering features of scale bar and box."""
+        if not self.overlay.visible:
+            return
 
-        if not self.overlay.colored:
-            if self.overlay.box:
-                # The box is visible - set the scale bar color to the negative of the
-                # box color.
-                color = 1 - box_color
-                color[-1] = 1
-            else:
-                # set scale color negative of theme background.
-                # the reason for using the `as_hex` here is to avoid
-                # `UserWarning` which is emitted when RGB values are above 1
-                if (
-                    self.node.parent is not None
-                    and self.node.parent.canvas.bgcolor
-                ):
-                    background_color = self.node.parent.canvas.bgcolor.rgba
-                else:
-                    background_color = get_theme(
-                        self.viewer.theme
-                    ).canvas.as_hex()
-                    background_color = transform_color(background_color)[0]
-                color = np.subtract(1, background_color)
-                color[-1] = background_color[-1]
-
-        self.node.set_data(color, self.overlay.ticks)
-        self.node.box.color = box_color
-
-    def _on_box_change(self):
-        self.node.box.visible = self.overlay.box
-
-    def _on_text_change(self):
-        """Update text information"""
-        # update the dpi scale factor to account for screen dpi
-        # because vispy scales pixel height of text by screen dpi
-        if self.node.text.transforms.dpi:
-            # use 96 as the napari reference dpi for historical reasons
-            dpi_scale_factor = 96 / self.node.text.transforms.dpi
+        if self.overlay.colored:
+            color = self.overlay.color
         else:
-            dpi_scale_factor = 1
+            color = self._get_fgcolor()
 
-        self.node.text.font_size = self.overlay.font_size * dpi_scale_factor
-        # changing the fox size changes the box height and positioning in it
-        self.node._update_layout(font_size=self.overlay.font_size)
+        width, height = self.node.set_data(
+            length=self._current_length,
+            color=color,
+            ticks=self.overlay.ticks,
+            font_size=self.overlay.font_size,
+        )
 
-        # positioning in the box uses the center of the box
-        # need to adjust the y_size to be half the size of the current box height
-        self.y_size = self.node.box.height / 2
-
-        self._on_position_change()
-
-    def _on_position_change(self, event=None):
-        # prevent the text from being cut off by shifting down
-        if 'top' in self.overlay.position:
-            # adjust the positioning to account for the box height
-            # 7 is base value for the default 10 font size
-            self.y_offset = 7 + self.y_size
-        else:
-            # ensure if switching from top to bottom, the offset is reset
-            self.y_offset = 7
-        super()._on_position_change()
+        size_changed = width != self.x_size or height != self.y_size
+        self.x_size = width
+        self.y_size = height
+        if size_changed:
+            self._on_position_change()
 
     def _on_visible_change(self):
         # ensure that dpi is updated when the scale bar is visible
-        self._on_text_change()
+        self._on_size_or_zoom_change()
         return super()._on_visible_change()
 
     def reset(self):
         super().reset()
         self._on_unit_change()
-        self._on_data_change()
-        self._on_box_change()
-        self._on_text_change()
-        self._on_length_change()

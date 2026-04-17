@@ -1,6 +1,6 @@
 from collections.abc import Callable, Generator, Iterable, Iterator
 from itertools import takewhile
-from typing import Optional
+from typing import Any, Optional
 
 from tqdm import tqdm
 
@@ -74,8 +74,8 @@ class progress(tqdm):
         desc: str | None = None,
         total: int | None = None,
         nest_under: Optional['progress'] = None,
-        *args,
-        **kwargs,
+        *args: Any,
+        **kwargs: Any,
     ) -> None:
         self.events = EmitterGroup(
             value=Event,
@@ -101,11 +101,11 @@ class progress(tqdm):
         return self.desc
 
     @property
-    def total(self):
+    def total(self) -> int:
         return self._total
 
     @total.setter
-    def total(self, total):
+    def total(self, total: int) -> None:
         self._total = total
         self.events.total(value=self.total)
 
@@ -119,12 +119,12 @@ class progress(tqdm):
         etas = str(self).split('|')[-1] if self.total != 0 else ''
         self.events.eta(value=etas)
 
-    def update(self, n=1):
+    def update(self, n: int = 1) -> None:
         """Update progress value by n and emit value event"""
         super().update(n)
         self.events.value(value=self.n)
 
-    def increment_with_overflow(self):
+    def increment_with_overflow(self) -> None:
         """Update if not exceeding total, else set indeterminate range."""
         if self.n == self.total:
             self.total = 0
@@ -132,12 +132,12 @@ class progress(tqdm):
         else:
             self.update(1)
 
-    def set_description(self, desc):
+    def set_description(self, desc: str) -> None:
         """Update progress description and emit description event."""
         super().set_description(desc, refresh=True)
         self.events.description(value=desc)
 
-    def close(self):
+    def close(self) -> None:
         """Close progress object and emit event."""
         if self.disable:
             return
@@ -145,7 +145,7 @@ class progress(tqdm):
         super().close()
 
 
-def progrange(*args, **kwargs):
+def progrange(*args: Any, **kwargs: Any) -> progress:
     """Shorthand for ``progress(range(*args), **kwargs)``.
 
     Adds tqdm based progress bar to napari viewer, if it
@@ -192,8 +192,8 @@ class cancelable_progress(progress):
         total: int | None = None,
         nest_under: Optional['progress'] = None,
         cancel_callback: Callable | None = None,
-        *args,
-        **kwargs,
+        *args: Any,
+        **kwargs: Any,
     ) -> None:
         self.cancel_callback = cancel_callback
         self.is_canceled = False
@@ -203,7 +203,7 @@ class cancelable_progress(progress):
     def __iter__(self) -> Iterator:
         itr = super().__iter__()
 
-        def is_canceled(_):
+        def is_canceled(_: Any) -> bool:
             if self.is_canceled:
                 # If we've canceled, run the callback and then notify takewhile
                 if self.cancel_callback:
@@ -217,7 +217,7 @@ class cancelable_progress(progress):
 
         return takewhile(is_canceled, itr)
 
-    def cancel(self):
+    def cancel(self) -> None:
         """Cancels the execution of the underlying computation.
         Note that the current iteration will be allowed to complete, however
         future iterations will not be run.

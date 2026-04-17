@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 import warnings
-from enum import Enum, EnumMeta
-from functools import partial, wraps
+from functools import wraps
 from typing import TYPE_CHECKING
 
 from qtpy.QtCore import QEvent, Qt
@@ -16,10 +17,12 @@ from qtpy.QtWidgets import (
 )
 from superqt import QEnumComboBox, QLabeledDoubleSlider
 
+from napari._app_model.actions._file import new_points, new_shapes
 from napari._qt.dialogs.qt_modal import QtPopup
 from napari._qt.widgets.qt_dims_sorter import QtDimsSorter
 from napari._qt.widgets.qt_spinbox import QtSpinBox
 from napari._qt.widgets.qt_tooltip import QtToolTipLabel
+from napari.layers._scalar_field import ScalarFieldBase
 from napari.utils.action_manager import action_manager
 from napari.utils.camera_orientations import (
     DepthAxisOrientation,
@@ -29,28 +32,16 @@ from napari.utils.camera_orientations import (
     VerticalAxisOrientation,
     VerticalAxisOrientationStr,
 )
+from napari.utils.compat import StrEnum
 from napari.utils.misc import in_ipython, in_jupyter, in_python_repl
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+    from enum import Enum, EnumMeta
     from typing import Any
 
     from napari.viewer import ViewerModel
-
-
-def add_new_points(viewer):
-    viewer.add_points(
-        ndim=max(viewer.dims.ndim, 2),
-        scale=viewer.layers.extent.step,
-    )
-
-
-def add_new_shapes(viewer):
-    viewer.add_shapes(
-        ndim=max(viewer.dims.ndim, 2),
-        scale=viewer.layers.extent.step,
-    )
 
 
 class QtLayerButtons(QFrame):
@@ -75,7 +66,7 @@ class QtLayerButtons(QFrame):
         Napari viewer containing the rendered scene, layers, and controls.
     """
 
-    def __init__(self, viewer: 'ViewerModel') -> None:
+    def __init__(self, viewer: ViewerModel) -> None:
         super().__init__()
 
         self.viewer = viewer
@@ -86,29 +77,117 @@ class QtLayerButtons(QFrame):
 
         self.newPointsButton = QtViewerPushButton(
             'new_points',
-            trans._('New points layer'),
-            partial(add_new_points, self.viewer),
+            trans._(
+                'Create a new points layer.\n'
+                'This button is highlighted if a layer is selected;\n'
+                'the new points layer will inherit the shape and all transforms of this layer.\n'
+                'If multiple layers are selected, the new points layer will span their extent.\n'
+                'If no layers are selected, the new points layer will have no scale/transform.\n'
+            ),
+            self._new_points,
         )
 
         self.newShapesButton = QtViewerPushButton(
             'new_shapes',
-            trans._('New shapes layer'),
-            partial(add_new_shapes, self.viewer),
+            trans._(
+                'Create a new shapes layer.\n'
+                'This button is highlighted if a layer is selected;\n'
+                'the new shapes layer will inherit the shape and all transforms of this layer.\n'
+                'If multiple layers are selected, the new shapes layer will span their extent.\n'
+                'If no layers are selected, the new points layer will have no scale/transform.\n'
+            ),
+            self._new_shapes,
         )
+
         self.newLabelsButton = QtViewerPushButton(
             'new_labels',
-            trans._('New labels layer'),
+            trans._(
+                'Create a new labels layer.\n'
+                'If a Labels or Image layer is selected, the newly created Labels layer\n'
+                'will inherit the shape and all transforms of the selected layer.\n'
+                'If any other layer type or multiple layers are selected, the resulting\n'
+                'Labels layer will span their extent. (Warning: could be huge!)\n'
+                'If layers are present in the Viewer but none are selected, the Labels button is disabled.\n'
+            ),
             self.viewer._new_labels,
+        )
+        # Labels button disabled when there are layers present but none are selected
+        self.newLabelsButton.setEnabled(
+            not self._layers_present_and_none_selected()
         )
 
         layout = QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(2)
         layout.addWidget(self.newPointsButton)
         layout.addWidget(self.newShapesButton)
         layout.addWidget(self.newLabelsButton)
         layout.addStretch(0)
         layout.addWidget(self.deleteButton)
         self.setLayout(layout)
+
+        self.viewer.layers.selection.events.changed.connect(
+            self._on_selection_changed
+        )
+        self.viewer.layers.events.removed.connect(self._on_selection_changed)
+        self._on_selection_changed()
+
+    def _new_points(self):
+        new_points(self.viewer)
+
+    def _new_shapes(self):
+        new_shapes(self.viewer)
+
+    def _on_selection_changed(self, event=None) -> None:
+        """Update button selection/enablement state based on the layer selection.
+
+        This allows indicating which mode of buttons will be triggered after
+        clicking on it.
+        """
+        if self.viewer.layers.selection.active is not None:
+            self.newPointsButton._change_selection_state(
+                LayerCreationState.FULL
+            )
+            self.newShapesButton._change_selection_state(
+                LayerCreationState.FULL
+            )
+            if isinstance(
+                self.viewer.layers.selection.active, ScalarFieldBase
+            ):
+                state = LayerCreationState.FULL
+            else:
+                state = LayerCreationState.PARTIAL
+            self.newLabelsButton._change_selection_state(state)
+        elif self.viewer.layers.selection:
+            self.newPointsButton._change_selection_state(
+                LayerCreationState.PARTIAL
+            )
+            self.newShapesButton._change_selection_state(
+                LayerCreationState.PARTIAL
+            )
+            self.newLabelsButton._change_selection_state(
+                LayerCreationState.PARTIAL
+            )
+        else:
+            self.newPointsButton._change_selection_state(
+                LayerCreationState.NONE
+            )
+            self.newShapesButton._change_selection_state(
+                LayerCreationState.NONE
+            )
+            self.newLabelsButton._change_selection_state(
+                LayerCreationState.NONE
+            )
+
+        self.newLabelsButton.setEnabled(
+            not self._layers_present_and_none_selected()
+        )
+
+    def _layers_present_and_none_selected(self) -> bool:
+        """Check if there are layers present but none selected."""
+        return bool(self.viewer.layers) and not bool(
+            self.viewer.layers.selection
+        )
 
 
 def labeled_double_slider(
@@ -117,12 +196,12 @@ def labeled_double_slider(
     value: float,
     value_range: tuple[float, float],
     decimals: int = 0,
-    callback: 'Callable',
+    callback: Callable,
 ) -> QLabeledDoubleSlider:
     """Create a labeled double slider widget."""
     slider = QLabeledDoubleSlider(parent)
-    slider.setValue(value)
     slider.setRange(*value_range)
+    slider.setValue(value)
     slider.setDecimals(decimals)
     slider.valueChanged.connect(callback)
     return slider
@@ -133,7 +212,7 @@ def enum_combobox(
     parent: QtPopup,
     enum_class: EnumMeta,
     current_enum: Enum,
-    callback: 'Callable[[],Any] | Callable[[Enum],Any]',
+    callback: Callable[[], Any] | Callable[[Enum], Any] | Callable[[str], Any],
 ) -> QEnumComboBox:
     """Create an enum combobox widget."""
     combo = QEnumComboBox(parent, enum_class=enum_class)
@@ -181,7 +260,7 @@ class QtViewerButtons(QFrame):
         Napari viewer containing the rendered scene, layers, and controls.
     """
 
-    def __init__(self, viewer: 'ViewerModel') -> None:
+    def __init__(self, viewer: ViewerModel) -> None:
         super().__init__()
 
         self.viewer = viewer
@@ -280,6 +359,18 @@ class QtViewerButtons(QFrame):
         )
         popup.show()
 
+    def _update_first_camera_angle(self, value: float) -> None:
+        """Update the camera angle along axis 0."""
+        self._update_camera_angles(0, value)
+
+    def _update_second_camera_angle(self, value: float) -> None:
+        """Update the camera angle along axis 1."""
+        self._update_camera_angles(1, value)
+
+    def _update_third_camera_angle(self, value: float) -> None:
+        """Update the camera angle along axis 2."""
+        self._update_camera_angles(2, value)
+
     def _add_3d_camera_controls(
         self,
         popup: QtPopup,
@@ -298,25 +389,27 @@ class QtViewerButtons(QFrame):
             text='Controls perspective projection strength. 0 is orthographic, larger values increase perspective effect.',
         )
 
-        self.rx = labeled_double_slider(
+        self.rz = labeled_double_slider(
             parent=popup,
             value=self.viewer.camera.angles[0],
             value_range=(-180, 180),
-            callback=partial(self._update_camera_angles, 0),
+            callback=self._update_first_camera_angle,
         )
 
+        # value_range is [-89, 89] because at >=+/-90 gimbal locks the camera.
+        # this is a known complication of calculation with Euler angles
         self.ry = labeled_double_slider(
             parent=popup,
             value=self.viewer.camera.angles[1],
             value_range=(-89, 89),
-            callback=partial(self._update_camera_angles, 1),
+            callback=self._update_second_camera_angle,
         )
 
-        self.rz = labeled_double_slider(
+        self.rx = labeled_double_slider(
             parent=popup,
             value=self.viewer.camera.angles[2],
             value_range=(-180, 180),
-            callback=partial(self._update_camera_angles, 2),
+            callback=self._update_third_camera_angle,
         )
 
         angle_help_symbol = help_tooltip(
@@ -328,15 +421,15 @@ class QtViewerButtons(QFrame):
         grid_layout.addWidget(self.perspective, 2, 1)
         grid_layout.addWidget(perspective_help_symbol, 2, 2)
 
-        grid_layout.addWidget(QLabel(trans._('Angles    X:')), 3, 0)
-        grid_layout.addWidget(self.rx, 3, 1)
+        grid_layout.addWidget(QLabel(trans._('Angles    Z:')), 3, 0)
+        grid_layout.addWidget(self.rz, 3, 1)
         grid_layout.addWidget(angle_help_symbol, 3, 2)
 
-        grid_layout.addWidget(QLabel(trans._('             Y:')), 4, 0)
+        grid_layout.addWidget(QLabel(trans._('               Y:')), 4, 0)
         grid_layout.addWidget(self.ry, 4, 1)
 
-        grid_layout.addWidget(QLabel(trans._('             Z:')), 5, 0)
-        grid_layout.addWidget(self.rz, 5, 1)
+        grid_layout.addWidget(QLabel(trans._('               X:')), 5, 0)
+        grid_layout.addWidget(self.rx, 5, 1)
 
     def _add_shared_camera_controls(
         self,
@@ -361,6 +454,24 @@ class QtViewerButtons(QFrame):
         grid_layout.addWidget(self.zoom, 1, 1)
         grid_layout.addWidget(zoom_help_symbol, 1, 2)
 
+    def _update_verical_axis_orientation(
+        self, value: VerticalAxisOrientationStr
+    ) -> None:
+        """Update the vertical axis orientation of the camera."""
+        self._update_orientation(VerticalAxisOrientation, value)
+
+    def _update_horizontal_axis_orientation(
+        self, value: HorizontalAxisOrientationStr
+    ) -> None:
+        """Update the horizontal axis orientation of the camera."""
+        self._update_orientation(HorizontalAxisOrientation, value)
+
+    def _update_depth_axis_orientation(
+        self, value: DepthAxisOrientationStr
+    ) -> None:
+        """Update the depth axis orientation of the camera."""
+        self._update_orientation(DepthAxisOrientation, value)
+
     def _add_orientation_controls(
         self,
         popup: QtPopup,
@@ -375,18 +486,14 @@ class QtViewerButtons(QFrame):
             parent=popup,
             enum_class=VerticalAxisOrientation,
             current_enum=self.viewer.camera.orientation[1],
-            callback=partial(
-                self._update_orientation, VerticalAxisOrientation
-            ),
+            callback=self._update_verical_axis_orientation,
         )
 
         self.horizontal_combo = enum_combobox(
             parent=popup,
             enum_class=HorizontalAxisOrientation,
             current_enum=self.viewer.camera.orientation[2],
-            callback=partial(
-                self._update_orientation, HorizontalAxisOrientation
-            ),
+            callback=self._update_horizontal_axis_orientation,
         )
 
         if self.viewer.dims.ndisplay == 2:
@@ -402,9 +509,7 @@ class QtViewerButtons(QFrame):
                 parent=popup,
                 enum_class=DepthAxisOrientation,
                 current_enum=self.viewer.camera.orientation[0],
-                callback=partial(
-                    self._update_orientation, DepthAxisOrientation
-                ),
+                callback=self._update_depth_axis_orientation,
             )
 
             orientation_layout.addWidget(self.depth_combo)
@@ -501,7 +606,7 @@ class QtViewerButtons(QFrame):
         Parameters
         ----------
         idx : int
-            Index of the angle to update. In the order of (rx, ry, rz).
+            Index of the angle to update. In the euler order of (rz, ry, rx).
         value : float
             New angle value.
         """
@@ -562,64 +667,57 @@ class QtViewerButtons(QFrame):
         spacing_help_symbol = QtToolTipLabel(self)
 
         shape_help_msg = trans._(
-            'Number of rows and columns in the grid. A value of -1 for either or both of width and height will trigger an auto calculation of the necessary grid shape to appropriately fill all the layers at the appropriate stride. 0 is not a valid entry.'
+            'Number of rows and columns in the grid.\n'
+            'A value of -1 for either or both of width and height will trigger an\n'
+            'auto calculation of the necessary grid shape to appropriately fill\n'
+            'all the layers at the appropriate stride. 0 is not a valid entry.'
         )
 
         stride_help_msg = trans._(
-            'Number of layers to place in each grid square before moving on to the next square. The default ordering is to place the most visible layer in the top left corner of the grid. A negative stride will cause the order in which the layers are placed in the grid to be reversed. 0 is not a valid entry.'
+            'Number of layers to place in each grid viewbox before moving on to the next viewbox.\n'
+            'A negative stride will cause the order in which the layers are placed in the grid to be reversed.\n'
+            '0 is not a valid entry.'
         )
 
         spacing_help_msg = trans._(
-            'Proportional spacing between grid layers. 0 has the layers touching. Positive values will space the layers apart, and negative values will overlap the layers.'
+            'The amount of spacing between grid viewboxes.\n'
+            'If between 0 and 1, it is interpreted as a proportion of the size of the viewboxes.\n'
+            'If equal or greater than 1, it is interpreted as screen pixels.'
         )
 
-        # set up
-        stride_min = self.viewer.grid.__fields__['stride'].type_.ge
-        stride_max = self.viewer.grid.__fields__['stride'].type_.le
-        stride_not = self.viewer.grid.__fields__['stride'].type_.ne
         grid_stride.setObjectName('gridStrideBox')
         grid_stride.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        grid_stride.setRange(stride_min, stride_max)
-        grid_stride.setProhibitValue(stride_not)
+        grid_stride.setProhibitValue(0)
         grid_stride.setValue(self.viewer.grid.stride)
         grid_stride.valueChanged.connect(self._update_grid_stride)
         self.grid_stride_box = grid_stride
 
-        width_min = self.viewer.grid.__fields__['shape'].sub_fields[1].type_.ge
-        width_not = self.viewer.grid.__fields__['shape'].sub_fields[1].type_.ne
         grid_width.setObjectName('gridWidthBox')
         grid_width.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        grid_width.setMinimum(width_min)
-        grid_width.setProhibitValue(width_not)
+        grid_width.setMinimum(-1)
+        grid_width.setProhibitValue(0)
         grid_width.setValue(self.viewer.grid.shape[1])
         grid_width.valueChanged.connect(self._update_grid_width)
         self.grid_width_box = grid_width
 
-        height_min = (
-            self.viewer.grid.__fields__['shape'].sub_fields[0].type_.ge
-        )
-        height_not = (
-            self.viewer.grid.__fields__['shape'].sub_fields[0].type_.ne
-        )
         grid_height.setObjectName('gridStrideBox')
         grid_height.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        grid_height.setMinimum(height_min)
-        grid_height.setProhibitValue(height_not)
+        grid_height.setMinimum(-1)
+        grid_height.setProhibitValue(0)
         grid_height.setValue(self.viewer.grid.shape[0])
         grid_height.valueChanged.connect(self._update_grid_height)
         self.grid_height_box = grid_height
 
         # set up spacing
-        spacing_min = self.viewer.grid.__fields__['spacing'].type_.ge
-        spacing_max = self.viewer.grid.__fields__['spacing'].type_.le
-        spacing_step = self.viewer.grid.__fields__['spacing'].type_.step
+        from napari.settings._application import MAX_GRID_SPACING
+
         grid_spacing.setObjectName('gridSpacingBox')
         grid_spacing.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        grid_spacing.setMinimum(spacing_min)
-        grid_spacing.setMaximum(spacing_max)
+        grid_spacing.setMinimum(0)
+        grid_spacing.setMaximum(MAX_GRID_SPACING)
         grid_spacing.setValue(self.viewer.grid.spacing)
         grid_spacing.setDecimals(2)
-        grid_spacing.setSingleStep(spacing_step)
+        grid_spacing.setSingleStep(5)
         grid_spacing.valueChanged.connect(self._update_grid_spacing)
         self.grid_spacing_box = grid_spacing
 
@@ -695,7 +793,6 @@ class QtViewerButtons(QFrame):
         value : float
             New grid spacing value.
         """
-
         self.viewer.grid.spacing = value
 
 
@@ -723,6 +820,12 @@ def _omit_viewer_args(constructor):
         return constructor(*args, **kwargs)
 
     return _func
+
+
+class LayerCreationState(StrEnum):
+    NONE = 'none'
+    FULL = 'full'
+    PARTIAL = 'partial'
 
 
 class QtViewerPushButton(QPushButton):
@@ -759,3 +862,14 @@ class QtViewerPushButton(QPushButton):
             action_manager.bind_button(
                 action, self, extra_tooltip_text=extra_tooltip_text
             )
+
+    def _change_selection_state(self, state: str | LayerCreationState) -> None:
+        """Change the selection state of a new-layer button."""
+        self.setProperty('creation_state', LayerCreationState(state).value)
+        self._refresh_qss()
+
+    def _refresh_qss(self) -> None:
+        """Refresh the button's QSS (Qt Style Sheet)."""
+        self.style().unpolish(self)
+        self.style().polish(self)
+        self.update()

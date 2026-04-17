@@ -44,7 +44,7 @@ def test_AxisList():
 
 
 def test_QtAxisListModel_data(qtbot):
-    dims, axislist, listview, axislistmodel = make_QtAxisListModel(qtbot)
+    dims, axislist, _listview, axislistmodel = make_QtAxisListModel(qtbot)
     assert all(
         axislistmodel.data(
             axislistmodel.index(idx), role=Qt.ItemDataRole.DisplayRole
@@ -90,7 +90,7 @@ def test_QtAxisListModel_data(qtbot):
 
 
 def test_QtAxisListModel_flags(qtbot):
-    dims, axislist, listview, axislistmodel = make_QtAxisListModel(qtbot)
+    dims, _axislist, _listview, axislistmodel = make_QtAxisListModel(qtbot)
     assert axislistmodel.flags(QModelIndex()) == Qt.ItemFlag.ItemIsDropEnabled
     flags = [
         axislistmodel.flags(axislistmodel.index(idx)) for idx in dims.order
@@ -104,5 +104,6 @@ def make_QtAxisListModel(qtbot) -> tuple[Dims, AxisList, QtAxisListModel]:
     dims.rollable = [True, False]
     axislist = AxisList.from_dims(dims)
     view = QtListView(axislist)
+    qtbot.addWidget(view)
     axislistmodel = view.model()
     return dims, axislist, view, axislistmodel

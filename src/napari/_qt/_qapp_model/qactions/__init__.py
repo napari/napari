@@ -8,7 +8,7 @@ from napari._qt._qapp_model.injection._qprocessors import QPROCESSORS
 from napari._qt._qapp_model.injection._qproviders import QPROVIDERS
 
 if TYPE_CHECKING:
-    from app_model.types import Context
+    from app_model.expressions import Context
 
 # Submodules should be able to import from most modules, so to
 # avoid circular imports, don't import submodules at the top level here,
@@ -35,7 +35,6 @@ def init_qactions() -> None:
         Q_DEBUG_ACTIONS,
     )
     from napari._qt._qapp_model.qactions._file import (
-        FILE_SUBMENUS,
         Q_FILE_ACTIONS,
     )
     from napari._qt._qapp_model.qactions._help import Q_HELP_ACTIONS
@@ -49,7 +48,6 @@ def init_qactions() -> None:
     from napari._qt._qapp_model.qactions._plugins import Q_PLUGINS_ACTIONS
     from napari._qt._qapp_model.qactions._view import (
         Q_VIEW_ACTIONS,
-        VIEW_SUBMENUS,
     )
     from napari._qt._qapp_model.qactions._window import Q_WINDOW_ACTIONS
     from napari._qt.qt_main_window import Window
@@ -85,9 +83,7 @@ def init_qactions() -> None:
     )
 
     # register menubar submenus
-    app.menus.append_menu_items(
-        chain(FILE_SUBMENUS, VIEW_SUBMENUS, DEBUG_SUBMENUS, LAYERS_SUBMENUS)
-    )
+    app.menus.append_menu_items(chain(DEBUG_SUBMENUS, LAYERS_SUBMENUS))
 
 
 def add_dummy_actions(context: Context) -> None:

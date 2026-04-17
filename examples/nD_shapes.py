@@ -16,7 +16,8 @@ blobs = data.binary_blobs(
     length=128, blob_size_fraction=0.05, n_dim=3, volume_fraction=0.1
 ).astype(float)
 
-viewer = napari.view_image(blobs.astype(float))
+viewer = napari.Viewer()
+layer = viewer.add_image(blobs.astype(float))
 
 # create one random polygon per "plane"
 planes = np.tile(np.arange(128).reshape((128, 1, 1)), (1, 5, 1))

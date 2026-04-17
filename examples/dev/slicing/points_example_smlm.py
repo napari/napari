@@ -27,7 +27,6 @@ with open(storm_path) as csvfile:
 
 data = np.array(data[1:]).astype(float)
 data = data[:, 1:4]
-
-viewer = napari.view_points(data, size=50)
-
+viewer = napari.Viewer()
+layer = viewer.add_points(data, size = 50)
 napari.run()

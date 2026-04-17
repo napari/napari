@@ -49,7 +49,6 @@ For more information see http://github.com/vispy/vispy/wiki/API_Events
 
 """
 
-import contextlib
 import inspect
 import os
 import warnings
@@ -952,11 +951,13 @@ class EmitterGroup(EventEmitter):
         self,
         source: Any = None,
         auto_connect: bool = False,
+        _connect_children: bool = True,
         **emitters: type[Event] | EventEmitter | None,
     ) -> None:
         EventEmitter.__init__(self, source)
 
         self.auto_connect = auto_connect
+        self._connect_children = _connect_children
         self.auto_connect_format = 'on_%s'
         self._emitters: dict[str, EventEmitter] = {}
         # whether the sub-emitters have been connected to the group:
@@ -1106,7 +1107,8 @@ class EmitterGroup(EventEmitter):
         See :func:`EventEmitter.connect() <vispy.event.EventEmitter.connect>`
         for arguments.
         """
-        self._connect_emitters(True)
+        if self._connect_children:
+            self._connect_emitters(True)
         return EventEmitter.connect(
             self, callback, ref, position, before, after
         )
@@ -1212,11 +1214,6 @@ def _is_pos_arg(param: inspect.Parameter):
         ]
         and param.default == inspect.Parameter.empty
     )
-
-
-with contextlib.suppress(ModuleNotFoundError):
-    # this could move somewhere higher up in napari imports ... but where?
-    __import__('dotenv').load_dotenv()
 
 
 def _noop(*a, **k):

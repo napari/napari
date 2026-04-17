@@ -16,6 +16,7 @@ def generate_interaction_box_vertices(
     top_left: tuple[float, float],
     bot_right: tuple[float, float],
     handles: bool = True,
+    rotation: bool = True,
 ) -> np.ndarray:
     """
     Generate coordinates for all the handles in InteractionBoxHandle.
@@ -30,6 +31,8 @@ def generate_interaction_box_vertices(
         Bottom-right corner of the box
     handles : bool
         Whether to also return indices for the transformation handles.
+    rotation : bool
+        Whether to also return the rotation handle.
 
     Returns
     -------
@@ -53,9 +56,10 @@ def generate_interaction_box_vertices(
         box_height = vertices[0, 1] - vertices[1, 1]
         vertices = np.concatenate([vertices, middle_vertices])
 
-        # add the extra handle for rotation
-        extra_vertex = [middle_vertices[0] + [0, box_height * 0.1]]
-        vertices = np.concatenate([vertices, extra_vertex])
+        if rotation:
+            # add the extra handle for rotation
+            extra_vertex = [middle_vertices[0] + [0, box_height * 0.1]]
+            vertices = np.concatenate([vertices, extra_vertex])
 
     return vertices
 
@@ -82,7 +86,7 @@ def generate_transform_box_from_layer(
     # generates in vispy canvas pos, so invert x and y, and then go back
     top_left, bot_right = (tuple(point) for point in bounds.T[:, ::-1])
     return generate_interaction_box_vertices(
-        top_left, bot_right, handles=True
+        top_left, bot_right, handles=True, rotation=True
     )[:, ::-1]
 
 

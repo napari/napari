@@ -46,7 +46,7 @@ def generate_shapes(filename):
     for shape in all_shapes:
         # Use try/except to filter all bad shapes
         try:
-            vertices, triangles = PolygonData(
+            PolygonData(
                 vertices=shape[:, 1:]
             ).triangulate()
         except AssertionError:

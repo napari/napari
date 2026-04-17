@@ -4,16 +4,17 @@ import re
 import signal
 import socket
 import weakref
-from collections.abc import Iterable, Sequence
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from enum import auto
 from functools import partial
+from typing import TYPE_CHECKING, Literal
 
 import numpy as np
 import qtpy
 from qtpy.QtCore import (
     QByteArray,
     QCoreApplication,
+    QObject,
     QPropertyAnimation,
     QSocketNotifier,
     Qt,
@@ -37,6 +38,11 @@ from napari.utils.translations import trans
 
 QBYTE_FLAG = '!QBYTE_'
 RICH_TEXT_PATTERN = re.compile('<[^\n]+>')
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Iterable, Sequence
+
+    from magicgui.widgets import Widget
 
 
 class ColorMode(StringEnum):
@@ -100,7 +106,9 @@ def str_to_qbytearray(string: str) -> QByteArray:
     return QByteArray.fromBase64(string[len(QBYTE_FLAG) :].encode())
 
 
-def QImg2array(img) -> np.ndarray:
+def QImg2array(
+    img,
+) -> np.ndarray[tuple[int, int, Literal[4]], np.dtype[np.uint8]]:
     """Convert QImage to an array.
 
     Parameters
@@ -121,7 +129,7 @@ def QImg2array(img) -> np.ndarray:
     h, w, c = img.height(), img.width(), 4
 
     # As vispy doesn't use qtpy we need to reconcile the differences
-    # between the `QImage` API for `PySide2` and `PyQt5` on how to convert
+    # between the `QImage` API for `PySide` and `PyQt` on how to convert
     # a QImage to a numpy array.
     if qtpy.API_NAME.startswith('PySide'):
         arr = np.array(b).reshape(h, w, c)
@@ -218,7 +226,8 @@ def drag_with_pixmap(list_widget: QListWidget) -> QDrag:
 
 
 def combine_widgets(
-    widgets: QWidget | Sequence[QWidget], vertical: bool = False
+    widgets: QWidget | Widget | Sequence[QWidget | Widget],
+    vertical: bool = False,
 ) -> QWidget:
     """Combine a list of widgets into a single QWidget with Layout.
 
@@ -316,13 +325,10 @@ def remove_flash_animation(widget_ref: weakref.ref[QWidget]):
     if widget_ref() is None:
         return
     widget = widget_ref()
-    try:
+    with suppress(RuntimeError):
         widget.setGraphicsEffect(None)
         widget._flash_animation.deleteLater()
         del widget._flash_animation
-    except RuntimeError:
-        # RuntimeError: wrapped C/C++ object of type QtWidgetOverlay deleted
-        pass
 
 
 @contextmanager
@@ -351,7 +357,7 @@ def _maybe_allow_interrupt(qapp):
     code from https://github.com/matplotlib/matplotlib/pull/13306
     """
     old_sigint_handler = signal.getsignal(signal.SIGINT)
-    handler_args = None
+    handler_args: Sequence | None = None
     if old_sigint_handler in (None, signal.SIG_IGN, signal.SIG_DFL):
         yield
         return
@@ -367,6 +373,13 @@ def _maybe_allow_interrupt(qapp):
     def handle(*args):
         nonlocal handler_args
         handler_args = args
+        from napari._qt.qt_main_window import _QtMainWindow
+
+        for instance in _QtMainWindow._instances:
+            if instance.status_thread.isRunning():
+                instance.status_thread.close_terminate()
+                instance.status_thread.wait()
+
         qapp.exit()
 
     signal.signal(signal.SIGINT, handle)
@@ -386,10 +399,7 @@ def qt_might_be_rich_text(text) -> bool:
     """
     Check if a text might be rich text in a cross-binding compatible way.
     """
-    if qtpy.PYSIDE2:
-        from qtpy.QtGui import Qt as Qt_
-    else:
-        from qtpy.QtCore import Qt as Qt_
+    from qtpy.QtCore import Qt as Qt_
 
     try:
         return Qt_.mightBeRichText(text)
@@ -411,7 +421,7 @@ def in_qt_main_thread() -> bool:
 
 def get_color(
     color: str | np.ndarray | QColor | None = None,
-    mode: ColorMode = ColorMode.HEX,
+    mode: ColorMode | Literal['hex', 'qcolor', 'array'] = ColorMode.HEX,
 ) -> np.ndarray | None:
     """
     Helper function to get a color from q QColorDialog.
@@ -448,3 +458,51 @@ def get_color(
                 / 255
             )
     return new_color
+
+
+def attr_to_settr(obj, name: str, q_object: QObject, setter: str) -> Callable:
+    """
+    Helper function to connect object attributes changes to QObject attributes.
+
+    Parameters
+    ----------
+    obj : object
+        The object instance which attributes changes will trigger an event.
+        The instance should have an `events` attribute (`EmitterGroup`) with an
+        event related to the attribute.
+    name : str
+        Object attribute that emits changes.
+    q_object : QObject
+        `QObject` instance (usually a `QWidget`) which attribute will be changed.
+    setter : str
+        Name of the method that needs to be used to set the `q_object` attribute.
+
+    Returns
+    -------
+    Callable
+        The callback that was created to call the `QObject` setter when the event
+        gets triggered.
+
+    """
+    qt_ref = weakref.ref(q_object)
+    obj_ref = weakref.ref(obj)
+
+    def callback(event):
+        obj_ = obj_ref()
+        if obj_ is None:
+            return
+
+        q_obj = qt_ref()
+        if q_obj is None:
+            getattr(obj.events, name).disconnect(callback)
+            return
+        with qt_signals_blocked(q_obj):
+            getattr(q_obj, setter)(getattr(obj, name))
+
+    getattr(obj.events, name).connect(callback)
+
+    return callback
+
+
+def checked_to_bool(value: Qt.CheckState) -> bool:
+    return Qt.CheckState(value) == Qt.CheckState.Checked

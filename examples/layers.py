@@ -15,7 +15,8 @@ from skimage.color import rgb2gray
 import napari
 
 # create the viewer with several image layers
-viewer = napari.view_image(rgb2gray(data.astronaut()), name='astronaut')
+viewer = napari.Viewer()
+layer = viewer.add_image(rgb2gray(data.astronaut()), name='astronaut')
 viewer.add_image(data.camera(), name='photographer')
 viewer.add_image(data.coins(), name='coins')
 viewer.add_image(data.moon(), name='moon')

@@ -122,9 +122,18 @@ invalid_colors = [
 ]
 
 warning_colors = [
-    np.array([]),
-    np.array(['g', 'g'], dtype=object),
-    [],
-    [[1, 2], [3, 4], [5, 6]],
-    np.array([[10], [10], [10], [10]]),
+    (np.array([]), 'Given color input is empty'),
+    (
+        np.array(['g', 'g'], dtype=object),
+        'An object array was passed as the color input',
+    ),
+    ([], 'Given color input is empty'),
+    (
+        [[1, 2], [3, 4], [5, 6]],
+        'Given colors input should contain three or four columns',
+    ),
+    (
+        np.array([[10], [10], [10], [10]]),
+        'Given colors input should contain three or four columns',
+    ),
 ]

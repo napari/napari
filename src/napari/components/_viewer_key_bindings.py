@@ -7,16 +7,21 @@ from app_model.types import KeyCode, KeyMod
 
 from napari.components.viewer_model import ViewerModel
 from napari.utils.action_manager import action_manager
-from napari.utils.notifications import show_info
+from napari.utils.notifications import show_info, show_warning
 from napari.utils.theme import available_themes, get_system_theme
 from napari.utils.transforms import Affine
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Generator
+
+    from napari._qt.qt_viewer import QtViewer
     from napari.viewer import Viewer
 
 
-def register_viewer_action(description, repeatable=False):
+def register_viewer_action(
+    description: str, repeatable: bool = False
+) -> Callable[[Callable], Callable]:
     """
     Convenient decorator to register an action with the current ViewerModel
 
@@ -24,7 +29,7 @@ def register_viewer_action(description, repeatable=False):
     to be given instead of function docstring for translation purpose.
     """
 
-    def _inner(func):
+    def _inner(func: Callable) -> Callable:
         action_manager.register_action(
             name=f'napari:{func.__name__}',
             command=func,
@@ -38,30 +43,17 @@ def register_viewer_action(description, repeatable=False):
 
 
 @ViewerModel.bind_key(KeyMod.Shift | KeyCode.UpArrow, overwrite=True)
-def extend_selection_to_layer_above(viewer: Viewer):
+def extend_selection_to_layer_above(viewer: ViewerModel) -> None:
     viewer.layers.select_next(shift=True)
 
 
 @ViewerModel.bind_key(KeyMod.Shift | KeyCode.DownArrow, overwrite=True)
-def extend_selection_to_layer_below(viewer: Viewer):
+def extend_selection_to_layer_below(viewer: ViewerModel) -> None:
     viewer.layers.select_previous(shift=True)
 
 
-@register_viewer_action(trans._('Reset scroll'))
-def reset_scroll_progress(viewer: Viewer):
-    # on key press
-    viewer.dims._scroll_progress = 0
-    yield
-
-    # on key release
-    viewer.dims._scroll_progress = 0
-
-
-reset_scroll_progress.__doc__ = trans._('Reset dims scroll progress')
-
-
 @register_viewer_action(trans._('Toggle 2D/3D view'))
-def toggle_ndisplay(viewer: Viewer):
+def toggle_ndisplay(viewer: ViewerModel) -> None:
     if viewer.dims.ndisplay == 2:
         viewer.dims.ndisplay = 3
     else:
@@ -74,7 +66,7 @@ def toggle_ndisplay(viewer: Viewer):
 # RuntimeError: wrapped C/C++ object of type CanvasBackendDesktop has been deleted
 # ```
 @register_viewer_action(trans._('Toggle current viewer theme'))
-def toggle_theme(viewer: ViewerModel):
+def toggle_theme(viewer: ViewerModel) -> None:
     """Toggle theme for current viewer"""
     themes = available_themes()
     current_theme = viewer.theme
@@ -91,61 +83,61 @@ def toggle_theme(viewer: ViewerModel):
 
 
 @register_viewer_action(trans._('Reset view to original state'))
-def reset_view(viewer: Viewer):
+def reset_view(viewer: ViewerModel) -> None:
     viewer.reset_view()
 
 
 @register_viewer_action(trans._('Delete selected layers'))
-def delete_selected_layers(viewer: Viewer):
+def delete_selected_layers(viewer: ViewerModel) -> None:
     viewer.layers.remove_selected()
 
 
 @register_viewer_action(
     trans._('Increment dimensions slider to the left'), repeatable=True
 )
-def increment_dims_left(viewer: Viewer):
+def increment_dims_left(viewer: ViewerModel) -> None:
     viewer.dims._increment_dims_left()
 
 
 @register_viewer_action(
     trans._('Increment dimensions slider to the right'), repeatable=True
 )
-def increment_dims_right(viewer: Viewer):
+def increment_dims_right(viewer: ViewerModel) -> None:
     viewer.dims._increment_dims_right()
 
 
 @register_viewer_action(trans._('Move focus of dimensions slider up'))
-def focus_axes_up(viewer: Viewer):
+def focus_axes_up(viewer: ViewerModel) -> None:
     viewer.dims._focus_up()
 
 
 @register_viewer_action(trans._('Move focus of dimensions slider down'))
-def focus_axes_down(viewer: Viewer):
+def focus_axes_down(viewer: ViewerModel) -> None:
     viewer.dims._focus_down()
 
 
 # Use non-breaking spaces and non-breaking hyphen for Preferences table
 @register_viewer_action(
     trans._(
-        'Change order of the visible axes, e.g.\u00a0[0,\u00a01,\u00a02]\u00a0\u2011>\u00a0[2,\u00a00,\u00a01]'
+        'Change order of the visible axes, e.g.\u00a0[-3,\u00a0-2,\u00a0-1]\u00a0\u2011>\u00a0[-1,\u00a0-3,\u00a0-2]'
     ),
 )
-def roll_axes(viewer: Viewer):
+def roll_axes(viewer: ViewerModel) -> None:
     viewer.dims.roll()
 
 
 # Use non-breaking spaces and non-breaking hyphen for Preferences table
 @register_viewer_action(
     trans._(
-        'Transpose order of the last two visible axes, e.g.\u00a0[0,\u00a01]\u00a0\u2011>\u00a0[1,\u00a00]'
+        'Transpose order of the last two visible axes, e.g.\u00a0[-2,\u00a0-1]\u00a0\u2011>\u00a0[-1,\u00a0-2]'
     ),
 )
-def transpose_axes(viewer: Viewer):
+def transpose_axes(viewer: ViewerModel) -> None:
     viewer.dims.transpose()
 
 
 @register_viewer_action(trans._('Rotate layers 90 degrees counter-clockwise'))
-def rotate_layers(viewer: Viewer):
+def rotate_layers(viewer: ViewerModel) -> None:
     if viewer.dims.ndisplay == 3:
         show_info(trans._('Rotating layers only works in 2D'))
         return
@@ -181,30 +173,47 @@ def rotate_layers(viewer: Viewer):
 
 
 @register_viewer_action(trans._('Toggle grid mode'))
-def toggle_grid(viewer: Viewer):
+def toggle_grid(viewer: ViewerModel) -> None:
+    if (
+        1 < len(viewer.layers) <= abs(viewer.grid.stride)
+        and not viewer.grid.enabled
+    ):
+        show_warning(
+            'Grid stride is too large for number of layers. Will render as 1x1 grid.'
+        )
     viewer.grid.enabled = not viewer.grid.enabled
 
 
 @register_viewer_action(trans._('Toggle visibility of selected layers'))
-def toggle_selected_visibility(viewer: Viewer):
+def toggle_selected_visibility(viewer: ViewerModel) -> None:
     viewer.layers.toggle_selected_visibility()
 
 
 @register_viewer_action(trans._('Toggle visibility of unselected layers'))
-def toggle_unselected_visibility(viewer: Viewer):
+def toggle_unselected_visibility(viewer: ViewerModel) -> None:
     for layer in viewer.layers:
         if layer not in viewer.layers.selection:
             layer.visible = not layer.visible
 
 
+@register_viewer_action(trans._('Select layer above'))
+def select_layer_above(viewer: ViewerModel) -> None:
+    viewer.layers.select_next()
+
+
+@register_viewer_action(trans._('Select layer below'))
+def select_layer_below(viewer: ViewerModel) -> None:
+    viewer.layers.select_previous()
+
+
 @register_viewer_action(trans._('Select and show only layer above'))
-def show_only_layer_above(viewer):
+def show_only_layer_above(viewer: ViewerModel) -> None:
     viewer.layers.select_next()
     _show_only_selected_layer(viewer)
 
 
 @register_viewer_action(trans._('Select and show only layer below'))
-def show_only_layer_below(viewer):
+def show_only_layer_below(viewer: ViewerModel) -> None:
     viewer.layers.select_previous()
     _show_only_selected_layer(viewer)
 
@@ -214,12 +223,17 @@ def show_only_layer_below(viewer):
         'Show/Hide IPython console (only available when napari started as standalone application)'
     )
 )
-def toggle_console_visibility(viewer: Viewer):
-    viewer.window._qt_viewer.toggle_console_visibility()
+def toggle_console_visibility(qt_viewer: QtViewer) -> None:
+    if hasattr(qt_viewer, 'toggle_console_visibility'):
+        qt_viewer.toggle_console_visibility()
+    else:
+        # old action_manager path :( :(, where
+        # toggle_console_visibility is treated as bound method...
+        qt_viewer.window._qt_viewer.toggle_console_visibility()  # type: ignore[attr-defined]
 
 
 @register_viewer_action(trans._('Press and hold for move camera mode'))
-def hold_for_pan_zoom(viewer: ViewerModel):
+def hold_for_pan_zoom(viewer: ViewerModel) -> Generator[None, None, None]:
     selected_layer = viewer.layers.selection.active
     if selected_layer is None:
         yield
@@ -238,14 +252,14 @@ def hold_for_pan_zoom(viewer: ViewerModel):
 
 
 @register_viewer_action(trans._('Show all key bindings'))
-def show_shortcuts(viewer: Viewer):
+def show_shortcuts(viewer: Viewer) -> None:
     pref_list = viewer.window._open_preferences_dialog()._list
     for i in range(pref_list.count()):
         if (item := pref_list.item(i)) and item.text() == 'Shortcuts':
             pref_list.setCurrentRow(i)
 
 
-def _show_only_selected_layer(viewer):
+def _show_only_selected_layer(viewer: ViewerModel) -> None:
     """Helper function to show only selected layer"""
     for layer in viewer.layers:
         if layer not in viewer.layers.selection:

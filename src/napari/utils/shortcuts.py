@@ -5,7 +5,6 @@ _default_shortcuts = {
     'napari:toggle_console_visibility': [
         KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KeyC
     ],
-    'napari:reset_scroll_progress': [KeyCode.Ctrl],
     'napari:toggle_ndisplay': [KeyMod.CtrlCmd | KeyCode.KeyY],
     'napari:toggle_theme': [KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KeyT],
     'napari:reset_view': [KeyMod.CtrlCmd | KeyCode.KeyR],
@@ -24,6 +23,8 @@ _default_shortcuts = {
     'napari:toggle_grid': [KeyMod.CtrlCmd | KeyCode.KeyG],
     'napari:toggle_selected_visibility': [KeyCode.KeyV],
     'napari:toggle_unselected_visibility': [KeyMod.Shift | KeyCode.KeyV],
+    'napari:select_layer_above': [KeyMod.CtrlCmd | KeyCode.UpArrow],
+    'napari:select_layer_below': [KeyMod.CtrlCmd | KeyCode.DownArrow],
     'napari:show_only_layer_above': [
         KeyMod.Shift | KeyMod.Alt | KeyCode.UpArrow
     ],
@@ -55,9 +56,9 @@ _default_shortcuts = {
     'napari:activate_points_transform_mode': [KeyCode.Digit5],
     'napari:select_all_in_slice': [
         KeyCode.KeyA,
-        KeyMod.CtrlCmd | KeyCode.KeyA,
     ],
-    'napari:select_all_data': [KeyMod.Shift | KeyCode.KeyA],
+    'napari:select_append_all_in_slice': [KeyMod.Shift | KeyCode.KeyA],
+    'napari:select_all_data': [KeyMod.CtrlCmd | KeyCode.KeyA],
     'napari:delete_selected_points': [
         KeyCode.Digit1,
         KeyCode.Delete,
@@ -81,7 +82,10 @@ _default_shortcuts = {
     'napari:paste_shape': [KeyMod.CtrlCmd | KeyCode.KeyV],
     'napari:move_shapes_selection_to_front': [KeyCode.KeyF],
     'napari:move_shapes_selection_to_back': [KeyCode.KeyB],
-    'napari:select_all_shapes': [KeyCode.KeyA],
+    'napari:select_shapes_in_slice': [
+        KeyCode.KeyA,
+        KeyMod.CtrlCmd | KeyCode.KeyA,
+    ],
     'napari:delete_selected_shapes': [
         KeyCode.Digit3,
         KeyCode.Delete,
@@ -93,6 +97,7 @@ _default_shortcuts = {
     'napari:orient_plane_normal_along_y': [KeyCode.KeyY],
     'napari:orient_plane_normal_along_z': [KeyCode.KeyZ],
     'napari:orient_plane_normal_along_view_direction': [KeyCode.KeyO],
+    'napari:auto_contrast_once': [KeyCode.KeyC],
     'napari:activate_image_pan_zoom_mode': [KeyCode.Digit1],
     'napari:activate_image_transform_mode': [KeyCode.Digit2],
     # vectors

@@ -1,18 +1,6 @@
 import numpy as np
 from vispy.scene import ArcballCamera, BaseCamera, PanZoomCamera
-
-from napari._vispy.utils.quaternion import quaternion2euler_degrees
-
-# Note: the Vispy axis order is xyz, or horizontal, vertical, depth,
-# while the napari axis order is zyx / plane-row-column, or depth, vertical,
-# horizontal — i.e. it is exactly inverted. This switch happens when data
-# is passed from napari to Vispy, usually with a transposition. In the camera
-# models, this means that the order of these orientations appear in the
-# opposite order to that in napari.components.Camera.
-#
-# Note that the default Vispy camera orientations come from Vispy, not from us.
-VISPY_DEFAULT_ORIENTATION_2D = ('right', 'up', 'towards')  # xyz
-VISPY_DEFAULT_ORIENTATION_3D = ('right', 'down', 'away')  # xyz
+from vispy.util.quaternion import Quaternion
 
 
 class VispyCamera:
@@ -35,19 +23,18 @@ class VispyCamera:
 
         # Create 2D camera
         self._2D_camera = MouseToggledPanZoomCamera(aspect=1)
-        self._2D_camera.viewbox_key_event = viewbox_key_event
 
         # Create 3D camera
         self._3D_camera = MouseToggledArcballCamera(fov=0)
-        self._3D_camera.viewbox_key_event = viewbox_key_event
 
-        # Set 2D camera by default
-        self._view.camera = self._2D_camera
+        self._view.camera = (
+            self._2D_camera if dims.ndisplay == 2 else self._3D_camera
+        )
+        self._last_viewbox_size = np.array((0, 0))
 
         self._dims.events.ndisplay.connect(
             self._on_ndisplay_change, position='first'
         )
-
         self._camera.events.center.connect(self._on_center_change)
         self._camera.events.zoom.connect(self._on_zoom_change)
         self._camera.events.angles.connect(self._on_angles_change)
@@ -56,18 +43,29 @@ class VispyCamera:
         self._camera.events.mouse_zoom.connect(self._on_mouse_toggles_change)
         self._camera.events.orientation.connect(self._on_orientation_change)
 
-        self._on_ndisplay_change()
-
     @property
     def angles(self):
         """3-tuple: Euler angles of camera in 3D viewing, in degrees.
         Note that angles might be different than the ones that might have generated the quaternion.
         """
 
-        if self._view.camera == self._3D_camera:
+        if isinstance(self._view.camera, MouseToggledArcballCamera):
+            from scipy.spatial.transform import Rotation
+
             # Do conversion from quaternion representation to euler angles
-            return quaternion2euler_degrees(self._view.camera._quaternion)
-        return (0, 0, 90)
+            q = self._view.camera._quaternion
+            rotation = Rotation.from_quat([q.x, q.y, q.z, q.w])
+            # see #8281 for why this is yzx. In short: longstanding vispy bug.
+            angles = rotation.as_euler('yzx', degrees=True)
+            # undo vispy quirks (rotation of 90 digrees and lefthanded y axis)
+            angles = (angles - (0, 0, 90)) * (1, -1, 1)
+            # flip handedness so the rotation is always righthanded even with axis flipping
+            angles = angles * np.where(
+                self._camera._vispy_flipped_axes(ndisplay=3), -1, 1
+            )
+            return tuple(angles)
+
+        return (0, 0, 0)
 
     @angles.setter
     def angles(self, angles):
@@ -75,19 +73,26 @@ class VispyCamera:
             return
 
         # Only update angles if current camera is 3D camera
-        if self._view.camera == self._3D_camera:
-            # Create and set quaternion
-            quat = self._view.camera._quaternion.create_from_euler_angles(
-                *angles,
-                degrees=True,
+        if isinstance(self._view.camera, MouseToggledArcballCamera):
+            from scipy.spatial.transform import Rotation
+
+            # flip handedness so the rotation is always righthanded even with axis flipping
+            angles = angles * np.where(
+                self._camera._vispy_flipped_axes(ndisplay=3), -1, 1
             )
-            self._view.camera._quaternion = quat
+            # undo vispy quirks (rotation of 90 digrees and lefthanded y axis)
+            angles = (np.array(angles) * (1, -1, 1)) + (0, 0, 90)
+            # see #8281 for why this is yzx. In short: longstanding vispy bug.
+            rotation = Rotation.from_euler('yzx', angles, degrees=True)
+            # Create and set quaternion
+            q = Quaternion(*rotation.as_quat(scalar_first=True))
+            self._view.camera._quaternion = q
             self._view.camera.view_changed()
 
     @property
     def center(self):
         """tuple: Center point of camera view for 2D or 3D viewing."""
-        if self._view.camera == self._3D_camera:
+        if isinstance(self._view.camera, MouseToggledArcballCamera):
             center = tuple(self._view.camera.center)
         else:
             # in 2D, we arbitrarily choose 0.0 as the center in z
@@ -105,8 +110,8 @@ class VispyCamera:
     @property
     def zoom(self):
         """float: Scale from canvas pixels to world pixels."""
-        canvas_size = np.array(self._view.canvas.size)
-        if self._view.camera == self._3D_camera:
+        viewbox_size = np.array(self._view.rect.size)
+        if isinstance(self._view.camera, MouseToggledArcballCamera):
             # For fov = 0.0 normalize scale factor by canvas size to get scale factor.
             # Note that the scaling is stored in the `_projection` property of the
             # camera which is updated in vispy here
@@ -116,16 +121,20 @@ class VispyCamera:
             scale = np.array(
                 [self._view.camera.rect.width, self._view.camera.rect.height]
             )
-            scale[np.isclose(scale, 0)] = 1  # fix for #2875
-        zoom = np.min(canvas_size / scale)
+            # we just never want this to be zero; however, ideally we should block zooming
+            # itself (currently we rely on vispy to do camera callbacks so we can't do this)
+            # other stuff breaks at lower than 1e-8, so we shhouldn't go there...
+            scale = np.clip(scale, 1e-8, np.inf)
+        zoom = np.min(viewbox_size / scale)
         return zoom
 
     @zoom.setter
     def zoom(self, zoom):
         if self.zoom == zoom:
             return
-        scale = np.array(self._view.canvas.size) / zoom
-        if self._view.camera == self._3D_camera:
+        viewbox_size = np.array(self._view.rect.size)
+        scale = np.array(viewbox_size) / zoom
+        if isinstance(self._view.camera, MouseToggledArcballCamera):
             self._view.camera.scale_factor = np.min(scale)
         else:
             # Set view rectangle, as left, right, width, height
@@ -161,6 +170,8 @@ class VispyCamera:
         self._view.camera.mouse_pan = mouse_pan
 
     def _on_ndisplay_change(self):
+        # remove previous camera from children
+        self._view.camera.parent = None
         if self._dims.ndisplay == 3:
             self._view.camera = self._3D_camera
             self._on_angles_change()
@@ -171,6 +182,7 @@ class VispyCamera:
         self._on_center_change()
         self._on_zoom_change()
         self._on_orientation_change()
+        self._on_perspective_change()
 
     def _on_mouse_toggles_change(self):
         self.mouse_pan = self._camera.mouse_pan
@@ -183,58 +195,44 @@ class VispyCamera:
         self.zoom = self._camera.zoom
 
     def _on_orientation_change(self):
-        # Vispy uses xyz coordinates; napari uses zyx coordinates. We therefore
-        # start by inverting the order of coordinates coming from the napari
-        # camera model:
-        orientation_xyz = self._camera.orientation[::-1]
-        # The Vispy camera flip is a tuple of three ints in {0, 1}, indicating
-        # whether they are flipped relative to the Vispy default.
-        self._2D_camera.flip = tuple(
-            int(ori != default_ori)
-            for ori, default_ori in zip(
-                orientation_xyz, VISPY_DEFAULT_ORIENTATION_2D, strict=True
-            )
-        )
-        self._3D_camera.flip = tuple(
-            int(ori != default_ori)
-            for ori, default_ori in zip(
-                orientation_xyz, VISPY_DEFAULT_ORIENTATION_3D, strict=True
-            )
-        )
+        self._2D_camera.flip = self._camera._vispy_flipped_axes(ndisplay=2)
+        self._3D_camera.flip = self._camera._vispy_flipped_axes(ndisplay=3)
 
     def _on_perspective_change(self):
         self.perspective = self._camera.perspective
 
     def _on_angles_change(self):
-        self.angles = self._camera.angles
+        with self._camera.events.angles.blocker():
+            self.angles = self._camera.angles
 
     def on_draw(self, _event):
         """Called whenever the canvas is drawn.
 
         Update camera model angles, center, and zoom.
         """
-        if self._view.camera == self._3D_camera:
+        # if the viewboxsize changed since last time, we need to update
+        viewbox_size = np.array(self._view.rect.size)
+        if not np.allclose(self._last_viewbox_size, viewbox_size):
+            self._last_viewbox_size = viewbox_size
+            self._on_ndisplay_change()
+
+        if not np.allclose(self.angles, self._camera.angles) and isinstance(
+            self._view.camera,
+            MouseToggledArcballCamera,
+        ):
             with self._camera.events.angles.blocker(self._on_angles_change):
                 self._camera.angles = self.angles
-        with self._camera.events.center.blocker(self._on_center_change):
-            self._camera.center = self.center
-        with self._camera.events.zoom.blocker(self._on_zoom_change):
-            self._camera.zoom = self.zoom
-        with self._camera.events.perspective.blocker(
-            self._on_perspective_change
-        ):
-            self._camera.perspective = self.perspective
-
-
-def viewbox_key_event(event):
-    """ViewBox key event handler.
-
-    Parameters
-    ----------
-    event : vispy.util.event.Event
-        The vispy event that triggered this method.
-    """
-    return
+        if not np.allclose(self.center, self._camera.center):
+            with self._camera.events.center.blocker(self._on_center_change):
+                self._camera.center = self.center
+        if not np.allclose(self.zoom, self._camera.zoom):
+            with self._camera.events.zoom.blocker(self._on_zoom_change):
+                self._camera.zoom = self.zoom
+        if not np.allclose(self.perspective, self._camera.perspective):
+            with self._camera.events.perspective.blocker(
+                self._on_perspective_change
+            ):
+                self._camera.perspective = self.perspective
 
 
 def add_mouse_pan_zoom_toggles(
@@ -246,6 +244,9 @@ def add_mouse_pan_zoom_toggles(
     panning and zooming on and off. This decorator adds separate toggles,
     ``mouse_pan`` and ``mouse_zoom``, to enable controlling them
     separately.
+
+    This also overrides viewbox_mouse_event and viewbox_key_event which are
+    called unnecessarily for us and cause exceptions in some cases.
 
     Parameters
     ----------
@@ -275,6 +276,24 @@ def add_mouse_pan_zoom_toggles(
                 super().viewbox_mouse_event(event)
             else:
                 event.handled = False
+
+        def viewbox_resize_event(self, event):
+            # due to the 2d/3d switching of cameras, sometimes we momentarily
+            # try to update cameras that are not in the scenegraph;
+            # in that case, we can just skip the update
+            if self not in event.source.scene.children:
+                return
+            super().viewbox_resize_event(event)
+
+        def viewbox_key_event(self, event):
+            """ViewBox key event handler.
+
+            Parameters
+            ----------
+            event : vispy.util.event.Event
+                The vispy event that triggered this method.
+            """
+            return
 
     return _vispy_camera_cls
 

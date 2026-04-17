@@ -34,7 +34,7 @@ def pltri(vertices, triangles, *, mask=None, ax=None):
     orientation of this dataset.)
     """
     if ax is None:
-        fig, ax = plt.subplots()
+        _fig, ax = plt.subplots()
     ax.triplot(vertices[:, 1], vertices[:, 0], triangles)
     if mask is not None:
         centers = np.mean(vertices[triangles], axis=1)

@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING, Any
+
 import numpy as np
-from vispy.scene.widgets.viewbox import ViewBox
 
 from napari._vispy.layers.base import VispyBaseLayer
 from napari._vispy.layers.image import VispyImageLayer
@@ -15,23 +16,35 @@ from napari._vispy.overlays.axes import VispyAxesOverlay
 from napari._vispy.overlays.base import VispyBaseOverlay
 from napari._vispy.overlays.bounding_box import VispyBoundingBoxOverlay
 from napari._vispy.overlays.brush_circle import VispyBrushCircleOverlay
+from napari._vispy.overlays.colorbar import VispyColorBarOverlay
 from napari._vispy.overlays.interaction_box import (
     VispySelectionBoxOverlay,
     VispyTransformBoxOverlay,
 )
 from napari._vispy.overlays.labels_polygon import VispyLabelsPolygonOverlay
 from napari._vispy.overlays.scale_bar import VispyScaleBarOverlay
-from napari._vispy.overlays.text import VispyTextOverlay
+from napari._vispy.overlays.text import (
+    VispyCurrentSliceOverlay,
+    VispyLayerNameOverlay,
+    VispyTextOverlay,
+)
+from napari._vispy.overlays.welcome import VispyWelcomeOverlay
+from napari._vispy.overlays.zoom import VispyZoomOverlay
 from napari.components.overlays import (
     AxesOverlay,
     BoundingBoxOverlay,
     BrushCircleOverlay,
+    ColorBarOverlay,
+    CurrentSliceOverlay,
     LabelsPolygonOverlay,
+    LayerNameOverlay,
     Overlay,
     ScaleBarOverlay,
     SelectionBoxOverlay,
     TextOverlay,
     TransformBoxOverlay,
+    WelcomeOverlay,
+    ZoomOverlay,
 )
 from napari.layers import (
     Image,
@@ -45,7 +58,10 @@ from napari.layers import (
 )
 from napari.utils.translations import trans
 
-layer_to_visual = {
+if TYPE_CHECKING:
+    from vispy.scene.widgets.viewbox import ViewBox
+
+layer_to_visual: dict[type[Layer], type[VispyBaseLayer]] = {
     Image: VispyImageLayer,
     Labels: VispyLabelsLayer,
     Points: VispyPointsLayer,
@@ -65,10 +81,17 @@ overlay_to_visual: dict[type[Overlay], type[VispyBaseOverlay]] = {
     SelectionBoxOverlay: VispySelectionBoxOverlay,
     BrushCircleOverlay: VispyBrushCircleOverlay,
     LabelsPolygonOverlay: VispyLabelsPolygonOverlay,
+    WelcomeOverlay: VispyWelcomeOverlay,
+    ZoomOverlay: VispyZoomOverlay,
+    LayerNameOverlay: VispyLayerNameOverlay,
+    CurrentSliceOverlay: VispyCurrentSliceOverlay,
+    ColorBarOverlay: VispyColorBarOverlay,
 }
 
 
-def create_vispy_layer(layer: Layer) -> VispyBaseLayer:
+def create_vispy_layer(
+    layer: Layer, *args: Any, **kwargs: Any
+) -> VispyBaseLayer:
     """Create vispy visual for a layer based on its layer type.
 
     Parameters
@@ -81,9 +104,10 @@ def create_vispy_layer(layer: Layer) -> VispyBaseLayer:
     visual : VispyBaseLayer
         Vispy layer
     """
-    for layer_type, visual_class in layer_to_visual.items():
-        if isinstance(layer, layer_type):
-            return visual_class(layer)
+    # find the closest parent class, to maintain behaviour from #2757
+    for cls in layer.__class__.mro():
+        if cls in layer_to_visual:
+            return layer_to_visual[cls](layer, *args, **kwargs)
 
     raise TypeError(
         trans._(
@@ -108,9 +132,9 @@ def create_vispy_overlay(overlay: Overlay, **kwargs) -> VispyBaseOverlay:
     visual : VispyBaseOverlay
         Vispy overlay
     """
-    for overlay_type, visual_class in overlay_to_visual.items():
-        if isinstance(overlay, overlay_type):
-            return visual_class(overlay=overlay, **kwargs)
+    for cls in overlay.__class__.mro():
+        if cls in overlay_to_visual:
+            return overlay_to_visual[cls](overlay=overlay, **kwargs)
 
     raise TypeError(
         trans._(

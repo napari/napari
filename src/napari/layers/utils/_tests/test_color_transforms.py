@@ -1,12 +1,9 @@
-from itertools import cycle
-
 import numpy as np
 import pytest
 from vispy.color import ColorArray
 
 from napari.layers.utils.color_transformations import (
     normalize_and_broadcast_colors,
-    transform_color_cycle,
     transform_color_with_defaults,
 )
 
@@ -29,7 +26,9 @@ def test_transform_color_wrong_colorname():
     shape = (10, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
-    with pytest.warns(UserWarning):
+    with pytest.warns(
+        UserWarning, match='resetting all edge_color values to black'
+    ):
         colorarray = transform_color_with_defaults(
             num_entries=len(data),
             colors='rr',
@@ -43,7 +42,7 @@ def test_transform_color_wrong_colorlen():
     shape = (10, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
-    with pytest.warns(UserWarning):
+    with pytest.warns(UserWarning, match='Setting face_color to black'):
         colorarray = transform_color_with_defaults(
             num_entries=len(data),
             colors=['r', 'r'],
@@ -67,7 +66,9 @@ def test_normalize_colors_wrong_num():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     colors = ColorArray(['w'] * shape[0]).rgba
-    with pytest.warns(UserWarning):
+    with pytest.warns(
+        UserWarning, match='The number of supplied colors mismatch'
+    ):
         colorarray = normalize_and_broadcast_colors(len(data), colors[:-1])
     np.testing.assert_array_equal(colorarray, colors)
 
@@ -77,21 +78,8 @@ def test_normalize_colors_zero_colors():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     real = np.ones((shape[0], 4), dtype=np.float32)
-    with pytest.warns(UserWarning):
+    with pytest.warns(
+        UserWarning, match='The number of supplied colors mismatch'
+    ):
         colorarray = normalize_and_broadcast_colors(len(data), [])
     np.testing.assert_array_equal(colorarray, real)
-
-
-def test_transform_color_cycle():
-    colors = ['red', 'blue']
-    transformed_color_cycle, transformed_colors = transform_color_cycle(
-        colors, elem_name='face_color', default='white'
-    )
-    transformed_result = np.array(
-        [next(transformed_color_cycle) for i in range(10)]
-    )
-
-    color_cycle = cycle(np.array([[1, 0, 0, 1], [0, 0, 1, 1]]))
-    color_cycle_result = np.array([next(color_cycle) for i in range(10)])
-
-    np.testing.assert_allclose(transformed_result, color_cycle_result)

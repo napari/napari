@@ -41,6 +41,7 @@ class DockWidgetToggleAction(Action):
         def toggle_dock_widget(window: Window) -> None:
             dock_widget_prop = getattr(window._qt_viewer, dock_widget)
             dock_widget_prop.setVisible(not dock_widget_prop.isVisible())
+            dock_widget_prop.setFocus()
 
         def get_current(window: Window) -> bool:
             dock_widget_prop = getattr(window._qt_viewer, dock_widget)

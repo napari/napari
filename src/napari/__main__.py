@@ -5,17 +5,16 @@ napari command line viewer.
 import argparse
 import contextlib
 import logging
-import os
-import runpy
 import sys
 import warnings
 from ast import literal_eval
-from itertools import chain, repeat
 from pathlib import Path
 from textwrap import wrap
 from typing import Any
 
+from napari import Viewer
 from napari.errors import ReaderPluginError
+from napari.utils._startup_script import _run_configured_startup_script
 from napari.utils.misc import maybe_patch_conda_exe
 from napari.utils.translations import trans
 
@@ -37,7 +36,7 @@ class PluginInfoAction(argparse.Action):
         logging.basicConfig(level=logging.WARNING)
         from npe2 import cli
 
-        cli.list(
+        cli.list_(
             fields='name,version,npe2,contributions',
             sort='name',
             format='table',
@@ -210,7 +209,7 @@ def parse_sys_argv():
 
 
 def _run() -> None:
-    from napari import Viewer, run
+    from napari import run
     from napari.settings import get_settings
 
     """Main program."""
@@ -246,168 +245,111 @@ def _run() -> None:
         # so remove --plugin from sys.argv to prevent that warning
         sys.argv.remove('--plugin')
 
-    if any(p.endswith('.py') for p in args.paths):
-        # we're running a script
-        if len(args.paths) > 1:
-            sys.exit(
-                'When providing a python script, only a '
-                'single positional argument may be provided'
-            )
-
-        # run the file
-        mod = runpy.run_path(args.paths[0])
-
-        from napari_plugin_engine.markers import HookImplementationMarker
-
-        # if this file had any hook implementations, register and run as plugin
-        if any(isinstance(i, HookImplementationMarker) for i in mod.values()):
-            _run_plugin_module(mod, os.path.basename(args.paths[0]))
-
-    else:
-        if args.with_:
-            from napari.plugins import (
-                _initialize_plugins,
-                _npe2,
-                plugin_manager,
-            )
-
-            # if a plugin widget has been requested, this will fail immediately
-            # if the requested plugin/widget is not available.
-            _initialize_plugins()
-            plugin_manager.discover_widgets()
-
-            plugin_manager_plugins = []
-            npe2_plugins = []
-            for plugin in args.with_:
-                pname, *wnames = plugin
-                for name, (w_pname, wnames) in _npe2.widget_iterator():
-                    if name == 'dock' and pname == w_pname:
-                        npe2_plugins.append(plugin)
-                        if '__all__' in wnames:
-                            wnames = wnames
-                        break
-
-                for name2, (
-                    w_pname,
-                    wnames_dict,
-                ) in plugin_manager.iter_widgets():
-                    if name2 == 'dock' and pname == w_pname:
-                        plugin_manager_plugins.append(plugin)
-                        if '__all__' in wnames:
-                            # Plugin_manager iter_widgets return wnames as dict keys
-                            wnames = list(wnames_dict)
-                        warnings.warn(
-                            trans._(
-                                'Non-npe2 plugin {pname} detected. Disable tabify for this plugin.',
-                                deferred=True,
-                                pname=pname,
-                            ),
-                            RuntimeWarning,
-                            stacklevel=3,
-                        )
-                        break
-
-                if wnames:
-                    for wname in wnames:
-                        _npe2.get_widget_contribution(
-                            pname, wname
-                        ) or plugin_manager.get_widget(pname, wname)
-                else:
-                    _npe2.get_widget_contribution(
-                        pname
-                    ) or plugin_manager.get_widget(pname)
-
-        from napari._qt.widgets.qt_splash_screen import NapariSplashScreen
-
-        splash = NapariSplashScreen()
-        splash.close()  # will close once event loop starts
-
-        # viewer _must_  be kept around.
-        # it will be referenced by the global window only
-        # once napari has finished starting
-        # but in the meantime if the garbage collector runs;
-        # it will collect it and hang napari at start time.
-        # in a way that is machine, os, time (and likely weather dependant).
-        viewer = Viewer()
-
-        # For backwards compatibility
-        # If the --stack option is provided without additional arguments
-        # just set stack to True similar to the previous store_true action
-        if args.stack and len(args.stack) == 1 and len(args.stack[0]) == 0:
-            warnings.warn(
-                trans._(
-                    "The usage of the --stack option as a boolean is deprecated. Please use '--stack file1 file2 .. fileN' instead. It is now also possible to specify multiple stacks of files to stack '--stack file1 file2 --stack file3 file4 file5 --stack ..'. This warning will become an error in version 0.5.0.",
-                ),
-                DeprecationWarning,
-                stacklevel=3,
-            )
-            args.stack = True
-        try:
-            viewer._window._qt_viewer._qt_open(
-                args.paths,
-                stack=args.stack,
-                plugin=args.plugin,
-                layer_type=args.layer_type,
-                **kwargs,
-            )
-        except ReaderPluginError:
-            logging.getLogger('napari').exception(
-                'Loading %s with %s failed with errors',
-                args.paths,
-                args.plugin,
-            )
-
-        if args.with_:
-            # Non-npe2 plugins disappear on tabify or if tabified npe2 plugins are loaded after them.
-            # Therefore, read npe2 plugins first and do not tabify for non-npe2 plugins.
-            for plugin, tabify in chain(
-                zip(npe2_plugins, repeat(True)),
-                zip(plugin_manager_plugins, repeat(False)),
-            ):
-                pname, *wnames = plugin
-                if '__all__' in wnames:
-                    for name, (_pname, wnames_collection) in chain(
-                        _npe2.widget_iterator(), plugin_manager.iter_widgets()
-                    ):
-                        if name == 'dock' and pname == _pname:
-                            if isinstance(wnames_collection, dict):
-                                # Plugin_manager iter_widgets return wnames as dict keys
-                                wnames = list(wnames_collection.keys())
-                            else:
-                                wnames = wnames_collection
-                            break
-
-                if wnames:
-                    first_dock_widget = viewer.window.add_plugin_dock_widget(
-                        pname, wnames[0], tabify=tabify
-                    )[0]
-                    for wname in wnames[1:]:
-                        viewer.window.add_plugin_dock_widget(
-                            pname, wname, tabify=tabify
-                        )
-                    first_dock_widget.show()
-                    first_dock_widget.raise_()
-                else:
-                    viewer.window.add_plugin_dock_widget(pname, tabify=tabify)
-
-        # only necessary in bundled app, but see #3596
-        from napari.utils.misc import (
-            install_certifi_opener,
-            running_as_constructor_app,
+    if args.with_:
+        from napari.plugins import (
+            _initialize_plugins,
+            _npe2,
         )
 
-        if running_as_constructor_app():
-            install_certifi_opener()
-            maybe_patch_conda_exe()
-        run(gui_exceptions=True)
+        # if a plugin widget has been requested, this will fail immediately
+        # if the requested plugin/widget is not available.
+        _initialize_plugins()
+
+        npe2_plugins = []
+        for plugin in args.with_:
+            pname, *wnames = plugin
+            for name, (w_pname, wnames) in _npe2.widget_iterator():
+                if name == 'dock' and pname == w_pname:
+                    npe2_plugins.append(plugin)
+                    if '__all__' in wnames:
+                        wnames = wnames
+                    break
+
+            if wnames:
+                for wname in wnames:
+                    _npe2.get_widget_contribution(pname, wname)
+            else:
+                _npe2.get_widget_contribution(pname)
+
+    # viewer _must_  be kept around.
+    # it will be referenced by the global window only
+    # once napari has finished starting
+    # but in the meantime if the garbage collector runs;
+    # in a way that is machine, os, time (and likely weather dependant).
+    # it will collect it and hang napari at start time.
+    # don't show viewer until we've processed all the args
+    viewer = Viewer(show=False)
+    _run_configured_startup_script()
+
+    # For backwards compatibility
+    # If the --stack option is provided without additional arguments
+    # just set stack to True similar to the previous store_true action
+    if args.stack and len(args.stack) == 1 and len(args.stack[0]) == 0:
+        warnings.warn(
+            trans._(
+                "The usage of the --stack option as a boolean is deprecated. Please use '--stack file1 file2 .. fileN' instead. It is now also possible to specify multiple stacks of files to stack '--stack file1 file2 --stack file3 file4 file5 --stack ..'. This warning will become an error in version 0.5.0.",
+            ),
+            DeprecationWarning,
+            stacklevel=3,
+        )
+        args.stack = True
+    try:
+        viewer._window._qt_viewer._qt_open(
+            args.paths,
+            stack=args.stack,
+            plugin=args.plugin,
+            layer_type=args.layer_type,
+            **kwargs,
+        )
+    except ReaderPluginError:
+        logging.getLogger('napari').exception(
+            'Loading %s with %s failed with errors',
+            args.paths,
+            args.plugin,
+        )
+
+    if args.with_:
+        for plugin in npe2_plugins:
+            pname, *wnames = plugin
+            if '__all__' in wnames:
+                for name, (
+                    _pname,
+                    wnames_collection,
+                ) in _npe2.widget_iterator():
+                    if name == 'dock' and pname == _pname:
+                        wnames = wnames_collection
+                        break
+
+            if wnames:
+                first_dock_widget = viewer.window.add_plugin_dock_widget(
+                    pname, wnames[0], tabify=True
+                )[0]
+                for wname in wnames[1:]:
+                    viewer.window.add_plugin_dock_widget(
+                        pname, wname, tabify=True
+                    )
+                first_dock_widget.show()
+                first_dock_widget.raise_()
+            else:
+                viewer.window.add_plugin_dock_widget(pname, tabify=True)
+
+    # only necessary in bundled app, but see #3596
+    from napari.utils.misc import (
+        install_certifi_opener,
+        running_as_constructor_app,
+    )
+
+    if running_as_constructor_app():
+        install_certifi_opener()
+        maybe_patch_conda_exe()
+    # now that we've processed all the args, show viewer
+    viewer.show()
+    run(gui_exceptions=True)
 
 
 def _run_plugin_module(mod, plugin_name):
     """Register `mod` as a plugin, find/create viewer, and run napari."""
     from napari import Viewer, run
-    from napari.plugins import plugin_manager
-
-    plugin_manager.register(mod, name=plugin_name)
 
     # now, check if a viewer was created, and if not, create one.
     for obj in mod.values():
@@ -425,161 +367,10 @@ def _run_plugin_module(mod, plugin_name):
         # can continue here
         return
 
-    # finally, if the file declared a dock widget, add it to the viewer.
-    dws = plugin_manager.hooks.napari_experimental_provide_dock_widget
-    if any(i.plugin_name == plugin_name for i in dws.get_hookimpls()):
-        _v.window.add_plugin_dock_widget(plugin_name)
-
     run()
 
 
-def _maybe_rerun_with_macos_fixes():
-    """
-    Apply some fixes needed in macOS, which might involve
-    running this script again using a different sys.executable.
-
-    1) Quick fix for Big Sur Python 3.9 and Qt 5.
-       No relaunch needed.
-    2) Using `pythonw` instead of `python`.
-       This can be used to ensure we're using a framework
-       build of Python on macOS, which fixes frozen menubar issues
-       in some macOS versions.
-    3) Make sure the menu bar uses 'napari' as the display name.
-       This requires relaunching the app from a symlink to the
-       desired python executable, conveniently named 'napari'.
-    """
-    from napari._qt import API_NAME
-
-    # This import mus be here to raise exception about PySide6 problem
-
-    if (
-        sys.platform != 'darwin'
-        or 'pdb' in sys.modules
-        or 'pydevd' in sys.modules
-    ):
-        return
-
-    if '_NAPARI_RERUN_WITH_FIXES' in os.environ:
-        # This function already ran, do not recurse!
-        # We also restore sys.executable to its initial value,
-        # if we used a symlink
-        if exe := os.environ.pop('_NAPARI_SYMLINKED_EXECUTABLE', ''):
-            sys.executable = exe
-        return
-
-    import platform
-    import subprocess
-    from tempfile import mkdtemp
-
-    # In principle, we will relaunch to the same python we were using
-    executable = sys.executable
-    cwd = Path.cwd()
-
-    _MACOS_AT_LEAST_CATALINA = int(platform.release().split('.')[0]) >= 19
-    _MACOS_AT_LEAST_BIG_SUR = int(platform.release().split('.')[0]) >= 20
-    _RUNNING_CONDA = 'CONDA_PREFIX' in os.environ
-    _RUNNING_PYTHONW = 'PYTHONEXECUTABLE' in os.environ
-
-    # 1) quick fix for Big Sur py3.9 and qt 5
-    # https://github.com/napari/napari/pull/1894
-    if _MACOS_AT_LEAST_BIG_SUR and '6' not in API_NAME:
-        os.environ['QT_MAC_WANTS_LAYER'] = '1'
-
-    # Create the env copy now because the following changes
-    # should not persist in the current process in case
-    # we do not run the subprocess!
-    env = os.environ.copy()
-
-    # 2) Ensure we're always using a "framework build" on the latest
-    # macOS to ensure menubar works without needing to refocus napari.
-    # We try this for macOS later than the Catalina release
-    # See https://github.com/napari/napari/pull/1554 and
-    # https://github.com/napari/napari/issues/380#issuecomment-659656775
-    # and https://github.com/ContinuumIO/anaconda-issues/issues/199
-    if (
-        _MACOS_AT_LEAST_CATALINA
-        and not _MACOS_AT_LEAST_BIG_SUR
-        and _RUNNING_CONDA
-        and not _RUNNING_PYTHONW
-    ):
-        pythonw_path = Path(sys.exec_prefix) / 'bin' / 'pythonw'
-        if pythonw_path.exists():
-            # Use this one instead of sys.executable to relaunch
-            # the subprocess
-            executable = pythonw_path
-        else:
-            msg = (
-                'pythonw executable not found.\n'
-                'To unfreeze the menubar on macOS, '
-                'click away from napari to another app, '
-                'then reactivate napari. To avoid this problem, '
-                'please install python.app in conda using:\n'
-                'conda install -c conda-forge python.app'
-            )
-            warnings.warn(msg, stacklevel=2)
-
-    # 3) Make sure the app name in the menu bar is 'napari', not 'python'
-    tempdir = None
-    _NEEDS_SYMLINK = (
-        # When napari is launched from the conda bundle shortcut
-        # it already has the right 'napari' name in the app title
-        # and __CFBundleIdentifier is set to 'com.napari._(<version>)'
-        'napari' not in os.environ.get('__CFBUNDLEIDENTIFIER', '')
-        # with a sys.executable named napari,
-        # macOS should have picked the right name already
-        or os.path.basename(executable) != 'napari'
-    )
-    if _NEEDS_SYMLINK:
-        tempdir = mkdtemp(prefix='symlink-to-fix-macos-menu-name-')
-        # By using a symlink with basename napari
-        # we make macOS take 'napari' as the program name
-        napari_link = os.path.join(tempdir, 'napari')
-        os.symlink(executable, napari_link)
-        # Pass original executable to the subprocess so it can restore it later
-        env['_NAPARI_SYMLINKED_EXECUTABLE'] = executable
-        executable = napari_link
-
-    # if at this point 'executable' is different from 'sys.executable', we
-    # need to launch the subprocess to apply the fixes
-    if sys.executable != executable:
-        env['_NAPARI_RERUN_WITH_FIXES'] = '1'
-        if Path(sys.argv[0]).name == 'napari':
-            # launched through entry point, we do that again to avoid
-            # issues with working directory getting into sys.path (#5007)
-            cmd = [executable, sys.argv[0]]
-        else:  # we assume it must have been launched via '-m' syntax
-            cmd = [executable, '-m', 'napari']
-
-        # this fixes issues running from a venv/virtualenv based virtual
-        # environment with certain python distributions (e.g. pyenv, asdf)
-        env['PYTHONEXECUTABLE'] = sys.executable
-
-        # Append original command line arguments.
-        if len(sys.argv) > 1:
-            cmd.extend(sys.argv[1:])
-        try:
-            result = subprocess.run(cmd, env=env, cwd=cwd)
-            sys.exit(result.returncode)
-        finally:
-            if tempdir is not None:
-                import shutil
-
-                shutil.rmtree(tempdir)
-
-
 def main():
-    # There a number of macOS issues we can fix with env vars
-    # and/or relaunching a subprocess
-    _maybe_rerun_with_macos_fixes()
-
-    # Prevent https://github.com/napari/napari/issues/3415
-    # This one fix is needed _after_ a potential relaunch,
-    # that's why it's here and not in _maybe_rerun_with_macos_fixes()
-    if sys.platform == 'darwin':
-        import multiprocessing
-
-        multiprocessing.set_start_method('fork')
-
     _run()
 
 

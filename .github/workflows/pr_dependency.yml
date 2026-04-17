@@ -7,10 +7,10 @@ on:
 
 jobs:
   check_dependencies:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     if: (github.event.issue.pull_request != '' && contains(github.event.comment.body, 'merge')) || github.event_name == 'pull_request'
     name: Check Dependencies
     steps:
-    - uses: gregsdennis/dependencies-action@v1.4.1
+    - uses: gregsdennis/dependencies-action@a8cccab69814b9b985496cf97cbfe154c96c03c7 # v1.4.2
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

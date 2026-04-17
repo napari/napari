@@ -1,3 +1,7 @@
+# StrEnum is only available in Python 3.11+; a vendored version
+# from backports.strenum is used for older versions.
+# Source: https://github.com/ethanfurman/backports.strenum
+# License: https://docs.python.org/3/license.html
 """Miscellaneous utility functions."""
 
 from __future__ import annotations
@@ -11,7 +15,6 @@ import os
 import re
 import sys
 import warnings
-from collections.abc import Callable, Iterable, Iterator, Sequence
 from enum import Enum, EnumMeta
 from os import fspath, path as os_path
 from pathlib import Path
@@ -26,10 +29,11 @@ import numpy.typing as npt
 
 from napari.utils.translations import trans
 
-_sentinel = object()
-
 if TYPE_CHECKING:
+    from collections.abc import Callable, Iterable, Iterator, Sequence
+
     import packaging.version
+    from typing_extensions import Self
 
 
 ROOT_DIR = os_path.dirname(os_path.dirname(__file__))
@@ -54,35 +58,60 @@ def running_as_constructor_app() -> bool:
 
 def in_jupyter() -> bool:
     """Return true if we're running in jupyter notebook/lab or qtconsole."""
-    with contextlib.suppress(ImportError):
-        from IPython import get_ipython
-
-        return get_ipython().__class__.__name__ == 'ZMQInteractiveShell'
-    return False
+    # check if IPython is imported already
+    ipy = sys.modules.get('IPython')
+    if ipy is None:
+        return False
+    get_ipython = ipy.get_ipython
+    shell = get_ipython()
+    return (
+        shell is not None and shell.__class__.__name__ == 'ZMQInteractiveShell'
+    )
 
 
 def in_ipython() -> bool:
     """Return true if we're running in an IPython interactive shell."""
-    with contextlib.suppress(ImportError):
-        from IPython import get_ipython
-
-        return get_ipython().__class__.__name__ == 'TerminalInteractiveShell'
-    return False
+    # check if IPython is imported already
+    ipy = sys.modules.get('IPython')
+    if ipy is None:
+        return False
+    get_ipython = ipy.get_ipython
+    shell = get_ipython()
+    return (
+        shell is not None
+        and shell.__class__.__name__ == 'TerminalInteractiveShell'
+    )
 
 
 def in_python_repl() -> bool:
     """Return true if we're running in a Python REPL."""
-    with contextlib.suppress(ImportError):
-        from IPython import get_ipython
-
-        return get_ipython().__class__.__name__ == 'NoneType' and hasattr(
-            sys, 'ps1'
-        )
-    return False
+    # check if IPython is imported already
+    ipy = sys.modules.get('IPython')
+    if ipy is None:
+        return hasattr(sys, 'ps1')
+    get_ipython = ipy.get_ipython
+    shell = get_ipython()
+    return (
+        shell is not None
+        and shell.__class__.__name__ == 'NoneType'
+        and hasattr(sys, 'ps1')
+    )
 
 
 def str_to_rgb(arg: str) -> list[int]:
-    """Convert an rgb string 'rgb(x,y,z)' to a list of ints [x,y,z]."""
+    """Convert an rgb string 'rgb(x,y,z)' to a list of ints [x,y,z].
+
+    .. deprecated:: 0.7.1
+        `str_to_rgb` is deprecated and will be removed in a future release.
+        Please migrate away from this utility. The function currently
+        retains its behavior but will warn on use.
+    """
+    warnings.warn(
+        'napari.utils.misc.str_to_rgb is deprecated in 0.7.1 and will be removed in 0.8.0 release.',
+        FutureWarning,
+        stacklevel=2,
+    )
+
     match = re.match(r'rgb\((\d+),\s*(\d+),\s*(\d+)\)', arg)
     if match is None:
         raise ValueError("arg not in format 'rgb(x,y,z)'")
@@ -219,33 +248,64 @@ def formatdoc(obj):
     return obj
 
 
+if sys.version_info >= (3, 11):
+    from enum import StrEnum
+else:
+
+    class StrEnum(str, Enum):
+        """Enum where members are also (and must be) strings."""
+
+        def __new__(cls, *values: str) -> Self:
+            if len(values) > 3:
+                raise TypeError(f'too many arguments for str(): {values!r}')
+            if len(values) == 1 and not isinstance(values[0], str):
+                raise TypeError(f'{values[0]!r} is not a string')
+            if len(values) >= 2 and not isinstance(values[1], str):
+                raise TypeError(
+                    f'encoding must be a string, not {values[1]!r}'
+                )
+            if len(values) == 3 and not isinstance(values[2], str):
+                raise TypeError(f'errors must be a string, not {values[2]!r}')
+            value = str(*values)
+            member = str.__new__(cls, value)
+            member._value_ = value
+            return member
+
+        __str__ = str.__str__
+
+        @staticmethod
+        def _generate_next_value_(
+            name: str, start: int, count: int, last_values: list[str]
+        ) -> str:
+            """Return the lower-cased version of the member name."""
+            return name.lower()
+
+
 class StringEnumMeta(EnumMeta):
-    def __getitem__(self, item):
-        """set the item name case to uppercase for name lookup"""
-        if isinstance(item, str):
-            item = item.upper()
+    def __getitem__(self, item: str) -> StringEnum:  # type: ignore[override]
+        """Case-insensitive name lookup: MyEnum['tHiNg'] -> MyEnum.THING."""
+        return super().__getitem__(item.upper())
 
-        return super().__getitem__(item)
 
-    def __call__(
-        cls,
-        value,
-        names=None,
-        *,
-        module=None,
-        qualname=None,
-        type=None,  # noqa: A002
-        start=1,
-    ):
-        """set the item value case to lowercase for value lookup"""
-        # simple value lookup
-        if names is None:
-            if isinstance(value, str):
-                return super().__call__(value.lower())
-            if isinstance(value, cls):
-                return value
+class StringEnum(StrEnum, metaclass=StringEnumMeta):
+    @staticmethod
+    def _generate_next_value_(
+        name: str, start: int, count: int, last_values: list[str]
+    ) -> str:
+        """Assign the lower-cased member name as its value."""
+        return name.lower()
 
-            raise ValueError(
+    def __str__(self) -> str:
+        return self.value
+
+    @classmethod
+    def _missing_(cls, value: object) -> StringEnum | None:
+        if isinstance(value, StringEnum):
+            # ruff suggests to use TypeError for when
+            # a value is of the wrong type,
+            # but tests expect ValueError,
+            # so tests win here
+            raise ValueError(  # noqa: TRY004
                 trans._(
                     '{class_name} may only be called with a `str` or an instance of {class_name}. Got {dtype}',
                     deferred=True,
@@ -253,42 +313,38 @@ class StringEnumMeta(EnumMeta):
                     dtype=builtins.type(value),
                 )
             )
-
-        # otherwise create new Enum class
-        return cls._create_(
-            value,
-            names,
-            module=module,
-            qualname=qualname,
-            type=type,
-            start=start,
+        if isinstance(value, str):
+            for member in cls:
+                if member.value == value.lower():
+                    return member
+            return None
+        raise ValueError(
+            trans._(
+                '{class_name} may only be called with a `str` or an instance of {class_name}. Got {dtype}',
+                deferred=True,
+                class_name=cls,
+                dtype=builtins.type(value),
+            )
         )
-
-    def keys(self) -> list[str]:
-        return list(map(str, self))
-
-
-class StringEnum(Enum, metaclass=StringEnumMeta):
-    @staticmethod
-    def _generate_next_value_(name: str, start, count, last_values) -> str:
-        """autonaming function assigns each value its own name as a value"""
-        return name.lower()
-
-    def __str__(self) -> str:
-        """String representation: The string method returns the lowercase
-        string of the Enum name
-        """
-        return self.value
 
     def __eq__(self, other: object) -> bool:
         if type(self) is type(other):
             return self is other
+        if isinstance(other, StringEnum):
+            return False
         if isinstance(other, str):
             return str(self) == other
         return False
 
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
+
     def __hash__(self) -> int:
         return hash(str(self))
+
+    @classmethod
+    def keys(cls) -> list[str]:
+        return list(map(str, cls))
 
 
 camel_to_snake_pattern = re.compile(r'(.)([A-Z][a-z]+)')
@@ -371,7 +427,9 @@ def all_subclasses(cls: type) -> set:
     )
 
 
-def ensure_n_tuple(val: Iterable, n: int, fill: int = 0) -> tuple:
+def ensure_n_tuple(
+    val: Iterable, n: int, fill: int = 0, before: bool = True
+) -> tuple:
     """Ensure input is a length n tuple.
 
     Parameters
@@ -380,6 +438,8 @@ def ensure_n_tuple(val: Iterable, n: int, fill: int = 0) -> tuple:
         Iterable to be forced into length n-tuple.
     n : int
         Length of tuple.
+    before : bool, default True
+        Fill the tuple with `fill` before or after the input iterable.
 
     Returns
     -------
@@ -388,7 +448,9 @@ def ensure_n_tuple(val: Iterable, n: int, fill: int = 0) -> tuple:
     """
     assert n > 0, 'n must be greater than 0'
     tuple_value = tuple(val)
-    return (fill,) * (n - len(tuple_value)) + tuple_value[-n:]
+    if before:
+        return (fill,) * (n - len(tuple_value)) + tuple_value[-n:]
+    return tuple_value[:n] + (fill,) * (n - len(tuple_value))
 
 
 def ensure_layer_data_tuple(val: tuple) -> tuple:

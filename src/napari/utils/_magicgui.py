@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import weakref
 from functools import cache, partial
-from typing import TYPE_CHECKING, Any, Optional, Union, get_args, get_origin
+from typing import TYPE_CHECKING, Any, Union, get_args, get_origin
 
 import numpy as np
 from magicgui.widgets import ComboBox, FunctionGui
@@ -34,7 +34,7 @@ if TYPE_CHECKING:
     from napari.viewer import Viewer
 
 
-def _get_layer_from_widget(gui: ComboBox, viewer: Viewer) -> Optional[Layer]:
+def _get_layer_from_widget(gui: ComboBox, viewer: Viewer) -> Layer | None:
     """Retrieve layer used as input to function wrapped into magicgui .
 
     Parameters

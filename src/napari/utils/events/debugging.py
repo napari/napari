@@ -4,7 +4,9 @@ import site
 from textwrap import indent
 from typing import TYPE_CHECKING, ClassVar
 
-from napari._pydantic_compat import BaseSettings, Field, PrivateAttr
+from pydantic import Field, PrivateAttr
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
 from napari.utils.misc import ROOT_DIR
 from napari.utils.translations import trans
 
@@ -16,10 +18,6 @@ except ModuleNotFoundError:
             'TIP: run `pip install rich` for much nicer event debug printout.'
         )
     )
-try:
-    import dotenv
-except ModuleNotFoundError:
-    dotenv = None  # type: ignore
 
 if TYPE_CHECKING:
     from napari.utils.events.event import Event
@@ -29,9 +27,8 @@ class EventDebugSettings(BaseSettings):
     """Parameters controlling how event debugging logs appear.
 
     To enable Event debugging:
-        1. pip install rich pydantic[dotenv]
-        2. export NAPARI_DEBUG_EVENTS=1  # or modify the .env_sample file
-        3. see .env_sample file for ways to set these fields here.
+        1. export NAPARI_DEBUG_EVENTS=1  # or modify the .env_sample file
+        2. see .env_sample file for ways to set these fields here.
     """
 
     # event emitters (e.g. 'Shapes') and event names (e.g. 'set_data')
@@ -52,9 +49,10 @@ class EventDebugSettings(BaseSettings):
 
     _cur_depth: ClassVar[int] = PrivateAttr(0)
 
-    class Config:
-        env_prefix = 'event_debug_'
-        env_file = '.env' if dotenv is not None else ''
+    model_config = SettingsConfigDict(
+        env_prefix='event_debug_',
+        env_file='.env',
+    )
 
 
 _SETTINGS = EventDebugSettings()

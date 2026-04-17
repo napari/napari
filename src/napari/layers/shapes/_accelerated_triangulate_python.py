@@ -117,14 +117,15 @@ def generate_2D_edge_meshes_py(
     miters = 0.5 * (full_normals[:-1] + full_normals[1:])
 
     # scale miters such that their dot product with normals is 1
-    _mf_dot = np.expand_dims(
+    mf_dot = np.expand_dims(
         np.einsum('ij,ij->i', miters, full_normals[:-1]), -1
     )
 
     miters = np.divide(
         miters,
-        _mf_dot,
-        where=np.abs(_mf_dot) > 1e-10,
+        mf_dot,
+        out=np.zeros_like(miters),
+        where=np.abs(mf_dot) > 1e-10,
     )
 
     miter_lengths_squared = (miters**2).sum(axis=1)
@@ -285,7 +286,7 @@ def reconstruct_polygons_from_edges_py(
         adjacency[v2].append(v1)
 
     # Initialize set of unvisited edges
-    unvisited_edges: set[tuple[int, int]] = {
+    unvisited_edges: set[tuple[np.int64, np.int64]] = {
         (edge[0], edge[1]) for edge in edges
     }
     unvisited_edges.update({(edge[1], edge[0]) for edge in edges})
@@ -296,7 +297,7 @@ def reconstruct_polygons_from_edges_py(
     # Process each edge until all are visited
     while unvisited_edges:
         # Start with any unvisited edge
-        edge: tuple[int, int] = next(iter(unvisited_edges))
+        edge: tuple[np.int64, np.int64] = next(iter(unvisited_edges))
         current_vertex = edge[0]
         start_vertex = edge[1]
 
@@ -330,7 +331,7 @@ def reconstruct_polygons_from_edges_py(
         polygon_vertices = vertices[polygon_indices]
         polygons.append(polygon_vertices)
 
-    return polygons  # type: ignore[return-value]
+    return polygons
 
 
 def normalize_vertices_and_edges_py(
@@ -375,7 +376,7 @@ def normalize_vertices_and_edges_py(
         that are visited twice are removed.
     """
     if tuple(vertices[0]) == tuple(vertices[-1]):  # closed polygon
-        vertices = vertices[:-1]  # type: ignore[assignment] # make closing implicit
+        vertices = vertices[:-1]  # make closing implicit
         close = True
 
     # Now, we make sure the vertices are unique (repeated vertices cause
@@ -418,7 +419,7 @@ def normalize_vertices_and_edges_py(
 
     new_vertices_array = np.array(new_vertices, dtype=np.float32)
     edges_array = np.array(list(edges), dtype=np.int64)
-    return new_vertices_array, edges_array  # type: ignore[return-value]
+    return new_vertices_array, edges_array
 
 
 def _are_polar_angles_monotonic(poly: npt.NDArray, orientation_: int) -> bool:
@@ -480,6 +481,60 @@ def orientation(p: np.ndarray, q: np.ndarray, r: np.ndarray) -> np.ndarray:
     val = np.sign(val)
 
     return val
+
+
+def vectorized_orientation(
+    p: npt.NDArray, q: npt.NDArray, r: npt.NDArray
+) -> npt.NDArray:
+    """Determines orientation of ordered triplet(s) (p, q, r).
+
+    This implementation is vectorized and works for arrays of points.
+
+    Parameters
+    ----------
+    p : (..., 2) array
+        Array of first points of triplets.
+    q : (..., 2) array
+        Array of second points of triplets.
+    r : (..., 2) array
+        Array of third points of triplets.
+
+    Returns
+    -------
+    val : (...) array of int
+        An array of values, one for each triplet. 0 if p, q, r are collinear,
+        1 if clockwise, and -1 if counterclockwise. (These definitions assume
+        napari's default reference frame, in which the 0th axis is y pointing
+        down, and the 1st axis is x, pointing right.)
+    """
+    # The orientation is calculated as the sign of the cross product
+    # of the vectors (q - p) and (r - p).
+    val = cross_2d(q - p, r - p)
+    return np.sign(val).astype(np.int8)
+
+
+def cross_2d(a: npt.NDArray, b: npt.NDArray) -> npt.NDArray:
+    """Calculate the magnitude of the cross product of two 2D vectors.
+
+    This is the explicit implementation of the 2D cross product magnitude,
+    which was provided by numpy developer Sebastian Berg
+    (seberg) to avoid a NumPy 2.0 deprecation warning.
+    See this issue fordetails:
+    https://github.com/numpy/numpy/issues/26620#issuecomment-2150748569
+
+    Parameters
+    ----------
+    a : (..., 2) array
+        An array of 2D vectors.
+    b : (..., 2) array
+        An array of 2D vectors.
+
+    Returns
+    -------
+    cross_product : (...) array
+        The magnitude of the cross product.
+    """
+    return a[..., 0] * b[..., 1] - a[..., 1] * b[..., 0]
 
 
 def _common_orientation(poly: npt.NDArray) -> int | None:

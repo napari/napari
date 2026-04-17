@@ -58,7 +58,7 @@ def test_3D_multiscale_labels_in_2D():
 
 def test_3D_multiscale_labels_in_3D():
     """Test instantiating Labels layer with 3D data, 3D dims."""
-    data_multiscale, layer = instantiate_3D_multiscale_labels()
+    layer = instantiate_3D_multiscale_labels()[1]
 
     # use 3D dims
     layer._slice_dims(Dims(ndim=3, ndisplay=3))

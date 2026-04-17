@@ -1,6 +1,7 @@
 from unittest.mock import Mock
 
 import numpy as np
+import numpy.testing as npt
 import pint
 import pytest
 
@@ -9,35 +10,51 @@ from napari.layers.base._test_util_sample_layer import SampleLayer
 REG = pint.get_application_registry()
 
 
-def test_assign_units():
+@pytest.mark.parametrize(
+    ('units', 'expected'),
+    [
+        (('nm', 'nm'), (REG.nm, REG.nm)),
+        ((REG.nm, REG.nm), (REG.nm, REG.nm)),
+        ('nm', (REG.nm, REG.nm)),
+        (None, (REG.pixel, REG.pixel)),
+        ((None, None), (REG.pixel, REG.pixel)),
+        ((None, 'nm'), (REG.pixel, REG.nm)),
+    ],
+)
+def test_assign_units(units, expected):
+    layer = SampleLayer(np.empty((10, 10)), units=['mm', 'mm'])
+    mock = Mock()
+    layer.events.units.connect(mock)
+    layer.units = units
+    assert layer.units == expected
+    mock.assert_called_once()
+
+
+def test_no_emmit_on_identical_units():
     layer = SampleLayer(np.empty((10, 10)))
     mock = Mock()
     layer.events.units.connect(mock)
-    assert layer.units == (REG.pixel, REG.pixel)
-
     layer.units = ('nm', 'nm')
-    mock.assert_called_once()
-    mock.reset_mock()
-
     assert layer.units == (REG.nm, REG.nm)
-
-    layer.units = (REG.mm, REG.mm)
     mock.assert_called_once()
-    mock.reset_mock()
 
-    assert layer.units == (REG.mm, REG.mm)
-
-    layer.units = ('mm', 'mm')
-    mock.assert_not_called()
-
-    layer.units = 'km'
+    layer.units = ('nm', REG.nm)
     mock.assert_called_once()
-    mock.reset_mock()
-    assert layer.units == (REG.km, REG.km)
 
-    layer.units = None
+    layer.units = (REG.nm, REG.nm)
     mock.assert_called_once()
-    assert layer.units == (REG.pixel, REG.pixel)
+
+
+def test_exception_on_invalid_units():
+    layer = SampleLayer(np.empty((10, 10)))
+    with pytest.raises(ValueError, match='Could not find unit'):
+        layer.units = ('ugh', 'ugh')
+
+    with pytest.raises(ValueError, match='Could not find unit'):
+        layer.units = (1, 1)
+
+    with pytest.raises(ValueError, match='Could not find unit'):
+        layer.units = 1
 
 
 def test_units_constructor():
@@ -73,7 +90,7 @@ def test_axis_labels_assign():
     layer = SampleLayer(np.empty((10, 10)))
     mock = Mock()
     layer.events.axis_labels.connect(mock)
-    assert layer.axis_labels == ('axis -2', 'axis -1')
+    assert layer.axis_labels == ('-2', '-1')
 
     layer.axis_labels = ('x', 'y')
     mock.assert_called_once()
@@ -86,7 +103,7 @@ def test_axis_labels_assign():
 
     layer.axis_labels = None
     mock.assert_called_once()
-    assert layer.axis_labels == ('axis -2', 'axis -1')
+    assert layer.axis_labels == ('-2', '-1')
 
 
 def test_axis_labels_constructor():
@@ -94,7 +111,7 @@ def test_axis_labels_constructor():
     assert layer.axis_labels == ('x', 'y')
 
     layer = SampleLayer(np.empty((10, 10)), axis_labels=None)
-    assert layer.axis_labels == ('axis -2', 'axis -1')
+    assert layer.axis_labels == ('-2', '-1')
 
 
 def test_axis_labels_error():
@@ -145,3 +162,60 @@ def test_world_to_displayed_data_normal_4D():
     )
 
     assert np.allclose(transformed_vector, expected_transformed_vector)
+
+
+def test_invalidate_extent_scale():
+    """Test that the extent is invalidated when the data changes."""
+    layer = SampleLayer(np.empty((10, 10)))
+    npt.assert_array_equal(layer.extent.step, (1, 1))
+    with layer._block_refresh():
+        layer.scale = (2, 2)
+    npt.assert_array_equal(layer.extent.step, (2, 2))
+
+
+def test_invalidate_extent_units():
+    """Test that the extent is invalidated when the data changes."""
+    # commented lines required 7889 and should be uncomment later
+    layer = SampleLayer(np.empty((10, 10)))
+    # px = pint.get_application_registry().pixel
+    # mm = pint.get_application_registry().mm
+    # npt.assert_array_equal(layer.extent.units, (px, px))
+    with layer._block_refresh():
+        layer.units = ('mm', 'mm')
+    # npt.assert_array_equal(layer.extent.units, (mm, mm))
+
+
+def test_invalidate_extent_translate():
+    """Test that the extent is invalidated when the data changes."""
+    layer = SampleLayer(np.empty((10, 10)))
+    npt.assert_array_equal(layer.extent.world[0], (0, 0))
+    with layer._block_refresh():
+        layer.translate = (1, 1)
+    npt.assert_array_equal(layer.extent.world[0], (1, 1))
+
+
+def test_invalidate_extent_rotate():
+    """Test that the extent is invalidated when the data changes."""
+    layer = SampleLayer(np.empty((10, 20)))
+    npt.assert_array_equal(layer.extent.world, [[0, 0], [9, 19]])
+    with layer._block_refresh():
+        layer.rotate = 90
+    npt.assert_almost_equal(layer.extent.world, [[-19, 0], [0, 9]])
+
+
+def test_invalidate_extent_affine():
+    """Test that the extent is invalidated when the data changes."""
+    layer = SampleLayer(np.empty((10, 20)))
+    npt.assert_array_equal(layer.extent.world, [[0, 0], [9, 19]])
+    with layer._block_refresh():
+        layer.affine = [[2, 0, 0], [0, 2, 0], [0, 0, 1]]
+    npt.assert_array_equal(layer.extent.world, [[0, 0], [18, 38]])
+
+
+def test_invalidate_extent_shear():
+    """Test that the extent is invalidated when the data changes."""
+    layer = SampleLayer(np.empty((10, 20)))
+    npt.assert_array_equal(layer.extent.world, [[0, 0], [9, 19]])
+    with layer._block_refresh():
+        layer.shear = [1]
+    npt.assert_array_equal(layer.extent.world, [[0, 0], [28, 19]])

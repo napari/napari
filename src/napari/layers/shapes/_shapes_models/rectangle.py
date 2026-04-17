@@ -2,6 +2,7 @@ import numpy as np
 
 from napari.layers.shapes._shapes_models.shape import Shape
 from napari.layers.shapes._shapes_utils import find_corners, rectangle_to_box
+from napari.types import ArrayLike
 from napari.utils.translations import trans
 
 
@@ -25,7 +26,7 @@ class Rectangle(Shape):
 
     def __init__(
         self,
-        data,
+        data: ArrayLike,
         *,
         edge_width=1,
         z_index=0,
@@ -44,12 +45,12 @@ class Rectangle(Shape):
         self.name = 'rectangle'
 
     @property
-    def data(self):
+    def data(self) -> np.ndarray:
         """(4, D) array: rectangle vertices."""
         return self._data
 
     @data.setter
-    def data(self, data):
+    def data(self, data: ArrayLike):
         data = np.array(data).astype(np.float32)
 
         if len(self.dims_order) != data.shape[1]:
@@ -83,7 +84,7 @@ class Rectangle(Shape):
         data_displayed = self.data_displayed
         self._set_meshes(data_displayed, face=False)
         self._face_vertices = data_displayed
-        self._face_triangles = np.array([[0, 1, 2], [0, 2, 3]])  # type: ignore[assignment]
+        self._face_triangles = np.array([[0, 1, 2], [0, 2, 3]])
         # The data displayed are in this case the four corners
         self._box = rectangle_to_box(data_displayed)  # type: ignore[arg-type]
         self.slice_key = self._bounding_box[:, self.dims_not_displayed].astype(

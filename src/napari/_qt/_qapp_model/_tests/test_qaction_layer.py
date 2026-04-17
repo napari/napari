@@ -84,6 +84,12 @@ def layer_list_dim():
     return ll
 
 
+@pytest.fixture
+def layer_list_dim2(layer_list_dim):
+    layer_list_dim.selection = {layer_list_dim['l1'], layer_list_dim['l2']}
+    return layer_list_dim
+
+
 @pytest.mark.usefixtures('qtbot')
 def test_copy_scale_to_clipboard(layer_list):
     """This is the test that checks copying scale to
@@ -100,6 +106,21 @@ def test_copy_scale_to_clipboard(layer_list):
     npt.assert_array_equal(layer_list['l2'].scale, (2, 3))
     npt.assert_array_equal(layer_list['l3'].scale, (1, 1))
     npt.assert_array_equal(layer_list['l2'].translate, (0, 0))
+
+
+@pytest.mark.usefixtures('qtbot')
+def test_paste_scale_higher_dim(layer_list_dim2):
+    """This is the test that checks copying scale to
+    clipboard and pasting it to another layer with higher dimensionality.
+
+    The layer_list_dim contains two layers, l1 and l2.
+    The l2 is selected and l1 has a non-default scale.
+    The test copy it to from l1 to l2 and check if l3 is not affected.
+    """
+    QApplication.clipboard().setText('{"scale": [5, 5]}')
+    _paste_spatial_from_clipboard(layer_list_dim2)
+    npt.assert_array_equal(layer_list_dim2['l2'].scale, (5, 5))
+    npt.assert_array_equal(layer_list_dim2['l1'].scale, (1, 5, 5))
 
 
 @pytest.mark.usefixtures('qtbot')
@@ -127,6 +148,25 @@ def test_copy_units_to_clipboard(layer_list):
 
 
 @pytest.mark.usefixtures('qtbot')
+def test_paste_units_higher_dim(layer_list_dim2):
+    """This is the test that checks copying scale to
+    clipboard and pasting it to another layer with higher dimensionality.
+
+    The layer_list_dim contains two layers, l1 and l2.
+    The l2 is selected and l1 has a non-default scale.
+    The test copy it to from l1 to l2 and check if l3 is not affected.
+    """
+    QApplication.clipboard().setText('{"units": ["nm", "nm"]}')
+    _paste_spatial_from_clipboard(layer_list_dim2)
+    npt.assert_array_equal(
+        layer_list_dim2['l2'].units, get_units_from_name(('nm', 'nm'))
+    )
+    npt.assert_array_equal(
+        layer_list_dim2['l1'].units, get_units_from_name(('px', 'nm', 'nm'))
+    )
+
+
+@pytest.mark.usefixtures('qtbot')
 def test_copy_translate_to_clipboard(layer_list):
     """This is the test that checks of copying translate to
     clipboard and pasting it to another layer.
@@ -145,6 +185,21 @@ def test_copy_translate_to_clipboard(layer_list):
 
 
 @pytest.mark.usefixtures('qtbot')
+def test_paste_translate_higher_dim(layer_list_dim2):
+    """This is the test that checks copying translate to
+    clipboard and pasting it to another layer with higher dimensionality.
+
+    The layer_list_dim contains two layers, l1 and l2.
+    The l2 is selected and l1 has non-default translate.
+    The test copy it to from l1 to l2 and check if l3 is not affected.
+    """
+    QApplication.clipboard().setText('{"translate": [5, 5]}')
+    _paste_spatial_from_clipboard(layer_list_dim2)
+    npt.assert_array_equal(layer_list_dim2['l2'].translate, (5, 5))
+    npt.assert_array_equal(layer_list_dim2['l1'].translate, (0, 5, 5))
+
+
+@pytest.mark.usefixtures('qtbot')
 def test_copy_rotate_to_clipboard(layer_list):
     """This is the test that checks copying rotate to
     clipboard and pasting it to another layer.
@@ -160,6 +215,25 @@ def test_copy_rotate_to_clipboard(layer_list):
     npt.assert_array_almost_equal(layer_list['l2'].rotate, ([0, -1], [1, 0]))
     npt.assert_array_almost_equal(layer_list['l3'].rotate, ([1, 0], [0, 1]))
     npt.assert_array_equal(layer_list['l2'].scale, (1, 1))
+
+
+@pytest.mark.usefixtures('qtbot')
+def test_paste_rotate_higher_dim(layer_list_dim2):
+    """This is the test that checks copying rotate to
+    clipboard and pasting it to another layer with higher dimensionality.
+
+    The layer_list_dim contains two layers, l1 and l2.
+    The l2 is selected and l1 has non-default rotate.
+    The test copy it to from l1 to l2 and check if l3 is not affected.
+    """
+    QApplication.clipboard().setText('{"rotate": [[0, -1], [1, 0]]}')
+    _paste_spatial_from_clipboard(layer_list_dim2)
+    npt.assert_array_almost_equal(
+        layer_list_dim2['l2'].rotate, ([0, -1], [1, 0])
+    )
+    npt.assert_array_almost_equal(
+        layer_list_dim2['l1'].rotate, ([1, 0, 0], [0, 0, -1], [0, 1, 0])
+    )
 
 
 @pytest.mark.usefixtures('qtbot')
@@ -188,6 +262,29 @@ def test_copy_affine_to_clipboard(layer_list):
 
 
 @pytest.mark.usefixtures('qtbot')
+def test_paste_affine_higher_dim(layer_list_dim2):
+    """This is the test that checks copying affine to
+    clipboard and pasting it to another layer with higher dimensionality.
+
+    The layer_list_dim contains two layers, l1 and l2.
+    The l2 is selected and l1 has non-default affine.
+    The test copy it to from l1 to l2 and check if l3 is not affected.
+    """
+    QApplication.clipboard().setText(
+        '{"affine": [[0.5, 0, 1], [0, 0.5, 2], [0, 0, 1]]}'
+    )
+    _paste_spatial_from_clipboard(layer_list_dim2)
+    npt.assert_array_almost_equal(
+        layer_list_dim2['l2'].affine.affine_matrix,
+        np.array([[0.5, 0, 1], [0, 0.5, 2], [0, 0, 1]]),
+    )
+    npt.assert_array_almost_equal(
+        layer_list_dim2['l1'].affine.affine_matrix,
+        np.array([[1, 0, 0, 0], [0, 0.5, 0, 1], [0, 0, 0.5, 2], [0, 0, 0, 1]]),
+    )
+
+
+@pytest.mark.usefixtures('qtbot')
 def test_copy_shear_to_clipboard(layer_list):
     """This is the test that checks copying shear to
     clipboard and pasting it to another layer.
@@ -203,6 +300,21 @@ def test_copy_shear_to_clipboard(layer_list):
     npt.assert_array_almost_equal(layer_list['l2'].shear, (1,))
     npt.assert_array_almost_equal(layer_list['l3'].shear, (0,))
     npt.assert_array_equal(layer_list['l2'].scale, (1, 1))
+
+
+@pytest.mark.usefixtures('qtbot')
+def test_paste_shear_higher_dim(layer_list_dim2):
+    """This is the test that checks copying shear to
+    clipboard and pasting it to another layer with higher dimensionality.
+
+    The layer_list_dim contains two layers, l1 and l2.
+    The l2 is selected and l1 has non-default shear.
+    The test copy it to from l1 to l2 and check if l3 is not affected.
+    """
+    QApplication.clipboard().setText('{"shear": [5]}')
+    _paste_spatial_from_clipboard(layer_list_dim2)
+    npt.assert_array_almost_equal(layer_list_dim2['l2'].shear, (5,))
+    npt.assert_array_almost_equal(layer_list_dim2['l1'].shear, (0, 0, 5))
 
 
 @pytest.mark.usefixtures('qtbot')

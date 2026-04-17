@@ -90,7 +90,7 @@ class Ellipse(Shape):
         # Build boundary vertices with num_segments
         self._clean_cache()
         vertices, triangles = triangulate_ellipse(self.data_displayed)
-        self._set_meshes(vertices[1:-1], face=False)  # type: ignore[arg-type]
+        self._set_meshes(vertices[1:-1], face=False)
         self._face_vertices = vertices
         self._face_triangles = triangles
         # The data displayed are in this case the four corners
@@ -117,7 +117,7 @@ class Ellipse(Shape):
         points = self._face_vertices[1:-1]
 
         centers, offsets, triangles = triangulate_edge(
-            points,  # type: ignore[arg-type]
+            points,
             closed=self._closed,
         )
         self._edge_vertices = centers

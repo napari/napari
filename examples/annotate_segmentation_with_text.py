@@ -120,7 +120,8 @@ text_parameters = {
 }
 
 # initialise viewer with coins image
-viewer = napari.view_image(image, name='coins', rgb=False)
+viewer = napari.Viewer()
+layer = viewer.add_image(image, name='coins', rgb=False)
 
 # add the labels
 label_layer = viewer.add_labels(label_image, name='segmentation')

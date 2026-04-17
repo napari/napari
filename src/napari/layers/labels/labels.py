@@ -1,29 +1,32 @@
+from __future__ import annotations
+
 import typing
 import warnings
 from collections import deque
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Generator, Sequence
 from contextlib import contextmanager
 from typing import (
+    TYPE_CHECKING,
     Any,
     ClassVar,
 )
 
 import numpy as np
 import numpy.typing as npt
-import pandas as pd
-from scipy import ndimage as ndi
-from skimage.draw import polygon2mask
+from PIL import Image, ImageDraw
 
 from napari.layers._data_protocols import LayerDataProtocol
 from napari.layers._multiscale_data import MultiScaleData
-from napari.layers._scalar_field.scalar_field import ScalarFieldBase
+from napari.layers._scalar_field.scalar_field import (
+    ScalarFieldBase,
+    ScalarFieldSlicingState,
+)
 from napari.layers.base import Layer, no_op
 from napari.layers.base._base_mouse_bindings import (
     highlight_box_handles,
     transform_with_box,
 )
 from napari.layers.image._image_utils import guess_multiscale
-from napari.layers.image._slice import _ImageSliceResponse
 from napari.layers.labels._labels_constants import (
     IsoCategoricalGradientMode,
     LabelColorMode,
@@ -38,12 +41,19 @@ from napari.layers.labels._labels_mouse_bindings import (
 from napari.layers.labels._labels_utils import (
     expand_slice,
     get_contours,
+    get_dtype,
     indices_in_shape,
     interpolate_coordinates,
     sphere_indices,
 )
+from napari.layers.labels._slice import _LabelsSliceRequest
 from napari.layers.utils.layer_utils import _FeatureTable
-from napari.utils._dtype import normalize_dtype, vispy_texture_dtype
+from napari.types import LayerDataType
+from napari.utils._dtype import (
+    get_dtype_limits,
+    normalize_dtype,
+    vispy_texture_dtype,
+)
 from napari.utils._indexing import elements_in_slice, index_in_slice
 from napari.utils.colormaps import (
     direct_colormap,
@@ -60,6 +70,9 @@ from napari.utils.events.custom_types import Array
 from napari.utils.misc import StringEnum, _is_array_type
 from napari.utils.naming import magic_name
 from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    import pandas as pd
 
 __all__ = ('Labels',)
 
@@ -84,7 +97,7 @@ class Labels(ScalarFieldBase):
         provided scale, rotate, and shear values.
     axis_labels : tuple of str, optional
         Dimension names of the layer data.
-        If not provided, axis_labels will be set to (..., 'axis -2', 'axis -1').
+        If not provided, axis_labels will be set to (..., '-2', '-1').
     blending : str
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
@@ -257,7 +270,9 @@ class Labels(ScalarFieldBase):
 
     _modeclass = Mode
 
-    _drag_modes: ClassVar[dict[Mode, Callable[['Labels', Event], None]]] = {  # type: ignore[assignment]
+    _drag_modes: ClassVar[
+        dict[Mode, Callable[[Labels, Event], None | Generator]]
+    ] = {  # type: ignore[assignment]
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: transform_with_box,
         Mode.PICK: pick,
@@ -270,7 +285,7 @@ class Labels(ScalarFieldBase):
     brush_size_on_mouse_move = BrushSizeOnMouseMove(min_brush_size=1)
 
     _move_modes: ClassVar[
-        dict[StringEnum, Callable[['Labels', Event], None]]
+        dict[StringEnum, Callable[[Labels, Event], None]]
     ] = {  # type: ignore[assignment]
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: highlight_box_handles,
@@ -385,7 +400,7 @@ class Labels(ScalarFieldBase):
             LabelsPolygonOverlay,
         )
 
-        self._overlays.update({'polygon': LabelsPolygonOverlay()})
+        self._overlays.update({'polygon': LabelsPolygonOverlay(visible=True)})
 
         self._feature_table = _FeatureTable.from_layer(
             features=features, properties=properties
@@ -582,6 +597,7 @@ class Labels(ScalarFieldBase):
         self._update_dims()
         self.events.data(value=self.data)
         self._reset_editable()
+        self.events.features()
 
     @property
     def features(self):
@@ -694,9 +710,10 @@ class Labels(ScalarFieldBase):
                 'rendering': self.rendering,
                 'iso_gradient_mode': self.iso_gradient_mode,
                 'depiction': self.depiction,
-                'plane': self.plane.dict(),
+                'plane': self.plane.model_dump(),
                 'experimental_clipping_planes': [
-                    plane.dict() for plane in self.experimental_clipping_planes
+                    plane.model_dump()
+                    for plane in self.experimental_clipping_planes
                 ],
                 'data': self.data,
                 'features': self.features,
@@ -716,6 +733,15 @@ class Labels(ScalarFieldBase):
             return
         # when setting the label to the background, store the previous
         # otherwise, clear it
+        layer_dtype = get_dtype(self)
+        dtype_lims = get_dtype_limits(layer_dtype)
+        if dtype_lims[0] > selected_label or dtype_lims[1] < selected_label:
+            raise WrongSelectedLabelError(
+                dtype=layer_dtype,
+                value=selected_label,
+                lower_bound=dtype_lims[0],
+                upper_bound=dtype_lims[1],
+            )
         if selected_label == self.colormap.background_value:
             self._prev_selected_label = self.selected_label
         else:
@@ -729,7 +755,7 @@ class Labels(ScalarFieldBase):
         if self.show_selected_label:
             self.refresh(extent=False)
 
-    def swap_selected_and_background_labels(self):
+    def swap_selected_and_background_labels(self) -> None:
         """Swap between the selected label and the background label."""
         if self.selected_label != self.colormap.background_value:
             self.selected_label = self.colormap.background_value
@@ -826,15 +852,10 @@ class Labels(ScalarFieldBase):
         """
         return vispy_texture_dtype(data)
 
-    def _update_slice_response(self, response: _ImageSliceResponse) -> None:
-        """Override to convert raw slice data to displayed label colors."""
-        response = response.to_displayed(self._raw_to_displayed)
-        super()._update_slice_response(response)
-
     def _partial_labels_refresh(self):
         """Prepares and displays only an updated part of the labels."""
 
-        if self._updated_slice is None or not self.loaded:
+        if self._updated_slice is None or not self._slicing_state.loaded:
             return
 
         dims_displayed = self._slice_input.displayed
@@ -953,7 +974,9 @@ class Labels(ScalarFieldBase):
         like adjusting gamma or changing the data based on the contrast
         limits.
         """
-        if not self.loaded:
+        from scipy import ndimage as ndi
+
+        if not self._slicing_state.loaded or self._slice.empty:
             # ASYNC_TODO: Do not compute the thumbnail until we are loaded.
             # Is there a nicer way to prevent this from getting called?
             return
@@ -1088,12 +1111,12 @@ class Labels(ScalarFieldBase):
 
         self.refresh()
 
-    def undo(self):
+    def undo(self) -> None:
         self._load_history(
             self._undo_history, self._redo_history, undoing=True
         )
 
-    def redo(self):
+    def redo(self) -> None:
         self._load_history(
             self._redo_history, self._undo_history, undoing=False
         )
@@ -1114,6 +1137,8 @@ class Labels(ScalarFieldBase):
             Whether to refresh view slice or not. Set to False to batch paint
             calls.
         """
+        from scipy import ndimage as ndi
+
         int_coord = tuple(np.round(coord).astype(int))
         # If requested fill location is outside data shape then return
         if np.any(np.less(int_coord, 0)) or np.any(
@@ -1268,7 +1293,8 @@ class Labels(ScalarFieldBase):
         slice_coord = points[0].tolist()
         points2d = points[:, dims_to_paint]
 
-        polygon_mask = polygon2mask(shape, points2d)
+        polygon_mask = self._create_polygon_mask(points2d, shape)
+
         mask_indices = np.argwhere(polygon_mask)
         self._paint_indices(
             mask_indices,
@@ -1278,6 +1304,31 @@ class Labels(ScalarFieldBase):
             slice_coord,
             refresh=True,
         )
+
+    def _create_polygon_mask(
+        self, points2d: np.ndarray, shape: list[int]
+    ) -> np.ndarray:
+        """Create a boolean mask from polygon points using PIL rasterization.
+
+        Parameters
+        ----------
+        points2d : ndarray
+            2D polygon vertices in (row, col) format, relative to the mask
+            coordinate system.
+        shape : list of int
+            Shape of the mask to create [height, width].
+
+        Returns
+        -------
+        ndarray
+            Boolean mask with True inside polygon.
+        """
+        # PIL uses (x, y) = (col, row), so reverse the points
+        img = Image.new('L', (shape[1], shape[0]), 0)
+        draw = ImageDraw.Draw(img)
+        points_pil = [tuple(p[::-1]) for p in points2d]
+        draw.polygon(points_pil, outline=1, fill=1)
+        return np.array(img, dtype=bool)
 
     def _paint_indices(
         self,
@@ -1436,10 +1487,8 @@ class Labels(ScalarFieldBase):
             indices = [np.array(x).flatten() for x in indices]
 
         updated_slice = tuple(
-            [
-                slice(min(axis_indices), max(axis_indices) + 1)
-                for axis_indices in indices
-            ]
+            slice(int(axis_indices.min()), int(axis_indices.max()) + 1)
+            for axis_indices in indices
         )
 
         if self.contour > 0:
@@ -1554,14 +1603,26 @@ class Labels(ScalarFieldBase):
         msg : string
             String containing a message that can be used as a tooltip.
         """
-        return '\n'.join(
-            self._get_properties(
-                position,
-                view_direction=view_direction,
-                dims_displayed=dims_displayed,
-                world=world,
-            )
+        value = self.get_value(
+            position,
+            view_direction=view_direction,
+            dims_displayed=dims_displayed,
+            world=world,
         )
+        if value is None:
+            return ''
+
+        properties = self._get_properties(
+            position,
+            view_direction=view_direction,
+            dims_displayed=dims_displayed,
+            world=world,
+        )
+
+        if not properties:
+            return f'{value}'
+
+        return f'{value}\n' + '\n'.join(properties)
 
     def _get_properties(
         self,
@@ -1600,6 +1661,16 @@ class Labels(ScalarFieldBase):
             and not (isinstance(v[idx], float) and np.isnan(v[idx]))
         ]
 
+    def _get_layer_slicing_state(
+        self, data: LayerDataType, cache: bool
+    ) -> _LabelsSlicingState:
+        return _LabelsSlicingState(self, data, cache)
+
+
+class _LabelsSlicingState(ScalarFieldSlicingState):
+    layer: Labels
+    _slice_request_class = _LabelsSliceRequest
+
 
 def _coerce_indices_for_vectorization(array, indices: list) -> tuple:
     """Coerces indices so that they can be used for vectorized indexing in the given data array."""
@@ -1614,3 +1685,25 @@ def _coerce_indices_for_vectorization(array, indices: list) -> tuple:
         else:
             return tuple(xr.DataArray(i) for i in indices)
     return tuple(indices)
+
+
+class WrongSelectedLabelError(ValueError):
+    """Raised when the selected label is not in the data array."""
+
+    def __init__(
+        self,
+        dtype: np.dtype,
+        value: int,
+        lower_bound: float,
+        upper_bound: float,
+        message: str = '',
+    ):
+        self.dtype = dtype
+        self.value = value
+        self.lower_bound = lower_bound
+        self.upper_bound = upper_bound
+        text = f'The value {value} is out of bounds for dtype {dtype} that allow for range [{int(lower_bound)}, {int(upper_bound)}].'
+        if message:
+            text = f'{message} {text}'
+        self.text = text
+        super().__init__(text)

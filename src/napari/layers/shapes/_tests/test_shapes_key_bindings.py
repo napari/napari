@@ -1,5 +1,6 @@
 import numpy as np
 
+from napari.components import Dims
 from napari.layers import Shapes
 from napari.layers.shapes import _shapes_key_bindings as key_bindings
 
@@ -81,16 +82,61 @@ def test_copy_paste():
     assert len(layer._clipboard) > 0
 
 
-def test_select_all():
+def test_select_shapes_in_slice():
     # Test on three four corner rectangle
-    layer = Shapes(20 * np.random.random((3, 4, 2)))
+    data = np.array(
+        [
+            [[0, 0], [0, 10], [10, 10], [10, 0]],
+            [[20, 20], [20, 30], [30, 30], [30, 20]],
+            [[40, 40], [40, 50], [50, 50], [50, 40]],
+        ]
+    )
+    layer = Shapes(data)
     layer.mode = 'direct'
 
     assert len(layer.data) == 3
     assert len(layer.selected_data) == 0
 
-    key_bindings.select_all_shapes(layer)
+    key_bindings.select_shapes_in_slice(layer)
     assert len(layer.selected_data) == 3
+
+    # Calling it again should deselect all
+    key_bindings.select_shapes_in_slice(layer)
+    assert len(layer.selected_data) == 0
+
+
+def test_select_shapes_in_slice_3d():
+    """Test select all shapes in a 3D slice."""
+    data = [
+        np.array([[0, 0, 0], [0, 10, 10]]),  # shape 0 on slice 0
+        np.array([[1, 5, 5], [1, 15, 15]]),  # shape 1 on slice 1
+        np.array([[0, 20, 20], [0, 30, 30]]),  # shape 2 on slice 0
+    ]
+    layer = Shapes(data, shape_type='line')
+    layer.mode = 'select'
+
+    # view slice 0
+    layer._slice_dims(
+        Dims(
+            ndim=3,
+            ndisplay=2,
+            range=((0, 2, 1), (0, 40, 1), (0, 40, 1)),
+            point=(0, 0, 0),
+        )
+    )
+
+    # select all shapes on slice 0
+    key_bindings.select_shapes_in_slice(layer)
+
+    # Check that shapes 0 and 2 are selected
+    assert layer.selected_data == {0, 2}
+
+    # Check that an interaction box is created
+    assert layer._selected_box is not None
+
+    # Check that get_status doesn't crash
+    status = layer.get_status(position=(0, 10, 10))
+    assert isinstance(status, dict)
 
 
 def test_delete():

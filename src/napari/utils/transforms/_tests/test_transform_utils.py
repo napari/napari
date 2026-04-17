@@ -48,7 +48,7 @@ def test_decompose_linear_matrix_3d():
             [0, 1, 0],
         ]
     )
-    rotate, scale, shear = decompose_linear_matrix(
+    rotate, scale, _shear = decompose_linear_matrix(
         arr * 5, upper_triangular=False
     )
     np.testing.assert_almost_equal(rotate, arr)

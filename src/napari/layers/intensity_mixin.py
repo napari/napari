@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 import numpy as np
 
@@ -12,6 +12,7 @@ validate_2_tuple = validate_n_seq(2)
 
 if TYPE_CHECKING:
     from napari.layers._scalar_field.scalar_field import ScalarFieldBase
+    from napari.layers.surface import Surface
 
 
 class IntensityVisualizationMixin:
@@ -36,7 +37,7 @@ class IntensityVisualizationMixin:
             gamma=Event,
             colormap=Event,
         )
-        self._gamma = 1
+        self._gamma = 1.0
         self._colormap_name = ''
         self._contrast_limits_msg = ''
         self._contrast_limits: tuple[float | None, float | None] = (
@@ -50,7 +51,12 @@ class IntensityVisualizationMixin:
         self._auto_contrast_source = 'slice'
         self._keep_auto_contrast = False
 
-    def reset_contrast_limits(self: 'ScalarFieldBase', mode=None):
+        # circular import
+        from napari.components.overlays import ColorBarOverlay
+
+        self._overlays.update({'colorbar': ColorBarOverlay()})
+
+    def reset_contrast_limits(self: 'ScalarFieldBase | Surface', mode=None):
         """Scale contrast limits to data range"""
         mode = mode or self._auto_contrast_source
         self.contrast_limits = self._calc_data_range(mode)
@@ -58,9 +64,16 @@ class IntensityVisualizationMixin:
     def _calc_data_range(self, mode):
         raise NotImplementedError
 
-    def reset_contrast_limits_range(self, mode=None):
+    def reset_contrast_limits_range(
+        self, mode: Literal['data', 'slice'] | None = None
+    ) -> None:
         """Scale contrast limits range to data type if dtype is an integer,
         or use the current maximum data range otherwise.
+
+        Parameters
+        ----------
+        mode: 'data' or 'slice'
+           If range should be calculated on whole data, or only visible slice.
         """
         dtype = normalize_dtype(self.dtype)
         if np.issubdtype(dtype, np.integer):
@@ -88,6 +101,11 @@ class IntensityVisualizationMixin:
     def colormaps(self):
         """tuple of str: names of available colormaps."""
         return tuple(self._colormaps.keys())
+
+    @property
+    def colorbar(self):
+        """Color Bar overlay."""
+        return self._overlays['colorbar']
 
     @property
     def contrast_limits(self):

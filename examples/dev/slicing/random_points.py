@@ -17,7 +17,7 @@ args = parser.parse_args()
 np.random.seed(0)
 n = args.n
 data = 1000 * np.random.rand(n, 3)
-viewer = napari.view_points(data)
-
+viewer = napari.Viewer()
+layer = viewer.add_points(data)
 if __name__ == '__main__':
     napari.run()

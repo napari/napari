@@ -876,7 +876,8 @@ def reconstruct_polygons_from_edges(
                 # chain of vertices, without this break, we would enter an
                 # infinite loop. Therefore, we leave it here for safety.
                 break
-        polygons.append([vertices[x] for x in poly])
+        polygon = vertices[np.array(poly)]
+        polygons.append(polygon)
     return polygons
 
 
@@ -925,7 +926,7 @@ def normalize_vertices_and_edges(
     if (
         vertices[0, 0] == vertices[-1, 0] and vertices[0, 1] == vertices[-1, 1]
     ):  # closed polygon
-        vertices = vertices[:-1]  # type: ignore[assignment] # make closing implicit
+        vertices = vertices[:-1]  # make closing implicit
         close = True
     # Now, we make sure the vertices are unique (repeated vertices cause
     # problems in spatial algorithms, and those problems can manifest as

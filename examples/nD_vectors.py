@@ -24,7 +24,8 @@ blobs = np.stack(
     ],
     axis=0,
 )
-viewer = napari.view_image(blobs.astype(float))
+viewer = napari.Viewer()
+layer = viewer.add_image(blobs.astype(float))
 
 # sample vector coord-like data
 n = 200

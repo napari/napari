@@ -3,12 +3,13 @@ from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pytest
+from magicgui.widgets import Container
 from qtpy.QtGui import QImage
+from qtpy.QtWidgets import QWidget
 
 from napari._qt.qt_main_window import Window, _QtMainWindow
 from napari._qt.utils import QImg2array
 from napari._tests.utils import skip_on_win_ci
-from napari.settings import get_settings
 from napari.utils.theme import (
     _themes,
     get_theme,
@@ -161,32 +162,32 @@ def test_set_status_and_tooltip(make_napari_viewer):
     assert viewer.tooltip.text == 'Text2'
 
 
-def test_shimmed_dialog_no_plugins(make_napari_viewer, npe2pm):
-    npe2pm.get_shimmed_plugins = MagicMock(return_value={})
-    with patch('napari._qt.qt_main_window.ShimmedPluginDialog') as mock_dialog:
-        make_napari_viewer(show=True)
-        npe2pm.get_shimmed_plugins.assert_called()
-        mock_dialog.assert_not_called()
+@pytest.mark.parametrize('BaseClass', [Container, QWidget])
+def test_add_plugin_dock_widget(make_napari_viewer, monkeypatch, BaseClass):
+    """Test that we can add a plugin dock widget to the viewer."""
 
+    class InnerWidget(BaseClass):
+        pass
 
-def test_shimmed_dialog_already_warned(make_napari_viewer, npe2pm):
-    npe2pm.get_shimmed_plugins = MagicMock(return_value={'plugin1', 'plugin2'})
-    get_settings().plugins.only_new_shimmed_plugins_warning = True
-    get_settings().plugins.already_warned_shimmed_plugins = {
-        'plugin1',
-        'plugin2',
-    }
-    with patch('napari._qt.qt_main_window.ShimmedPluginDialog') as mock_dialog:
-        make_napari_viewer(show=True)
-        npe2pm.get_shimmed_plugins.assert_called()
-        mock_dialog.assert_not_called()
+    mock = MagicMock(return_value=(InnerWidget, 'widget name'))
+    monkeypatch.setattr('napari.plugins._npe2.get_widget_contribution', mock)
+    viewer = make_napari_viewer()
+    assert list(viewer.window.dock_widgets.keys()) == []
 
+    docked, widget = viewer.window.add_plugin_dock_widget(
+        'sample_plugin', 'sample_widget'
+    )
+    assert isinstance(widget, InnerWidget)
+    assert docked.inner_widget() is widget
+    assert list(viewer.window.dock_widgets.keys()) == [
+        'widget name (sample_plugin)'
+    ]
+    assert viewer.window.dock_widgets['widget name (sample_plugin)'] is widget
+    docked2, widget2 = viewer.window.add_plugin_dock_widget(
+        'sample_plugin', 'sample_widget'
+    )
+    assert docked is docked2
+    assert widget is widget2
 
-def test_shimmed_dialog_show(make_napari_viewer, npe2pm):
-    npe2pm.get_shimmed_plugins = MagicMock(return_value={'plugin1', 'plugin2'})
-    with patch('napari._qt.qt_main_window.ShimmedPluginDialog') as mock_dialog:
-        viewer = make_napari_viewer(show=True)
-        npe2pm.get_shimmed_plugins.assert_called()
-        mock_dialog.assert_called_once_with(
-            viewer.window._qt_window, {'plugin1', 'plugin2'}
-        )
+    with pytest.raises(TypeError):
+        viewer.window.dock_widgets['widget name (sample_plugin)'] = 1

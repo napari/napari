@@ -3,6 +3,7 @@ from unittest.mock import Mock
 
 import numpy as np
 import pytest
+from vispy.app.canvas import MouseEvent
 
 from napari._tests.utils import skip_on_win_ci
 from napari.layers import Image
@@ -81,7 +82,10 @@ def test_viewer_mouse_bindings(qtbot, make_napari_viewer):
     canvas._scene_canvas.events.mouse_press(pos=(0, 0), modifiers=(), button=0)
     qtbot.wait(10)
     canvas._scene_canvas.events.mouse_move(
-        pos=(0, 0), modifiers=(), button=0, press_event=True
+        pos=(0, 0),
+        modifiers=(),
+        button=0,
+        press_event=MouseEvent(pos=(0, 0), type='mouse_press'),
     )
     qtbot.wait(10)
     canvas._scene_canvas.events.mouse_release(
@@ -164,7 +168,10 @@ def test_layer_mouse_bindings(qtbot, make_napari_viewer):
     canvas._scene_canvas.events.mouse_press(pos=(0, 0), modifiers=(), button=0)
     qtbot.wait(10)
     canvas._scene_canvas.events.mouse_move(
-        pos=(0, 0), modifiers=(), button=0, press_event=True
+        pos=(0, 0),
+        modifiers=(),
+        button=0,
+        press_event=MouseEvent(pos=(0, 0), type='mouse_press'),
     )
     qtbot.wait(10)
     canvas._scene_canvas.events.mouse_release(
@@ -244,7 +251,10 @@ def test_unselected_layer_mouse_bindings(qtbot, make_napari_viewer):
     canvas._scene_canvas.events.mouse_press(pos=(0, 0), modifiers=(), button=0)
     qtbot.wait(10)
     canvas._scene_canvas.events.mouse_move(
-        pos=(0, 0), modifiers=(), button=0, press_event=True
+        pos=(0, 0),
+        modifiers=(),
+        button=0,
+        press_event=MouseEvent(pos=(0, 0), type='mouse_press'),
     )
     qtbot.wait(10)
     canvas._scene_canvas.events.mouse_release(

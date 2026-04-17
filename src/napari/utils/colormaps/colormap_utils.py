@@ -1,9 +1,8 @@
 import warnings
 from collections import OrderedDict, defaultdict
-from collections.abc import Iterable
 from functools import lru_cache
 from threading import Lock
-from typing import NamedTuple, Union
+from typing import TYPE_CHECKING, NamedTuple, Union
 
 import numpy as np
 import skimage.color as colorconv
@@ -16,7 +15,7 @@ from vispy.color import (
 )
 from vispy.color.colormap import LUT_len
 
-from napari.utils.colormaps._accelerated_cmap import minimum_dtype_for_labels
+from napari.utils.colormaps import _accelerated_cmap
 from napari.utils.colormaps.bop_colors import bopd
 from napari.utils.colormaps.colormap import (
     Colormap,
@@ -28,6 +27,9 @@ from napari.utils.colormaps.inverse_colormaps import inverse_cmaps
 from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils.colormaps.vendored.cm import cmap_d
 from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
 
 # All parsable input color types that a user can provide
 ColorType = Union[list, tuple, np.ndarray, str, Color, ColorArray]
@@ -245,7 +247,7 @@ def convert_vispy_colormap(colormap, name='vispy'):
 
 def _napari_cmap_to_vispy(colormap: Colormap) -> VispyColormap:
     """Convert a napari colormap to its equivalent vispy colormap."""
-    cmap_args = colormap.dict()
+    cmap_args = colormap.model_dump()
     cmap_args.pop('name')
     cmap_args['bad_color'] = cmap_args.pop('nan_color')
     return VispyColormap(**cmap_args)
@@ -323,8 +325,11 @@ def low_discrepancy_image(image, seed=0.5, margin=1 / 256) -> np.ndarray:
 
 
 def color_dict_to_colormap(colors):
-    """
-    Generate a color map based on the given color dictionary
+    """Generate a color map based on the given color dictionary.
+
+    .. deprecated:: 0.7.1
+        ``color_dict_to_colormap`` is deprecated as of ``0.7.1`` and will be
+        removed in ``0.8.0``.
 
     Parameters
     ----------
@@ -338,6 +343,13 @@ def color_dict_to_colormap(colors):
     label_color_index : dict of int
         Mapping of Label to color control point within colormap
     """
+
+    warnings.warn(
+        'color_dict_to_colormap is deprecated in 0.7.1 and will be removed in '
+        '0.8.0 release. Construct a Colormap and label-to-control mapping directly.',
+        category=FutureWarning,
+        stacklevel=2,
+    )
 
     MAX_DISTINCT_COLORS = LUT_len
 
@@ -588,7 +600,7 @@ def shuffle_and_extend_colormap(
     """
     rng = np.random.default_rng(seed)
     n_colors_prev = len(colormap.colors)
-    dtype = minimum_dtype_for_labels(n_colors_prev)
+    dtype = _accelerated_cmap.minimum_dtype_for_labels(n_colors_prev)
     indices = np.arange(n_colors_prev)
     rng.shuffle(indices)
     shuffled_colors = colormap.colors[indices]
@@ -718,8 +730,8 @@ AVAILABLE_COLORMAPS_LOCK = Lock()
 # blending of multiple channels.
 MAGENTA_GREEN = ['magenta', 'green']
 RGB = ['red', 'green', 'blue']
+CMYBGR = ['cyan', 'magenta', 'yellow', 'blue', 'green', 'red']
 CYMRGB = ['cyan', 'yellow', 'magenta', 'red', 'green', 'blue']
-
 
 AVAILABLE_LABELS_COLORMAPS = {
     'lodisc-50': label_colormap(50),
@@ -727,7 +739,7 @@ AVAILABLE_LABELS_COLORMAPS = {
 
 
 def _increment_unnamed_colormap(
-    existing: Iterable[str], name: str = '[unnamed colormap]'
+    existing: 'Iterable[str]', name: str = '[unnamed colormap]'
 ) -> tuple[str, str]:
     """Increment name for unnamed colormap.
 
@@ -959,6 +971,18 @@ def _colormap_from_colors(
 
 
 def make_default_color_array():
+    """Return the default RGBA color array.
+
+    .. deprecated:: 0.7.1
+        This helper is deprecated and will be removed in a future release.
+        Use an explicit array such as ``np.array([0, 0, 0, 1])`` instead.
+    """
+    warnings.warn(
+        'make_default_color_array is deprecated in 0.7.1 and will be removed in 0.8.0 release.'
+        ' Use an explicit array such as np.array([0, 0, 0, 1]) instead.',
+        DeprecationWarning,
+        stacklevel=2,
+    )
     return np.array([0, 0, 0, 1])
 
 

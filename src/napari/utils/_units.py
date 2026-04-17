@@ -1,6 +1,5 @@
 """Units utilities."""
 
-from functools import lru_cache
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -26,7 +25,6 @@ PREFERRED_VALUES = [
 ]
 
 
-@lru_cache(maxsize=1)
 def get_unit_registry() -> 'pint.UnitRegistry':
     """Get pint's UnitRegistry.
 
@@ -40,4 +38,4 @@ def get_unit_registry() -> 'pint.UnitRegistry':
     """
     import pint
 
-    return pint.UnitRegistry()
+    return pint.get_application_registry()

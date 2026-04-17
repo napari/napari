@@ -57,6 +57,7 @@ class MenuId(StrEnum):
     LAYERS_CONTEXT_CONVERT_DTYPE = 'napari/layers/context/convert_dtype'
     LAYERS_CONTEXT_PROJECT = 'napari/layers/contxt/project'
     LAYERS_CONTEXT_COPY_SPATIAL = 'napari/layers/context/copy_spatial'
+    LAYERS_CONTEXT_VISUALIZATION = 'napari/layers/context/visualization'
 
     def __str__(self) -> str:
         return self.value
