@@ -246,7 +246,11 @@ def get_system_theme() -> str:
         )
         return 'dark'
 
-    scheme = QGuiApplication.styleHints().colorScheme()
+    style_hints = QGuiApplication.styleHints()
+    if style_hints is None:
+        return 'dark'
+
+    scheme = style_hints.colorScheme()
     match scheme:
         case Qt.ColorScheme.Dark:
             return 'dark'
