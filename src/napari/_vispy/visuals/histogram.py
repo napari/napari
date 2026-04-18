@@ -31,6 +31,7 @@ class HistogramVisual(Compound):
         self._bar_color = (0.8, 0.8, 0.8, 0.8)  # Light gray bars
         self._lut_color = (1.0, 1.0, 0.0, 0.9)  # Yellow for unified LUT line
         self._axes_color = (0.5, 0.5, 0.5, 1.0)
+        self._text_color = (1.0, 1.0, 1.0, 1.0)
 
         # Create sub-visuals
         self._bars = Mesh()
@@ -313,6 +314,7 @@ class HistogramVisual(Compound):
         bar_color: tuple[float, float, float, float] | None = None,
         lut_color: tuple[float, float, float, float] | None = None,
         axes_color: tuple[float, float, float, float] | None = None,
+        text_color: tuple[float, float, float, float] | None = None,
     ) -> None:
         """
         Set colors for different visual elements.
@@ -325,6 +327,8 @@ class HistogramVisual(Compound):
             RGBA color for unified LUT line (clims + gamma curve).
         axes_color : tuple, optional
             RGBA color for axes.
+        text_color : tuple, optional
+            RGBA color for text labels.
         """
         if bar_color is not None:
             self._bar_color = bar_color
@@ -332,6 +336,9 @@ class HistogramVisual(Compound):
             self._lut_color = lut_color
         if axes_color is not None:
             self._axes_color = axes_color
+        if text_color is not None:
+            self._text_color = text_color
+            self._text.color = text_color
 
         # Reapply colors if data exists
         if len(self._counts) > 0:

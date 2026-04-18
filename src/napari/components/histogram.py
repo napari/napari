@@ -27,7 +27,7 @@ class HistogramModel(EventedModel):
         The layer to compute histogram for.
     n_bins : int, default: 256
         Number of histogram bins.
-    mode : {'displayed', 'full'}, default: 'displayed'
+    mode : {'canvas', 'full'}, default: 'canvas'
         Whether to compute histogram from displayed data or full volume.
     log_scale : bool, default: False
         Use logarithmic scale for histogram counts.
@@ -107,13 +107,9 @@ class HistogramModel(EventedModel):
         layer.events.contrast_limits_range.connect(self._on_range_change)
 
         # Connect to set_data event which fires on slice changes
+        # This covers both sync slice updates and async slice completion.
         if hasattr(layer.events, 'set_data'):
             layer.events.set_data.connect(self._on_slice_change)
-
-        # Connect to loaded event for async slicing support
-        # This fires when async slice loading completes
-        if hasattr(layer.events, 'loaded'):
-            layer.events.loaded.connect(self._on_loaded_change)
 
         # Connect to our own events to trigger recomputation
         self.events.n_bins.connect(self._on_params_change)
@@ -309,16 +305,6 @@ class HistogramModel(EventedModel):
         on the currently visible data.
         """
         if self.mode == 'canvas':
-            self._mark_dirty()
-
-    def _on_loaded_change(self) -> None:
-        """Called when async slice loading completes.
-
-        For async slicing, the slice data may not be available immediately.
-        This event fires when loading completes, so we can update the histogram
-        with the newly loaded slice data.
-        """
-        if self.mode == 'canvas' and getattr(self._layer, 'loaded', True):
             self._mark_dirty()
 
     def _on_params_change(self) -> None:
