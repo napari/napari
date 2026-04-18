@@ -1,3 +1,4 @@
+import warnings
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from functools import partial, wraps
 from pathlib import Path
@@ -12,6 +13,7 @@ from typing import (
 )
 
 import numpy as np
+import numpy.typing as npt
 
 # TODO decide where types should be defined to have single place for them
 from npe2.types import LayerName as LayerTypeName
@@ -60,6 +62,7 @@ __all__ = [
 # note, numpy.typing.ArrayLike (in v1.20) is not quite what we want either,
 # since it includes all valid arguments for np.array() ( int, float, str...)
 ArrayLike = Union[np.ndarray, 'dask.array.Array', 'zarr.Array']
+LayerDataType = Union[npt.ArrayLike, Sequence[npt.ArrayLike]]
 
 # layer data may be: (data,) (data, meta), or (data, meta, layer_type)
 # using "Any" for the data type until ArrayLike is more mature.
@@ -127,6 +130,9 @@ def image_reader_to_layerdata_reader(
 ) -> ReaderFunction:
     """Convert a PathLike -> ArrayLike function to a PathLike -> LayerData.
 
+    .. deprecated:: 0.7.1
+        This helper is deprecated and will be removed in 0.8.0.
+
     Parameters
     ----------
     func : Callable[[PathLike], ArrayLike]
@@ -140,6 +146,11 @@ def image_reader_to_layerdata_reader(
         as a list of LayerData: List[Tuple[ArrayLike]]
 
     """
+    warnings.warn(
+        'image_reader_to_layerdata_reader is deprecated in 0.7.1 and will be removed in 0.8.0 release.',
+        DeprecationWarning,
+        stacklevel=2,
+    )
 
     @wraps(func)
     def reader_function(*args, **kwargs) -> list[LayerData]:

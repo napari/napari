@@ -1,9 +1,10 @@
+from __future__ import annotations
+
 import inspect
 import warnings
-from collections.abc import Callable, Sequence
 from functools import partial, wraps
-from types import FunctionType, GeneratorType
 from typing import (
+    TYPE_CHECKING,
     TypeVar,
 )
 
@@ -13,6 +14,10 @@ from napari.utils.progress import progress
 from napari.utils.task_status import Status
 from napari.utils.translations import trans
 from napari.viewer import current_viewer
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
+    from types import FunctionType, GeneratorType
 
 __all__ = [
     'FunctionWorker',
@@ -64,7 +69,7 @@ def create_worker(
     _start_thread: bool | None = None,
     _connect: dict[str, Callable | Sequence[Callable]] | None = None,
     _progress: bool | dict[str, int | bool | str] | None = None,
-    _worker_class: type[GeneratorWorker] | type[FunctionWorker] | None = None,
+    _worker_class: type[GeneratorWorker | FunctionWorker] | None = None,
     _ignore_errors: bool = False,
     **kwargs,
 ) -> FunctionWorker | GeneratorWorker:
@@ -236,15 +241,16 @@ def create_worker(
         if hasattr(worker.signals, 'aborted'):
             worker.aborted.connect(
                 partial(
-                    lambda task_status_id,
-                    function: window._update_task_status(
-                        task_status_id,
-                        Status.CANCELLED,
-                        description=trans._(
-                            '{func} execution cancelled',
-                            deferred=True,
-                            func=function,
-                        ),
+                    lambda task_status_id, function: (
+                        window._update_task_status(
+                            task_status_id,
+                            Status.CANCELLED,
+                            description=trans._(
+                                '{func} execution cancelled',
+                                deferred=True,
+                                func=function,
+                            ),
+                        )
                     ),
                     worker_status_id,
                     func,
@@ -264,7 +270,7 @@ def thread_worker(
     start_thread: bool | None = None,
     connect: dict[str, Callable | Sequence[Callable]] | None = None,
     progress: bool | dict[str, int | bool | str] | None = None,
-    worker_class: type[FunctionWorker] | type[GeneratorWorker] | None = None,
+    worker_class: type[FunctionWorker | GeneratorWorker] | None = None,
     ignore_errors: bool = False,
 ):
     """Decorator that runs a function in a separate thread when called.

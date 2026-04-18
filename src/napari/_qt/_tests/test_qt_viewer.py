@@ -71,7 +71,7 @@ def test_add_layer(
     data: ArrayLike,
     ndim: int,
 ) -> None:
-    viewer_model.dims.ndisplay = np.clip(ndim, 2, 3)
+    viewer_model.dims.ndisplay = max(min(3, ndim), 2)
 
     add_layer_by_type(viewer_model, layer_class, data)
     check_viewer_functioning(viewer_model, qt_viewer, data, ndim)
@@ -671,6 +671,28 @@ def test_create_non_empty_viewer_model(qtbot: QtBot) -> None:
     gc.collect()
 
 
+def test_create_non_empty_viewer_model_initializes_world_units(
+    qtbot: QtBot,
+) -> None:
+    from pint import get_application_registry
+
+    reg = get_application_registry()
+    viewer_model = ViewerModel()
+    image_um = viewer_model.add_image(np.zeros((10, 10)), units=('um', 'um'))
+    viewer_model.layers.units = ('nm', 'nm')
+
+    viewer = QtViewer(viewer=viewer_model)
+    qtbot.addWidget(
+        viewer, before_close_func=lambda widget: widget._instances.clear()
+    )
+
+    assert viewer_model.layers.units == (reg.nm, reg.nm)
+    assert viewer.canvas.layer_to_visual[image_um]._world_units == (
+        reg.nm,
+        reg.nm,
+    )
+
+
 def _update_data(
     layer: Labels,
     label: int,
@@ -803,6 +825,8 @@ def test_label_colors_matching_widget_direct(
 
 def test_axis_labels(viewer_model: ViewerModel, qt_viewer: QtViewer) -> None:
     viewer_model.dims.ndisplay = 3
+    viewer_model.axes.visible = True
+
     layer = viewer_model.add_image(np.zeros((2, 2, 2)), scale=(1, 2, 4))
 
     layer_visual = qt_viewer.layer_to_visual[layer]
@@ -812,7 +836,7 @@ def test_axis_labels(viewer_model: ViewerModel, qt_viewer: QtViewer) -> None:
 
     layer_visual_size = vispy_image_scene_size(layer_visual)
     assert tuple(layer_visual_size) == (8, 4, 2)
-    assert tuple(axes_visual.node.text.text) == ('2', '1', '0')
+    assert tuple(axes_visual.node.text.text) == ('-1', '-2', '-3')
 
 
 def _find_margin(data: np.ndarray, additional_margin: int) -> tuple[int, int]:
@@ -1078,7 +1102,9 @@ def test_scale_bar_colored(
     def check_white_scale_bar():
         screenshot = qt_viewer.screenshot(flash=False)
         assert not np.all(screenshot == [0, 0, 0, 255], axis=-1).all()
-        assert np.all(screenshot == [255, 255, 255, 255], axis=-1).any()
+        # antialiasing can make things less saturated
+        assert np.all(screenshot[..., 0] == screenshot[..., 1])
+        assert np.all(screenshot[..., 1] == screenshot[..., 2])
 
     scale_bar.visible = True
     qtbot.waitUntil(check_white_scale_bar)
@@ -1086,8 +1112,10 @@ def test_scale_bar_colored(
     # Check scale bar is colored (canvas has fuchsia `[1, 0, 1, 255]` and not white in it)
     def check_colored_scale_bar():
         screenshot = qt_viewer.screenshot(flash=False)
-        assert not np.all(screenshot == [255, 255, 255, 255], axis=-1).any()
-        assert np.all(screenshot == [255, 0, 255, 255], axis=-1).any()
+        assert not np.all(screenshot == [0, 0, 0, 255], axis=-1).all()
+        # antialiasing can make things less saturated
+        assert np.all(screenshot[..., 0] == screenshot[..., 2])
+        assert np.all(screenshot[..., 1] == 0)
 
     scale_bar.colored = True
     qtbot.waitUntil(check_colored_scale_bar)
@@ -1095,8 +1123,10 @@ def test_scale_bar_colored(
     # Check scale bar is still visible but not colored (canvas has white again but not fuchsia in it)
     def check_only_white_scale_bar():
         screenshot = qt_viewer.screenshot(flash=False)
-        assert np.all(screenshot == [255, 255, 255, 255], axis=-1).any()
-        assert not np.all(screenshot == [255, 0, 255, 255], axis=-1).any()
+        assert not np.all(screenshot == [0, 0, 0, 255], axis=-1).all()
+        # antialiasing can make things less saturated
+        assert np.all(screenshot[..., 0] == screenshot[..., 1])
+        assert np.all(screenshot[..., 1] == screenshot[..., 2])
 
     scale_bar.colored = False
     qtbot.waitUntil(check_only_white_scale_bar)
@@ -1124,7 +1154,9 @@ def test_scale_bar_ticks(
     def check_white_scale_bar():
         screenshot = qt_viewer.screenshot(flash=False)
         assert not np.all(screenshot == [0, 0, 0, 255], axis=-1).all()
-        assert np.all(screenshot == [255, 255, 255, 255], axis=-1).any()
+        # antialiasing can make things less saturated
+        assert np.all(screenshot[..., 0] == screenshot[..., 1])
+        assert np.all(screenshot[..., 1] == screenshot[..., 2])
 
     scale_bar.visible = True
     qtbot.waitUntil(check_white_scale_bar)
@@ -1136,7 +1168,9 @@ def test_scale_bar_ticks(
     # Check scale bar without ticks (still white present but new screenshot differs from ticks one)
     def check_no_ticks_scale_bar():
         screenshot = qt_viewer.screenshot(flash=False)
-        assert np.all(screenshot == [255, 255, 255, 255], axis=-1).any()
+        # antialiasing can make things less saturated
+        assert np.all(screenshot[..., 0] == screenshot[..., 1])
+        assert np.all(screenshot[..., 1] == screenshot[..., 2])
         npt.assert_raises(
             AssertionError,
             npt.assert_array_equal,
@@ -1150,8 +1184,11 @@ def test_scale_bar_ticks(
     # Check scale bar again has ticks (still white present and new screenshot corresponds with ticks one)
     def check_ticks_scale_bar():
         screenshot = qt_viewer.screenshot(flash=False)
-        assert np.all(screenshot == [255, 255, 255, 255], axis=-1).any()
-        npt.assert_array_equal(screenshot, screenshot_with_ticks)
+        # antialiasing can make things less saturated
+        assert np.all(screenshot[..., 0] == screenshot[..., 1])
+        assert np.all(screenshot[..., 1] == screenshot[..., 2])
+        # some variation can happen with antialiasing
+        npt.assert_allclose(screenshot, screenshot_with_ticks, atol=1)
 
     scale_bar.ticks = True
     qtbot.waitUntil(check_ticks_scale_bar)
@@ -1188,14 +1225,15 @@ def test_viewer_drag_to_zoom(
     """Test drag to zoom mouse binding."""
     canvas = qt_viewer.canvas
 
-    def zoom_callback(event):
+    def zoom_callback(data_positions):
         """Mock zoom callback to check zoom box visibility."""
-        data_positions = event.value
         assert len(data_positions) == 2, (
             'Zoom event should release two positions'
         )
 
-    viewer_model._zoom_box.events.zoom.connect(zoom_callback)
+    zoom_area_mock = mock.Mock(side_effect=zoom_callback)
+
+    viewer_model._zoom_box.events.zoom_area.connect(zoom_area_mock)
 
     # Add an image layer
     data = np.random.default_rng(0).random((10, 20))
@@ -1240,6 +1278,8 @@ def test_viewer_drag_to_zoom(
         'Zoom box should be hidden after release'
     )
 
+    assert zoom_area_mock.call_count == 1
+
 
 @pytest.mark.show_qt_viewer
 def test_viewer_drag_to_zoom_with_cancel(
@@ -1248,14 +1288,9 @@ def test_viewer_drag_to_zoom_with_cancel(
     """Test drag to zoom mouse binding."""
     canvas = qt_viewer.canvas
 
-    def zoom_callback(event):
-        """Mock zoom callback to check zoom box visibility."""
-        data_positions = event.value
-        assert len(data_positions) == 2, (
-            'Zoom event should release two positions'
-        )
+    zoom_area_mock = mock.Mock()
 
-    viewer_model._zoom_box.events.zoom.connect(zoom_callback)
+    viewer_model._zoom_box.events.zoom_area.connect(zoom_area_mock)
 
     # Add an image layer
     data = np.random.default_rng(0).random((10, 20))
@@ -1290,3 +1325,59 @@ def test_viewer_drag_to_zoom_with_cancel(
     assert viewer_model._zoom_box.position == ((0, 0), (0, 0)), (
         'Zoom box canvas positions should match the drag coordinates'
     )
+    zoom_area_mock.assert_not_called()
+
+
+@pytest.mark.show_qt_viewer
+def test_viewer_drag_to_zoom_3d_data(
+    qt_viewer: QtViewer, viewer_model: ViewerModel, qtbot: QtBot
+) -> None:
+    """Regression test: drag-to-zoom must not raise ValidationError with 3D data.
+
+    When the viewer has ndim>2 but ndisplay=2, event.position is a len(ndim)-tuple.
+    ZoomOverlay.zoom_area only accepts 2-tuples, so the drag_to_zoom binding
+    must slice to the displayed (last 2) coordinates before assigning.
+    """
+    canvas = qt_viewer.canvas
+
+    zoom_area_mock = mock.Mock()
+    viewer_model._zoom_box.events.zoom_area.connect(zoom_area_mock)
+
+    # 3D data so that event.position will have 3 components
+    data = np.random.default_rng(0).random((10, 20, 20))
+    viewer_model.add_image(data)
+    assert viewer_model.dims.ndim == 3
+    assert viewer_model.dims.ndisplay == 2
+
+    qtbot.wait(10)
+    canvas._scene_canvas.events.mouse_press(
+        pos=(0, 0), modifiers=('Alt',), button=0
+    )
+    qtbot.wait(10)
+    assert viewer_model._zoom_box.visible is True
+
+    canvas._scene_canvas.events.mouse_move(
+        pos=(100, 100),
+        modifiers=('Alt',),
+        button=0,
+        press_event=MouseEvent(
+            pos=(0, 0), modifiers=('Alt',), button=0, type='mouse_press'
+        ),
+    )
+    qtbot.wait(10)
+
+    # Release — this previously raised a pydantic ValidationError
+    canvas._scene_canvas.events.mouse_release(
+        pos=(100, 100), modifiers=('Alt',), button=0
+    )
+    qtbot.wait(10)
+
+    assert viewer_model._zoom_box.visible is False, (
+        'Zoom box should be hidden after release'
+    )
+    # zoom_area should have been set with 2-tuples (last 2 world coords)
+    assert zoom_area_mock.call_count == 1
+    zoom_area_value = zoom_area_mock.call_args[0][0]
+    assert len(zoom_area_value) == 2, 'zoom_area must be a 2-element tuple'
+    assert len(zoom_area_value[0]) == 2, 'each corner must be a 2-tuple'
+    assert len(zoom_area_value[1]) == 2, 'each corner must be a 2-tuple'

@@ -1,17 +1,17 @@
+from __future__ import annotations
+
 import warnings
 from collections.abc import Callable, Collection, Iterable, Sized
 from contextlib import contextmanager
 from copy import copy, deepcopy
-from itertools import cycle
-from typing import Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import numpy as np
 import numpy.typing as npt
-import pandas as pd
 from psygnal.containers import Selection
 from vispy.color import get_color_names
 
-from napari.layers.base import Layer, no_op
+from napari.layers.base import Layer, _LayerSlicingState, no_op
 from napari.layers.base._base_constants import ActionType
 from napari.layers.base._base_mouse_bindings import (
     highlight_box_handles,
@@ -29,7 +29,6 @@ from napari.layers.shapes._shapes_constants import (
     shape_classes,
 )
 from napari.layers.shapes._shapes_mouse_bindings import (
-    _set_highlight,
     add_ellipse,
     add_line,
     add_path_polygon,
@@ -67,7 +66,9 @@ from napari.layers.utils.interactivity_utils import (
 from napari.layers.utils.layer_utils import _FeatureTable, _unique_element
 from napari.layers.utils.text_manager import TextManager
 from napari.settings import get_settings
+from napari.types import LayerDataType
 from napari.utils.colormaps import Colormap, ValidColormapArg, ensure_colormap
+from napari.utils.colormaps.categorical_colormap_utils import ColorCycle
 from napari.utils.colormaps.colormap_utils import ColorType
 from napari.utils.colormaps.standardize_color import (
     hex_to_name,
@@ -79,6 +80,11 @@ from napari.utils.events.custom_types import Array
 from napari.utils.misc import ensure_iterable
 from napari.utils.notifications import show_warning
 from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    from itertools import cycle
+
+    import pandas as pd
 
 DEFAULT_COLOR_CYCLE = np.array([[1, 0, 1, 1], [0, 1, 0, 1]])
 
@@ -103,7 +109,7 @@ class Shapes(Layer):
         provided scale, rotate, and shear values.
     axis_labels : tuple of str, optional
         Dimension names of the layer data.
-        If not provided, axis_labels will be set to (..., 'axis -2', 'axis -1').
+        If not provided, axis_labels will be set to (..., '-2', '-1').
     blending : str
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
@@ -356,8 +362,6 @@ class Shapes(Layer):
     _edge_color_property: str
     _face_color_cycle: npt.NDArray
     _edge_color_cycle: npt.NDArray
-    _face_color_cycle_values: npt.NDArray
-    _edge_color_cycle_values: npt.NDArray
     _face_color_mode: str
     _edge_color_mode: str
 
@@ -365,7 +369,7 @@ class Shapes(Layer):
     # in the thumbnail
     _max_shapes_thumbnail = 100
 
-    _drag_modes: ClassVar[dict[Mode, Callable[['Shapes', Event], Any]]] = {
+    _drag_modes: ClassVar[dict[Mode, Callable[[Shapes, Event], Any]]] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: transform_with_box,
         Mode.SELECT: select,
@@ -381,7 +385,7 @@ class Shapes(Layer):
         Mode.ADD_POLYGON_LASSO: add_path_polygon_lasso,
     }
 
-    _move_modes: ClassVar[dict[Mode, Callable[['Shapes', Event], Any]]] = {
+    _move_modes: ClassVar[dict[Mode, Callable[[Shapes, Event], Any]]] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: highlight_box_handles,
         Mode.SELECT: highlight,
@@ -398,7 +402,7 @@ class Shapes(Layer):
     }
 
     _double_click_modes: ClassVar[
-        dict[Mode, Callable[['Shapes', Event], Any]]
+        dict[Mode, Callable[[Shapes, Event], Any]]
     ] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: no_op,
@@ -553,6 +557,9 @@ class Shapes(Layer):
         self._value_stored = (None, None)
         self._moving_value: tuple[int | None, int | None] = (None, None)
         self._selected_data: Selection[int] = Selection()
+        self._selected_data.events.items_changed.connect(
+            self._on_selection_changed
+        )
         self._selected_data_stored = set()
         self._selected_data_history = set()
         self._selected_box = None
@@ -576,6 +583,12 @@ class Shapes(Layer):
         self._drag_box_stored = None
         self._is_creating = False
         self._clipboard: dict[str, Shapes] = {}
+        self._outlines_cache: dict[
+            int | None, tuple[np.ndarray, np.ndarray, np.ndarray]
+        ] = {}
+        self._selected_data.events.items_changed.connect(
+            self._clean_outline_cache
+        )
 
         self._status = self.mode
 
@@ -620,9 +633,6 @@ class Shapes(Layer):
             features=self.features,
         )
 
-        # Trigger generation of view slice and thumbnail
-        self.mouse_wheel_callbacks.append(_set_highlight)
-        self.mouse_drag_callbacks.append(_set_highlight)
         self.refresh()
 
     def _initialize_current_color_for_empty_layer(
@@ -998,7 +1008,7 @@ class Shapes(Layer):
 
         Can be a list of colors defined by name, RGB or RGBA
         """
-        return self._edge_color_cycle_values
+        return self._edge_color_cycle.values
 
     @edge_color_cycle.setter
     def edge_color_cycle(self, edge_color_cycle: list | np.ndarray):
@@ -1064,7 +1074,7 @@ class Shapes(Layer):
         """Union[np.ndarray, cycle]:  Color cycle for face_color
         Can be a list of colors defined by name, RGB or RGBA
         """
-        return self._face_color_cycle_values
+        return self._face_color_cycle.values
 
     @face_color_cycle.setter
     def face_color_cycle(self, face_color_cycle: np.ndarray | cycle):
@@ -1184,12 +1194,13 @@ class Shapes(Layer):
             The name of the attribute to set the color of.
             Should be 'edge' for edge_color or 'face' for face_color.
         """
-        transformed_color_cycle, transformed_colors = transform_color_cycle(
+        transformed_colors = transform_color_cycle(
             color_cycle=color_cycle,
             elem_name=f'{attribute}_color_cycle',
             default='white',
         )
-        setattr(self, f'_{attribute}_color_cycle_values', transformed_colors)
+        transformed_color_cycle = ColorCycle(transformed_colors)
+
         setattr(self, f'_{attribute}_color_cycle', transformed_color_cycle)
 
         if self._update_properties is True:
@@ -1261,13 +1272,17 @@ class Shapes(Layer):
         return self._selected_data
 
     @selected_data.setter
-    def selected_data(self, selected_data: Collection[int]) -> None:
+    def selected_data(
+        self, selected_data: Collection[int | np.integer]
+    ) -> None:
         self._selected_data.replace_selection(selected_data)
-        self._selected_box = self.interaction_box(self._selected_data)
+
+    def _on_selection_changed(self, added, removed):
+        self._selected_box = self.interaction_box(self.selected_data)
 
         # Update properties based on selected shapes
-        if len(selected_data) > 0:
-            selected_data_indices = list(selected_data)
+        if len(self.selected_data) > 0:
+            selected_data_indices = list(self.selected_data)
             selected_face_colors = self._data_view._face_color[
                 selected_data_indices
             ]
@@ -1290,7 +1305,7 @@ class Shapes(Layer):
                 np.array(
                     [
                         self._data_view.shapes[i].edge_width
-                        for i in selected_data
+                        for i in self.selected_data
                     ]
                 )
             )
@@ -1333,7 +1348,7 @@ class Shapes(Layer):
             Should be 'edge' for edge_color or 'face' for face_color.
         """
         if self._is_color_mapped(color):
-            if guess_continuous(self.properties[color]):
+            if guess_continuous(self.properties[color], feature_name=color):
                 setattr(self, f'_{attribute}_color_mode', ColorMode.COLORMAP)
             else:
                 setattr(self, f'_{attribute}_color_mode', ColorMode.CYCLE)
@@ -1421,7 +1436,7 @@ class Shapes(Layer):
             The calculated values for setting edge or face_color
         """
         if self._is_color_mapped(color):
-            if guess_continuous(self.properties[color]):
+            if guess_continuous(self.properties[color], feature_name=color):
                 setattr(self, f'_{attribute}_color_mode', ColorMode.COLORMAP)
             else:
                 setattr(self, f'_{attribute}_color_mode', ColorMode.CYCLE)
@@ -1623,18 +1638,18 @@ class Shapes(Layer):
                 'ndim': self.ndim,
                 'properties': self.properties,
                 'property_choices': self.property_choices,
-                'text': self.text.dict(),
+                'text': self.text.model_dump(),
                 'shape_type': self.shape_type,
                 'opacity': self.opacity,
                 'z_index': self.z_index,
                 'edge_width': self.edge_width,
                 'face_color': face_color,
                 'face_color_cycle': self.face_color_cycle,
-                'face_colormap': self.face_colormap.dict(),
+                'face_colormap': self.face_colormap.model_dump(),
                 'face_contrast_limits': self.face_contrast_limits,
                 'edge_color': edge_color,
                 'edge_color_cycle': self.edge_color_cycle,
-                'edge_colormap': self.edge_colormap.dict(),
+                'edge_colormap': self.edge_colormap.model_dump(),
                 'edge_contrast_limits': self.edge_contrast_limits,
                 'data': self.data,
                 'features': self.features,
@@ -1729,15 +1744,18 @@ class Shapes(Layer):
         self._mode = mode
         self.events.mode(mode=mode)
 
-        draw_modes = {
+        non_draw_modes = {
             Mode.SELECT,
             Mode.DIRECT,
             Mode.VERTEX_INSERT,
             Mode.VERTEX_REMOVE,
+            Mode.PAN_ZOOM,
         }
 
-        # don't update thumbnail on mode changes
-        if not (mode in draw_modes and self._mode in draw_modes):
+        if mode not in non_draw_modes:
+            self.selected_data.clear()
+
+        if self._is_creating:
             # Shapes._finish_drawing() calls Shapes.refresh() via Shapes._update_dims()
             # so we need to block thumbnail update from here
             # TODO: this is not great... ideally we should no longer need this blocking system
@@ -1761,8 +1779,8 @@ class Shapes(Layer):
         super()._update_draw(
             scale_factor, corner_pixels_displayed, shape_threshold
         )
-        # update highlight only if scale has changed, otherwise causes a cycle
-        self._set_highlight(force=(prev_scale != self.scale_factor))
+        if prev_scale != self.scale_factor and self.selected_data:
+            self._set_highlight(force=True)
 
     def add_rectangles(
         self,
@@ -2498,6 +2516,30 @@ class Shapes(Layer):
 
         return box
 
+    def refresh(
+        self,
+        event: Event | None = None,
+        *,
+        thumbnail: bool = True,
+        data_displayed: bool = True,
+        highlight: bool = True,
+        extent: bool = True,
+        force: bool = False,
+    ) -> None:
+        if data_displayed:
+            self._clean_outline_cache()
+        super().refresh(
+            event,
+            thumbnail=thumbnail,
+            data_displayed=data_displayed,
+            highlight=highlight,
+            extent=extent,
+            force=force,
+        )
+
+    def _clean_outline_cache(self):
+        self._outlines_cache.clear()
+
     def _outline_shapes(self):
         """Find outlines of any selected or hovered shapes.
 
@@ -2514,18 +2556,27 @@ class Shapes(Layer):
             and self._value is not None
             and (self._value[0] is not None or len(self.selected_data) > 0)
         ):
-            if len(self.selected_data) > 0:
-                index = list(self.selected_data)
-                if self._value[0] is not None:
-                    if self._value[0] in index:
-                        pass
-                    else:
-                        index.append(self._value[0])
-                index.sort()
-            else:
-                index = self._value[0]
+            value = self._value[0]
+            if value in self.selected_data:
+                value = None
 
-            centers, offsets, triangles = self._data_view.outline(index)
+            if value in self._outlines_cache:
+                centers, offsets, triangles = self._outlines_cache[value]
+            else:
+                if len(self.selected_data) > 0:
+                    index = list(self.selected_data)
+                    if value is not None:
+                        index.append(value)
+                    index.sort()
+                else:
+                    index = value
+
+                centers, offsets, triangles = self._data_view.outline(index)
+                self._outlines_cache[self._value[0]] = (
+                    centers,
+                    offsets,
+                    triangles,
+                )
             vertices = centers + (
                 self._normalized_scale_factor * self._highlight_width * offsets
             )
@@ -2639,11 +2690,11 @@ class Shapes(Layer):
             Bool that forces a redraw to occur when `True`
         """
         # Check if any shape or vertex ids have changed since last call
-        if (
+        if not force and (
             self.selected_data == self._selected_data_stored
             and np.array_equal(self._value, self._value_stored)
             and np.array_equal(self._drag_box, self._drag_box_stored)
-        ) and not force:
+        ):
             return
         self._selected_data_stored = set(self._selected_data)
         self._value_stored = copy(self._value)
@@ -3272,3 +3323,15 @@ class Shapes(Layer):
         labels = self._data_view.to_labels(labels_shape=labels_shape)
 
         return labels
+
+    def _get_layer_slicing_state(
+        self, data: LayerDataType, cache: bool
+    ) -> _ShapesSlicingState:
+        return _ShapesSlicingState(layer=self, data=data, cache=cache)
+
+
+class _ShapesSlicingState(_LayerSlicingState):
+    layer: Shapes
+
+    def _set_view_slice(self):
+        self.layer._set_view_slice()

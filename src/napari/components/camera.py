@@ -3,9 +3,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Literal, cast
 
 import numpy as np
-from scipy.spatial.transform import Rotation as R
+from pydantic import field_validator
 
-from napari._pydantic_compat import validator
 from napari.utils.camera_orientations import (
     DEFAULT_ORIENTATION_TYPED,
     DepthAxisOrientation,
@@ -35,8 +34,10 @@ class Camera(EventedModel):
     angles : 3-tuple
         Euler angles of camera in 3D viewing (rx, ry, rz), in degrees.
         Only used during 3D viewing.
-        Note that Euler angles's intrinsic degeneracy means different
-        sets of Euler angles may lead to the same view.
+        Euler angles in 3D do not uniquely represent an orientation, so
+        different angle triplets can produce the same view.
+        Stored or returned angle values may differ from those that were set,
+        while still representing an equivalent camera orientation.
     perspective : float
         Perspective (aka "field of view" in vispy) of the camera (if 3D).
     mouse_pan : bool
@@ -62,8 +63,8 @@ class Camera(EventedModel):
         HorizontalAxisOrientation,
     ] = DEFAULT_ORIENTATION_TYPED
 
-    # validators
-    @validator('center', 'angles', pre=True, allow_reuse=True)
+    @field_validator('center', 'angles', mode='before')
+    @classmethod
     def _ensure_3_tuple(cls, v):
         return ensure_n_tuple(v, n=3)
 
@@ -75,6 +76,8 @@ class Camera(EventedModel):
         3-tuple. This direction is in 3D scene coordinates, the world coordinate
         system for three currently displayed dimensions.
         """
+        from scipy.spatial.transform import Rotation as R
+
         # once we're in scene-land, we pretend to be in xyz space (axes names don't
         # mean anything after all...) which simplifies the logic a lot.
         rotation = R.from_euler('xyz', self.angles, degrees=True)
@@ -90,6 +93,8 @@ class Camera(EventedModel):
         3-tuple. This direction is in 3D scene coordinates, the world coordinate
         system for three currently displayed dimensions.
         """
+        from scipy.spatial.transform import Rotation as R
+
         # once we're in scene-land, we pretend to be in xyz space (axes names don't
         # mean anything after all...) which simplifies the logic a lot.
         rotation = R.from_euler('xyz', self.angles, degrees=True)
@@ -123,6 +128,8 @@ class Camera(EventedModel):
             to (0, -1, 0) unless the view direction is parallel to the y-axis,
             in which case will default to (-1, 0, 0).
         """
+        from scipy.spatial.transform import Rotation as R
+
         # project up onto view so we can remove the parallel component
         projection = np.dot(up_direction, view_direction) * np.array(
             view_direction
@@ -221,58 +228,6 @@ class Camera(EventedModel):
         if sum(diffs) % 2 != 0:
             return Handedness.LEFT
         return Handedness.RIGHT
-
-    def from_legacy_angles(
-        self, angles: tuple[float, float, float]
-    ) -> tuple[float, float, float]:
-        """Convert camera angles from vispy convention (legacy behaviour) to napari.
-
-        Vispy (and previously napari) uses YZX ordering, but in napari we use ZYX.
-        Rotations are extrinsic.
-
-        Prior to napari 0.7.0, we didn't account for Vispy's ZYX ordering, so our
-        camera angles updated the rotation around the wrong axes. See:
-
-        https://github.com/napari/napari/pull/8281
-        """
-        # see #8281 for why this is yzx. In short: longstanding vispy bug.
-        rot = R.from_euler('yzx', angles, degrees=True)
-        # rotate 90 degrees to get neutral position at 0, 0, 0
-        rot = rot * R.from_euler('x', -90, degrees=True)
-        angles = rot.as_euler('zyx', degrees=True)
-        # flip angles where orientation is flipped relative to default, so the
-        # resulting rotation is always right-handed (i.e: CCW when facing the plane)
-        flipped = angles * np.where(
-            self._vispy_flipped_axes(ndisplay=3), -1, 1
-        )
-        return cast(tuple[float, float, float], tuple(flipped))
-
-    def to_legacy_angles(
-        self, angles: tuple[float, float, float]
-    ) -> tuple[float, float, float]:
-        """Convert camera angles to napari convention to vispy (legacy behaviour).
-
-        Vispy (and previously napari) uses YZX ordering, but in napari we use ZYX.
-        Rotations are extrinsic.
-
-        Prior to napari 0.7.0, we didn't account for Vispy's ZYX ordering, so our
-        camera angles updated the rotation around the wrong axes. See:
-
-        https://github.com/napari/napari/pull/8281
-        """
-        # flip angles where orientation is flipped relative to default, so the
-        # resulting rotation is always right-handed (i.e: CCW when facing the plane)
-        flipped_angles = angles * np.where(
-            self._vispy_flipped_axes(ndisplay=3), -1, 1
-        )
-        # see #8281 for why this is yzx. In short: longstanding vispy bug.
-        rot = R.from_euler('zyx', flipped_angles, degrees=True)
-        # flip angles so handedness of rotation is always right
-        rot = rot * R.from_euler('x', 90, degrees=True)
-        return cast(
-            tuple[float, float, float],
-            tuple(rot.as_euler('yzx', degrees=True)),
-        )
 
     def _vispy_flipped_axes(
         self, ndisplay: Literal[2, 3] = 2

@@ -17,7 +17,7 @@ except Exception as e:
                     """
                 No Qt bindings could be found for napari=={version}.
 
-                napari requires either PyQt5 (default), PyQt6 or PySide6 to be installed in the environment.
+                napari requires either PyQt5, PyQt6 (default) or PySide6 to be installed in the environment.
 
                 With pip, you can install either with:
                   $ pip install -U 'napari[all]'  # default choice
@@ -26,7 +26,7 @@ except Exception as e:
                   $ pip install -U 'napari[pyside6]'
 
                 With conda, you need to do:
-                  $ conda install -c conda-forge pyqt
+                  $ conda install -c conda-forge pyqt6
                   $ conda install -c conda-forge pyside6
 
                 Our heuristics suggest you are using '{tool}' to manage your packages.
