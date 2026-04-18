@@ -8,6 +8,7 @@ from qtpy.QtWidgets import QVBoxLayout, QWidget
 from vispy.scene import SceneCanvas
 
 from napari._vispy.visuals.histogram import HistogramVisual
+from napari.utils.events.event_utils import disconnect_events
 
 if TYPE_CHECKING:
     from napari.layers import Image
@@ -42,6 +43,8 @@ class QtHistogramWidget(QWidget):
         super().__init__(parent)
 
         self.layer = layer
+        self._histogram = layer.histogram
+        self._updating = False
         self._target_width = 300
         self._target_height = 150
 
@@ -78,11 +81,10 @@ class QtHistogramWidget(QWidget):
         self.setLayout(main_layout)
 
         # Connect to layer histogram events
-        if hasattr(layer, 'histogram'):
-            layer.histogram.events.bins.connect(self._on_histogram_change)
-            layer.histogram.events.counts.connect(self._on_histogram_change)
-            layer.histogram.events.log_scale.connect(self._on_histogram_change)
-            layer.histogram.events.enabled.connect(self._on_histogram_change)
+        self._histogram.events.bins.connect(self._on_histogram_change)
+        self._histogram.events.counts.connect(self._on_histogram_change)
+        self._histogram.events.log_scale.connect(self._on_histogram_change)
+        self._histogram.events.enabled.connect(self._on_histogram_change)
 
         # Connect to layer events that affect visualization
         if hasattr(layer, 'events'):
@@ -106,50 +108,47 @@ class QtHistogramWidget(QWidget):
 
     def _update_histogram(self) -> None:
         """Update the histogram visual with current data."""
-        if not hasattr(self.layer, 'histogram'):
+        if self._updating:
             return
 
-        hist = self.layer.histogram
-        if not hist.enabled or hist.bins is None or hist.counts is None:
-            # Clear visualization if histogram is disabled or has no data
-            self.histogram_visual.set_data()
+        self._updating = True
+        try:
+            hist = self._histogram
+            if not hist.enabled:
+                # Clear visualization if histogram is disabled.
+                self.histogram_visual.set_data()
+                self.canvas.update()
+                return
+
+            bins = hist.bins
+            counts = hist.counts
+            if bins is None or counts is None:
+                self.histogram_visual.set_data()
+                self.canvas.update()
+                return
+
+            # Get current layer properties
+            gamma = getattr(self.layer, 'gamma', 1.0)
+            clims = getattr(self.layer, 'contrast_limits', None)
+            clims_range = getattr(self.layer, 'contrast_limits_range', None)
+
+            # Update the visual with histogram data
+            self.histogram_visual.set_data(
+                bins=bins,
+                counts=counts,
+                log_scale=hist.log_scale,
+                gamma=gamma,
+                clims=clims,
+                data_range=clims_range,
+            )
+
             self.canvas.update()
-            return
-
-        # Get current layer properties
-        gamma = getattr(self.layer, 'gamma', 1.0)
-        clims = getattr(self.layer, 'contrast_limits', None)
-        clims_range = getattr(self.layer, 'contrast_limits_range', None)
-
-        # Update the visual with histogram data
-        self.histogram_visual.set_data(
-            bins=hist.bins,
-            counts=hist.counts,
-            log_scale=hist.log_scale,
-            gamma=gamma,
-            clims=clims,
-            data_range=clims_range,
-        )
-
-        self.canvas.update()
+        finally:
+            self._updating = False
 
     def cleanup(self) -> None:
         """Disconnect event handlers and clean up resources."""
-        if hasattr(self.layer, 'histogram'):
-            self.layer.histogram.events.bins.disconnect(
-                self._on_histogram_change
-            )
-            self.layer.histogram.events.counts.disconnect(
-                self._on_histogram_change
-            )
-            self.layer.histogram.events.log_scale.disconnect(
-                self._on_histogram_change
-            )
-            self.layer.histogram.events.enabled.disconnect(
-                self._on_histogram_change
-            )
-        if hasattr(self.layer, 'events'):
-            self.layer.events.gamma.disconnect(self._on_gamma_change)
-            self.layer.events.contrast_limits.disconnect(self._on_clims_change)
+        disconnect_events(self._histogram.events, self)
+        disconnect_events(self.layer.events, self)
 
         self.canvas.close()

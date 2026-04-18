@@ -90,6 +90,7 @@ class QContrastLimitsPopup(QtPopup):
         super().__init__(parent)
 
         self._layer = layer
+        self._cleaned_up = False
         self._histogram_was_enabled = (
             False  # Track if histogram was enabled before popup opened
         )
@@ -130,7 +131,7 @@ class QContrastLimitsPopup(QtPopup):
         # Add histogram widget for Image layers, Surface layers not yet implemented
         self.histogram_widget = None
         self.settings_widget = None
-        if isinstance(layer, Image) and hasattr(layer, 'histogram'):
+        if isinstance(layer, Image):
             # Create histogram widget
             self.histogram_widget = QtHistogramWidget(layer)
 
@@ -232,8 +233,8 @@ class QContrastLimitsPopup(QtPopup):
     def showEvent(self, event):
         """Enable histogram when popup is shown."""
         super().showEvent(event)
-        if self.histogram_widget is not None and hasattr(
-            self._layer, 'histogram'
+        if self.histogram_widget is not None and isinstance(
+            self._layer, Image
         ):
             # Track if histogram was already enabled before we open the popup
             self._histogram_was_enabled = self._layer.histogram.enabled
@@ -258,7 +259,7 @@ class QContrastLimitsPopup(QtPopup):
         """Disable histogram when popup is hidden/closed, only if popup enabled it."""
         if (
             self.histogram_widget is not None
-            and hasattr(self._layer, 'histogram')
+            and isinstance(self._layer, Image)
             and not self._histogram_was_enabled
         ):
             # Only disable if the popup was the one that enabled it
@@ -266,6 +267,10 @@ class QContrastLimitsPopup(QtPopup):
 
     def _cleanup(self) -> None:
         """Disconnect event handlers and clean up widgets."""
+        if self._cleaned_up:
+            return
+        self._cleaned_up = True
+
         if self.settings_widget is not None:
             self.settings_widget.cleanup()
         if self.histogram_widget is not None:
@@ -301,6 +306,9 @@ class QContrastLimitsPopup(QtPopup):
                 with qt_signals_blocked(self.gamma_slider):
                     self.gamma_slider.setValue(int(layer.gamma * 10))
                 self.gamma_value_label.setText(f'{layer.gamma:.2f}')
+
+
+QRangeSliderPopup = QContrastLimitsPopup
 
 
 class AutoScaleButtons(QWidget):

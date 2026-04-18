@@ -7,6 +7,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
 )
 from napari._qt.utils import attr_to_settr
 from napari._qt.widgets.qt_mode_buttons import QtModeRadioButton
+from napari.layers import Image
 from napari.layers.base.base import Layer
 from napari.utils.events.event_utils import connect_setattr
 from napari.utils.translations import trans
@@ -41,6 +42,7 @@ class QtGammaSliderControl(QtWidgetControlsBase):
 
         # Track histogram visibility state
         self.histogram_visible = False
+        self.histogram_button = None
 
         # Setup gamma slider - exactly like opacity slider
         sld = QLabeledDoubleSlider(Qt.Orientation.Horizontal, parent=parent)
@@ -56,22 +58,23 @@ class QtGammaSliderControl(QtWidgetControlsBase):
         self.gamma_slider = sld
         self.gamma_slider_label = QtWrappedLabel(trans._('gamma:'))
 
-        # Create histogram button on same row by appending to slider's layout
-        self.histogram_button = QtModeRadioButton(
-            layer,
-            button_name='histogram',
-            mode=None,
-            slot=self._on_histogram_button_clicked,
-            tooltip=(
-                'Left click to toggle histogram in layer controls.\n'
-                'Right click to open histogram popup.'
-            ),
-        )
-        # Install event filter for right-click handling
-        self.histogram_button.installEventFilter(self)
+        if isinstance(layer, Image):
+            # Create histogram button on same row by appending to slider's layout
+            self.histogram_button = QtModeRadioButton(
+                layer,
+                button_name='histogram',
+                mode=None,
+                slot=self._on_histogram_button_clicked,
+                tooltip=(
+                    'Left click to toggle histogram in layer controls.\n'
+                    'Right click to open histogram popup.'
+                ),
+            )
+            # Install event filter for right-click handling
+            self.histogram_button.installEventFilter(self)
 
-        # Add button directly to slider's layout
-        sld.layout().addWidget(self.histogram_button)
+            # Add button directly to slider's layout
+            sld.layout().addWidget(self.histogram_button)
 
     def eventFilter(self, obj, event):
         """Handle right-click on histogram button to show popup.
@@ -89,7 +92,8 @@ class QtGammaSliderControl(QtWidgetControlsBase):
             True if the event was handled, False otherwise.
         """
         if (
-            obj == self.histogram_button
+            self.histogram_button is not None
+            and obj == self.histogram_button
             and event.type() == event.Type.MouseButtonPress
             and event.button() == Qt.MouseButton.RightButton
         ):
@@ -99,29 +103,34 @@ class QtGammaSliderControl(QtWidgetControlsBase):
 
     def _on_histogram_button_clicked(self):
         """Handle left-click on histogram button to toggle histogram widget."""
-        parent = self.parent()
-        if not hasattr(parent, '_histogram_control'):
+        if not isinstance(self._layer, Image):
             return
+
+        parent = self.parent()
+        histogram_control = getattr(parent, '_histogram_control', None)
+        if histogram_control is None:
+            return
+
+        histogram_control.ensure_content()
 
         # Get the layout (QFormLayout)
         layout = parent.layout()
 
         if self.histogram_visible:
             # Remove histogram widget from layout
-            label_item = layout.labelForField(
-                parent._histogram_control.content_widget
-            )
+            label_item = layout.labelForField(histogram_control.content_widget)
             if label_item is not None:
                 layout.removeWidget(label_item)
                 label_item.hide()
-            layout.removeWidget(parent._histogram_control.content_widget)
-            parent._histogram_control.content_widget.hide()
+            layout.removeWidget(histogram_control.content_widget)
+            histogram_control.content_widget.hide()
 
             # Disable histogram computation
             self._layer.histogram.enabled = False
 
             self.histogram_visible = False
-            self.histogram_button.setChecked(False)
+            if self.histogram_button is not None:
+                self.histogram_button.setChecked(False)
         else:
             # Add histogram widget to layout (after gamma slider)
             # Find the row index of the gamma slider
@@ -141,17 +150,21 @@ class QtGammaSliderControl(QtWidgetControlsBase):
                 layout.insertRow(
                     gamma_row + 1,
                     histogram_label,
-                    parent._histogram_control.content_widget,
+                    histogram_control.content_widget,
                 )
-                parent._histogram_control.content_widget.show()
+                histogram_control.content_widget.show()
                 # Enable histogram computation and force update
                 self._layer.histogram.enabled = True
                 self._layer.histogram.compute()
                 self.histogram_visible = True
-                self.histogram_button.setChecked(True)
+                if self.histogram_button is not None:
+                    self.histogram_button.setChecked(True)
 
     def show_histogram_popup(self):
         """Show the histogram popup widget."""
+        if not isinstance(self._layer, Image):
+            return
+
         # Enable histogram if not already enabled
         if not self._layer.histogram.enabled:
             self._layer.histogram.enabled = True

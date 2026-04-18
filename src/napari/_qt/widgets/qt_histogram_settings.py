@@ -14,7 +14,7 @@ from qtpy.QtWidgets import (
 )
 
 from napari._qt.utils import qt_signals_blocked
-from napari.utils.events.event_utils import connect_setattr
+from napari.utils.events.event_utils import connect_setattr, disconnect_events
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
@@ -134,13 +134,4 @@ class QtHistogramSettingsWidget(QWidget):
 
     def cleanup(self) -> None:
         """Disconnect event handlers."""
-        if self.mode_combobox is not None:
-            self._histogram.events.mode.disconnect(self._on_model_mode_change)
-        if self.n_bins_spinbox is not None:
-            self._histogram.events.n_bins.disconnect(
-                self._on_model_n_bins_change
-            )
-        if self.log_scale_checkbox is not None:
-            self._histogram.events.log_scale.disconnect(
-                self._on_model_log_scale_change
-            )
+        disconnect_events(self._histogram.events, self)

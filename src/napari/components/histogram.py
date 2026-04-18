@@ -98,11 +98,9 @@ class HistogramModel(EventedModel):
             n_bins=n_bins, mode=mode, log_scale=log_scale, enabled=enabled
         )
 
-        # Set private attributes using object.__setattr__ to bypass pydantic
-        object.__setattr__(self, '_layer', layer)
-        object.__setattr__(self, '_bins', np.array([0.0, 1.0]))
-        object.__setattr__(self, '_counts', np.array([0.0]))
-        object.__setattr__(self, '_dirty', True)
+        # Let pydantic manage private attributes so reads and writes stay in
+        # sync with the PrivateAttr storage used by EventedModel.
+        self._layer = layer
 
         # Connect to layer events to trigger recomputation
         layer.events.data.connect(self._on_data_change)

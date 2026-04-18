@@ -49,27 +49,33 @@ class QtHistogramControl(QtWidgetControlsBase):
 
         # Create content widget
         self.content_widget = QWidget()
-        content_layout = QVBoxLayout()
-        content_layout.setContentsMargins(4, 4, 4, 4)
-        content_layout.setSpacing(4)
+        self.content_widget.hide()
+        self.histogram_widget = None
+        self.settings_widget = None
 
-        # Create histogram visualization widget
+        self._content_layout = QVBoxLayout()
+        self._content_layout.setContentsMargins(4, 4, 4, 4)
+        self._content_layout.setSpacing(4)
+        self.content_widget.setLayout(self._content_layout)
+
+    def ensure_content(self) -> None:
+        """Create the histogram UI lazily when it is first requested."""
+        if self.histogram_widget is not None:
+            return
+
         self.histogram_widget = QtHistogramWidget(
-            layer, parent=self.content_widget
+            self._layer, parent=self.content_widget
         )
-        content_layout.addWidget(self.histogram_widget)
+        self._content_layout.addWidget(self.histogram_widget)
 
-        # Create shared settings controls
         self.settings_widget = QtHistogramSettingsWidget(
-            layer.histogram,
+            self._layer.histogram,
             parent=self.content_widget,
         )
-        content_layout.addWidget(self.settings_widget)
+        self._content_layout.addWidget(self.settings_widget)
 
-        self.content_widget.setLayout(content_layout)
-
-        # Start with histogram disabled (will be enabled when button is clicked)
-        layer.histogram.enabled = False
+        # Keep histogram computation off until the widget is explicitly shown.
+        self._layer.histogram.enabled = False
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
         """
@@ -88,5 +94,7 @@ class QtHistogramControl(QtWidgetControlsBase):
     def disconnect_widget_controls(self) -> None:
         """Disconnect event handlers and clean up."""
         super().disconnect_widget_controls()
-        self.settings_widget.cleanup()
-        self.histogram_widget.cleanup()
+        if self.settings_widget is not None:
+            self.settings_widget.cleanup()
+        if self.histogram_widget is not None:
+            self.histogram_widget.cleanup()
