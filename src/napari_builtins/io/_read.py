@@ -8,22 +8,19 @@ import tokenize
 from contextlib import contextmanager, suppress
 from glob import glob
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional, Union
-from urllib.parse import urlparse
+from typing import TYPE_CHECKING, Optional, Union
 
 import imageio.v3 as iio
 import numpy as np
-import requests
 from dask import delayed
 
+from napari.utils.io import execute_python_code
 from napari.utils.misc import abspath_or_url
-from napari.utils.notifications import notification_manager
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
-    from napari import Viewer
     from napari.types import FullLayerData, LayerData, ReaderFunction
 
 
@@ -33,13 +30,6 @@ def _alphanumeric_key(s: str) -> list[str | int]:
 
 
 URL_REGEX = re.compile(r'https?://|ftps?://|file://|file:\\')
-
-_DROPPED_SCRIPTS_NAMESPACE = {}
-# This is a global dictionary to store the namespace for scripts that are
-# executed using drag and drop or the Python file reader.
-# The content is a mapping from the script path to the namespace.
-# The dict should not be overwritten but only modified, as
-# it may be broken the execution of scripts that are already running.
 
 
 def _is_url(filename):
@@ -63,6 +53,8 @@ def _git_provider_url_to_raw_url(filename: str) -> str:
     str
         The raw file URL.
     """
+    from urllib.parse import urlparse
+
     parsed_url = urlparse(filename)
     # For a GitLab file URL that contains `blob/` replace with `raw`
     if 'gitlab' in parsed_url.netloc:
@@ -714,50 +706,16 @@ def load_and_execute_python_code(script_path: str) -> list[LayerData]:
     if _is_url(script_path):
         # download the script from the URL
 
-        response = requests.get(_git_provider_url_to_raw_url(script_path))
-        response.raise_for_status()
-        code = response.text
+        from urllib.request import urlopen
+
+        raw_url = _git_provider_url_to_raw_url(script_path)
+        with urlopen(raw_url) as response:
+            encoding = response.headers.get_content_charset() or 'utf-8'
+            code = response.read().decode(encoding)
     else:
         code = _read_python_source(script_path)
     execute_python_code(code, script_path)
     return [(None,)]
-
-
-def execute_python_code(code: str, script_path: str | Path) -> None:
-    """Execute Python code in the current viewer's context.
-
-    Store the executed cod variables in _DROPPED_SCRIPTS_NAMESPACE dict
-
-    Parameters
-    ----------
-    code: str
-        python code to be executed
-    script_path: str | Path
-        Path to the script file from which the code is executed.
-        Used to store the namespace in the _DROPPED_SCRIPTS_NAMESPACE.
-    """
-    from napari.viewer import current_viewer
-
-    with _patch_viewer_new(), _patch_napari_run():
-        try:
-            viewer = current_viewer()
-            script_namespace = _DROPPED_SCRIPTS_NAMESPACE.setdefault(
-                script_path, {}
-            )
-            # The `__name__` variable is storing the name of the module.
-            # If a module is imported, it is set to the module name.
-            # If a module is executed with `python -m ...` or
-            # `python script.py` it is set to '__main__'.
-            # If code is executed with `exec(code, namespace)` it is set to `builtins` if
-            # `__name__` is not set in the namespace.
-            # So ww set it to `__main__` to execute `if __name__ == '__main__':` blocks
-            script_namespace['__name__'] = '__main__'
-            exec(code, script_namespace)
-            _add_dropped_scripts_to_console(
-                _DROPPED_SCRIPTS_NAMESPACE[script_path], viewer
-            )
-        except BaseException as e:  # noqa: BLE001
-            notification_manager.receive_error(type(e), e, e.__traceback__)
 
 
 def napari_get_py_reader(path: str) -> ReaderFunction | None:

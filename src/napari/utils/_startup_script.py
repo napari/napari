@@ -4,6 +4,7 @@ import warnings
 from dataclasses import dataclass
 from pathlib import Path
 
+from napari.utils.io import execute_python_code
 from napari.utils.translations import trans
 
 
