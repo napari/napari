@@ -6,15 +6,15 @@ from collections import deque
 from collections.abc import Callable, Generator, Sequence
 from contextlib import contextmanager
 from typing import (
+    TYPE_CHECKING,
     Any,
     ClassVar,
+    TypeAlias,
 )
 
 import numpy as np
 import numpy.typing as npt
-import pandas as pd
 from PIL import Image, ImageDraw
-from scipy import ndimage as ndi
 
 from napari.layers._data_protocols import LayerDataProtocol
 from napari.layers._multiscale_data import MultiScaleData
@@ -72,7 +72,12 @@ from napari.utils.misc import StringEnum, _is_array_type
 from napari.utils.naming import magic_name
 from napari.utils.translations import trans
 
+if TYPE_CHECKING:
+    import pandas as pd
+
 __all__ = ('Labels',)
+
+HistoryItem: TypeAlias = tuple[npt.NDArray, npt.NDArray, npt.NDArray]
 
 
 class Labels(ScalarFieldBase):
@@ -416,12 +421,17 @@ class Labels(ScalarFieldBase):
         self.colormap.use_selection = self._show_selected_label
         self._prev_selected_label = None
         self._selected_color = self.get_color(self._selected_label)
-        self._updated_slice = None
+        self._updated_slice: tuple[slice, ...] | None = None
         if colormap is not None:
             self._set_colormap(colormap)
 
         self._status = self.mode
         self._preserve_labels = False
+
+        self._undo_history: deque[HistoryItem]
+        self._redo_history: deque[HistoryItem]
+        self._staged_history: list[HistoryItem]
+        self._block_history: bool
 
     def _slice_dtype(self):
         """Calculate dtype of data view based on data dtype and current colormap"""
@@ -525,7 +535,7 @@ class Labels(ScalarFieldBase):
         self.cursor_size = self._calculate_cursor_size()
         self.events.brush_size()
 
-    def _calculate_cursor_size(self):
+    def _calculate_cursor_size(self) -> int:
         # Convert from brush size in data coordinates to
         # cursor size in world coordinates
         scale = self._data_to_world.scale
@@ -643,7 +653,7 @@ class Labels(ScalarFieldBase):
             label_index = {i: i for i in range(features.shape[0])}
         return label_index
 
-    def _is_default_colors(self, color):
+    def _is_default_colors(self, color: dict) -> bool:
         """Returns True if color contains only default colors, otherwise False.
 
         Default colors are black for `None` and transparent for
@@ -708,9 +718,10 @@ class Labels(ScalarFieldBase):
                 'rendering': self.rendering,
                 'iso_gradient_mode': self.iso_gradient_mode,
                 'depiction': self.depiction,
-                'plane': self.plane.dict(),
+                'plane': self.plane.model_dump(),
                 'experimental_clipping_planes': [
-                    plane.dict() for plane in self.experimental_clipping_planes
+                    plane.model_dump()
+                    for plane in self.experimental_clipping_planes
                 ],
                 'data': self.data,
                 'features': self.features,
@@ -798,12 +809,13 @@ class Labels(ScalarFieldBase):
         In ERASE mode the cursor functions similarly to PAINT mode, but to
         paint with background label, which effectively removes the label.
         """
-        return Layer.mode.fget(self)
+        return super().mode
 
     # Only overriding to change the docstring of the setter above
     @mode.setter
     def mode(self, mode):
-        Layer.mode.fset(self, mode)
+        # See https://github.com/python/mypy/issues/16426 for type ignore reason
+        Layer.mode.fset(self, mode)  # type: ignore[attr-defined]
 
     def _mode_setter_helper(self, mode):
         mode = super()._mode_setter_helper(mode)
@@ -849,7 +861,7 @@ class Labels(ScalarFieldBase):
         """
         return vispy_texture_dtype(data)
 
-    def _partial_labels_refresh(self):
+    def _partial_labels_refresh(self) -> None:
         """Prepares and displays only an updated part of the labels."""
 
         if self._updated_slice is None or not self._slicing_state.loaded:
@@ -971,6 +983,8 @@ class Labels(ScalarFieldBase):
         like adjusting gamma or changing the data based on the contrast
         limits.
         """
+        from scipy import ndimage as ndi
+
         if not self._slicing_state.loaded or self._slice.empty:
             # ASYNC_TODO: Do not compute the thumbnail until we are loaded.
             # Is there a nicer way to prevent this from getting called?
@@ -1010,7 +1024,7 @@ class Labels(ScalarFieldBase):
             col = self.colormap.map(label)
         return col
 
-    def _reset_history(self, event=None):
+    def _reset_history(self, event: Event | None = None) -> None:
         self._undo_history = deque(maxlen=self._history_limit)
         self._redo_history = deque(maxlen=self._history_limit)
         self._staged_history = []
@@ -1102,7 +1116,7 @@ class Labels(ScalarFieldBase):
         after.append(list(reversed(history_item)))
         for prev_indices, prev_values, next_values in reversed(history_item):
             values = prev_values if undoing else next_values
-            self.data[prev_indices] = values
+            self.data[prev_indices] = values  # type: ignore[index]
 
         self.refresh()
 
@@ -1116,7 +1130,9 @@ class Labels(ScalarFieldBase):
             self._redo_history, self._undo_history, undoing=False
         )
 
-    def fill(self, coord, new_label, refresh=True):
+    def fill(
+        self, coord: Sequence[float], new_label: int, refresh: bool = True
+    ) -> None:
         """Replace an existing label with a new label, either just at the
         connected component if the `contiguous` flag is `True` or everywhere
         if it is `False`, working in the number of dimensions specified by
@@ -1132,6 +1148,8 @@ class Labels(ScalarFieldBase):
             Whether to refresh view slice or not. Set to False to batch paint
             calls.
         """
+        from scipy import ndimage as ndi
+
         int_coord = tuple(np.round(coord).astype(int))
         # If requested fill location is outside data shape then return
         if np.any(np.less(int_coord, 0)) or np.any(
@@ -1176,6 +1194,7 @@ class Labels(ScalarFieldBase):
                 )
 
         match_indices_local = np.nonzero(matches)
+        match_indices: Sequence[npt.NDArray[np.intp]]
         if self.ndim not in {2, self.n_edit_dimensions}:
             n_idx = len(match_indices_local[0])
             match_indices = []
@@ -1189,11 +1208,11 @@ class Labels(ScalarFieldBase):
         else:
             match_indices = match_indices_local
 
-        match_indices = _coerce_indices_for_vectorization(
+        match_indices_tuple = _coerce_indices_for_vectorization(
             self.data, match_indices
         )
 
-        self.data_setitem(match_indices, new_label, refresh)
+        self.data_setitem(match_indices_tuple, new_label, refresh)
 
     def _draw(self, new_label, last_cursor_coord, coordinates):
         """Paint into coordinates, accounting for mode and cursor movement.
@@ -1452,7 +1471,7 @@ class Labels(ScalarFieldBase):
         )
 
         # update the labels image
-        self.data[indices] = value
+        self.data[indices] = value  # type: ignore[index]
 
         pt_not_disp = self._get_pt_not_disp()
         displayed_indices = index_in_slice(
@@ -1665,7 +1684,9 @@ class _LabelsSlicingState(ScalarFieldSlicingState):
     _slice_request_class = _LabelsSliceRequest
 
 
-def _coerce_indices_for_vectorization(array, indices: list) -> tuple:
+def _coerce_indices_for_vectorization(
+    array, indices: Sequence[int | npt.NDArray[np.intp]]
+) -> tuple:
     """Coerces indices so that they can be used for vectorized indexing in the given data array."""
     if _is_array_type(array, 'xarray.DataArray'):
         # Fix indexing for xarray if necessary

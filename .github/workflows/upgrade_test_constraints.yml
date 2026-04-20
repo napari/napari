@@ -89,11 +89,12 @@ jobs:
         if: github.event_name != 'issue_comment' && github.event_name != 'pull_request'
         run: |
           echo "FULL_NAME=${{ github.repository }}" >> "$GITHUB_ENV"
-          echo "BRANCH=${{ github.ref_name }}" >> "$GITHUB_ENV"
+          echo "BRANCH=${GITHUB_REF_NAME}" >> "$GITHUB_ENV"
 
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Clone target repo (remote)
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -103,6 +104,11 @@ jobs:
           repository: ${{ env.FULL_NAME }}
           ref: ${{ env.BRANCH }}
           token: ${{ secrets.GHA_TOKEN_BOT_REPO }}
+          # Set credentials explicity to 'true'
+          # In this scenario, push changes to the bot repo to allow a user, who is not a collaborator,
+          # to get the changes without access to artifacts.
+          # This allows a contributor to manually open a PR to their fork.
+          persist-credentials: 'true'
 
       - name: Clone target repo (pull request)
         # we need separate step as passing empty token to actions/checkout@v4 will not work
@@ -110,6 +116,7 @@ jobs:
         if: github.event_name == 'pull_request'
         with:
           path: napari_repo  # place in a named directory
+          persist-credentials: 'false'  # Can be set to false as cloning the repo on a pull_request trigger does not require a push/change
 
       - name: Clone target repo (main)
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -119,6 +126,9 @@ jobs:
           repository: ${{ env.FULL_NAME }}
           ref: ${{ env.BRANCH }}
           token: ${{ secrets.GHA_TOKEN_BOT_REPO }}
+          # Explicitly persist credentials and set to 'true'
+          # This action pushes changes to the bot repo and then opens a PR to the napari repo.
+          persist-credentials: 'true'
 
       - name: Add napari-bot/napari to napari_repo upstreams
         run: |
@@ -127,7 +137,7 @@ jobs:
           git remote add napari-bot https://github.com/napari-bot/napari.git
           git remote -v
       - name: Set up Python 3.12
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57 # v8.0.0
         with:
           python-version: "3.12"
 
@@ -140,7 +150,7 @@ jobs:
       # END PYTHON DEPENDENCIES
 
       - name: Upload constraints
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: constraints
           path: |

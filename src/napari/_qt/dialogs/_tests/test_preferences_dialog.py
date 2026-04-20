@@ -3,10 +3,11 @@ import sys
 import numpy.testing as npt
 import pyautogui
 import pytest
+from pydantic import BaseModel
 from qtpy.QtCore import QPoint, Qt
 from qtpy.QtWidgets import QApplication
 
-from napari._pydantic_compat import BaseModel
+from napari._pydantic_util import get_inner_type
 from napari._qt.dialogs.preferences_dialog import (
     PreferencesDialog,
     QMessageBox,
@@ -56,8 +57,11 @@ def pref(qtbot):
 
 def test_prefdialog_populated(pref):
     subfields = filter(
-        lambda f: isinstance(f.type_, type) and issubclass(f.type_, BaseModel),
-        NapariSettings.__fields__.values(),
+        lambda f: (
+            isinstance(ff := get_inner_type(f.annotation), type)
+            and issubclass(ff, BaseModel)
+        ),
+        NapariSettings.model_fields.values(),
     )
     assert pref._stack.count() == len(list(subfields))
 

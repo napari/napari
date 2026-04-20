@@ -12,7 +12,7 @@ from qtpy.QtWidgets import (
 )
 
 from napari.errors import ReaderPluginError
-from napari.plugins.utils import get_potential_readers
+from napari.plugins import _npe2
 from napari.settings import get_settings
 from napari.utils.translations import trans
 
@@ -30,7 +30,13 @@ class QtReaderDialog(QDialog):
     ) -> None:
         if readers is None:
             readers = {}
+        style_sheet = None
+        if parent is not None and not parent.isVisible():
+            style_sheet = parent.styleSheet()
+            parent = None
         super().__init__(parent)
+        if style_sheet:
+            self.setStyleSheet(style_sheet)
         self.setObjectName('Choose reader')
         self.setWindowTitle(trans._('Choose reader'))
         self._current_file = pth
@@ -111,6 +117,12 @@ class QtReaderDialog(QDialog):
         self.persist_checkbox.setChecked(persist_checked)
         layout.addWidget(self.persist_checkbox)
 
+        # note for users on how to reset the reader preference
+        reset_label = QLabel(
+            trans._('Manage saved readers in Preferences > Plugins')
+        )
+        reset_label.setWordWrap(True)
+        layout.addWidget(reset_label)
         layout.addWidget(self.btn_box)
         self.setLayout(layout)
 
@@ -235,7 +247,7 @@ def prepare_remaining_readers(
     ReaderPluginError
         raises previous error if no readers are left to try
     """
-    readers = get_potential_readers(paths[0])
+    readers = _npe2.get_readers(paths[0])
     # remove plugin we already tried e.g. preferred plugin
     if plugin_name in readers:
         del readers[plugin_name]

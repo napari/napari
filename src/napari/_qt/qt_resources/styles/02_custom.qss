@@ -77,13 +77,13 @@ QMainWindow::separator:vertical {
 }
 
 #QtCustomTitleBar > QLabel {
-  color: {{ primary }};
+  color: {{ text }};
   font-size: {{ decrease(font_size, 1) }};
 }
 
 #QTitleBarCloseButton{
-    width: 12px;
-    height: 12px;
+    width: 24px;
+    height: 24px;
     padding: 0;
     image: url("theme_{{ id }}:/delete_shape.svg");
 }
@@ -91,15 +91,15 @@ QMainWindow::separator:vertical {
 
 #QTitleBarFloatButton{
     image: url("theme_{{ id }}:/pop_out.svg");
-    width: 10px;
-    height: 8px;
+    width: 24px;
+    height: 24px;
     padding: 2 1 2 1;
 }
 
 #QTitleBarHideButton{
     image: url("theme_{{ id }}:/visibility_off.svg");
-    width: 10px;
-    height: 8px;
+    width: 24px;
+    height: 24px;
     padding: 2 1 2 1;
 }
 

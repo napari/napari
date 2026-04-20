@@ -1,13 +1,10 @@
 import warnings
-from collections.abc import Sequence
 from copy import deepcopy
-from typing import Any, Union
+from typing import TYPE_CHECKING, Any, Union
 
 import numpy as np
-import pandas as pd
-from pydantic.v1 import PositiveFloat
+from pydantic import PositiveFloat, field_validator
 
-from napari._pydantic_compat import validator
 from napari.layers.base._base_constants import Blending
 from napari.layers.utils._text_constants import Anchor
 from napari.layers.utils._text_utils import get_text_anchors
@@ -26,6 +23,9 @@ from napari.layers.utils.style_encoding import _get_style_values
 from napari.utils.events import Event, EventedModel
 from napari.utils.events.custom_types import Array
 from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 
 class TextManager(EventedModel):
@@ -184,7 +184,7 @@ class TextManager(EventedModel):
             DeprecationWarning,
             stacklevel=2,
         )
-        features = pd.DataFrame(
+        features = _validate_features(
             {
                 name: np.repeat(value, n_text, axis=0)
                 for name, value in properties.items()
@@ -310,7 +310,7 @@ class TextManager(EventedModel):
     def _from_layer(
         cls,
         *,
-        text: Union['TextManager', dict, str, Sequence[str], None],
+        text: Union['TextManager', dict, str, 'Sequence[str]', None],
         features: Any,
     ) -> 'TextManager':
         """Create a TextManager from a layer.
@@ -329,7 +329,7 @@ class TextManager(EventedModel):
         TextManager
         """
         if isinstance(text, TextManager):
-            kwargs = text.dict()
+            kwargs = text.model_dump()
         elif isinstance(text, dict):
             kwargs = deepcopy(text)
         elif text is None:
@@ -365,7 +365,7 @@ class TextManager(EventedModel):
         # should not mutate any existing fields in-place.
         # Avoid recursion because some fields are also models that may
         # not share field names/types (e.g. string).
-        current_manager = self.copy()
+        current_manager = self.model_copy()
         current_manager.update(new_manager, recurse=False)
 
         # If we got here, then there were no errors, so update for real.
@@ -376,7 +376,8 @@ class TextManager(EventedModel):
         # values if needed.
         self.apply(features)
 
-    @validator('blending', pre=True, always=True, allow_reuse=True)
+    @field_validator('blending', mode='before')
+    @classmethod
     def _check_blending_mode(cls, blending):
         blending_mode = Blending(blending)
 

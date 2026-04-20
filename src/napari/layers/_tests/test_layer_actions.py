@@ -156,7 +156,7 @@ def test_duplicate_layers(layer_type):
     layer_list.append(layer_type([], name='test'))
     layer_list.selection.active = layer_list[0]
     layer_list[0].events.data.connect(_dummy)
-    assert len(layer_list[0].events.data.callbacks) == 2
+    assert len(layer_list[0].events.data.callbacks) == 3
     assert len(layer_list) == 1
     _duplicate_layer(layer_list)
     assert len(layer_list) == 2
@@ -164,7 +164,7 @@ def test_duplicate_layers(layer_type):
     assert layer_list[1].name == 'test copy'
     assert layer_list[1].events.source is layer_list[1]
     assert (
-        len(layer_list[1].events.data.callbacks) == 1
+        len(layer_list[1].events.data.callbacks) == 2
     )  # `events` Event Emitter
     assert layer_list[1].source.parent() is layer_list[0]
 

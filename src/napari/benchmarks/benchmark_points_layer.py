@@ -154,8 +154,9 @@ class PointsToMaskSuite:
     ]
 
     skip_params = Skip(
-        if_in_pr=lambda num_points, mask_shape, points_size: num_points > 256
-        or mask_shape[0] > 512
+        if_in_pr=lambda num_points, mask_shape, points_size: (
+            num_points > 256 or mask_shape[0] > 512
+        )
     )
 
     def setup(self, num_points, mask_shape, point_size):

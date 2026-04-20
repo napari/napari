@@ -215,11 +215,11 @@ def _fresh_settings(monkeypatch):
     from napari.utils.triangulation_backend import TriangulationBackend
 
     # prevent the developer's config file from being used if it exists
-    cp = NapariSettings.__private_attributes__['_config_path']
+    cp = NapariSettings.model_fields['config_path']
     monkeypatch.setattr(cp, 'default', None)
 
     monkeypatch.setattr(
-        ExperimentalSettings.__fields__['triangulation_backend'],
+        ExperimentalSettings.model_fields['triangulation_backend'],
         'default',
         TriangulationBackend.fastest_available,
     )
@@ -282,9 +282,6 @@ def napari_svg_name():
 @pytest.fixture(autouse=True)
 def npe2pm_(npe2pm, monkeypatch):
     """Autouse npe2 & npe1 mock plugin managers with no registered plugins."""
-    from napari.plugins import NapariPluginManager
-
-    monkeypatch.setattr(NapariPluginManager, 'discover', lambda *_, **__: None)
     return npe2pm
 
 
@@ -297,7 +294,7 @@ def builtins(npe2pm_: TestPluginManager):
 @pytest.fixture
 def tmp_plugin(npe2pm_: TestPluginManager):
     with npe2pm_.tmp_plugin() as plugin:
-        plugin.manifest.package_metadata = PackageMetadata(  # type: ignore[call-arg]
+        plugin.manifest.package_metadata = PackageMetadata(
             version='0.1.0', name='test'
         )
         plugin.manifest.display_name = 'Temp Plugin'

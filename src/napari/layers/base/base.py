@@ -5,7 +5,6 @@ import inspect
 import itertools
 import logging
 import os.path
-import typing
 import uuid
 from abc import ABC, ABCMeta, abstractmethod
 from collections import defaultdict
@@ -16,7 +15,6 @@ from typing import TYPE_CHECKING, Any, ClassVar
 
 import magicgui as mgui
 import numpy as np
-import pint
 from npe2 import plugin_manager as pm
 
 from napari.layers.base._base_constants import (
@@ -28,7 +26,11 @@ from napari.layers.base._base_mouse_bindings import (
     highlight_box_handles,
     transform_with_box,
 )
-from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
+from napari.layers.utils._slice_input import (
+    _SliceInput,
+    _ThickNDSlice,
+    apply_units_to_transform,
+)
 from napari.layers.utils.interactivity_utils import (
     drag_data_to_projected_distance,
 )
@@ -67,9 +69,10 @@ from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     import numpy.typing as npt
+    import pint
 
     from napari.components.dims import Dims
-    from napari.components.overlays.base import Overlay
+    from napari.components.overlays import BoundingBoxOverlay, Overlay
     from napari.layers._source import Source
 
 from psygnal import Signal
@@ -131,10 +134,19 @@ class _LayerSlicingState(ABC):
         )
         self._loaded: bool = True
         self._last_slice_id: int = -1
+        self._units: tuple[pint.Unit, ...] | None = None
 
     def set_view_slice(self) -> None:
         with self.dask_optimized_slicing():
             self._set_view_slice()
+
+    def _slice_indices(
+        self, slice_input: _SliceInput, dims: Dims
+    ) -> _ThickNDSlice[float | int]:
+        """Get the indices of the current slice in the full data array."""
+        world_to_data = self.layer._data_to_world.inverse
+        world_to_data = apply_units_to_transform(world_to_data, dims.units)
+        return slice_input.data_slice(world_to_data)
 
     @property
     def data_slice(self) -> _ThickNDSlice:
@@ -144,15 +156,17 @@ class _LayerSlicingState(ABC):
             # early return to avoid evaluating data_to_world.inverse
             return _ThickNDSlice.make_full(point=(np.nan,) * self.ndim)
 
-        return self._slice_input.data_slice(
-            self.layer._data_to_world.inverse,
-        )
+        world_to_data = self.layer._data_to_world.inverse
+        world_to_data = apply_units_to_transform(world_to_data, self._units)
+
+        return self._slice_input.data_slice(world_to_data=world_to_data)
 
     def update_dims(self):
         self._slice_input = self._slice_input.with_ndim(self.ndim)
 
     def set_slice_input_from_dims(self, dims: Dims, force: bool) -> bool:
         slice_input = self.make_slice_input(dims)
+        self._units = dims.units
         return self.set_slice_input(slice_input, force)
 
     def set_slice_input(self, slice_input: _SliceInput, force: bool) -> bool:
@@ -172,13 +186,13 @@ class _LayerSlicingState(ABC):
         self,
         dims: Dims,
     ) -> _SliceInput:
-        world_slice = _ThickNDSlice.from_dims(dims)
+        world_slice = _ThickNDSlice[float].from_dims(dims)
         order_array = (
             np.arange(dims.ndim)
             if dims.order is None
             else np.asarray(dims.order)
         )
-        order = tuple(
+        order: tuple[int, ...] = tuple(
             self._world_to_layer_dims(
                 world_dims=order_array,
                 ndim_world=dims.ndim,
@@ -188,7 +202,7 @@ class _LayerSlicingState(ABC):
         return _SliceInput(
             ndisplay=dims.ndisplay,
             world_slice=world_slice[-self.ndim :],
-            order=typing.cast(tuple[int, ...], order[-self.ndim :]),
+            order=order[-self.ndim :],
         )
 
     def _world_to_layer_dims(
@@ -1188,6 +1202,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             data=extent_data,
             world=extent_world,
             step=abs(data_to_world.scale),
+            units=self.units,
         )
 
     @cached_property
@@ -1210,6 +1225,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             data=extent_data,
             world=extent_world,
             step=abs(data_to_world.scale),
+            units=self.units,
         )
 
     def _clear_extent(self) -> None:
@@ -1245,7 +1261,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             'axis_labels': self.axis_labels,
             'blending': self.blending,
             'experimental_clipping_planes': [
-                plane.dict() for plane in self.experimental_clipping_planes
+                plane.model_dump()
+                for plane in self.experimental_clipping_planes
             ],
             'metadata': self.metadata,
             'name': self.name,
@@ -1393,8 +1410,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             self._experimental_clipping_planes.append(plane)
 
     @property
-    def bounding_box(self) -> Overlay:
-        return self._overlays['bounding_box']
+    def bounding_box(self) -> BoundingBoxOverlay:
+        return self._overlays['bounding_box']  # type: ignore[return-value]
 
     @property
     def name_overlay(self) -> Overlay:
@@ -1780,7 +1797,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
         affine * (rotate * shear * scale + translate)
         """
-        return self._transforms[1:3].simplified
+        res = self._transforms[1:3].simplified
+        res.units = self.units
+        return res
 
     def _world_to_data_ray(self, vector: npt.ArrayLike) -> npt.NDArray:
         """Convert a vector defining an orientation from world coordinates to data coordinates.
@@ -2124,8 +2143,18 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             )
             if any(s == 0 for s in display_shape):
                 return
-            if self.data_level != level or not np.array_equal(
-                self.corner_pixels, corners
+            # only update when level changes or
+            # when new view is outside current corner_pixels
+            if (
+                self.data_level != level
+                or np.any(
+                    corners[0, displayed_axes]
+                    < self.corner_pixels[0, displayed_axes]
+                )
+                or np.any(
+                    corners[1, displayed_axes]
+                    > self.corner_pixels[1, displayed_axes]
+                )
             ):
                 self._data_level = level
                 self.corner_pixels = corners
