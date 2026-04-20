@@ -1,6 +1,7 @@
-from typing import Any
+from __future__ import annotations
 
-from vispy.scene import ViewBox
+from typing import TYPE_CHECKING, Any
+
 from vispy.scene.visuals import Compound, Ellipse
 
 from napari._vispy.overlays.base import ViewerOverlayMixin, VispyCanvasOverlay
@@ -8,9 +9,12 @@ from napari.components.overlays.brush_circle import BrushCircleOverlay
 from napari.utils.events import Event
 from napari.viewer import Viewer
 
+if TYPE_CHECKING:
+    from vispy.scene import ViewBox
+
 
 class VispyBrushCircleOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
-    overlay: 'BrushCircleOverlay'
+    overlay: BrushCircleOverlay
 
     def __init__(
         self,

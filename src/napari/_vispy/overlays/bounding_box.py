@@ -1,13 +1,17 @@
-from typing import Any
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
-from vispy.scene import ViewBox
 
 from napari import Viewer
 from napari._vispy.overlays.base import LayerOverlayMixin, VispySceneOverlay
 from napari._vispy.visuals.bounding_box import BoundingBox
 from napari.components.overlays import BoundingBoxOverlay
 from napari.layers._scalar_field import ScalarFieldBase
+
+if TYPE_CHECKING:
+    from vispy.scene import ViewBox
 
 
 class VispyBoundingBoxOverlay(LayerOverlayMixin, VispySceneOverlay):
