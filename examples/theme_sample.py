@@ -153,6 +153,7 @@ class ThemeSampleWidget(QWidget):
         self._current_button = QPushButton('current')
         self._theme_meta = QLabel()
 
+        self.setMinimumWidth(800)
         self._build_ui()
         self._viewer.events.theme.connect(self._sync_from_viewer_theme)
         self._sync_from_viewer_theme()
@@ -179,12 +180,13 @@ class ThemeSampleWidget(QWidget):
         left_layout.setContentsMargins(0, 0, 0, 0)
         left_layout.setSpacing(10)
         left_layout.addWidget(self._build_theme_selector_group())
-        left_layout.addWidget(self._build_controls_group())
         left_layout.addWidget(self._build_state_group())
+        left_layout.addWidget(self._build_controls_group())
         left_layout.addStretch(1)
         content_layout.addWidget(left_column, 2)
 
         right_column = QWidget()
+        right_column.setMinimumWidth(300)
         right_layout = QVBoxLayout(right_column)
         right_layout.setContentsMargins(0, 0, 0, 0)
         right_layout.setSpacing(10)
