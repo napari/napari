@@ -1,12 +1,12 @@
 import logging
 import time
+import tokenize
 import warnings
 from dataclasses import dataclass
 from pathlib import Path
 
 from napari.utils.io import execute_python_code
 from napari.utils.translations import trans
-from napari_builtins.io._read import _read_python_source
 
 
 @dataclass
@@ -48,12 +48,13 @@ def _run_configured_startup_script() -> None:
         return
 
     try:
-        script_code = _read_python_source(script_path)
+        with tokenize.open(script_path) as file:
+            script_code = file.read()
     except (OSError, SyntaxError, UnicodeDecodeError) as exc:
         warnings.warn(
             trans._(
                 'Failed to read startup script at {script_path}. '
-                'napari will be launched without running it.'
+                'napari will be launched without running it. '
                 'Error: {error_message}',
                 deferred=True,
                 script_path=script_path,

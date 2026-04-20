@@ -3,7 +3,6 @@ from types import SimpleNamespace
 import pytest
 
 from napari.utils import _startup_script
-from napari_builtins.io import _read
 
 
 def test_run_configured_startup_script_warns_on_source_read_error(
@@ -20,7 +19,7 @@ def test_run_configured_startup_script_warns_on_source_read_error(
         raise SyntaxError('bad encoding cookie')
 
     monkeypatch.setattr('napari.settings.get_settings', lambda: settings)
-    monkeypatch.setattr(_read, '_read_python_source', _raise)
+    monkeypatch.setattr(_startup_script.tokenize, 'open', _raise)
     monkeypatch.setattr(_startup_script, 'startup_script_status_info', None)
 
     with pytest.warns(UserWarning, match='Failed to read startup script'):
