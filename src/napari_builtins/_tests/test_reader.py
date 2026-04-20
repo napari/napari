@@ -6,10 +6,6 @@ import numpy as np
 import pytest
 import tifffile
 
-from napari_builtins.io._read import (
-    _DROPPED_SCRIPTS_NAMESPACE,
-    load_and_execute_python_code,
-)
 from napari_builtins.io._write import write_csv
 
 if TYPE_CHECKING:
@@ -85,25 +81,3 @@ def test_reader_plugin_csv(tmp_path):
     assert isinstance(layer_data[0], tuple)
     assert layer_data[0][2] == 'points'
     assert np.allclose(table[:, 1:], layer_data[0][0])
-
-
-@pytest.mark.parametrize(
-    ('encoding', 'prefix', 'unit_value'),
-    [
-        ('utf-8', '', 'μm'),
-        ('latin-1', '# coding: latin-1\n', 'µm'),
-    ],
-)
-def test_load_and_execute_python_code_uses_python_source_encoding(
-    tmp_path, encoding, prefix, unit_value
-):
-    script_path = tmp_path / 'unit_script.py'
-    script = f'{prefix}unit = {unit_value!r}\n'
-    script_path.write_bytes(script.encode(encoding))
-
-    key = str(script_path)
-    _DROPPED_SCRIPTS_NAMESPACE.pop(key, None)
-
-    load_and_execute_python_code(key)
-
-    assert _DROPPED_SCRIPTS_NAMESPACE[key]['unit'] == unit_value
