@@ -10,6 +10,21 @@ values = np.linspace(0, 1, len(data))
 _SURFACE = (data, faces, values)
 
 
+def _assert_controls_enabled(controls, enabled):
+    for control in controls:
+        for label, widget in control.get_widget_controls():
+            assert label.isEnabled() is enabled
+            assert widget.isEnabled() is enabled
+
+
+def _scalar_coloring_controls(qtctrl):
+    return (
+        qtctrl._contrast_limits_control,
+        qtctrl._gamma_slider_control,
+        qtctrl._colormap_control,
+    )
+
+
 def test_shading_combobox(qtbot):
     layer = Surface(_SURFACE)
     qtctrl = QtSurfaceControls(layer)
@@ -39,12 +54,11 @@ def test_intensity_controls_disabled_with_vertex_colors(qtbot):
     qtctrl = QtSurfaceControls(layer)
     qtbot.addWidget(qtctrl)
 
-    assert all(
-        not widget.isEnabled()
-        for ctrl in qtctrl._intensity_controls
-        for _, widget in ctrl.get_widget_controls()
+    _assert_controls_enabled(_scalar_coloring_controls(qtctrl), False)
+    _assert_controls_enabled(
+        (qtctrl._shading_combobox_control,),
+        True,
     )
-    assert qtctrl._shading_combobox_control.shading_combobox.isEnabled()
 
 
 def test_intensity_controls_toggle_with_vertex_colors(qtbot):
@@ -52,22 +66,10 @@ def test_intensity_controls_toggle_with_vertex_colors(qtbot):
     qtctrl = QtSurfaceControls(layer)
     qtbot.addWidget(qtctrl)
 
-    assert all(
-        widget.isEnabled()
-        for ctrl in qtctrl._intensity_controls
-        for _, widget in ctrl.get_widget_controls()
-    )
+    _assert_controls_enabled(_scalar_coloring_controls(qtctrl), True)
 
     layer.vertex_colors = np.full((len(data), 3), 0.5)
-    assert all(
-        not widget.isEnabled()
-        for ctrl in qtctrl._intensity_controls
-        for _, widget in ctrl.get_widget_controls()
-    )
+    _assert_controls_enabled(_scalar_coloring_controls(qtctrl), False)
 
     layer.vertex_colors = None
-    assert all(
-        widget.isEnabled()
-        for ctrl in qtctrl._intensity_controls
-        for _, widget in ctrl.get_widget_controls()
-    )
+    _assert_controls_enabled(_scalar_coloring_controls(qtctrl), True)
