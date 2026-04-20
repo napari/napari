@@ -1,3 +1,8 @@
+"""
+Tests for the _read module that depend on the Qt viewer being active
+because the reader plugin uses the active viewer to determine where to add layers.
+"""
+
 import pytest
 
 from napari.utils.io import _SCRIPT_NAMESPACES
@@ -16,7 +21,6 @@ from napari_builtins.io._read import load_and_execute_python_code
 def test_load_and_execute_python_code_uses_python_source_encoding(
     tmp_path, make_napari_viewer, encoding, prefix, unit_value
 ):
-    # Script execution patches the active Qt viewer, so this belongs here.
     make_napari_viewer()
 
     script_path = tmp_path / 'unit_script.py'
@@ -36,7 +40,6 @@ def test_load_and_execute_python_code_uses_python_source_encoding(
 def test_load_and_execute_python_code_reports_source_read_errors(
     monkeypatch, make_napari_viewer
 ):
-    # Script execution patches the active Qt viewer, so this belongs here.
     make_napari_viewer()
 
     error = SyntaxError('bad encoding cookie')
