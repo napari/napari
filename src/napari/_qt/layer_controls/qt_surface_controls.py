@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 from napari._qt.layer_controls.qt_image_controls_base import (
@@ -23,13 +25,20 @@ class QtSurfaceControls(QtBaseImageControls):
         Widget that wraps comboBox controlling current shading value of the layer.
     """
 
-    layer: 'napari.layers.Surface'
+    layer: napari.layers.Surface
     PAN_ZOOM_ACTION_NAME = 'activate_surface_pan_zoom_mode'
     TRANSFORM_ACTION_NAME = 'activate_surface_transform_mode'
 
-    def __init__(self, layer) -> None:
+    def __init__(self, layer: napari.layers.Surface) -> None:
         super().__init__(layer)
+        # Surface emits `data` when vertex_values or vertex_colors are reassigned.
+        self.layer.events.data.connect(self._on_surface_coloring_change)
 
         # Setup widgets controls
         self._shading_combobox_control = QtShadingComboBoxControl(self, layer)
         self._add_widget_controls(self._shading_combobox_control)
+        self._on_surface_coloring_change()
+
+    def _on_surface_coloring_change(self) -> None:
+        """Disable scalar-color controls when direct vertex colors are active."""
+        self._set_intensity_controls_enabled(self.layer.vertex_colors is None)
