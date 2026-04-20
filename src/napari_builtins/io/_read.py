@@ -5,7 +5,7 @@ import itertools
 import os
 import re
 import tokenize
-from contextlib import contextmanager, suppress
+from contextlib import suppress
 from glob import glob
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional, Union
@@ -594,101 +594,6 @@ def napari_get_reader(
     return _magic_imreader
 
 
-@contextmanager
-def _patch_viewer_new():
-    """Context manager to patch the viewer's new method."""
-    from napari.viewer import Viewer, current_viewer
-
-    original_new = Viewer.__new__
-    original_init = Viewer.__init__
-
-    def patched_init(self, *args, **kwargs):
-        Viewer.__init__ = original_init
-
-    def patched_new(cls, *args, **kwargs):
-        ndisplay = None
-        if len(kwargs) == 1 and 'ndisplay' in kwargs:
-            ndisplay = kwargs.pop('ndisplay')
-
-        if not kwargs and not args:
-            viewer = current_viewer()
-            if ndisplay is not None:
-                viewer.dims.ndisplay = ndisplay
-            if viewer is not None:
-                Viewer.__new__ = original_new
-                return viewer
-        Viewer.__init__ = original_init
-        return original_new(cls)
-
-    Viewer.__new__ = patched_new
-    Viewer.__init__ = patched_init
-    try:
-        yield
-    finally:
-        Viewer.__new__ = original_new
-        Viewer.__init__ = original_init
-
-
-@contextmanager
-def _patch_napari_run():
-    """Context manager to patch napari.run to always be a no-op.
-
-    napari.run() executes the Qt event loop, *except* when napari
-    is running in IPython and therefore IPython's Qt integration
-    already has the event loop.
-
-    When running a script by dragging-and-dropping onto a
-    running napari Viewer, we already have an event loop, so we
-    should not start a new nested loop, even though we are not
-    in IPython.
-
-    This context manager temporarily patches the IPython check
-    to always return True, causing a fast exit from napari.run()
-    without a new event loop.
-    """
-    from napari._qt import qt_event_loop
-
-    original_ipython_check = qt_event_loop._ipython_has_eventloop
-
-    def patched_ipython_check() -> bool:
-        """A patched ipython_check that always returns True.
-
-        napari's script running from drag-and-dropping a script
-        into a viewer uses this patch to prevent nested event loops.
-        """
-        return True
-
-    qt_event_loop._ipython_has_eventloop = patched_ipython_check
-    try:
-        yield
-    finally:
-        qt_event_loop._ipython_has_eventloop = original_ipython_check
-
-
-def filter_variables(variables: dict[str, Any]) -> dict[str, Any]:
-    res = variables.copy()
-    res.pop('viewer', None)
-    res.pop(
-        '__name__', None
-    )  # Remove the __name__ variable to not affect the console
-    return res
-
-
-def _add_dropped_scripts_to_console(
-    variables: dict[str, Any], viewer: Viewer | None
-) -> None:
-    if viewer is None:
-        return
-
-    variables = filter_variables(variables)
-
-    if viewer.window._qt_viewer._console is None:
-        viewer.window._qt_viewer.add_to_console_backlog(variables)
-    else:
-        console = viewer.window._qt_viewer._console
-        console.push(variables)
-
-
 def _read_python_source(script_path: str | Path) -> str:
     """Read Python source using Python's own source decoding rules."""
     with tokenize.open(script_path) as file:
@@ -713,7 +618,15 @@ def load_and_execute_python_code(script_path: str) -> list[LayerData]:
             encoding = response.headers.get_content_charset() or 'utf-8'
             code = response.read().decode(encoding)
     else:
-        code = _read_python_source(script_path)
+        try:
+            code = _read_python_source(script_path)
+        except (OSError, SyntaxError, UnicodeDecodeError) as exc:
+            from napari.utils.notifications import notification_manager
+
+            notification_manager.receive_error(
+                type(exc), exc, exc.__traceback__
+            )
+            return [(None,)]
     execute_python_code(code, script_path)
     return [(None,)]
 
