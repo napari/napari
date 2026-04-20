@@ -595,7 +595,7 @@ def napari_get_reader(
 
 
 def _read_python_source(script_path: str | Path) -> str:
-    """Read Python source using Python's own source decoding rules."""
+    """Read Python source from script."""
     with tokenize.open(script_path) as file:
         return file.read()
 
