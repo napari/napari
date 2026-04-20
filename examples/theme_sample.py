@@ -93,7 +93,7 @@ class TabDemo(QTabWidget):
         layout2.addRow(QLabel('Sex'), sex_row)
         layout2.addRow('Date of Birth', QLineEdit())
 
-        self.setMaximumHeight(100)
+        self.setMaximumHeight(88)
 
 
 class ColorSwatch(QFrame):
@@ -149,12 +149,10 @@ class ThemeSampleWidget(QWidget):
         super().__init__()
         self._viewer = viewer
         self._color_rows: dict[str, ColorSwatchRow] = {}
-        self._header = QLabel()
         self._theme_selector = QComboBox()
         self._current_button = QPushButton('current')
         self._theme_meta = QLabel()
 
-        self.setMinimumWidth(420)
         self._build_ui()
         self._viewer.events.theme.connect(self._sync_from_viewer_theme)
         self._sync_from_viewer_theme()
@@ -171,18 +169,28 @@ class ThemeSampleWidget(QWidget):
         outer_layout.addWidget(scroll_area)
 
         content = QWidget()
-        content_layout = QVBoxLayout(content)
+        content_layout = QHBoxLayout(content)
         content_layout.setContentsMargins(12, 12, 12, 12)
-        content_layout.setSpacing(10)
+        content_layout.setSpacing(12)
         scroll_area.setWidget(content)
 
-        self._header.setWordWrap(True)
-        content_layout.addWidget(self._header)
-        content_layout.addWidget(self._build_theme_selector_group())
-        content_layout.addWidget(self._build_controls_group())
-        content_layout.addWidget(self._build_state_group())
-        content_layout.addWidget(self._build_color_group())
-        content_layout.addStretch(1)
+        left_column = QWidget()
+        left_layout = QVBoxLayout(left_column)
+        left_layout.setContentsMargins(0, 0, 0, 0)
+        left_layout.setSpacing(10)
+        left_layout.addWidget(self._build_theme_selector_group())
+        left_layout.addWidget(self._build_controls_group())
+        left_layout.addWidget(self._build_state_group())
+        left_layout.addStretch(1)
+        content_layout.addWidget(left_column, 2)
+
+        right_column = QWidget()
+        right_layout = QVBoxLayout(right_column)
+        right_layout.setContentsMargins(0, 0, 0, 0)
+        right_layout.setSpacing(10)
+        right_layout.addWidget(self._build_color_group())
+        right_layout.addStretch(1)
+        content_layout.addWidget(right_column, 3)
 
     def _build_theme_selector_group(self) -> QGroupBox:
         group = QGroupBox('Theme selector')
@@ -208,8 +216,8 @@ class ThemeSampleWidget(QWidget):
     def _build_controls_group(self) -> QGroupBox:
         group = QGroupBox('Controls')
         layout = QVBoxLayout(group)
-        layout.setContentsMargins(8, 6, 8, 6)
-        layout.setSpacing(6)
+        layout.setContentsMargins(6, 5, 6, 5)
+        layout.setSpacing(4)
 
         layout.addWidget(QPushButton('push button'))
 
@@ -241,14 +249,19 @@ class ThemeSampleWidget(QWidget):
         layout.addWidget(QRangeSlider(Qt.Orientation.Horizontal, self))
 
         text = QTextEdit()
-        text.setMaximumHeight(80)
+        text.setMaximumHeight(70)
         text.setHtml(_BLURB)
         layout.addWidget(text)
-        layout.addWidget(QTimeEdit())
+
+        input_row = QHBoxLayout()
+        input_row.setContentsMargins(0, 0, 0, 0)
+        input_row.setSpacing(4)
+        input_row.addWidget(QTimeEdit())
 
         edit = QLineEdit()
         edit.setPlaceholderText('LineEdit placeholder...')
-        layout.addWidget(edit)
+        input_row.addWidget(edit, 1)
+        layout.addLayout(input_row)
 
         progress = QProgressBar()
         progress.setValue(50)
@@ -256,7 +269,7 @@ class ThemeSampleWidget(QWidget):
 
         radio_group = QGroupBox('Exclusive Radio Buttons')
         radio_layout = QHBoxLayout(radio_group)
-        radio_layout.setContentsMargins(10, 10, 10, 10)
+        radio_layout.setContentsMargins(6, 6, 6, 6)
         radio1 = QRadioButton('&Radio button 1')
         radio2 = QRadioButton('R&adio button 2')
         radio3 = QRadioButton('Ra&dio button 3')
@@ -346,13 +359,6 @@ class ThemeSampleWidget(QWidget):
     def _sync_from_viewer_theme(self, event=None) -> None:
         theme_id = self._viewer.theme
         theme = get_theme(theme_id)
-        resolved_id = theme.id
-
-        if theme_id == 'system' and resolved_id != 'system':
-            header = f'<h2>{theme.label} (system -&gt; {resolved_id})</h2>'
-        else:
-            header = f'<h2>{theme.label} ({theme_id})</h2>'
-        self._header.setText(header)
 
         was_blocked = self._theme_selector.blockSignals(True)
         self._theme_selector.setCurrentText(theme_id)
@@ -372,13 +378,13 @@ class ThemeSampleWidget(QWidget):
 
 
 viewer = napari.Viewer(title='Theme sample', show_welcome_screen=False)
-viewer.window._qt_window.resize(1400, 900)
 widget = ThemeSampleWidget(viewer)
 dock_widget = viewer.window.add_dock_widget(
     widget,
     area='right',
     name='Theme sample',
 )
+dock_widget.setMinimumWidth(widget.minimumWidth())
 
 if __name__ == '__main__':
     napari.run()
