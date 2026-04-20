@@ -6,6 +6,7 @@ from napari._qt.layer_controls.qt_image_controls_base import (
     QtBaseImageControls,
 )
 from napari._qt.layer_controls.widgets._surface import QtShadingComboBoxControl
+from napari._qt.utils import set_widgets_enabled_with_opacity
 
 if TYPE_CHECKING:
     import napari.layers
@@ -41,4 +42,13 @@ class QtSurfaceControls(QtBaseImageControls):
 
     def _on_surface_coloring_change(self) -> None:
         """Disable scalar-color controls when direct vertex colors are active."""
-        self._set_intensity_controls_enabled(self.layer.vertex_colors is None)
+        enabled = self.layer.vertex_colors is None
+        for control in (
+            self._contrast_limits_control,
+            self._gamma_slider_control,
+            self._colormap_control,
+        ):
+            for label, widget in control.get_widget_controls():
+                set_widgets_enabled_with_opacity(
+                    self, (label, widget), enabled
+                )

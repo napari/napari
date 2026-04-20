@@ -8,7 +8,6 @@ from napari._qt.layer_controls.widgets import (
     QtContrastLimitsControl,
     QtGammaSliderControl,
 )
-from napari._qt.utils import set_widgets_enabled_with_opacity
 
 if TYPE_CHECKING:
     from napari.layers import Image, Surface
@@ -44,18 +43,3 @@ class QtBaseImageControls(QtLayerControls):
         self._add_widget_controls(self._gamma_slider_control)
         self._colormap_control = QtColormapControl(self, layer)
         self._add_widget_controls(self._colormap_control)
-        self._intensity_controls = [
-            self._contrast_limits_control,
-            self._gamma_slider_control,
-            self._colormap_control,
-        ]
-
-    def _set_intensity_controls_enabled(self, enabled: bool) -> None:
-        """Enable or disable intensity-based controls with matching opacity."""
-        widgets = [
-            wdg
-            for ctrl in self._intensity_controls
-            for label, widget in ctrl.get_widget_controls()
-            for wdg in (label, widget)
-        ]
-        set_widgets_enabled_with_opacity(self, widgets, enabled)
