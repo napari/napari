@@ -924,6 +924,32 @@ class VispyCanvas:
             self._update_overlay_canvas_positions
         )
 
+    def _defer_viewer_overlay_visible_disconnect(
+        self, overlay: Overlay
+    ) -> None:
+        """Disconnect the lazy visible callback after the current emission.
+
+        Viewer overlays are lazily instantiated by connecting
+        ``overlay.events.visible`` to ``_update_viewer_overlays`` while the
+        overlay is hidden. Once the overlay has been created, that bootstrap
+        callback should be removed, but doing so from inside the active
+        ``visible`` emission mutates psygnal's live slot list and can skip
+        downstream listeners. Deferring the disconnect preserves the one-shot
+        lazy behavior without mutating the callback list mid-emission.
+        """
+        from qtpy.QtCore import QTimer
+
+        def _disconnect_if_initialized() -> None:
+            if overlay not in self.viewer._overlays.values():
+                return
+            if overlay not in self._overlay_to_visual:
+                return
+            overlay.events.visible.disconnect(
+                self._update_viewer_overlays, missing_ok=True
+            )
+
+        QTimer.singleShot(0, _disconnect_if_initialized)
+
     def _create_or_update_vispy_viewer_overlay(
         self,
         overlay: Overlay,
@@ -978,7 +1004,7 @@ class VispyCanvas:
                     self._update_viewer_overlays, unique=True
                 )
                 continue
-            overlay.events.visible.disconnect(self._update_viewer_overlays)
+            self._defer_viewer_overlay_visible_disconnect(overlay)
 
             vispy_overlays = self._overlay_to_visual.setdefault(overlay, [])
 
