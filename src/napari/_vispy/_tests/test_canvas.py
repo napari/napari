@@ -232,10 +232,12 @@ def test_first_viewer_overlay_visible_event_reaches_listener(qt_viewer, qtbot):
     # Wait until the deferred disconnect scheduled with QTimer.singleShot(0,
     # ...) has been processed by the event loop.
     qtbot.waitUntil(
-        lambda: viewer.scale_bar.events.visible._slot_index(
-            canvas._update_viewer_overlays
+        lambda: (
+            viewer.scale_bar.events.visible._slot_index(
+                canvas._update_viewer_overlays
+            )
+            == -1
         )
-        == -1
     )
 
 
@@ -261,10 +263,12 @@ def test_first_layer_overlay_visible_event_reaches_listener(qt_viewer, qtbot):
     # Wait until the deferred disconnect scheduled with QTimer.singleShot(0,
     # ...) has been processed by the event loop.
     qtbot.waitUntil(
-        lambda: overlay.events.visible._slot_index(
-            canvas._overlay_callbacks[layer]
+        lambda: (
+            overlay.events.visible._slot_index(
+                canvas._overlay_callbacks[layer]
+            )
+            == -1
         )
-        == -1
     )
 
 
