@@ -124,8 +124,8 @@ def _build_controls() -> QWidget:
     controls = QWidget()
     layout = QVBoxLayout(controls)
     instructions = QLabel(
-        'Run this example from a terminal. Compare the terminal, the popup '
-        'area, and Help > Show logs while pressing the buttons below.'
+        'Compare the terminal, the popup area and Help > Show logs'
+        ' while pressing the buttons below.'
     )
     instructions.setWordWrap(True)
     layout.addWidget(instructions)
