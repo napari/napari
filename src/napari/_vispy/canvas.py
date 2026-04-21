@@ -928,16 +928,7 @@ class VispyCanvas:
     def _defer_viewer_overlay_visible_disconnect(
         self, overlay: Overlay
     ) -> None:
-        """Disconnect the lazy visible callback after the current emission.
-
-        Viewer overlays are lazily instantiated by connecting
-        ``overlay.events.visible`` to ``_update_viewer_overlays`` while the
-        overlay is hidden. Once the overlay has been created, that bootstrap
-        callback should be removed, but doing so from inside the active
-        ``visible`` emission mutates psygnal's live slot list and can skip
-        downstream listeners. Deferring the disconnect preserves the one-shot
-        lazy behavior without mutating the callback list mid-emission.
-        """
+        # Disconnect the lazy visible callback after the current emission.
         def _disconnect_if_initialized() -> None:
             if overlay not in self.viewer._overlays.values():
                 return
@@ -952,15 +943,8 @@ class VispyCanvas:
     def _defer_layer_overlay_visible_disconnect(
         self, layer: Layer, overlay: Overlay
     ) -> None:
-        """Disconnect a layer overlay's lazy visible callback after emission.
+        # Disconnect a layer overlay's lazy visible callback after emission.
 
-        Layer overlays use a per-layer bootstrap callback to lazily create the
-        vispy overlay when the model first becomes visible. As with viewer
-        overlays, disconnecting that callback from inside the active ``visible``
-        emission can mutate psygnal's live slot list and skip downstream
-        listeners. Deferring the disconnect keeps the callback one-shot without
-        modifying the slot list mid-emission.
-        """
         def _disconnect_if_initialized() -> None:
             if layer not in self.viewer.layers:
                 return
