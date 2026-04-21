@@ -210,6 +210,66 @@ def test_tiling_canvas_overlays(qt_viewer):
     )
 
 
+def test_first_viewer_overlay_visible_event_reaches_listener(qt_viewer, qtbot):
+    viewer = qt_viewer.viewer
+    canvas = qt_viewer.canvas
+
+    calls = []
+    viewer.scale_bar.events.visible.connect(lambda: calls.append('visible'))
+
+    assert not viewer.scale_bar.visible
+    assert (
+        viewer.scale_bar.events.visible._slot_index(
+            canvas._update_viewer_overlays
+        )
+        != -1
+    )
+
+    viewer.scale_bar.visible = True
+
+    assert calls == ['visible']
+
+    # Let the event loop process the deferred disconnect scheduled with
+    # QTimer.singleShot(0, ...).
+    qtbot.wait(0)
+
+    assert (
+        viewer.scale_bar.events.visible._slot_index(
+            canvas._update_viewer_overlays
+        )
+        == -1
+    )
+
+
+def test_first_layer_overlay_visible_event_reaches_listener(qt_viewer, qtbot):
+    viewer = qt_viewer.viewer
+    canvas = qt_viewer.canvas
+    layer = viewer.add_points()
+    overlay = next(iter(layer._overlays.values()))
+
+    calls = []
+    overlay.events.visible.connect(lambda: calls.append('visible'))
+
+    assert not overlay.visible
+    assert (
+        overlay.events.visible._slot_index(canvas._overlay_callbacks[layer])
+        != -1
+    )
+
+    overlay.visible = True
+
+    assert calls == ['visible']
+
+    # Let the event loop process the deferred disconnect scheduled with
+    # QTimer.singleShot(0, ...).
+    qtbot.wait(0)
+
+    assert (
+        overlay.events.visible._slot_index(canvas._overlay_callbacks[layer])
+        == -1
+    )
+
+
 def test_world_units_restored_after_removing_inconsistent_layer(qt_viewer):
     """Removing a units-inconsistent layer should re-enable unit-aware rendering.
 
