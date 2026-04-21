@@ -944,7 +944,6 @@ class VispyCanvas:
         self, layer: Layer, overlay: Overlay
     ) -> None:
         # Disconnect a layer overlay's lazy visible callback after emission.
-
         def _disconnect_if_initialized() -> None:
             if layer not in self.viewer.layers:
                 return
