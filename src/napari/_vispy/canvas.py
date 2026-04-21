@@ -1011,6 +1011,8 @@ class VispyCanvas:
                     self._update_viewer_overlays, unique=True
                 )
                 continue
+            # The disconnection needs to happen after the event emission is finished
+            # or else it will be consumed
             self._defer_viewer_overlay_visible_disconnect(overlay)
 
             vispy_overlays = self._overlay_to_visual.setdefault(overlay, [])
