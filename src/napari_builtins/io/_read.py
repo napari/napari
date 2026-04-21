@@ -594,12 +594,6 @@ def napari_get_reader(
     return _magic_imreader
 
 
-def _read_python_source(script_path: str | Path) -> str:
-    """Read Python source from script."""
-    with tokenize.open(script_path) as file:
-        return file.read()
-
-
 def load_and_execute_python_code(script_path: str) -> list[LayerData]:
     """Load and execute Python code from a file.
 
@@ -618,15 +612,8 @@ def load_and_execute_python_code(script_path: str) -> list[LayerData]:
             encoding = response.headers.get_content_charset() or 'utf-8'
             code = response.read().decode(encoding)
     else:
-        try:
-            code = _read_python_source(script_path)
-        except (OSError, SyntaxError, UnicodeDecodeError) as exc:
-            from napari.utils.notifications import notification_manager
-
-            notification_manager.receive_error(
-                type(exc), exc, exc.__traceback__
-            )
-            return [(None,)]
+        with tokenize.open(script_path) as file:
+            code = file.read()
     execute_python_code(code, script_path)
     return [(None,)]
 
