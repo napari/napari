@@ -6,6 +6,8 @@ import numpy as np
 import pytest
 import tifffile
 
+from napari.utils.io import _SCRIPT_NAMESPACES
+from napari_builtins.io._read import load_and_execute_python_code
 from napari_builtins.io._write import write_csv
 
 if TYPE_CHECKING:
@@ -81,3 +83,41 @@ def test_reader_plugin_csv(tmp_path):
     assert isinstance(layer_data[0], tuple)
     assert layer_data[0][2] == 'points'
     assert np.allclose(table[:, 1:], layer_data[0][0])
+
+
+@pytest.mark.parametrize(
+    ('encoding', 'prefix', 'unit_value'),
+    [
+        ('utf-8', '', 'μm'),
+        ('latin-1', '# coding: latin-1\n', 'µm'),
+    ],
+)
+def test_load_and_execute_python_code_uses_python_source_encoding(
+    tmp_path, encoding, prefix, unit_value
+):
+    script_path = tmp_path / 'unit_script.py'
+    script = f'{prefix}unit = {unit_value!r}\n'
+    script_path.write_bytes(script.encode(encoding))
+
+    key = str(script_path)
+    _SCRIPT_NAMESPACES.pop(key, None)
+
+    try:
+        load_and_execute_python_code(key)
+        assert _SCRIPT_NAMESPACES[key]['unit'] == unit_value
+    finally:
+        _SCRIPT_NAMESPACES.pop(key, None)
+
+
+def test_load_and_execute_python_code_raises_source_read_errors(monkeypatch):
+    error = SyntaxError('bad encoding cookie')
+
+    def _raise(*_args, **_kwargs):
+        raise error
+
+    monkeypatch.setattr('napari_builtins.io._read._read_python_source', _raise)
+
+    with pytest.raises(SyntaxError, match='bad encoding cookie'):
+        load_and_execute_python_code('broken_script.py')
+
+    assert 'broken_script.py' not in _SCRIPT_NAMESPACES
