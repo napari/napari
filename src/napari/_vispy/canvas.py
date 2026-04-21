@@ -940,23 +940,6 @@ class VispyCanvas:
 
         QTimer.singleShot(0, _disconnect_if_initialized)
 
-    def _defer_layer_overlay_visible_disconnect(
-        self, layer: Layer, overlay: Overlay
-    ) -> None:
-        # Disconnect a layer overlay's lazy visible callback after emission.
-        def _disconnect_if_initialized() -> None:
-            if layer not in self.viewer.layers:
-                return
-            if overlay not in layer._overlays.values():
-                return
-            if overlay not in self._layer_overlay_to_visual.get(layer, {}):
-                return
-            overlay.events.visible.disconnect(
-                self._overlay_callbacks[layer], missing_ok=True
-            )
-
-        QTimer.singleShot(0, _disconnect_if_initialized)
-
     def _create_or_update_vispy_viewer_overlay(
         self,
         overlay: Overlay,
@@ -1098,7 +1081,7 @@ class VispyCanvas:
                     self._overlay_callbacks[layer], unique=True
                 )
                 continue
-            self._defer_layer_overlay_visible_disconnect(layer, overlay)
+            overlay.events.visible.disconnect(self._overlay_callbacks[layer])
 
             vispy_overlay = overlay_to_visual.get(overlay, None)
 

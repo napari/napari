@@ -241,37 +241,6 @@ def test_first_viewer_overlay_visible_event_reaches_listener(qt_viewer, qtbot):
     )
 
 
-def test_first_layer_overlay_visible_event_reaches_listener(qt_viewer, qtbot):
-    viewer = qt_viewer.viewer
-    canvas = qt_viewer.canvas
-    layer = viewer.add_points()
-    overlay = next(iter(layer._overlays.values()))
-
-    calls = []
-    overlay.events.visible.connect(lambda: calls.append('visible'))
-
-    assert not overlay.visible
-    assert (
-        overlay.events.visible._slot_index(canvas._overlay_callbacks[layer])
-        != -1
-    )
-
-    overlay.visible = True
-
-    assert calls == ['visible']
-
-    # Wait until the deferred disconnect scheduled with QTimer.singleShot(0,
-    # ...) has been processed by the event loop.
-    qtbot.waitUntil(
-        lambda: (
-            overlay.events.visible._slot_index(
-                canvas._overlay_callbacks[layer]
-            )
-            == -1
-        )
-    )
-
-
 def test_world_units_restored_after_removing_inconsistent_layer(qt_viewer):
     """Removing a units-inconsistent layer should re-enable unit-aware rendering.
 
