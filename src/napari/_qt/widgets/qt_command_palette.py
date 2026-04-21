@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from importlib.util import find_spec
 from typing import TYPE_CHECKING, Any, cast
 
 from app_model.types import CommandRule, MenuItem
@@ -9,11 +10,20 @@ from qtpy.QtCore import Qt, Signal
 
 from napari._app_model import get_app_model
 from napari._app_model.context._context import get_context
+from napari.settings import get_settings
+from napari.utils.notifications import show_warning
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Mapping
 
     from napari._qt.qt_main_window import _QtMainWindow
+
+
+_COMMON_ALIASES = {
+    'colorbar': 'calibration bar',
+    'color': 'colour',
+    'visualize': 'visualise',
+}
 
 
 class QCommandPalette(QtW.QWidget):
@@ -111,6 +121,14 @@ class QCommandPalette(QtW.QWidget):
 
         self.raise_()
         self._line.setFocus()
+
+        exp = get_settings().experimental
+        if exp.command_palette_fuzzy_search and find_spec('rapidfuzz') is None:
+            show_warning(
+                'Fuzzy command search is enabled in experimental settings, but '
+                'rapidfuzz is not installed. Falling back to simple word matching. '
+                'To suppress this warning, disable the setting or install rapidfuzz.'
+            )
         return
 
     def hide(self) -> None:
@@ -211,7 +229,7 @@ class QCommandLabel(QtW.QLabel):
 
     def set_command(self, cmd: CommandRule) -> None:
         """Set command to this widget."""
-        command_text = _format_action_name(cmd)
+        command_text = _command_to_name(cmd)
         self._command_text = command_text
         self._command = cmd
         self.setText(command_text)
@@ -226,28 +244,21 @@ class QCommandLabel(QtW.QLabel):
         if input_text == '':
             return
         text = self.command_text()
-        words = input_text.split(' ')
-        pattern = re.compile('|'.join(words), re.IGNORECASE)
 
         output_texts: list[str] = []
-        last_end = 0
-        for match_obj in pattern.finditer(text):
-            output_texts.append(text[last_end : match_obj.start()])
-            word = match_obj.group()
-            colored_word = bold_colored(word, color)
-            output_texts.append(colored_word)
-            last_end = match_obj.end()
 
-        output_texts.append(text[last_end:])
+        for substring, highlighted in _iter_highlight_slices(input_text, text):
+            if highlighted:
+                substring = bold_colored(substring, color)
+            output_texts.append(substring)
+
         output_text = ''.join(output_texts)
         self.setText(output_text)
-        return
 
     def set_disabled(self) -> None:
         """Set the label to disabled."""
         text = self.command_text()
         self.setText(colored(text, self.DISABLED_COLOR))
-        return
 
 
 class QCommandList(QtW.QListView):
@@ -376,15 +387,38 @@ class QCommandList(QtW.QListView):
 
     def iter_top_hits(self, input_text: str) -> Iterator[CommandRule]:
         """Iterate over the top hits for the input text"""
-        commands: list[tuple[float, CommandRule]] = []
-        for command in self.all_commands:
-            score = _match_score(command, input_text)
-            if score > 0.0:
-                if _enabled(command, self._app_model_context):
-                    score += 10.0
-                commands.append((score, command))
-        commands.sort(key=lambda x: x[0], reverse=True)
-        for _, command in commands:
+        if not input_text:
+            yield from [
+                c
+                for c in self.all_commands
+                if _enabled(c, self._app_model_context)
+            ]
+
+        commands: dict[CommandRule, float] = {}
+
+        # we have to pass these as a list to rapidfuzz, cause it takes {result: string}
+        # as mapping, not allowing us to have multuple strings point to the same
+        # result without doing weird stuff
+        name_to_command = {_command_to_name(c): c for c in self.all_commands}
+        for n, c in list(name_to_command.items()):
+            for alias in _action_to_aliases(n):
+                name_to_command[alias] = c
+
+        for score, command in _iter_matched_actions(
+            input_text, name_to_command
+        ):
+            if score == 0:
+                continue
+
+            if _enabled(command, self._app_model_context):
+                score += 101
+
+            commands.setdefault(command, 0)
+            # get the max score between aliases
+            commands[command] = max(score, commands[command])
+        for command, _ in sorted(
+            commands.items(), key=lambda x: x[1], reverse=True
+        ):
             yield command
 
     if TYPE_CHECKING:
@@ -406,13 +440,13 @@ def _enabled(action: CommandRule, context: Mapping[str, Any]) -> bool:
 
 def _match_score(action: CommandRule, input_text: str) -> float:
     """Return a match score (between 0 and 1) for the input text."""
-    name = _format_action_name(action).lower()
+    name = _command_to_name(action).lower()
     if all(word in name for word in input_text.lower().split(' ')):
         return 1.0
     return 0.0
 
 
-def _format_action_name(cmd: CommandRule) -> str:
+def _command_to_name(cmd: CommandRule) -> str:
     sep = ':' if ':' in cmd.id else '.'
     *contexts, _ = cmd.id.split(sep)
     title = ' > '.join(contexts)
@@ -420,6 +454,125 @@ def _format_action_name(cmd: CommandRule) -> str:
     if title:
         return f'{title} > {desc}'
     return desc
+
+
+def _action_to_aliases(action_name: str) -> list[str]:
+    return [
+        re.sub(word, alias, action_name, flags=re.IGNORECASE)
+        for word, alias in _COMMON_ALIASES.items()
+        if re.search(word, action_name, flags=re.IGNORECASE)
+    ]
+
+
+def _iter_matched_actions(
+    input_text: str, name_to_command: dict[str, CommandRule]
+) -> Iterator[tuple[float, CommandRule]]:
+    exp = get_settings().experimental
+    if not exp.command_palette_fuzzy_search or find_spec('rapidfuzz') is None:
+        # basic word matching
+        words = input_text.lower().split(' ')
+        for name, command in name_to_command.items():
+            name = name.lower()
+            if all(word in name for word in words):
+                yield 100, command
+            else:
+                yield 0, command
+        return
+
+    # fuzzy finding
+    from rapidfuzz import fuzz, process, utils
+
+    names = list(name_to_command)
+    commands = list(name_to_command.values())
+
+    for _, score, command_idx in process.extract(
+        input_text,
+        names,
+        limit=100,
+        score_cutoff=exp.command_palette_fuzzy_search_threshold,
+        scorer=fuzz.partial_token_sort_ratio,
+        processor=utils.default_process,
+    ):
+        yield score, commands[command_idx]
+
+
+def _iter_highlight_slices(
+    query: str, text: str, min_len: int = 2
+) -> Iterator[tuple[str, bool]]:
+    """Get highlights for matches, or reasonable approximation for fuzzy matches.
+
+    Will match all non-overlapping substrings bigger than min_len.
+    It's not a correct representation of what the fuzzy matching does,
+    but should help visualize a bit what's being matched.
+    """
+    exp = get_settings().experimental
+    if not exp.command_palette_fuzzy_search or find_spec('rapidfuzz') is None:
+        # basic word matching
+        import re
+
+        words = query.split(' ')
+        pattern = re.compile('|'.join(words), re.IGNORECASE)
+        last_end = 0
+        for match_obj in pattern.finditer(text):
+            yield text[last_end : match_obj.start()], False
+            yield match_obj.group(), True
+            last_end = match_obj.end()
+        yield text[last_end:], False
+        return
+
+    # fancier substring matching for fuzzy finding
+
+    len_query = len(query)
+    len_text = len(text)
+
+    if min_len > len_query:
+        yield text, False
+        return
+
+    substrings = {
+        query.lower()[i:j]
+        for i in range(len_query)
+        for j in range(i + min_len, len_query + 1)
+    }
+
+    matches = []
+
+    pos = 0
+    while pos < len_text:
+        longest = 0
+
+        # prioritize matching longest substring first
+        for length in range(len_query, min_len - 1, -1):
+            if pos + length > len_text:
+                # overshooting
+                continue
+            if text.lower()[pos : pos + length] in substrings:
+                longest = length
+                break
+
+        if longest:
+            matches.append((pos, pos + longest))
+            pos += longest
+        else:
+            pos += 1
+
+    if not matches:
+        yield text, False
+        return
+
+    # yield slices from original text
+    pos = 0
+    for start, end in matches:
+        if pos < start:
+            # yield the unmatched region before this one
+            yield text[pos:start], False
+        # now we're at an actual matched region
+        yield text[start:end], True
+        pos = end
+
+    # trailing is unmatched
+    if pos < len_text:
+        yield text[pos:], False
 
 
 def _exec_action(action: CommandRule) -> Any:
