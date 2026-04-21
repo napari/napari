@@ -12,6 +12,7 @@ from weakref import WeakSet
 
 import numpy as np
 from OpenGL.error import GLError
+from qtpy.QtCore import QTimer
 from superqt.utils import qthrottled
 from vispy.scene import Grid, SceneCanvas as SceneCanvas_, ViewBox, Widget
 
@@ -937,8 +938,6 @@ class VispyCanvas:
         downstream listeners. Deferring the disconnect preserves the one-shot
         lazy behavior without mutating the callback list mid-emission.
         """
-        from qtpy.QtCore import QTimer
-
         def _disconnect_if_initialized() -> None:
             if overlay not in self.viewer._overlays.values():
                 return
@@ -962,8 +961,6 @@ class VispyCanvas:
         listeners. Deferring the disconnect keeps the callback one-shot without
         modifying the slot list mid-emission.
         """
-        from qtpy.QtCore import QTimer
-
         def _disconnect_if_initialized() -> None:
             if layer not in self.viewer.layers:
                 return
