@@ -67,8 +67,10 @@ jobs:
       XDG_CACHE_HOME: ${{ github.workspace }}/.cache
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
       - name: Cache pooch downloads
-        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v4
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
         with:
           path: |
             ${{ github.workspace }}/.cache/scikit-image
@@ -76,9 +78,10 @@ jobs:
             ${{ github.workspace }}/.cache/pooch
           key: pooch
 
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      - name: Download packages needed for testing
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          name: wheel
+          name: Packages
           path: dist
 
       - name: Set wheel path
@@ -141,18 +144,20 @@ jobs:
         # FOURTH=none
         shell: bash
         run: |
-          python tools/split_qt_backend.py 0 ${{ inputs.qt_backend }} >> "$GITHUB_ENV"
-          python tools/split_qt_backend.py 1 ${{ inputs.qt_backend }} >> "$GITHUB_ENV"
-          python tools/split_qt_backend.py 2 ${{ inputs.qt_backend }} >> "$GITHUB_ENV"
-          python tools/split_qt_backend.py 3 ${{ inputs.qt_backend }} >> "$GITHUB_ENV"
+          python tools/split_qt_backend.py 0 "${INPUTS_QT_BACKEND}" >> "$GITHUB_ENV"
+          python tools/split_qt_backend.py 1 "${INPUTS_QT_BACKEND}" >> "$GITHUB_ENV"
+          python tools/split_qt_backend.py 2 "${INPUTS_QT_BACKEND}" >> "$GITHUB_ENV"
+          python tools/split_qt_backend.py 3 "${INPUTS_QT_BACKEND}" >> "$GITHUB_ENV"
+        env:
+          INPUTS_QT_BACKEND: ${{ inputs.qt_backend }}
 
       - name: Test with tox main qt_backend
         timeout-minutes: ${{ inputs.timeout }}
         shell: bash
         run: |
-          echo ${{ env.MAIN }}
+          echo "${MAIN}"
           tox --version
-          python -m tox run --installpkg ${{ env.WHEEL_PATH }} -- --basetemp=.pytest_tmp
+          python -m tox run --installpkg "${WHEEL_PATH}" -- --basetemp=.pytest_tmp
           rm -r .tox
         env:
           BACKEND: ${{ env.MAIN }}
@@ -163,7 +168,7 @@ jobs:
         if : ${{ env.SECOND != 'none' }}
         shell: bash
         run: |
-          python -m tox run --installpkg ${{ env.WHEEL_PATH }} -- --basetemp=.pytest_tmp
+          python -m tox run --installpkg "${WHEEL_PATH}" -- --basetemp=.pytest_tmp
           rm -r .tox
         env:
           BACKEND: ${{ env.SECOND }}
@@ -174,7 +179,7 @@ jobs:
         if : ${{ env.THIRD != 'none' }}
         shell: bash
         run: |
-          python -m tox run --installpkg ${{ env.WHEEL_PATH }} -- --basetemp=.pytest_tmp
+          python -m tox run --installpkg "${WHEEL_PATH}" -- --basetemp=.pytest_tmp
           rm -r .tox
         env:
           BACKEND: ${{ env.THIRD }}
@@ -185,7 +190,7 @@ jobs:
         if: ${{ env.FOURTH != 'none' }}
         shell: bash
         run: |
-          python -m tox run --installpkg ${{ env.WHEEL_PATH }} -- --basetemp=.pytest_tmp
+          python -m tox run --installpkg "${WHEEL_PATH}" -- --basetemp=.pytest_tmp
           rm -r .tox
         env:
           BACKEND: ${{ env.FOURTH }}

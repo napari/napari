@@ -900,7 +900,7 @@ class Points(Layer):
         # this will check that it is the correct length.
         if coerced_symbols.size == 1:
             coerced_symbols = np.full(
-                self.data.shape[0], coerced_symbols[0], dtype=object
+                self.data.shape[0], coerced_symbols, dtype=object
             )
         else:
             coerced_symbols = np.array(coerced_symbols)
