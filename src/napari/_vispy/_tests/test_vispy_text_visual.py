@@ -5,4 +5,6 @@ from napari.components.overlays import TextOverlay
 def test_text_instantiation(make_napari_viewer):
     viewer = make_napari_viewer()
     model = TextOverlay()
-    VispyTextOverlay(overlay=model, viewer=viewer)
+    VispyTextOverlay(
+        overlay=model, canvas_info=viewer.window._qt_viewer.canvas._canvas_info
+    )

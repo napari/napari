@@ -1,8 +1,14 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import numpy as np
 from vispy.scene.visuals import Compound, Line
-from vispy.visuals.text.text import FontManager
 
 from napari._vispy.visuals.text import Text
+
+if TYPE_CHECKING:
+    from napari._vispy.canvas import CanvasInfo
 
 
 class ScaleBar(Compound):
@@ -16,11 +22,7 @@ class ScaleBar(Compound):
     - Padding
     """
 
-    def __init__(
-        self,
-        font_manager: FontManager | None = None,
-        font_family: str = 'OpenSans',
-    ) -> None:
+    def __init__(self, canvas_info: CanvasInfo) -> None:
         # Layout constants
         self.PADDING = 6  # Space around the entire scale bar
         self.TICK_LENGTH = 11  # Height of tick marks (odd numbers look better)
@@ -45,8 +47,7 @@ class ScaleBar(Compound):
             anchor_x='center',
             anchor_y='bottom',
             font_size=10,
-            face=font_family,
-            font_manager=font_manager,
+            font_info=canvas_info,
         )
         self.line = Line(
             connect='segments', method='gl', width=3, antialias=True

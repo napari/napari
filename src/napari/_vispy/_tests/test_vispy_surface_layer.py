@@ -4,6 +4,7 @@ from vispy.geometry import create_cube
 
 from napari._tests.utils import skip_local_popups
 from napari._vispy.layers.surface import VispySurfaceLayer
+from napari._vispy.utils.qt_font import FontInfo
 from napari.components.dims import Dims
 from napari.layers import Surface
 
@@ -17,14 +18,14 @@ def cube_layer():
 @pytest.mark.parametrize('opacity', [0, 0.3, 0.7, 1])
 def test_VispySurfaceLayer(cube_layer, opacity):
     cube_layer.opacity = opacity
-    visual = VispySurfaceLayer(cube_layer)
+    visual = VispySurfaceLayer(cube_layer, font_info=FontInfo())
     assert visual.node.opacity == opacity
 
 
 def test_shading(cube_layer):
     cube_layer._slice_dims(Dims(ndim=3, ndisplay=3))
     cube_layer.shading = 'flat'
-    visual = VispySurfaceLayer(cube_layer)
+    visual = VispySurfaceLayer(cube_layer, font_info=FontInfo())
     assert visual.node.shading_filter.attached
     assert visual.node.shading_filter.shading == 'flat'
     cube_layer.shading = 'smooth'
@@ -43,7 +44,7 @@ def test_shading(cube_layer):
 )
 def test_add_texture(cube_layer, texture_shape):
     np.random.seed(0)
-    visual = VispySurfaceLayer(cube_layer)
+    visual = VispySurfaceLayer(cube_layer, font_info=FontInfo())
     assert visual._texture_filter is None
 
     texture = np.random.random(texture_shape).astype(np.float32)
@@ -70,7 +71,7 @@ def test_add_texture(cube_layer, texture_shape):
 
 def test_change_texture(cube_layer):
     np.random.seed(0)
-    visual = VispySurfaceLayer(cube_layer)
+    visual = VispySurfaceLayer(cube_layer, font_info=FontInfo())
     texcoords = create_cube()[0]['texcoord']
     cube_layer.texcoords = texcoords
 
@@ -92,7 +93,7 @@ def test_change_texture(cube_layer):
 def test_vertex_colors(cube_layer):
     np.random.seed(0)
     cube_layer._slice_dims(Dims(ndim=3, ndisplay=3))
-    visual = VispySurfaceLayer(cube_layer)
+    visual = VispySurfaceLayer(cube_layer, font_info=FontInfo())
     n = len(cube_layer.vertices)
 
     colors0 = np.random.random((n, 4)).astype(np.float32)
