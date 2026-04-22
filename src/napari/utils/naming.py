@@ -7,13 +7,13 @@ import re
 from collections import ChainMap, ChainMap as ChainMapType
 from typing import TYPE_CHECKING, Any
 
-from typing_extensions import Self
-
 from napari.utils.misc import ROOT_DIR, formatdoc
 
 if TYPE_CHECKING:
     from collections.abc import Callable
     from types import FrameType, TracebackType
+
+    from typing_extensions import Self
 
 sep = ' '
 start = 1

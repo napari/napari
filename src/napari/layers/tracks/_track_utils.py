@@ -2,7 +2,6 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 import numpy.typing as npt
-from scipy.sparse import coo_matrix
 
 from napari.layers.utils.layer_utils import _FeatureTable
 from napari.utils.events.custom_types import Array
@@ -128,6 +127,7 @@ class TrackManager:
     @data.setter
     def data(self, data: list | np.ndarray) -> None:
         """set the vertex data and build the vispy arrays for display"""
+        from scipy.sparse import coo_matrix
         from scipy.spatial import cKDTree
 
         # convert data to a numpy array if it is not already one

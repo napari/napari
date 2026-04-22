@@ -31,8 +31,8 @@ class ContextMapping(collections.abc.Mapping):
     `ContextMapping` object.
     """
 
-    def __init__(self, initial_values: collections.abc.Mapping):
-        self._initial_context_mapping = initial_values
+    def __init__(self, initial_values: collections.abc.Mapping | None):
+        self._initial_context_mapping = initial_values or {}
         self._evaluated_context_mapping: dict[str, Any] = {}
 
     def __getitem__(self, key):

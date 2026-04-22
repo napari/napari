@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import numpy as np
-from vispy.scene import Node
 
 from napari._vispy.layers.scalar_field import (
     _VISPY_FORMAT_TO_DTYPE,
@@ -19,6 +20,9 @@ from napari.utils.colormaps.colormap_utils import (
     _napari_cmap_to_vispy,
 )
 from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    from vispy.scene import Node
 
 
 class ImageLayerNode(ScalarFieldLayerNode):

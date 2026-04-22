@@ -14,7 +14,6 @@ from typing import (
 
 import dask
 import numpy as np
-import pint
 
 from napari.utils.action_manager import action_manager
 from napari.utils.events.custom_types import Array
@@ -26,6 +25,7 @@ if TYPE_CHECKING:
 
     import numpy.typing as npt
     import pandas as pd
+    import pint
 
     from napari.layers._data_protocols import LayerDataProtocol
 else:

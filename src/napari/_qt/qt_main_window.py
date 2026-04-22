@@ -22,7 +22,6 @@ from typing import (
 )
 from weakref import WeakValueDictionary
 
-import numpy as np
 from qtpy.QtCore import (
     QEvent,
     QEventLoop,
@@ -33,7 +32,7 @@ from qtpy.QtCore import (
     Qt,
     Slot,
 )
-from qtpy.QtGui import QHideEvent, QImage, QShowEvent
+from qtpy.QtGui import QImage
 from qtpy.QtWidgets import (
     QApplication,
     QDialog,
@@ -96,8 +95,9 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Mapping, MutableMapping, Sequence
     from pathlib import Path
 
+    import numpy as np
     from magicgui.widgets import Widget
-    from qtpy.QtGui import QImage
+    from qtpy.QtGui import QHideEvent, QImage, QShowEvent
 
     from napari.viewer import Viewer
 

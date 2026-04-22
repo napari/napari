@@ -4,6 +4,7 @@ import warnings
 from dataclasses import dataclass
 from pathlib import Path
 
+from napari.utils.io import execute_python_code
 from napari.utils.translations import trans
 
 
@@ -44,10 +45,6 @@ def _run_configured_startup_script() -> None:
             )
         )
         return
-
-    from napari_builtins.io._read import (
-        execute_python_code,
-    )
 
     script_code = script_path.read_text()
     start_time = time.time()

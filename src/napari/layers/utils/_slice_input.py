@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, Generic, TypeVar
 
 import numpy as np
 import pint
-from typing_extensions import Self
 
 from napari.utils.misc import reorder_after_dim_reduction
 from napari.utils.transforms import Affine
@@ -16,6 +15,7 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
     import numpy.typing as npt
+    from typing_extensions import Self
 
     from napari.components.dims import Dims
 

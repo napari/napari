@@ -110,7 +110,7 @@ def get_dummy_action(menu_id: MenuId) -> tuple[Action, str]:
     # move to using short menu keys, the key itself will be used
     # here and this will no longer be a concern.
     id_key = to_id_key(menu_id)
-    action = Action(
+    action: Action = Action(
         id=to_action_id(id_key),
         title='Empty',
         callback=no_op,

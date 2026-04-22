@@ -15,7 +15,6 @@ from typing import TYPE_CHECKING, Any, ClassVar
 
 import magicgui as mgui
 import numpy as np
-import pint
 from npe2 import plugin_manager as pm
 
 from napari.layers.base._base_constants import (
@@ -70,6 +69,7 @@ from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     import numpy.typing as npt
+    import pint
 
     from napari.components.dims import Dims
     from napari.components.overlays import BoundingBoxOverlay, Overlay
