@@ -27,6 +27,8 @@ from napari.utils.translations import trans
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
+    from napari._qt.qt_viewer import QtViewer
+
 
 WELCOME_SHORTCUTS = (
     'napari.window.file._image_from_clipboard',
@@ -47,6 +49,9 @@ WELCOME_TIPS = (
     'If you have questions, you can reach out on our community chat at napari.zulipchat.com!',
     'The community at forum.image.sc is full of imaging experts sharing knowledge and tools for napari and much, much more!',
 )
+
+TIP_PLACEHOLDER_PATTERN = re.compile(r'{(.*?)}')
+SHORTCUTS_SETTINGS_KEY = 'shortcuts.shortcuts'
 
 
 class QtWelcomeLabel(QLabel):
@@ -72,6 +77,7 @@ class QtWelcomeWidget(QWidget):
         self._tips = tuple(tips) if tips is not None else WELCOME_TIPS
         self._current_tip = ''
 
+        # Create colored icon using theme
         self._image = QLabel()
         self._image.setObjectName('logo_silhouette')
         self._image.setMinimumSize(300, 300)
@@ -81,6 +87,7 @@ class QtWelcomeWidget(QWidget):
         )
         self._tip_label = QtShortcutLabel('')
 
+        # Widget setup
         self.setAutoFillBackground(True)
         self.setAcceptDrops(True)
         self.setProperty('drag', False)
@@ -90,19 +97,22 @@ class QtWelcomeWidget(QWidget):
         self._tip_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._tip_label.setWordWrap(True)
 
+        # Layout
         text_layout = QVBoxLayout()
         text_layout.setSpacing(30)
         text_layout.addWidget(self._version_label)
         text_layout.addWidget(self._label)
 
         shortcut_layout = QFormLayout()
-        self._shortcut_key_labels: list[QtShortcutLabel] = []
-        self._shortcut_description_labels: list[QtShortcutLabel] = []
-        for _ in WELCOME_SHORTCUTS:
+        self._shortcut_rows: list[
+            tuple[str, QtShortcutLabel, QtShortcutLabel]
+        ] = []
+        for command_id in WELCOME_SHORTCUTS:
             shortcut_label = QtShortcutLabel('')
             description_label = QtShortcutLabel('')
-            self._shortcut_key_labels.append(shortcut_label)
-            self._shortcut_description_labels.append(description_label)
+            self._shortcut_rows.append(
+                (command_id, shortcut_label, description_label)
+            )
             shortcut_layout.addRow(shortcut_label, description_label)
         shortcut_layout.setSpacing(0)
 
@@ -119,9 +129,10 @@ class QtWelcomeWidget(QWidget):
         self.setLayout(layout)
         self.refresh_shortcuts()
         self.show_random_tip()
-        action_manager.events.shorcut_changed.connect(self.refresh_shortcuts)
+        get_settings().events.changed.connect(self._refresh_on_settings_change)
+        action_manager.events.shortcut_changed.connect(self.refresh)
 
-    def minimumSizeHint(self):
+    def minimumSizeHint(self) -> QSize:
         """Overwrite minimum size to allow creating small viewer instance."""
         return QSize(100, 100)
 
@@ -129,13 +140,17 @@ class QtWelcomeWidget(QWidget):
         self.refresh_shortcuts()
         self._update_tip_label()
 
+    def _refresh_on_settings_change(self, event) -> None:
+        if getattr(event, 'key', '').startswith(SHORTCUTS_SETTINGS_KEY):
+            self.refresh(event)
+
     def refresh_shortcuts(self, _event=None) -> None:
-        for shortcut_label, description_label, command_id in zip(
-            self._shortcut_key_labels,
-            self._shortcut_description_labels,
-            WELCOME_SHORTCUTS,
-            strict=False,
-        ):
+        """Update the shortcut table using the current settings."""
+        for (
+            command_id,
+            shortcut_label,
+            description_label,
+        ) in self._shortcut_rows:
             shortcut, description = self._command_shortcut_and_description(
                 command_id
             )
@@ -143,6 +158,7 @@ class QtWelcomeWidget(QWidget):
             description_label.setText(description or '')
 
     def set_tips(self, tips: Sequence[str] | None) -> None:
+        """Replace the tip pool and show a random one."""
         self._tips = tuple(tips) if tips is not None else WELCOME_TIPS
         self.show_random_tip()
 
@@ -152,6 +168,7 @@ class QtWelcomeWidget(QWidget):
         self._update_tip_label()
 
     def _update_tip_label(self) -> None:
+        """Render the current tip after expanding any shortcut placeholders."""
         if not self._current_tip:
             return
         self._tip_label.setText(
@@ -162,21 +179,26 @@ class QtWelcomeWidget(QWidget):
         )
 
     def _format_tip(self, tip: str) -> str:
-        for match in re.finditer(r'{(.*?)}', tip):
+        """Replace keybinding ``{...}`` placeholders with text glyphs."""
+
+        def replace_placeholder(match: re.Match[str]) -> str:
             command_id = match.group(1)
             shortcut, _ = self._command_shortcut_and_description(command_id)
             if shortcut is None:
+                # Some placeholders are literal keys such as ``{Ctrl}`` rather
+                # than command ids, so normalize them as standalone shortcuts.
                 with warnings.catch_warnings():
                     warnings.simplefilter('ignore')
                     shortcut = Shortcut(command_id).platform
-            if shortcut:
-                tip = tip.replace(match.group(), str(shortcut))
-        return tip
+            return str(shortcut) if shortcut else match.group(0)
+
+        return TIP_PLACEHOLDER_PATTERN.sub(replace_placeholder, tip)
 
     @staticmethod
     def _command_shortcut_and_description(
         command_id: str,
     ) -> tuple[str | None, str | None]:
+        """Return the current shortcut text and label for a command id."""
         app = get_app_model()
         all_shortcuts = get_settings().shortcuts.shortcuts
         keybinding = app.keybindings.get_keybinding(command_id)
@@ -186,6 +208,8 @@ class QtWelcomeWidget(QWidget):
             shortcut = Shortcut(keybinding.keybinding).platform
             command = app.commands[command_id].title
         else:
+            # Some welcome entries still come from the legacy action manager,
+            # so we fall back to the settings-backed shortcut registry here.
             keybinding = all_shortcuts.get(command_id, [None])[0]
             action = action_manager._actions.get(command_id)
             if keybinding is not None and action is not None:
@@ -195,41 +219,89 @@ class QtWelcomeWidget(QWidget):
         return shortcut, command
 
     def paintEvent(self, event):
-        """Override Qt method."""
+        """Override Qt method.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+            Event from the Qt context.
+        """
         option = QStyleOption()
         option.initFrom(self)
         p = QPainter(self)
         self.style().drawPrimitive(QStyle.PE_Widget, option, p, self)
 
     def _update_property(self, prop, value):
-        """Update properties of widget to update style."""
+        """Update properties of widget to update style.
+
+        Parameters
+        ----------
+        prop : str
+            Property name to update.
+        value : bool
+            Property value to update.
+        """
         self.setProperty(prop, value)
+        # Qt only reapplies selector rules that depend on dynamic properties
+        # after the widget is polished again.
         self.style().unpolish(self)
         self.style().polish(self)
 
+    def _qt_viewer(self) -> QtViewer | None:
+        return getattr(self.window(), '_qt_viewer', None)
+
     def dragEnterEvent(self, event):
-        """Provide style updates on drag enter."""
-        self._update_property('drag', True)
-        if event.mimeData().hasUrls():
-            viewer = self.parentWidget().nativeParentWidget()._qt_viewer
-            viewer._set_drag_status()
-            event.accept()
-        else:
+        """Override Qt method.
+
+        Provide style updates on event.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QDragEnterEvent
+            Event from the Qt context.
+        """
+        if not event.mimeData().hasUrls():
+            self._update_property('drag', False)
             event.ignore()
+            return
+
+        qt_viewer = self._qt_viewer()
+        if qt_viewer is None:
+            self._update_property('drag', False)
+            event.ignore()
+            return
+
+        self._update_property('drag', True)
+        qt_viewer._set_drag_status()
+        event.accept()
 
     def dragLeaveEvent(self, event):
-        """Provide style updates on drag leave."""
+        """Override Qt method.
+
+        Provide style updates on event.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QDragLeaveEvent
+            Event from the Qt context.
+        """
         self._update_property('drag', False)
 
     def dropEvent(self, event):
-        """Provide style updates on drop and emit the drop event."""
+        """Override Qt method.
+
+        Provide style updates on event and emit the drop event.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QDropEvent
+            Event from the Qt context.
+        """
         self._update_property('drag', False)
-        if (
-            self.parent() is not None
-            and self.parent().parent() is not None
-            and self.parent().parent().parent() is not None
-        ):
-            self.parent().parent().parent().dropEvent(event)
+        if qt_viewer := self._qt_viewer():
+            qt_viewer.dropEvent(event)
+        else:
+            event.ignore()
 
 
 class QtWidgetOverlay(QStackedWidget):
@@ -254,26 +326,23 @@ class QtWidgetOverlay(QStackedWidget):
         self.setCurrentIndex(0)
 
     def refresh(self) -> None:
+        """Refresh the welcome overlay content without changing visibility."""
         self._overlay.refresh()
 
-    def set_welcome_visible(self, visible=True):
-        """Show welcome screen widget on stack."""
+    def set_welcome_visible(self, visible: bool = True) -> None:
         if visible:
             self._overlay.refresh_shortcuts()
             self._overlay.show_random_tip()
         self.setCurrentIndex(int(visible))
 
     def resizeEvent(self, event):
-        """Emit our own event when canvas was resized."""
         self.resized.emit()
         return super().resizeEvent(event)
 
     def enterEvent(self, event):
-        """Emit our own event when mouse enters the canvas."""
         self.enter.emit()
         super().enterEvent(event)
 
     def leaveEvent(self, event):
-        """Emit our own event when mouse leaves the canvas."""
         self.leave.emit()
         super().leaveEvent(event)

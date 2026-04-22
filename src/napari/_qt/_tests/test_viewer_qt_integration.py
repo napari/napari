@@ -16,6 +16,7 @@ from qtpy.QtWidgets import QApplication
 from napari._qt._tests.test_qt_viewer import qt_viewer
 from napari._tests.utils import skip_local_popups, skip_on_win_ci
 from napari.settings import get_settings
+from napari.utils.action_manager import action_manager
 from napari.utils.theme import available_themes
 
 
@@ -202,6 +203,63 @@ def test_welcome_widget_shows_random_tip(make_napari_viewer):
         assert (
             welcome._overlay._tip_label.text() == 'Did you know?\nsecond tip'
         )
+
+
+def test_welcome_widget_refreshes_tip_on_shortcut_change(make_napari_viewer):
+    viewer = make_napari_viewer(show=False, show_welcome_screen=True)
+    overlay = viewer.window._qt_viewer._welcome_widget._overlay
+    overlay._current_tip = (
+        'Open files with {napari.window.file.open_files_dialog}.'
+    )
+
+    with patch.object(
+        overlay,
+        '_command_shortcut_and_description',
+        return_value=('Ctrl+O', 'Open File(s)...'),
+    ):
+        overlay.refresh()
+        assert (
+            overlay._tip_label.text()
+            == 'Did you know?\nOpen files with Ctrl+O.'
+        )
+
+    with patch.object(
+        overlay,
+        '_command_shortcut_and_description',
+        return_value=('Cmd+O', 'Open File(s)...'),
+    ):
+        action_manager.events.shortcut_changed(
+            name='napari.window.file.open_files_dialog',
+            shortcut='Cmd+O',
+            tooltip='',
+        )
+        assert (
+            overlay._tip_label.text()
+            == 'Did you know?\nOpen files with Cmd+O.'
+        )
+
+
+def test_welcome_widget_delegates_drag_and_drop_to_viewer(make_napari_viewer):
+    viewer = make_napari_viewer(show=False, show_welcome_screen=True)
+    qt_viewer = viewer.window._qt_viewer
+    overlay = qt_viewer._welcome_widget._overlay
+
+    drag_event = MagicMock()
+    drag_event.mimeData.return_value.hasUrls.return_value = True
+
+    with patch.object(qt_viewer, '_set_drag_status') as set_drag_status:
+        overlay.dragEnterEvent(drag_event)
+
+    set_drag_status.assert_called_once_with()
+    drag_event.accept.assert_called_once_with()
+    assert overlay.property('drag') is True
+
+    drop_event = MagicMock()
+    with patch.object(qt_viewer, 'dropEvent') as drop_handler:
+        overlay.dropEvent(drop_event)
+
+    drop_handler.assert_called_once_with(drop_event)
+    assert overlay.property('drag') is False
 
 
 def test_qt_viewer_with_console(make_napari_viewer):
