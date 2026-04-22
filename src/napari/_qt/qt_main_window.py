@@ -192,6 +192,9 @@ class _QtMainWindow(QMainWindow):
         # this is the line that initializes any Qt-based app-model Actions that
         # were defined somewhere in the `_qt` module and imported in init_qactions
         init_qactions()
+
+        # only after qaction are initialized we can get all shortcuts, so we have
+        # to force update the welcome widget here. TODO: UGLYYYY
         self._qt_viewer.refresh_welcome_widget()
 
         with contextlib.suppress(IndexError):
