@@ -26,7 +26,6 @@ class QtSurfaceControls(QtBaseImageControls):
         Widget that wraps comboBox controlling current shading value of the layer.
     """
 
-    layer: napari.layers.Surface
     PAN_ZOOM_ACTION_NAME = 'activate_surface_pan_zoom_mode'
     TRANSFORM_ACTION_NAME = 'activate_surface_transform_mode'
 
