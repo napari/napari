@@ -197,11 +197,11 @@ def test_welcome_widget_shows_random_tip(make_napari_viewer):
         'napari._qt.widgets.qt_welcome.choice',
         side_effect=['first tip', 'second tip'],
     ):
-        view.set_welcome_visible(True)
+        view._set_welcome_visible(True)
         assert welcome._tip_label.text() == 'Did you know?\nfirst tip'
 
-        view.set_welcome_visible(False)
-        view.set_welcome_visible(True)
+        view._set_welcome_visible(False)
+        view._set_welcome_visible(True)
         assert welcome._tip_label.text() == 'Did you know?\nsecond tip'
 
 

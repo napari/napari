@@ -228,7 +228,7 @@ class QtViewer(QSplitter):
         self._update_welcome_screen()
 
     def hideEvent(self, event):
-        self.set_welcome_visible(False)
+        self._set_welcome_visible(False)
         super().hideEvent(event)
 
     @property
@@ -369,7 +369,7 @@ class QtViewer(QSplitter):
             and self.isVisible()
             and not self.viewer.layers
         )
-        self.set_welcome_visible(show_welcome)
+        self._set_welcome_visible(show_welcome)
 
     def _ensure_connect(self):
         # lazy load console
@@ -1131,15 +1131,12 @@ class QtViewer(QSplitter):
         """Refresh welcome content without changing its visibility."""
         self._welcome_widget.refresh()
 
-    def set_welcome_visible(self, visible: bool) -> None:
+    def _set_welcome_visible(self, visible: bool) -> None:
         """Directly show or hide the welcome screen widget.
 
         Unlike the ``show_welcome_screen`` property setter, this method does
         not modify the ``_show_welcome_screen`` preference and bypasses the
-        layer-count / visibility guards in ``_update_welcome_screen``.  It is
-        intended for use in tests that need to exercise the welcome widget in
-        isolation (e.g. verifying tip-refresh behaviour) without creating a
-        fully-visible viewer.
+        layer-count / visibility guards in ``_update_welcome_screen``.
         """
         self._welcome_widget.set_welcome_visible(visible)
 
