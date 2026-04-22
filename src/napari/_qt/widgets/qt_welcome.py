@@ -5,12 +5,11 @@ import warnings
 from random import choice
 from typing import TYPE_CHECKING
 
-from qtpy.QtCore import QSize, Qt, Signal
+from qtpy.QtCore import QSize, Qt
 from qtpy.QtGui import QPainter
 from qtpy.QtWidgets import (
     QFormLayout,
     QLabel,
-    QStackedWidget,
     QStyle,
     QStyleOption,
     QVBoxLayout,
@@ -129,6 +128,11 @@ class QtWelcomeWidget(QWidget):
         self.setLayout(layout)
         self.refresh_shortcuts()
         self.show_random_tip()
+        parent_resized = getattr(self.parentWidget(), 'resized', None)
+        if parent_resized is not None:
+            parent_resized.connect(self._sync_to_parent)
+        self._sync_to_parent()
+        self.hide()
         get_settings().events.changed.connect(self._refresh_on_settings_change)
         action_manager.events.shortcut_changed.connect(self.refresh)
 
@@ -161,6 +165,16 @@ class QtWelcomeWidget(QWidget):
         """Replace the tip pool and show a random one."""
         self._tips = tuple(tips) if tips is not None else WELCOME_TIPS
         self.show_random_tip()
+
+    def set_welcome_visible(self, visible: bool = True) -> None:
+        if visible:
+            self.refresh_shortcuts()
+            self.show_random_tip()
+            self._sync_to_parent()
+            self.show()
+            self.raise_()
+        else:
+            self.hide()
 
     def show_random_tip(self) -> None:
         tips = self._tips or ("You're awesome!",)
@@ -247,6 +261,11 @@ class QtWelcomeWidget(QWidget):
         self.style().unpolish(self)
         self.style().polish(self)
 
+    def _sync_to_parent(self, *_args) -> None:
+        parent = self.parentWidget()
+        if parent is not None:
+            self.setGeometry(parent.rect())
+
     def _qt_viewer(self) -> QtViewer | None:
         return getattr(self.window(), '_qt_viewer', None)
 
@@ -302,47 +321,3 @@ class QtWelcomeWidget(QWidget):
             qt_viewer.dropEvent(event)
         else:
             event.ignore()
-
-
-class QtWidgetOverlay(QStackedWidget):
-    """Stacked widget providing switching between the canvas and welcome page."""
-
-    resized = Signal()
-    leave = Signal()
-    enter = Signal()
-
-    def __init__(
-        self,
-        parent: QWidget | None,
-        widget: QWidget,
-        tips: Sequence[str] | None = None,
-    ) -> None:
-        super().__init__(parent)
-
-        self._overlay = QtWelcomeWidget(self, tips=tips)
-
-        self.addWidget(widget)
-        self.addWidget(self._overlay)
-        self.setCurrentIndex(0)
-
-    def refresh(self) -> None:
-        """Refresh the welcome overlay content without changing visibility."""
-        self._overlay.refresh()
-
-    def set_welcome_visible(self, visible: bool = True) -> None:
-        if visible:
-            self._overlay.refresh_shortcuts()
-            self._overlay.show_random_tip()
-        self.setCurrentIndex(int(visible))
-
-    def resizeEvent(self, event):
-        self.resized.emit()
-        return super().resizeEvent(event)
-
-    def enterEvent(self, event):
-        self.enter.emit()
-        super().enterEvent(event)
-
-    def leaveEvent(self, event):
-        self.leave.emit()
-        super().leaveEvent(event)

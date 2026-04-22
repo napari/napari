@@ -32,7 +32,7 @@ from napari._qt.widgets.qt_viewer_buttons import (
     QtViewerButtons,
 )
 from napari._qt.widgets.qt_viewer_dock_widget import QtViewerDockWidget
-from napari._qt.widgets.qt_welcome import QtWidgetOverlay
+from napari._qt.widgets.qt_welcome import QtWelcomeWidget
 from napari._vispy.utils.qt_font import QtFontManager
 from napari.components.camera import Camera
 from napari.components.layerlist import LayerList
@@ -172,17 +172,11 @@ class QtViewer(QSplitter):
             autoswap=get_settings().experimental.autoswap_buffers,  # see #5734
         )
 
-        self._welcome_widget = QtWidgetOverlay(
-            self, self.canvas.native, tips=tips
-        )
-        self._welcome_widget.set_welcome_visible(show_welcome_screen)
-        self._welcome_widget.leave.connect(self._leave_canvas)
-        self._welcome_widget.enter.connect(self._enter_canvas)
+        self._welcome_widget = QtWelcomeWidget(self.canvas.native, tips=tips)
 
         main_widget = QWidget()
         main_layout = QVBoxLayout()
         main_layout.setContentsMargins(0, 2, 0, 2)
-        main_layout.addWidget(self._welcome_widget)
         main_layout.addWidget(self.dims)
         main_layout.setSpacing(0)
         main_widget.setLayout(main_layout)
@@ -234,7 +228,7 @@ class QtViewer(QSplitter):
         self._update_welcome_screen()
 
     def hideEvent(self, event):
-        self._welcome_widget.set_welcome_visible(False)
+        self.set_welcome_visible(False)
         super().hideEvent(event)
 
     @property
@@ -375,7 +369,7 @@ class QtViewer(QSplitter):
             and self.isVisible()
             and not self.viewer.layers
         )
-        self._welcome_widget.set_welcome_visible(show_welcome)
+        self.set_welcome_visible(show_welcome)
 
     def _ensure_connect(self):
         # lazy load console
@@ -931,11 +925,14 @@ class QtViewer(QSplitter):
         with self.resize_canvas(size, scale):
             if fit_to_data_extent:
                 self.viewer.fit_to_view(margin=0)
-            img = self.canvas.screenshot()
+            if self._welcome_widget.isVisible():
+                img = self.canvas.native.grab().toImage()
+            else:
+                img = self.canvas.screenshot()
             if flash:
                 from napari._qt.utils import add_flash_animation
 
-                add_flash_animation(self._welcome_widget)
+                add_flash_animation(self)
 
             return img
 
@@ -1130,7 +1127,11 @@ class QtViewer(QSplitter):
             self.viewerButtons.consoleButton
         )
 
-    def set_welcome_visible(self, visible):
+    def refresh_welcome_widget(self) -> None:
+        """Refresh welcome content without changing its visibility."""
+        self._welcome_widget.refresh()
+
+    def set_welcome_visible(self, visible: bool) -> None:
         """Directly show or hide the welcome screen widget.
 
         Unlike the ``show_welcome_screen`` property setter, this method does
