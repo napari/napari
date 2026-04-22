@@ -30,9 +30,11 @@ n = len(vertices)
 texture_path = load_data_file('spot/spot.png')
 texture = imread(texture_path)
 
+vertices *= 1000  # play nicer with guessed diims step
+
 flat_spot = napari.layers.Surface(
     (vertices, faces),
-    translate=(1, 0, 0),
+    translate=(1000, 0, 0),
     texture=texture,
     texcoords=texcoords,
     shading='flat',
@@ -51,12 +53,12 @@ plasma_spot = napari.layers.Surface(
 
 rainbow_spot = napari.layers.Surface(
     (vertices, faces),
-    translate=(-1, 0, 0),
+    translate=(-1000, 0, 0),
     texture=texture,
     texcoords=texcoords,
     # the vertices are _roughly_ in [-1, 1] for this model and RGB values just
     # get clipped to [0, 1], adding 0.5 brightens it up a little :)
-    vertex_colors=vertices + 0.5,
+    vertex_colors=vertices / 1000 + 0.5,
     shading='none',
     name='vertex_colors and texture',
 )

@@ -54,24 +54,19 @@ class VispySurfaceLayer(VispyBaseLayer):
         faces = None
         vertex_values = None
         vertex_colors = None
-        if len(self.layer._data_view) and len(self.layer._view_faces):
+        if len(self.layer._view_vertices) and len(self.layer._view_faces):
             # Offsetting so pixels now centered
             # coerce to float to solve vispy/vispy#2007
             # reverse order to get zyx instead of xyz
             vertices = np.asarray(
-                self.layer._data_view[:, ::-1], dtype=np.float32
+                self.layer._view_vertices[:, ::-1], dtype=np.float32
             )
             # due to above xyz>zyx, also reverse order of faces to fix
             # handedness of normals
             faces = self.layer._view_faces[:, ::-1]
 
-            values = self.layer._view_vertex_values
-            if len(values):
-                vertex_values = values
-
-            colors = self.layer._view_vertex_colors
-            if len(colors):
-                vertex_colors = colors
+            vertex_values = self.layer._view_vertex_values
+            vertex_colors = self.layer._view_vertex_colors
 
         # making sure the vertex data is 3D prevents shape errors with
         # attached filters, instead of trying to attach/detach each time
@@ -116,12 +111,12 @@ class VispySurfaceLayer(VispyBaseLayer):
         if self.layer._has_texture and self._texture_filter is None:
             self._texture_filter = TextureFilter(
                 np.flipud(self.layer.texture),
-                self.layer.texcoords,
+                self.layer._view_texcoords,
             )
             self.node.attach(self._texture_filter)
         elif self.layer._has_texture:
             self._texture_filter.texture = np.flipud(self.layer.texture)
-            self._texture_filter.texcoords = self.layer.texcoords
+            self._texture_filter.texcoords = self.layer._view_texcoords
 
         if self._texture_filter is not None:
             self._texture_filter.enabled = self.layer._has_texture
@@ -219,3 +214,4 @@ class VispySurfaceLayer(VispyBaseLayer):
         self._on_wireframe_color_change()
         self._on_face_normals_change()
         self._on_vertex_normals_change()
+        self._on_camera_move()

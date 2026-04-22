@@ -1,17 +1,26 @@
+from __future__ import annotations
+
 import copy
-import warnings
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
 from napari.layers.base import Layer, _LayerSlicingState
 from napari.layers.intensity_mixin import IntensityVisualizationMixin
-from napari.layers.surface._surface_constants import Shading
+from napari.layers.surface._slice import (
+    _SurfaceSliceRequest,
+    _SurfaceSliceResponse,
+)
+from napari.layers.surface._surface_constants import (
+    Shading,
+    SurfaceProjectionMode,
+)
 from napari.layers.surface._surface_utils import (
     calculate_barycentric_coordinates,
 )
 from napari.layers.surface.normals import SurfaceNormals
 from napari.layers.surface.wireframe import SurfaceWireframe
+from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
 from napari.layers.utils.interactivity_utils import (
     nd_line_segment_to_displayed_data_ray,
 )
@@ -22,10 +31,13 @@ from napari.utils.colormaps import AVAILABLE_COLORMAPS
 from napari.utils.events import Event
 from napari.utils.events.event_utils import connect_no_arg
 from napari.utils.geometry import find_nearest_triangle_intersection
+from napari.utils.misc import StringEnum
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     import pandas as pd
+
+    from napari.components.dims import Dims
 
 
 # Mixin must come before Layer
@@ -202,7 +214,7 @@ class Surface(IntensityVisualizationMixin, Layer):
 
     Notes
     -----
-    _data_view : (M, 2) or (M, 3) array
+    _view_vertices : (M, 2) or (M, 3) array
         The coordinates of the vertices given the viewed dimensions.
     _view_faces : (P, 3) array
         The integer indices of the vertices that form the triangles
@@ -210,6 +222,8 @@ class Surface(IntensityVisualizationMixin, Layer):
     _colorbar : array
         Colorbar for current colormap.
     """
+
+    _projectionclass: type[StringEnum] = SurfaceProjectionMode
 
     _colormaps = AVAILABLE_COLORMAPS
 
@@ -231,7 +245,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         name=None,
         normals=None,
         opacity=1.0,
-        projection_mode='none',
+        projection_mode='all',
         rotate=None,
         scale=None,
         shading='flat',
@@ -344,12 +358,16 @@ class Surface(IntensityVisualizationMixin, Layer):
         return self._slicing_state._view_vertex_values
 
     @property
-    def _data_view(self) -> np.ndarray:
-        return self._slicing_state._data_view
+    def _view_vertices(self) -> np.ndarray:
+        return self._slicing_state._view_vertices
 
     @property
     def _view_faces(self) -> np.ndarray:
         return self._slicing_state._view_faces
+
+    @property
+    def _view_texcoords(self) -> np.ndarray | None:
+        return self._slicing_state._view_texcoords
 
     def _calc_data_range(self, mode='data'):
         return calc_data_range(self.vertex_values)
@@ -485,7 +503,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         return extrema
 
     @property
-    def features(self) -> 'pd.DataFrame':
+    def features(self) -> pd.DataFrame:
         """Dataframe-like features table.
 
         It is an implementation detail that this is a `pandas.DataFrame`. In the future,
@@ -505,13 +523,13 @@ class Surface(IntensityVisualizationMixin, Layer):
     @features.setter
     def features(
         self,
-        features: 'dict[str, np.ndarray] | pd.DataFrame',
+        features: dict[str, np.ndarray] | pd.DataFrame,
     ) -> None:
         self._feature_table.set_values(features, num_data=len(self.data[0]))
         self.events.features()
 
     @property
-    def feature_defaults(self) -> 'pd.DataFrame':
+    def feature_defaults(self) -> pd.DataFrame:
         """Dataframe-like with one row of feature default values.
 
         See `features` for more details on the type of this property.
@@ -520,7 +538,7 @@ class Surface(IntensityVisualizationMixin, Layer):
 
     @feature_defaults.setter
     def feature_defaults(
-        self, defaults: 'dict[str, Any] | pd.DataFrame'
+        self, defaults: dict[str, Any] | pd.DataFrame
     ) -> None:
         self._feature_table.set_defaults(defaults)
         self.events.feature_defaults()
@@ -605,6 +623,7 @@ class Surface(IntensityVisualizationMixin, Layer):
             self.texture is not None
             and self.texcoords is not None
             and len(self.texcoords)
+            and self._view_texcoords is not None
         )
 
     def _get_state(self) -> dict[str, Any]:
@@ -694,7 +713,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         )
 
         # get the mesh triangles
-        mesh_triangles = self._data_view[self._view_faces]
+        mesh_triangles = self._view_vertices[self._view_faces]
 
         # get the triangles intersection
         intersection_index, intersection = find_nearest_triangle_intersection(
@@ -703,7 +722,11 @@ class Surface(IntensityVisualizationMixin, Layer):
             triangles=mesh_triangles,
         )
 
-        if intersection_index is None or intersection is None:
+        if (
+            intersection_index is None
+            or intersection is None
+            or self._view_vertex_values is None
+        ):
             return None, None
 
         # add the full nD coords to intersection
@@ -712,7 +735,7 @@ class Surface(IntensityVisualizationMixin, Layer):
 
         # calculate the value from the intersection
         triangle_vertex_indices = self._view_faces[intersection_index]
-        triangle_vertices = self._data_view[triangle_vertex_indices]
+        triangle_vertices = self._view_vertices[triangle_vertex_indices]
         barycentric_coordinates = calculate_barycentric_coordinates(
             intersection, triangle_vertices
         )
@@ -750,7 +773,7 @@ class Surface(IntensityVisualizationMixin, Layer):
 
     def _get_layer_slicing_state(
         self, data: LayerDataType, cache: bool
-    ) -> '_SurfaceSlicingState':
+    ) -> _SurfaceSlicingState:
         return _SurfaceSlicingState(layer=self, data=data, cache=cache)
 
     def _maybe_reset_contrast_limits(self) -> None:
@@ -764,96 +787,49 @@ class _SurfaceSlicingState(_LayerSlicingState):
     def __init__(self, layer: Surface, data, cache: bool):
         super().__init__(layer=layer, data=data, cache=cache)
         # Data containing vectors in the currently viewed slice
-        self._data_view = np.zeros((0, self._slice_input.ndisplay))
+        self._view_vertices = np.zeros((0, self._slice_input.ndisplay))
         self._view_faces = np.zeros((0, 3), dtype=int)
-        self._view_vertex_values: list[Any] | np.ndarray = []
-        self._view_vertex_colors: list[Any] | np.ndarray = []
+        self._view_vertex_values: np.ndarray | None = None
+        self._view_vertex_colors: np.ndarray | None = None
+        self._view_texcoords: np.ndarray | None = None
 
-    def _slice_associated_data(
-        self,
-        data: np.ndarray,
-        vertex_ndim: int,
-        dims: int = 1,
-    ) -> list[Any] | np.ndarray:
-        """Return associated layer data (e.g. vertex values, colors) within
-        the current slice.
-        """
-        if data is None:
-            return []
+    def _set_view_slice(self) -> None:
+        """Sets the view given the indices to slice with."""
 
-        data_ndim = data.ndim - 1
-        if data_ndim >= dims:
-            # Get indices for axes corresponding to data dimensions
-            data_indices: tuple[int | slice, ...] = tuple(
-                slice(None) if np.isnan(idx) else int(np.round(idx))
-                for idx in self.data_slice.point[:-vertex_ndim]
-            )
-            data = data[data_indices]
-            if data.ndim > dims:
-                warnings.warn(
-                    trans._(
-                        'Assigning multiple data per vertex after slicing '
-                        'is not allowed. All dimensions corresponding to '
-                        'vertex data must be non-displayed dimensions. Data '
-                        'may not be visible.',
-                        deferred=True,
-                    ),
-                    category=UserWarning,
-                    stacklevel=2,
-                )
-                return []
-        return data
+        # The new slicing code makes a request from the existing state and
+        # executes the request on the calling thread directly.
+        # For async slicing, the calling thread will not be the main thread.
+        request = self.make_slice_request_internal(
+            self._slice_input, self.data_slice
+        )
+        response = request()
+        self._update_slice_response(response)
 
-    def _set_view_slice(self):
-        _, vertex_ndim = self.layer.vertices.shape
-        values_ndim = self.layer.vertex_values.ndim - 1
+    def _make_slice_request(self, dims: Dims) -> _SurfaceSliceRequest:
+        """Make a Surface slice request based on the given dims and these data."""
+        slice_input = self.make_slice_input(dims)
+        # See Image._make_slice_request to understand why we evaluate this here
+        # instead of using `self._data_slice`.
+        data_slice = self._slice_indices(slice_input, dims)
+        return self.make_slice_request_internal(slice_input, data_slice)
 
-        self._view_vertex_values = self._slice_associated_data(
-            self.layer.vertex_values,
-            vertex_ndim,
+    def make_slice_request_internal(
+        self, slice_input: _SliceInput, data_slice: _ThickNDSlice
+    ) -> _SurfaceSliceRequest:
+        return _SurfaceSliceRequest(
+            slice_input=slice_input,
+            data=self.layer.data,
+            vertex_colors=self.layer.vertex_colors,
+            texcoords=self.layer.texcoords,
+            data_slice=data_slice,
+            projection_mode=self.layer.projection_mode,
         )
 
-        self._view_vertex_colors = self._slice_associated_data(
-            self.layer.vertex_colors,
-            vertex_ndim,
-            dims=2,
-        )
-
-        if len(self._view_vertex_values) == 0:
-            self._data_view = np.zeros((0, self._slice_input.ndisplay))
-            self._view_faces = np.zeros((0, 3), dtype=int)
-            return
-
-        if values_ndim > 0:
-            indices = np.array(self.data_slice.point[-vertex_ndim:])
-            disp = [
-                d
-                for d in np.subtract(self._slice_input.displayed, values_ndim)
-                if d >= 0
-            ]
-            not_disp = [
-                d
-                for d in np.subtract(
-                    self._slice_input.not_displayed, values_ndim
-                )
-                if d >= 0
-            ]
-        else:
-            indices = np.array(self.data_slice.point)
-            not_disp = list(self._slice_input.not_displayed)
-            disp = list(self._slice_input.displayed)
-
-        self._data_view = self.layer.vertices[:, disp]
-        if len(self.layer.vertices) == 0:
-            self._view_faces = np.zeros((0, 3), dtype=int)
-        elif vertex_ndim > self._slice_input.ndisplay:
-            vertices = self.layer.vertices[:, not_disp].astype('int')
-            triangles = vertices[self.layer.faces]
-            matches = np.all(triangles == indices[not_disp], axis=(1, 2))
-            matches = np.where(matches)[0]
-            if len(matches) == 0:
-                self._view_faces = np.zeros((0, 3), dtype=int)
-            else:
-                self._view_faces = self.layer.faces[matches]
-        else:
-            self._view_faces = self.layer.faces
+    def _update_slice_response(self, response: _SurfaceSliceResponse) -> None:
+        """Handle a slicing response."""
+        self._slice_input = response.slice_input
+        self._view_vertices = response.vertices
+        self._view_faces = response.faces
+        self._view_vertex_values = response.values
+        self._view_vertex_colors = response.vertex_colors
+        self._view_texcoords = response.texcoords
