@@ -8,7 +8,7 @@ from napari._qt._qapp_model.injection._qprocessors import QPROCESSORS
 from napari._qt._qapp_model.injection._qproviders import QPROVIDERS
 
 if TYPE_CHECKING:
-    from app_model.types import Context
+    from app_model.expressions import Context
 
 # Submodules should be able to import from most modules, so to
 # avoid circular imports, don't import submodules at the top level here,

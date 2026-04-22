@@ -3,11 +3,13 @@
 Non-Qt processors can be found in `napari/_app_model/injection/_processors.py`.
 """
 
-from collections.abc import Callable
+from __future__ import annotations
+
 from concurrent.futures import Future
 from contextlib import nullcontext, suppress
 from functools import partial
 from typing import (
+    TYPE_CHECKING,
     Any,
     Optional,
     Union,
@@ -23,6 +25,9 @@ from napari._qt._qapp_model.injection._qproviders import (
     _provide_viewer_or_raise,
 )
 from napari.layers._source import layer_source
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 def _add_plugin_dock_widget(

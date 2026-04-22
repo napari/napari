@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
-from vispy.scene.widgets.viewbox import ViewBox
 
 from napari._vispy.layers.base import VispyBaseLayer
 from napari._vispy.layers.image import VispyImageLayer
@@ -56,6 +55,9 @@ from napari.layers import (
     Vectors,
 )
 from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    from vispy.scene.widgets.viewbox import ViewBox
 
 layer_to_visual: dict[type[Layer], type[VispyBaseLayer]] = {
     Image: VispyImageLayer,

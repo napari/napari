@@ -1,6 +1,5 @@
 import numpy as np
 import numpy.typing as npt
-import scipy.linalg
 
 from napari.utils.translations import trans
 
@@ -369,6 +368,8 @@ def decompose_linear_matrix(
         1-D array of upper triangular values or an n-D matrix if lower
         triangular.
     """
+    import scipy.linalg
+
     n = matrix.shape[0]
 
     if upper_triangular:
