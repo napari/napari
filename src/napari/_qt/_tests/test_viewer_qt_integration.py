@@ -9,7 +9,7 @@ from unittest.mock import MagicMock, patch
 import numpy as np
 import pytest
 from numpy import testing as npt
-from qtpy.QtCore import QEvent, Qt, QUrl
+from qtpy.QtCore import QEvent, QPoint, Qt, QUrl
 from qtpy.QtGui import QGuiApplication, QKeyEvent
 from qtpy.QtWidgets import QApplication
 
@@ -157,18 +157,20 @@ def test_welcome_widget_visibility(make_napari_viewer):
     viewer = make_napari_viewer(show=True, show_welcome_screen=True)
     view = viewer.window._qt_viewer
 
-    assert view._welcome_widget.currentIndex() == 1
+    assert view.canvas.native.isVisible()
+    assert view._welcome_widget.isVisible()
 
     viewer.add_image(np.zeros((1, 1)))
-    assert view._welcome_widget.currentIndex() == 0
+    assert not view._welcome_widget.isVisible()
 
     viewer.layers.pop(0)
-    assert view._welcome_widget.currentIndex() == 1
+    assert view._welcome_widget.isVisible()
 
     # Canvas shown when show_welcome_screen=False (default)
     viewer2 = make_napari_viewer(show=True, show_welcome_screen=False)
     view2 = viewer2.window._qt_viewer
-    assert view2._welcome_widget.currentIndex() == 0
+    assert view2.canvas.native.isVisible()
+    assert not view2._welcome_widget.isVisible()
 
 
 def test_welcome_screen_property_setter(make_napari_viewer):
@@ -176,55 +178,53 @@ def test_welcome_screen_property_setter(make_napari_viewer):
     viewer = make_napari_viewer(show=True, show_welcome_screen=False)
     view = viewer.window._qt_viewer
 
-    assert view._welcome_widget.currentIndex() == 0
+    assert not view._welcome_widget.isVisible()
 
     view.show_welcome_screen = True
-    assert view._welcome_widget.currentIndex() == 1
+    assert view._welcome_widget.isVisible()
 
     view.show_welcome_screen = False
-    assert view._welcome_widget.currentIndex() == 0
+    assert not view._welcome_widget.isVisible()
 
 
 def test_welcome_widget_shows_random_tip(make_napari_viewer):
     viewer = make_napari_viewer(show=False, show_welcome_screen=True)
     view = viewer.window._qt_viewer
     welcome = view._welcome_widget
-    welcome._overlay.set_tips(('first tip', 'second tip'))
+    welcome.set_tips(('first tip', 'second tip'))
 
     with patch(
         'napari._qt.widgets.qt_welcome.choice',
         side_effect=['first tip', 'second tip'],
     ):
         view.set_welcome_visible(True)
-        assert welcome._overlay._tip_label.text() == 'Did you know?\nfirst tip'
+        assert welcome._tip_label.text() == 'Did you know?\nfirst tip'
 
         view.set_welcome_visible(False)
         view.set_welcome_visible(True)
-        assert (
-            welcome._overlay._tip_label.text() == 'Did you know?\nsecond tip'
-        )
+        assert welcome._tip_label.text() == 'Did you know?\nsecond tip'
 
 
 def test_welcome_widget_refreshes_tip_on_shortcut_change(make_napari_viewer):
     viewer = make_napari_viewer(show=False, show_welcome_screen=True)
-    overlay = viewer.window._qt_viewer._welcome_widget._overlay
-    overlay._current_tip = (
+    welcome = viewer.window._qt_viewer._welcome_widget
+    welcome._current_tip = (
         'Open files with {napari.window.file.open_files_dialog}.'
     )
 
     with patch.object(
-        overlay,
+        welcome,
         '_command_shortcut_and_description',
         return_value=('Ctrl+O', 'Open File(s)...'),
     ):
-        overlay.refresh()
+        welcome.refresh()
         assert (
-            overlay._tip_label.text()
+            welcome._tip_label.text()
             == 'Did you know?\nOpen files with Ctrl+O.'
         )
 
     with patch.object(
-        overlay,
+        welcome,
         '_command_shortcut_and_description',
         return_value=('Cmd+O', 'Open File(s)...'),
     ):
@@ -234,7 +234,7 @@ def test_welcome_widget_refreshes_tip_on_shortcut_change(make_napari_viewer):
             tooltip='',
         )
         assert (
-            overlay._tip_label.text()
+            welcome._tip_label.text()
             == 'Did you know?\nOpen files with Cmd+O.'
         )
 
@@ -242,24 +242,43 @@ def test_welcome_widget_refreshes_tip_on_shortcut_change(make_napari_viewer):
 def test_welcome_widget_delegates_drag_and_drop_to_viewer(make_napari_viewer):
     viewer = make_napari_viewer(show=False, show_welcome_screen=True)
     qt_viewer = viewer.window._qt_viewer
-    overlay = qt_viewer._welcome_widget._overlay
+    welcome = qt_viewer._welcome_widget
 
     drag_event = MagicMock()
     drag_event.mimeData.return_value.hasUrls.return_value = True
 
     with patch.object(qt_viewer, '_set_drag_status') as set_drag_status:
-        overlay.dragEnterEvent(drag_event)
+        welcome.dragEnterEvent(drag_event)
 
     set_drag_status.assert_called_once_with()
     drag_event.accept.assert_called_once_with()
-    assert overlay.property('drag') is True
+    assert welcome.property('drag') is True
 
     drop_event = MagicMock()
     with patch.object(qt_viewer, 'dropEvent') as drop_handler:
-        overlay.dropEvent(drop_event)
+        welcome.dropEvent(drop_event)
 
     drop_handler.assert_called_once_with(drop_event)
-    assert overlay.property('drag') is False
+    assert welcome.property('drag') is False
+
+
+@skip_local_popups
+def test_canvas_hover_state_comes_from_canvas(qtbot, make_napari_viewer):
+    viewer = make_napari_viewer(show=True, show_welcome_screen=False)
+    qt_viewer = viewer.window._qt_viewer
+
+    qtbot.waitUntil(qt_viewer.isVisible)
+
+    viewer.mouse_over_canvas = False
+    viewer.status = ''
+
+    qtbot.mouseMove(qt_viewer.canvas.native, pos=QPoint(10, 10))
+    qtbot.waitUntil(lambda: viewer.mouse_over_canvas)
+    assert viewer.status == 'Ready'
+
+    qtbot.mouseMove(qt_viewer.dims, pos=QPoint(10, 10))
+    qtbot.waitUntil(lambda: not viewer.mouse_over_canvas)
+    assert viewer.status == ''
 
 
 def test_qt_viewer_with_console(make_napari_viewer):
@@ -361,17 +380,11 @@ def test_qt_viewer_clipboard_with_flash(make_napari_viewer, qtbot):
     assert not clipboard_image.isNull()
 
     # ensure the flash effect is applied
-    assert (
-        viewer.window._qt_viewer._welcome_widget.graphicsEffect() is not None
-    )
-    assert hasattr(
-        viewer.window._qt_viewer._welcome_widget, '_flash_animation'
-    )
+    assert viewer.window._qt_viewer.graphicsEffect() is not None
+    assert hasattr(viewer.window._qt_viewer, '_flash_animation')
     qtbot.wait(500)  # wait for the animation to finish
-    assert viewer.window._qt_viewer._welcome_widget.graphicsEffect() is None
-    assert not hasattr(
-        viewer.window._qt_viewer._welcome_widget, '_flash_animation'
-    )
+    assert viewer.window._qt_viewer.graphicsEffect() is None
+    assert not hasattr(viewer.window._qt_viewer, '_flash_animation')
 
     # clear clipboard and grab image from application view
     QGuiApplication.clipboard().clear()
@@ -408,10 +421,8 @@ def test_qt_viewer_clipboard_without_flash(make_napari_viewer):
     assert not clipboard_image.isNull()
 
     # ensure the flash effect is not applied
-    assert viewer.window._qt_viewer._welcome_widget.graphicsEffect() is None
-    assert not hasattr(
-        viewer.window._qt_viewer._welcome_widget, '_flash_animation'
-    )
+    assert viewer.window._qt_viewer.graphicsEffect() is None
+    assert not hasattr(viewer.window._qt_viewer, '_flash_animation')
 
     # clear clipboard and grab image from application view
     QGuiApplication.clipboard().clear()
@@ -425,9 +436,7 @@ def test_qt_viewer_clipboard_without_flash(make_napari_viewer):
 
     # ensure the flash effect is not applied
     assert viewer.window._qt_window.graphicsEffect() is None
-    assert not hasattr(
-        viewer.window._qt_viewer._welcome_widget, '_flash_animation'
-    )
+    assert not hasattr(viewer.window._qt_viewer, '_flash_animation')
 
 
 @pytest.mark.parametrize('theme', available_themes())

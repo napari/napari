@@ -52,7 +52,7 @@ def _clean_current(monkeypatch, qtbot):
     qtbot.addWidget(widget)
     mock_window = MagicMock()
     widget.resized = MagicMock()
-    mock_window._qt_viewer._welcome_widget = widget
+    mock_window._qt_viewer.canvas.native = widget
 
     def mock_current_main_window(*_, **__):
         """
@@ -132,7 +132,7 @@ def _ensure_qtbot(monkeypatch, qtbot):
 def test_clean_current_path_exist(make_napari_viewer):
     """If this test fail then you need to fix also clean_current fixture"""
     assert isinstance(
-        make_napari_viewer().window._qt_viewer._welcome_widget, QWidget
+        make_napari_viewer().window._qt_viewer.canvas.native, QWidget
     )
 
 
