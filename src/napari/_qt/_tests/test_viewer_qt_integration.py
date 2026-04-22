@@ -9,8 +9,8 @@ from unittest.mock import MagicMock, patch
 import numpy as np
 import pytest
 from numpy import testing as npt
-from qtpy.QtCore import QEvent, QPoint, Qt, QUrl
-from qtpy.QtGui import QGuiApplication, QKeyEvent
+from qtpy.QtCore import QEvent, QPointF, Qt, QUrl
+from qtpy.QtGui import QEnterEvent, QGuiApplication, QKeyEvent
 from qtpy.QtWidgets import QApplication
 
 from napari._qt._tests.test_qt_viewer import qt_viewer
@@ -272,12 +272,19 @@ def test_canvas_hover_state_comes_from_canvas(qtbot, make_napari_viewer):
     viewer.mouse_over_canvas = False
     viewer.status = ''
 
-    qtbot.mouseMove(qt_viewer.canvas.native, pos=QPoint(10, 10))
-    qtbot.waitUntil(lambda: viewer.mouse_over_canvas)
+    canvas = qt_viewer.canvas.native
+    canvas.enterEvent(
+        QEnterEvent(
+            QPointF(10, 10),
+            QPointF(10, 10),
+            QPointF(10, 10),
+        )
+    )
+    assert viewer.mouse_over_canvas
     assert viewer.status == 'Ready'
 
-    qtbot.mouseMove(qt_viewer.dims, pos=QPoint(10, 10))
-    qtbot.waitUntil(lambda: not viewer.mouse_over_canvas)
+    canvas.leaveEvent(QEvent(QEvent.Type.Leave))
+    assert not viewer.mouse_over_canvas
     assert viewer.status == ''
 
 
