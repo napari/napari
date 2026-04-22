@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import re
 import warnings
-from collections.abc import Sequence
 from random import choice
+from typing import TYPE_CHECKING
 
 from qtpy.QtCore import QSize, Qt, Signal
 from qtpy.QtGui import QPainter
@@ -23,6 +23,10 @@ from napari.settings import get_settings
 from napari.utils.action_manager import action_manager
 from napari.utils.interactions import Shortcut
 from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
 
 WELCOME_SHORTCUTS = (
     'napari.window.file._image_from_clipboard',
