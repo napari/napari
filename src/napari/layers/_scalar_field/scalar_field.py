@@ -274,6 +274,11 @@ class ScalarFieldBase(Layer, ABC):
 
         self._array_like = True
 
+        # User-override for multiscale data level.
+        # When not None, _update_draw will use this level instead of
+        # automatically selecting one based on the viewport / 3D mode.
+        self._locked_data_level: int | None = None
+
         # Set data
         self._data = data
         if isinstance(data, MultiScaleData):
@@ -389,6 +394,48 @@ class ScalarFieldBase(Layer, ABC):
     def data_level(self, level: int) -> None:
         if self._data_level == level:
             return
+        self._data_level = level
+        self.refresh(extent=False)
+
+    @property
+    def locked_data_level(self) -> int | None:
+        """Optional[int]: When set, forces this multiscale level to be used
+        instead of automatic level selection. Set to None to restore automatic
+        behavior."""
+        return self._locked_data_level
+
+    @locked_data_level.setter
+    def locked_data_level(self, level: int | None) -> None:
+        if level is not None:
+            n_levels = len(self.level_shapes)
+            if level < 0 or level >= n_levels:
+                raise ValueError(
+                    trans._(
+                        'locked_data_level must be >= 0 and < {n_levels}, got {level}',
+                        deferred=True,
+                        n_levels=n_levels,
+                        level=level,
+                    )
+                )
+        self._locked_data_level = level
+        if level is not None:
+            self._set_force_level(level)
+        else:
+            # Restoring auto mode. In 3D the default is the coarsest
+            # level; in 2D, _update_draw will recompute on next draw.
+            if self._slice_input.ndisplay == 3 and self.multiscale:
+                self._set_force_level(len(self.level_shapes) - 1)
+            else:
+                self.refresh(extent=False)
+
+    def _set_force_level(self, level: int) -> None:
+        """Set data_level and corner_pixels to the full extent of the given
+        level, then refresh. Bypasses the data_level setter's early-return."""
+        displayed_axes = self._slice_input.displayed
+        shape_at_level = np.array(self.level_shapes[level])
+        corners = np.zeros((2, self.ndim), dtype=int)
+        corners[1, displayed_axes] = shape_at_level[displayed_axes] - 1
+        self.corner_pixels = corners
         self._data_level = level
         self.refresh(extent=False)
 
@@ -570,16 +617,11 @@ class ScalarFieldBase(Layer, ABC):
             # we use dims_displayed because the image slice
             # has its dimensions  in th same order as the vispy
             # Volume
-            # Account for downsampling in the case of multiscale
-            # -1 means lowest resolution here.
-            start_point = (
-                start_point[dims_displayed]
-                / self.downsample_factors[-1][dims_displayed]
-            )
-            end_point = (
-                end_point[dims_displayed]
-                / self.downsample_factors[-1][dims_displayed]
-            )
+            # Account for downsampling in the case of multiscale.
+            # Scale from level-0 coordinates to the current data_level.
+            ds = self.downsample_factors[self.data_level][dims_displayed]
+            start_point = start_point[dims_displayed] / ds
+            end_point = end_point[dims_displayed] / ds
             start_point = cast(np.ndarray, start_point)
             end_point = cast(np.ndarray, end_point)
             sample_ray = end_point - start_point

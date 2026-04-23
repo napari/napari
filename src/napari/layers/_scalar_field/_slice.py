@@ -249,10 +249,7 @@ class _ScalarFieldSliceRequest:
         )
 
     def _call_multi_scale(self) -> _ScalarFieldSliceResponse:
-        if self.slice_input.ndisplay == 3:
-            level = len(self.data) - 1
-        else:
-            level = self.data_level
+        level = self.data_level
 
         # Calculate the tile-to-data transform.
         scale = np.ones(self.slice_input.ndim)

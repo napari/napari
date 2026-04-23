@@ -2125,7 +2125,18 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             [np.floor(data_bbox[0]), np.ceil(data_bbox[1])]
         ).astype(int)
 
-        if self._slice_input.ndisplay == 2 and self.multiscale:
+        locked = getattr(self, '_locked_data_level', None)
+
+        if locked is not None and self.multiscale:
+            # User has explicitly locked the data level; skip automatic
+            # level selection and use the full extent of that level.
+            self._data_level = locked
+            corners = np.zeros((2, self.ndim), dtype=int)
+            corners[1, displayed_axes] = (
+                np.take(self.data[locked].shape, displayed_axes) - 1
+            )
+            self.corner_pixels = corners
+        elif self._slice_input.ndisplay == 2 and self.multiscale:
             level, scaled_corners = compute_multiscale_level_and_corners(
                 data_bbox_int,
                 shape_threshold,
