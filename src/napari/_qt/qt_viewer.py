@@ -132,7 +132,6 @@ class QtViewer(QSplitter):
         viewer: ViewerModel,
         show_welcome_screen: bool = False,
         canvas_class: type[VispyCanvas] = VispyCanvas,
-        tips: Sequence | None = None,
     ) -> None:
         super().__init__()
         self._instances.add(self)
@@ -172,7 +171,7 @@ class QtViewer(QSplitter):
             autoswap=get_settings().experimental.autoswap_buffers,  # see #5734
         )
 
-        self._welcome_widget = QtWelcomeWidget(self.canvas.native, tips=tips)
+        self._welcome_widget = QtWelcomeWidget(self.canvas.native)
 
         main_widget = QWidget()
         main_layout = QVBoxLayout()
