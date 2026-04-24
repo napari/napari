@@ -10,25 +10,7 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
-
-      - name: Set up Python 3.12
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
-        with:
-          python-version: 3.12
-          cache: "pip"
-          cache-dependency-path: pyproject.toml
-
-      - name: Install Dependencies
-        run: |
-          pip install --upgrade pip
-          pip install build wheel
+          persist-credentials: false
 
       - name: Build wheel
-        run: |
-          python -m build --outdir dist/
-
-      - name: Upload wheel
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
-        with:
-          name: wheel
-          path: dist/*.whl
+        uses: hynek/build-and-inspect-python-package@fe0a0fb1925ca263d076ca4f2c13e93a6e92a33e

@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import types
 from abc import ABC, abstractmethod
-from collections.abc import Sequence
 from contextlib import nullcontext
+from functools import lru_cache
 from typing import TYPE_CHECKING, cast
 
 import numpy as np
@@ -40,10 +40,31 @@ from napari.utils.transforms import Affine
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
+
     from napari.components import Dims
 
 
 __all__ = ('ScalarFieldBase',)
+
+
+def _make_level_materializer(
+    data: MultiScaleData,
+) -> Callable[[int], np.ndarray]:
+    """Return a cached function that materializes one level of *data* at a time.
+
+    The returned callable accepts a ``level`` integer and returns
+    ``np.asarray(data[level])``, caching the last result so repeated slice
+    requests at the same level avoid redundant data fetches.  Replacing
+    ``data`` by constructing a new materializer automatically abandons the old
+    cache without an explicit ``cache_clear()``.
+    """
+
+    @lru_cache(maxsize=1)
+    def _materializer(level: int) -> np.ndarray:
+        return np.asarray(data[level])
+
+    return _materializer
 
 
 # It is important to contain at least one abstractmethod to properly exclude this class
@@ -182,6 +203,7 @@ class ScalarFieldBase(Layer, ABC):
     _colormaps = AVAILABLE_COLORMAPS
     _interpolation2d: Interpolation
     _interpolation3d: Interpolation
+    _level_materializer: Callable[[int], np.ndarray] | None
 
     def __init__(
         self,
@@ -277,24 +299,13 @@ class ScalarFieldBase(Layer, ABC):
         self._data = data
         if isinstance(data, MultiScaleData):
             self._data_level = len(data) - 1
-            # Determine which level of the multiscale to use for the thumbnail.
-            # Pick the smallest level with at least one axis >= 64. This is
-            # done to prevent the thumbnail from being from one of the very
-            # low resolution layers and therefore being very blurred.
-            big_enough_levels = [
-                np.any(np.greater_equal(p.shape, 64)) for p in data
-            ]
-            if np.any(big_enough_levels):
-                self._thumbnail_level = np.where(big_enough_levels)[0][-1]
-            else:
-                self._thumbnail_level = 0
         else:
             self._data_level = 0
-            self._thumbnail_level = 0
         displayed_axes = self._slice_input.displayed
         self.corner_pixels[1][displayed_axes] = (
             np.array(self.level_shapes)[self._data_level][displayed_axes] - 1
         )
+        self._reset_thumbnail_level_data()
 
         self._plane = SlicingPlane(thickness=1)
         # Whether to calculate clims on the next set_view_slice
@@ -390,6 +401,25 @@ class ScalarFieldBase(Layer, ABC):
             return
         self._data_level = level
         self.refresh(extent=False)
+
+    def _reset_thumbnail_level_data(self) -> None:
+        """Set ``_thumbnail_level`` and ``_level_materializer`` for the current data.
+
+        Called once during ``__init__`` and again whenever ``data`` is replaced.
+        Single-scale and 3D multiscale layers set ``_level_materializer`` to
+        ``None``; only 2D multiscale layers cache the thumbnail level.
+        """
+        data = self._data
+        if isinstance(data, MultiScaleData):
+            self._thumbnail_level = len(data) - 1
+            self._level_materializer = (
+                _make_level_materializer(data)
+                if self._get_ndim() == 2
+                else None
+            )
+        else:
+            self._thumbnail_level = 0
+            self._level_materializer = None
 
     def _get_level_shapes(self) -> Sequence[tuple[int, ...]]:
         data = self.data
@@ -733,17 +763,46 @@ class ScalarFieldSlicingState(_LayerSlicingState):
         This is temporary scaffolding that should go away once we have completed
         the async slicing project: https://github.com/napari/napari/issues/4795
         """
+        data = self.layer.data
+        if self.layer.multiscale:
+            data_level = (
+                len(data) - 1
+                if slice_input.ndisplay == 3
+                else self.layer.data_level
+            )
+        else:
+            data_level = 0
+
+        thumbnail_level = self.layer._thumbnail_level
+        if self.layer._level_materializer:
+            data_at_thumbnail_level = self.layer._level_materializer(
+                thumbnail_level
+            )
+        elif self.layer.multiscale:
+            data_at_thumbnail_level = data[thumbnail_level]
+        else:
+            data_at_thumbnail_level = data
+
+        if not self.layer.multiscale:
+            data_at_data_level = data
+        elif data_level == thumbnail_level:
+            data_at_data_level = data_at_thumbnail_level
+        else:
+            data_at_data_level = data[data_level]
+
         return self._slice_request_class(
             slice_input=slice_input,
-            data=self.layer.data,
+            data_at_data_level=data_at_data_level,
+            data_at_thumbnail_level=data_at_thumbnail_level,
+            dtype=self.layer.dtype,
             dask_indexer=dask_indexer,
             data_slice=data_slice,
             projection_mode=self.layer.projection_mode,
             multiscale=self.layer.multiscale,
             corner_pixels=self.layer.corner_pixels,
             rgb=len(self.layer.data.shape) != self.ndim,
-            data_level=self.layer.data_level,
-            thumbnail_level=self.layer._thumbnail_level,
+            data_level=data_level,
+            thumbnail_level=thumbnail_level,
             level_shapes=self.layer.level_shapes,
             downsample_factors=self.layer.downsample_factors,
         )

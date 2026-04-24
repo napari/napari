@@ -4,11 +4,9 @@ from __future__ import annotations
 
 import typing
 import warnings
-from collections.abc import Sequence
 from typing import Any, Literal, cast
 
 import numpy as np
-from scipy import ndimage as ndi
 
 from napari.layers._data_protocols import LayerDataProtocol
 from napari.layers._multiscale_data import MultiScaleData
@@ -34,6 +32,8 @@ from napari.utils.colormaps.colormap_utils import _coerce_contrast_limits
 from napari.utils.translations import trans
 
 if typing.TYPE_CHECKING:
+    from collections.abc import Sequence
+
     import numpy.typing as npt
     import pint
 
@@ -423,6 +423,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         self._data_raw = data
         # note, we don't support changing multiscale in an Image instance
         self._data = MultiScaleData(data) if self.multiscale else data  # type: ignore
+        self._reset_thumbnail_level_data()
         self._update_dims()
         if self._keep_auto_contrast:
             self.reset_contrast_limits()
@@ -492,6 +493,8 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
 
     def _update_thumbnail(self) -> None:
         """Update thumbnail with current image data and colormap."""
+        from scipy import ndimage as ndi
+
         # black thumbnail if there is no data in the slice
         if self._slice.empty:
             self.thumbnail = np.zeros(self._thumbnail_shape, self.dtype)

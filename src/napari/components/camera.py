@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, Literal, cast
 
 import numpy as np
 from pydantic import field_validator
-from scipy.spatial.transform import Rotation as R
 
 from napari.utils.camera_orientations import (
     DEFAULT_ORIENTATION_TYPED,
@@ -35,8 +34,10 @@ class Camera(EventedModel):
     angles : 3-tuple
         Euler angles of camera in 3D viewing (rx, ry, rz), in degrees.
         Only used during 3D viewing.
-        Note that Euler angles's intrinsic degeneracy means different
-        sets of Euler angles may lead to the same view.
+        Euler angles in 3D do not uniquely represent an orientation, so
+        different angle triplets can produce the same view.
+        Stored or returned angle values may differ from those that were set,
+        while still representing an equivalent camera orientation.
     perspective : float
         Perspective (aka "field of view" in vispy) of the camera (if 3D).
     mouse_pan : bool
@@ -75,6 +76,8 @@ class Camera(EventedModel):
         3-tuple. This direction is in 3D scene coordinates, the world coordinate
         system for three currently displayed dimensions.
         """
+        from scipy.spatial.transform import Rotation as R
+
         # once we're in scene-land, we pretend to be in xyz space (axes names don't
         # mean anything after all...) which simplifies the logic a lot.
         rotation = R.from_euler('xyz', self.angles, degrees=True)
@@ -90,6 +93,8 @@ class Camera(EventedModel):
         3-tuple. This direction is in 3D scene coordinates, the world coordinate
         system for three currently displayed dimensions.
         """
+        from scipy.spatial.transform import Rotation as R
+
         # once we're in scene-land, we pretend to be in xyz space (axes names don't
         # mean anything after all...) which simplifies the logic a lot.
         rotation = R.from_euler('xyz', self.angles, degrees=True)
@@ -123,6 +128,8 @@ class Camera(EventedModel):
             to (0, -1, 0) unless the view direction is parallel to the y-axis,
             in which case will default to (-1, 0, 0).
         """
+        from scipy.spatial.transform import Rotation as R
+
         # project up onto view so we can remove the parallel component
         projection = np.dot(up_direction, view_direction) * np.array(
             view_direction
