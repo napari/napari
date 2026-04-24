@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any
 from napari import Viewer
 from napari._vispy.overlays.base import LayerOverlayMixin, VispySceneOverlay
 from napari._vispy.visuals.interaction_box import InteractionBox
+from napari.components import ViewerModel
 from napari.components.overlays import (
     Overlay,
     SelectionBoxOverlay,
@@ -22,7 +23,7 @@ class _VispyBoundingBoxOverlay(LayerOverlayMixin, VispySceneOverlay):
         self,
         *,
         layer: Layer,
-        viewer: Viewer,
+        viewer: ViewerModel,
         overlay: Overlay,
         parent: ViewBox | None = None,
         **kwargs: Any,

@@ -132,7 +132,7 @@ def fix_data_dtype(data: npt.NDArray) -> npt.NDArray:
 # - destination alpha
 # they do not apply to min/max blending equation
 
-BLENDING_MODES = {
+BLENDING_MODES: dict[str, dict] = {
     'opaque': {
         'depth_test': True,
         'cull_face': False,
