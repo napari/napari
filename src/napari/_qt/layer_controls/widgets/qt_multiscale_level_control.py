@@ -97,9 +97,7 @@ class QtMultiscaleLevelControl(QtWidgetControlsBase):
                         nbytes = data_arr.nbytes
                     else:
                         dtype = getattr(data_arr, 'dtype', np.float32)
-                        nbytes = int(
-                            np.prod(shape) * np.dtype(dtype).itemsize
-                        )
+                        nbytes = int(np.prod(shape) * np.dtype(dtype).itemsize)
 
                     label = _format_level_label(
                         i, tuple(shape), nbytes, displayed
