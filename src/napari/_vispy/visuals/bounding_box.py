@@ -1,4 +1,5 @@
 from itertools import product
+from typing import Any
 
 import numpy as np
 from vispy.scene.visuals import Compound, Line
@@ -32,7 +33,7 @@ class BoundingBox(Compound):
         ]
     )
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         self._line_color = 'red'
         self._line_thickness = 2
         self._marker_color = (1, 1, 1, 1)
