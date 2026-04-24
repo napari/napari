@@ -1128,10 +1128,6 @@ class QtViewer(QSplitter):
             self.viewerButtons.consoleButton
         )
 
-    def _refresh_welcome_widget(self) -> None:
-        """Refresh welcome content without changing its visibility."""
-        self._welcome_widget.refresh()
-
     def _set_welcome_visible(self, visible: bool) -> None:
         """Directly show or hide the welcome screen widget.
 
