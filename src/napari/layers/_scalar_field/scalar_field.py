@@ -410,9 +410,17 @@ class ScalarFieldBase(Layer, ABC):
 
     @property
     def locked_data_level(self) -> int | None:
-        """Optional[int]: When set, forces this multiscale level to be used
-        instead of automatic level selection. Set to None to restore automatic
-        behavior."""
+        """int or None: Locked multiscale resolution level.
+
+        When set to an integer, forces rendering at the given multiscale
+        level instead of automatic level selection based on the viewport.
+        Set to ``None`` to restore automatic behaviour.
+
+        Raises
+        ------
+        ValueError
+            If *level* is not ``None`` and is outside ``[0, n_levels)``.
+        """
         return self._locked_data_level
 
     @locked_data_level.setter
@@ -441,8 +449,17 @@ class ScalarFieldBase(Layer, ABC):
         self.events.locked_data_level()
 
     def _set_force_level(self, level: int) -> None:
-        """Set data_level and corner_pixels to the full extent of the given
-        level, then refresh. Bypasses the data_level setter's early-return."""
+        """Set data_level and corner_pixels for the full extent of a level.
+
+        Directly assigns ``_data_level`` (bypassing the ``data_level``
+        setter's early-return guard) and updates ``corner_pixels`` to span
+        the entire array at the requested level, then refreshes the layer.
+
+        Parameters
+        ----------
+        level : int
+            Zero-based multiscale level index.
+        """
         displayed_axes = self._slice_input.displayed
         shape_at_level = np.array(self.level_shapes[level])
         corners = np.zeros((2, self.ndim), dtype=int)

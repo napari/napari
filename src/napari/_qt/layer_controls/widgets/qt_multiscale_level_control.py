@@ -11,7 +11,18 @@ from napari.utils.translations import trans
 
 
 def _human_readable_size(size_bytes: float) -> str:
-    """Convert bytes to human-readable string (KB, MB, GB, etc.)."""
+    """Convert bytes to a human-readable string (KB, MB, GB, etc.).
+
+    Parameters
+    ----------
+    size_bytes : float
+        Number of bytes.
+
+    Returns
+    -------
+    str
+        Human-readable size string, e.g. ``"8.4 MB"``.
+    """
     for unit in ('B', 'KB', 'MB', 'GB', 'TB'):
         if abs(size_bytes) < 1000:
             return f'{size_bytes:.1f} {unit}'
@@ -66,6 +77,13 @@ class QtMultiscaleLevelControl(QtWidgetControlsBase):
         Parent widget.
     layer : Layer
         A napari layer with multiscale data (Image or Labels).
+
+    Attributes
+    ----------
+    level_combobox : QComboBox
+        Combobox listing "Auto" and each resolution level.
+    level_label : QtWrappedLabel
+        Label for the resolution combobox.
     """
 
     def __init__(self, parent: QWidget, layer: Layer) -> None:
@@ -113,6 +131,14 @@ class QtMultiscaleLevelControl(QtWidgetControlsBase):
                 self.level_combobox.setCurrentIndex(0)
 
     def _on_combobox_changed(self, index: int) -> None:
+        """Update the layer's locked data level from the combobox selection.
+
+        Parameters
+        ----------
+        index : int
+            Index of the selected combobox item. ``0`` corresponds to
+            "Auto" (``None``); higher indices map to resolution levels.
+        """
         level = self.level_combobox.itemData(index)
         self._layer.locked_data_level = level
 
@@ -126,14 +152,23 @@ class QtMultiscaleLevelControl(QtWidgetControlsBase):
                 self.level_combobox.setCurrentIndex(0)
 
     def _on_display_change_show(self) -> None:
+        """Show the resolution combobox when the layer is multiscale."""
         if self._layer.multiscale:
             self._rebuild_items()
             self.level_combobox.show()
             self.level_label.show()
 
     def _on_display_change_hide(self) -> None:
+        """Hide the resolution combobox and its label."""
         self.level_combobox.hide()
         self.level_label.hide()
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
+        """Return the label/widget pairs for this control.
+
+        Returns
+        -------
+        list[tuple[QtWrappedLabel, QWidget]]
+            Single-element list containing the resolution label and combobox.
+        """
         return [(self.level_label, self.level_combobox)]
