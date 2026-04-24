@@ -1,5 +1,8 @@
+from unittest.mock import patch
+
 import numpy as np
 import pytest
+from qtpy.QtGui import QStandardItemModel
 
 from napari._qt.layer_controls.qt_image_controls import QtImageControls
 from napari._qt.layer_controls.qt_labels_controls import QtLabelsControls
@@ -151,3 +154,60 @@ def test_not_multiscale_has_only_auto_and_is_hidden(qtbot):
     assert ctrl.level_combobox.itemText(0) == 'Auto'
     assert ctrl.level_combobox.isHidden()
     assert ctrl.level_label.isHidden()
+
+
+# ---------------------------------------------------------------------------
+# GL texture limit tests
+# ---------------------------------------------------------------------------
+_3D_MULTISCALE_DATA = [
+    np.zeros((64, 64, 64), dtype=np.uint8),
+    np.zeros((32, 32, 32), dtype=np.uint8),
+    np.zeros((16, 16, 16), dtype=np.uint8),
+]
+
+
+def test_levels_exceeding_3d_texture_limit_are_disabled(make_napari_viewer):
+    """In 3D, levels whose shape exceeds GL_MAX_3D_TEXTURE_SIZE are disabled."""
+    viewer = make_napari_viewer()
+    layer = viewer.add_image(_3D_MULTISCALE_DATA, multiscale=True)
+
+    with patch(
+        'napari._qt.layer_controls.widgets.qt_multiscale_level_control.get_max_texture_sizes',
+        return_value=(16384, 32),
+    ):
+        viewer.dims.ndisplay = 3
+
+    ctrl = viewer.window._qt_viewer.controls.widgets[layer]
+    combo = ctrl._multiscale_level_control.level_combobox
+    model = combo.model()
+    assert isinstance(model, QStandardItemModel)
+
+    # "Auto" (index 0) should be enabled
+    assert model.item(0).isEnabled()
+    # Level 0 (64^3) exceeds limit of 32 — disabled
+    assert not model.item(1).isEnabled()
+    # Level 1 (32^3) fits — enabled
+    assert model.item(2).isEnabled()
+    # Level 2 (16^3) fits — enabled
+    assert model.item(3).isEnabled()
+
+
+def test_levels_all_enabled_in_2d(make_napari_viewer):
+    """In 2D, no levels should be disabled regardless of 3D texture limit."""
+    viewer = make_napari_viewer()
+    layer = viewer.add_image(_3D_MULTISCALE_DATA, multiscale=True)
+
+    with patch(
+        'napari._qt.layer_controls.widgets.qt_multiscale_level_control.get_max_texture_sizes',
+        return_value=(16384, 32),
+    ):
+        # Force a rebuild while in 2D
+        ctrl = viewer.window._qt_viewer.controls.widgets[layer]
+        ctrl._multiscale_level_control._rebuild_items()
+
+    combo = ctrl._multiscale_level_control.level_combobox
+    model = combo.model()
+    assert isinstance(model, QStandardItemModel)
+
+    for i in range(combo.count()):
+        assert model.item(i).isEnabled()

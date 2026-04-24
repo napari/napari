@@ -1,4 +1,5 @@
 import numpy as np
+from qtpy.QtGui import QStandardItemModel
 from qtpy.QtWidgets import QComboBox, QWidget
 
 from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
@@ -6,6 +7,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWrappedLabel,
 )
 from napari._qt.utils import qt_signals_blocked
+from napari._vispy.utils.gl import get_max_texture_sizes
 from napari.layers.base.base import Layer
 from napari.utils.translations import trans
 
@@ -103,6 +105,8 @@ class QtMultiscaleLevelControl(QtWidgetControlsBase):
     def _rebuild_items(self) -> None:
         """Populate the combobox from the layer's current level_shapes."""
         displayed = tuple(self._layer._slice_input.displayed)
+        ndisplay = self._layer._slice_input.ndisplay
+        _, max_size_3d = get_max_texture_sizes()
         with qt_signals_blocked(self.level_combobox):
             self.level_combobox.clear()
             self.level_combobox.addItem('Auto', None)
@@ -121,6 +125,24 @@ class QtMultiscaleLevelControl(QtWidgetControlsBase):
                         i, tuple(shape), nbytes, displayed
                     )
                     self.level_combobox.addItem(label, i)
+
+                    # Disable levels that exceed the GL texture limit in 3D
+                    if (
+                        ndisplay == 3
+                        and max_size_3d is not None
+                        and any(shape[ax] > max_size_3d for ax in displayed)
+                    ):
+                        item_index = self.level_combobox.count() - 1
+                        model = self.level_combobox.model()
+                        assert isinstance(model, QStandardItemModel)
+                        item = model.item(item_index)
+                        item.setEnabled(False)
+                        item.setToolTip(
+                            trans._(
+                                'Exceeds GL_MAX_3D_TEXTURE_SIZE ({max_size})',
+                                max_size=max_size_3d,
+                            )
+                        )
 
             # Reflect current locked state
             locked = getattr(self._layer, '_locked_data_level', None)
