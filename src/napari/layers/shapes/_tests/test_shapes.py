@@ -422,7 +422,7 @@ def test_nd_text(prepend):
             point=prepend + (0, 10, 0, 0),
         )
     )
-    np.testing.assert_equal(layer._indices_view, [0])
+    np.testing.assert_equal(layer._view_indices, [0])
     np.testing.assert_equal(layer._view_text_coords[0], [[15, 15]])
 
     # TODO: 1st bug #6205, ndisplay 3 is buggy in 5+ dimensions
@@ -435,7 +435,7 @@ def test_nd_text(prepend):
             point=prepend + (1, 0, 0, 0),
         )
     )
-    np.testing.assert_equal(layer._indices_view, [1])
+    np.testing.assert_equal(layer._view_indices, [1])
     np.testing.assert_equal(layer._view_text_coords[0], [[20, 40, 40]])
 
 

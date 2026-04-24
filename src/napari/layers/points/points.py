@@ -1503,7 +1503,7 @@ class Points(Layer):
     @property
     def _view_size(
         self,
-    ) -> float | np.ndarray[tuple[int], np.dtype[np.float64]]:
+    ) -> np.ndarray[tuple[int], np.dtype[np.float64]]:
         """Size of the points in view.
 
         It is equal to size unless the projection mode is `rescale`,
