@@ -1,12 +1,16 @@
+from __future__ import annotations
+
 import os
-from collections.abc import Callable
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from qtpy.QtWidgets import QFileDialog, QMessageBox
 
 from napari.utils.misc import in_ipython
 from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 HOME_DIRECTORY = str(Path.home())
 

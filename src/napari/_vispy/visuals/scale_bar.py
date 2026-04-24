@@ -1,5 +1,6 @@
 import numpy as np
 from vispy.scene.visuals import Compound, Line
+from vispy.visuals.text.text import FontManager
 
 from napari._vispy.visuals.text import Text
 
@@ -15,7 +16,11 @@ class ScaleBar(Compound):
     - Padding
     """
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        font_manager: FontManager | None = None,
+        font_family: str = 'OpenSans',
+    ) -> None:
         # Layout constants
         self.PADDING = 6  # Space around the entire scale bar
         self.TICK_LENGTH = 11  # Height of tick marks (odd numbers look better)
@@ -40,6 +45,8 @@ class ScaleBar(Compound):
             anchor_x='center',
             anchor_y='bottom',
             font_size=10,
+            face=font_family,
+            font_manager=font_manager,
         )
         self.line = Line(
             connect='segments', method='gl', width=3, antialias=True

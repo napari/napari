@@ -1,9 +1,11 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 from unittest import mock
 
 import numpy as np
 import pytest
 from app_model.types import MenuItem, SubmenuItem
-from npe2 import DynamicPlugin
 from npe2.manifest.contributions import SampleDataURI
 from qtpy.QtGui import QGuiApplication
 from qtpy.QtWidgets import QApplication
@@ -14,6 +16,9 @@ from napari._qt._qapp_model._tests.utils import get_submenu_action
 from napari.layers import Image
 from napari.plugins._tests.test_npe2 import mock_pm  # noqa: F401
 from napari.utils.action_manager import action_manager
+
+if TYPE_CHECKING:
+    from npe2 import DynamicPlugin
 
 
 def test_sample_data_triggers_reader_dialog(
@@ -39,10 +44,15 @@ def test_sample_data_triggers_reader_dialog(
     app = get_app_model()
     # Configures `app`, registers actions and initializes plugins
     make_napari_viewer()
-    with mock.patch(
-        'napari._qt.dialogs.qt_reader_dialog.handle_gui_reading'
-    ) as mock_read:
-        app.commands.execute_command('tmp_plugin:tmp-sample')
+    with (
+        mock.patch(
+            'napari.components.viewer_model._validate_paths_exist',
+        ),
+        mock.patch(
+            'napari._qt.dialogs.qt_reader_dialog.handle_gui_reading'
+        ) as mock_read,
+    ):
+        app.commands.execute_command('tmp_plugin.tmp-sample')
 
     # assert that handle gui reading was called
     mock_read.assert_called_once()
@@ -62,9 +72,9 @@ def test_plugin_display_name_use_for_multiple_samples(
     assert samples_menu[0].title == 'napari builtins'
     # Now ensure that the actions are still correct
     # trigger the action, opening the first sample: `Astronaut`
-    assert 'napari:astronaut' in app.commands
+    assert 'napari.astronaut' in app.commands
     assert len(viewer.layers) == 0
-    app.commands.execute_command('napari:astronaut')
+    app.commands.execute_command('napari.astronaut')
     assert len(viewer.layers) == 1
     assert viewer.layers[0].name == 'astronaut'
 
@@ -104,19 +114,19 @@ def test_sample_menu_plugin_state_change(
     assert len(samples_sub_menu) == 2
     assert isinstance(samples_sub_menu[0], MenuItem)
     assert samples_sub_menu[0].command.title == 'Temp Sample One'
-    assert 'tmp_plugin:tmp-sample-1' in app.commands
+    assert 'tmp_plugin.tmp-sample-1' in app.commands
 
     # Disable plugin
     pm.disable(tmp_plugin.name)
     with pytest.raises(KeyError):
         app.menus.get_menu(MenuId.FILE_SAMPLES)
-    assert 'tmp_plugin:tmp-sample-1' not in app.commands
+    assert 'tmp_plugin.tmp-sample-1' not in app.commands
 
     # Enable plugin
     pm.enable(tmp_plugin.name)
     samples_sub_menu = app.menus.get_menu(MenuId.FILE_SAMPLES + '/tmp_plugin')
     assert len(samples_sub_menu) == 2
-    assert 'tmp_plugin:tmp-sample-1' in app.commands
+    assert 'tmp_plugin.tmp-sample-1' in app.commands
 
 
 def test_sample_menu_single_data(
@@ -138,7 +148,7 @@ def test_sample_menu_single_data(
     assert isinstance(samples_menu[0], MenuItem)
     assert len(samples_menu) == 1
     assert samples_menu[0].command.title == 'Temp Sample One (Temp Plugin)'
-    assert 'tmp_plugin:tmp-sample-1' in app.commands
+    assert 'tmp_plugin.tmp-sample-1' in app.commands
 
 
 def test_sample_menu_sorted(
