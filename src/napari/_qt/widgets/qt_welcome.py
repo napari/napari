@@ -237,6 +237,9 @@ class QtWelcomeWidget(QWidget):
     def paintEvent(self, event):
         """Override Qt method.
 
+        Paint using the stylesheet.
+        This is needed for the drag-and-drop highlighting.
+
         Parameters
         ----------
         event : qtpy.QtCore.QEvent
