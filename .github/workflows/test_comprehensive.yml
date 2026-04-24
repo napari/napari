@@ -75,6 +75,9 @@ jobs:
             platform: ubuntu-latest
             backend: pyside6
             tox_extras: "testing_extra"
+          - python: "3.14"
+            platform: ubuntu-24.04-arm
+            backend: pyqt6
 
     with:
       python_version: ${{ matrix.python }}
