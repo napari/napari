@@ -60,7 +60,8 @@ shapes = [(128, 256, 256), (64, 128, 128), (32, 64, 64), (16, 32, 32)]
 scales = [8, 4, 2, 1]
 multiscale_data = []
 for i, (shape, sc) in enumerate(zip(shapes, scales)):
-    arr = np.full(shape, fill_value=30, dtype=np.uint8)
+    rng = np.random.default_rng(i)
+    arr = rng.integers(0, 50, size=shape, dtype=np.uint8)
     _stamp_digit(arr, i, scale=sc)
     multiscale_data.append(arr)
 
