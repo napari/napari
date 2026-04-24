@@ -793,7 +793,6 @@ module = [
     "napari._vispy.visuals.scale_bar",
     "napari.components._layer_slicer",
     "napari.components._viewer_mouse_bindings",
-    "napari.components.overlays.base",
     "napari.utils.colormaps.categorical_colormap_utils",
 ]
 disallow_untyped_defs = false
