@@ -644,11 +644,17 @@ class ScalarFieldBase(Layer, ABC):
         if len(dims_displayed) == 3:
             # only use get_value_ray on 3D for now
             # we use dims_displayed because the image slice
-            # has its dimensions  in th same order as the vispy
-            # Volume
-            # Account for downsampling in the case of multiscale.
-            # Scale from level-0 coordinates to the current data_level.
-            ds = self.downsample_factors[self.data_level][dims_displayed]
+            # has its dimensions in the same order as the vispy
+            # Volume.
+            #
+            # Grab the slice data first, then derive the downsample
+            # factor from its actual shape so that coordinates and
+            # data are always consistent (data_level and the slice
+            # can be temporarily out of sync).
+            im_slice = self._slice.image.raw
+            slice_shape = np.array(im_slice.shape)
+            level0_shape = np.array(self.level_shapes[0])
+            ds = level0_shape[dims_displayed] / slice_shape[dims_displayed]
             start_point = start_point[dims_displayed] / ds
             end_point = end_point[dims_displayed] / ds
             start_point = cast(np.ndarray, start_point)
@@ -659,15 +665,9 @@ class ScalarFieldBase(Layer, ABC):
             sample_points = np.linspace(
                 start_point, end_point, n_points, endpoint=True
             )
-            im_slice = self._slice.image.raw
-            # ensure the bounding box is for the proper multiscale level
-            bounding_box = self._display_bounding_box_at_level(
-                dims_displayed, self.data_level
-            )
-            # the display bounding box is returned as a closed interval
-            # (i.e. the endpoint is included) by the method, but we need
-            # open intervals in the code that follows, so we add 1.
-            bounding_box[:, 1] += 1
+            # Build the bounding box from the actual slice shape
+            bounding_box = np.zeros((len(dims_displayed), 2))
+            bounding_box[:, 1] = slice_shape[dims_displayed]
 
             clamped = clamp_point_to_bounding_box(
                 sample_points,
@@ -807,11 +807,13 @@ class ScalarFieldSlicingState(_LayerSlicingState):
         """
         data = self.layer.data
         if self.layer.multiscale:
-            data_level = (
-                len(data) - 1
-                if slice_input.ndisplay == 3
-                else self.layer.data_level
-            )
+            locked = self.layer._locked_data_level
+            if locked is not None:
+                data_level = locked
+            elif slice_input.ndisplay == 3:
+                data_level = len(data) - 1
+            else:
+                data_level = self.layer.data_level
         else:
             data_level = 0
 

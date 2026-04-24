@@ -2130,12 +2130,15 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         if locked is not None and self.multiscale:
             # User has explicitly locked the data level; skip automatic
             # level selection and use the full extent of that level.
+            old_level = self._data_level
             self._data_level = locked
             corners = np.zeros((2, self.ndim), dtype=int)
             corners[1, displayed_axes] = (
                 np.take(self.data[locked].shape, displayed_axes) - 1
             )
             self.corner_pixels = corners
+            if old_level != locked:
+                self.refresh(extent=False, thumbnail=False)
         elif self._slice_input.ndisplay == 2 and self.multiscale:
             level, scaled_corners = compute_multiscale_level_and_corners(
                 data_bbox_int,
@@ -2172,8 +2175,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
                 self.refresh(extent=False, thumbnail=False)
         else:
             # set the data_level so that it is the lowest resolution in 3d view
+            level_changed = False
             if self.multiscale is True:
-                self._data_level = len(self.level_shapes) - 1
+                new_level = len(self.level_shapes) - 1
+                level_changed = self._data_level != new_level
+                self._data_level = new_level
 
             # The stored corner_pixels attribute must contain valid indices.
             corners = np.zeros((2, self.ndim), dtype=int)
@@ -2187,6 +2193,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
                 )
                 corners[:, displayed_axes] = data_bbox_clipped
             self.corner_pixels = corners
+
+            if level_changed:
+                self.refresh(extent=False, thumbnail=False)
 
     def _get_source_info(self) -> dict:
         components = {}
