@@ -75,7 +75,7 @@ viewer.add_image(
 )
 
 # Lock to the full-resolution level so the "0" is visible.
-viewer.layers['multiscale'].locked_data_level = 0
+# viewer.layers['multiscale'].locked_data_level = 0
 
 if __name__ == '__main__':
     napari.run()
