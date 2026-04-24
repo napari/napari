@@ -282,9 +282,6 @@ def napari_svg_name():
 @pytest.fixture(autouse=True)
 def npe2pm_(npe2pm, monkeypatch):
     """Autouse npe2 & npe1 mock plugin managers with no registered plugins."""
-    from napari.plugins import NapariPluginManager
-
-    monkeypatch.setattr(NapariPluginManager, 'discover', lambda *_, **__: None)
     return npe2pm
 
 

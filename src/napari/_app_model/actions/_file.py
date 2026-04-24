@@ -59,29 +59,35 @@ FILE_SUBMENUS = [
 
 def add_new_points(viewer: 'ViewerModel') -> None:
     if not viewer.layers.selection:
+        ndim = max(viewer.dims.ndim, 2)
         viewer.add_points(  # type: ignore[attr-defined]
-            ndim=max(viewer.dims.ndim, 2),
-            scale=viewer.layers.extent.step,
+            ndim=ndim,
+            scale=(1,) * ndim,
+            units=viewer.layers.extent.units,
         )
     else:
         extent = viewer.layers.get_extent(viewer.layers.selection)
         viewer.add_points(  # type: ignore[attr-defined]
             ndim=len(extent.step),
             scale=extent.step,
+            units=viewer.layers.extent.units,
         )
 
 
 def add_new_shapes(viewer: 'ViewerModel') -> None:
     if not viewer.layers.selection:
+        ndim = max(viewer.dims.ndim, 2)
         viewer.add_shapes(  # type: ignore[attr-defined]
-            ndim=max(viewer.dims.ndim, 2),
-            scale=viewer.layers.extent.step,
+            ndim=ndim,
+            scale=(1,) * ndim,
+            units=viewer.layers.extent.units,
         )
     else:
         extent = viewer.layers.get_extent(viewer.layers.selection)
         viewer.add_shapes(  # type: ignore[attr-defined]
             ndim=len(extent.step),
             scale=extent.step,
+            units=viewer.layers.extent.units,
         )
 
 
@@ -125,7 +131,7 @@ def _new_layer_from_active(
         raise ValueError('No active layer to create new layer from.')
     source_layer = layer_list.selection.active
     new_layer_name = get_layer_name(
-        f'{source_layer.name} - {layer_class.__name__.lower()}',
+        f'{source_layer.name} - {layer_class.__name__}',
         existing_names={layer.name for layer in layer_list},
     )
     return _create_single_layer(source_layer, layer_class, new_layer_name)

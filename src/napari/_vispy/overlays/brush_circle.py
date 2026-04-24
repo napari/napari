@@ -1,10 +1,29 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
 from vispy.scene.visuals import Compound, Ellipse
 
 from napari._vispy.overlays.base import ViewerOverlayMixin, VispyCanvasOverlay
+from napari.components.overlays.brush_circle import BrushCircleOverlay
+from napari.utils.events import Event
+from napari.viewer import Viewer
+
+if TYPE_CHECKING:
+    from vispy.scene import ViewBox
 
 
 class VispyBrushCircleOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
-    def __init__(self, *, viewer, overlay, parent=None):
+    overlay: BrushCircleOverlay
+
+    def __init__(
+        self,
+        *,
+        viewer: Viewer,
+        overlay: BrushCircleOverlay,
+        parent: ViewBox | None = None,
+        **kwargs: Any,
+    ) -> None:
         self._white_circle = Ellipse(
             center=(0, 0),
             color=(0, 0, 0, 0.0),
@@ -23,6 +42,7 @@ class VispyBrushCircleOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
             viewer=viewer,
             overlay=overlay,
             parent=parent,
+            **kwargs,
         )
 
         self._last_mouse_pos = None
@@ -36,40 +56,40 @@ class VispyBrushCircleOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
 
         self.reset()
 
-        # manually connect this once once and get the correct canvas
+        # manually connect this once and get the correct canvas
         if parent is not None:
             parent.scene.canvas.events.mouse_move.connect(self._on_mouse_move)
 
-    def _on_position_change(self, event=None):
+    def _on_position_change(self, event: Event | None = None) -> None:
         self._set_position(self.overlay.position)
 
-    def _on_size_change(self, event=None):
+    def _on_size_change(self, event: Event | None = None) -> None:
         self._white_circle.radius = self.overlay.size / 2
         self._black_circle.radius = self._white_circle.radius - 1
 
-    def _on_visible_change(self):
+    def _on_visible_change(self) -> None:
         if self._last_mouse_pos is not None:
             self._set_position(self._last_mouse_pos)
         self.node.visible = (
             self.overlay.visible and self.viewer.mouse_over_canvas
         )
 
-    def _on_mouse_move(self, event):
+    def _on_mouse_move(self, event: Event) -> None:
         self._last_mouse_pos = event.pos
         if self.overlay.visible:
             self.overlay.position = event.pos.tolist()
 
-    def _set_position(self, pos):
+    def _set_position(self, pos: tuple[int, int]) -> None:
         if not self.overlay.position_is_frozen:
             self.node.transform.translate = [pos[0], pos[1], 0, 0]
 
-    def _on_canvas_change(self, event):
+    def _on_canvas_change(self, event: Event) -> None:
         if event.new is not None:
             event.new.events.mouse_move.connect(self._on_mouse_move)
         if event.old is not None:
             event.old.events.mouse_move.disconnect(self._on_mouse_move)
 
-    def _on_mouse_over_canvas(self):
+    def _on_mouse_over_canvas(self) -> None:
         if self.viewer.mouse_over_canvas:
             # Move the cursor outside the canvas when the mouse leaves it.
             # It fixes the bug described in PR #5763:
@@ -82,11 +102,11 @@ class VispyBrushCircleOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
             else:
                 self.node.visible = False
 
-    def reset(self):
+    def reset(self) -> None:
         super().reset()
         self._on_size_change()
         self._last_mouse_pos = None
 
-    def close(self):
+    def close(self) -> None:
         self.node.events.canvas_change.disconnect(self._on_canvas_change)
         super().close()

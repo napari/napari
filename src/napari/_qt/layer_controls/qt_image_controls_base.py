@@ -10,7 +10,7 @@ from napari._qt.layer_controls.widgets import (
 )
 
 if TYPE_CHECKING:
-    from napari.layers import Image
+    from napari.layers import Image, Surface
 
 
 class QtBaseImageControls(QtLayerControls):
@@ -34,7 +34,7 @@ class QtBaseImageControls(QtLayerControls):
         Widget that wraps layer gamma adjustment slider widget.
     """
 
-    def __init__(self, layer: Image) -> None:
+    def __init__(self, layer: Image | Surface) -> None:
         super().__init__(layer)
         # Setup widgets controls
         self._contrast_limits_control = QtContrastLimitsControl(self, layer)

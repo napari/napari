@@ -6,7 +6,6 @@ from collections.abc import Callable, Iterator
 from typing import Any
 
 import dask
-import dask.array as da
 from dask.cache import Cache
 
 #: dask.cache.Cache, optional : A dask cache for opportunistic caching
@@ -80,10 +79,19 @@ def resize_dask_cache(
 
 
 def _is_dask_data(data: Any) -> bool:
-    """Return True if data is a dask array or a list/tuple of dask arrays."""
-    return isinstance(data, da.Array) or (
-        isinstance(data, collections.abc.Sequence)
-        and any(isinstance(i, da.Array) for i in data)
+    """Return True if data has a dask computation graph.
+
+    Uses dask's Protocol through `dask.is_dask_collection`, which
+    checks for the ``__dask_graph__`` attribute.  This covers things like
+
+    - `dask.array.Array` directly
+    - `xarray.DataArray` backed by a dask array (but *not* numpy-backed)
+    - Any other dask-collection type
+    """
+    if dask.is_dask_collection(data):
+        return True
+    return isinstance(data, collections.abc.Sequence) and any(
+        dask.is_dask_collection(i) for i in data
     )
 
 

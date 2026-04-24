@@ -1,8 +1,7 @@
 import inspect
 import operator
-from collections.abc import Sequence
 from enum import auto
-from typing import Any, ClassVar, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Any, ClassVar, Protocol, runtime_checkable
 from unittest.mock import Mock
 
 import dask.array as da
@@ -17,6 +16,9 @@ from napari._pydantic_util import NapariConfigDict
 from napari.utils.events import EmitterGroup, EventedModel
 from napari.utils.events.custom_types import Array
 from napari.utils.misc import StringEnum
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 
 def test_creating_empty_evented_model():
@@ -462,7 +464,7 @@ class T(EventedModel):
         return [self.a, self.b]
 
     @c.setter
-    def c(self, val: Sequence[int]):
+    def c(self, val: 'Sequence[int]'):
         self.a, self.b = val
 
     @property
@@ -761,4 +763,49 @@ def test_single_emit():
     a_m.assert_called_once()
     c_m.assert_called_once()
     d_m.assert_called_once()
+    e_m.assert_called_once()
+
+
+@pytest.mark.parametrize('field', ['a', 'b'])
+def test_events_called_once(field):
+    class SampleClass(EventedModel):
+        a: int
+
+        @property
+        def b(self):
+            return self.a * 2
+
+        @b.setter
+        def b(self, value):
+            self.a = value // 2
+
+    s = SampleClass(a=1)
+    a_m = Mock()
+    b_m = Mock()
+    e_m = Mock()
+
+    s.events.a.connect(a_m)
+    s.events.b.connect(b_m)
+    s.events.connect(e_m)
+
+    setattr(s, field, 4)
+    a_m.assert_called_once()
+    b_m.assert_called_once()
+    # prior to #8672 the self.events will be called twice
+    e_m.assert_called_once()
+    assert e_m.call_args.args[0].value == 4
+    assert e_m.call_args.args[0].type == field
+
+
+def test_events_called():
+    class SampleClass(EventedModel):
+        a: int
+
+    s = SampleClass(a=1)
+
+    e_m = Mock()
+    s.events.connect(e_m)
+
+    s.a = 2
+
     e_m.assert_called_once()

@@ -3,7 +3,6 @@ from __future__ import annotations
 import os
 import platform
 import sys
-from pathlib import Path
 from typing import TYPE_CHECKING
 from warnings import warn
 
@@ -14,6 +13,7 @@ from qtpy.QtSvg import QSvgRenderer
 from qtpy.QtWidgets import QApplication, QWidget
 
 from napari import Viewer, __version__
+from napari._qt._qapp_model.injection._qproviders import register_qt_types
 from napari._qt.dialogs.qt_notification import NapariQtNotification
 from napari._qt.qt_event_filters import QtToolTipEventFilter
 from napari._qt.qthreading import (
@@ -35,6 +35,8 @@ from napari.utils.theme import _themes, get_system_theme
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from IPython import InteractiveShell
 
 NAPARI_APP_ID = f'napari.napari.viewer.{__version__}'
@@ -265,6 +267,7 @@ def get_qapp(
             QDir.addSearchPath(f'theme_{name}', str(_theme_path(name)))
 
         register_threadworker_processors()
+        register_qt_types()
 
         notification_manager.notification_ready.connect(
             NapariQtNotification.show_notification
