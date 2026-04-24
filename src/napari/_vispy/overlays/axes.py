@@ -1,10 +1,18 @@
-import numpy as np
-from vispy.visuals.text.text import FontManager
+from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
+import numpy as np
+
+from napari import Viewer
 from napari._vispy.overlays.base import ViewerOverlayMixin, VispySceneOverlay
 from napari._vispy.visuals.axes import Axes
 from napari.components.overlays import AxesOverlay
 from napari.utils.theme import get_theme
+
+if TYPE_CHECKING:
+    from vispy.scene import ViewBox
+    from vispy.visuals.text.text import FontManager
 
 
 class VispyAxesOverlay(ViewerOverlayMixin, VispySceneOverlay):
@@ -15,9 +23,9 @@ class VispyAxesOverlay(ViewerOverlayMixin, VispySceneOverlay):
     def __init__(
         self,
         *,
-        viewer,
-        overlay,
-        parent=None,
+        viewer: Viewer,
+        overlay: AxesOverlay,
+        parent: ViewBox | None = None,
         font_manager: FontManager | None = None,
         font_family: str = 'OpenSans',
     ) -> None:
@@ -50,7 +58,7 @@ class VispyAxesOverlay(ViewerOverlayMixin, VispySceneOverlay):
 
         self.reset()
 
-    def _on_data_change(self):
+    def _on_data_change(self) -> None:
         # Determine which axes are displayed
         axes = self.viewer.dims.displayed[::-1]
 
@@ -70,15 +78,15 @@ class VispyAxesOverlay(ViewerOverlayMixin, VispySceneOverlay):
 
         self._on_labels_text_change()
 
-    def _on_labels_visible_change(self):
+    def _on_labels_visible_change(self) -> None:
         self.node.text.visible = self.overlay.labels
 
-    def _on_labels_text_change(self):
+    def _on_labels_text_change(self) -> None:
         axes = self.viewer.dims.displayed[::-1]
         axis_labels = [self.viewer.dims.axis_labels[a] for a in axes]
         self.node.text.text = axis_labels
 
-    def _on_zoom_change(self):
+    def _on_zoom_change(self) -> None:
         scale = 1 / self.viewer.camera.zoom
 
         # If scale has not changed, do not redraw
@@ -90,7 +98,7 @@ class VispyAxesOverlay(ViewerOverlayMixin, VispySceneOverlay):
         self.node.transform.reset()
         self.node.transform.scale([scale, scale, scale, 1])
 
-    def reset(self):
+    def reset(self) -> None:
         super().reset()
         self._on_data_change()
         self._on_labels_visible_change()

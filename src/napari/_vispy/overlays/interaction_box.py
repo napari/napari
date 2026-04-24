@@ -1,12 +1,31 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
+from napari import Viewer
 from napari._vispy.overlays.base import LayerOverlayMixin, VispySceneOverlay
 from napari._vispy.visuals.interaction_box import InteractionBox
-from napari.components.overlays import SelectionBoxOverlay, TransformBoxOverlay
+from napari.components.overlays import (
+    Overlay,
+    SelectionBoxOverlay,
+    TransformBoxOverlay,
+)
+from napari.layers import Layer
 from napari.layers.base._base_constants import InteractionBoxHandle
+
+if TYPE_CHECKING:
+    from vispy.scene import ViewBox
 
 
 class _VispyBoundingBoxOverlay(LayerOverlayMixin, VispySceneOverlay):
     def __init__(
-        self, *, layer, viewer, overlay, parent=None, **kwargs
+        self,
+        *,
+        layer: Layer,
+        viewer: Viewer,
+        overlay: Overlay,
+        parent: ViewBox | None = None,
+        **kwargs: Any,
     ) -> None:
         super().__init__(
             node=InteractionBox(),
@@ -18,17 +37,17 @@ class _VispyBoundingBoxOverlay(LayerOverlayMixin, VispySceneOverlay):
         )
         self.layer.events.set_data.connect(self._on_visible_change)
 
-    def _on_bounds_change(self):
+    def _on_bounds_change(self) -> None:
         pass
 
-    def _on_visible_change(self):
+    def _on_visible_change(self) -> None:
         if self.layer._slice_input.ndisplay == 2:
             super()._on_visible_change()
             self._on_bounds_change()
         else:
             self.node.visible = False
 
-    def reset(self):
+    def reset(self) -> None:
         super().reset()
         self._on_bounds_change()
 
@@ -37,7 +56,13 @@ class VispySelectionBoxOverlay(_VispyBoundingBoxOverlay):
     overlay: SelectionBoxOverlay
 
     def __init__(
-        self, *, layer, viewer, overlay, parent=None, **kwargs
+        self,
+        *,
+        layer: Layer,
+        viewer: Viewer,
+        overlay: SelectionBoxOverlay,
+        parent: ViewBox | None = None,
+        **kwargs: Any,
     ) -> None:
         super().__init__(
             layer=layer,
@@ -52,7 +77,7 @@ class VispySelectionBoxOverlay(_VispyBoundingBoxOverlay):
 
         self.reset()
 
-    def _on_bounds_change(self):
+    def _on_bounds_change(self) -> None:
         if self.layer._slice_input.ndisplay == 2:
             top_left, bot_right = self.overlay.bounds
             self.node.set_data(
@@ -68,7 +93,13 @@ class VispyTransformBoxOverlay(_VispyBoundingBoxOverlay):
     overlay: TransformBoxOverlay
 
     def __init__(
-        self, *, layer, viewer, overlay, parent=None, **kwargs
+        self,
+        *,
+        layer: Layer,
+        viewer: Viewer,
+        overlay: TransformBoxOverlay,
+        parent: ViewBox | None = None,
+        **kwargs: Any,
     ) -> None:
         super().__init__(
             layer=layer,
@@ -86,7 +117,7 @@ class VispyTransformBoxOverlay(_VispyBoundingBoxOverlay):
 
         self.reset()
 
-    def _on_bounds_change(self):
+    def _on_bounds_change(self) -> None:
         if self.layer._slice_input.ndisplay == 2:
             bounds = self.layer._display_bounding_box_augmented_data_level(
                 self.layer._slice_input.displayed
