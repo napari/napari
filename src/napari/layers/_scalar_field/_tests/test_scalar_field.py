@@ -1,7 +1,8 @@
 import numpy as np
+import pytest
 
 from napari.components import Dims
-from napari.layers import Image
+from napari.layers import Image, Labels
 from napari.layers._scalar_field.scalar_field import ScalarFieldBase
 from napari.utils._test_utils import (
     validate_all_params_in_docstring,
@@ -142,3 +143,184 @@ def test_rgb_2d_multiscale_prematerialized():
     assert isinstance(tld, np.ndarray)
     assert tld.shape == (64, 64, 3)
     np.testing.assert_array_equal(tld, data[1])
+
+
+# ---------------------------------------------------------------------------
+# locked_data_level tests
+# ---------------------------------------------------------------------------
+
+_MULTISCALE_SHAPES_2D = [(4000, 3000), (2000, 1500), (1000, 750), (500, 375)]
+_MULTISCALE_SHAPES_3D = [(8, 40, 20), (4, 20, 10), (2, 10, 5)]
+
+
+def _make_multiscale_2d():
+    """2D multiscale data where each level has a distinct constant value."""
+    return [
+        np.full(s, fill_value=(i + 1) * 10, dtype=np.uint8)
+        for i, s in enumerate(_MULTISCALE_SHAPES_2D)
+    ]
+
+
+def _make_multiscale_3d():
+    """3D multiscale data where each level has a distinct constant value."""
+    return [
+        np.full(s, fill_value=(i + 1) * 10, dtype=np.uint8)
+        for i, s in enumerate(_MULTISCALE_SHAPES_3D)
+    ]
+
+
+@pytest.mark.parametrize('Layer', [Image, Labels])
+class TestLockedDataLevel:
+    """Tests for the locked_data_level property on ScalarFieldBase."""
+
+    def test_locked_data_level_property(self, Layer):
+        """Default is None; setting valid/invalid values works correctly."""
+        data = _make_multiscale_3d()
+        layer = Layer(data, multiscale=True)
+
+        assert layer.locked_data_level is None
+
+        layer.locked_data_level = 1
+        assert layer.locked_data_level == 1
+
+        layer.locked_data_level = None
+        assert layer.locked_data_level is None
+
+        with pytest.raises(ValueError):
+            layer.locked_data_level = len(data)
+        with pytest.raises(ValueError):
+            layer.locked_data_level = -1
+
+
+class TestLockedDataLevelViewer:
+    """Viewer-based tests for locked_data_level.
+
+    These use the real viewer draw cycle instead of manually calling
+    _update_draw / _slice_dims, so they exercise the feature the same
+    way a user would.
+    """
+
+    @staticmethod
+    def _trigger_draw(viewer):
+        """Set a canvas size and trigger the draw cycle."""
+        viewer.window._qt_viewer.canvas.size = (800, 600)
+        viewer.window._qt_viewer.canvas.on_draw(None)
+
+    def test_lock_overrides_auto_2d(self, make_napari_viewer):
+        """Locking to level 0 keeps full resolution even when the
+        viewport is wide enough that auto would pick a coarser level."""
+        viewer = make_napari_viewer()
+        data = _make_multiscale_2d()
+        layer = viewer.add_image(data, multiscale=True)
+
+        self._trigger_draw(viewer)
+        auto_level = layer.data_level
+        assert auto_level > 0, 'sanity: auto should pick a coarser level'
+
+        layer.locked_data_level = 0
+        self._trigger_draw(viewer)
+
+        assert layer.data_level == 0
+
+    def test_lock_overrides_auto_3d(self, make_napari_viewer):
+        """In 3D, auto defaults to the coarsest level; locking to 0
+        should override that."""
+        viewer = make_napari_viewer()
+        data = _make_multiscale_3d()
+        layer = viewer.add_image(data, multiscale=True)
+
+        viewer.dims.ndisplay = 3
+        self._trigger_draw(viewer)
+        assert layer.data_level == len(data) - 1, (
+            'sanity: 3D auto should pick coarsest'
+        )
+
+        layer.locked_data_level = 0
+        self._trigger_draw(viewer)
+
+        assert layer.data_level == 0
+
+    def test_unlock_restores_auto_2d(self, make_napari_viewer):
+        """Setting locked_data_level back to None restores automatic
+        level selection in 2D."""
+        viewer = make_napari_viewer()
+        data = _make_multiscale_2d()
+        layer = viewer.add_image(data, multiscale=True)
+
+        self._trigger_draw(viewer)
+        auto_level = layer.data_level
+
+        layer.locked_data_level = 0
+        self._trigger_draw(viewer)
+        assert layer.data_level == 0
+
+        layer.locked_data_level = None
+        self._trigger_draw(viewer)
+        assert layer.data_level == auto_level
+
+    def test_unlock_restores_auto_3d(self, make_napari_viewer):
+        """Setting locked_data_level back to None restores coarsest-level
+        default in 3D."""
+        viewer = make_napari_viewer()
+        data = _make_multiscale_3d()
+        layer = viewer.add_image(data, multiscale=True)
+
+        viewer.dims.ndisplay = 3
+        layer.locked_data_level = 0
+        self._trigger_draw(viewer)
+        assert layer.data_level == 0
+
+        layer.locked_data_level = None
+        self._trigger_draw(viewer)
+        assert layer.data_level == len(data) - 1
+
+    def test_ndisplay_transitions(self, make_napari_viewer):
+        """Lock and auto behaviour across 2D↔3D switches."""
+        viewer = make_napari_viewer()
+        data = _make_multiscale_3d()
+        layer = viewer.add_image(data, multiscale=True)
+        coarsest = len(data) - 1
+
+        # -- auto 2D→3D: should pick coarsest
+        self._trigger_draw(viewer)
+        viewer.dims.ndisplay = 3
+        self._trigger_draw(viewer)
+        assert layer.data_level == coarsest
+
+        # -- auto 3D→2D: should leave coarsest-level default behind
+        viewer.dims.ndisplay = 2
+        self._trigger_draw(viewer)
+        assert layer.data_level != coarsest
+
+        # -- locked 2D→3D: lock should persist
+        layer.locked_data_level = 0
+        self._trigger_draw(viewer)
+        assert layer.data_level == 0
+
+        viewer.dims.ndisplay = 3
+        self._trigger_draw(viewer)
+        assert layer.data_level == 0
+
+        # -- locked 3D→2D: lock should persist
+        viewer.dims.ndisplay = 2
+        self._trigger_draw(viewer)
+        assert layer.data_level == 0
+
+    def test_locked_level_loads_correct_data_3d(self, make_napari_viewer):
+        """Verify the actual pixel values match the locked level."""
+        viewer = make_napari_viewer()
+        data = _make_multiscale_3d()
+        layer = viewer.add_image(data, multiscale=True)
+
+        viewer.dims.ndisplay = 3
+        self._trigger_draw(viewer)
+
+        for level_idx in range(len(data)):
+            expected_value = (level_idx + 1) * 10
+            layer.locked_data_level = level_idx
+            self._trigger_draw(viewer)
+            view = layer._data_view
+            assert np.all(view == expected_value), (
+                f'Level {level_idx}: expected all {expected_value}, '
+                f'got unique values {np.unique(view)}'
+            )

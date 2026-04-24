@@ -279,6 +279,7 @@ class ScalarFieldBase(Layer, ABC):
             attenuation=Event,
             custom_interpolation_kernel_2d=Event,
             depiction=Event,
+            locked_data_level=Event,
             interpolation=WarningEmitter(
                 trans._(
                     "'layer.events.interpolation' is deprecated please use `interpolation2d` and `interpolation3d`",
@@ -437,6 +438,7 @@ class ScalarFieldBase(Layer, ABC):
                 self._set_force_level(len(self.level_shapes) - 1)
             else:
                 self.refresh(extent=False)
+        self.events.locked_data_level()
 
     def _set_force_level(self, level: int) -> None:
         """Set data_level and corner_pixels to the full extent of the given
