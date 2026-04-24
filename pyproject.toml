@@ -817,7 +817,6 @@ module = [
     "napari._vispy.layers.scalar_field",
     "napari._vispy.layers.tracks",
     "napari._vispy.layers.vectors",
-    "napari._vispy.overlays.labels_polygon",
     "napari.layers.utils._slice_input",
     "napari.utils._register",
     "napari.utils.colormaps.categorical_colormap",
@@ -934,7 +933,6 @@ disallow_untyped_defs = false
 [[tool.mypy.overrides]]
 module = [
     "napari._app_model.context._layerlist_context",
-    "napari.components.overlays.labels_polygon",
     "napari.plugins.io",
     "napari.utils.colormaps.vendored._cm_listed",
 ]

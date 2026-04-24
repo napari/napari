@@ -1285,7 +1285,7 @@ class Labels(ScalarFieldBase):
             mask_indices, new_label, shape, dims_to_paint, slice_coord, refresh
         )
 
-    def paint_polygon(self, points, new_label):
+    def paint_polygon(self, points: Sequence[int], new_label: int) -> None:
         """Paint a polygon over existing labels with a new label.
 
         Parameters
@@ -1302,9 +1302,9 @@ class Labels(ScalarFieldBase):
                 'Polygon painting is implemented only in 2D.'
             )
 
-        points = np.array(points, dtype=int)
-        slice_coord = points[0].tolist()
-        points2d = points[:, dims_to_paint]
+        points_arr = np.array(points, dtype=int)
+        slice_coord = points_arr[0].tolist()
+        points2d = points_arr[:, dims_to_paint]
 
         polygon_mask = self._create_polygon_mask(points2d, shape)
 
