@@ -43,7 +43,7 @@ def _format_level_label(
     Returns
     -------
     str
-        e.g. ``"0: 256 × 256 × 128 (8.4 MB)"``
+        e.g. ``"0: 256 x 256 x 128 (8.4 MB)"``
     """
     if displayed_axes is not None:
         dims = tuple(shape[ax] for ax in displayed_axes)

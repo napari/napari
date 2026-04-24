@@ -12,11 +12,13 @@ immediately tell which resolution is being rendered.
 .. tags:: visualization-advanced
 """
 
+import argparse
+
 import numpy as np
 
 import napari
 
-# -- 5×3 bitmap font for digits 0-9 ----------------------------------------
+# -- 5x3 bitmap font for digits 0-9 ----------------------------------------
 _DIGITS = {
     0: [0b111, 0b101, 0b101, 0b101, 0b111],
     1: [0b010, 0b110, 0b010, 0b010, 0b111],
@@ -41,7 +43,7 @@ def _stamp_digit(arr, digit, scale=1):
     digit : int
         Single digit 0-9.
     scale : int
-        Pixel multiplier for the 5×3 glyph.
+        Pixel multiplier for the 5x3 glyph.
     """
     rows = _DIGITS[digit]
     glyph_h, glyph_w = 5 * scale, 3 * scale
@@ -55,27 +57,39 @@ def _stamp_digit(arr, digit, scale=1):
                 arr[:, y_start : y_start + scale, x_start : x_start + scale] = 255
 
 
+# -- Parse arguments --------------------------------------------------------
+parser = argparse.ArgumentParser(description='Multiscale volume demo')
+parser.add_argument(
+    '--labels',
+    action='store_true',
+    help='Add as a Labels layer instead of Image',
+)
+args = parser.parse_args()
+
 # -- Build a 4-level 3D multiscale pyramid ----------------------------------
 shapes = [(128, 256, 256), (64, 128, 128), (32, 64, 64), (16, 32, 32)]
 scales = [8, 4, 2, 1]
 multiscale_data = []
-for i, (shape, sc) in enumerate(zip(shapes, scales)):
-    rng = np.random.default_rng(i)
-    arr = rng.integers(0, 50, size=shape, dtype=np.uint8)
+for i, (shape, sc) in enumerate(zip(shapes, scales, strict=True)):
+    if args.labels:
+        arr = np.zeros(shape, dtype=np.uint8)
+    else:
+        rng = np.random.default_rng(i)
+        arr = rng.integers(0, 50, size=shape, dtype=np.uint8)
     _stamp_digit(arr, i, scale=sc)
     multiscale_data.append(arr)
 
 # -- Open viewer in 3D and add the layer -----------------------------------
 viewer = napari.Viewer(ndisplay=3)
-viewer.add_image(
-    multiscale_data,
-    name='multiscale',
-    multiscale=True,
-    interpolation3d='nearest',
-)
-
-# Lock to the full-resolution level so the "0" is visible.
-# viewer.layers['multiscale'].locked_data_level = 0
+if args.labels:
+    viewer.add_labels(multiscale_data, name='multiscale', multiscale=True)
+else:
+    viewer.add_image(
+        multiscale_data,
+        name='multiscale',
+        multiscale=True,
+        interpolation3d='nearest',
+    )
 
 if __name__ == '__main__':
     napari.run()

@@ -2,11 +2,12 @@ import numpy as np
 import pytest
 
 from napari._qt.layer_controls.qt_image_controls import QtImageControls
+from napari._qt.layer_controls.qt_labels_controls import QtLabelsControls
 from napari._qt.layer_controls.widgets.qt_multiscale_level_control import (
     _format_level_label,
     _human_readable_size,
 )
-from napari.layers import Image
+from napari.layers import Image, Labels
 
 
 # ---------------------------------------------------------------------------
@@ -74,10 +75,17 @@ _MULTISCALE_DATA = [
 ]
 
 
-@pytest.fixture
-def multiscale_controls(qtbot):
-    layer = Image(_MULTISCALE_DATA, multiscale=True)
-    qtctrl = QtImageControls(layer)
+@pytest.fixture(
+    params=[
+        (Image, QtImageControls),
+        (Labels, QtLabelsControls),
+    ],
+    ids=['Image', 'Labels'],
+)
+def multiscale_controls(qtbot, request):
+    LayerCls, ControlsCls = request.param
+    layer = LayerCls(_MULTISCALE_DATA, multiscale=True)
+    qtctrl = ControlsCls(layer)
     qtbot.addWidget(qtctrl)
     return layer, qtctrl
 
