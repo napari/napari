@@ -183,8 +183,6 @@ class QtWelcomeWidget(QWidget):
 
     def _update_tip_label(self) -> None:
         """Render the current tip after expanding any shortcut placeholders."""
-        if not self._current_tip:
-            return
         self._tip_label.setText(
             f'Did you know?\n{self._format_tip(self._current_tip)}'
         )
