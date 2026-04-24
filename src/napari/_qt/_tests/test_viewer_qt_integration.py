@@ -247,18 +247,33 @@ def test_welcome_widget_delegates_drag_and_drop_to_viewer(make_napari_viewer):
     drag_event = MagicMock()
     drag_event.mimeData.return_value.hasUrls.return_value = True
 
-    with patch.object(qt_viewer, '_set_drag_status') as set_drag_status:
-        welcome.dragEnterEvent(drag_event)
+    welcome.dragEnterEvent(drag_event)
 
-    set_drag_status.assert_called_once_with()
     drag_event.accept.assert_called_once_with()
     assert welcome.property('drag') is True
+    assert (
+        viewer.status
+        == 'Hold <Alt> key to open plugin selection. Hold <Shift> to open files as stack.'
+    )
 
     drop_event = MagicMock()
-    with patch.object(qt_viewer, 'dropEvent') as drop_handler:
+    drop_urls = [QUrl('file:///tmp/example.tif')]
+    drop_event.mimeData.return_value.urls.return_value = drop_urls
+    with (
+        patch.object(
+            QGuiApplication,
+            'keyboardModifiers',
+            return_value=Qt.KeyboardModifier.NoModifier,
+        ),
+        patch.object(qt_viewer, '_open_from_list_of_urls_data') as open_urls,
+    ):
         welcome.dropEvent(drop_event)
 
-    drop_handler.assert_called_once_with(drop_event)
+    open_urls.assert_called_once_with(
+        drop_urls,
+        stack=False,
+        choose_plugin=False,
+    )
     assert welcome.property('drag') is False
 
 

@@ -172,6 +172,8 @@ class QtViewer(QSplitter):
         )
 
         self._welcome_widget = QtWelcomeWidget(self.canvas.native)
+        self._welcome_widget.urls_drag_entered.connect(self._set_drag_status)
+        self._welcome_widget.urls_dropped.connect(self.dropEvent)
 
         main_widget = QWidget()
         main_layout = QVBoxLayout()
@@ -1126,7 +1128,7 @@ class QtViewer(QSplitter):
             self.viewerButtons.consoleButton
         )
 
-    def refresh_welcome_widget(self) -> None:
+    def _refresh_welcome_widget(self) -> None:
         """Refresh welcome content without changing its visibility."""
         self._welcome_widget.refresh()
 

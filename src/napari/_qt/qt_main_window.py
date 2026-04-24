@@ -195,7 +195,7 @@ class _QtMainWindow(QMainWindow):
 
         # only after qaction are initialized we can get all shortcuts, so we have
         # to force update the welcome widget here. TODO: UGLYYYY
-        self._qt_viewer.refresh_welcome_widget()
+        self._qt_viewer._refresh_welcome_widget()
 
         with contextlib.suppress(IndexError):
             viewer.cursor.events.position.disconnect(

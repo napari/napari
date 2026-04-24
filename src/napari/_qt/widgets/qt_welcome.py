@@ -5,7 +5,7 @@ import warnings
 from random import choice
 from typing import TYPE_CHECKING
 
-from qtpy.QtCore import QSize, Qt
+from qtpy.QtCore import QSize, Qt, Signal
 from qtpy.QtGui import QPainter
 from qtpy.QtWidgets import (
     QFormLayout,
@@ -20,12 +20,9 @@ from napari import __version__
 from napari._app_model import get_app_model
 from napari.utils.action_manager import action_manager
 from napari.utils.interactions import Shortcut
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
-
-    from napari._qt.qt_viewer import QtViewer
 
 
 WELCOME_SHORTCUTS = (
@@ -66,6 +63,9 @@ class QtVersionLabel(QLabel):
 class QtWelcomeWidget(QWidget):
     """Welcome widget to display initial information, shortcuts, and tips."""
 
+    urls_drag_entered = Signal()
+    urls_dropped = Signal(object)
+
     def __init__(
         self, parent: QWidget | None, tips: Sequence[str] | None = None
     ) -> None:
@@ -80,7 +80,7 @@ class QtWelcomeWidget(QWidget):
         self._image.setMinimumSize(300, 300)
         self._version_label = QtVersionLabel(f'napari {__version__}')
         self._label = QtWelcomeLabel(
-            trans._('Drag file(s) here to open, or use shortcuts below:')
+            'Drag file(s) here to open, or use shortcuts below:'
         )
         self._tip_label = QtShortcutLabel('')
 
@@ -126,6 +126,8 @@ class QtWelcomeWidget(QWidget):
         self.setLayout(layout)
         self.refresh_shortcuts()
         self.show_random_tip()
+        # The welcome screen is a manual overlay on top of the canvas
+        # Need to keep its geometry synced explicitly
         parent_resized = getattr(self.parentWidget(), 'resized', None)
         if parent_resized is not None:
             parent_resized.connect(self._sync_to_parent)
@@ -179,10 +181,7 @@ class QtWelcomeWidget(QWidget):
         if not self._current_tip:
             return
         self._tip_label.setText(
-            trans._(
-                'Did you know?\n{tip}',
-                tip=self._format_tip(self._current_tip),
-            )
+            f'Did you know?\n{self._format_tip(self._current_tip)}'
         )
 
     def _format_tip(self, tip: str) -> str:
@@ -243,34 +242,36 @@ class QtWelcomeWidget(QWidget):
         p = QPainter(self)
         self.style().drawPrimitive(QStyle.PE_Widget, option, p, self)
 
-    def _update_property(self, prop, value):
-        """Update properties of widget to update style.
+    def _set_drag_highlight(self, value: bool) -> None:
+        """Update the QSS state used to highlight drag-and-drop.
 
-        Parameters
-        ----------
-        prop : str
-            Property name to update.
-        value : bool
-            Property value to update.
+        The welcome widget QSS uses the dynamic ``drag`` property
+        e.g. ``QtWelcomeWidget[drag=true]`` to switch backgrounds
+        while a file is dragged over the canvas. Here we repolish
+        the widget after updating it, so the dynamic-property
+        selectors above take effect immediately when the drag state changes
         """
-        self.setProperty(prop, value)
-        # Qt only reapplies selector rules that depend on dynamic properties
-        # after the widget is polished again.
+        self.setProperty('drag', value)
         self.style().unpolish(self)
         self.style().polish(self)
 
     def _sync_to_parent(self, *_args) -> None:
+        """Resize this overlay to cover the full parent canvas.
+
+        The welcome widget is parented directly to the VisPy
+        canvas so it can sit above the rendered scene, but
+        it is not managed by a layout.
+        This helper ensures its geometry is matched whenever
+        the canvas resizes.
+        """
         parent = self.parentWidget()
         if parent is not None:
             self.setGeometry(parent.rect())
 
-    def _qt_viewer(self) -> QtViewer | None:
-        return getattr(self.window(), '_qt_viewer', None)
-
     def dragEnterEvent(self, event):
         """Override Qt method.
 
-        Provide style updates on event.
+        Update the drag highlight and forward valid URL drags upstream.
 
         Parameters
         ----------
@@ -278,44 +279,35 @@ class QtWelcomeWidget(QWidget):
             Event from the Qt context.
         """
         if not event.mimeData().hasUrls():
-            self._update_property('drag', False)
+            self._set_drag_highlight(False)
             event.ignore()
             return
 
-        qt_viewer = self._qt_viewer()
-        if qt_viewer is None:
-            self._update_property('drag', False)
-            event.ignore()
-            return
-
-        self._update_property('drag', True)
-        qt_viewer._set_drag_status()
+        self._set_drag_highlight(True)
+        self.urls_drag_entered.emit()
         event.accept()
 
     def dragLeaveEvent(self, event):
         """Override Qt method.
 
-        Provide style updates on event.
+        Clear the drag highlight when a drag leaves the overlay.
 
         Parameters
         ----------
         event : qtpy.QtCore.QDragLeaveEvent
             Event from the Qt context.
         """
-        self._update_property('drag', False)
+        self._set_drag_highlight(False)
 
     def dropEvent(self, event):
         """Override Qt method.
 
-        Provide style updates on event and emit the drop event.
+        Clear the drag highlight and forward the drop to the viewer.
 
         Parameters
         ----------
         event : qtpy.QtCore.QDropEvent
             Event from the Qt context.
         """
-        self._update_property('drag', False)
-        if qt_viewer := self._qt_viewer():
-            qt_viewer.dropEvent(event)
-        else:
-            event.ignore()
+        self._set_drag_highlight(False)
+        self.urls_dropped.emit(event)
