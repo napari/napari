@@ -18,7 +18,6 @@ from qtpy.QtWidgets import (
 
 from napari import __version__
 from napari._app_model import get_app_model
-from napari.settings import get_settings
 from napari.utils.action_manager import action_manager
 from napari.utils.interactions import Shortcut
 from napari.utils.translations import trans
@@ -50,7 +49,6 @@ WELCOME_TIPS = (
 )
 
 TIP_PLACEHOLDER_PATTERN = re.compile(r'{(.*?)}')
-SHORTCUTS_SETTINGS_KEY = 'shortcuts.shortcuts'
 
 
 class QtWelcomeLabel(QLabel):
@@ -133,7 +131,6 @@ class QtWelcomeWidget(QWidget):
             parent_resized.connect(self._sync_to_parent)
         self._sync_to_parent()
         self.hide()
-        get_settings().events.changed.connect(self._refresh_on_settings_change)
         action_manager.events.shortcut_changed.connect(self.refresh)
 
     def minimumSizeHint(self) -> QSize:
@@ -144,12 +141,8 @@ class QtWelcomeWidget(QWidget):
         self.refresh_shortcuts()
         self._update_tip_label()
 
-    def _refresh_on_settings_change(self, event) -> None:
-        if getattr(event, 'key', '').startswith(SHORTCUTS_SETTINGS_KEY):
-            self.refresh(event)
-
     def refresh_shortcuts(self, _event=None) -> None:
-        """Update the shortcut table using the current settings."""
+        """Update the shortcut table using the current runtime bindings."""
         for (
             command_id,
             shortcut_label,
@@ -212,25 +205,30 @@ class QtWelcomeWidget(QWidget):
     def _command_shortcut_and_description(
         command_id: str,
     ) -> tuple[str | None, str | None]:
-        """Return the current shortcut text and label for a command id."""
+        """Return the active shortcut text and label for a command.
+
+        NOte: The shortcut table has to support both app-model commands
+        (e.g. ``napari.window.*``) and ``action_manager`` commands
+        (e.g. ``napari:*``).
+        """
         app = get_app_model()
-        all_shortcuts = get_settings().shortcuts.shortcuts
-        keybinding = app.keybindings.get_keybinding(command_id)
 
-        shortcut = command = None
-        if keybinding is not None and command_id in app.commands:
-            shortcut = Shortcut(keybinding.keybinding).platform
-            command = app.commands[command_id].title
-        else:
-            # Some welcome entries still come from the legacy action manager,
-            # so we fall back to the settings-backed shortcut registry here.
-            keybinding = all_shortcuts.get(command_id, [None])[0]
-            action = action_manager._actions.get(command_id)
-            if keybinding is not None and action is not None:
-                shortcut = Shortcut(keybinding).platform
-                command = action.description
+        if command_id in app.commands:
+            keybinding = app.keybindings.get_keybinding(command_id)
+            shortcut = (
+                Shortcut(keybinding.keybinding).platform
+                if keybinding is not None
+                else None
+            )
+            return shortcut, app.commands[command_id].title
 
-        return shortcut, command
+        action = action_manager._actions.get(command_id)
+        if action is None:
+            return None, None
+
+        shortcuts = action_manager._shortcuts.get(command_id, [])
+        shortcut = Shortcut(shortcuts[0]).platform if shortcuts else None
+        return shortcut, action.description
 
     def paintEvent(self, event):
         """Override Qt method.
