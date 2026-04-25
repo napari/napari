@@ -74,32 +74,33 @@ class QtWelcomeWidget(QWidget):
         self._tips = tuple(tips) if tips is not None else WELCOME_TIPS
         self._current_tip = ''
 
-        # Create colored icon using theme
-        self._image = QLabel()
-        self._image.setObjectName('logo_silhouette')
-        self._image.setMinimumSize(300, 300)
-        self._version_label = QtVersionLabel(f'napari {__version__}')
-        self._label = QtWelcomeLabel(
-            'Drag file(s) here to open, or use shortcuts below:'
-        )
-        self._tip_label = QtShortcutLabel('')
-
         # Widget setup
         self.setAutoFillBackground(True)
         self.setAcceptDrops(True)
         self.setProperty('drag', False)
+
+        # Create colored icon using theme
+        self._image = QLabel()
+        self._image.setObjectName('logo_silhouette')
+        self._image.setMinimumSize(300, 300)
         self._image.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        # setup text elements
+        self._version_label = QtVersionLabel(f'napari {__version__}')
         self._version_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._version_label.setWordWrap(True)
+
+        self._label = QtWelcomeLabel(
+            'Drag file(s) here to open, or use shortcuts below:'
+        )
+        self._label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._label.setWordWrap(True)
+
+        self._tip_label = QtShortcutLabel('')
         self._tip_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._tip_label.setWordWrap(True)
 
-        # Layout
-        text_layout = QVBoxLayout()
-        text_layout.setSpacing(30)
-        text_layout.addWidget(self._version_label)
-        text_layout.addWidget(self._label)
-
+        # setup the shortcuts "table"
         shortcut_layout = QFormLayout()
         self._shortcut_rows: list[
             tuple[str, QtShortcutLabel, QtShortcutLabel]
@@ -119,11 +120,15 @@ class QtWelcomeWidget(QWidget):
         shortcut_layout.setFormAlignment(Qt.AlignHCenter | Qt.AlignTop)
         shortcut_layout.setLabelAlignment(Qt.AlignRight)
 
+        #  Widget layout of logo and text elements
         layout = QVBoxLayout()
         layout.addStretch()
         layout.setSpacing(10)
         layout.addWidget(self._image)
-        layout.addLayout(text_layout)
+        layout.addSpacing(30)
+        layout.addWidget(self._version_label)
+        layout.addSpacing(30)
+        layout.addWidget(self._label)
         layout.addLayout(shortcut_layout)
         layout.addSpacing(30)
         layout.addWidget(self._tip_label)
