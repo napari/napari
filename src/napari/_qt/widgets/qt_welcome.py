@@ -111,7 +111,8 @@ class QtWelcomeWidget(QWidget):
                 (command_id, shortcut_label, description_label)
             )
             shortcut_layout.addRow(shortcut_label, description_label)
-        shortcut_layout.setSpacing(0)
+        shortcut_layout.setVerticalSpacing(0)
+        shortcut_layout.setHorizontalSpacing(10)
         # override default form styles for consistent appearance across platforms
         shortcut_layout.setRowWrapPolicy(QFormLayout.DontWrapRows)
         shortcut_layout.setFieldGrowthPolicy(QFormLayout.FieldsStayAtSizeHint)
