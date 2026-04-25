@@ -8,7 +8,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
 )
 from napari._qt.utils import qt_signals_blocked
 from napari._vispy.utils.gl import get_max_texture_sizes
-from napari.layers.base.base import Layer
+from napari.layers import Image, Labels
 from napari.utils.translations import trans
 
 
@@ -67,7 +67,11 @@ def _format_level_label(
     return f'{index}: {shape_str} ({size_str})'
 
 
-class QtMultiscaleLevelControl(QtWidgetControlsBase):
+# MetaWidgetControlsBase merges type(QObject) and type(ABC) at runtime,
+# but mypy cannot verify this is safe.
+class QtMultiscaleLevelControl(  # type: ignore[metaclass]
+    QtWidgetControlsBase,
+):
     """Widget to manually select which multiscale level to render.
 
     Shows a combobox with "Auto" plus one entry per resolution level.
@@ -77,7 +81,7 @@ class QtMultiscaleLevelControl(QtWidgetControlsBase):
     ----------
     parent : QWidget
         Parent widget.
-    layer : Layer
+    layer : Image | Labels
         A napari layer with multiscale data (Image or Labels).
 
     Attributes
@@ -88,8 +92,9 @@ class QtMultiscaleLevelControl(QtWidgetControlsBase):
         Label for the resolution combobox.
     """
 
-    def __init__(self, parent: QWidget, layer: Layer) -> None:
+    def __init__(self, parent: QWidget, layer: Image | Labels) -> None:
         super().__init__(parent, layer)
+        self._layer: Image | Labels = layer
 
         self.level_combobox = QComboBox(parent)
         self.level_label = QtWrappedLabel(trans._('resolution:'))
@@ -136,13 +141,14 @@ class QtMultiscaleLevelControl(QtWidgetControlsBase):
                         model = self.level_combobox.model()
                         assert isinstance(model, QStandardItemModel)
                         item = model.item(item_index)
-                        item.setEnabled(False)
-                        item.setToolTip(
-                            trans._(
-                                'Exceeds GL_MAX_3D_TEXTURE_SIZE ({max_size})',
-                                max_size=max_size_3d,
+                        if item is not None:
+                            item.setEnabled(False)
+                            item.setToolTip(
+                                trans._(
+                                    'Exceeds GL_MAX_3D_TEXTURE_SIZE ({max_size})',
+                                    max_size=max_size_3d,
+                                )
                             )
-                        )
 
             # Reflect current locked state
             locked = getattr(self._layer, '_locked_data_level', None)
