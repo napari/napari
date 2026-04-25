@@ -6,10 +6,10 @@ from typing import TYPE_CHECKING
 import numpy as np
 import numpy.typing as npt
 
-from napari.layers import Labels
-
 if TYPE_CHECKING:
     from vispy.app import MouseEvent
+
+    from napari.layers import Labels
 
 
 def interpolate_coordinates(old_coord, new_coord, brush_size):
