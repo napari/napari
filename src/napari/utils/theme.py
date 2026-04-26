@@ -230,7 +230,8 @@ def get_system_theme() -> str:
     """
     try:
         from qtpy import QT6
-        from qtpy.QtGui import QGuiApplication, Qt
+        from qtpy.QtCore import Qt
+        from qtpy.QtGui import QGuiApplication
     except (ImportError, RuntimeError):
         return 'dark'
 
