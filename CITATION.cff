@@ -281,16 +281,16 @@ authors:
   family-names: Lowe
   affiliation: UCL & The Alan Turing Institute
   alias: quantumjot
-- given-names: Luca
-  family-names: Marconato
-  affiliation: EMBL Heidelberg
-  orcid: https://orcid.org/0000-0003-3198-1326
-  alias: LucaMarconato
 - given-names: Caroline
   family-names: Malin-Mayor
   affiliation: HHMI Janelia Research Campus
   orcid: https://orcid.org/0000-0002-9627-6030
   alias: cmalinmayor
+- given-names: Luca
+  family-names: Marconato
+  affiliation: EMBL Heidelberg
+  orcid: https://orcid.org/0000-0003-3198-1326
+  alias: LucaMarconato
 - given-names: Sean
   family-names: Martin
   affiliation: MetaCell
