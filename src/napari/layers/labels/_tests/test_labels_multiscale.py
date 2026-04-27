@@ -91,7 +91,7 @@ def test_multiscale_labels_data_setter():
     data = [np.zeros(20, size=s) for s in shapes]
     layer = Labels(data, multiscale=True)
 
-    new_data = [np.random.randint(20, size=s) for s in shapes]
+    new_data = [np.ones(s) for s in shapes]
     layer.data = new_data
 
     assert layer.multiscale is True
