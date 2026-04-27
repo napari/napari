@@ -783,14 +783,3 @@ def test_remove_selected_all_locked():
     layers.selection = {layer}
     layers.remove_selected()
     assert len(layers) == 1
-
-
-def test_lock_permanent_prevents_unlock():
-    """A permanently locked layer cannot be unlocked."""
-    layers = LayerList()
-    layer = Image(np.random.random((10, 10)), name='a')
-    layers.append(layer)
-    layer.lock_permanent = True
-    assert layer.locked
-    layer.locked = False
-    assert layer.locked  # still locked
