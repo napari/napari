@@ -878,7 +878,7 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
                         )
                     )
                 if colormap.name not in AVAILABLE_COLORMAPS:
-                    AVAILABLE_COLORMAPS[name] = colormap
+                    AVAILABLE_COLORMAPS[colormap.name] = colormap
                 name = colormap.name
 
         elif isinstance(colormap, dict):
@@ -968,7 +968,7 @@ def _check_if_colormap_exits(
 def _colormap_from_colors(
     colors: ColorType,
     available_colormaps: Mapping[str, Colormap],
-    name: str | None = '[unnamed colormap]',
+    name: str = '[unnamed colormap]',
 ) -> Colormap | None:
     try:
         color_array = transform_color(colors)
