@@ -93,10 +93,9 @@ class QtHistogramWidget(QWidget):
         self._histogram.events.enabled.connect(self._on_histogram_change)
 
         # Connect to layer events that affect visualization
-        if hasattr(layer, 'events'):
-            layer.events.gamma.connect(self._on_gamma_change)
-            layer.events.contrast_limits.connect(self._on_clims_change)
-            layer.events.colormap.connect(self._on_colormap_change)
+        layer.events.gamma.connect(self._on_gamma_change)
+        layer.events.contrast_limits.connect(self._on_clims_change)
+        layer.events.colormap.connect(self._on_colormap_change)
 
         self._appearance.events.theme.connect(self._on_theme_change)
 
@@ -167,9 +166,9 @@ class QtHistogramWidget(QWidget):
             counts = hist.counts
 
             # Get current layer properties
-            gamma = getattr(self.layer, 'gamma', 1.0)
-            clims = getattr(self.layer, 'contrast_limits', None)
-            clims_range = getattr(self.layer, 'contrast_limits_range', None)
+            gamma = self.layer.gamma
+            clims = self.layer.contrast_limits
+            clims_range = self.layer.contrast_limits_range
 
             # Update the visual with histogram data
             self.histogram_visual.set_data(

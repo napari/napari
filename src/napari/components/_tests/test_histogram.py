@@ -22,14 +22,17 @@ class TestHistogramModel:
         assert hist.mode == 'canvas'
         assert hist.log_scale is False
         assert hist.enabled is True
+        # No computation should happen on creation; it is deferred to the
+        # first access of bins/counts or the next data-change event.
+        assert hist._dirty is True
 
     def test_histogram_computation(self):
-        """Test histogram is computed correctly."""
+        """Test histogram is computed on first access of bins/counts."""
         data = np.arange(1000, dtype=np.float32).reshape((10, 100))
         layer = Image(data)
         hist = layer.histogram
 
-        # Force computation
+        # Computation is triggered lazily by accessing the properties.
         bins = hist.bins
         counts = hist.counts
 
@@ -37,15 +40,29 @@ class TestHistogramModel:
         assert len(counts) == 256
         assert counts.sum() > 0  # Should have some counts
 
+    def test_histogram_not_computed_on_creation(self):
+        """Histogram must not run np.histogram during model creation.
+
+        Computation is deferred until the histogram widget is shown or the
+        caller explicitly accesses bins/counts. This avoids a wasted compute
+        when the model is created but immediately disabled (e.g. the inline
+        controls widget creates-then-hides the histogram on first button click).
+        """
+        data = np.random.random((100, 100))
+        layer = Image(data)
+        hist = HistogramModel(layer)  # enabled=True by default
+
+        assert hist._dirty is True  # computation has not run
+
     def test_histogram_lazy_computation(self):
-        """Test that histogram is computed lazily."""
+        """Accessing bins/counts triggers computation; disabled prevents it."""
         data = np.random.random((100, 100))
         layer = Image(data)
         hist = HistogramModel(layer, enabled=False)
 
-        # Should not compute when disabled
+        # When disabled, accessing the properties must NOT trigger computation.
         assert hist._dirty is True
-        _ = hist.bins  # Access should not trigger computation when disabled
+        _ = hist.bins
         assert hist._dirty is True
 
     def test_histogram_data_change_triggers_recompute(self):

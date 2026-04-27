@@ -122,14 +122,11 @@ class QtGammaSliderControl(QtWidgetControlsBase):
         else:
             # Add histogram widget to layout (after gamma slider)
             gamma_row = -1
-            for i in range(layout.rowCount()):
-                if layout.itemAt(i, layout.ItemRole.FieldRole):
-                    widget = layout.itemAt(
-                        i, layout.ItemRole.FieldRole
-                    ).widget()
-                    if widget == self.gamma_slider:
-                        gamma_row = i
-                        break
+            for row in range(layout.rowCount()):
+                item = layout.itemAt(row, layout.ItemRole.FieldRole)
+                if item and item.widget() is self.gamma_slider:
+                    gamma_row = row
+                    break
 
             if gamma_row >= 0:
                 # Span the histogram across the full form width.
@@ -149,9 +146,7 @@ class QtGammaSliderControl(QtWidgetControlsBase):
         # The popup's showEvent manages histogram enable/disable; do not
         # pre-enable here, or the popup cannot tell whether it was the one
         # that enabled it and will skip the matching disable on close.
-        parent = self.parent()
-        if hasattr(parent, '_contrast_limits_control'):
-            parent._contrast_limits_control.show_clim_popup()
+        self.parent()._contrast_limits_control.show_clim_popup()
 
     def get_widget_controls(
         self,

@@ -113,9 +113,8 @@ class HistogramModel(EventedModel):
         self.events.mode.connect(self._on_params_change)
         self.events.log_scale.connect(self._on_log_scale_change)
 
-        # Initial computation
-        if self.enabled:
-            self.compute()
+        # Do not compute on creation — bins/counts are computed lazily on
+        # first access, or automatically when enabled and data changes.
 
     @property
     def bins(self) -> np.ndarray:
@@ -234,18 +233,15 @@ class HistogramModel(EventedModel):
         return self._get_full_data()
 
     def _get_slice_raw_data(self) -> Optional[np.ndarray]:
-        """Get the currently sliced raw image data if available."""
-        if (
-            hasattr(self._layer, '_slice')
-            and self._layer._slice is not None
-            and hasattr(self._layer._slice, 'image')
-            and self._layer._slice.image is not None
-            and hasattr(self._layer._slice.image, 'raw')
-        ):
-            raw = self._layer._slice.image.raw
-            if raw is not None:
-                return np.asarray(raw)
-        return None
+        """Get the currently sliced raw image data if available.
+
+        Image always has _slice.image.raw, but _slice itself may be None
+        before the layer has been rendered for the first time.
+        """
+        if self._layer._slice is None:
+            return None
+        raw = self._layer._slice.image.raw
+        return np.asarray(raw) if raw is not None else None
 
     def _has_real_displayed_data(self, raw: np.ndarray) -> bool:
         """Return True when sliced data is more than the placeholder sample."""
