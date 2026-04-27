@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Literal
 from qtpy.QtWidgets import (
     QCheckBox,
     QComboBox,
-    QHBoxLayout,
+    QGridLayout,
     QLabel,
     QSpinBox,
     QWidget,
@@ -54,8 +54,10 @@ class QtHistogramSettingsWidget(QWidget):
         self._histogram = histogram_model
         self._callbacks = []
 
-        layout = QHBoxLayout()
+        layout = QGridLayout()
         layout.setContentsMargins(0, 0, 0, 0)
+        layout.setHorizontalSpacing(6)
+        layout.setVerticalSpacing(4)
 
         self.mode_combobox = None
         self.n_bins_spinbox = None
@@ -73,7 +75,8 @@ class QtHistogramSettingsWidget(QWidget):
         self.mode_combobox.currentTextChanged.connect(self._on_mode_change)
 
         histogram_model.events.mode.connect(self._on_model_mode_change)
-        layout.addWidget(self.mode_combobox)
+        layout.addWidget(QLabel(trans._('mode:')), 0, 0)
+        layout.addWidget(self.mode_combobox, 0, 1)
 
         # Bins spinbox
         self.n_bins_spinbox = QSpinBox()
@@ -88,8 +91,8 @@ class QtHistogramSettingsWidget(QWidget):
 
         histogram_model.events.n_bins.connect(self._on_model_n_bins_change)
 
-        layout.addWidget(QLabel(trans._('bins:')))
-        layout.addWidget(self.n_bins_spinbox)
+        layout.addWidget(QLabel(trans._('bins:')), 1, 0)
+        layout.addWidget(self.n_bins_spinbox, 1, 1)
 
         # Log scale checkbox
         self.log_scale_checkbox = QCheckBox(trans._('log'))
@@ -106,7 +109,7 @@ class QtHistogramSettingsWidget(QWidget):
         histogram_model.events.log_scale.connect(
             self._on_model_log_scale_change
         )
-        layout.addWidget(self.log_scale_checkbox)
+        layout.addWidget(self.log_scale_checkbox, 0, 2)
 
         self.setLayout(layout)
 

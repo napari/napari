@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypeGuard
 
 from qtpy.QtWidgets import (
     QVBoxLayout,
@@ -13,11 +13,16 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,
 )
-from napari._qt.widgets.qt_histogram import QtHistogramWidget
-from napari._qt.widgets.qt_histogram_settings import QtHistogramSettingsWidget
+from napari._qt.widgets.qt_histogram_content import QtHistogramContentWidget
+from napari.layers import Image
 
 if TYPE_CHECKING:
-    from napari.layers import Image
+    from napari.layers import Image as ImageLayer
+
+
+def layer_supports_histogram_ui(layer: object) -> TypeGuard[Image]:
+    """Return True when the layer supports the single-layer histogram UI."""
+    return isinstance(layer, Image) and not layer.rgb
 
 
 class QtHistogramControl(QtWidgetControlsBase):
@@ -44,12 +49,13 @@ class QtHistogramControl(QtWidgetControlsBase):
         Shared widget for log scale, bins, and mode controls.
     """
 
-    def __init__(self, parent: QWidget, layer: Image) -> None:
+    def __init__(self, parent: QWidget, layer: ImageLayer) -> None:
         super().__init__(parent, layer)
 
         # Create content widget
-        self.content_widget = QWidget()
+        self.content_widget = QWidget(parent)
         self.content_widget.hide()
+        self.histogram_content = None
         self.histogram_widget = None
         self.settings_widget = None
 
@@ -60,19 +66,17 @@ class QtHistogramControl(QtWidgetControlsBase):
 
     def ensure_content(self) -> None:
         """Create the histogram UI lazily when it is first requested."""
-        if self.histogram_widget is not None:
+        if self.histogram_content is not None:
             return
 
-        self.histogram_widget = QtHistogramWidget(
-            self._layer, parent=self.content_widget
-        )
-        self._content_layout.addWidget(self.histogram_widget)
-
-        self.settings_widget = QtHistogramSettingsWidget(
-            self._layer.histogram,
+        self.histogram_content = QtHistogramContentWidget(
+            self._layer,
             parent=self.content_widget,
         )
-        self._content_layout.addWidget(self.settings_widget)
+        self._content_layout.addWidget(self.histogram_content)
+
+        self.histogram_widget = self.histogram_content.histogram_widget
+        self.settings_widget = self.histogram_content.settings_widget
 
         # Keep histogram computation off until the widget is explicitly shown.
         self._layer.histogram.enabled = False
@@ -94,7 +98,5 @@ class QtHistogramControl(QtWidgetControlsBase):
     def disconnect_widget_controls(self) -> None:
         """Disconnect event handlers and clean up."""
         super().disconnect_widget_controls()
-        if self.settings_widget is not None:
-            self.settings_widget.cleanup()
-        if self.histogram_widget is not None:
-            self.histogram_widget.cleanup()
+        if self.histogram_content is not None:
+            self.histogram_content.cleanup()

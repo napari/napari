@@ -1,5 +1,7 @@
 """Tests for the HistogramModel class."""
 
+from dataclasses import replace
+
 import numpy as np
 
 from napari.components.histogram import HistogramModel
@@ -122,6 +124,46 @@ class TestHistogramModel:
         # Full should have more data points
         # (though counts sum depends on binning)
         assert counts_full is not None
+
+    def test_histogram_canvas_mode_falls_back_before_first_real_slice(self):
+        """Canvas mode should ignore the placeholder 1x1 sliced sample."""
+        data = np.arange(64, dtype=np.uint8).reshape((8, 8))
+        layer = Image(data)
+        layer._slicing_state._slice = replace(
+            layer._slice,
+            image=replace(
+                layer._slice.image, raw=data[:1, :1], view=data[:1, :1]
+            ),
+        )
+        hist = HistogramModel(layer)
+
+        assert hist.mode == 'canvas'
+        assert hist.counts.sum() == data.size
+
+        hist.mode = 'full'
+        assert hist.counts.sum() == data.size
+
+    def test_histogram_canvas_mode_falls_back_before_first_real_rgb_slice(
+        self,
+    ):
+        """Canvas mode should ignore the placeholder RGB sample before slicing."""
+        data = np.arange(8 * 8 * 3, dtype=np.uint8).reshape((8, 8, 3))
+        layer = Image(data, rgb=True)
+        layer._slicing_state._slice = replace(
+            layer._slice,
+            image=replace(
+                layer._slice.image,
+                raw=data[:1, :1, :],
+                view=data[:1, :1, :],
+            ),
+        )
+        hist = HistogramModel(layer)
+
+        assert hist.mode == 'canvas'
+        assert hist.counts.sum() == data.size
+
+        hist.mode = 'full'
+        assert hist.counts.sum() == data.size
 
     def test_histogram_sampling_large_data(self):
         """Test that large data is sampled."""
@@ -252,6 +294,20 @@ class TestHistogramModel:
 
         counts = hist.counts
         assert counts is not None
+
+    def test_histogram_multiscale_full_uses_coarsest_level(self):
+        """Full mode should use the coarsest multiscale level."""
+        data = [
+            np.arange(10000, dtype=np.float32).reshape((100, 100)),
+            np.arange(2500, dtype=np.float32).reshape((50, 50)),
+            np.arange(625, dtype=np.float32).reshape((25, 25)),
+        ]
+        layer = Image(data, multiscale=True)
+        hist = layer.histogram
+
+        hist.mode = 'full'
+
+        assert hist.counts.sum() == data[-1].size
 
     def test_histogram_rgb_image(self):
         """Test histogram with RGB image."""

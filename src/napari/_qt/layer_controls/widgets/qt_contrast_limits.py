@@ -13,13 +13,15 @@ from qtpy.QtWidgets import (
 from superqt import QDoubleRangeSlider
 
 from napari._qt.dialogs.qt_modal import QtPopup
+from napari._qt.layer_controls.widgets.qt_histogram_control import (
+    layer_supports_histogram_ui,
+)
 from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,
 )
 from napari._qt.utils import qt_signals_blocked
-from napari._qt.widgets.qt_histogram import QtHistogramWidget
-from napari._qt.widgets.qt_histogram_settings import QtHistogramSettingsWidget
+from napari._qt.widgets.qt_histogram_content import QtHistogramContentWidget
 from napari.layers import Image, Surface
 from napari.utils._dtype import normalize_dtype
 from napari.utils.events.event_utils import connect_no_arg, connect_setattr
@@ -129,25 +131,23 @@ class QContrastLimitsPopup(QtPopup):
         )
 
         # Add histogram widget for Image layers, Surface layers not yet implemented
+        self.histogram_content = None
         self.histogram_widget = None
         self.settings_widget = None
-        if isinstance(layer, Image):
-            # Create histogram widget
-            self.histogram_widget = QtHistogramWidget(layer)
+        if layer_supports_histogram_ui(layer):
+            self.histogram_content = QtHistogramContentWidget(
+                layer, parent=self
+            )
+            self.histogram_widget = self.histogram_content.histogram_widget
+            self.settings_widget = self.histogram_content.settings_widget
 
             # Add histogram below the slider (slider is at index 0)
-            self._layout.insertWidget(1, self.histogram_widget)
+            self._layout.insertWidget(1, self.histogram_content)
 
             # Create controls layout below histogram
             controls_layout = QHBoxLayout()
             controls_layout.setContentsMargins(0, 5, 0, 5)
             controls_layout.setSpacing(10)
-
-            # Add shared settings widget (mode, bins, log scale)
-            self.settings_widget = QtHistogramSettingsWidget(
-                layer.histogram,
-            )
-            controls_layout.addWidget(self.settings_widget)
 
             # Add gamma slider with label
             if hasattr(layer, 'gamma'):
@@ -233,9 +233,7 @@ class QContrastLimitsPopup(QtPopup):
     def showEvent(self, event):
         """Enable histogram when popup is shown."""
         super().showEvent(event)
-        if self.histogram_widget is not None and isinstance(
-            self._layer, Image
-        ):
+        if self.histogram_widget is not None:
             # Track if histogram was already enabled before we open the popup
             self._histogram_was_enabled = self._layer.histogram.enabled
             if not self._histogram_was_enabled:
@@ -259,7 +257,6 @@ class QContrastLimitsPopup(QtPopup):
         """Disable histogram when popup is hidden/closed, only if popup enabled it."""
         if (
             self.histogram_widget is not None
-            and isinstance(self._layer, Image)
             and not self._histogram_was_enabled
         ):
             # Only disable if the popup was the one that enabled it
@@ -271,10 +268,8 @@ class QContrastLimitsPopup(QtPopup):
             return
         self._cleaned_up = True
 
-        if self.settings_widget is not None:
-            self.settings_widget.cleanup()
-        if self.histogram_widget is not None:
-            self.histogram_widget.cleanup()
+        if self.histogram_content is not None:
+            self.histogram_content.cleanup()
         if hasattr(self, 'gamma_slider') and hasattr(self._layer, 'events'):
             with contextlib.suppress(ValueError, RuntimeError):
                 self._layer.events.gamma.disconnect(

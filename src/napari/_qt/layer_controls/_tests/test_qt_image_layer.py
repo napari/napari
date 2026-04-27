@@ -1,4 +1,5 @@
 import numpy as np
+from qtpy.QtCore import Qt
 
 from napari._qt.layer_controls.qt_image_controls import QtImageControls
 from napari.components.dims import Dims
@@ -142,3 +143,49 @@ def test_auto_contrast_buttons(qtbot):
     dims.point = (4, 8, 8)
     layer._slice_dims(dims)
     assert layer.contrast_limits == [192, 255]
+
+
+def test_histogram_button_toggles_inline_histogram(qtbot):
+    layer = Image(np.random.rand(8, 8))
+    qtctrl = QtImageControls(layer)
+    qtbot.addWidget(qtctrl)
+
+    button = qtctrl._gamma_slider_control.histogram_button
+    assert button is not None
+    assert qtctrl._histogram_control is not None
+    assert qtctrl._histogram_control.content_widget.isHidden()
+
+    qtbot.mouseClick(button, Qt.MouseButton.LeftButton)
+
+    assert not qtctrl._histogram_control.content_widget.isHidden()
+    assert (
+        qtctrl.layout().labelForField(qtctrl._histogram_control.content_widget)
+        is None
+    )
+    assert layer.histogram.enabled
+    assert button.isChecked()
+
+    qtbot.mouseClick(button, Qt.MouseButton.LeftButton)
+
+    assert qtctrl._histogram_control.content_widget.isHidden()
+    assert not layer.histogram.enabled
+    assert not button.isChecked()
+
+
+def test_histogram_button_right_click_opens_popup(qtbot):
+    layer = Image(np.random.rand(8, 8))
+    qtctrl = QtImageControls(layer)
+    qtbot.addWidget(qtctrl)
+
+    button = qtctrl._gamma_slider_control.histogram_button
+    assert button is not None
+
+    qtbot.mouseClick(button, Qt.MouseButton.RightButton)
+
+    popup = qtctrl._contrast_limits_control.clim_popup
+    assert popup is not None
+    assert popup.histogram_widget is not None
+    assert popup.settings_widget is not None
+    assert not button.isChecked()
+
+    popup.close()

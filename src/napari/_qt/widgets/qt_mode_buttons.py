@@ -84,6 +84,8 @@ class QtModePushButton(QPushButton):
         in stylesheets (e.g. to add a custom icon)
     slot : callable, optional
         The function to call when this button is clicked.
+    checkable : bool, optional
+        Whether the button should toggle between checked states.
     tooltip : str, optional
         A tooltip to display when hovering the mouse on this button.
 
@@ -93,13 +95,27 @@ class QtModePushButton(QPushButton):
         The layer instance that this button controls.
     """
 
-    def __init__(self, layer, button_name, *, slot=None, tooltip=None) -> None:
+    def __init__(
+        self,
+        layer,
+        button_name,
+        *,
+        slot=None,
+        tooltip=None,
+        checkable=False,
+        checked=False,
+    ) -> None:
         super().__init__()
 
         self.layer = layer
         self.setProperty('mode', button_name)
         self.setToolTip(tooltip or button_name)
+        self.setCheckable(checkable)
+        self.setChecked(checked)
         self.setFixedWidth(28)
         self.setFixedHeight(28)
         if slot is not None:
-            self.clicked.connect(slot)
+            if checkable:
+                self.toggled.connect(slot)
+            else:
+                self.clicked.connect(slot)

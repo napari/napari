@@ -2,15 +2,13 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal, Optional
+from typing import Literal, Optional
 
 import numpy as np
 from pydantic import PrivateAttr
 
+from napari.layers import Image
 from napari.utils.events import EventedModel
-
-if TYPE_CHECKING:
-    from napari.layers import Image
 
 __all__ = ('HistogramModel',)
 
@@ -64,7 +62,7 @@ class HistogramModel(EventedModel):
     enabled: bool = True
 
     # Private attributes (use PrivateAttr for pydantic)
-    _layer: object = PrivateAttr()
+    _layer: Image = PrivateAttr()
     _bins: np.ndarray = PrivateAttr(
         default_factory=lambda: np.array([0.0, 1.0])
     )
@@ -169,6 +167,9 @@ class HistogramModel(EventedModel):
 
         # Get histogram range from contrast limits range
         range_min, range_max = self._layer.contrast_limits_range
+        if range_min is None or range_max is None:
+            range_min = float(np.nanmin(data))
+            range_max = float(np.nanmax(data))
 
         # Handle edge case where min == max
         if range_min == range_max:
@@ -224,8 +225,17 @@ class HistogramModel(EventedModel):
         np.ndarray | None
             Data from displayed slice only.
         """
-        # Use the already-sliced data from the rendering pipeline
-        # This correctly handles multiscale, dask, and async loading
+        raw = self._get_slice_raw_data()
+        if raw is not None and self._has_real_displayed_data(raw):
+            return raw
+
+        # Fallback: if slice not available, use full data
+        # This can happen before first render or while the placeholder slice
+        # still contains a single sampled value.
+        return self._get_full_data()
+
+    def _get_slice_raw_data(self) -> Optional[np.ndarray]:
+        """Get the currently sliced raw image data if available."""
         if (
             hasattr(self._layer, '_slice')
             and self._layer._slice is not None
@@ -236,10 +246,28 @@ class HistogramModel(EventedModel):
             raw = self._layer._slice.image.raw
             if raw is not None:
                 return np.asarray(raw)
+        return None
 
-        # Fallback: if slice not available, use full data
-        # This can happen before first render
-        return self._get_full_data()
+    def _has_real_displayed_data(self, raw: np.ndarray) -> bool:
+        """Return True when sliced data is more than the placeholder sample."""
+        if raw.size == 0:
+            return False
+
+        if self._layer.multiscale:
+            return True
+
+        displayed_shape = raw.shape[:-1] if self._layer.rgb else raw.shape
+        if any(size != 1 for size in displayed_shape):
+            return True
+
+        full_data = self._get_full_data()
+        if full_data is None:
+            return True
+
+        full_shape = (
+            full_data.shape[:-1] if self._layer.rgb else full_data.shape
+        )
+        return all(size == 1 for size in full_shape)
 
     def _get_full_data(self) -> Optional[np.ndarray]:
         """Get full volume data.
