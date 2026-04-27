@@ -88,7 +88,7 @@ def test_3D_multiscale_labels_in_3D():
 def test_multiscale_labels_data_setter():
     """Setting .data on a multiscale Labels layer should not crash."""
     shapes = [(40, 20), (20, 10), (10, 5)]
-    data = [np.zeros(20, size=s) for s in shapes]
+    data = [np.zeros(s) for s in shapes]
     layer = Labels(data, multiscale=True)
 
     new_data = [np.ones(s) for s in shapes]
