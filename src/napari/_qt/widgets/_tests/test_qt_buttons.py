@@ -37,32 +37,6 @@ def test_push_button(qtbot):
     qtbot.waitUntil(lambda: layer.test_prop, timeout=500)
 
 
-def test_push_button_can_toggle(qtbot):
-    """Make sure the QtModePushButton supports toggle callbacks."""
-    layer = Points()
-    layer.test_states = []
-
-    def record_state(state):
-        layer.test_states.append(state)
-
-    btn = QtModePushButton(
-        layer,
-        'test_button',
-        slot=record_state,
-        tooltip='tooltip',
-        checkable=True,
-    )
-    assert btn.property('mode') == 'test_button'
-    assert btn.toolTip() == 'tooltip'
-    assert btn.isCheckable()
-
-    btn.click()
-    qtbot.waitUntil(lambda: layer.test_states == [True], timeout=500)
-
-    btn.click()
-    qtbot.waitUntil(lambda: layer.test_states == [True, False], timeout=500)
-
-
 def test_layers_button_works(make_napari_viewer):
     v = make_napari_viewer()
     layer = v.add_layer(Points())

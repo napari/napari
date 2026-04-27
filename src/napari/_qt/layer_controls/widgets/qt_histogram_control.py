@@ -29,8 +29,8 @@ class QtHistogramControl(QtWidgetControlsBase):
     """
     Histogram control widget for Image layers.
 
-    This widget provides a histogram visualization along with settings controls
-    that can be shown/hidden via the histogram button on the gamma slider.
+    This widget provides the lazily-created inline histogram content that is
+    shown or hidden via the histogram button on the gamma slider.
 
     Parameters
     ----------
@@ -43,10 +43,8 @@ class QtHistogramControl(QtWidgetControlsBase):
     ----------
     content_widget : QWidget
         The main content widget containing histogram and controls.
-    histogram_widget : QtHistogramWidget
-        The vispy-based histogram visualization widget.
     settings_widget : QtHistogramSettingsWidget
-        Shared widget for log scale, bins, and mode controls.
+        Shared widget for histogram mode and log scale controls.
     """
 
     def __init__(self, parent: QWidget, layer: ImageLayer) -> None:

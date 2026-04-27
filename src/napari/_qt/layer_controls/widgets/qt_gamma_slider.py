@@ -1,4 +1,5 @@
 from qtpy.QtCore import Qt
+from qtpy.QtWidgets import QPushButton
 from superqt import QLabeledDoubleSlider
 
 from napari._qt.layer_controls.widgets.qt_histogram_control import (
@@ -9,7 +10,6 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWrappedLabel,
 )
 from napari._qt.utils import attr_to_settr
-from napari._qt.widgets.qt_mode_buttons import QtModePushButton
 from napari.layers.base.base import Layer
 from napari.utils.events.event_utils import connect_setattr
 from napari.utils.translations import trans
@@ -33,7 +33,7 @@ class QtGammaSliderControl(QtWidgetControlsBase):
         Gamma adjustment slider widget.
     gamma_slider_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for the gamma chooser widget.
-    histogram_button : QtModePushButton
+    histogram_button : QPushButton
         Button to toggle histogram widget.
     """
 
@@ -57,21 +57,18 @@ class QtGammaSliderControl(QtWidgetControlsBase):
         self.gamma_slider_label = QtWrappedLabel(trans._('gamma:'))
 
         if layer_supports_histogram_ui(layer):
-            # Create histogram button on same row by appending to slider's layout
-            self.histogram_button = QtModePushButton(
-                layer,
-                button_name='histogram',
-                slot=self._on_histogram_button_toggled,
-                checkable=True,
-                tooltip=(
-                    'Left click to toggle histogram in layer controls.\n'
-                    'Right click to open histogram popup.'
-                ),
+            self.histogram_button = QPushButton(parent)
+            self.histogram_button.setProperty('mode', 'histogram')
+            self.histogram_button.setToolTip(
+                'Left click to toggle histogram in layer controls.\n'
+                'Right click to open histogram popup.'
             )
-            # Install event filter for right-click handling
+            self.histogram_button.setCheckable(True)
+            self.histogram_button.setFixedSize(28, 28)
+            self.histogram_button.toggled.connect(
+                self._on_histogram_button_toggled
+            )
             self.histogram_button.installEventFilter(self)
-
-            # Add button directly to slider's layout
             sld.layout().addWidget(self.histogram_button)
 
     def eventFilter(self, obj, event):

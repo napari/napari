@@ -7,9 +7,7 @@ from typing import TYPE_CHECKING, Literal
 from qtpy.QtWidgets import (
     QCheckBox,
     QComboBox,
-    QGridLayout,
-    QLabel,
-    QSpinBox,
+    QHBoxLayout,
     QWidget,
 )
 
@@ -22,11 +20,10 @@ if TYPE_CHECKING:
 
 
 class QtHistogramSettingsWidget(QWidget):
-    """Reusable widget for histogram settings (log scale, mode, bins).
+    """Reusable widget for histogram mode and log scale.
 
-    This widget provides consistent controls for histogram settings that
-    can be shared between the layer controls histogram panel and the
-    contrast limits popup.
+    This widget provides the shared histogram controls used by the
+    layer controls histogram panel and the contrast limits popup.
 
     Parameters
     ----------
@@ -39,8 +36,6 @@ class QtHistogramSettingsWidget(QWidget):
     ----------
     mode_combobox : QComboBox | None
         Combobox for selecting canvas/full mode.
-    n_bins_spinbox : QSpinBox | None
-        Spinbox for setting number of bins.
     log_scale_checkbox : QCheckBox | None
         Checkbox for toggling log scale.
     """
@@ -52,15 +47,11 @@ class QtHistogramSettingsWidget(QWidget):
     ) -> None:
         super().__init__(parent)
         self._histogram = histogram_model
-        self._callbacks = []
-
-        layout = QGridLayout()
+        layout = QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setHorizontalSpacing(6)
-        layout.setVerticalSpacing(4)
+        layout.setSpacing(6)
 
         self.mode_combobox = None
-        self.n_bins_spinbox = None
         self.log_scale_checkbox = None
 
         # Mode selector
@@ -75,24 +66,7 @@ class QtHistogramSettingsWidget(QWidget):
         self.mode_combobox.currentTextChanged.connect(self._on_mode_change)
 
         histogram_model.events.mode.connect(self._on_model_mode_change)
-        layout.addWidget(QLabel(trans._('mode:')), 0, 0)
-        layout.addWidget(self.mode_combobox, 0, 1)
-
-        # Bins spinbox
-        self.n_bins_spinbox = QSpinBox()
-        self.n_bins_spinbox.setRange(8, 1024)
-        self.n_bins_spinbox.setValue(histogram_model.n_bins)
-        self.n_bins_spinbox.setToolTip(trans._('Number of histogram bins'))
-        connect_setattr(
-            self.n_bins_spinbox.valueChanged,
-            histogram_model,
-            'n_bins',
-        )
-
-        histogram_model.events.n_bins.connect(self._on_model_n_bins_change)
-
-        layout.addWidget(QLabel(trans._('bins:')), 1, 0)
-        layout.addWidget(self.n_bins_spinbox, 1, 1)
+        layout.addWidget(self.mode_combobox)
 
         # Log scale checkbox
         self.log_scale_checkbox = QCheckBox(trans._('log'))
@@ -109,7 +83,8 @@ class QtHistogramSettingsWidget(QWidget):
         histogram_model.events.log_scale.connect(
             self._on_model_log_scale_change
         )
-        layout.addWidget(self.log_scale_checkbox, 0, 2)
+        layout.addWidget(self.log_scale_checkbox)
+        layout.addStretch()
 
         self.setLayout(layout)
 
@@ -122,12 +97,6 @@ class QtHistogramSettingsWidget(QWidget):
         if self.mode_combobox is not None:
             with qt_signals_blocked(self.mode_combobox):
                 self.mode_combobox.setCurrentText(self._histogram.mode)
-
-    def _on_model_n_bins_change(self, event=None) -> None:
-        """Update spinbox when n_bins changes in the model."""
-        if self.n_bins_spinbox is not None:
-            with qt_signals_blocked(self.n_bins_spinbox):
-                self.n_bins_spinbox.setValue(self._histogram.n_bins)
 
     def _on_model_log_scale_change(self, event=None) -> None:
         """Update checkbox when log_scale changes in the model."""
