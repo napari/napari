@@ -146,12 +146,9 @@ class QtGammaSliderControl(QtWidgetControlsBase):
         if not layer_supports_histogram_ui(self._layer):
             return
 
-        # Enable histogram if not already enabled
-        if not self._layer.histogram.enabled:
-            self._layer.histogram.enabled = True
-            self._layer.histogram.compute()
-
-        # Access the parent's contrast limits control to show the popup
+        # The popup's showEvent manages histogram enable/disable; do not
+        # pre-enable here, or the popup cannot tell whether it was the one
+        # that enabled it and will skip the matching disable on close.
         parent = self.parent()
         if hasattr(parent, '_contrast_limits_control'):
             parent._contrast_limits_control.show_clim_popup()

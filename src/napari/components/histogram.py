@@ -340,14 +340,8 @@ class HistogramModel(EventedModel):
         self._mark_dirty()
 
     def _on_log_scale_change(self) -> None:
-        """Called when log_scale changes.
-
-        For log scale, we can just retransform the counts without
-        recomputing the histogram.
-        """
+        """Called when log_scale changes. Triggers full recomputation."""
         if not self._dirty:
-            # Re-apply log transform to existing counts
-            # We need to recompute to get original counts
             self._mark_dirty()
 
     def _mark_dirty(self) -> None:

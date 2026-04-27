@@ -34,9 +34,9 @@ class QtHistogramSettingsWidget(QWidget):
 
     Attributes
     ----------
-    mode_combobox : QComboBox | None
+    mode_combobox : QComboBox
         Combobox for selecting canvas/full mode.
-    log_scale_checkbox : QCheckBox | None
+    log_scale_checkbox : QCheckBox
         Checkbox for toggling log scale.
     """
 
@@ -50,9 +50,6 @@ class QtHistogramSettingsWidget(QWidget):
         layout = QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(6)
-
-        self.mode_combobox = None
-        self.log_scale_checkbox = None
 
         # Mode selector
         self.mode_combobox = QComboBox()
@@ -94,15 +91,13 @@ class QtHistogramSettingsWidget(QWidget):
 
     def _on_model_mode_change(self, event=None) -> None:
         """Update combobox when mode changes in the model."""
-        if self.mode_combobox is not None:
-            with qt_signals_blocked(self.mode_combobox):
-                self.mode_combobox.setCurrentText(self._histogram.mode)
+        with qt_signals_blocked(self.mode_combobox):
+            self.mode_combobox.setCurrentText(self._histogram.mode)
 
     def _on_model_log_scale_change(self, event=None) -> None:
         """Update checkbox when log_scale changes in the model."""
-        if self.log_scale_checkbox is not None:
-            with qt_signals_blocked(self.log_scale_checkbox):
-                self.log_scale_checkbox.setChecked(self._histogram.log_scale)
+        with qt_signals_blocked(self.log_scale_checkbox):
+            self.log_scale_checkbox.setChecked(self._histogram.log_scale)
 
     def cleanup(self) -> None:
         """Disconnect event handlers."""

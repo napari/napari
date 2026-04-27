@@ -165,10 +165,6 @@ class QtHistogramWidget(QWidget):
 
             bins = hist.bins
             counts = hist.counts
-            if bins is None or counts is None:
-                self.histogram_visual.set_data()
-                self.canvas.update()
-                return
 
             # Get current layer properties
             gamma = getattr(self.layer, 'gamma', 1.0)

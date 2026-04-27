@@ -4,13 +4,15 @@ from typing import Optional
 import numpy as np
 from qtpy.QtCore import Qt, Signal
 from qtpy.QtWidgets import (
+    QApplication,
     QHBoxLayout,
     QLabel,
     QPushButton,
     QSlider,
+    QVBoxLayout,
     QWidget,
 )
-from superqt import QDoubleRangeSlider
+from superqt import QDoubleRangeSlider, QLabeledDoubleRangeSlider
 
 from napari._qt.dialogs.qt_modal import QtPopup
 from napari._qt.layer_controls.widgets.qt_histogram_control import (
@@ -98,9 +100,6 @@ class QContrastLimitsPopup(QtPopup):
         )
 
         # Create vertical layout for stacking widgets
-        from qtpy.QtWidgets import QApplication, QVBoxLayout
-        from superqt import QLabeledDoubleRangeSlider
-
         self._layout = QVBoxLayout()
         self._layout.setContentsMargins(10, 10, 10, 10)
         self._layout.setSpacing(5)
@@ -259,7 +258,9 @@ class QContrastLimitsPopup(QtPopup):
             self.histogram_widget is not None
             and not self._histogram_was_enabled
         ):
-            # Only disable if the popup was the one that enabled it
+            # Mark as already-enabled so a second call (closeEvent fires then
+            # hideEvent also fires) is a no-op and avoids a redundant event.
+            self._histogram_was_enabled = True
             self._layer.histogram.enabled = False
 
     def _cleanup(self) -> None:
@@ -284,23 +285,15 @@ class QContrastLimitsPopup(QtPopup):
 
     def _on_gamma_slider_changed(self, value: int) -> None:
         """Handle gamma slider value change."""
-        gamma = (
-            value / 10.0
-        )  # Convert slider value (10-100) to gamma (0.1-10.0)
-        if self.histogram_widget is not None and hasattr(
-            self.histogram_widget.layer, 'gamma'
-        ):
-            self.histogram_widget.layer.gamma = gamma
-            self.gamma_value_label.setText(f'{gamma:.2f}')
+        gamma = value / 10.0  # slider range 1-20 maps to gamma 0.1-2.0
+        self._layer.gamma = gamma
+        self.gamma_value_label.setText(f'{gamma:.2f}')
 
     def _on_layer_gamma_changed(self, event=None) -> None:
         """Update gamma slider when layer gamma changes externally."""
-        if hasattr(self, 'gamma_slider') and self.histogram_widget is not None:
-            layer = self.histogram_widget.layer
-            if hasattr(layer, 'gamma'):
-                with qt_signals_blocked(self.gamma_slider):
-                    self.gamma_slider.setValue(int(layer.gamma * 10))
-                self.gamma_value_label.setText(f'{layer.gamma:.2f}')
+        with qt_signals_blocked(self.gamma_slider):
+            self.gamma_slider.setValue(int(self._layer.gamma * 10))
+        self.gamma_value_label.setText(f'{self._layer.gamma:.2f}')
 
 
 QRangeSliderPopup = QContrastLimitsPopup
