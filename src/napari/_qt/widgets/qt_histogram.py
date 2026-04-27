@@ -14,6 +14,7 @@ from napari.utils.events.event_utils import disconnect_events
 from napari.utils.theme import get_theme
 
 if TYPE_CHECKING:
+    from napari.components import ViewerModel
     from napari.layers import Image
 
 
@@ -48,11 +49,12 @@ class QtHistogramWidget(QWidget):
         self.layer = layer
         self._histogram = layer.histogram
         self._appearance = get_settings().appearance
+        self._viewer = self._find_viewer()
         self._updating = False
         self._target_width = 300
         self._target_height = 150
 
-        theme = get_theme(self._appearance.theme)
+        theme = get_theme(self._theme_id())
 
         # Create vispy canvas
         self.canvas = SceneCanvas(
@@ -98,6 +100,8 @@ class QtHistogramWidget(QWidget):
         layer.events.colormap.connect(self._on_colormap_change)
 
         self._appearance.events.theme.connect(self._on_theme_change)
+        if self._viewer is not None:
+            self._viewer.events.theme.connect(self._on_theme_change)
 
         self._apply_visual_style()
 
@@ -131,6 +135,22 @@ class QtHistogramWidget(QWidget):
         red, green, blue = color.as_rgb_tuple()
         return (red / 255, green / 255, blue / 255, alpha)
 
+    def _theme_id(self) -> str:
+        """Return the active theme id for this histogram widget."""
+        if self._viewer is not None:
+            return self._viewer.theme
+        return self._appearance.theme
+
+    def _find_viewer(self) -> ViewerModel | None:
+        """Walk parent widgets to find an owning viewer model if present."""
+        parent = self.parentWidget()
+        while parent is not None:
+            viewer = getattr(parent, 'viewer', None)
+            if viewer is not None and hasattr(viewer, 'events'):
+                return viewer
+            parent = parent.parentWidget()
+        return None
+
     def _layer_bar_color(self) -> tuple[float, ...]:
         """Use the brightest end of the layer colormap for histogram bars."""
         rgba = np.atleast_2d(self.layer.colormap.map([1.0]))[0].astype(float)
@@ -139,9 +159,9 @@ class QtHistogramWidget(QWidget):
 
     def _apply_visual_style(self) -> None:
         """Apply theme-aware and layer-aware styling to the histogram plot."""
-        theme = get_theme(self._appearance.theme)
+        theme = get_theme(self._theme_id())
         self.canvas.bgcolor = theme.canvas.as_hex()
-        self.histogram_visual.set_colors(
+        self.histogram_visual.set_style(
             bar_color=self._layer_bar_color(),
             lut_color=self._theme_rgba(theme.highlight, 0.95),
             axes_color=self._theme_rgba(theme.text, 0.7),
@@ -189,5 +209,7 @@ class QtHistogramWidget(QWidget):
         disconnect_events(self._histogram.events, self)
         disconnect_events(self.layer.events, self)
         disconnect_events(self._appearance.events, self)
+        if self._viewer is not None:
+            disconnect_events(self._viewer.events, self)
 
         self.canvas.close()

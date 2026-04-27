@@ -28,6 +28,9 @@ class HistogramVisual(Compound):
         self._bins = np.array([])
         self._counts = np.array([])
         self._log_scale = False
+        self._gamma = 1.0
+        self._clims: tuple[float, float] | None = None
+        self._data_range: tuple[float, float] | None = None
         self._bar_color = (0.8, 0.8, 0.8, 0.8)  # Light gray bars
         self._lut_color = (1.0, 1.0, 0.0, 0.9)  # Yellow for unified LUT line
         self._axes_color = (0.5, 0.5, 0.5, 1.0)
@@ -120,6 +123,9 @@ class HistogramVisual(Compound):
         self._bins = bins
         self._counts = counts
         self._log_scale = log_scale
+        self._gamma = gamma
+        self._clims = clims
+        self._data_range = data_range
 
         # Update bar chart
         self._update_bars()
@@ -145,6 +151,9 @@ class HistogramVisual(Compound):
 
     def _clear(self) -> None:
         """Clear all visual elements."""
+        self._gamma = 1.0
+        self._clims = None
+        self._data_range = None
         self._set_empty_data()
 
     def _update_bars(self) -> None:
@@ -309,7 +318,7 @@ class HistogramVisual(Compound):
             width=2.0,
         )
 
-    def set_colors(
+    def set_style(
         self,
         bar_color: tuple[float, float, float, float] | None = None,
         lut_color: tuple[float, float, float, float] | None = None,
@@ -340,7 +349,28 @@ class HistogramVisual(Compound):
             self._text_color = text_color
             self._text.color = text_color
 
-        # Reapply colors if data exists
+        # Reapply colors if data exists.
         if len(self._counts) > 0:
             self._update_bars()
             self._update_axes()
+            if self._clims is not None and self._data_range is not None:
+                self._update_lut_line(
+                    self._clims,
+                    self._gamma,
+                    self._data_range,
+                )
+
+    def set_colors(
+        self,
+        bar_color: tuple[float, float, float, float] | None = None,
+        lut_color: tuple[float, float, float, float] | None = None,
+        axes_color: tuple[float, float, float, float] | None = None,
+        text_color: tuple[float, float, float, float] | None = None,
+    ) -> None:
+        """Backward-compatible alias for setting histogram visual styling."""
+        self.set_style(
+            bar_color=bar_color,
+            lut_color=lut_color,
+            axes_color=axes_color,
+            text_color=text_color,
+        )
