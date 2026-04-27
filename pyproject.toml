@@ -133,6 +133,9 @@ optional = [
 bermuda = [
     "bermuda>=0.1.5",
 ]
+triangle = [
+    "triangle; python_version <= '3.13'",  # there is no wheel for triangle on python 3.14 at the time and build from source causes problems.
+]
 partsegcore = [
     "PartSegCore-compiled-backend>=0.15.11",
 ]
