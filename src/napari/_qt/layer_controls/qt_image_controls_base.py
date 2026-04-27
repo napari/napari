@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
 from napari._qt.layer_controls.widgets import (
     QtColormapControl,
@@ -9,7 +11,9 @@ from napari._qt.layer_controls.widgets import (
 from napari._qt.layer_controls.widgets.qt_histogram_control import (
     QtHistogramControl,
 )
-from napari.layers import Image as ImageLayer, Surface
+
+if TYPE_CHECKING:
+    from napari.layers import Image, Surface
 
 
 class QtBaseImageControls(QtLayerControls):
@@ -35,7 +39,7 @@ class QtBaseImageControls(QtLayerControls):
         Collapsible widget that shows layer histogram with visualization and settings.
     """
 
-    def __init__(self, layer: ImageLayer | Surface) -> None:
+    def __init__(self, layer: Image | Surface) -> None:
         super().__init__(layer)
         # Setup widgets controls
         self._contrast_limits_control = QtContrastLimitsControl(self, layer)
@@ -43,8 +47,7 @@ class QtBaseImageControls(QtLayerControls):
         self._gamma_slider_control = QtGammaSliderControl(self, layer)
         self._add_widget_controls(self._gamma_slider_control)
         self._histogram_control = None
-        if isinstance(layer, ImageLayer):
-            self._histogram_control = QtHistogramControl(self, layer)
-            self._add_widget_controls(self._histogram_control)
+        self._histogram_control = QtHistogramControl(self, layer)
+        self._add_widget_controls(self._histogram_control)
         self._colormap_control = QtColormapControl(self, layer)
         self._add_widget_controls(self._colormap_control)
