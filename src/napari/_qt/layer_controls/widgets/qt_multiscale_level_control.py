@@ -111,12 +111,14 @@ class QtMultiscaleLevelControl(  # type: ignore[metaclass]
         """Populate the combobox from the layer's current level_shapes."""
         displayed = tuple(self._layer._slice_input.displayed)
         ndisplay = self._layer._slice_input.ndisplay
-        _, max_size_3d = get_max_texture_sizes()
         with qt_signals_blocked(self.level_combobox):
             self.level_combobox.clear()
             self.level_combobox.addItem('Auto', None)
 
             if self._layer.multiscale:
+                if ndisplay == 3:
+                    _, max_size_3d = get_max_texture_sizes()
+
                 shapes = self._layer.level_shapes
                 for i, shape in enumerate(shapes):
                     data_arr = self._layer.data[i]
