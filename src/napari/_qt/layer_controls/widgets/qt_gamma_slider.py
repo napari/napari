@@ -2,14 +2,12 @@ from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QPushButton
 from superqt import QLabeledDoubleSlider
 
-from napari._qt.layer_controls.widgets.qt_histogram_control import (
-    layer_supports_histogram_ui,
-)
 from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,
 )
 from napari._qt.utils import attr_to_settr
+from napari.layers import Image
 from napari.layers.base.base import Layer
 from napari.utils.events.event_utils import connect_setattr
 from napari.utils.translations import trans
@@ -56,7 +54,7 @@ class QtGammaSliderControl(QtWidgetControlsBase):
         self.gamma_slider = sld
         self.gamma_slider_label = QtWrappedLabel(trans._('gamma:'))
 
-        if layer_supports_histogram_ui(layer):
+        if isinstance(layer, Image):
             self.histogram_button = QPushButton(parent)
             self.histogram_button.setProperty('mode', 'histogram')
             self.histogram_button.setToolTip(
@@ -99,7 +97,7 @@ class QtGammaSliderControl(QtWidgetControlsBase):
 
     def _on_histogram_button_toggled(self, visible: bool) -> None:
         """Handle left-click on histogram button to toggle histogram widget."""
-        if not layer_supports_histogram_ui(self._layer):
+        if not isinstance(self._layer, Image):
             return
 
         parent = self.parent()
@@ -134,13 +132,13 @@ class QtGammaSliderControl(QtWidgetControlsBase):
                     gamma_row + 1, histogram_control.content_widget
                 )
                 histogram_control.content_widget.show()
-                # Enable histogram computation and force update
+                # Enable histogram computation; _on_enabled_change triggers
+                # an immediate compute if there is pending dirty data.
                 self._layer.histogram.enabled = True
-                self._layer.histogram.compute()
 
     def show_histogram_popup(self):
         """Show the histogram popup widget."""
-        if not layer_supports_histogram_ui(self._layer):
+        if not isinstance(self._layer, Image):
             return
 
         # The popup's showEvent manages histogram enable/disable; do not

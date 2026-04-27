@@ -17,9 +17,6 @@ from superqt import (
 )
 
 from napari._qt.dialogs.qt_modal import QtPopup
-from napari._qt.layer_controls.widgets.qt_histogram_control import (
-    layer_supports_histogram_ui,
-)
 from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,
@@ -97,17 +94,26 @@ class QContrastLimitsPopup(QtPopup):
 
         self._layer = layer
         self._cleaned_up = False
-        self._histogram_was_enabled = (
-            False  # Track if histogram was enabled before popup opened
-        )
+        self._histogram_was_enabled = False
 
-        # Create vertical layout for stacking widgets
         self._layout = QVBoxLayout()
         self._layout.setContentsMargins(10, 10, 10, 10)
-        self._layout.setSpacing(5)
+        self._layout.setSpacing(6)
         self.frame.setLayout(self._layout)
 
-        # Create slider
+        # 1. Histogram + settings (Image layers only; Surface not yet supported)
+        self.histogram_content = None
+        self.histogram_widget = None
+        self.settings_widget = None
+        if isinstance(layer, Image):
+            self.histogram_content = QtHistogramContentWidget(
+                layer, parent=self
+            )
+            self.histogram_widget = self.histogram_content.histogram_widget
+            self.settings_widget = self.histogram_content.settings_widget
+            self._layout.addWidget(self.histogram_content)
+
+        # 2. Contrast limits slider
         self.slider = QLabeledDoubleRangeSlider(
             Qt.Orientation.Horizontal, parent
         )
@@ -121,8 +127,12 @@ class QContrastLimitsPopup(QtPopup):
         self.slider.setSingleStep(10**-decimals)
         self.slider.setValue(layer.contrast_limits)
 
-        # Add slider to layout
-        self._layout.addWidget(self.slider)
+        clim_row = QHBoxLayout()
+        clim_row.setContentsMargins(0, 0, 0, 0)
+        clim_row.addWidget(QLabel(trans._('contrast limits:')))
+        clim_row.addWidget(self.slider)
+        self._layout.addLayout(clim_row)
+
         QApplication.processEvents()
         self.slider._reposition_labels()
 
@@ -131,52 +141,27 @@ class QContrastLimitsPopup(QtPopup):
             self.slider.rangeChanged, layer, 'contrast_limits_range'
         )
 
-        # Add histogram widget for Image layers, Surface layers not yet implemented
-        self.histogram_content = None
-        self.histogram_widget = None
-        self.settings_widget = None
-        if layer_supports_histogram_ui(layer):
-            self.histogram_content = QtHistogramContentWidget(
-                layer, parent=self
-            )
-            self.histogram_widget = self.histogram_content.histogram_widget
-            self.settings_widget = self.histogram_content.settings_widget
+        # 3. Gamma slider
 
-            # Add histogram below the slider (slider is at index 0)
-            self._layout.insertWidget(1, self.histogram_content)
+        self.gamma_slider = QLabeledDoubleSlider(Qt.Orientation.Horizontal)
+        self.gamma_slider.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.gamma_slider.setMinimum(0.2)
+        self.gamma_slider.setMaximum(2.0)
+        self.gamma_slider.setSingleStep(0.02)
+        self.gamma_slider.setValue(layer.gamma)
+        self.gamma_slider.setToolTip(
+            trans._('Adjust gamma correction (0.2 - 2.0)')
+        )
+        connect_setattr(self.gamma_slider.valueChanged, layer, 'gamma')
+        connect_setattr(layer.events.gamma, self.gamma_slider, 'setValue')
 
-            # Create controls layout below histogram
-            controls_layout = QHBoxLayout()
-            controls_layout.setContentsMargins(0, 5, 0, 5)
-            controls_layout.setSpacing(10)
+        gamma_row = QHBoxLayout()
+        gamma_row.setContentsMargins(0, 0, 0, 0)
+        gamma_row.addWidget(QLabel(trans._('gamma:')))
+        gamma_row.addWidget(self.gamma_slider)
+        self._layout.addLayout(gamma_row)
 
-            # Add gamma slider with label.
-            # All non-RGB Image layers have gamma; layer_supports_histogram_ui
-            # guarantees this block is only reached for such layers.
-            gamma_label = QLabel(trans._('gamma:'))
-            controls_layout.addWidget(gamma_label)
-
-            self.gamma_slider = QLabeledDoubleSlider(Qt.Orientation.Horizontal)
-            self.gamma_slider.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-            self.gamma_slider.setMinimum(0.2)
-            self.gamma_slider.setMaximum(2.0)
-            self.gamma_slider.setSingleStep(0.02)
-            self.gamma_slider.setValue(layer.gamma)
-            self.gamma_slider.setToolTip(
-                trans._('Adjust gamma correction (0.2 - 2.0)')
-            )
-            connect_setattr(self.gamma_slider.valueChanged, layer, 'gamma')
-            connect_setattr(layer.events.gamma, self.gamma_slider, 'setValue')
-            controls_layout.addWidget(self.gamma_slider)
-
-            controls_layout.addStretch()
-
-            # Add controls layout to main layout below histogram
-            self._layout.insertWidget(
-                2, self._create_widget_from_layout(controls_layout)
-            )
-
-        # Create button row for reset and full range buttons
+        # 4. Reset / full range buttons
         button_layout = QHBoxLayout()
         button_layout.setContentsMargins(0, 5, 0, 0)
         button_layout.setSpacing(5)
@@ -212,7 +197,6 @@ class QContrastLimitsPopup(QtPopup):
 
         button_layout.addStretch()
 
-        # Add button row to main layout
         self._layout.addWidget(self._create_widget_from_layout(button_layout))
 
     def keyPressEvent(self, event):
@@ -226,12 +210,10 @@ class QContrastLimitsPopup(QtPopup):
         """Enable histogram when popup is shown."""
         super().showEvent(event)
         if self.histogram_widget is not None:
-            # Track if histogram was already enabled before we open the popup
             self._histogram_was_enabled = self._layer.histogram.enabled
             if not self._histogram_was_enabled:
-                # Only enable if it wasn't already enabled
+                # _on_enabled_change handles the immediate compute.
                 self._layer.histogram.enabled = True
-                self._layer.histogram.compute()
 
     def closeEvent(self, event):
         """Clean up event handlers when popup is closed."""

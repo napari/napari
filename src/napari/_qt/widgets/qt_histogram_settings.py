@@ -16,7 +16,7 @@ from napari.utils.events.event_utils import connect_setattr, disconnect_events
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
-    from napari.components.histogram import HistogramModel
+    from napari.layers.image._histogram import HistogramModel
 
 
 class QtHistogramSettingsWidget(QWidget):

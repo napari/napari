@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, TypeGuard
+from typing import TYPE_CHECKING
 
 from qtpy.QtWidgets import (
     QVBoxLayout,
@@ -14,15 +14,9 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWrappedLabel,
 )
 from napari._qt.widgets.qt_histogram_content import QtHistogramContentWidget
-from napari.layers import Image
 
 if TYPE_CHECKING:
-    from napari.layers import Image as ImageLayer
-
-
-def layer_supports_histogram_ui(layer: object) -> TypeGuard[Image]:
-    """Return True when the layer supports the single-layer histogram UI."""
-    return isinstance(layer, Image) and not layer.rgb
+    from napari.layers import Image
 
 
 class QtHistogramControl(QtWidgetControlsBase):
@@ -47,7 +41,7 @@ class QtHistogramControl(QtWidgetControlsBase):
         Shared widget for histogram mode and log scale controls.
     """
 
-    def __init__(self, parent: QWidget, layer: ImageLayer) -> None:
+    def __init__(self, parent: QWidget, layer: Image) -> None:
         super().__init__(parent, layer)
 
         # Create content widget
@@ -75,9 +69,6 @@ class QtHistogramControl(QtWidgetControlsBase):
 
         self.histogram_widget = self.histogram_content.histogram_widget
         self.settings_widget = self.histogram_content.settings_widget
-
-        # Keep histogram computation off until the widget is explicitly shown.
-        self._layer.histogram.enabled = False
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
         """

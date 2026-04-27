@@ -158,12 +158,12 @@ def test_tensorstore_clim_popup(qtbot):
     ('layer', 'supports_histogram'),
     [
         (Image(_IMAGE), True),
-        (Image(np.dstack([_IMAGE, _IMAGE, _IMAGE]), rgb=True), False),
+        (Image(np.dstack([_IMAGE, _IMAGE, _IMAGE]), rgb=True), True),
         (Surface(_SURF), False),
     ],
 )
 def test_histogram_ui_support_boundary(qtbot, layer, supports_histogram):
-    """Only grayscale Image layers should expose histogram UI."""
+    """Image layers (including RGB via luminance) should expose histogram UI."""
     qtctrl = QtBaseImageControls(layer)
     qtbot.addWidget(qtctrl)
 
@@ -177,14 +177,14 @@ def test_histogram_ui_support_boundary(qtbot, layer, supports_histogram):
     ('layer', 'supports_histogram'),
     [
         (Image(_IMAGE), True),
-        (Image(np.dstack([_IMAGE, _IMAGE, _IMAGE]), rgb=True), False),
+        (Image(np.dstack([_IMAGE, _IMAGE, _IMAGE]), rgb=True), True),
         (Surface(_SURF), False),
     ],
 )
 def test_contrast_limits_popup_histogram_boundary(
     qtbot, layer, supports_histogram
 ):
-    """The detailed contrast popup should only embed histogram UI when supported."""
+    """The detailed contrast popup should embed histogram UI for all Image layers."""
     popup = QContrastLimitsPopup(layer)
     qtbot.addWidget(popup)
 

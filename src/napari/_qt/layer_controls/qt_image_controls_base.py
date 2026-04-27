@@ -10,11 +10,11 @@ from napari._qt.layer_controls.widgets import (
 )
 from napari._qt.layer_controls.widgets.qt_histogram_control import (
     QtHistogramControl,
-    layer_supports_histogram_ui,
 )
+from napari.layers import Image
 
 if TYPE_CHECKING:
-    from napari.layers import Image, Surface
+    from napari.layers import Surface
 
 
 class QtBaseImageControls(QtLayerControls):
@@ -48,7 +48,7 @@ class QtBaseImageControls(QtLayerControls):
         self._gamma_slider_control = QtGammaSliderControl(self, layer)
         self._add_widget_controls(self._gamma_slider_control)
         self._histogram_control = None
-        if layer_supports_histogram_ui(layer):
+        if isinstance(layer, Image):
             self._histogram_control = QtHistogramControl(self, layer)
             self._add_widget_controls(self._histogram_control)
         self._colormap_control = QtColormapControl(self, layer)
