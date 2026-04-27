@@ -602,6 +602,8 @@ class Labels(ScalarFieldBase):
         data = self._ensure_int_labels(data)
         self._data = data
         self._ndim = len(self._data.shape)
+        # Reset locked resolution to auto if data is changed
+        self._locked_data_level = None
         self._reset_thumbnail_level_data()
         self._update_dims()
         self.events.data(value=self.data)
