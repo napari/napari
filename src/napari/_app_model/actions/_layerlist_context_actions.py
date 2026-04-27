@@ -189,13 +189,11 @@ LAYERLIST_CONTEXT_ACTIONS: list[Action] = [
         enablement=(
             (LLSCK.num_selected_layers > 0)
             & LLSCK.any_selected_layers_locked
-            & ~LLSCK.any_selected_layers_permanently_locked
         ),
         menus=[
             {
                 **LAYERCTX_LOCK,
-                'when': LLSCK.any_selected_layers_locked
-                & ~LLSCK.any_selected_layers_permanently_locked,
+                'when': LLSCK.any_selected_layers_locked,
             }
         ],
     ),
