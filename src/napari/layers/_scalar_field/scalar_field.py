@@ -448,6 +448,19 @@ class ScalarFieldBase(Layer, ABC):
                 self.refresh(extent=False)
         self.events.locked_data_level()
 
+    def _reset_data_level(self) -> None:
+        """Reset ``_locked_data_level`` and ``_data_level`` for new data.
+
+        Called from the ``data`` setter of subclasses when the underlying
+        array is replaced.  Uses the coarsest level for multiscale data
+        (matching ``__init__`` behaviour) and 0 for single-scale data.
+        """
+        self._locked_data_level = None
+        if isinstance(self._data, MultiScaleData):
+            self._data_level = len(self._data) - 1
+        else:
+            self._data_level = 0
+
     def _set_force_level(self, level: int) -> None:
         """Set data_level and corner_pixels for the full extent of a level.
 

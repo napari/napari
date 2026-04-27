@@ -191,6 +191,22 @@ class TestLockedDataLevel:
         with pytest.raises(ValueError, match='locked_data_level'):
             layer.locked_data_level = -1
 
+    def test_locked_data_level_reset_on_data_change(self, Layer):
+        """Setting .data resets locked_data_level to None (auto)."""
+        data = _make_multiscale_3d()
+        layer = Layer(data, multiscale=True)
+
+        # Lock to the last level
+        layer.locked_data_level = len(data) - 1
+        assert layer.locked_data_level == len(data) - 1
+
+        # Replace with data that has fewer levels
+        fewer_levels = data[:2]
+        layer.data = fewer_levels
+
+        # The old locked level would be out of range; it must be reset
+        assert layer.locked_data_level is None
+
 
 @pytest.mark.parametrize('add_method', ['add_image', 'add_labels'])
 class TestLockedDataLevelViewer:
