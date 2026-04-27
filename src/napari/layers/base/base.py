@@ -2061,7 +2061,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         )
         if front_face_normal is None or back_face_normal is None:
             # click does not intersect the data bounding box
-            # we use "or" above instead of None because is some literal
+            # we use "or" above instead of "and" because is some literal
             # edge cases one face might be found but not the other
             return None, None
 
