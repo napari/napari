@@ -76,10 +76,6 @@ LAYERCTX_CONVERSION: MenuRuleDict = {
     'id': MenuId.LAYERLIST_CONTEXT,
     'group': MenuGroup.LAYERLIST_CONTEXT.CONVERSION,
 }
-LAYERCTX_LOCK: MenuRuleDict = {
-    'id': MenuId.LAYERLIST_CONTEXT,
-    'group': MenuGroup.LAYERLIST_CONTEXT.LOCK,
-}
 LAYERCTX_LINK: MenuRuleDict = {
     'id': MenuId.LAYERLIST_CONTEXT,
     'group': MenuGroup.LAYERLIST_CONTEXT.LINK,
@@ -169,31 +165,13 @@ LAYERLIST_CONTEXT_ACTIONS: list[Action] = [
         ],
     ),
     Action(
-        id='napari.layer.lock_selected',
-        title=trans._('Lock Layer(s)'),
-        callback=_layer_actions._lock_selected_layers,
-        enablement=(
-            (LLSCK.num_selected_layers > 0) & ~LLSCK.all_selected_layers_locked
-        ),
+        id='napari.layer.toggle_lock',
+        title=trans._('Toggle lock'),
+        callback=_layer_actions._toggle_lock,
         menus=[
             {
-                **LAYERCTX_LOCK,
-                'when': ~LLSCK.all_selected_layers_locked,
-            }
-        ],
-    ),
-    Action(
-        id='napari.layer.unlock_selected',
-        title=trans._('Unlock Layer(s)'),
-        callback=_layer_actions._unlock_selected_layers,
-        enablement=(
-            (LLSCK.num_selected_layers > 0)
-            & LLSCK.any_selected_layers_locked
-        ),
-        menus=[
-            {
-                **LAYERCTX_LOCK,
-                'when': LLSCK.any_selected_layers_locked,
+                'id': MenuId.LAYERLIST_CONTEXT,
+                'group': MenuGroup.NAVIGATION,
             }
         ],
     ),

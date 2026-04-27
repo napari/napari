@@ -108,7 +108,6 @@ class MenuGroup:
         CONVERSION = '1_conversion'
         COPY_SPATIAL = '4_copy_spatial'
         SPLIT_MERGE = '5_split_merge'
-        LOCK = '8_lock'
         LINK = '9_link'
 
     class LAYERS:

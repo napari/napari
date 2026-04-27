@@ -6,7 +6,7 @@ from qtpy.QtWidgets import QLineEdit, QStyleOptionViewItem
 
 from napari._qt.containers import QtLayerList
 from napari._qt.containers._layer_delegate import LayerDelegate
-from napari._qt.containers.qt_layer_model import LockRole
+from napari._qt.containers.qt_layer_model import LockedRole
 from napari._tests.utils import skip_local_focus
 from napari.components import LayerList
 from napari.layers import Image, Shapes
@@ -300,19 +300,19 @@ def test_createEditor(qtbot):
 
 
 def test_lock_role_data(qtbot):
-    """LockRole should return the layer's locked property."""
+    """LockedRole should return the layer's locked property."""
     view, image = make_qt_layer_list_with_layer(qtbot)
     model_index = layer_to_model_index(view, 0)
-    assert view.model().data(model_index, LockRole) is False
+    assert view.model().data(model_index, LockedRole) is False
     image.locked = True
-    assert view.model().data(model_index, LockRole) is True
+    assert view.model().data(model_index, LockedRole) is True
 
 
 def test_lock_role_set_data(qtbot):
-    """setData with LockRole should change layer.locked."""
+    """setData with LockedRole should change layer.locked."""
     view, image = make_qt_layer_list_with_layer(qtbot)
     model_index = layer_to_model_index(view, 0)
-    view.model().setData(model_index, True, LockRole)
+    view.model().setData(model_index, True, LockedRole)
     assert image.locked is True
 
 

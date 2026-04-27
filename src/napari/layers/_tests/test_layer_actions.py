@@ -18,6 +18,7 @@ from napari.layers._layer_actions import (
     _show_unselected,
     _split_rgb,
     _split_stack,
+    _toggle_lock,
     _toggle_visibility,
 )
 from napari.utils.transforms import Affine
@@ -118,6 +119,35 @@ def test_toggle_visibility():
     _toggle_visibility(layer_list)
 
     assert layer_list[0].visible is True
+
+
+def test_toggle_lock():
+    """Single locked layer flips to unlocked and back."""
+    layer_list = LayerList()
+    layer_list.append(Points([[0, 0]]))
+    layer_list.selection.active = layer_list[0]
+
+    _toggle_lock(layer_list)
+    assert layer_list[0].locked is True
+
+    _toggle_lock(layer_list)
+    assert layer_list[0].locked is False
+
+
+def test_toggle_lock_mixed_selection():
+    """Mixed selection flips each layer's locked state independently."""
+    layer_list = LayerList()
+    layer_list.append(Points([[0, 0]]))
+    layer_list.append(Points([[0, 0]]))
+    layer_list[0].locked = True
+
+    layer_list.selection.active = layer_list[0]
+    layer_list.selection.add(layer_list[1])
+
+    _toggle_lock(layer_list)
+
+    assert layer_list[0].locked is False
+    assert layer_list[1].locked is True
 
 
 def test_toggle_visibility_with_linked_layers():
