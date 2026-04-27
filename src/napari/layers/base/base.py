@@ -551,6 +551,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         translate=None,
         units=None,
         visible=True,
+        locked: bool = False,
     ):
         super().__init__()
 
@@ -634,6 +635,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
         self.corner_pixels = np.zeros((2, ndim), dtype=int)
         self._editable = True
+        self._locked = bool(locked)
         self._array_like = False
 
         self._thumbnail_shape = (32, 32, 4)
@@ -662,6 +664,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             cursor=Event,
             cursor_size=Event,
             editable=Event,
+            locked=Event,
             extent=Event,
             help=Event,
             loaded=Event,
@@ -987,6 +990,18 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self._editable = editable
         self._on_editable_changed()
         self.events.editable()
+
+    @property
+    def locked(self) -> bool:
+        """bool: Whether the layer is locked (protected from deletion)."""
+        return self._locked
+
+    @locked.setter
+    def locked(self, locked: bool) -> None:
+        if self._locked == locked:
+            return
+        self._locked = bool(locked)
+        self.events.locked()
 
     def _reset_editable(self) -> None:
         """Reset this layer's editable state based on layer properties."""

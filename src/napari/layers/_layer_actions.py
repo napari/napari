@@ -37,6 +37,16 @@ def _split_stack(ll: LayerList, axis: int = 0) -> None:
     layer = ll.selection.active
     if not isinstance(layer, Image):
         return
+    if getattr(layer, 'locked', False):
+        from napari.utils.notifications import show_info
+
+        show_info(
+            trans._(
+                'Cannot split locked layer: {name}',
+                name=repr(layer.name),
+            )
+        )
+        return
     if layer.rgb:
         # determine if image is rgb (3 channel) or rbga (4 channel)
         with_alpha = False
@@ -57,6 +67,20 @@ def _split_rgb(ll: LayerList) -> None:
 
 def _convert(ll: LayerList, type_: str) -> None:
     from napari.layers import Shapes
+    from napari.utils.notifications import show_info
+
+    locked = [lay for lay in ll.selection if getattr(lay, 'locked', False)]
+    if locked:
+        names = ', '.join(
+            repr(x.name) for x in sorted(locked, key=lambda x: x.name)
+        )
+        show_info(
+            trans._(
+                'Cannot convert locked layer(s): {names}',
+                names=names,
+            )
+        )
+        return
 
     for lay in list(ll.selection):
         idx = ll.index(lay)
@@ -111,6 +135,20 @@ def _convert_to_image(ll: LayerList) -> None:
 
 
 def _merge_stack(ll: LayerList, rgb: bool = False) -> None:
+    locked = [lay for lay in ll.selection if getattr(lay, 'locked', False)]
+    if locked:
+        from napari.utils.notifications import show_info
+
+        names = ', '.join(
+            repr(x.name) for x in sorted(locked, key=lambda x: x.name)
+        )
+        show_info(
+            trans._(
+                'Cannot merge locked layer(s): {names}',
+                names=names,
+            )
+        )
+        return
     # force selection to follow LayerList ordering
     imgs = cast(list[Image], [layer for layer in ll if layer in ll.selection])
     merged = (
@@ -133,6 +171,13 @@ def _toggle_visibility(ll: LayerList) -> None:
     ):
         if layer.visible == visibility:
             layer.visible = not visibility
+
+
+def _toggle_lock(ll: LayerList) -> None:
+    current_lock_state = [layer.locked for layer in ll.selection]
+    for lock, layer in zip(current_lock_state, ll.selection, strict=False):
+        if layer.locked == lock:
+            layer.locked = not lock
 
 
 def _show_selected(ll: LayerList) -> None:

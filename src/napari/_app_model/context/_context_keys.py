@@ -18,3 +18,8 @@ class ContextNamespace(_ContextNamespace, Generic[A]):
         """Trigger an update of all "getter" functions in this namespace."""
         for k, get in self._getters.items():
             setattr(self, k, get(event.source))
+
+    def refresh(self, source: A) -> None:
+        """Re-evaluate all getter functions without requiring an Event."""
+        for k, get in self._getters.items():
+            setattr(self, k, get(source))

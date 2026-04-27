@@ -165,6 +165,17 @@ LAYERLIST_CONTEXT_ACTIONS: list[Action] = [
         ],
     ),
     Action(
+        id='napari.layer.toggle_lock',
+        title=trans._('Toggle lock'),
+        callback=_layer_actions._toggle_lock,
+        menus=[
+            {
+                'id': MenuId.LAYERLIST_CONTEXT,
+                'group': MenuGroup.NAVIGATION,
+            }
+        ],
+    ),
+    Action(
         id='napari.layer.link_selected_layers',
         title=trans._('Link Layers'),
         callback=_layer_actions._link_selected_layers,

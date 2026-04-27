@@ -6,6 +6,7 @@ from qtpy.QtWidgets import QLineEdit, QStyleOptionViewItem
 
 from napari._qt.containers import QtLayerList
 from napari._qt.containers._layer_delegate import LayerDelegate
+from napari._qt.containers.qt_layer_model import LockedRole
 from napari._tests.utils import skip_local_focus
 from napari.components import LayerList
 from napari.layers import Image, Shapes
@@ -296,3 +297,44 @@ def test_createEditor(qtbot):
     assert isinstance(editor, QLineEdit)
     delegate.setEditorData(editor, model_index)
     assert editor.text() == image.name
+
+
+def test_lock_role_data(qtbot):
+    """LockedRole should return the layer's locked property."""
+    view, image = make_qt_layer_list_with_layer(qtbot)
+    model_index = layer_to_model_index(view, 0)
+    assert view.model().data(model_index, LockedRole) is False
+    image.locked = True
+    assert view.model().data(model_index, LockedRole) is True
+
+
+def test_lock_role_set_data(qtbot):
+    """setData with LockedRole should change layer.locked."""
+    view, image = make_qt_layer_list_with_layer(qtbot)
+    model_index = layer_to_model_index(view, 0)
+    view.model().setData(model_index, True, LockedRole)
+    assert image.locked is True
+
+
+def test_process_event_locked(qtbot):
+    """locked event should trigger dataChanged signal."""
+    view, image = make_qt_layer_list_with_layer(qtbot)
+    changed_signals = []
+    view.model().dataChanged.connect(lambda *a: changed_signals.append(a))
+    image.locked = True
+    assert len(changed_signals) >= 1
+
+
+def test_paint_lock_icon_locked(qtbot):
+    """Painting locked layer should not raise errors."""
+    view, image = make_qt_layer_list_with_layer(qtbot)
+    image.locked = True
+    view.viewport().update()
+    qtbot.wait(100)
+
+
+def test_paint_lock_icon_unlocked(qtbot):
+    """Painting unlocked layer should not raise errors."""
+    view, _image = make_qt_layer_list_with_layer(qtbot)
+    view.viewport().update()
+    qtbot.wait(100)
