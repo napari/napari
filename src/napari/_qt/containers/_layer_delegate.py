@@ -49,7 +49,7 @@ from napari._qt._qapp_model import build_qmodel_menu
 from napari._qt.containers._base_item_model import ItemRole
 from napari._qt.containers.qt_layer_model import (
     LoadedRole,
-    LockRole,
+    LockedRole,
     ThumbnailRole,
 )
 from napari._qt.qt_resources import QColoredSVGIcon
@@ -175,11 +175,11 @@ class LayerDelegate(QStyledItemDelegate):
             painter.drawPixmap(thumb_rect, QPixmap.fromImage(image))
 
     def _paint_lock_icon(self, painter, option, index):
-        """Paint lock/lock_open icon based on layer's locked state."""
-        locked = index.data(LockRole)
-        icon_name = 'lock' if locked else 'lock_open'
+        """Paint a lock icon when the layer is locked. No icon when unlocked."""
+        if not index.data(LockedRole):
+            return
         try:
-            icon = QColoredSVGIcon.from_resources(icon_name)
+            icon = QColoredSVGIcon.from_resources('lock')
         except (ValueError, FileNotFoundError):
             return
         bg = option.palette.color(option.palette.ColorRole.Window).red()
@@ -291,20 +291,6 @@ class LayerDelegate(QStyledItemDelegate):
             )
             if check_rect.contains(event.pos()):
                 self._alt_click_layer = lambda: None
-
-        # lock icon click toggle
-        if (
-            event.type() == QMouseEvent.MouseButtonRelease
-            and event.button() == Qt.MouseButton.LeftButton
-        ):
-            lock_rect = self._lock_icon_rect(option, index)
-            if lock_rect.contains(event.pos()):
-                layer = index.data(ItemRole)
-                if getattr(layer, 'lock_permanent', False):
-                    return True  # permanently locked, ignore click
-                current_locked = index.data(LockRole)
-                model.setData(index, not current_locked, LockRole)
-                return True
 
         # refer all other events to the QStyledItemDelegate
         return super().editorEvent(event, model, option, index)

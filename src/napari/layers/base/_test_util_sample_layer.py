@@ -37,6 +37,7 @@ class SampleLayer(Layer):
         translate=None,
         units=None,
         visible=True,
+        locked=False,
     ) -> None:
         if ndim is None:
             ndim = data.ndim
@@ -60,7 +61,8 @@ class SampleLayer(Layer):
             translate=translate,
             units=units,
             visible=visible,
-        )  # type: ignore [no-untyped-call]
+            locked=locked,
+        )
         self._data = data
         self.a = 2
 

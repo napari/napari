@@ -173,6 +173,13 @@ def _toggle_visibility(ll: LayerList) -> None:
             layer.visible = not visibility
 
 
+def _toggle_lock(ll: LayerList) -> None:
+    current_lock_state = [layer.locked for layer in ll.selection]
+    for lock, layer in zip(current_lock_state, ll.selection, strict=False):
+        if layer.locked == lock:
+            layer.locked = not lock
+
+
 def _show_selected(ll: LayerList) -> None:
     for lay in ll.selection:
         lay.visible = True
@@ -286,16 +293,6 @@ def _project(ll: LayerList, axis: int = 0, mode: str = 'max') -> None:
     )
 
     ll.append(new)
-
-
-def _lock_selected_layers(ll: LayerList) -> None:
-    for lay in ll.selection:
-        lay.locked = True
-
-
-def _unlock_selected_layers(ll: LayerList) -> None:
-    for lay in ll.selection:
-        lay.locked = False
 
 
 def _toggle_bounding_box(ll: LayerList) -> None:
