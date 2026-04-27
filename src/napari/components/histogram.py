@@ -104,10 +104,9 @@ class HistogramModel(EventedModel):
         layer.events.data.connect(self._on_data_change)
         layer.events.contrast_limits_range.connect(self._on_range_change)
 
-        # Connect to set_data event which fires on slice changes
-        # This covers both sync slice updates and async slice completion.
-        if hasattr(layer.events, 'set_data'):
-            layer.events.set_data.connect(self._on_slice_change)
+        # set_data fires from Layer._refresh_sync() at the end of both
+        # synchronous and async slice updates
+        layer.events.set_data.connect(self._on_slice_change)
 
         # Connect to our own events to trigger recomputation
         self.events.n_bins.connect(self._on_params_change)
