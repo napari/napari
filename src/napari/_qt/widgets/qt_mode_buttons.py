@@ -13,18 +13,14 @@ class QtModeRadioButton(QRadioButton):
     button_name : str
         Name for the button.  This is mostly used to identify the button
         in stylesheets (e.g. to add a custom icon)
-    mode : Enum, optional
+    mode : Enum
         The mode to enable when this button is clicked.
-        If None, the button acts as a generic toggle without affecting layer mode.
     tooltip : str, optional
         A tooltip to display when hovering the mouse on this button,
         by default it will be set to `button_name`.
     checked : bool, optional
         Whether the button is activate, by default False.
         One button in a QButtonGroup should be initially checked.
-    slot : callable, optional
-        The function to call when this button is toggled.
-        Only used when mode is None (for non-layer-mode toggles).
 
     Attributes
     ----------
@@ -40,7 +36,6 @@ class QtModeRadioButton(QRadioButton):
         *,
         tooltip=None,
         checked=False,
-        slot=None,
     ) -> None:
         super().__init__()
 
@@ -50,10 +45,7 @@ class QtModeRadioButton(QRadioButton):
         self.setProperty('mode', button_name)
         self.setFixedWidth(28)
         self.mode = mode
-        if mode is not None:
-            self.toggled.connect(self._set_mode)
-        elif slot is not None:
-            self.toggled.connect(slot)
+        self.toggled.connect(self._set_mode)
 
     def _set_mode(self, mode_selected):
         """Toggle the mode associated with the layer.

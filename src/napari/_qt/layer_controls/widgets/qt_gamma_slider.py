@@ -1,5 +1,4 @@
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QPushButton
 from superqt import QLabeledDoubleSlider
 
 from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
@@ -7,6 +6,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWrappedLabel,
 )
 from napari._qt.utils import attr_to_settr
+from napari._qt.widgets.qt_mode_buttons import QtModePushButton
 from napari.layers import Image
 from napari.layers.base.base import Layer
 from napari.utils.events.event_utils import connect_setattr
@@ -31,7 +31,7 @@ class QtGammaSliderControl(QtWidgetControlsBase):
         Gamma adjustment slider widget.
     gamma_slider_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for the gamma chooser widget.
-    histogram_button : QPushButton
+    histogram_button : QtModePushButton
         Button to toggle histogram widget.
     """
 
@@ -55,14 +55,17 @@ class QtGammaSliderControl(QtWidgetControlsBase):
         self.gamma_slider_label = QtWrappedLabel(trans._('gamma:'))
 
         if isinstance(layer, Image):
-            self.histogram_button = QPushButton(parent)
-            self.histogram_button.setProperty('mode', 'histogram')
-            self.histogram_button.setToolTip(
-                'Left click to toggle histogram in layer controls.\n'
-                'Right click to open histogram popup.'
+            self.histogram_button = QtModePushButton(
+                self._layer,
+                'histogram',
+                tooltip=trans._(
+                    'Left click to toggle histogram in layer controls.\n'
+                    'Right click to open histogram popup.'
+                ),
             )
+            self.histogram_button.setParent(sld)
             self.histogram_button.setCheckable(True)
-            self.histogram_button.setFixedSize(28, 28)
+            self.histogram_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
             self.histogram_button.toggled.connect(
                 self._on_histogram_button_toggled
             )
@@ -70,20 +73,7 @@ class QtGammaSliderControl(QtWidgetControlsBase):
             sld.layout().addWidget(self.histogram_button)
 
     def eventFilter(self, obj, event):
-        """Handle right-click on histogram button to show popup.
-
-        Parameters
-        ----------
-        obj : QObject
-            The object that generated the event.
-        event : QEvent
-            The event to handle.
-
-        Returns
-        -------
-        bool
-            True if the event was handled, False otherwise.
-        """
+        """Handle right-click on histogram button to show popup."""
         if (
             self.histogram_button is not None
             and obj == self.histogram_button
