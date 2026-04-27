@@ -15,6 +15,7 @@ from napari.layers._scalar_field.scalar_field import (
     ScalarFieldBase,
     ScalarFieldSlicingState,
 )
+from napari.layers.image._histogram import HistogramModel
 from napari.layers.image._image_constants import (
     ImageProjectionMode,
     ImageRendering,
@@ -336,8 +337,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         else:
             self._iso_threshold = iso_threshold
 
-        # Initialize histogram (lazy)
-        self._histogram = None
+        self._histogram = HistogramModel(self)
 
     @property
     def rendering(self) -> str:
@@ -417,7 +417,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         self.events.attenuation()
 
     @property
-    def histogram(self):
+    def histogram(self) -> HistogramModel:
         """Histogram model for this layer.
 
         The histogram model computes and stores histogram data for the layer,
@@ -427,22 +427,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         -------
         HistogramModel
             Histogram model instance for this layer.
-
-        Examples
-        --------
-        >>> import napari
-        >>> import numpy as np
-        >>> data = np.random.random((512, 512))
-        >>> layer = napari.layers.Image(data)
-        >>> hist = layer.histogram
-        >>> print(hist.counts)  # Get histogram counts
-        >>> hist.log_scale = True  # Enable log scale
-        >>> hist.n_bins = 512  # Change number of bins
         """
-        if self._histogram is None:
-            from napari.components.histogram import HistogramModel
-
-            self._histogram = HistogramModel(self)
         return self._histogram
 
     @property
