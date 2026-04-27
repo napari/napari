@@ -5,7 +5,7 @@ from dataclasses import replace
 import numpy as np
 
 from napari.layers import Image
-from napari.layers.image._histogram import HistogramModel
+from napari.layers._histogram import HistogramModel
 
 
 class TestHistogramModel:
