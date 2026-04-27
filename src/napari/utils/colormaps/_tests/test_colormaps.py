@@ -289,3 +289,23 @@ def test_ensure_colormap_with_recognized_mpl_color_name(mpl_name):
     cmap = ensure_colormap(mpl_name)
     assert isinstance(cmap, Colormap)
     assert cmap.name == mpl_name
+
+
+@pytest.mark.parametrize(
+    'color',
+    [
+        'red',
+        (1, 0, 0, 1),
+        (1, 0, 0),
+        [(0, 0, 0), (1, 0, 0)],
+        '#ff0000',
+        '#f00',
+    ],
+)
+def test_ensure_colormap_with_recognized_color(color):
+    """
+    Test that ensure_colormap correctly handles recognized color inputs
+    """
+    cmap = ensure_colormap(color)
+    assert isinstance(cmap, Colormap)
+    assert cmap.name == 'red'
