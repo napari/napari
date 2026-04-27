@@ -1,14 +1,16 @@
-"""Histogram model for layer data visualization."""
+"""Histogram model for Image layer data visualization."""
 
 from __future__ import annotations
 
-from typing import Literal, Optional
+from typing import TYPE_CHECKING, Any, Literal, Optional
 
 import numpy as np
 from pydantic import PrivateAttr
 
-from napari.layers import Image
 from napari.utils.events import EventedModel
+
+if TYPE_CHECKING:
+    from napari.layers.image.image import Image
 
 __all__ = ('HistogramModel',)
 
@@ -16,7 +18,7 @@ __all__ = ('HistogramModel',)
 class HistogramModel(EventedModel):
     """Data model for histogram computation and display.
 
-    This model computes and stores histogram data for a layer,
+    This model computes and stores histogram data for an Image layer,
     responding to changes in layer data, contrast limits, and gamma.
 
     Parameters
@@ -29,8 +31,10 @@ class HistogramModel(EventedModel):
         Whether to compute histogram from displayed data or full volume.
     log_scale : bool, default: False
         Use logarithmic scale for histogram counts.
-    enabled : bool, default: True
-        Whether histogram is enabled (computes on data changes).
+    enabled : bool, default: False
+        Whether histogram responds to data-change events automatically.
+        When False the model is still computed on explicit access to
+        ``bins`` or ``counts`` and when flipped to True.
 
     Attributes
     ----------
@@ -59,10 +63,13 @@ class HistogramModel(EventedModel):
     n_bins: int = 256
     mode: Literal['canvas', 'full'] = 'canvas'
     log_scale: bool = False
-    enabled: bool = True
+    enabled: bool = False
 
-    # Private attributes (use PrivateAttr for pydantic)
-    _layer: Image = PrivateAttr()
+    # Private attributes (use PrivateAttr for pydantic).
+    # Annotated as Any here because pydantic does not validate PrivateAttr
+    # types at runtime; the actual type is Image (enforced by the __init__
+    # signature and checked by static type-checkers via TYPE_CHECKING).
+    _layer: Any = PrivateAttr()
     _bins: np.ndarray = PrivateAttr(
         default_factory=lambda: np.array([0.0, 1.0])
     )
@@ -75,7 +82,7 @@ class HistogramModel(EventedModel):
         n_bins: int = 256,
         mode: Literal['canvas', 'full'] = 'canvas',
         log_scale: bool = False,
-        enabled: bool = True,
+        enabled: bool = False,
     ):
         """Initialize histogram model.
 
@@ -89,15 +96,13 @@ class HistogramModel(EventedModel):
             Whether to compute histogram from displayed data or full volume.
         log_scale : bool, default: False
             Use logarithmic scale for histogram counts.
-        enabled : bool, default: True
-            Whether histogram is enabled (computes on data changes).
+        enabled : bool, default: False
+            Whether histogram responds to data-change events automatically.
         """
         super().__init__(
             n_bins=n_bins, mode=mode, log_scale=log_scale, enabled=enabled
         )
 
-        # Let pydantic manage private attributes so reads and writes stay in
-        # sync with the PrivateAttr storage used by EventedModel.
         self._layer = layer
 
         # Connect to layer events to trigger recomputation
@@ -108,13 +113,13 @@ class HistogramModel(EventedModel):
         # synchronous and async slice updates
         layer.events.set_data.connect(self._on_slice_change)
 
-        # Connect to our own events to trigger recomputation
+        # Connect to our own events
         self.events.n_bins.connect(self._on_params_change)
         self.events.mode.connect(self._on_params_change)
         self.events.log_scale.connect(self._on_log_scale_change)
-
-        # Do not compute on creation — bins/counts are computed lazily on
-        # first access, or automatically when enabled and data changes.
+        # When enabled flips True and data is dirty, compute immediately so
+        # any widget that just subscribed to bins/counts events gets a result.
+        self.events.enabled.connect(self._on_enabled_change)
 
     @property
     def bins(self) -> np.ndarray:
@@ -125,7 +130,7 @@ class HistogramModel(EventedModel):
         np.ndarray
             Array of bin edges with length n_bins + 1.
         """
-        if self._dirty and self.enabled:
+        if self._dirty:
             self.compute()
         return self._bins
 
@@ -138,7 +143,7 @@ class HistogramModel(EventedModel):
         np.ndarray
             Array of counts with length n_bins.
         """
-        if self._dirty and self.enabled:
+        if self._dirty:
             self.compute()
         return self._counts
 
@@ -148,7 +153,6 @@ class HistogramModel(EventedModel):
         This method extracts data from the layer based on the current mode
         (displayed or full), samples if necessary, and computes the histogram.
         """
-        # Get data based on mode
         data = self._get_data()
 
         if data is None or data.size == 0:
@@ -159,8 +163,12 @@ class HistogramModel(EventedModel):
             self.events.counts()
             return
 
-        # For RGB images, compute luminance so the histogram represents
-        # perceived brightness across all channels.
+        # For RGB(A) images convert to luminance so the histogram represents
+        # perceived brightness. For napari rgb=True images the channel axis is
+        # always the last axis regardless of the number of leading dimensions
+        # (e.g. TxHxWxC), so `data[..., :3]` is the correct slice.
+        # There is no dedicated napari utility for this; calc_data_range uses
+        # the same last-axis convention (via `offset = 2 + int(rgb)`).
         if self._layer.rgb:
             data = self._rgb_to_luminance(data)
 
@@ -179,17 +187,14 @@ class HistogramModel(EventedModel):
             range_min = float(range_min) - 0.5
             range_max = float(range_max) + 0.5
 
-        # Compute histogram
         counts, bins = np.histogram(
             data.ravel(),
             bins=self.n_bins,
             range=(float(range_min), float(range_max)),
         )
 
-        # Store original counts (before log transform)
         self._bins = bins.astype(np.float32)
 
-        # Apply log scale if needed
         if self.log_scale:
             self._counts = np.log10(counts + 1).astype(np.float32)
         else:
@@ -204,7 +209,7 @@ class HistogramModel(EventedModel):
 
         Uses ITU-R BT.709 coefficients so the result matches sRGB display
         brightness. Only the first three channels are used; alpha is ignored.
-        The returned array has the same dtype range as the input (e.g. 0-255
+        The returned array has the same value range as the input (e.g. 0-255
         for uint8, 0-1 for float).
         """
         rgb = data[..., :3].astype(np.float32)
@@ -213,13 +218,7 @@ class HistogramModel(EventedModel):
         )
 
     def _get_data(self) -> Optional[np.ndarray]:
-        """Get data from layer based on current mode.
-
-        Returns
-        -------
-        np.ndarray | None
-            Data array to compute histogram from.
-        """
+        """Get data from layer based on current mode."""
         if self.mode == 'canvas':
             return self._get_displayed_data()
         return self._get_full_data()
@@ -235,27 +234,16 @@ class HistogramModel(EventedModel):
         which is most useful for adjusting contrast limits. It also
         correctly handles multiscale data by using the appropriate
         resolution level that is currently being rendered.
-
-        Returns
-        -------
-        np.ndarray | None
-            Data from displayed slice only.
         """
         raw = self._get_slice_raw_data()
         if raw is not None and self._has_real_displayed_data(raw):
             return raw
 
         # Fallback: if slice not available, use full data
-        # This can happen before first render or while the placeholder slice
-        # still contains a single sampled value.
         return self._get_full_data()
 
     def _get_slice_raw_data(self) -> Optional[np.ndarray]:
-        """Get the currently sliced raw image data if available.
-
-        Image always has _slice.image.raw, but _slice itself may be None
-        before the layer has been rendered for the first time.
-        """
+        """Get the currently sliced raw image data if available."""
         if self._layer._slice is None:
             return None
         raw = self._layer._slice.image.raw
@@ -285,38 +273,16 @@ class HistogramModel(EventedModel):
     def _get_full_data(self) -> Optional[np.ndarray]:
         """Get full volume data.
 
-        For multiscale data, uses the lowest resolution level (like
-        contrast limit calculations) for efficiency.
-
-        Returns
-        -------
-        np.ndarray | None
-            Full volume data.
+        For multiscale data, uses the lowest resolution level for efficiency.
         """
         data = self._layer.data
-        # Handle multiscale - use lowest resolution level for efficiency
-        # This matches the pattern in _calc_data_range
         if isinstance(data, list | tuple):
             data = data[-1]
         return np.asarray(data)
 
     def _sample_data(self, data: np.ndarray, max_samples: int) -> np.ndarray:
-        """Randomly sample data to reduce computation.
-
-        Parameters
-        ----------
-        data : np.ndarray
-            Data array to sample from.
-        max_samples : int
-            Maximum number of samples to take.
-
-        Returns
-        -------
-        np.ndarray
-            Sampled data array.
-        """
+        """Randomly sample data to reduce computation."""
         flat_data = data.ravel()
-        # Remove NaN and inf values before sampling
         valid_mask = np.isfinite(flat_data)
         valid_data = flat_data[valid_mask]
 
@@ -326,7 +292,6 @@ class HistogramModel(EventedModel):
         if valid_data.size <= max_samples:
             return valid_data
 
-        # Random sampling without replacement
         rng = np.random.default_rng()
         indices = rng.choice(valid_data.size, size=max_samples, replace=False)
         return valid_data[indices]
@@ -340,11 +305,7 @@ class HistogramModel(EventedModel):
         self._mark_dirty()
 
     def _on_slice_change(self) -> None:
-        """Called when the displayed slice changes (slice navigation or 2D/3D toggle).
-
-        This is important for 'canvas' mode where we only compute histogram
-        on the currently visible data.
-        """
+        """Called when the displayed slice changes."""
         if self.mode == 'canvas':
             self._mark_dirty()
 
@@ -357,8 +318,18 @@ class HistogramModel(EventedModel):
         if not self._dirty:
             self._mark_dirty()
 
+    def _on_enabled_change(self) -> None:
+        """When enabled flips to True, compute if there is pending dirty data."""
+        if self.enabled and self._dirty:
+            self.compute()
+
     def _mark_dirty(self) -> None:
-        """Mark histogram as needing recomputation."""
+        """Mark histogram as needing recomputation.
+
+        If enabled, compute immediately so connected widgets stay live.
+        If disabled, defer — the next explicit access or enabled=True will
+        trigger the compute.
+        """
         self._dirty = True
         if self.enabled:
             self.compute()

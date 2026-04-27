@@ -4,8 +4,8 @@ from dataclasses import replace
 
 import numpy as np
 
-from napari.components.histogram import HistogramModel
 from napari.layers import Image
+from napari.layers.image._histogram import HistogramModel
 
 
 class TestHistogramModel:
@@ -21,11 +21,9 @@ class TestHistogramModel:
         assert hist.n_bins == 256
         assert hist.mode == 'canvas'
         assert hist.log_scale is False
-        assert hist.enabled is True
-        # The model is created eagerly in Image.__init__; Image init events
-        # may trigger computation, so _dirty may be True or False here.
-        # Deferred computation on first access is tested separately.
-        assert isinstance(hist._dirty, bool)
+        # enabled defaults to False; histogram is inert until a widget
+        # explicitly enables it (popup shown or inline histogram toggled on).
+        assert hist.enabled is False
 
     def test_histogram_computation(self):
         """Test histogram is computed on first access of bins/counts."""
@@ -33,51 +31,77 @@ class TestHistogramModel:
         layer = Image(data)
         hist = layer.histogram
 
-        # Computation is triggered lazily by accessing the properties.
+        # Computation is always triggered by accessing bins/counts when dirty.
         bins = hist.bins
         counts = hist.counts
 
         assert len(bins) == 257  # n_bins + 1
         assert len(counts) == 256
-        assert counts.sum() > 0  # Should have some counts
+        assert counts.sum() > 0
 
     def test_histogram_not_computed_on_creation(self):
         """Histogram must not run np.histogram during model creation.
 
         Computation is deferred until the histogram widget is shown or the
-        caller explicitly accesses bins/counts. This avoids a wasted compute
-        when the model is created but immediately disabled (e.g. the inline
-        controls widget creates-then-hides the histogram on first button click).
+        caller explicitly accesses bins/counts. enabled=False (the default)
+        guarantees no event-driven compute fires during or after __init__.
         """
         data = np.random.random((100, 100))
         layer = Image(data)
-        hist = HistogramModel(layer)  # enabled=True by default
+        hist = HistogramModel(layer)  # enabled=False by default
 
         assert hist._dirty is True  # computation has not run
 
-    def test_histogram_lazy_computation(self):
-        """Accessing bins/counts triggers computation; disabled prevents it."""
+    def test_histogram_disabled_prevents_event_driven_recompute(self):
+        """With enabled=False, data-change events do not trigger auto-recompute.
+
+        Explicit access to bins/counts still computes regardless of enabled.
+
+        NOTE: always use ``layer.histogram`` (never a standalone
+        ``HistogramModel(layer)``).  Pydantic compares model instances by
+        field values, so two models with identical settings are considered
+        equal by napari's EventEmitter, which silently drops the second
+        connection as a duplicate.  ``layer.histogram`` is registered first and
+        is therefore the canonical connected instance.
+        """
         data = np.random.random((100, 100))
         layer = Image(data)
-        hist = HistogramModel(layer, enabled=False)
+        hist = layer.histogram  # enabled=False by default; properly connected
 
-        # When disabled, accessing the properties must NOT trigger computation.
+        # Starts dirty; no event-driven compute has run yet.
         assert hist._dirty is True
+
+        # Explicit access always computes when dirty.
         _ = hist.bins
+        assert hist._dirty is False
+
+        # A data change must mark dirty but NOT auto-recompute (enabled=False).
+        layer.data = np.random.random((100, 100))
+        assert hist._dirty is True  # dirty again, but no event-driven compute
+
+    def test_histogram_enabled_triggers_immediate_compute(self):
+        """Flipping enabled to True computes immediately if data is dirty."""
+        data = np.random.random((100, 100))
+        layer = Image(data)
+        hist = layer.histogram  # enabled=False by default; dirty=True
+
         assert hist._dirty is True
+        hist.enabled = True  # _on_enabled_change fires compute
+
+        assert hist._dirty is False
 
     def test_histogram_data_change_triggers_recompute(self):
-        """Test that changing layer data triggers histogram recomputation."""
+        """Test that changing layer data results in fresh counts on access."""
         data1 = np.ones((100, 100))
         layer = Image(data1)
         hist = layer.histogram
 
-        counts1 = hist.counts.copy()
+        counts1 = hist.counts.copy()  # explicit access → compute
 
-        # Change data
-        layer.data = np.zeros((100, 100))
-
-        counts2 = hist.counts
+        layer.data = np.zeros(
+            (100, 100)
+        )  # marks dirty (enabled=False → no auto-compute)
+        counts2 = hist.counts  # explicit access → recompute with new data
 
         assert not np.array_equal(counts1, counts2)
 
@@ -87,12 +111,10 @@ class TestHistogramModel:
         layer = Image(data)
         hist = layer.histogram
 
-        # Change contrast limits range
         layer.contrast_limits_range = [0.0, 0.5]
 
         bins2 = hist.bins
 
-        # Bins should have changed to reflect new range
         assert bins2[-1] <= 0.5
 
     def test_histogram_log_scale(self):
@@ -103,14 +125,11 @@ class TestHistogramModel:
 
         counts_linear = hist.counts.copy()
 
-        # Enable log scale
         hist.log_scale = True
 
         counts_log = hist.counts
 
-        # Log scaled counts should be different
         assert not np.array_equal(counts_linear, counts_log)
-        # Log scaled counts should generally be smaller
         assert counts_log.max() <= np.log10(counts_linear.max() + 1) + 1
 
     def test_histogram_n_bins_change(self):
@@ -132,15 +151,11 @@ class TestHistogramModel:
         layer = Image(data)
         hist = layer.histogram
 
-        # Default is canvas mode
         assert hist.mode == 'canvas'
 
-        # Change to full mode
         hist.mode = 'full'
         counts_full = hist.counts
 
-        # Full should have more data points
-        # (though counts sum depends on binning)
         assert counts_full is not None
 
     def test_histogram_canvas_mode_falls_back_before_first_real_slice(self):
@@ -188,12 +203,10 @@ class TestHistogramModel:
 
     def test_histogram_sampling_large_data(self):
         """Test that large data is sampled."""
-        # Create data larger than 1M points
         data = np.random.random((2000, 2000))
         layer = Image(data)
         hist = layer.histogram
 
-        # Should still compute without issues
         counts = hist.counts
         assert counts is not None
         assert len(counts) == 256
@@ -207,7 +220,6 @@ class TestHistogramModel:
         counts = hist.counts
         bins = hist.bins
 
-        # Should handle gracefully
         assert counts is not None
         assert bins is not None
 
@@ -219,10 +231,8 @@ class TestHistogramModel:
         layer = Image(data)
         hist = layer.histogram
 
-        # Should compute without errors
         counts = hist.counts
         assert counts is not None
-        # NaN and inf should be filtered out
         assert np.isfinite(counts).all()
 
     def test_histogram_single_value_data(self):
@@ -234,7 +244,6 @@ class TestHistogramModel:
         counts = hist.counts
         bins = hist.bins
 
-        # Should handle single value gracefully
         assert counts is not None
         assert bins is not None
 
@@ -249,7 +258,6 @@ class TestHistogramModel:
 
         assert counts is not None
         assert len(counts) == 256
-        # Bins should span 0-255 for uint8
         assert bins[0] >= 0
         assert bins[-1] <= 255
 
@@ -296,7 +304,6 @@ class TestHistogramModel:
         hist.events.bins.connect(on_bins)
         hist.events.counts.connect(on_counts)
 
-        # Trigger recomputation
         hist.compute()
 
         assert len(bins_called) > 0
@@ -304,7 +311,6 @@ class TestHistogramModel:
 
     def test_histogram_multiscale_image(self):
         """Test histogram with multiscale image."""
-        # Create simple multiscale data
         data = [
             np.random.random((100, 100)),
             np.random.random((50, 50)),
@@ -335,21 +341,18 @@ class TestHistogramModel:
         data = np.random.randint(0, 256, size=(100, 100, 3), dtype=np.uint8)
         layer = Image(data, rgb=True)
 
-        # RGB images should still have histogram property
         hist = layer.histogram
         assert hist is not None
 
     def test_histogram_compute_explicit(self):
-        """Test explicit compute call."""
+        """Test explicit compute call works regardless of enabled state."""
         data = np.random.random((100, 100))
         layer = Image(data)
         hist = layer.histogram
 
-        # Mark as dirty but disabled
         hist.enabled = False
         hist._dirty = True
 
-        # Explicit compute should work even when disabled
         hist.compute()
 
         assert hist._dirty is False
@@ -360,10 +363,8 @@ class TestHistogramModel:
         layer = Image(data)
         hist = HistogramModel(layer, enabled=False)
 
-        # Should not auto-compute
         assert hist._dirty is True
 
-        # Manual compute should still work
         hist.compute()
         assert hist._dirty is False
 
