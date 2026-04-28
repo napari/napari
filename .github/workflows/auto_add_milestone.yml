@@ -21,11 +21,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # shellcheck disable=SC2016
-
           IFS='/' read -r repoOwner repoName <<< "${{ github.repository }}"
           TODAY="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
+          # shellcheck disable=SC2016
           CLOSEST_MILESTONE=$(gh api graphql -f query='
             query($repoName: String!, $repoOwner: String!) {
               repository(name: $repoName, owner: $repoOwner) {
