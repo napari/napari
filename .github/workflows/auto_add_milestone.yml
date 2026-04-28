@@ -1,0 +1,61 @@
+name: Set milestone on merge of PR
+on:
+  pull_request_target:
+    types: [closed]
+    branches:
+      - main
+
+permissions: {}
+
+jobs:
+  set_milestone:
+    runs-on: ubuntu-slim
+    if: github.event.pull_request.merged == true
+    permissions:
+      pull-requests: write
+      issues: write
+      contents: read
+    steps:
+      - name: Check the closest milestone
+        id: closest_milestone
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # shellcheck disable=SC2016
+
+          IFS='/' read -r repoOwner repoName <<< "${{ github.repository }}"
+          TODAY="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+          CLOSEST_MILESTONE=$(gh api graphql -f query='
+            query($repoName: String!, $repoOwner: String!) {
+              repository(name: $repoName, owner: $repoOwner) {
+                milestones(states: OPEN, orderBy: {field: DUE_DATE, direction: ASC}, first: 100) {
+                  nodes {
+                    title
+                    number
+                    dueOn
+                  }
+                }
+              }
+          }' --jq '.data.repository.milestones.nodes | map(select(.dueOn >= today)) | .[0].number' -f repoName="$repoName" -f repoOwner="$repoOwner" -f today=$TODAY)
+
+          if [ -z "$CLOSEST_MILESTONE_NUMBER" ]; then
+            echo "No open milestone with a future due date was found."
+            echo "CLOSEST_MILESTONE_NAME=" >> "$GITHUB_ENV"
+            exit 0
+          fi
+
+          # print the closest milestone
+          CLOSEST_MILESTONE_NAME=$(gh api "/repos/${{ github.repository }}/milestones/$CLOSEST_MILESTONE" --jq '.title')
+          echo "Closest milestone: $CLOSEST_MILESTONE_NAME"
+
+          echo "name=$CLOSEST_MILESTONE_NAME" >> "$GITHUB_OUTPUT"
+
+      - name: Set milestone on PR
+        if: github.event.pull_request.milestone == null && steps.closest_milestone.outputs.name != ''
+        run: |
+          gh pr edit "$PR_NUMBER" --milestone "$CLOSEST_MILESTONE_NAME"
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CLOSEST_MILESTONE_NAME: ${{ steps.closest_milestone.outputs.name }}
