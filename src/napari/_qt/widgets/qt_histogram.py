@@ -43,18 +43,28 @@ class QtHistogramWidget(QWidget):
         The vispy visual that renders the histogram.
     """
 
-    def __init__(self, layer: Image, parent: QWidget | None = None) -> None:
+    def __init__(
+        self,
+        layer: Image,
+        viewer: ViewerModel | None = None,
+        parent: QWidget | None = None,
+    ) -> None:
         super().__init__(parent)
 
         self.layer = layer
         self._histogram = layer.histogram
         self._appearance = get_settings().appearance
-        self._viewer = self._find_viewer()
+        self._viewer = viewer
         self._updating = False
         self._target_width = 300
         self._target_height = 150
 
-        theme = get_theme(self._theme_id())
+        theme_name = (
+            self._viewer.theme
+            if self._viewer is not None
+            else self._appearance.theme
+        )
+        theme = get_theme(theme_name)
 
         # Create vispy canvas
         self.canvas = SceneCanvas(
@@ -135,22 +145,6 @@ class QtHistogramWidget(QWidget):
         red, green, blue = color.as_rgb_tuple()
         return (red / 255, green / 255, blue / 255, alpha)
 
-    def _theme_id(self) -> str:
-        """Return the active theme id for this histogram widget."""
-        if self._viewer is not None:
-            return self._viewer.theme
-        return self._appearance.theme
-
-    def _find_viewer(self) -> ViewerModel | None:
-        """Walk parent widgets to find an owning viewer model if present."""
-        parent = self.parentWidget()
-        while parent is not None:
-            viewer = getattr(parent, 'viewer', None)
-            if viewer is not None and hasattr(viewer, 'events'):
-                return viewer
-            parent = parent.parentWidget()
-        return None
-
     def _layer_bar_color(self) -> tuple[float, ...]:
         """Use the brightest end of the layer colormap for histogram bars."""
         rgba = np.atleast_2d(self.layer.colormap.map([1.0]))[0].astype(float)
@@ -159,7 +153,12 @@ class QtHistogramWidget(QWidget):
 
     def _apply_visual_style(self) -> None:
         """Apply theme-aware and layer-aware styling to the histogram plot."""
-        theme = get_theme(self._theme_id())
+        theme_name = (
+            self._viewer.theme
+            if self._viewer is not None
+            else self._appearance.theme
+        )
+        theme = get_theme(theme_name)
         self.canvas.bgcolor = theme.canvas.as_hex()
         self.histogram_visual.set_style(
             bar_color=self._layer_bar_color(),

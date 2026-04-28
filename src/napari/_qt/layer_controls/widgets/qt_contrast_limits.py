@@ -88,11 +88,15 @@ class QContrastLimitsPopup(QtPopup):
     """
 
     def __init__(
-        self, layer: Image | Surface, parent: Optional[QWidget] = None
+        self,
+        layer: Image | Surface,
+        parent: Optional[QWidget] = None,
+        viewer=None,
     ) -> None:
         super().__init__(parent)
 
         self._layer = layer
+        self._viewer = viewer
         self._cleaned_up = False
         self._histogram_was_enabled = False
 
@@ -107,7 +111,9 @@ class QContrastLimitsPopup(QtPopup):
         self.settings_widget = None
         if isinstance(layer, Image):
             self.histogram_content = QtHistogramContentWidget(
-                layer, parent=self
+                layer,
+                viewer=self._viewer,
+                parent=self,
             )
             self.histogram_widget = self.histogram_content.histogram_widget
             self.settings_widget = self.histogram_content.settings_widget
@@ -360,7 +366,11 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
         )
 
     def show_clim_popup(self):
-        self.clim_popup = QContrastLimitsPopup(self._layer, self.parent())
+        self.clim_popup = QContrastLimitsPopup(
+            self._layer,
+            self.parent(),
+            viewer=getattr(self.parent(), 'viewer', None),
+        )
         self.clim_popup.setParent(self.parent())
         self.clim_popup.move_to('top', min_length=650)
         self.clim_popup.show()
