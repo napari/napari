@@ -75,10 +75,10 @@ QtViewerPushButton[mode="ndisplay_button"]:checked {
   max-height: 28px;
   background: qlineargradient(
     x1: 0, y1: 0, x2: 1, y2: 0,
-    stop: 0 {{ foreground }},
-    stop: 0.3 {{ foreground }},
-    stop: 0.5 {{ highlight }},
-    stop: 1 {{ highlight }}
+    stop: 0 {{ primary }},
+    stop: 0.3 {{ primary }},
+    stop: 0.5 {{ current }},
+    stop: 1 {{ current }}
   );
 }
 
@@ -90,10 +90,10 @@ QtViewerPushButton[mode="ndisplay_button"] {
   max-height: 28px;
   background: qlineargradient(
     x1: 0, y1: 0, x2: 1, y2: 0,
-    stop: 0 {{ highlight }},
-    stop: 0.5 {{ highlight }},
-    stop: 0.7 {{ foreground }},
-    stop: 1 {{ foreground }}
+    stop: 0 {{ current }},
+    stop: 0.5 {{ current }},
+    stop: 0.7 {{ primary }},
+    stop: 1 {{ primary }}
   );
 }
 
@@ -128,7 +128,7 @@ QtModeRadioButton::indicator:checked {
 
 
 QtModeRadioButton::indicator:disabled {
-  background-color: {{ darken(foreground, 20) }}
+  background-color: {{ darken(primary, 20) }}
 }
 
 QtModeRadioButton::indicator:unchecked:hover {
@@ -236,11 +236,6 @@ QtModePushButton[mode="delete_shape"] {
    image: url("theme_{{ id }}:/delete_shape.svg");
 }
 
-QWidget[emphasized="true"] QtModePushButton[mode="delete_shape"]:pressed {
-  background-color: {{ error }};
-}
-
-
 QtCopyToClipboardButton {
    background-color: {{ background }};
    margin: 0px;
@@ -271,12 +266,11 @@ QtPlayButton[reverse=True] {
 }
 
 QtPlayButton[reverse=False] {
-  background: {{ foreground }};
   image: url("theme_{{ id }}:/playback-forward.svg");
 }
 
 QtPlayButton[reverse=True]:hover, QtPlayButton[reverse=False]:hover {
-  background: {{ primary }};
+  background: {{ highlight }};
 }
 
 QtPlayButton[playing=True]:hover {
