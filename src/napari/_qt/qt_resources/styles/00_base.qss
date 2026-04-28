@@ -122,6 +122,10 @@ QComboBox:on {
   border-radius: 0px;
 }
 
+QComboBox:hover {
+    background-color: {{ highlight }}
+}
+
 QListView {
   /* controls the color of the open dropdown menu */
   background-color: {{ primary }};
@@ -243,10 +247,12 @@ QCheckBox::indicator:unchecked {
 
 QCheckBox::indicator:checked {
   image: url("theme_{{ id }}:/check.svg");
+  background-color: {{ current }};
 }
 
 QCheckBox::indicator:indeterminate {
   image: url("theme_{{ id }}:/minus.svg");
+  background-color: {{ secondary }};
   padding: 2px;
   width: 14px;
   height: 14px;
@@ -290,7 +296,7 @@ QRadioButton::indicator::checked {
 
 
 QSlider {
-   background-color: none;
+    background-color: none;
 }
 
 QSlider::groove:horizontal {
@@ -313,24 +319,28 @@ QSlider::handle:hover {
    background-color: {{ highlight }};
 }
 
+/* TODO: for some reason this works on the theme example but not layer controls */
 QSlider::sub-page:horizontal {
     background: {{ secondary }};
-    border-radius: 2px;
+    border-radius: 0px;
 }
 
-/* TODO: doesn't work :( */
+QSlider::add-page:horizontal {
+    background: {{ primary }};
+    border-radius: 0px;
+}
+
+/* TODO: doesn't work at all :( */
 QSlider#invertedSlider::sub-page:horizontal {
     background: {{ primary }};
-    border-radius: 2px;
 }
 
 QSlider#invertedSlider::add-page:horizontal {
     background: {{ secondary }};
-    border-radius: 2px;
 }
 
 QRangeSlider {
-  qproperty-barColor: {{ darken(secondary, 20) }};
+  qproperty-barColor: {{ secondary }};
 }
 
 /* ----------------- QScrollBar ------------------ */
@@ -338,7 +348,7 @@ QRangeSlider {
 QScrollBar {
   border: none;
   border-radius: 2px;
-  background: {{ primary }};
+  background: {{ foreground }};
 }
 
 QScrollBar:horizontal {
@@ -353,7 +363,7 @@ QScrollBar:vertical {
 }
 
 QScrollBar::handle {
-  background: {{ secondary }};
+  background: {{ primary }};
   border-radius: 2px;
 }
 
@@ -363,6 +373,10 @@ QScrollBar::handle:horizontal {
 
 QScrollBar::handle:vertical {
     min-height: 26px;
+}
+
+QScrollBar::handle:hover {
+    background-color: {{ highlight }}
 }
 
 QScrollBar::add-line, QScrollBar::sub-line {
@@ -394,7 +408,13 @@ QScrollBar::sub-line:vertical {
 
 QScrollBar::add-line:horizontal:pressed,
 QScrollBar::sub-line:horizontal:pressed {
-    background: {{ current }};
+    background-color: {{ current }};
+}
+
+/* TODO: this doesn't work for some reason... */
+QScrollBar::add-line:horizontal:hover,
+QScrollBar::sub-line:horizontal:hover {
+    background-color: {{ highlight }}
 }
 
 QScrollBar:left-arrow:horizontal {

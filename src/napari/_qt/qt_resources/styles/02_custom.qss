@@ -161,6 +161,10 @@ QtLayerControlsContainer > QFrame {
   background-color: {{ foreground }};
 }
 
+QWidget[foreground=true] {
+  background-color: {{ foreground }};
+}
+
 /* the box that shows the current Label color */
 QtColorBox {
   padding: 0px;
@@ -200,12 +204,8 @@ PlaneNormalButtons QPushButton {
 }
 /* ------------- DimsSliders --------- */
 
-QtDimSliderWidget > QScrollBar::handle[last_used=false]:horizontal {
-    background: {{ secondary }};
-}
-
 QtDimSliderWidget > QScrollBar::handle[last_used=true]:horizontal {
-    background: {{ current }};
+    background: {{ highlight }};
 }
 
 QtDimSliderWidget > QScrollBar:left-arrow:horizontal {
@@ -275,7 +275,7 @@ QtDimSliderWidget > QLineEdit {
 
 #CustomColorDialog QLabel {
   background-color: {{ foreground }};
-  color: {{ secondary }};
+  color: {{ primary }};
 }
 
 
@@ -635,13 +635,15 @@ QtListView QScrollBar:down-arrow {
 QtListView::item {
   padding: 4px;
   margin: 2px 2px 2px 2px;
-  background-color: {{ foreground }};
+  background-color: {{ primary }};
   border: 1px solid {{ foreground }};
 }
 
 QtListView::item:hover {
-  background-color: {{ lighten(foreground, 3) }};
+  background-color: {{ highlight }};
 }
+
+/* TODO: all these darken/lighten in the layerlist seem unnecessarily complicated */
 
 /* in the QSS context "active" means the window is active */
 /* (as opposed to focused on another application) */
@@ -668,6 +670,7 @@ QtLayerList::item {
   border: 0;
 }
 
+/* eye visibility icon */
 /* the first one is the "partially checked" state */
 QtLayerList::indicator {
   width: 16px;
@@ -681,12 +684,12 @@ QtLayerList::indicator {
 
 QtLayerList::indicator:unchecked {
   image: url("theme_{{ id }}:/visibility_off_50.svg");
-  background: {{ opacity(background, 190) }};
+  background: {{ darken(primary, 20) }};
 }
 
 QtLayerList::indicator:checked {
   image: url("theme_{{ id }}:/visibility.svg");
-  background: {{ opacity(highlight, 190) }};
+  background: {{ secondary }};
 }
 
 
@@ -745,7 +748,7 @@ QtDimsSorter > QtListView::indicator::checked {
 
 QMenu::separator, QModelMenu::separator {
 	height: 1 px;
-	background: {{ opacity(text, 90) }};
+	background: {{ foreground }};
 	margin-left: 17 px;
 	margin-right: 6 px;
 	margin-top: 5 px;

@@ -35,6 +35,7 @@ QtViewerPushButton[mode="new_labels"]:disabled {
   border: 3px solid {{ background }};
 }
 
+/* TODO: can we avoid this darken/lighten? */
 QtViewerPushButton[mode="new_points"][creation_state="full"],
 QtViewerPushButton[mode="new_shapes"][creation_state="full"],
 QtViewerPushButton[mode="new_labels"][creation_state="full"] {
@@ -126,9 +127,9 @@ QtModeRadioButton::indicator:checked {
   background-color: {{ current }};
 }
 
-
+/* TODO: introduce "disabled" as color? */
 QtModeRadioButton::indicator:disabled {
-  background-color: {{ darken(primary, 20) }}
+  background-color: {{ opacity(primary, 50) }}
 }
 
 QtModeRadioButton::indicator:unchecked:hover {
@@ -157,7 +158,6 @@ QtModeRadioButton[mode="rectangle"]::indicator {
 
 QtModeRadioButton[mode="ellipse"]::indicator {
   image: url("theme_{{ id }}:/ellipse.svg");
-  color: red;
 }
 
 QtModeRadioButton[mode="line"]::indicator {
@@ -269,15 +269,11 @@ QtPlayButton[reverse=False] {
   image: url("theme_{{ id }}:/playback-forward.svg");
 }
 
-QtPlayButton[reverse=True]:hover, QtPlayButton[reverse=False]:hover {
+QtPlayButton:hover {
   background: {{ highlight }};
-}
-
-QtPlayButton[playing=True]:hover {
-  background-color: {{ lighten(error, 10) }};
 }
 
 QtPlayButton[playing=True] {
     image: url("theme_{{ id }}:/playback-stop.svg");
-    background-color: {{ error }};
+    background-color: {{ current }};
 }

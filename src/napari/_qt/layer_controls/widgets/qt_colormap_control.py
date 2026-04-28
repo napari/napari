@@ -158,6 +158,7 @@ class QtColormapControl(QtWidgetControlsBase):
         colormap_layout.addStretch(1)
         self.colormapWidget = QWidget()
         self.colormapWidget.setLayout(colormap_layout)
+        self.colormapWidget.setProperty('foreground', 'true')
 
         self._on_colormap_change()
 
