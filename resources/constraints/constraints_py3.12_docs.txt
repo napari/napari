@@ -2,7 +2,7 @@
 #    uv pip compile --python-version 3.12 --output-file resources/constraints/constraints_py3.12_docs.txt pyproject.toml resources/constraints/version_denylist.txt resources/constraints/version_denylist_examples.txt --group docs --extra pyqt6 --extra pyside6 --extra testing --group testing_extra --extra all_optional --exclude resources/constraints/napari_exclude.txt
 accessible-pygments==0.0.5
     # via pydata-sphinx-theme
-aiobotocore==3.4.0
+aiobotocore==3.5.0
     # via s3fs
 aiohappyeyeballs==2.6.1
     # via aiohttp
@@ -67,17 +67,17 @@ bioio-imageio==1.3.0
     # via ndevio
 bioio-ome-tiff==1.4.0
     # via ndevio
-bioio-ome-zarr==3.3.0
+bioio-ome-zarr==3.4.0
     # via ndevio
 bioio-tifffile==1.3.0
     # via ndevio
-botocore==1.42.84
+botocore==1.42.91
     # via aiobotocore
-build==1.4.3
+build==1.4.4
     # via npe2
 cachey==0.2.1
     # via napari (pyproject.toml)
-certifi==2026.2.25
+certifi==2026.4.22
     # via
     #   napari (pyproject.toml)
     #   requests
@@ -85,7 +85,7 @@ chardet==7.4.3
     # via trackastra
 charset-normalizer==3.4.7
     # via requests
-click==8.3.2
+click==8.3.3
     # via
     #   dask
     #   distributed
@@ -209,9 +209,9 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.152.1
+hypothesis==6.152.3
     # via napari (pyproject.toml)
-idna==3.11
+idna==3.13
     # via
     #   anyio
     #   requests
@@ -248,7 +248,7 @@ ipykernel==6.31.0
     #   myst-nb
     #   napari-console
     #   qtconsole
-ipython==9.12.0
+ipython==9.13.0
     # via
     #   napari (pyproject.toml)
     #   ipykernel
@@ -345,7 +345,7 @@ markdown-it-py==3.0.0
     #   rich
 markupsafe==3.0.3
     # via jinja2
-matplotlib==3.10.8
+matplotlib==3.10.9
     # via
     #   napari (pyproject.toml)
     #   napari (pyproject.toml:docs)
@@ -433,7 +433,7 @@ npe2==0.8.2
     # via
     #   napari (pyproject.toml)
     #   napari-plugin-manager
-numba==0.65.0
+numba==0.65.1
     # via
     #   napari (pyproject.toml)
     #   napari (pyproject.toml:docs)
@@ -535,7 +535,7 @@ ome-types==0.6.3
     #   bioio
     #   bioio-base
     #   bioio-ome-tiff
-packaging==26.1
+packaging==26.2
     # via
     #   build
     #   dask
@@ -586,7 +586,7 @@ pint==0.25.3
     #   bioio-base
     #   napari-metadata
     #   ome-types
-pip==26.0.1
+pip==26.1
     # via napari-plugin-manager
 platformdirs==4.9.6
     # via
@@ -623,6 +623,7 @@ psutil==7.2.2
     #   distributed
     #   imageio
     #   ipykernel
+    #   ipython
     #   trackastra
 psygnal==0.15.1
     # via
@@ -639,7 +640,7 @@ pyautogui==0.9.54
     # via napari (pyproject.toml)
 pyconify==0.2.1
     # via superqt
-pydantic==2.13.2
+pydantic==2.13.3
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
@@ -651,18 +652,18 @@ pydantic==2.13.2
     #   ome-types
     #   pydantic-extra-types
     #   pydantic-settings
-pydantic-core==2.46.2
+pydantic-core==2.46.3
     # via pydantic
 pydantic-extra-types==2.11.1
     # via
     #   napari (pyproject.toml)
     #   npe2
     #   ome-types
-pydantic-settings==2.13.1
+pydantic-settings==2.14.0
     # via napari (pyproject.toml)
-pydata-sphinx-theme==0.17.0
+pydata-sphinx-theme==0.17.1
     # via napari-sphinx-theme
-pydeps==3.0.2
+pydeps==3.0.6
     # via napari (pyproject.toml:docs)
 pygetwindow==0.0.9
     # via pyautogui
@@ -878,7 +879,7 @@ sphinx-external-toc==1.0.1
     # via napari (pyproject.toml:docs)
 sphinx-favicon==1.0.1
     # via napari (pyproject.toml:docs)
-sphinx-gallery==0.20.0
+sphinx-gallery==0.21.0
     # via napari (pyproject.toml:docs)
 sphinx-tabs==3.5.0
     # via napari (pyproject.toml:docs)
@@ -979,7 +980,7 @@ triangle==20250106
     #   napari (pyproject.toml:docs)
 triton==3.6.0
     # via torch
-typer==0.24.1
+typer==0.25.0
     # via
     #   geff
     #   npe2
@@ -1026,7 +1027,7 @@ urllib3==2.6.3
     #   botocore
     #   distributed
     #   requests
-uvicorn==0.44.0
+uvicorn==0.46.0
     # via sphinx-autobuild
 virtualenv==21.2.4
     # via napari (pyproject.toml)
