@@ -354,6 +354,21 @@ class ScalarFieldBase(Layer, ABC):
         """Data, exactly as provided by the user."""
         return self._data_raw
 
+    @property
+    def data(self) -> LayerDataProtocol | MultiScaleData:
+        """Data, possibly in multiscale wrapper. Obeys LayerDataProtocol."""
+        return self._data
+
+    @data.setter
+    def data(self, data: LayerDataProtocol | MultiScaleData):
+        self._data_raw = data
+        # note, we don't support changing from/to multiscale after construction
+        self._data = MultiScaleData(data) if self.multiscale else data  # type: ignore[arg-type]
+        self._reset_thumbnail_level_data()
+        self._update_dims()
+        self.events.data(value=self.data)
+        self._reset_editable()
+
     def _get_ndim(self) -> int:
         """Determine number of dimensions of the layer."""
         return len(self.level_shapes[0])
