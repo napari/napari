@@ -1,4 +1,4 @@
-name: Labels and citation checks
+name: Check labels and citation 
 on:
   pull_request:
     types:

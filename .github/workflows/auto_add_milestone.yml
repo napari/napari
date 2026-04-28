@@ -1,4 +1,4 @@
-name: Set milestone on merge of PR
+name: Set release milestone on PR merge to main
 on:
   pull_request_target:
     types: [closed]
@@ -16,7 +16,7 @@ jobs:
       issues: write
       contents: read
     steps:
-      - name: Check the closest milestone
+      - name: Ensure closest milestone exists
         id: closest_milestone
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -40,14 +40,14 @@ jobs:
           }' --jq '.data.repository.milestones.nodes | map(select(.dueOn >= today)) | .[0].number' -f repoName="$repoName" -f repoOwner="$repoOwner" -f today=$TODAY)
 
           if [ -z "$CLOSEST_MILESTONE_NUMBER" ]; then
-            echo "No open milestone with a future due date was found."
+            echo "No open milestone with a future due date was found. Creating a new milestone."
             echo "CLOSEST_MILESTONE_NAME=" >> "$GITHUB_ENV"
             exit 0
           fi
 
           # print the closest milestone
           CLOSEST_MILESTONE_NAME=$(gh api "/repos/${{ github.repository }}/milestones/$CLOSEST_MILESTONE" --jq '.title')
-          echo "Closest milestone: $CLOSEST_MILESTONE_NAME"
+          echo "Milestone to apply to PR: $CLOSEST_MILESTONE_NAME"
 
           echo "name=$CLOSEST_MILESTONE_NAME" >> "$GITHUB_OUTPUT"
 
