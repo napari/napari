@@ -10,7 +10,7 @@ permissions: {}
 jobs:
   set_milestone:
     runs-on: ubuntu-slim
-    if: github.event.pull_request.merged == true
+    if: github.event.pull_request.merged == true &&  github.repository == 'napari/napari'
     permissions:
       pull-requests: write
       issues: write
