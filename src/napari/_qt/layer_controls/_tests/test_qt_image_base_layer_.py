@@ -154,6 +154,44 @@ def test_tensorstore_clim_popup(qtbot):
     qtbot.addWidget(QContrastLimitsPopup(layer))
 
 
+@pytest.mark.parametrize(
+    ('layer', 'supports_histogram'),
+    [
+        (Image(_IMAGE), True),
+        (Image(np.dstack([_IMAGE, _IMAGE, _IMAGE]), rgb=True), True),
+        (Surface(_SURF), False),
+    ],
+)
+def test_histogram_ui_support_boundary(qtbot, layer, supports_histogram):
+    """Image layers (including RGB via luminance) should expose histogram UI."""
+    qtctrl = QtBaseImageControls(layer)
+    qtbot.addWidget(qtctrl)
+
+    assert (qtctrl._histogram_control is not None) is supports_histogram
+    assert (
+        qtctrl._gamma_slider_control.histogram_button is not None
+    ) is supports_histogram
+
+
+@pytest.mark.parametrize(
+    ('layer', 'supports_histogram'),
+    [
+        (Image(_IMAGE), True),
+        (Image(np.dstack([_IMAGE, _IMAGE, _IMAGE]), rgb=True), True),
+        (Surface(_SURF), False),
+    ],
+)
+def test_contrast_limits_popup_histogram_boundary(
+    qtbot, layer, supports_histogram
+):
+    """The detailed contrast popup should embed histogram UI for all Image layers."""
+    popup = QContrastLimitsPopup(layer)
+    qtbot.addWidget(popup)
+
+    assert (popup.histogram_widget is not None) is supports_histogram
+    assert (popup.settings_widget is not None) is supports_histogram
+
+
 def test_blending_opacity_slider(qtbot):
     """Tests whether opacity slider is disabled for minimum, opaque, and multiplicative blending."""
     layer = Image(np.random.rand(8, 8))

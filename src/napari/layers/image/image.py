@@ -9,6 +9,7 @@ from typing import Any, Literal, cast
 import numpy as np
 
 from napari.layers._data_protocols import LayerDataProtocol
+from napari.layers._histogram import HistogramModel
 from napari.layers._multiscale_data import MultiScaleData
 from napari.layers._scalar_field._slice import _ScalarFieldSliceResponse
 from napari.layers._scalar_field.scalar_field import (
@@ -336,6 +337,8 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         else:
             self._iso_threshold = iso_threshold
 
+        self._histogram = HistogramModel(self)
+
     @property
     def rendering(self) -> str:
         """Return current rendering mode.
@@ -412,6 +415,20 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         self._attenuation = value
         self._update_thumbnail()
         self.events.attenuation()
+
+    @property
+    def histogram(self) -> HistogramModel:
+        """Histogram model for this layer.
+
+        The histogram model computes and stores histogram data for the layer,
+        responding to changes in layer data, contrast limits, and gamma.
+
+        Returns
+        -------
+        HistogramModel
+            Histogram model instance for this layer.
+        """
+        return self._histogram
 
     @property
     def data(self) -> LayerDataProtocol | MultiScaleData:

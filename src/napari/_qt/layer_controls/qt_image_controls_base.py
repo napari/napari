@@ -8,9 +8,13 @@ from napari._qt.layer_controls.widgets import (
     QtContrastLimitsControl,
     QtGammaSliderControl,
 )
+from napari._qt.layer_controls.widgets.qt_histogram_control import (
+    QtHistogramControl,
+)
+from napari.layers import Image
 
 if TYPE_CHECKING:
-    from napari.layers import Image, Surface
+    from napari.layers import Surface
 
 
 class QtBaseImageControls(QtLayerControls):
@@ -32,6 +36,8 @@ class QtBaseImageControls(QtLayerControls):
         Widget that wraps layer contrast range slider and autocontrast widgets.
     _gamma_slider_control : napari._qt.layer_controls.widgets.QtGammaSliderControl
         Widget that wraps layer gamma adjustment slider widget.
+    _histogram_control : napari._qt.layer_controls.widgets._image.QtHistogramControl
+        Collapsible widget that shows layer histogram with visualization and settings.
     """
 
     def __init__(self, layer: Image | Surface) -> None:
@@ -41,5 +47,9 @@ class QtBaseImageControls(QtLayerControls):
         self._add_widget_controls(self._contrast_limits_control)
         self._gamma_slider_control = QtGammaSliderControl(self, layer)
         self._add_widget_controls(self._gamma_slider_control)
+        self._histogram_control = None
+        if isinstance(layer, Image):
+            self._histogram_control = QtHistogramControl(self, layer)
+            self._add_widget_controls(self._histogram_control)
         self._colormap_control = QtColormapControl(self, layer)
         self._add_widget_controls(self._colormap_control)

@@ -220,6 +220,23 @@ QtModeRadioButton[mode="add_points"]::indicator {
     image: url("theme_{{ id }}:/add.svg");
 }
 
+QtModePushButton[mode="histogram"] {
+  image: url("theme_{{ id }}:/histogram.svg");
+  border-radius: 3px;
+}
+
+QtModePushButton[mode="histogram"]:hover:!checked {
+  background-color: {{ highlight }};
+}
+
+QtModePushButton[mode="histogram"]:checked {
+  background-color: {{ current }};
+}
+
+QtModePushButton[mode="histogram"]:disabled {
+  background-color: {{ darken(foreground, 20) }};
+}
+
 QtModePushButton[mode="shuffle"] {
    image: url("theme_{{ id }}:/shuffle.svg");
 }

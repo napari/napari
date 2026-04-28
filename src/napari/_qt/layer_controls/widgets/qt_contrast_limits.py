@@ -2,15 +2,27 @@ from typing import Optional
 
 import numpy as np
 from qtpy.QtCore import Qt, Signal
-from qtpy.QtWidgets import QHBoxLayout, QPushButton, QWidget
-from superqt import QDoubleRangeSlider
+from qtpy.QtWidgets import (
+    QApplication,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
+from superqt import (
+    QDoubleRangeSlider,
+    QLabeledDoubleRangeSlider,
+    QLabeledDoubleSlider,
+)
 
+from napari._qt.dialogs.qt_modal import QtPopup
 from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,
 )
 from napari._qt.utils import qt_signals_blocked
-from napari._qt.widgets.qt_range_slider_popup import QRangeSliderPopup
+from napari._qt.widgets.qt_histogram_content import QtHistogramContentWidget
 from napari.layers import Image, Surface
 from napari.utils._dtype import normalize_dtype
 from napari.utils.events.event_utils import connect_no_arg, connect_setattr
@@ -68,11 +80,52 @@ class _QDoubleRangeSlider(QDoubleRangeSlider):
             super().mousePressEvent(event)
 
 
-class QContrastLimitsPopup(QRangeSliderPopup):
+class QContrastLimitsPopup(QtPopup):
+    """Popup for contrast limits with histogram visualization.
+
+    Unlike the simple QRangeSliderPopup, this uses a vertical layout
+    to stack the slider, histogram, and controls vertically.
+    """
+
     def __init__(
-        self, layer: Image | Surface, parent: Optional[QWidget] = None
+        self,
+        layer: Image | Surface,
+        parent: Optional[QWidget] = None,
+        viewer=None,
     ) -> None:
         super().__init__(parent)
+
+        self._layer = layer
+        self._viewer = viewer
+        self._cleaned_up = False
+        self._histogram_was_enabled = False
+
+        self._layout = QVBoxLayout()
+        self._layout.setContentsMargins(10, 10, 10, 10)
+        self._layout.setSpacing(6)
+        self.frame.setLayout(self._layout)
+
+        # 1. Histogram + settings (Image layers only; Surface not yet supported)
+        self.histogram_content = None
+        self.histogram_widget = None
+        self.settings_widget = None
+        if isinstance(layer, Image):
+            self.histogram_content = QtHistogramContentWidget(
+                layer,
+                viewer=self._viewer,
+                parent=self,
+            )
+            self.histogram_widget = self.histogram_content.histogram_widget
+            self.settings_widget = self.histogram_content.settings_widget
+            self._layout.addWidget(self.histogram_content)
+
+        # 2. Contrast limits slider
+        self.slider = QLabeledDoubleRangeSlider(
+            Qt.Orientation.Horizontal, parent
+        )
+        self.slider.label_shift_x = 2
+        self.slider.label_shift_y = 2
+        self.slider.setFocus()
 
         decimals = range_to_decimals(layer.contrast_limits_range, layer.dtype)
         self.slider.setRange(*layer.contrast_limits_range)
@@ -80,10 +133,44 @@ class QContrastLimitsPopup(QRangeSliderPopup):
         self.slider.setSingleStep(10**-decimals)
         self.slider.setValue(layer.contrast_limits)
 
+        clim_row = QHBoxLayout()
+        clim_row.setContentsMargins(0, 0, 0, 0)
+        clim_row.addWidget(QLabel(trans._('contrast limits:')))
+        clim_row.addWidget(self.slider)
+        self._layout.addLayout(clim_row)
+
+        QApplication.processEvents()
+        self.slider._reposition_labels()
+
         connect_setattr(self.slider.valueChanged, layer, 'contrast_limits')
         connect_setattr(
             self.slider.rangeChanged, layer, 'contrast_limits_range'
         )
+
+        # 3. Gamma slider
+
+        self.gamma_slider = QLabeledDoubleSlider(Qt.Orientation.Horizontal)
+        self.gamma_slider.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.gamma_slider.setMinimum(0.2)
+        self.gamma_slider.setMaximum(2.0)
+        self.gamma_slider.setSingleStep(0.02)
+        self.gamma_slider.setValue(layer.gamma)
+        self.gamma_slider.setToolTip(
+            trans._('Adjust gamma correction (0.2 - 2.0)')
+        )
+        connect_setattr(self.gamma_slider.valueChanged, layer, 'gamma')
+        connect_setattr(layer.events.gamma, self.gamma_slider, 'setValue')
+
+        gamma_row = QHBoxLayout()
+        gamma_row.setContentsMargins(0, 0, 0, 0)
+        gamma_row.addWidget(QLabel(trans._('gamma:')))
+        gamma_row.addWidget(self.gamma_slider)
+        self._layout.addLayout(gamma_row)
+
+        # 4. Reset / full range buttons
+        button_layout = QHBoxLayout()
+        button_layout.setContentsMargins(0, 5, 0, 0)
+        button_layout.setSpacing(5)
 
         def reset():
             layer.reset_contrast_limits()
@@ -99,9 +186,7 @@ class QContrastLimitsPopup(QRangeSliderPopup):
         reset_btn.setToolTip(trans._('Autoscale contrast to data range'))
         reset_btn.setFixedWidth(45)
         reset_btn.clicked.connect(reset)
-        self._layout.addWidget(
-            reset_btn, alignment=Qt.AlignmentFlag.AlignBottom
-        )
+        button_layout.addWidget(reset_btn)
 
         # the "full range" button doesn't do anything if it's not an
         # unsigned integer type (it's unclear what range should be set)
@@ -114,9 +199,68 @@ class QContrastLimitsPopup(QRangeSliderPopup):
             )
             range_btn.setFixedWidth(75)
             range_btn.clicked.connect(layer.reset_contrast_limits_range)
-            self._layout.addWidget(
-                range_btn, alignment=Qt.AlignmentFlag.AlignBottom
-            )
+            button_layout.addWidget(range_btn)
+
+        button_layout.addStretch()
+
+        self._layout.addWidget(self._create_widget_from_layout(button_layout))
+
+    def keyPressEvent(self, event):
+        """On key press lose focus of the lineEdits."""
+        if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
+            self.slider.setFocus()
+            return
+        super().keyPressEvent(event)
+
+    def showEvent(self, event):
+        """Enable histogram when popup is shown."""
+        super().showEvent(event)
+        if self.histogram_widget is not None:
+            self._histogram_was_enabled = self._layer.histogram.enabled
+            if not self._histogram_was_enabled:
+                # _on_enabled_change handles the immediate compute.
+                self._layer.histogram.enabled = True
+
+    def closeEvent(self, event):
+        """Clean up event handlers when popup is closed."""
+        self._disable_histogram()
+        self._cleanup()
+        super().closeEvent(event)
+
+    def hideEvent(self, event):
+        """Clean up event handlers when popup is hidden."""
+        self._disable_histogram()
+        self._cleanup()
+        super().hideEvent(event)
+
+    def _disable_histogram(self) -> None:
+        """Disable histogram when popup is hidden/closed, only if popup enabled it."""
+        if (
+            self.histogram_widget is not None
+            and not self._histogram_was_enabled
+        ):
+            # Mark as already-enabled so a second call (closeEvent fires then
+            # hideEvent also fires) is a no-op and avoids a redundant event.
+            self._histogram_was_enabled = True
+            self._layer.histogram.enabled = False
+
+    def _cleanup(self) -> None:
+        """Disconnect event handlers and clean up widgets."""
+        if self._cleaned_up:
+            return
+        self._cleaned_up = True
+
+        if self.histogram_content is not None:
+            self.histogram_content.cleanup()
+
+    def _create_widget_from_layout(self, layout: QHBoxLayout) -> QWidget:
+        """Helper to wrap a layout in a widget."""
+        widget = QWidget()
+        widget.setLayout(layout)
+        return widget
+
+
+QRangeSliderPopup = QContrastLimitsPopup
 
 
 class AutoScaleButtons(QWidget):
@@ -222,7 +366,11 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
         )
 
     def show_clim_popup(self):
-        self.clim_popup = QContrastLimitsPopup(self._layer, self.parent())
+        self.clim_popup = QContrastLimitsPopup(
+            self._layer,
+            self.parent(),
+            viewer=getattr(self.parent(), 'viewer', None),
+        )
         self.clim_popup.setParent(self.parent())
         self.clim_popup.move_to('top', min_length=650)
         self.clim_popup.show()
@@ -255,6 +403,6 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
         return [
-            (self.contrast_limits_slider_label, self.contrast_limits_slider),
             (self.auto_scale_bar_label, self.auto_scale_bar),
+            (self.contrast_limits_slider_label, self.contrast_limits_slider),
         ]
