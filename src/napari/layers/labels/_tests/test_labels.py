@@ -1197,6 +1197,30 @@ def test_fill_swap_with_preserve_labels():
     assert np.unique(layer.data[:3, :3]) == 1
 
 
+@pytest.mark.parametrize('tool', ['fill', 'paint', 'paint_polygon'])
+def test_preserve_labels_non_background_is_noop_after_swap(tool):
+    """All editing tools should share the same preserve_labels rule."""
+    data = np.zeros((8, 8), dtype=np.int32)
+    data[2:6, 2:6] = 2
+    layer = Labels(data.copy())
+    layer.preserve_labels = True
+    layer.selected_label = 2
+    layer.swap_selected_and_background_labels()
+
+    assert layer.selected_label == 0
+    assert layer._prev_selected_label == 2
+
+    if tool == 'fill':
+        layer.fill((3, 3), 3)
+    elif tool == 'paint':
+        layer.brush_size = 1
+        layer.paint((3, 3), 3)
+    else:
+        layer.paint_polygon([[2, 2], [2, 5], [5, 5], [5, 2]], 3)
+
+    npt.assert_array_equal(layer.data, data)
+
+
 def test_fill_3d_batch_refresh():
     """Test batch fill operations with refresh=False on different slices.
 

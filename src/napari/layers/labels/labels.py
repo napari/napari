@@ -1251,17 +1251,10 @@ class Labels(ScalarFieldBase):
         if old_label == new_label:
             return None
 
-        # If preserve_labels is True, then we only want to fill:
-        # - pixels of the background label, filling with the new label
-        # - pixels of the previous label, filling with the background
-        # the previous label is stored when the selected label is set
-        # to the background, e.g. by swap_selected_and_background_labels
-        if (
-            self.preserve_labels
-            and old_label != self._prev_selected_label
-            and old_label != self.colormap.background_value
-        ):
-            return None
+        if self.preserve_labels:
+            source_label = self._get_preserve_labels_source_label(new_label)
+            if old_label != source_label:
+                return None
 
         # Create the slice to extract the full working volume/plane
         data_slice_list = list(int_coord)
@@ -1298,6 +1291,30 @@ class Labels(ScalarFieldBase):
             cropped_mask = mask[bbox_slices]
 
         return cropped_mask, min_vals, max_vals, labels[bbox_slices]
+
+    def _get_preserve_labels_source_label(self, new_label: int) -> int:
+        """Return the existing label value that preserve_labels allows to change.
+
+        Painting with a non-background label may only replace background.
+        Painting with the background label may only replace the previously
+        selected label, falling back to the current selected label when no
+        previous label is stored.
+
+        Parameters
+        ----------
+        new_label : int
+            The label value that will be written.
+
+        Returns
+        -------
+        int
+            The only existing label value that may be overwritten.
+        """
+        if new_label == self.colormap.background_value:
+            if self._prev_selected_label is not None:
+                return self._prev_selected_label
+            return self.selected_label
+        return self.colormap.background_value
 
     def _draw(self, new_label, last_cursor_coord, coordinates):
         """Paint into coordinates, accounting for mode and cursor movement.
@@ -1819,38 +1836,6 @@ class Labels(ScalarFieldBase):
         if refresh:
             self._partial_labels_refresh()
 
-    def _account_for_preserving_labels(
-        self, current_values: np.ndarray, new_label: int
-    ) -> np.ndarray:
-        """Determine which pixels can be painted when preserve_labels is True.
-
-        When preserve_labels is enabled, only certain pixels are allowed to
-        be painted: background pixels when painting, or the previously selected
-        label when erasing.
-
-        Parameters
-        ----------
-        current_values : np.ndarray
-            The current label values at the locations to be painted.
-        new_label : int
-            The new label value to be painted.
-
-        Returns
-        -------
-        np.ndarray
-            Boolean mask indicating which pixels should be (over)painted.
-        """
-        if new_label == self.colormap.background_value:
-            # Erasing: only erase the previously selected label
-            target_label = (
-                self._prev_selected_label
-                if self._prev_selected_label is not None
-                else self.selected_label
-            )
-            return current_values == target_label
-        # Painting: only paint on background
-        return current_values == self.colormap.background_value
-
     def _apply_mask_to_data(
         self,
         data: np.ndarray,
@@ -1891,7 +1876,8 @@ class Labels(ScalarFieldBase):
         effective_mask = np.array(mask, copy=True)
 
         if self.preserve_labels:
-            keep_mask = self._account_for_preserving_labels(data, new_label)
+            source_label = self._get_preserve_labels_source_label(new_label)
+            keep_mask = data == source_label
             if not np.any(keep_mask):
                 return None
             effective_mask &= keep_mask
