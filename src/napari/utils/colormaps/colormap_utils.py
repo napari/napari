@@ -824,7 +824,7 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
                 if custom_cmap is None:
                     custom_cmap = vispy_or_mpl_colormap(colormap)
 
-                custom_cmap = _check_if_colormap_exits(
+                custom_cmap = _ensure_unique_exists(
                     custom_cmap, AVAILABLE_COLORMAPS
                 )
 
@@ -947,7 +947,7 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
     return AVAILABLE_COLORMAPS[name]
 
 
-def _check_if_colormap_exits(
+def _ensure_unique_exists(
     colormap: Colormap, available_colormaps: Mapping[str, Colormap]
 ) -> Colormap:
     """Check if a colormap already exists in the available colormaps."""
@@ -981,7 +981,7 @@ def _colormap_from_colors(
         available_colormaps, name=name
     )
 
-    return _check_if_colormap_exits(
+    return _ensure_unique_exists(
         Colormap(
             name=name,
             display_name=display_name or name,
