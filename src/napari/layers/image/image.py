@@ -423,6 +423,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         self._data_raw = data
         # note, we don't support changing multiscale in an Image instance
         self._data = MultiScaleData(data) if self.multiscale else data  # type: ignore
+        self._reset_thumbnail_level_data()
         self._update_dims()
         if self._keep_auto_contrast:
             self.reset_contrast_limits()

@@ -14,21 +14,11 @@ from napari._qt.layer_controls.widgets import (
 )
 from napari._qt.utils import set_widgets_enabled_with_opacity
 from napari._qt.widgets.qt_mode_buttons import QtModeRadioButton
-from napari.layers.base._base_constants import (
-    Blending,
-    Mode,
-)
+from napari.layers.base._base_constants import Mode
 from napari.layers.base.base import Layer
 from napari.utils.action_manager import action_manager
 from napari.utils.events import disconnect_events
 from napari.utils.translations import trans
-
-# opaque, minimum, and multiplicative blending do not support changing alpha (opacity)
-NO_OPACITY_BLENDING_MODES = {
-    str(Blending.MINIMUM),
-    str(Blending.OPAQUE),
-    str(Blending.MULTIPLICATIVE),
-}
 
 
 class LayerFormLayout(QFormLayout):
