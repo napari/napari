@@ -859,8 +859,9 @@ class Labels(ScalarFieldBase):
         dims_displayed = self._slice_input.displayed
         raw_displayed = self._slice.image.raw
 
-        # Keep only the dimensions that correspond to the current view
-        # Note: updated_slice can contain int objects
+        # Keep only the dimensions that correspond to the current view.
+        # Note: updated_slice can contain int objects, e.g.
+        # (5, slice(100, 200), slice(150, 250)).
         updated_slice = tuple(
             self._updated_slice[index] for index in dims_displayed
         )
@@ -1279,7 +1280,8 @@ class Labels(ScalarFieldBase):
             mask = labels == old_label
 
         # Calculate bounding box of the mask to minimize update size.
-        # When mask covers the full region, skip bbox calculation.
+        # When the fill already spans the full extracted region, skip the
+        # bbox scan and reuse the full slice directly.
         mask_is_full = mask.all()
         if mask_is_full:
             bbox_slices = tuple(slice(None) for _ in dims_to_paint)
@@ -1411,9 +1413,9 @@ class Labels(ScalarFieldBase):
         # Radius in pixels for each dimension (accounting for scale)
         # Use floor to match old sphere_indices behavior: points where dist <= radius
         # means integer coordinates from -floor(radius) to +floor(radius)
-        abs_scale = np.abs(paint_scale)
-        scale_normalized = abs_scale / np.min(abs_scale)
-        radius_pixels = np.floor(radius / scale_normalized).astype(int)
+        normalized_scale = np.abs(paint_scale)
+        normalized_scale = normalized_scale / np.min(normalized_scale)
+        radius_pixels = np.floor(radius / normalized_scale).astype(int)
 
         center = np.round(coord_paint).astype(int)
 
@@ -1427,7 +1429,7 @@ class Labels(ScalarFieldBase):
         center_in_bbox = center - min_vals
 
         brush_mask = self._create_brush_mask(
-            bbox_shape, radius, center_in_bbox, paint_scale
+            bbox_shape, radius, center_in_bbox, normalized_scale
         )
 
         if not np.any(brush_mask):
@@ -1559,7 +1561,7 @@ class Labels(ScalarFieldBase):
         shape: tuple[int, ...],
         radius: float,
         center: np.ndarray,
-        scale: np.ndarray,
+        normalized_scale: np.ndarray,
     ) -> np.ndarray:
         """Create boolean mask for nD circular/spherical/ellipsoidal brush.
 
@@ -1577,8 +1579,9 @@ class Labels(ScalarFieldBase):
         center : ndarray
             Center position within the mask (already adjusted for bounding box offset)
             Shape: (n_edit_dimensions,)
-        scale : ndarray
-            Scale factors for each dimension to support ellipsoids
+        normalized_scale : ndarray
+            Scale factors normalized so the smallest painted axis has scale 1.
+            These are used to support ellipsoids with anisotropic scaling.
             Shape: (n_edit_dimensions,)
 
         Returns
@@ -1589,14 +1592,11 @@ class Labels(ScalarFieldBase):
         """
         ndim = len(shape)
 
-        abs_scale = np.abs(scale)
-        scale_normalized = abs_scale / np.min(abs_scale)
-
         grids = np.ogrid[tuple(slice(0, s) for s in shape)]
 
         # Calculate squared distance from center in scaled space
         dist_sq = sum(
-            ((grids[i] - center[i]) * scale_normalized[i]) ** 2
+            ((grids[i] - center[i]) * normalized_scale[i]) ** 2
             for i in range(ndim)
         )
 
@@ -1996,6 +1996,9 @@ class Labels(ScalarFieldBase):
         new_label : int
             The new label value that was painted. Used to optimize texture updates.
         """
+        # Invariant: for numpy-backed data, both raw and view caches are
+        # already views into self.data, so manual cache patching would be
+        # redundant.
         if isinstance(self.data, np.ndarray) and np.shares_memory(
             self.data, self._slice.image.view
         ):
@@ -2078,9 +2081,7 @@ class Labels(ScalarFieldBase):
                     view_slices[view_idx] = slice(val, val + 1)
             else:
                 # Dimension is not displayed: must match current slice position
-                current_pos = pt_not_disp.get(d)
-                if current_pos is None:
-                    continue  # Should not happen for valid dims
+                current_pos = pt_not_disp[d]
 
                 if d in paint_dim_to_idx:
                     # Painted but not displayed: check bounds and extract slice
