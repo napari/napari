@@ -210,6 +210,37 @@ def test_tiling_canvas_overlays(qt_viewer):
     )
 
 
+def test_first_viewer_overlay_visible_event_reaches_listener(qt_viewer, qtbot):
+    viewer = qt_viewer.viewer
+    canvas = qt_viewer.canvas
+
+    calls = []
+    viewer.scale_bar.events.visible.connect(lambda: calls.append('visible'))
+
+    assert not viewer.scale_bar.visible
+    assert (
+        viewer.scale_bar.events.visible._slot_index(
+            canvas._update_viewer_overlays
+        )
+        != -1
+    )
+
+    viewer.scale_bar.visible = True
+
+    assert calls == ['visible']
+
+    # Wait until the deferred disconnect scheduled with QTimer.singleShot(0,
+    # ...) has been processed by the event loop.
+    qtbot.waitUntil(
+        lambda: (
+            viewer.scale_bar.events.visible._slot_index(
+                canvas._update_viewer_overlays
+            )
+            == -1
+        )
+    )
+
+
 def test_world_units_restored_after_removing_inconsistent_layer(qt_viewer):
     """Removing a units-inconsistent layer should re-enable unit-aware rendering.
 
