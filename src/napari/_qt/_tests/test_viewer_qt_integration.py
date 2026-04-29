@@ -11,9 +11,9 @@ import pytest
 from numpy import testing as npt
 from qtpy.QtCore import QEvent, QPointF, Qt, QUrl
 from qtpy.QtGui import QEnterEvent, QGuiApplication, QKeyEvent
+from qtpy.QtTest import QTest
 from qtpy.QtWidgets import QApplication
 
-from napari._qt._tests.test_qt_viewer import qt_viewer
 from napari._tests.utils import skip_local_popups, skip_on_win_ci
 from napari.settings import get_settings
 from napari.utils.action_manager import action_manager
@@ -348,6 +348,9 @@ def test_qt_viewer_console_focus(qtbot, make_napari_viewer):
 def test_screenshot(make_napari_viewer, qapp, qtbot):
     "Test taking a screenshot"
     viewer = make_napari_viewer(show=True)
+    qt_viewer = viewer.window._qt_viewer
+    assert QTest.qWaitForWindowExposed(viewer.window._qt_window, 5000)
+    qapp.processEvents()
     rng = np.random.default_rng(0)
     # Add image
     data = rng.random((10, 15))
@@ -369,7 +372,7 @@ def test_screenshot(make_napari_viewer, qapp, qtbot):
     data = 20 * rng.random((10, 4, 2))
     viewer.add_shapes(data)
     # wait for window be fully rendered
-    qtbot.wait_exposed(qt_viewer)
+    qtbot.waitUntil(qt_viewer.isVisible)
 
     # without these two lines, the shape of screenshot1 and screenshot2 differ by
     # 2 pixels. It looks like some event requires inactivity in event loop to
