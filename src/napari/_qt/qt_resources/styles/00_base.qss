@@ -31,7 +31,7 @@ QWidget {
   padding: 1px;
   margin: 0px;
   color: {{ text }};
-  selection-background-color: {{ secondary }};
+  selection-background-color: {{ highlight }};
   selection-color: {{ text }};
 }
 
@@ -39,36 +39,28 @@ QWidget:disabled {
   color: {{ opacity(text, 90) }};
 }
 
-QWidget[emphasized="true"] {
-    background-color: {{ foreground }};
-}
-
-QWidget[emphasized="true"] > QFrame {
-    background-color: {{ foreground }};
-}
-
 /* ------------ QAbstractScrollArea ------------- */
 
 /* QAbstractScrollArea is the superclass */
 
 QTextEdit {
-  background-color: {{ console }};
+  background-color: {{ primary }};
   background-clip: padding;
   color: {{ text }};
-  selection-background-color: {{ foreground }};
+  selection-background-color: {{ highlight }};
   padding: 4px 2px 4px 4px;
   font-size: {{ increase(font_size, 1) }};
 }
 
 /* the area behind the scrollbar */
 QTextEdit > QWidget {
-  background-color: {{ console }};
+  background-color: {{ primary }};
 }
 
 /* ----------------- QPushButton ------------------ */
 
 QPushButton {
-  background-color: {{ foreground }};
+  background-color: {{ primary }};
   border-radius: 2px;
   padding: 4px;
   border: 0px;
@@ -76,65 +68,39 @@ QPushButton {
 }
 
 QPushButton:hover {
-  background-color: {{ primary }};
+  background-color: {{ highlight }};
 }
 
 QPushButton:pressed {
-  background-color: {{ highlight }};
+  background-color: {{ current }};
 }
 
 QPushButton:checked {
-  background-color: {{ highlight }};
+  background-color: {{ current }};
 }
 
 QPushButton:disabled {
-  background-color: {{ opacity(foreground, 75) }};
+  background-color: {{ opacity(primary, 75) }};
   border: 1px solid;
-  border-color: {{ foreground }};
+  border-color: {{ primary }};
   color: {{ opacity(text, 90) }};
-}
-
-QWidget[emphasized="true"] QPushButton {
-   background-color: {{ primary }};
-}
-
-QWidget[emphasized="true"] QPushButton:disabled {
-  background-color: {{ darken(foreground, 20) }};
-}
-
-QWidget[emphasized="true"] QPushButton:hover {
-    background-color: {{ highlight }};
-}
-
-QWidget[emphasized="true"] QPushButton:pressed {
-  background-color: {{ secondary }};
-}
-
-
-QWidget[emphasized="true"] QPushButton:checked {
-  background-color: {{ current }};
 }
 
 /* ----------------- QComboBox ------------------ */
 
 QComboBox {
   border-radius: 2px;
-  background-color: {{ foreground }};
+  background-color: {{ primary }};
   padding: 3px 10px 3px 8px; /* top right bottom left */
   font-size: {{ increase(font_size, 1) }};
 }
 
 QComboBox:disabled {
-  background-color: {{ opacity(foreground, 75) }};
+  background-color: {{ opacity(primary, 75) }};
   border: 1px solid;
   border-color: {{ foreground }};
   color: {{ opacity(text, 90) }};
 }
-
-QWidget[emphasized="true"]  QComboBox {
-  background-color: {{ primary }};
-}
-
 
 QComboBox::drop-down {
   width: 26px;
@@ -156,9 +122,13 @@ QComboBox:on {
   border-radius: 0px;
 }
 
+QComboBox:hover {
+    background-color: {{ highlight }}
+}
+
 QListView {
   /* controls the color of the open dropdown menu */
-  background-color: {{ foreground }};
+  background-color: {{ primary }};
   color: {{ text }};
   border-radius: 2px;
   font-size: {{ font_size }};
@@ -168,14 +138,10 @@ QListView:item:selected {
     background-color: {{ highlight }};
 }
 
-QWidget[emphasized="true"] QComboBox {
-  background-color: {{ primary }};
-}
-
 /* ----------------- QLineEdit ------------------ */
 
 QLineEdit {
-  background-color: {{ darken(background, 15) }};
+  background-color: {{ primary }};
   color: {{ text }};
   min-height: 20px;
   padding: 2px;
@@ -183,14 +149,10 @@ QLineEdit {
   font-size: {{ decrease(font_size, 1) }};
 }
 
-QWidget[emphasized="true"] QLineEdit {
-  background-color: {{ background }};
-}
-
 /* ----------------- QAbstractSpinBox ------------------ */
 
 QAbstractSpinBox {
-  background-color: {{ foreground }};
+  background-color: {{ primary }};
   border: none;
   padding: 1px 10px;
   min-width: 70px;
@@ -210,10 +172,6 @@ QLabeledRangeSlider > QAbstractSpinBox {
   padding: 0px;
 }
 
-QWidget[emphasized="true"] QAbstractSpinBox {
-  background-color: {{ primary }};
-}
-
 QAbstractSpinBox::up-button,
 QAbstractSpinBox::down-button {
     subcontrol-origin: margin;
@@ -223,22 +181,12 @@ QAbstractSpinBox::down-button {
 
 QAbstractSpinBox::up-button:hover,
 QAbstractSpinBox::down-button:hover {
-  background-color: {{ primary }};
-}
-
-QWidget[emphasized="true"] QAbstractSpinBox::up-button:hover,
-QWidget[emphasized="true"] QAbstractSpinBox::down-button:hover {
   background-color: {{ highlight }};
 }
 
 QAbstractSpinBox::up-button:pressed,
 QAbstractSpinBox::down-button:pressed {
-  background-color: {{ highlight }};
-}
-
-QWidget[emphasized="true"] QAbstractSpinBox::up-button:pressed,
-QWidget[emphasized="true"] QAbstractSpinBox::down-button:pressed {
-  background-color: {{ lighten(highlight, 15) }};
+  background-color: {{ current }};
 }
 
 QAbstractSpinBox::up-button {
@@ -277,19 +225,20 @@ QCheckBox {
   color: {{ text }};
   background-color: none;
   font-size: {{ increase(font_size, 1) }};
+  border-color: {{ foreground }};
 }
 
 QCheckBox::indicator {
   width: 16px;
   height: 16px;
-  background-color: {{ foreground }};
+  background-color: {{ primary }};
   border: 0px;
   padding: 1px;
   border-radius: 2px
 }
 
 QCheckBox::indicator:hover {
-  background-color: {{ lighten(foreground, 5) }};
+  background-color: {{ highlight }};
 }
 
 QCheckBox::indicator:unchecked {
@@ -298,27 +247,15 @@ QCheckBox::indicator:unchecked {
 
 QCheckBox::indicator:checked {
   image: url("theme_{{ id }}:/check.svg");
+  background-color: {{ current }};
 }
 
 QCheckBox::indicator:indeterminate {
   image: url("theme_{{ id }}:/minus.svg");
+  background-color: {{ secondary }};
   padding: 2px;
   width: 14px;
   height: 14px;
-}
-
-QWidget[emphasized="true"] QCheckBox::indicator {
-  background-color: {{ primary }};
-  border-color: {{ primary }};
-}
-
-QWidget[emphasized="true"] QCheckBox::indicator:hover {
-  background-color: {{ lighten(primary, 5) }};
-}
-
-QWidget[emphasized="true"] QCheckBox::indicator:unchecked:hover {
-  background-color: {{ lighten(primary, 5) }};
-  border-color: {{ lighten(primary, 5) }};
 }
 
 
@@ -336,16 +273,16 @@ QRadioButton::indicator{
 }
 
 QRadioButton::indicator::unchecked {
-  background: {{ foreground }};
+  background: {{ primary }};
 }
 
 QRadioButton::indicator:unchecked:hover {
-  background: {{ lighten(foreground, 5) }};
+  background: {{ highlight }};
 }
 
 
 QRadioButton::indicator::checked {
-    background: {{ highlight }};
+    background: {{ current }};
 }
 
 QRadioButton::indicator::checked {
@@ -355,43 +292,22 @@ QRadioButton::indicator::checked {
   padding: 5px;
 }
 
-QWidget[emphasized="true"] > QRadioButton {
-   background: {{ foreground }};
-}
-
-QWidget[emphasized="true"] > QRadioButton::indicator::unchecked {
-   background-color: {{ primary }};
-}
-
-QWidget[emphasized="true"] > QRadioButton:disabled {
-  background-color: {{ foreground }};
-}
-
-QWidget[emphasized="true"] > QRadioButton::indicator:checked {
-  background-color: {{ secondary }};
-}
-
-QWidget[emphasized="true"] > QRadioButton::indicator:unchecked:hover {
-  background: {{ lighten(primary, 5) }};
-}
-
-
 /* ----------------- QSlider ------------------ */
 
 
 QSlider {
-   background-color: none;
+    background-color: none;
 }
 
 QSlider::groove:horizontal {
    border: 0px;
-   background-color: {{ foreground }};
+   background-color: {{ primary }};
    height: 6px;
    border-radius: 2px;
 }
 
 QSlider::handle:horizontal {
-   background-color: {{ highlight }};
+   background-color: {{ secondary }};
    border: 0px;
    width: 16px;
    margin-top: -5px;
@@ -400,49 +316,31 @@ QSlider::handle:horizontal {
 }
 
 QSlider::handle:hover {
-   background-color: {{ secondary }};
+   background-color: {{ highlight }};
 }
 
+/* TODO: for some reason this works for qsliders but not QLabeledSlider, except for the dims margins ones?? */
 QSlider::sub-page:horizontal {
-    background: {{ primary }};
-    border-radius: 2px;
+    background: {{ secondary }};
+    border-radius: 0px;
 }
 
-/* TODO: doesn't work :( */
+QSlider::add-page:horizontal {
+    background: {{ primary }};
+    border-radius: 0px;
+}
+
+/* TODO: doesn't work at all :( */
 QSlider#invertedSlider::sub-page:horizontal {
-    background: {{ secondary }};
-    border-radius: 2px;
+    background: {{ primary }};
 }
 
 QSlider#invertedSlider::add-page:horizontal {
-    background: {{ primary }};
-    border-radius: 2px;
+    background: {{ secondary }};
 }
-
-QWidget[emphasized="true"] QSlider::groove:horizontal {
-   background: {{ primary }};
-}
-
-QWidget[emphasized="true"] QSlider::handle:horizontal {
-   background: {{ secondary }};
-
-}
-
-QWidget[emphasized="true"] QSlider::sub-page:horizontal {
-    background: {{ highlight }};
-}
-
-QWidget[emphasized="true"] QSlider::handle:hover {
-   background-color: {{ lighten(secondary, 5) }};
-}
-
 
 QRangeSlider {
-  qproperty-barColor: {{ primary }};
-}
-
-QWidget[emphasized="true"] QRangeSlider {
-  qproperty-barColor: {{ highlight }};
+  qproperty-barColor: {{ secondary }};
 }
 
 /* ----------------- QScrollBar ------------------ */
@@ -451,10 +349,6 @@ QScrollBar {
   border: none;
   border-radius: 2px;
   background: {{ foreground }};
-}
-
-QWidget[emphasized="true"] QScrollBar {
-  background: {{ primary }};
 }
 
 QScrollBar:horizontal {
@@ -469,12 +363,8 @@ QScrollBar:vertical {
 }
 
 QScrollBar::handle {
-  background: {{ highlight }};
+  background: {{ primary }};
   border-radius: 2px;
-}
-
-QWidget[emphasized="true"] QScrollBar::handle {
-  background: {{ secondary }};
 }
 
 QScrollBar::handle:horizontal {
@@ -485,16 +375,15 @@ QScrollBar::handle:vertical {
     min-height: 26px;
 }
 
+QScrollBar::handle:hover {
+    background-color: {{ highlight }}
+}
+
 QScrollBar::add-line, QScrollBar::sub-line {
     border: none;
     border-radius: 2px;
-    background: {{ foreground }};
-    subcontrol-origin: margin;
-}
-
-QWidget[emphasized="true"] QScrollBar::add-line,
-QWidget[emphasized="true"] QScrollBar::sub-line {
     background: {{ primary }};
+    subcontrol-origin: margin;
 }
 
 QScrollBar::add-line:horizontal {
@@ -519,12 +408,13 @@ QScrollBar::sub-line:vertical {
 
 QScrollBar::add-line:horizontal:pressed,
 QScrollBar::sub-line:horizontal:pressed {
-    background: {{ highlight }};
+    background-color: {{ current }};
 }
 
-QWidget[emphasized="true"] QScrollBar::add-line:horizontal:pressed,
-QWidget[emphasized="true"] QScrollBar::sub-line:horizontal:pressed {
-    background: {{ secondary }};
+/* TODO: this doesn't work for some reason... */
+QScrollBar::add-line:horizontal:hover,
+QScrollBar::sub-line:horizontal:hover {
+    background-color: {{ highlight }}
 }
 
 QScrollBar:left-arrow:horizontal {
@@ -555,7 +445,7 @@ QScrollBar::down-arrow {
   margin: 0;
   border: 0;
   border-radius: 2px;
-  background: {{ foreground }};
+  background: {{ primary }};
 }
 
 QScrollBar::left-arrow:hover,
@@ -569,7 +459,7 @@ QScrollBar::left-arrow:pressed,
 QScrollBar::right-arrow:pressed,
 QScrollBar::up-arrow:pressed,
 QScrollBar::down-arrow:pressed {
-  background-color: {{ highlight }};
+  background-color: {{ current }};
 }
 
 
@@ -581,7 +471,7 @@ QScrollBar::sub-page {
 /* ----------------- QProgressBar ------------------ */
 
 QProgressBar {
-    border: 1px solid {{ foreground }};
+    border: 1px solid {{ primary }};
     border-radius: 2px;
     text-align: center;
     padding: 0px;
@@ -598,7 +488,7 @@ QProgressBar::vertical {
 
 QProgressBar::chunk {
     width: 1px;
-    background-color: vgradient({{ highlight }} - {{ foreground }});
+    background-color: vgradient({{ highlight }} - {{ primary }});
 }
 
 /* ----------------- QToolTip ------------------ */
@@ -617,7 +507,7 @@ QGroupBox {
     background-color: {{ background }};
     border: 1px solid {{ foreground }};
     border-radius: 5px;
-    margin-top: 1ex; /* leave space at the top for the title */
+    margin-top: 1.5ex; /* leave space at the top for the title */
     font-size: {{ increase(font_size, 1) }};
 }
 
@@ -658,31 +548,12 @@ QGroupBox::indicator:indeterminate {
   height: 14px;
 }
 
-QWidget[emphasized="true"] QGroupBox::indicator {
-  background-color: {{ primary }};
-  border-color: {{ primary }};
-}
-
-QWidget[emphasized="true"] QGroupBox::indicator:hover {
-  background-color: {{ lighten(primary, 5) }};
-}
-
-QWidget[emphasized="true"] QGroupBox::indicator:unchecked:hover {
-  background-color: {{ lighten(primary, 5) }};
-  border-color: {{ lighten(primary, 5) }};
-}
-
-
 /* ----------------- QTabWidget ------------------ */
 
 /* The tab widget frame */
 QTabWidget::pane {
-  border: 1px solid {{ darken(foreground, 10) }};
+  border: 1px solid {{ foreground }};
   border-radius: 2px;
-}
-
-QWidget[emphasized="true"] QTabWidget::pane {
-  border: 1px solid {{ darken(primary, 10) }};
 }
 
 QTabBar, QTabBar::tab {
@@ -697,18 +568,8 @@ QTabBar, QTabBar::tab {
 }
 
 
-QWidget[emphasized="true"] QTabBar::tab {
-  background-color: {{ primary }};
-  border: 1px solid {{ foreground }};
-  background: vgradient({{ lighten(primary, 15) }} - {{ primary }});
-}
-
 QTabBar::tab:selected {
-  background: vgradient({{ lighten(highlight, 15) }} - {{ highlight }});
-}
-
-QWidget[emphasized="true"] QTabBar::tab:selected {
-    background: vgradient({{ lighten(secondary, 15) }} - {{ secondary }});
+  background: vgradient({{ lighten(current, 15) }} - {{ current }});
 }
 
 /* ----------------- QLabel ------------------ */
@@ -737,7 +598,7 @@ QMenu::item {
 
 QMenu::item:selected {
     font-size: {{ font_size }};
-    background-color: {{ secondary }};
+    background-color: {{ highlight }};
 }
 */
 
@@ -749,6 +610,6 @@ QStatusBar::item{
 
 /* ----------------- QHeaderView ----------------- */
 QHeaderView::section {
-  background-color: {{ background }};
+  background-color: {{ highlight }};
   padding: 2px;
 }

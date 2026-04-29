@@ -41,7 +41,7 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from superqt import QRangeSlider
+from superqt import QLabeledSlider, QRangeSlider
 
 import napari
 from napari.utils.theme import available_themes, get_theme
@@ -245,6 +245,10 @@ class ThemeSampleWidget(QWidget):
         slider.setValue(50)
         layout.addWidget(slider)
 
+        lab_slider = QLabeledSlider(Qt.Orientation.Horizontal)
+        lab_slider.setValue(10)
+        layout.addWidget(lab_slider)
+
         h_scrollbar = QScrollBar(Qt.Orientation.Horizontal)
         h_scrollbar.setValue(50)
         layout.addWidget(h_scrollbar)
@@ -314,14 +318,6 @@ class ThemeSampleWidget(QWidget):
         disabled_row.addStretch(1)
         layout.addLayout(disabled_row)
 
-        emphasized_frame = QFrame()
-        emphasized_frame.setProperty('emphasized', True)
-        emphasized_layout = QHBoxLayout(emphasized_frame)
-        emphasized_layout.setContentsMargins(8, 6, 8, 6)
-        emphasized_layout.addWidget(QLabel('Emphasized panel'))
-        emphasized_layout.addStretch(1)
-        layout.addWidget(emphasized_frame)
-
         return group
 
     def _build_color_group(self) -> QGroupBox:
@@ -387,6 +383,7 @@ dock_widget = viewer.window.add_dock_widget(
     name='Theme sample',
 )
 dock_widget.setMinimumWidth(widget.minimumWidth())
+viewer.open_sample('napari', 'cells3d')
 
 if __name__ == '__main__':
     napari.run()
