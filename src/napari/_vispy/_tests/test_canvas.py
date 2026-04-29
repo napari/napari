@@ -127,7 +127,6 @@ def test_grid_mode(qt_viewer):
 
     # ensure that switching to grid maintains zoom and angles
     viewer.grid.enabled = True
-    viewer.fit_to_view()
 
     canvas.on_draw(None)
 
