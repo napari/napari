@@ -87,6 +87,7 @@ from napari.types import (
     PathOrPaths,
     SampleData,
 )
+from napari.utils._logging import register_logger_to_napari_handler
 from napari.utils._register import create_func as create_add_method
 from napari.utils.action_manager import action_manager
 from napari.utils.colormaps import ensure_colormap
@@ -238,6 +239,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     def __init__(
         self, title='napari', ndisplay=2, order=(), axis_labels=()
     ) -> None:
+        register_logger_to_napari_handler()
         # max_depth=0 means don't look for parent contexts.
 
         # FIXME: just like the LayerList, this object should ideally be created
