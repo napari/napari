@@ -644,17 +644,17 @@ QtWelcomeWidget[drag=true] {
 
 QtWelcomeLabel {
  color: {{ darken(text, 25) }};
- font-size: {{ increase(font_size, 10) }};
+ font-size: {{ increase(font_size, 8) }};
 }
 
 QtShortcutLabel {
  color: {{ darken(text, 25) }};
- font-size: {{ increase(font_size, 10) }};
+ font-size: {{ increase(font_size, 8) }};
 }
 
 QtVersionLabel {
   color: {{ darken(text, 25) }};
-  font-size: {{ increase(font_size, 10) }};
+  font-size: {{ increase(font_size, 8) }};
 }
 
 /* ------------- Narrow scrollbar for qtlayer list --------- */

@@ -99,6 +99,7 @@ class QtWelcomeWidget(QWidget):
         self._tip_label = QtShortcutLabel('')
         self._tip_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._tip_label.setWordWrap(True)
+        self._tip_label.setContentsMargins(32, 0, 32, 0)
 
         # setup the shortcuts "table"
         shortcut_layout = QFormLayout()
