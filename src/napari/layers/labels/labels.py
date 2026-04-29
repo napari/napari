@@ -600,7 +600,8 @@ class Labels(ScalarFieldBase):
     @data.setter
     def data(self, data: LayerDataProtocol | MultiScaleData):
         data = self._ensure_int_labels(data)
-        self._data = data
+        self._data_raw = data
+        self._data = MultiScaleData(data) if self.multiscale else data  # type: ignore[arg-type]
         self._ndim = len(self._data.shape)
         self._reset_thumbnail_level_data()
         self._update_dims()

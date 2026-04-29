@@ -5,7 +5,7 @@ import re
 import sys
 from ast import literal_eval
 from contextlib import suppress
-from typing import Any
+from typing import Any, Literal
 
 import npe2
 from pydantic import field_validator
@@ -40,6 +40,8 @@ class Theme(EventedModel):
         will be saved to.
     label : str
         Name of the theme as it should be shown in the ui.
+    type: str
+        Whether the theme is "dark" or "light" type.
     syntax_style : str
         Name of the console style.
         See for more details: https://pygments.org/docs/styles/
@@ -69,6 +71,7 @@ class Theme(EventedModel):
 
     id: str
     label: str
+    type: Literal['dark', 'light']
     syntax_style: str
     canvas: Color
     console: Color
@@ -358,6 +361,7 @@ def rebuild_theme_settings():
 # Note: these colors are sometimes lightened / darkened in the qss file.
 DARK = Theme(
     id='dark',
+    type='dark',
     label='Default Dark',
     background='rgb(38, 41, 48)',
     foreground='rgb(50, 55, 65)',
@@ -376,6 +380,7 @@ DARK = Theme(
 )
 LIGHT = Theme(
     id='light',
+    type='light',
     label='Default Light',
     background='rgb(239, 235, 233)',
     foreground='rgb(214, 208, 206)',
