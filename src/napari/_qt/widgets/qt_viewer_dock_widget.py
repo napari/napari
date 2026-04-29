@@ -155,10 +155,13 @@ class QtViewerDockWidget(QDockWidget):
 
         # custom title bar
         self.title = QtCustomTitleBar(
-            self, title=self.name, close_btn=close_btn
+            self,
+            title=self.name,
+            vertical=area in {'top', 'bottom'},
+            close_btn=close_btn,
         )
         self.setTitleBarWidget(self.title)
-        self.visibilityChanged.connect(self._on_visibility_changed)
+        self.topLevelChanged.connect(self._update_title_bar)
 
         self.dockLocationChanged.connect(self._update_default_dock_area)
 
@@ -267,6 +270,9 @@ class QtViewerDockWidget(QDockWidget):
         return self._ref_qt_viewer().keyReleaseEvent(event)
 
     def _set_title_orientation(self, area):
+        # NoDockWidgetArea means the widget is floating; nothing to orient.
+        if area == Qt.DockWidgetArea.NoDockWidgetArea:
+            return
         if area in (
             Qt.DockWidgetArea.LeftDockWidgetArea,
             Qt.DockWidgetArea.RightDockWidgetArea,
@@ -295,19 +301,41 @@ class QtViewerDockWidget(QDockWidget):
                 )
         return self.size().height() > self.size().width()
 
-    def _on_visibility_changed(self, visible):
-        if not visible:
-            return
+    def _update_title_bar(self, is_floating: bool | None = None) -> None:
+        """Recreate the title bar to match the current dock/float state.
+
+        Parameters
+        ----------
+        is_floating :
+            Floating state override from ``topLevelChanged``. If omitted, use
+            the widget's current floating state.
+        """
+        if is_floating is None:
+            is_floating = self.isFloating()
+        # Floating windows always use a horizontal (non-rotated) title bar so
+        # the title text and controls look correct as a standalone window.
+        vertical = (not is_floating) and (not self.is_vertical)
         with qt_signals_blocked(self):
-            self.setTitleBarWidget(None)
-            if not self.isFloating():
-                self.title = QtCustomTitleBar(
-                    self,
-                    title=self.name,
-                    vertical=not self.is_vertical,
-                    close_btn=self._close_btn,
+            # When a widget is docked at top/bottom, Qt sets
+            # DockWidgetVerticalTitleBar so the custom title bar is placed on
+            # the left side of the widget. Clear that feature when floating,
+            # otherwise the custom title bar ends up on the left edge of the
+            # floating window as a narrow strip that is hard to drag.
+            # Afterwards, recreate our custom title bar
+            if is_floating:
+                features = (
+                    self._features
+                    & ~self.DockWidgetFeature.DockWidgetVerticalTitleBar
                 )
-                self.setTitleBarWidget(self.title)
+                self.setFeatures(features)
+            self.setTitleBarWidget(None)
+            self.title = QtCustomTitleBar(
+                self,
+                title=self.name,
+                vertical=vertical,
+                close_btn=self._close_btn,
+            )
+            self.setTitleBarWidget(self.title)
 
     def setWidget(self, widget):
         widget._parent = self
