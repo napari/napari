@@ -393,6 +393,10 @@ ignore = [
   "src/napari/resources/icons/_themes/*/*.svg"
 ]
 
+[tool.uv]
+exclude-newer = "7 days"
+exclude-newer-package = {app-model = false, bermuda = false, napari-console = false, napari-metadata = false, napari-plugin-engine = false, napari-plugin-manager = false, napari-svg = false, npe2 = false, psygnal = false, superqt = false, vispy = false}
+
 [tool.ruff]
 line-length = 79
 extend-exclude = [
