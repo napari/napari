@@ -68,7 +68,7 @@ def increment_name(name: str, existing: SizedContainer[str]) -> str:
     if name not in existing:
         return name
 
-    if m := re.match(r'(.*) \((\d+)\)'):
+    if m := re.match(r'(.*) \((\d+)\)', name):
         number = int(m.group(2)) + 1
         name = m.group(1)
     else:

@@ -13,6 +13,7 @@ from napari.utils.colormaps.colormap_utils import (
     _increment_unnamed_colormap,
     _napari_cmap_to_vispy,
     ensure_colormap,
+    increment_name,
     vispy_or_mpl_colormap,
 )
 from napari.utils.colormaps.standardize_color import transform_color
@@ -309,3 +310,42 @@ def test_ensure_colormap_with_recognized_color(color):
     cmap = ensure_colormap(color)
     assert isinstance(cmap, Colormap)
     assert cmap.name == 'red'
+
+
+def test_add_own_red():
+    """chek if named cmap without a conflict is not replaced"""
+    cmap = Colormap(np.array([[0, 0, 0, 1], [1, 0, 0, 1]]), name='own red')
+    assert ensure_colormap(cmap).name == 'own red'
+
+
+def test_not_overwrite_existing_named_colormap():
+    """chek if named cmap with a conflict is replaced"""
+    cmap = Colormap(np.array([[0, 0, 0, 1], [0.98, 0, 0, 1]]), name='red')
+    assert ensure_colormap(cmap).name == 'red (1)'
+
+
+def test_not_replace():
+    cmap = Colormap(np.array([[0, 0, 0, 1], [1, 0, 0, 1]]), name='red')
+    cmap_ = ensure_colormap(cmap)
+    assert cmap_.name == 'red'
+    assert cmap_ is not cmap
+
+
+def test_increment_name():
+    """
+    Test that increment_name correctly increments the name with a number suffix
+    """
+    assert increment_name('test', {'test'}) == 'test (1)'
+    assert increment_name('test', {'test', 'aa'}) == 'test (1)'
+    assert increment_name('test', {'test', 'aa', 'test (1)'}) == 'test (2)'
+    assert (
+        increment_name('test', {'test', 'test (1)', 'test (3)'}) == 'test (2)'
+    )
+
+
+def test_increment_name_with_number_suffix():
+    """
+    Test that increment_name correctly extract number from name and then increments the name with a number suffix
+    """
+    assert increment_name('test (1)', {'test (1)'}) == 'test (2)'
+    assert increment_name('test (1)', {'test (1)', 'test (2)'}) == 'test (3)'
