@@ -72,14 +72,14 @@ def test_change_properties_updates_node_strings():
     np.testing.assert_array_equal(vispy_layer.node.text.text, ['D', 'E', 'F'])
 
 
-def test_update_property_value_then_refresh_text_updates_node_strings():
+def test_update_features_value_then_refresh_text_updates_node_strings():
     points = np.random.rand(3, 2)
     properties = {'class': np.array(['A', 'B', 'C'])}
     layer = Points(points, properties=properties, text='class')
     vispy_layer = VispyPointsLayer(layer)
     np.testing.assert_array_equal(vispy_layer.node.text.text, ['A', 'B', 'C'])
 
-    layer.properties['class'][1] = 'D'
+    layer.features.at[1, 'class'] = 'D'
     layer.refresh_text()
 
     np.testing.assert_array_equal(vispy_layer.node.text.text, ['A', 'D', 'C'])
