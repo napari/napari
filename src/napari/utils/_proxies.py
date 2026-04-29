@@ -20,18 +20,26 @@ class ReadOnlyWrapper(wrapt.ObjectProxy):
     Disable item and attribute setting with the exception of  ``__wrapped__``.
     """
 
-    def __init__(self, wrapped: Any, exceptions: tuple[str, ...] = ()):
+    def __init__(
+        self,
+        wrapped: Any,
+        exceptions: tuple[str, ...] = (),
+    ) -> None:
+        # prevent nested wrapping
+        while isinstance(wrapped, ReadOnlyWrapper):
+            wrapped = wrapped.__wrapped__
         super().__init__(wrapped)
         self._self_exceptions = exceptions
 
     def __setattr__(self, name: str, val: Any) -> None:
         if (
-            name not in ('__wrapped__', '_self_exceptions')
+            name != '__wrapped__'
+            and not name.startswith('_self_')
             and name not in self._self_exceptions
         ):
             raise TypeError(
                 trans._(
-                    'cannot set attribute {name}',
+                    'cannot set attribute {name} (read only)',
                     deferred=True,
                     name=name,
                 )
@@ -42,9 +50,16 @@ class ReadOnlyWrapper(wrapt.ObjectProxy):
     def __setitem__(self, name: str, val: Any) -> None:
         if name not in self._self_exceptions:
             raise TypeError(
-                trans._('cannot set item {name}', deferred=True, name=name)
+                trans._(
+                    'cannot set item {name} (read only)',
+                    deferred=True,
+                    name=name,
+                )
             )
         super().__setitem__(name, val)
+
+    def __call__(self, *args: Any, **kwargs: Any) -> Any:
+        self.__wrapped__(args, **kwargs)
 
 
 _SUNDER = re.compile('^_[^_]')
