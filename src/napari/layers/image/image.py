@@ -413,9 +413,9 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         self._update_thumbnail()
         self.events.attenuation()
 
-    @ScalarFieldBase.data.setter
+    @ScalarFieldBase.data.setter  # type: ignore[attr-defined]
     def data(self, data: LayerDataProtocol | MultiScaleData) -> None:
-        ScalarFieldBase.data.fset(self, data)
+        ScalarFieldBase.data.fset(self, data)  # type: ignore[attr-defined]
         if self._keep_auto_contrast:
             self.reset_contrast_limits()
 
@@ -555,7 +555,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         """
         input_data: np.ndarray
         if mode == 'data':
-            input_data = self.data[-1] if self.multiscale else self.data  # type: ignore[assignment]
+            input_data = self.data[-1] if self.multiscale else self.data
         elif mode == 'slice':
             input_data = self._slice.image.raw  # ugh
         else:

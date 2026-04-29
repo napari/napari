@@ -592,10 +592,10 @@ class Labels(ScalarFieldBase):
         self.events.selected_label()
         self.refresh(extent=False)
 
-    @ScalarFieldBase.data.setter
-    def data(self, data: LayerDataProtocol | MultiScaleData):
+    @ScalarFieldBase.data.setter  # type: ignore[attr-defined]
+    def data(self, data: LayerDataProtocol | MultiScaleData) -> None:
         data = self._ensure_int_labels(data)
-        ScalarFieldBase.data.fset(self, data)
+        ScalarFieldBase.data.fset(self, data)  # type: ignore[attr-defined]
         self.events.features()
 
     @property
@@ -1107,7 +1107,7 @@ class Labels(ScalarFieldBase):
         after.append(list(reversed(history_item)))
         for prev_indices, prev_values, next_values in reversed(history_item):
             values = prev_values if undoing else next_values
-            self.data[prev_indices] = values  # type: ignore[index]
+            self.data[prev_indices] = values
 
         self.refresh()
 
@@ -1462,7 +1462,7 @@ class Labels(ScalarFieldBase):
         )
 
         # update the labels image
-        self.data[indices] = value  # type: ignore[index]
+        self.data[indices] = value
 
         pt_not_disp = self._get_pt_not_disp()
         displayed_indices = index_in_slice(
