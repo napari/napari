@@ -671,6 +671,24 @@ def test_create_non_empty_viewer_model(qtbot: QtBot) -> None:
     gc.collect()
 
 
+def test_qt_viewer_accepts_custom_welcome_tips(
+    qtbot: QtBot, viewer_model: ViewerModel
+) -> None:
+    viewer = QtViewer(viewer=viewer_model, tips=('first tip', 'second tip'))
+    qtbot.addWidget(
+        viewer, before_close_func=lambda widget: widget._instances.clear()
+    )
+
+    with mock.patch(
+        'napari._qt.widgets.qt_welcome.choice',
+        side_effect=lambda available_tips: available_tips[-1],
+    ):
+        viewer._set_welcome_visible(True)
+        assert viewer._welcome_widget._tip_label.text() == (
+            'Did you know?\nsecond tip'
+        )
+
+
 def test_create_non_empty_viewer_model_initializes_world_units(
     qtbot: QtBot,
 ) -> None:

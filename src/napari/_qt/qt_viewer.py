@@ -99,12 +99,15 @@ class QtViewer(QSplitter):
     ----------
     viewer : napari.components.ViewerModel
         Napari viewer containing the rendered scene, layers, and controls.
-    canvas_class : napari._vispy.canvas.VispyCanvas
-        The VispyCanvas class providing the Vispy SceneCanvas. Users can also
-        have a custom canvas here.
     show_welcome_screen : bool, optional
         Flag to show a welcome message when no layers are present in the
         canvas. Default is `False`.
+    canvas_class : napari._vispy.canvas.VispyCanvas
+        The VispyCanvas class providing the Vispy SceneCanvas. Users can also
+        have a custom canvas here.
+    tips : Sequence[str] | None, optional
+        Custom welcome-screen tips. By default, the built-in napari tips are
+        used.
 
     Attributes
     ----------
@@ -132,6 +135,7 @@ class QtViewer(QSplitter):
         viewer: ViewerModel,
         show_welcome_screen: bool = False,
         canvas_class: type[VispyCanvas] = VispyCanvas,
+        tips: Sequence[str] | None = None,
     ) -> None:
         super().__init__()
         self._instances.add(self)
@@ -171,7 +175,7 @@ class QtViewer(QSplitter):
             autoswap=get_settings().experimental.autoswap_buffers,  # see #5734
         )
 
-        self._welcome_widget = QtWelcomeWidget(self.canvas.native)
+        self._welcome_widget = QtWelcomeWidget(self.canvas.native, tips=tips)
         self._welcome_widget.urls_drag_entered.connect(self._set_drag_status)
         self._welcome_widget.urls_dropped.connect(self.dropEvent)
 
@@ -1126,6 +1130,10 @@ class QtViewer(QSplitter):
         self.viewerButtons.consoleButton.style().polish(
             self.viewerButtons.consoleButton
         )
+
+    def set_welcome_tips(self, tips: Sequence[str] | None) -> None:
+        """Replace the welcome screen tip pool."""
+        self._welcome_widget.set_tips(tips)
 
     def _set_welcome_visible(self, visible: bool) -> None:
         """Directly show or hide the welcome screen widget.
