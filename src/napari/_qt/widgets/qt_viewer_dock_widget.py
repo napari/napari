@@ -159,6 +159,7 @@ class QtViewerDockWidget(QDockWidget):
             title=self.name,
             vertical=area in {'top', 'bottom'},
             close_btn=close_btn,
+            is_floating=False,
         )
         self.setTitleBarWidget(self.title)
         self.topLevelChanged.connect(self._update_title_bar)
@@ -334,6 +335,7 @@ class QtViewerDockWidget(QDockWidget):
                 title=self.name,
                 vertical=vertical,
                 close_btn=self._close_btn,
+                is_floating=is_floating,
             )
             self.setTitleBarWidget(self.title)
 
@@ -360,11 +362,17 @@ class QtCustomTitleBar(QLabel):
     """
 
     def __init__(
-        self, parent, title: str = '', vertical=False, close_btn=True
+        self,
+        parent,
+        title: str = '',
+        vertical=False,
+        close_btn=True,
+        is_floating=False,
     ) -> None:
         super().__init__(parent)
         self.setObjectName('QtCustomTitleBar')
         self.setProperty('vertical', str(vertical))
+        self.setProperty('floating', str(is_floating))
         self.vertical = vertical
         self.setToolTip(trans._('drag to move. double-click to float'))
 
@@ -372,13 +380,26 @@ class QtCustomTitleBar(QLabel):
         line.setObjectName('QtCustomTitleBarLine')
 
         self.hide_button = QPushButton(self)
-        self.hide_button.setToolTip(trans._('hide this panel'))
         self.hide_button.setObjectName('QTitleBarHideButton')
         self.hide_button.setCursor(Qt.CursorShape.ArrowCursor)
-        self.hide_button.clicked.connect(lambda: self.parent().close())
+        if is_floating:
+            # When floating the widget has no taskbar entry, so hiding it via
+            # close() leaves no way to recover it.  Instead, dock it back.
+            self.hide_button.setToolTip(trans._('dock this panel'))
+            self.hide_button.clicked.connect(
+                lambda: self.parent().setFloating(False)
+            )
+            self.hide_button.hide()
+        else:
+            self.hide_button.setToolTip(trans._('hide this panel'))
+            self.hide_button.clicked.connect(lambda: self.parent().close())
 
         self.float_button = QPushButton(self)
-        self.float_button.setToolTip(trans._('float this panel'))
+        self.float_button.setToolTip(
+            trans._('dock this panel')
+            if is_floating
+            else trans._('float this panel')
+        )
         self.float_button.setObjectName('QTitleBarFloatButton')
         self.float_button.setCursor(Qt.CursorShape.ArrowCursor)
         self.float_button.clicked.connect(
