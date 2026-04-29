@@ -68,7 +68,7 @@ args = parser.parse_args()
 
 # -- Build a 4-level 3D multiscale pyramid ----------------------------------
 shapes = [(128, 256, 256), (64, 128, 128), (32, 64, 64), (16, 32, 32)]
-scales = [8, 4, 2, 1]
+scales = [40, 20, 10, 5]
 multiscale_data = []
 for i, (shape, sc) in enumerate(zip(shapes, scales, strict=True)):
     if args.labels:
