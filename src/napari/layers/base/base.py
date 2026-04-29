@@ -2059,8 +2059,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         front_face_normal, back_face_normal = find_front_back_face(
             click_pos_data, bounding_box, view_dir
         )
-        if front_face_normal is None and back_face_normal is None:
+        if front_face_normal is None or back_face_normal is None:
             # click does not intersect the data bounding box
+            # we use "or" above instead of "and" because is some literal
+            # edge cases one face might be found but not the other
             return None, None
 
         # Calculate ray-bounding box face intersections
