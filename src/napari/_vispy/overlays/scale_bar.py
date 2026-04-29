@@ -60,6 +60,9 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self.overlay.events.visible.connect(self._on_rendering_change)
 
         self.viewer.camera.events.zoom.connect(self._on_size_or_zoom_change)
+        self.viewer.dims.events.displayed.connect(self._on_unit_change)
+        # self.viewer.layers.events.extent.connect(self._on_unit_change)
+        self.viewer.layers.events.units.connect(self._on_unit_change)
         self.viewer.events.theme.connect(self._on_rendering_change)
 
         get_settings().appearance.events.theme.connect(
@@ -69,7 +72,11 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self.reset()
 
     def _on_unit_change(self):
-        self._unit = pint.get_application_registry()(self.overlay.unit)
+        if self.viewer.layers.units is not None:
+            unit = self.viewer.layers.units[self.viewer.dims.displayed[-1]]
+        else:
+            unit = pint.get_application_registry()(self.overlay.unit)
+        self._unit = unit
         self._on_size_or_zoom_change(force=True)
 
     def _on_font_size_change(self):
