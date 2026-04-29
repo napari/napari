@@ -454,14 +454,15 @@ class ScalarFieldBase(Layer, ABC):
                 )
         self._locked_data_level = level
         if level is not None:
-            self._set_force_level(level)
+            displayed_axes = self._slice_input.displayed
+            shape_at_level = np.array(self.level_shapes[level])
+            corners = np.zeros((2, self.ndim), dtype=int)
+            corners[1, displayed_axes] = shape_at_level[displayed_axes] - 1
+            self.corner_pixels = corners
+            self._data_level = level
         else:
-            # Restoring auto mode. In 3D the default is the coarsest
-            # level; in 2D, _update_draw will recompute on next draw.
-            if self._slice_input.ndisplay == 3 and self.multiscale:
-                self._set_force_level(len(self.level_shapes) - 1)
-            else:
-                self.refresh(extent=False)
+            self._reset_data_level()
+        self.refresh(extent=False)
         self.events.locked_data_level()
 
     def _reset_data_level(self) -> None:
@@ -476,26 +477,6 @@ class ScalarFieldBase(Layer, ABC):
             self._data_level = len(self._data) - 1
         else:
             self._data_level = 0
-
-    def _set_force_level(self, level: int) -> None:
-        """Set data_level and corner_pixels for the full extent of a level.
-
-        Directly assigns ``_data_level`` (bypassing the ``data_level``
-        setter's early-return guard) and updates ``corner_pixels`` to span
-        the entire array at the requested level, then refreshes the layer.
-
-        Parameters
-        ----------
-        level : int
-            Zero-based multiscale level index.
-        """
-        displayed_axes = self._slice_input.displayed
-        shape_at_level = np.array(self.level_shapes[level])
-        corners = np.zeros((2, self.ndim), dtype=int)
-        corners[1, displayed_axes] = shape_at_level[displayed_axes] - 1
-        self.corner_pixels = corners
-        self._data_level = level
-        self.refresh(extent=False)
 
     def _reset_thumbnail_level_data(self) -> None:
         """Set ``_thumbnail_level`` and ``_level_materializer`` for the current data.
