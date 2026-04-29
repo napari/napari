@@ -229,7 +229,6 @@ class QtViewer(QSplitter):
         self._update_welcome_screen()
 
     def hideEvent(self, event):
-        self._set_welcome_visible(False)
         super().hideEvent(event)
 
     @property
