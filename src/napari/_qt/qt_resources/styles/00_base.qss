@@ -319,7 +319,7 @@ QSlider::handle:hover {
    background-color: {{ highlight }};
 }
 
-/* TODO: for some reason this works on the theme example but not layer controls */
+/* TODO: for some reason this works for qsliders but not QLabeledSlider, except for the dims margins ones?? */
 QSlider::sub-page:horizontal {
     background: {{ secondary }};
     border-radius: 0px;

@@ -41,7 +41,7 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from superqt import QRangeSlider
+from superqt import QLabeledSlider, QRangeSlider
 
 import napari
 from napari.utils.theme import available_themes, get_theme
@@ -244,6 +244,10 @@ class ThemeSampleWidget(QWidget):
         slider = QSlider(Qt.Orientation.Horizontal)
         slider.setValue(50)
         layout.addWidget(slider)
+
+        lab_slider = QLabeledSlider(Qt.Orientation.Horizontal)
+        lab_slider.setValue(10)
+        layout.addWidget(lab_slider)
 
         h_scrollbar = QScrollBar(Qt.Orientation.Horizontal)
         h_scrollbar.setValue(50)
