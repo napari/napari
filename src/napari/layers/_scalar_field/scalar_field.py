@@ -360,6 +360,22 @@ class ScalarFieldBase(Layer, ABC):
         """Data, exactly as provided by the user."""
         return self._data_raw
 
+    @property
+    def data(self) -> LayerDataProtocol | MultiScaleData:
+        """Data, possibly in multiscale wrapper. Obeys LayerDataProtocol."""
+        return self._data
+
+    @data.setter
+    def data(self, data: LayerDataProtocol | MultiScaleData) -> None:
+        self._data_raw = data
+        # note, we don't support changing from/to multiscale after construction
+        self._data = MultiScaleData(data) if self.multiscale else data  # type: ignore[arg-type]
+        self._reset_data_level()
+        self._reset_thumbnail_level_data()
+        self._update_dims()
+        self.events.data(value=self.data)
+        self._reset_editable()
+
     def _get_ndim(self) -> int:
         """Determine number of dimensions of the layer."""
         return len(self.level_shapes[0])
@@ -843,13 +859,16 @@ class ScalarFieldSlicingState(_LayerSlicingState):
             if locked is not None:
                 data_level = locked
             elif slice_input.ndisplay == 3:
-                data_level = len(data) - 1
+                data_level = len(data) - 1  # type: ignore[arg-type]
             else:
                 data_level = self.layer.data_level
         else:
             data_level = 0
 
         thumbnail_level = self.layer._thumbnail_level
+        data_at_thumbnail_level: (
+            LayerDataProtocol | MultiScaleData | np.ndarray
+        )
         if self.layer._level_materializer:
             data_at_thumbnail_level = self.layer._level_materializer(
                 thumbnail_level
@@ -859,6 +878,7 @@ class ScalarFieldSlicingState(_LayerSlicingState):
         else:
             data_at_thumbnail_level = data
 
+        data_at_data_level: LayerDataProtocol | MultiScaleData | np.ndarray
         if not self.layer.multiscale:
             data_at_data_level = data
         elif data_level == thumbnail_level:

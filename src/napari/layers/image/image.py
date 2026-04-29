@@ -421,23 +421,11 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         self._update_thumbnail()
         self.events.attenuation()
 
-    @property
-    def data(self) -> LayerDataProtocol | MultiScaleData:
-        """Data, possibly in multiscale wrapper. Obeys LayerDataProtocol."""
-        return self._data
-
-    @data.setter
+    @ScalarFieldBase.data.setter  # type: ignore[attr-defined]
     def data(self, data: LayerDataProtocol | MultiScaleData) -> None:
-        self._data_raw = data
-        # note, we don't support changing multiscale in an Image instance
-        self._data = MultiScaleData(data) if self.multiscale else data  # type: ignore
-        self._reset_data_level()
-        self._reset_thumbnail_level_data()
-        self._update_dims()
+        ScalarFieldBase.data.fset(self, data)  # type: ignore[attr-defined]
         if self._keep_auto_contrast:
             self.reset_contrast_limits()
-        self.events.data(value=self.data)
-        self._reset_editable()
 
     @property
     def interpolation2d(self) -> InterpolationStr:
@@ -575,7 +563,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         """
         input_data: np.ndarray
         if mode == 'data':
-            input_data = self.data[-1] if self.multiscale else self.data  # type: ignore[assignment]
+            input_data = self.data[-1] if self.multiscale else self.data
         elif mode == 'slice':
             input_data = self._slice.image.raw  # ugh
         else:

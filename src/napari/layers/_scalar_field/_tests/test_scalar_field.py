@@ -145,6 +145,20 @@ def test_rgb_2d_multiscale_prematerialized():
     np.testing.assert_array_equal(tld, data[1])
 
 
+@pytest.mark.parametrize('Layer', [Image, Labels])
+def test_data_setter_updates_transforms(Layer):
+    """Replacing data with different ndim should expand transforms."""
+    data_2d = np.zeros((10, 10), dtype=np.uint8)
+    layer = Layer(data_2d, scale=(2, 3))
+    assert layer.ndim == 2
+    assert len(layer.scale) == 2
+
+    data_3d = np.zeros((5, 10, 10), dtype=np.uint8)
+    layer.data = data_3d
+    assert layer.ndim == 3
+    assert len(layer.scale) == 3
+
+
 # ---------------------------------------------------------------------------
 # locked_data_level tests
 # ---------------------------------------------------------------------------
