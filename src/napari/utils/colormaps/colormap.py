@@ -197,7 +197,7 @@ class Colormap(EventedModel):
         return make_colorbar(self)
 
     def same_colors(self, other: 'Colormap') -> bool:
-        return (
+        return bool(
             np.array_equal(self.controls, other.controls)
             and np.array_equal(self.colors, other.colors)
             and self.interpolation == other.interpolation
