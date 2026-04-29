@@ -32,6 +32,7 @@ viewer.scale_bar.visible = True
 viewer.scale_bar.box = True
 # show scalebar in each grid instead of just once
 viewer.scale_bar.gridded = True
+viewer.fit_to_view()
 
 if __name__ == '__main__':
     napari.run()
