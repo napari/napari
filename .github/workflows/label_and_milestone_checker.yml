@@ -12,6 +12,8 @@ on:
   merge_group: # to be prepared on merge queue
     types: [checks_requested]
 
+permissions: {}
+
 jobs:
   check_labels:
     if: (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ready to merge'))
@@ -65,8 +67,6 @@ jobs:
             echo "No milestone set on PR. Skipping milestone check."
             exit 0
           fi
-
-          #
 
           IFS='/' read -r repoOwner repoName <<< "${{ github.repository }}"
 
