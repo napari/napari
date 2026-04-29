@@ -247,6 +247,7 @@ def test_grid_mode(make_napari_viewer):
 
     # enter grid view
     viewer.grid.enabled = True
+    viewer.fit_to_view()
     assert viewer.grid.enabled
     assert viewer.grid.actual_shape(6) == (2, 3)
     assert viewer.grid.stride == 1
