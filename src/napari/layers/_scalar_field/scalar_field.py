@@ -436,6 +436,8 @@ class ScalarFieldBase(Layer, ABC):
         ------
         ValueError
             If *level* is not ``None`` and is outside ``[0, n_levels)``.
+
+        .. versionadded:: 0.7.1
         """
         return self._locked_data_level
 
