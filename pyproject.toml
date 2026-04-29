@@ -217,7 +217,7 @@ docs = [
     "pydeps",
     "seedir",
     # triangle and bermuda needed for docs/guides/triangulation.md
-    "triangle",
+    "triangle; python_version <= '3.13'",  # there is no wheel for triangle on python 3.14 at the time and build from source causes problems.
     "bermuda>=0.1.4",
     "pytest",
     "linkify-it-py",
@@ -316,7 +316,7 @@ docs = [
     "pydeps",
     "seedir",
     # triangle and bermuda needed for docs/guides/triangulation.md
-    "triangle",
+    "triangle; python_version <= '3.13'",  # there is no wheel for triangle on python 3.14 at the time and build from source causes problems.
     "bermuda>=0.1.4",
     "pytest",
     "linkify-it-py",
@@ -705,7 +705,6 @@ module = [
     'napari._qt.widgets.qt_scrollbar',
     'napari._qt.widgets.qt_size_preview',
     'napari._qt.widgets.qt_spinbox',
-    'napari._qt.widgets.qt_theme_sample',
     'napari._qt.widgets.qt_tooltip',
     'napari._qt.widgets.qt_viewer_buttons',
     'napari._qt.widgets.qt_viewer_dock_widget',
