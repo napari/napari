@@ -443,7 +443,6 @@ def test_grid():
     # reenter grid view with new stride
     viewer.grid.stride = -2
     viewer.grid.enabled = True
-    viewer.fit_to_view()
     assert viewer.grid.enabled
     assert viewer.grid.actual_shape(6) == (2, 2)
     assert viewer.grid.stride == -2
