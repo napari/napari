@@ -46,6 +46,59 @@ jobs:
           echo "  $allowed_labels"
           exit 1
 
+  check_next_milestone:
+    name: Check milestone is next release
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-slim
+    steps:
+      - name: Check milestone for closest due date
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_MILESTONE_NAME: ${{ github.event.pull_request.milestone.title }}
+          PR_MILESTONE_NUMBER: ${{ github.event.pull_request.milestone.number }}
+        run: |
+          # Install GitHub CLI if necessary
+          # sudo apt-get install -y gh
+
+          # Check if PR_MILESTONE_NAME is defined
+          if [ -z "$PR_MILESTONE_NAME" ]; then
+            echo "No milestone set on PR. Skipping milestone check."
+            exit 0
+          fi
+
+          #
+
+          IFS='/' read -r repoOwner repoName <<< "${{ github.repository }}"
+
+          # Fetch the closest future milestone
+          # shellcheck disable=SC2016
+          CLOSEST_MILESTONE=$(gh api graphql -f query='
+            query($repoName: String!, $repoOwner: String!) {
+              repository(name: $repoName, owner: $repoOwner) {
+                milestones(states: OPEN, orderBy: {field: DUE_DATE, direction: ASC}, first: 100) {
+                  nodes {
+                    title
+                    number
+                    dueOn
+                  }
+                }
+              }
+          }' --jq '.data.repository.milestones.nodes | map(select(.dueOn >= now)) | .[0].number' -f repoName="$repoName" -f repoOwner="$repoOwner")
+
+          # Extract the milestone number of the current PR
+          CLOSEST_MILESTONE_NAME=$(gh api "/repos/${{ github.repository }}/milestones/$CLOSEST_MILESTONE" --jq '.title')
+
+
+          # Check if the PR's milestone is the closest future milestone
+          if [ "$CLOSEST_MILESTONE" != "$PR_MILESTONE_NUMBER" ]; then
+            echo "If this PR can be merged in time for the earlier milestone,"
+            echo "changing the milestone to $CLOSEST_MILESTONE_NAME will make the check pass."
+            echo "If this PR must wait until $PR_MILESTONE_NAME,"
+            echo "remove the ready-to-merge tag to skip this check,"
+            echo "and re-add it when all earlier milestones are completed."
+            exit 1
+          fi
+
   check_citation_cff_for_pr_author:
     name: Check PR author is in CITATION.cff
     if: (github.event_name == 'pull_request')
