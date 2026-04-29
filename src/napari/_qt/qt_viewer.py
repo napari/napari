@@ -164,10 +164,15 @@ class QtViewer(QSplitter):
         self._font_manager = QtFontManager()
         self._overlay_font = QGuiApplication.font().family()
 
+        main_widget = QWidget()
+        main_layout = QVBoxLayout()
+        main_layout.setContentsMargins(0, 2, 0, 2)
+        main_layout.setSpacing(0)
+
         # This dictionary holds the corresponding vispy visual for each layer
         self.canvas = canvas_class(
             viewer=viewer,
-            parent=self,
+            parent=main_widget,
             font_manager=self._font_manager,
             font_family=self._overlay_font,
             key_map_handler=self._key_map_handler,
@@ -179,11 +184,8 @@ class QtViewer(QSplitter):
         self._welcome_widget.urls_drag_entered.connect(self._set_drag_status)
         self._welcome_widget.urls_dropped.connect(self.dropEvent)
 
-        main_widget = QWidget()
-        main_layout = QVBoxLayout()
-        main_layout.setContentsMargins(0, 2, 0, 2)
+        main_layout.addWidget(self.canvas.native, stretch=1)
         main_layout.addWidget(self.dims)
-        main_layout.setSpacing(0)
         main_widget.setLayout(main_layout)
 
         self.setOrientation(Qt.Orientation.Vertical)
