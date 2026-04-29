@@ -10,7 +10,10 @@ from qtpy import PYQT5
 from qtpy.QtCore import QDir, QRectF, QSize, Qt
 from qtpy.QtGui import QIcon, QPainter, QPixmap
 from qtpy.QtSvg import QSvgRenderer
-from qtpy.QtWidgets import QApplication, QWidget
+from qtpy.QtWidgets import (
+    QApplication,
+    QWidget,
+)
 
 from napari import Viewer, __version__
 from napari._qt._qapp_model.injection._qproviders import register_qt_types
@@ -436,6 +439,7 @@ def run(
             stacklevel=2,
         )
         return
+
     with (
         notification_manager,
         _maybe_allow_interrupt(app),
