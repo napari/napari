@@ -636,8 +636,17 @@ class QtViewer(QSplitter):
         # clipping in perspective projection, while still preserving enough
         # bit depth in the depth buffer to avoid artifacts. See discussion at:
         # https://github.com/napari/napari/pull/7529#issuecomment-2594203871
+        #
+        # If depth_value becomes too large, the projection matrix entry
+        # M[2,2] = -(f+n)/(f-n) rounds to exactly -1.0 in float32
+        # (vispy builds the frustum in float32), making the far-plane
+        # inverse singular and breaking volume raycasting (renders black).
+        # Vispy sets far/near = depth_value * 10, so we cap at
+        # depth_value < 2 / (10 * float32_eps). See
+        # https://github.com/vispy/vispy/blob/0a6da357/vispy/scene/cameras/perspective.py#L322
+        max_depth = 2.0 / (10.0 * np.finfo(np.float32).eps)
         for camera in [self.canvas.camera] + self.canvas.grid_cameras:
-            camera._3D_camera.depth_value = 128 * diameter
+            camera._3D_camera.depth_value = min(128 * diameter, max_depth)
 
     def _add_layer(self, layer):
         """When a layer is added, set its parent and order.
