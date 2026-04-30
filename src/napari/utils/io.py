@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import struct
+import sys
 import warnings
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any
@@ -180,7 +181,19 @@ def execute_python_code(code: str, script_path: str | Path = '') -> None:
     with _patched_viewer_new(), _noop_napari_run():
         try:
             patched_viewer = current_viewer()
-            script_namespace = _SCRIPT_NAMESPACES.setdefault(script_path, {})
+            script_key = str(script_path) if script_path else script_path
+            script_namespace = _SCRIPT_NAMESPACES.setdefault(script_key, {})
+            main_module = sys.modules['__main__']
+
+            if script_path:
+                # When launched with multiprocessing, a script executed via
+                # `multiprocessing.spawn` (e.g. Windows) either re-imports the
+                # parent __main__ module by name or re-executes its file path.
+                # Point __main__ at the executed script path so child workers
+                # can import functions/classes defined in the script.
+                main_module.__spec__ = None
+                main_module.__file__ = script_key
+                script_namespace['__file__'] = script_key
 
             # The `__name__` variable stores the module name.
             # If a module is imported, set `__name__` to the module name.
@@ -191,8 +204,9 @@ def execute_python_code(code: str, script_path: str | Path = '') -> None:
             # Set `__main__` to execute `if __name__ == '__main__':` blocks
             script_namespace['__name__'] = '__main__'
             exec(code, script_namespace)
+            main_module.__dict__.update(script_namespace)
             _add_variables_to_viewer_console(
-                _SCRIPT_NAMESPACES[script_path], patched_viewer
+                _SCRIPT_NAMESPACES[script_key], patched_viewer
             )
         except BaseException as e:  # noqa: BLE001
             notification_manager.receive_error(type(e), e, e.__traceback__)
