@@ -22,7 +22,7 @@ the gui via QTWidgets and napari's thread_worker.
 """
 
 try:
-    import dragon  # isort:skip
+    import dragon  # isort:skip  # noqa: F401
     import multiprocessing as mp  # Must be after import of dragon
 
     mp.set_start_method("dragon")
