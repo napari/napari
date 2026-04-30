@@ -16,7 +16,7 @@ from napari.layers import (
     Tracks,
     Vectors,
 )
-from napari.utils.translations import trans
+
 
 layer_to_controls = {
     Labels: QtLabelsControls,

@@ -16,7 +16,7 @@ from napari import Viewer
 from napari.errors import ReaderPluginError
 from napari.utils._startup_script import _run_configured_startup_script
 from napari.utils.misc import maybe_patch_conda_exe
-from napari.utils.translations import trans
+
 
 
 class InfoAction(argparse.Action):

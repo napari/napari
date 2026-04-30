@@ -2,7 +2,7 @@ from collections import OrderedDict
 from enum import IntEnum, auto
 
 from napari.utils.misc import StringEnum
-from napari.utils.translations import trans
+
 
 
 class Blending(StringEnum):

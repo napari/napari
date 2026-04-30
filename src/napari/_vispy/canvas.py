@@ -57,7 +57,7 @@ if TYPE_CHECKING:
 
 import warnings
 
-from napari.utils.translations import trans
+
 
 
 class NapariSceneCanvas(SceneCanvas_):

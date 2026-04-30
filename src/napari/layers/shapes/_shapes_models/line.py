@@ -2,7 +2,7 @@ import numpy as np
 
 from napari.layers.shapes._shapes_models.shape import Shape
 from napari.layers.shapes._shapes_utils import create_box
-from napari.utils.translations import trans
+
 
 
 class Line(Shape):

@@ -10,7 +10,7 @@ from qtpy.QtWidgets import (
 )
 
 from napari.utils import citation_text, sys_info
-from napari.utils.translations import trans
+
 
 
 class QtAbout(QDialog):

@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from napari._qt.containers.qt_axis_model import AxisList, QtAxisListModel
 from napari.components.layerlist import LayerList
 from napari.utils.events import SelectableEventedList
-from napari.utils.translations import trans
+
 from napari.utils.tree import Group
 
 if TYPE_CHECKING:

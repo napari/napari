@@ -8,7 +8,7 @@ from napari._qt.utils import attr_to_settr
 from napari._qt.widgets.qt_color_swatch import QColorSwatchEdit
 from napari.layers import Points
 from napari.utils.events.event_utils import connect_setattr
-from napari.utils.translations import trans
+
 
 
 class QtBorderColorControl(QtWidgetControlsBase):

@@ -59,7 +59,7 @@ from napari.utils.events import Event
 from napari.utils.events.custom_types import Array
 from napari.utils.geometry import project_points_onto_plane, rotate_points
 from napari.utils.transforms import Affine
-from napari.utils.translations import trans
+
 
 if TYPE_CHECKING:
     from collections.abc import (

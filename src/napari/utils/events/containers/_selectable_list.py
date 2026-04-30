@@ -4,7 +4,7 @@ from typing import Any, TypeVar
 from napari.utils.events.containers._evented_list import EventedList
 from napari.utils.events.containers._nested_list import NestableEventedList
 from napari.utils.events.containers._selection import Selectable
-from napari.utils.translations import trans
+
 
 _T = TypeVar('_T')
 

@@ -18,7 +18,7 @@ from napari.layers.base._base_constants import Mode
 from napari.layers.base.base import Layer
 from napari.utils.action_manager import action_manager
 from napari.utils.events import disconnect_events
-from napari.utils.translations import trans
+
 
 
 class LayerFormLayout(QFormLayout):

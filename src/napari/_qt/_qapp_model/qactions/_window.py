@@ -6,7 +6,7 @@ from napari._app_model.constants import MenuGroup, MenuId
 from napari._qt._qapp_model.qactions._toggle_action import (
     DockWidgetToggleAction,
 )
-from napari.utils.translations import trans
+
 
 Q_WINDOW_ACTIONS: list[Action] = []
 

@@ -11,7 +11,7 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from napari.utils.translations import trans
+
 
 
 class QtFontSizePreview(QFrame):

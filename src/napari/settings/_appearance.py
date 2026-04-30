@@ -5,7 +5,7 @@ from pydantic import AliasChoices, Field
 from napari.settings._fields import Logo, Theme
 from napari.utils.events.evented_model import ComparisonDelayer, EventedModel
 from napari.utils.theme import available_themes, get_theme
-from napari.utils.translations import trans
+
 
 
 class HighlightSettings(EventedModel):

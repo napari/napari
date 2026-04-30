@@ -4,7 +4,7 @@ from napari._qt.containers import QtListView
 from napari._qt.containers.qt_axis_model import AxisList, AxisModel
 from napari._qt.widgets.qt_tooltip import QtToolTipLabel
 from napari.components import Dims
-from napari.utils.translations import trans
+
 
 
 def set_dims_order(dims: Dims, order: tuple[int, ...]):

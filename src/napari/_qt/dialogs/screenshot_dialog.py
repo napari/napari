@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any
 from qtpy.QtWidgets import QFileDialog, QMessageBox
 
 from napari.utils.misc import in_ipython
-from napari.utils.translations import trans
+
 
 if TYPE_CHECKING:
     from collections.abc import Callable

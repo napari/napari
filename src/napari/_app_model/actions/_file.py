@@ -6,7 +6,7 @@ from app_model.types import (
 from napari._app_model.constants import MenuGroup, MenuId
 from napari.components import LayerList, ViewerModel
 from napari.layers import Layer, Points, Shapes
-from napari.utils.translations import trans
+
 
 FILE_SUBMENUS = [
     (

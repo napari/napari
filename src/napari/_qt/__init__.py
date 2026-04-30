@@ -1,6 +1,6 @@
 from warnings import warn
 
-from napari.utils.translations import trans
+
 
 try:
     from qtpy import API_NAME, QtCore

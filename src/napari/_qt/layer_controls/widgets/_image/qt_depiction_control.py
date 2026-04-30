@@ -15,7 +15,7 @@ from napari._qt.utils import qt_signals_blocked
 from napari.layers import Image
 from napari.layers.image._image_constants import VolumeDepiction
 from napari.utils.action_manager import action_manager
-from napari.utils.translations import trans
+
 
 
 class PlaneNormalButtons(QWidget):

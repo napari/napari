@@ -8,7 +8,7 @@ from napari.layers.utils.layer_utils import (
     register_layer_attr_action,
 )
 from napari.layers.vectors.vectors import Vectors
-from napari.utils.translations import trans
+
 
 if TYPE_CHECKING:
     from collections.abc import Callable

@@ -10,7 +10,7 @@ from typing import (
 # change on import from typing when drop python 3.10 support
 from typing_extensions import Self
 
-from napari.utils.translations import trans
+
 
 logger = logging.getLogger(__name__)
 

@@ -7,7 +7,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
 from napari._qt.utils import qt_signals_blocked
 from napari.layers import Tracks
 from napari.utils.colormaps import AVAILABLE_COLORMAPS
-from napari.utils.translations import trans
+
 
 
 class QtColormapComboBoxControl(QtWidgetControlsBase):

@@ -12,7 +12,7 @@ from napari.layers.image._image_constants import (
     ImageRendering,
 )
 from napari.utils.events.event_utils import connect_setattr
-from napari.utils.translations import trans
+
 
 
 class QtImageRenderControl(QtWidgetControlsBase):

@@ -11,7 +11,7 @@ from qtpy.QtWidgets import (
 )
 
 from napari.utils.progress import cancelable_progress, progress
-from napari.utils.translations import trans
+
 
 
 class QtLabeledProgressBar(QWidget):

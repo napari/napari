@@ -10,7 +10,7 @@ import numpy as np
 
 from napari._version import __version__
 from napari.utils.notifications import notification_manager, show_warning
-from napari.utils.translations import trans
+
 
 if TYPE_CHECKING:
     from pathlib import Path

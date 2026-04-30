@@ -16,7 +16,7 @@ from napari._qt.widgets.qt_mode_buttons import QtModePushButton
 from napari.layers.points._points_constants import Mode
 from napari.utils.action_manager import action_manager
 from napari.utils.events import disconnect_events
-from napari.utils.translations import trans
+
 
 if TYPE_CHECKING:
     import napari.layers

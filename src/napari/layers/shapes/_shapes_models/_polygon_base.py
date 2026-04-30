@@ -7,7 +7,7 @@ from napari.layers.shapes._shapes_models.shape import (
     Shape,
     remove_path_duplicates,
 )
-from napari.utils.translations import trans
+
 
 
 class PolygonBase(Shape):

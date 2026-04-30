@@ -22,7 +22,7 @@ from napari.utils.colormaps import (
     ensure_colormap,
     make_colorbar,
 )
-from napari.utils.translations import trans
+
 
 COLORMAP_WIDTH = 50
 TEXT_WIDTH = 130

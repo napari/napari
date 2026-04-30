@@ -10,7 +10,7 @@ from app_model.expressions import ContextKey
 
 from napari._app_model.context._context_keys import ContextNamespace
 from napari.utils._dtype import normalize_dtype
-from napari.utils.translations import trans
+
 
 if TYPE_CHECKING:
     from weakref import ReferenceType

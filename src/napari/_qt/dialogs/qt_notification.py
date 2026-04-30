@@ -32,7 +32,7 @@ from napari._qt.qt_resources import QColoredSVGIcon
 from napari.settings import get_settings
 from napari.utils.notifications import Notification, NotificationSeverity
 from napari.utils.theme import get_theme
-from napari.utils.translations import trans
+
 
 ActionSequence = Sequence[tuple[str, Callable[['NapariQtNotification'], None]]]
 

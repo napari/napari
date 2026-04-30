@@ -8,7 +8,7 @@ from qtpy.QtWidgets import QLabel, QStatusBar, QWidget
 from superqt import QElidingLabel
 
 from napari._qt.dialogs.qt_activity_dialog import ActivityToggleItem
-from napari.utils.translations import trans
+
 
 if TYPE_CHECKING:
     from napari._qt.qt_main_window import _QtMainWindow

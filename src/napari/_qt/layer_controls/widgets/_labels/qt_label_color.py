@@ -16,7 +16,7 @@ from napari.layers import Labels
 from napari.layers.labels._labels_utils import get_dtype
 from napari.utils._dtype import get_dtype_limits
 from napari.utils.events import disconnect_events
-from napari.utils.translations import trans
+
 
 
 class QtColorBox(QWidget):

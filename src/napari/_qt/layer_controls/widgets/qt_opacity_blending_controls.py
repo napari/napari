@@ -13,7 +13,7 @@ from napari._qt.utils import attr_to_settr
 from napari.layers.base._base_constants import BLENDING_TRANSLATIONS, Blending
 from napari.layers.base.base import Layer
 from napari.utils.events.event_utils import connect_setattr
-from napari.utils.translations import trans
+
 
 # opaque, minimum, and multiplicative blending do not support changing alpha (opacity)
 NO_OPACITY_BLENDING_MODES = {

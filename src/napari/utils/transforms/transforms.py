@@ -23,7 +23,7 @@ from napari.utils.transforms.transform_utils import (
     shear_to_matrix,
     translate_to_vector,
 )
-from napari.utils.translations import trans
+
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Sequence

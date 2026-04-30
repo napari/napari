@@ -18,7 +18,7 @@ from napari._app_model.context import (
 )
 from napari._qt.qt_main_window import Window
 from napari._qt.qt_viewer import QtViewer
-from napari.utils.translations import trans
+
 
 
 # File actions

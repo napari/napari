@@ -3,7 +3,7 @@ import numpy as np
 from napari.layers.shapes._shapes_models.shape import Shape
 from napari.layers.shapes._shapes_utils import find_corners, rectangle_to_box
 from napari.types import ArrayLike
-from napari.utils.translations import trans
+
 
 
 class Rectangle(Shape):

@@ -34,7 +34,7 @@ from qtpy.QtWidgets import (
 from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils.events.custom_types import Array
 from napari.utils.misc import StringEnum, is_sequence
-from napari.utils.translations import trans
+
 
 QBYTE_FLAG = '!QBYTE_'
 RICH_TEXT_PATTERN = re.compile('<[^\n]+>')

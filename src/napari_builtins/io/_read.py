@@ -15,7 +15,7 @@ from dask import delayed
 
 from napari.utils.io import execute_python_code
 from napari.utils.misc import abspath_or_url
-from napari.utils.translations import trans
+
 
 if TYPE_CHECKING:
     from collections.abc import Sequence

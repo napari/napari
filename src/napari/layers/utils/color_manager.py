@@ -30,7 +30,7 @@ from napari.utils.colormaps.categorical_colormap import CategoricalColormap
 from napari.utils.colormaps.colormap_utils import ColorType, ensure_colormap
 from napari.utils.events import EventedModel
 from napari.utils.events.custom_types import Array
-from napari.utils.translations import trans
+
 
 
 @dataclass

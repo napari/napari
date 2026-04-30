@@ -15,7 +15,7 @@ from pydantic._internal._model_construction import ModelMetaclass
 from napari._pydantic_util import get_inner_type, get_outer_type
 from napari.utils.events.event import EmitterGroup, Event
 from napari.utils.misc import pick_equality_operator
-from napari.utils.translations import trans
+
 
 # encoders for non-napari specific field types.  To declare a custom encoder
 # for a napari type, add a `_json_encode` method to the class itself.

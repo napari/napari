@@ -10,7 +10,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
 )
 from napari._qt.utils import qt_signals_blocked
 from napari.layers import Labels
-from napari.utils.translations import trans
+
 
 
 class QtNdimSpinBoxControl(QtWidgetControlsBase):

@@ -30,7 +30,7 @@ from napari.components import Dims
 from napari.settings import get_settings
 from napari.settings._constants import LoopMode
 from napari.utils.events.event_utils import connect_setattr_value
-from napari.utils.translations import trans
+
 
 if TYPE_CHECKING:
     from qtpy.QtGui import QResizeEvent

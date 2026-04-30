@@ -56,7 +56,7 @@ from napari.layers import (
     Tracks,
     Vectors,
 )
-from napari.utils.translations import trans
+
 
 if TYPE_CHECKING:
     from vispy.scene.widgets.viewbox import ViewBox

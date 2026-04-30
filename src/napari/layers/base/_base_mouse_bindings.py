@@ -13,7 +13,7 @@ from napari.layers.utils.interaction_box import (
 )
 from napari.utils.events import Event
 from napari.utils.transforms import Affine
-from napari.utils.translations import trans
+
 
 if TYPE_CHECKING:
     from collections.abc import Generator

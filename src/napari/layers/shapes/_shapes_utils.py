@@ -23,7 +23,7 @@ from napari.layers.shapes.shape_types import (
     EdgeArray,
     TriangleArray,
 )
-from napari.utils.translations import trans
+
 
 if TYPE_CHECKING:
     import numpy.typing as npt

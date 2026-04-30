@@ -9,7 +9,7 @@ from napari.utils.key_bindings import (
     KeyCode,
     coerce_keybinding,
 )
-from napari.utils.translations import trans
+
 
 if TYPE_CHECKING:
     from napari._vispy.mouse_event import NapariMouseEvent

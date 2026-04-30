@@ -13,7 +13,7 @@ from pydantic import field_validator, model_validator
 
 from napari.utils.events import EventedModel
 from napari.utils.misc import argsort, reorder_after_dim_reduction
-from napari.utils.translations import trans
+
 
 
 class RangeTuple(NamedTuple):

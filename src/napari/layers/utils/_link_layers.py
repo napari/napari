@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 from collections import defaultdict
 
 from napari.utils.events.event import WarningEmitter
-from napari.utils.translations import trans
+
 
 #: Record of already linked layers... to avoid duplicating callbacks
 #  in the form of {(id(layer1), id(layer2), attribute_name) -> callback}

@@ -12,7 +12,7 @@ from napari._qt.utils import qt_signals_blocked
 from napari.layers import Vectors
 from napari.layers.vectors._vectors_constants import VECTORSTYLE_TRANSLATIONS
 from napari.utils.events.event_utils import connect_setattr
-from napari.utils.translations import trans
+
 
 
 class QtVectorStyleComboBoxControl(QtWidgetControlsBase):

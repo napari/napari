@@ -4,7 +4,7 @@ from qtpy.QtWidgets import QHBoxLayout, QPushButton, QWidget
 from napari._qt.widgets.qt_spinbox import QtSpinBox
 from napari.settings import get_settings
 from napari.utils.theme import get_system_theme, get_theme
-from napari.utils.translations import trans
+
 
 
 class QtFontSizeWidget(QWidget):

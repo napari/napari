@@ -13,7 +13,7 @@ from napari.layers.labels._labels_constants import (
     LabelColorMode,
 )
 from napari.utils import CyclicLabelColormap
-from napari.utils.translations import trans
+
 
 
 class QtColorModeComboBoxControl(QtWidgetControlsBase):

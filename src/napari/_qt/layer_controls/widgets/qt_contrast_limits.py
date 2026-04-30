@@ -14,7 +14,7 @@ from napari._qt.widgets.qt_range_slider_popup import QRangeSliderPopup
 from napari.layers import Image, Surface
 from napari.utils._dtype import normalize_dtype
 from napari.utils.events.event_utils import connect_no_arg, connect_setattr
-from napari.utils.translations import trans
+
 
 
 def range_to_decimals(range_, dtype):

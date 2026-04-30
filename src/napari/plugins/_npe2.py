@@ -10,7 +10,7 @@ from app_model.types import SubmenuItem
 from npe2 import io_utils, plugin_manager as pm
 from npe2.manifest import contributions
 
-from napari.utils.translations import trans
+
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence

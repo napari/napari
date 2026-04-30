@@ -11,7 +11,7 @@ from napari.layers import Image
 from napari.layers.image._image_utils import guess_multiscale
 from napari.utils.colormaps import CMYBGR, MAGENTA_GREEN, Colormap
 from napari.utils.misc import ensure_iterable, ensure_sequence_of_iterables
-from napari.utils.translations import trans
+
 
 if TYPE_CHECKING:
     from napari.types import FullLayerData

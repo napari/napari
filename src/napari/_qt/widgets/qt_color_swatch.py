@@ -22,7 +22,7 @@ from napari.utils.colormaps.standardize_color import (
     rgb_to_hex,
     transform_color,
 )
-from napari.utils.translations import trans
+
 
 # matches any 3- or 4-tuple of int or float, with or without parens
 # captures the numbers into groups.

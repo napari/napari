@@ -18,7 +18,7 @@ from napari.utils.events import Event
 from napari.utils.events.containers import SelectableEventedList
 from napari.utils.naming import inc_name_count
 from napari.utils.transforms._units import get_units_from_name
-from napari.utils.translations import trans
+
 
 if TYPE_CHECKING:
     from npe2.manifest.io import WriterContribution

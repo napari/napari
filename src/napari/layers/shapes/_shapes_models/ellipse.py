@@ -7,7 +7,7 @@ from napari.layers.shapes._shapes_utils import (
     triangulate_edge,
     triangulate_ellipse,
 )
-from napari.utils.translations import trans
+
 
 
 class Ellipse(Shape):

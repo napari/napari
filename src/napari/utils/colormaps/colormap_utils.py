@@ -25,7 +25,7 @@ from napari.utils.colormaps.colormap import (
 from napari.utils.colormaps.inverse_colormaps import inverse_cmaps
 from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils.colormaps.vendored.cm import cmap_d
-from napari.utils.translations import trans
+
 
 if TYPE_CHECKING:
     from collections.abc import Iterable

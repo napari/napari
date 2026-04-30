@@ -10,7 +10,7 @@ from napari._qt.widgets.qt_dims_slider import (
 )
 from napari.components.dims import Dims
 from napari.settings._constants import LoopMode
-from napari.utils.translations import trans
+
 
 
 class QtDims(QWidget):

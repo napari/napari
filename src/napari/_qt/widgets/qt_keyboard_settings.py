@@ -38,7 +38,7 @@ from napari.layers import (
 from napari.settings import get_settings
 from napari.utils.action_manager import action_manager
 from napari.utils.interactions import Shortcut
-from napari.utils.translations import trans
+
 
 
 class ShortcutEditor(QWidget):

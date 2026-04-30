@@ -54,7 +54,7 @@ from napari.utils.key_bindings import KeymapHandler
 from napari.utils.misc import in_ipython, in_jupyter
 from napari.utils.naming import CallerFrame
 from napari.utils.notifications import show_info
-from napari.utils.translations import trans
+
 
 from napari._vispy import VispyCanvas, create_vispy_layer  # isort:skip
 

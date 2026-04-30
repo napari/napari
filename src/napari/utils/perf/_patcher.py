@@ -10,7 +10,7 @@ from collections.abc import Callable
 from importlib import import_module
 from typing import Union
 
-from napari.utils.translations import trans
+
 
 # The parent of a callable is a module or a class, class is of type "type".
 CallableParent = Union[types.ModuleType, type]

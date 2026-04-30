@@ -5,7 +5,7 @@ from napari._app_model.actions._toggle_action import ViewerModelToggleAction
 from napari._app_model.constants import MenuGroup, MenuId
 from napari.components import ViewerModel
 from napari.settings import get_settings
-from napari.utils.translations import trans
+
 
 VIEW_SUBMENUS = [
     (

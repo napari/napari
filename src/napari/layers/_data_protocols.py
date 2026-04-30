@@ -10,7 +10,7 @@ from typing import (
     runtime_checkable,
 )
 
-from napari.utils.translations import trans
+
 
 _OBJ_NAMES = set(dir(Protocol))
 _OBJ_NAMES.update({'__annotations__', '__dict__', '__weakref__'})

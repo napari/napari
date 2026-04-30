@@ -1,5 +1,5 @@
 from napari.utils.events.event import WarningEmitter
-from napari.utils.translations import trans
+
 
 
 def deprecation_warning_event(

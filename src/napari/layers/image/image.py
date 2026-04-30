@@ -29,7 +29,7 @@ from napari.types import LayerDataType
 from napari.utils._dtype import get_dtype_limits, normalize_dtype
 from napari.utils.colormaps import ensure_colormap
 from napari.utils.colormaps.colormap_utils import _coerce_contrast_limits
-from napari.utils.translations import trans
+
 
 if typing.TYPE_CHECKING:
     from collections.abc import Sequence

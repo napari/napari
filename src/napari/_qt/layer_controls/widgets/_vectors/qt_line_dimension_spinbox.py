@@ -10,7 +10,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
 )
 from napari._qt.utils import attr_to_settr
 from napari.layers import Vectors
-from napari.utils.translations import trans
+
 
 
 class QtWidthSpinBoxControl(QtWidgetControlsBase):

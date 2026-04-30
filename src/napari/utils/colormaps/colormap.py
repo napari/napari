@@ -29,7 +29,7 @@ from napari.utils.compat import StrEnum
 from napari.utils.events import EventedModel
 from napari.utils.events.custom_types import Array
 from napari.utils.migrations import deprecated_class_name
-from napari.utils.translations import trans
+
 
 if TYPE_CHECKING:
     from numba import typed

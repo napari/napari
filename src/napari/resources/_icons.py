@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from napari.utils._platformdirs import user_cache_dir
-from napari.utils.translations import trans
+
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator

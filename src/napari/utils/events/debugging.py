@@ -8,7 +8,7 @@ from pydantic import Field, PrivateAttr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from napari.utils.misc import ROOT_DIR
-from napari.utils.translations import trans
+
 
 try:
     from rich import print  # noqa: A004

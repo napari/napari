@@ -9,7 +9,7 @@ from app_model.expressions import (
     get_context as _get_context,
 )
 
-from napari.utils.translations import trans
+
 
 if TYPE_CHECKING:
     from napari.utils.events import Event

@@ -8,7 +8,7 @@ to server as a graphical user interface for napari.
 
 __all__ = ['Window']
 
-from napari.utils.translations import trans
+
 
 try:
     from napari._qt import Window

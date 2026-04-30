@@ -70,7 +70,7 @@ from napari.utils.events import EmitterGroup, Event
 from napari.utils.events.custom_types import Array
 from napari.utils.misc import StringEnum, _is_array_type
 from napari.utils.naming import magic_name
-from napari.utils.translations import trans
+
 
 if TYPE_CHECKING:
     import pandas as pd

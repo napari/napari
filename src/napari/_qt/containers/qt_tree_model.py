@@ -5,7 +5,7 @@ from typing import Optional, TypeVar
 from qtpy.QtCore import QMimeData, QModelIndex, Qt
 
 from napari._qt.containers._base_item_model import _BaseEventedItemModel
-from napari.utils.translations import trans
+
 from napari.utils.tree import Group, Node
 
 logger = logging.getLogger(__name__)

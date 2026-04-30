@@ -13,7 +13,7 @@ from napari.layers.utils.layer_utils import (
 from napari.settings import get_settings
 from napari.utils.interactions import Shortcut
 from napari.utils.notifications import show_info
-from napari.utils.translations import trans
+
 
 if TYPE_CHECKING:
     from collections.abc import Callable

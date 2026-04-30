@@ -1,7 +1,7 @@
 import warnings
 
 from napari.settings import *  # noqa: F403
-from napari.utils.translations import trans
+
 
 warnings.warn(
     trans._(

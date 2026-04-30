@@ -2,7 +2,7 @@ import numpy as np
 import numpy.typing as npt
 
 from napari.layers.utils._text_constants import Anchor
-from napari.utils.translations import trans
+
 
 
 def get_text_anchors(

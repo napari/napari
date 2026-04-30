@@ -12,7 +12,7 @@ from napari.layers.tracks._track_utils import TrackManager
 from napari.types import LayerDataType
 from napari.utils.colormaps import AVAILABLE_COLORMAPS, Colormap
 from napari.utils.events import Event
-from napari.utils.translations import trans
+
 
 if TYPE_CHECKING:
     import pandas as pd

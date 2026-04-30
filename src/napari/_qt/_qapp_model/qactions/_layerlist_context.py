@@ -18,7 +18,7 @@ from napari._app_model.context import LayerListSelectionContextKeys as LLSCK
 from napari.components import LayerList
 from napari.layers import Layer
 from napari.utils.notifications import show_warning
-from napari.utils.translations import trans
+
 
 __all__ = ('Q_LAYERLIST_CONTEXT_ACTIONS', 'is_valid_spatial_in_clipboard')
 

@@ -11,7 +11,7 @@ from napari.layers.utils.layer_utils import (
     register_layer_attr_action,
 )
 from napari.utils.notifications import show_info, show_warning
-from napari.utils.translations import trans
+
 
 MIN_BRUSH_SIZE = 1
 CONVERT_TEXT = 'You can convert the layer dtype in the right-click contextual menu of the layer list.'

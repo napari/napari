@@ -79,7 +79,7 @@ from napari.utils.events import Event
 from napari.utils.events.custom_types import Array
 from napari.utils.misc import ensure_iterable
 from napari.utils.notifications import show_warning
-from napari.utils.translations import trans
+
 
 if TYPE_CHECKING:
     from itertools import cycle

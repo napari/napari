@@ -8,7 +8,7 @@ from typing import Any, Generic, TypeVar, Union
 import wrapt
 
 from napari.utils import misc
-from napari.utils.translations import trans
+
 
 _T = TypeVar('_T')
 _K = TypeVar('_K', bound=Hashable)

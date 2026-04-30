@@ -32,7 +32,7 @@ from napari.utils.notifications import (
 )
 from napari.utils.perf import perf_config
 from napari.utils.theme import _themes, get_system_theme
-from napari.utils.translations import trans
+
 
 if TYPE_CHECKING:
     from pathlib import Path

@@ -6,7 +6,7 @@ from napari.settings._napari_settings import (
     CURRENT_SCHEMA_VERSION,
     NapariSettings,
 )
-from napari.utils.translations import trans
+
 
 __all__ = ['CURRENT_SCHEMA_VERSION', 'NapariSettings', 'get_settings']
 

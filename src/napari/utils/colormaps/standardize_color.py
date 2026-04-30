@@ -29,7 +29,7 @@ import numpy as np
 from vispy.color import ColorArray, get_color_dict, get_color_names
 from vispy.color.color_array import _string_to_rgb
 
-from napari.utils.translations import trans
+
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence

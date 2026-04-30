@@ -21,7 +21,7 @@ from napari.utils import Colormap
 from napari.utils.color import ColorArray, ColorValue
 from napari.utils.colormaps import ValidColormapArg, ensure_colormap
 from napari.utils.colormaps.categorical_colormap import CategoricalColormap
-from napari.utils.translations import trans
+
 
 """The default color to use, which may also be used a safe fallback color."""
 DEFAULT_COLOR = ColorValue.validate('cyan')

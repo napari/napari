@@ -5,7 +5,7 @@ import numpy.typing as npt
 
 from napari.layers.utils.layer_utils import _FeatureTable
 from napari.utils.events.custom_types import Array
-from napari.utils.translations import trans
+
 
 if TYPE_CHECKING:
     import pandas as pd

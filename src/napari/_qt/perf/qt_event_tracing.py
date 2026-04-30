@@ -11,7 +11,7 @@ from qtpy.QtCore import QEvent
 from qtpy.QtWidgets import QApplication, QWidget
 
 from napari.utils import perf
-from napari.utils.translations import trans
+
 
 
 class QApplicationWithTracing(QApplication):

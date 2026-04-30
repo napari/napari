@@ -21,7 +21,7 @@ from napari.plugins.utils import (
     get_filename_patterns_for_reader,
 )
 from napari.settings import get_settings
-from napari.utils.translations import trans
+
 
 
 class Extension2ReaderTable(QWidget):

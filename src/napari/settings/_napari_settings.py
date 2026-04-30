@@ -17,7 +17,7 @@ from napari.settings._fields import Version
 from napari.settings._plugins import PluginsSettings
 from napari.settings._shortcuts import ShortcutsSettings
 from napari.utils._base import _DEFAULT_CONFIG_PATH
-from napari.utils.translations import trans
+
 
 _CFG_PATH = os.getenv('NAPARI_CONFIG', _DEFAULT_CONFIG_PATH)
 

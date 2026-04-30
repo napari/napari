@@ -4,7 +4,7 @@ from collections import UserDict
 from functools import wraps
 from typing import TYPE_CHECKING, Any, NamedTuple
 
-from napari.utils.translations import trans
+
 
 if TYPE_CHECKING:
     from collections.abc import Callable

@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any
 
 from napari.utils.events import EmitterGroup
 from napari.utils.interactions import Shortcut
-from napari.utils.translations import trans
+
 
 if TYPE_CHECKING:
     from collections.abc import Callable

@@ -8,7 +8,7 @@ from napari.utils.colormap_backend import (
     set_backend as set_colormap_backend,
 )
 from napari.utils.events import Event
-from napari.utils.translations import trans
+
 from napari.utils.triangulation_backend import (
     TriangulationBackend,
     set_backend as set_triangulation_backend,

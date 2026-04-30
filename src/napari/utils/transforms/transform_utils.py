@@ -1,7 +1,7 @@
 import numpy as np
 import numpy.typing as npt
 
-from napari.utils.translations import trans
+
 
 
 def compose_linear_matrix(rotate, scale, shear) -> npt.NDArray:

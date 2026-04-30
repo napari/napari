@@ -12,7 +12,7 @@ from napari._app_model.constants import MenuGroup, MenuId
 from napari._qt.qt_viewer import QtViewer
 from napari.utils import perf
 from napari.utils.history import get_save_history, update_save_history
-from napari.utils.translations import trans
+
 
 # Debug submenu
 DEBUG_SUBMENUS = [

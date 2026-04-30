@@ -10,7 +10,7 @@ from napari.layers.points._points_constants import (
     SYMBOL_TRANSLATION,
     SYMBOL_TRANSLATION_INVERTED,
 )
-from napari.utils.translations import trans
+
 
 
 class QtSymbolComboBoxControl(QtWidgetControlsBase):

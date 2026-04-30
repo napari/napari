@@ -10,7 +10,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
 from napari._qt.utils import attr_to_settr, checked_to_bool
 from napari.layers import Labels
 from napari.utils.events.event_utils import connect_setattr
-from napari.utils.translations import trans
+
 
 
 class QtDisplaySelectedLabelCheckBoxControl(QtWidgetControlsBase):

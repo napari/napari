@@ -10,7 +10,7 @@ from napari.utils.action_manager import action_manager
 from napari.utils.notifications import show_info, show_warning
 from napari.utils.theme import available_themes, get_system_theme
 from napari.utils.transforms import Affine
-from napari.utils.translations import trans
+
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Generator

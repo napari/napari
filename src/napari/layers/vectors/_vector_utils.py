@@ -1,7 +1,7 @@
 import numpy as np
 import numpy.typing as npt
 
-from napari.utils.translations import trans
+
 
 
 def convert_image_to_coordinates(vectors: npt.NDArray) -> npt.NDArray:

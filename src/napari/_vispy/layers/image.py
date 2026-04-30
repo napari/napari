@@ -19,7 +19,7 @@ from napari.utils.colormaps.colormap_utils import (
     _coerce_contrast_limits,
     _napari_cmap_to_vispy,
 )
-from napari.utils.translations import trans
+
 
 if TYPE_CHECKING:
     from vispy.scene import Node

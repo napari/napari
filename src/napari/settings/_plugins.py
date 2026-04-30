@@ -3,7 +3,7 @@ from pydantic_settings import SettingsConfigDict
 from typing_extensions import TypedDict
 
 from napari.settings._base import EventedSettings
-from napari.utils.translations import trans
+
 
 
 class PluginHookOption(TypedDict):

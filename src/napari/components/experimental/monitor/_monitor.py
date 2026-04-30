@@ -12,7 +12,7 @@ import logging
 import os
 from pathlib import Path
 
-from napari.utils.translations import trans
+
 
 LOGGER = logging.getLogger('napari.monitor')
 

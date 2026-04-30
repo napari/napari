@@ -12,7 +12,7 @@ from napari.layers.labels._labels_constants import (
     LabelsRendering,
 )
 from napari.utils.events.event_utils import connect_setattr
-from napari.utils.translations import trans
+
 
 
 class QtLabelRenderControl(QtWidgetControlsBase):

@@ -7,7 +7,7 @@ from app_model.types import Action
 
 from napari._app_model.constants import MenuGroup, MenuId
 from napari._qt.qt_main_window import Window
-from napari.utils.translations import trans
+
 
 logger = getLogger(__name__)
 

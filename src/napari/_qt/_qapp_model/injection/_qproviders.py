@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING
 from napari import components, layers, viewer
 from napari._app_model import get_app_model
 from napari.utils._proxies import PublicOnlyProxy
-from napari.utils.translations import trans
+
 from napari.viewer import ViewerModel
 
 if TYPE_CHECKING:

@@ -5,7 +5,7 @@ from pydantic import Field, field_validator
 from napari.utils.events.evented_model import EventedModel
 from napari.utils.key_bindings import KeyBinding, coerce_keybinding
 from napari.utils.shortcuts import default_shortcuts
-from napari.utils.translations import trans
+
 
 
 class ShortcutsSettings(EventedModel):

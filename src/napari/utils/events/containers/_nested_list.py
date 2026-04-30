@@ -19,7 +19,7 @@ from typing import (
 
 from napari.utils.events.containers._evented_list import EventedList, Index
 from napari.utils.events.event import Event
-from napari.utils.translations import trans
+
 
 logger = logging.getLogger(__name__)
 

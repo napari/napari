@@ -29,7 +29,7 @@ from napari.layers.shapes.shape_types import (
     TriangleArray,
 )
 from napari.utils.misc import argsort
-from napari.utils.translations import trans
+
 from napari.utils.triangulation_backend import TriangulationBackend
 
 try:

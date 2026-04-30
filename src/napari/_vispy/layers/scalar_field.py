@@ -13,7 +13,7 @@ from napari._vispy.utils.gl import fix_data_dtype
 from napari._vispy.visuals.labels import LabelNode
 from napari._vispy.visuals.volume import Volume as VolumeNode
 from napari.layers._scalar_field.scalar_field import ScalarFieldBase
-from napari.utils.translations import trans
+
 
 if TYPE_CHECKING:
     from vispy.scene import Node

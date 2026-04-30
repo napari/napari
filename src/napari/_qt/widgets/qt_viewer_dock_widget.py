@@ -19,7 +19,7 @@ from qtpy.QtWidgets import (
 
 from napari._qt.utils import combine_widgets, qt_signals_blocked
 from napari.settings import get_settings
-from napari.utils.translations import trans
+
 
 if TYPE_CHECKING:
     from magicgui.widgets import Widget

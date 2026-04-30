@@ -30,7 +30,7 @@ from napari.utils.geometry import (
     intersect_line_with_triangles,
     line_in_triangles_3d,
 )
-from napari.utils.translations import trans
+
 
 
 class MeshArrayDict(TypedDict):

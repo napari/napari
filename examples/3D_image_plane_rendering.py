@@ -11,7 +11,7 @@ import numpy as np
 from skimage import data
 
 import napari
-from napari.utils.translations import trans
+
 
 viewer = napari.Viewer(ndisplay=3)
 

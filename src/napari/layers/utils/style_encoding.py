@@ -13,7 +13,7 @@ import numpy as np
 from pydantic import ConfigDict
 
 from napari.utils.events import EventedModel
-from napari.utils.translations import trans
+
 
 IndicesType = Union[range, list[int], np.ndarray]
 

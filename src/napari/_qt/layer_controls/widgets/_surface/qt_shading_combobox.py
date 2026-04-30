@@ -10,7 +10,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
 from napari._qt.utils import qt_signals_blocked
 from napari.layers import Surface
 from napari.layers.surface._surface_constants import SHADING_TRANSLATION
-from napari.utils.translations import trans
+
 
 
 class QtShadingComboBoxControl(QtWidgetControlsBase):

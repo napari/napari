@@ -9,7 +9,7 @@ import pint
 
 from napari.utils.misc import reorder_after_dim_reduction
 from napari.utils.transforms import Affine
-from napari.utils.translations import trans
+
 
 if TYPE_CHECKING:
     from collections.abc import Sequence

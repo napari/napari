@@ -20,7 +20,7 @@ from napari._qt.widgets.qt_progress_bar import (
 )
 from napari.resources import LOADING_GIF_PATH
 from napari.utils.progress import progress
-from napari.utils.translations import trans
+
 
 
 class ActivityToggleItem(QWidget):

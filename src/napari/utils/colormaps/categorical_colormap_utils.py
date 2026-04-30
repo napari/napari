@@ -6,7 +6,7 @@ import numpy as np
 from pydantic import GetCoreSchemaHandler
 from pydantic_core import core_schema
 
-from napari.utils.translations import trans
+
 
 
 @dataclass(eq=False)

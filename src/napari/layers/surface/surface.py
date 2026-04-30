@@ -22,7 +22,7 @@ from napari.utils.colormaps import AVAILABLE_COLORMAPS
 from napari.utils.events import Event
 from napari.utils.events.event_utils import connect_no_arg
 from napari.utils.geometry import find_nearest_triangle_intersection
-from napari.utils.translations import trans
+
 
 if TYPE_CHECKING:
     import pandas as pd

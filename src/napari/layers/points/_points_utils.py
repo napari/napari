@@ -11,7 +11,7 @@ from napari.layers.points._points_constants import (
     Symbol,
 )
 from napari.utils.geometry import project_points_onto_plane
-from napari.utils.translations import trans
+
 
 if TYPE_CHECKING:
     from collections.abc import Sequence

@@ -26,7 +26,7 @@ from napari.types import LayerDataType
 from napari.utils.colormaps import Colormap, ValidColormapArg
 from napari.utils.events import Event
 from napari.utils.events.custom_types import Array
-from napari.utils.translations import trans
+
 
 if TYPE_CHECKING:
     import pandas as pd

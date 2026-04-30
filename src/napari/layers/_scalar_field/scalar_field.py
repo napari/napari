@@ -37,7 +37,7 @@ from napari.utils.events.event_utils import connect_no_arg
 from napari.utils.geometry import clamp_point_to_bounding_box
 from napari.utils.naming import magic_name
 from napari.utils.transforms import Affine
-from napari.utils.translations import trans
+
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence

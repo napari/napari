@@ -31,7 +31,7 @@ from napari.settings._yaml import PydanticYamlMixin
 from napari.utils.compat import StrEnum
 from napari.utils.events import EmitterGroup, EventedModel
 from napari.utils.misc import StringEnum, deep_update
-from napari.utils.translations import trans
+
 
 _logger = logging.getLogger(__name__)
 

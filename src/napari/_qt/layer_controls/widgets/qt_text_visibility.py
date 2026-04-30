@@ -8,7 +8,7 @@ from napari._qt.utils import checked_to_bool, qt_signals_blocked
 from napari.layers.base.base import Layer
 from napari.utils.events import disconnect_events
 from napari.utils.events.event_utils import connect_setattr
-from napari.utils.translations import trans
+
 
 
 class QtTextVisibilityControl(QtWidgetControlsBase):

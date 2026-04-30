@@ -34,7 +34,7 @@ from napari.utils.events.containers._typed import (
 )
 from napari.utils.events.event import EmitterGroup, Event
 from napari.utils.events.types import SupportsEvents
-from napari.utils.translations import trans
+
 
 logger = logging.getLogger(__name__)
 

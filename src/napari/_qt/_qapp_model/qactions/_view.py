@@ -13,7 +13,7 @@ from app_model.types import (
 from napari._app_model.constants import MenuGroup, MenuId
 from napari._qt.qt_main_window import Window
 from napari._qt.qt_viewer import QtViewer
-from napari.utils.translations import trans
+
 
 
 # View actions

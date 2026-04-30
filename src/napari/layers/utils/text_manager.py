@@ -22,7 +22,7 @@ from napari.layers.utils.string_encoding import (
 from napari.layers.utils.style_encoding import _get_style_values
 from napari.utils.events import Event, EventedModel
 from napari.utils.events.custom_types import Array
-from napari.utils.translations import trans
+
 
 if TYPE_CHECKING:
     from collections.abc import Sequence

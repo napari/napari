@@ -13,7 +13,7 @@ from napari.layers.utils.style_encoding import (
     _ManualStyleEncoding,
 )
 from napari.utils.events.custom_types import Array
-from napari.utils.translations import trans
+
 
 """A scalar array that represents one string value."""
 StringValue = Array[str, ()]

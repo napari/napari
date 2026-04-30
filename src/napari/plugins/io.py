@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any
 from napari.layers import Layer
 from napari.plugins import _npe2
 from napari.types import LayerData, PathLike
-from napari.utils.translations import trans
+
 
 logger = getLogger(__name__)
 if TYPE_CHECKING:

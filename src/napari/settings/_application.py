@@ -23,7 +23,7 @@ from napari.utils.events import Event
 from napari.utils.events.custom_types import NotEqual
 from napari.utils.events.evented_model import EventedModel
 from napari.utils.notifications import NotificationSeverity
-from napari.utils.translations import trans
+
 
 # we could use a smaller or greater 'le' for spacing,
 # this is just meant to be a somewhat reasonable upper limit,

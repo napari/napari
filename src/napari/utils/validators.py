@@ -1,7 +1,7 @@
 from collections.abc import Collection, Generator, Iterable
 from itertools import tee
 
-from napari.utils.translations import trans
+
 
 
 def validate_n_seq(n: int, dtype=None):

@@ -65,7 +65,7 @@ from napari.utils.status_messages import (
     generate_layer_status_strings,
 )
 from napari.utils.transforms import Affine, CompositeAffine, TransformChain
-from napari.utils.translations import trans
+
 
 if TYPE_CHECKING:
     import numpy.typing as npt

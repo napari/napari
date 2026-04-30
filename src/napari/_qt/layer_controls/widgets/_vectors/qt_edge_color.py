@@ -10,7 +10,7 @@ from napari._qt.widgets.qt_color_swatch import QColorSwatchEdit
 from napari.layers import Vectors
 from napari.layers.utils._color_manager_constants import ColorMode
 from napari.utils.events.event_utils import connect_setattr
-from napari.utils.translations import trans
+
 
 
 class QtEdgeColorFeatureControl(QtWidgetControlsBase):

@@ -30,7 +30,7 @@ from napari.errors.reader_errors import MultipleReaderError
 from napari.plugins import menu_item_template
 from napari.plugins._npe2 import _when_group_order, get_widget_contribution
 from napari.utils.events import Event
-from napari.utils.translations import trans
+
 from napari.viewer import Viewer, ViewerModel
 
 if TYPE_CHECKING:

@@ -5,7 +5,7 @@ from collections.abc import Sequence
 import numpy as np
 
 from napari.layers._data_protocols import LayerDataProtocol, assert_protocol
-from napari.utils.translations import trans
+
 
 
 # note: this also implements `LayerDataProtocol`, but we don't need to inherit.
