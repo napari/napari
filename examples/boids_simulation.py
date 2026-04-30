@@ -95,17 +95,17 @@ class Boids3D:
         pool=None,
     ):
         assert veryclose_radius <= kindaclose_radius
-        kwargs = dict(
-            pos=self.pos,
-            vel=self.vel,
-            width=self.width,
-            height=self.height,
-            depth=self.depth,
-            min_vel=min_vel,
-            max_vel=max_vel,
-            veryclose_radius=veryclose_radius,
-            kindaclose_radius=kindaclose_radius,
-        )
+        kwargs = {
+            'pos': self.pos,
+            'vel': self.vel,
+            'width': self.width,
+            'height': self.height,
+            'depth': self.depth,
+            'min_vel': min_vel,
+            'max_vel': max_vel,
+            'veryclose_radius': veryclose_radius,
+            'kindaclose_radius': kindaclose_radius,
+        }
         if pool is None:
             self.pos[:], self.vel[:] = self.compute_flock_step_forward(**kwargs)
         else:
@@ -113,7 +113,6 @@ class Boids3D:
                 pool.apply_async(
                     self.compute_flock_step_forward,
                     kwds=(kwargs | {"slice_idx": slice_idx, "slice_tot": slice_tot}),
-                    # kwargs=(kwargs | {"slice_idx": slice_idx, "slice_tot": slice_tot}),
                 )
                 for slice_idx in range(slice_tot)
             ]
@@ -314,14 +313,14 @@ def main(
     num_boids=500, width=600, height=600, depth=800, parallel=False, num_workers=1
 ):
     global viewer, state
-    state = dict(
-        num_boids=num_boids,
-        width=width,
-        height=height,
-        depth=depth,
-        parallel=parallel,
-        num_workers=num_workers,
-    )
+    state = {
+        'num_boids': num_boids,
+        'width': width,
+        'height': height,
+        'depth': depth,
+        'parallel': parallel,
+        'num_workers': num_workers,
+    }
     boids = Boids3D(num_boids, width, height, depth)
 
     title = f"napari+{'Dragon' if 'dragon' in sys.modules else 'multiprocessing'}"
