@@ -64,7 +64,7 @@ jobs:
 
           # Check if PR_MILESTONE_NAME is defined
           if [ -z "$PR_MILESTONE_NAME" ]; then
-            echo "No milestone set on PR. Skipping milestone check."
+            echo "Skipping milestone check. A maintainer or Github action will set on PR merge."
             exit 0
           fi
 
