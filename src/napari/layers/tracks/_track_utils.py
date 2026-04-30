@@ -1,15 +1,12 @@
-from typing import TYPE_CHECKING
-
 import numpy as np
 import numpy.typing as npt
+import pandas as pd
+from scipy.sparse import coo_matrix
+from scipy.spatial import cKDTree
 
 from napari.layers.utils.layer_utils import _FeatureTable
 from napari.utils.events.custom_types import Array
 from napari.utils.translations import trans
-
-if TYPE_CHECKING:
-    import pandas as pd
-    from scipy.spatial import cKDTree
 
 
 class TrackManager:
@@ -79,7 +76,7 @@ class TrackManager:
         self._feature_table = _FeatureTable()
 
         self._data: npt.NDArray
-        self._order: np.ndarray[tuple[int], np.dtype[np.integer]]
+        self._order: list[int]
         self._kdtree: cKDTree
         self._points: npt.NDArray
         self._points_id: npt.NDArray
@@ -90,7 +87,7 @@ class TrackManager:
         self._track_connex: npt.NDArray | None = None
 
         self._graph: dict[int, list[int]] | None = None
-        self._graph_vertices: npt.NDArray | None = None
+        self._graph_vertices = None
         self._graph_connex: npt.NDArray | None = None
 
         # Parameters for hide_completed_tracks functionality
@@ -127,8 +124,6 @@ class TrackManager:
     @data.setter
     def data(self, data: list | np.ndarray) -> None:
         """set the vertex data and build the vispy arrays for display"""
-        from scipy.sparse import coo_matrix
-        from scipy.spatial import cKDTree
 
         # convert data to a numpy array if it is not already one
         data = np.asarray(data)
@@ -168,7 +163,7 @@ class TrackManager:
         self._track_end_times = None
 
     @property
-    def features(self) -> 'pd.DataFrame':
+    def features(self) -> pd.DataFrame:
         """Dataframe-like features table.
 
         It is an implementation detail that this is a `pandas.DataFrame`. In the future,
@@ -188,10 +183,10 @@ class TrackManager:
     @features.setter
     def features(
         self,
-        features: 'dict[str, np.ndarray] | pd.DataFrame',
+        features: dict[str, np.ndarray] | pd.DataFrame,
     ) -> None:
         self._feature_table.set_values(features, num_data=len(self.data))
-        self._feature_table.reorder(self._order)  # type: ignore[arg-type]
+        self._feature_table.reorder(self._order)
         if 'track_id' not in self._feature_table.values:
             self._feature_table.values['track_id'] = self.track_ids
 
@@ -509,3 +504,18 @@ class TrackManager:
             lbl = [f'ID:{i}' for i in self._points_id[lookup]]
 
         return lbl, pos
+    
+    def normalize_track_data(data, column_map):
+        required = ["track_id", "t", "y", "x"]
+        for key in required:
+            if key not in column_map:
+                raise ValueError ("key missing")
+            
+        order = [column_map["track_id"], column_map["t"]]
+
+        if "z" in column_map:
+            order.append(column_map["z"])
+        
+        order.extend([column_map["y"], column_map["x"]])
+
+        return data[:, order]
