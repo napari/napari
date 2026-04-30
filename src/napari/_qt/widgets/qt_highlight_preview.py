@@ -12,9 +12,6 @@ from qtpy.QtWidgets import (
 )
 
 from napari._qt.widgets.qt_color_swatch import QColorSwatchEdit
-from napari.utils.translations import translator
-
-trans = translator.load()
 
 
 class QtStar(QFrame):
