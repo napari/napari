@@ -504,18 +504,18 @@ class TrackManager:
             lbl = [f'ID:{i}' for i in self._points_id[lookup]]
 
         return lbl, pos
-    
+
     def normalize_track_data(data, column_map):
-        required = ["track_id", "t", "y", "x"]
+        required = ['track_id', 't', 'y', 'x']
         for key in required:
             if key not in column_map:
-                raise ValueError ("key missing")
-            
-        order = [column_map["track_id"], column_map["t"]]
+                raise ValueError('key missing')
 
-        if "z" in column_map:
-            order.append(column_map["z"])
-        
-        order.extend([column_map["y"], column_map["x"]])
+        order = [column_map['track_id'], column_map['t']]
+
+        if 'z' in column_map:
+            order.append(column_map['z'])
+
+        order.extend([column_map['y'], column_map['x']])
 
         return data[:, order]

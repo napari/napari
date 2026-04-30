@@ -9,11 +9,13 @@ import numpy as np
 import pandas as pd
 
 from napari.layers.base import Layer
-from napari.layers.tracks._track_utils import TrackManager
+from napari.layers.tracks._track_utils import (
+    TrackManager,
+    normalize_track_data,
+)
 from napari.utils.colormaps import AVAILABLE_COLORMAPS, Colormap
 from napari.utils.events import Event
 from napari.utils.translations import trans
-from napari.layers.tracks._track_utils import normalize_track_data
 
 
 class Tracks(Layer):
@@ -224,7 +226,7 @@ class Tracks(Layer):
         # reset the display before returning
         self._current_displayed_dims = None
 
-        #reorder dataframe columns
+        # reorder dataframe columns
         if column_map is not None:
             data = normalize_track_data(data, column_map)
 
