@@ -14,7 +14,6 @@ from napari._qt.qt_main_window import Window
 from napari._qt.widgets.qt_logger import LogWidget
 
 
-
 def _show_about(window: Window):
     QtAbout.showAbout(window._qt_window)
 

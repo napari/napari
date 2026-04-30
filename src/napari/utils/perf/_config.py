@@ -12,7 +12,6 @@ import wrapt
 from napari.utils.perf._patcher import patch_callables
 from napari.utils.perf._timers import perf_timer
 
-
 if TYPE_CHECKING:
     from collections.abc import Callable
     from types import ModuleType

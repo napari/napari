@@ -12,7 +12,6 @@ from napari.layers import Labels
 from napari.utils.events.event_utils import connect_setattr
 
 
-
 class QtPreserveLabelsCheckBoxControl(QtWidgetControlsBase):
     """
     Class that wraps the connection of events/signals between the layer attribute to

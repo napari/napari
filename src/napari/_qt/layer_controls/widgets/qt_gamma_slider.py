@@ -11,7 +11,6 @@ from napari.layers.base.base import Layer
 from napari.utils.events.event_utils import connect_setattr
 
 
-
 class QtGammaSliderControl(QtWidgetControlsBase):
     """
     Class that wraps the connection of events/signals between the current gamma

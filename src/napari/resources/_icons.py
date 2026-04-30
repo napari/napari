@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING
 
 from napari.utils._platformdirs import user_cache_dir
 
-
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
 
@@ -59,9 +58,7 @@ def get_colorized_svg(
         return xml
 
     if not svg_elem.search(xml):
-        raise ValueError(
-            f'Could not detect svg tag in {path_or_xml!r}'
-        )
+        raise ValueError(f'Could not detect svg tag in {path_or_xml!r}')
     # use regex to find the svg tag and insert css right after
     # (the '\\1' syntax includes the matched tag in the output)
     return svg_elem.sub(f'\\1{svg_style.format(color, opacity)}', xml)

@@ -4,8 +4,6 @@ from collections import UserDict
 from functools import wraps
 from typing import TYPE_CHECKING, Any, NamedTuple
 
-
-
 if TYPE_CHECKING:
     from collections.abc import Callable
 
@@ -105,14 +103,10 @@ def add_deprecated_property(
     """
 
     if hasattr(obj, previous_name):
-        raise RuntimeError(
-            f'{previous_name} property already exists.'
-        )
+        raise RuntimeError(f'{previous_name} property already exists.')
 
     if not hasattr(obj, new_name):
-        raise RuntimeError(
-            f'{new_name} property must exist.'
-        )
+        raise RuntimeError(f'{new_name} property must exist.')
 
     name = f'{obj.__name__}.{previous_name}'
     msg = f'{name} is deprecated since {since_version} and will be removed in {version}. Please use {new_name}'

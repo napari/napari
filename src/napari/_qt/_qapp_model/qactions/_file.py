@@ -20,7 +20,6 @@ from napari._qt.qt_main_window import Window
 from napari._qt.qt_viewer import QtViewer
 
 
-
 # File actions
 def _open_files_with_plugin(qt_viewer: QtViewer):
     qt_viewer._open_files_dialog(choose_plugin=True)

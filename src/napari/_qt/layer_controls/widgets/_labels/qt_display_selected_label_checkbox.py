@@ -12,7 +12,6 @@ from napari.layers import Labels
 from napari.utils.events.event_utils import connect_setattr
 
 
-
 class QtDisplaySelectedLabelCheckBoxControl(QtWidgetControlsBase):
     """
     Class that wraps the connection of events/signals between the layer attribute to
@@ -37,9 +36,7 @@ class QtDisplaySelectedLabelCheckBoxControl(QtWidgetControlsBase):
         super().__init__(parent, layer)
         # Setup widgets
         selected_color_checkbox = QCheckBox()
-        selected_color_checkbox.setToolTip(
-            'Display only selected label'
-        )
+        selected_color_checkbox.setToolTip('Display only selected label')
         selected_color_checkbox.setChecked(self._layer.show_selected_label)
         self._callbacks.append(
             attr_to_settr(
@@ -57,9 +54,7 @@ class QtDisplaySelectedLabelCheckBoxControl(QtWidgetControlsBase):
         )
         self.selected_color_checkbox = selected_color_checkbox
 
-        self.selected_color_checkbox_label = QtWrappedLabel(
-            'show\nselected:'
-        )
+        self.selected_color_checkbox_label = QtWrappedLabel('show\nselected:')
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
         return [

@@ -7,7 +7,6 @@ from pathlib import Path
 from napari.utils.io import execute_python_code
 
 
-
 @dataclass
 class StartupScriptStatusInfo:
     startup_time: float

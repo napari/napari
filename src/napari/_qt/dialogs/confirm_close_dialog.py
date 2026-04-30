@@ -12,7 +12,6 @@ from qtpy.QtWidgets import (
 from napari.settings import get_settings
 
 
-
 class ConfirmCloseDialog(QDialog):
     def __init__(
         self,
@@ -34,17 +33,19 @@ class ConfirmCloseDialog(QDialog):
 
         if close_app:
             self.setWindowTitle('Close Application?')
-            text = f"Do you want to close the application? ('{QKeySequence('Ctrl+Q').toString(
-                    QKeySequence.NativeText
-                )}' to confirm). This will close all Qt Windows in this process{extra_info}"
+            text = f"Do you want to close the application? ('{
+                QKeySequence('Ctrl+Q').toString(QKeySequence.NativeText)
+            }' to confirm). This will close all Qt Windows in this process{
+                extra_info
+            }"
             close_btn.setObjectName('error_icon_btn')
             close_btn.setShortcut(QKeySequence('Ctrl+Q'))
             icon_label.setObjectName('error_icon_element')
         else:
             self.setWindowTitle('Close Window?')
-            text = f"Confirm to close window (or press '{QKeySequence('Ctrl+W').toString(
-                    QKeySequence.NativeText
-                )}'){extra_info}"
+            text = f"Confirm to close window (or press '{
+                QKeySequence('Ctrl+W').toString(QKeySequence.NativeText)
+            }'){extra_info}"
             close_btn.setObjectName('warning_icon_btn')
             close_btn.setShortcut(QKeySequence('Ctrl+W'))
             icon_label.setObjectName('warning_icon_element')

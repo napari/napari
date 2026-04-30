@@ -18,7 +18,6 @@ from napari.settings._plugins import PluginsSettings
 from napari.settings._shortcuts import ShortcutsSettings
 from napari.utils._base import _DEFAULT_CONFIG_PATH
 
-
 _CFG_PATH = os.getenv('NAPARI_CONFIG', _DEFAULT_CONFIG_PATH)
 
 CURRENT_SCHEMA_VERSION = Version(0, 9, 0)

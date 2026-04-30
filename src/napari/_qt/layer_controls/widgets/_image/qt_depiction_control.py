@@ -17,7 +17,6 @@ from napari.layers.image._image_constants import VolumeDepiction
 from napari.utils.action_manager import action_manager
 
 
-
 class PlaneNormalButtons(QWidget):
     """Qt buttons for controlling plane orientation.
 
@@ -129,9 +128,7 @@ class QtDepictionControl(QtWidgetControlsBase):
         self.plane_thickness_slider.valueChanged.connect(
             self.change_plane_thickness
         )
-        self.plane_thickness_label = QtWrappedLabel(
-            'plane thickness:'
-        )
+        self.plane_thickness_label = QtWrappedLabel('plane thickness:')
 
     def change_depiction(self, text: str) -> None:
         self._layer.depiction = text

@@ -14,7 +14,6 @@ from napari.layers import Labels
 from napari.utils.events.event_utils import connect_setattr
 
 
-
 class QtBrushSizeSliderControl(QtWidgetControlsBase):
     """
     Class that wraps the connection of events/signals between the current brush

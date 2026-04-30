@@ -14,7 +14,6 @@ from napari.layers.labels._labels_constants import (
 from napari.utils.events.event_utils import connect_setattr
 
 
-
 class QtLabelRenderControl(QtWidgetControlsBase):
     """
     Class that wraps the connection of events/signals between the layer attribute for
@@ -71,9 +70,7 @@ class QtLabelRenderControl(QtWidgetControlsBase):
             self._layer.rendering == LabelsRendering.ISO_CATEGORICAL
         )
         self.iso_gradient_combobox = iso_gradient_combobox
-        self.iso_gradient_combobox_label = QtWrappedLabel(
-            'gradient\nmode:'
-        )
+        self.iso_gradient_combobox_label = QtWrappedLabel('gradient\nmode:')
 
     def _on_rendering_change(self):
         """Receive layer model rendering change event and update dropdown menu."""

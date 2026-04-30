@@ -102,7 +102,6 @@ from napari.utils.mouse_bindings import MousemapProviderPydantic
 from napari.utils.progress import progress
 from napari.utils.theme import available_themes, is_theme_available
 
-
 if TYPE_CHECKING:
     from npe2.types import SampleDataCreator
 
@@ -144,9 +143,7 @@ def _validate_paths_exist(paths: list[PathLike]) -> None:
         p_str = str(p)
         parsed = urlparse(p_str)
         if not (parsed.scheme and parsed.netloc) and not Path(p_str).exists():
-            raise FileNotFoundError(
-                f'Path {p_str!r} does not exist.'
-            )
+            raise FileNotFoundError(f'Path {p_str!r} does not exist.')
 
 
 # KeymapProvider & MousemapProvider should eventually be moved off the ViewerModel
@@ -940,9 +937,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             desc = action_manager._actions[action_name].description.lower()
             if not shortcuts.get(action_name, []):
                 continue
-            help_li.append(
-                f'use <{shortcuts[action_name][0]}> for {desc}'
-            )
+            help_li.append(f'use <{shortcuts[action_name][0]}> for {desc}')
 
         layer.help = ', '.join(help_li)
 
@@ -1508,8 +1503,8 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             warnings.warn(
                 RuntimeWarning(
                     f"Can't find {plugin} plugin associated with {path_message} files. "
-                    + "This may be because you've switched environments, or have uninstalled the plugin without updating the reader preference. "
-                    + 'You can remove this preference in the preference dialog, or by editing `settings.plugins.extension2reader`.'
+                    "This may be because you've switched environments, or have uninstalled the plugin without updating the reader preference. "
+                    'You can remove this preference in the preference dialog, or by editing `settings.plugins.extension2reader`.'
                 )
             )
             plugin = None
@@ -1732,9 +1727,7 @@ def _normalize_layer_data(data: LayerData) -> FullLayerData:
         not a ``dict``, or the third item is not a valid layer_type ``str``
     """
     if not isinstance(data, tuple) and 0 < len(data) < 4:
-        raise ValueError(
-            'LayerData must be a 1-, 2-, or 3-tuple'
-        )
+        raise ValueError('LayerData must be a 1-, 2-, or 3-tuple')
 
     _data = list(data)
     if len(_data) > 1:
@@ -1858,9 +1851,7 @@ def prune_kwargs(kwargs: Mapping[str, Any], layer_type: str) -> dict[str, Any]:
     """
     add_method = getattr(ViewerModel, 'add_' + layer_type, None)
     if not add_method or layer_type == 'layer':
-        raise ValueError(
-            f'Invalid layer_type: {layer_type}'
-        )
+        raise ValueError(f'Invalid layer_type: {layer_type}')
 
     # get valid params for the corresponding add_<layer_type> method
     valid = valid_add_kwargs()[layer_type]

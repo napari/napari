@@ -10,7 +10,6 @@ from napari.utils.events import disconnect_events
 from napari.utils.events.event_utils import connect_setattr
 
 
-
 class QtTextVisibilityControl(QtWidgetControlsBase):
     """
     Class that wraps the connection of events/signals between the text visibility

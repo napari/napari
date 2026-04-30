@@ -9,7 +9,6 @@ from napari.layers import Image, Points, Vectors
 from napari.utils.events.event_utils import connect_setattr
 
 
-
 class QtProjectionModeControl(QtWidgetControlsBase):
     """
     Class that wraps the connection of events/signals between the layer projection
@@ -51,9 +50,7 @@ class QtProjectionModeControl(QtWidgetControlsBase):
 
         self._on_projection_mode_change()
 
-        self.projection_combobox_label = QtWrappedLabel(
-            'projection mode:'
-        )
+        self.projection_combobox_label = QtWrappedLabel('projection mode:')
 
     def _on_projection_mode_change(self) -> None:
         with qt_signals_blocked(self.projection_combobox):

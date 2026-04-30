@@ -5,7 +5,6 @@ from napari.layers.shapes._shapes_utils import find_corners, rectangle_to_box
 from napari.types import ArrayLike
 
 
-
 class Rectangle(Shape):
     """Class for a single rectangle
 

@@ -12,7 +12,6 @@ from superqt.utils import _qthreading
 
 from napari.utils.progress import progress
 from napari.utils.task_status import Status
-
 from napari.viewer import current_viewer
 
 if TYPE_CHECKING:

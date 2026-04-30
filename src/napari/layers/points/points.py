@@ -60,7 +60,6 @@ from napari.utils.events.custom_types import Array
 from napari.utils.geometry import project_points_onto_plane, rotate_points
 from napari.utils.transforms import Affine
 
-
 if TYPE_CHECKING:
     from collections.abc import (
         Callable,
@@ -948,9 +947,7 @@ class Points(Layer):
         if isinstance(size, list | tuple | np.ndarray):
             size = size[-1]
         if not isinstance(size, numbers.Number):
-            raise TypeError(
-                'currrent size must be a number'
-            )
+            raise TypeError('currrent size must be a number')
         if size < 0:
             raise ValueError(
                 'current_size value must be positive.',
@@ -1028,9 +1025,7 @@ class Points(Layer):
 
         # border width cannot be negative
         if np.any(border_width < 0):
-            raise ValueError(
-                'All border_width must be > 0'
-            )
+            raise ValueError('All border_width must be > 0')
         # if relative border width is enabled, border_width must be between 0 and 1
         if self.border_width_is_relative and np.any(border_width > 1):
             raise ValueError(

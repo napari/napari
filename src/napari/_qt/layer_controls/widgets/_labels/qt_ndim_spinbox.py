@@ -12,7 +12,6 @@ from napari._qt.utils import qt_signals_blocked
 from napari.layers import Labels
 
 
-
 class QtNdimSpinBoxControl(QtWidgetControlsBase):
     """
     Class that wraps the connection of events/signals between the layer number of

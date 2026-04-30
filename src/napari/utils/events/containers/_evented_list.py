@@ -35,7 +35,6 @@ from napari.utils.events.containers._typed import (
 from napari.utils.events.event import EmitterGroup, Event
 from napari.utils.events.types import SupportsEvents
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -121,9 +120,7 @@ class EventedList(TypedMutableSequence[_T]):
         old = self._list[key]  # https://github.com/napari/napari/pull/2120
         if isinstance(key, slice):
             if not isinstance(value, Iterable):
-                raise TypeError(
-                    'Can only assign an iterable to slice'
-                )
+                raise TypeError('Can only assign an iterable to slice')
             value = list(
                 value
             )  # make sure we don't empty generators and reuse them
@@ -161,9 +158,7 @@ class EventedList(TypedMutableSequence[_T]):
             return [(self, self.index(key))]
 
         valid = {int, slice}.union(set(self._lookup))
-        raise TypeError(
-            f'Deletion index must be {valid!r}, got {type(key)}'
-        )
+        raise TypeError(f'Deletion index must be {valid!r}, got {type(key)}')
 
     def __delitem__(self, key: Index) -> None:
         # delete from the end
@@ -303,9 +298,7 @@ class EventedList(TypedMutableSequence[_T]):
             The destination for sources.
         """
         if isinstance(dest_index, slice):
-            raise TypeError(
-                'Destination index may not be a slice'
-            )
+            raise TypeError('Destination index may not be a slice')
 
         to_move: list[int] = []
         for idx in sources:

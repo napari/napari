@@ -9,7 +9,6 @@ from napari.layers.utils.layer_utils import (
 )
 from napari.layers.vectors.vectors import Vectors
 
-
 if TYPE_CHECKING:
     from collections.abc import Callable
 

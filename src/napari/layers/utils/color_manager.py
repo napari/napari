@@ -32,7 +32,6 @@ from napari.utils.events import EventedModel
 from napari.utils.events.custom_types import Array
 
 
-
 @dataclass
 class ColorProperties:
     """The property values that are used for setting colors in ColorMode.COLORMAP

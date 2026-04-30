@@ -68,8 +68,6 @@ from typing import (
 from vispy.util.logs import _handle_exception
 
 
-
-
 class Event:
     """Class describing events that occur and can be reacted to with callbacks.
     Each event instance contains information about a single event that has
@@ -475,13 +473,9 @@ class EventEmitter:
         elif isinstance(ref, str):
             _ref = ref
         else:
-            raise TypeError(
-                'ref must be a bool or string'
-            )
+            raise TypeError('ref must be a bool or string')
         if _ref is not None and _ref in self._callback_refs:
-            raise ValueError(
-                f'ref "{_ref}" is not unique'
-            )
+            raise ValueError(f'ref "{_ref}" is not unique')
 
         # positions
         if position not in ('first', 'last'):
@@ -723,9 +717,7 @@ class EventEmitter:
             self._emitting = False
             ps = event._pop_source()
             if ps is not self.source:
-                raise RuntimeError(
-                    'Event source-stack mismatch.'
-                )
+                raise RuntimeError('Event source-stack mismatch.')
 
         return event
 

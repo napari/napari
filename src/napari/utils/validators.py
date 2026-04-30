@@ -2,8 +2,6 @@ from collections.abc import Collection, Generator, Iterable
 from itertools import tee
 
 
-
-
 def validate_n_seq(n: int, dtype=None):
     """Creates a function to validate a sequence of len == N and type == dtype.
 
@@ -56,9 +54,7 @@ def validate_n_seq(n: int, dtype=None):
                 f"object '{obj}' is not an indexable collection (list, tuple, or np.array), of length {n}"
             )
         if len(obj) != n:
-            raise ValueError(
-                f'object must have length {n}, got {len(obj)}'
-            )
+            raise ValueError(f'object must have length {n}, got {len(obj)}')
         if dtype is not None:
             for item in obj:
                 if not isinstance(item, dtype):

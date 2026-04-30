@@ -12,7 +12,6 @@ from napari.layers.base.base import Layer
 from napari.utils.events.event_utils import connect_setattr
 
 
-
 class QtOutSliceCheckBoxControl(QtWidgetControlsBase):
     """
     Class that wraps the connection of events/signals between the layer out of slice
@@ -51,9 +50,7 @@ class QtOutSliceCheckBoxControl(QtWidgetControlsBase):
             convert_fun=checked_to_bool,
         )
 
-        self.out_of_slice_checkbox_label = QtWrappedLabel(
-            'out of slice:'
-        )
+        self.out_of_slice_checkbox_label = QtWrappedLabel('out of slice:')
 
     def _on_out_of_slice_display_change(self) -> None:
         """Receive layer model out_of_slice_display change event and update checkbox."""

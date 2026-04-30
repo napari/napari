@@ -16,7 +16,6 @@ from napari.utils._dtype import normalize_dtype
 from napari.utils.events.event_utils import connect_no_arg, connect_setattr
 
 
-
 def range_to_decimals(range_, dtype):
     """Convert a range to decimals of precision.
 
@@ -109,9 +108,7 @@ class QContrastLimitsPopup(QRangeSliderPopup):
         if np.issubdtype(normalize_dtype(layer.dtype), np.integer):
             range_btn = QPushButton('full range')
             range_btn.setObjectName('full_clim_range_button')
-            range_btn.setToolTip(
-                'Set contrast range to full bit-depth'
-            )
+            range_btn.setToolTip('Set contrast range to full bit-depth')
             range_btn.setFixedWidth(75)
             range_btn.clicked.connect(layer.reset_contrast_limits_range)
             self._layout.addWidget(
@@ -217,9 +214,7 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
             'contrast_limits_range',
         )
 
-        self.contrast_limits_slider_label = QtWrappedLabel(
-            'contrast limits:'
-        )
+        self.contrast_limits_slider_label = QtWrappedLabel('contrast limits:')
 
     def show_clim_popup(self):
         self.clim_popup = QContrastLimitsPopup(self._layer, self.parent())

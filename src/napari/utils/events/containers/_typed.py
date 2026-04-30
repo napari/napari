@@ -10,8 +10,6 @@ from typing import (
 # change on import from typing when drop python 3.10 support
 from typing_extensions import Self
 
-
-
 logger = logging.getLogger(__name__)
 
 
@@ -82,9 +80,7 @@ class TypedMutableSequence(MutableSequence[_T]):
     def __setitem__(self, key, value):
         if isinstance(key, slice):
             if not isinstance(value, Iterable):
-                raise TypeError(
-                    'Can only assign an iterable to slice'
-                )
+                raise TypeError('Can only assign an iterable to slice')
             self._list[key] = [self._type_check(v) for v in value]
         else:
             self._list[key] = self._type_check(value)
@@ -221,9 +217,7 @@ class TypedMutableSequence(MutableSequence[_T]):
             if v is value or v == value:
                 return i
 
-        raise ValueError(
-            f'{value!r} is not in list'
-        )
+        raise ValueError(f'{value!r} is not in list')
 
     def _iter_indices(
         self, start: int = 0, stop: int | None = None

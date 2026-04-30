@@ -17,7 +17,6 @@ from napari.layers import (
     Vectors,
 )
 
-
 layer_to_controls = {
     Labels: QtLabelsControls,
     Image: QtImageControls,

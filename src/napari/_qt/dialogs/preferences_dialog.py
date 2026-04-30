@@ -19,7 +19,6 @@ from qtpy.QtWidgets import (
 from napari._pydantic_util import get_inner_type
 from napari.utils.compat import StrEnum
 
-
 if TYPE_CHECKING:
     from qtpy.QtGui import QCloseEvent, QKeyEvent, QResizeEvent
 

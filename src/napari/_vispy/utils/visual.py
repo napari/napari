@@ -57,7 +57,6 @@ from napari.layers import (
     Vectors,
 )
 
-
 if TYPE_CHECKING:
     from vispy.scene.widgets.viewbox import ViewBox
 

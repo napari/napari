@@ -8,7 +8,6 @@ from napari.layers import Layer
 from napari.plugins import _npe2
 from napari.types import LayerData, PathLike
 
-
 logger = getLogger(__name__)
 if TYPE_CHECKING:
     from collections.abc import Sequence

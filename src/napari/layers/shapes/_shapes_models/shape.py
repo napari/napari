@@ -29,7 +29,6 @@ from napari.layers.shapes.shape_types import (
     TriangleArray,
 )
 from napari.utils.misc import argsort
-
 from napari.utils.triangulation_backend import TriangulationBackend
 
 try:
@@ -772,9 +771,7 @@ class Shape(ABC):
         elif axis == 1:
             transform = np.array([[-1, 0], [0, 1]])
         else:
-            raise ValueError(
-                'Axis not recognized, must be one of "{{0, 1}}"'
-            )
+            raise ValueError('Axis not recognized, must be one of "{{0, 1}}"')
         if center is None:
             self.transform(transform)
         else:

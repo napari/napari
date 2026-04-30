@@ -14,7 +14,6 @@ from pydantic import ConfigDict
 
 from napari.utils.events import EventedModel
 
-
 IndicesType = Union[range, list[int], np.ndarray]
 
 """The variable type of a single style value."""

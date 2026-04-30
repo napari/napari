@@ -10,8 +10,6 @@ from typing import (
     runtime_checkable,
 )
 
-
-
 _OBJ_NAMES = set(dir(Protocol))
 _OBJ_NAMES.update({'__annotations__', '__dict__', '__weakref__'})
 
@@ -34,7 +32,7 @@ def _raise_protocol_error(obj: Any, protocol: type) -> None:
     annotations = getattr(protocol, '__annotations__', {})
     needed = set(dir(protocol)).union(annotations) - _OBJ_NAMES
     missing = needed - set(dir(obj))
-    message = f'Object of type {repr(type(obj).__name__)} does not implement {repr(protocol.__name__)} Protocol.\nMissing methods: {repr(missing)}'
+    message = f'Object of type {type(obj).__name__!r} does not implement {protocol.__name__!r} Protocol.\nMissing methods: {missing!r}'
     raise TypeError(message)
 
 

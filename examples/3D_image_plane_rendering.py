@@ -12,7 +12,6 @@ from skimage import data
 
 import napari
 
-
 viewer = napari.Viewer(ndisplay=3)
 
 # add a 3D image

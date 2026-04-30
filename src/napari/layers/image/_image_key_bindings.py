@@ -15,7 +15,6 @@ from napari.layers.utils.layer_utils import (
 from napari.utils.action_manager import action_manager
 from napari.utils.events import Event
 
-
 if TYPE_CHECKING:
     from collections.abc import Callable, Generator
 

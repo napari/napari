@@ -10,8 +10,6 @@ from app_model.types import SubmenuItem
 from npe2 import io_utils, plugin_manager as pm
 from npe2.manifest import contributions
 
-
-
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
 

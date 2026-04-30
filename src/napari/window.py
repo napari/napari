@@ -9,7 +9,6 @@ to server as a graphical user interface for napari.
 __all__ = ['Window']
 
 
-
 try:
     from napari._qt import Window
 

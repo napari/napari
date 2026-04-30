@@ -6,7 +6,6 @@ import numpy.typing as npt
 from napari.layers.utils.layer_utils import _FeatureTable
 from napari.utils.events.custom_types import Array
 
-
 if TYPE_CHECKING:
     import pandas as pd
     from scipy.spatial import cKDTree
@@ -257,26 +256,18 @@ class TrackManager:
         """validate the coordinate data"""
 
         if data.ndim != 2:
-            raise ValueError(
-                'track vertices should be a NxD array'
-            )
+            raise ValueError('track vertices should be a NxD array')
 
         if data.shape[1] < 4 or data.shape[1] > 5:
-            raise ValueError(
-                'track vertices should be 4 or 5-dimensional'
-            )
+            raise ValueError('track vertices should be 4 or 5-dimensional')
 
         # check that all IDs are integers
         ids = data[:, 0]
         if not np.array_equal(np.floor(ids), ids):
-            raise ValueError(
-                'track id must be an integer'
-            )
+            raise ValueError('track id must be an integer')
 
         if not all(t >= 0 for t in data[:, 1]):
-            raise ValueError(
-                'track timestamps must be greater than zero'
-            )
+            raise ValueError('track timestamps must be greater than zero')
 
         return data
 
@@ -301,9 +292,7 @@ class TrackManager:
             nodes = [node_idx, *parents_idx]
             for node in nodes:
                 if node not in unique_track_ids:
-                    raise ValueError(
-                        f'graph node {node_idx} not found'
-                    )
+                    raise ValueError(f'graph node {node_idx} not found')
 
         return new_graph
 
@@ -365,9 +354,7 @@ class TrackManager:
         """return the properties of tracks by vertex"""
 
         if color_by not in self.properties:
-            raise ValueError(
-                f'Property {color_by} not found'
-            )
+            raise ValueError(f'Property {color_by} not found')
 
         return self.properties[color_by]
 

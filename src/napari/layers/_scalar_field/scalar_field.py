@@ -38,7 +38,6 @@ from napari.utils.geometry import clamp_point_to_bounding_box
 from napari.utils.naming import magic_name
 from napari.utils.transforms import Affine
 
-
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
@@ -238,9 +237,7 @@ class ScalarFieldBase(Layer, ABC):
             data = list(data)
 
         if getattr(data, 'ndim', 2) < 2:
-            raise ValueError(
-                'Image data must have at least 2 dimensions.'
-            )
+            raise ValueError('Image data must have at least 2 dimensions.')
 
         # Determine if data is a multiscale
         self._data_raw = data

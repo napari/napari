@@ -10,8 +10,6 @@ from collections.abc import Callable
 from importlib import import_module
 from typing import Union
 
-
-
 # The parent of a callable is a module or a class, class is of type "type".
 CallableParent = Union[types.ModuleType, type]
 
@@ -42,9 +40,7 @@ def _patch_attribute(
     # We expect attribute_str is <function> or <class>.<method>. We could
     # allow nested classes and functions if we wanted to extend this some.
     if attribute_str.count('.') > 1:
-        raise PatchError(
-            f'Nested attribute not found: {attribute_str}'
-        )
+        raise PatchError(f'Nested attribute not found: {attribute_str}')
 
     if '.' in attribute_str:
         # Assume attribute_str is <class>.<method>
@@ -118,9 +114,7 @@ def _import_module(
         except ModuleNotFoundError as e:
             if module is None:
                 # The very first top-level module import failed!
-                raise PatchError(
-                    f'Module not found: {module_path}'
-                ) from e
+                raise PatchError(f'Module not found: {module_path}') from e
 
             # We successfully imported part of the target_str but then
             # we got a failure. Usually this is because we tried

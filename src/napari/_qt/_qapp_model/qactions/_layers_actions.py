@@ -2,7 +2,6 @@ from app_model.types import Action, SubmenuItem
 
 from napari._app_model.constants import MenuGroup, MenuId
 
-
 LAYERS_SUBMENUS = [
     (
         MenuId.MENUBAR_LAYERS,

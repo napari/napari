@@ -3,8 +3,6 @@ from qtpy.QtGui import QCursor, QGuiApplication
 from qtpy.QtWidgets import QDialog, QFrame, QVBoxLayout
 
 
-
-
 class QtPopup(QDialog):
     """A generic popup window.
 
@@ -119,9 +117,7 @@ class QtPopup(QDialog):
             assert len(position) == 4, '`position` argument must have length 4'
             left, top, width, height = position
         else:
-            raise TypeError(
-                f'Wrong type of position {position}'
-            )
+            raise TypeError(f'Wrong type of position {position}')
 
         # necessary for transparent round corners
         self.resize(self.sizeHint())

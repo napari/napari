@@ -16,7 +16,6 @@ from napari.layers.utils.layer_utils import (
 )
 from napari.utils.notifications import show_info
 
-
 if TYPE_CHECKING:
     from collections.abc import Callable, Generator
 
@@ -164,9 +163,7 @@ def paste_shape(layer: Shapes) -> None:
         layer._paste_data()
 
 
-@register_shapes_action(
-    'Select/Deselect all shapes in the current view slice'
-)
+@register_shapes_action('Select/Deselect all shapes in the current view slice')
 def select_shapes_in_slice(layer: Shapes) -> None:
     """Select/Deselect all shapes in the current view slice."""
     new_selected = set(np.nonzero(layer._data_view._displayed)[0])
@@ -179,9 +176,7 @@ def select_shapes_in_slice(layer: Shapes) -> None:
         # any other selection.
         layer.selected_data = new_selected
         if new_selected:
-            show_info(
-                f'Selected {len(new_selected)} shapes in this slice.'
-            )
+            show_info(f'Selected {len(new_selected)} shapes in this slice.')
     layer._set_highlight()
 
 

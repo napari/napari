@@ -1,7 +1,6 @@
 from napari.utils.events.event import WarningEmitter
 
 
-
 def deprecation_warning_event(
     prefix: str,
     previous_name: str,

@@ -6,7 +6,6 @@ from napari._app_model.constants import MenuGroup, MenuId
 from napari.components import ViewerModel
 from napari.settings import get_settings
 
-
 VIEW_SUBMENUS = [
     (
         MenuId.MENUBAR_VIEW,

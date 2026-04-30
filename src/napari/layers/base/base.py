@@ -66,7 +66,6 @@ from napari.utils.status_messages import (
 )
 from napari.utils.transforms import Affine, CompositeAffine, TransformChain
 
-
 if TYPE_CHECKING:
     import numpy.typing as npt
     import pint
@@ -559,7 +558,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
         if scale is not None and not np.all(scale):
             raise ValueError(
-                f"Layer {repr(name)} is invalid because it has scale values of 0. The layer's scale is currently {repr(scale)}"
+                f"Layer {name!r} is invalid because it has scale values of 0. The layer's scale is currently {scale!r}"
             )
 
         # Needs to be imported here to avoid circular import in _source
@@ -743,9 +742,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             return mode
 
         if mode not in self._modeclass:
-            raise ValueError(
-                f'Mode not recognized: {mode}'
-            )
+            raise ValueError(f'Mode not recognized: {mode}')
 
         for callback_list, mode_dict in [
             (self.mouse_drag_callbacks, self._drag_modes),

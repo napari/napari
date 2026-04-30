@@ -3,8 +3,6 @@ from https://github.com/cleterrier/ChrisLUTs. To make it compatible with napari'
 colormap classes, all the values in the colormap are normalized (divide by 255).
 """
 
-
-
 I_Bordeaux = [[1, 1, 1], [204 / 255, 0, 51 / 255]]
 I_Blue = [[1, 1, 1], [0, 51 / 255, 204 / 255]]
 I_Forest = [[1, 1, 1], [0, 153 / 255, 0]]

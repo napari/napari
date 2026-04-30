@@ -7,7 +7,6 @@ from napari.settings._napari_settings import (
     NapariSettings,
 )
 
-
 __all__ = ['CURRENT_SCHEMA_VERSION', 'NapariSettings', 'get_settings']
 
 

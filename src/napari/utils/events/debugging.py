@@ -9,13 +9,10 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from napari.utils.misc import ROOT_DIR
 
-
 try:
     from rich import print  # noqa: A004
 except ModuleNotFoundError:
-    print(
-        'TIP: run `pip install rich` for much nicer event debug printout.'
-    )
+    print('TIP: run `pip install rich` for much nicer event debug printout.')
 
 if TYPE_CHECKING:
     from napari.utils.events.event import Event

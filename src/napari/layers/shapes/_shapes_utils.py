@@ -24,7 +24,6 @@ from napari.layers.shapes.shape_types import (
     TriangleArray,
 )
 
-
 if TYPE_CHECKING:
     import numpy.typing as npt
 

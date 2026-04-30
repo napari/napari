@@ -10,7 +10,6 @@ from napari.layers import Tracks
 from napari.utils.events.event_utils import connect_setattr
 
 
-
 class QtColorPropertiesComboBoxControl(QtWidgetControlsBase):
     """
     Class that wraps the connection of events/signals between the layer color properties

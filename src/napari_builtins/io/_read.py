@@ -16,7 +16,6 @@ from dask import delayed
 from napari.utils.io import execute_python_code
 from napari.utils.misc import abspath_or_url
 
-
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
@@ -147,7 +146,7 @@ def read_zarr_dataset(path: str):
         store = zarr.open(path, mode='r')
     except Exception as e:
         raise ValueError(
-            f'Failed to open zarr store at {path}. Error: {str(e)}'
+            f'Failed to open zarr store at {path}. Error: {e!s}'
         ) from e
 
     # Arrays can be opened directly, local and remote
@@ -157,9 +156,7 @@ def read_zarr_dataset(path: str):
 
     # if we're here, it means the path wasn't a valid array, so we check if it's a valid group
     if not isinstance(store, zarr.Group):
-        raise TypeError(
-            f'Unexpected zarr type: {type(store).__name__}'
-        )
+        raise TypeError(f'Unexpected zarr type: {type(store).__name__}')
 
     # Remote zarr Groups cannot be traversed over HTTP
     if _is_url(path):
@@ -177,7 +174,7 @@ def read_zarr_dataset(path: str):
             # if there are multiple groups, inform the user
             other_groups = group_keys[1:]
             show_info(
-                f'Multiple zarr Groups found in {path}. Opening group "{group_keys[0]}". Other groups: {', '.join(other_groups)}'
+                f'Multiple zarr Groups found in {path}. Opening group "{group_keys[0]}". Other groups: {", ".join(other_groups)}'
             )
     else:
         # the store consists of a single group, so open it
@@ -185,9 +182,7 @@ def read_zarr_dataset(path: str):
 
     array_keys = sorted(group.array_keys())
     if not array_keys:
-        raise ValueError(
-            f'No arrays found in zarr group: {path}'
-        )
+        raise ValueError(f'No arrays found in zarr group: {path}')
 
     # Build list of arrays from arrays in the group
     image = [da.from_zarr(group[k]) for k in array_keys]
@@ -375,9 +370,7 @@ def _shapes_csv_to_layerdata(
     transitions = list((np.diff(inds)).nonzero()[0] + 1)
     shape_boundaries = [0, *transitions] + [len(table)]
     if n_shapes != len(shape_boundaries) - 1:
-        raise ValueError(
-            'Expected number of shapes not found'
-        )
+        raise ValueError('Expected number of shapes not found')
 
     data = []
     shape_type = []

@@ -13,7 +13,6 @@ from qtpy.QtWidgets import QApplication, QWidget
 from napari.utils import perf
 
 
-
 class QApplicationWithTracing(QApplication):
     """Extend QApplication to trace Qt Events.
 

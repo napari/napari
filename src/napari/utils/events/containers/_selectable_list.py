@@ -5,7 +5,6 @@ from napari.utils.events.containers._evented_list import EventedList
 from napari.utils.events.containers._nested_list import NestableEventedList
 from napari.utils.events.containers._selection import Selectable
 
-
 _T = TypeVar('_T')
 
 

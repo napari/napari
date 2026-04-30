@@ -20,7 +20,6 @@ from napari.utils.colormaps.colormap_utils import (
     _napari_cmap_to_vispy,
 )
 
-
 if TYPE_CHECKING:
     from vispy.scene import Node
 

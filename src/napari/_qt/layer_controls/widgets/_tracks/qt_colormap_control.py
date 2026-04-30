@@ -9,7 +9,6 @@ from napari.layers import Tracks
 from napari.utils.colormaps import AVAILABLE_COLORMAPS
 
 
-
 class QtColormapComboBoxControl(QtWidgetControlsBase):
     """
     Class that wraps the connection of events/signals between the layer colormaps

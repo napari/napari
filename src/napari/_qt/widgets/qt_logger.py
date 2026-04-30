@@ -16,7 +16,6 @@ from napari._qt.dialogs.qt_about import QtCopyToClipboardButton
 from napari.utils._logging import LOG_STREAM, get_log_level_value
 
 
-
 class LogWidget(QWidget):
     """
     Widget for inspecting and filtering logging output.

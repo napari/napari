@@ -6,7 +6,6 @@ from napari.settings import get_settings
 from napari.utils.theme import get_system_theme, get_theme
 
 
-
 class QtFontSizeWidget(QWidget):
     """
     Widget to change `font_size` and enable to reset is value to the current

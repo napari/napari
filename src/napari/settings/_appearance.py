@@ -7,7 +7,6 @@ from napari.utils.events.evented_model import ComparisonDelayer, EventedModel
 from napari.utils.theme import available_themes, get_theme
 
 
-
 class HighlightSettings(EventedModel):
     highlight_thickness: int = Field(
         1,

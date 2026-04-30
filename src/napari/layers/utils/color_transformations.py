@@ -12,7 +12,6 @@ from napari.utils.colormaps.colormap_utils import ColorType
 from napari.utils.colormaps.standardize_color import transform_color
 
 
-
 def transform_color_with_defaults(
     num_entries: int, colors: ColorType, elem_name: str, default: str
 ) -> np.ndarray:

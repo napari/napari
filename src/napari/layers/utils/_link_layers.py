@@ -19,7 +19,6 @@ from collections import defaultdict
 
 from napari.utils.events.event import WarningEmitter
 
-
 #: Record of already linked layers... to avoid duplicating callbacks
 #  in the form of {(id(layer1), id(layer2), attribute_name) -> callback}
 LinkKey = tuple['ReferenceType[Layer]', 'ReferenceType[Layer]', str]
@@ -164,9 +163,7 @@ def unlink_layers(
         between the provided layers will be unlinked.
     """
     if not layers:
-        raise ValueError(
-            'Must provide at least one layer to unlink'
-        )
+        raise ValueError('Must provide at least one layer to unlink')
     layer_refs = [ref(layer) for layer in layers]
     if len(layer_refs) == 1:
         # If a single layer was provided, find all keys that include that layer

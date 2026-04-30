@@ -12,8 +12,6 @@ import logging
 import os
 from pathlib import Path
 
-
-
 LOGGER = logging.getLogger('napari.monitor')
 
 # If False monitor is disabled even if we meet all other requirements.

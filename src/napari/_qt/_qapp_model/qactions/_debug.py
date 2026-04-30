@@ -13,7 +13,6 @@ from napari._qt.qt_viewer import QtViewer
 from napari.utils import perf
 from napari.utils.history import get_save_history, update_save_history
 
-
 # Debug submenu
 DEBUG_SUBMENUS = [
     (

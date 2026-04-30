@@ -7,7 +7,6 @@ from napari.utils.key_bindings import KeyBinding, coerce_keybinding
 from napari.utils.shortcuts import default_shortcuts
 
 
-
 class ShortcutsSettings(EventedModel):
     shortcuts: dict[str, list[KeyBinding]] = Field(
         default_shortcuts,

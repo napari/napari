@@ -19,7 +19,6 @@ from napari.resources._icons import (
 from napari.utils.events import EventedModel
 from napari.utils.events.containers._evented_dict import EventedDict
 
-
 try:
     from qtpy import QT_VERSION
 
@@ -92,7 +91,9 @@ class Theme(EventedModel):
     def _ensure_syntax_style(cls, value: str) -> str:
         from pygments.styles import STYLE_MAP
 
-        assert value in STYLE_MAP, f'Incorrect `syntax_style` value: {value} provided. Please use one of the following: {f' {", ".join(STYLE_MAP)}'}'
+        assert value in STYLE_MAP, (
+            f'Incorrect `syntax_style` value: {value} provided. Please use one of the following: {f" {", ".join(STYLE_MAP)}"}'
+        )
         return value
 
     @field_validator('font_size', mode='before')

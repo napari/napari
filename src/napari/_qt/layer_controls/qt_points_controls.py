@@ -17,7 +17,6 @@ from napari.layers.points._points_constants import Mode
 from napari.utils.action_manager import action_manager
 from napari.utils.events import disconnect_events
 
-
 if TYPE_CHECKING:
     import napari.layers
 

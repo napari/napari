@@ -19,7 +19,6 @@ from napari.utils.events.containers import SelectableEventedList
 from napari.utils.naming import inc_name_count
 from napari.utils.transforms._units import get_units_from_name
 
-
 if TYPE_CHECKING:
     from npe2.manifest.io import WriterContribution
     from typing_extensions import Self
@@ -330,9 +329,7 @@ class LayerList(SelectableEventedList[Layer]):
             # warning
             warnings.filterwarnings(
                 'ignore',
-                message=str(
-                    'All-NaN axis encountered'
-                ),
+                message='All-NaN axis encountered',
             )
             min_v = np.nanmin(
                 list(itertools.zip_longest(*mins_list, fillvalue=np.nan)),

@@ -4,7 +4,6 @@ from napari.layers.shapes._shapes_models.shape import Shape
 from napari.layers.shapes._shapes_utils import create_box
 
 
-
 class Line(Shape):
     """Class for a single line segment
 

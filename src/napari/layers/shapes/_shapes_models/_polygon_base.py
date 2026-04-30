@@ -9,7 +9,6 @@ from napari.layers.shapes._shapes_models.shape import (
 )
 
 
-
 class PolygonBase(Shape):
     """Class for a polygon or path.
 

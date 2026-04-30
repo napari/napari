@@ -12,7 +12,6 @@ from napari.layers import Shapes
 from napari.utils.events.event_utils import connect_setattr
 
 
-
 class QtEdgeColorControl(QtWidgetControlsBase):
     """
     Class that wraps the connection of events/signals between the current edge

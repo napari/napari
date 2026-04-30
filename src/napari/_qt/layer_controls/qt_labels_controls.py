@@ -16,7 +16,6 @@ from napari._qt.utils import set_widgets_enabled_with_opacity
 from napari._qt.widgets.qt_mode_buttons import QtModePushButton
 from napari.layers.labels._labels_constants import Mode
 
-
 if TYPE_CHECKING:
     import napari.layers
 

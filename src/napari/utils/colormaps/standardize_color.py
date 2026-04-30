@@ -29,8 +29,6 @@ import numpy as np
 from vispy.color import ColorArray, get_color_dict, get_color_names
 from vispy.color.color_array import _string_to_rgb
 
-
-
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
@@ -92,9 +90,7 @@ def _handle_str(color: str) -> np.ndarray:
 
     """
     if len(color) == 0:
-        warnings.warn(
-            'Empty string detected. Returning black instead.'
-        )
+        warnings.warn('Empty string detected. Returning black instead.')
         return np.zeros((1, 4), dtype=np.float32)
 
     colorarray = np.atleast_2d(_string_to_rgb(color)).astype(np.float32)
@@ -232,9 +228,7 @@ def _handle_array(colors: np.ndarray) -> np.ndarray:
     if kind in ['f', 'i', 'u']:
         return _convert_array_to_correct_format(colors)
 
-    raise ValueError(
-        f'Data type of array ({colors.dtype}) not supported.'
-    )
+    raise ValueError(f'Data type of array ({colors.dtype}) not supported.')
 
 
 def _convert_array_to_correct_format(colors: np.ndarray) -> np.ndarray:
@@ -262,9 +256,7 @@ def _convert_array_to_correct_format(colors: np.ndarray) -> np.ndarray:
         )
 
     if colors.min() < 0:
-        raise ValueError(
-            'Colors input had negative values.'
-        )
+        raise ValueError('Colors input had negative values.')
 
     if colors.max() > 1:
         warnings.warn(

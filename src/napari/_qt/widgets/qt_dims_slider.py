@@ -31,7 +31,6 @@ from napari.settings import get_settings
 from napari.settings._constants import LoopMode
 from napari.utils.events.event_utils import connect_setattr_value
 
-
 if TYPE_CHECKING:
     from qtpy.QtGui import QResizeEvent
 
@@ -75,9 +74,7 @@ class QtDimSliderWidget(QWidget):
         self.dims: Dims = parent.dims
         self.margins_popup = None
         self.curslice_label = QLineEdit(self)
-        self.curslice_label.setToolTip(
-            f'Current slice for axis {axis}'
-        )
+        self.curslice_label.setToolTip(f'Current slice for axis {axis}')
         # if we set the QIntValidator to actually reflect the range of the data
         # then an invalid (i.e. too large) index doesn't actually trigger the
         # editingFinished event (the user is expected to change the value)...
@@ -88,9 +85,7 @@ class QtDimSliderWidget(QWidget):
 
         self.curslice_label.editingFinished.connect(self._set_slice_from_label)
         self.totslice_label = QLabel(self)
-        self.totslice_label.setToolTip(
-            f'Total slices for axis {axis}'
-        )
+        self.totslice_label.setToolTip(f'Total slices for axis {axis}')
         self.curslice_label.setObjectName('slice_label')
         self.totslice_label.setObjectName('slice_label')
         sep = QFrame(self)
@@ -364,9 +359,7 @@ class QtDimSliderWidget(QWidget):
             Frame range as tuple/list with range (minimum_frame, maximum_frame)
         """
         if not isinstance(value, tuple | list | type(None)):
-            raise TypeError(
-                'frame_range value must be a list or tuple'
-            )
+            raise TypeError('frame_range value must be a list or tuple')
 
         if value and len(value) != 2:
             raise ValueError('frame_range must have a length of 2')
@@ -693,9 +686,7 @@ class AnimationThread(QThread):
 
         if frame_range != (0, 0):
             if frame_range[0] >= frame_range[1]:
-                raise ValueError(
-                    'frame_range[0] must be <= frame_range[1]'
-                )
+                raise ValueError('frame_range[0] must be <= frame_range[1]')
             if frame_range[0] < self.dims_range[0]:
                 raise IndexError('frame_range[0] out of range')
             if frame_range[1] * self.dims_range[2] >= self.dims_range[1]:

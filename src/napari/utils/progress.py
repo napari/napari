@@ -7,7 +7,6 @@ from tqdm import tqdm
 from napari.utils.events.containers import EventedSet
 from napari.utils.events.event import EmitterGroup, Event
 
-
 __all__ = ['cancelable_progress', 'progrange', 'progress']
 
 

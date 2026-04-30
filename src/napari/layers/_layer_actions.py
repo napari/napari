@@ -17,7 +17,6 @@ from napari.layers._source import layer_source
 from napari.layers.utils import stack_utils
 from napari.layers.utils._link_layers import get_linked_layers
 
-
 if TYPE_CHECKING:
     from napari.components import LayerList
 
@@ -83,7 +82,7 @@ def _convert(ll: LayerList, type_: str) -> None:
             layer_type._projectionclass(state['projection_mode'].value)
         except ValueError:
             warnings.warn(
-                f'projection mode "{state['projection_mode']}" is not compatible with {type_.title()} layers. Falling back to "none".',
+                f'projection mode "{state["projection_mode"]}" is not compatible with {type_.title()} layers. Falling back to "none".',
                 category=UserWarning,
                 stacklevel=1,
             )

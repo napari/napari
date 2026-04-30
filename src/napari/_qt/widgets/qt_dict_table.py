@@ -4,8 +4,6 @@ from qtpy.QtCore import QSize, Slot
 from qtpy.QtGui import QFont
 from qtpy.QtWidgets import QTableWidget, QTableWidgetItem
 
-
-
 email_pattern = re.compile(r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$')
 url_pattern = re.compile(
     r'https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}'
@@ -80,9 +78,7 @@ class QtDictTable(QTableWidget):
         if not isinstance(data, list) or any(
             not isinstance(i, dict) for i in data
         ):
-            raise ValueError(
-                "'data' argument must be a list of dicts"
-            )
+            raise ValueError("'data' argument must be a list of dicts")
         nrows = len(data)
         _headers = sorted(set().union(*data))
         if headers:

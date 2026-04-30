@@ -14,7 +14,6 @@ from napari.layers.labels._labels_utils import get_dtype
 from napari.utils._dtype import get_dtype_limits
 
 
-
 class QtContourSpinBoxControl(QtWidgetControlsBase):
     """
     Class that wraps the connection of events/signals between the layer contour

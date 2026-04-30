@@ -7,7 +7,6 @@ import numpy as np
 from napari.layers._data_protocols import LayerDataProtocol, assert_protocol
 
 
-
 # note: this also implements `LayerDataProtocol`, but we don't need to inherit.
 class MultiScaleData(Sequence[LayerDataProtocol]):
     """Wrapper for multiscale data, to provide consistent API.
@@ -37,9 +36,7 @@ class MultiScaleData(Sequence[LayerDataProtocol]):
     ) -> None:
         self._data: list[LayerDataProtocol] = list(data)
         if not self._data:
-            raise ValueError(
-                'Multiscale data must be a (non-empty) sequence'
-            )
+            raise ValueError('Multiscale data must be a (non-empty) sequence')
         for d in self._data:
             assert_protocol(d)
 

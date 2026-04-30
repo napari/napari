@@ -32,7 +32,6 @@ from napari.utils.geometry import (
 )
 
 
-
 class MeshArrayDict(TypedDict):
     """Mesh array dict used for adding multiple shapes at once.
 
@@ -853,9 +852,7 @@ class ShapeList:
                 z_refresh=z_refresh,
             )
         else:
-            raise TypeError(
-                'Cannot add single nor multiple shape'
-            )
+            raise TypeError('Cannot add single nor multiple shape')
 
     def _add_single_shape(
         self,
@@ -884,9 +881,7 @@ class ShapeList:
             ShapesList._update_z_order() once at the end.
         """
         if not issubclass(type(shape), Shape):
-            raise TypeError(
-                'shape must be subclass of Shape'
-            )
+            raise TypeError('shape must be subclass of Shape')
 
         if shape_index is None:
             self.shapes.append(shape)
@@ -1070,9 +1065,7 @@ class ShapeList:
 
         # Validate inputs and prepare colors
         if not all(issubclass(type(shape), Shape) for shape in shapes):
-            raise ValueError(
-                'all shapes must be subclass of Shape'
-            )
+            raise ValueError('all shapes must be subclass of Shape')
         face_colors, edge_colors = _ensure_color_arrays(
             shapes, face_colors, edge_colors
         )

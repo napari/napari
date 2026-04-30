@@ -22,7 +22,6 @@ from napari.resources import LOADING_GIF_PATH
 from napari.utils.progress import progress
 
 
-
 class ActivityToggleItem(QWidget):
     """Toggle button for Activity Dialog.
 

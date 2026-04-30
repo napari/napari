@@ -12,8 +12,6 @@ from vispy.app import Canvas
 from vispy.gloo import gl
 from vispy.gloo.context import get_current_canvas
 
-
-
 if TYPE_CHECKING:
     from collections.abc import Generator
 

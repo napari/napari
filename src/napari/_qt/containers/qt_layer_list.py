@@ -15,7 +15,6 @@ from napari._qt.containers._layer_delegate import LayerDelegate
 from napari._qt.containers.qt_list_view import QtListView
 from napari.layers import Layer
 
-
 if TYPE_CHECKING:
     from qtpy.QtGui import QKeyEvent  # type: ignore[attr-defined]
     from qtpy.QtWidgets import QWidget  # type: ignore[attr-defined]

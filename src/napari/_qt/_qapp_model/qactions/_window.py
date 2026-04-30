@@ -7,7 +7,6 @@ from napari._qt._qapp_model.qactions._toggle_action import (
     DockWidgetToggleAction,
 )
 
-
 Q_WINDOW_ACTIONS: list[Action] = []
 
 toggle_action_details = [

@@ -23,7 +23,6 @@ from napari.utils.colormaps import (
     make_colorbar,
 )
 
-
 COLORMAP_WIDTH = 50
 TEXT_WIDTH = 130
 ENTRY_HEIGHT = 20

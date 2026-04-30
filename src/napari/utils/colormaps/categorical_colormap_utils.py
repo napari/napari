@@ -7,8 +7,6 @@ from pydantic import GetCoreSchemaHandler
 from pydantic_core import core_schema
 
 
-
-
 @dataclass(eq=False)
 class ColorCycle:
     """A dataclass to hold a color cycle for the fallback_colors
@@ -97,9 +95,7 @@ def _coerce_colorcycle_from_dict(
     # validate values
     color_values = val.get('values')
     if color_values is None:
-        raise ValueError(
-            'ColorCycle requires a values argument'
-        )
+        raise ValueError('ColorCycle requires a values argument')
 
     transformed_color_values = transform_color(color_values)
 

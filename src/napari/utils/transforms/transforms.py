@@ -24,7 +24,6 @@ from napari.utils.transforms.transform_utils import (
     translate_to_vector,
 )
 
-
 if TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
 
@@ -60,9 +59,7 @@ class Transform:
     @property
     def inverse(self) -> Transform:
         if self._inverse_func is None:
-            raise ValueError(
-                'Inverse function was not provided.'
-            )
+            raise ValueError('Inverse function was not provided.')
         if 'inverse' not in self._cache_dict:
             self._cache_dict['inverse'] = Transform(
                 self._inverse_func, self.func
@@ -86,9 +83,7 @@ class Transform:
         Transform
             Resulting transform.
         """
-        raise NotImplementedError(
-            'Cannot subset arbitrary transforms.'
-        )
+        raise NotImplementedError('Cannot subset arbitrary transforms.')
 
     def expand_dims(self, axes: Sequence[int]) -> Transform:
         """Return a transform with added axes for non-visible dimensions.
@@ -105,9 +100,7 @@ class Transform:
         Transform
             Resulting transform.
         """
-        raise NotImplementedError(
-            'Cannot subset arbitrary transforms.'
-        )
+        raise NotImplementedError('Cannot subset arbitrary transforms.')
 
     @property
     def _is_diagonal(self):
@@ -204,9 +197,7 @@ class TransformChain(EventedList[_T], Transform, Generic[_T]):
             If the transform chain is empty.
         """
         if len(self) == 0:
-            raise ValueError(
-                'Cannot simplify an empty transform chain.'
-            )
+            raise ValueError('Cannot simplify an empty transform chain.')
 
         if len(self) == 1:
             return self[0]

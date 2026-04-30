@@ -38,7 +38,7 @@ class StrField(str):
         value = v.lower()
         if not cls._valid_option(v):
             raise ValueError(
-                f'"{value}" is not valid. It must be one of {', '.join(cls._available_options())}'
+                f'"{value}" is not valid. It must be one of {", ".join(cls._available_options())}'
             )
 
         return value
@@ -123,9 +123,7 @@ class Version:
             version = version.decode('UTF-8')
         match = cls._SEMVER_PATTERN.match(version)
         if match is None:
-            raise ValueError(
-                f'{version} is not valid SemVer string'
-            )
+            raise ValueError(f'{version} is not valid SemVer string')
         matched_version_parts: dict[str, Any] = match.groupdict()
         return cls(**matched_version_parts)
 

@@ -12,7 +12,6 @@ from qtpy.QtWidgets import (
 from napari.utils import citation_text, sys_info
 
 
-
 class QtAbout(QDialog):
     """Qt dialog window for displaying 'About napari' information.
 

@@ -15,7 +15,6 @@ from napari._qt.qt_main_window import Window
 from napari._qt.qt_viewer import QtViewer
 
 
-
 # View actions
 def _toggle_activity_dock(window: Window):
     window._status_bar._toggle_activity_dock()

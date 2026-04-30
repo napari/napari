@@ -9,7 +9,6 @@ from superqt import QElidingLabel
 
 from napari._qt.dialogs.qt_activity_dialog import ActivityToggleItem
 
-
 if TYPE_CHECKING:
     from napari._qt.qt_main_window import _QtMainWindow
 

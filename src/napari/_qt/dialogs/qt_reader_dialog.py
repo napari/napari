@@ -16,7 +16,6 @@ from napari.plugins import _npe2
 from napari.settings import get_settings
 
 
-
 class QtReaderDialog(QDialog):
     """Dialog for user to select a reader plugin for a given file extension or folder"""
 
@@ -104,9 +103,7 @@ class QtReaderDialog(QDialog):
         layout.addWidget(self.persist_checkbox)
 
         # note for users on how to reset the reader preference
-        reset_label = QLabel(
-            'Manage saved readers in Preferences > Plugins'
-        )
+        reset_label = QLabel('Manage saved readers in Preferences > Plugins')
         reset_label.setWordWrap(True)
         layout.addWidget(reset_label)
         layout.addWidget(self.btn_box)
@@ -239,9 +236,11 @@ def prepare_remaining_readers(
         del readers[plugin_name]
     # if there's no other readers left, raise the exception
     if not readers and error:
-        error_msg = f'Tried to read {(
-                f'[{paths[0]}, ...]' if len(paths) > 1 else paths[0]
-            )} with plugin {plugin_name}, because it was associated with that file extension/because it is the only plugin capable of reading that path, but it gave an error. Try associating a different plugin or installing a different plugin for this kind of file.'
+        error_msg = f'Tried to read {
+            (f"[{paths[0]}, ...]" if len(paths) > 1 else paths[0])
+        } with plugin {
+            plugin_name
+        }, because it was associated with that file extension/because it is the only plugin capable of reading that path, but it gave an error. Try associating a different plugin or installing a different plugin for this kind of file.'
         raise ReaderPluginError(
             error_msg,
             plugin_name,

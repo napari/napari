@@ -10,7 +10,6 @@ from napari.utils.key_bindings import (
     coerce_keybinding,
 )
 
-
 if TYPE_CHECKING:
     from napari._vispy.mouse_event import NapariMouseEvent
 
@@ -85,9 +84,7 @@ def mouse_double_click_callbacks(obj, event) -> None:
     for mouse_click_func in obj.mouse_double_click_callbacks:
         # execute function to run press event code
         if inspect.isgeneratorfunction(mouse_click_func):
-            raise ValueError(
-                "Double-click actions can't be generators."
-            )
+            raise ValueError("Double-click actions can't be generators.")
         mouse_click_func(obj, event)
 
 

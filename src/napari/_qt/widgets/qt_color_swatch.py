@@ -23,7 +23,6 @@ from napari.utils.colormaps.standardize_color import (
     transform_color,
 )
 
-
 # matches any 3- or 4-tuple of int or float, with or without parens
 # captures the numbers into groups.
 # this is used to allow users to enter colors as e.g.: "(1, 0.7, 0)"

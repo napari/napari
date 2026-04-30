@@ -12,7 +12,6 @@ from napari.layers.utils._color_manager_constants import ColorMode
 from napari.utils.events.event_utils import connect_setattr
 
 
-
 class QtEdgeColorFeatureControl(QtWidgetControlsBase):
     """
     Class that wraps the connection of events/signals between the current edge

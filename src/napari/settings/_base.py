@@ -32,7 +32,6 @@ from napari.utils.compat import StrEnum
 from napari.utils.events import EmitterGroup, EventedModel
 from napari.utils.misc import StringEnum, deep_update
 
-
 _logger = logging.getLogger(__name__)
 
 
@@ -93,9 +92,7 @@ class EventedSettings(BaseSettings, EventedModel):
 
     @staticmethod
     def _warn_restart(*_: Event) -> None:
-        warn(
-            'Restart required for this change to take effect.'
-        )
+        warn('Restart required for this change to take effect.')
 
     def _connect(self, model: EventedModel, prefix: str = '') -> None:
         """Recursively connect and re-emit to all sub-fields."""
@@ -171,9 +168,7 @@ class FileConfigSettingsSource(PydanticBaseSettingsSource):
             elif path_.suffix == '.json':
                 load = __import__('json').load
             else:
-                warn(
-                    f'Unrecognized file extension for config_path: {path}'
-                )
+                warn(f'Unrecognized file extension for config_path: {path}')
                 continue
 
             try:
@@ -424,9 +419,7 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
         path = path or self.config_path
         # use insinstance so mypy is happy
         if not path or isinstance(path, _NotSetType):
-            raise ValueError(
-                'No path provided in config or save argument.'
-            )
+            raise ValueError('No path provided in config or save argument.')
 
         path = Path(path).expanduser().resolve()
         path.parent.mkdir(exist_ok=True, parents=True)

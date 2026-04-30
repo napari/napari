@@ -13,7 +13,6 @@ from napari.types import LayerDataType
 from napari.utils.colormaps import AVAILABLE_COLORMAPS, Colormap
 from napari.utils.events import Event
 
-
 if TYPE_CHECKING:
     import pandas as pd
 
@@ -542,9 +541,7 @@ class Tracks(Layer):
     def color_by(self, color_by: str) -> None:
         """set the property to color vertices by"""
         if color_by not in self.properties_to_color_by:
-            raise ValueError(
-                f'{color_by} is not a valid property key'
-            )
+            raise ValueError(f'{color_by} is not a valid property key')
         self._color_by = color_by
         self._recolor_tracks()
         self.events.color_by()
@@ -557,9 +554,7 @@ class Tracks(Layer):
     def colormap(self, colormap: str) -> None:
         """set the default colormap"""
         if colormap not in AVAILABLE_COLORMAPS:
-            raise ValueError(
-                f'Colormap {colormap} not available'
-            )
+            raise ValueError(f'Colormap {colormap} not available')
         self._colormap = colormap
         self._recolor_tracks()
         self.events.colormap()

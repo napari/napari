@@ -8,7 +8,6 @@ from qtpy.QtWidgets import QFileDialog, QMessageBox
 
 from napari.utils.misc import in_ipython
 
-
 if TYPE_CHECKING:
     from collections.abc import Callable
 
@@ -40,9 +39,7 @@ class ScreenshotDialog(QFileDialog):
         super().__init__(parent, 'Save screenshot')
         self.setAcceptMode(QFileDialog.AcceptSave)
         self.setFileMode(QFileDialog.AnyFile)
-        self.setNameFilter(
-            'Image files (*.png *.bmp *.gif *.tif *.tiff)'
-        )
+        self.setNameFilter('Image files (*.png *.bmp *.gif *.tif *.tiff)')
         self.setDirectory(directory)
         self.setHistory(history)
 

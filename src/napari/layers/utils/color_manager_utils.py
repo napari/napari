@@ -8,7 +8,6 @@ import numpy as np
 from napari.utils.colormaps import Colormap
 from napari.utils.events.custom_types import Array
 
-
 if TYPE_CHECKING:
     from napari.layers.utils.color_manager import ColorManager
 

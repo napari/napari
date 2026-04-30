@@ -11,7 +11,6 @@ from napari.utils.notifications import show_info, show_warning
 from napari.utils.theme import available_themes, get_system_theme
 from napari.utils.transforms import Affine
 
-
 if TYPE_CHECKING:
     from collections.abc import Callable, Generator
 

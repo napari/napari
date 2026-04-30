@@ -10,7 +10,6 @@ from typing import TYPE_CHECKING, Any
 from napari.utils.events import EmitterGroup
 from napari.utils.interactions import Shortcut
 
-
 if TYPE_CHECKING:
     from collections.abc import Callable
     from concurrent.futures import Future

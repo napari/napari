@@ -23,7 +23,6 @@ from napari.plugins.utils import (
 from napari.settings import get_settings
 
 
-
 class Extension2ReaderTable(QWidget):
     """Table showing extension to reader mappings with removal button.
 

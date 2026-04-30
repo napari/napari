@@ -5,7 +5,6 @@ from typing_extensions import TypedDict
 from napari.settings._base import EventedSettings
 
 
-
 class PluginHookOption(TypedDict):
     """Custom type specifying plugin, hook implementation function name, and enabled state."""
 

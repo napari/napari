@@ -14,7 +14,6 @@ from napari.layers.shapes._shapes_constants import Mode
 from napari.utils.action_manager import action_manager
 from napari.utils.interactions import Shortcut
 
-
 if TYPE_CHECKING:
     import napari.layers
 
@@ -163,7 +162,7 @@ class QtShapesControls(QtLayerControls):
             layer,
             'delete_shape',
             slot=self.layer.remove_selected,
-            tooltip=f'Delete selected shapes ({Shortcut('Backspace').platform})',
+            tooltip=f'Delete selected shapes ({Shortcut("Backspace").platform})',
         )
         self._EDIT_BUTTONS += (
             self.delete_button,

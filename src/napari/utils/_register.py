@@ -5,7 +5,6 @@ from inspect import Parameter, getdoc, signature
 from napari.utils.migrations import rename_argument
 from napari.utils.misc import camel_to_snake
 
-
 tmpl_path = os.path.join(
     os.path.dirname(os.path.abspath(__file__)), 'add_layer.py_tmpl'
 )
@@ -27,9 +26,7 @@ def create_func(cls, name=None, doc=None):
         name = camel_to_snake(cls_name)
 
     if 'layer' in name:
-        raise ValueError(
-            f"name {name} should not include 'layer'"
-        )
+        raise ValueError(f"name {name} should not include 'layer'")
 
     name = 'add_' + name
 

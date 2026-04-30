@@ -12,7 +12,6 @@ from napari.components.dims import Dims
 from napari.settings._constants import LoopMode
 
 
-
 class QtDims(QWidget):
     """Qt view for the napari Dims model.
 
@@ -318,9 +317,7 @@ class QtDims(QWidget):
                 self._animation_thread.slider.play_button._handle_start()
 
         else:
-            warnings.warn(
-                'Refusing to play a hidden axis'
-            )
+            warnings.warn('Refusing to play a hidden axis')
 
     @Slot()
     def stop(self):

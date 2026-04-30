@@ -11,7 +11,6 @@ import numpy as np
 from napari._version import __version__
 from napari.utils.notifications import notification_manager, show_warning
 
-
 if TYPE_CHECKING:
     from pathlib import Path
 

@@ -8,7 +8,6 @@ from napari._qt.containers.qt_list_model import QtListModel
 from napari.layers import Layer
 from napari.settings import get_settings
 
-
 ThumbnailRole = Qt.UserRole + 2
 LoadedRole = Qt.UserRole + 3
 

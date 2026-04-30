@@ -9,7 +9,6 @@ from napari.layers.utils.layer_utils import (
     register_layer_attr_action,
 )
 
-
 if TYPE_CHECKING:
     from collections.abc import Callable
 

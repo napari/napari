@@ -7,7 +7,6 @@ from pydantic import field_validator
 from napari.utils.events import EventedModel, SelectableEventedList
 from napari.utils.geometry import intersect_line_with_plane_3d
 
-
 Point3D: TypeAlias = tuple[float, float, float]
 
 

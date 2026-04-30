@@ -2,8 +2,6 @@ import numpy as np
 import numpy.typing as npt
 
 
-
-
 def compose_linear_matrix(rotate, scale, shear) -> npt.NDArray:
     """Compose linear transform matrix from rotate, shear, scale.
 
@@ -280,9 +278,7 @@ def expand_upper_triangular(vector):
     n = len(vector)
     N = ((-1 + np.sqrt(8 * n + 1)) / 2.0) + 1  # n+1 th root
     if np.floor(N) != N:
-        raise ValueError(
-            f'{n} is a strange number of shear elements'
-        )
+        raise ValueError(f'{n} is a strange number of shear elements')
 
     N = int(N)
     inds = np.triu(np.ones((N, N)), 1).astype(bool)
@@ -307,9 +303,7 @@ def embed_in_identity_matrix(matrix, ndim):
         Larger matrix.
     """
     if matrix.ndim != 2 or matrix.shape[0] != matrix.shape[1]:
-        raise ValueError(
-            f'Improper transform matrix {matrix}'
-        )
+        raise ValueError(f'Improper transform matrix {matrix}')
 
     if matrix.shape[0] == ndim:
         return matrix
@@ -471,9 +465,7 @@ def is_diagonal(matrix, tol=1e-8):
         True if matrix is diagonal, False otherwise.
     """
     if matrix.ndim != 2 or matrix.shape[0] != matrix.shape[1]:
-        raise ValueError(
-            f'matrix must be square, but shape={matrix.shape}'
-        )
+        raise ValueError(f'matrix must be square, but shape={matrix.shape}')
     non_diag = matrix[~np.eye(matrix.shape[0], dtype=bool)]
     if tol == 0:
         return np.count_nonzero(non_diag) == 0

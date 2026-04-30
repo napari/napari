@@ -12,8 +12,6 @@ from qtpy.QtWidgets import (
 )
 
 
-
-
 class QtFontSizePreview(QFrame):
     """
     Widget that displays a preview text.

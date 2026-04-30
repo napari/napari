@@ -2,8 +2,6 @@ import numpy as np
 import numpy.typing as npt
 
 
-
-
 def convert_image_to_coordinates(vectors: npt.NDArray) -> npt.NDArray:
     """To convert an image-like array with elements (y-proj, x-proj) into a
     position list of coordinates
@@ -96,7 +94,7 @@ def fix_data_vectors(
             vectors = vectors[np.newaxis]
         if vectors.ndim != 3 or vectors.shape[1] != 2:
             raise ValueError(
-                f'could not reshape Vector data from {vectors.shape} to (N, 2, {ndim or 'D'})'
+                f'could not reshape Vector data from {vectors.shape} to (N, 2, {ndim or "D"})'
             )
 
     data_ndim = vectors.shape[2]

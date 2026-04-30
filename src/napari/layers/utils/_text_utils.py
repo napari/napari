@@ -4,7 +4,6 @@ import numpy.typing as npt
 from napari.layers.utils._text_constants import Anchor
 
 
-
 def get_text_anchors(
     view_data: np.ndarray | list,
     ndisplay: int,
@@ -154,9 +153,7 @@ def _calculate_bbox_extents(
         bbox_min = np.array([np.min(coords, axis=0) for coords in view_data])
         bbox_max = np.array([np.max(coords, axis=0) for coords in view_data])
     else:
-        raise TypeError(
-            'view_data should be a numpy array or list'
-        )
+        raise TypeError('view_data should be a numpy array or list')
     return bbox_min, bbox_max
 
 

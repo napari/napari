@@ -71,7 +71,6 @@ from napari.utils.events.custom_types import Array
 from napari.utils.misc import StringEnum, _is_array_type
 from napari.utils.naming import magic_name
 
-
 if TYPE_CHECKING:
     import pandas as pd
 
@@ -904,9 +903,7 @@ class Labels(ScalarFieldBase):
         if self.contour < 1:
             return None
         if labels.ndim > 2:
-            warnings.warn(
-                'Contours are not displayed during 3D rendering'
-            )
+            warnings.warn('Contours are not displayed during 3D rendering')
             return None
 
         expanded_slice = expand_slice(data_slice, labels.shape, 1)

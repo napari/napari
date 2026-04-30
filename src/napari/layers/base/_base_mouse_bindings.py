@@ -14,7 +14,6 @@ from napari.layers.utils.interaction_box import (
 from napari.utils.events import Event
 from napari.utils.transforms import Affine
 
-
 if TYPE_CHECKING:
     from collections.abc import Generator
 

@@ -13,7 +13,6 @@ from qtpy.QtWidgets import (
 from napari.utils.progress import cancelable_progress, progress
 
 
-
 class QtLabeledProgressBar(QWidget):
     """QProgressBar with QLabels for description and ETA."""
 

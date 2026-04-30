@@ -18,7 +18,6 @@ from napari.utils._dtype import get_dtype_limits
 from napari.utils.events import disconnect_events
 
 
-
 class QtColorBox(QWidget):
     """A widget that shows a square with the current label color.
 

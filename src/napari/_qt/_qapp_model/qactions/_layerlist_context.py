@@ -19,7 +19,6 @@ from napari.components import LayerList
 from napari.layers import Layer
 from napari.utils.notifications import show_warning
 
-
 __all__ = ('Q_LAYERLIST_CONTEXT_ACTIONS', 'is_valid_spatial_in_clipboard')
 
 

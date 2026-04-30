@@ -20,7 +20,6 @@ from qtpy.QtWidgets import (
 from napari.utils import perf
 
 
-
 class TextLog(QTextEdit):
     """Text window we can write "log" messages to.
 
@@ -39,9 +38,7 @@ class TextLog(QTextEdit):
         """
         self.moveCursor(QTextCursor.MoveOperation.End)
         self.setTextColor(Qt.GlobalColor.red)
-        self.insertPlainText(
-            f'{time_ms:5.0f}ms {name}\n'
-        )
+        self.insertPlainText(f'{time_ms:5.0f}ms {name}\n')
 
 
 class QtPerformance(QWidget):
@@ -175,9 +172,7 @@ class QtPerformance(QWidget):
         """Update our label and progress bar and log any new slow events."""
         # Update our timer label.
         elapsed = time.time() - self.start_time
-        self.timer_label.setText(
-            f'Uptime: {elapsed:.2f}'
-        )
+        self.timer_label.setText(f'Uptime: {elapsed:.2f}')
 
         average, long_events = self._get_timer_info()
 

@@ -33,7 +33,6 @@ from napari.settings import get_settings
 from napari.utils.notifications import Notification, NotificationSeverity
 from napari.utils.theme import get_theme
 
-
 ActionSequence = Sequence[tuple[str, Callable[['NapariQtNotification'], None]]]
 
 
@@ -98,9 +97,7 @@ class NapariQtNotification(QDialog):
         self._update_icon(str(severity))
         self.message.setText(message)
         if source:
-            self.source_label.setText(
-                f'Source: {source}'
-            )
+            self.source_label.setText(f'Source: {source}')
 
         self.close_button.clicked.connect(self.close)
         self.expand_button.clicked.connect(self.toggle_expansion)

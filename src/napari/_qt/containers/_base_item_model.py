@@ -8,7 +8,6 @@ from qtpy.QtCore import QAbstractItemModel, QModelIndex, Qt
 from napari.utils.events import disconnect_events
 from napari.utils.events.containers import SelectableEventedList
 
-
 if TYPE_CHECKING:
     from qtpy.QtWidgets import QWidget  # type: ignore[attr-defined]
 

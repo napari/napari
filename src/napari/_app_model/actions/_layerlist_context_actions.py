@@ -19,7 +19,6 @@ from napari._app_model.constants import MenuGroup, MenuId
 from napari._app_model.context import LayerListSelectionContextKeys as LLSCK
 from napari.layers import _layer_actions
 
-
 if TYPE_CHECKING:
     from app_model.types import MenuRuleDict
 

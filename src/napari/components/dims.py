@@ -15,7 +15,6 @@ from napari.utils.events import EventedModel
 from napari.utils.misc import argsort, reorder_after_dim_reduction
 
 
-
 class RangeTuple(NamedTuple):
     start: float
     stop: float
@@ -502,9 +501,7 @@ class Dims(EventedModel):
                 and not isinstance(value, str)
                 and not value_is_sequence
             ):
-                raise ValueError(
-                    'cannot set multiple values to a single axis'
-                )
+                raise ValueError('cannot set multiple values to a single axis')
             axis = [axis]
             value = [value]
         else:
@@ -512,9 +509,7 @@ class Dims(EventedModel):
             value = list(value)
 
         if len(axis) != len(value):
-            raise ValueError(
-                'axis and value sequences must have equal length'
-            )
+            raise ValueError('axis and value sequences must have equal length')
 
         for ax in axis:
             ensure_axis_in_bounds(ax, self.ndim)

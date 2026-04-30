@@ -14,7 +14,6 @@ from napari.layers.utils.style_encoding import (
 )
 from napari.utils.events.custom_types import Array
 
-
 """A scalar array that represents one string value."""
 StringValue = Array[str, ()]
 

@@ -12,7 +12,6 @@ from napari._qt.utils import attr_to_settr
 from napari.layers import Vectors
 
 
-
 class QtWidthSpinBoxControl(QtWidgetControlsBase):
     """
     Class that wraps the connection of events/signals between the layer edge width

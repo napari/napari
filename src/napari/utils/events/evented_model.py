@@ -16,7 +16,6 @@ from napari._pydantic_util import get_inner_type, get_outer_type
 from napari.utils.events.event import EmitterGroup, Event
 from napari.utils.misc import pick_equality_operator
 
-
 # encoders for non-napari specific field types.  To declare a custom encoder
 # for a napari type, add a `_json_encode` method to the class itself.
 # it will be added to the model json_encoders in :func:`EventedMetaclass.__new__`
@@ -404,9 +403,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         if isinstance(values, self.__class__):
             values = values.model_dump()
         if not isinstance(values, dict):
-            raise TypeError(
-                f'Unsupported update from {type(values)}'
-            )
+            raise TypeError(f'Unsupported update from {type(values)}')
 
         with self.events.blocker() as block:
             for key, value in values.items():

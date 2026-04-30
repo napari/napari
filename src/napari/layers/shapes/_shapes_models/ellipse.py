@@ -9,7 +9,6 @@ from napari.layers.shapes._shapes_utils import (
 )
 
 
-
 class Ellipse(Shape):
     """Class for a single ellipse
 

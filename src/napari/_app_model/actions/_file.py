@@ -7,7 +7,6 @@ from napari._app_model.constants import MenuGroup, MenuId
 from napari.components import LayerList, ViewerModel
 from napari.layers import Layer, Points, Shapes
 
-
 FILE_SUBMENUS = [
     (
         MenuId.MENUBAR_FILE,
