@@ -91,8 +91,10 @@ class Theme(EventedModel):
     def _ensure_syntax_style(cls, value: str) -> str:
         from pygments.styles import STYLE_MAP
 
+        valid_styles = ', '.join(STYLE_MAP)
         assert value in STYLE_MAP, (
-            f'Incorrect `syntax_style` value: {value} provided. Please use one of the following: {f" {", ".join(STYLE_MAP)}"}'
+            f'Incorrect `syntax_style` value: {value} provided. '
+            f'Please use one of the following: {valid_styles}'
         )
         return value
 

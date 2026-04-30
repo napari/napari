@@ -159,7 +159,7 @@ class FileConfigSettingsSource(PydanticBaseSettingsSource):
                 # we warn, since this would have been user provided.
                 if path_ != default_cfg:
                     _logger.warning(
-                        f'Requested config path is not a file: {path_}'
+                        'Requested config path is not a file: %s', path_
                     )
                 continue
                 # get loader for yaml/json
@@ -176,7 +176,10 @@ class FileConfigSettingsSource(PydanticBaseSettingsSource):
                 new_data = load(path_.read_text()) or {}
             except Exception as err:  # noqa: BLE001
                 _logger.warning(
-                    f'The content of the napari settings file could not be read\n\nThe default settings will be used and the content of the file will be replaced the next time settings are changed.\n\nError:\n{err}'
+                    'The content of the napari settings file could not be read\n\n'
+                    'The default settings will be used and the content of the file '
+                    'will be replaced the next time settings are changed.\n\nError:\n%s',
+                    err,
                 )
                 continue
             assert isinstance(new_data, dict), path_.read_text()

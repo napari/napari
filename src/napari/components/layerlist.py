@@ -706,10 +706,7 @@ class LayerList(SelectableEventedList[Layer]):
             else list(self)
         )
 
-        if selected:
-            msg = 'No layers selected'
-        else:
-            msg = 'No layers to save'
+        msg = 'No layers selected' if selected else 'No layers to save'
 
         if not layers:
             warnings.warn(msg)

@@ -92,11 +92,9 @@ def select_all_in_slice(layer: Points) -> None:
     else:
         layer.selected_data = new_selected
         show_info(
-            f'Selected {len(new_selected)} points in this slice only, use {
-                Shortcut(shortcuts()["napari:select_append_all_in_slice"][0])
-            } to append to existing selection. ({
-                len(layer.selected_data)
-            } selected)'
+            f'Selected {len(new_selected)} points in this slice only, '
+            f'use {Shortcut(shortcuts()["napari:select_append_all_in_slice"][0])} '
+            f'to append to existing selection. ({len(layer.selected_data)} selected)'
         )
 
 
