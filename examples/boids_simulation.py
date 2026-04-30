@@ -305,7 +305,7 @@ def update_state_then_launch_main():
         viewer.layers[-1].visible = False
     state["num_boids"] = num_boids
     state["num_workers"] = num_procs
-    state["parallel"] = True if num_procs > 1 else False
+    state["parallel"] = num_procs > 1
     return main(**state)
 
 
