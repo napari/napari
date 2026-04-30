@@ -26,7 +26,6 @@ from napari.utils.colormaps.inverse_colormaps import inverse_cmaps
 from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils.colormaps.vendored.cm import cmap_d
 
-
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
@@ -46,8 +45,7 @@ ValidColormapArg = Union[
     dict,
 ]
 
-
-matplotlib_colormaps = _MATPLOTLIB_COLORMAP_NAMES = OrderedDict(
+_MATPLOTLIB_COLORMAP_NAMES = OrderedDict(
     viridis='viridis',
     magma='magma',
     inferno='inferno',
@@ -60,40 +58,42 @@ matplotlib_colormaps = _MATPLOTLIB_COLORMAP_NAMES = OrderedDict(
     PiYG='PiYG',
 )
 _MATPLOTLIB_COLORMAP_NAMES_REVERSE = {
-    v: k for k, v in matplotlib_colormaps.items()
+    v: k for k, v in _MATPLOTLIB_COLORMAP_NAMES.items()
 }
 
 # some colormaps use BaseColormap and custom mapping functions instead of
 # standard colors/controls, so they are broken in napari
-_VISPY_COLORMAPS_ORIGINAL = _VCO = {
+_VISPY_COLORMAPS = {
     k: v for k, v in get_colormaps().items() if isinstance(v, VispyColormap)
 }
-_VISPY_COLORMAPS_TRANSLATIONS = OrderedDict(
-    autumn=('autumn', _VCO['autumn']),
-    blues=('blues', _VCO['blues']),
-    cool=('cool', _VCO['cool']),
-    greens=('greens', _VCO['greens']),
-    reds=('reds', _VCO['reds']),
-    spring=('spring', _VCO['spring']),
-    summer=('summer', _VCO['summer']),
-    light_blues=('light blues', _VCO['light_blues']),
-    orange=('orange', _VCO['orange']),
-    viridis=('viridis', _VCO['viridis']),
-    coolwarm=('coolwarm', _VCO['coolwarm']),
-    PuGr=('PuGr', _VCO['PuGr']),
-    GrBu=('GrBu', _VCO['GrBu']),
-    GrBu_d=('GrBu_d', _VCO['GrBu_d']),
-    RdBu=('RdBu', _VCO['RdBu']),
-    cubehelix=('cubehelix', _VCO['cubehelix']),
-    single_hue=('single hue', _VCO['single_hue']),
-    hsl=('hsl', _VCO['hsl']),
-    husl=('husl', _VCO['husl']),
-    diverging=('diverging', _VCO['diverging']),
-    RdYeBuCy=('RdYeBuCy', _VCO['RdYeBuCy']),
+_VISPY_COLORMAP_NAMES = OrderedDict(
+    autumn='autumn',
+    blues='blues',
+    cool='cool',
+    greens='greens',
+    reds='reds',
+    spring='spring',
+    summer='summer',
+    light_blues='light blues',
+    orange='orange',
+    viridis='viridis',
+    coolwarm='coolwarm',
+    PuGr='PuGr',
+    GrBu='GrBu',
+    GrBu_d='GrBu_d',
+    RdBu='RdBu',
+    cubehelix='cubehelix',
+    single_hue='single hue',
+    hsl='hsl',
+    husl='husl',
+    diverging='diverging',
+    RdYeBuCy='RdYeBuCy',
 )
-_VISPY_COLORMAPS_TRANSLATIONS_REVERSE = {
-    v[0]: k for k, v in _VISPY_COLORMAPS_TRANSLATIONS.items()
+
+_VISPY_COLORMAP_NAMES_REVERSE = {
+    v: k for k, v in _VISPY_COLORMAP_NAMES.items()
 }
+
 _PRIMARY_COLORS = OrderedDict(
     red=('red', [1.0, 0.0, 0.0]),
     green=('green', [0.0, 1.0, 0.0]),
@@ -223,15 +223,9 @@ def convert_vispy_colormap(colormap, name='vispy'):
             'Colormap must be a vispy colormap if passed to from_vispy'
         )
 
-    if name in _VISPY_COLORMAPS_TRANSLATIONS:
-        display_name, _cmap = _VISPY_COLORMAPS_TRANSLATIONS[name]
-    else:
-        # Unnamed colormap
-        display_name = trans._(name)
-
     return Colormap(
         name=name,
-        display_name=display_name,
+        display_name=name,
         colors=colormap.colors.rgba,
         controls=colormap._controls,
         interpolation=colormap.interpolation,
@@ -353,7 +347,7 @@ def color_dict_to_colormap(colors):
 
     if len(control_colors) >= MAX_DISTINCT_COLORS:
         warnings.warn(
-            f'Label layers with more than {str(MAX_DISTINCT_COLORS)} distinct colors will not render correctly. This layer has {str(len(control_colors))}.',
+            f'Label layers with more than {MAX_DISTINCT_COLORS!s} distinct colors will not render correctly. This layer has {len(control_colors)!s}.',
             category=UserWarning,
         )
 
@@ -663,7 +657,7 @@ def vispy_or_mpl_colormap(name) -> Colormap:
     KeyError
         If no colormap with that name is found within vispy or matplotlib.
     """
-    if name in _VISPY_COLORMAPS_TRANSLATIONS:
+    if name in _VISPY_COLORMAPS:
         cmap = get_colormap(name)
         colormap = convert_vispy_colormap(cmap, name=name)
     else:
@@ -673,15 +667,16 @@ def vispy_or_mpl_colormap(name) -> Colormap:
         except KeyError as e:
             suggestion = _MATPLOTLIB_COLORMAP_NAMES_REVERSE.get(
                 name
-            ) or _VISPY_COLORMAPS_TRANSLATIONS_REVERSE.get(name)
+            ) or _VISPY_COLORMAP_NAMES_REVERSE.get(name)
             if suggestion:
                 raise KeyError(
                     f'Colormap "{name}" not found in either vispy or matplotlib but you might want to use "{suggestion}".'
                 ) from e
 
-            colormaps = set(_VISPY_COLORMAPS_ORIGINAL).union(set(cmap_d))
+            colormaps = set(_VISPY_COLORMAPS).union(set(cmap_d))
+            options = ', '.join(sorted(f'"{cm}"' for cm in colormaps))
             raise KeyError(
-                f'Colormap "{name}" not found in either vispy or matplotlib. Recognized colormaps are: {', '.join(sorted(f'"{cm}"' for cm in colormaps))}'
+                f'Colormap "{name}" not found in either vispy or matplotlib. Recognized colormaps are: {options}'
             ) from e
         mpl_colors = mpl_cmap(np.linspace(0, 1, 256))
         colormap = Colormap(

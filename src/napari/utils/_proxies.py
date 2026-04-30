@@ -64,12 +64,7 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
 
         # This is code prepared for a moment where we want to block access to private attributes
         # raise AttributeError(
-        #     trans._(
-        #         "Private attribute set/access ('{typ}.{name}') not allowed in this context.",
-        #         deferred=True,
-        #         name=name,
-        #         typ=typ,
-        #     )
+        #     "Private attribute set/access ('{typ}.{name}') not allowed in this context.",
         # )
 
     @staticmethod

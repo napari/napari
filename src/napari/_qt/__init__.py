@@ -1,7 +1,5 @@
 from warnings import warn
 
-
-
 try:
     from qtpy import API_NAME, QtCore
 except Exception as e:
@@ -12,29 +10,24 @@ except Exception as e:
         from napari.utils._env_detection import detect_environment
 
         raise ImportError(
-            trans._(
-                cleandoc(
-                    """
-                No Qt bindings could be found for napari=={version}.
+            cleandoc(
+                f"""
+                No Qt bindings could be found for napari=={version('napari')}.
 
                 napari requires either PyQt5, PyQt6 (default) or PySide6 to be installed in the environment.
 
                 With pip, you can install either with:
-                  $ pip install -U 'napari[all]'  # default choice
-                  $ pip install -U 'napari[pyqt5]'
-                  $ pip install -U 'napari[pyqt6]'
-                  $ pip install -U 'napari[pyside6]'
+                    $ pip install -U 'napari[all]'  # default choice
+                    $ pip install -U 'napari[pyqt5]'
+                    $ pip install -U 'napari[pyqt6]'
+                    $ pip install -U 'napari[pyside6]'
 
                 With conda, you need to do:
-                  $ conda install -c conda-forge pyqt6
-                  $ conda install -c conda-forge pyside6
+                    $ conda install -c conda-forge pyqt6
+                    $ conda install -c conda-forge pyside6
 
-                Our heuristics suggest you are using '{tool}' to manage your packages.
+                Our heuristics suggest you are using '{detect_environment().value}' to manage your packages.
                 """
-                ),
-                deferred=True,
-                tool=detect_environment().value,
-                version=version('napari'),
             )
         ) from e
     raise
