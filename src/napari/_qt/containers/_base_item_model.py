@@ -198,11 +198,7 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
         """Call during __init__, to set the python model and connections"""
         if not isinstance(root, SelectableEventedList):
             raise TypeError(
-                trans._(
-                    'root must be an instance of {class_name}',
-                    deferred=True,
-                    class_name=SelectableEventedList,
-                )
+                f'root must be an instance of {SelectableEventedList}'
             )
         current_root = getattr(self, '_root', None)
         if root is current_root:

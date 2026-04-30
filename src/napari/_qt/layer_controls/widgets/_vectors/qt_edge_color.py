@@ -57,19 +57,17 @@ class QtEdgeColorFeatureControl(QtWidgetControlsBase):
             self.change_edge_color_feature
         )
         self.color_feature_box.addItems(self._layer.features.columns)
-        self.edge_feature_label = QtWrappedLabel(trans._('edge feature:'))
+        self.edge_feature_label = QtWrappedLabel('edge feature:')
 
         # vector direct color mode adjustment and widget
         self.edge_color_edit = QColorSwatchEdit(
             initial_color=self._layer.edge_color,
-            tooltip=trans._(
-                'Click to set current edge color',
-            ),
+            tooltip='Click to set current edge color',
         )
         connect_setattr(
             self.edge_color_edit.color_changed, self._layer, 'edge_color'
         )
-        self.edge_color_label = QtWrappedLabel(trans._('edge color:'))
+        self.edge_color_label = QtWrappedLabel('edge color:')
         self._on_edge_color_change()
 
         # dropdown to select the edge color mode
@@ -79,7 +77,7 @@ class QtEdgeColorFeatureControl(QtWidgetControlsBase):
         self.color_mode_combobox.currentTextChanged.connect(
             self.change_edge_color_mode
         )
-        self.color_mode_label = QtWrappedLabel(trans._('edge color mode:'))
+        self.color_mode_label = QtWrappedLabel('edge color mode:')
         self._on_edge_color_mode_change()
 
     def change_edge_color_feature(self, feature: str):

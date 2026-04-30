@@ -24,14 +24,7 @@ class _RenamedAttribute(NamedTuple):
     since_version: str
 
     def message(self) -> str:
-        return trans._(
-            '{from_name} is deprecated since {since_version} and will be removed in {version}. Please use {to_name}',
-            deferred=True,
-            from_name=self.from_name,
-            since_version=self.since_version,
-            version=self.version,
-            to_name=self.to_name,
-        )
+        return f'{self.from_name} is deprecated since {self.since_version} and will be removed in {self.version}. Please use {self.to_name}'
 
 
 def rename_argument(
@@ -71,20 +64,10 @@ def rename_argument(
             if from_name in kwargs:
                 if to_name in kwargs:
                     raise ValueError(
-                        trans._(
-                            'Argument {to_name} already defined, please do not mix {from_name} and {to_name} in one call.',
-                            from_name=from_name,
-                            to_name=to_name,
-                        )
+                        f'Argument {to_name} already defined, please do not mix {from_name} and {to_name} in one call.'
                     )
                 warnings.warn(
-                    trans._(
-                        'Argument {from_name!r} is deprecated, please use {to_name!r} instead. The argument {from_name!r} was deprecated in {since_version} and it will be removed in {version}.',
-                        from_name=from_name,
-                        to_name=to_name,
-                        version=version,
-                        since_version=since_version,
-                    ),
+                    f'Argument {from_name!r} is deprecated, please use {to_name!r} instead. The argument {from_name!r} was deprecated in {since_version} and it will be removed in {version}.',
                     category=FutureWarning,
                     stacklevel=2,
                 )
@@ -123,31 +106,16 @@ def add_deprecated_property(
 
     if hasattr(obj, previous_name):
         raise RuntimeError(
-            trans._(
-                '{previous_name} property already exists.',
-                deferred=True,
-                previous_name=previous_name,
-            )
+            f'{previous_name} property already exists.'
         )
 
     if not hasattr(obj, new_name):
         raise RuntimeError(
-            trans._(
-                '{new_name} property must exist.',
-                deferred=True,
-                new_name=new_name,
-            )
+            f'{new_name} property must exist.'
         )
 
     name = f'{obj.__name__}.{previous_name}'
-    msg = trans._(
-        '{name} is deprecated since {since_version} and will be removed in {version}. Please use {new_name}',
-        deferred=True,
-        name=name,
-        since_version=since_version,
-        version=version,
-        new_name=new_name,
-    )
+    msg = f'{name} is deprecated since {since_version} and will be removed in {version}. Please use {new_name}'
 
     def _getter(instance) -> Any:
         warnings.warn(msg, category=FutureWarning, stacklevel=3)

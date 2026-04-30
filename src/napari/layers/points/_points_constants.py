@@ -72,20 +72,20 @@ SYMBOL_ALIAS = {
 
 SYMBOL_TRANSLATION = OrderedDict(
     [
-        (Symbol.ARROW, trans._('arrow')),
-        (Symbol.CLOBBER, trans._('clobber')),
-        (Symbol.CROSS, trans._('cross')),
-        (Symbol.DIAMOND, trans._('diamond')),
-        (Symbol.DISC, trans._('disc')),
-        (Symbol.HBAR, trans._('hbar')),
-        (Symbol.RING, trans._('ring')),
-        (Symbol.SQUARE, trans._('square')),
-        (Symbol.STAR, trans._('star')),
-        (Symbol.TAILED_ARROW, trans._('tailed arrow')),
-        (Symbol.TRIANGLE_DOWN, trans._('triangle down')),
-        (Symbol.TRIANGLE_UP, trans._('triangle up')),
-        (Symbol.VBAR, trans._('vbar')),
-        (Symbol.X, trans._('x')),
+        (Symbol.ARROW, 'arrow'),
+        (Symbol.CLOBBER, 'clobber'),
+        (Symbol.CROSS, 'cross'),
+        (Symbol.DIAMOND, 'diamond'),
+        (Symbol.DISC, 'disc'),
+        (Symbol.HBAR, 'hbar'),
+        (Symbol.RING, 'ring'),
+        (Symbol.SQUARE, 'square'),
+        (Symbol.STAR, 'star'),
+        (Symbol.TAILED_ARROW, 'tailed arrow'),
+        (Symbol.TRIANGLE_DOWN, 'triangle down'),
+        (Symbol.TRIANGLE_UP, 'triangle up'),
+        (Symbol.VBAR, 'vbar'),
+        (Symbol.X, 'x'),
     ]
 )
 
@@ -110,8 +110,8 @@ class Shading(StringEnum):
 
 
 SHADING_TRANSLATION = {
-    trans._('none'): Shading.NONE,
-    trans._('spherical'): Shading.SPHERICAL,
+    'none': Shading.NONE,
+    'spherical': Shading.SPHERICAL,
 }
 
 

@@ -115,10 +115,7 @@ def _scale_with_box(
             locked_aspect_ratio = True
         else:
             warnings.warn(
-                trans._(
-                    'Aspect ratio can only be blocked when resizing from a corner',
-                    deferred=True,
-                ),
+                'Aspect ratio can only be blocked when resizing from a corner',
                 RuntimeWarning,
                 stacklevel=2,
             )

@@ -36,9 +36,7 @@ class QtBorderColorControl(QtWidgetControlsBase):
         # Setup widgets
         self.border_color_edit = QColorSwatchEdit(
             initial_color=self._layer.current_border_color,
-            tooltip=trans._(
-                'Click to set the border color of currently selected points and any added afterwards.'
-            ),
+            tooltip='Click to set the border color of currently selected points and any added afterwards.',
         )
         connect_setattr(
             self.border_color_edit.color_changed,
@@ -62,7 +60,7 @@ class QtBorderColorControl(QtWidgetControlsBase):
             )
         )
 
-        self.border_color_edit_label = QtWrappedLabel(trans._('border color:'))
+        self.border_color_edit_label = QtWrappedLabel('border color:')
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
         return [(self.border_color_edit_label, self.border_color_edit)]

@@ -54,11 +54,7 @@ class Line(Shape):
 
         if len(data) != 2:
             raise ValueError(
-                trans._(
-                    'Data shape does not match a line. A line expects two end vertices, {number} provided.',
-                    deferred=True,
-                    number=len(data),
-                )
+                f'Data shape does not match a line. A line expects two end vertices, {len(data)} provided.'
             )
 
         self._data = data

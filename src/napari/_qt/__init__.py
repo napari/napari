@@ -47,18 +47,9 @@ if tuple(int(x) for x in QtCore.__version__.split('.')[:3]) < (5, 12, 3):
     try:
         dist_info_version = importlib.metadata.version(API_NAME)
         if dist_info_version != QtCore.__version__:
-            warn_message = trans._(
-                "\n\nIMPORTANT:\nYou are using QT version {version}, but version {dversion} was also found in your environment.\nThis usually happens when you 'conda install' something that also depends on PyQt\n*after* you have pip installed napari (such as jupyter notebook).\nYou will likely run into problems and should create a fresh environment.\nIf you want to install conda packages into the same environment as napari,\nplease add conda-forge to your channels: https://conda-forge.org\n",
-                deferred=True,
-                version=QtCore.__version__,
-                dversion=dist_info_version,
-            )
+            warn_message = f"\n\nIMPORTANT:\nYou are using QT version {QtCore.__version__}, but version {dist_info_version} was also found in your environment.\nThis usually happens when you 'conda install' something that also depends on PyQt\n*after* you have pip installed napari (such as jupyter notebook).\nYou will likely run into problems and should create a fresh environment.\nIf you want to install conda packages into the same environment as napari,\nplease add conda-forge to your channels: https://conda-forge.org\n"
     except ModuleNotFoundError:
-        warn_message = trans._(
-            '\n\nnapari was tested with QT library `>=5.12.3`.\nThe version installed is {version}. Please report any issues with\nthis specific QT version at https://github.com/Napari/napari/issues.',
-            deferred=True,
-            version=QtCore.__version__,
-        )
+        warn_message = f'\n\nnapari was tested with QT library `>=5.12.3`.\nThe version installed is {QtCore.__version__}. Please report any issues with\nthis specific QT version at https://github.com/Napari/napari/issues.'
     warn(message=warn_message, stacklevel=1)
 
 

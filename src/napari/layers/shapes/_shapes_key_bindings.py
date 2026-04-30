@@ -57,77 +57,77 @@ def register_shapes_mode_action(
     return register_layer_attr_action(Shapes, description, 'mode')
 
 
-@register_shapes_mode_action(trans._('Transform'))
+@register_shapes_mode_action('Transform')
 def activate_shapes_transform_mode(layer: Shapes) -> None:
     layer.mode = Mode.TRANSFORM
 
 
-@register_shapes_mode_action(trans._('Move camera'))
+@register_shapes_mode_action('Move camera')
 def activate_shapes_pan_zoom_mode(layer: Shapes) -> None:
     layer.mode = Mode.PAN_ZOOM
 
 
-@register_shapes_mode_action(trans._('Add rectangles'))
+@register_shapes_mode_action('Add rectangles')
 def activate_add_rectangle_mode(layer: Shapes) -> None:
     """Activate add rectangle tool."""
     layer.mode = Mode.ADD_RECTANGLE
 
 
-@register_shapes_mode_action(trans._('Add ellipses'))
+@register_shapes_mode_action('Add ellipses')
 def activate_add_ellipse_mode(layer: Shapes) -> None:
     """Activate add ellipse tool."""
     layer.mode = Mode.ADD_ELLIPSE
 
 
-@register_shapes_mode_action(trans._('Add lines'))
+@register_shapes_mode_action('Add lines')
 def activate_add_line_mode(layer: Shapes) -> None:
     """Activate add line tool."""
     layer.mode = Mode.ADD_LINE
 
 
-@register_shapes_mode_action(trans._('Add polylines'))
+@register_shapes_mode_action('Add polylines')
 def activate_add_polyline_mode(layer: Shapes) -> None:
     """Activate add polyline tool."""
     layer.mode = Mode.ADD_POLYLINE
 
 
-@register_shapes_mode_action(trans._('Add path'))
+@register_shapes_mode_action('Add path')
 def activate_add_path_mode(layer: Shapes) -> None:
     """Activate add path tool."""
     layer.mode = Mode.ADD_PATH
 
 
-@register_shapes_mode_action(trans._('Add polygons'))
+@register_shapes_mode_action('Add polygons')
 def activate_add_polygon_mode(layer: Shapes) -> None:
     """Activate add polygon tool."""
     layer.mode = Mode.ADD_POLYGON
 
 
-@register_shapes_mode_action(trans._('Add polygons lasso'))
+@register_shapes_mode_action('Add polygons lasso')
 def activate_add_polygon_lasso_mode(layer: Shapes) -> None:
     """Activate add polygon tool."""
     layer.mode = Mode.ADD_POLYGON_LASSO
 
 
-@register_shapes_mode_action(trans._('Select vertices'))
+@register_shapes_mode_action('Select vertices')
 def activate_direct_mode(layer: Shapes) -> None:
     """Activate vertex selection tool."""
     layer.mode = Mode.DIRECT
 
 
-@register_shapes_mode_action(trans._('Select shapes'))
+@register_shapes_mode_action('Select shapes')
 def activate_select_mode(layer: Shapes) -> None:
     """Activate shape selection tool."""
     layer.mode = Mode.SELECT
 
 
-@register_shapes_mode_action(trans._('Insert vertex'))
+@register_shapes_mode_action('Insert vertex')
 def activate_vertex_insert_mode(layer: Shapes) -> None:
     """Activate vertex insertion tool."""
     layer.mode = Mode.VERTEX_INSERT
 
 
-@register_shapes_mode_action(trans._('Remove vertex'))
+@register_shapes_mode_action('Remove vertex')
 def activate_vertex_remove_mode(layer: Shapes) -> None:
     """Activate vertex deletion tool."""
     layer.mode = Mode.VERTEX_REMOVE
@@ -150,14 +150,14 @@ shapes_fun_to_mode = [
 ]
 
 
-@register_shapes_action(trans._('Copy any selected shapes'))
+@register_shapes_action('Copy any selected shapes')
 def copy_selected_shapes(layer: Shapes) -> None:
     """Copy any selected shapes."""
     if layer._mode in (Mode.DIRECT, Mode.SELECT):
         layer._copy_data()
 
 
-@register_shapes_action(trans._('Paste any copied shapes'))
+@register_shapes_action('Paste any copied shapes')
 def paste_shape(layer: Shapes) -> None:
     """Paste any copied shapes."""
     if layer._mode in (Mode.DIRECT, Mode.SELECT):
@@ -165,7 +165,7 @@ def paste_shape(layer: Shapes) -> None:
 
 
 @register_shapes_action(
-    trans._('Select/Deselect all shapes in the current view slice')
+    'Select/Deselect all shapes in the current view slice'
 )
 def select_shapes_in_slice(layer: Shapes) -> None:
     """Select/Deselect all shapes in the current view slice."""
@@ -180,16 +180,12 @@ def select_shapes_in_slice(layer: Shapes) -> None:
         layer.selected_data = new_selected
         if new_selected:
             show_info(
-                trans._(
-                    'Selected {n_new} shapes in this slice.',
-                    n_new=len(new_selected),
-                    deferred=True,
-                )
+                f'Selected {len(new_selected)} shapes in this slice.'
             )
     layer._set_highlight()
 
 
-@register_shapes_action(trans._('Delete any selected shapes'))
+@register_shapes_action('Delete any selected shapes')
 def delete_selected_shapes(layer: Shapes) -> None:
     """."""
 
@@ -197,20 +193,18 @@ def delete_selected_shapes(layer: Shapes) -> None:
         layer.remove_selected()
 
 
-@register_shapes_action(trans._('Move to front'))
+@register_shapes_action('Move to front')
 def move_shapes_selection_to_front(layer: Shapes) -> None:
     layer.move_to_front()
 
 
-@register_shapes_action(trans._('Move to back'))
+@register_shapes_action('Move to back')
 def move_shapes_selection_to_back(layer: Shapes) -> None:
     layer.move_to_back()
 
 
 @register_shapes_action(
-    trans._(
-        'Finish any drawing, for example when using the path or polygon tool'
-    ),
+    'Finish any drawing, for example when using the path or polygon tool',
 )
 def finish_drawing_shape(layer: Shapes) -> None:
     """Finish any drawing, for example when using the path or polygon tool."""

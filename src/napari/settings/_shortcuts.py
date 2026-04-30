@@ -11,10 +11,8 @@ from napari.utils.shortcuts import default_shortcuts
 class ShortcutsSettings(EventedModel):
     shortcuts: dict[str, list[KeyBinding]] = Field(
         default_shortcuts,
-        title=trans._('shortcuts'),
-        description=trans._(
-            'Set keyboard shortcuts for actions.',
-        ),
+        title='shortcuts',
+        description='Set keyboard shortcuts for actions.',
     )
 
     class NapariConfig:

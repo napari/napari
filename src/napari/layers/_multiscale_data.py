@@ -38,7 +38,7 @@ class MultiScaleData(Sequence[LayerDataProtocol]):
         self._data: list[LayerDataProtocol] = list(data)
         if not self._data:
             raise ValueError(
-                trans._('Multiscale data must be a (non-empty) sequence')
+                'Multiscale data must be a (non-empty) sequence'
             )
         for d in self._data:
             assert_protocol(d)

@@ -100,11 +100,7 @@ class SettingsAwareContext(Context):
     def __setitem__(self, k: str, v: Any) -> None:
         if k.startswith(self._PREFIX):
             raise ValueError(
-                trans._(
-                    'Cannot set key starting with {prefix!r}',
-                    deferred=True,
-                    prefix=self._PREFIX,
-                )
+                f'Cannot set key starting with {self._PREFIX!r}'
             )
 
         return super().__setitem__(k, v)

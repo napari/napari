@@ -281,11 +281,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         # assign mesh data and establish default behavior
         if len(data) not in (2, 3):
             raise ValueError(
-                trans._(
-                    'Surface data tuple must be 2 or 3, specifying vertices, faces, and optionally vertex values, instead got length {length}.',
-                    deferred=True,
-                    length=len(data),
-                )
+                f'Surface data tuple must be 2 or 3, specifying vertices, faces, and optionally vertex values, instead got length {len(data)}.'
             )
         self._vertices = data[0]
         self._faces = data[1]
@@ -366,11 +362,7 @@ class Surface(IntensityVisualizationMixin, Layer):
     def data(self, data):
         if len(data) not in (2, 3):
             raise ValueError(
-                trans._(
-                    'Surface data tuple must be 2 or 3, specifying vertices, faces, and optionally vertex values, instead got length {data_length}.',
-                    deferred=True,
-                    data_length=len(data),
-                )
+                f'Surface data tuple must be 2 or 3, specifying vertices, faces, and optionally vertex values, instead got length {len(data)}.'
             )
         self._vertices = data[0]
         self._faces = data[1]

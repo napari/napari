@@ -98,7 +98,7 @@ def _coerce_colorcycle_from_dict(
     color_values = val.get('values')
     if color_values is None:
         raise ValueError(
-            trans._('ColorCycle requires a values argument', deferred=True)
+            'ColorCycle requires a values argument'
         )
 
     transformed_color_values = transform_color(color_values)

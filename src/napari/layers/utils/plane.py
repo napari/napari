@@ -184,11 +184,7 @@ class ClippingPlaneList(SelectableEventedList):
         """
         if array.ndim != 3 or array.shape[1:] != (2, 3):
             raise ValueError(
-                trans._(
-                    'Planes can only be constructed from arrays of shape (N, 2, 3), not {shape}',
-                    deferred=True,
-                    shape=array.shape,
-                )
+                f'Planes can only be constructed from arrays of shape (N, 2, 3), not {array.shape}'
             )
         planes = [
             ClippingPlane.from_array(sub_arr, enabled=enabled)

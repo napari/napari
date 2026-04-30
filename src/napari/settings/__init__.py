@@ -56,11 +56,7 @@ def get_settings(path=_NOT_SET) -> NapariSettings:
         curframe = inspect.currentframe()
         calframe = inspect.getouterframes(curframe, 2)
         raise RuntimeError(
-            trans._(
-                'The path can only be set once per session. Settings called from {calframe}',
-                deferred=True,
-                calframe=calframe[1][3],
-            )
+            f'The path can only be set once per session. Settings called from {calframe[1][3]}'
         )
 
     return _SETTINGS

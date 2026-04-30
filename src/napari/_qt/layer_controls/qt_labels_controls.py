@@ -86,7 +86,7 @@ class QtLabelsControls(QtLayerControls):
             layer,
             'shuffle',
             slot=self.changeColor,
-            tooltip=trans._('Shuffle colors'),
+            tooltip='Shuffle colors',
         )
 
         self.pick_button = self._radio_button(

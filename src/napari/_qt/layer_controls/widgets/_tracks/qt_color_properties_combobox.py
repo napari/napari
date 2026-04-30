@@ -46,7 +46,7 @@ class QtColorPropertiesComboBoxControl(QtWidgetControlsBase):
             self.color_by_combobox.currentTextChanged, self._layer, 'color_by'
         )
 
-        self.color_by_combobox_label = QtWrappedLabel(trans._('color by:'))
+        self.color_by_combobox_label = QtWrappedLabel('color by:')
 
         self._on_color_by_change()
 

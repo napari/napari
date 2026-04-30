@@ -35,22 +35,22 @@ def register_points_mode_action(
     return register_layer_attr_action(Points, description, 'mode')
 
 
-@register_points_mode_action(trans._('Transform'))
+@register_points_mode_action('Transform')
 def activate_points_transform_mode(layer: Points) -> None:
     layer.mode = Mode.TRANSFORM
 
 
-@register_points_mode_action(trans._('Move camera'))
+@register_points_mode_action('Move camera')
 def activate_points_pan_zoom_mode(layer: Points) -> None:
     layer.mode = Mode.PAN_ZOOM
 
 
-@register_points_mode_action(trans._('Add points'))
+@register_points_mode_action('Add points')
 def activate_points_add_mode(layer: Points) -> None:
     layer.mode = Mode.ADD
 
 
-@register_points_mode_action(trans._('Select points'))
+@register_points_mode_action('Select points')
 def activate_points_select_mode(layer: Points) -> None:
     layer.mode = Mode.SELECT
 
@@ -76,7 +76,7 @@ def paste(layer: Points) -> None:
 
 
 @register_points_action(
-    trans._('Select/Deselect all points in the current view slice'),
+    'Select/Deselect all points in the current view slice',
 )
 def select_all_in_slice(layer: Points) -> None:
     """Select only the points in the current view slice, don't append."""
@@ -86,32 +86,21 @@ def select_all_in_slice(layer: Points) -> None:
     if new_selected & layer.selected_data == new_selected:
         layer.selected_data = layer.selected_data - new_selected
         show_info(
-            trans._(
-                'Deselected all points in this slice, use {shortcut} to select/deselect all points on the layer. ({n_total} selected)',
-                shortcut=Shortcut(shortcuts()['napari:select_all_data'][0]),
-                n_total=len(layer.selected_data),
-                deferred=True,
-            )
+            f'Deselected all points in this slice, use {Shortcut(shortcuts()['napari:select_all_data'][0])} to select/deselect all points on the layer. ({len(layer.selected_data)} selected)'
         )
 
     # If visible points are not already selected, select just the visible points
     else:
         layer.selected_data = new_selected
         show_info(
-            trans._(
-                'Selected {n_new} points in this slice only, use {shortcut} to append to existing selection. ({n_total} selected)',
-                n_new=len(new_selected),
-                shortcut=Shortcut(
+            f'Selected {len(new_selected)} points in this slice only, use {Shortcut(
                     shortcuts()['napari:select_append_all_in_slice'][0]
-                ),
-                n_total=len(layer.selected_data),
-                deferred=True,
-            )
+                )} to append to existing selection. ({len(layer.selected_data)} selected)'
         )
 
 
 @register_points_action(
-    trans._('Select/Deselect all points in the current view slice'),
+    'Select/Deselect all points in the current view slice',
 )
 def select_append_all_in_slice(layer: Points) -> None:
     """Select all points in the current view slice, appending to existing selection"""
@@ -121,36 +110,25 @@ def select_append_all_in_slice(layer: Points) -> None:
     if new_selected & layer.selected_data == new_selected:
         layer.selected_data = layer.selected_data - new_selected
         show_info(
-            trans._(
-                'Deselected all points in this slice, use {shortcut} to select/deselect all points on the layer. ({n_total} selected)',
-                shortcut=Shortcut(shortcuts()['napari:select_all_data'][0]),
-                n_total=len(layer.selected_data),
-                deferred=True,
-            )
+            f'Deselected all points in this slice, use {Shortcut(shortcuts()['napari:select_all_data'][0])} to select/deselect all points on the layer. ({len(layer.selected_data)} selected)'
         )
 
     # If not all visible points are already selected, additionally select the visible points
     else:
         layer.selected_data = layer.selected_data | new_selected
         show_info(
-            trans._(
-                'Appended {n_new} points in this slice to the selection, use {shortcut} to select all points on the layer. ({n_total} selected)',
-                n_new=len(new_selected),
-                shortcut=Shortcut(shortcuts()['napari:select_all_data'][0]),
-                n_total=len(layer.selected_data),
-                deferred=True,
-            )
+            f'Appended {len(new_selected)} points in this slice to the selection, use {Shortcut(shortcuts()['napari:select_all_data'][0])} to select all points on the layer. ({len(layer.selected_data)} selected)'
         )
 
 
 @register_points_action(
-    trans._('Select/Deselect all points in the layer'),
+    'Select/Deselect all points in the layer',
 )
 def select_all_data(layer: Points) -> None:
     # If all points are already selected, deselect all points
     if len(layer.selected_data) == len(layer.data):
         layer.selected_data = set()
-        show_info(trans._('Cleared all selections.', deferred=True))
+        show_info('Cleared all selections.')
 
     # Select all points
     else:
@@ -159,17 +137,11 @@ def select_all_data(layer: Points) -> None:
         view_selected = set(layer._indices_view[: len(layer._view_data)])
         layer.selected_data = new_selected
         show_info(
-            trans._(
-                'Selected {n_new} points across all slices, including {n_invis} points not currently visible. ({n_total})',
-                n_new=len(new_selected),
-                n_invis=len(new_selected - view_selected),
-                n_total=len(layer.selected_data),
-                deferred=True,
-            )
+            f'Selected {len(new_selected)} points across all slices, including {len(new_selected - view_selected)} points not currently visible. ({len(layer.selected_data)})'
         )
 
 
-@register_points_action(trans._('Delete selected points'))
+@register_points_action('Delete selected points')
 def delete_selected_points(layer: Points) -> None:
     """Delete all selected points."""
     layer.remove_selected()

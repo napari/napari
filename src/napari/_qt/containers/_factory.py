@@ -38,11 +38,7 @@ def create_view(
     if isinstance(obj, SelectableEventedList):
         return QtListView(obj, parent=parent)
     raise TypeError(
-        trans._(
-            'Cannot create Qt view for obj: {obj}',
-            deferred=True,
-            obj=obj,
-        )
+        f'Cannot create Qt view for obj: {obj}'
     )
 
 
@@ -78,9 +74,5 @@ def create_model(
     if isinstance(obj, SelectableEventedList):
         return QtListModel(obj, parent=parent)
     raise TypeError(
-        trans._(
-            'Cannot create Qt model for obj: {obj}',
-            deferred=True,
-            obj=obj,
-        )
+        f'Cannot create Qt model for obj: {obj}'
     )

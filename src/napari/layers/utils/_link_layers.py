@@ -104,12 +104,7 @@ def link_layers(
         extra = attr_set - valid_attrs
         if extra:
             raise ValueError(
-                trans._(
-                    'Cannot link attributes that are not shared by all layers: {extra}. Allowable attrs include:\n{valid_attrs}',
-                    deferred=True,
-                    extra=extra,
-                    valid_attrs=valid_attrs,
-                )
+                f'Cannot link attributes that are not shared by all layers: {extra}. Allowable attrs include:\n{valid_attrs}'
             )
     else:
         # if no attributes are specified, ALL valid attributes are linked.
@@ -170,7 +165,7 @@ def unlink_layers(
     """
     if not layers:
         raise ValueError(
-            trans._('Must provide at least one layer to unlink', deferred=True)
+            'Must provide at least one layer to unlink'
         )
     layer_refs = [ref(layer) for layer in layers]
     if len(layer_refs) == 1:
@@ -251,10 +246,7 @@ def _get_common_evented_attributes(
         first_layer = next(iter(layers))
     except StopIteration:
         raise ValueError(
-            trans._(
-                '``layers`` iterable must have at least one layer',
-                deferred=True,
-            )
+            '``layers`` iterable must have at least one layer'
         ) from None
 
     layer_events = [

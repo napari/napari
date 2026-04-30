@@ -543,11 +543,7 @@ class Tracks(Layer):
         """set the property to color vertices by"""
         if color_by not in self.properties_to_color_by:
             raise ValueError(
-                trans._(
-                    '{color_by} is not a valid property key',
-                    deferred=True,
-                    color_by=color_by,
-                )
+                f'{color_by} is not a valid property key'
             )
         self._color_by = color_by
         self._recolor_tracks()
@@ -562,11 +558,7 @@ class Tracks(Layer):
         """set the default colormap"""
         if colormap not in AVAILABLE_COLORMAPS:
             raise ValueError(
-                trans._(
-                    'Colormap {colormap} not available',
-                    deferred=True,
-                    colormap=colormap,
-                )
+                f'Colormap {colormap} not available'
             )
         self._colormap = colormap
         self._recolor_tracks()
@@ -667,13 +659,7 @@ class Tracks(Layer):
     def _check_color_by_in_features(self) -> None:
         if self._color_by not in self.features.columns:
             warn(
-                (
-                    trans._(
-                        'Previous color_by key {key!r} not present in features. Falling back to track_id',
-                        deferred=True,
-                        key=self._color_by,
-                    )
-                ),
+                f'Previous color_by key {self._color_by!r} not present in features. Falling back to track_id',
                 UserWarning,
             )
             self._color_by = 'track_id'

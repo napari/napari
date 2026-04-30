@@ -47,7 +47,7 @@ class QtIdCheckBoxControl(QtWidgetControlsBase):
             convert_fun=checked_to_bool,
         )
 
-        self.id_checkbox_label = QtWrappedLabel(trans._('show ID:'))
+        self.id_checkbox_label = QtWrappedLabel('show ID:')
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
         return [(self.id_checkbox_label, self.id_checkbox)]

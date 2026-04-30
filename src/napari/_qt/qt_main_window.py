@@ -965,7 +965,7 @@ class Window:
         )
         # file menu
         self.file_menu = build_qmodel_menu(
-            MenuId.MENUBAR_FILE, title=trans._('&File'), parent=self._qt_window
+            MenuId.MENUBAR_FILE, title='&File', parent=self._qt_window
         )
         self.file_menu.aboutToShow.connect(
             self._update_file_menu_state,
@@ -973,7 +973,7 @@ class Window:
         self.main_menu.addMenu(self.file_menu)
         # view menu
         self.view_menu = build_qmodel_menu(
-            MenuId.MENUBAR_VIEW, title=trans._('&View'), parent=self._qt_window
+            MenuId.MENUBAR_VIEW, title='&View', parent=self._qt_window
         )
         self.view_menu.aboutToShow.connect(
             self._update_view_menu_state,
@@ -982,7 +982,7 @@ class Window:
         # layers menu
         self.layers_menu = build_qmodel_menu(
             MenuId.MENUBAR_LAYERS,
-            title=trans._('&Layers'),
+            title='&Layers',
             parent=self._qt_window,
         )
         self.layers_menu.aboutToShow.connect(
@@ -992,7 +992,7 @@ class Window:
         # plugins menu
         self.plugins_menu = build_qmodel_menu(
             MenuId.MENUBAR_PLUGINS,
-            title=trans._('&Plugins'),
+            title='&Plugins',
             parent=self._qt_window,
         )
         self.plugins_menu.aboutToShow.connect(
@@ -1003,7 +1003,7 @@ class Window:
         if perf.perf_config is not None:
             self._debug_menu = build_qmodel_menu(
                 MenuId.MENUBAR_DEBUG,
-                title=trans._('&Debug'),
+                title='&Debug',
                 parent=self._qt_window,
             )
             self._handle_trace_file_on_start()
@@ -1014,7 +1014,7 @@ class Window:
         # window menu
         self.window_menu = build_qmodel_menu(
             MenuId.MENUBAR_WINDOW,
-            title=trans._('&Window'),
+            title='&Window',
             parent=self._qt_window,
         )
         self.plugins_menu.aboutToShow.connect(
@@ -1023,7 +1023,7 @@ class Window:
         self.main_menu.addMenu(self.window_menu)
         # help menu
         self.help_menu = build_qmodel_menu(
-            MenuId.MENUBAR_HELP, title=trans._('&Help'), parent=self._qt_window
+            MenuId.MENUBAR_HELP, title='&Help', parent=self._qt_window
         )
         self.help_menu.aboutToShow.connect(
             self._update_help_menu_state,
@@ -1168,10 +1168,7 @@ class Window:
         if not name:
             with contextlib.suppress(AttributeError):
                 name = widget.objectName()
-            name = name or trans._(
-                'Dock widget {number}',
-                number=self._unnamed_dockwidget_count,
-            )
+            name = name or f'Dock widget {self._unnamed_dockwidget_count}'
 
             self._unnamed_dockwidget_count += 1
 
@@ -1364,11 +1361,7 @@ class Window:
                     break
             else:
                 raise LookupError(
-                    trans._(
-                        'Could not find a dock widget containing: {widget}',
-                        deferred=True,
-                        widget=widget,
-                    )
+                    f'Could not find a dock widget containing: {widget}'
                 )
         else:
             _dw = widget
@@ -1515,10 +1508,7 @@ class Window:
             self._qt_window.show(block=block)
         except (AttributeError, RuntimeError) as e:
             raise RuntimeError(
-                trans._(
-                    'This viewer has already been closed and deleted. Please create a new one.',
-                    deferred=True,
-                )
+                'This viewer has already been closed and deleted. Please create a new one.'
             ) from e
 
         if settings.application.first_time:
@@ -1527,10 +1517,7 @@ class Window:
                 self._qt_window.resize(self._qt_window.layout().sizeHint())
             except (AttributeError, RuntimeError) as e:
                 raise RuntimeError(
-                    trans._(
-                        'This viewer has already been closed and deleted. Please create a new one.',
-                        deferred=True,
-                    )
+                    'This viewer has already been closed and deleted. Please create a new one.'
                 ) from e
         else:
             try:
@@ -1542,11 +1529,7 @@ class Window:
                 import warnings
 
                 warnings.warn(
-                    trans._(
-                        'The window geometry settings could not be loaded due to the following error: {err}',
-                        deferred=True,
-                        err=err,
-                    ),
+                    f'The window geometry settings could not be loaded due to the following error: {err}',
                     category=RuntimeWarning,
                     stacklevel=2,
                 )

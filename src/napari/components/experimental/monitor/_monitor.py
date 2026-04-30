@@ -37,11 +37,7 @@ def _load_config(path: str) -> dict:
     if not path.exists():
         raise FileNotFoundError(
             errno.ENOENT,
-            trans._(
-                'Monitor: Config file not found: {path}',
-                deferred=True,
-                path=path,
-            ),
+            f'Monitor: Config file not found: {path}',
         )
 
     with path.open() as infile:

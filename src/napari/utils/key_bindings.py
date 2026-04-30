@@ -204,11 +204,7 @@ def bind_key(
 
     if func is not None and key_bind in keymap and not overwrite:
         raise ValueError(
-            trans._(
-                "keybinding {key} already used! specify 'overwrite=True' to bypass this check",
-                deferred=True,
-                key=str(key_bind),
-            )
+            f"keybinding {str(key_bind)} already used! specify 'overwrite=True' to bypass this check"
         )
 
     unbound = keymap.pop(key_bind, None)
@@ -216,10 +212,7 @@ def bind_key(
     if func is not None:
         if func is not Ellipsis and not callable(func):
             raise TypeError(
-                trans._(
-                    "'func' must be a callable",
-                    deferred=True,
-                )
+                "'func' must be a callable"
             )
         keymap[key_bind] = func
 
@@ -418,11 +411,7 @@ class KeymapHandler:
             return False
         if not callable(func):
             raise TypeError(
-                trans._(
-                    'expected {func} to be callable',
-                    deferred=True,
-                    func=func,
-                )
+                f'expected {func} to be callable'
             )
 
         generator_or_callback = func()

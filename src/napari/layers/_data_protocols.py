@@ -34,13 +34,7 @@ def _raise_protocol_error(obj: Any, protocol: type) -> None:
     annotations = getattr(protocol, '__annotations__', {})
     needed = set(dir(protocol)).union(annotations) - _OBJ_NAMES
     missing = needed - set(dir(obj))
-    message = trans._(
-        'Object of type {type_name} does not implement {protocol_name} Protocol.\nMissing methods: {missing_methods}',
-        deferred=True,
-        type_name=repr(type(obj).__name__),
-        protocol_name=repr(protocol.__name__),
-        missing_methods=repr(missing),
-    )
+    message = f'Object of type {repr(type(obj).__name__)} does not implement {repr(protocol.__name__)} Protocol.\nMissing methods: {repr(missing)}'
     raise TypeError(message)
 
 

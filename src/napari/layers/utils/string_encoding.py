@@ -86,10 +86,7 @@ class StringEncoding(StyleEncoding[StringValue, StringArray], Protocol):
         if isinstance(value, Sequence):
             return ManualStringEncoding(array=value, default=DEFAULT_STRING)
         raise ValueError(
-            trans._(
-                'value should be a StringEncoding, a dict, a string, a sequence of strings, or None',
-                deferred=True,
-            )
+            'value should be a StringEncoding, a dict, a string, a sequence of strings, or None'
         )
 
 

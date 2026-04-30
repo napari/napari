@@ -53,11 +53,7 @@ class SelectableEventedList(Selectable[_T], EventedList[_T]):
         """Called before adding an item to the selection."""
         if value not in self:
             raise ValueError(
-                trans._(
-                    'Cannot select item that is not in list: {value!r}',
-                    deferred=True,
-                    value=value,
-                )
+                f'Cannot select item that is not in list: {value!r}'
             )
         return value
 
@@ -112,10 +108,7 @@ class SelectableEventedList(Selectable[_T], EventedList[_T]):
         """
         # this is just here for now to support the old layerlist API
         warnings.warn(
-            trans._(
-                'move_selected is deprecated since 0.4.16. Please use layers.move_multiple with layers.selection instead.',
-                deferred=True,
-            ),
+            'move_selected is deprecated since 0.4.16. Please use layers.move_multiple with layers.selection instead.',
             FutureWarning,
             stacklevel=2,
         )

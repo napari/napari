@@ -55,10 +55,7 @@ def is_color_mapped(color, properties):
         return False
 
     raise ValueError(
-        trans._(
-            'face_color should be the name of a color, an array of colors, or the name of an property',
-            deferred=True,
-        )
+        'face_color should be the name of a color, an array of colors, or the name of an property'
     )
 
 

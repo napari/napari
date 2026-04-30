@@ -158,9 +158,7 @@ class TextManager(EventedModel):
             The new properties from the layer
         """
         warnings.warn(
-            trans._(
-                'TextManager.refresh_text is deprecated since 0.4.16. Use TextManager.refresh instead.'
-            ),
+            'TextManager.refresh_text is deprecated since 0.4.16. Use TextManager.refresh instead.',
             DeprecationWarning,
             stacklevel=2,
         )
@@ -178,9 +176,7 @@ class TextManager(EventedModel):
             The number of text elements to add
         """
         warnings.warn(
-            trans._(
-                'TextManager.add is deprecated since 0.4.16. Use TextManager.apply instead.'
-            ),
+            'TextManager.add is deprecated since 0.4.16. Use TextManager.apply instead.',
             DeprecationWarning,
             stacklevel=2,
         )
@@ -386,10 +382,7 @@ class TextManager(EventedModel):
         if blending_mode == Blending.OPAQUE:
             blending_mode = Blending.TRANSLUCENT
             warnings.warn(
-                trans._(
-                    'opaque blending mode is not allowed for text. setting to translucent.',
-                    deferred=True,
-                ),
+                'opaque blending mode is not allowed for text. setting to translucent.',
                 category=RuntimeWarning,
             )
 
@@ -398,9 +391,7 @@ class TextManager(EventedModel):
 
 def _warn_about_deprecated_text_parameter():
     warnings.warn(
-        trans._(
-            'text is a deprecated parameter since 0.4.16. Use string instead.'
-        ),
+        'text is a deprecated parameter since 0.4.16. Use string instead.',
         DeprecationWarning,
         stacklevel=2,
     )
@@ -408,9 +399,7 @@ def _warn_about_deprecated_text_parameter():
 
 def _warn_about_deprecated_properties_parameter():
     warnings.warn(
-        trans._(
-            'properties is a deprecated parameter since 0.4.16. Use features instead.'
-        ),
+        'properties is a deprecated parameter since 0.4.16. Use features instead.',
         DeprecationWarning,
         stacklevel=2,
     )
@@ -418,9 +407,7 @@ def _warn_about_deprecated_properties_parameter():
 
 def _warn_about_deprecated_n_text_parameter():
     warnings.warn(
-        trans._(
-            'n_text is a deprecated parameter since 0.4.16. Use features instead.'
-        ),
+        'n_text is a deprecated parameter since 0.4.16. Use features instead.',
         DeprecationWarning,
         stacklevel=2,
     )
@@ -428,9 +415,7 @@ def _warn_about_deprecated_n_text_parameter():
 
 def _warn_about_deprecated_values_parameter():
     warnings.warn(
-        trans._(
-            'values is a deprecated parameter since 0.4.16. Use string instead.'
-        ),
+        'values is a deprecated parameter since 0.4.16. Use string instead.',
         DeprecationWarning,
         stacklevel=2,
     )

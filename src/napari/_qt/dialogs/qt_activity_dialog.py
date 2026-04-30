@@ -41,10 +41,10 @@ class ActivityToggleItem(QWidget):
         )
         self._activityBtn.setArrowType(Qt.ArrowType.UpArrow)
         self._activityBtn.setIconSize(QSize(11, 11))
-        self._activityBtn.setText(trans._('activity'))
+        self._activityBtn.setText('activity')
         self._activityBtn.setCheckable(True)
 
-        self._inProgressIndicator = QLabel(trans._('in progress...'), self)
+        self._inProgressIndicator = QLabel('in progress...', self)
         sp = self._inProgressIndicator.sizePolicy()
         sp.setRetainSizeWhenHidden(True)
         self._inProgressIndicator.setSizePolicy(sp)

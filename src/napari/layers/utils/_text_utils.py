@@ -61,10 +61,7 @@ def _calculate_bbox_centers(view_data: np.ndarray | list) -> np.ndarray:
         )
     else:
         raise TypeError(
-            trans._(
-                'view_data should be a numpy array or list when using Anchor.CENTER',
-                deferred=True,
-            )
+            'view_data should be a numpy array or list when using Anchor.CENTER'
         )
     return bbox_centers
 
@@ -158,10 +155,7 @@ def _calculate_bbox_extents(
         bbox_max = np.array([np.max(coords, axis=0) for coords in view_data])
     else:
         raise TypeError(
-            trans._(
-                'view_data should be a numpy array or list',
-                deferred=True,
-            )
+            'view_data should be a numpy array or list'
         )
     return bbox_min, bbox_max
 

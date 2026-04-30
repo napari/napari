@@ -35,13 +35,6 @@ def deprecation_warning_event(
     previous_path = f'{prefix}.{previous_name}'
     new_path = f'{prefix}.{new_name}'
     return WarningEmitter(
-        trans._(
-            '{previous_path} is deprecated since {since_version} and will be removed in {version}. Please use {new_path}',
-            deferred=True,
-            previous_path=previous_path,
-            since_version=since_version,
-            version=version,
-            new_path=new_path,
-        ),
+        f'{previous_path} is deprecated since {since_version} and will be removed in {version}. Please use {new_path}',
         type_name=previous_name,
     )

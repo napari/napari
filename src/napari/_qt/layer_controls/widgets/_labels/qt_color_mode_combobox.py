@@ -51,7 +51,7 @@ class QtColorModeComboBoxControl(QtWidgetControlsBase):
         self._on_colormap_change()
         color_mode_comboBox.activated.connect(self.change_color_mode)
 
-        self.color_mode_combobox_label = QtWrappedLabel(trans._('color mode:'))
+        self.color_mode_combobox_label = QtWrappedLabel('color mode:')
 
     def change_color_mode(self) -> None:
         """Change color mode of label layer"""

@@ -35,36 +35,36 @@ class NapariSettings(EventedConfigFileSettings):
     # 3. You don't need to touch this value if you're just adding a new option
     schema_version: Version = Field(
         CURRENT_SCHEMA_VERSION,
-        description=trans._('Napari settings schema version.'),
+        description='Napari settings schema version.',
     )
 
     application: ApplicationSettings = Field(
         default_factory=ApplicationSettings,
-        title=trans._('Application'),
-        description=trans._('Main application settings.'),
+        title='Application',
+        description='Main application settings.',
     )
     appearance: AppearanceSettings = Field(
         default_factory=AppearanceSettings,
-        title=trans._('Appearance'),
-        description=trans._('User interface appearance settings.'),
+        title='Appearance',
+        description='User interface appearance settings.',
         frozen=True,
     )
     plugins: PluginsSettings = Field(
         default_factory=PluginsSettings,
-        title=trans._('Plugins'),
-        description=trans._('Plugins settings.'),
+        title='Plugins',
+        description='Plugins settings.',
         frozen=True,
     )
     shortcuts: ShortcutsSettings = Field(
         default_factory=ShortcutsSettings,
-        title=trans._('Shortcuts'),
-        description=trans._('Shortcut settings.'),
+        title='Shortcuts',
+        description='Shortcut settings.',
         frozen=True,
     )
     experimental: ExperimentalSettings = Field(
         default_factory=ExperimentalSettings,
-        title=trans._('Experimental'),
-        description=trans._('Experimental settings.'),
+        title='Experimental',
+        description='Experimental settings.',
         frozen=True,
     )
 

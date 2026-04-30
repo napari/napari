@@ -163,10 +163,7 @@ def create_worker(
         total = int(_progress.get('total', 0))
         if isinstance(worker, FunctionWorker) and total != 0:
             warnings.warn(
-                trans._(
-                    '_progress total != 0 but worker is FunctionWorker and will not yield. Returning indeterminate progress bar...',
-                    deferred=True,
-                ),
+                '_progress total != 0 but worker is FunctionWorker and will not yield. Returning indeterminate progress bar...',
                 RuntimeWarning,
             )
             total = 0
@@ -194,7 +191,7 @@ def create_worker(
         worker_status_id = window._register_task_status(
             'napari-worker',
             Status.PENDING,
-            trans._('{func} execution pending', deferred=True, func=func),
+            f'{func} execution pending',
             cancel_callback=worker.quit,
         )
         worker.started.connect(
@@ -202,9 +199,7 @@ def create_worker(
                 lambda task_status_id, function: window._update_task_status(
                     task_status_id,
                     Status.BUSY,
-                    description=trans._(
-                        'Executing {func}', deferred=True, func=function
-                    ),
+                    description=f'Executing {function}',
                 ),
                 worker_status_id,
                 func,
@@ -215,9 +210,7 @@ def create_worker(
                 lambda task_status_id, function: window._update_task_status(
                     task_status_id,
                     Status.FAILED,
-                    description=trans._(
-                        '{func} execution failed', deferred=True, func=function
-                    ),
+                    description=f'{function} execution failed',
                 ),
                 worker_status_id,
                 func,
@@ -228,11 +221,7 @@ def create_worker(
                 lambda task_status_id, function: window._update_task_status(
                     task_status_id,
                     Status.COMPLETED,
-                    description=trans._(
-                        '{func} execution completed',
-                        deferred=True,
-                        func=function,
-                    ),
+                    description=f'{function} execution completed',
                 ),
                 worker_status_id,
                 func,
@@ -245,11 +234,7 @@ def create_worker(
                         window._update_task_status(
                             task_status_id,
                             Status.CANCELLED,
-                            description=trans._(
-                                '{func} execution cancelled',
-                                deferred=True,
-                                func=function,
-                            ),
+                            description=f'{function} execution cancelled',
                         )
                     ),
                     worker_status_id,

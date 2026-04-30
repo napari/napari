@@ -99,7 +99,7 @@ class NapariQtNotification(QDialog):
         self.message.setText(message)
         if source:
             self.source_label.setText(
-                trans._('Source: {source}', source=source)
+                f'Source: {source}'
             )
 
         self.close_button.clicked.connect(self.close)
@@ -396,7 +396,7 @@ class NapariQtNotification(QDialog):
 
             actions = (
                 *tuple(notification.actions),
-                (trans._('View Traceback'), show_tb),
+                ('View Traceback', show_tb),
             )
         else:
             actions = notification.actions
@@ -458,16 +458,14 @@ class TracebackDialog(QDialog):
         )
         text.setText(exception.as_text())
         text.setReadOnly(True)
-        self.btn = QPushButton(trans._('Enter Debugger'))
+        self.btn = QPushButton('Enter Debugger')
         self.btn.clicked.connect(self._enter_debug_mode)
         self.layout().addWidget(text)
         self.layout().addWidget(self.btn, 0, Qt.AlignmentFlag.AlignRight)
 
     def _enter_debug_mode(self):
         self.btn.setText(
-            trans._(
-                'Now Debugging. Please quit debugger in console to continue'
-            )
+            'Now Debugging. Please quit debugger in console to continue'
         )
         _debug_tb(self.exception.__traceback__)
-        self.btn.setText(trans._('Enter Debugger'))
+        self.btn.setText('Enter Debugger')

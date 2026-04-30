@@ -44,9 +44,7 @@ class QtSymbolComboBoxControl(QtWidgetControlsBase):
         # Setup widgets
         sym_cb = QComboBox()
         sym_cb.setToolTip(
-            trans._(
-                'Change the symbol of currently selected points and any added afterwards.'
-            )
+            'Change the symbol of currently selected points and any added afterwards.'
         )
         current_index = 0
         for index, (symbol_string, text) in enumerate(
@@ -62,7 +60,7 @@ class QtSymbolComboBoxControl(QtWidgetControlsBase):
         sym_cb.currentTextChanged.connect(self.change_current_symbol)
         self.symbol_combobox = sym_cb
 
-        self.symbol_combobox_label = QtWrappedLabel(trans._('symbol:'))
+        self.symbol_combobox_label = QtWrappedLabel('symbol:')
 
     def change_current_symbol(self, text: str) -> None:
         """Change marker symbol of the points on the layer model.

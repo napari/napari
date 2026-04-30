@@ -122,10 +122,7 @@ def _ensure_color_arrays(shapes, face_colors=None, edge_colors=None):
 
     if not len(face_colors) == len(edge_colors) == len(shapes):
         raise ValueError(
-            trans._(
-                'shapes, face_colors, and edge_colors must be the same length',
-                deferred=True,
-            )
+            'shapes, face_colors, and edge_colors must be the same length'
         )
 
     return face_colors, edge_colors
@@ -676,12 +673,7 @@ class ShapeList:
         n_shapes = len(self.data)
         if not np.array_equal(colors.shape, (n_shapes, 4)):
             raise ValueError(
-                trans._(
-                    '{attribute}_color must have shape ({n_shapes}, 4)',
-                    deferred=True,
-                    attribute=attribute,
-                    n_shapes=n_shapes,
-                )
+                f'{attribute}_color must have shape ({n_shapes}, 4)'
             )
 
         update_method = getattr(self, f'update_{attribute}_colors')
@@ -852,10 +844,7 @@ class ShapeList:
         elif isinstance(shape, Iterable):
             if shape_index is not None:
                 raise ValueError(
-                    trans._(
-                        'shape_index must be None when adding multiple shapes',
-                        deferred=True,
-                    )
+                    'shape_index must be None when adding multiple shapes'
                 )
             self._add_multiple_shapes(
                 shapes=shape,
@@ -865,10 +854,7 @@ class ShapeList:
             )
         else:
             raise TypeError(
-                trans._(
-                    'Cannot add single nor multiple shape',
-                    deferred=True,
-                )
+                'Cannot add single nor multiple shape'
             )
 
     def _add_single_shape(
@@ -899,10 +885,7 @@ class ShapeList:
         """
         if not issubclass(type(shape), Shape):
             raise TypeError(
-                trans._(
-                    'shape must be subclass of Shape',
-                    deferred=True,
-                )
+                'shape must be subclass of Shape'
             )
 
         if shape_index is None:
@@ -1088,10 +1071,7 @@ class ShapeList:
         # Validate inputs and prepare colors
         if not all(issubclass(type(shape), Shape) for shape in shapes):
             raise ValueError(
-                trans._(
-                    'all shapes must be subclass of Shape',
-                    deferred=True,
-                )
+                'all shapes must be subclass of Shape'
             )
         face_colors, edge_colors = _ensure_color_arrays(
             shapes, face_colors, edge_colors
@@ -1481,12 +1461,7 @@ class ShapeList:
                     shape_cls = shape_classes[shape_type]
                 else:
                     raise ValueError(
-                        trans._(
-                            '{shape_type} must be one of {shape_classes}',
-                            deferred=True,
-                            shape_type=shape_type,
-                            shape_classes=set(shape_classes),
-                        )
+                        f'{shape_type} must be one of {set(shape_classes)}'
                     )
             else:
                 shape_cls = new_type

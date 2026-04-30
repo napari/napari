@@ -88,10 +88,7 @@ class QtPopup(QDialog):
             window = self.parent().window() if self.parent() else None
             if not window:
                 raise ValueError(
-                    trans._(
-                        'Specifying position as a string is only possible if the popup has a parent',
-                        deferred=True,
-                    )
+                    'Specifying position as a string is only possible if the popup has a parent'
                 )
             left = window.pos().x()
             top = window.pos().y()
@@ -116,21 +113,14 @@ class QtPopup(QDialog):
                 )
             else:
                 raise ValueError(
-                    trans._(
-                        'position must be one of ["top", "left", "bottom", "right"]',
-                        deferred=True,
-                    )
+                    'position must be one of ["top", "left", "bottom", "right"]'
                 )
         elif isinstance(position, tuple | list):
             assert len(position) == 4, '`position` argument must have length 4'
             left, top, width, height = position
         else:
             raise TypeError(
-                trans._(
-                    'Wrong type of position {position}',
-                    deferred=True,
-                    position=position,
-                )
+                f'Wrong type of position {position}'
             )
 
         # necessary for transparent round corners

@@ -280,9 +280,7 @@ class QtViewerButtons(QFrame):
         self.transposeDimsButton = QtViewerPushButton(
             'transpose',
             action='napari:transpose_axes',
-            extra_tooltip_text=trans._(
-                '\nAlt/option-click to rotate visible axes'
-            ),
+            extra_tooltip_text='\nAlt/option-click to rotate visible axes',
         )
         self.transposeDimsButton.installEventFilter(self)
 
@@ -417,18 +415,18 @@ class QtViewerButtons(QFrame):
             text='Controls the rotation angles around each axis in degrees.',
         )
 
-        grid_layout.addWidget(QLabel(trans._('Perspective:')), 2, 0)
+        grid_layout.addWidget(QLabel('Perspective:'), 2, 0)
         grid_layout.addWidget(self.perspective, 2, 1)
         grid_layout.addWidget(perspective_help_symbol, 2, 2)
 
-        grid_layout.addWidget(QLabel(trans._('Angles    Z:')), 3, 0)
+        grid_layout.addWidget(QLabel('Angles    Z:'), 3, 0)
         grid_layout.addWidget(self.rz, 3, 1)
         grid_layout.addWidget(angle_help_symbol, 3, 2)
 
-        grid_layout.addWidget(QLabel(trans._('               Y:')), 4, 0)
+        grid_layout.addWidget(QLabel('               Y:'), 4, 0)
         grid_layout.addWidget(self.ry, 4, 1)
 
-        grid_layout.addWidget(QLabel(trans._('               X:')), 5, 0)
+        grid_layout.addWidget(QLabel('               X:'), 5, 0)
         grid_layout.addWidget(self.rx, 5, 1)
 
     def _add_shared_camera_controls(
@@ -450,7 +448,7 @@ class QtViewerButtons(QFrame):
             text='Controls zoom level of the camera. Larger values zoom in, smaller values zoom out.',
         )
 
-        grid_layout.addWidget(QLabel(trans._('Zoom:')), 1, 0)
+        grid_layout.addWidget(QLabel('Zoom:'), 1, 0)
         grid_layout.addWidget(self.zoom, 1, 1)
         grid_layout.addWidget(zoom_help_symbol, 1, 2)
 
@@ -527,7 +525,7 @@ class QtViewerButtons(QFrame):
 
         orientation_widget.setLayout(orientation_layout)
 
-        grid_layout.addWidget(QLabel(trans._('Orientation:')), 0, 0)
+        grid_layout.addWidget(QLabel('Orientation:'), 0, 0)
         grid_layout.addWidget(orientation_widget, 0, 1)
         grid_layout.addWidget(self.orientation_help_symbol, 0, 2)
 
@@ -733,19 +731,19 @@ class QtViewerButtons(QFrame):
 
         # layout
         grid_layout = QGridLayout()
-        grid_layout.addWidget(QLabel(trans._('Grid stride:')), 0, 0)
+        grid_layout.addWidget(QLabel('Grid stride:'), 0, 0)
         grid_layout.addWidget(grid_stride, 0, 1)
         grid_layout.addWidget(stride_help_symbol, 0, 2)
 
-        grid_layout.addWidget(QLabel(trans._('Grid width:')), 1, 0)
+        grid_layout.addWidget(QLabel('Grid width:'), 1, 0)
         grid_layout.addWidget(grid_width, 1, 1)
 
         grid_layout.addWidget(shape_help_symbol, 1, 2, 2, 1)  # Span rows
 
-        grid_layout.addWidget(QLabel(trans._('Grid height:')), 2, 0)
+        grid_layout.addWidget(QLabel('Grid height:'), 2, 0)
         grid_layout.addWidget(grid_height, 2, 1)
 
-        grid_layout.addWidget(QLabel(trans._('Grid spacing:')), 3, 0)
+        grid_layout.addWidget(QLabel('Grid spacing:'), 3, 0)
         grid_layout.addWidget(grid_spacing, 3, 1)
         grid_layout.addWidget(spacing_help_symbol, 3, 2)
 
@@ -801,18 +799,14 @@ def _omit_viewer_args(constructor):
     def _func(*args, **kwargs):
         if len(args) > 1 and not isinstance(args[1], str):
             warnings.warn(
-                trans._(
-                    'viewer argument is deprecated since 0.4.14 and should not be used'
-                ),
+                'viewer argument is deprecated since 0.4.14 and should not be used',
                 category=FutureWarning,
                 stacklevel=2,
             )
             args = args[:1] + args[2:]
         if 'viewer' in kwargs:
             warnings.warn(
-                trans._(
-                    'viewer argument is deprecated since 0.4.14 and should not be used'
-                ),
+                'viewer argument is deprecated since 0.4.14 and should not be used',
                 category=FutureWarning,
                 stacklevel=2,
             )

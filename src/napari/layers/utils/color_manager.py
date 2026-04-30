@@ -86,20 +86,14 @@ class ColorProperties:
                     color_properties = cls(**val)
                 except ValueError as e:
                     raise ValueError(
-                        trans._(
-                            'color_properties dictionary should have keys: name, values, and optionally current_value',
-                            deferred=True,
-                        )
+                        'color_properties dictionary should have keys: name, values, and optionally current_value'
                     ) from e
 
         elif isinstance(val, cls):
             color_properties = val
         else:
             raise TypeError(
-                trans._(
-                    'color_properties should be None, a dict, or ColorProperties object',
-                    deferred=True,
-                )
+                'color_properties should be None, a dict, or ColorProperties object'
             )
 
         return color_properties
@@ -540,10 +534,7 @@ class ColorManager(EventedModel):
                     )
                 except KeyError as e:
                     raise KeyError(
-                        trans._(
-                            'if color_properties is a string, it should be a property name',
-                            deferred=True,
-                        )
+                        'if color_properties is a string, it should be a property name'
                     ) from e
         else:
             color_values = colors

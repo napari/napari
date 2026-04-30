@@ -97,10 +97,7 @@ def str_to_qbytearray(string: str) -> QByteArray:
     """
     if len(string) < len(QBYTE_FLAG) or not is_qbyte(string):
         raise ValueError(
-            trans._(
-                "Invalid QByte string. QByte strings start with '{QBYTE_FLAG}'",
-                QBYTE_FLAG=QBYTE_FLAG,
-            )
+            f"Invalid QByte string. QByte strings start with '{QBYTE_FLAG}'"
         )
 
     return QByteArray.fromBase64(string[len(QBYTE_FLAG) :].encode())

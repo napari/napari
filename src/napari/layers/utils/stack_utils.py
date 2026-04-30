@@ -46,10 +46,7 @@ def slice_from_axis(array, *, axis, element):
 
         array = da.from_zarr(array)
         logger.info(
-            trans._(
-                'zarr array cannot be sliced lazily, converted to dask array.',
-                deferred=True,
-            )
+            'zarr array cannot be sliced lazily, converted to dask array.'
         )
 
     slices = [slice(None) for i in range(array.ndim)]
@@ -165,15 +162,7 @@ def split_channels(
                 i_kwargs[key] = next(val)
             except StopIteration as e:
                 raise IndexError(
-                    trans._(
-                        "Error adding multichannel image with data shape {data_shape!r}.\nRequested channel_axis ({channel_axis}) had length {n_channels}, but the '{key}' argument only provided {i} values. ",
-                        deferred=True,
-                        data_shape=data.shape,
-                        channel_axis=channel_axis,
-                        n_channels=n_channels,
-                        key=key,
-                        i=i,
-                    )
+                    f"Error adding multichannel image with data shape {data.shape!r}.\nRequested channel_axis ({channel_axis}) had length {n_channels}, but the '{key}' argument only provided {i} values. "
                 ) from e
 
         layerdata: FullLayerData = (image, i_kwargs, 'image')
@@ -218,20 +207,12 @@ def stack_to_images(stack: Image, axis: int, **kwargs) -> list[Image]:
 
     if num_dim < 3:
         raise ValueError(
-            trans._(
-                'The image needs more than 2 dimensions for splitting',
-                deferred=True,
-            )
+            'The image needs more than 2 dimensions for splitting'
         )
 
     if axis >= num_dim:
         raise ValueError(
-            trans._(
-                "Can't split along axis {axis}. The image has {num_dim} dimensions",
-                deferred=True,
-                axis=axis,
-                num_dim=num_dim,
-            )
+            f"Can't split along axis {axis}. The image has {num_dim} dimensions"
         )
 
     if kwargs.get('colormap'):
@@ -272,7 +253,7 @@ def split_rgb(stack: Image, with_alpha=False) -> list[Image]:
     """Split RGB image into separate channel images while preserving affine transforms."""
     if not stack.rgb:
         raise ValueError(
-            trans._('Image must be RGB to use split_rgb', deferred=True)
+            'Image must be RGB to use split_rgb'
         )
 
     data, meta, _ = stack.as_layer_data_tuple()
@@ -320,7 +301,7 @@ def images_to_stack(images: list[Image], axis: int = 0, **kwargs) -> Image:
     """
 
     if not images:
-        raise IndexError(trans._('images list is empty', deferred=True))
+        raise IndexError('images list is empty')
 
     if not all(isinstance(layer, Image) for layer in images):
         non_image_layers = [
@@ -351,11 +332,7 @@ def images_to_stack(images: list[Image], axis: int = 0, **kwargs) -> Image:
     ]
     if not all(multiscale_flags) and any(multiscale_flags):
         raise ValueError(
-            trans._(
-                'All images must have the same multiscale status (all True or all False) to be stacked.\nGot: {multiscale_flags}',
-                multiscale_flags=multiscale_flags[::-1],
-                deferred=True,
-            )
+            f'All images must have the same multiscale status (all True or all False) to be stacked.\nGot: {multiscale_flags[::-1]}'
         )
 
     if all(multiscale_flags):
@@ -363,11 +340,7 @@ def images_to_stack(images: list[Image], axis: int = 0, **kwargs) -> Image:
         n_scales_list = [len(image.data) for image in images]
         if len(set(n_scales_list)) != 1:
             raise ValueError(
-                trans._(
-                    'All multiscale images must have the same number of levels to be stacked.\nGot: {n_scales_list}',
-                    deferred=True,
-                    n_scales_list=n_scales_list,
-                )
+                f'All multiscale images must have the same number of levels to be stacked.\nGot: {n_scales_list}'
             )
         arrays_to_check = [img.data[0] for img in images]
     else:
@@ -385,10 +358,7 @@ def images_to_stack(images: list[Image], axis: int = 0, **kwargs) -> Image:
 
         stacker = da.stack
         logger.info(
-            trans._(
-                'zarr array cannot be sliced lazily, converted to dask array.',
-                deferred=True,
-            )
+            'zarr array cannot be sliced lazily, converted to dask array.'
         )
     else:
         stacker = np.stack
@@ -419,10 +389,7 @@ def merge_rgb(images: list[Image]) -> Image:
         len(images) in [3, 4] and all(isinstance(x, Image) for x in images)
     ):
         raise ValueError(
-            trans._(
-                'Merging to RGB requires either 3 or 4 Image layers',
-                deferred=True,
-            )
+            'Merging to RGB requires either 3 or 4 Image layers'
         )
     if not all(image.data.shape == images[0].data.shape for image in images):
         all_shapes = [(image.name, image.data.shape) for image in images]

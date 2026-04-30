@@ -250,10 +250,7 @@ class _DerivedStyleEncoding(
             array = self(features)
         except (KeyError, ValueError):
             warnings.warn(
-                trans._(
-                    'Applying the encoding failed. Using the safe fallback value instead.',
-                    deferred=True,
-                ),
+                'Applying the encoding failed. Using the safe fallback value instead.',
                 category=RuntimeWarning,
             )
             shape = (features.shape[0], *self.fallback.shape)

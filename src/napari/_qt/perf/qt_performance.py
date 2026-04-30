@@ -40,7 +40,7 @@ class TextLog(QTextEdit):
         self.moveCursor(QTextCursor.MoveOperation.End)
         self.setTextColor(Qt.GlobalColor.red)
         self.insertPlainText(
-            trans._('{time_ms:5.0f}ms {name}\n', time_ms=time_ms, name=name)
+            f'{time_ms:5.0f}ms {name}\n'
         )
 
 
@@ -103,7 +103,7 @@ class QtPerformance(QWidget):
         self.start_time = time.time()
 
         # Label for our progress bar.
-        bar_label = QLabel(trans._('Draw Time:'))
+        bar_label = QLabel('Draw Time:')
         layout.addWidget(bar_label)
 
         # Progress bar is not used for "progress", it's just a bar graph to show
@@ -123,9 +123,9 @@ class QtPerformance(QWidget):
         self.thresh_combo.setCurrentText(str(self.thresh_ms))
 
         combo_layout = QHBoxLayout()
-        combo_layout.addWidget(QLabel(trans._('Show Events Slower Than:')))
+        combo_layout.addWidget(QLabel('Show Events Slower Than:'))
         combo_layout.addWidget(self.thresh_combo)
-        combo_layout.addWidget(QLabel(trans._('milliseconds')))
+        combo_layout.addWidget(QLabel('milliseconds'))
         combo_layout.addItem(
             QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
         )
@@ -176,7 +176,7 @@ class QtPerformance(QWidget):
         # Update our timer label.
         elapsed = time.time() - self.start_time
         self.timer_label.setText(
-            trans._('Uptime: {elapsed:.2f}', elapsed=elapsed)
+            f'Uptime: {elapsed:.2f}'
         )
 
         average, long_events = self._get_timer_info()

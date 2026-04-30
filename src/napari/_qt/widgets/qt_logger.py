@@ -31,7 +31,7 @@ class LogWidget(QWidget):
         self.layout = QVBoxLayout()
 
         # Description
-        title_label = QLabel(trans._('logger'))
+        title_label = QLabel('logger')
         title_label.setTextInteractionFlags(
             Qt.TextInteractionFlag.TextSelectableByMouse
         )

@@ -11,27 +11,23 @@ from napari.utils.theme import available_themes, get_theme
 class HighlightSettings(EventedModel):
     highlight_thickness: int = Field(
         1,
-        title=trans._('Highlight thickness'),
-        description=trans._(
-            'Select the highlight thickness when hovering over shapes/points.'
-        ),
+        title='Highlight thickness',
+        description='Select the highlight thickness when hovering over shapes/points.',
         ge=1,
         le=10,
     )
     highlight_color: list[float] = Field(
         [0.0, 0.6, 1.0, 1.0],
-        title=trans._('Highlight color'),
-        description=trans._(
-            'Select the highlight color when hovering over shapes/points.'
-        ),
+        title='Highlight color',
+        description='Select the highlight color when hovering over shapes/points.',
     )
 
 
 class AppearanceSettings(EventedModel):
     theme: Theme = Field(
         Theme('dark'),
-        title=trans._('Theme'),
-        description=trans._('Select the user interface theme.'),
+        title='Theme',
+        description='Select the user interface theme.',
         validation_alias=AliasChoices('theme', 'napari_theme'),
     )
     logo: Logo = Field(
@@ -41,29 +37,25 @@ class AppearanceSettings(EventedModel):
     )
     font_size: int = Field(
         int(get_theme('dark').font_size[:-2]),
-        title=trans._('Font size'),
-        description=trans._('Select the user interface font size.'),
+        title='Font size',
+        description='Select the user interface font size.',
         ge=5,
         le=20,
     )
     highlight: HighlightSettings = Field(
         HighlightSettings(),
-        title=trans._('Highlight'),
-        description=trans._(
-            'Select the highlight color and thickness to use when hovering over shapes/points.'
-        ),
+        title='Highlight',
+        description='Select the highlight color and thickness to use when hovering over shapes/points.',
     )
     layer_tooltip_visibility: bool = Field(
         False,
-        title=trans._('Show layer tooltips'),
-        description=trans._('Toggle to display a tooltip on mouse hover.'),
+        title='Show layer tooltips',
+        description='Toggle to display a tooltip on mouse hover.',
     )
     update_status_based_on_layer: bool = Field(
         True,
-        title=trans._('Update status based on layer'),
-        description=trans._(
-            'Calculate status bar based on current active layer and mouse position.'
-        ),
+        title='Update status based on layer',
+        description='Calculate status bar based on current active layer and mouse position.',
     )
 
     def update(

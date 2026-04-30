@@ -222,12 +222,7 @@ def ensure_sequence_of_iterables(
         if length is not None and len(obj) != length:
             # sequence of iterables of wrong length
             raise ValueError(
-                trans._(
-                    'length of {obj} must equal {length}',
-                    deferred=True,
-                    obj=obj,
-                    length=length,
-                )
+                f'length of {obj} must equal {length}'
             )
 
         if len(obj) > 0 or not repeat_empty:
@@ -306,12 +301,7 @@ class StringEnum(StrEnum, metaclass=StringEnumMeta):
             # but tests expect ValueError,
             # so tests win here
             raise ValueError(  # noqa: TRY004
-                trans._(
-                    '{class_name} may only be called with a `str` or an instance of {class_name}. Got {dtype}',
-                    deferred=True,
-                    class_name=cls,
-                    dtype=builtins.type(value),
-                )
+                f'{cls} may only be called with a `str` or an instance of {cls}. Got {builtins.type(value)}'
             )
         if isinstance(value, str):
             for member in cls:
@@ -319,12 +309,7 @@ class StringEnum(StrEnum, metaclass=StringEnumMeta):
                     return member
             return None
         raise ValueError(
-            trans._(
-                '{class_name} may only be called with a `str` or an instance of {class_name}. Got {dtype}',
-                deferred=True,
-                class_name=cls,
-                dtype=builtins.type(value),
-            )
+            f'{cls} may only be called with a `str` or an instance of {cls}. Got {builtins.type(value)}'
         )
 
     def __eq__(self, other: object) -> bool:
@@ -388,7 +373,7 @@ def abspath_or_url(relpath: T, *, must_exist: bool = False) -> T:
 
     if not isinstance(relpath, str | Path):
         raise TypeError(
-            trans._('Argument must be a string or Path', deferred=True)
+            'Argument must be a string or Path'
         )
     OriginType = type(relpath)
 
@@ -400,11 +385,7 @@ def abspath_or_url(relpath: T, *, must_exist: bool = False) -> T:
     path = os_path.abspath(os_path.expanduser(relpath_str))
     if must_exist and not (urlp.scheme or urlp.netloc or os.path.exists(path)):
         raise ValueError(
-            trans._(
-                'Requested path {path!r} does not exist.',
-                deferred=True,
-                path=path,
-            )
+            f'Requested path {path!r} does not exist.'
         )
     return OriginType(path)
 
@@ -454,11 +435,7 @@ def ensure_n_tuple(
 
 
 def ensure_layer_data_tuple(val: tuple) -> tuple:
-    msg = trans._(
-        'Not a valid layer data tuple: {value!r}',
-        deferred=True,
-        value=val,
-    )
+    msg = f'Not a valid layer data tuple: {val!r}'
     if not isinstance(val, tuple) and val:
         raise TypeError(msg)
     if len(val) > 1:
@@ -475,7 +452,7 @@ def ensure_list_of_layer_data_tuple(val: list[tuple]) -> list[tuple]:
         with contextlib.suppress(TypeError):
             return [ensure_layer_data_tuple(v) for v in val]
     raise TypeError(
-        trans._('Not a valid list of layer data tuples!', deferred=True)
+        'Not a valid list of layer data tuples!'
     )
 
 
@@ -585,11 +562,7 @@ def dir_hash(
 
     if not Path(path).is_dir():
         raise TypeError(
-            trans._(
-                '{path} is not a directory.',
-                deferred=True,
-                path=path,
-            )
+            f'{path} is not a directory.'
         )
 
     hash_func = hashlib.md5

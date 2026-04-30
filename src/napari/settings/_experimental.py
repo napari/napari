@@ -30,26 +30,22 @@ class ExperimentalSettings(EventedSettings):
 
     async_: bool = Field(
         False,
-        title=trans._('Render Images Asynchronously'),
-        description=trans._(
-            'Asynchronous loading of image data. \nThis setting partially loads data while viewing.'
-        ),
+        title='Render Images Asynchronously',
+        description='Asynchronous loading of image data. \nThis setting partially loads data while viewing.',
         validation_alias=AliasChoices('async_', 'async', 'napari_async'),
         json_schema_extra={'requires_restart': False},
     )
     autoswap_buffers: bool = Field(
         False,
-        title=trans._('Enable autoswapping rendering buffers.'),
-        description=trans._(
-            'Autoswapping rendering buffers improves quality by reducing tearing artifacts, while sacrificing some performance.'
-        ),
+        title='Enable autoswapping rendering buffers.',
+        description='Autoswapping rendering buffers improves quality by reducing tearing artifacts, while sacrificing some performance.',
         validation_alias=AliasChoices('autoswap_buffers', 'napari_autoswap'),
         json_schema_extra={'requires_restart': True},
     )
 
     rdp_epsilon: float = Field(
         0.5,
-        title=trans._('Shapes polygon lasso and path RDP epsilon'),
+        title='Shapes polygon lasso and path RDP epsilon',
         description=trans._(
             'Setting this higher removes more points from polygons or paths. \nSetting this to 0 keeps all vertices of '
             'a given polygon or path.'
@@ -59,9 +55,7 @@ class ExperimentalSettings(EventedSettings):
 
     lasso_vertex_distance: int = Field(
         10,
-        title=trans._(
-            'Minimum distance threshold of shapes lasso and path tool'
-        ),
+        title='Minimum distance threshold of shapes lasso and path tool',
         description=trans._(
             'Value determines how many screen pixels one has to move before another vertex can be added to the polygon'
             'or path.'
@@ -72,17 +66,13 @@ class ExperimentalSettings(EventedSettings):
 
     completion_radius: int = Field(
         default=-1,
-        title=trans._(
-            'Double-click Labels polygon completion radius (-1 to always complete)'
-        ),
-        description=trans._(
-            'Max radius in pixels from first vertex for double-click to complete a polygon; set -1 to always complete.'
-        ),
+        title='Double-click Labels polygon completion radius (-1 to always complete)',
+        description='Max radius in pixels from first vertex for double-click to complete a polygon; set -1 to always complete.',
     )
 
     triangulation_backend: TriangulationBackend = Field(
         TriangulationBackend.fastest_available,
-        title=trans._('Triangulation backend to use for Shapes layer'),
+        title='Triangulation backend to use for Shapes layer',
         description=trans._(
             'Triangulation backend to use for Shapes layer.\n'
             "The 'bermuda' requires the optional 'bermuda' package.\n"
@@ -98,7 +88,7 @@ class ExperimentalSettings(EventedSettings):
     )
     colormap_backend: ColormapBackend = Field(
         ColormapBackend.fastest_available,
-        title=trans._('Colormap backend to use for Labels layer'),
+        title='Colormap backend to use for Labels layer',
         description=trans._(
             'Color mapping backend to use for Labels layer.\n'
             "'partsegcore' requires the optional 'partsegcore-compiled-backend' package.\n"
@@ -113,7 +103,7 @@ class ExperimentalSettings(EventedSettings):
 
     compiled_triangulation: bool = Field(
         default=False,
-        title=trans._('Unused option. Use "triangulation backend" instead.'),
+        title='Unused option. Use "triangulation backend" instead.',
         description=trans._(
             'This option was removed in napari 0.6.0. Use \n'
             '"triangulation backend" instead.'

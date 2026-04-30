@@ -52,7 +52,7 @@ class QtProjectionModeControl(QtWidgetControlsBase):
         self._on_projection_mode_change()
 
         self.projection_combobox_label = QtWrappedLabel(
-            trans._('projection mode:')
+            'projection mode:'
         )
 
     def _on_projection_mode_change(self) -> None:

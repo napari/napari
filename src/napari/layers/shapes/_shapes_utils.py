@@ -486,10 +486,7 @@ def rectangle_to_box(
     """
     if data.shape[0] != 4:
         raise ValueError(
-            trans._(
-                'Data shape does not match expected `[4, D]` shape specifying corners for the rectangle',
-                deferred=True,
-            )
+            'Data shape does not match expected `[4, D]` shape specifying corners for the rectangle'
         )
     box = np.array(
         [
@@ -596,10 +593,7 @@ def triangulate_ellipse(
     """
     if corners.shape[0] != 4:
         raise ValueError(
-            trans._(
-                'Data shape does not match expected `[4, D]` shape specifying corners for the ellipse',
-                deferred=True,
-            )
+            'Data shape does not match expected `[4, D]` shape specifying corners for the ellipse'
         )
     assert corners.shape in {(4, 2), (4, 3)}
     center = corners.mean(axis=0)
@@ -1341,13 +1335,7 @@ def validate_num_vertices(
             min_vertices and len(shape) < min_vertices
         ):
             raise ValueError(
-                trans._(
-                    '{shape_type} {shape} has invalid number of vertices: {shape_length}.',
-                    deferred=True,
-                    shape_type=shape_type,
-                    shape=shape,
-                    shape_length=len(shape),
-                )
+                f'{shape_type} {shape} has invalid number of vertices: {len(shape)}.'
             )
 
 

@@ -106,9 +106,7 @@ class QtLayerControls(QFrame):
             self.MODE.TRANSFORM,
             True,
             self.TRANSFORM_ACTION_NAME,
-            extra_tooltip_text=trans._(
-                '\nAlt + Left mouse click over this button to reset'
-            ),
+            extra_tooltip_text='\nAlt + Left mouse click over this button to reset',
         )
         self.transform_button.installEventFilter(self)
         self._on_editable_or_visible_change()
@@ -226,7 +224,7 @@ class QtLayerControls(QFrame):
             self._MODE_BUTTONS[event.mode].setChecked(True)
         else:
             raise ValueError(
-                trans._("Mode '{mode}' not recognized", mode=event.mode)
+                f"Mode '{event.mode}' not recognized"
             )
 
     def _on_editable_or_visible_change(self):
@@ -290,8 +288,8 @@ class QtLayerControls(QFrame):
         ):
             result = QMessageBox.warning(
                 self,
-                trans._('Reset transform'),
-                trans._('Are you sure you want to reset transforms?'),
+                'Reset transform',
+                'Are you sure you want to reset transforms?',
                 QMessageBox.Yes | QMessageBox.No,
             )
             if result == QMessageBox.Yes:

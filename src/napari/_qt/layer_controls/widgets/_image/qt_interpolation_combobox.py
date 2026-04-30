@@ -49,13 +49,11 @@ class QtInterpolationComboBoxControl(QtWidgetControlsBase):
             self.change_interpolation
         )
         self.interpolation_combobox.setToolTip(
-            trans._(
-                'Texture interpolation for display.\nnearest and linear are most performant.'
-            )
+            'Texture interpolation for display.\nnearest and linear are most performant.'
         )
 
         self.interpolation_combobox_label = QtWrappedLabel(
-            trans._('interpolation:')
+            'interpolation:'
         )
 
     def change_interpolation(self, text: str) -> None:

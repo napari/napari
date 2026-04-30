@@ -29,10 +29,7 @@ if TYPE_CHECKING:
 counter = count()
 _sentinel = object()
 
-_SHORTCUT_DEPRECATION_STRING = trans._(
-    'The shortcut parameter is deprecated since version 0.4.8, please use the action and shortcut manager APIs. The new action manager and shortcut API allow user configuration and localisation. (got {shortcut})',
-    shortcut='{shortcut}',
-)
+_SHORTCUT_DEPRECATION_STRING = f'The shortcut parameter is deprecated since version 0.4.8, please use the action and shortcut manager APIs. The new action manager and shortcut API allow user configuration and localisation. (got {'{shortcut}'})'
 
 dock_area_to_str = {
     Qt.DockWidgetArea.LeftDockWidgetArea: 'left',
@@ -100,11 +97,7 @@ class QtViewerDockWidget(QDockWidget):
         }
         if area not in areas:
             raise ValueError(
-                trans._(
-                    'area argument must be in {areas}',
-                    deferred=True,
-                    areas=list(areas.keys()),
-                )
+                f'area argument must be in {list(areas.keys())}'
             )
         self.area = area
         self.qt_area = areas[area]
@@ -121,19 +114,12 @@ class QtViewerDockWidget(QDockWidget):
         if allowed_areas:
             if not isinstance(allowed_areas, list | tuple):
                 raise TypeError(
-                    trans._(
-                        '`allowed_areas` must be a list or tuple',
-                        deferred=True,
-                    )
+                    '`allowed_areas` must be a list or tuple'
                 )
 
             if any(area not in areas for area in allowed_areas):
                 raise ValueError(
-                    trans._(
-                        'all allowed_areas argument must be in {areas}',
-                        deferred=True,
-                        areas=list(areas.keys()),
-                    )
+                    f'all allowed_areas argument must be in {list(areas.keys())}'
                 )
             allowed_areas = reduce(ior, [areas[a] for a in allowed_areas])
         else:
@@ -338,19 +324,19 @@ class QtCustomTitleBar(QLabel):
         self.setObjectName('QtCustomTitleBar')
         self.setProperty('vertical', str(vertical))
         self.vertical = vertical
-        self.setToolTip(trans._('drag to move. double-click to float'))
+        self.setToolTip('drag to move. double-click to float')
 
         line = QFrame(self)
         line.setObjectName('QtCustomTitleBarLine')
 
         self.hide_button = QPushButton(self)
-        self.hide_button.setToolTip(trans._('hide this panel'))
+        self.hide_button.setToolTip('hide this panel')
         self.hide_button.setObjectName('QTitleBarHideButton')
         self.hide_button.setCursor(Qt.CursorShape.ArrowCursor)
         self.hide_button.clicked.connect(lambda: self.parent().close())
 
         self.float_button = QPushButton(self)
-        self.float_button.setToolTip(trans._('float this panel'))
+        self.float_button.setToolTip('float this panel')
         self.float_button.setObjectName('QTitleBarFloatButton')
         self.float_button.setCursor(Qt.CursorShape.ArrowCursor)
         self.float_button.clicked.connect(
@@ -363,7 +349,7 @@ class QtCustomTitleBar(QLabel):
 
         if close_btn:
             self.close_button = QPushButton(self)
-            self.close_button.setToolTip(trans._('close this panel'))
+            self.close_button.setToolTip('close this panel')
             self.close_button.setObjectName('QTitleBarCloseButton')
             self.close_button.setCursor(Qt.CursorShape.ArrowCursor)
             self.close_button.clicked.connect(

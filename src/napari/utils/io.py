@@ -55,9 +55,7 @@ def imsave(filename: str, data: np.ndarray):
         '.stk',
     ] and np.issubdtype(data.dtype, np.floating):
         show_warning(
-            trans._(
-                'Image was not saved, because image data is of dtype float.\nEither convert dtype or save as different file type (e.g. TIFF).'
-            )
+            'Image was not saved, because image data is of dtype float.\nEither convert dtype or save as different file type (e.g. TIFF).'
         )
         return
     # Save screenshot image data to output file
@@ -147,11 +145,7 @@ def __getattr__(name: str):
         'read_zarr_dataset',
     }:
         warnings.warn(
-            trans._(
-                '{name} was moved to napari_builtins.io and will be removed from here in v0.8.0.',
-                deferred=True,
-                name=name,
-            ),
+            f'{name} was moved to napari_builtins.io and will be removed from here in v0.8.0.',
             FutureWarning,
             stacklevel=2,
         )

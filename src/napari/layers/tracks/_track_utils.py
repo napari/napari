@@ -258,29 +258,24 @@ class TrackManager:
 
         if data.ndim != 2:
             raise ValueError(
-                trans._('track vertices should be a NxD array', deferred=True)
+                'track vertices should be a NxD array'
             )
 
         if data.shape[1] < 4 or data.shape[1] > 5:
             raise ValueError(
-                trans._(
-                    'track vertices should be 4 or 5-dimensional',
-                    deferred=True,
-                )
+                'track vertices should be 4 or 5-dimensional'
             )
 
         # check that all IDs are integers
         ids = data[:, 0]
         if not np.array_equal(np.floor(ids), ids):
             raise ValueError(
-                trans._('track id must be an integer', deferred=True)
+                'track id must be an integer'
             )
 
         if not all(t >= 0 for t in data[:, 1]):
             raise ValueError(
-                trans._(
-                    'track timestamps must be greater than zero', deferred=True
-                )
+                'track timestamps must be greater than zero'
             )
 
         return data
@@ -307,11 +302,7 @@ class TrackManager:
             for node in nodes:
                 if node not in unique_track_ids:
                     raise ValueError(
-                        trans._(
-                            'graph node {node_idx} not found',
-                            deferred=True,
-                            node_idx=node_idx,
-                        )
+                        f'graph node {node_idx} not found'
                     )
 
         return new_graph
@@ -375,11 +366,7 @@ class TrackManager:
 
         if color_by not in self.properties:
             raise ValueError(
-                trans._(
-                    'Property {color_by} not found',
-                    deferred=True,
-                    color_by=color_by,
-                )
+                f'Property {color_by} not found'
             )
 
         return self.properties[color_by]

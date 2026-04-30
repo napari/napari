@@ -47,12 +47,12 @@ class Blending(StringEnum):
 
 BLENDING_TRANSLATIONS = OrderedDict(
     [
-        (Blending.TRANSLUCENT, trans._('translucent')),
-        (Blending.TRANSLUCENT_NO_DEPTH, trans._('translucent_no_depth')),
-        (Blending.ADDITIVE, trans._('additive')),
-        (Blending.MINIMUM, trans._('minimum')),
-        (Blending.OPAQUE, trans._('opaque')),
-        (Blending.MULTIPLICATIVE, trans._('multiplicative')),
+        (Blending.TRANSLUCENT, 'translucent'),
+        (Blending.TRANSLUCENT_NO_DEPTH, 'translucent_no_depth'),
+        (Blending.ADDITIVE, 'additive'),
+        (Blending.MINIMUM, 'minimum'),
+        (Blending.OPAQUE, 'opaque'),
+        (Blending.MULTIPLICATIVE, 'multiplicative'),
     ]
 )
 

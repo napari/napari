@@ -145,11 +145,7 @@ def _validate_paths_exist(paths: list[PathLike]) -> None:
         parsed = urlparse(p_str)
         if not (parsed.scheme and parsed.netloc) and not Path(p_str).exists():
             raise FileNotFoundError(
-                trans._(
-                    'Path {path!r} does not exist.',
-                    deferred=True,
-                    path=p_str,
-                )
+                f'Path {p_str!r} does not exist.'
             )
 
 
@@ -377,12 +373,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     def _valid_theme(cls, v):
         if not is_theme_available(v):
             raise ValueError(
-                trans._(
-                    "Theme '{theme_name}' not found; options are {themes}.",
-                    deferred=True,
-                    theme_name=v,
-                    themes=', '.join(available_themes()),
-                )
+                f"Theme '{v}' not found; options are {', '.join(available_themes())}."
             )
 
         return v
@@ -547,11 +538,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         if 0 <= margin < 1:
             return 1 - margin
         raise ValueError(
-            trans._(
-                'margin must be between 0 and 1; got {margin} instead.',
-                deferred=True,
-                margin=margin,
-            )
+            f'margin must be between 0 and 1; got {margin} instead.'
         )
 
     def _get_viewbox_size(self):
@@ -954,11 +941,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             if not shortcuts.get(action_name, []):
                 continue
             help_li.append(
-                trans._(
-                    'use <{shortcut}> for {desc}',
-                    shortcut=shortcuts[action_name][0],
-                    desc=desc,
-                )
+                f'use <{shortcuts[action_name][0]}> for {desc}'
             )
 
         layer.help = ', '.join(help_li)
@@ -1235,11 +1218,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             for k, v in kwargs.items():
                 if k not in iterable_kwargs and is_sequence(v):
                     raise TypeError(
-                        trans._(
-                            "Received sequence for argument '{argument}', did you mean to specify a 'channel_axis'? ",
-                            deferred=True,
-                            argument=k,
-                        )
+                        f"Received sequence for argument '{k}', did you mean to specify a 'channel_axis'? "
                     )
             layer = Image(data, **kwargs)
             self.layers.append(layer)
@@ -1313,27 +1292,11 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             data = data.__self__.uri
 
         if data is None:
-            msg = trans._(
-                'Plugin {plugin!r} does not provide sample data named {sample!r}. ',
-                plugin=plugin,
-                sample=sample,
-                deferred=True,
-            )
+            msg = f'Plugin {plugin!r} does not provide sample data named {sample!r}. '
             if available:
-                msg = trans._(
-                    'Plugin {plugin!r} does not provide sample data named {sample!r}. Available samples include: {samples}.',
-                    deferred=True,
-                    plugin=plugin,
-                    sample=sample,
-                    samples=available,
-                )
+                msg = f'Plugin {plugin!r} does not provide sample data named {sample!r}. Available samples include: {available}.'
             else:
-                msg = trans._(
-                    'Plugin {plugin!r} does not provide sample data named {sample!r}. No plugin samples have been registered.',
-                    deferred=True,
-                    plugin=plugin,
-                    sample=sample,
-                )
+                msg = f'Plugin {plugin!r} does not provide sample data named {sample!r}. No plugin samples have been registered.'
 
             raise KeyError(msg)
 
@@ -1349,12 +1312,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
                         added.extend(self._add_layer_from_data(*datum))
                 if needs_error:
                     raise ValueError(
-                        trans._(
-                            'Sample "{sample}" from plugin "{plugin}" did not return any valid layer data tuples.',
-                            deferred=True,
-                            sample=sample,
-                            plugin=plugin,
-                        )
+                        f'Sample "{sample}" from plugin "{plugin}" did not return any valid layer data tuples.'
                     )
                 return added
             if isinstance(data, str | Path):
@@ -1368,24 +1326,12 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
                         and reader_plugin != plugin_spec_reader
                     ):
                         raise ValueError(
-                            trans._(
-                                'Chosen reader {chosen_reader} failed to open sample. Plugin {plugin} declares {original_reader} as the reader for this sample - try calling `open_sample` with no `reader_plugin` or passing {original_reader} explicitly.',
-                                deferred=True,
-                                plugin=plugin,
-                                chosen_reader=reader_plugin,
-                                original_reader=plugin_spec_reader,
-                            )
+                            f'Chosen reader {reader_plugin} failed to open sample. Plugin {plugin} declares {plugin_spec_reader} as the reader for this sample - try calling `open_sample` with no `reader_plugin` or passing {plugin_spec_reader} explicitly.'
                         ) from e
                     raise e  # noqa: TRY201
 
             raise TypeError(
-                trans._(
-                    'Got unexpected type for sample ({plugin!r}, {sample!r}): {data_type}',
-                    deferred=True,
-                    plugin=plugin,
-                    sample=sample,
-                    data_type=type(data),
-                )
+                f'Got unexpected type for sample ({plugin!r}, {sample!r}): {type(data)}'
             )
 
     def open(
@@ -1438,10 +1384,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         """
         if plugin == 'builtins':
             warnings.warn(
-                trans._(
-                    'The "builtins" plugin name is deprecated and will not work in a future version. Please use "napari" instead.',
-                    deferred=True,
-                ),
+                'The "builtins" plugin name is deprecated and will not work in a future version. Please use "napari" instead.',
             )
             plugin = 'napari'
 
@@ -1465,7 +1408,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         added: list[Layer] = []  # for layers that get added
         with progress(
             paths,
-            desc=trans._('Opening Files'),
+            desc='Opening Files',
             total=(
                 0 if len(paths) == 1 else None
             ),  # indeterminate bar for 1 file
@@ -1556,11 +1499,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         readers = _npe2.get_readers(str(_path))
         if not readers:
             raise NoAvailableReaderError(
-                trans._(
-                    'No plugin found capable of reading {path_message}.',
-                    path_message=path_message,
-                    deferred=True,
-                ),
+                f'No plugin found capable of reading {path_message}.',
                 paths,
             )
 
@@ -1568,17 +1507,9 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         if plugin and plugin not in readers:
             warnings.warn(
                 RuntimeWarning(
-                    trans._(
-                        "Can't find {plugin} plugin associated with {path_message} files. ",
-                        plugin=plugin,
-                        path_message=path_message,
-                    )
-                    + trans._(
-                        "This may be because you've switched environments, or have uninstalled the plugin without updating the reader preference. "
-                    )
-                    + trans._(
-                        'You can remove this preference in the preference dialog, or by editing `settings.plugins.extension2reader`.'
-                    )
+                    f"Can't find {plugin} plugin associated with {path_message} files. "
+                    + "This may be because you've switched environments, or have uninstalled the plugin without updating the reader preference. "
+                    + 'You can remove this preference in the preference dialog, or by editing `settings.plugins.extension2reader`.'
                 )
             )
             plugin = None
@@ -1597,11 +1528,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             # plugin failed
             except Exception as e:
                 raise ReaderPluginError(
-                    trans._(
-                        'Tried opening with {plugin}, but failed.',
-                        deferred=True,
-                        plugin=plugin,
-                    ),
+                    f'Tried opening with {plugin}, but failed.',
                     plugin,
                     paths,
                     original_error=e,
@@ -1609,12 +1536,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         # multiple plugins
         else:
             raise MultipleReaderError(
-                trans._(
-                    'Multiple plugins found capable of reading {path_message}. Select plugin from {plugins} and pass to reading function e.g. `viewer.open(..., plugin=...)`.',
-                    path_message=path_message,
-                    plugins=readers,
-                    deferred=True,
-                ),
+                f'Multiple plugins found capable of reading {path_message}. Select plugin from {readers} and pass to reading function e.g. `viewer.open(..., plugin=...)`.',
                 list(readers.keys()),
                 paths,
             )
@@ -1774,12 +1696,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
         if layer_type not in layers.NAMES:
             raise ValueError(
-                trans._(
-                    "Unrecognized layer_type: '{layer_type}'. Must be one of: {layer_names}.",
-                    deferred=True,
-                    layer_type=layer_type,
-                    layer_names=layers.NAMES,
-                )
+                f"Unrecognized layer_type: '{layer_type}'. Must be one of: {layers.NAMES}."
             )
 
         try:
@@ -1790,12 +1707,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
                 raise
             bad_key = str(exc).split('keyword argument ')[-1]
             raise TypeError(
-                trans._(
-                    '_add_layer_from_data received an unexpected keyword argument ({bad_key}) for layer type {layer_type}',
-                    deferred=True,
-                    bad_key=bad_key,
-                    layer_type=layer_type,
-                )
+                f'_add_layer_from_data received an unexpected keyword argument ({bad_key}) for layer type {layer_type}'
             ) from exc
         return layer if isinstance(layer, list) else [layer]
 
@@ -1821,31 +1733,21 @@ def _normalize_layer_data(data: LayerData) -> FullLayerData:
     """
     if not isinstance(data, tuple) and 0 < len(data) < 4:
         raise ValueError(
-            trans._(
-                'LayerData must be a 1-, 2-, or 3-tuple',
-                deferred=True,
-            )
+            'LayerData must be a 1-, 2-, or 3-tuple'
         )
 
     _data = list(data)
     if len(_data) > 1:
         if not isinstance(_data[1], MutableMapping):
             raise ValueError(
-                trans._(
-                    'The second item in a LayerData tuple must be a dict or other MutableMapping.',
-                    deferred=True,
-                )
+                'The second item in a LayerData tuple must be a dict or other MutableMapping.'
             )
     else:
         _data.append({})
     if len(_data) > 2:
         if _data[2] not in layers.NAMES:
             raise ValueError(
-                trans._(
-                    'The third item in a LayerData tuple must be one of: {layers!r}.',
-                    deferred=True,
-                    layers=layers.NAMES,
-                )
+                f'The third item in a LayerData tuple must be one of: {layers.NAMES!r}.'
             )
     else:
         _data.append(guess_labels(_data[0]))
@@ -1957,11 +1859,7 @@ def prune_kwargs(kwargs: Mapping[str, Any], layer_type: str) -> dict[str, Any]:
     add_method = getattr(ViewerModel, 'add_' + layer_type, None)
     if not add_method or layer_type == 'layer':
         raise ValueError(
-            trans._(
-                'Invalid layer_type: {layer_type}',
-                deferred=True,
-                layer_type=layer_type,
-            )
+            f'Invalid layer_type: {layer_type}'
         )
 
     # get valid params for the corresponding add_<layer_type> method

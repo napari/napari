@@ -42,7 +42,7 @@ class QtColormapComboBoxControl(QtWidgetControlsBase):
             self.colormap_combobox.addItem(display_name, name)
         self.colormap_combobox.currentTextChanged.connect(self.change_colormap)
 
-        self.colormap_combobox_label = QtWrappedLabel(trans._('colormap:'))
+        self.colormap_combobox_label = QtWrappedLabel('colormap:')
 
         self._on_colormap_change()
 

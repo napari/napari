@@ -83,10 +83,7 @@ class TypedMutableSequence(MutableSequence[_T]):
         if isinstance(key, slice):
             if not isinstance(value, Iterable):
                 raise TypeError(
-                    trans._(
-                        'Can only assign an iterable to slice',
-                        deferred=True,
-                    )
+                    'Can only assign an iterable to slice'
                 )
             self._list[key] = [self._type_check(v) for v in value]
         else:
@@ -155,12 +152,7 @@ class TypedMutableSequence(MutableSequence[_T]):
             isinstance(e, t) for t in self._basetypes
         ):
             raise TypeError(
-                trans._(
-                    'Cannot add object with type {dtype!r} to TypedList expecting type {basetypes!r}',
-                    deferred=True,
-                    dtype=type(e),
-                    basetypes=self._basetypes,
-                )
+                f'Cannot add object with type {type(e)!r} to TypedList expecting type {self._basetypes!r}'
             )
         return e
 
@@ -230,11 +222,7 @@ class TypedMutableSequence(MutableSequence[_T]):
                 return i
 
         raise ValueError(
-            trans._(
-                '{value!r} is not in list',
-                deferred=True,
-                value=value,
-            )
+            f'{value!r} is not in list'
         )
 
     def _iter_indices(

@@ -117,12 +117,7 @@ class PerfmonConfig:
             return self.data['callable_lists'][list_name]
         except KeyError as e:
             raise PerfmonConfigError(
-                trans._(
-                    "{path} has no callable list '{list_name}'",
-                    deferred=True,
-                    path=self.config_path,
-                    list_name=list_name,
-                )
+                f"{self.config_path} has no callable list '{list_name}'"
             ) from e
 
     def _patch_callables(self) -> None:

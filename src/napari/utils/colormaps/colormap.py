@@ -130,10 +130,7 @@ class Colormap(EventedModel):
         # Check control points are sorted correctly
         if not np.array_equal(v, sorted(v)):
             raise ValueError(
-                trans._(
-                    'Control points need to be sorted in ascending order',
-                    deferred=True,
-                )
+                'Control points need to be sorted in ascending order'
             )
 
         # Check number of control points is correct
@@ -143,12 +140,7 @@ class Colormap(EventedModel):
         n_controls = len(v)
         if n_controls != n_controls_target:
             raise ValueError(
-                trans._(
-                    'Wrong number of control points provided. Expected {n_controls_target}, got {n_controls}',
-                    deferred=True,
-                    n_controls_target=n_controls_target,
-                    n_controls=n_controls,
-                )
+                f'Wrong number of control points provided. Expected {n_controls_target}, got {n_controls}'
             )
 
         return v
@@ -176,10 +168,7 @@ class Colormap(EventedModel):
             cols = self.colors[indices.astype(np.int32)]
         else:
             raise ValueError(
-                trans._(
-                    'Unrecognized Colormap Interpolation Mode',
-                    deferred=True,
-                )
+                'Unrecognized Colormap Interpolation Mode'
             )
 
         values = values[..., None]

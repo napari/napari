@@ -62,7 +62,7 @@ class QtImageRenderControl(QtWidgetControlsBase):
         render_combobox.currentTextChanged.connect(self.change_rendering)
         self.render_combobox = render_combobox
 
-        self.render_label = QtWrappedLabel(trans._('rendering:'))
+        self.render_label = QtWrappedLabel('rendering:')
 
         sld = QLabeledDoubleSlider(Qt.Orientation.Horizontal, parent=parent)
         sld.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -76,7 +76,7 @@ class QtImageRenderControl(QtWidgetControlsBase):
         )
         self.iso_threshold_slider = sld
 
-        self.iso_threshold_label = QtWrappedLabel(trans._('iso threshold:'))
+        self.iso_threshold_label = QtWrappedLabel('iso threshold:')
 
         sld = QLabeledDoubleSlider(Qt.Orientation.Horizontal, parent=parent)
         sld.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -91,7 +91,7 @@ class QtImageRenderControl(QtWidgetControlsBase):
         )
         self.attenuation_slider = sld
 
-        self.attenuation_label = QtWrappedLabel(trans._('attenuation:'))
+        self.attenuation_label = QtWrappedLabel('attenuation:')
 
     def change_rendering(self, text):
         """Change rendering mode for image display.

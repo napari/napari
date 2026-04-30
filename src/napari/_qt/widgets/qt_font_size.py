@@ -18,7 +18,7 @@ class QtFontSizeWidget(QWidget):
     def __init__(self, parent: QWidget = None) -> None:
         super().__init__(parent=parent)
         self._spinbox = QtSpinBox()
-        self._reset_button = QPushButton(trans._('Reset font size'))
+        self._reset_button = QPushButton('Reset font size')
 
         layout = QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)

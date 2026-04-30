@@ -38,7 +38,7 @@ class QtLayerListModel(QtListModel[Layer]):
             layer_source_info = layer.get_source_str()
             if layer_loaded:
                 return layer_source_info
-            return trans._('{source} (loading)', source=layer_source_info)
+            return f'{layer_source_info} (loading)'
         if (
             role == Qt.ItemDataRole.CheckStateRole
         ):  # the "checked" state of this item

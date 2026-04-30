@@ -289,16 +289,12 @@ class QtDims(QWidget):
             _modes = LoopMode.keys()
             if loop_mode not in _modes:
                 raise ValueError(
-                    trans._(
-                        'loop_mode must be one of {_modes}. Got: {loop_mode}',
-                        _modes=_modes,
-                        loop_mode=loop_mode,
-                    )
+                    f'loop_mode must be one of {_modes}. Got: {loop_mode}'
                 )
             loop_mode = LoopMode(loop_mode)
 
         if axis >= self.dims.ndim:
-            raise IndexError(trans._('axis argument out of range'))
+            raise IndexError('axis argument out of range')
 
         if self.is_playing and self._animation_thread.axis == axis:
             self.slider_widgets[axis]._update_play_settings(
@@ -323,10 +319,7 @@ class QtDims(QWidget):
 
         else:
             warnings.warn(
-                trans._(
-                    'Refusing to play a hidden axis',
-                    deferred=True,
-                )
+                'Refusing to play a hidden axis'
             )
 
     @Slot()

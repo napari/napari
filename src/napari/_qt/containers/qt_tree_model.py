@@ -179,11 +179,7 @@ class QtNodeTreeModel(_BaseEventedItemModel[NodeType]):
     def setRoot(self, root: Group[NodeType]):
         if not isinstance(root, Group):
             raise TypeError(
-                trans._(
-                    'root node must be an instance of {Group}',
-                    deferred=True,
-                    Group=Group,
-                )
+                f'root node must be an instance of {Group}'
             )
         super().setRoot(root)
 
@@ -200,10 +196,7 @@ class QtNodeTreeModel(_BaseEventedItemModel[NodeType]):
             child = nested_index
         else:
             raise TypeError(
-                trans._(
-                    'nested_index must be an int or tuple of int.',
-                    deferred=True,
-                )
+                'nested_index must be an int or tuple of int.'
             )
         return self.index(child, 0, parent)
 

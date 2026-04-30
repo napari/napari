@@ -66,7 +66,7 @@ class QtDimsSorter(QWidget):
             )
         )
 
-        widget_title = QLabel(trans._('Dims. Ordering'), self)
+        widget_title = QLabel('Dims. Ordering', self)
 
         self.layout().addWidget(widget_title, 0, 0)
         self.layout().addWidget(widget_tooltip, 0, 1)

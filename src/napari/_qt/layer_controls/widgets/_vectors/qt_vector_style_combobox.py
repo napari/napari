@@ -57,7 +57,7 @@ class QtVectorStyleComboBoxControl(QtWidgetControlsBase):
         )
 
         self.vector_style_combobox_label = QtWrappedLabel(
-            trans._('vector style:')
+            'vector style:'
         )
 
     def _on_vector_style_change(self) -> None:

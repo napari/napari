@@ -43,7 +43,7 @@ class QtColorBox(QWidget):
         self._height = 24
         self.setFixedWidth(self._height)
         self.setFixedHeight(self._height)
-        self.setToolTip(trans._('Selected label color'))
+        self.setToolTip('Selected label color')
 
         self.color = None
 
@@ -148,7 +148,7 @@ class QtLabelControl(QtWidgetControlsBase):
             )
         )
 
-        self.label_color_label = QtWrappedLabel(trans._('label:'))
+        self.label_color_label = QtWrappedLabel('label:')
         self.label_color = QWidget()
         self.label_color.setProperty('emphasized', True)
         color_layout = QHBoxLayout()

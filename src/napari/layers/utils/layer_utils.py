@@ -190,10 +190,7 @@ def register_layer_attr_action(
             first_variable_name = next(iter(sig.parameters))
         except StopIteration as e:
             raise RuntimeError(
-                trans._(
-                    'If actions has no arguments there is no way to know what to set the attribute to.',
-                    deferred=True,
-                ),
+                'If actions has no arguments there is no way to know what to set the attribute to.',
             ) from e
 
         @functools.wraps(func)
@@ -498,10 +495,7 @@ def validate_properties(
         expected_len = lens[0]
     if any(v != expected_len for v in lens):
         raise ValueError(
-            trans._(
-                'the number of items must be equal for all properties',
-                deferred=True,
-            )
+            'the number of items must be equal for all properties'
         )
 
     return {k: np.asarray(v) for k, v in properties.items()}
@@ -531,10 +525,7 @@ def _coerce_current_properties_value(
     if isinstance(value, np.ndarray | list | tuple):
         if len(value) != 1:
             raise ValueError(
-                trans._(
-                    'current_properties values should have length 1.',
-                    deferred=True,
-                )
+                'current_properties values should have length 1.'
             )
         coerced_value = np.asarray(value)
     else:
@@ -677,11 +668,7 @@ def coerce_affine(
         affine = Affine(affine_matrix=np.array(affine), ndim=ndim)
     elif not isinstance(affine, Affine):
         raise TypeError(
-            trans._(
-                'affine input not recognized. must be either napari.utils.transforms.Affine or ndarray. Got {dtype}',
-                deferred=True,
-                dtype=type(affine),
-            )
+            f'affine input not recognized. must be either napari.utils.transforms.Affine or ndarray. Got {type(affine)}'
         )
     if name is not None:
         affine.name = name
@@ -1048,20 +1035,12 @@ def _validate_feature_defaults(
         extra_defaults = default_columns - value_columns
         if len(extra_defaults) > 0:
             raise ValueError(
-                trans._(
-                    'Feature defaults contain some extra columns not in feature values: {extra_defaults}',
-                    deferred=True,
-                    extra_defaults=extra_defaults,
-                )
+                f'Feature defaults contain some extra columns not in feature values: {extra_defaults}'
             )
         missing_defaults = value_columns - default_columns
         if len(missing_defaults) > 0:
             raise ValueError(
-                trans._(
-                    'Feature defaults is missing some columns in feature values: {missing_defaults}',
-                    deferred=True,
-                    missing_defaults=missing_defaults,
-                )
+                f'Feature defaults is missing some columns in feature values: {missing_defaults}'
             )
         # Convert to series first to capture the per-column dtype from values,
         # since the DataFrame initializer does not support passing multiple dtypes.

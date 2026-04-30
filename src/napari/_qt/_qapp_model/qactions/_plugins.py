@@ -41,7 +41,7 @@ def _show_plugin_install_dialog(window: Window) -> None:
 Q_PLUGINS_ACTIONS: list[Action] = [
     Action(
         id='napari.window.plugins.plugin_install_dialog',
-        title=trans._('Install/Uninstall Plugins...'),
+        title='Install/Uninstall Plugins...',
         menus=[
             {
                 'id': MenuId.MENUBAR_PLUGINS,

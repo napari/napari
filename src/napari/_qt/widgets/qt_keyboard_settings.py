@@ -45,7 +45,7 @@ class ShortcutEditor(QWidget):
     """Widget to edit keybindings for napari."""
 
     valueChanged = Signal(dict)
-    VIEWER_KEYBINDINGS = trans._('Viewer key bindings')
+    VIEWER_KEYBINDINGS = 'Viewer key bindings'
 
     def __init__(
         self,
@@ -84,7 +84,7 @@ class ShortcutEditor(QWidget):
             QAbstractItemView.SelectionMode.SingleSelection
         )
         self._table.setShowGrid(False)
-        self._restore_button = QPushButton(trans._('Restore All Keybindings'))
+        self._restore_button = QPushButton('Restore All Keybindings')
 
         # Set up dictionary for layers and associated actions.
         all_actions = action_manager._actions.copy()
@@ -111,7 +111,7 @@ class ShortcutEditor(QWidget):
         self.layer_combo_box.currentTextChanged.connect(self._set_table)
         self.layer_combo_box.setCurrentText(self.VIEWER_KEYBINDINGS)
         self._set_table()
-        self._label.setText(trans._('Group'))
+        self._label.setText('Group')
         self._restore_button.clicked.connect(self.restore_defaults)
 
         # layout
@@ -131,9 +131,7 @@ class ShortcutEditor(QWidget):
         layout.addWidget(self._table)
         layout.addWidget(
             QLabel(
-                trans._(
-                    'To edit, double-click the keybinding. To unbind a shortcut, use Backspace or Delete. To set Backspace or Delete, first unbind.'
-                )
+                'To edit, double-click the keybinding. To unbind a shortcut, use Backspace or Delete. To set Backspace or Delete, first unbind.'
             )
         )
 
@@ -149,8 +147,8 @@ class ShortcutEditor(QWidget):
         )
         response = QMessageBox.question(
             self,
-            trans._('Restore Shortcuts'),
-            trans._('Are you sure you want to restore default shortcuts?'),
+            'Restore Shortcuts',
+            'Are you sure you want to restore default shortcuts?',
             QMessageBox.StandardButton.RestoreDefaults
             | QMessageBox.StandardButton.Cancel,
             QMessageBox.StandardButton.RestoreDefaults,
@@ -203,9 +201,9 @@ class ShortcutEditor(QWidget):
 
         # Set header strings for table.
         header_strs = ['', '', '', '', '']
-        header_strs[self._action_name_col] = trans._('Action')
-        header_strs[self._shortcut_col] = trans._('Keybinding')
-        header_strs[self._shortcut_col2] = trans._('Alternative Keybinding')
+        header_strs[self._action_name_col] = 'Action'
+        header_strs[self._shortcut_col] = 'Keybinding'
+        header_strs[self._shortcut_col2] = 'Alternative Keybinding'
 
         # If no layer_str, then set the page to the viewer keybindings page.
         if not layer_str:
@@ -294,7 +292,7 @@ class ShortcutEditor(QWidget):
             self._table.verticalHeader().setVisible(False)
 
             self._table.setColumnHidden(self._action_col, True)
-            item = QTableWidgetItem(trans._('No key bindings'))
+            item = QTableWidgetItem('No key bindings')
             item.setFlags(Qt.ItemFlag.NoItemFlags)
             self._table.setItem(0, 0, item)
 
@@ -355,11 +353,7 @@ class ShortcutEditor(QWidget):
         # create string listing info of all the conflicts found
         conflicting_actions_string = '<ul>'
         for group, action_description in conflicting_actions:
-            conflicting_actions_string += trans._(
-                '<li><b>{action_description}</b> in the <b>{group}</b> group</li>',
-                action_description=action_description,
-                group=group,
-            )
+            conflicting_actions_string += f'<li><b>{action_description}</b> in the <b>{group}</b> group</li>'
         conflicting_actions_string += '</ul>'
 
         # show warning symbols
@@ -431,10 +425,7 @@ class ShortcutEditor(QWidget):
         # Show warning message to let user know this shortcut is invalid.
         self._show_warning_icons([row])
 
-        message = trans._(
-            '<b>{new_shortcut}</b> is not a valid keybinding.',
-            new_shortcut=Shortcut(new_shortcut).platform,
-        )
+        message = f'<b>{Shortcut(new_shortcut).platform}</b> is not a valid keybinding.'
         self._show_warning(row, message)
 
         self._cleanup_warning_icons([row])

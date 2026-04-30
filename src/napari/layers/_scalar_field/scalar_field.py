@@ -239,7 +239,7 @@ class ScalarFieldBase(Layer, ABC):
 
         if getattr(data, 'ndim', 2) < 2:
             raise ValueError(
-                trans._('Image data must have at least 2 dimensions.')
+                'Image data must have at least 2 dimensions.'
             )
 
         # Determine if data is a multiscale
@@ -280,10 +280,7 @@ class ScalarFieldBase(Layer, ABC):
             custom_interpolation_kernel_2d=Event,
             depiction=Event,
             interpolation=WarningEmitter(
-                trans._(
-                    "'layer.events.interpolation' is deprecated please use `interpolation2d` and `interpolation3d`",
-                    deferred=True,
-                ),
+                "'layer.events.interpolation' is deprecated please use `interpolation2d` and `interpolation3d`",
                 type_name='select',
             ),
             interpolation2d=Event,

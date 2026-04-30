@@ -38,7 +38,7 @@ class QtDisplaySelectedLabelCheckBoxControl(QtWidgetControlsBase):
         # Setup widgets
         selected_color_checkbox = QCheckBox()
         selected_color_checkbox.setToolTip(
-            trans._('Display only selected label')
+            'Display only selected label'
         )
         selected_color_checkbox.setChecked(self._layer.show_selected_label)
         self._callbacks.append(
@@ -58,7 +58,7 @@ class QtDisplaySelectedLabelCheckBoxControl(QtWidgetControlsBase):
         self.selected_color_checkbox = selected_color_checkbox
 
         self.selected_color_checkbox_label = QtWrappedLabel(
-            trans._('show\nselected:')
+            'show\nselected:'
         )
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:

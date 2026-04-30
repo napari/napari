@@ -94,10 +94,7 @@ class EventedSettings(BaseSettings, EventedModel):
     @staticmethod
     def _warn_restart(*_: Event) -> None:
         warn(
-            trans._(
-                'Restart required for this change to take effect.',
-                deferred=True,
-            )
+            'Restart required for this change to take effect.'
         )
 
     def _connect(self, model: EventedModel, prefix: str = '') -> None:
@@ -165,10 +162,7 @@ class FileConfigSettingsSource(PydanticBaseSettingsSource):
                 # we warn, since this would have been user provided.
                 if path_ != default_cfg:
                     _logger.warning(
-                        trans._(
-                            'Requested config path is not a file: {path}',
-                            path=path_,
-                        )
+                        f'Requested config path is not a file: {path_}'
                     )
                 continue
                 # get loader for yaml/json
@@ -178,10 +172,7 @@ class FileConfigSettingsSource(PydanticBaseSettingsSource):
                 load = __import__('json').load
             else:
                 warn(
-                    trans._(
-                        'Unrecognized file extension for config_path: {path}',
-                        path=path,
-                    )
+                    f'Unrecognized file extension for config_path: {path}'
                 )
                 continue
 
@@ -190,11 +181,7 @@ class FileConfigSettingsSource(PydanticBaseSettingsSource):
                 new_data = load(path_.read_text()) or {}
             except Exception as err:  # noqa: BLE001
                 _logger.warning(
-                    trans._(
-                        'The content of the napari settings file could not be read\n\nThe default settings will be used and the content of the file will be replaced the next time settings are changed.\n\nError:\n{err}',
-                        deferred=True,
-                        err=err,
-                    )
+                    f'The content of the napari settings file could not be read\n\nThe default settings will be used and the content of the file will be replaced the next time settings are changed.\n\nError:\n{err}'
                 )
                 continue
             assert isinstance(new_data, dict), path_.read_text()
@@ -220,11 +207,7 @@ class FileConfigSettingsSource(PydanticBaseSettingsSource):
 
             # if errors occur, we still want to boot, so we just remove bad keys
             errors = err.errors()
-            msg = trans._(
-                'Validation errors in config file(s).\nThe following fields have been reset to the default value:\n\n{errors}\n',
-                deferred=True,
-                errors=errors,  # TODO: is this good enough?
-            )
+            msg = f'Validation errors in config file(s).\nThe following fields have been reset to the default value:\n\n{errors}\n'
             with contextlib.suppress(Exception):
                 # we're about to nuke some settings, so just in case... try backup
                 backup_path = path_.parent / f'{path_.stem}.BAK{path_.suffix}'
@@ -235,9 +218,7 @@ class FileConfigSettingsSource(PydanticBaseSettingsSource):
                 _remove_bad_keys(data, [e.get('loc', ()) for e in errors])
             except KeyError:  # pragma: no cover
                 _logger.warning(
-                    trans._(
-                        'Failed to remove validation errors from config file. Using defaults.'
-                    )
+                    'Failed to remove validation errors from config file. Using defaults.'
                 )
                 data = {}
         return data
@@ -444,10 +425,7 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
         # use insinstance so mypy is happy
         if not path or isinstance(path, _NotSetType):
             raise ValueError(
-                trans._(
-                    'No path provided in config or save argument.',
-                    deferred=True,
-                )
+                'No path provided in config or save argument.'
             )
 
         path = Path(path).expanduser().resolve()
@@ -464,11 +442,7 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
             )
         else:
             raise NotImplementedError(
-                trans._(
-                    'Can only currently dump to `.json` or `.yaml`, not {path!r}',
-                    deferred=True,
-                    path=path,
-                )
+                f'Can only currently dump to `.json` or `.yaml`, not {path!r}'
             )
         with open(path, 'w') as target:
             target.write(data_)

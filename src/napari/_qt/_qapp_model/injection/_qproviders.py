@@ -43,11 +43,7 @@ def _provide_viewer_or_raise(
     if msg:
         msg = ' ' + msg
     raise RuntimeError(
-        trans._(
-            'No current `Viewer` found.{msg}',
-            deferred=True,
-            msg=msg,
-        )
+        f'No current `Viewer` found.{msg}'
     )
 
 
@@ -66,11 +62,7 @@ def _provide_qt_viewer_or_raise(msg: str = '') -> QtViewer:
     if msg:
         msg = ' ' + msg
     raise RuntimeError(
-        trans._(
-            'No current `QtViewer` found.{msg}',
-            deferred=True,
-            msg=msg,
-        )
+        f'No current `QtViewer` found.{msg}'
     )
 
 
@@ -89,11 +81,7 @@ def _provide_window_or_raise(msg: str = '') -> Window:
     if msg:
         msg = ' ' + msg
     raise RuntimeError(
-        trans._(
-            'No current `Window` found.{msg}',
-            deferred=True,
-            msg=msg,
-        )
+        f'No current `Window` found.{msg}'
     )
 
 

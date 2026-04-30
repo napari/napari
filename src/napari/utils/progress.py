@@ -93,7 +93,7 @@ class progress(tqdm):
         if self.disable:
             self.desc = ''
         if not self.desc:
-            self.set_description(trans._('progress'))
+            self.set_description('progress')
         progress._all_instances.add(self)
         self.is_init = False
 

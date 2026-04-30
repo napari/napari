@@ -96,22 +96,12 @@ def fix_data_vectors(
             vectors = vectors[np.newaxis]
         if vectors.ndim != 3 or vectors.shape[1] != 2:
             raise ValueError(
-                trans._(
-                    'could not reshape Vector data from {vectors_shape} to (N, 2, {dimensions})',
-                    deferred=True,
-                    vectors_shape=vectors.shape,
-                    dimensions=ndim or 'D',
-                )
+                f'could not reshape Vector data from {vectors.shape} to (N, 2, {ndim or 'D'})'
             )
 
     data_ndim = vectors.shape[2]
     if ndim is not None and ndim != data_ndim:
         raise ValueError(
-            trans._(
-                'Vectors dimensions ({data_ndim}) must be equal to ndim ({ndim})',
-                deferred=True,
-                data_ndim=data_ndim,
-                ndim=ndim,
-            )
+            f'Vectors dimensions ({data_ndim}) must be equal to ndim ({ndim})'
         )
     return vectors, data_ndim

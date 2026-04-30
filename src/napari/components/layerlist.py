@@ -232,11 +232,7 @@ class LayerList(SelectableEventedList[Layer]):
         for v in values:
             if v in bad:
                 raise ValueError(
-                    trans._(
-                        "Layer '{v}' is already present in layer list",
-                        deferred=True,
-                        v=v,
-                    )
+                    f"Layer '{v}' is already present in layer list"
                 )
         return values
 
@@ -335,7 +331,7 @@ class LayerList(SelectableEventedList[Layer]):
             warnings.filterwarnings(
                 'ignore',
                 message=str(
-                    trans._('All-NaN axis encountered', deferred=True)
+                    'All-NaN axis encountered'
                 ),
             )
             min_v = np.nanmin(
@@ -714,9 +710,9 @@ class LayerList(SelectableEventedList[Layer]):
         )
 
         if selected:
-            msg = trans._('No layers selected', deferred=True)
+            msg = 'No layers selected'
         else:
-            msg = trans._('No layers to save', deferred=True)
+            msg = 'No layers to save'
 
         if not layers:
             warnings.warn(msg)

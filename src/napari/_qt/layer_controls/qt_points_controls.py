@@ -109,9 +109,7 @@ class QtPointsControls(QtLayerControls):
         self._face_color_control = QtFaceColorControl(
             self,
             layer,
-            tooltip=trans._(
-                'Click to set the face color of currently selected points and any added afterwards.'
-            ),
+            tooltip='Click to set the face color of currently selected points and any added afterwards.',
         )
         self._add_widget_controls(self._face_color_control)
         self._border_color_control = QtBorderColorControl(self, layer)

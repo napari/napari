@@ -53,11 +53,7 @@ def ensure_tuple_index(index: MaybeNestedIndex) -> NestedIndex:
         return index
 
     raise TypeError(
-        trans._(
-            'Invalid nested index: {index}. Must be an int or tuple',
-            deferred=True,
-            index=index,
-        )
+        f'Invalid nested index: {index}. Must be an int or tuple'
     )
 
 
@@ -93,10 +89,7 @@ def split_nested_index(index: MaybeNestedIndex) -> tuple[ParentIndex, Index]:
         *first, last = index
         if any(not isinstance(p, int) for p in first):
             raise ValueError(
-                trans._(
-                    'The parent index must be a tuple of int',
-                    deferred=True,
-                )
+                'The parent index must be a tuple of int'
             )
         return cast(ParentIndex, tuple(first)), last
     return ParentIndex(()), -1  # empty tuple appends to self
@@ -313,10 +306,7 @@ class NestableEventedList(EventedList[_T]):
         dest_par, dest_i = split_nested_index(dest_index)
         if isinstance(dest_i, slice):
             raise TypeError(
-                trans._(
-                    'Destination index may not be a slice',
-                    deferred=True,
-                )
+                'Destination index may not be a slice'
             )
         dest_i = cast(int, self._non_negative_index(dest_par, dest_i))
 
@@ -331,10 +321,7 @@ class NestableEventedList(EventedList[_T]):
                 idx = (idx,)
             if idx == ():
                 raise IndexError(
-                    trans._(
-                        'Group cannot move itself',
-                        deferred=True,
-                    )
+                    'Group cannot move itself'
                 )
 
             # i.e. we need to increase the (src_par, ...) by 1 for each time
@@ -344,10 +331,7 @@ class NestableEventedList(EventedList[_T]):
                 _idx: list[Index] = list(idx)
                 if isinstance(_idx[_parlen], slice):
                     raise NotImplementedError(
-                        trans._(
-                            "Can't yet deal with slice source indices in multimove",
-                            deferred=True,
-                        )
+                        "Can't yet deal with slice source indices in multimove"
                     )
                 _idx[_parlen] += sum(x <= _idx[_parlen] for x in dumped)
                 idx = tuple(_idx)
@@ -355,10 +339,7 @@ class NestableEventedList(EventedList[_T]):
             src_par, src_i = split_nested_index(idx)
             if isinstance(src_i, slice):
                 raise TypeError(
-                    trans._(
-                        'Terminal source index may not be a slice',
-                        deferred=True,
-                    )
+                    'Terminal source index may not be a slice'
                 )
 
             if src_i < 0:
@@ -418,26 +399,17 @@ class NestableEventedList(EventedList[_T]):
 
         if isinstance(src_i, slice):
             raise TypeError(
-                trans._(
-                    'Terminal source index may not be a slice',
-                    deferred=True,
-                )
+                'Terminal source index may not be a slice'
             )
 
         if isinstance(dest_i, slice):
             raise TypeError(
-                trans._(
-                    'Destination index may not be a slice',
-                    deferred=True,
-                )
+                'Destination index may not be a slice'
             )
 
         if src_i == ():
             raise ValueError(
-                trans._(
-                    'Group cannot move itself',
-                    deferred=True,
-                )
+                'Group cannot move itself'
             )
 
         if src_par_i == dest_par_i and isinstance(dest_i, int):
@@ -465,12 +437,7 @@ class NestableEventedList(EventedList[_T]):
             _types = self._basetypes + (NestableEventedList,)
             if not isinstance(e, _types):
                 raise TypeError(
-                    trans._(
-                        'Cannot add object with type {dtype!r} to TypedList expecting type {types_!r}',
-                        deferred=True,
-                        dtype=type(e),
-                        types_=_types,
-                    )
+                    f'Cannot add object with type {type(e)!r} to TypedList expecting type {_types!r}'
                 )
         return e
 

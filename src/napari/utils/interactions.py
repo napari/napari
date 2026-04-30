@@ -86,9 +86,7 @@ def mouse_double_click_callbacks(obj, event) -> None:
         # execute function to run press event code
         if inspect.isgeneratorfunction(mouse_click_func):
             raise ValueError(
-                trans._(
-                    "Double-click actions can't be generators.", deferred=True
-                )
+                "Double-click actions can't be generators."
             )
         mouse_click_func(obj, event)
 
@@ -263,10 +261,7 @@ class Shortcut:
         shortcut : keybinding-like
             shortcut to format
         """
-        error_msg = trans._(
-            '`{shortcut}` does not seem to be a valid shortcut Key.',
-            shortcut=shortcut,
-        )
+        error_msg = f'`{shortcut}` does not seem to be a valid shortcut Key.'
         error = False
 
         try:

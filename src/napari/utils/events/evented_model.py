@@ -405,11 +405,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             values = values.model_dump()
         if not isinstance(values, dict):
             raise TypeError(
-                trans._(
-                    'Unsupported update from {values}',
-                    deferred=True,
-                    values=type(values),
-                )
+                f'Unsupported update from {type(values)}'
             )
 
         with self.events.blocker() as block:

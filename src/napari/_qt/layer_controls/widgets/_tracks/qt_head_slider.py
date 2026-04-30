@@ -50,7 +50,7 @@ class QtHeadLengthSliderControl(QtWidgetControlsBase):
             self.head_length_slider.valueChanged, self._layer, 'head_length'
         )
 
-        self.head_length_slider_label = QtWrappedLabel(trans._('head length:'))
+        self.head_length_slider_label = QtWrappedLabel('head length:')
 
     def _on_head_length_change(self) -> None:
         """Receive layer model track line width change event and update slider."""

@@ -54,7 +54,7 @@ class QtLabelRenderControl(QtWidgetControlsBase):
         connect_setattr(
             render_combobox.currentEnumChanged, self._layer, 'rendering'
         )
-        self.render_combobox_label = QtWrappedLabel(trans._('rendering:'))
+        self.render_combobox_label = QtWrappedLabel('rendering:')
 
         iso_gradient_combobox = QEnumComboBox(
             enum_class=IsoCategoricalGradientMode
@@ -72,7 +72,7 @@ class QtLabelRenderControl(QtWidgetControlsBase):
         )
         self.iso_gradient_combobox = iso_gradient_combobox
         self.iso_gradient_combobox_label = QtWrappedLabel(
-            trans._('gradient\nmode:')
+            'gradient\nmode:'
         )
 
     def _on_rendering_change(self):

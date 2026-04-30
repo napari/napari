@@ -30,11 +30,7 @@ class ReadOnlyWrapper(wrapt.ObjectProxy):
             and name not in self._self_exceptions
         ):
             raise TypeError(
-                trans._(
-                    'cannot set attribute {name}',
-                    deferred=True,
-                    name=name,
-                )
+                f'cannot set attribute {name}'
             )
 
         super().__setattr__(name, val)
@@ -42,7 +38,7 @@ class ReadOnlyWrapper(wrapt.ObjectProxy):
     def __setitem__(self, name: str, val: Any) -> None:
         if name not in self._self_exceptions:
             raise TypeError(
-                trans._('cannot set item {name}', deferred=True, name=name)
+                f'cannot set item {name}'
             )
         super().__setitem__(name, val)
 

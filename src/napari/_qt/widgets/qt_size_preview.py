@@ -136,7 +136,7 @@ class QtSizeSliderPreviewWidget(QWidget):
         self._slider.setMinimum(min_value)
         self._slider.setMaximum(max_value)
         self._preview.setText(preview_text)
-        self._preview_label.setText(trans._('preview'))
+        self._preview_label.setText('preview')
         self._preview_label.setAlignment(Qt.AlignmentFlag.AlignHCenter)
         self.setFocusProxy(self._lineedit)
 
@@ -301,10 +301,7 @@ class QtSizeSliderPreviewWidget(QWidget):
         """
         if value >= self._max_value:
             raise ValueError(
-                trans._(
-                    'Minimum value must be smaller than {max_value}',
-                    max_value=self._max_value,
-                )
+                f'Minimum value must be smaller than {self._max_value}'
             )
         self._min_value = value
         self._value = max(self._value, self._min_value)
@@ -333,10 +330,7 @@ class QtSizeSliderPreviewWidget(QWidget):
         """
         if value <= self._min_value:
             raise ValueError(
-                trans._(
-                    'Maximum value must be larger than {min_value}',
-                    min_value=self._min_value,
-                )
+                f'Maximum value must be larger than {self._min_value}'
             )
         self._max_value = value
         self._value = min(self._value, self._max_value)

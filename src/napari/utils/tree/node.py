@@ -114,9 +114,5 @@ class Node:
             self.parent.remove(self)
             return self
         raise IndexError(
-            trans._(
-                'Cannot unparent orphaned Node: {node!r}',
-                deferred=True,
-                node=self,
-            ),
+            f'Cannot unparent orphaned Node: {self!r}',
         )

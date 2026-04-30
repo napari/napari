@@ -166,11 +166,7 @@ def _get_widget_viewer_param(
         widget_param = ''
     else:
         raise TypeError(
-            trans._(
-                "'{widget}' must be `QtWidgets.QWidget` or `magicgui.widgets.Widget` subclass, `MagicFactory` instance or function. Please raise an issue in napari GitHub with the plugin and widget you were trying to use.",
-                deferred=True,
-                widget=widget_name,
-            )
+            f"'{widget_name}' must be `QtWidgets.QWidget` or `magicgui.widgets.Widget` subclass, `MagicFactory` instance or function. Please raise an issue in napari GitHub with the plugin and widget you were trying to use."
         )
     return widget_param
 

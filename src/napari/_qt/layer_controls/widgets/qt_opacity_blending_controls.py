@@ -68,7 +68,7 @@ class QtOpacityBlendingControls(QtWidgetControlsBase):
                 self._layer, 'opacity', self.opacity_slider, 'setValue'
             )
         )
-        self.opacity_label = QtWrappedLabel(trans._('opacity:'))
+        self.opacity_label = QtWrappedLabel('opacity:')
 
         blend_combobox = QComboBox(parent)
         for index, (data, text) in enumerate(BLENDING_TRANSLATIONS.items()):
@@ -79,7 +79,7 @@ class QtOpacityBlendingControls(QtWidgetControlsBase):
 
         blend_combobox.currentTextChanged.connect(self.change_blending)
         self.blend_combobox = blend_combobox
-        self.blend_label = QtWrappedLabel(trans._('blending:'))
+        self.blend_label = QtWrappedLabel('blending:')
 
         # opaque and minimum blending do not support changing alpha
         self.opacity_slider.setEnabled(
@@ -108,9 +108,7 @@ class QtOpacityBlendingControls(QtWidgetControlsBase):
 
         blending_tooltip = ''
         if self._layer.blending == Blending.MINIMUM:
-            blending_tooltip = trans._(
-                '`minimum` blending mode works best with inverted colormaps with a white background.',
-            )
+            blending_tooltip = '`minimum` blending mode works best with inverted colormaps with a white background.'
         self.blend_combobox.setToolTip(blending_tooltip)
         self._layer.help = blending_tooltip
 

@@ -33,17 +33,12 @@ class StrField(str):
     @classmethod
     def validate(cls, v):
         if not isinstance(v, str):
-            raise TypeError(trans._('must be a string', deferred=True))
+            raise TypeError('must be a string')
 
         value = v.lower()
         if not cls._valid_option(v):
             raise ValueError(
-                trans._(
-                    '"{value}" is not valid. It must be one of {options}',
-                    deferred=True,
-                    value=value,
-                    options=', '.join(cls._available_options()),
-                )
+                f'"{value}" is not valid. It must be one of {', '.join(cls._available_options())}'
             )
 
         return value
@@ -129,11 +124,7 @@ class Version:
         match = cls._SEMVER_PATTERN.match(version)
         if match is None:
             raise ValueError(
-                trans._(
-                    '{version} is not valid SemVer string',
-                    deferred=True,
-                    version=version,
-                )
+                f'{version} is not valid SemVer string'
             )
         matched_version_parts: dict[str, Any] = match.groupdict()
         return cls(**matched_version_parts)
@@ -162,12 +153,7 @@ class Version:
             other = Version(*other)
         elif not isinstance(other, Version):
             raise TypeError(
-                trans._(
-                    'Expected str, bytes, dict, tuple, list, or {cls} instance, but got {other_type}',
-                    deferred=True,
-                    cls=cls,
-                    other_type=type(other),
-                )
+                f'Expected str, bytes, dict, tuple, list, or {cls} instance, but got {type(other)}'
             )
         return other
 

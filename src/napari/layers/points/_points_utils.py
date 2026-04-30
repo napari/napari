@@ -252,10 +252,7 @@ def fix_data_points(
         data_ndim = points.shape[1]
         if ndim is not None and ndim != data_ndim:
             raise ValueError(
-                trans._(
-                    'Points dimensions must be equal to ndim',
-                    deferred=True,
-                )
+                'Points dimensions must be equal to ndim'
             )
         ndim = data_ndim
     return points, ndim

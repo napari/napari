@@ -28,11 +28,7 @@ def create_func(cls, name=None, doc=None):
 
     if 'layer' in name:
         raise ValueError(
-            trans._(
-                "name {name} should not include 'layer'",
-                deferred=True,
-                name=name,
-            )
+            f"name {name} should not include 'layer'"
         )
 
     name = 'add_' + name

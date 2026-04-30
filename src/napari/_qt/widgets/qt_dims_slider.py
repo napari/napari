@@ -76,7 +76,7 @@ class QtDimSliderWidget(QWidget):
         self.margins_popup = None
         self.curslice_label = QLineEdit(self)
         self.curslice_label.setToolTip(
-            trans._('Current slice for axis {axis}', axis=axis)
+            f'Current slice for axis {axis}'
         )
         # if we set the QIntValidator to actually reflect the range of the data
         # then an invalid (i.e. too large) index doesn't actually trigger the
@@ -89,7 +89,7 @@ class QtDimSliderWidget(QWidget):
         self.curslice_label.editingFinished.connect(self._set_slice_from_label)
         self.totslice_label = QLabel(self)
         self.totslice_label.setToolTip(
-            trans._('Total slices for axis {axis}', axis=axis)
+            f'Total slices for axis {axis}'
         )
         self.curslice_label.setObjectName('slice_label')
         self.totslice_label.setObjectName('slice_label')
@@ -152,7 +152,7 @@ class QtDimSliderWidget(QWidget):
         label.setEllipsesWidth(int(fm.averageCharWidth() * 3))
         label.setText(self.dims.axis_labels[self.axis])
         label.home(False)
-        label.setToolTip(trans._('Edit to change axis label'))
+        label.setToolTip('Edit to change axis label')
         label.setAcceptDrops(False)
         label.setEnabled(True)
         label.setAlignment(Qt.AlignmentFlag.AlignRight)
@@ -206,7 +206,7 @@ class QtDimSliderWidget(QWidget):
             self.qt_dims, self.axis, fps=self._fps, mode=self._loop_mode
         )
         play_button.setToolTip(
-            trans._('Right click on button for playback setting options.')
+            'Right click on button for playback setting options.'
         )
         play_button.mode_combo.currentTextChanged.connect(
             lambda x: self.__class__.loop_mode.fset(
@@ -365,11 +365,11 @@ class QtDimSliderWidget(QWidget):
         """
         if not isinstance(value, tuple | list | type(None)):
             raise TypeError(
-                trans._('frame_range value must be a list or tuple')
+                'frame_range value must be a list or tuple'
             )
 
         if value and len(value) != 2:
-            raise ValueError(trans._('frame_range must have a length of 2'))
+            raise ValueError('frame_range must have a length of 2')
 
         if value is None:
             value = (0, 0)
@@ -520,7 +520,7 @@ class QtPlayButton(QPushButton):
         fpsspin.setMinimum(0)
         form_layout.insertRow(
             0,
-            QLabel(trans._('frames per second:'), parent=self.popup),
+            QLabel('frames per second:', parent=self.popup),
             fpsspin,
         )
         self.fpsspin = fpsspin
@@ -528,14 +528,14 @@ class QtPlayButton(QPushButton):
         revcheck = QCheckBox(self.popup)
         revcheck.setObjectName('playDirectionCheckBox')
         form_layout.insertRow(
-            1, QLabel(trans._('play direction:'), parent=self.popup), revcheck
+            1, QLabel('play direction:', parent=self.popup), revcheck
         )
         self.reverse_check = revcheck
 
         mode_combo = QComboBox(self.popup)
         mode_combo.addItems([str(i).replace('_', ' ') for i in LoopMode])
         form_layout.insertRow(
-            2, QLabel(trans._('play mode:'), parent=self.popup), mode_combo
+            2, QLabel('play mode:', parent=self.popup), mode_combo
         )
         mode_combo.setCurrentText(str(self.mode).replace('_', ' '))
         self.mode_combo = mode_combo
@@ -694,12 +694,12 @@ class AnimationThread(QThread):
         if frame_range != (0, 0):
             if frame_range[0] >= frame_range[1]:
                 raise ValueError(
-                    trans._('frame_range[0] must be <= frame_range[1]')
+                    'frame_range[0] must be <= frame_range[1]'
                 )
             if frame_range[0] < self.dims_range[0]:
-                raise IndexError(trans._('frame_range[0] out of range'))
+                raise IndexError('frame_range[0] out of range')
             if frame_range[1] * self.dims_range[2] >= self.dims_range[1]:
-                raise IndexError(trans._('frame_range[1] out of range'))
+                raise IndexError('frame_range[1] out of range')
         self.frame_range = frame_range
 
         if self.frame_range != (0, 0):

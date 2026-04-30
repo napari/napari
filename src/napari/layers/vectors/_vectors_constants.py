@@ -25,9 +25,9 @@ class VectorStyle(StringEnum):
 
 VECTORSTYLE_TRANSLATIONS = OrderedDict(
     [
-        (VectorStyle.LINE, trans._('line')),
-        (VectorStyle.TRIANGLE, trans._('triangle')),
-        (VectorStyle.ARROW, trans._('arrow')),
+        (VectorStyle.LINE, 'line'),
+        (VectorStyle.TRIANGLE, 'triangle'),
+        (VectorStyle.ARROW, 'arrow'),
     ]
 )
 

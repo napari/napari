@@ -122,10 +122,7 @@ class EventedList(TypedMutableSequence[_T]):
         if isinstance(key, slice):
             if not isinstance(value, Iterable):
                 raise TypeError(
-                    trans._(
-                        'Can only assign an iterable to slice',
-                        deferred=True,
-                    )
+                    'Can only assign an iterable to slice'
                 )
             value = list(
                 value
@@ -137,12 +134,7 @@ class EventedList(TypedMutableSequence[_T]):
                 indices = list(range(*key.indices(len(self))))
                 if not len(value) == len(indices):
                     raise ValueError(
-                        trans._(
-                            'attempt to assign sequence of size {size} to extended slice of size {slice_size}',
-                            deferred=True,
-                            size=len(value),
-                            slice_size=len(indices),
-                        )
+                        f'attempt to assign sequence of size {len(value)} to extended slice of size {len(indices)}'
                     )
                 for i, v in zip(indices, value, strict=False):
                     self.__setitem__(i, v)
@@ -170,12 +162,7 @@ class EventedList(TypedMutableSequence[_T]):
 
         valid = {int, slice}.union(set(self._lookup))
         raise TypeError(
-            trans._(
-                'Deletion index must be {valid!r}, got {dtype}',
-                deferred=True,
-                valid=valid,
-                dtype=type(key),
-            )
+            f'Deletion index must be {valid!r}, got {type(key)}'
         )
 
     def __delitem__(self, key: Index) -> None:
@@ -317,10 +304,7 @@ class EventedList(TypedMutableSequence[_T]):
         """
         if isinstance(dest_index, slice):
             raise TypeError(
-                trans._(
-                    'Destination index may not be a slice',
-                    deferred=True,
-                )
+                'Destination index may not be a slice'
             )
 
         to_move: list[int] = []
@@ -331,11 +315,7 @@ class EventedList(TypedMutableSequence[_T]):
                 to_move.append(idx)
             else:
                 raise TypeError(
-                    trans._(
-                        'Can only move integer or slice indices, not {t}',
-                        deferred=True,
-                        t=type(idx),
-                    )
+                    f'Can only move integer or slice indices, not {type(idx)}'
                 )
 
         to_move = list(dict.fromkeys(to_move))

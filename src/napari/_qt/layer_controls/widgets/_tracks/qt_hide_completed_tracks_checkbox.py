@@ -55,7 +55,7 @@ class QtHideCompletedTracksCheckBoxControl(QtWidgetControlsBase):
         )
 
         self.hide_completed_tracks_checkbox_label = QtWrappedLabel(
-            trans._('hide completed:')
+            'hide completed:'
         )
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:

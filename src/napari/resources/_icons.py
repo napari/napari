@@ -22,12 +22,7 @@ def get_icon_path(name: str) -> str:
     """Return path to an SVG in the theme icons."""
     if name not in ICONS:
         raise ValueError(
-            trans._(
-                'unrecognized icon name: {name!r}. Known names: {icons}',
-                deferred=True,
-                name=name,
-                icons=set(ICONS),
-            )
+            f'unrecognized icon name: {name!r}. Known names: {set(ICONS)}'
         )
     return ICONS[name]
 
@@ -65,11 +60,7 @@ def get_colorized_svg(
 
     if not svg_elem.search(xml):
         raise ValueError(
-            trans._(
-                'Could not detect svg tag in {path_or_xml!r}',
-                deferred=True,
-                path_or_xml=path_or_xml,
-            )
+            f'Could not detect svg tag in {path_or_xml!r}'
         )
     # use regex to find the svg tag and insert css right after
     # (the '\\1' syntax includes the matched tag in the output)

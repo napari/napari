@@ -146,7 +146,7 @@ class QtShapesControls(QtLayerControls):
         self.move_front_button = QtModePushButton(
             layer,
             'move_front',
-            tooltip=trans._('Move to front'),
+            tooltip='Move to front',
         )
         action_manager.bind_button(
             'napari:move_shapes_selection_to_front', self.move_front_button
@@ -154,7 +154,7 @@ class QtShapesControls(QtLayerControls):
         self.move_back_button = QtModePushButton(
             layer,
             'move_back',
-            tooltip=trans._('Move to back'),
+            tooltip='Move to back',
         )
         action_manager.bind_button(
             'napari:move_shapes_selection_to_back', self.move_back_button
@@ -163,10 +163,7 @@ class QtShapesControls(QtLayerControls):
             layer,
             'delete_shape',
             slot=self.layer.remove_selected,
-            tooltip=trans._(
-                'Delete selected shapes ({shortcut})',
-                shortcut=Shortcut('Backspace').platform,
-            ),
+            tooltip=f'Delete selected shapes ({Shortcut('Backspace').platform})',
         )
         self._EDIT_BUTTONS += (
             self.delete_button,
@@ -199,17 +196,13 @@ class QtShapesControls(QtLayerControls):
         self._edge_color_control = QtEdgeColorControl(
             self,
             layer,
-            tooltip=trans._(
-                'Click to set the edge color of currently selected shapes and any added afterwards'
-            ),
+            tooltip='Click to set the edge color of currently selected shapes and any added afterwards',
         )
         self._add_widget_controls(self._edge_color_control)
         self._face_color_control = QtFaceColorControl(
             self,
             layer,
-            tooltip=trans._(
-                'Click to set the face color of currently selected shapes and any added afterwards.'
-            ),
+            tooltip='Click to set the face color of currently selected shapes and any added afterwards.',
         )
         self._add_widget_controls(self._face_color_control)
         self._text_visibility_control = QtTextVisibilityControl(self, layer)

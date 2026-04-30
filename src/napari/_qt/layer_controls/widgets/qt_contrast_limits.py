@@ -96,7 +96,7 @@ class QContrastLimitsPopup(QRangeSliderPopup):
 
         reset_btn = QPushButton('reset')
         reset_btn.setObjectName('reset_clims_button')
-        reset_btn.setToolTip(trans._('Autoscale contrast to data range'))
+        reset_btn.setToolTip('Autoscale contrast to data range')
         reset_btn.setFixedWidth(45)
         reset_btn.clicked.connect(reset)
         self._layout.addWidget(
@@ -110,7 +110,7 @@ class QContrastLimitsPopup(QRangeSliderPopup):
             range_btn = QPushButton('full range')
             range_btn.setObjectName('full_clim_range_button')
             range_btn.setToolTip(
-                trans._('Set contrast range to full bit-depth')
+                'Set contrast range to full bit-depth'
             )
             range_btn.setFixedWidth(75)
             range_btn.clicked.connect(layer.reset_contrast_limits_range)
@@ -128,10 +128,10 @@ class AutoScaleButtons(QWidget):
         self.setLayout(QHBoxLayout())
         self.layout().setSpacing(2)
         self.layout().setContentsMargins(0, 0, 0, 0)
-        once_btn = QPushButton(trans._('once'))
+        once_btn = QPushButton('once')
         once_btn.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
-        auto_btn = QPushButton(trans._('continuous'))
+        auto_btn = QPushButton('continuous')
         auto_btn.setCheckable(True)
         auto_btn.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         once_btn.clicked.connect(lambda: auto_btn.setChecked(False))
@@ -185,7 +185,7 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
 
         # Setup widgets
         self.auto_scale_bar = AutoScaleButtons(layer, parent)
-        self.auto_scale_bar_label = QtWrappedLabel(trans._('auto-contrast:'))
+        self.auto_scale_bar_label = QtWrappedLabel('auto-contrast:')
         self.contrast_limits_slider = _QDoubleRangeSlider(
             Qt.Orientation.Horizontal,
         )
@@ -201,7 +201,7 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
         self.contrast_limits_slider.setSingleStep(10**-decimals)
         self.contrast_limits_slider.setValue(self._layer.contrast_limits)
         self.contrast_limits_slider.setToolTip(
-            trans._('Right click for detailed slider popup.')
+            'Right click for detailed slider popup.'
         )
 
         self.clim_popup = None
@@ -218,7 +218,7 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
         )
 
         self.contrast_limits_slider_label = QtWrappedLabel(
-            trans._('contrast limits:')
+            'contrast limits:'
         )
 
     def show_clim_popup(self):

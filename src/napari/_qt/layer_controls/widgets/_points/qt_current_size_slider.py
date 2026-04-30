@@ -46,9 +46,7 @@ class QtCurrentSizeSliderControl(QtWidgetControlsBase):
         # Setup widgets
         sld = QLabeledSlider(Qt.Orientation.Horizontal)
         sld.setToolTip(
-            trans._(
-                'Change the size of currently selected points and any added afterwards.'
-            )
+            'Change the size of currently selected points and any added afterwards.'
         )
         sld.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         sld.setMinimum(1)
@@ -65,7 +63,7 @@ class QtCurrentSizeSliderControl(QtWidgetControlsBase):
             self.size_slider.valueChanged, self._layer, 'current_size'
         )
 
-        self.size_slider_label = QtWrappedLabel(trans._('point size:'))
+        self.size_slider_label = QtWrappedLabel('point size:')
 
     def _on_current_size_change(self) -> None:
         """Receive layer model size change event and update point size slider."""

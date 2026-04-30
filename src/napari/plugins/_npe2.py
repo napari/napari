@@ -110,13 +110,7 @@ def get_widget_contribution(
                 return contrib.get_callable(), contrib.display_name
             widgets_seen.add(contrib.display_name)
     if widget_name and widgets_seen:
-        msg = trans._(
-            'Plugin {plugin_name!r} does not provide a widget named {widget_name!r}. It does provide: {seen}',
-            plugin_name=plugin_name,
-            widget_name=widget_name,
-            seen=widgets_seen,
-            deferred=True,
-        )
+        msg = f'Plugin {plugin_name!r} does not provide a widget named {widget_name!r}. It does provide: {widgets_seen}'
         raise KeyError(msg)
     return None
 

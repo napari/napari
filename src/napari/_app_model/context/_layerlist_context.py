@@ -35,7 +35,7 @@ class LayerListContextKeys(ContextNamespace['Layer']):
 
     num_layers = ContextKey(
         0,
-        trans._('Number of layers.'),
+        'Number of layers.',
         _len,
     )
 
@@ -232,29 +232,27 @@ class LayerListSelectionContextKeys(ContextNamespace['LayerSel']):
 
     num_selected_layers = ContextKey(
         0,
-        trans._('Number of currently selected layers.'),
+        'Number of currently selected layers.',
         _len,
     )
     num_selected_layers_linked = ContextKey(
         False,
-        trans._('True when all selected layers are linked.'),
+        'True when all selected layers are linked.',
         _all_linked,
     )
     num_unselected_linked_layers = ContextKey(
         0,
-        trans._('Number of unselected layers linked to selected layer(s).'),
+        'Number of unselected layers linked to selected layer(s).',
         _n_unselected_links,
     )
     active_layer_is_rgb = ContextKey(
         False,
-        trans._('True when the active layer is RGB.'),
+        'True when the active layer is RGB.',
         _is_rgb,
     )
     active_layer_type = ContextKey['LayerSel', Optional[str]](
         None,
-        trans._(
-            'Lowercase name of active layer type, or None of none active.'
-        ),
+        'Lowercase name of active layer type, or None of none active.',
         _active_type,
     )
     # TODO: try to reduce these `num_selected_x_layers` to a single set of strings
@@ -262,113 +260,111 @@ class LayerListSelectionContextKeys(ContextNamespace['LayerSel']):
     # support Sets, tuples, lists, etc...  which they currently do not.
     num_selected_image_layers = ContextKey(
         0,
-        trans._('Number of selected image layers.'),
+        'Number of selected image layers.',
         _n_selected_imgs,
     )
     num_selected_labels_layers = ContextKey(
         0,
-        trans._('Number of selected labels layers.'),
+        'Number of selected labels layers.',
         _n_selected_labels,
     )
     num_selected_points_layers = ContextKey(
         0,
-        trans._('Number of selected points layers.'),
+        'Number of selected points layers.',
         _n_selected_points,
     )
     num_selected_shapes_layers = ContextKey(
         0,
-        trans._('Number of selected shapes layers.'),
+        'Number of selected shapes layers.',
         _n_selected_shapes,
     )
     num_selected_surface_layers = ContextKey(
         0,
-        trans._('Number of selected surface layers.'),
+        'Number of selected surface layers.',
         _n_selected_surfaces,
     )
     num_selected_vectors_layers = ContextKey(
         0,
-        trans._('Number of selected vectors layers.'),
+        'Number of selected vectors layers.',
         _n_selected_vectors,
     )
     num_selected_tracks_layers = ContextKey(
         0,
-        trans._('Number of selected tracks layers.'),
+        'Number of selected tracks layers.',
         _n_selected_tracks,
     )
     active_layer_ndim = ContextKey['LayerSel', Optional[int]](
         None,
-        trans._(
-            'Number of dimensions in the active layer, or `None` if nothing is active.'
-        ),
+        'Number of dimensions in the active layer, or `None` if nothing is active.',
         _active_ndim,
     )
     active_layer_shape = ContextKey['LayerSel', Optional[tuple[int, ...]]](
         (),
-        trans._('Shape of the active layer, or `None` if nothing is active.'),
+        'Shape of the active layer, or `None` if nothing is active.',
         _active_shape,
     )
     active_layer_is_image_3d = ContextKey(
         False,
-        trans._('True when the active layer is a 3D image.'),
+        'True when the active layer is a 3D image.',
         _active_is_image_3d,
     )
     active_layer_dtype = ContextKey(
         None,
-        trans._('Dtype of the active layer, or `None` if nothing is active.'),
+        'Dtype of the active layer, or `None` if nothing is active.',
         _active_dtype,
     )
     all_selected_layers_same_shape = ContextKey(
         False,
-        trans._('True when all selected layers have the same shape.'),
+        'True when all selected layers have the same shape.',
         _same_shape,
     )
     all_selected_layers_same_type = ContextKey(
         False,
-        trans._('True when all selected layers are of the same type.'),
+        'True when all selected layers are of the same type.',
         _same_type,
     )
     all_selected_layers_image = ContextKey(
         False,
-        trans._('True when all selected layers are images.'),
+        'True when all selected layers are images.',
         _only_image,
     )
     all_selected_layers_labels = ContextKey(
         False,
-        trans._('True when all selected layers are labels.'),
+        'True when all selected layers are labels.',
         _only_labels,
     )
     all_selected_layers_shapes = ContextKey(
         False,
-        trans._('True when all selected layers are shapes.'),
+        'True when all selected layers are shapes.',
         _only_shapes,
     )
     all_selected_layers_surfaces = ContextKey(
         False,
-        trans._('True when all selected layers are surfaces.'),
+        'True when all selected layers are surfaces.',
         _only_surfaces,
     )
     all_selected_layers_support_colorbar = ContextKey(
         False,
-        trans._('True when all selected layers support a colorbar.'),
+        'True when all selected layers support a colorbar.',
         _all_support_colorbar,
     )
     all_selected_layers_support_border_colorbar = ContextKey(
         False,
-        trans._('True when all selected layers support a border colorbar.'),
+        'True when all selected layers support a border colorbar.',
         _all_support_border_colorbar,
     )
     all_selected_layers_support_face_colorbar = ContextKey(
         False,
-        trans._('True when all selected layers support a face colorbar.'),
+        'True when all selected layers support a face colorbar.',
         _all_support_face_colorbar,
     )
     selected_empty_shapes_layer = CallableContextKey(
         False,
-        trans._('True when there is a shapes layer without data selected.'),
+        'True when there is a shapes layer without data selected.',
         _empty_shapes_layer_selected,
     )
     active_layer_supports_features = ContextKey(
         False,
-        trans._('True when the active layer can have a Features table.'),
+        'True when the active layer can have a Features table.',
         _active_supports_features,
     )

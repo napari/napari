@@ -14,9 +14,7 @@ try:
     from rich import print  # noqa: A004
 except ModuleNotFoundError:
     print(
-        trans._(
-            'TIP: run `pip install rich` for much nicer event debug printout.'
-        )
+        'TIP: run `pip install rich` for much nicer event debug printout.'
     )
 
 if TYPE_CHECKING:

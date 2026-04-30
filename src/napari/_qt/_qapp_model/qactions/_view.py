@@ -40,7 +40,7 @@ def _get_current_activity_dock_status(window: Window):
 Q_VIEW_ACTIONS: list[Action] = [
     Action(
         id='napari.window.view.toggle_fullscreen',
-        title=trans._('Toggle Full Screen'),
+        title='Toggle Full Screen',
         menus=[
             {
                 'id': MenuId.MENUBAR_VIEW,
@@ -54,7 +54,7 @@ Q_VIEW_ACTIONS: list[Action] = [
     ),
     Action(
         id='napari.window.view.toggle_command_palette',
-        title=trans._('Command Palette'),
+        title='Command Palette',
         menus=[
             {
                 'id': MenuId.MENUBAR_VIEW,
@@ -69,7 +69,7 @@ Q_VIEW_ACTIONS: list[Action] = [
     ),
     Action(
         id='napari.window.view.toggle_menubar',
-        title=trans._('Toggle Menubar Visibility'),
+        title='Toggle Menubar Visibility',
         menus=[
             {
                 'id': MenuId.MENUBAR_VIEW,
@@ -87,12 +87,12 @@ Q_VIEW_ACTIONS: list[Action] = [
         ],
         # TODO: add is_mac global context keys (rather than boolean here)
         enablement=sys.platform != 'darwin',
-        status_tip=trans._('Show/Hide Menubar'),
+        status_tip='Show/Hide Menubar',
         toggled=ToggleRule(get_current=_get_current_menubar_status),
     ),
     Action(
         id='napari.window.view.toggle_play',
-        title=trans._('Toggle Play'),
+        title='Toggle Play',
         menus=[
             {
                 'id': MenuId.MENUBAR_VIEW,
@@ -106,7 +106,7 @@ Q_VIEW_ACTIONS: list[Action] = [
     ),
     Action(
         id='napari.window.view.toggle_activity_dock',
-        title=trans._('Toggle Activity Dock'),
+        title='Toggle Activity Dock',
         menus=[
             {'id': MenuId.MENUBAR_VIEW, 'group': MenuGroup.RENDER, 'order': 11}
         ],

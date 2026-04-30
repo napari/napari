@@ -50,7 +50,7 @@ class QtBrushSizeSliderControl(QtWidgetControlsBase):
         self.brush_size_slider = sld
         self._on_brush_size_change()
 
-        self.brush_size_slider_label = QtWrappedLabel(trans._('brush size:'))
+        self.brush_size_slider_label = QtWrappedLabel('brush size:')
 
     def _on_brush_size_change(self) -> None:
         """Receive layer model brush size change event and update the slider."""

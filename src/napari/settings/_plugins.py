@@ -19,24 +19,18 @@ CallOrderDict = dict[str, list[PluginHookOption]]
 class PluginsSettings(EventedSettings):
     disabled_plugins: set[str] = Field(
         set(),
-        title=trans._('Disabled plugins'),
-        description=trans._(
-            'Plugins to disable on application start.',
-        ),
+        title='Disabled plugins',
+        description='Plugins to disable on application start.',
     )
     extension2reader: dict[str, str] = Field(
         default_factory=dict,
-        title=trans._('File extension readers'),
-        description=trans._(
-            'Assign file extensions to specific reader plugins'
-        ),
+        title='File extension readers',
+        description='Assign file extensions to specific reader plugins',
     )
     extension2writer: dict[str, str] = Field(
         default_factory=dict,
-        title=trans._('Writer plugin extension association.'),
-        description=trans._(
-            'Assign file extensions to specific writer plugins'
-        ),
+        title='Writer plugin extension association.',
+        description='Assign file extensions to specific writer plugins',
     )
 
     model_config = SettingsConfigDict(use_enum_values=False)

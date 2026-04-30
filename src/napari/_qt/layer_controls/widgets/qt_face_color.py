@@ -47,7 +47,7 @@ class QtFaceColorControl(QtWidgetControlsBase):
             initial_color=self._layer.current_face_color,
             tooltip=tooltip,
         )
-        self.face_color_label = QtWrappedLabel(trans._('face color:'))
+        self.face_color_label = QtWrappedLabel('face color:')
         connect_setattr(
             self.face_color_edit.color_changed,
             self._layer,
