@@ -685,7 +685,7 @@ class ScalarFieldBase(Layer, ABC):
             im_slice = self._slice.image.raw
             slice_shape = np.array(im_slice.shape)
             level0_shape = np.array(self.level_shapes[0])
-            ds = level0_shape[dims_displayed] / slice_shape[dims_displayed]
+            ds = level0_shape[dims_displayed] / slice_shape
             start_point = start_point[dims_displayed] / ds
             end_point = end_point[dims_displayed] / ds
             start_point = cast(np.ndarray, start_point)
@@ -698,7 +698,7 @@ class ScalarFieldBase(Layer, ABC):
             )
             # Build the bounding box from the actual slice shape
             bounding_box = np.zeros((len(dims_displayed), 2))
-            bounding_box[:, 1] = slice_shape[dims_displayed]
+            bounding_box[:, 1] = slice_shape
 
             clamped = clamp_point_to_bounding_box(
                 sample_points,
