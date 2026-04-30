@@ -1,8 +1,6 @@
-from collections import OrderedDict
 from enum import auto
 
 from napari.utils.misc import StringEnum
-
 
 
 class ColorMode(StringEnum):
@@ -70,31 +68,9 @@ SYMBOL_ALIAS = {
     '|': Symbol.VBAR,
 }
 
-SYMBOL_TRANSLATION = OrderedDict(
-    [
-        (Symbol.ARROW, 'arrow'),
-        (Symbol.CLOBBER, 'clobber'),
-        (Symbol.CROSS, 'cross'),
-        (Symbol.DIAMOND, 'diamond'),
-        (Symbol.DISC, 'disc'),
-        (Symbol.HBAR, 'hbar'),
-        (Symbol.RING, 'ring'),
-        (Symbol.SQUARE, 'square'),
-        (Symbol.STAR, 'star'),
-        (Symbol.TAILED_ARROW, 'tailed arrow'),
-        (Symbol.TRIANGLE_DOWN, 'triangle down'),
-        (Symbol.TRIANGLE_UP, 'triangle up'),
-        (Symbol.VBAR, 'vbar'),
-        (Symbol.X, 'x'),
-    ]
-)
-
-SYMBOL_TRANSLATION_INVERTED = {v: k for k, v in SYMBOL_TRANSLATION.items()}
-
 
 SYMBOL_DICT: dict[str | Symbol, Symbol] = {x: x for x in Symbol}
 SYMBOL_DICT.update({str(x): x for x in Symbol})
-SYMBOL_DICT.update(SYMBOL_TRANSLATION_INVERTED)
 SYMBOL_DICT.update(SYMBOL_ALIAS)
 
 

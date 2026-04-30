@@ -7,8 +7,8 @@ from vispy.color import Colormap as VispyColormap
 from napari.utils.colormaps import Colormap
 from napari.utils.colormaps.colormap_utils import (
     _MATPLOTLIB_COLORMAP_NAMES,
+    _VISPY_COLORMAP_NAMES,
     _VISPY_COLORMAPS,
-    _VISPY_COLORMAPS_TRANSLATIONS,
     AVAILABLE_COLORMAPS,
     _increment_unnamed_colormap,
     _napari_cmap_to_vispy,
@@ -159,7 +159,7 @@ def test_vispy_colormap_amount():
     Test that the amount of localized vispy colormap names matches available colormaps.
     """
     for name in _VISPY_COLORMAPS:
-        assert name in _VISPY_COLORMAPS_TRANSLATIONS
+        assert name in _VISPY_COLORMAP_NAMES
 
 
 def test_mpl_colormap_exists():

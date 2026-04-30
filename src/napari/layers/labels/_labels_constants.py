@@ -1,9 +1,7 @@
 import sys
-from collections import OrderedDict
 from enum import auto
 
 from napari.utils.misc import StringEnum
-
 
 
 class Mode(StringEnum):
@@ -62,14 +60,6 @@ class LabelColorMode(StringEnum):
 
 
 BACKSPACE = 'delete' if sys.platform == 'darwin' else 'backspace'
-
-
-LABEL_COLOR_MODE_TRANSLATIONS = OrderedDict(
-    [
-        (LabelColorMode.AUTO, 'auto'),
-        (LabelColorMode.DIRECT, 'direct'),
-    ]
-)
 
 
 class LabelsRendering(StringEnum):

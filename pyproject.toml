@@ -832,7 +832,6 @@ module = [
     "napari.utils.io",
     "napari.utils.notebook_display",
     "napari.utils.transforms.transform_utils",
-    "napari.utils.translations",
     "napari.utils.tree.node",
     "napari.viewer",
     "napari.layers.shapes._shape_list",

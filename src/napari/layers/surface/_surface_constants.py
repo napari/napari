@@ -3,7 +3,6 @@ from enum import auto
 from napari.utils.misc import StringEnum
 
 
-
 class Shading(StringEnum):
     """Shading: Shading mode for the surface.
 
@@ -24,10 +23,3 @@ class Shading(StringEnum):
     NONE = auto()
     FLAT = auto()
     SMOOTH = auto()
-
-
-SHADING_TRANSLATION = {
-    'none': Shading.NONE,
-    'flat': Shading.FLAT,
-    'smooth': Shading.SMOOTH,
-}

@@ -1,7 +1,7 @@
 from qtpy.QtWidgets import (
-    QComboBox,
     QWidget,
 )
+from superqt import QEnumComboBox
 
 from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
@@ -9,8 +9,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
 )
 from napari._qt.utils import qt_signals_blocked
 from napari.layers import Surface
-from napari.layers.surface._surface_constants import SHADING_TRANSLATION
-
+from napari.layers.surface._surface_constants import Shading
 
 
 class QtShadingComboBoxControl(QtWidgetControlsBase):
@@ -39,14 +38,9 @@ class QtShadingComboBoxControl(QtWidgetControlsBase):
         self._layer.events.shading.connect(self._on_shading_change)
 
         # Setup widgets
-        shading_comboBox = QComboBox(parent)
-        for display_name, shading in SHADING_TRANSLATION.items():
-            shading_comboBox.addItem(display_name, shading)
-        index = shading_comboBox.findData(
-            SHADING_TRANSLATION[self._layer.shading]
-        )
-        shading_comboBox.setCurrentIndex(index)
-        shading_comboBox.currentTextChanged.connect(self.change_shading)
+        shading_comboBox = QEnumComboBox(parent, Shading)
+        shading_comboBox.setCurrentEnum(self._layer.shading)
+        shading_comboBox.currentEnumChanged.connect(self.change_shading)
         self.shading_combobox = shading_comboBox
 
         self.shading_combobox_label = QtWrappedLabel('shading:')
@@ -58,16 +52,12 @@ class QtShadingComboBoxControl(QtWidgetControlsBase):
         text : str
             Name of shading mode, eg: 'flat', 'smooth', 'none'.
         """
-        self._layer.shading = self.shading_combobox.currentData()
+        self._layer.shading = self.shading_combobox.currentEnum()
 
     def _on_shading_change(self) -> None:
         """Receive layer model shading change event and update combobox."""
         with qt_signals_blocked(self.shading_combobox):
-            self.shading_combobox.setCurrentIndex(
-                self.shading_combobox.findData(
-                    SHADING_TRANSLATION[self._layer.shading]
-                )
-            )
+            self.shading_combobox.setCurrentEnum(self._layer.shading)
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
         return [(self.shading_combobox_label, self.shading_combobox)]

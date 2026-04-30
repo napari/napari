@@ -45,7 +45,7 @@ ValidColormapArg = Union[
     dict,
 ]
 
-_MATPLOTLIB_COLORMAP_NAMES = OrderedDict(
+matplotlib_colormaps = _MATPLOTLIB_COLORMAP_NAMES = OrderedDict(
     viridis='viridis',
     magma='magma',
     inferno='inferno',

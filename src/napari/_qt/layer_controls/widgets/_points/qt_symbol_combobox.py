@@ -1,4 +1,5 @@
-from qtpy.QtWidgets import QComboBox, QWidget
+from qtpy.QtWidgets import QWidget
+from superqt import QEnumComboBox
 
 from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
@@ -6,11 +7,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
 )
 from napari._qt.utils import qt_signals_blocked
 from napari.layers import Points
-from napari.layers.points._points_constants import (
-    SYMBOL_TRANSLATION,
-    SYMBOL_TRANSLATION_INVERTED,
-)
-
+from napari.layers.points._points_constants import Symbol
 
 
 class QtSymbolComboBoxControl(QtWidgetControlsBase):
@@ -42,27 +39,17 @@ class QtSymbolComboBoxControl(QtWidgetControlsBase):
         )
 
         # Setup widgets
-        sym_cb = QComboBox()
+        sym_cb = QEnumComboBox(enum_class=Symbol)
         sym_cb.setToolTip(
             'Change the symbol of currently selected points and any added afterwards.'
         )
-        current_index = 0
-        for index, (symbol_string, text) in enumerate(
-            SYMBOL_TRANSLATION.items()
-        ):
-            symbol_string = symbol_string.value
-            sym_cb.addItem(text, symbol_string)
-
-            if symbol_string == self._layer.current_symbol:
-                current_index = index
-
-        sym_cb.setCurrentIndex(current_index)
-        sym_cb.currentTextChanged.connect(self.change_current_symbol)
+        sym_cb.setCurrentEnum(self._layer.current_symbol)
+        sym_cb.currentEnumChanged.connect(self.change_current_symbol)
         self.symbol_combobox = sym_cb
 
         self.symbol_combobox_label = QtWrappedLabel('symbol:')
 
-    def change_current_symbol(self, text: str) -> None:
+    def change_current_symbol(self, symbol: Symbol) -> None:
         """Change marker symbol of the points on the layer model.
 
         Parameters
@@ -71,14 +58,12 @@ class QtSymbolComboBoxControl(QtWidgetControlsBase):
             Index of current marker symbol of points, eg: '+', '.', etc.
         """
         with self._layer.events.symbol.blocker(self._on_current_symbol_change):
-            self._layer.current_symbol = SYMBOL_TRANSLATION_INVERTED[text]
+            self._layer.current_symbol = symbol
 
     def _on_current_symbol_change(self) -> None:
         """Receive marker symbol change event and update the dropdown menu."""
         with qt_signals_blocked(self.symbol_combobox):
-            self.symbol_combobox.setCurrentIndex(
-                self.symbol_combobox.findData(self._layer.current_symbol.value)
-            )
+            self.symbol_combobox.setCurrentEnum(self._layer.current_symbol)
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
         return [(self.symbol_combobox_label, self.symbol_combobox)]

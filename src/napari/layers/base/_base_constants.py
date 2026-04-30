@@ -1,8 +1,6 @@
-from collections import OrderedDict
 from enum import IntEnum, auto
 
 from napari.utils.misc import StringEnum
-
 
 
 class Blending(StringEnum):
@@ -43,18 +41,6 @@ class Blending(StringEnum):
     MINIMUM = auto()
     OPAQUE = auto()
     MULTIPLICATIVE = auto()
-
-
-BLENDING_TRANSLATIONS = OrderedDict(
-    [
-        (Blending.TRANSLUCENT, 'translucent'),
-        (Blending.TRANSLUCENT_NO_DEPTH, 'translucent_no_depth'),
-        (Blending.ADDITIVE, 'additive'),
-        (Blending.MINIMUM, 'minimum'),
-        (Blending.OPAQUE, 'opaque'),
-        (Blending.MULTIPLICATIVE, 'multiplicative'),
-    ]
-)
 
 
 class Mode(StringEnum):

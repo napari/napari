@@ -1,8 +1,8 @@
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
-    QComboBox,
     QWidget,
 )
+from superqt import QEnumComboBox
 
 from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
@@ -10,9 +10,8 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
 )
 from napari._qt.utils import qt_signals_blocked
 from napari.layers import Vectors
-from napari.layers.vectors._vectors_constants import VECTORSTYLE_TRANSLATIONS
+from napari.layers.vectors._vectors_constants import VectorStyle
 from napari.utils.events.event_utils import connect_setattr
-
 
 
 class QtVectorStyleComboBoxControl(QtWidgetControlsBase):
@@ -42,23 +41,16 @@ class QtVectorStyleComboBoxControl(QtWidgetControlsBase):
 
         # Setup widgets
         # dropdown to select the edge display vector_style
-        vector_style_combobox = QComboBox(parent)
-        for index, (data, text) in enumerate(VECTORSTYLE_TRANSLATIONS.items()):
-            data = data.value
-            vector_style_combobox.addItem(text, data)
-            if data == self._layer.vector_style:
-                vector_style_combobox.setCurrentIndex(index)
-
+        vector_style_combobox = QEnumComboBox(parent, VectorStyle)
+        vector_style_combobox.setCurrentEnum(self._layer.vector_style)
         self.vector_style_combobox = vector_style_combobox
         connect_setattr(
-            self.vector_style_combobox.currentTextChanged,
+            self.vector_style_combobox.currentEnumChanged,
             self._layer,
             'vector_style',
         )
 
-        self.vector_style_combobox_label = QtWrappedLabel(
-            'vector style:'
-        )
+        self.vector_style_combobox_label = QtWrappedLabel('vector style:')
 
     def _on_vector_style_change(self) -> None:
         """Receive layer model vector style change event & update dropdown."""
