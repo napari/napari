@@ -58,8 +58,6 @@ if TYPE_CHECKING:
 import warnings
 
 
-
-
 class NapariSceneCanvas(SceneCanvas_):
     """Vispy SceneCanvas used to allow for ignoring mouse wheel events with modifiers."""
 
@@ -1407,15 +1405,10 @@ class VispyCanvas:
 
         if raw_spacing > safe_spacing:
             warnings.warn(
-                trans._(
-                    'Grid spacing of {raw_spacing:.1f} pixels is too large and has been '
-                    'reduced to {safe_spacing:.1f} pixels to prevent viewboxes from '
-                    'becoming too small. Consider using a smaller spacing value or '
-                    'increasing the canvas size.',
-                    deferred=True,
-                    raw_spacing=raw_spacing,
-                    safe_spacing=safe_spacing,
-                ),
+                f'Grid spacing of {raw_spacing:.1f} pixels is too large and has been '
+                'reduced to {safe_spacing:.1f} pixels to prevent viewboxes from '
+                'becoming too small. Consider using a smaller spacing value or '
+                'increasing the canvas size.',
                 UserWarning,
                 stacklevel=2,
             )

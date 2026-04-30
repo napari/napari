@@ -35,7 +35,6 @@ from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils.events.custom_types import Array
 from napari.utils.misc import StringEnum, is_sequence
 
-
 QBYTE_FLAG = '!QBYTE_'
 RICH_TEXT_PATTERN = re.compile('<[^\n]+>')
 
@@ -266,10 +265,8 @@ def combine_widgets(
                 container.layout().addWidget(widget)
             return container
     raise TypeError(
-        trans._(
-            '"widgets" must be a QWidget, a magicgui Widget or a sequence of '
-            'such types'
-        )
+        '"widgets" must be a QWidget, a magicgui Widget or a sequence of '
+        'such types'
     )
 
 

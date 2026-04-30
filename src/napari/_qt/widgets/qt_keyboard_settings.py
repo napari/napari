@@ -40,7 +40,6 @@ from napari.utils.action_manager import action_manager
 from napari.utils.interactions import Shortcut
 
 
-
 class ShortcutEditor(QWidget):
     """Widget to edit keybindings for napari."""
 
@@ -360,12 +359,10 @@ class ShortcutEditor(QWidget):
         self._show_warning_icons(conflicting_rows)
 
         # show warning message
-        message = trans._(
-            'The keybinding <b>{new_shortcut}</b> is already assigned to:'
+        message = (
+            f'The keybinding <b>{new_shortcut}</b> is already assigned to:'
             '{conflicting_actions_string}'
-            'Change or clear conflicting shortcuts before assigning <b>{new_shortcut}</b> to this one.',
-            new_shortcut=new_shortcut,
-            conflicting_actions_string=conflicting_actions_string,
+            'Change or clear conflicting shortcuts before assigning <b>{new_shortcut}</b> to this one.'
         )
         self._show_warning(conflicting_rows[0], message)
 

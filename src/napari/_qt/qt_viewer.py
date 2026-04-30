@@ -55,7 +55,6 @@ from napari.utils.misc import in_ipython, in_jupyter
 from napari.utils.naming import CallerFrame
 from napari.utils.notifications import show_info
 
-
 from napari._vispy import VispyCanvas, create_vispy_layer  # isort:skip
 
 if TYPE_CHECKING:
@@ -520,10 +519,8 @@ class QtViewer(QSplitter):
                 return console
         except ModuleNotFoundError:
             warnings.warn(
-                trans._(
-                    'napari-console not found. It can be installed with'
-                    ' "pip install napari_console"'
-                ),
+                'napari-console not found. It can be installed with'
+                ' "pip install napari_console"',
                 stacklevel=1,
             )
             return None
@@ -728,7 +725,7 @@ class QtViewer(QSplitter):
         if not len(self.viewer.layers):
             msg = 'There are no layers in the viewer to save'
         elif selected and not len(self.viewer.layers.selection):
-            msg = trans._(
+            msg = (
                 'Please select one or more layers to save,'
                 '\nor use "Save all layers..."'
             )
@@ -768,12 +765,8 @@ class QtViewer(QSplitter):
             ),
         )
         logging.getLogger('napari').debug(
-            trans._(
-                'QFileDialog - filename: {filename} '
-                'selected_filter: {selected_filter}',
-                filename=filename or None,
-                selected_filter=selected_filter or None,
-            )
+            f'QFileDialog - filename: {filename or None} '
+            'selected_filter: {selected_filter or None}'
         )
 
         if filename:
@@ -1377,9 +1370,7 @@ class QtViewer(QSplitter):
             upper-left corner of the rendered region.
         """
         if not isinstance(scale, float | int):
-            raise TypeError(
-                'Scale must be a float or an int.'
-            )
+            raise TypeError('Scale must be a float or an int.')
 
         img = QImg2array(
             self._screenshot(

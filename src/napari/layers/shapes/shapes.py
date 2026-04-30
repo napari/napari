@@ -80,7 +80,6 @@ from napari.utils.events.custom_types import Array
 from napari.utils.misc import ensure_iterable
 from napari.utils.notifications import show_warning
 
-
 if TYPE_CHECKING:
     from itertools import cycle
 
@@ -485,9 +484,7 @@ class Shapes(Layer):
             data, shape_type = extract_shape_type(data, shape_type)
             data_ndim = get_shape_ndim(data)
             if ndim is not None and ndim != data_ndim:
-                raise ValueError(
-                    'Shape dimensions must be equal to ndim'
-                )
+                raise ValueError('Shape dimensions must be equal to ndim')
             ndim = data_ndim
 
         super().__init__(
@@ -2709,15 +2706,13 @@ class Shapes(Layer):
                     if len(vertices) <= 3 and prev_vertices > 3:
                         # https://github.com/napari/napari/issues/7903
                         show_warning(
-                            trans._(
-                                'Polygons must have three or more vertices. '
-                                'Lasso polygons are simplified using the '
-                                'RDP algorithm, which may cause polygons '
-                                'smaller than RDP epsilon to disappear. If  '
-                                'you face issues drawing small polygons, '
-                                'try reducing napari > Settings > '
-                                'Experimental > RDP epsilon. '
-                            ),
+                            'Polygons must have three or more vertices. '
+                            'Lasso polygons are simplified using the '
+                            'RDP algorithm, which may cause polygons '
+                            'smaller than RDP epsilon to disappear. If  '
+                            'you face issues drawing small polygons, '
+                            'try reducing napari > Settings > '
+                            'Experimental > RDP epsilon. ',
                         )
                 if len(vertices) <= 3:
                     self._data_view.remove(index)

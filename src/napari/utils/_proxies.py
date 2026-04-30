@@ -9,7 +9,6 @@ import wrapt
 
 from napari.utils import misc
 
-
 _T = TypeVar('_T')
 _K = TypeVar('_K', bound=Hashable)
 _V = TypeVar('_V')
@@ -29,17 +28,13 @@ class ReadOnlyWrapper(wrapt.ObjectProxy):
             name not in ('__wrapped__', '_self_exceptions')
             and name not in self._self_exceptions
         ):
-            raise TypeError(
-                f'cannot set attribute {name}'
-            )
+            raise TypeError(f'cannot set attribute {name}')
 
         super().__setattr__(name, val)
 
     def __setitem__(self, name: str, val: Any) -> None:
         if name not in self._self_exceptions:
-            raise TypeError(
-                f'cannot set item {name}'
-            )
+            raise TypeError(f'cannot set item {name}')
         super().__setitem__(name, val)
 
 
@@ -60,14 +55,9 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
     @staticmethod
     def _private_attr_warning(name: str, typ: str) -> None:
         warnings.warn(
-            trans._(
-                "Private attribute access ('{typ}.{name}') in this context "
-                '(e.g. inside a plugin widget or dock widget) is deprecated '
-                'and will be unavailable in version 0.7.0',
-                deferred=True,
-                name=name,
-                typ=typ,
-            ),
+            f"Private attribute access ('{typ}.{name}') in this context "
+            '(e.g. inside a plugin widget or dock widget) is deprecated '
+            'and will be unavailable in version 0.7.0',
             category=FutureWarning,
             stacklevel=3,
         )

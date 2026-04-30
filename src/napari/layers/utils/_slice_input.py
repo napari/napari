@@ -10,7 +10,6 @@ import pint
 from napari.utils.misc import reorder_after_dim_reduction
 from napari.utils.transforms import Affine
 
-
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
@@ -193,11 +192,8 @@ class _SliceInput:
         """
         if not self.is_orthogonal(world_to_data):
             warnings.warn(
-                trans._(
-                    'Non-orthogonal slicing is being requested, but is not fully supported. '
-                    'Data is displayed without applying an out-of-slice rotation or shear component.',
-                    deferred=True,
-                ),
+                'Non-orthogonal slicing is being requested, but is not fully supported. '
+                'Data is displayed without applying an out-of-slice rotation or shear component.',
                 category=UserWarning,
             )
 

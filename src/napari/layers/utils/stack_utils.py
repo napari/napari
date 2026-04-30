@@ -12,7 +12,6 @@ from napari.layers.image._image_utils import guess_multiscale
 from napari.utils.colormaps import CMYBGR, MAGENTA_GREEN, Colormap
 from napari.utils.misc import ensure_iterable, ensure_sequence_of_iterables
 
-
 if TYPE_CHECKING:
     from napari.types import FullLayerData
 
@@ -252,9 +251,7 @@ def stack_to_images(stack: Image, axis: int, **kwargs) -> list[Image]:
 def split_rgb(stack: Image, with_alpha=False) -> list[Image]:
     """Split RGB image into separate channel images while preserving affine transforms."""
     if not stack.rgb:
-        raise ValueError(
-            'Image must be RGB to use split_rgb'
-        )
+        raise ValueError('Image must be RGB to use split_rgb')
 
     data, meta, _ = stack.as_layer_data_tuple()
 
@@ -310,11 +307,9 @@ def images_to_stack(images: list[Image], axis: int = 0, **kwargs) -> Image:
             if not isinstance(layer, Image)
         ]
         raise ValueError(
-            trans._(
-                'All selected layers to be merged must be Image layers. '
-                'The following layers are not Image layers: '
-                f'{", ".join(f"{name} ({layer_type})" for name, layer_type in non_image_layers)}'
-            )
+            'All selected layers to be merged must be Image layers. '
+            'The following layers are not Image layers: '
+            f'{", ".join(f"{name} ({layer_type})" for name, layer_type in non_image_layers)}'
         )
 
     data, meta, _ = images[0].as_layer_data_tuple()
@@ -388,17 +383,13 @@ def merge_rgb(images: list[Image]) -> Image:
     if not (
         len(images) in [3, 4] and all(isinstance(x, Image) for x in images)
     ):
-        raise ValueError(
-            'Merging to RGB requires either 3 or 4 Image layers'
-        )
+        raise ValueError('Merging to RGB requires either 3 or 4 Image layers')
     if not all(image.data.shape == images[0].data.shape for image in images):
         all_shapes = [(image.name, image.data.shape) for image in images]
         raise ValueError(
-            trans._(
-                'Shape mismatch! To merge to RGB, all selected Image layers (with R, G, and B colormaps) must have the same shape. '
-                'Mismatched shapes: '
-                f'{", ".join(f"{name} (shape: {shape})" for name, shape in all_shapes)}'
-            )
+            'Shape mismatch! To merge to RGB, all selected Image layers (with R, G, and B colormaps) must have the same shape. '
+            'Mismatched shapes: '
+            f'{", ".join(f"{name} (shape: {shape})" for name, shape in all_shapes)}'
         )
 
     # we will check for the presence of R G B colormaps to determine how to merge
@@ -410,13 +401,9 @@ def merge_rgb(images: list[Image]) -> Image:
     if colormaps != set(r_g_b):
         missing_colormaps = set(r_g_b) - colormaps
         raise ValueError(
-            trans._(
-                'Missing colormap(s): {missing_colormaps}! To merge layers to '
-                f'{"RGB" if len(r_g_b) == 3 else "RGBA"}, ensure you have '
-                f'{", ".join(r_g_b[:-1])}, and {r_g_b[-1]} as layer colormaps.',
-                missing_colormaps=missing_colormaps,
-                deferred=True,
-            )
+            f'Missing colormap(s): {missing_colormaps}! To merge layers to '
+            f'{"RGB" if len(r_g_b) == 3 else "RGBA"}, ensure you have '
+            f'{", ".join(r_g_b[:-1])}, and {r_g_b[-1]} as layer colormaps.'
         )
 
     # use the R G B colormaps to order the images for merging

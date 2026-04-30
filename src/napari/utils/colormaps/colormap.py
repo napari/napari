@@ -30,7 +30,6 @@ from napari.utils.events import EventedModel
 from napari.utils.events.custom_types import Array
 from napari.utils.migrations import deprecated_class_name
 
-
 if TYPE_CHECKING:
     from numba import typed
 
@@ -118,13 +117,8 @@ class Colormap(EventedModel):
         # Check control end points are correct
         if v[0] != 0 or (len(v) > 1 and v[-1] != 1):
             raise ValueError(
-                trans._(
-                    'Control points must start with 0.0 and end with 1.0. '
-                    'Got {start_control_point} and {end_control_point}',
-                    deferred=True,
-                    start_control_point=v[0],
-                    end_control_point=v[-1],
-                )
+                'Control points must start with 0.0 and end with 1.0. '
+                'Got {v[0]} and {v[-1]}'
             )
 
         # Check control points are sorted correctly
@@ -167,9 +161,7 @@ class Colormap(EventedModel):
             )
             cols = self.colors[indices.astype(np.int32)]
         else:
-            raise ValueError(
-                'Unrecognized Colormap Interpolation Mode'
-            )
+            raise ValueError('Unrecognized Colormap Interpolation Mode')
 
         values = values[..., None]
         # map NaNs, lows, and highs

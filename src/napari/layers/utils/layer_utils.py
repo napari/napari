@@ -19,7 +19,6 @@ from napari.utils.action_manager import action_manager
 from napari.utils.events.custom_types import Array
 from napari.utils.transforms import Affine
 
-
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
@@ -524,9 +523,7 @@ def _coerce_current_properties_value(
     """
     if isinstance(value, np.ndarray | list | tuple):
         if len(value) != 1:
-            raise ValueError(
-                'current_properties values should have length 1.'
-            )
+            raise ValueError('current_properties values should have length 1.')
         coerced_value = np.asarray(value)
     else:
         coerced_value = np.array([value])
@@ -740,11 +737,8 @@ def get_extent_world(
     """
     if centered is not None:
         warnings.warn(
-            trans._(
-                'The `centered` argument is deprecated. '
-                'Extents are now always centered on data points.',
-                deferred=True,
-            ),
+            'The `centered` argument is deprecated. '
+            'Extents are now always centered on data points.',
             stacklevel=2,
         )
 

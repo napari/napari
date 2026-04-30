@@ -8,7 +8,6 @@ from napari.utils.colormap_backend import (
     set_backend as set_colormap_backend,
 )
 from napari.utils.events import Event
-
 from napari.utils.triangulation_backend import (
     TriangulationBackend,
     set_backend as set_triangulation_backend,
@@ -46,20 +45,16 @@ class ExperimentalSettings(EventedSettings):
     rdp_epsilon: float = Field(
         0.5,
         title='Shapes polygon lasso and path RDP epsilon',
-        description=trans._(
-            'Setting this higher removes more points from polygons or paths. \nSetting this to 0 keeps all vertices of '
-            'a given polygon or path.'
-        ),
+        description='Setting this higher removes more points from polygons or paths. \nSetting this to 0 keeps all vertices of '
+        'a given polygon or path.',
         ge=0,
     )
 
     lasso_vertex_distance: int = Field(
         10,
         title='Minimum distance threshold of shapes lasso and path tool',
-        description=trans._(
-            'Value determines how many screen pixels one has to move before another vertex can be added to the polygon'
-            'or path.'
-        ),
+        description='Value determines how many screen pixels one has to move before another vertex can be added to the polygon'
+        'or path.',
         gt=0,
         lt=50,
     )
@@ -73,15 +68,13 @@ class ExperimentalSettings(EventedSettings):
     triangulation_backend: TriangulationBackend = Field(
         TriangulationBackend.fastest_available,
         title='Triangulation backend to use for Shapes layer',
-        description=trans._(
-            'Triangulation backend to use for Shapes layer.\n'
-            "The 'bermuda' requires the optional 'bermuda' package.\n"
-            "The 'partsegcore' requires the optional 'partsegcore-compiled-backend' package.\n"
-            "The 'triangle' requires the optional 'triangle' package.\n"
-            "The 'numba' backend requires the optional 'numba' package.\n"
-            "The 'pure python' backend uses the default Python triangulation from vispy.\n"
-            "The 'fastest available' backend will select the fastest available backend.\n"
-        ),
+        description='Triangulation backend to use for Shapes layer.\n'
+        "The 'bermuda' requires the optional 'bermuda' package.\n"
+        "The 'partsegcore' requires the optional 'partsegcore-compiled-backend' package.\n"
+        "The 'triangle' requires the optional 'triangle' package.\n"
+        "The 'numba' backend requires the optional 'numba' package.\n"
+        "The 'pure python' backend uses the default Python triangulation from vispy.\n"
+        "The 'fastest available' backend will select the fastest available backend.\n",
         validation_alias=AliasChoices(
             'triangulation_backend', 'napari_triangulation_backend'
         ),
@@ -89,13 +82,11 @@ class ExperimentalSettings(EventedSettings):
     colormap_backend: ColormapBackend = Field(
         ColormapBackend.fastest_available,
         title='Colormap backend to use for Labels layer',
-        description=trans._(
-            'Color mapping backend to use for Labels layer.\n'
-            "'partsegcore' requires the optional 'partsegcore-compiled-backend' package.\n"
-            "'numba' requires the optional 'numba' package.\n"
-            "'pure python' uses only NumPy and Python.\n"
-            "The 'fastest available' backend will select the fastest installed backend.\n"
-        ),
+        description='Color mapping backend to use for Labels layer.\n'
+        "'partsegcore' requires the optional 'partsegcore-compiled-backend' package.\n"
+        "'numba' requires the optional 'numba' package.\n"
+        "'pure python' uses only NumPy and Python.\n"
+        "The 'fastest available' backend will select the fastest installed backend.\n",
         validation_alias=AliasChoices(
             'colormap_backend', 'napari_colormap_backend'
         ),
@@ -104,10 +95,8 @@ class ExperimentalSettings(EventedSettings):
     compiled_triangulation: bool = Field(
         default=False,
         title='Unused option. Use "triangulation backend" instead.',
-        description=trans._(
-            'This option was removed in napari 0.6.0. Use \n'
-            '"triangulation backend" instead.'
-        ),
+        description='This option was removed in napari 0.6.0. Use \n'
+        '"triangulation backend" instead.',
     )
 
     class NapariConfig:

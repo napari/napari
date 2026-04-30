@@ -35,7 +35,6 @@ from napari.utils.camera_orientations import (
 from napari.utils.compat import StrEnum
 from napari.utils.misc import in_ipython, in_jupyter, in_python_repl
 
-
 if TYPE_CHECKING:
     from collections.abc import Callable
     from enum import Enum, EnumMeta
@@ -77,38 +76,32 @@ class QtLayerButtons(QFrame):
 
         self.newPointsButton = QtViewerPushButton(
             'new_points',
-            trans._(
-                'Create a new points layer.\n'
-                'This button is highlighted if a layer is selected;\n'
-                'the new points layer will inherit the shape and all transforms of this layer.\n'
-                'If multiple layers are selected, the new points layer will span their extent.\n'
-                'If no layers are selected, the new points layer will have no scale/transform.\n'
-            ),
+            'Create a new points layer.\n'
+            'This button is highlighted if a layer is selected;\n'
+            'the new points layer will inherit the shape and all transforms of this layer.\n'
+            'If multiple layers are selected, the new points layer will span their extent.\n'
+            'If no layers are selected, the new points layer will have no scale/transform.\n',
             self._new_points,
         )
 
         self.newShapesButton = QtViewerPushButton(
             'new_shapes',
-            trans._(
-                'Create a new shapes layer.\n'
-                'This button is highlighted if a layer is selected;\n'
-                'the new shapes layer will inherit the shape and all transforms of this layer.\n'
-                'If multiple layers are selected, the new shapes layer will span their extent.\n'
-                'If no layers are selected, the new points layer will have no scale/transform.\n'
-            ),
+            'Create a new shapes layer.\n'
+            'This button is highlighted if a layer is selected;\n'
+            'the new shapes layer will inherit the shape and all transforms of this layer.\n'
+            'If multiple layers are selected, the new shapes layer will span their extent.\n'
+            'If no layers are selected, the new points layer will have no scale/transform.\n',
             self._new_shapes,
         )
 
         self.newLabelsButton = QtViewerPushButton(
             'new_labels',
-            trans._(
-                'Create a new labels layer.\n'
-                'If a Labels or Image layer is selected, the newly created Labels layer\n'
-                'will inherit the shape and all transforms of the selected layer.\n'
-                'If any other layer type or multiple layers are selected, the resulting\n'
-                'Labels layer will span their extent. (Warning: could be huge!)\n'
-                'If layers are present in the Viewer but none are selected, the Labels button is disabled.\n'
-            ),
+            'Create a new labels layer.\n'
+            'If a Labels or Image layer is selected, the newly created Labels layer\n'
+            'will inherit the shape and all transforms of the selected layer.\n'
+            'If any other layer type or multiple layers are selected, the resulting\n'
+            'Labels layer will span their extent. (Warning: could be huge!)\n'
+            'If layers are present in the Viewer but none are selected, the Labels button is disabled.\n',
             self.viewer._new_labels,
         )
         # Labels button disabled when there are layers present but none are selected
@@ -664,20 +657,20 @@ class QtViewerButtons(QFrame):
         stride_help_symbol = QtToolTipLabel(self)
         spacing_help_symbol = QtToolTipLabel(self)
 
-        shape_help_msg = trans._(
+        shape_help_msg = (
             'Number of rows and columns in the grid.\n'
             'A value of -1 for either or both of width and height will trigger an\n'
             'auto calculation of the necessary grid shape to appropriately fill\n'
             'all the layers at the appropriate stride. 0 is not a valid entry.'
         )
 
-        stride_help_msg = trans._(
+        stride_help_msg = (
             'Number of layers to place in each grid viewbox before moving on to the next viewbox.\n'
             'A negative stride will cause the order in which the layers are placed in the grid to be reversed.\n'
             '0 is not a valid entry.'
         )
 
-        spacing_help_msg = trans._(
+        spacing_help_msg = (
             'The amount of spacing between grid viewboxes.\n'
             'If between 0 and 1, it is interpreted as a proportion of the size of the viewboxes.\n'
             'If equal or greater than 1, it is interpreted as screen pixels.'

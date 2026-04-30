@@ -20,7 +20,6 @@ from napari.utils.action_manager import action_manager
 from napari.utils.events import disconnect_events
 
 
-
 class LayerFormLayout(QFormLayout):
     """Reusable form layout for subwidgets in each QtLayerControls class"""
 
@@ -94,10 +93,8 @@ class QtLayerControls(QFrame):
             self.MODE.PAN_ZOOM,
             False,
             self.PAN_ZOOM_ACTION_NAME,
-            extra_tooltip_text=trans._(
-                '\n(or hold Space)\n(hold Shift to pan in 3D)'
-                '\n(hold Alt to zoom via ROI selection)',
-            ),
+            extra_tooltip_text='\n(or hold Space)\n(hold Shift to pan in 3D)'
+            '\n(hold Alt to zoom via ROI selection)',
             checked=True,
         )
         self.transform_button = self._radio_button(
@@ -223,9 +220,7 @@ class QtLayerControls(QFrame):
         if event.mode in self._MODE_BUTTONS:
             self._MODE_BUTTONS[event.mode].setChecked(True)
         else:
-            raise ValueError(
-                f"Mode '{event.mode}' not recognized"
-            )
+            raise ValueError(f"Mode '{event.mode}' not recognized")
 
     def _on_editable_or_visible_change(self):
         """Receive layer model editable/visible change event & enable/disable buttons."""

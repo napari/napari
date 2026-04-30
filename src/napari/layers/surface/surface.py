@@ -23,7 +23,6 @@ from napari.utils.events import Event
 from napari.utils.events.event_utils import connect_no_arg
 from napari.utils.geometry import find_nearest_triangle_intersection
 
-
 if TYPE_CHECKING:
     import pandas as pd
 
@@ -783,13 +782,10 @@ class _SurfaceSlicingState(_LayerSlicingState):
             data = data[data_indices]
             if data.ndim > dims:
                 warnings.warn(
-                    trans._(
-                        'Assigning multiple data per vertex after slicing '
-                        'is not allowed. All dimensions corresponding to '
-                        'vertex data must be non-displayed dimensions. Data '
-                        'may not be visible.',
-                        deferred=True,
-                    ),
+                    'Assigning multiple data per vertex after slicing '
+                    'is not allowed. All dimensions corresponding to '
+                    'vertex data must be non-displayed dimensions. Data '
+                    'may not be visible.',
                     category=UserWarning,
                     stacklevel=2,
                 )

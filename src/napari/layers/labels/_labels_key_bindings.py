@@ -12,7 +12,6 @@ from napari.layers.utils.layer_utils import (
 )
 from napari.utils.notifications import show_info, show_warning
 
-
 MIN_BRUSH_SIZE = 1
 CONVERT_TEXT = 'You can convert the layer dtype in the right-click contextual menu of the layer list.'
 
@@ -88,10 +87,8 @@ def new_label(layer: Labels) -> None:
         new_selected_label = int(np.max(layer.data)) + 1
         if layer.selected_label == new_selected_label:
             show_info(
-                trans._(
-                    'Current selected label is not being used. You will need to use it first '
-                    'to be able to set the current select label to the next one available',
-                )
+                'Current selected label is not being used. You will need to use it first '
+                'to be able to set the current select label to the next one available'
             )
         else:
             try:

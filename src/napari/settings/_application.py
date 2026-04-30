@@ -24,7 +24,6 @@ from napari.utils.events.custom_types import NotEqual
 from napari.utils.events.evented_model import EventedModel
 from napari.utils.notifications import NotificationSeverity
 
-
 # we could use a smaller or greater 'le' for spacing,
 # this is just meant to be a somewhat reasonable upper limit,
 # as even on a 4k monitor a 2x2 grid will break calculation with >1300 spacing
@@ -150,36 +149,28 @@ class ApplicationSettings(EventedModel):
     depth_axis_orientation: DepthAxisOrientation = Field(
         default=DEFAULT_ORIENTATION_TYPED[0],
         title='Depth Axis Orientation',
-        description=trans._(
-            'Orientation of the depth axis in 3D view.\n'
-            'Default is "Towards"; <0.6.0 was "Away".'
-        ),
+        description='Orientation of the depth axis in 3D view.\n'
+        'Default is "Towards"; <0.6.0 was "Away".',
     )
     vertical_axis_orientation: VerticalAxisOrientation = Field(
         default=DEFAULT_ORIENTATION_TYPED[1],
         title='Vertical Axis Orientation',
-        description=trans._(
-            'Orientation of the vertical axis in 2D and 3D view.\n'
-            'Default is "Down".'
-        ),
+        description='Orientation of the vertical axis in 2D and 3D view.\n'
+        'Default is "Down".',
     )
     horizontal_axis_orientation: HorizontalAxisOrientation = Field(
         default=DEFAULT_ORIENTATION_TYPED[2],
         title='Horizontal Axis Orientation',
-        description=trans._(
-            'Orientation of the horizontal axis in 2D and 3D view.\n'
-            'Default is "Right".'
-        ),
+        description='Orientation of the horizontal axis in 2D and 3D view.\n'
+        'Default is "Right".',
     )
 
     grid_stride: GridStride = Field(
         default=1,
         title='Grid Stride',
-        description=trans._(
-            'Number of layers to place in each grid viewbox before moving on to the next viewbox.\n'
-            'A negative stride will cause the order in which the layers are placed in the grid to be reversed.\n'
-            '0 is not a valid entry.'
-        ),
+        description='Number of layers to place in each grid viewbox before moving on to the next viewbox.\n'
+        'A negative stride will cause the order in which the layers are placed in the grid to be reversed.\n'
+        '0 is not a valid entry.',
     )
 
     grid_width: GridWidth = Field(
@@ -197,11 +188,9 @@ class ApplicationSettings(EventedModel):
     grid_spacing: GridSpacing = Field(
         default=0,
         title='Grid Spacing',
-        description=trans._(
-            'The amount of spacing inbetween grid viewboxes.\n'
-            'If between 0 and 1, it is interpreted as a proportion of the size of the viewboxes.\n'
-            'If equal or greater than 1, it is interpreted as screen pixels.'
-        ),
+        description='The amount of spacing inbetween grid viewboxes.\n'
+        'If between 0 and 1, it is interpreted as a proportion of the size of the viewboxes.\n'
+        'If equal or greater than 1, it is interpreted as screen pixels.',
     )
 
     confirm_close_window: bool = Field(
@@ -243,10 +232,8 @@ class ApplicationSettings(EventedModel):
     startup_script: Path = Field(
         default=Path(),
         title='Full path to a startup script',
-        description=trans._(
-            'Path to a Python script that will be executed on napari startup.\n'
-            'This can be used to customize the behavior of napari or load specific plugins automatically.',
-        ),
+        description='Path to a Python script that will be executed on napari startup.\n'
+        'This can be used to customize the behavior of napari or load specific plugins automatically.',
         json_schema_extra={'file_extension': 'py'},
     )
 
@@ -272,9 +259,7 @@ class ApplicationSettings(EventedModel):
     @classmethod
     def _validate_qbtye(cls, v: str) -> str:
         if v and (not isinstance(v, str) or not v.startswith('!QBYTE_')):
-            raise ValueError(
-                "QByte strings must start with '!QBYTE_'"
-            )
+            raise ValueError("QByte strings must start with '!QBYTE_'")
         return v
 
     model_config = SettingsConfigDict(use_enum_values=False)

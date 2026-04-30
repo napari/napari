@@ -89,7 +89,6 @@ from napari.utils.notifications import Notification
 from napari.utils.task_status import Status, TaskStatusManager
 from napari.utils.theme import _themes, get_system_theme
 
-
 if TYPE_CHECKING:
     import uuid
     from collections.abc import Callable, Mapping, MutableMapping, Sequence
@@ -856,13 +855,10 @@ class Window:
     @property
     def qt_viewer(self):
         warnings.warn(
-            trans._(
-                'Public access to Window.qt_viewer is deprecated and will be removed in\n'
-                'v0.8.0. It is considered an "implementation detail" of the napari\napplication, '
-                'not part of the napari viewer model. If your use case\n'
-                'requires access to qt_viewer, please open an issue to discuss.',
-                deferred=True,
-            ),
+            'Public access to Window.qt_viewer is deprecated and will be removed in\n'
+            'v0.8.0. It is considered an "implementation detail" of the napari\napplication, '
+            'not part of the napari viewer model. If your use case\n'
+            'requires access to qt_viewer, please open an issue to discuss.',
             category=FutureWarning,
             stacklevel=2,
         )
@@ -1687,11 +1683,8 @@ class Window:
             fit_to_data_extent or size is not None or scale is not None
         ):
             raise ValueError(
-                trans._(
-                    'scale, size, and fit_to_data_extent can only be set for '
-                    'canvas_only screenshots.',
-                    deferred=True,
-                )
+                'scale, size, and fit_to_data_extent can only be set for '
+                'canvas_only screenshots.'
             )
 
         # Part 2: take the screenshot
