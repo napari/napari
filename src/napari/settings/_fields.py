@@ -8,7 +8,6 @@ from pydantic_core import CoreSchema, core_schema
 
 from napari.utils.logo import available_logos
 from napari.utils.theme import available_themes, is_theme_available
-from napari.utils.translations import _load_language, get_language_packs, trans
 
 
 class StrField(str):
@@ -84,20 +83,6 @@ class Theme(StrField):
     @classmethod
     def _valid_option(cls, v):
         return is_theme_available(v)
-
-
-class Language(StrField):
-    """
-    Custom theme type to dynamically load all installed language packs.
-    """
-
-    @classmethod
-    def _available_options(cls):
-        return list(get_language_packs(_load_language()).keys())
-
-    @classmethod
-    def _valid_option(cls, v):
-        return v in cls._available_options()
 
 
 @total_ordering

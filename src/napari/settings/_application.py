@@ -13,8 +13,6 @@ from napari.settings._constants import (
     LabelDTypes,
     LoopMode,
 )
-from napari.settings._fields import Language
-from napari.utils._base import _DEFAULT_LOCALE
 from napari.utils.camera_orientations import (
     DEFAULT_ORIENTATION_TYPED,
     DepthAxisOrientation,
@@ -74,13 +72,6 @@ class ApplicationSettings(EventedModel):
         title=trans._('IPython interactive'),
         description=trans._(
             r'Toggle the use of interactive `%gui qt` event loop when creating napari Viewers in IPython.'
-        ),
-    )
-    language: Language = Field(
-        Language(_DEFAULT_LOCALE),
-        title=trans._('Language'),
-        description=trans._(
-            'Select the display language for the user interface.'
         ),
     )
     # Window state, geometry and position
