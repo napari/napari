@@ -12,7 +12,7 @@ class TestLoadAndExecutePythonCode:
     These tests verify that a file written in a specific encoding is both decoded
     correctly *and* executed so that the resulting namespace is correct.
     The pure decoding step (_read_python_source) is tested
-    headlessly in src/napari_builtins/_tests/test_reader.py.
+    headlessly in src/napari_builtins/_tests/test_read.py.
     """
 
     @pytest.mark.usefixtures('qapp')
