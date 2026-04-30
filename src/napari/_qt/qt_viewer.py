@@ -765,8 +765,9 @@ class QtViewer(QSplitter):
             ),
         )
         logging.getLogger('napari').debug(
-            f'QFileDialog - filename: {filename or None} '
-            'selected_filter: {selected_filter or None}'
+            'QFileDialog - filename: %s selected_filter: %s',
+            filename or None,
+            selected_filter or None,
         )
 
         if filename:
