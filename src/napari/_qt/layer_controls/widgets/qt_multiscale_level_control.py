@@ -120,13 +120,9 @@ class QtMultiscaleLevelControl(  # type: ignore[metaclass]
                     _, max_size_3d = get_max_texture_sizes()
 
                 shapes = self._layer.level_shapes
+                itemsize = self._layer.dtype.itemsize
                 for i, shape in enumerate(shapes):
-                    data_arr = self._layer.data[i]
-                    if hasattr(data_arr, 'nbytes'):
-                        nbytes = data_arr.nbytes
-                    else:
-                        dtype = getattr(data_arr, 'dtype', np.float32)
-                        nbytes = int(np.prod(shape) * np.dtype(dtype).itemsize)
+                    nbytes = int(np.prod(shape) * itemsize)
 
                     label = _format_level_label(
                         i, tuple(shape), nbytes, displayed
