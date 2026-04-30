@@ -39,7 +39,7 @@ jobs:
           }' --jq '.data.repository.milestones.nodes | map(select(.dueOn >= today)) | .[0].number' -f repoName="$repoName" -f repoOwner="$repoOwner" -f today="$TODAY")
 
           if [ -z "$CLOSEST_MILESTONE_NUMBER" ]; then
-            echo "No open milestone with a future due date was found. Creating a new milestone."
+            echo "No open milestone with a future due date was found. Create a new milestone with a future due date."
             echo "CLOSEST_MILESTONE_NAME=" >> "$GITHUB_ENV"
             exit 0
           fi
