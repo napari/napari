@@ -82,14 +82,27 @@ for i, (shape, sc) in enumerate(zip(shapes, scales, strict=True)):
 # -- Open viewer in 3D and add the layer -----------------------------------
 viewer = napari.Viewer(ndisplay=3)
 if args.labels:
-    viewer.add_labels(multiscale_data, name='multiscale', multiscale=True)
+    layer = viewer.add_labels(
+        multiscale_data, name='multiscale', multiscale=True
+    )
 else:
-    viewer.add_image(
+    layer = viewer.add_image(
         multiscale_data,
         name='multiscale',
         multiscale=True,
+        rendering='attenuated_mip',
         interpolation3d='nearest',
     )
+
+# Tilt the camera for a better 3D view
+viewer.camera.angles = (-10, 10, -10)
+
+# -- Lock to the highest resolution level so you can see the "0" digit.
+# Without locking, 3D mode defaults to the coarsest level (digit "3").
+layer.locked_data_level = 0
+
+# To restore automatic level selection:
+# layer.locked_data_level = None
 
 if __name__ == '__main__':
     napari.run()
