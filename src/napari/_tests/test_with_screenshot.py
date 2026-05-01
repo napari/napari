@@ -476,7 +476,7 @@ def test_scale_bar_visible(make_napari_viewer):
 def test_screenshot_has_no_border(make_napari_viewer):
     """See https://github.com/napari/napari/issues/3357"""
     viewer = make_napari_viewer(show=True)
-    image_data = np.ones((60, 80))
+    image_data = np.ones((60, 80), dtype=np.uint8)
     viewer.add_image(image_data, colormap='red')
     # Zoom in dramatically to make the screenshot all red.
     viewer.camera.zoom = 1000
