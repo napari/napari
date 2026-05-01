@@ -5,6 +5,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from importlib.metadata import version
 
+import dask.array as da
 import numpy as np
 import numpy.testing as npt
 import pandas as pd
@@ -1614,6 +1615,34 @@ def test_paint_partial_dense_history_stores_ndarray_redo():
     npt.assert_array_equal(layer.data, data)
     layer.redo()
     assert np.count_nonzero(layer.data == 3) > 0
+
+
+def test_paint_sparse_history_uses_dense_bbox_for_dask():
+    data = np.zeros((2, 21, 21), dtype=np.uint32)
+    data[1, 6:15, 6:15] = 3
+    data[1, 8, 10] = 0
+    data[1, 10, 8] = 0
+    data[1, 10, 12] = 0
+    data[1, 12, 10] = 0
+    original = data.copy()
+
+    layer = Labels(da.from_array(data, chunks=(1, 21, 21)))
+    layer.n_edit_dimensions = 2
+    layer.brush_size = 9
+
+    layer.paint((1, 10, 10), 3)
+    painted = np.asarray(layer.data).copy()
+
+    history_indices, old_values, new_values = layer._undo_history[0][0]
+    assert history_indices == (1, slice(6, 15), slice(6, 15))
+    assert isinstance(old_values, np.ndarray)
+    assert isinstance(new_values, np.ndarray)
+    assert old_values.shape == new_values.shape == (9, 9)
+
+    layer.undo()
+    npt.assert_array_equal(np.asarray(layer.data), original)
+    layer.redo()
+    npt.assert_array_equal(np.asarray(layer.data), painted)
 
 
 @pytest.mark.parametrize(

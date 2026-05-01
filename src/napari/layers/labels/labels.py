@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 import typing
 import warnings
 from collections import deque
@@ -1928,7 +1929,17 @@ class Labels(ScalarFieldBase):
         if mask.all():
             return volume_slice, region_data.copy(), new_label
 
-        if self._sparse_history_is_smaller(region_data, mask):
+        dask_array = sys.modules.get('dask.array')
+        is_dask_backed = dask_array is not None and (
+            isinstance(self.data, dask_array.Array)
+            or isinstance(getattr(self.data, 'data', None), dask_array.Array)
+        )
+
+        # Dask-backed data cannot replay sparse multi-axis advanced-index
+        # assignments during undo/redo, so keep bbox slice history there.
+        if not is_dask_backed and self._sparse_history_is_smaller(
+            region_data, mask
+        ):
             return self._sparse_history_atom_for_mask_paint(
                 volume_slice, region_data, mask, new_label
             )
