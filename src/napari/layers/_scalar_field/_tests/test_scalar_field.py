@@ -346,6 +346,25 @@ class TestLockedDataLevelViewer:
         self._trigger_draw(viewer)
         assert layer.data_level == 0
 
+    def test_locked_level_refreshes_on_stale_data_level(
+        self, make_napari_viewer, add_method
+    ):
+        """_update_draw refreshes when _data_level drifts from locked."""
+        viewer = make_napari_viewer()
+        data = _make_multiscale_3d()
+        layer = self._add_layer(viewer, data, add_method)
+
+        viewer.dims.ndisplay = 3
+        layer.locked_data_level = 0
+        self._trigger_draw(viewer)
+        assert layer.data_level == 0
+
+        # Simulate _data_level drifting out of sync (e.g. internal reset)
+        layer._data_level = len(data) - 1
+        self._trigger_draw(viewer)
+        # _update_draw should have corrected it back to the locked level
+        assert layer.data_level == 0
+
     def test_locked_level_loads_correct_data_3d(
         self, make_napari_viewer, add_method
     ):
