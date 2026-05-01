@@ -1,3 +1,5 @@
+import sys
+
 import numpy as np
 import pytest
 
@@ -222,6 +224,7 @@ class TestLockedDataLevel:
         assert layer.locked_data_level is None
 
 
+@pytest.mark.skipif('qtpy' not in sys.modules, reason='qtpy not installed')
 @pytest.mark.parametrize('add_method', ['add_image', 'add_labels'])
 class TestLockedDataLevelViewer:
     """Viewer-based tests for locked_data_level.
@@ -229,6 +232,8 @@ class TestLockedDataLevelViewer:
     These use the real viewer draw cycle instead of manually calling
     _update_draw / _slice_dims, so they exercise the feature the same
     way a user would.  Parametrized over Image and Labels layers.
+
+    Requires Qt bindings (skipped in headless CI environments).
     """
 
     @staticmethod
