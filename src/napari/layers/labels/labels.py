@@ -1100,8 +1100,10 @@ class Labels(ScalarFieldBase):
             - **old_values**: Array of values before the change. Shape matches
               the indexing expression (N-D array for slice-based, 1D for
               array-based)
-            - **new_values**: Value(s) after the change. Can be a scalar, 1D array,
-              or N-D array matching old_values shape
+            - **new_values**: Value(s) after the change. Can be a scalar,
+              1D array, or N-D array matching old_values shape. Full-mask
+              bbox edits store a scalar redo value to avoid keeping a second
+              full bbox copy.
 
         Notes
         -----
@@ -1918,7 +1920,14 @@ class Labels(ScalarFieldBase):
         mask: np.ndarray,
         new_label: int,
     ) -> tuple[tuple[Any, ...], np.ndarray, int | np.ndarray]:
-        """Build an undo history atom for a bbox-based edit."""
+        """Build an undo history atom for a bbox-based edit.
+
+        Full-bbox edits store the old bbox plus a scalar redo value so history
+        memory is one bbox copy instead of two.
+        """
+        if mask.all():
+            return volume_slice, region_data.copy(), new_label
+
         if self._sparse_history_is_smaller(region_data, mask):
             return self._sparse_history_atom_for_mask_paint(
                 volume_slice, region_data, mask, new_label

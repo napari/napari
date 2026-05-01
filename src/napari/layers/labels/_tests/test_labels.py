@@ -1578,6 +1578,44 @@ def test_fill_sparse_history_storage():
     assert np.count_nonzero(layer.data == 2) == 4
 
 
+def test_fill_full_mask_history_stores_scalar_redo():
+    data = np.zeros((8, 8), dtype=np.uint32)
+    layer = Labels(data.copy())
+
+    layer.fill((0, 0), 7)
+
+    history_indices, old_values, new_values = layer._undo_history[0][0]
+    assert history_indices == (slice(0, 8), slice(0, 8))
+    npt.assert_array_equal(old_values, data)
+    assert not isinstance(new_values, np.ndarray)
+    assert new_values == 7
+
+    layer.undo()
+    npt.assert_array_equal(layer.data, data)
+    layer.redo()
+    npt.assert_array_equal(
+        layer.data, np.full(data.shape, 7, dtype=data.dtype)
+    )
+
+
+def test_paint_partial_dense_history_stores_ndarray_redo():
+    data = np.zeros((21, 21), dtype=np.uint8)
+    layer = Labels(data.copy())
+    layer.brush_size = 9
+
+    layer.paint((10, 10), 3)
+
+    _, old_values, new_values = layer._undo_history[0][0]
+    assert isinstance(old_values, np.ndarray)
+    assert isinstance(new_values, np.ndarray)
+    assert old_values.shape == new_values.shape
+
+    layer.undo()
+    npt.assert_array_equal(layer.data, data)
+    layer.redo()
+    assert np.count_nonzero(layer.data == 3) > 0
+
+
 @pytest.mark.parametrize(
     'scale', list(itertools.product([-2, 2], [-0.5, 0.5], [-0.5, 0.5]))
 )
