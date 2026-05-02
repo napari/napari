@@ -162,7 +162,7 @@ jobs:
             platform: ubuntu-latest
             backend: pyqt6
             coverage: cov
-            tox_extras: "testing_extra"
+            tox_dependency_groups: "testing_extra"
           # test with no numba
           - python: "3.13"
             platform: ubuntu-latest

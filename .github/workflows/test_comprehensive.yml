@@ -70,11 +70,11 @@ jobs:
           - python: "3.13"
             platform: ubuntu-latest
             backend: pyqt6
-            tox_extras: "testing_extra"
+            tox_dependency_groups: "testing_extra"
           - python: "3.11"
             platform: ubuntu-latest
             backend: pyside6
-            tox_extras: "testing_extra"
+            tox_dependency_groups: "testing_extra"
           - python: "3.14"
             platform: ubuntu-24.04-arm
             backend: pyqt6
