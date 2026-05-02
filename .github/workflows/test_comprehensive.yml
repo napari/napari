@@ -85,7 +85,7 @@ jobs:
       qt_backend: ${{ matrix.backend }}
       min_req: ${{ matrix.MIN_REQ }}
       coverage: cov
-      tox_extras: ${{ matrix.tox_extras }}
+      tox_dependency_groups: ${{ matrix.tox_dependency_groups }}
 
   test_pip_install:
     name: pip install

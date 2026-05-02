@@ -185,6 +185,7 @@ jobs:
       min_req: ${{ matrix.MIN_REQ }}
       coverage: ${{ matrix.coverage }}
       tox_extras: ${{ matrix.tox_extras }}
+      tox_dependency_groups: ${{ matrix.tox_dependency_groups }}
       timeout: ${{ matrix.timeout-minutes || 40 }}
 
 
