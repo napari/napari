@@ -10,6 +10,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     ClassVar,
+    TypeAlias,
 )
 
 import numpy as np
@@ -74,6 +75,8 @@ if TYPE_CHECKING:
     import pandas as pd
 
 __all__ = ('Labels',)
+
+HistoryItem: TypeAlias = tuple[npt.NDArray, npt.NDArray, npt.NDArray]
 
 
 class Labels(ScalarFieldBase):
@@ -424,6 +427,11 @@ class Labels(ScalarFieldBase):
         self._status = self.mode
         self._preserve_labels = False
 
+        self._undo_history: deque[HistoryItem]
+        self._redo_history: deque[HistoryItem]
+        self._staged_history: list[HistoryItem]
+        self._block_history: bool
+
     def _slice_dtype(self):
         """Calculate dtype of data view based on data dtype and current colormap"""
         return self.colormap._data_to_texture(
@@ -526,7 +534,7 @@ class Labels(ScalarFieldBase):
         self.cursor_size = self._calculate_cursor_size()
         self.events.brush_size()
 
-    def _calculate_cursor_size(self):
+    def _calculate_cursor_size(self) -> int:
         # Convert from brush size in data coordinates to
         # cursor size in world coordinates
         scale = self._data_to_world.scale
@@ -583,19 +591,10 @@ class Labels(ScalarFieldBase):
         self.events.selected_label()
         self.refresh(extent=False)
 
-    @property
-    def data(self) -> LayerDataProtocol | MultiScaleData:
-        """array: Image data."""
-        return self._data
-
-    @data.setter
-    def data(self, data: LayerDataProtocol | MultiScaleData):
+    @ScalarFieldBase.data.setter  # type: ignore[attr-defined]
+    def data(self, data: LayerDataProtocol | MultiScaleData) -> None:
         data = self._ensure_int_labels(data)
-        self._data = data
-        self._ndim = len(self._data.shape)
-        self._update_dims()
-        self.events.data(value=self.data)
-        self._reset_editable()
+        ScalarFieldBase.data.fset(self, data)  # type: ignore[attr-defined]
         self.events.features()
 
     @property
@@ -644,7 +643,7 @@ class Labels(ScalarFieldBase):
             label_index = {i: i for i in range(features.shape[0])}
         return label_index
 
-    def _is_default_colors(self, color):
+    def _is_default_colors(self, color: dict) -> bool:
         """Returns True if color contains only default colors, otherwise False.
 
         Default colors are black for `None` and transparent for
@@ -800,12 +799,13 @@ class Labels(ScalarFieldBase):
         In ERASE mode the cursor functions similarly to PAINT mode, but to
         paint with background label, which effectively removes the label.
         """
-        return Layer.mode.fget(self)
+        return super().mode
 
     # Only overriding to change the docstring of the setter above
     @mode.setter
     def mode(self, mode):
-        Layer.mode.fset(self, mode)
+        # See https://github.com/python/mypy/issues/16426 for type ignore reason
+        Layer.mode.fset(self, mode)  # type: ignore[attr-defined]
 
     def _mode_setter_helper(self, mode):
         mode = super()._mode_setter_helper(mode)
@@ -851,7 +851,7 @@ class Labels(ScalarFieldBase):
         """
         return vispy_texture_dtype(data)
 
-    def _partial_labels_refresh(self):
+    def _partial_labels_refresh(self) -> None:
         """Prepares and displays only an updated part of the labels."""
 
         if self._updated_slice is None or not self._slicing_state.loaded:
@@ -1033,7 +1033,7 @@ class Labels(ScalarFieldBase):
             col = self.colormap.map(label)
         return col
 
-    def _reset_history(self, event=None):
+    def _reset_history(self, event: Event | None = None) -> None:
         self._undo_history = deque(maxlen=self._history_limit)
         self._redo_history = deque(maxlen=self._history_limit)
         self._staged_history = []
