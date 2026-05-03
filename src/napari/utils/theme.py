@@ -85,6 +85,9 @@ class Theme(EventedModel):
     warning: Color
     error: Color
     current: Color
+    # base font sizes differ between platforms
+    # macOS uses 72 dpi while windows and linux use 96
+    # which is a factor of 4/3 so 12 and 9 should be similar
     font_size: str = '12pt' if sys.platform == 'darwin' else '9pt'
 
     @field_validator('syntax_style', mode='before')
@@ -130,14 +133,29 @@ lighten_pattern = re.compile(r'{{\s?lighten\((\w+),?\s?([-\d]+)?\)\s?}}')
 opacity_pattern = re.compile(r'{{\s?opacity\((\w+),?\s?([-\d]+)?\)\s?}}')
 
 
-def decrease(font_size: str, pt: int) -> str:
+def _platform_aware_font_size_adjustment(pt: str) -> float:
+    """Rescale font size adjustments to 72 dpi (macOS)
+
+    Account for platform DPI differences in font size adjustments.
+    macOS uses 72 dpi while windows and linux use 96, so in order for
+    increases and decreases in font size remain proportional,
+    they also need to be scaled by a factor of 96/72.
+    """
+    if sys.platform == 'darwin':
+        return float(pt) * 96 / 72
+    return pt
+
+
+def decrease(font_size: str, pt: str) -> str:
     """Decrease fontsize."""
-    return f'{int(font_size[:-2]) - int(pt)}pt'
+    _pt = _platform_aware_font_size_adjustment(pt)
+    return f'{int(font_size[:-2]) - _pt}pt'
 
 
-def increase(font_size: str, pt: int) -> str:
+def increase(font_size: str, pt: str) -> str:
     """Increase fontsize."""
-    return f'{int(font_size[:-2]) + int(pt)}pt'
+    _pt = _platform_aware_font_size_adjustment(pt)
+    return f'{int(font_size[:-2]) + _pt}pt'
 
 
 def _parse_color_as_rgb(color: str | Color) -> tuple[int, int, int]:
