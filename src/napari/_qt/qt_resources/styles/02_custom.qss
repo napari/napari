@@ -419,7 +419,8 @@ NapariQtNotification #severity_icon {
 }
 
 #QtActivityButton {
-   font-size: {{ font_size }};
+    padding: 10px;
+    font-size: {{ font_size }};
 }
 
 #QtActivityButton:hover {
