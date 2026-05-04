@@ -22,7 +22,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           IFS='/' read -r repoOwner repoName <<< "${{ github.repository }}"
-          export TODAY="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          TODAY="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          export TODAY
 
           # shellcheck disable=SC2016
           CLOSEST_MILESTONE_NUMBER=$(gh api graphql -f query='
