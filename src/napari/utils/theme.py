@@ -143,7 +143,7 @@ def _platform_aware_font_size_adjustment(pt: str) -> float:
     """
     if sys.platform == 'darwin':
         return float(pt) * 96 / 72
-    return pt
+    return float(pt)
 
 
 def decrease(font_size: str, pt: str) -> str:
