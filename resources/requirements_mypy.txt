@@ -6,7 +6,7 @@ annotated-types==0.7.0
     # via pydantic
 app-model==0.5.1
     # via -r resources/requirements_mypy.in
-build==1.4.4
+build==1.5.0
     # via npe2
 certifi==2026.4.22
     # via requests
@@ -92,11 +92,11 @@ superqt==0.8.1
     # via magicgui
 tomli-w==1.2.0
     # via npe2
-typer==0.25.0
+typer==0.25.1
     # via npe2
 types-pyyaml==6.0.12.20260408
     # via -r resources/requirements_mypy.in
-types-requests==2.33.0.20260408
+types-requests==2.33.0.20260503
     # via -r resources/requirements_mypy.in
 types-setuptools==82.0.0.20260408
     # via -r resources/requirements_mypy.in
