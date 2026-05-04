@@ -1,4 +1,5 @@
-from qtpy.QtWidgets import QGridLayout, QLabel, QWidget
+from qtpy.QtCore import Qt
+from qtpy.QtWidgets import QAbstractScrollArea, QGridLayout, QLabel, QWidget
 
 from napari._qt.containers import QtListView
 from napari._qt.containers.qt_axis_model import AxisList, AxisModel
@@ -43,15 +44,20 @@ class QtDimsSorter(QWidget):
         Selectable evented list representing the viewer axes.
     """
 
+    _MAX_VISIBLE_DIMS = 6
+
     def __init__(self, dims: Dims, parent: QWidget) -> None:
         super().__init__(parent=parent)
         self.dims = dims
         self.axis_list = AxisList.from_dims(self.dims)
 
         self.view = QtListView(self.axis_list)
-        if len(self.axis_list) <= 2:
-            # prevent excess space in popup
-            self.view.setSizeAdjustPolicy(QtListView.AdjustToContents)
+        self.view.setSizeAdjustPolicy(
+            QAbstractScrollArea.SizeAdjustPolicy.AdjustToContents
+        )
+        self.view.setVerticalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAsNeeded
+        )
 
         layout = QGridLayout()
         self.setLayout(layout)
@@ -68,9 +74,10 @@ class QtDimsSorter(QWidget):
 
         widget_title = QLabel(trans._('Dims. Ordering'), self)
 
-        self.layout().addWidget(widget_title, 0, 0)
-        self.layout().addWidget(widget_tooltip, 0, 1)
-        self.layout().addWidget(self.view, 1, 0, 1, 2)
+        layout.addWidget(widget_title, 0, 0)
+        layout.addWidget(widget_tooltip, 0, 1)
+        layout.addWidget(self.view, 1, 0, 1, 2)
+        self._update_view_height()
 
         # connect axis_list and dims
         self.axis_list.events.reordered.connect(
@@ -87,6 +94,20 @@ class QtDimsSorter(QWidget):
         # Regenerate AxisList upon Dims side order changes for easy cleanup
         self.axis_list = AxisList.from_dims(self.dims)
         self.view.setRoot(self.axis_list)
+        self._update_view_height()
         self.axis_list.events.reordered.connect(
             self._axis_list_reorder_callback,
         )
+
+    def _update_view_height(self) -> None:
+        row_count = self.view.model().rowCount()
+        visible_rows = min(row_count, self._MAX_VISIBLE_DIMS)
+        row_height = self.view.sizeHintForRow(0)
+        if row_height <= 0:
+            row_height = self.view.fontMetrics().height() + 8
+
+        view_height = (2 * self.view.frameWidth()) + (
+            visible_rows * row_height
+        )
+        self.view.setFixedHeight(view_height)
+        self.updateGeometry()
