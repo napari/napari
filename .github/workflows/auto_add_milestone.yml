@@ -22,10 +22,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           IFS='/' read -r repoOwner repoName <<< "${{ github.repository }}"
-          TODAY="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          export TODAY="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
           # shellcheck disable=SC2016
-          CLOSEST_MILESTONE=$(gh api graphql -f query='
+          $CLOSEST_MILESTONE_NUMBER=$(gh api graphql -f query='
             query($repoName: String!, $repoOwner: String!) {
               repository(name: $repoName, owner: $repoOwner) {
                 milestones(states: OPEN, orderBy: {field: DUE_DATE, direction: ASC}, first: 100) {
@@ -36,7 +36,7 @@ jobs:
                   }
                 }
               }
-          }' --jq '.data.repository.milestones.nodes | map(select(.dueOn >= today)) | .[0].number' -f repoName="$repoName" -f repoOwner="$repoOwner" -f today="$TODAY")
+          }' --jq '.data.repository.milestones.nodes | map(select(.dueOn >= env.TODAY)) | .[0].number' -f repoName="$repoName" -f repoOwner="$repoOwner")
 
           if [ -z "$CLOSEST_MILESTONE_NUMBER" ]; then
             echo "No open milestone with a future due date was found. Create a new milestone with a future due date."
@@ -45,7 +45,7 @@ jobs:
           fi
 
           # print the closest milestone
-          CLOSEST_MILESTONE_NAME=$(gh api "/repos/${{ github.repository }}/milestones/$CLOSEST_MILESTONE" --jq '.title')
+          CLOSEST_MILESTONE_NAME=$(gh api "/repos/${{ github.repository }}/milestones/$CLOSEST_MILESTONE_NUMBER" --jq '.title')
           echo "Milestone to apply to PR: $CLOSEST_MILESTONE_NAME"
 
           echo "name=$CLOSEST_MILESTONE_NAME" >> "$GITHUB_OUTPUT"
