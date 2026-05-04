@@ -95,6 +95,7 @@ viewer.add_image(figure, rgb=True, name='figure')
 
 viewer.grid.enabled = True
 viewer.grid.shape = (2, 3)
+viewer.fit_to_view()
 
 if __name__ == '__main__':
     napari.run()
