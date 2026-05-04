@@ -418,6 +418,10 @@ NapariQtNotification #severity_icon {
   color: {{ text }};
 }
 
+#QtActivityButton {
+   font-size: {{ font_size }};
+}
+
 #QtActivityButton:hover {
   background-color: {{ lighten(background, 10) }};
 }
