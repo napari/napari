@@ -218,6 +218,7 @@ PlaneNormalButtons QPushButton {
     font-size: {{ decrease(font_size, 1) }};
     padding: 4;
 }
+
 /* ------------- DimsSliders --------- */
 
 QtDimSliderWidget > QScrollBar::handle[last_used=false]:horizontal {
@@ -240,6 +241,7 @@ QtDimSliderWidget > QLineEdit {
   background-color: {{ background }};
 }
 
+/* ------------- QtModal (Grid, Play, nDisplay, Roll --------- */
 
 #QtModalPopup {
   /* required for rounded corners to not have background color */
@@ -252,8 +254,7 @@ QtDimSliderWidget > QLineEdit {
 }
 
 #QtPopupFrame > QLabel {
-  color: {{ darken(text, 35) }};
-  font-size: {{ font_size }};
+  color: {{ text }};
 }
 
 #playDirectionCheckBox::indicator {
