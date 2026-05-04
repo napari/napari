@@ -49,3 +49,17 @@ def test_dims_sorter_with_reordered_init(qtbot):
     dim_sorter = QtDimsSorter(dims, parent)
     qtbot.addWidget(dim_sorter)
     assert tuple(dim_sorter.axis_list) == tuple(dims.order)
+
+
+def test_dims_sorter_height_caps_visible_rows(qtbot):
+    parent = QWidget()
+    small_sorter = QtDimsSorter(Dims(ndim=2), parent)
+    capped_sorter = QtDimsSorter(Dims(ndim=6), parent)
+    large_sorter = QtDimsSorter(Dims(ndim=10), parent)
+
+    qtbot.addWidget(small_sorter)
+    qtbot.addWidget(capped_sorter)
+    qtbot.addWidget(large_sorter)
+
+    assert small_sorter.view.height() < capped_sorter.view.height()
+    assert capped_sorter.view.height() == large_sorter.view.height()
