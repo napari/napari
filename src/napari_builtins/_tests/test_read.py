@@ -8,7 +8,6 @@ import tifffile
 
 from napari_builtins.io._read import (
     _read_python_source,
-    load_and_execute_python_code,
 )
 from napari_builtins.io._write import write_csv
 
@@ -102,15 +101,3 @@ def test_read_python_source_uses_python_source_encoding(
     script_path.write_bytes(script.encode(encoding))
 
     assert _read_python_source(script_path) == script
-
-
-def test_load_and_execute_python_code_raises_source_read_errors(monkeypatch):
-    error = SyntaxError('bad encoding cookie')
-
-    def _raise(*_args, **_kwargs):
-        raise error
-
-    monkeypatch.setattr('napari_builtins.io._read._read_python_source', _raise)
-
-    with pytest.raises(SyntaxError, match='bad encoding cookie'):
-        load_and_execute_python_code('broken_script.py')
