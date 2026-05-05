@@ -106,7 +106,6 @@ jobs:
               --target "${target_commit}" \
               --prerelease "${prerelease}"
         env:
-          tag_name: ${{ github.ref }}
           name: ${{ env.tag }}
           body_path: notes/release_notes.md
           prerelease: ${{ contains(env.tag, 'rc') || contains(env.tag, 'a') || contains(env.tag, 'b') }}
