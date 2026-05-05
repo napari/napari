@@ -100,12 +100,12 @@ jobs:
       - name: Create Release
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
         run: |
-          gh release create ${name} ${files} \
-              --title ${name} \
-              --notes-file ${body_path} \
-              --target ${target_commit} \
-              --prerelease ${prerelease}
-        with:
+          gh release create "${name}" "${files}" \
+              --title "${name}" \
+              --notes-file "${body_path}" \
+              --target "${target_commit}" \
+              --prerelease "${prerelease}"
+        env:
           tag_name: ${{ github.ref }}
           name: ${{ env.tag }}
           body_path: notes/release_notes.md
