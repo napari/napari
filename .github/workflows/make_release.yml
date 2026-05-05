@@ -98,16 +98,19 @@ jobs:
           path: notes
 
       - name: Create Release
-        uses: softprops/action-gh-release@153bb8e04406b158c6c84fc1615b65b24149a1fe # v2.6.1
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+        run: |
+          gh release create ${name} ${files} \
+              --title ${name} \
+              --notes-file ${body_path} \
+              --target ${target_commit} \
+              --prerelease ${prerelease}
         with:
           tag_name: ${{ github.ref }}
           name: ${{ env.tag }}
-          body: pre-release ${{ env.tag }}
           body_path: notes/release_notes.md
-          draft: false
           prerelease: ${{ contains(env.tag, 'rc') || contains(env.tag, 'a') || contains(env.tag, 'b') }}
-          target_commitish: ${{ github.sha }}
+          target_commit: ${{ github.sha }}
           files: |
             dist/*
 
