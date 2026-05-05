@@ -54,7 +54,7 @@ jobs:
       - name: Set milestone on PR
         if: github.event.pull_request.milestone == null && steps.closest_milestone.outputs.name != ''
         run: |
-          gh pr edit "$PR_NUMBER" --milestone "$CLOSEST_MILESTONE_NAME"
+          gh pr edit "$PR_NUMBER" --repo ${{ github.repository }} --milestone "$CLOSEST_MILESTONE_NAME"
         env:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
