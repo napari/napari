@@ -106,6 +106,7 @@ class QtMultiscaleLevelControl(  # type: ignore[metaclass]
         self._layer.events.locked_data_level.connect(
             self._on_locked_data_level_change
         )
+        self._layer.events.data.connect(self._rebuild_items)
 
     def _rebuild_items(self) -> None:
         """Populate the combobox from the layer's current level_shapes."""

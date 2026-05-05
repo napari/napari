@@ -144,6 +144,26 @@ def test_programmatic_change_updates_combobox(multiscale_controls):
     assert combo.currentIndex() == 0
 
 
+def test_combobox_updates_on_data_change(multiscale_controls):
+    """Replacing layer.data with fewer levels should update the combobox."""
+    layer, qtctrl = multiscale_controls
+    combo = qtctrl._multiscale_level_control.level_combobox
+    # Initially 3 levels + Auto
+    assert combo.count() == 1 + len(_MULTISCALE_DATA)
+
+    # Replace with a 2-level multiscale
+    new_data = [
+        np.zeros((20, 10), dtype=np.uint8),
+        np.zeros((10, 5), dtype=np.uint8),
+    ]
+    layer.data = new_data
+
+    # Combobox should now have Auto + 2 levels
+    assert combo.count() == 1 + len(new_data)
+    for i in range(len(new_data)):
+        assert combo.itemData(i + 1) == i
+
+
 def test_not_multiscale_has_only_auto_and_is_hidden(qtbot):
     """Single-scale layer should have only 'Auto' and hide the control."""
     layer = Image(np.zeros((40, 20), dtype=np.uint8))
