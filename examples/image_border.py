@@ -37,6 +37,7 @@ viewer.layers[1].bounding_box.line_color = 'orange'
 viewer.layers[1].bounding_box.line_thickness = 2
 viewer.layers[1].bounding_box.opacity = 0.8 # default: 1
 # viewer_2d.layers[1].bounding_box.blending = 'additive' # default: 'translucent'
+viewer.fit_to_view()
 
 if __name__ == '__main__':
     napari.run()
