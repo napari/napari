@@ -12,19 +12,19 @@ Q_WINDOW_ACTIONS: list[Action] = []
 
 toggle_action_details = [
     (
-        'napari:window:window:toggle_window_console',
+        'napari.window.toggle_window_console',
         trans._('Console'),
         'dockConsole',
         trans._('Toggle console panel'),
     ),
     (
-        'napari:window:window:toggle_layer_controls',
+        'napari.window.toggle_layer_controls',
         trans._('Layer Controls'),
         'dockLayerControls',
         trans._('Toggle layer controls panel'),
     ),
     (
-        'napari:window:window:toggle_layer_list',
+        'napari.window.toggle_layer_list',
         trans._('Layer List'),
         'dockLayerList',
         trans._('Toggle layer list panel'),

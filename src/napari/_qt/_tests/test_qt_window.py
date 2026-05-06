@@ -121,7 +121,7 @@ def test_screenshot_to_file(make_napari_viewer, tmp_path):
 
     np.random.seed(0)
     # Add image
-    data = np.random.random((10, 15))
+    data = np.ones((10, 15), dtype=np.uint8)
     viewer.add_image(data)
 
     # Add labels
