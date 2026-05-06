@@ -354,7 +354,6 @@ class Labels(ScalarFieldBase):
         )
         self._colormap = self._random_colormap
         self._color_mode = LabelColorMode.AUTO
-        self._show_selected_label = False
         self._contour = 0
 
         data = self._ensure_int_labels(data)
@@ -418,10 +417,13 @@ class Labels(ScalarFieldBase):
 
         self._selected_label = 1
         self.colormap.selection = self._selected_label
-        self.colormap.use_selection = self._show_selected_label
         self._prev_selected_label = None
         self._selected_color = self.get_color(self._selected_label)
         self._updated_slice: tuple[slice, ...] | None = None
+        # Bubble cmap.events.use_selection up to layer.events.show_selected_label
+        # so external mutations (and cmap swaps) keep listeners coherent. Must
+        # connect before any path that might mutate the cmap's use_selection.
+        self._connect_colormap_events()
         if colormap is not None:
             self._set_colormap(colormap)
 
@@ -552,9 +554,10 @@ class Labels(ScalarFieldBase):
         new_cmap = shuffle_and_extend_colormap(
             self._original_random_colormap, seed
         )
-        # Sync from the layer (source of truth) before assignment, so
-        # `events.colormap` listeners observe the correct `use_selection`.
-        new_cmap.use_selection = self._show_selected_label
+        # Carry the current selection state onto the shuffled colormap, so
+        # `events.colormap` listeners observe the correct `use_selection` and
+        # the public colormap setter doesn't fire a spurious change event.
+        new_cmap.use_selection = self._colormap.use_selection
         new_cmap.selection = self._selected_label
         self.colormap = new_cmap
         self._original_random_colormap = orig
@@ -567,7 +570,27 @@ class Labels(ScalarFieldBase):
     def colormap(self, colormap: LabelColormapBase):
         self._set_colormap(colormap)
 
+    def _connect_colormap_events(self):
+        self._colormap.events.use_selection.connect(
+            self._on_cmap_use_selection_change
+        )
+
+    def _disconnect_colormap_events(self, cmap):
+        cmap.events.use_selection.disconnect(
+            self._on_cmap_use_selection_change
+        )
+
+    def _on_cmap_use_selection_change(self, event):
+        # Bubble cmap field event up so listeners (vispy shader rebuild,
+        # qt checkbox) react to external mutation. The layer's own setter
+        # blocks this listener (via .blocker()) to avoid double-firing.
+        self.events.show_selected_label(show_selected_label=event.value)
+        self.refresh(extent=False)
+
     def _set_colormap(self, colormap):
+        old_cmap = self._colormap
+        old_use_sel = old_cmap.use_selection
+        self._disconnect_colormap_events(old_cmap)
         colormap = _normalize_label_colormap(colormap)
         if isinstance(colormap, CyclicLabelColormap):
             self._random_colormap = colormap
@@ -593,8 +616,15 @@ class Labels(ScalarFieldBase):
         self._cached_labels = None  # invalidate the cached color mapping
         self._selected_color = self.get_color(self.selected_label)
         self._color_mode = color_mode
+        self._connect_colormap_events()
         self.events.colormap()  # Will update the LabelVispyColormap shader
         self.events.selected_label()
+        if self._colormap.use_selection != old_use_sel:
+            # Listener was rebound rather than seeing a field change, so emit
+            # the layer-level event explicitly.
+            self.events.show_selected_label(
+                show_selected_label=self._colormap.use_selection
+            )
         self.refresh(extent=False)
 
     @ScalarFieldBase.data.setter  # type: ignore[attr-defined]
@@ -768,14 +798,24 @@ class Labels(ScalarFieldBase):
 
     @property
     def show_selected_label(self):
-        """Whether to filter displayed labels to only the selected label or not"""
-        return self._show_selected_label
+        """Whether to filter displayed labels to only the selected label or not.
+
+        Backed directly by ``self.colormap.use_selection``; mutating the
+        colormap field is reflected here and fires this property's event.
+        """
+        return self._colormap.use_selection
 
     @show_selected_label.setter
     def show_selected_label(self, show_selected):
-        self._show_selected_label = show_selected
-        self.colormap.use_selection = show_selected
-        self.colormap.selection = self.selected_label
+        # Block the bubbled listener so the setter's explicit fire below
+        # is the single emission (preserves the pre-proxy always-fire
+        # behavior, which several listeners depend on for unconditional
+        # refresh).
+        with self._colormap.events.use_selection.blocker(
+            self._on_cmap_use_selection_change
+        ):
+            self._colormap.use_selection = show_selected
+            self._colormap.selection = self.selected_label
         self.events.show_selected_label(show_selected_label=show_selected)
         self.refresh(extent=False)
 

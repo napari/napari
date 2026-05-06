@@ -63,6 +63,25 @@ def test_changing_layer_show_selected_label_updates_check_box(
     assert qtctrl._display_selected_label_checkbox_control.selected_color_checkbox.isChecked()
 
 
+def test_color_mode_switch_preserves_show_selected_label(make_labels_controls):
+    """Switching color mode via the combobox is orthogonal to the
+    show-selected-label preference and should not flip the checkbox.
+    """
+    from napari.layers.labels._labels_constants import LabelColorMode
+
+    layer, qtctrl = make_labels_controls(colormap=_COLOR)
+    combo = qtctrl._colormode_combobox_control.color_mode_combobox
+    layer.show_selected_label = True
+
+    combo.setCurrentIndex(combo.findData(LabelColorMode.AUTO.value))
+    qtctrl._colormode_combobox_control.change_color_mode()
+    assert layer.show_selected_label is True
+
+    combo.setCurrentIndex(combo.findData(LabelColorMode.DIRECT.value))
+    qtctrl._colormode_combobox_control.change_color_mode()
+    assert layer.show_selected_label is True
+
+
 def test_rendering_combobox(make_labels_controls):
     """Changing the model attribute should update the view"""
     layer, qtctrl = make_labels_controls()
