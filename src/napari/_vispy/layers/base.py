@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, Generic, TypeVar, cast
 
 import numpy as np
 import pint
-from vispy.scene import VisualNode
 from vispy.visuals.transforms import MatrixTransform
 
 from napari._vispy.utils.gl import BLENDING_MODES, get_max_texture_sizes
@@ -13,6 +12,8 @@ from napari.layers import Layer
 from napari.utils.events import disconnect_events
 
 if TYPE_CHECKING:
+    from vispy.scene import VisualNode
+
     from napari._vispy.utils.qt_font import FontInfo
 
 _L = TypeVar('_L', bound=Layer)
