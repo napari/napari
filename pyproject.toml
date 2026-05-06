@@ -129,10 +129,12 @@ optional-numba = [
 ]
 optional = [
     "napari[optional-base,optional-numba,bermuda]",
-    "triangle; python_version <= '3.13'",  # there is no wheel for triangle on python 3.14 at the time and build from source causes problems.
 ]
 bermuda = [
     "bermuda>=0.1.5",
+]
+triangle = [
+    "triangle; python_version <= '3.13'",  # there is no wheel for triangle on python 3.14 at the time and build from source causes problems.
 ]
 partsegcore = [
     "PartSegCore-compiled-backend>=0.15.11",
@@ -208,14 +210,14 @@ docs = [
     "sphinxext-opengraph[social-cards]",
     "sphinxext-rediraffe",
     "myst-nb",
-    "napari-sphinx-theme>=1.0.0",
+    "napari-sphinx-theme>=1.1.0",
     "matplotlib",
     "lxml[html_clean]>5",
     "imageio-ffmpeg",
     "pydeps",
     "seedir",
     # triangle and bermuda needed for docs/guides/triangulation.md
-    "triangle",
+    "triangle; python_version <= '3.13'",  # there is no wheel for triangle on python 3.14 at the time and build from source causes problems.
     "bermuda>=0.1.4",
     "pytest",
     "linkify-it-py",
@@ -307,14 +309,14 @@ docs = [
     "sphinxext-opengraph[social-cards]",
     "sphinxext-rediraffe",
     "myst-nb",
-    "napari-sphinx-theme>=1.0.0",
+    "napari-sphinx-theme>=1.1.0",
     "matplotlib",
     "lxml[html_clean]>5",
     "imageio-ffmpeg",
     "pydeps",
     "seedir",
     # triangle and bermuda needed for docs/guides/triangulation.md
-    "triangle",
+    "triangle; python_version <= '3.13'",  # there is no wheel for triangle on python 3.14 at the time and build from source causes problems.
     "bermuda>=0.1.4",
     "pytest",
     "linkify-it-py",
@@ -373,7 +375,7 @@ napari_builtins = [
 
 [tool.setuptools_scm]
 write_to = "src/napari/_version.py"
-fallback_version = "0.6.4.dev0"
+fallback_version = "0.7.1.dev0"
 
 [tool.check-manifest]
 ignore = [
@@ -441,7 +443,7 @@ select = [
     "T20", # flake8-print
 ]
 ignore = [
-    "E501", "TC001", "TC002",
+    "E501", "TC001",
     "A003", # flake8-builtins - we have class attributes violating these rule
     "COM812", # flake8-commas - we don't like adding comma on single line of arguments
     "COM819", # conflicts with ruff-format
@@ -458,20 +460,21 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "src/napari/_vispy/__init__.py" = ["E402"]
-"**/_tests/*.py" = ["B011", "INP001", "TRY301", "B018", "RUF012"]
+"**/_tests/*.py" = ["B011", "INP001", "TRY301", "B018", "RUF012", "TID253"]
 "src/napari/utils/_testsupport.py" = ["B011"]
 "tools/validate_strings.py" = ["F401"]
 "tools/**" = ["INP001", "T20", "LOG015"]
-"examples/**" = ["ICN001", "INP001", "T20", "LOG015"]
+"examples/**" = ["ICN001", "INP001", "T20", "LOG015", "TID253"]
 "**/vendored/**" = ["TID"]
-"src/napari/benchmarks/**" = ["RUF012", "TID252"]
+"src/napari/benchmarks/**" = ["RUF012", "TID252", "TID253"]
+"src/napari_builtins/**" = ["TID253"]
 
 [tool.ruff.lint.flake8-builtins]
 builtins-allowed-modules = ["io", "types", "threading"]
 
 [tool.ruff.lint.flake8-type-checking]
-runtime-evaluated-base-classes = ["pydantic.BaseModel", "pydantic.ConfigDict"]
-quote-annotations = true
+runtime-evaluated-base-classes = ["pydantic.BaseModel", "pydantic.ConfigDict", "napari.utils.events.EventedModel"]
+#quote-annotations = true
 
 [tool.ruff.lint.pyupgrade]
 keep-runtime-typing = true
@@ -484,6 +487,8 @@ multiline-quotes = "double"
 [tool.ruff.lint.flake8-tidy-imports]
 # Disallow all relative imports.
 ban-relative-imports = "all"
+# Expensive imports should be lazy loaded within functions instead of module
+banned-module-level-imports = ["scipy", "pandas", "dask.array"]
 
 [tool.ruff.lint.isort]
 known-first-party=['napari']
@@ -700,7 +705,6 @@ module = [
     'napari._qt.widgets.qt_scrollbar',
     'napari._qt.widgets.qt_size_preview',
     'napari._qt.widgets.qt_spinbox',
-    'napari._qt.widgets.qt_theme_sample',
     'napari._qt.widgets.qt_tooltip',
     'napari._qt.widgets.qt_viewer_buttons',
     'napari._qt.widgets.qt_viewer_dock_widget',
@@ -880,7 +884,6 @@ module = [
     "napari._vispy.layers.shapes",
     "napari._vispy.layers.surface",
     "napari.components._viewer_key_bindings",
-    "napari.layers.labels.labels",
     "napari.layers.surface.surface",
     "napari.layers.tracks.tracks",
     "napari.layers.utils.layer_utils",
@@ -889,6 +892,14 @@ module = [
     "napari.utils.misc",
 ]
 check_untyped_defs = false
+disallow_incomplete_defs = false
+disallow_untyped_calls = false
+disallow_untyped_defs = false
+
+[[tool.mypy.overrides]]
+module = [
+    "napari.layers.labels.labels",
+]
 disallow_incomplete_defs = false
 disallow_untyped_calls = false
 disallow_untyped_defs = false
@@ -948,11 +959,8 @@ warn_unused_ignores = false
 
 [[tool.mypy.overrides]]
 module = [
-    "napari._vispy.overlays.bounding_box",
-    "napari._vispy.overlays.brush_circle",
     "napari.utils._test_utils",
 ]
-check_untyped_defs = false
 disallow_untyped_defs = false
 
 [tool.coverage.report]
@@ -1009,3 +1017,15 @@ layers = ["napari.qt","napari.components"]
 ignore_imports = [
     "napari.plugins._npe2 -> napari._qt._qplugins",
 ]
+
+[[tool.importlinter.contracts]]
+name = "Block imports from napari_builtins in napari core"
+type = "forbidden"
+source_modules = "napari"
+forbidden_modules = ["napari_builtins"]
+ignore_imports = [
+    "napari.utils.io -> napari_builtins"  # to be removed in 0.8.0
+]
+
+[tool.check-wheel-contents]
+toplevel = ["napari", "napari_builtins"]

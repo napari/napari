@@ -5,7 +5,6 @@ from threading import Lock
 from typing import TYPE_CHECKING, NamedTuple, Union
 
 import numpy as np
-import skimage.color as colorconv
 from vispy.color import (
     Color,
     ColorArray,
@@ -440,6 +439,8 @@ def _color_random(n, *, colorspace='lab', tolerance=0.0, seed=0.5):
     rgb : array of float, shape (n, 3)
         RGB colors chosen uniformly at random from given colorspace.
     """
+    import skimage.color as colorconv
+
     factor = 6  # about 1/5 of random LUV tuples are inside the space
     expand_factor = 2
     rgb = np.zeros((0, 3))
@@ -733,10 +734,6 @@ RGB = ['red', 'green', 'blue']
 CMYBGR = ['cyan', 'magenta', 'yellow', 'blue', 'green', 'red']
 CYMRGB = ['cyan', 'yellow', 'magenta', 'red', 'green', 'blue']
 
-AVAILABLE_LABELS_COLORMAPS = {
-    'lodisc-50': label_colormap(50),
-}
-
 
 def _increment_unnamed_colormap(
     existing: 'Iterable[str]', name: str = '[unnamed colormap]'
@@ -971,6 +968,18 @@ def _colormap_from_colors(
 
 
 def make_default_color_array():
+    """Return the default RGBA color array.
+
+    .. deprecated:: 0.7.1
+        This helper is deprecated and will be removed in a future release.
+        Use an explicit array such as ``np.array([0, 0, 0, 1])`` instead.
+    """
+    warnings.warn(
+        'make_default_color_array is deprecated in 0.7.1 and will be removed in 0.8.0 release.'
+        ' Use an explicit array such as np.array([0, 0, 0, 1]) instead.',
+        DeprecationWarning,
+        stacklevel=2,
+    )
     return np.array([0, 0, 0, 1])
 
 
@@ -1033,3 +1042,17 @@ def scale_up(contrast_limits: tuple[float, float]):
     shift = -contrast_limits[0] * scale
 
     return CoercedContrastLimits((0, 1000), shift, scale)
+
+
+# label_colormap uses _color_random which has an expensive skimage.color import
+# PEP562 implementation to delay this until it is actually accessed
+def __getattr__(name):
+    if name == 'AVAILABLE_LABELS_COLORMAPS':
+        return {
+            'lodisc-50': label_colormap(50),
+        }
+    raise AttributeError(f'module {__name__} has no attribute {name}')
+
+
+def __dir__():
+    return sorted(set(globals()) | {'AVAILABLE_LABELS_COLORMAPS'})
