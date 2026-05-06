@@ -105,6 +105,7 @@ jobs:
               --notes-file notes/release_notes.md \
               --target "${target_commit}" \
               --prerelease "${prerelease}"
+        shell: bash
         env:
           name: ${{ github.ref_name }}
           prerelease: ${{ contains(github.ref_name, 'rc') || contains(github.ref_name, 'a') || contains(github.ref_name, 'b') }}
