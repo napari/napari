@@ -112,6 +112,7 @@ jobs:
           target_commit: ${{ github.sha }}
           files: |
             dist/*
+          GH_TOKEN: ${{ github.token }}
 
   publish-to-pypi:
     name: Publish release to PyPI
