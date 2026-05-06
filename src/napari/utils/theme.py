@@ -20,15 +20,6 @@ from napari.utils.events import EventedModel
 from napari.utils.events.containers._evented_dict import EventedDict
 from napari.utils.translations import trans
 
-try:
-    from qtpy import QT_VERSION
-
-    major, minor, *_ = QT_VERSION.split('.')  # type: ignore[attr-defined]
-    use_gradients = (int(major) >= 5) and (int(minor) >= 12)
-    del major, minor, QT_VERSION
-except (ImportError, RuntimeError):
-    use_gradients = False
-
 
 class Theme(EventedModel):
     """Theme model.
@@ -172,8 +163,6 @@ def opacity(color: str | Color, value: int = 255) -> str:
 
 
 def gradient(stops, horizontal: bool = True) -> str:
-    if not use_gradients:
-        return stops[-1]
 
     if horizontal:
         grad = 'qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0, '
