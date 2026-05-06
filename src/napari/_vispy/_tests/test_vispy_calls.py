@@ -133,7 +133,9 @@ def test_add_invisible_image_layer_in_3d(make_napari_viewer):
     """
     viewer = make_napari_viewer()
     viewer.dims.ndisplay = 3
-    layer = viewer.add_image(np.zeros((4, 5, 6), dtype=np.uint8), visible=False)
+    layer = viewer.add_image(
+        np.zeros((4, 5, 6), dtype=np.uint8), visible=False
+    )
     assert layer.visible is False
     # Toggling visibility on then off exercises the slice-recompute path now
     # that the placeholder is at the right rank.
