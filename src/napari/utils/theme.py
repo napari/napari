@@ -5,8 +5,8 @@ import re
 import sys
 from ast import literal_eval
 from contextlib import suppress
-from warnings import warn
 from typing import Any, Literal
+from warnings import warn
 
 import npe2
 from pydantic import field_validator
