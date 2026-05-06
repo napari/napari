@@ -1820,7 +1820,10 @@ def test_show_selected_label_round_trip_honors_each_colormap():
     # has use_selection=False (its default); the proxy reads from the new
     # active colormap, so show_selected_label flips to False.
     layer.colormap = layer._original_random_colormap
-    assert layer.show_selected_label == layer._original_random_colormap.use_selection
+    assert (
+        layer.show_selected_label
+        == layer._original_random_colormap.use_selection
+    )
 
 
 def test_external_use_selection_mutation_bubbles_to_layer_event():
