@@ -102,13 +102,12 @@ jobs:
         run: |
           gh release create "${name}" dist/* \
               --title "${name}" \
-              --notes-file "${body_path}" \
+              --notes-file notes/release_notes.md \
               --target "${target_commit}" \
               --prerelease "${prerelease}"
         env:
           name: ${{ github.ref_name }}
-          body_path: notes/release_notes.md
-          prerelease: ${{ contains(env.tag, 'rc') || contains(env.tag, 'a') || contains(env.tag, 'b') }}
+          prerelease: ${{ contains(github.ref_name, 'rc') || contains(github.ref_name, 'a') || contains(github.ref_name, 'b') }}
           target_commit: ${{ github.sha }}
           GH_TOKEN: ${{ github.token }}
 
