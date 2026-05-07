@@ -2,17 +2,14 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Optional
 
 from napari._vispy.overlays.base import ViewerOverlayMixin, VispyCanvasOverlay
 from napari._vispy.visuals.interaction_box import InteractionBox
 from napari.settings import get_settings
 
 if TYPE_CHECKING:
-    from vispy.visuals.text.text import FontManager
-
-    from napari.components.overlays import ZoomOverlay
-    from napari.components.viewer_model import ViewerModel
+    from napari.components.overlays import Overlay, ZoomOverlay
     from napari.utils.events import Event
 
 
@@ -21,22 +18,8 @@ class VispyZoomOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
 
     overlay: ZoomOverlay
 
-    def __init__(
-        self,
-        viewer: ViewerModel,
-        overlay: ZoomOverlay,
-        parent: Optional[Any] = None,
-        font_manager: FontManager | None = None,
-        font_family: str = 'OpenSans',
-    ):
-        super().__init__(
-            node=InteractionBox(),
-            viewer=viewer,
-            overlay=overlay,
-            parent=parent,
-            font_manager=font_manager,
-            font_family=font_family,
-        )
+    def __init__(self, **kwargs: Overlay) -> None:
+        super().__init__(node=InteractionBox(), **kwargs)
 
         self.overlay.events.position.connect(self._on_position_change)
 
