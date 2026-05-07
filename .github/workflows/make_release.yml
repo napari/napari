@@ -109,7 +109,7 @@ jobs:
               --title "${name}" \
               --notes-file notes/release_notes.md \
               --target "${target_commit}" \
-              --repo ${repository} \
+              --repo "${repository}" \
               "${prerelease[@]}"
         shell: bash
         env:
