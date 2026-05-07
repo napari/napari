@@ -11,6 +11,8 @@ concurrency:
   group: test-${{ github.ref }}
   cancel-in-progress: true
 
+permissions: {}
+
 env:
   COLUMNS: 120
 
@@ -186,6 +188,21 @@ jobs:
       coverage: ${{ matrix.coverage }}
       tox_extras: ${{ matrix.tox_extras }}
       timeout: ${{ matrix.timeout-minutes || 40 }}
+
+  test_pixi:
+    name: test pixi
+    uses: ./.github/workflows/reusable_pixi_test.yml
+    needs: test_initial
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [ ubuntu-latest ]
+        python: [ "313" ]
+        backend: [ "pyside6" ]
+    with:
+      python_version: ${{ matrix.python }}
+      platform: ${{ matrix.platform }}
+      qt_backend: ${{ matrix.backend }}
 
 
   test_pip_install:
