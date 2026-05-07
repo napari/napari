@@ -1,6 +1,15 @@
+from __future__ import annotations
+
 from functools import lru_cache
+from typing import TYPE_CHECKING
 
 import numpy as np
+import numpy.typing as npt
+
+if TYPE_CHECKING:
+    from vispy.app import MouseEvent
+
+    from napari.layers import Labels
 
 
 def interpolate_coordinates(old_coord, new_coord, brush_size):
@@ -139,7 +148,11 @@ def get_dtype(layer):
     return layer_dtype
 
 
-def first_nonzero_coordinate(data, start_point, end_point):
+def first_nonzero_coordinate(
+    data: npt.NDArray,
+    start_point: npt.NDArray,
+    end_point: npt.NDArray,
+) -> npt.NDArray | None:
     """Coordinate of the first nonzero element between start and end points.
 
     Parameters
@@ -165,7 +178,9 @@ def first_nonzero_coordinate(data, start_point, end_point):
     return None if len(nonzero) == 0 else clipped_coords[nonzero[0]]
 
 
-def mouse_event_to_labels_coordinate(layer, event):
+def mouse_event_to_labels_coordinate(
+    layer: Labels, event: MouseEvent
+) -> npt.NDArray | None:
     """Return the data coordinate of a Labels layer mouse event in 2D or 3D.
 
     In 2D, this is just the event's position transformed by the layer's
@@ -188,6 +203,7 @@ def mouse_event_to_labels_coordinate(layer, event):
         The data coordinates for the mouse event.
     """
     ndim = len(layer._slice_input.displayed)
+    coordinates: npt.NDArray | None
     if ndim == 2:
         coordinates = layer.world_to_data(event.position)
     else:  # 3d
@@ -197,9 +213,11 @@ def mouse_event_to_labels_coordinate(layer, event):
             dims_displayed=layer._slice_input.displayed,
             world=True,
         )
-        if start is None and end is None:
+        if start is None or end is None:
             return None
-        coordinates = first_nonzero_coordinate(layer.data, start, end)
+        coordinates = first_nonzero_coordinate(
+            np.asanyarray(layer.data), start, end
+        )
     return coordinates
 
 
