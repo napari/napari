@@ -1765,11 +1765,13 @@ def test_direct_colormap_assignment_honors_new_use_selection():
     cache and emits ``events.show_selected_label`` when it differs from
     the previous value.
 
-    The colormap setter is the central swap point used by user code, the
-    qt color-mode combobox, and ``new_colormap()``. Assigning a fresh
-    ``CyclicLabelColormap`` (which defaults to ``use_selection=False``)
-    flips the layer state to match so vispy and the qt checkbox stay
-    coherent. (See PR discussion for the assign-honors-X tradeoff.)
+    The colormap setter is the central swap point used by user code and
+    ``new_colormap()``. Assigning a fresh ``CyclicLabelColormap`` (which
+    defaults to ``use_selection=False``) flips the layer state to match
+    so vispy and the qt checkbox stay coherent. The qt color-mode
+    combobox pre-syncs the new cmap before assignment to preserve the
+    user's filter preference across mode swaps; that GUI-side path is
+    covered by ``test_color_mode_switch_preserves_show_selected_label``.
     """
     data = np.arange(5, dtype=np.int32)[:, np.newaxis].repeat(5, axis=1)
     layer = Labels(data)
@@ -1799,8 +1801,10 @@ def test_show_selected_label_round_trip_honors_each_colormap():
     data = np.arange(5, dtype=np.int32)[:, np.newaxis].repeat(5, axis=1)
     layer = Labels(data)
 
-    # Combobox path AUTO -> DIRECT (non-default colors). The new direct
-    # cmap has the default use_selection=False.
+    # Direct API path AUTO -> DIRECT: assigning a fresh
+    # DirectLabelColormap (default use_selection=False) flips the layer
+    # state to match. (The qt combobox path pre-syncs first; see
+    # test_color_mode_switch_preserves_show_selected_label.)
     direct_cmap = DirectLabelColormap(
         color_dict={
             0: [0, 0, 0, 0],
@@ -1817,9 +1821,10 @@ def test_show_selected_label_round_trip_honors_each_colormap():
     layer.show_selected_label = True
     assert layer.colormap.use_selection is True
 
-    # Combobox path DIRECT -> AUTO. The stashed _original_random_colormap
-    # has use_selection=False (its default); the proxy reads from the new
-    # active colormap, so show_selected_label flips to False.
+    # Direct API path DIRECT -> AUTO: the stashed
+    # _original_random_colormap has use_selection=False (its default);
+    # the layer adopts that value on assignment, so
+    # show_selected_label flips to False.
     layer.colormap = layer._original_random_colormap
     assert (
         layer.show_selected_label
