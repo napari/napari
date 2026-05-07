@@ -44,7 +44,7 @@ class VispyPointsLayer(VispyBaseLayer):
         # Set vispy data, noting that the order of the points needs to be
         # reversed to make the most recently added point appear on top
         # and the rows / columns need to be switched for vispy's x / y ordering
-        if len(self.layer._indices_view) == 0:
+        if len(self.layer._view_indices) == 0:
             # always pass one invisible point to avoid issues
             data = np.zeros((1, self.layer._slice_input.ndisplay))
             size = np.zeros(1)
@@ -98,7 +98,7 @@ class VispyPointsLayer(VispyBaseLayer):
 
             # _highlight_index contains indices into the view arrays, but we can get the
             # actual data indices once to avoid materializing the entire view for each property
-            data_indices = self.layer._indices_view[
+            data_indices = self.layer._view_indices[
                 self.layer._highlight_index
             ]
 
@@ -107,15 +107,7 @@ class VispyPointsLayer(VispyBaseLayer):
             ]
             if data.ndim == 1:
                 data = np.expand_dims(data, axis=0)
-            if isinstance(self.layer._view_size_scale, np.ndarray):
-                size = (
-                    self.layer.size[data_indices]
-                    * self.layer._view_size_scale[self.layer._highlight_index]
-                )
-            else:
-                size = (
-                    self.layer.size[data_indices] * self.layer._view_size_scale
-                )
+            size = self.layer.size[data_indices]
             border_width = self.layer.border_width[data_indices]
             if self.layer.border_width_is_relative:
                 border_width = border_width * size

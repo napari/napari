@@ -78,7 +78,7 @@ def _has_visible_text(layer: Points | Shapes) -> bool:
         and text.string.constant == ''
     ):
         return False
-    return len(layer._indices_view) != 0
+    return len(layer._view_indices) != 0
 
 
 @lru_cache(maxsize=128)
