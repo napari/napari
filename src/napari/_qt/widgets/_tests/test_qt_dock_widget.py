@@ -19,7 +19,8 @@ def test_add_dock_widget(make_napari_viewer):
     assert not dwidg.is_vertical
     assert viewer.window._qt_window.findChild(QDockWidget, 'test')
     assert dwidg.widget() == widg
-    dwidg._on_visibility_changed(True)  # smoke test
+    assert dwidg.titleBarWidget() is dwidg.title
+    assert dwidg.title.vertical
     assert viewer.window.dock_widgets['test'] is widg
     with pytest.raises(KeyError):
         assert viewer.window.dock_widgets['test2']
@@ -29,7 +30,8 @@ def test_add_dock_widget(make_napari_viewer):
     assert dwidg2.is_vertical
     assert viewer.window._qt_window.findChild(QDockWidget, 'test2')
     assert dwidg2.widget() == widg2
-    dwidg2._on_visibility_changed(True)  # smoke test
+    assert dwidg2.titleBarWidget() is dwidg2.title
+    assert not dwidg2.title.vertical
 
     with pytest.raises(ValueError, match='area argument must be'):
         viewer.window.add_dock_widget(widg2, name='test2', area='under')
@@ -146,6 +148,76 @@ def test_adding_stretch(make_napari_viewer):
     dw = viewer.window.add_dock_widget(widg, area='bottom')
     assert widg.layout().count() == 1
     dw.close()
+
+
+def test_float_unfloat_title_bar(make_napari_viewer):
+    """Float then unfloat must preserve the custom title bar with correct orientation.
+
+    Regression test for https://github.com/napari/napari/issues/8887.
+
+    The custom title bar must always be set (docked and floating) so that
+    napari's dark theming and custom controls are always visible.
+
+    Orientation rules:
+      - docked left/right (is_vertical=True)  → vertical=False (horizontal bar)
+      - docked top/bottom (is_vertical=False) → vertical=True  (side bar)
+      - floating                               → always vertical=False
+    """
+    viewer = make_napari_viewer()
+    widg = QPushButton('button')
+    dw = viewer.window.add_dock_widget(widg, name='test', area='right')
+
+    assert dw.titleBarWidget() is dw.title
+    assert not dw.title.vertical  # right-docked -> horizontal bar
+
+    dw.setFloating(True)
+    assert dw.isFloating()
+    assert dw.titleBarWidget() is dw.title
+    # Floating always uses a horizontal title bar regardless of window size.
+    assert not dw.title.vertical
+
+    # Re-dock the widget.
+    dw.setFloating(False)
+    assert not dw.isFloating()
+    # Custom title bar restored with correct orientation.
+    assert dw.titleBarWidget() is dw.title
+
+
+def test_float_from_bottom_clears_vertical_titlebar_feature(
+    make_napari_viewer,
+):
+    """Floating a widget from top/bottom must not leave the title bar as a left-side strip.
+
+    Regression test for https://github.com/napari/napari/issues/8887.
+
+    When docked at top/bottom Qt sets DockWidgetVerticalTitleBar, placing the
+    custom title bar on the left side of the widget.  If that feature is not
+    cleared when the widget becomes floating, the title bar ends up as a
+    narrow unusable strip on the left edge of the floating window.
+    """
+    from qtpy.QtWidgets import QDockWidget
+
+    viewer = make_napari_viewer()
+    widg = QPushButton('button')
+    dw = viewer.window.add_dock_widget(widg, name='test', area='bottom')
+
+    # Docked at bottom: vertical feature should be set (sidebar-style bar).
+    assert (
+        dw.features()
+        & QDockWidget.DockWidgetFeature.DockWidgetVerticalTitleBar
+    )
+
+    # Float the widget.
+    dw.setFloating(True)
+    assert dw.isFloating()
+    # DockWidgetVerticalTitleBar must be cleared so the title bar spans the
+    # top of the floating window, not the left edge.
+    assert not (
+        dw.features()
+        & QDockWidget.DockWidgetFeature.DockWidgetVerticalTitleBar
+    )
+    assert dw.titleBarWidget() is dw.title
+    assert not dw.title.vertical  # horizontal bar on the floating window
 
 
 def test_combine_widgets_error():
