@@ -27,7 +27,7 @@ beautifulsoup4==4.14.3
     # via gdown
 bermuda==0.1.7
     # via napari (pyproject.toml)
-build==1.4.4
+build==1.5.0
     # via npe2
 cachey==0.2.1
     # via napari (pyproject.toml)
@@ -58,7 +58,7 @@ coverage==7.13.5
     # via napari (pyproject.toml)
 cuda-bindings==13.2.0
     # via torch
-cuda-pathfinder==1.5.3
+cuda-pathfinder==1.5.4
     # via cuda-bindings
 cuda-toolkit==13.0.2
     # via torch
@@ -106,7 +106,7 @@ frozenlist==1.8.0
     # via
     #   aiohttp
     #   aiosignal
-fsspec==2026.3.0
+fsspec==2026.4.0
     # via
     #   napari (pyproject.toml)
     #   dask
@@ -129,7 +129,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.152.3
+hypothesis==6.152.4
     # via napari (pyproject.toml)
 idna==3.13
     # via
@@ -162,7 +162,7 @@ ipython-pygments-lexers==1.1.1
     # via
     #   ipython
     #   qtconsole
-jedi==0.19.2
+jedi==0.20.0
     # via ipython
 jinja2==3.1.6
     # via
@@ -307,7 +307,6 @@ numpy==2.4.4
     #   tifffile
     #   torchvision
     #   trackastra
-    #   triangle
     #   vispy
     #   xarray
     #   zarr
@@ -377,7 +376,7 @@ pandas==3.0.2
     #   nilearn
     #   trackastra
     #   xarray
-parso==0.8.6
+parso==0.8.7
     # via jedi
 partd==1.4.2
     # via dask
@@ -637,7 +636,7 @@ tensorstore==0.1.82
     #   napari (pyproject.toml)
 threadpoolctl==3.6.0
     # via scikit-learn
-tifffile==2026.4.11
+tifffile==2026.5.2
     # via
     #   napari (pyproject.toml)
     #   napari (pyproject.toml:gallery)
@@ -677,11 +676,9 @@ traitlets==5.14.3
     #   jupyter-core
     #   matplotlib-inline
     #   qtconsole
-triangle==20250106
-    # via napari (pyproject.toml)
 triton==3.6.0
     # via torch
-typer==0.25.0
+typer==0.25.1
     # via
     #   geff
     #   npe2
@@ -715,13 +712,13 @@ urllib3==2.6.3
     # via
     #   distributed
     #   requests
-virtualenv==21.2.4
+virtualenv==21.3.0
     # via napari (pyproject.toml)
 vispy==0.16.1
     # via
     #   napari (pyproject.toml)
     #   napari-svg
-wcwidth==0.6.0
+wcwidth==0.7.0
     # via prompt-toolkit
 wrapt==2.1.2
     # via
@@ -733,7 +730,7 @@ xarray==2026.4.0
     #   napari (pyproject.toml:gallery)
 yarl==1.23.0
     # via aiohttp
-zarr==3.1.6
+zarr==3.2.0
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
