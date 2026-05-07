@@ -1,6 +1,6 @@
 # Contributing to GitHub workflows and actions
 
-*Created: 2024-11-11; Updated:*
+*Created: 2024-11-11; Updated: 2026-05-05*
 
 See the napari website for more detailed contributor information:
 - [deployment](https://napari.org/stable/developers/contributing/documentation/docs_deployment.html)
@@ -42,9 +42,3 @@ napari uses the following:
    - `labeler.yml` is a labels config file for labeler action
    - `BOT_REPO_UPDATE_FAIL_TEMPLATE.md` is an bot failure notification template
    - `TEST_FAIL_TEMPLATE.md` is a test failure notification template
-
-## CODEOWNERS
-
-This `CODEOWNERS` file identifies which individuals are notified if a
-particular file or directory is found in a PR. Core team members can
-update if desired.
