@@ -169,3 +169,4 @@ jobs:
             GHA_TOKEN_MAIN_REPO: ${{ secrets.GHA_TOKEN_NAPARI_BOT_MAIN_REPO }}
             PR_NUMBER: ${{ github.event.issue.number }}
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            PYTHON_VERSION_FOR_DESCRIPTION: "3.14"
