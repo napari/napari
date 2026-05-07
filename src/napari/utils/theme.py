@@ -6,6 +6,7 @@ import sys
 from ast import literal_eval
 from contextlib import suppress
 from typing import Any, Literal
+from warnings import warn
 
 import npe2
 from pydantic import field_validator
@@ -226,17 +227,41 @@ def template(css: str, **theme):
 
 
 def get_system_theme() -> str:
-    """Return the system default theme, either 'dark', or 'light'."""
-    try:
-        from napari._vendor import darkdetect
-    except ImportError:
-        return 'dark'
-    try:
-        id_ = darkdetect.theme().lower()
-    except AttributeError:
-        id_ = 'dark'
+    """Return the system default theme, either 'dark', or 'light'.
 
-    return id_
+    Note: uses Qt6 (version >6.5) property colorScheme
+    """
+    try:
+        from qtpy import QT6
+        from qtpy.QtCore import Qt
+        from qtpy.QtGui import QGuiApplication
+    except (ImportError, RuntimeError):
+        return 'dark'
+
+    if not QT6:
+        # can remove this check once pyqt5 support is dropped
+        warn(
+            trans._(
+                'System theme detection requires a Qt6 backend. '
+                'Please switch to PyQt6 or PySide6 to use it.',
+                deferred=True,
+            ),
+            stacklevel=2,
+        )
+        return 'dark'
+
+    style_hints = QGuiApplication.styleHints()
+    if style_hints is None:
+        return 'dark'
+
+    scheme = style_hints.colorScheme()
+    match scheme:
+        case Qt.ColorScheme.Dark:
+            return 'dark'
+        case Qt.ColorScheme.Light:
+            return 'light'
+        case _:
+            return 'dark'
 
 
 def get_theme(theme_id: str):
