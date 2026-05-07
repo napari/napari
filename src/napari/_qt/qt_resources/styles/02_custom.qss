@@ -750,9 +750,8 @@ QPushButton#lockButton:!checked {
 
 /* ------------- Set size for dims sorter --------- */
 
-QtDimsSorter > QtListView {
-  max-height: 100px;
-  max-width: 150px;
+QtDimsSorter > QtListView::item {
+  padding: 2px;
 }
 
 /* ------------- Lock check buttons for dims sorter --------- */
