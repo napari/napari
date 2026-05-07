@@ -999,6 +999,35 @@ def test_adjust_contrast_limits_range_set_data():
     )
 
 
+_OOB_TRANSLATE_DATA = np.random.default_rng(0).uniform(500, 1000, (3, 6, 6))
+
+
+@pytest.mark.parametrize(
+    'data',
+    [
+        da.from_array(_OOB_TRANSLATE_DATA),
+        xr.DataArray(_OOB_TRANSLATE_DATA),
+    ],
+    ids=['dask', 'xarray'],
+)
+def test_contrast_limits_non_numpy_out_of_bounds_translate(data):
+    """Non-numpy arrays with a translate that places world origin outside the
+    data extent should still compute contrast_limits from the actual data.
+
+    Regression test for https://github.com/napari/napari/issues/8755.
+    """
+    # translate=[1, 0, 0] with scale=[0.3, ...] places the data at z ∈ [1, 1.9];
+    # world coordinate 0 is outside the data extent on the non-displayed z axis,
+    # so the initial slice point (world origin) is out of bounds.
+    layer = Image(data, scale=[0.3, 0.1, 0.1], translate=[1.0, 0.0, 0.0])
+    # Numpy takes the eager path in __init__ and is always correct; use it as
+    # the reference.
+    ref = Image(
+        _OOB_TRANSLATE_DATA, scale=[0.3, 0.1, 0.1], translate=[1.0, 0.0, 0.0]
+    )
+    npt.assert_allclose(layer.contrast_limits, ref.contrast_limits)
+
+
 def test_thick_slice_multiscale():
     data = np.ones((5, 5, 5)) * np.arange(5).reshape(-1, 1, 1)
     data_zoom = data.repeat(2, 0).repeat(2, 1).repeat(2, 2)
