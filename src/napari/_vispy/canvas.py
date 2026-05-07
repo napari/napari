@@ -12,6 +12,7 @@ from weakref import WeakSet
 
 import numpy as np
 from OpenGL.error import GLError
+from qtpy.QtCore import QTimer
 from superqt.utils import qthrottled
 from vispy.scene import Grid, SceneCanvas as SceneCanvas_, ViewBox, Widget
 
@@ -924,6 +925,21 @@ class VispyCanvas:
             self._update_overlay_canvas_positions
         )
 
+    def _defer_viewer_overlay_visible_disconnect(
+        self, overlay: Overlay
+    ) -> None:
+        # Disconnect the lazy visible callback after the current emission.
+        def _disconnect_if_initialized() -> None:
+            if overlay not in self.viewer._overlays.values():
+                return
+            if overlay not in self._overlay_to_visual:
+                return
+            overlay.events.visible.disconnect(
+                self._update_viewer_overlays, missing_ok=True
+            )
+
+        QTimer.singleShot(0, _disconnect_if_initialized)
+
     def _create_or_update_vispy_viewer_overlay(
         self,
         overlay: Overlay,
@@ -978,7 +994,9 @@ class VispyCanvas:
                     self._update_viewer_overlays, unique=True
                 )
                 continue
-            overlay.events.visible.disconnect(self._update_viewer_overlays)
+            # The disconnection needs to happen after the event emission is finished
+            # or else it will be consumed
+            self._defer_viewer_overlay_visible_disconnect(overlay)
 
             vispy_overlays = self._overlay_to_visual.setdefault(overlay, [])
 
