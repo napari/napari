@@ -16,7 +16,6 @@ from napari._qt.widgets.qt_mode_buttons import QtModePushButton
 from napari.layers.points._points_constants import Mode
 from napari.utils.action_manager import action_manager
 from napari.utils.events import disconnect_events
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     import napari.layers
@@ -109,9 +108,7 @@ class QtPointsControls(QtLayerControls):
         self._face_color_control = QtFaceColorControl(
             self,
             layer,
-            tooltip=trans._(
-                'Click to set the face color of currently selected points and any added afterwards.'
-            ),
+            tooltip='Click to set the face color of currently selected points and any added afterwards.',
         )
         self._add_widget_controls(self._face_color_control)
         self._border_color_control = QtBorderColorControl(self, layer)

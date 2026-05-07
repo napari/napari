@@ -65,7 +65,6 @@ from napari.utils.status_messages import (
     generate_layer_status_strings,
 )
 from napari.utils.transforms import Affine, CompositeAffine, TransformChain
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     import numpy.typing as npt
@@ -559,12 +558,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
         if scale is not None and not np.all(scale):
             raise ValueError(
-                trans._(
-                    "Layer {name} is invalid because it has scale values of 0. The layer's scale is currently {scale}",
-                    deferred=True,
-                    name=repr(name),
-                    scale=repr(scale),
-                )
+                f"Layer {name!r} is invalid because it has scale values of 0. The layer's scale is currently {scale!r}"
             )
 
         # Needs to be imported here to avoid circular import in _source
@@ -748,11 +742,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             return mode
 
         if mode not in self._modeclass:
-            raise ValueError(
-                trans._(
-                    'Mode not recognized: {mode}', deferred=True, mode=mode
-                )
-            )
+            raise ValueError(f'Mode not recognized: {mode}')
 
         for callback_list, mode_dict in [
             (self.mouse_drag_callbacks, self._drag_modes),
@@ -773,9 +763,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self._overlays['transform_box'].visible = mode == TRANSFORM
 
         if mode == TRANSFORM:
-            self.help = trans._(
-                'hold <space> to move camera, hold <shift> to preserve aspect ratio and rotate in 45° increments'
-            )
+            self.help = 'hold <space> to move camera, hold <shift> to preserve aspect ratio and rotate in 45° increments'
         elif mode == PAN_ZOOM:
             self.help = ''
 
@@ -904,11 +892,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     def opacity(self, opacity: float) -> None:
         if not 0.0 <= opacity <= 1.0:
             raise ValueError(
-                trans._(
-                    'opacity must be between 0.0 and 1.0; got {opacity}',
-                    deferred=True,
-                    opacity=opacity,
-                )
+                f'opacity must be between 0.0 and 1.0; got {opacity}'
             )
 
         self._opacity = float(opacity)
@@ -2425,12 +2409,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
         if layer_type is None or layer_type not in layers.NAMES:
             raise ValueError(
-                trans._(
-                    "Unrecognized layer_type: '{layer_type}'. Must be one of: {layer_names}.",
-                    deferred=True,
-                    layer_type=layer_type,
-                    layer_names=layers.NAMES,
-                )
+                f"Unrecognized layer_type: '{layer_type}'. Must be one of: {layers.NAMES}."
             )
 
         Cls = getattr(layers, layer_type.title())
@@ -2443,12 +2422,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
             bad_key = str(exc).split('keyword argument ')[-1]
             raise TypeError(
-                trans._(
-                    '_add_layer_from_data received an unexpected keyword argument ({bad_key}) for layer type {layer_type}',
-                    deferred=True,
-                    bad_key=bad_key,
-                    layer_type=layer_type,
-                )
+                f'_add_layer_from_data received an unexpected keyword argument ({bad_key}) for layer type {layer_type}'
             ) from exc
 
     @abstractmethod

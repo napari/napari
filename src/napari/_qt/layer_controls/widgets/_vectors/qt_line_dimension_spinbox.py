@@ -10,7 +10,6 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
 )
 from napari._qt.utils import attr_to_settr
 from napari.layers import Vectors
-from napari.utils.translations import trans
 
 
 class QtWidthSpinBoxControl(QtWidgetControlsBase):
@@ -52,7 +51,7 @@ class QtWidthSpinBoxControl(QtWidgetControlsBase):
                 'setValue',
             )
         )
-        self.width_spinbox_label = QtWrappedLabel(trans._('width:'))
+        self.width_spinbox_label = QtWrappedLabel('width:')
 
     def change_width(self, value) -> None:
         """Change edge line width of vectors on the layer model.
@@ -110,7 +109,7 @@ class QtLengthSpinBoxControl(QtWidgetControlsBase):
                 'setValue',
             )
         )
-        self.length_spinbox_label = QtWrappedLabel(trans._('length:'))
+        self.length_spinbox_label = QtWrappedLabel('length:')
 
     def change_length(self, value: float) -> None:
         """Change length of vectors on the layer model.

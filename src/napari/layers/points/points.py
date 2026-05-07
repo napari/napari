@@ -59,7 +59,6 @@ from napari.utils.events import Event
 from napari.utils.events.custom_types import Array
 from napari.utils.geometry import project_points_onto_plane, rotate_points
 from napari.utils.transforms import Affine
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from collections.abc import (
@@ -770,11 +769,7 @@ class Points(Layer):
                 color_manager.color_mode = ColorMode.DIRECT
                 color_manager.color_properties = None
                 warnings.warn(
-                    trans._(
-                        'property used for {name} dropped',
-                        deferred=True,
-                        name=name,
-                    ),
+                    f'property used for {name} dropped',
                     RuntimeWarning,
                 )
             else:
@@ -937,10 +932,7 @@ class Points(Layer):
             self._size = np.broadcast_to(size, len(self.data)).copy()
         except ValueError as e:
             raise ValueError(
-                trans._(
-                    'Size is not compatible for broadcasting (may be anisotropic)',
-                    deferred=True,
-                )
+                'Size is not compatible for broadcasting (may be anisotropic)'
             ) from e
         # TODO: technically not needed to cleat the non-augmented extent... maybe it's fine like this to avoid complexity
         self.refresh(highlight=False)
@@ -955,18 +947,10 @@ class Points(Layer):
         if isinstance(size, list | tuple | np.ndarray):
             size = size[-1]
         if not isinstance(size, numbers.Number):
-            raise TypeError(
-                trans._(
-                    'currrent size must be a number',
-                    deferred=True,
-                )
-            )
+            raise TypeError('currrent size must be a number')
         if size < 0:
             raise ValueError(
-                trans._(
-                    'current_size value must be positive.',
-                    deferred=True,
-                ),
+                'current_size value must be positive.',
             )
 
         self._current_size = size
@@ -991,10 +975,7 @@ class Points(Layer):
         """
         if value < 0:
             warnings.warn(
-                message=trans._(
-                    'antialiasing value must be positive, value will be set to 0.',
-                    deferred=True,
-                ),
+                message='antialiasing value must be positive, value will be set to 0.',
                 category=RuntimeWarning,
             )
         self._antialiasing = max(0, value)
@@ -1044,19 +1025,11 @@ class Points(Layer):
 
         # border width cannot be negative
         if np.any(border_width < 0):
-            raise ValueError(
-                trans._(
-                    'All border_width must be > 0',
-                    deferred=True,
-                )
-            )
+            raise ValueError('All border_width must be > 0')
         # if relative border width is enabled, border_width must be between 0 and 1
         if self.border_width_is_relative and np.any(border_width > 1):
             raise ValueError(
-                trans._(
-                    'All border_width must be between 0 and 1 if border_width_is_relative is enabled',
-                    deferred=True,
-                )
+                'All border_width must be between 0 and 1 if border_width_is_relative is enabled'
             )
 
         self._border_width = border_width
@@ -1074,10 +1047,7 @@ class Points(Layer):
             (self.border_width > 1) | (self.border_width < 0)
         ):
             raise ValueError(
-                trans._(
-                    'border_width_is_relative can only be enabled if border_width is between 0 and 1',
-                    deferred=True,
-                )
+                'border_width_is_relative can only be enabled if border_width is between 0 and 1'
             )
         self._border_width_is_relative = border_width_is_relative
         self.events.border_width_is_relative()
@@ -1310,20 +1280,11 @@ class Points(Layer):
                         ),
                     }
                     warnings.warn(
-                        trans._(
-                            '_{attribute}_color_property was not set, setting to: {new_color_property}',
-                            deferred=True,
-                            attribute=attribute,
-                            new_color_property=new_color_property,
-                        )
+                        f'_{attribute}_color_property was not set, setting to: {new_color_property}'
                     )
                 else:
                     raise ValueError(
-                        trans._(
-                            'There must be a valid Points.properties to use {color_mode}',
-                            deferred=True,
-                            color_mode=color_mode,
-                        )
+                        f'There must be a valid Points.properties to use {color_mode}'
                     )
 
             # ColorMode.COLORMAP can only be applied to numeric properties
@@ -1332,10 +1293,7 @@ class Points(Layer):
                 self.features[color_property].dtype.type, np.number
             ):
                 raise TypeError(
-                    trans._(
-                        'selected property must be numeric to use ColorMode.COLORMAP',
-                        deferred=True,
-                    )
+                    'selected property must be numeric to use ColorMode.COLORMAP'
                 )
             color_manager.color_mode = color_mode
 

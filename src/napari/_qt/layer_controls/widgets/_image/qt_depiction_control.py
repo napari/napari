@@ -15,7 +15,6 @@ from napari._qt.utils import qt_signals_blocked
 from napari.layers import Image
 from napari.layers.image._image_constants import VolumeDepiction
 from napari.utils.action_manager import action_manager
-from napari.utils.translations import trans
 
 
 class PlaneNormalButtons(QWidget):
@@ -42,7 +41,7 @@ class PlaneNormalButtons(QWidget):
         self.x_button = QPushButton('x')
         self.y_button = QPushButton('y')
         self.z_button = QPushButton('z')
-        self.oblique_button = QPushButton(trans._('oblique'))
+        self.oblique_button = QPushButton('oblique')
         action_manager.bind_button(
             'napari:orient_plane_normal_along_z',
             self.z_button,
@@ -113,11 +112,11 @@ class QtDepictionControl(QtWidgetControlsBase):
         self.depiction_combobox.currentTextChanged.connect(
             self.change_depiction
         )
-        self.depiction_label = QtWrappedLabel(trans._('depiction:'))
+        self.depiction_label = QtWrappedLabel('depiction:')
 
         # plane controls
         self.plane_normal_buttons = PlaneNormalButtons(parent)
-        self.plane_normal_label = QtWrappedLabel(trans._('plane normal:'))
+        self.plane_normal_label = QtWrappedLabel('plane normal:')
 
         self.plane_thickness_slider = QLabeledDoubleSlider(
             Qt.Orientation.Horizontal, parent
@@ -129,9 +128,7 @@ class QtDepictionControl(QtWidgetControlsBase):
         self.plane_thickness_slider.valueChanged.connect(
             self.change_plane_thickness
         )
-        self.plane_thickness_label = QtWrappedLabel(
-            trans._('plane thickness:')
-        )
+        self.plane_thickness_label = QtWrappedLabel('plane thickness:')
 
     def change_depiction(self, text: str) -> None:
         self._layer.depiction = text

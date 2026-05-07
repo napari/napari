@@ -54,7 +54,6 @@ from napari.utils.key_bindings import KeymapHandler
 from napari.utils.misc import in_ipython, in_jupyter
 from napari.utils.naming import CallerFrame
 from napari.utils.notifications import show_info
-from napari.utils.translations import trans
 
 from napari._vispy import VispyCanvas, create_vispy_layer  # isort:skip
 
@@ -300,7 +299,7 @@ class QtViewer(QSplitter):
             self._dockLayerList = QtViewerDockWidget(
                 self,
                 layerList,
-                name=trans._('layer list'),
+                name='layer list',
                 area='left',
                 allowed_areas=['left', 'right'],
                 object_name='layer list',
@@ -315,7 +314,7 @@ class QtViewer(QSplitter):
             self._dockLayerControls = QtViewerDockWidget(
                 self,
                 self.controls,
-                name=trans._('layer controls'),
+                name='layer controls',
                 area='left',
                 allowed_areas=['left', 'right'],
                 object_name='layer controls',
@@ -330,7 +329,7 @@ class QtViewer(QSplitter):
             self._dockConsole = QtViewerDockWidget(
                 self,
                 QWidget(),
-                name=trans._('console'),
+                name='console',
                 area='bottom',
                 allowed_areas=['top', 'bottom'],
                 object_name='console',
@@ -378,7 +377,7 @@ class QtViewer(QSplitter):
             return QtViewerDockWidget(
                 self,
                 QtPerformance(),
-                name=trans._('performance'),
+                name='performance',
                 area='bottom',
             )
         return None
@@ -520,19 +519,15 @@ class QtViewer(QSplitter):
                 return console
         except ModuleNotFoundError:
             warnings.warn(
-                trans._(
-                    'napari-console not found. It can be installed with'
-                    ' "pip install napari_console"'
-                ),
+                'napari-console not found. It can be installed with'
+                ' "pip install napari_console"',
                 stacklevel=1,
             )
             return None
         except ImportError:
             traceback.print_exc()
             warnings.warn(
-                trans._(
-                    'error importing napari-console. See console for full error.'
-                ),
+                'error importing napari-console. See console for full error.',
                 stacklevel=1,
             )
             return None
@@ -728,14 +723,14 @@ class QtViewer(QSplitter):
         """
         msg = ''
         if not len(self.viewer.layers):
-            msg = trans._('There are no layers in the viewer to save')
+            msg = 'There are no layers in the viewer to save'
         elif selected and not len(self.viewer.layers.selection):
-            msg = trans._(
+            msg = (
                 'Please select one or more layers to save,'
                 '\nor use "Save all layers..."'
             )
         if msg:
-            raise OSError(trans._('Nothing to save'))
+            raise OSError('Nothing to save')
 
         # prepare list of extensions for drop down menu.
         ext_str, writers = _npe2.file_extensions_string_for_layers(
@@ -744,7 +739,7 @@ class QtViewer(QSplitter):
             else self.viewer.layers
         )
 
-        msg = trans._('selected') if selected else trans._('all')
+        msg = 'selected' if selected else 'all'
         dlg = QFileDialog()
         hist = get_save_history()
         dlg.setHistory(hist)
@@ -757,7 +752,7 @@ class QtViewer(QSplitter):
             )
         filename, selected_filter = dlg.getSaveFileName(
             self,  # parent
-            trans._('Save {msg} layers', msg=msg),  # caption
+            f'Save {msg} layers',  # caption
             # home dir by default if selected all, home dir and file name if only 1 layer
             str(
                 Path(hist[0]) / selected_layer_name
@@ -770,12 +765,9 @@ class QtViewer(QSplitter):
             ),
         )
         logging.getLogger('napari').debug(
-            trans._(
-                'QFileDialog - filename: {filename} '
-                'selected_filter: {selected_filter}',
-                filename=filename or None,
-                selected_filter=selected_filter or None,
-            )
+            'QFileDialog - filename: %s selected_filter: %s',
+            filename or None,
+            selected_filter or None,
         )
 
         if filename:
@@ -791,12 +783,7 @@ class QtViewer(QSplitter):
 
             if not saved:
                 raise OSError(
-                    trans._(
-                        'File {filename} save failed.\n{error_messages}',
-                        deferred=True,
-                        filename=filename,
-                        error_messages=error_messages,
-                    )
+                    f'File {filename} save failed.\n{error_messages}'
                 )
 
             update_save_history(saved[0])
@@ -880,11 +867,7 @@ class QtViewer(QSplitter):
 
         if size is not None and len(size) != 2:
             raise ValueError(
-                trans._(
-                    'screenshot size must be 2 values, got {len_size}',
-                    deferred=True,
-                    len_size=len(size),
-                )
+                f'screenshot size must be 2 values, got {len(size)}'
             )
 
         try:
@@ -997,7 +980,7 @@ class QtViewer(QSplitter):
 
     def _open_files_dialog(self, choose_plugin=False, stack=False):
         """Add files from the menubar."""
-        filenames = self._open_file_dialog_uni(trans._('Select file(s)...'))
+        filenames = self._open_file_dialog_uni('Select file(s)...')
 
         if filenames:
             self._qt_open(filenames, choose_plugin=choose_plugin, stack=stack)
@@ -1015,7 +998,7 @@ class QtViewer(QSplitter):
 
         folder = dlg.getExistingDirectory(
             self,
-            trans._('Select folder...'),
+            'Select folder...',
             hist[0],  # home dir by default
             (
                 QFileDialog.DontUseNativeDialog
@@ -1160,9 +1143,7 @@ class QtViewer(QSplitter):
 
     def _set_drag_status(self):
         """Set dedicated status message when dragging files into viewer"""
-        self.viewer.status = trans._(
-            'Hold <Alt> key to open plugin selection. Hold <Shift> to open files as stack.'
-        )
+        self.viewer.status = 'Hold <Alt> key to open plugin selection. Hold <Shift> to open files as stack.'
 
     def _image_from_clipboard(self):
         """Insert image from clipboard as a new layer if clipboard contains an image or link."""
@@ -1318,10 +1299,7 @@ class QtViewer(QSplitter):
             and len(paths) != len(rois)
         ):
             raise ValueError(
-                trans._(
-                    'The number of file paths does not match the number of ROI shapes',
-                    deferred=True,
-                )
+                'The number of file paths does not match the number of ROI shapes'
             )
 
         if isinstance(paths, str | Path):
@@ -1393,12 +1371,7 @@ class QtViewer(QSplitter):
             upper-left corner of the rendered region.
         """
         if not isinstance(scale, float | int):
-            raise TypeError(
-                trans._(
-                    'Scale must be a float or an int.',
-                    deferred=True,
-                )
-            )
+            raise TypeError('Scale must be a float or an int.')
 
         img = QImg2array(
             self._screenshot(

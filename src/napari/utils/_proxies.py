@@ -8,7 +8,6 @@ from typing import Any, Generic, TypeVar, Union
 import wrapt
 
 from napari.utils import misc
-from napari.utils.translations import trans
 
 _T = TypeVar('_T')
 _K = TypeVar('_K', bound=Hashable)
@@ -29,21 +28,13 @@ class ReadOnlyWrapper(wrapt.ObjectProxy):
             name not in ('__wrapped__', '_self_exceptions')
             and name not in self._self_exceptions
         ):
-            raise TypeError(
-                trans._(
-                    'cannot set attribute {name}',
-                    deferred=True,
-                    name=name,
-                )
-            )
+            raise TypeError(f'cannot set attribute {name}')
 
         super().__setattr__(name, val)
 
     def __setitem__(self, name: str, val: Any) -> None:
         if name not in self._self_exceptions:
-            raise TypeError(
-                trans._('cannot set item {name}', deferred=True, name=name)
-            )
+            raise TypeError(f'cannot set item {name}')
         super().__setitem__(name, val)
 
 
@@ -64,26 +55,16 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
     @staticmethod
     def _private_attr_warning(name: str, typ: str) -> None:
         warnings.warn(
-            trans._(
-                "Private attribute access ('{typ}.{name}') in this context "
-                '(e.g. inside a plugin widget or dock widget) is deprecated '
-                'and will be unavailable in version 0.7.0',
-                deferred=True,
-                name=name,
-                typ=typ,
-            ),
+            f"Private attribute access ('{typ}.{name}') in this context "
+            '(e.g. inside a plugin widget or dock widget) is deprecated '
+            'and will be unavailable in version 0.7.0',
             category=FutureWarning,
             stacklevel=3,
         )
 
         # This is code prepared for a moment where we want to block access to private attributes
         # raise AttributeError(
-        #     trans._(
-        #         "Private attribute set/access ('{typ}.{name}') not allowed in this context.",
-        #         deferred=True,
-        #         name=name,
-        #         typ=typ,
-        #     )
+        #     "Private attribute set/access ('{typ}.{name}') not allowed in this context.",
         # )
 
     @staticmethod

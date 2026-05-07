@@ -26,7 +26,6 @@ from napari.types import LayerDataType
 from napari.utils.colormaps import Colormap, ValidColormapArg
 from napari.utils.events import Event
 from napari.utils.events.custom_types import Array
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -389,10 +388,7 @@ class Vectors(Layer):
                 self._edge.color_mode = ColorMode.DIRECT
                 self._edge.color_properties = None
                 warnings.warn(
-                    trans._(
-                        'property used for edge_color dropped',
-                        deferred=True,
-                    ),
+                    'property used for edge_color dropped',
                     RuntimeWarning,
                 )
             else:
@@ -611,20 +607,12 @@ class Vectors(Layer):
                         ],
                     }
                     warnings.warn(
-                        trans._(
-                            'edge_color property was not set, setting to: {color_property}',
-                            deferred=True,
-                            color_property=color_property,
-                        ),
+                        f'edge_color property was not set, setting to: {color_property}',
                         RuntimeWarning,
                     )
                 else:
                     raise ValueError(
-                        trans._(
-                            'There must be a valid Points.properties to use {edge_color_mode}',
-                            deferred=True,
-                            edge_color_mode=edge_color_mode,
-                        )
+                        f'There must be a valid Points.properties to use {edge_color_mode}'
                     )
 
             # ColorMode.COLORMAP can only be applied to numeric properties
@@ -633,10 +621,7 @@ class Vectors(Layer):
                 np.number,
             ):
                 raise TypeError(
-                    trans._(
-                        'selected property must be numeric to use ColorMode.COLORMAP',
-                        deferred=True,
-                    )
+                    'selected property must be numeric to use ColorMode.COLORMAP'
                 )
 
             self._edge.color_mode = edge_color_mode

@@ -7,7 +7,6 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
 from napari._qt.utils import qt_signals_blocked
 from napari.layers import Image, Points, Vectors
 from napari.utils.events.event_utils import connect_setattr
-from napari.utils.translations import trans
 
 
 class QtProjectionModeControl(QtWidgetControlsBase):
@@ -51,9 +50,7 @@ class QtProjectionModeControl(QtWidgetControlsBase):
 
         self._on_projection_mode_change()
 
-        self.projection_combobox_label = QtWrappedLabel(
-            trans._('projection mode:')
-        )
+        self.projection_combobox_label = QtWrappedLabel('projection mode:')
 
     def _on_projection_mode_change(self) -> None:
         with qt_signals_blocked(self.projection_combobox):

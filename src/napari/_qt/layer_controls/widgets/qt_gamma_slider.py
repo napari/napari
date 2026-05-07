@@ -9,7 +9,6 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
 from napari._qt.utils import attr_to_settr
 from napari.layers.base.base import Layer
 from napari.utils.events.event_utils import connect_setattr
-from napari.utils.translations import trans
 
 
 class QtGammaSliderControl(QtWidgetControlsBase):
@@ -46,7 +45,7 @@ class QtGammaSliderControl(QtWidgetControlsBase):
         )
         self.gamma_slider = sld
 
-        self.gamma_slider_label = QtWrappedLabel(trans._('gamma:'))
+        self.gamma_slider_label = QtWrappedLabel('gamma:')
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
         return [(self.gamma_slider_label, self.gamma_slider)]

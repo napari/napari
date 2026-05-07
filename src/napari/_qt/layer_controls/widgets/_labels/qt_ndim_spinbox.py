@@ -10,7 +10,6 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
 )
 from napari._qt.utils import qt_signals_blocked
 from napari.layers import Labels
-from napari.utils.translations import trans
 
 
 class QtNdimSpinBoxControl(QtWidgetControlsBase):
@@ -44,7 +43,7 @@ class QtNdimSpinBoxControl(QtWidgetControlsBase):
         # Setup widgets
         ndim_sb = QSpinBox()
         self.ndim_spinbox = ndim_sb
-        ndim_sb.setToolTip(trans._('Number of dimensions for label editing'))
+        ndim_sb.setToolTip('Number of dimensions for label editing')
         ndim_sb.valueChanged.connect(self.change_n_edit_dim)
         ndim_sb.setMinimum(2)
         ndim_sb.setMaximum(self._layer.ndim)
@@ -52,7 +51,7 @@ class QtNdimSpinBoxControl(QtWidgetControlsBase):
         ndim_sb.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._on_n_edit_dimensions_change()
 
-        self.ndim_spinbox_label = QtWrappedLabel(trans._('n edit dim:'))
+        self.ndim_spinbox_label = QtWrappedLabel('n edit dim:')
 
     def change_n_edit_dim(self, value: int) -> None:
         """Change the number of editable dimensions of label layer.

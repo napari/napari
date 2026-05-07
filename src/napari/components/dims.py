@@ -13,7 +13,6 @@ from pydantic import field_validator, model_validator
 
 from napari.utils.events import EventedModel
 from napari.utils.misc import argsort, reorder_after_dim_reduction
-from napari.utils.translations import trans
 
 
 class RangeTuple(NamedTuple):
@@ -135,22 +134,11 @@ class Dims(EventedModel):
         for axis, (start, stop, step) in enumerate(ranges):
             if start > stop:
                 raise ValueError(
-                    trans._(
-                        'start and stop must be strictly increasing, but got ({start}, {stop}) for axis {axis}',
-                        deferred=True,
-                        start=start,
-                        stop=stop,
-                        axis=axis,
-                    )
+                    f'start and stop must be strictly increasing, but got ({start}, {stop}) for axis {axis}'
                 )
             if step <= 0:
                 raise ValueError(
-                    trans._(
-                        'step must be strictly positive, but got {step} for axis {axis}.',
-                        deferred=True,
-                        step=step,
-                        axis=axis,
-                    )
+                    f'step must be strictly positive, but got {step} for axis {axis}.'
                 )
         return ranges
 
@@ -202,12 +190,7 @@ class Dims(EventedModel):
             # Check the order is a permutation of 0, ..., ndim - 1
             if set(self.order) != set(range(ndim)):
                 raise ValueError(
-                    trans._(
-                        'Invalid ordering {order} for {ndim} dimensions',
-                        deferred=True,
-                        order=self.order,
-                        ndim=ndim,
-                    )
+                    f'Invalid ordering {self.order} for {ndim} dimensions'
                 )
 
         # Check the axis labels tuple has same number of elements as ndim
@@ -518,9 +501,7 @@ class Dims(EventedModel):
                 and not isinstance(value, str)
                 and not value_is_sequence
             ):
-                raise ValueError(
-                    trans._('cannot set multiple values to a single axis')
-                )
+                raise ValueError('cannot set multiple values to a single axis')
             axis = [axis]
             value = [value]
         else:
@@ -528,9 +509,7 @@ class Dims(EventedModel):
             value = list(value)
 
         if len(axis) != len(value):
-            raise ValueError(
-                trans._('axis and value sequences must have equal length')
-            )
+            raise ValueError('axis and value sequences must have equal length')
 
         for ax in axis:
             ensure_axis_in_bounds(ax, self.ndim)
@@ -586,13 +565,7 @@ def ensure_axis_in_bounds(axis: int, ndim: int) -> int:
         The given axis index is out of bounds.
     """
     if axis not in range(-ndim, ndim):
-        msg = trans._(
-            'Axis {axis} not defined for dimensionality {ndim}. Must be in [{ndim_lower}, {ndim}).',
-            deferred=True,
-            axis=axis,
-            ndim=ndim,
-            ndim_lower=-ndim,
-        )
+        msg = f'Axis {axis} not defined for dimensionality {ndim}. Must be in [{-ndim}, {ndim}).'
         raise ValueError(msg)
 
     return axis % ndim

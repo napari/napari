@@ -16,7 +16,6 @@ from napari.layers import (
     Tracks,
     Vectors,
 )
-from napari.utils.translations import trans
 
 layer_to_controls = {
     Labels: QtLabelsControls,
@@ -53,11 +52,7 @@ def create_qt_layer_controls(layer):
 
     if not candidates:
         raise TypeError(
-            trans._(
-                'Could not find QtControls for layer of type {type_}',
-                deferred=True,
-                type_=type(layer),
-            )
+            f'Could not find QtControls for layer of type {type(layer)}'
         )
 
     layer_cls = layer.__class__

@@ -79,7 +79,6 @@ from napari.utils.events import Event
 from napari.utils.events.custom_types import Array
 from napari.utils.misc import ensure_iterable
 from napari.utils.notifications import show_warning
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from itertools import cycle
@@ -485,12 +484,7 @@ class Shapes(Layer):
             data, shape_type = extract_shape_type(data, shape_type)
             data_ndim = get_shape_ndim(data)
             if ndim is not None and ndim != data_ndim:
-                raise ValueError(
-                    trans._(
-                        'Shape dimensions must be equal to ndim',
-                        deferred=True,
-                    )
-                )
+                raise ValueError('Shape dimensions must be equal to ndim')
             ndim = data_ndim
 
         super().__init__(
@@ -809,10 +803,7 @@ class Shapes(Layer):
         ):
             self._face_color_property = ''
             warnings.warn(
-                trans._(
-                    'property used for face_color dropped',
-                    deferred=True,
-                ),
+                'property used for face_color dropped',
                 RuntimeWarning,
             )
 
@@ -821,10 +812,7 @@ class Shapes(Layer):
         ):
             self._edge_color_property = ''
             warnings.warn(
-                trans._(
-                    'property used for edge_color dropped',
-                    deferred=True,
-                ),
+                'property used for edge_color dropped',
                 RuntimeWarning,
             )
 
@@ -1151,20 +1139,11 @@ class Shapes(Layer):
                         new_color_property,
                     )
                     warnings.warn(
-                        trans._(
-                            '_{attribute}_color_property was not set, setting to: {new_color_property}',
-                            deferred=True,
-                            attribute=attribute,
-                            new_color_property=new_color_property,
-                        )
+                        f'_{attribute}_color_property was not set, setting to: {new_color_property}'
                     )
                 else:
                     raise ValueError(
-                        trans._(
-                            'There must be a valid Shapes.properties to use {color_mode}',
-                            deferred=True,
-                            color_mode=color_mode,
-                        )
+                        f'There must be a valid Shapes.properties to use {color_mode}'
                     )
 
             # ColorMode.COLORMAP can only be applied to numeric properties
@@ -1173,10 +1152,7 @@ class Shapes(Layer):
                 self.properties[color_property].dtype.type, np.number
             ):
                 raise TypeError(
-                    trans._(
-                        'selected property must be numeric to use ColorMode.COLORMAP',
-                        deferred=True,
-                    )
+                    'selected property must be numeric to use ColorMode.COLORMAP'
                 )
             setattr(self, f'_{attribute}_color_mode', color_mode)
             self.refresh_colors()
@@ -1227,7 +1203,7 @@ class Shapes(Layer):
         if isinstance(width, list):
             if not len(width) == self.nshapes:
                 raise ValueError(
-                    trans._('Length of list does not match number of shapes')
+                    'Length of list does not match number of shapes'
                 )
 
             widths = width
@@ -1256,7 +1232,7 @@ class Shapes(Layer):
         if isinstance(z_index, list):
             if not len(z_index) == self.nshapes:
                 raise ValueError(
-                    trans._('Length of list does not match number of shapes')
+                    'Length of list does not match number of shapes'
                 )
 
             z_indices = z_index
@@ -1612,10 +1588,7 @@ class Shapes(Layer):
             return False
 
         raise ValueError(
-            trans._(
-                'Should be the name of a color, an array of colors, or the name of a property',
-                deferred=True,
-            )
+            'Should be the name of a color, an array of colors, or the name of a property'
         )
 
     def _get_state(self) -> dict[str, Any]:
@@ -2733,15 +2706,13 @@ class Shapes(Layer):
                     if len(vertices) <= 3 and prev_vertices > 3:
                         # https://github.com/napari/napari/issues/7903
                         show_warning(
-                            trans._(
-                                'Polygons must have three or more vertices. '
-                                'Lasso polygons are simplified using the '
-                                'RDP algorithm, which may cause polygons '
-                                'smaller than RDP epsilon to disappear. If  '
-                                'you face issues drawing small polygons, '
-                                'try reducing napari > Settings > '
-                                'Experimental > RDP epsilon. '
-                            ),
+                            'Polygons must have three or more vertices. '
+                            'Lasso polygons are simplified using the '
+                            'RDP algorithm, which may cause polygons '
+                            'smaller than RDP epsilon to disappear. If  '
+                            'you face issues drawing small polygons, '
+                            'try reducing napari > Settings > '
+                            'Experimental > RDP epsilon. ',
                         )
                 if len(vertices) <= 3:
                     self._data_view.remove(index)

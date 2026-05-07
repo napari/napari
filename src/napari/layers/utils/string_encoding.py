@@ -13,7 +13,6 @@ from napari.layers.utils.style_encoding import (
     _ManualStyleEncoding,
 )
 from napari.utils.events.custom_types import Array
-from napari.utils.translations import trans
 
 """A scalar array that represents one string value."""
 StringValue = Array[str, ()]
@@ -86,10 +85,7 @@ class StringEncoding(StyleEncoding[StringValue, StringArray], Protocol):
         if isinstance(value, Sequence):
             return ManualStringEncoding(array=value, default=DEFAULT_STRING)
         raise ValueError(
-            trans._(
-                'value should be a StringEncoding, a dict, a string, a sequence of strings, or None',
-                deferred=True,
-            )
+            'value should be a StringEncoding, a dict, a string, a sequence of strings, or None'
         )
 
 

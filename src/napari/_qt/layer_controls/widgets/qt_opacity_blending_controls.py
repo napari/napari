@@ -1,19 +1,17 @@
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
-    QComboBox,
     QWidget,
 )
-from superqt import QLabeledDoubleSlider
+from superqt import QEnumComboBox, QLabeledDoubleSlider
 
 from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,
 )
 from napari._qt.utils import attr_to_settr
-from napari.layers.base._base_constants import BLENDING_TRANSLATIONS, Blending
+from napari.layers.base._base_constants import Blending
 from napari.layers.base.base import Layer
 from napari.utils.events.event_utils import connect_setattr
-from napari.utils.translations import trans
 
 # opaque, minimum, and multiplicative blending do not support changing alpha (opacity)
 NO_OPACITY_BLENDING_MODES = {
@@ -68,18 +66,14 @@ class QtOpacityBlendingControls(QtWidgetControlsBase):
                 self._layer, 'opacity', self.opacity_slider, 'setValue'
             )
         )
-        self.opacity_label = QtWrappedLabel(trans._('opacity:'))
+        self.opacity_label = QtWrappedLabel('opacity:')
 
-        blend_combobox = QComboBox(parent)
-        for index, (data, text) in enumerate(BLENDING_TRANSLATIONS.items()):
-            data = data.value
-            blend_combobox.addItem(text, data)
-            if data == self._layer.blending:
-                blend_combobox.setCurrentIndex(index)
+        blend_combobox = QEnumComboBox(parent, Blending)
+        blend_combobox.setCurrentEnum(self._layer.blending)
 
-        blend_combobox.currentTextChanged.connect(self.change_blending)
+        blend_combobox.currentEnumChanged.connect(self.change_blending)
         self.blend_combobox = blend_combobox
-        self.blend_label = QtWrappedLabel(trans._('blending:'))
+        self.blend_label = QtWrappedLabel('blending:')
 
         # opaque and minimum blending do not support changing alpha
         self.opacity_slider.setEnabled(
@@ -97,7 +91,7 @@ class QtOpacityBlendingControls(QtWidgetControlsBase):
         text : str
             Name of blending mode, eg: 'translucent', 'additive', 'opaque'.
         """
-        self._layer.blending = self.blend_combobox.currentData()
+        self._layer.blending = self.blend_combobox.currentEnum()
         # opaque and minimum blending do not support changing alpha
         self.opacity_slider.setEnabled(
             self._layer.blending not in NO_OPACITY_BLENDING_MODES
@@ -108,18 +102,14 @@ class QtOpacityBlendingControls(QtWidgetControlsBase):
 
         blending_tooltip = ''
         if self._layer.blending == Blending.MINIMUM:
-            blending_tooltip = trans._(
-                '`minimum` blending mode works best with inverted colormaps with a white background.',
-            )
+            blending_tooltip = '`minimum` blending mode works best with inverted colormaps with a white background.'
         self.blend_combobox.setToolTip(blending_tooltip)
         self._layer.help = blending_tooltip
 
     def _on_blending_change(self) -> None:
         """Receive layer model blending mode change event and update slider."""
         with self._layer.events.blending.blocker():
-            self.blend_combobox.setCurrentIndex(
-                self.blend_combobox.findData(self._layer.blending)
-            )
+            self.blend_combobox.setCurrentEnum(self._layer.blending)
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
         return [

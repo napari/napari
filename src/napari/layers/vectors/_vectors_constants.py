@@ -1,8 +1,6 @@
-from collections import OrderedDict
 from enum import auto
 
 from napari.utils.misc import StringEnum
-from napari.utils.translations import trans
 
 
 class VectorStyle(StringEnum):
@@ -21,15 +19,6 @@ class VectorStyle(StringEnum):
     LINE = auto()
     TRIANGLE = auto()
     ARROW = auto()
-
-
-VECTORSTYLE_TRANSLATIONS = OrderedDict(
-    [
-        (VectorStyle.LINE, trans._('line')),
-        (VectorStyle.TRIANGLE, trans._('triangle')),
-        (VectorStyle.ARROW, trans._('arrow')),
-    ]
-)
 
 
 class VectorsProjectionMode(StringEnum):

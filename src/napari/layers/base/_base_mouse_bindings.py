@@ -13,7 +13,6 @@ from napari.layers.utils.interaction_box import (
 )
 from napari.utils.events import Event
 from napari.utils.transforms import Affine
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from collections.abc import Generator
@@ -115,10 +114,7 @@ def _scale_with_box(
             locked_aspect_ratio = True
         else:
             warnings.warn(
-                trans._(
-                    'Aspect ratio can only be blocked when resizing from a corner',
-                    deferred=True,
-                ),
+                'Aspect ratio can only be blocked when resizing from a corner',
                 RuntimeWarning,
                 stacklevel=2,
             )

@@ -4,7 +4,6 @@ from napari._qt.containers import QtListView
 from napari._qt.containers.qt_axis_model import AxisList, AxisModel
 from napari._qt.widgets.qt_tooltip import QtToolTipLabel
 from napari.components import Dims
-from napari.utils.translations import trans
 
 
 def set_dims_order(dims: Dims, order: tuple[int, ...]):
@@ -59,14 +58,12 @@ class QtDimsSorter(QWidget):
         widget_tooltip = QtToolTipLabel(self)
         widget_tooltip.setObjectName('help_label')
         widget_tooltip.setToolTip(
-            trans._(
-                'Drag dimensions to reorder.'
-                '\nDouble-click to edit axis label.'
-                '\nClick lock icon to lock dimension in place.'
-            )
+            'Drag dimensions to reorder.'
+            '\nDouble-click to edit axis label.'
+            '\nClick lock icon to lock dimension in place.'
         )
 
-        widget_title = QLabel(trans._('Dims. Ordering'), self)
+        widget_title = QLabel('Dims. Ordering', self)
 
         self.layout().addWidget(widget_title, 0, 0)
         self.layout().addWidget(widget_tooltip, 0, 1)

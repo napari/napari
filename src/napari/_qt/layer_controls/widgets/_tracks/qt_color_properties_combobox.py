@@ -8,7 +8,6 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
 from napari._qt.utils import qt_signals_blocked
 from napari.layers import Tracks
 from napari.utils.events.event_utils import connect_setattr
-from napari.utils.translations import trans
 
 
 class QtColorPropertiesComboBoxControl(QtWidgetControlsBase):
@@ -46,7 +45,7 @@ class QtColorPropertiesComboBoxControl(QtWidgetControlsBase):
             self.color_by_combobox.currentTextChanged, self._layer, 'color_by'
         )
 
-        self.color_by_combobox_label = QtWrappedLabel(trans._('color by:'))
+        self.color_by_combobox_label = QtWrappedLabel('color by:')
 
         self._on_color_by_change()
 

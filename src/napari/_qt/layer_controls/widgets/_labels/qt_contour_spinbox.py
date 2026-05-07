@@ -12,7 +12,6 @@ from napari._qt.utils import attr_to_settr
 from napari.layers import Labels
 from napari.layers.labels._labels_utils import get_dtype
 from napari.utils._dtype import get_dtype_limits
-from napari.utils.translations import trans
 
 
 class QtContourSpinBoxControl(QtWidgetControlsBase):
@@ -42,7 +41,7 @@ class QtContourSpinBoxControl(QtWidgetControlsBase):
         dtype_lims = get_dtype_limits(get_dtype(layer))
         self.contour_spinbox.setRange(0, dtype_lims[1])
         self.contour_spinbox.setToolTip(
-            trans._('Set width of displayed label contours')
+            'Set width of displayed label contours'
         )
         self.contour_spinbox.setValue(self._layer.contour)
         self.contour_spinbox.valueChanged.connect(self.change_contour)
@@ -57,7 +56,7 @@ class QtContourSpinBoxControl(QtWidgetControlsBase):
             )
         )
 
-        self.contour_spinbox_label = QtWrappedLabel(trans._('contour:'))
+        self.contour_spinbox_label = QtWrappedLabel('contour:')
 
     def change_contour(self, value: int) -> None:
         """Change contour thickness.

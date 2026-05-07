@@ -12,8 +12,6 @@ from vispy.app import Canvas
 from vispy.gloo import gl
 from vispy.gloo.context import get_current_canvas
 
-from napari.utils.translations import trans
-
 if TYPE_CHECKING:
     from collections.abc import Generator
 
@@ -115,12 +113,7 @@ def fix_data_dtype(data: npt.NDArray) -> npt.NDArray:
             dtype_ = np.float32
     except KeyError as e:  # not an int or float
         raise TypeError(
-            trans._(
-                'type {dtype} not allowed for texture; must be one of {textures}',
-                deferred=True,
-                dtype=dtype,
-                textures=set(texture_dtypes),
-            )
+            f'type {dtype} not allowed for texture; must be one of {set(texture_dtypes)}'
         ) from e
     return data.astype(dtype_)
 

@@ -34,7 +34,6 @@ from qtpy.QtWidgets import (
 from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils.events.custom_types import Array
 from napari.utils.misc import StringEnum, is_sequence
-from napari.utils.translations import trans
 
 QBYTE_FLAG = '!QBYTE_'
 RICH_TEXT_PATTERN = re.compile('<[^\n]+>')
@@ -97,10 +96,7 @@ def str_to_qbytearray(string: str) -> QByteArray:
     """
     if len(string) < len(QBYTE_FLAG) or not is_qbyte(string):
         raise ValueError(
-            trans._(
-                "Invalid QByte string. QByte strings start with '{QBYTE_FLAG}'",
-                QBYTE_FLAG=QBYTE_FLAG,
-            )
+            f"Invalid QByte string. QByte strings start with '{QBYTE_FLAG}'"
         )
 
     return QByteArray.fromBase64(string[len(QBYTE_FLAG) :].encode())
@@ -269,10 +265,8 @@ def combine_widgets(
                 container.layout().addWidget(widget)
             return container
     raise TypeError(
-        trans._(
-            '"widgets" must be a QWidget, a magicgui Widget or a sequence of '
-            'such types'
-        )
+        '"widgets" must be a QWidget, a magicgui Widget or a sequence of '
+        'such types'
     )
 
 

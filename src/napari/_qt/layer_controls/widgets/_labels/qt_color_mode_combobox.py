@@ -1,7 +1,7 @@
 from qtpy.QtWidgets import (
-    QComboBox,
     QWidget,
 )
+from superqt import QEnumComboBox
 
 from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
@@ -9,11 +9,9 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
 )
 from napari.layers import Labels
 from napari.layers.labels._labels_constants import (
-    LABEL_COLOR_MODE_TRANSLATIONS,
     LabelColorMode,
 )
 from napari.utils import CyclicLabelColormap
-from napari.utils.translations import trans
 
 
 class QtColorModeComboBoxControl(QtWidgetControlsBase):
@@ -42,20 +40,16 @@ class QtColorModeComboBoxControl(QtWidgetControlsBase):
         self._layer.events.colormap.connect(self._on_colormap_change)
 
         # Setup widgets
-        color_mode_comboBox = QComboBox()
-        for data, text in LABEL_COLOR_MODE_TRANSLATIONS.items():
-            data = data.value
-            color_mode_comboBox.addItem(text, data)
-
+        color_mode_comboBox = QEnumComboBox(enum_class=LabelColorMode)
         self.color_mode_combobox = color_mode_comboBox
         self._on_colormap_change()
         color_mode_comboBox.activated.connect(self.change_color_mode)
 
-        self.color_mode_combobox_label = QtWrappedLabel(trans._('color mode:'))
+        self.color_mode_combobox_label = QtWrappedLabel('color mode:')
 
     def change_color_mode(self) -> None:
         """Change color mode of label layer"""
-        if self.color_mode_combobox.currentData() == LabelColorMode.AUTO.value:
+        if self.color_mode_combobox.currentEnum() == LabelColorMode.AUTO.value:
             self._layer.colormap = self._layer._original_random_colormap
         else:
             self._layer.colormap = self._layer._direct_colormap
@@ -71,13 +65,9 @@ class QtColorModeComboBoxControl(QtWidgetControlsBase):
                 'mode.'
             )
         if isinstance(self._layer.colormap, CyclicLabelColormap):
-            self.color_mode_combobox.setCurrentIndex(
-                self.color_mode_combobox.findData(LabelColorMode.AUTO.value)
-            )
+            self.color_mode_combobox.setCurrentEnum(LabelColorMode.AUTO)
         else:
-            self.color_mode_combobox.setCurrentIndex(
-                self.color_mode_combobox.findData(LabelColorMode.DIRECT.value)
-            )
+            self.color_mode_combobox.setCurrentEnum(LabelColorMode.DIRECT)
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
         return [(self.color_mode_combobox_label, self.color_mode_combobox)]

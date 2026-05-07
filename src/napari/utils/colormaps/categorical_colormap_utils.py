@@ -6,8 +6,6 @@ import numpy as np
 from pydantic import GetCoreSchemaHandler
 from pydantic_core import core_schema
 
-from napari.utils.translations import trans
-
 
 @dataclass(eq=False)
 class ColorCycle:
@@ -97,9 +95,7 @@ def _coerce_colorcycle_from_dict(
     # validate values
     color_values = val.get('values')
     if color_values is None:
-        raise ValueError(
-            trans._('ColorCycle requires a values argument', deferred=True)
-        )
+        raise ValueError('ColorCycle requires a values argument')
 
     transformed_color_values = transform_color(color_values)
 
