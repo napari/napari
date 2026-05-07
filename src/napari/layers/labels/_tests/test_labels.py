@@ -1238,8 +1238,10 @@ def test_large_label_values():
 
 if parse_version(version('zarr')) > parse_version('3.0.0a0'):
     driver = [(2, 'zarr'), (3, 'zarr3')]
+    ZARR_V3 = True
 else:
     driver = [(2, 'zarr')]
+    ZARR_V3 = False
 
 
 @pytest.mark.parametrize(('zarr_version', 'zarr_driver'), driver)
@@ -1259,7 +1261,9 @@ def test_fill_tensorstore(tmp_path, zarr_version, zarr_driver):
         shape=labels.shape,
         dtype=np.uint32,
         chunks=(1, 1, 8, 9),
-        zarr_format=zarr_version,
+        # zarr < 3 uses zarr_version, zarr > 3 uses zarr_format
+        # This can be removed in favor of zarr_format once napari drops py310
+        **{('zarr_format' if ZARR_V3 else 'zarr_version'): zarr_version},
     )
     labels_temp[:] = labels
     labels_ts_spec = {

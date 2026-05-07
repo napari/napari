@@ -23,6 +23,19 @@ from napari_builtins.io._read import (
 )
 from napari_builtins.io._write import write_csv
 
+
+def _create_zarr_array(group, name, **kwargs):
+    """This is a helper to handle creating arrays with zarr < 3 and >3.2.0
+
+    Zarr > 3 deprecated `create_dataset` and zarr 3.2.0 removed it, but
+    `create_array` is not part of zarr < 3 API.
+    Once napari drops py310, this can be removed in favor of just `create_array`.
+    """
+    if hasattr(group, 'create_array'):
+        return group.create_array(name, **kwargs)
+    return group.create_dataset(name, **kwargs)
+
+
 if TYPE_CHECKING:
     from pathlib import Path
 
@@ -86,7 +99,7 @@ def test_zarr_nested(tmp_path):
     image_name = 'my_image'
     root_path = tmp_path / 'dataset.zarr'
     grp = zarr.open(store=str(root_path), mode='a')
-    grp.create_array(image_name, data=image)
+    _create_zarr_array(grp, image_name, data=image)
 
     image_in = magic_imread([str(root_path / image_name)])
     np.testing.assert_array_equal(image, image_in)
@@ -97,7 +110,7 @@ def test_zarr_with_unrelated_file(tmp_path):
     image_name = 'my_image'
     root_path = tmp_path / 'dataset.zarr'
     grp = zarr.open(store=str(root_path), mode='a')
-    grp.create_array(image_name, data=image)
+    _create_zarr_array(grp, image_name, data=image)
 
     txt_file_path = root_path / 'unrelated.txt'
     txt_file_path.touch()
@@ -117,7 +130,9 @@ def test_zarr_multiscale(tmp_path):
     root = zarr.open_group(fout, mode='a')
     for i in range(len(multiscale)):
         shape = 20 // 2**i
-        z = root.create_array(str(i), shape=(shape,) * 2, dtype=np.float64)
+        z = _create_zarr_array(
+            root, str(i), shape=(shape,) * 2, dtype=np.float64
+        )
         z[:] = multiscale[i]
     multiscale_in = magic_imread([fout])
     assert len(multiscale) == len(multiscale_in)
@@ -415,9 +430,9 @@ def test_zarr_multiple_groups_reads_first(tmp_path, monkeypatch):
     data0 = np.zeros((10, 10))
 
     group_one = root.create_group('1')
-    group_one.create_array('data', data=data1)
+    _create_zarr_array(group_one, 'data', data=data1)
     group_zero = root.create_group('0')
-    group_zero.create_array('data', data=data0)
+    _create_zarr_array(group_zero, 'data', data=data0)
 
     # Mock show_info to check if it was called
     mock_show_info = MagicMock()
