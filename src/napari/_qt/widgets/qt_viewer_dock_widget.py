@@ -303,18 +303,10 @@ class QtViewerDockWidget(QDockWidget):
         return self.size().height() > self.size().width()
 
     def _update_title_bar(self, is_floating: bool | None = None) -> None:
-        """Recreate the title bar to match the current dock/float state.
-
-        Parameters
-        ----------
-        is_floating :
-            Floating state override from ``topLevelChanged``. If omitted, use
-            the widget's current floating state.
-        """
+        """Recreate the title bar to match the current dock/float state."""
         if is_floating is None:
             is_floating = self.isFloating()
-        # Floating windows always use a horizontal (non-rotated) title bar so
-        # the title text and controls look correct as a standalone window.
+        # Floating windows always use a horizontal (non-rotated) title bar
         vertical = (not is_floating) and (not self.is_vertical)
         with qt_signals_blocked(self):
             # When a widget is docked at top/bottom, Qt sets
@@ -374,25 +366,16 @@ class QtCustomTitleBar(QLabel):
         self.setProperty('vertical', str(vertical))
         self.setProperty('floating', str(is_floating))
         self.vertical = vertical
-        self.setToolTip(trans._('drag to move. double-click to float'))
+        self.setToolTip(trans._('drag to move. double-click toggle floating'))
 
         line = QFrame(self)
         line.setObjectName('QtCustomTitleBarLine')
 
         self.hide_button = QPushButton(self)
+        self.hide_button.setToolTip(trans._('hide this panel'))
         self.hide_button.setObjectName('QTitleBarHideButton')
         self.hide_button.setCursor(Qt.CursorShape.ArrowCursor)
-        if is_floating:
-            # When floating the widget has no taskbar entry, so hiding it via
-            # close() leaves no way to recover it.  Instead, dock it back.
-            self.hide_button.setToolTip(trans._('dock this panel'))
-            self.hide_button.clicked.connect(
-                lambda: self.parent().setFloating(False)
-            )
-            self.hide_button.hide()
-        else:
-            self.hide_button.setToolTip(trans._('hide this panel'))
-            self.hide_button.clicked.connect(lambda: self.parent().close())
+        self.hide_button.clicked.connect(lambda: self.parent().close())
 
         self.float_button = QPushButton(self)
         self.float_button.setToolTip(

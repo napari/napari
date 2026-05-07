@@ -54,7 +54,7 @@ QMainWindow::separator:vertical {
 /* ------------- DockWidgets --------- */
 
 QDockWidget:floating {
-  border: 1px solid {{ foreground }};
+  border: 2px solid {{ foreground }};
   border-radius: 4px;
 }
 
@@ -70,11 +70,10 @@ QDockWidget:floating {
 /* Floating state: distinct title bar so it reads as a standalone window */
 #QtCustomTitleBar[floating="True"] {
   background-color: {{ foreground }};
-  border-bottom: 1px solid {{ darken(foreground, 10) }};
 }
 
 #QtCustomTitleBar[floating="True"]:hover {
-  background-color: {{ darken(foreground, 8) }};
+  background-color: {{ darken(foreground, 10) }};
 }
 
 #QtCustomTitleBarLine {

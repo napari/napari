@@ -167,14 +167,11 @@ def test_float_unfloat_title_bar(make_napari_viewer):
     widg = QPushButton('button')
     dw = viewer.window.add_dock_widget(widg, name='test', area='right')
 
-    # Starts docked on the right: custom title bar is set and is horizontal.
     assert dw.titleBarWidget() is dw.title
     assert not dw.title.vertical  # right-docked -> horizontal bar
 
-    # Float the widget.
     dw.setFloating(True)
     assert dw.isFloating()
-    # Custom title bar must still be set (dark theme + controls).
     assert dw.titleBarWidget() is dw.title
     # Floating always uses a horizontal title bar regardless of window size.
     assert not dw.title.vertical
