@@ -58,16 +58,17 @@ class QtColorModeComboBoxControl(QtWidgetControlsBase):
 
         Each colormap carries its own ``use_selection`` flag, so swapping
         modes would otherwise expose whichever value the new cmap last
-        held. The user toggled one widget; mode and filter are orthogonal
-        from the GUI perspective, so we restore the filter state across
-        the swap.
+        held. Pre-sync the filter and selection onto the target cmap
+        before assignment so the swap is a single coherent event (no
+        spurious adopt-and-emit cycle on the layer setter).
         """
-        show_selected = self._layer.show_selected_label
         if self.color_mode_combobox.currentData() == LabelColorMode.AUTO.value:
-            self._layer.colormap = self._layer._original_random_colormap
+            new_cmap = self._layer._original_random_colormap
         else:
-            self._layer.colormap = self._layer._direct_colormap
-        self._layer.show_selected_label = show_selected
+            new_cmap = self._layer._direct_colormap
+        new_cmap.use_selection = self._layer.show_selected_label
+        new_cmap.selection = self._layer.selected_label
+        self._layer.colormap = new_cmap
 
     def _on_colormap_change(self) -> None:
         enable_combobox = not self._layer._is_default_colors(
