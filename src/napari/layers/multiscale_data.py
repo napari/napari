@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from typing import overload
 
 import numpy as np
+import numpy.typing as npt
 
 from napari.layers._data_protocols import LayerDataProtocol, assert_protocol
 from napari.utils.translations import trans
@@ -13,15 +15,13 @@ class MultiScaleData(Sequence[LayerDataProtocol]):
     """Wrapper for multiscale data, to provide consistent API.
 
     :class:`LayerDataProtocol` is the subset of the python Array API that we
-    expect array-likes to provide.  Multiscale data is just a sequence of
-    array-likes (providing, e.g. `shape`, `dtype`, `__getitem__`).
+    expect array-likes to provide. Multiscale data is just a sequence of these
+    array-likes.
 
     Parameters
     ----------
     data : Sequence[LayerDataProtocol]
         Levels of multiscale data, from larger to smaller.
-    max_size : Sequence[int], optional
-        Maximum size of a displayed tile in pixels, by default`data[-1].shape`
 
     Raises
     ------
@@ -41,56 +41,61 @@ class MultiScaleData(Sequence[LayerDataProtocol]):
                 trans._('Multiscale data must be a (non-empty) sequence')
             )
         for d in self._data:
-            assert_protocol(d)
+            assert_protocol(d, protocol=LayerDataProtocol)
 
     @property
     def size(self) -> int:
-        """Return size of the first scale.."""
+        """Size of the first scale."""
         return self._data[0].size
 
     @property
     def ndim(self) -> int:
-        """Return ndim of the first scale.."""
+        """ndim of the first scale."""
         return self._data[0].ndim
 
     @property
-    def dtype(self) -> np.dtype:
-        """Return dtype of the first scale.."""
+    def nlevels(self) -> int:
+        """Number of multiscale levels."""
+        return len(self._data)
+
+    @property
+    def dtype(self) -> npt.DTypeLike:
+        """dtype of the first scale.."""
         return self._data[0].dtype
 
     @property
     def shape(self) -> tuple[int, ...]:
-        """Shape of multiscale is just the biggest shape."""
+        """Shape of the first scale."""
         return self._data[0].shape
 
     @property
     def shapes(self) -> tuple[tuple[int, ...], ...]:
-        """Tuple shapes for all scales."""
+        """Tuple of shapes for all scales."""
         return tuple(im.shape for im in self._data)
 
-    def __getitem__(  # type: ignore [override]
-        self, key: int | tuple[slice, ...]
-    ) -> LayerDataProtocol:
-        """Multiscale indexing."""
+    @overload
+    def __getitem__(self, i: int) -> LayerDataProtocol: ...
+    @overload
+    def __getitem__(self, i: slice) -> Sequence[LayerDataProtocol]: ...
+    def __getitem__(
+        self, key: int | slice
+    ) -> LayerDataProtocol | Sequence[LayerDataProtocol]:
+        """Get individual multiscale levels."""
         return self._data[key]
 
-    def __len__(self) -> int:
-        return len(self._data)
-
-    def __eq__(self, other) -> bool:
-        return self._data == other
-
-    def __add__(self, other) -> bool:
-        return self._data + other
-
-    def __mul__(self, other) -> bool:
-        return self._data * other
-
-    def __rmul__(self, other) -> bool:
-        return other * self._data
-
-    def __array__(self) -> np.ndarray:
+    def __array__(self) -> npt.NDArray:
+        """Get numpy array of the lowest resolution level."""
+        # TODO:
+        # deprecate this, and replace with a more verbose API
+        # like get_level_array(self, level: int) -> npt.ndarray
         return np.asarray(self._data[-1])
+
+    def __len__(self) -> int:
+        """Number of multiscale levels."""
+        return self.nlevels
+
+    def __eq__(self, other: object) -> bool:
+        return self._data == other
 
     def __repr__(self) -> str:
         return (

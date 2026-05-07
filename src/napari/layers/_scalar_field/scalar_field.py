@@ -10,7 +10,6 @@ import numpy as np
 from numpy import typing as npt
 
 from napari.layers._data_protocols import LayerDataProtocol
-from napari.layers._multiscale_data import MultiScaleData
 from napari.layers._scalar_field._slice import (
     _ScalarFieldSliceRequest,
     _ScalarFieldSliceResponse,
@@ -22,6 +21,7 @@ from napari.layers.image._image_mouse_bindings import (
     set_plane_position as plane_double_click_callback,
 )
 from napari.layers.image._image_utils import guess_multiscale
+from napari.layers.multiscale_data import MultiScaleData
 from napari.layers.utils._slice_input import (
     _SliceInput,
     _ThickNDSlice,

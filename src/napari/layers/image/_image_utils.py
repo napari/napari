@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any, Literal
 import numpy as np
 
 from napari.layers._data_protocols import LayerDataProtocol
-from napari.layers._multiscale_data import MultiScaleData
+from napari.layers.multiscale_data import MultiScaleData
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
