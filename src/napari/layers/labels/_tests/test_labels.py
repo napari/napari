@@ -1717,8 +1717,13 @@ def test_color_mapping_with_show_selected_label():
     assert np.allclose(layer.colormap.map(data), mapped_colors_all)
 
 
-def test_show_selected_label_preserved_after_shuffle():
-    """Shuffling colors must not silently disable show_selected_label."""
+def test_shuffle_preserves_show_selected_label_in_both_directions():
+    """Shuffling must reflect the layer's current ``show_selected_label``
+    state, both when enabled and when disabled. Covers the original
+    #8947 bug (shuffle silently dropped the filter) and its mirror image
+    (after enable -> shuffle -> disable, the next shuffle seeded from a
+    stale ``_original_random_colormap`` and revived ``use_selection``).
+    """
     data = np.arange(5, dtype=np.int32)[:, np.newaxis].repeat(5, axis=1)
     layer = Labels(data)
     layer.selected_label = 2
@@ -1730,27 +1735,16 @@ def test_show_selected_label_preserved_after_shuffle():
     )
     layer.new_colormap(seed=0)
 
-    # Selection state must be set before `events.colormap` fires, so the
+    # Filter state must be set before `events.colormap` fires so the
     # vispy shader is rebuilt with the right `use_selection`.
     assert seen['use_selection'] is True
-    # And it must stick on the final colormap.
     assert layer.colormap.use_selection is True
     assert layer.colormap.selection == 2
     label_mask = data == 2
     npt.assert_allclose(layer.colormap.map(data)[~label_mask], 0)
 
-
-def test_shuffle_does_not_revive_stale_show_selected():
-    """Shuffling must reflect the layer's current show_selected_label state."""
-    data = np.arange(5, dtype=np.int32)[:, np.newaxis].repeat(5, axis=1)
-    layer = Labels(data)
-    layer.selected_label = 2
-
-    # Enable, shuffle (detaches `_original_random_colormap` from the layer's
-    # mutations), then disable. Without the fix, the next shuffle would seed
-    # from the now-stale original and revive `use_selection=True`.
-    layer.show_selected_label = True
-    layer.new_colormap(seed=0)
+    # Disable and shuffle again. The shuffle must seed from the layer's
+    # current state, not from a stale `_original_random_colormap`.
     layer.show_selected_label = False
     layer.new_colormap(seed=1)
 
