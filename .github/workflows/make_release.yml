@@ -109,9 +109,11 @@ jobs:
               --title "${name}" \
               --notes-file notes/release_notes.md \
               --target "${target_commit}" \
+              --repo ${repository} \
               "${prerelease[@]}"
         shell: bash
         env:
+          repository: ${{ github.repository }}
           name: ${{ github.ref_name }}
           target_commit: ${{ github.sha }}
           GH_TOKEN: ${{ github.token }}
