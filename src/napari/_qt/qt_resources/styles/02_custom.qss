@@ -1,3 +1,4 @@
+/* TODO: what even are these h1/2/3 for?? */
 QLabel#h1 {
   font-size: 28px;
 }
@@ -84,7 +85,7 @@ QMainWindow::separator:vertical {
 #QTitleBarCloseButton{
     width: 24px;
     height: 24px;
-    padding: 0;
+    padding: 2;
     image: url("theme_{{ id }}:/delete_shape.svg");
 }
 
@@ -93,14 +94,14 @@ QMainWindow::separator:vertical {
     image: url("theme_{{ id }}:/pop_out.svg");
     width: 24px;
     height: 24px;
-    padding: 2 1 2 1;
+    padding: 2;
 }
 
 #QTitleBarHideButton{
     image: url("theme_{{ id }}:/visibility_off.svg");
     width: 24px;
     height: 24px;
-    padding: 2 1 2 1;
+    padding: 2;
 }
 
 /* ----------------- Console ------------------ */
@@ -115,7 +116,7 @@ QtConsole > QTextEdit {
   color: {{ text }};
   selection-background-color: {{ highlight }};
   margin: 10px;
-  font-family: Menlo, Consolas, "Ubuntu Mono", "Roboto Mono", "DejaVu Sans Mono", monospace;
+  font-family: monospace, Menlo, Consolas, "Ubuntu Mono", "Roboto Mono", "DejaVu Sans Mono";
   font-size: {{ font_size }};
 }
 .inverted {
@@ -157,6 +158,11 @@ QtLayerControlsContainer > QFrame {
   padding: 5px;
   padding-right: 8px;
   border-radius: 2px;
+  background-color: {{ foreground }};
+}
+
+QWidget[foreground=true] {
+  background-color: {{ foreground }};
 }
 
 /* the box that shows the current Label color */
@@ -178,19 +184,6 @@ QtLayerControls > QComboBox, QtLayerControls > QLabel, QtLayerControls, QtPlaneC
   color: {{ text }};
 }
 
-QLabeledRangeSlider > QAbstractSpinBox {
-  font-size: {{ font_size }};
-  color: {{ secondary }};
-}
-
-QWidget[emphasized="true"] QDoubleSlider::sub-page:horizontal:disabled {
-    background: {{ primary }};
-}
-
-QWidget[emphasized="true"] QDoubleSlider::handle:disabled {
-    background: {{ primary }};
-}
-
 SliderLabel {
   background-color: {{ darken(background, 15) }};
   color: {{ text }};
@@ -198,18 +191,6 @@ SliderLabel {
   padding: 0px;
   border-radius: 2px;
   font-size: {{ decrease(font_size, 1) }};
-}
-
-QWidget[emphasized="true"] SliderLabel {
-  background-color: {{ background }};
-}
-
-QWidget[emphasized="true"] SliderLabel:disabled {
-    color: {{ opacity(text, 50) }};
-}
-
-QWidget[emphasized="true"] QLabel:disabled {
-    color: {{ opacity(text, 50) }};
 }
 
 AutoScaleButtons QPushButton {
@@ -223,12 +204,8 @@ PlaneNormalButtons QPushButton {
 }
 /* ------------- DimsSliders --------- */
 
-QtDimSliderWidget > QScrollBar::handle[last_used=false]:horizontal {
-    background: {{ highlight }};
-}
-
 QtDimSliderWidget > QScrollBar::handle[last_used=true]:horizontal {
-    background: {{ secondary }};
+    background: {{ highlight }};
 }
 
 QtDimSliderWidget > QScrollBar:left-arrow:horizontal {
@@ -276,7 +253,7 @@ QtDimSliderWidget > QLineEdit {
 }
 
 #playDirectionCheckBox::indicator:pressed {
-   background-color: {{ highlight }};
+   background-color: {{ current }};
 }
 
 
@@ -297,8 +274,8 @@ QtDimSliderWidget > QLineEdit {
 }
 
 #CustomColorDialog QLabel {
-  background-color: {{ background }};
-  color: {{ secondary }};
+  background-color: {{ foreground }};
+  color: {{ primary }};
 }
 
 
@@ -313,7 +290,7 @@ QtDimSliderWidget > QLineEdit {
 
 #slice_label {
   font-size: {{ decrease(font_size, 1) }};
-  color: {{ secondary }};
+  color: {{ text }};
   background: transparent;
 }
 
@@ -351,7 +328,7 @@ QtHookImplementationListWidget::item {
 }
 
 QtHookImplementationListWidget {
-  background-color: {{ console }};
+  background-color: {{ foreground }};
 }
 
 /* for the error reporter */
@@ -360,7 +337,7 @@ QtHookImplementationListWidget {
 }
 
 QtPluginErrReporter > QTextEdit {
-  background-color: {{ console }};
+  background-color: {{ foreground }};
   background-clip: padding;
   color: {{ text }};
   selection-background-color: {{ highlight }};
@@ -374,7 +351,7 @@ NapariQtNotification > QWidget {
 }
 
 NapariQtNotification::hover{
-  background: {{ lighten(background, 5) }};
+  background: {{ foreground }};
 }
 
 
@@ -403,17 +380,16 @@ NapariQtNotification #close_button {
 }
 
 NapariQtNotification #source_label {
-  color: {{ primary }};
+  color: {{ darken(text, 10) }};
   font-size: {{ decrease(font_size, 1) }};
 }
 
 NapariQtNotification #severity_icon {
   padding: 0;
-  margin: 0 0 -3px 0;
+  margin: 0;
   min-width: 20px;
-  min-height: 18px;
+  min-height: 20px;
   font-size: {{ increase(font_size, 3) }};
-  color: {{ icon }};
 }
 
 /* ------------ Activity Dock ------------ */
@@ -424,7 +400,7 @@ NapariQtNotification #severity_icon {
 }
 
 #QtActivityButton:hover {
-  background-color: {{ lighten(background, 10) }};
+  background-color: {{ foreground }};
 }
 
 /* ------------ Plugin Dialog ------------ */
@@ -659,13 +635,15 @@ QtListView QScrollBar:down-arrow {
 QtListView::item {
   padding: 4px;
   margin: 2px 2px 2px 2px;
-  background-color: {{ foreground }};
+  background-color: {{ primary }};
   border: 1px solid {{ foreground }};
 }
 
 QtListView::item:hover {
-  background-color: {{ lighten(foreground, 3) }};
+  background-color: {{ highlight }};
 }
+
+/* TODO: all these darken/lighten in the layerlist seem unnecessarily complicated */
 
 /* in the QSS context "active" means the window is active */
 /* (as opposed to focused on another application) */
@@ -692,6 +670,7 @@ QtLayerList::item {
   border: 0;
 }
 
+/* eye visibility icon */
 /* the first one is the "partially checked" state */
 QtLayerList::indicator {
   width: 16px;
@@ -705,12 +684,12 @@ QtLayerList::indicator {
 
 QtLayerList::indicator:unchecked {
   image: url("theme_{{ id }}:/visibility_off_50.svg");
-  background: {{ opacity(background, 190) }};
+  background: {{ darken(primary, 20) }};
 }
 
 QtLayerList::indicator:checked {
   image: url("theme_{{ id }}:/visibility.svg");
-  background: {{ opacity(highlight, 190) }};
+  background: {{ secondary }};
 }
 
 
@@ -769,7 +748,7 @@ QtDimsSorter > QtListView::indicator::checked {
 
 QMenu::separator, QModelMenu::separator {
 	height: 1 px;
-	background: {{ opacity(text, 90) }};
+	background: {{ foreground }};
 	margin-left: 17 px;
 	margin-right: 6 px;
 	margin-top: 5 px;

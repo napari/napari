@@ -157,8 +157,8 @@ class QtColormapControl(QtWidgetControlsBase):
             colormap_layout.addWidget(self.colormap_combobox, stretch=1)
         colormap_layout.addStretch(1)
         self.colormapWidget = QWidget()
-        self.colormapWidget.setProperty('emphasized', True)
         self.colormapWidget.setLayout(colormap_layout)
+        self.colormapWidget.setProperty('foreground', 'true')
 
         self._on_colormap_change()
 

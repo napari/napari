@@ -150,13 +150,13 @@ class QtLabelControl(QtWidgetControlsBase):
 
         self.label_color_label = QtWrappedLabel(trans._('label:'))
         self.label_color = QWidget()
-        self.label_color.setProperty('emphasized', True)
         color_layout = QHBoxLayout()
         color_layout.setContentsMargins(0, 2, 0, 1)
         self.colorbox = QtColorBox(layer)
         color_layout.addWidget(self.colorbox)
         color_layout.addWidget(self.selection_spinbox)
         self.label_color.setLayout(color_layout)
+        self.label_color.setProperty('foreground', 'true')
 
     def change_selection(self, value: int) -> None:
         """Change currently selected label.
