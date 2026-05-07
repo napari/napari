@@ -51,7 +51,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [ubuntu-latest, windows-2022]
+        platform: [ubuntu-latest, windows-latest]
         python: ["3.10", "3.11", "3.12", "3.13"]
         backend: [pyqt5]
         include:
