@@ -3,7 +3,10 @@ from typing import TYPE_CHECKING
 from napari._qt.layer_controls.qt_image_controls_base import (
     QtBaseImageControls,
 )
-from napari._qt.layer_controls.widgets import QtProjectionModeControl
+from napari._qt.layer_controls.widgets import (
+    QtMultiscaleLevelControl,
+    QtProjectionModeControl,
+)
 from napari._qt.layer_controls.widgets._image import (
     QtDepictionControl,
     QtImageRenderControl,
@@ -51,6 +54,8 @@ class QtImageControls(QtBaseImageControls):
         self._add_widget_controls(self._depiction_control)
         self._render_control = QtImageRenderControl(self, layer)
         self._add_widget_controls(self._render_control)
+        self._multiscale_level_control = QtMultiscaleLevelControl(self, layer)
+        self._add_widget_controls(self._multiscale_level_control)
 
         self._on_ndisplay_changed()
 
@@ -64,4 +69,8 @@ class QtImageControls(QtBaseImageControls):
         else:
             self._render_control._on_display_change_show()
             self._depiction_control._on_display_change_show()
+        if self.layer.multiscale:
+            self._multiscale_level_control._on_display_change_show()
+        else:
+            self._multiscale_level_control._on_display_change_hide()
         super()._on_ndisplay_changed()

@@ -52,9 +52,11 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         Image data. Can be N >= 2 dimensional. If the last dimension has length
         3 or 4 can be interpreted as RGB or RGBA if rgb is `True`. If a
         list and arrays are decreasing in shape then the data is treated as
-        a multiscale image. Please note multiscale rendering is only
-        supported in 2D. In 3D, only the lowest resolution scale is
-        displayed.
+        a multiscale image. In 2D, the displayed resolution is chosen
+        automatically based on the viewport. In 3D, the lowest resolution
+        scale is displayed by default. The resolution level can be locked
+        via ``locked_data_level`` or the resolution control in the layer
+        controls UI.
     affine : n-D array or napari.utils.transforms.Affine
         (N+1, N+1) affine transformation matrix in homogeneous coordinates.
         The first (N, N) entries correspond to a linear transform and
@@ -115,9 +117,11 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         represented by a list of array-like image data. If not specified by
         the user and if the data is a list of arrays that decrease in shape,
         then it will be taken to be multiscale. The first image in the list
-        should be the largest. Please note multiscale rendering is only
-        supported in 2D. In 3D, only the lowest resolution scale is
-        displayed.
+        should be the largest. In 2D, the displayed resolution is chosen
+        automatically based on the viewport. In 3D, the lowest resolution
+        scale is displayed by default. The resolution level can be locked
+        via ``locked_data_level`` or the resolution control in the layer
+        controls UI.
     name : str
         Name of the layer.
     opacity : float
@@ -162,9 +166,11 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         Image data. Can be N dimensional. If the last dimension has length
         3 or 4 can be interpreted as RGB or RGBA if rgb is `True`. If a list
         and arrays are decreasing in shape then the data is treated as a
-        multiscale image. Please note multiscale rendering is only
-        supported in 2D. In 3D, only the lowest resolution scale is
-        displayed.
+        multiscale image. In 2D, the displayed resolution is chosen
+        automatically based on the viewport. In 3D, the lowest resolution
+        scale is displayed by default. The resolution level can be locked
+        via ``locked_data_level`` or the resolution control in the layer
+        controls UI.
     axis_labels : tuple of str
         Dimension names of the layer data.
     metadata : dict
@@ -177,9 +183,11 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
     multiscale : bool
         Whether the data is a multiscale image or not. Multiscale data is
         represented by a list of array like image data. The first image in the
-        list should be the largest. Please note multiscale rendering is only
-        supported in 2D. In 3D, only the lowest resolution scale is
-        displayed.
+        list should be the largest. In 2D, the displayed resolution is chosen
+        automatically based on the viewport. In 3D, the lowest resolution
+        scale is displayed by default. The resolution level can be locked
+        via ``locked_data_level`` or the resolution control in the layer
+        controls UI.
     mode : str
         Interactive mode. The normal, default mode is PAN_ZOOM, which
         allows for normal interactivity with the canvas.

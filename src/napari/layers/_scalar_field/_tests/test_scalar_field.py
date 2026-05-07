@@ -157,3 +157,216 @@ def test_data_setter_updates_transforms(Layer):
     layer.data = data_3d
     assert layer.ndim == 3
     assert len(layer.scale) == 3
+
+
+# ---------------------------------------------------------------------------
+# locked_data_level tests
+# ---------------------------------------------------------------------------
+
+_MULTISCALE_SHAPES_2D = [(4000, 3000), (2000, 1500), (1000, 750), (500, 375)]
+_MULTISCALE_SHAPES_3D = [(8, 40, 20), (4, 20, 10), (2, 10, 5)]
+
+
+def _make_multiscale_2d():
+    """2D multiscale data where each level has a distinct constant value."""
+    return [
+        np.full(s, fill_value=(i + 1) * 10, dtype=np.uint8)
+        for i, s in enumerate(_MULTISCALE_SHAPES_2D)
+    ]
+
+
+def _make_multiscale_3d():
+    """3D multiscale data where each level has a distinct constant value."""
+    return [
+        np.full(s, fill_value=(i + 1) * 10, dtype=np.uint8)
+        for i, s in enumerate(_MULTISCALE_SHAPES_3D)
+    ]
+
+
+@pytest.mark.parametrize('Layer', [Image, Labels])
+class TestLockedDataLevel:
+    """Tests for the locked_data_level property on ScalarFieldBase."""
+
+    def test_locked_data_level_property(self, Layer):
+        """Default is None; setting valid/invalid values works correctly."""
+        data = _make_multiscale_3d()
+        layer = Layer(data, multiscale=True)
+
+        assert layer.locked_data_level is None
+
+        layer.locked_data_level = 1
+        assert layer.locked_data_level == 1
+
+        layer.locked_data_level = None
+        assert layer.locked_data_level is None
+
+        with pytest.raises(ValueError, match='locked_data_level'):
+            layer.locked_data_level = len(data)
+        with pytest.raises(ValueError, match='locked_data_level'):
+            layer.locked_data_level = -1
+
+    def test_locked_data_level_reset_on_data_change(self, Layer):
+        """Setting .data resets locked_data_level to None (auto)."""
+        data = _make_multiscale_3d()
+        layer = Layer(data, multiscale=True)
+
+        # Lock to the last level
+        layer.locked_data_level = len(data) - 1
+        assert layer.locked_data_level == len(data) - 1
+
+        # Replace with data that has fewer levels
+        fewer_levels = data[:2]
+        layer.data = fewer_levels
+
+        # The old locked level would be out of range; it must be reset
+        assert layer.locked_data_level is None
+
+
+def _draw_layer(layer, shape_threshold=(800, 600)):
+    """Call ``_update_draw`` with a viewport that sees the full data extent."""
+    displayed = layer._slice_input.displayed
+    corner_pixels = layer._extent_data[:, displayed]
+    layer._update_draw(
+        scale_factor=1,
+        corner_pixels_displayed=corner_pixels,
+        shape_threshold=shape_threshold,
+    )
+
+
+@pytest.mark.parametrize('Layer', [Image, Labels])
+class TestLockedDataLevelDraw:
+    """Tests for locked_data_level interacting with the draw cycle.
+
+    These call ``_update_draw`` and ``_slice_dims`` directly instead of
+    going through a full Qt viewer, so they run in headless CI
+    environments without Qt bindings.
+    """
+
+    def test_lock_overrides_auto_2d(self, Layer):
+        """Locking to level 0 keeps full resolution even when the
+        viewport is wide enough that auto would pick a coarser level."""
+        data = _make_multiscale_2d()
+        layer = Layer(data, multiscale=True)
+
+        _draw_layer(layer)
+        auto_level = layer.data_level
+        assert auto_level > 0, 'sanity: auto should pick a coarser level'
+
+        layer.locked_data_level = 0
+        _draw_layer(layer)
+
+        assert layer.data_level == 0
+
+    def test_lock_overrides_auto_3d(self, Layer):
+        """In 3D, auto defaults to the coarsest level; locking to 0
+        should override that."""
+        data = _make_multiscale_3d()
+        layer = Layer(data, multiscale=True)
+
+        layer._slice_dims(Dims(ndim=3, ndisplay=3))
+        _draw_layer(layer)
+        assert layer.data_level == len(data) - 1, (
+            'sanity: 3D auto should pick coarsest'
+        )
+
+        layer.locked_data_level = 0
+        _draw_layer(layer)
+
+        assert layer.data_level == 0
+
+    def test_unlock_restores_auto_2d(self, Layer):
+        """Setting locked_data_level back to None restores automatic
+        level selection in 2D."""
+        data = _make_multiscale_2d()
+        layer = Layer(data, multiscale=True)
+
+        _draw_layer(layer)
+        auto_level = layer.data_level
+
+        layer.locked_data_level = 0
+        _draw_layer(layer)
+        assert layer.data_level == 0
+
+        layer.locked_data_level = None
+        _draw_layer(layer)
+        assert layer.data_level == auto_level
+
+    def test_unlock_restores_auto_3d(self, Layer):
+        """Setting locked_data_level back to None restores coarsest-level
+        default in 3D."""
+        data = _make_multiscale_3d()
+        layer = Layer(data, multiscale=True)
+
+        layer._slice_dims(Dims(ndim=3, ndisplay=3))
+        layer.locked_data_level = 0
+        _draw_layer(layer)
+        assert layer.data_level == 0
+
+        layer.locked_data_level = None
+        _draw_layer(layer)
+        assert layer.data_level == len(data) - 1
+
+    def test_ndisplay_transitions(self, Layer):
+        """Lock and auto behaviour across 2D/3D switches."""
+        data = _make_multiscale_3d()
+        layer = Layer(data, multiscale=True)
+        coarsest = len(data) - 1
+
+        # -- auto 2D->3D: should pick coarsest
+        _draw_layer(layer)
+        layer._slice_dims(Dims(ndim=3, ndisplay=3))
+        _draw_layer(layer)
+        assert layer.data_level == coarsest
+
+        # -- auto 3D->2D: should leave coarsest-level default behind
+        layer._slice_dims(Dims(ndim=3, ndisplay=2))
+        _draw_layer(layer)
+        assert layer.data_level != coarsest
+
+        # -- locked 2D->3D: lock should persist
+        layer.locked_data_level = 0
+        _draw_layer(layer)
+        assert layer.data_level == 0
+
+        layer._slice_dims(Dims(ndim=3, ndisplay=3))
+        _draw_layer(layer)
+        assert layer.data_level == 0
+
+        # -- locked 3D->2D: lock should persist
+        layer._slice_dims(Dims(ndim=3, ndisplay=2))
+        _draw_layer(layer)
+        assert layer.data_level == 0
+
+    def test_locked_level_refreshes_on_stale_data_level(self, Layer):
+        """_update_draw refreshes when _data_level drifts from locked."""
+        data = _make_multiscale_3d()
+        layer = Layer(data, multiscale=True)
+
+        layer._slice_dims(Dims(ndim=3, ndisplay=3))
+        layer.locked_data_level = 0
+        _draw_layer(layer)
+        assert layer.data_level == 0
+
+        # Simulate _data_level drifting out of sync (e.g. internal reset)
+        layer._data_level = len(data) - 1
+        _draw_layer(layer)
+        # _update_draw should have corrected it back to the locked level
+        assert layer.data_level == 0
+
+    def test_locked_level_loads_correct_data_3d(self, Layer):
+        """Verify the actual pixel values match the locked level."""
+        data = _make_multiscale_3d()
+        layer = Layer(data, multiscale=True)
+
+        layer._slice_dims(Dims(ndim=3, ndisplay=3))
+        _draw_layer(layer)
+
+        for level_idx in range(len(data)):
+            expected_value = (level_idx + 1) * 10
+            layer.locked_data_level = level_idx
+            layer._slice_dims(Dims(ndim=3, ndisplay=3))
+            view = layer._data_view
+            assert np.all(view == expected_value), (
+                f'Level {level_idx}: expected all {expected_value}, '
+                f'got unique values {np.unique(view)}'
+            )
