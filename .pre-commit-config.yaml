@@ -34,6 +34,14 @@ repos:
     exclude: .*\.py
 - repo: local
   hooks:
+  - id: check-citation-author-order
+    name: check CITATION.cff author ordering
+    language: python
+    additional_dependencies:
+    - PyYAML>=6.0
+    entry: python tools/check_citation_authors.py check-order
+    pass_filenames: false
+    files: ^CITATION.cff$
   - id: check-groups-vs-extras
     name: check that all group names in pyproject.toml are in extras
     language: python
