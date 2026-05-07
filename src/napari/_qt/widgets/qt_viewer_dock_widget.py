@@ -366,7 +366,7 @@ class QtCustomTitleBar(QLabel):
         self.setProperty('vertical', str(vertical))
         self.setProperty('floating', str(is_floating))
         self.vertical = vertical
-        self.setToolTip(trans._('drag to move. double-click toggle floating'))
+        self.setToolTip(trans._('drag to move. double-click toggles floating'))
 
         line = QFrame(self)
         line.setObjectName('QtCustomTitleBarLine')
