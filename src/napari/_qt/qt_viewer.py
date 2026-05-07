@@ -32,6 +32,7 @@ from napari._qt.widgets.qt_viewer_buttons import (
     QtViewerButtons,
 )
 from napari._qt.widgets.qt_viewer_dock_widget import QtViewerDockWidget
+from napari._qt.widgets.qt_welcome import QtWelcomeWidget
 from napari._vispy.utils.qt_font import QtFontManager
 from napari.components.camera import Camera
 from napari.components.layerlist import LayerList
@@ -98,12 +99,15 @@ class QtViewer(QSplitter):
     ----------
     viewer : napari.components.ViewerModel
         Napari viewer containing the rendered scene, layers, and controls.
-    canvas_class : napari._vispy.canvas.VispyCanvas
-        The VispyCanvas class providing the Vispy SceneCanvas. Users can also
-        have a custom canvas here.
     show_welcome_screen : bool, optional
         Flag to show a welcome message when no layers are present in the
         canvas. Default is `False`.
+    canvas_class : napari._vispy.canvas.VispyCanvas
+        The VispyCanvas class providing the Vispy SceneCanvas. Users can also
+        have a custom canvas here.
+    tips : Sequence[str] | None, optional
+        Custom welcome-screen tips. By default, the built-in napari tips are
+        used.
 
     Attributes
     ----------
@@ -131,7 +135,7 @@ class QtViewer(QSplitter):
         viewer: ViewerModel,
         show_welcome_screen: bool = False,
         canvas_class: type[VispyCanvas] = VispyCanvas,
-        tips: Sequence | None = None,
+        tips: Sequence[str] | None = None,
     ) -> None:
         super().__init__()
         self._instances.add(self)
@@ -160,10 +164,15 @@ class QtViewer(QSplitter):
         self._font_manager = QtFontManager()
         self._overlay_font = QGuiApplication.font().family()
 
+        main_widget = QWidget()
+        main_layout = QVBoxLayout()
+        main_layout.setContentsMargins(0, 2, 0, 2)
+        main_layout.setSpacing(0)
+
         # This dictionary holds the corresponding vispy visual for each layer
         self.canvas = canvas_class(
             viewer=viewer,
-            parent=self,
+            parent=main_widget,
             font_manager=self._font_manager,
             font_family=self._overlay_font,
             key_map_handler=self._key_map_handler,
@@ -171,11 +180,12 @@ class QtViewer(QSplitter):
             autoswap=get_settings().experimental.autoswap_buffers,  # see #5734
         )
 
-        main_widget = QWidget()
-        main_layout = QVBoxLayout()
-        main_layout.setContentsMargins(0, 2, 0, 2)
+        self._welcome_widget = QtWelcomeWidget(self.canvas.native, tips=tips)
+        self._welcome_widget.urls_drag_entered.connect(self._set_drag_status)
+        self._welcome_widget.urls_dropped.connect(self.dropEvent)
+
+        main_layout.addWidget(self.canvas.native, stretch=1)
         main_layout.addWidget(self.dims)
-        main_layout.setSpacing(0)
         main_widget.setLayout(main_layout)
 
         self.setOrientation(Qt.Orientation.Vertical)
@@ -187,6 +197,8 @@ class QtViewer(QSplitter):
         self.viewer.layers.events.inserted.connect(self._update_camera_depth)
         self.viewer.layers.events.removed.connect(self._update_camera_depth)
         self.viewer.dims.events.ndisplay.connect(self._update_camera_depth)
+        self.viewer.layers.events.inserted.connect(self._update_welcome_screen)
+        self.viewer.layers.events.removed.connect(self._update_welcome_screen)
         self.viewer.layers.selection.events.active.connect(
             self._on_active_change
         )
@@ -218,17 +230,12 @@ class QtViewer(QSplitter):
         for layer in self.viewer.layers:
             self._add_layer(layer)
 
-        # set up welcome screen
-        viewer.welcome_screen.visible = False
-        if tips is not None:
-            viewer.welcome_screen.tips = tips
-
     def showEvent(self, event):
         super().showEvent(event)
-        self.viewer.welcome_screen.visible = self._show_welcome_screen
+        self._update_welcome_screen()
 
     def hideEvent(self, event):
-        self.viewer.welcome_screen.visible = False
+        super().hideEvent(event)
 
     @property
     def show_welcome_screen(self) -> bool:
@@ -238,7 +245,7 @@ class QtViewer(QSplitter):
     @show_welcome_screen.setter
     def show_welcome_screen(self, value: bool):
         self._show_welcome_screen = value
-        self.viewer.welcome_screen.visible = value and self.isVisible()
+        self._update_welcome_screen()
 
     @staticmethod
     def _update_dask_cache_settings(
@@ -360,6 +367,15 @@ class QtViewer(QSplitter):
         """enable status on canvas enter"""
         self.viewer.status = 'Ready'
         self.viewer.mouse_over_canvas = True
+
+    def _update_welcome_screen(self):
+        """Update welcome screen display based on layer count."""
+        show_welcome = (
+            self._show_welcome_screen
+            and self.isVisible()
+            and not self.viewer.layers
+        )
+        self._set_welcome_visible(show_welcome)
 
     def _ensure_connect(self):
         # lazy load console
@@ -915,7 +931,10 @@ class QtViewer(QSplitter):
         with self.resize_canvas(size, scale):
             if fit_to_data_extent:
                 self.viewer.fit_to_view(margin=0)
-            img = self.canvas.screenshot()
+            if self._welcome_widget.isVisible():
+                img = self.canvas.native.grab().toImage()
+            else:
+                img = self.canvas.screenshot()
             if flash:
                 from napari._qt.utils import add_flash_animation
 
@@ -1113,6 +1132,19 @@ class QtViewer(QSplitter):
         self.viewerButtons.consoleButton.style().polish(
             self.viewerButtons.consoleButton
         )
+
+    def set_welcome_tips(self, tips: Sequence[str] | None) -> None:
+        """Replace the welcome screen tip pool."""
+        self._welcome_widget.set_tips(tips)
+
+    def _set_welcome_visible(self, visible: bool) -> None:
+        """Directly show or hide the welcome screen widget.
+
+        Unlike the ``show_welcome_screen`` property setter, this method does
+        not modify the ``_show_welcome_screen`` preference and bypasses the
+        layer-count / visibility guards in ``_update_welcome_screen``.
+        """
+        self._welcome_widget.set_welcome_visible(visible)
 
     def keyPressEvent(self, event):
         """Called whenever a key is pressed.
