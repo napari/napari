@@ -1,5 +1,7 @@
+import contextlib
 import os
 from enum import auto
+from importlib import metadata
 from pathlib import Path
 
 from napari.utils.compat import StrEnum
@@ -79,3 +81,15 @@ def detect_environment() -> Environment:
             return Environment.pixi
         return Environment.conda
     return Environment.pip
+
+
+def detect_installed_qt_bindings() -> dict[str, str]:
+    """Detect the installed Qt bindings."""
+    res = {}
+    with contextlib.suppress(metadata.PackageNotFoundError):
+        res['pyqt5'] = metadata.version('PyQt5')
+    with contextlib.suppress(metadata.PackageNotFoundError):
+        res['pyqt6'] = metadata.version('PyQt6')
+    with contextlib.suppress(metadata.PackageNotFoundError):
+        res['pyside6'] = metadata.version('PySide6')
+    return res
