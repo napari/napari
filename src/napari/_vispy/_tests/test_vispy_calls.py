@@ -121,3 +121,38 @@ def test_data_change_ndisplay_surface(make_napari_viewer):
     # Switch to 3D rendering mode and back to 2D rendering mode
     test_ndisplay_change(ndisplay=3)
     test_ndisplay_change(ndisplay=2)
+
+
+def test_add_invisible_image_layer_in_3d(make_napari_viewer):
+    """Adding an Image with visible=False while the viewer is already in 3D
+    must not crash vispy. Without the ScalarFieldSlicingState fix, the empty
+    placeholder cached at layer init has rank 2 (ndisplay defaults to 2),
+    set_view_slice is skipped on add because the layer is invisible, and
+    vispy then rejects the wrong-rank array with
+    "Volume visual needs a 3D array.".
+    """
+    viewer = make_napari_viewer()
+    viewer.dims.ndisplay = 3
+    layer = viewer.add_image(
+        np.zeros((4, 5, 6), dtype=np.uint8), visible=False
+    )
+    assert layer.visible is False
+    # Toggling visibility on then off exercises the slice-recompute path now
+    # that the placeholder is at the right rank.
+    layer.visible = True
+    layer.visible = False
+
+
+def test_add_invisible_labels_layer_in_3d(make_napari_viewer):
+    """Same regression as test_add_invisible_image_layer_in_3d, but for
+    Labels. Both layer types share ScalarFieldSlicingState so the bug and
+    fix apply to both.
+    """
+    viewer = make_napari_viewer()
+    viewer.dims.ndisplay = 3
+    layer = viewer.add_labels(
+        np.zeros((4, 5, 6), dtype=np.uint8), visible=False
+    )
+    assert layer.visible is False
+    layer.visible = True
+    layer.visible = False
