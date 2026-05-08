@@ -549,9 +549,15 @@ class Labels(ScalarFieldBase):
             seed = int(np.random.default_rng().integers(2**32 - 1))
 
         orig = self._original_random_colormap
-        self.colormap = shuffle_and_extend_colormap(
+        new_cmap = shuffle_and_extend_colormap(
             self._original_random_colormap, seed
         )
+        # Carry the layer's selection state onto the shuffled colormap, so
+        # the assign below is a no-op for `use_selection` (no spurious event)
+        # and `events.colormap` listeners observe the correct values.
+        new_cmap.use_selection = self._show_selected_label
+        new_cmap.selection = self._selected_label
+        self.colormap = new_cmap
         self._original_random_colormap = orig
 
     @property
@@ -585,11 +591,24 @@ class Labels(ScalarFieldBase):
             else:
                 color_mode = LabelColorMode.DIRECT
                 self._colormap = self._direct_colormap
+        # Adopt the new colormap's selection state into the layer's cache.
+        # `_show_selected_label` is the layer's source of truth, but each
+        # colormap object carries its own `use_selection`; honoring the
+        # incoming value keeps `_get_state` round-trips and externally-built
+        # cmaps coherent. Emit `events.show_selected_label` only when it
+        # actually changes so existing listeners don't see spurious fires.
+        old_show_selected = self._show_selected_label
+        new_show_selected = self._colormap.use_selection
+        self._show_selected_label = new_show_selected
         self._cached_labels = None  # invalidate the cached color mapping
         self._selected_color = self.get_color(self.selected_label)
         self._color_mode = color_mode
         self.events.colormap()  # Will update the LabelVispyColormap shader
         self.events.selected_label()
+        if new_show_selected != old_show_selected:
+            self.events.show_selected_label(
+                show_selected_label=new_show_selected
+            )
         self.refresh(extent=False)
 
     @ScalarFieldBase.data.setter  # type: ignore[attr-defined]
@@ -763,7 +782,13 @@ class Labels(ScalarFieldBase):
 
     @property
     def show_selected_label(self):
-        """Whether to filter displayed labels to only the selected label or not"""
+        """Whether to filter displayed labels to only the selected label or not.
+
+        The layer-level ``_show_selected_label`` is the source of truth.
+        Mutating ``layer.colormap.use_selection`` directly will not update
+        this property or fire ``events.show_selected_label`` -- always go
+        through this setter.
+        """
         return self._show_selected_label
 
     @show_selected_label.setter

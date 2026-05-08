@@ -54,11 +54,21 @@ class QtColorModeComboBoxControl(QtWidgetControlsBase):
         self.color_mode_combobox_label = QtWrappedLabel(trans._('color mode:'))
 
     def change_color_mode(self) -> None:
-        """Change color mode of label layer"""
+        """Change color mode of label layer.
+
+        Each colormap carries its own ``use_selection`` flag, so swapping
+        modes would otherwise expose whichever value the new cmap last
+        held. Pre-sync the filter and selection onto the target cmap
+        before assignment so the swap is a single coherent event (no
+        spurious adopt-and-emit cycle on the layer setter).
+        """
         if self.color_mode_combobox.currentData() == LabelColorMode.AUTO.value:
-            self._layer.colormap = self._layer._original_random_colormap
+            new_cmap = self._layer._original_random_colormap
         else:
-            self._layer.colormap = self._layer._direct_colormap
+            new_cmap = self._layer._direct_colormap
+        new_cmap.use_selection = self._layer.show_selected_label
+        new_cmap.selection = self._layer.selected_label
+        self._layer.colormap = new_cmap
 
     def _on_colormap_change(self) -> None:
         enable_combobox = not self._layer._is_default_colors(

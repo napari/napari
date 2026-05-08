@@ -1717,6 +1717,164 @@ def test_color_mapping_with_show_selected_label():
     assert np.allclose(layer.colormap.map(data), mapped_colors_all)
 
 
+def test_shuffle_preserves_show_selected_label_in_both_directions():
+    """Shuffling must reflect the layer's current ``show_selected_label``
+    state, both when enabled and when disabled. Covers the original
+    #8947 bug (shuffle silently dropped the filter) and its mirror image
+    (after enable -> shuffle -> disable, the next shuffle seeded from a
+    stale ``_original_random_colormap`` and revived ``use_selection``).
+    """
+    data = np.arange(5, dtype=np.int32)[:, np.newaxis].repeat(5, axis=1)
+    layer = Labels(data)
+    layer.selected_label = 2
+    layer.show_selected_label = True
+
+    seen = {}
+    layer.events.colormap.connect(
+        lambda e: seen.update(use_selection=layer.colormap.use_selection)
+    )
+    layer.new_colormap(seed=0)
+
+    # Filter state must be set before `events.colormap` fires so the
+    # vispy shader is rebuilt with the right `use_selection`.
+    assert seen['use_selection'] is True
+    assert layer.colormap.use_selection is True
+    assert layer.colormap.selection == 2
+    label_mask = data == 2
+    npt.assert_allclose(layer.colormap.map(data)[~label_mask], 0)
+
+    # Disable and shuffle again. The shuffle must seed from the layer's
+    # current state, not from a stale `_original_random_colormap`.
+    layer.show_selected_label = False
+    layer.new_colormap(seed=1)
+
+    assert layer.colormap.use_selection is False
+    mapped = layer.colormap.map(data)
+    for value in range(1, 5):
+        assert np.any(mapped[data == value] != 0)
+
+
+def test_direct_colormap_assignment_honors_new_use_selection():
+    """``layer.colormap = X`` adopts ``X.use_selection`` into the layer
+    cache and emits ``events.show_selected_label`` when it differs from
+    the previous value.
+
+    The colormap setter is the central swap point used by user code and
+    ``new_colormap()``. Assigning a fresh ``CyclicLabelColormap`` (which
+    defaults to ``use_selection=False``) flips the layer state to match
+    so vispy and the qt checkbox stay coherent. The qt color-mode
+    combobox pre-syncs the new cmap before assignment to preserve the
+    user's filter preference across mode swaps; that GUI-side path is
+    covered by ``test_color_mode_switch_preserves_show_selected_label``.
+    """
+    data = np.arange(5, dtype=np.int32)[:, np.newaxis].repeat(5, axis=1)
+    layer = Labels(data)
+    layer.show_selected_label = True
+
+    seen = []
+    layer.events.show_selected_label.connect(
+        lambda e: seen.append(e.show_selected_label)
+    )
+    layer.colormap = label_colormap(49, seed=0.7)
+
+    assert layer.show_selected_label is False
+    assert layer.colormap.use_selection is False
+    assert seen == [False]
+
+
+def test_show_selected_label_round_trip_honors_each_colormap():
+    """AUTO -> DIRECT -> toggle show_selected -> AUTO. ``show_selected_label``
+    tracks whichever colormap is currently active at every step.
+
+    ``_original_random_colormap`` is a snapshot whose ``use_selection``
+    reflects whatever it had when last touched. The layer adopts the
+    assigned cmap's value on every ``layer.colormap = ...`` swap, so the
+    round trip's final state is determined by the cmap, not by some
+    stashed layer preference.
+    """
+    data = np.arange(5, dtype=np.int32)[:, np.newaxis].repeat(5, axis=1)
+    layer = Labels(data)
+
+    # Direct API path AUTO -> DIRECT: assigning a fresh
+    # DirectLabelColormap (default use_selection=False) flips the layer
+    # state to match. (The qt combobox path pre-syncs first; see
+    # test_color_mode_switch_preserves_show_selected_label.)
+    direct_cmap = DirectLabelColormap(
+        color_dict={
+            0: [0, 0, 0, 0],
+            1: [1, 0, 0, 1],
+            2: [0, 1, 0, 1],
+            None: [0, 0, 1, 1],
+        }
+    )
+    layer.colormap = direct_cmap
+    assert isinstance(layer.colormap, DirectLabelColormap)
+    assert layer.show_selected_label is False
+
+    # Toggle while in DIRECT mode -- mutates the active (direct) cmap.
+    layer.show_selected_label = True
+    assert layer.colormap.use_selection is True
+
+    # Direct API path DIRECT -> AUTO: the stashed
+    # _original_random_colormap has use_selection=False (its default);
+    # the layer adopts that value on assignment, so
+    # show_selected_label flips to False.
+    layer.colormap = layer._original_random_colormap
+    assert (
+        layer.show_selected_label
+        == layer._original_random_colormap.use_selection
+    )
+
+
+def test_labels_constructor_honors_colormap_use_selection():
+    """Constructing ``Labels`` with a colormap whose ``use_selection`` is
+    pre-set yields a layer whose ``show_selected_label`` reflects it.
+
+    Note: ``selected_label`` vs ``colormap.selection`` is intentionally
+    out of scope here; that pair is being decoupled in #8699 (drawing
+    label vs display label).
+    """
+    cmap = label_colormap(49, seed=0.5)
+    cmap.use_selection = True
+
+    layer = Labels(np.zeros((4, 4), dtype=np.int32), colormap=cmap)
+
+    assert layer.show_selected_label is True
+
+
+def test_show_selected_label_survives_get_state_round_trip():
+    """``Labels._get_state()`` round-trips ``show_selected_label`` via the
+    serialised colormap object (which carries ``use_selection``).
+    """
+    data = np.arange(5, dtype=np.int32)[:, np.newaxis].repeat(5, axis=1)
+    layer = Labels(data)
+    layer.show_selected_label = True
+
+    state = layer._get_state()
+    new_layer = Labels(**state)
+
+    assert new_layer.show_selected_label is True
+    assert new_layer.colormap.use_selection is True
+
+
+def test_deepcopy_preserves_selection_state():
+    """``copy.deepcopy(layer)`` carries the selection state on the cloned
+    colormap. Guard against a future event-based sync regressing this if
+    listener wiring on the cloned colormap gets dropped."""
+    import copy
+
+    data = np.arange(5, dtype=np.int32)[:, np.newaxis].repeat(5, axis=1)
+    layer = Labels(data)
+    layer.selected_label = 2
+    layer.show_selected_label = True
+
+    clone = copy.deepcopy(layer)
+
+    assert clone.colormap.use_selection is True
+    assert clone.colormap.selection == 2
+    assert clone.selected_label == 2
+
+
 def test_color_mapping_when_seed_is_changed():
     """Checks if the color mapping is updated when the color palette seed is changed."""
     np.random.seed(0)
