@@ -483,5 +483,10 @@ authors:
   affiliation: Galgotias University
   orcid: https://orcid.org/0009-0004-4883-3797
   alias: Aniketsy
+- given-names: Lucien
+  family-names: Hinderling
+  affiliation: Institute of Cell Biology, University of Bern, Switzerland
+  orcid: https://orcid.org/0000-0002-3956-9363
+  alias: hinderling
 repository-code: https://github.com/napari/napari
 license: BSD-3-Clause

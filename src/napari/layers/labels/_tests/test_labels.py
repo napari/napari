@@ -1717,6 +1717,49 @@ def test_color_mapping_with_show_selected_label():
     assert np.allclose(layer.colormap.map(data), mapped_colors_all)
 
 
+def test_show_selected_label_preserved_after_shuffle():
+    """Shuffling colors must not silently disable show_selected_label."""
+    data = np.arange(5, dtype=np.int32)[:, np.newaxis].repeat(5, axis=1)
+    layer = Labels(data)
+    layer.selected_label = 2
+    layer.show_selected_label = True
+
+    seen = {}
+    layer.events.colormap.connect(
+        lambda e: seen.update(use_selection=layer.colormap.use_selection)
+    )
+    layer.new_colormap(seed=0)
+
+    # Selection state must be set before `events.colormap` fires, so the
+    # vispy shader is rebuilt with the right `use_selection`.
+    assert seen['use_selection'] is True
+    # And it must stick on the final colormap.
+    assert layer.colormap.use_selection is True
+    assert layer.colormap.selection == 2
+    label_mask = data == 2
+    npt.assert_allclose(layer.colormap.map(data)[~label_mask], 0)
+
+
+def test_shuffle_does_not_revive_stale_show_selected():
+    """Shuffling must reflect the layer's current show_selected_label state."""
+    data = np.arange(5, dtype=np.int32)[:, np.newaxis].repeat(5, axis=1)
+    layer = Labels(data)
+    layer.selected_label = 2
+
+    # Enable, shuffle (detaches `_original_random_colormap` from the layer's
+    # mutations), then disable. Without the fix, the next shuffle would seed
+    # from the now-stale original and revive `use_selection=True`.
+    layer.show_selected_label = True
+    layer.new_colormap(seed=0)
+    layer.show_selected_label = False
+    layer.new_colormap(seed=1)
+
+    assert layer.colormap.use_selection is False
+    mapped = layer.colormap.map(data)
+    for value in range(1, 5):
+        assert np.any(mapped[data == value] != 0)
+
+
 def test_color_mapping_when_seed_is_changed():
     """Checks if the color mapping is updated when the color palette seed is changed."""
     np.random.seed(0)
