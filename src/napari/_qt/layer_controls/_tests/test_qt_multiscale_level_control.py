@@ -11,6 +11,7 @@ from napari._qt.layer_controls.widgets.qt_multiscale_level_control import (
     _human_readable_size,
 )
 from napari.layers import Image, Labels
+from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
 
 
 # ---------------------------------------------------------------------------
@@ -186,19 +187,25 @@ _3D_MULTISCALE_DATA = [
 ]
 
 
-def test_levels_exceeding_3d_texture_limit_are_disabled(make_napari_viewer):
+def test_levels_exceeding_3d_texture_limit_are_disabled(qtbot):
     """In 3D, levels whose shape exceeds GL_MAX_3D_TEXTURE_SIZE are disabled."""
-    viewer = make_napari_viewer()
-    layer = viewer.add_image(_3D_MULTISCALE_DATA, multiscale=True)
+    layer = Image(_3D_MULTISCALE_DATA, multiscale=True)
+    qtctrl = QtImageControls(layer)
+    qtbot.addWidget(qtctrl)
 
+    # Switch to 3D display and rebuild items with a mocked texture limit
+    layer._slicing_state._slice_input = _SliceInput(
+        ndisplay=3,
+        world_slice=_ThickNDSlice.make_full(ndim=3),
+        order=(0, 1, 2),
+    )
     with patch(
         'napari._qt.layer_controls.widgets.qt_multiscale_level_control.get_max_texture_sizes',
         return_value=(16384, 32),
     ):
-        viewer.dims.ndisplay = 3
+        qtctrl._multiscale_level_control._rebuild_items()
 
-    ctrl = viewer.window._qt_viewer.controls.widgets[layer]
-    combo = ctrl._multiscale_level_control.level_combobox
+    combo = qtctrl._multiscale_level_control.level_combobox
     model = combo.model()
     assert isinstance(model, QStandardItemModel)
 
@@ -212,20 +219,20 @@ def test_levels_exceeding_3d_texture_limit_are_disabled(make_napari_viewer):
     assert model.item(3).isEnabled()
 
 
-def test_levels_all_enabled_in_2d(make_napari_viewer):
+def test_levels_all_enabled_in_2d(qtbot):
     """In 2D, no levels should be disabled regardless of 3D texture limit."""
-    viewer = make_napari_viewer()
-    layer = viewer.add_image(_3D_MULTISCALE_DATA, multiscale=True)
+    layer = Image(_3D_MULTISCALE_DATA, multiscale=True)
+    qtctrl = QtImageControls(layer)
+    qtbot.addWidget(qtctrl)
 
+    # Rebuild with a mocked texture limit while in 2D (default ndisplay=2)
     with patch(
         'napari._qt.layer_controls.widgets.qt_multiscale_level_control.get_max_texture_sizes',
         return_value=(16384, 32),
     ):
-        # Force a rebuild while in 2D
-        ctrl = viewer.window._qt_viewer.controls.widgets[layer]
-        ctrl._multiscale_level_control._rebuild_items()
+        qtctrl._multiscale_level_control._rebuild_items()
 
-    combo = ctrl._multiscale_level_control.level_combobox
+    combo = qtctrl._multiscale_level_control.level_combobox
     model = combo.model()
     assert isinstance(model, QStandardItemModel)
 
