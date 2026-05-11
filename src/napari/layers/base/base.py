@@ -37,7 +37,6 @@ from napari.layers.utils.interactivity_utils import (
 from napari.layers.utils.layer_utils import (
     Extent,
     coerce_affine,
-    compute_multiscale_level_and_corners,
     convert_to_uint8,
     dims_displayed_world_to_layer,
     get_extent_world,
@@ -2085,6 +2084,40 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
         return start_point, end_point
 
+    def _update_level_and_corners(
+        self, data_bbox_int, shape_threshold, displayed_axes
+    ):
+        """Update the data level and corner pixels for the current viewport.
+
+        Sets ``self.corner_pixels`` (and ``self._data_level`` for multiscale
+        layers) based on the viewport bounding box, and calls
+        ``self.refresh()`` when the level or visible region changes.
+
+        For non-multiscale layers this clips the viewport bounding box to the
+        data extent. Overridden in ScalarFieldBase for multiscale logic.
+
+        Parameters
+        ----------
+        data_bbox_int : numpy.ndarray, shape (2, ndisplay)
+            Integer bounding box of the viewport in data coordinates.
+        shape_threshold : tuple
+            Maximum displayed tile size in pixels (canvas shape).
+        displayed_axes : list of int
+            Indices of the currently displayed dimensions.
+        """
+        # The stored corner_pixels attribute must contain valid indices.
+        corners = np.zeros((2, self.ndim), dtype=int)
+        # Some empty layers (e.g. Points) may have a data extent that only
+        # contains nans, in which case the integer valued corner pixels
+        # cannot be meaningfully set.
+        displayed_extent = self.extent.data[:, displayed_axes]
+        if not np.all(np.isnan(displayed_extent)):
+            data_bbox_clipped = np.clip(
+                data_bbox_int, displayed_extent[0], displayed_extent[1]
+            )
+            corners[:, displayed_axes] = data_bbox_clipped
+        self.corner_pixels = corners
+
     def _update_draw(
         self, scale_factor, corner_pixels_displayed, shape_threshold
     ):
@@ -2127,77 +2160,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             [np.floor(data_bbox[0]), np.ceil(data_bbox[1])]
         ).astype(int)
 
-        locked = getattr(self, '_locked_data_level', None)
-
-        if locked is not None and self.multiscale:
-            # User has explicitly locked the data level; skip automatic
-            # level selection and use the full extent of that level.
-            old_level = self._data_level
-            self._data_level = locked
-            corners = np.zeros((2, self.ndim), dtype=int)
-            corners[1, displayed_axes] = (
-                np.take(self.data[locked].shape, displayed_axes) - 1
-            )
-            self.corner_pixels = corners
-            if old_level != locked:
-                self.refresh(extent=False, thumbnail=False)
-        elif self._slice_input.ndisplay == 2 and self.multiscale:
-            level, scaled_corners = compute_multiscale_level_and_corners(
-                data_bbox_int,
-                shape_threshold,
-                self.downsample_factors[:, displayed_axes],
-            )
-            corners = np.zeros((2, self.ndim), dtype=int)
-            # The corner_pixels attribute stores corners in the data
-            # space of the selected level. Using the level's data
-            # shape only works for images, but that's the only case we
-            # handle now and downsample_factors is also only on image layers.
-            max_coords = np.take(self.data[level].shape, displayed_axes) - 1
-            corners[:, displayed_axes] = np.clip(scaled_corners, 0, max_coords)
-            display_shape = tuple(
-                corners[1, displayed_axes] - corners[0, displayed_axes]
-            )
-            if any(s == 0 for s in display_shape):
-                return
-            # only update when level changes or
-            # when new view is outside current corner_pixels
-            if (
-                self.data_level != level
-                or np.any(
-                    corners[0, displayed_axes]
-                    < self.corner_pixels[0, displayed_axes]
-                )
-                or np.any(
-                    corners[1, displayed_axes]
-                    > self.corner_pixels[1, displayed_axes]
-                )
-            ):
-                self._data_level = level
-                self.corner_pixels = corners
-                self.refresh(extent=False, thumbnail=False)
-        else:
-            # set the data_level so that it is the lowest resolution in 3d view
-            level_changed = False
-            if self.multiscale is True:
-                new_level = len(self.level_shapes) - 1
-                level_changed = self._data_level != new_level
-                self._data_level = new_level
-
-            # The stored corner_pixels attribute must contain valid indices.
-            corners = np.zeros((2, self.ndim), dtype=int)
-            # Some empty layers (e.g. Points) may have a data extent that only
-            # contains nans, in which case the integer valued corner pixels
-            # cannot be meaningfully set.
-            displayed_extent = self.extent.data[:, displayed_axes]
-            if not np.all(np.isnan(displayed_extent)):
-                data_bbox_clipped = np.clip(
-                    data_bbox_int, displayed_extent[0], displayed_extent[1]
-                )
-                corners[:, displayed_axes] = data_bbox_clipped
-            self.corner_pixels = corners
-
-            if level_changed:
-                self.refresh(extent=False, thumbnail=False)
+        self._update_level_and_corners(
+            data_bbox_int, shape_threshold, displayed_axes
+        )
 
     def _get_source_info(self) -> dict:
         components = {}

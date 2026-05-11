@@ -26,6 +26,9 @@ from napari.layers.utils._slice_input import (
     _SliceInput,
     _ThickNDSlice,
 )
+from napari.layers.utils.layer_utils import (
+    compute_multiscale_level_and_corners,
+)
 from napari.layers.utils.plane import SlicingPlane
 from napari.types import LayerDataType
 from napari.utils._dask_utils import DaskIndexer
@@ -479,6 +482,78 @@ class ScalarFieldBase(Layer, ABC):
             self._data_level = len(self._data) - 1
         else:
             self._data_level = 0
+
+    def _update_level_and_corners(
+        self, data_bbox_int, shape_threshold, displayed_axes
+    ):
+        """Update the data level and corner pixels for the current viewport.
+
+        For multiscale layers, selects the appropriate resolution level
+        (locked, 2D auto, or 3D coarsest), computes corner pixels for that
+        level, and refreshes the layer when the level or visible region
+        changes. For non-multiscale data, delegates to the base implementation.
+        """
+        if not self.multiscale:
+            super()._update_level_and_corners(
+                data_bbox_int, shape_threshold, displayed_axes
+            )
+            return
+
+        if self._locked_data_level is not None:
+            # User has explicitly locked the data level; skip automatic
+            # level selection and use the full extent of that level.
+            locked = self._locked_data_level
+            old_level = self._data_level
+            self._data_level = locked
+            corners = np.zeros((2, self.ndim), dtype=int)
+            corners[1, displayed_axes] = (
+                np.take(self.data[locked].shape, displayed_axes) - 1
+            )
+            self.corner_pixels = corners
+            if old_level != locked:
+                self.refresh(extent=False, thumbnail=False)
+        elif self._slice_input.ndisplay == 2:
+            level, scaled_corners = compute_multiscale_level_and_corners(
+                data_bbox_int,
+                shape_threshold,
+                self.downsample_factors[:, displayed_axes],
+            )
+            corners = np.zeros((2, self.ndim), dtype=int)
+            max_coords = np.take(self.data[level].shape, displayed_axes) - 1
+            corners[:, displayed_axes] = np.clip(scaled_corners, 0, max_coords)
+            display_shape = tuple(
+                corners[1, displayed_axes] - corners[0, displayed_axes]
+            )
+            if any(s == 0 for s in display_shape):
+                return
+            # Only update when level changes or
+            # when new view is outside current corner_pixels
+            if (
+                self.data_level != level
+                or np.any(
+                    corners[0, displayed_axes]
+                    < self.corner_pixels[0, displayed_axes]
+                )
+                or np.any(
+                    corners[1, displayed_axes]
+                    > self.corner_pixels[1, displayed_axes]
+                )
+            ):
+                self._data_level = level
+                self.corner_pixels = corners
+                self.refresh(extent=False, thumbnail=False)
+        else:
+            # 3D: use the coarsest level, full extent
+            new_level = len(self.level_shapes) - 1
+            level_changed = self._data_level != new_level
+            self._data_level = new_level
+            corners = np.zeros((2, self.ndim), dtype=int)
+            corners[1, displayed_axes] = (
+                np.take(self.data[new_level].shape, displayed_axes) - 1
+            )
+            self.corner_pixels = corners
+            if level_changed:
+                self.refresh(extent=False, thumbnail=False)
 
     def _reset_thumbnail_level_data(self) -> None:
         """Set ``_thumbnail_level`` and ``_level_materializer`` for the current data.
