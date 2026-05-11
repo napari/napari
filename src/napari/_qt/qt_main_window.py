@@ -1589,7 +1589,7 @@ class Window:
         settings = get_settings()
         font_size = event.value if event else settings.appearance.font_size
         font_size = self._adjust_font_size_from_dpi_and_platform(font_size)
-        extra_variables = {'font_size': f'{font_size}px'}
+        extra_variables = {'font_size': f'{font_size}pt'}
         self._update_theme(extra_variables=extra_variables)
 
     def _update_theme(self, event=None, extra_variables=None):
@@ -1609,7 +1609,7 @@ class Window:
                 font_size = self._adjust_font_size_from_dpi_and_platform(
                     settings.appearance.font_size
                 )
-                extra_variables.update({'font_size': f'{font_size}px'})
+                extra_variables.update({'font_size': f'{font_size}pt'})
             # set the style sheet with the theme name and extra_variables
             style_sheet = get_stylesheet(
                 actual_theme_name, extra_variables=extra_variables

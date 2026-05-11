@@ -65,7 +65,7 @@ class Theme(EventedModel):
     current : Color
         Color used to highlight Qt widget.
     font_size : str
-        Font size (in pixels, px) used in the application.
+        Font size (in points, pt) used in the application.
     """
 
     id: str
@@ -84,7 +84,7 @@ class Theme(EventedModel):
     warning: Color
     error: Color
     current: Color
-    font_size: str = '9px'
+    font_size: str = '9pt'
 
     @field_validator('syntax_style', mode='before')
     @classmethod
@@ -102,8 +102,8 @@ class Theme(EventedModel):
     @field_validator('font_size', mode='before')
     @classmethod
     def _ensure_font_size(cls, value: str) -> str:
-        assert value.endswith('px'), trans._(
-            'Font size must be in pixels (px).', deferred=True
+        assert value.endswith('pt'), trans._(
+            'Font size must be in pixels (pt).', deferred=True
         )
         assert int(value[:-2]) > 0, trans._(
             'Font size must be greater than 0.', deferred=True
@@ -129,14 +129,14 @@ lighten_pattern = re.compile(r'{{\s?lighten\((\w+),?\s?([-\d]+)?\)\s?}}')
 opacity_pattern = re.compile(r'{{\s?opacity\((\w+),?\s?([-\d]+)?\)\s?}}')
 
 
-def decrease(font_size: str, px: float) -> str:
+def decrease(font_size: str, pt: float) -> str:
     """Decrease fontsize."""
-    return f'{float(font_size[:-2]) - float(px)}px'
+    return f'{float(font_size[:-2]) - float(pt)}pt'
 
 
-def increase(font_size: str, px: float) -> str:
+def increase(font_size: str, pt: float) -> str:
     """Increase fontsize."""
-    return f'{float(font_size[:-2]) + float(px)}px'
+    return f'{float(font_size[:-2]) + float(pt)}pt'
 
 
 def _parse_color_as_rgb(color: str | Color) -> tuple[int, int, int]:
@@ -387,7 +387,7 @@ DARK = Theme(
     # Console background. HEX: #121212
     console='rgb(18, 18, 18)',
     canvas='black',
-    font_size='9px',
+    font_size='9pt',
 )
 LIGHT = Theme(
     id='light',
@@ -406,7 +406,7 @@ LIGHT = Theme(
     syntax_style='default',
     console='rgb(255, 255, 255)',
     canvas='white',
-    font_size='9px',
+    font_size='9pt',
 )
 
 register_theme('dark', DARK, 'builtin')
