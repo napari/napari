@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Generator, Set as AbstractSet
 from typing import TYPE_CHECKING, TypeVar
 
 import numpy as np
@@ -10,6 +9,8 @@ from napari.layers.points._points_utils import _points_in_box_3d, points_in_box
 from napari.utils.events import Event
 
 if TYPE_CHECKING:
+    from collections.abc import Generator, Set as AbstractSet
+
     from napari.layers.points.points import Points
 
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 import contextlib
 from collections.abc import Callable
 from functools import partial
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, TypeVar, cast
 from weakref import ref
 
 from app_model.expressions import ContextKey
@@ -194,6 +194,35 @@ def _all_support_colorbar(s: LayerSel) -> bool:
     return bool(s and all(hasattr(x, 'colorbar') for x in s))
 
 
+def _all_support_border_colorbar(s: LayerSel) -> bool:
+    return bool(s and all(hasattr(x, 'border_colorbar') for x in s))
+
+
+def _all_support_face_colorbar(s: LayerSel) -> bool:
+    return bool(s and all(hasattr(x, 'face_colorbar') for x in s))
+
+
+A = TypeVar('A')
+
+
+class CallableContextKey(ContextKey[A, bool]):
+    """A context key that is a callable."""
+
+    def __init__(
+        self,
+        default_value: bool,
+        description: str,
+        getter: Callable[[A], Callable[[], bool]] | None = None,
+        **kwargs: str,
+    ) -> None:
+        super().__init__(
+            default_value=default_value,
+            description=description,
+            getter=cast(Callable[[A], bool], getter),
+            **kwargs,
+        )
+
+
 class LayerListSelectionContextKeys(ContextNamespace['LayerSel']):
     """Available context keys relating to the selection in a LayerList.
 
@@ -323,7 +352,17 @@ class LayerListSelectionContextKeys(ContextNamespace['LayerSel']):
         trans._('True when all selected layers support a colorbar.'),
         _all_support_colorbar,
     )
-    selected_empty_shapes_layer = ContextKey(
+    all_selected_layers_support_border_colorbar = ContextKey(
+        False,
+        trans._('True when all selected layers support a border colorbar.'),
+        _all_support_border_colorbar,
+    )
+    all_selected_layers_support_face_colorbar = ContextKey(
+        False,
+        trans._('True when all selected layers support a face colorbar.'),
+        _all_support_face_colorbar,
+    )
+    selected_empty_shapes_layer = CallableContextKey(
         False,
         trans._('True when there is a shapes layer without data selected.'),
         _empty_shapes_layer_selected,

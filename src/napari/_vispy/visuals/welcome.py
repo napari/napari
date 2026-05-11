@@ -13,6 +13,7 @@ from vispy.util.svg import Document
 from vispy.visuals.transforms import STTransform
 
 from napari._app_model import get_app_model
+from napari._vispy.utils.text import get_text_metrics
 from napari._vispy.visuals.text import Text
 from napari.resources import get_icon_path
 from napari.settings import get_settings
@@ -20,72 +21,89 @@ from napari.utils.action_manager import action_manager
 from napari.utils.interactions import Shortcut
 
 if TYPE_CHECKING:
+    from vispy.visuals.text.text import FontManager
+
     from napari.utils.color import ColorValue
 
 vispy_logger = logging.getLogger('vispy')
 
 
+def _load_logo() -> np.ndarray:
+    # load logo (disabling logging for some svg reading warnings)
+    old_level = vispy_logger.level
+    vispy_logger.setLevel(logging.ERROR)
+    coords = Document(get_icon_path('logo_silhouette')).paths[0].vertices[0][0]
+    vispy_logger.setLevel(old_level)
+    # drop z: causes issues with polygon agg mode
+    coords = coords[:, :2]
+    # center
+    coords -= (np.max(coords, axis=0) + np.min(coords, axis=0)) / 2
+    return coords
+
+
 class Welcome(Node):
-    def __init__(self) -> None:
-        old_level = vispy_logger.level
-        vispy_logger.setLevel(logging.ERROR)
-        self.logo_coords = (
-            Document(get_icon_path('logo_silhouette')).paths[0].vertices[0][0]
-        )
-        vispy_logger.setLevel(old_level)
-        self.logo_coords = self.logo_coords[
-            :, :2
-        ]  # drop z: causes issues with polygon agg mode
-        # center
-        self.logo_coords -= (
-            np.max(self.logo_coords, axis=0) + np.min(self.logo_coords, axis=0)
-        ) / 2
-        # make it smaller
-        self.logo_coords /= 4
-        # move it up
-        self.logo_coords[:, 1] -= 130  # magic number shifting up logo
+    def __init__(self, font_manager: FontManager, face: str) -> None:
+        self.logo_coords = _load_logo()
         super().__init__()
+
+        # make logo smaller and move it up (magic number)
+        self.logo_coords /= 4
+        self.logo_coords[:, 1] -= 130
 
         self.logo = Polygon(
             self.logo_coords, border_method='agg', border_width=2, parent=self
         )
+        self.logo.transform = STTransform()
+
         self.header = Text(
             text='',
-            pos=[0, 0],
+            line_height=1.75,
+            pos=[0, -10],
             anchor_x='center',
             anchor_y='bottom',
-            method='gpu',
             parent=self,
+            font_manager=font_manager,
+            face=face,
         )
+        self.header.transform = STTransform()
+
+        self.font_height = get_text_metrics(self.header).height()
+
         self.shortcut_keybindings = Text(
             text='',
             line_height=1.15,
-            pos=[-80, 60],
+            pos=[-80, 2.75 * self.font_height],
             anchor_x='right',
             anchor_y='bottom',
-            method='gpu',
             parent=self,
+            font_manager=font_manager,
+            face=face,
         )
+        self.shortcut_keybindings.transform = STTransform()
+
         self.shortcut_descriptions = Text(
             text='',
             line_height=1.15,
-            pos=[-60, 60],
+            pos=[-60, 2.75 * self.font_height],
             anchor_x='left',
             anchor_y='bottom',
-            method='gpu',
             parent=self,
+            font_manager=font_manager,
+            face=face,
         )
+        self.shortcut_descriptions.transform = STTransform()
+
         self.tip = Text(
             text='',
             line_height=1.15,
-            pos=[0, 160],
+            pos=[0, 7.5 * self.font_height],
             anchor_x='center',
             anchor_y='bottom',
-            method='gpu',
             parent=self,
+            font_manager=font_manager,
+            face=face,
         )
-
-        self.transform = STTransform()
+        self.tip.transform = STTransform()
 
     def set_color(self, color: ColorValue) -> None:
         self.logo.color = color
@@ -97,7 +115,7 @@ class Welcome(Node):
 
     def set_version(self, version: str) -> None:
         self.header.text = (
-            f'napari {version}\n\n'
+            f'napari {version}\n'
             'Drag file(s) here to open, or use the shortcuts below:'
         )
 
@@ -147,9 +165,9 @@ class Welcome(Node):
             command = app.commands[command_id].title
         else:
             # might be an action_manager action
-            keybinding = all_shortcuts.get(command_id, [None])[0]
-            if keybinding is not None:
-                shortcut = Shortcut(keybinding).platform
+            keybinding_ = all_shortcuts.get(command_id, [None])[0]
+            if keybinding_ is not None:
+                shortcut = Shortcut(keybinding_).platform
                 command = action_manager._actions[command_id].description
             else:
                 shortcut = command = None
@@ -157,17 +175,23 @@ class Welcome(Node):
         return shortcut, command
 
     def set_scale_and_position(self, x: float, y: float) -> None:
-        self.transform.translate = (x / 2, y / 2, 0, 0)
-        scale = min(x, y) * 0.002  # magic number
-        self.transform.scale = (scale, scale, 0, 0)
+        trans = (x / 2, y / 2, 0, 0)
+        # we don't want the logo to be affected by dpi ratio which is included in
+        # font_height, so we scale it separately
+        logo_scale = min(x, y) * 0.002  # magic number
+        self.logo.transform.translate = trans
+        self.logo.transform.scale = (logo_scale, logo_scale, 0, 0)
 
+        text_scale = min(x, y) / self.font_height * 0.04  # magic number
         for text in (
             self.header,
             self.shortcut_keybindings,
             self.shortcut_descriptions,
             self.tip,
         ):
-            text.font_size = max(scale * 10, 10)
+            text.font_size = text_scale * 8
+            text.transform.translate = trans
+            text.transform.scale = (text_scale, text_scale, 0, 0)
 
     def set_gl_state(self, *args: Any, **kwargs: Any) -> None:
         for node in self.children:

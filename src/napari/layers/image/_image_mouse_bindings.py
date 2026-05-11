@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Generator
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -11,6 +10,8 @@ from napari.utils.geometry import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Generator
+
     from napari.layers.image.image import Image
     from napari.utils.events import Event
 

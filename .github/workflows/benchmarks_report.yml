@@ -59,7 +59,9 @@ jobs:
 
       - name: Replace URLs
         run: |
-          sed -i 's@||BENCHMARK_CI_LOGS_URL||@${{ github.event.workflow_run.html_url }}@g' message.txt
+          sed -i "s@||BENCHMARK_CI_LOGS_URL||@${GITHUB_EVENT_WORKFLOW_RUN_HTML_URL}@g" message.txt
+        env:
+          GITHUB_EVENT_WORKFLOW_RUN_HTML_URL: ${{ github.event.workflow_run.html_url }}
 
       - name: Collect PR number if available
         run: |

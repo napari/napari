@@ -28,7 +28,8 @@ class ShortcutsSettings(EventedModel):
     ) -> dict[str, list[KeyBinding]]:
         for name, value in default_shortcuts.items():
             if name not in v:
-                v[name] = value
+                # make a copy of the default value
+                v[name] = list(value)
 
         return {
             name: [coerce_keybinding(kb) for kb in value]

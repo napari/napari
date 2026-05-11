@@ -1,9 +1,10 @@
 """OpenGL Utilities."""
 
-from collections.abc import Generator
+from __future__ import annotations
+
 from contextlib import contextmanager
 from functools import lru_cache
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import numpy as np
 import numpy.typing as npt
@@ -12,6 +13,9 @@ from vispy.gloo import gl
 from vispy.gloo.context import get_current_canvas
 
 from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
 
 texture_dtypes = [
     np.dtype(np.uint8),
