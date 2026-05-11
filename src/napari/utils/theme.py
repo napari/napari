@@ -129,14 +129,14 @@ lighten_pattern = re.compile(r'{{\s?lighten\((\w+),?\s?([-\d]+)?\)\s?}}')
 opacity_pattern = re.compile(r'{{\s?opacity\((\w+),?\s?([-\d]+)?\)\s?}}')
 
 
-def decrease(font_size: str, px: int) -> str:
+def decrease(font_size: str, px: float) -> str:
     """Decrease fontsize."""
-    return f'{int(font_size[:-2]) - int(px)}px'
+    return f'{float(font_size[:-2]) - float(px)}px'
 
 
-def increase(font_size: str, px: int) -> str:
+def increase(font_size: str, px: float) -> str:
     """Increase fontsize."""
-    return f'{int(font_size[:-2]) + int(px)}px'
+    return f'{float(font_size[:-2]) + float(px)}px'
 
 
 def _parse_color_as_rgb(color: str | Color) -> tuple[int, int, int]:
