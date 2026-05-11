@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import warnings
 from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING
 
 import numpy as np
-from vispy.scene import Node
 from vispy.visuals import ImageVisual
 
 from napari._vispy.layers.base import VispyBaseLayer
@@ -14,6 +14,9 @@ from napari._vispy.visuals.labels import LabelNode
 from napari._vispy.visuals.volume import Volume as VolumeNode
 from napari.layers._scalar_field.scalar_field import ScalarFieldBase
 from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    from vispy.scene import Node
 
 
 class ScalarFieldLayerNode(ABC):
