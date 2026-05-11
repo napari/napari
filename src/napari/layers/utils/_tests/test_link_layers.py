@@ -195,3 +195,48 @@ def test_link_layers_with_images_then_loaded_not_linked():
 
     assert not l1._slicing_state.loaded
     assert l2._slicing_state.loaded
+
+
+def test_linked_locked_data_level_multiscale_and_single():
+    """Linking multiscale and single-scale layers doesn't error on level sync."""
+    multiscale_data = [
+        np.zeros((64, 64)),
+        np.zeros((32, 32)),
+        np.zeros((16, 16)),
+    ]
+    ms_layer = layers.Image(multiscale_data, multiscale=True)
+    single_layer = layers.Image(np.zeros((64, 64)))
+
+    link_layers([ms_layer, single_layer])
+
+    # Setting a level that doesn't exist on single_layer is a no-op there
+    ms_layer.locked_data_level = 2
+    assert ms_layer.locked_data_level == 2
+    assert single_layer.locked_data_level is None
+
+    # Setting None syncs to both
+    ms_layer.locked_data_level = None
+    assert ms_layer.locked_data_level is None
+    assert single_layer.locked_data_level is None
+
+    # Setting level 0 works on both (both have at least 1 level)
+    ms_layer.locked_data_level = 0
+    assert ms_layer.locked_data_level == 0
+    assert single_layer.locked_data_level == 0
+
+
+def test_linked_locked_data_level_two_multiscale():
+    """Linking two multiscale layers syncs locked_data_level normally."""
+    data = [np.zeros((64, 64)), np.zeros((32, 32)), np.zeros((16, 16))]
+    l1 = layers.Image(data, multiscale=True)
+    l2 = layers.Image(data, multiscale=True)
+
+    link_layers([l1, l2])
+
+    l1.locked_data_level = 2
+    assert l1.locked_data_level == 2
+    assert l2.locked_data_level == 2
+
+    l2.locked_data_level = None
+    assert l1.locked_data_level is None
+    assert l2.locked_data_level is None

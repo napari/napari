@@ -200,10 +200,14 @@ class TestLockedDataLevel:
         layer.locked_data_level = None
         assert layer.locked_data_level is None
 
-        with pytest.raises(ValueError, match='locked_data_level'):
-            layer.locked_data_level = len(data)
-        with pytest.raises(ValueError, match='locked_data_level'):
-            layer.locked_data_level = -1
+        # Out-of-range values are silently ignored (e.g. for linked layers
+        # where one layer may have fewer levels than another).
+        layer.locked_data_level = 1
+        layer.locked_data_level = len(data)
+        assert layer.locked_data_level == 1  # unchanged
+
+        layer.locked_data_level = -1
+        assert layer.locked_data_level == 1  # unchanged
 
     def test_locked_data_level_reset_on_data_change(self, Layer):
         """Setting .data resets locked_data_level to None (auto)."""

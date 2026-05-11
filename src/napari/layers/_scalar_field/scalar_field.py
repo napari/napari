@@ -449,14 +449,7 @@ class ScalarFieldBase(Layer, ABC):
         if level is not None:
             n_levels = len(self.level_shapes)
             if level < 0 or level >= n_levels:
-                raise ValueError(
-                    trans._(
-                        'locked_data_level must be >= 0 and < {n_levels}, got {level}',
-                        deferred=True,
-                        n_levels=n_levels,
-                        level=level,
-                    )
-                )
+                return
         self._locked_data_level = level
         if level is not None:
             displayed_axes = self._slice_input.displayed
