@@ -572,7 +572,7 @@ typing-inspection==0.4.2
     # via
     #   pydantic
     #   pydantic-settings
-urllib3==2.6.3
+urllib3==2.7.0
     # via requests
 virtualenv==21.2.4
     # via napari (pyproject.toml)
