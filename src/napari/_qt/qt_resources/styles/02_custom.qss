@@ -420,7 +420,6 @@ NapariQtNotification #severity_icon {
 }
 
 #QtActivityButton {
-    padding: 10px;
     font-size: {{ font_size }};
 }
 
