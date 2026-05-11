@@ -1,4 +1,4 @@
-from qtpy.QtWidgets import QGridLayout, QLabel, QWidget
+from qtpy.QtWidgets import QAbstractScrollArea, QGridLayout, QLabel, QWidget
 
 from napari._qt.containers import QtListView
 from napari._qt.containers.qt_axis_model import AxisList, AxisModel
@@ -49,9 +49,9 @@ class QtDimsSorter(QWidget):
         self.axis_list = AxisList.from_dims(self.dims)
 
         self.view = QtListView(self.axis_list)
-        if len(self.axis_list) <= 2:
-            # prevent excess space in popup
-            self.view.setSizeAdjustPolicy(QtListView.AdjustToContents)
+        self.view.setSizeAdjustPolicy(
+            QAbstractScrollArea.SizeAdjustPolicy.AdjustToContents
+        )
 
         layout = QGridLayout()
         self.setLayout(layout)
@@ -68,9 +68,9 @@ class QtDimsSorter(QWidget):
 
         widget_title = QLabel(trans._('Dims. Ordering'), self)
 
-        self.layout().addWidget(widget_title, 0, 0)
-        self.layout().addWidget(widget_tooltip, 0, 1)
-        self.layout().addWidget(self.view, 1, 0, 1, 2)
+        layout.addWidget(widget_title, 0, 0)
+        layout.addWidget(widget_tooltip, 0, 1)
+        layout.addWidget(self.view, 1, 0, 1, 2)
 
         # connect axis_list and dims
         self.axis_list.events.reordered.connect(
