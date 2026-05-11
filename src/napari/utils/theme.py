@@ -2,7 +2,6 @@
 # pygments - see here for examples https://help.farbox.com/pygments.html
 import logging
 import re
-import sys
 from ast import literal_eval
 from contextlib import suppress
 from typing import Any, Literal
@@ -66,7 +65,7 @@ class Theme(EventedModel):
     current : Color
         Color used to highlight Qt widget.
     font_size : str
-        Font size (in points, pt) used in the application.
+        Font size (in pixels, px) used in the application.
     """
 
     id: str
@@ -85,7 +84,7 @@ class Theme(EventedModel):
     warning: Color
     error: Color
     current: Color
-    font_size: str = '12pt' if sys.platform == 'darwin' else '9pt'
+    font_size: str = '9px'
 
     @field_validator('syntax_style', mode='before')
     @classmethod
@@ -103,8 +102,8 @@ class Theme(EventedModel):
     @field_validator('font_size', mode='before')
     @classmethod
     def _ensure_font_size(cls, value: str) -> str:
-        assert value.endswith('pt'), trans._(
-            'Font size must be in points (pt).', deferred=True
+        assert value.endswith('px'), trans._(
+            'Font size must be in pixels (px).', deferred=True
         )
         assert int(value[:-2]) > 0, trans._(
             'Font size must be greater than 0.', deferred=True
@@ -130,14 +129,14 @@ lighten_pattern = re.compile(r'{{\s?lighten\((\w+),?\s?([-\d]+)?\)\s?}}')
 opacity_pattern = re.compile(r'{{\s?opacity\((\w+),?\s?([-\d]+)?\)\s?}}')
 
 
-def decrease(font_size: str, pt: int) -> str:
+def decrease(font_size: str, px: int) -> str:
     """Decrease fontsize."""
-    return f'{int(font_size[:-2]) - int(pt)}pt'
+    return f'{int(font_size[:-2]) - int(px)}px'
 
 
-def increase(font_size: str, pt: int) -> str:
+def increase(font_size: str, px: int) -> str:
     """Increase fontsize."""
-    return f'{int(font_size[:-2]) + int(pt)}pt'
+    return f'{int(font_size[:-2]) + int(px)}px'
 
 
 def _parse_color_as_rgb(color: str | Color) -> tuple[int, int, int]:
@@ -388,7 +387,7 @@ DARK = Theme(
     # Console background. HEX: #121212
     console='rgb(18, 18, 18)',
     canvas='black',
-    font_size='12pt' if sys.platform == 'darwin' else '9pt',
+    font_size='9px',
 )
 LIGHT = Theme(
     id='light',
@@ -407,7 +406,7 @@ LIGHT = Theme(
     syntax_style='default',
     console='rgb(255, 255, 255)',
     canvas='white',
-    font_size='12pt' if sys.platform == 'darwin' else '9pt',
+    font_size='9px',
 )
 
 register_theme('dark', DARK, 'builtin')
