@@ -100,18 +100,23 @@ jobs:
       - name: Create Release
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
         run: |
-          gh release create "${name}" "${files}" \
+          prerelease=()
+          if [[ "${name}" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+(a|b|rc)[0-9]+$ ]]; then
+              prerelease=(--prerelease)
+          fi
+
+          gh release create "${name}" dist/* \
               --title "${name}" \
-              --notes-file "${body_path}" \
+              --notes-file notes/release_notes.md \
               --target "${target_commit}" \
-              --prerelease "${prerelease}"
+              --repo "${repository}" \
+              "${prerelease[@]}"
+        shell: bash
         env:
-          name: ${{ env.tag }}
-          body_path: notes/release_notes.md
-          prerelease: ${{ contains(env.tag, 'rc') || contains(env.tag, 'a') || contains(env.tag, 'b') }}
+          repository: ${{ github.repository }}
+          name: ${{ github.ref_name }}
           target_commit: ${{ github.sha }}
-          files: |
-            dist/*
+          GH_TOKEN: ${{ github.token }}
 
   publish-to-pypi:
     name: Publish release to PyPI
