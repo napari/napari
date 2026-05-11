@@ -9,27 +9,8 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
 from napari._qt.utils import qt_signals_blocked
 from napari._vispy.utils.gl import get_max_texture_sizes
 from napari.layers import Image, Labels
+from napari.utils.misc import human_readable_size
 from napari.utils.translations import trans
-
-
-def _human_readable_size(size_bytes: float) -> str:
-    """Convert bytes to a human-readable string (KB, MB, GB, etc.).
-
-    Parameters
-    ----------
-    size_bytes : float
-        Number of bytes.
-
-    Returns
-    -------
-    str
-        Human-readable size string, e.g. ``"8.4 MB"``.
-    """
-    for unit in ('B', 'KB', 'MB', 'GB', 'TB'):
-        if abs(size_bytes) < 1000:
-            return f'{size_bytes:.1f} {unit}'
-        size_bytes /= 1000
-    return f'{size_bytes:.1f} PB'
 
 
 def _format_level_label(
@@ -63,7 +44,7 @@ def _format_level_label(
     else:
         dims = shape
     shape_str = ' \u00d7 '.join(str(s) for s in dims)
-    size_str = _human_readable_size(nbytes)
+    size_str = human_readable_size(nbytes)
     return f'{index}: {shape_str} ({size_str})'
 
 

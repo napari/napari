@@ -800,3 +800,23 @@ def argsort(values: Sequence[int]) -> list[int]:
     [1, 2, 0]
     """
     return sorted(range(len(values)), key=values.__getitem__)
+
+
+def human_readable_size(size_bytes: float) -> str:
+    """Convert bytes to a human-readable string (KB, MB, GB, etc.).
+
+    Parameters
+    ----------
+    size_bytes : float
+        Number of bytes.
+
+    Returns
+    -------
+    str
+        Human-readable size string, e.g. ``"8.4 MB"``.
+    """
+    for unit in ('B', 'KB', 'MB', 'GB', 'TB'):
+        if abs(size_bytes) < 1000:
+            return f'{size_bytes:.1f} {unit}'
+        size_bytes /= 1000
+    return f'{size_bytes:.1f} PB'

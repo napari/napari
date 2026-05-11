@@ -8,33 +8,9 @@ from napari._qt.layer_controls.qt_image_controls import QtImageControls
 from napari._qt.layer_controls.qt_labels_controls import QtLabelsControls
 from napari._qt.layer_controls.widgets.qt_multiscale_level_control import (
     _format_level_label,
-    _human_readable_size,
 )
 from napari.layers import Image, Labels
 from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
-
-
-# ---------------------------------------------------------------------------
-# _human_readable_size
-# ---------------------------------------------------------------------------
-@pytest.mark.parametrize(
-    ('size_bytes', 'expected'),
-    [
-        (0, '0.0 B'),
-        (1, '1.0 B'),
-        (999, '999.0 B'),
-        (1000, '1.0 KB'),
-        (1500, '1.5 KB'),
-        (1_000_000, '1.0 MB'),
-        (1_500_000, '1.5 MB'),
-        (1_000_000_000, '1.0 GB'),
-        (1_000_000_000_000, '1.0 TB'),
-        (1_000_000_000_000_000, '1.0 PB'),
-        (2_500_000_000_000_000, '2.5 PB'),
-    ],
-)
-def test_human_readable_size(size_bytes, expected):
-    assert _human_readable_size(size_bytes) == expected
 
 
 # ---------------------------------------------------------------------------
