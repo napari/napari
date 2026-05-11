@@ -1579,11 +1579,7 @@ class Window:
     def _adjust_font_size_from_dpi_and_platform(self, font_size):
         screen = self._qt_window.screen()
         baseline = 96.0
-        return (
-            font_size
-            * (baseline / screen.logicalDotsPerInch())
-            * screen.devicePixelRatio()
-        )
+        return font_size * (baseline / screen.logicalDotsPerInch())
 
     def _update_theme_font_size(self, event=None):
         settings = get_settings()
