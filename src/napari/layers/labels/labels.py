@@ -549,9 +549,14 @@ class Labels(ScalarFieldBase):
             seed = int(np.random.default_rng().integers(2**32 - 1))
 
         orig = self._original_random_colormap
-        self.colormap = shuffle_and_extend_colormap(
+        new_cmap = shuffle_and_extend_colormap(
             self._original_random_colormap, seed
         )
+        # Sync from the layer (source of truth) before assignment, so
+        # `events.colormap` listeners observe the correct `use_selection`.
+        new_cmap.use_selection = self._show_selected_label
+        new_cmap.selection = self._selected_label
+        self.colormap = new_cmap
         self._original_random_colormap = orig
 
     @property
