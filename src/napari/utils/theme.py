@@ -65,7 +65,9 @@ class Theme(EventedModel):
     current : Color
         Color used to highlight Qt widget.
     font_size : str
-        Font size (in points, pt) used in the application.
+        Font size (in points, pt) used in the application. Note that this is relative
+        to a baseline dpi of 96, and will result in different "pt" size if on a screen
+        with dpi different from 96 (e.g: hidpi screens).
     """
 
     id: str
@@ -103,7 +105,7 @@ class Theme(EventedModel):
     @classmethod
     def _ensure_font_size(cls, value: str) -> str:
         assert value.endswith('pt'), trans._(
-            'Font size must be in pixels (pt).', deferred=True
+            'Font size must be in points (pt).', deferred=True
         )
         assert int(value[:-2]) > 0, trans._(
             'Font size must be greater than 0.', deferred=True
