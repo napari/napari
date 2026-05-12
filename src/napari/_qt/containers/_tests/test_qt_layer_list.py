@@ -303,9 +303,9 @@ def test_lock_role_data(qtbot):
     """LockedRole should return the layer's locked property."""
     view, image = make_qt_layer_list_with_layer(qtbot)
     model_index = layer_to_model_index(view, 0)
-    assert view.model().data(model_index, LockedRole) is False
+    assert not view.model().data(model_index, LockedRole)
     image.locked = True
-    assert view.model().data(model_index, LockedRole) is True
+    assert view.model().data(model_index, LockedRole)
 
 
 def test_lock_role_set_data(qtbot):
@@ -313,7 +313,7 @@ def test_lock_role_set_data(qtbot):
     view, image = make_qt_layer_list_with_layer(qtbot)
     model_index = layer_to_model_index(view, 0)
     view.model().setData(model_index, True, LockedRole)
-    assert image.locked is True
+    assert image.locked
 
 
 def test_process_event_locked(qtbot):

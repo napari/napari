@@ -128,10 +128,10 @@ def test_toggle_lock():
     layer_list.selection.active = layer_list[0]
 
     _toggle_lock(layer_list)
-    assert layer_list[0].locked is True
+    assert layer_list[0].locked
 
     _toggle_lock(layer_list)
-    assert layer_list[0].locked is False
+    assert not layer_list[0].locked
 
 
 def test_toggle_lock_mixed_selection():
@@ -146,8 +146,8 @@ def test_toggle_lock_mixed_selection():
 
     _toggle_lock(layer_list)
 
-    assert layer_list[0].locked is False
-    assert layer_list[1].locked is True
+    assert not layer_list[0].locked
+    assert layer_list[1].locked
 
 
 def test_toggle_visibility_with_linked_layers():

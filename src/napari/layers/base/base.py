@@ -20,6 +20,7 @@ from npe2 import plugin_manager as pm
 from napari.layers.base._base_constants import (
     BaseProjectionMode,
     Blending,
+    LayerLock,
     Mode,
 )
 from napari.layers.base._base_mouse_bindings import (
@@ -551,7 +552,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         translate=None,
         units=None,
         visible=True,
-        locked: bool = False,
+        locked: bool | LayerLock = False,
     ):
         super().__init__()
 
@@ -635,7 +636,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
         self.corner_pixels = np.zeros((2, ndim), dtype=int)
         self._editable = True
-        self._locked = bool(locked)
+        self._locked = self._coerce_lock(locked)
         self._array_like = False
 
         self._thumbnail_shape = (32, 32, 4)
@@ -992,16 +993,27 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self.events.editable()
 
     @property
-    def locked(self) -> bool:
-        """bool: Whether the layer is locked (protected from deletion)."""
+    def locked(self) -> LayerLock:
+        """LayerLock: which UI operations are locked on this layer.
+
+        ``bool(layer.locked)`` is truthy when any lock flag is set. Setting
+        ``True``/``False`` is equivalent to ``LayerLock.ALL``/``LayerLock.NONE``.
+        """
         return self._locked
 
     @locked.setter
-    def locked(self, locked: bool) -> None:
-        if self._locked == locked:
+    def locked(self, locked: bool | LayerLock) -> None:
+        new_lock = self._coerce_lock(locked)
+        if self._locked == new_lock:
             return
-        self._locked = bool(locked)
+        self._locked = new_lock
         self.events.locked()
+
+    @staticmethod
+    def _coerce_lock(value: bool | LayerLock) -> LayerLock:
+        if isinstance(value, LayerLock):
+            return value
+        return LayerLock.ALL if value else LayerLock.NONE
 
     def _reset_editable(self) -> None:
         """Reset this layer's editable state based on layer properties."""

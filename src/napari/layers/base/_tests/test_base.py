@@ -5,6 +5,7 @@ import numpy.testing as npt
 import pint
 import pytest
 
+from napari.layers.base import LayerLock
 from napari.layers.base._test_util_sample_layer import SampleLayer
 
 REG = pint.get_application_registry()
@@ -276,6 +277,7 @@ def test_get_ray_intersections_miss():
 
 def test_layer_locked_default():
     layer = SampleLayer(np.empty((10, 10)))
+    assert layer.locked is LayerLock.NONE
     assert not layer.locked
 
 
@@ -285,7 +287,7 @@ def test_layer_locked_setter():
     layer.events.locked.connect(mock)
     layer.locked = True
     mock.assert_called_once()
-    assert layer.locked
+    assert layer.locked is LayerLock.ALL
     mock.reset_mock()
     layer.locked = True  # same value should not re-emit
     mock.assert_not_called()
@@ -301,4 +303,19 @@ def test_layer_locked_not_in_base_state():
 
 def test_layer_locked_constructor():
     layer = SampleLayer(np.empty((10, 10)), locked=True)
-    assert layer.locked
+    assert layer.locked is LayerLock.ALL
+
+
+def test_layer_locked_accepts_flag():
+    """Setter accepts LayerLock values and bool, both round-trip."""
+    layer = SampleLayer(np.empty((10, 10)))
+    layer.locked = LayerLock.STRUCTURAL
+    assert layer.locked is LayerLock.STRUCTURAL
+    assert bool(layer.locked) is True
+    layer.locked = LayerLock.NONE
+    assert layer.locked is LayerLock.NONE
+    assert bool(layer.locked) is False
+    layer.locked = True
+    assert layer.locked is LayerLock.ALL
+    layer.locked = False
+    assert layer.locked is LayerLock.NONE
