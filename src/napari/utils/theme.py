@@ -241,11 +241,15 @@ def template(css: str, **theme):
 
     def darken_match(matchobj):
         color, percentage = matchobj.groups()
-        return darken(theme[color], float(percentage))
+        return darken(
+            theme[color], float(percentage), theme_type=theme['type']
+        )
 
     def lighten_match(matchobj):
         color, percentage = matchobj.groups()
-        return lighten(theme[color], float(percentage))
+        return lighten(
+            theme[color], float(percentage), theme_type=theme['type']
+        )
 
     def opacity_match(matchobj):
         color, value = matchobj.groups()
@@ -426,20 +430,20 @@ LIGHT = Theme(
     id='light',
     type='light',
     label='Default Light',
-    background='rgb(239, 235, 233)',
-    foreground='rgb(214, 208, 206)',
-    primary='rgb(188, 184, 181)',
-    secondary='rgb(150, 146, 144)',
-    highlight='rgb(163, 158, 156)',
+    background='rgb(232, 232, 235)',
+    foreground='rgb(208, 210, 212)',
+    primary='rgb(188, 190, 194)',
+    secondary='rgb(172, 174, 178)',
+    highlight='rgb(166, 168, 172)',
     text='rgb(59, 58, 57)',
-    icon='rgb(107, 105, 103)',
+    icon='rgb(97, 95, 93)',
     warning='rgb(227, 182, 23)',
     error='rgb(255, 18, 31)',
-    current='rgb(253, 240, 148)',
+    current='rgb(150, 210, 245)',
     syntax_style='default',
-    console='rgb(255, 255, 255)',
+    console='white',
     canvas='white',
-    font_size=DARK.font_size,
+    font_size='12pt' if sys.platform == 'darwin' else '9pt',
 )
 
 register_theme('dark', DARK, 'builtin')
