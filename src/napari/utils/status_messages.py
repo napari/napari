@@ -3,10 +3,13 @@ from collections.abc import Iterable
 import numpy as np
 import numpy.typing as npt
 
+from napari.settings import get_settings
+
 
 def format_float(value):
     """Nice float formatting into strings."""
-    return f'{value:0.3g}'
+    precision = get_settings().application.float_precision
+    return f'{value:0.{precision}g}'
 
 
 def status_format(value):

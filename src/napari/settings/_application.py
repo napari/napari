@@ -239,6 +239,16 @@ class ApplicationSettings(EventedModel):
         ),
     )
 
+    float_precision: int = Field(
+        3,
+        ge=1,
+        le=10,
+        title=trans._('Float precision'),
+        description=trans._(
+            'Number of significant digits when displaying float values in the status bar and layer tooltips.'
+        ),
+    )
+
     confirm_close_window: bool = Field(
         default=True,
         title=trans._('Confirm window or application closing'),
