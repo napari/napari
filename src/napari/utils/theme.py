@@ -363,7 +363,7 @@ def _invert_dark_light(color: Color) -> Color:
 
     This preserves hue, but desaturates when swapping from dark to light because
     """
-    r, g, b = color.as_rgb_tuple(alpha=False)
+    r, g, b = color.as_rgb_tuple(alpha=False)  # type: ignore[misc]
 
     # use perceived luminance for darken/lighten
     lum = 0.299 * r + 0.587 * g + 0.114 * b
