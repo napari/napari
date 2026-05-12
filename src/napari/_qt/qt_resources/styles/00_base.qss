@@ -610,6 +610,6 @@ QStatusBar::item{
 
 /* ----------------- QHeaderView ----------------- */
 QHeaderView::section {
-  background-color: {{ highlight }};
+  background-color: {{ foreground }};
   padding: 2px;
 }
