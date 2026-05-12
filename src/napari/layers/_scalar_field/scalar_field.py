@@ -435,10 +435,6 @@ class ScalarFieldBase(Layer, ABC):
         level instead of automatic level selection based on the viewport.
         Set to ``None`` to restore automatic behaviour.
 
-        Raises
-        ------
-        ValueError
-            If *level* is not ``None`` and is outside ``[0, n_levels)``.
 
         .. versionadded:: 0.7.1
         """
