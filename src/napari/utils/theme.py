@@ -358,6 +358,57 @@ def rebuild_theme_settings():
     settings.appearance.refresh_themes()
 
 
+def _invert_dark_light(color: Color) -> Color:
+    """Invert dark colors into bright and viceversa.
+
+    This preserves hue, but desaturates when swapping from dark to light because
+    """
+    r, g, b = color.as_rgb_tuple(alpha=False)
+
+    # use perceived luminance for darken/lighten
+    lum = 0.299 * r + 0.587 * g + 0.114 * b
+
+    norm = lum / 255
+
+    target = (1 - norm) ** 0.8 * 255
+
+    # special case for near-black otherwise we get black out
+    if lum < 1:
+        return Color((255, 255, 255))
+
+    scale = target / lum
+
+    # inverted colors
+    ir = r * scale
+    ig = g * scale
+    ib = b * scale
+
+    # desaturate colors that were lightened a lot
+    # this is kinda arbitrary, but light colors seem a lot more
+    # saturated than dark colors with the same values
+    # the coefficients at the right are tunable
+    if scale > 1.0:
+        # brighten -> desaturate
+        sat_adjust = 1.0 / (1.0 + (scale - 1.0) * 0.5)
+    else:
+        # darken -> mildly saturate
+        sat_adjust = 1.0 + (1.0 - scale) * 0.15
+
+    # blend toward a mid-gray as bright as the rgb
+    gray = (ir + ig + ib) / 3
+    ir = gray + (ir - gray) * sat_adjust
+    ig = gray + (ig - gray) * sat_adjust
+    ib = gray + (ib - gray) * sat_adjust
+
+    return Color(
+        (
+            max(0, min(255, int(ir))),
+            max(0, min(255, int(ig))),
+            max(0, min(255, int(ib))),
+        )
+    )
+
+
 # Note: these colors are sometimes lightened / darkened in the qss file.
 DARK = Theme(
     id='dark',
@@ -372,7 +423,7 @@ DARK = Theme(
     icon='rgb(209, 210, 212)',
     warning='rgb(227, 182, 23)',
     error='rgb(153, 18, 31)',
-    current='rgb(0, 122, 204)',
+    current='rgb(57, 102, 204)',
     syntax_style='native',
     console='rgb(18, 18, 18)',
     canvas='black',
@@ -382,20 +433,20 @@ LIGHT = Theme(
     id='light',
     type='light',
     label='Default Light',
-    background='rgb(239, 235, 233)',
-    foreground='rgb(214, 208, 206)',
-    primary='rgb(188, 184, 181)',
-    secondary='rgb(150, 146, 144)',
-    highlight='rgb(163, 158, 156)',
-    text='rgb(59, 58, 57)',
-    icon='rgb(107, 105, 103)',
-    warning='rgb(227, 182, 23)',
-    error='rgb(255, 18, 31)',
-    current='rgb(253, 240, 148)',
+    background=_invert_dark_light(DARK.background),
+    foreground=_invert_dark_light(DARK.foreground),
+    primary=_invert_dark_light(DARK.primary),
+    secondary=_invert_dark_light(DARK.secondary),
+    highlight=_invert_dark_light(DARK.highlight),
+    text=_invert_dark_light(DARK.text),
+    icon=_invert_dark_light(DARK.icon),
+    warning=_invert_dark_light(DARK.warning),
+    error=_invert_dark_light(DARK.error),
+    current=_invert_dark_light(DARK.current),
     syntax_style='default',
-    console='rgb(255, 255, 255)',
+    console=_invert_dark_light(DARK.console),
     canvas='white',
-    font_size='12pt' if sys.platform == 'darwin' else '9pt',
+    font_size=DARK.font_size,
 )
 
 register_theme('dark', DARK, 'builtin')
