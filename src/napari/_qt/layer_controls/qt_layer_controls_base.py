@@ -256,6 +256,13 @@ class QtLayerControls(QFrame):
         """
         self._set_transform_tool_state()
 
+    def _on_order_changed(self) -> None:
+        """Respond to a change in the axis display order.
+
+        Override in subclasses that need to update when displayed axes change
+        (e.g. to rebuild multiscale level labels).
+        """
+
     def _set_transform_tool_state(self):
         """
         Enable/disable transform button taking into account:

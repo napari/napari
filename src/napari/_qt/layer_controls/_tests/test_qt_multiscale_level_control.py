@@ -214,3 +214,33 @@ def test_levels_all_enabled_in_2d(qtbot):
 
     for i in range(combo.count()):
         assert model.item(i).isEnabled()
+
+
+# ---------------------------------------------------------------------------
+# Displayed axes (order) change tests
+# ---------------------------------------------------------------------------
+_4D_MULTISCALE_DATA = [
+    np.zeros((3, 10, 64, 64), dtype=np.uint8),
+    np.zeros((3, 10, 32, 32), dtype=np.uint8),
+]
+
+
+def test_order_change_rebuilds_labels(qtbot):
+    """Changing displayed axes should update combobox labels."""
+    layer = Image(_4D_MULTISCALE_DATA, multiscale=True)
+    qtctrl = QtImageControls(layer)
+    qtbot.addWidget(qtctrl)
+
+    combo = qtctrl._multiscale_level_control.level_combobox
+    label_before = combo.itemText(1)
+
+    # Change displayed axes from default (2, 3) to (1, 3)
+    layer._slicing_state._slice_input = _SliceInput(
+        ndisplay=2,
+        world_slice=_ThickNDSlice.make_full(ndim=4),
+        order=(0, 2, 1, 3),
+    )
+    qtctrl._on_order_changed()
+
+    label_after = combo.itemText(1)
+    assert label_before != label_after

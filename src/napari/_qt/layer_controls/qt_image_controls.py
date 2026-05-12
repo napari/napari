@@ -74,3 +74,8 @@ class QtImageControls(QtBaseImageControls):
         else:
             self._multiscale_level_control._on_display_change_hide()
         super()._on_ndisplay_changed()
+
+    def _on_order_changed(self):
+        """Rebuild multiscale level labels for the new displayed axes."""
+        if self.layer.multiscale:
+            self._multiscale_level_control._rebuild_items()
