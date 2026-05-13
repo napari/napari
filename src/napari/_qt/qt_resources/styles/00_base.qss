@@ -411,7 +411,11 @@ QScrollBar::sub-line:horizontal:pressed {
     background-color: {{ current }};
 }
 
-/* TODO: this doesn't work for some reason... */
+/* TODO: this doesn't work for some reason...
+ *       AFAIK this just happens with some native styles
+ *       because the hover detection might not always be there
+ *       for add-line and sub-line widgets
+*/
 QScrollBar::add-line:horizontal:hover,
 QScrollBar::sub-line:horizontal:hover {
     background-color: {{ highlight }}
