@@ -159,11 +159,12 @@ class LayerLock(Flag):
     ``Layer.locked`` API. ``bool(value)`` is truthy when any flag is set.
 
         * NONE: no operations are locked.
-        * STRUCTURAL: layer is protected from UI-driven delete, convert,
-          and stack split/merge.
+        * DELETION: layer is protected from UI-driven delete; convert and
+          stack split/merge are also blocked because they delete the
+          original layer.
         * ALL: every defined lock dimension is engaged.
     """
 
     NONE = 0
-    STRUCTURAL = auto()
-    ALL = STRUCTURAL
+    DELETION = auto()
+    ALL = DELETION

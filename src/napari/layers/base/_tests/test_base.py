@@ -309,8 +309,8 @@ def test_layer_locked_constructor():
 def test_layer_locked_accepts_flag():
     """Setter accepts LayerLock values and bool, both round-trip."""
     layer = SampleLayer(np.empty((10, 10)))
-    layer.locked = LayerLock.STRUCTURAL
-    assert layer.locked is LayerLock.STRUCTURAL
+    layer.locked = LayerLock.DELETION
+    assert layer.locked is LayerLock.DELETION
     assert bool(layer.locked) is True
     layer.locked = LayerLock.NONE
     assert layer.locked is LayerLock.NONE

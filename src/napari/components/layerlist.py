@@ -185,7 +185,6 @@ class LayerList(SelectableEventedList[Layer]):
         super()._process_delete_item(item)
         item.events.extent.disconnect(self._clean_cache)
         item.events._extent_augmented.disconnect(self._clean_cache)
-        item.events.locked.disconnect(self._on_layer_locked_changed)
         self.unlink_layers([item])
         self._clean_cache()
 
@@ -197,11 +196,6 @@ class LayerList(SelectableEventedList[Layer]):
             '_step_size',
         )
         [self.__dict__.pop(p, None) for p in cached_properties]
-
-    def _on_layer_locked_changed(self, event):
-        """Re-evaluate context keys when a layer's locked state changes."""
-        if hasattr(self, '_selection_ctx_keys'):
-            self._selection_ctx_keys.refresh(self.selection)
 
     def __newlike__(self, data):
         return LayerList(data)
@@ -274,7 +268,6 @@ class LayerList(SelectableEventedList[Layer]):
         new_layer.events.data.connect(
             self._trigger_check_ndim_and_maybe_clean_units
         )
-        new_layer.events.locked.connect(self._on_layer_locked_changed)
         super().insert(index, new_layer)
         self._check_ndim_and_maybe_clean_units(new_layer.ndim)
 
