@@ -282,24 +282,30 @@ class VispyLabelsLayer(VispyScalarFieldBaseLayer):
             self.texture_data = color_texture
 
         elif not auto_mode:  # only for raw_dtype.itemsize > 2
-            color_dict = colormap._values_mapping_to_minimum_values_set()[1]
+            use_selection = self.layer.show_selected_label
+            selected_label = self.layer.selected_label
+            color_dict = colormap._values_mapping_to_minimum_values_set(
+                use_selection=use_selection, selection=selected_label
+            )[1]
             max_size = get_max_texture_sizes()[0]
             val_texture = build_textures_from_dict(color_dict, max_size)
 
-            dtype = _texture_dtype(
-                self.layer._direct_colormap._num_unique_colors + 2,
-                raw_dtype,
+            num_colors = (
+                2
+                if use_selection
+                else self.layer._direct_colormap._num_unique_colors + 2
             )
+            dtype = _texture_dtype(num_colors, raw_dtype)
             if issubclass(dtype.type, np.integer):
                 scale = np.iinfo(dtype).max
             else:  # float32 texture
                 scale = 1.0
 
             selection_texture = colormap._selection_as_minimum_dtype(
-                self.layer.selected_label, raw_dtype
+                selected_label, raw_dtype, use_selection=use_selection
             )
             self.node.cmap = DirectLabelVispyColormap(
-                use_selection=self.layer.show_selected_label,
+                use_selection=use_selection,
                 selection=selection_texture,
                 scale=scale,
                 color_map_size=val_texture.shape[0],
