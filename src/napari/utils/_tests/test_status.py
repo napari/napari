@@ -39,5 +39,7 @@ COMBINED_FORMATTED = f'[1e+06, {MISSING_FORMATTED}, {STRING_FORMATTED}]'
 def test_status_format(input_data, expected, monkeypatch):
     """test various formatting cases embodied in utils.status_messages.status_format with the default parameter 3"""
 
-    monkeypatch.setattr(get_settings().application, 'float_precision', 3)
+    monkeypatch.setattr(
+        get_settings().application, 'float_display_precision', 3
+    )
     assert status_format(input_data) == expected

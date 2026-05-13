@@ -8,7 +8,7 @@ from napari.settings import get_settings
 
 def format_float(value):
     """Nice float formatting into strings."""
-    precision = get_settings().application.float_precision
+    precision = get_settings().application.float_display_precision
     return f'{value:0.{precision}g}'
 
 

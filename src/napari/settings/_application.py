@@ -239,11 +239,11 @@ class ApplicationSettings(EventedModel):
         ),
     )
 
-    float_precision: int = Field(
+    float_display_precision: int = Field(
         3,
         ge=1,
         le=10,
-        title=trans._('Float precision'),
+        title=trans._('Float display precision'),
         description=trans._(
             'Number of significant digits when displaying float values in the status bar and layer tooltips.'
         ),
