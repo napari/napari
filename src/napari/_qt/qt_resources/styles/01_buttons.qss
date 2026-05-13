@@ -88,6 +88,16 @@ QtViewerPushButton[mode="ndisplay_button"]:checked {
   );
 }
 
+QtViewerPushButton[mode="ndisplay_button"]:checked:hover {
+    background: qlineargradient(
+      x1: 0, y1: 0, x2: 1, y2: 0,
+      stop: 0 {{ highlight }},
+      stop: 0.5 {{ highlight }},
+      stop: 0.7 {{ current }},
+      stop: 1 {{ current }}
+    );
+}
+
 QtViewerPushButton[mode="ndisplay_button"] {
   image: url("theme_{{ id }}:/2D-toggle.svg");
   min-width: 49px;
@@ -101,6 +111,16 @@ QtViewerPushButton[mode="ndisplay_button"] {
     stop: 0.7 {{ primary }},
     stop: 1 {{ primary }}
   );
+}
+
+QtViewerPushButton[mode="ndisplay_button"]:hover {
+    background: qlineargradient(
+      x1: 0, y1: 0, x2: 1, y2: 0,
+      stop: 0 {{ current }},
+      stop: 0.5 {{ current }},
+      stop: 0.7 {{ highlight }},
+      stop: 1 {{ highlight }}
+    );
 }
 
 QtViewerPushButton[mode="grid_view_button"]:checked {
