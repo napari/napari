@@ -766,5 +766,9 @@ QCommandLineEdit, QCommandList, QCommandLabel {
 }
 
 QCommandLineEdit, QCommandList {
-  background-color: {{ foreground }}
+  background-color: {{ foreground }};
+}
+
+QCommandList::item:selected {
+  background-color: {{ primary }};
 }
