@@ -140,7 +140,7 @@ def _parse_color_as_rgb(color: str | Color) -> tuple[int, int, int]:
 
 
 def _shift_luminance(
-    color: tuple[int, int, int], percentage: float
+    color: tuple[float, float, float], percentage: float
 ) -> tuple[int, int, int]:
     """Darkens or lightens a color preserving hue and perceived saturation."""
     r, g, b = color
