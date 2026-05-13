@@ -764,3 +764,7 @@ QMenu, QModelMenu {
 QCommandLineEdit, QCommandList, QCommandLabel {
   font-size: {{ increase(font_size, 4) }};
 }
+
+QCommandLineEdit, QCommandList {
+  background-color: {{ foreground }}
+}
