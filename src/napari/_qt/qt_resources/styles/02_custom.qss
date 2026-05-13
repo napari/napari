@@ -36,6 +36,7 @@ QStatusBar {
 QMainWindow::separator {
   width: 4px;
   height: 4px;
+  padding: 2px;
   border: none;
   background-color: {{ background }};
 }
@@ -56,6 +57,7 @@ QMainWindow::separator:vertical {
 
 #QtCustomTitleBar {
   padding-top:3px;
+  padding-bottom:3px;
   background-color: {{ background }};
 }
 
@@ -74,7 +76,7 @@ QMainWindow::separator:vertical {
 }
 
 #QtCustomTitleBar > QPushButton:hover {
-  background-color: {{ foreground }};
+  background-color: {{ primary }};
 }
 
 #QtCustomTitleBar > QLabel {
