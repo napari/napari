@@ -804,7 +804,7 @@ def _increment_unnamed_colormap(
     ----------
     existing : list of str
         Names of existing colormaps.
-    name : str, optional
+    name : str, default '[unnamed colormap]'
         Name of colormap to be incremented. by default '[unnamed colormap]'
 
     Returns
@@ -814,7 +814,7 @@ def _increment_unnamed_colormap(
     display_name : str
         Display name of colormap after incrementing.
     """
-    display_name = '[unnamed colormap]'
+    display_name: str = name
     if name == '[unnamed colormap]':
         past_names = [n for n in existing if n.startswith('[unnamed colormap')]
         name = f'[unnamed colormap {len(past_names)}]'
@@ -1011,7 +1011,7 @@ def _colormap_from_colors(
     return _ensure_unique_exists(
         Colormap(
             name=name,
-            display_name=display_name or name,
+            display_name=display_name,
             colors=color_array,
         ),
         available_colormaps,
