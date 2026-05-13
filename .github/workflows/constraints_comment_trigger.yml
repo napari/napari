@@ -12,7 +12,7 @@ jobs:
   add_eyes:
     name: Add eyes reaction
     if: github.event.issue.pull_request != '' && contains(github.event.comment.body, '@napari-bot update constraints')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     steps:
       - name: Add eyes reaction
         run: |
@@ -31,7 +31,7 @@ jobs:
   add_rocket:
     name: Add rocket reaction
     needs: trigger-benchmarks
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     steps:
       - name: Add rocket reaction
         run: |

@@ -74,6 +74,12 @@ def _sys_name() -> str:
     return ''
 
 
+def _desktop_env() -> str:
+    if sys.platform == 'linux':
+        return f'{os.getenv("XDG_SESSION_TYPE")} - {os.getenv("XDG_SESSION_DESKTOP")}'
+    return ''
+
+
 def _napari_from_conda() -> bool:
     """
     Try to check if napari was installed using conda.
@@ -187,6 +193,9 @@ def sys_info(as_html: bool = False) -> str:
     __sys_name = _sys_name()
     if __sys_name:
         text += f'<b>System</b>: {__sys_name}<br>'
+    __desktop_env = _desktop_env()
+    if __desktop_env:
+        text += f'<b>Session</b>: {__desktop_env}<br>'
 
     text += f'<b>Python</b>: {sys_version}<br>'
 
@@ -296,7 +305,7 @@ def sys_info(as_html: bool = False) -> str:
         )
         _config_path = get_settings().config_path
     except ValueError:
-        from napari.utils._appdirs import user_config_dir
+        from napari.utils._platformdirs import user_config_dir
 
         _async_setting = str(os.getenv('NAPARI_ASYNC', 'False'))
         _autoswap_buffers = str(os.getenv('NAPARI_AUTOSWAP', 'False'))
