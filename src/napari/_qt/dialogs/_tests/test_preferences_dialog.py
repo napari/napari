@@ -1,5 +1,3 @@
-import sys
-
 import numpy.testing as npt
 import pyautogui
 import pytest
@@ -96,7 +94,7 @@ def test_font_size_widget(qtbot, pref):
     font_size_widget = (
         pref._stack.widget(1).widget().widget.widgets['font_size']
     )
-    def_font_size = 12 if sys.platform == 'darwin' else 9
+    def_font_size = 9
 
     # check custom widget definition usage for the font size setting
     # and default values
