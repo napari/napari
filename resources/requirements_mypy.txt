@@ -6,7 +6,9 @@ annotated-types==0.7.0
     # via pydantic
 app-model==0.5.1
     # via -r resources/requirements_mypy.in
-build==1.4.4
+ast-serialize==0.3.0
+    # via mypy
+build==1.5.0
     # via npe2
 certifi==2026.4.22
     # via requests
@@ -16,19 +18,19 @@ click==8.3.3
     # via typer
 docstring-parser==0.18.0
     # via magicgui
-idna==3.13
+idna==3.14
     # via requests
 in-n-out==0.2.1
     # via app-model
-librt==0.9.0
+librt==0.11.0
     # via mypy
 magicgui==0.10.2
     # via -r resources/requirements_mypy.in
-markdown-it-py==4.0.0
+markdown-it-py==4.2.0
     # via rich
 mdurl==0.1.2
     # via markdown-it-py
-mypy==1.20.2
+mypy==2.0.0
     # via -r resources/requirements_mypy.in
 mypy-extensions==1.1.0
     # via mypy
@@ -51,13 +53,13 @@ psygnal==0.15.1
     #   npe2
 pyconify==0.2.1
     # via superqt
-pydantic==2.13.3
+pydantic==2.13.4
     # via
     #   -r resources/requirements_mypy.in
     #   app-model
     #   npe2
     #   pydantic-extra-types
-pydantic-core==2.46.3
+pydantic-core==2.46.4
     # via pydantic
 pydantic-extra-types==2.11.1
     # via npe2
@@ -92,13 +94,13 @@ superqt==0.8.1
     # via magicgui
 tomli-w==1.2.0
     # via npe2
-typer==0.25.0
+typer==0.25.1
     # via npe2
-types-pyyaml==6.0.12.20260408
+types-pyyaml==6.0.12.20260510
     # via -r resources/requirements_mypy.in
-types-requests==2.33.0.20260408
+types-requests==2.33.0.20260508
     # via -r resources/requirements_mypy.in
-types-setuptools==82.0.0.20260408
+types-setuptools==82.0.0.20260508
     # via -r resources/requirements_mypy.in
 typing-extensions==4.15.0
     # via
@@ -112,7 +114,7 @@ typing-extensions==4.15.0
     #   typing-inspection
 typing-inspection==0.4.2
     # via pydantic
-urllib3==2.6.3
+urllib3==2.7.0
     # via
     #   requests
     #   types-requests
