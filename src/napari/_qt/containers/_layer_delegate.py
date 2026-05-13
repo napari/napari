@@ -39,7 +39,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from weakref import WeakKeyDictionary, ref
 
-from qtpy.QtCore import QPoint, QSize, Qt, Signal
+from qtpy.QtCore import QPoint, QRect, QSize, Qt, Signal
 from qtpy.QtGui import QMouseEvent, QMovie, QPixmap
 from qtpy.QtWidgets import QStyledItemDelegate
 
@@ -47,9 +47,14 @@ from napari._app_model.constants import MenuId
 from napari._app_model.context import get_context
 from napari._qt._qapp_model import build_qmodel_menu
 from napari._qt.containers._base_item_model import ItemRole
-from napari._qt.containers.qt_layer_model import LoadedRole, ThumbnailRole
+from napari._qt.containers.qt_layer_model import (
+    LoadedRole,
+    LockedRole,
+    ThumbnailRole,
+)
 from napari._qt.qt_resources import QColoredSVGIcon
 from napari.resources import LOADING_GIF_PATH
+from napari.utils.notifications import show_warning
 
 if TYPE_CHECKING:
     from qtpy import QtCore
@@ -83,6 +88,7 @@ class LayerDelegate(QStyledItemDelegate):
         self._load_movie = QMovie(LOADING_GIF_PATH)
         self._load_movie.setScaledSize(QSize(18, 18))
         self._load_movie.frameChanged.connect(self.loading_frame_changed)
+        self._lock_icon = QColoredSVGIcon.from_resources('lock')
         self._layer_visibility_states = WeakKeyDictionary()
         self._alt_click_layer = lambda: None
 
@@ -102,6 +108,7 @@ class LayerDelegate(QStyledItemDelegate):
         self._paint_loading(painter, option, index)
         # paint the thumbnail
         self._paint_thumbnail(painter, option, index)
+        self._paint_lock(painter, option, index)
 
     def get_layer_icon(
         self, option: QStyleOptionViewItem, index: QtCore.QModelIndex
@@ -168,6 +175,33 @@ class LayerDelegate(QStyledItemDelegate):
             image = index.data(ThumbnailRole)
             painter.drawPixmap(thumb_rect, QPixmap.fromImage(image))
 
+    def _paint_lock(self, painter, option, index):
+        """Paint a lock if the layer is locked."""
+        locked = index.data(LockedRole)
+        if not locked:
+            return
+
+        # shift it left from the right side of the main rect
+        dec_size = option.decorationSize
+        spacing = 14
+        h = index.data(Qt.ItemDataRole.SizeHintRole).height() - 20
+
+        lock_rect = QRect(option.rect)
+        lock_rect.setLeft(lock_rect.right() - dec_size.width() - spacing - h)
+        lock_rect.setTop(
+            lock_rect.top() + (lock_rect.height() - int(h * 1.2)) // 2
+        )
+        lock_rect.setSize(QSize(h, h))
+
+        # guessing theme rather than passing it through.
+        bg = option.palette.color(option.palette.ColorRole.Window).red()
+        icon = self._lock_icon.colored(theme='dark' if bg < 128 else 'light')
+
+        painter.drawPixmap(
+            lock_rect,
+            icon.pixmap(h, h),
+        )
+
     def createEditor(
         self,
         parent: QWidget,
@@ -175,6 +209,10 @@ class LayerDelegate(QStyledItemDelegate):
         index: QtCore.QModelIndex,
     ) -> QWidget:
         """User has double clicked on layer name."""
+        if index.data(LockedRole):
+            show_warning('Locked layer. To unlock, set layer.locked to False')
+            return None
+
         # necessary for geometry, otherwise editor takes up full width.
         self.get_layer_icon(option, index)
         editor = super().createEditor(parent, option, index)
@@ -207,10 +245,11 @@ class LayerDelegate(QStyledItemDelegate):
 
             self.show_context_menu(index, model, pnt, option.widget)
 
-        # if the user clicks quickly on the visibility checkbox, we *don't*
-        # want it to be interpreted as a double-click.  We want the visibility
-        # to simply be toggled.
-        if event.type() == QMouseEvent.MouseButtonDblClick:
+        if event.type() in (
+            QMouseEvent.MouseButtonDblClick,
+            QMouseEvent.MouseButtonRelease,
+        ):
+            # check if the click is on the visibility checkbox
             self.initStyleOption(option, index)
             style = option.widget.style()
             check_rect = style.subElementRect(
@@ -219,48 +258,41 @@ class LayerDelegate(QStyledItemDelegate):
                 option.widget,
             )
             if check_rect.contains(event.pos()):
-                cur_state = index.data(Qt.ItemDataRole.CheckStateRole)
-                if model.flags(index) & Qt.ItemFlag.ItemIsUserTristate:
-                    state = Qt.CheckState((cur_state + 1) % 3)
-                else:
-                    state = (
-                        Qt.CheckState.Unchecked
-                        if cur_state
-                        else Qt.CheckState.Checked
+                if index.data(LockedRole):
+                    show_warning(
+                        'Locked layer. To unlock, set layer.locked to False'
                     )
-                return model.setData(
-                    index, state, Qt.ItemDataRole.CheckStateRole
-                )
+                    return False
+                # if the user clicks quickly on the visibility checkbox, we *don't*
+                # want it to be interpreted as a double-click.  We want the visibility
+                # to simply be toggled.
+                if event.type() == QMouseEvent.MouseButtonDblClick:
+                    cur_state = index.data(Qt.ItemDataRole.CheckStateRole)
+                    if model.flags(index) & Qt.ItemFlag.ItemIsUserTristate:
+                        state = Qt.CheckState((cur_state + 1) % 3)
+                    else:
+                        state = (
+                            Qt.CheckState.Unchecked
+                            if cur_state
+                            else Qt.CheckState.Checked
+                        )
+                        return model.setData(
+                            index, state, Qt.ItemDataRole.CheckStateRole
+                        )
 
-        # catch alt-click on the vis checkbox and hide *other* layer visibility
-        # on second alt-click, restore the visibility state of the layers
-        if event.type() == QMouseEvent.MouseButtonRelease and (
-            event.button() == Qt.MouseButton.LeftButton
-            and event.modifiers() == Qt.AltModifier
-        ):
-            self.initStyleOption(option, index)
-            style = option.widget.style()
-            check_rect = style.subElementRect(
-                style.SubElement.SE_ItemViewItemCheckIndicator,
-                option,
-                option.widget,
-            )
-            if check_rect.contains(event.pos()):
-                return self._show_on_alt_click_hide_others(model, index)
+                # catch alt-click on the vis checkbox and hide *other* layer visibility
+                # on second alt-click, restore the visibility state of the layers
+                if event.type() == QMouseEvent.MouseButtonRelease and (
+                    event.button() == Qt.MouseButton.LeftButton
+                    and event.modifiers() == Qt.AltModifier
+                ):
+                    return self._show_on_alt_click_hide_others(model, index)
 
-        # on regular click of visibility icon, clear alt-click state
-        if event.type() == QMouseEvent.MouseButtonRelease and (
-            event.button() == Qt.MouseButton.LeftButton
-        ):
-            self.initStyleOption(option, index)
-            style = option.widget.style()
-            check_rect = style.subElementRect(
-                style.SubElement.SE_ItemViewItemCheckIndicator,
-                option,
-                option.widget,
-            )
-            if check_rect.contains(event.pos()):
-                self._alt_click_layer = lambda: None
+                # on regular click of visibility icon, clear alt-click state
+                if event.type() == QMouseEvent.MouseButtonRelease and (
+                    event.button() == Qt.MouseButton.LeftButton
+                ):
+                    self._alt_click_layer = lambda: None
 
         # refer all other events to the QStyledItemDelegate
         return super().editorEvent(event, model, option, index)

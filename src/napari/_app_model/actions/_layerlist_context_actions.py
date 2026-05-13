@@ -154,6 +154,17 @@ LAYERLIST_CONTEXT_ACTIONS: list[Action] = [
         menus=[LAYERCTX_SPLITMERGE],
     ),
     Action(
+        id='napari.layer.toggle_lock',
+        title=trans._('Lock/Unlock'),
+        callback=_layer_actions._toggle_lock,
+        menus=[
+            {
+                'id': MenuId.LAYERLIST_CONTEXT,
+                'group': MenuGroup.NAVIGATION,
+            }
+        ],
+    ),
+    Action(
         id='napari.layer.toggle_visibility',
         title=trans._('Toggle visibility'),
         callback=_layer_actions._toggle_visibility,
