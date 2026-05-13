@@ -67,6 +67,9 @@ uniform vec2 LUT_shape;
 
 vec4 sample_label_color(float t) {
     t = t * $scale;
+    if (($use_selection) && ($selection != int(t + 0.5))) {
+        return vec4(0);
+    }
     return texture2D(
         texture2D_values,
         vec2(0.0, (t + 0.5) / $color_map_size)
@@ -81,6 +84,9 @@ uniform vec2 LUT_shape;
 
 vec4 sample_label_color(float t) {
     t = t * $scale;
+    if (($use_selection) && ($selection != int(t + 0.5))) {
+        return vec4(0);
+    }
     float row = mod(t, LUT_shape.x);
     float col = int(t / LUT_shape.x);
     return texture2D(
@@ -97,6 +103,8 @@ class LabelVispyColormap(VispyColormap):
         colormap: CyclicLabelColormap,
         view_dtype: np.dtype,
         raw_dtype: np.dtype,
+        use_selection: bool = False,
+        selection: int = 0,
     ):
         super().__init__(
             colors=['w', 'w'], controls=None, interpolation='zero'
@@ -116,12 +124,14 @@ class LabelVispyColormap(VispyColormap):
                 f'Cannot use dtype {view_dtype} with LabelVispyColormap'
             )
 
-        selection = colormap._selection_as_minimum_dtype(raw_dtype)
+        selection_texture = colormap._selection_as_minimum_dtype(
+            selection, raw_dtype
+        )
 
         self.glsl_map = (
             shader.replace('$color_map_size', str(len(colormap.colors)))
-            .replace('$use_selection', str(colormap.use_selection).lower())
-            .replace('$selection', str(selection))
+            .replace('$use_selection', str(use_selection).lower())
+            .replace('$selection', str(selection_texture))
         )
 
 
@@ -258,7 +268,11 @@ class VispyLabelsLayer(VispyScalarFieldBaseLayer):
                 colormap, view_dtype, raw_dtype
             )
             self.node.cmap = LabelVispyColormap(
-                colormap, view_dtype=view_dtype, raw_dtype=raw_dtype
+                colormap,
+                view_dtype=view_dtype,
+                raw_dtype=raw_dtype,
+                use_selection=self.layer.show_selected_label,
+                selection=self.layer.selected_label,
             )
             self.node.shared_program['texture2D_values'] = Texture2D(
                 color_texture,
@@ -281,9 +295,12 @@ class VispyLabelsLayer(VispyScalarFieldBaseLayer):
             else:  # float32 texture
                 scale = 1.0
 
+            selection_texture = colormap._selection_as_minimum_dtype(
+                self.layer.selected_label, raw_dtype
+            )
             self.node.cmap = DirectLabelVispyColormap(
-                use_selection=colormap.use_selection,
-                selection=colormap.selection,
+                use_selection=self.layer.show_selected_label,
+                selection=selection_texture,
                 scale=scale,
                 color_map_size=val_texture.shape[0],
                 multi=val_texture.shape[1] > 1,

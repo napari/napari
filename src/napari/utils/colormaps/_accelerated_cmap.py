@@ -197,8 +197,6 @@ def _labels_raw_to_texture_direct_numpy(
 
     See `_cast_labels_data_to_texture_dtype_direct` for more details.
     """
-    if direct_colormap.use_selection:
-        return (data == direct_colormap.selection).astype(np.uint8)
     mapper = direct_colormap._array_map
     if any(x < 0 for x in direct_colormap.color_dict if x is not None):
         half_shape = mapper.shape[0] // 2 - 1
@@ -227,9 +225,6 @@ def _labels_raw_to_texture_direct_loop(
     np.ndarray
         The cast data array.
     """
-    if direct_colormap.use_selection:
-        return (data == direct_colormap.selection).astype(np.uint8)
-
     dkt = direct_colormap._get_typed_dict_mapping(data.dtype)
     target_dtype = minimum_dtype_for_labels(
         direct_colormap._num_unique_colors + 2
@@ -269,17 +264,12 @@ def zero_preserving_modulo_partsegcore(
 def labels_raw_to_texture_direct_partsegcore(
     data: np.ndarray, direct_colormap: 'DirectLabelColormap'
 ) -> np.ndarray:
-    if direct_colormap.use_selection:
-        dkt = {None: 0, direct_colormap.selection: 1}
-    else:
-        iinfo = np.iinfo(data.dtype)
-        dkt = {
-            k: v
-            for k, v in direct_colormap._label_mapping_and_color_dict[
-                0
-            ].items()
-            if k is None or iinfo.min <= k <= iinfo.max
-        }
+    iinfo = np.iinfo(data.dtype)
+    dkt = {
+        k: v
+        for k, v in direct_colormap._label_mapping_and_color_dict[0].items()
+        if k is None or iinfo.min <= k <= iinfo.max
+    }
     target_dtype = minimum_dtype_for_labels(
         direct_colormap._num_unique_colors + 2
     )

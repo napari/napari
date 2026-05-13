@@ -206,9 +206,13 @@ class Labels(ScalarFieldBase):
         np.degrees if needed.
     scale : tuple of float
         Scale factors for the layer.
+    selected_label : int
+        Index of selected label. Can be greater than the current maximum label.
     shear : 1-D array or n-D array
         Either a vector of upper triangular values, or an nD shear matrix with
         ones along the main diagonal.
+    show_selected_label : bool
+        Whether to filter displayed labels to only the selected label.
     translate : tuple of float
         Translation values for the layer.
     units : tuple of str or pint.Unit, optional
@@ -379,7 +383,9 @@ class Labels(ScalarFieldBase):
         rendering='iso_categorical',
         rotate=None,
         scale=None,
+        selected_label=1,
         shear=None,
+        show_selected_label=False,
         translate=None,
         units=None,
         visible=True,
@@ -399,7 +405,7 @@ class Labels(ScalarFieldBase):
         )
         self._colormap = self._random_colormap
         self._color_mode = LabelColorMode.AUTO
-        self._show_selected_label = False
+        self._show_selected_label = show_selected_label
         self._contour = 0
 
         data = self._ensure_int_labels(data)
@@ -461,9 +467,7 @@ class Labels(ScalarFieldBase):
 
         self._iso_gradient_mode = IsoCategoricalGradientMode(iso_gradient_mode)
 
-        self._selected_label = 1
-        self.colormap.selection = self._selected_label
-        self.colormap.use_selection = self._show_selected_label
+        self._selected_label = selected_label
         self._prev_selected_label = None
         self._selected_color = self.get_color(self._selected_label)
         self._updated_slice: tuple[slice, ...] | None = None
@@ -768,6 +772,8 @@ class Labels(ScalarFieldBase):
                 'data': self.data,
                 'features': self.features,
                 'colormap': self.colormap,
+                'selected_label': self.selected_label,
+                'show_selected_label': self.show_selected_label,
             }
         )
         return state
@@ -815,7 +821,6 @@ class Labels(ScalarFieldBase):
             self._prev_selected_label = self.selected_label
         else:
             self._prev_selected_label = None
-        self.colormap.selection = selected_label
         self._selected_label = selected_label
         self._selected_color = self.get_color(selected_label)
 
@@ -839,8 +844,6 @@ class Labels(ScalarFieldBase):
     @show_selected_label.setter
     def show_selected_label(self, show_selected):
         self._show_selected_label = show_selected
-        self.colormap.use_selection = show_selected
-        self.colormap.selection = self.selected_label
         self.events.show_selected_label(show_selected_label=show_selected)
         self.refresh(extent=False)
 
@@ -1036,7 +1039,11 @@ class Labels(ScalarFieldBase):
         if sliced_labels is None:
             sliced_labels = labels[data_slice]
 
-        return self.colormap._data_to_texture(sliced_labels)
+        return self.colormap._data_to_texture(
+            sliced_labels,
+            use_selection=self.show_selected_label,
+            selection=self.selected_label,
+        )
 
     def _update_thumbnail(self):
         """Update the thumbnail with current data and colormap.
@@ -1070,6 +1077,8 @@ class Labels(ScalarFieldBase):
 
         downsampled = ndi.zoom(image, zoom_factor, prefilter=False, order=0)
         color_array = self.colormap.map(downsampled)
+        if self.show_selected_label:
+            color_array[downsampled != self.selected_label] = 0
         color_array[..., 3] *= self.opacity
 
         self.thumbnail = color_array
@@ -2173,7 +2182,11 @@ class Labels(ScalarFieldBase):
         if self.contour == 0:
             # update data view
             self._slice.image.view[displayed_indices] = (
-                self.colormap._data_to_texture(visible_values)
+                self.colormap._data_to_texture(
+                    visible_values,
+                    use_selection=self.show_selected_label,
+                    selection=self.selected_label,
+                )
             )
 
         self._accumulate_updated_slice(updated_slice)
