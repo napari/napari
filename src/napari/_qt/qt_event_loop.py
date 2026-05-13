@@ -46,7 +46,7 @@ def get_icon_path() -> Path:
     return get_logo_path(
         logo=get_settings().appearance.logo,
         template='padded' if platform.system() == 'Darwin' else 'plain',
-        theme=get_system_theme(),
+        theme_type=get_system_theme(),
     )
 
 

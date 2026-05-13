@@ -27,19 +27,19 @@ beautifulsoup4==4.14.3
     # via gdown
 bermuda==0.1.7
     # via napari (pyproject.toml)
-build==1.4.3
+build==1.4.4
     # via npe2
 cachey==0.2.1
     # via napari (pyproject.toml)
-certifi==2026.2.25
+certifi==2026.4.22
     # via
     #   napari (pyproject.toml)
     #   requests
-chardet==7.4.2
+chardet==7.4.3
     # via trackastra
 charset-normalizer==3.4.7
     # via requests
-click==8.3.2
+click==8.3.3
     # via
     #   dask
     #   distributed
@@ -58,7 +58,7 @@ coverage==7.13.5
     # via napari (pyproject.toml)
 cuda-bindings==13.2.0
     # via torch
-cuda-pathfinder==1.5.2
+cuda-pathfinder==1.5.3
     # via cuda-bindings
 cuda-toolkit==13.0.2
     # via torch
@@ -78,7 +78,7 @@ distlib==0.4.0
     # via virtualenv
 distributed==2026.3.0
     # via dask
-docstring-parser==0.17.0
+docstring-parser==0.18.0
     # via
     #   napari (pyproject.toml)
     #   magicgui
@@ -88,7 +88,7 @@ edt==3.1.1
     # via trackastra
 executing==2.2.1
     # via stack-data
-filelock==3.25.2
+filelock==3.29.0
     # via
     #   gdown
     #   python-discovery
@@ -129,9 +129,9 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.151.13
+hypothesis==6.152.3
     # via napari (pyproject.toml)
-idna==3.11
+idna==3.13
     # via
     #   requests
     #   yarl
@@ -153,7 +153,7 @@ ipykernel==6.31.0
     #   -r resources/constraints/version_denylist.txt
     #   napari-console
     #   qtconsole
-ipython==9.12.0
+ipython==9.13.0
     # via
     #   napari (pyproject.toml)
     #   ipykernel
@@ -201,7 +201,7 @@ locket==1.0.0
     # via
     #   distributed
     #   partd
-lxml==6.0.4
+lxml==6.1.0
     # via
     #   napari (pyproject.toml)
     #   lxml-html-clean
@@ -215,7 +215,7 @@ markdown-it-py==4.0.0
     # via rich
 markupsafe==3.0.3
     # via jinja2
-matplotlib==3.10.8
+matplotlib==3.10.9
     # via
     #   napari (pyproject.toml)
     #   napari (pyproject.toml:gallery)
@@ -265,7 +265,7 @@ npe2==0.8.2
     # via
     #   napari (pyproject.toml)
     #   napari-plugin-manager
-numba==0.65.0
+numba==0.65.1
     # via
     #   napari (pyproject.toml)
     #   glasbey
@@ -350,7 +350,7 @@ nvidia-nvshmem-cu13==3.4.5
     # via torch
 nvidia-nvtx==13.0.85
     # via cuda-toolkit
-packaging==26.0
+packaging==26.2
     # via
     #   build
     #   dask
@@ -396,7 +396,7 @@ pint==0.25.3
     # via
     #   napari (pyproject.toml)
     #   napari-metadata
-pip==26.0.1
+pip==26.1
     # via napari-plugin-manager
 platformdirs==4.9.6
     # via
@@ -430,6 +430,7 @@ psutil==7.2.2
     #   napari (pyproject.toml)
     #   distributed
     #   ipykernel
+    #   ipython
     #   trackastra
 psygnal==0.15.1
     # via
@@ -445,7 +446,7 @@ pyautogui==0.9.54
     # via napari (pyproject.toml)
 pyconify==0.2.1
     # via superqt
-pydantic==2.12.5
+pydantic==2.13.3
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
@@ -455,13 +456,13 @@ pydantic==2.12.5
     #   npe2
     #   pydantic-extra-types
     #   pydantic-settings
-pydantic-core==2.41.5
+pydantic-core==2.46.3
     # via pydantic
-pydantic-extra-types==2.11.2
+pydantic-extra-types==2.11.1
     # via
     #   napari (pyproject.toml)
     #   npe2
-pydantic-settings==2.13.1
+pydantic-settings==2.14.0
     # via napari (pyproject.toml)
 pygetwindow==0.0.9
     # via pyautogui
@@ -680,7 +681,7 @@ triangle==20250106
     # via napari (pyproject.toml)
 triton==3.6.0
     # via torch
-typer==0.24.1
+typer==0.25.0
     # via
     #   geff
     #   npe2
@@ -714,7 +715,7 @@ urllib3==2.6.3
     # via
     #   distributed
     #   requests
-virtualenv==21.2.1
+virtualenv==21.2.4
     # via napari (pyproject.toml)
 vispy==0.16.1
     # via
@@ -726,7 +727,7 @@ wrapt==2.1.2
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
-xarray==2026.2.0
+xarray==2026.4.0
     # via
     #   napari (pyproject.toml)
     #   napari (pyproject.toml:gallery)

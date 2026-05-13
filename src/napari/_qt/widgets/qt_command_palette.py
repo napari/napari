@@ -447,8 +447,7 @@ def _match_score(action: CommandRule, input_text: str) -> float:
 
 
 def _command_to_name(cmd: CommandRule) -> str:
-    sep = ':' if ':' in cmd.id else '.'
-    *contexts, _ = cmd.id.split(sep)
+    *contexts, _ = cmd.id.split('.')
     title = ' > '.join(contexts)
     desc = cmd.title
     if title:
