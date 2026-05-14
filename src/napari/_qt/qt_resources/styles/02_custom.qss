@@ -120,6 +120,7 @@ QtConsole > QTextEdit {
   margin: 10px;
   font-family: monospace, Menlo, Consolas, "Ubuntu Mono", "Roboto Mono", "DejaVu Sans Mono";
   font-size: {{ font_size }};
+  border: 1px solid {{ console }};
 }
 .inverted {
   background-color: {{ background }};
@@ -131,9 +132,13 @@ QtConsole > QTextEdit {
 .in-prompt { color: #6ab825; }
 .out-prompt { color: #b72121; }
 
+QtConsole > QTextEdit:focus {
+  border: 1px solid {{ foreground }};
+}
+
 
 /* controls the area around the canvas */
-QSplitter {
+QtViewer {
   spacing: 0px;
   padding: 0px;
   margin: 0px;
@@ -608,11 +613,12 @@ QListWidget#Preferences {
  background: {{ background }};
 }
 
-/* ------------- Narrow scrollbar for qtlayer list --------- */
 
 QtListView {
   background: {{ background }};
 }
+
+/* ------------- Narrow scrollbar for qtlayer list --------- */
 
 QtListView QScrollBar:vertical {
   max-width: 8px;
@@ -645,6 +651,11 @@ QtListView::item:hover {
   background-color: {{ highlight }};
 }
 
+/* in the QSS context "focus" means the window is focused _and_ the item is focused */
+QtListView::item:selected:focus{
+  border: 1px solid {{ lighten(current, 20) }};
+}
+
 /* TODO: all these darken/lighten in the layerlist seem unnecessarily complicated */
 
 QtListView::item:selected {
@@ -654,7 +665,7 @@ QtListView::item:selected {
 
 QtListView QLineEdit {
   background-color: {{ current }};
-  selection-background-color: {{ lighten(current, 20) }};
+  selection-background-color: {{ darken(current, 15) }};
   font-size: {{ font_size }};
 }
 
@@ -662,7 +673,7 @@ QtLayerList::item {
   margin: 2px 2px 2px 28px;
   border-top-right-radius: 2px;
   border-bottom-right-radius: 2px;
-  border: 0;
+  border: 1px solid {{ primary }};  /* otherwise it's `foreground` for generic lists */
 }
 
 /* eye visibility icon */
