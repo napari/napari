@@ -10,12 +10,21 @@ from napari.components.dims import RangeTuple
 from napari.utils._units import compute_nice_ticks
 
 if TYPE_CHECKING:
+    from vispy.visuals.text.text import FontManager
+
     from napari.utils.color import ColorValue
 
 
 class GridLines3D(Node):
-    def __init__(self, *args: Any, **kwargs: Any):
-        super().__init__(*args, **kwargs)
+    def __init__(
+        self,
+        font_manager: FontManager | None = None,
+        font_family: str = 'OpenSans',
+    ):
+        super().__init__()
+        self.font_manager = font_manager
+        self.font_family = font_family
+
         # compound does not play well with sub-transforms for some reason
         # so we use a simple empty node with children instead
         self.tick_labels: dict[int, list[Text]] = {0: [], 1: [], 2: []}
@@ -212,6 +221,8 @@ class GridLines3D(Node):
                     pos=(val, ranges[next_axis].start, 0),
                     font_size=8,
                     color=self.color,
+                    font_manager=self.font_manager,
+                    face=self.font_family,
                     parent=self.grids[axis],
                 )
                 tick.transform = STTransform()

@@ -1,21 +1,37 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import numpy as np
-from vispy.scene import Node
 
 from napari._vispy.overlays.base import ViewerOverlayMixin, VispySceneOverlay
 from napari._vispy.visuals.grid_lines import GridLines3D
 from napari.components.camera import DEFAULT_ORIENTATION_TYPED
-from napari.components.overlays import Overlay
-from napari.components.viewer_model import ViewerModel
 from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils.theme import get_theme
+
+if TYPE_CHECKING:
+    from vispy.scene import Node
+    from vispy.visuals.text.text import FontManager
+
+    from napari.components.overlays import Overlay
+    from napari.components.viewer_model import ViewerModel
 
 
 class VispyGridLinesOverlay(ViewerOverlayMixin, VispySceneOverlay):
     def __init__(
-        self, *, viewer: ViewerModel, overlay: Overlay, parent: Node = None
+        self,
+        *,
+        viewer: ViewerModel,
+        overlay: Overlay,
+        parent: Node = None,
+        font_manager: FontManager | None = None,
+        font_family: str = 'OpenSans',
     ):
         super().__init__(
-            node=GridLines3D(),
+            node=GridLines3D(
+                font_manager=font_manager, font_family=font_family
+            ),
             viewer=viewer,
             overlay=overlay,
             parent=parent,
