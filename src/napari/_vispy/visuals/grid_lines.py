@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-import numpy as np
 from vispy.scene import MatrixTransform, STTransform
 from vispy.scene.visuals import GridLines, Node, Text
 
@@ -28,7 +27,6 @@ class GridLines3D(Node):
         # compound does not play well with sub-transforms for some reason
         # so we use a simple empty node with children instead
         self.tick_labels: dict[int, list[Text]] = {0: [], 1: [], 2: []}
-        self._last_ticks = np.array((0.0,))
         self.color: ColorValue | str = 'white'
         self.scale = (1, 1, 1)
         self._opacity = 1.0
@@ -117,9 +115,11 @@ class GridLines3D(Node):
             farthest_bound = ranges[axis][int(view_is_flipped[axis])]
             far_bounds.append(farthest_bound)
 
-        offset = (
-            10 / zoom**0.5
-        )  # magic numbers, they work ok at a wide range of zooms
+        # TODO: damn, turns out of course we also need to handle the near bounds the same way,
+        #       because the layers may not be at the origin...
+
+        # magic numbers, they work ok at a wide range of zooms
+        offset = 10 / zoom**0.5
         for axis in range(3):
             prev_axis = (axis - 1) % 3
             next_axis = (axis + 1) % 3
@@ -141,7 +141,7 @@ class GridLines3D(Node):
 
                 if axis == 0:
                     if view_is_flipped[next_axis]:
-                        pass
+                        tick.transform.move((0, -offset, 0))
                     else:
                         tick.transform.move((0, next_axis_shift, 0))
                     if view_is_flipped[prev_axis]:
@@ -185,17 +185,10 @@ class GridLines3D(Node):
             return
 
         # generate tick positions with round values
-        tick_positions = np.array(
-            [
-                compute_nice_ticks(r.start, r.stop, target_ticks=n_ticks)
-                for r in ranges
-            ]
-        )
-
-        if np.array_equal(tick_positions, self._last_ticks) and not force:
-            return
-
-        self._last_ticks = tick_positions
+        tick_positions = [
+            compute_nice_ticks(r.start, r.stop, target_ticks=n_ticks)
+            for r in ranges
+        ]
 
         ndim = len(ranges)
         for axis in range(ndim):
