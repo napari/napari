@@ -68,7 +68,11 @@ class VispyGridLinesOverlay(ViewerOverlayMixin, VispySceneOverlay):
         )
         self.node.reset_grids()
         self.node.set_extents(ranges)
-        self.node.set_ticks(self.overlay.labels, self.overlay.n_labels, ranges)
+        # TODO: 'force' should only be used when necesssary!
+        self.node.set_ticks(
+            self.overlay.labels, self.overlay.n_labels, ranges, force=True
+        )
+        self._on_blending_change()  # needed to ensure new grids/ticks are up to date
 
         self._on_view_direction_change(force=True)
 

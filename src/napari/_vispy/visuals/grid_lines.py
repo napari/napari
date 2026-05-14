@@ -176,6 +176,8 @@ class GridLines3D(Node):
                 else:
                     tick.anchors = ('right', 'center')
 
+                # TODO: the above flips only left/right anchors. We need to do the same for up/down
+
         # rotate grids onto the right axes
         for axis in range(3):
             self.grids[axis].transform.rotate(angle=120 * axis, axis=(1, 1, 1))
@@ -205,7 +207,7 @@ class GridLines3D(Node):
             ]
         )
 
-        if np.array_equal(tick_positions, self._last_ticks):
+        if np.array_equal(tick_positions, self._last_ticks) and not force:
             return
 
         self._last_ticks = tick_positions
@@ -222,17 +224,19 @@ class GridLines3D(Node):
                         font_size=8,
                         font_manager=self.font_manager,
                         face=self.font_family,
-                        parent=self.grids[axis],
                     )
                     tick.transform = STTransform()
                     tick_visuals.append(tick)
                 else:
                     tick = tick_visuals[i]
 
-                tick.text = f'{val:.3g}'
+                # note the extra newlines and spaces are needed to ensure spacing
+                # between the text and the axes regardless of positioning
+                tick.text = f'\n  {val:.3g}  \n'
                 tick.pos = (val, ranges[next_axis].start, 0)
                 tick.color = self.color
                 tick.opacity = self._opacity
+                tick.parent = self.grids[axis]
 
             for extra_tick in tick_visuals[len(new_tick_values) :]:
                 # disable all extra ones
