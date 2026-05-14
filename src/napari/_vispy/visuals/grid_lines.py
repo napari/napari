@@ -185,7 +185,11 @@ class GridLines3D(Node):
         self._last_orientation_flip = orientation_flip
 
     def set_ticks(
-        self, show_ticks: bool, n_ticks: int, ranges: list[RangeTuple]
+        self,
+        show_ticks: bool,
+        n_ticks: int,
+        ranges: list[RangeTuple],
+        force: bool = False,
     ) -> None:
         if not show_ticks:
             for axis_ticks in self.tick_labels.values():
@@ -208,25 +212,28 @@ class GridLines3D(Node):
 
         ndim = len(ranges)
         for axis in range(ndim):
-            self.grids[axis].parent = None
-            # clear previous ticks
-            for tick in self.tick_labels[axis]:
-                tick.parent = None
-            self.tick_labels[axis].clear()
             next_axis = (axis + 1) % ndim
+            tick_visuals = self.tick_labels[axis]
+            new_tick_values = tick_positions[axis]
+            for i, val in enumerate(new_tick_values):
+                if i >= len(tick_visuals):
+                    # more ticks than before, make a new one
+                    tick = Text(
+                        font_size=8,
+                        font_manager=self.font_manager,
+                        face=self.font_family,
+                        parent=self.grids[axis],
+                    )
+                    tick.transform = STTransform()
+                    tick_visuals.append(tick)
+                else:
+                    tick = tick_visuals[i]
 
-            for val in tick_positions[axis]:
-                tick = Text(
-                    text=f'{val:.3g}',
-                    pos=(val, ranges[next_axis].start, 0),
-                    font_size=8,
-                    color=self.color,
-                    font_manager=self.font_manager,
-                    face=self.font_family,
-                    parent=self.grids[axis],
-                )
-                tick.transform = STTransform()
+                tick.text = f'{val:.3g}'
+                tick.pos = (val, ranges[next_axis].start, 0)
+                tick.color = self.color
                 tick.opacity = self._opacity
-                self.tick_labels[axis].append(tick)
 
-            self.grids[axis].parent = self
+            for extra_tick in tick_visuals[len(new_tick_values) :]:
+                # disable all extra ones
+                extra_tick.parent = None

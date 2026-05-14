@@ -10,7 +10,7 @@ class GridLinesOverlay(SceneOverlay):
 
     Attributes
     ----------
-    color : ColorValue
+    color : ColorValue or None
         Color of the grid lines, or None for automatic coloring.
     labels : bool
         Whether to display ticks and tick labels.

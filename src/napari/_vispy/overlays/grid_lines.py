@@ -7,8 +7,7 @@ import numpy as np
 from napari._vispy.overlays.base import ViewerOverlayMixin, VispySceneOverlay
 from napari._vispy.visuals.grid_lines import GridLines3D
 from napari.components.camera import DEFAULT_ORIENTATION_TYPED
-from napari.utils.colormaps.standardize_color import transform_color
-from napari.utils.theme import get_theme
+from napari.settings import get_settings
 
 if TYPE_CHECKING:
     from vispy.scene import Node
@@ -52,6 +51,7 @@ class VispyGridLinesOverlay(ViewerOverlayMixin, VispySceneOverlay):
         self.viewer.camera.events.orientation.connect(
             self._on_view_direction_change
         )
+        get_settings().appearance.events.theme.connect(self._on_data_change)
         self.viewer.events.theme.connect(self._on_data_change)
 
         self.reset()
@@ -61,23 +61,11 @@ class VispyGridLinesOverlay(ViewerOverlayMixin, VispySceneOverlay):
         displayed = self.viewer.dims.displayed[::-1]
         ranges = [self.viewer.dims.range[i] for i in displayed]
 
-        color = self.overlay.color
-        if color is None:
-            # set scale color negative of theme background.
-            # the reason for using the `as_hex` here is to avoid
-            # `UserWarning` which is emitted when RGB values are above 1
-            if (
-                self.node.parent is not None
-                and self.node.parent.canvas.bgcolor
-            ):
-                background_color = self.node.parent.canvas.bgcolor.rgba
-            else:
-                background_color = get_theme(self.viewer.theme).canvas.as_hex()
-                background_color = transform_color(background_color)[0]
-            color = np.subtract(1, background_color)
-            color[-1] = background_color[-1]
-
-        self.node.color = color
+        self.node.color = (
+            self.overlay.color
+            if self.overlay.color is not None
+            else self._get_fgcolor()
+        )
         self.node.reset_grids()
         self.node.set_extents(ranges)
         self.node.set_ticks(self.overlay.labels, self.overlay.n_labels, ranges)
