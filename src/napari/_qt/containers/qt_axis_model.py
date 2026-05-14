@@ -1,12 +1,17 @@
-from collections.abc import Iterable
-from typing import Any
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
 
 from qtpy.QtCore import QModelIndex, Qt
-from typing_extensions import Self
 
 from napari._qt.containers.qt_list_model import QtListModel
 from napari.components import Dims
 from napari.utils.events import SelectableEventedList
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
+
+    from typing_extensions import Self
 
 
 class AxisModel:

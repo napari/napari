@@ -1,5 +1,6 @@
+from __future__ import annotations
+
 import warnings
-from enum import Enum, EnumMeta
 from functools import wraps
 from typing import TYPE_CHECKING
 
@@ -37,6 +38,7 @@ from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+    from enum import Enum, EnumMeta
     from typing import Any
 
     from napari.viewer import ViewerModel
@@ -64,7 +66,7 @@ class QtLayerButtons(QFrame):
         Napari viewer containing the rendered scene, layers, and controls.
     """
 
-    def __init__(self, viewer: 'ViewerModel') -> None:
+    def __init__(self, viewer: ViewerModel) -> None:
         super().__init__()
 
         self.viewer = viewer
@@ -194,7 +196,7 @@ def labeled_double_slider(
     value: float,
     value_range: tuple[float, float],
     decimals: int = 0,
-    callback: 'Callable',
+    callback: Callable,
 ) -> QLabeledDoubleSlider:
     """Create a labeled double slider widget."""
     slider = QLabeledDoubleSlider(parent)
@@ -210,7 +212,7 @@ def enum_combobox(
     parent: QtPopup,
     enum_class: EnumMeta,
     current_enum: Enum,
-    callback: 'Callable[[],Any] | Callable[[Enum],Any] | Callable[[str],Any]',
+    callback: Callable[[], Any] | Callable[[Enum], Any] | Callable[[str], Any],
 ) -> QEnumComboBox:
     """Create an enum combobox widget."""
     combo = QEnumComboBox(parent, enum_class=enum_class)
@@ -258,7 +260,7 @@ class QtViewerButtons(QFrame):
         Napari viewer containing the rendered scene, layers, and controls.
     """
 
-    def __init__(self, viewer: 'ViewerModel') -> None:
+    def __init__(self, viewer: ViewerModel) -> None:
         super().__init__()
 
         self.viewer = viewer

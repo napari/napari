@@ -1,20 +1,21 @@
 from __future__ import annotations
 
 import warnings
-from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Generic, TypeVar
 
 import numpy as np
 import pint
-from typing_extensions import Self
 
 from napari.utils.misc import reorder_after_dim_reduction
 from napari.utils.transforms import Affine
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     import numpy.typing as npt
+    from typing_extensions import Self
 
     from napari.components.dims import Dims
 

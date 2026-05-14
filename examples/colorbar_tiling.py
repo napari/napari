@@ -29,6 +29,7 @@ viewer.canvas.scale_bar.gridded = True
 # enable grid with stride 2 to get layers split two-by-two
 viewer.canvas.grid.enabled = True
 viewer.canvas.grid.stride = 2
+viewer.fit_to_view()
 
 if __name__ == '__main__':
     napari.run()

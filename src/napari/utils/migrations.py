@@ -1,11 +1,13 @@
 import inspect
 import warnings
 from collections import UserDict
-from collections.abc import Callable
 from functools import wraps
-from typing import Any, NamedTuple
+from typing import TYPE_CHECKING, Any, NamedTuple
 
 from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 _UNSET = object()
 
@@ -34,7 +36,7 @@ class _RenamedAttribute(NamedTuple):
 
 def rename_argument(
     from_name: str, to_name: str, version: str, since_version: str = ''
-) -> Callable:
+) -> 'Callable':
     """
     This is decorator for simple rename function argument
     without break backward compatibility.
@@ -158,7 +160,7 @@ def add_deprecated_property(
     setattr(obj, previous_name, property(_getter, _setter))
 
 
-def deprecated_constructor_arg_by_attr(name: str) -> Callable:
+def deprecated_constructor_arg_by_attr(name: str) -> 'Callable':
     """
     Decorator to deprecate a constructor argument and remove it from the signature.
 
