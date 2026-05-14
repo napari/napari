@@ -3,11 +3,15 @@ from unittest.mock import Mock
 
 import npe2
 import numpy as np
+import numpy.testing as npt
 import pytest
+from pint import get_application_registry
 
 from napari.components import LayerList
 from napari.layers import Image
-from napari.layers.utils._link_layers import get_linked_layers
+from napari.layers.utils._link_layers import get_linked_layers, layer_is_linked
+
+REG = get_application_registry()
 
 
 def test_empty_layers_list():
@@ -611,3 +615,146 @@ def test_layer_renamed_event_connection_management():
 
     layers.remove(layer)
     assert len(layer.events.name.callbacks) == 0
+
+
+def test_update_units_in_layer():
+    layer_n = Image(
+        np.zeros((5, 5)), name='image', scale=(500, 500), units=('um', 'um')
+    )
+    layer_u = Image(
+        np.zeros((5, 5)), name='image', scale=(0.5, 0.5), units=('um', 'um')
+    )
+
+    layer_list = LayerList([layer_u, layer_n])
+    npt.assert_array_equal(layer_list.extent.step, (0.500, 0.500))
+    assert layer_list.extent.units == layer_u.units
+
+    layer_n.units = ('nm', 'nm')
+    npt.assert_almost_equal(layer_list.extent.step, (500, 500))
+    assert layer_list.extent.units == layer_n.units
+
+
+def test_incompatible_units():
+    layer_u = Image(np.zeros((5, 5)), units=('um', 'um'))
+    layer_px = Image(np.zeros((5, 5)), units=('pixels', 'pixels'))
+    layer_list = LayerList([layer_u, layer_px])
+    assert layer_list.extent.units is None
+    npt.assert_array_equal(layer_list._step_size, (1, 1))
+
+
+def test_extent_world():
+    """Test world extent after adding layers."""
+    image_1 = Image(np.zeros((7, 5)))
+    image_2 = Image(np.zeros((5, 7)))
+    ll = LayerList([image_1, image_2])
+    npt.assert_array_equal(ll._extent_world, ((0, 0), (6, 6)))
+    npt.assert_array_equal(
+        ll._extent_world_augmented, ((-0.5, -0.5), (6.5, 6.5))
+    )
+
+
+def test_default_extent_world():
+    """Test default extent after adding layers."""
+    ll = LayerList()
+    npt.assert_array_equal(ll._extent_world, ((0, 0), (511, 511)))
+    npt.assert_array_equal(
+        ll._extent_world_augmented, ((-0.5, -0.5), (511.5, 511.5))
+    )
+
+
+def test_overload_units():
+    layer_1 = Image(np.zeros((5, 5)), units=('um', 'um'))
+    layer_2 = Image(np.zeros((5, 5)), units=('um', 'um'))
+    layer_list = LayerList([layer_1, layer_2])
+    assert layer_list.extent.units == (REG.um, REG.um)
+    assert layer_list.units == (REG.um, REG.um)
+
+    layer_1.units = ('nm', 'nm')
+    assert layer_list.units == (REG.nm, REG.nm)
+    assert layer_list.extent.units == (REG.nm, REG.nm)
+    assert layer_list._get_units([x.extent for x in layer_list]) == (
+        REG.nm,
+        REG.nm,
+    )
+
+
+def test_warn_units_dimensions1():
+    layer_1 = Image(np.zeros((5, 5)), units=('um', 'um'))
+    layer_2 = Image(np.zeros((3, 5, 5)), units=('um', 'um', 'um'))
+
+    layer_list = LayerList([layer_1])
+
+    assert layer_list.units == (REG.um, REG.um)
+    layer_list.units = ('nm', 'nm')
+    assert layer_list.units == (REG.nm, REG.nm)
+
+    with pytest.warns(
+        UserWarning,
+        match='New layer has more dimensions than the current units, dropping units override',
+    ):
+        layer_list.append(layer_2)
+
+    assert layer_list.units == (REG.um, REG.um, REG.um)
+
+
+def test_warn_units_dimensions2():
+    layer_1 = Image(np.zeros((5, 5)), units=('um', 'um'))
+    layer_2 = Image(np.zeros((3, 5, 5)), units=('um', 'um', 'um'))
+
+    layer_list = LayerList([layer_1, layer_2])
+
+    with pytest.raises(
+        ValueError,
+        match='Number of units must be at least the number of dimensions',
+    ):
+        layer_list.units = ('nm', 'nm')
+
+    assert layer_list.units == (REG.um, REG.um, REG.um)
+
+
+def test_cannot_override_unit_when_inconsistent_layers():
+    layer_1 = Image(np.zeros((5, 5)), units=('um', 'um'))
+    layer_2 = Image(np.zeros((5, 5)), units=('s', 'nm'))
+    layer_list = LayerList([layer_1, layer_2])
+    assert layer_list.units is None
+    with pytest.raises(
+        ValueError,
+        match='Cannot set units when layers have inconsistent dimensionality',
+    ):
+        layer_list.units = ('nm', 'nm')
+    assert layer_list.units is None
+
+
+def test_warn_incompatible_overriding_units():
+    layer_1 = Image(np.zeros((5, 5)), units=('um', 'um'))
+    layer_list = LayerList([layer_1])
+    assert layer_list.units == (REG.um, REG.um)
+    with pytest.raises(
+        ValueError, match='On axis -2 units must be consistent'
+    ):
+        layer_list.units = ('s', 'nm')
+
+    assert layer_list.units == (REG.um, REG.um)
+
+
+def test_unlink_on_delete():
+    """Test that layer is unlinked after user removes the layer from the
+    viewer."""
+    layer1 = Image(np.zeros((5, 5)), name='image1')
+    layer2 = Image(np.zeros((5, 5)), name='image2')
+    layer3 = Image(np.zeros((5, 5)), name='image3')
+    ll = LayerList([layer1, layer2, layer3])
+    ll.link_layers([layer1, layer2, layer3])
+    assert layer_is_linked(layer1)
+    assert layer_is_linked(layer2)
+    assert layer_is_linked(layer3)
+    del ll['image3']
+
+    assert layer_is_linked(layer1)
+    assert layer_is_linked(layer2)
+    assert not layer_is_linked(layer3)
+
+    ll.remove(layer2)
+    assert not layer_is_linked(layer1)
+    assert not layer_is_linked(layer2)
+    assert not layer_is_linked(layer3)

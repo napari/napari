@@ -147,6 +147,8 @@ def test_second_alt_click_to_restore_layer_state(qtbot):
 
 
 def test_contextual_menu_updates_selection_ctx_keys(monkeypatch, qtbot):
+    from napari._app_model import get_app_model
+
     shapes_layer = Shapes()
     layer_list = LayerList()
     layer_list._create_contexts()
@@ -165,21 +167,23 @@ def test_contextual_menu_updates_selection_ctx_keys(monkeypatch, qtbot):
         'app_model.backends.qt.QModelMenu.exec_', lambda self, x: x
     )
 
-    delegate.show_context_menu(
-        index, view.model(), QPoint(10, 10), parent=view
-    )
-    assert not delegate._context_menu.findAction(
-        'napari.layer.convert_to_labels'
-    ).isEnabled()
+    app = get_app_model()
+    with app.injection_store.register(providers={LayerList: layer_list}):
+        delegate.show_context_menu(
+            index, view.model(), QPoint(10, 10), parent=view
+        )
+        assert not delegate._context_menu.findAction(
+            'napari.layer.convert_to_labels'
+        ).isEnabled()
 
-    layer_list[0].add(np.array(([0, 0], [0, 10], [10, 10], [10, 0])))
-    assert layer_list[0].data
-    delegate.show_context_menu(
-        index, view.model(), QPoint(10, 10), parent=view
-    )
-    assert delegate._context_menu.findAction(
-        'napari.layer.convert_to_labels'
-    ).isEnabled()
+        layer_list[0].add(np.array(([0, 0], [0, 10], [10, 10], [10, 0])))
+        assert layer_list[0].data
+        delegate.show_context_menu(
+            index, view.model(), QPoint(10, 10), parent=view
+        )
+        assert delegate._context_menu.findAction(
+            'napari.layer.convert_to_labels'
+        ).isEnabled()
 
 
 def make_qt_layer_list_with_delegate(qtbot):

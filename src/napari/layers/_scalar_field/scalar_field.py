@@ -2,28 +2,35 @@ from __future__ import annotations
 
 import types
 from abc import ABC, abstractmethod
-from collections.abc import Sequence
 from contextlib import nullcontext
+from functools import lru_cache
 from typing import TYPE_CHECKING, cast
 
 import numpy as np
 from numpy import typing as npt
 
-from napari.layers import Layer
 from napari.layers._data_protocols import LayerDataProtocol
 from napari.layers._multiscale_data import MultiScaleData
 from napari.layers._scalar_field._slice import (
     _ScalarFieldSliceRequest,
     _ScalarFieldSliceResponse,
 )
+from napari.layers.base import Layer, _LayerSlicingState
 from napari.layers.image._image_constants import Interpolation, VolumeDepiction
 from napari.layers.image._image_mouse_bindings import (
     move_plane_along_normal as plane_drag_callback,
     set_plane_position as plane_double_click_callback,
 )
 from napari.layers.image._image_utils import guess_multiscale
-from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
+from napari.layers.utils._slice_input import (
+    _SliceInput,
+    _ThickNDSlice,
+)
+from napari.layers.utils.layer_utils import (
+    compute_multiscale_level_and_corners,
+)
 from napari.layers.utils.plane import SlicingPlane
+from napari.types import LayerDataType
 from napari.utils._dask_utils import DaskIndexer
 from napari.utils._dtype import normalize_dtype
 from napari.utils.colormaps import AVAILABLE_COLORMAPS
@@ -32,13 +39,35 @@ from napari.utils.events.event import WarningEmitter
 from napari.utils.events.event_utils import connect_no_arg
 from napari.utils.geometry import clamp_point_to_bounding_box
 from napari.utils.naming import magic_name
+from napari.utils.transforms import Affine
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
+
     from napari.components import Dims
 
 
 __all__ = ('ScalarFieldBase',)
+
+
+def _make_level_materializer(
+    data: MultiScaleData,
+) -> Callable[[int], np.ndarray]:
+    """Return a cached function that materializes one level of *data* at a time.
+
+    The returned callable accepts a ``level`` integer and returns
+    ``np.asarray(data[level])``, caching the last result so repeated slice
+    requests at the same level avoid redundant data fetches.  Replacing
+    ``data`` by constructing a new materializer automatically abandons the old
+    cache without an explicit ``cache_clear()``.
+    """
+
+    @lru_cache(maxsize=1)
+    def _materializer(level: int) -> np.ndarray:
+        return np.asarray(data[level])
+
+    return _materializer
 
 
 # It is important to contain at least one abstractmethod to properly exclude this class
@@ -64,7 +93,7 @@ class ScalarFieldBase(Layer, ABC):
         provided scale, rotate, and shear values.
     axis_labels : tuple of str, optional
         Dimension names of the layer data.
-        If not provided, axis_labels will be set to (..., 'axis -2', 'axis -1').
+        If not provided, axis_labels will be set to (..., '-2', '-1').
     blending : str
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
@@ -177,6 +206,7 @@ class ScalarFieldBase(Layer, ABC):
     _colormaps = AVAILABLE_COLORMAPS
     _interpolation2d: Interpolation
     _interpolation3d: Interpolation
+    _level_materializer: Callable[[int], np.ndarray] | None
 
     def __init__(
         self,
@@ -225,6 +255,7 @@ class ScalarFieldBase(Layer, ABC):
         # Determine dimensionality of the data
         if ndim is None:
             ndim = len(data.shape)
+        self._data = data
 
         super().__init__(
             data,
@@ -251,6 +282,7 @@ class ScalarFieldBase(Layer, ABC):
             attenuation=Event,
             custom_interpolation_kernel_2d=Event,
             depiction=Event,
+            locked_data_level=Event,
             interpolation=WarningEmitter(
                 trans._(
                     "'layer.events.interpolation' is deprecated please use `interpolation2d` and `interpolation3d`",
@@ -267,34 +299,22 @@ class ScalarFieldBase(Layer, ABC):
 
         self._array_like = True
 
+        # User-override for multiscale data level.
+        # When not None, _update_draw will use this level instead of
+        # automatically selecting one based on the viewport / 3D mode.
+        self._locked_data_level: int | None = None
+
         # Set data
         self._data = data
         if isinstance(data, MultiScaleData):
             self._data_level = len(data) - 1
-            # Determine which level of the multiscale to use for the thumbnail.
-            # Pick the smallest level with at least one axis >= 64. This is
-            # done to prevent the thumbnail from being from one of the very
-            # low resolution layers and therefore being very blurred.
-            big_enough_levels = [
-                np.any(np.greater_equal(p.shape, 64)) for p in data
-            ]
-            if np.any(big_enough_levels):
-                self._thumbnail_level = np.where(big_enough_levels)[0][-1]
-            else:
-                self._thumbnail_level = 0
         else:
             self._data_level = 0
-            self._thumbnail_level = 0
         displayed_axes = self._slice_input.displayed
         self.corner_pixels[1][displayed_axes] = (
             np.array(self.level_shapes)[self._data_level][displayed_axes] - 1
         )
-
-        self._slice = _ScalarFieldSliceResponse.make_empty(
-            slice_input=self._slice_input,
-            rgb=len(self.data.shape) != self.ndim,
-            dtype=self._slice_dtype(),
-        )
+        self._reset_thumbnail_level_data()
 
         self._plane = SlicingPlane(thickness=1)
         # Whether to calculate clims on the next set_view_slice
@@ -329,6 +349,10 @@ class ScalarFieldBase(Layer, ABC):
         return self._slice.image.view
 
     @property
+    def _slice(self) -> _ScalarFieldSliceResponse:
+        return self._slicing_state._slice
+
+    @property
     def dtype(self):
         return normalize_dtype(self._data.dtype)
 
@@ -338,6 +362,22 @@ class ScalarFieldBase(Layer, ABC):
     ) -> LayerDataProtocol | Sequence[LayerDataProtocol]:
         """Data, exactly as provided by the user."""
         return self._data_raw
+
+    @property
+    def data(self) -> LayerDataProtocol | MultiScaleData:
+        """Data, possibly in multiscale wrapper. Obeys LayerDataProtocol."""
+        return self._data
+
+    @data.setter
+    def data(self, data: LayerDataProtocol | MultiScaleData) -> None:
+        self._data_raw = data
+        # note, we don't support changing from/to multiscale after construction
+        self._data = MultiScaleData(data) if self.multiscale else data  # type: ignore[arg-type]
+        self._reset_data_level()
+        self._reset_thumbnail_level_data()
+        self._update_dims()
+        self.events.data(value=self.data)
+        self._reset_editable()
 
     def _get_ndim(self) -> int:
         """Determine number of dimensions of the layer."""
@@ -386,6 +426,142 @@ class ScalarFieldBase(Layer, ABC):
             return
         self._data_level = level
         self.refresh(extent=False)
+
+    @property
+    def locked_data_level(self) -> int | None:
+        """int or None: Locked multiscale resolution level.
+
+        When set to an integer, forces rendering at the given multiscale
+        level instead of automatic level selection based on the viewport.
+        Set to ``None`` to restore automatic behaviour.
+
+
+        .. versionadded:: 0.7.1
+        """
+        return self._locked_data_level
+
+    @locked_data_level.setter
+    def locked_data_level(self, level: int | None) -> None:
+        if level is not None:
+            n_levels = len(self.level_shapes)
+            if level < 0 or level >= n_levels:
+                return
+        self._locked_data_level = level
+        if level is not None:
+            displayed_axes = self._slice_input.displayed
+            shape_at_level = np.array(self.level_shapes[level])
+            corners = np.zeros((2, self.ndim), dtype=int)
+            corners[1, displayed_axes] = shape_at_level[displayed_axes] - 1
+            self.corner_pixels = corners
+            self._data_level = level
+        else:
+            self._reset_data_level()
+        self.refresh(extent=False)
+        self.events.locked_data_level()
+
+    def _reset_data_level(self) -> None:
+        """Reset ``_locked_data_level`` and ``_data_level`` for new data.
+
+        Called from the ``data`` setter of subclasses when the underlying
+        array is replaced.  Uses the coarsest level for multiscale data
+        (matching ``__init__`` behaviour) and 0 for single-scale data.
+        """
+        self._locked_data_level = None
+        if isinstance(self._data, MultiScaleData):
+            self._data_level = len(self._data) - 1
+        else:
+            self._data_level = 0
+
+    def _update_level_and_corners(
+        self, data_bbox_int, shape_threshold, displayed_axes
+    ):
+        """Update the data level and corner pixels for the current viewport.
+
+        For multiscale layers, selects the appropriate resolution level
+        (locked, 2D auto, or 3D coarsest), computes corner pixels for that
+        level, and refreshes the layer when the level or visible region
+        changes. For non-multiscale data, delegates to the base implementation.
+        """
+        if not self.multiscale:
+            super()._update_level_and_corners(
+                data_bbox_int, shape_threshold, displayed_axes
+            )
+            return
+
+        if self._locked_data_level is not None:
+            # User has explicitly locked the data level; skip automatic
+            # level selection and use the full extent of that level.
+            locked = self._locked_data_level
+            old_level = self._data_level
+            self._data_level = locked
+            corners = np.zeros((2, self.ndim), dtype=int)
+            corners[1, displayed_axes] = (
+                np.take(self.data[locked].shape, displayed_axes) - 1
+            )
+            self.corner_pixels = corners
+            if old_level != locked:
+                self.refresh(extent=False, thumbnail=False)
+        elif self._slice_input.ndisplay == 2:
+            level, scaled_corners = compute_multiscale_level_and_corners(
+                data_bbox_int,
+                shape_threshold,
+                self.downsample_factors[:, displayed_axes],
+            )
+            corners = np.zeros((2, self.ndim), dtype=int)
+            max_coords = np.take(self.data[level].shape, displayed_axes) - 1
+            corners[:, displayed_axes] = np.clip(scaled_corners, 0, max_coords)
+            display_shape = tuple(
+                corners[1, displayed_axes] - corners[0, displayed_axes]
+            )
+            if any(s == 0 for s in display_shape):
+                return
+            # Only update when level changes or
+            # when new view is outside current corner_pixels
+            if (
+                self.data_level != level
+                or np.any(
+                    corners[0, displayed_axes]
+                    < self.corner_pixels[0, displayed_axes]
+                )
+                or np.any(
+                    corners[1, displayed_axes]
+                    > self.corner_pixels[1, displayed_axes]
+                )
+            ):
+                self._data_level = level
+                self.corner_pixels = corners
+                self.refresh(extent=False, thumbnail=False)
+        else:
+            # 3D: use the coarsest level, full extent
+            new_level = len(self.level_shapes) - 1
+            level_changed = self._data_level != new_level
+            self._data_level = new_level
+            corners = np.zeros((2, self.ndim), dtype=int)
+            corners[1, displayed_axes] = (
+                np.take(self.data[new_level].shape, displayed_axes) - 1
+            )
+            self.corner_pixels = corners
+            if level_changed:
+                self.refresh(extent=False, thumbnail=False)
+
+    def _reset_thumbnail_level_data(self) -> None:
+        """Set ``_thumbnail_level`` and ``_level_materializer`` for the current data.
+
+        Called once during ``__init__`` and again whenever ``data`` is replaced.
+        Single-scale and 3D multiscale layers set ``_level_materializer`` to
+        ``None``; only 2D multiscale layers cache the thumbnail level.
+        """
+        data = self._data
+        if isinstance(data, MultiScaleData):
+            self._thumbnail_level = len(data) - 1
+            self._level_materializer = (
+                _make_level_materializer(data)
+                if self._get_ndim() == 2
+                else None
+            )
+        else:
+            self._thumbnail_level = 0
+            self._level_materializer = None
 
     def _get_level_shapes(self) -> Sequence[tuple[int, ...]]:
         data = self.data
@@ -488,76 +664,8 @@ class ScalarFieldBase(Layer, ABC):
         """
         raise NotImplementedError
 
-    def _set_view_slice(self) -> None:
-        """Set the slice output based on this layer's current state."""
-        # The new slicing code makes a request from the existing state and
-        # executes the request on the calling thread directly.
-        # For async slicing, the calling thread will not be the main thread.
-        request = self._make_slice_request_internal(
-            slice_input=self._slice_input,
-            data_slice=self._data_slice,
-            dask_indexer=nullcontext,
-        )
-        response = request()
-        self._update_slice_response(response)
-
-    def _make_slice_request(self, dims: Dims) -> _ScalarFieldSliceRequest:
-        """Make an image slice request based on the given dims and this image."""
-        slice_input = self._make_slice_input(dims)
-        # For the existing sync slicing, indices is passed through
-        # to avoid some performance issues related to the evaluation of the
-        # data-to-world transform and its inverse. Async slicing currently
-        # absorbs these performance issues here, but we can likely improve
-        # things either by caching the world-to-data transform on the layer
-        # or by lazily evaluating it in the slice task itself.
-        indices = slice_input.data_slice(self._data_to_world.inverse)
-        return self._make_slice_request_internal(
-            slice_input=slice_input,
-            data_slice=indices,
-            dask_indexer=self.dask_optimized_slicing,
-        )
-
-    def _make_slice_request_internal(
-        self,
-        *,
-        slice_input: _SliceInput,
-        data_slice: _ThickNDSlice,
-        dask_indexer: DaskIndexer,
-    ) -> _ScalarFieldSliceRequest:
-        """Needed to support old-style sync slicing through _slice_dims and
-        _set_view_slice.
-
-        This is temporary scaffolding that should go away once we have completed
-        the async slicing project: https://github.com/napari/napari/issues/4795
-        """
-        return _ScalarFieldSliceRequest(
-            slice_input=slice_input,
-            data=self.data,
-            dask_indexer=dask_indexer,
-            data_slice=data_slice,
-            projection_mode=self.projection_mode,
-            multiscale=self.multiscale,
-            corner_pixels=self.corner_pixels,
-            rgb=len(self.data.shape) != self.ndim,
-            data_level=self.data_level,
-            thumbnail_level=self._thumbnail_level,
-            level_shapes=self.level_shapes,
-            downsample_factors=self.downsample_factors,
-        )
-
-    def _update_slice_response(
-        self, response: _ScalarFieldSliceResponse
-    ) -> None:
-        """Update the slice output state currently on the layer. Currently used
-        for both sync and async slicing.
-        """
-        response = response.to_displayed(self._raw_to_displayed)
-        # We call to_displayed here to ensure that if the contrast limits
-        # are outside the range of supported by vispy, then data view is
-        # rescaled to fit within the range.
-        self._slice_input = response.slice_input
-        self._transforms[0] = response.tile_to_data
-        self._slice = response
+    def _set_view_slice(self):
+        raise NotImplementedError
 
     def _get_value(self, position):
         """Value of the data at a position in data coordinates.
@@ -631,18 +739,19 @@ class ScalarFieldBase(Layer, ABC):
         if len(dims_displayed) == 3:
             # only use get_value_ray on 3D for now
             # we use dims_displayed because the image slice
-            # has its dimensions  in th same order as the vispy
-            # Volume
-            # Account for downsampling in the case of multiscale
-            # -1 means lowest resolution here.
-            start_point = (
-                start_point[dims_displayed]
-                / self.downsample_factors[-1][dims_displayed]
-            )
-            end_point = (
-                end_point[dims_displayed]
-                / self.downsample_factors[-1][dims_displayed]
-            )
+            # has its dimensions in the same order as the vispy
+            # Volume.
+            #
+            # Grab the slice data first, then derive the downsample
+            # factor from its actual shape so that coordinates and
+            # data are always consistent (data_level and the slice
+            # can be temporarily out of sync).
+            im_slice = self._slice.image.raw
+            slice_shape = np.array(im_slice.shape)
+            level0_shape = np.array(self.level_shapes[0])
+            ds = level0_shape[dims_displayed] / slice_shape
+            start_point = start_point[dims_displayed] / ds
+            end_point = end_point[dims_displayed] / ds
             start_point = cast(np.ndarray, start_point)
             end_point = cast(np.ndarray, end_point)
             sample_ray = end_point - start_point
@@ -651,15 +760,9 @@ class ScalarFieldBase(Layer, ABC):
             sample_points = np.linspace(
                 start_point, end_point, n_points, endpoint=True
             )
-            im_slice = self._slice.image.raw
-            # ensure the bounding box is for the proper multiscale level
-            bounding_box = self._display_bounding_box_at_level(
-                dims_displayed, self.data_level
-            )
-            # the display bounding box is returned as a closed interval
-            # (i.e. the endpoint is included) by the method, but we need
-            # open intervals in the code that follows, so we add 1.
-            bounding_box[:, 1] += 1
+            # Build the bounding box from the actual slice shape
+            bounding_box = np.zeros((len(dims_displayed), 2))
+            bounding_box[:, 1] = slice_shape
 
             clamped = clamp_point_to_bounding_box(
                 sample_points,
@@ -735,3 +838,131 @@ class ScalarFieldBase(Layer, ABC):
         bounding box of the data at the current level
         """
         return self._extent_level_data_augmented[:, dims_displayed].T
+
+    def _get_layer_slicing_state(
+        self, data: LayerDataType, cache: bool
+    ) -> ScalarFieldSlicingState:
+        return ScalarFieldSlicingState(layer=self, data=data, cache=cache)
+
+
+class ScalarFieldSlicingState(_LayerSlicingState):
+    layer: ScalarFieldBase
+    _slice_request_class = _ScalarFieldSliceRequest
+
+    def __init__(
+        self, layer: ScalarFieldBase, data: LayerDataType, cache: bool
+    ):
+        super().__init__(layer, data, cache)
+        self.transforms = Affine(
+            np.ones(self.ndim), np.zeros(self.ndim), name='tile2data'
+        )
+        self._slice = _ScalarFieldSliceResponse.make_empty(
+            slice_input=self._slice_input,
+            rgb=len(self.layer.data.shape) != self.ndim,
+            dtype=self.layer._slice_dtype(),
+        )
+
+    def _set_view_slice(self):
+        request = self._make_slice_request_internal(
+            slice_input=self._slice_input,
+            data_slice=self.data_slice,
+            dask_indexer=nullcontext,
+        )
+        response = request()
+        self._update_slice_response(response)
+
+    def _make_slice_request(self, dims: Dims) -> _ScalarFieldSliceRequest:
+        """Make an image slice request based on the given dims and this image."""
+        slice_input = self.make_slice_input(dims)
+        # For the existing sync slicing, indices is passed through
+        # to avoid some performance issues related to the evaluation of the
+        # data-to-world transform and its inverse. Async slicing currently
+        # absorbs these performance issues here, but we can likely improve
+        # things either by caching the world-to-data transform on the layer
+        # or by lazily evaluating it in the slice task itself.
+        data_slice = self._slice_indices(slice_input, dims)
+        return self._make_slice_request_internal(
+            slice_input=slice_input,
+            data_slice=data_slice,
+            dask_indexer=self.dask_optimized_slicing,
+        )
+
+    def _make_slice_request_internal(
+        self,
+        *,
+        slice_input: _SliceInput,
+        data_slice: _ThickNDSlice,
+        dask_indexer: DaskIndexer,
+    ) -> _ScalarFieldSliceRequest:
+        """Needed to support old-style sync slicing through _slice_dims and
+        _set_view_slice.
+
+        This is temporary scaffolding that should go away once we have completed
+        the async slicing project: https://github.com/napari/napari/issues/4795
+        """
+        data = self.layer.data
+        if self.layer.multiscale:
+            locked = self.layer._locked_data_level
+            if locked is not None:
+                data_level = locked
+            elif slice_input.ndisplay == 3:
+                data_level = len(data) - 1  # type: ignore[arg-type]
+            else:
+                data_level = self.layer.data_level
+        else:
+            data_level = 0
+
+        thumbnail_level = self.layer._thumbnail_level
+        data_at_thumbnail_level: (
+            LayerDataProtocol | MultiScaleData | np.ndarray
+        )
+        if self.layer._level_materializer:
+            data_at_thumbnail_level = self.layer._level_materializer(
+                thumbnail_level
+            )
+        elif self.layer.multiscale:
+            data_at_thumbnail_level = data[thumbnail_level]
+        else:
+            data_at_thumbnail_level = data
+
+        data_at_data_level: LayerDataProtocol | MultiScaleData | np.ndarray
+        if not self.layer.multiscale:
+            data_at_data_level = data
+        elif data_level == thumbnail_level:
+            data_at_data_level = data_at_thumbnail_level
+        else:
+            data_at_data_level = data[data_level]
+
+        return self._slice_request_class(
+            slice_input=slice_input,
+            data_at_data_level=data_at_data_level,
+            data_at_thumbnail_level=data_at_thumbnail_level,
+            dtype=self.layer.dtype,
+            dask_indexer=dask_indexer,
+            data_slice=data_slice,
+            projection_mode=self.layer.projection_mode,
+            multiscale=self.layer.multiscale,
+            corner_pixels=self.layer.corner_pixels,
+            rgb=len(self.layer.data.shape) != self.ndim,
+            data_level=data_level,
+            thumbnail_level=thumbnail_level,
+            level_shapes=self.layer.level_shapes,
+            downsample_factors=self.layer.downsample_factors,
+        )
+
+    def _update_slice_response(
+        self, response: _ScalarFieldSliceResponse
+    ) -> None:
+        """Update the slice output state currently on the layer. Currently used
+        for both sync and async slicing.
+        """
+        response = response.to_displayed(self.layer._raw_to_displayed)
+        # We call to_displayed here to ensure that if the contrast limits
+        # are outside the range of supported by vispy, then data view is
+        # rescaled to fit within the range.
+        self._slice_input = response.slice_input
+        # this is the temporary patch
+        self.layer._transforms[0] = response.tile_to_data
+        #
+        self.transforms = response.tile_to_data
+        self._slice = response

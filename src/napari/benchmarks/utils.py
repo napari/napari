@@ -1,15 +1,20 @@
+from __future__ import annotations
+
 import itertools
 import os
 from collections.abc import Callable, Sequence
 from functools import lru_cache
-from types import ModuleType
 from typing import (
+    TYPE_CHECKING,
     Literal,
     overload,
 )
 
 import numpy as np
 from skimage import morphology
+
+if TYPE_CHECKING:
+    from types import ModuleType
 
 
 def always_false(*_):

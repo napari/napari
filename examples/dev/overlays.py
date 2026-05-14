@@ -28,7 +28,7 @@ class DotOverlay(CanvasOverlay):
 # and not a specific layer
 class VispyDotOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
     # all arguments are keyword-only. viewer, overlay and parent should always be present.
-    def __init__(self, *, viewer, overlay, parent=None):
+    def __init__(self, *, viewer, overlay, parent=None, font_manager=None, font_family="OpenSans"):
         # the node argument for the base class is the vispy visual
         # note that the center is (0, 0), cause we handle the shift with transforms
         super().__init__(
@@ -36,6 +36,8 @@ class VispyDotOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
             viewer=viewer,
             overlay=overlay,
             parent=parent,
+            font_manager=font_manager,
+            font_family=font_family,
         )
 
         # we also need to connect events from the model to callbacks that update the visual

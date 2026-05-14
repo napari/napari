@@ -12,6 +12,8 @@ def test_viewer_overlays(qt_viewer):
     canvas = qt_viewer.canvas
 
     for overlay in viewer._overlays.values():
+        # vispy overlays only exist if they are visible at least once
+        overlay.visible = True
         if isinstance(overlay, CanvasOverlay):
             assert all(
                 visual.node in canvas.view.children
@@ -23,7 +25,11 @@ def test_viewer_overlays(qt_viewer):
                 for visual in canvas._overlay_to_visual[overlay]
             )
 
-    new_overlay = ScaleBarOverlay()
+    old_vispy_overlays = {
+        k: list(v) for k, v in canvas._overlay_to_visual.items()
+    }
+
+    new_overlay = ScaleBarOverlay(visible=True)
     viewer._overlays['test'] = new_overlay
 
     assert new_overlay in canvas._overlay_to_visual
@@ -31,9 +37,19 @@ def test_viewer_overlays(qt_viewer):
     assert new_overlay_node not in canvas.view.scene.children
     assert new_overlay_node in canvas.view.children
 
+    # old visuals should still be there, as they are reused when possible
+    for overlay, vispy_overlays in old_vispy_overlays.items():
+        for vispy_overlay in vispy_overlays:
+            if isinstance(overlay, CanvasOverlay):
+                assert vispy_overlay.node in canvas.view.children
+            else:
+                assert vispy_overlay.node in canvas.view.scene.children
+
     viewer._overlays.pop('test')
     assert new_overlay not in canvas._overlay_to_visual
     assert new_overlay_node not in canvas.view.children
+
+    viewer.welcome_screen.visible = False  # just for proper test cleanup
 
 
 def test_layer_overlays(qt_viewer):
@@ -72,10 +88,12 @@ def test_layer_overlays(qt_viewer):
     assert new_overlay_node in layer_node.children
     assert new_overlay_node not in canvas.view.children
 
-    # old visuals should be removed, as everything was recreated
-    for old_ov in old_vispy_overlays.values():
-        assert old_ov.node not in canvas.view.scene.children
-        assert old_ov.node not in canvas.view.children
+    # old visuals should still be there, as they are reused when possible
+    for overlay, vispy_overlay in old_vispy_overlays.items():
+        if isinstance(overlay, CanvasOverlay):
+            assert vispy_overlay.node in canvas.view.children
+        else:
+            assert vispy_overlay.node in layer_node.children
 
     layer._overlays.pop('test')
     assert new_overlay not in canvas._layer_overlay_to_visual[layer]
@@ -132,6 +150,8 @@ def test_tiling_canvas_overlays(qt_viewer):
     viewer.scale_bar.visible = True
     viewer.text_overlay.visible = True
     viewer.text_overlay.text = 'test'
+    viewer.scale_bar.position = 'bottom_left'
+    viewer.text_overlay.position = 'bottom_left'
 
     vispy_scale_bar = canvas._overlay_to_visual[viewer.scale_bar][0]
     vispy_text_overlay = canvas._overlay_to_visual[viewer.text_overlay][0]
@@ -188,3 +208,82 @@ def test_tiling_canvas_overlays(qt_viewer):
         0 + padding,
         decimal=3,
     )
+
+
+def test_world_units_restored_after_removing_inconsistent_layer(qt_viewer):
+    """Removing a units-inconsistent layer should re-enable unit-aware rendering.
+
+    Regression test for #8771: when a layer with pixel (dimensionless) units is added to
+    a viewer that already has length-unit layers, world units become inconsistent
+    and unit-aware rendering is disabled.Upon removing the inconsistent layer,
+    the canvas must call _update_world_units() on the next draw so the remaining compatible
+    layers resume using the shared world units.
+    """
+    from pint import get_application_registry
+
+    reg = get_application_registry()
+
+    viewer = qt_viewer.viewer
+    canvas = qt_viewer.canvas
+
+    # Two images with compatible length units (um and nm share the same
+    # dimensionality; consistent world units = nm, the smaller one).
+    im1 = viewer.add_image(np.zeros((10, 10)), units=('um', 'um'))
+    viewer.add_image(np.zeros((10, 10)), units=('nm', 'nm'))
+
+    # Units should be consistent after adding compatible layers.
+    assert viewer.layers.extent.units is not None
+    vispy_im1 = canvas.layer_to_visual[im1]
+
+    # the vispy layer received the shared world units (nm). (not just im1's own layer units (um))
+    assert vispy_im1._world_units == (reg.nm, reg.nm)
+
+    # Add layer with incompatible units (pixels)
+    labels = viewer.add_labels(np.zeros((10, 10), dtype=int))
+
+    # Units are now inconsistent across layers; _update_world_units() sets
+    # world_units=None on each vispy layer, which causes the vispy layer's
+    # _world_units to fall back to its own layer-local units.
+    assert viewer.layers.extent.units is None
+    assert vispy_im1._world_units == (
+        reg.um,
+        reg.um,
+    )  # im1's own layer units, not (nm, nm)
+
+    # Remove the incompatible layer.
+    viewer.layers.remove(labels)
+
+    canvas.on_draw(None)
+    assert vispy_im1.world_units == (reg.nm, reg.nm)
+
+
+def test_world_units_applied_to_inserted_layer_via_layerlist_event(qt_viewer):
+    from pint import get_application_registry
+
+    reg = get_application_registry()
+
+    viewer = qt_viewer.viewer
+    canvas = qt_viewer.canvas
+
+    viewer.add_image(np.zeros((10, 10)), units=('um', 'um'))
+    image_nm = viewer.add_image(np.zeros((10, 10)), units=('nm', 'nm'))
+
+    assert viewer.layers.extent.units == (reg.nm, reg.nm)
+    assert canvas.layer_to_visual[image_nm].world_units == (reg.nm, reg.nm)
+
+
+def test_inserted_layer_receives_shared_world_units_when_units_unchanged(
+    qt_viewer,
+):
+    from pint import get_application_registry
+
+    reg = get_application_registry()
+
+    viewer = qt_viewer.viewer
+    canvas = qt_viewer.canvas
+
+    viewer.add_image(np.zeros((10, 10)), units=('nm', 'nm'))
+    image_um = viewer.add_image(np.zeros((10, 10)), units=('um', 'um'))
+
+    assert viewer.layers.extent.units == (reg.nm, reg.nm)
+    assert canvas.layer_to_visual[image_um].world_units == (reg.nm, reg.nm)

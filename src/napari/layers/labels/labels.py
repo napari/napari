@@ -1,23 +1,27 @@
+from __future__ import annotations
+
 import typing
 import warnings
 from collections import deque
 from collections.abc import Callable, Generator, Sequence
 from contextlib import contextmanager
 from typing import (
+    TYPE_CHECKING,
     Any,
     ClassVar,
+    TypeAlias,
 )
 
 import numpy as np
 import numpy.typing as npt
-import pandas as pd
-from scipy import ndimage as ndi
-from skimage.draw import polygon2mask
+from PIL import Image, ImageDraw
 
 from napari.layers._data_protocols import LayerDataProtocol
 from napari.layers._multiscale_data import MultiScaleData
-from napari.layers._scalar_field._slice import _ScalarFieldSliceResponse
-from napari.layers._scalar_field.scalar_field import ScalarFieldBase
+from napari.layers._scalar_field.scalar_field import (
+    ScalarFieldBase,
+    ScalarFieldSlicingState,
+)
 from napari.layers.base import Layer, no_op
 from napari.layers.base._base_mouse_bindings import (
     highlight_box_handles,
@@ -43,7 +47,9 @@ from napari.layers.labels._labels_utils import (
     interpolate_coordinates,
     sphere_indices,
 )
+from napari.layers.labels._slice import _LabelsSliceRequest
 from napari.layers.utils.layer_utils import _FeatureTable
+from napari.types import LayerDataType
 from napari.utils._dtype import (
     get_dtype_limits,
     normalize_dtype,
@@ -66,7 +72,12 @@ from napari.utils.misc import StringEnum, _is_array_type
 from napari.utils.naming import magic_name
 from napari.utils.translations import trans
 
+if TYPE_CHECKING:
+    import pandas as pd
+
 __all__ = ('Labels',)
+
+HistoryItem: TypeAlias = tuple[npt.NDArray, npt.NDArray, npt.NDArray]
 
 
 class Labels(ScalarFieldBase):
@@ -79,8 +90,11 @@ class Labels(ScalarFieldBase):
     ----------
     data : array or list of array
         Labels data as an array or multiscale. Must be integer type or bools.
-        Please note multiscale rendering is only supported in 2D. In 3D, only
-        the lowest resolution scale is displayed.
+        In 2D, the displayed resolution is chosen automatically based on
+        the viewport. In 3D, the lowest resolution scale is displayed by
+        default. The resolution level can be locked via
+        ``locked_data_level`` or the resolution control in the layer
+        controls UI.
     affine : n-D array or napari.utils.transforms.Affine
         (N+1, N+1) affine transformation matrix in homogeneous coordinates.
         The first (N, N) entries correspond to a linear transform and
@@ -89,7 +103,7 @@ class Labels(ScalarFieldBase):
         provided scale, rotate, and shear values.
     axis_labels : tuple of str, optional
         Dimension names of the layer data.
-        If not provided, axis_labels will be set to (..., 'axis -2', 'axis -1').
+        If not provided, axis_labels will be set to (..., '-2', '-1').
     blending : str
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
@@ -123,9 +137,11 @@ class Labels(ScalarFieldBase):
         represented by a list of array like image data. If not specified by
         the user and if the data is a list of arrays that decrease in shape
         then it will be taken to be multiscale. The first image in the list
-        should be the largest. Please note multiscale rendering is only
-        supported in 2D. In 3D, only the lowest resolution scale is
-        displayed.
+        should be the largest. In 2D, the displayed resolution is chosen
+        automatically based on the viewport. In 3D, the lowest resolution
+        scale is displayed by default. The resolution level can be locked
+        via ``locked_data_level`` or the resolution control in the layer
+        controls UI.
     name : str
         Name of the layer.
     opacity : float
@@ -170,17 +186,21 @@ class Labels(ScalarFieldBase):
     data : array or list of array
         Integer label data as an array or multiscale. Can be N dimensional.
         Every pixel contains an integer ID corresponding to the region it
-        belongs to. The label 0 is rendered as transparent. Please note
-        multiscale rendering is only supported in 2D. In 3D, only
-        the lowest resolution scale is displayed.
+        belongs to. The label 0 is rendered as transparent. In 2D, the
+        displayed resolution is chosen automatically based on the viewport.
+        In 3D, the lowest resolution scale is displayed by default. The
+        resolution level can be locked via ``locked_data_level`` or the
+        resolution control in the layer controls UI.
     axis_labels : tuple of str
         Dimension names of the layer data.
     multiscale : bool
         Whether the data is a multiscale image or not. Multiscale data is
         represented by a list of array like image data. The first image in the
-        list should be the largest. Please note multiscale rendering is only
-        supported in 2D. In 3D, only the lowest resolution scale is
-        displayed.
+        list should be the largest. In 2D, the displayed resolution is chosen
+        automatically based on the viewport. In 3D, the lowest resolution
+        scale is displayed by default. The resolution level can be locked
+        via ``locked_data_level`` or the resolution control in the layer
+        controls UI.
     metadata : dict
         Labels metadata.
     num_colors : int
@@ -263,7 +283,7 @@ class Labels(ScalarFieldBase):
     _modeclass = Mode
 
     _drag_modes: ClassVar[
-        dict[Mode, Callable[['Labels', Event], None | Generator]]
+        dict[Mode, Callable[[Labels, Event], None | Generator]]
     ] = {  # type: ignore[assignment]
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: transform_with_box,
@@ -277,7 +297,7 @@ class Labels(ScalarFieldBase):
     brush_size_on_mouse_move = BrushSizeOnMouseMove(min_brush_size=1)
 
     _move_modes: ClassVar[
-        dict[StringEnum, Callable[['Labels', Event], None]]
+        dict[StringEnum, Callable[[Labels, Event], None]]
     ] = {  # type: ignore[assignment]
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: highlight_box_handles,
@@ -410,12 +430,17 @@ class Labels(ScalarFieldBase):
         self.colormap.use_selection = self._show_selected_label
         self._prev_selected_label = None
         self._selected_color = self.get_color(self._selected_label)
-        self._updated_slice = None
+        self._updated_slice: tuple[slice, ...] | None = None
         if colormap is not None:
             self._set_colormap(colormap)
 
         self._status = self.mode
         self._preserve_labels = False
+
+        self._undo_history: deque[HistoryItem]
+        self._redo_history: deque[HistoryItem]
+        self._staged_history: list[HistoryItem]
+        self._block_history: bool
 
     def _slice_dtype(self):
         """Calculate dtype of data view based on data dtype and current colormap"""
@@ -519,7 +544,7 @@ class Labels(ScalarFieldBase):
         self.cursor_size = self._calculate_cursor_size()
         self.events.brush_size()
 
-    def _calculate_cursor_size(self):
+    def _calculate_cursor_size(self) -> int:
         # Convert from brush size in data coordinates to
         # cursor size in world coordinates
         scale = self._data_to_world.scale
@@ -533,9 +558,14 @@ class Labels(ScalarFieldBase):
             seed = int(np.random.default_rng().integers(2**32 - 1))
 
         orig = self._original_random_colormap
-        self.colormap = shuffle_and_extend_colormap(
+        new_cmap = shuffle_and_extend_colormap(
             self._original_random_colormap, seed
         )
+        # Sync from the layer (source of truth) before assignment, so
+        # `events.colormap` listeners observe the correct `use_selection`.
+        new_cmap.use_selection = self._show_selected_label
+        new_cmap.selection = self._selected_label
+        self.colormap = new_cmap
         self._original_random_colormap = orig
 
     @property
@@ -576,19 +606,10 @@ class Labels(ScalarFieldBase):
         self.events.selected_label()
         self.refresh(extent=False)
 
-    @property
-    def data(self) -> LayerDataProtocol | MultiScaleData:
-        """array: Image data."""
-        return self._data
-
-    @data.setter
-    def data(self, data: LayerDataProtocol | MultiScaleData):
+    @ScalarFieldBase.data.setter  # type: ignore[attr-defined]
+    def data(self, data: LayerDataProtocol | MultiScaleData) -> None:
         data = self._ensure_int_labels(data)
-        self._data = data
-        self._ndim = len(self._data.shape)
-        self._update_dims()
-        self.events.data(value=self.data)
-        self._reset_editable()
+        ScalarFieldBase.data.fset(self, data)  # type: ignore[attr-defined]
         self.events.features()
 
     @property
@@ -637,7 +658,7 @@ class Labels(ScalarFieldBase):
             label_index = {i: i for i in range(features.shape[0])}
         return label_index
 
-    def _is_default_colors(self, color):
+    def _is_default_colors(self, color: dict) -> bool:
         """Returns True if color contains only default colors, otherwise False.
 
         Default colors are black for `None` and transparent for
@@ -702,9 +723,10 @@ class Labels(ScalarFieldBase):
                 'rendering': self.rendering,
                 'iso_gradient_mode': self.iso_gradient_mode,
                 'depiction': self.depiction,
-                'plane': self.plane.dict(),
+                'plane': self.plane.model_dump(),
                 'experimental_clipping_planes': [
-                    plane.dict() for plane in self.experimental_clipping_planes
+                    plane.model_dump()
+                    for plane in self.experimental_clipping_planes
                 ],
                 'data': self.data,
                 'features': self.features,
@@ -746,7 +768,7 @@ class Labels(ScalarFieldBase):
         if self.show_selected_label:
             self.refresh(extent=False)
 
-    def swap_selected_and_background_labels(self):
+    def swap_selected_and_background_labels(self) -> None:
         """Swap between the selected label and the background label."""
         if self.selected_label != self.colormap.background_value:
             self.selected_label = self.colormap.background_value
@@ -792,12 +814,13 @@ class Labels(ScalarFieldBase):
         In ERASE mode the cursor functions similarly to PAINT mode, but to
         paint with background label, which effectively removes the label.
         """
-        return Layer.mode.fget(self)
+        return super().mode
 
     # Only overriding to change the docstring of the setter above
     @mode.setter
     def mode(self, mode):
-        Layer.mode.fset(self, mode)
+        # See https://github.com/python/mypy/issues/16426 for type ignore reason
+        Layer.mode.fset(self, mode)  # type: ignore[attr-defined]
 
     def _mode_setter_helper(self, mode):
         mode = super()._mode_setter_helper(mode)
@@ -843,17 +866,10 @@ class Labels(ScalarFieldBase):
         """
         return vispy_texture_dtype(data)
 
-    def _update_slice_response(
-        self, response: _ScalarFieldSliceResponse
-    ) -> None:
-        """Override to convert raw slice data to displayed label colors."""
-        response = response.to_displayed(self._raw_to_displayed)
-        super()._update_slice_response(response)
-
-    def _partial_labels_refresh(self):
+    def _partial_labels_refresh(self) -> None:
         """Prepares and displays only an updated part of the labels."""
 
-        if self._updated_slice is None or not self.loaded:
+        if self._updated_slice is None or not self._slicing_state.loaded:
             return
 
         dims_displayed = self._slice_input.displayed
@@ -972,7 +988,9 @@ class Labels(ScalarFieldBase):
         like adjusting gamma or changing the data based on the contrast
         limits.
         """
-        if not self.loaded or self._slice.empty:
+        from scipy import ndimage as ndi
+
+        if not self._slicing_state.loaded or self._slice.empty:
             # ASYNC_TODO: Do not compute the thumbnail until we are loaded.
             # Is there a nicer way to prevent this from getting called?
             return
@@ -1011,7 +1029,7 @@ class Labels(ScalarFieldBase):
             col = self.colormap.map(label)
         return col
 
-    def _reset_history(self, event=None):
+    def _reset_history(self, event: Event | None = None) -> None:
         self._undo_history = deque(maxlen=self._history_limit)
         self._redo_history = deque(maxlen=self._history_limit)
         self._staged_history = []
@@ -1107,17 +1125,19 @@ class Labels(ScalarFieldBase):
 
         self.refresh()
 
-    def undo(self):
+    def undo(self) -> None:
         self._load_history(
             self._undo_history, self._redo_history, undoing=True
         )
 
-    def redo(self):
+    def redo(self) -> None:
         self._load_history(
             self._redo_history, self._undo_history, undoing=False
         )
 
-    def fill(self, coord, new_label, refresh=True):
+    def fill(
+        self, coord: Sequence[float], new_label: int, refresh: bool = True
+    ) -> None:
         """Replace an existing label with a new label, either just at the
         connected component if the `contiguous` flag is `True` or everywhere
         if it is `False`, working in the number of dimensions specified by
@@ -1133,6 +1153,8 @@ class Labels(ScalarFieldBase):
             Whether to refresh view slice or not. Set to False to batch paint
             calls.
         """
+        from scipy import ndimage as ndi
+
         int_coord = tuple(np.round(coord).astype(int))
         # If requested fill location is outside data shape then return
         if np.any(np.less(int_coord, 0)) or np.any(
@@ -1177,6 +1199,7 @@ class Labels(ScalarFieldBase):
                 )
 
         match_indices_local = np.nonzero(matches)
+        match_indices: Sequence[npt.NDArray[np.intp]]
         if self.ndim not in {2, self.n_edit_dimensions}:
             n_idx = len(match_indices_local[0])
             match_indices = []
@@ -1190,11 +1213,11 @@ class Labels(ScalarFieldBase):
         else:
             match_indices = match_indices_local
 
-        match_indices = _coerce_indices_for_vectorization(
+        match_indices_tuple = _coerce_indices_for_vectorization(
             self.data, match_indices
         )
 
-        self.data_setitem(match_indices, new_label, refresh)
+        self.data_setitem(match_indices_tuple, new_label, refresh)
 
     def _draw(self, new_label, last_cursor_coord, coordinates):
         """Paint into coordinates, accounting for mode and cursor movement.
@@ -1287,7 +1310,8 @@ class Labels(ScalarFieldBase):
         slice_coord = points[0].tolist()
         points2d = points[:, dims_to_paint]
 
-        polygon_mask = polygon2mask(shape, points2d)
+        polygon_mask = self._create_polygon_mask(points2d, shape)
+
         mask_indices = np.argwhere(polygon_mask)
         self._paint_indices(
             mask_indices,
@@ -1297,6 +1321,31 @@ class Labels(ScalarFieldBase):
             slice_coord,
             refresh=True,
         )
+
+    def _create_polygon_mask(
+        self, points2d: np.ndarray, shape: list[int]
+    ) -> np.ndarray:
+        """Create a boolean mask from polygon points using PIL rasterization.
+
+        Parameters
+        ----------
+        points2d : ndarray
+            2D polygon vertices in (row, col) format, relative to the mask
+            coordinate system.
+        shape : list of int
+            Shape of the mask to create [height, width].
+
+        Returns
+        -------
+        ndarray
+            Boolean mask with True inside polygon.
+        """
+        # PIL uses (x, y) = (col, row), so reverse the points
+        img = Image.new('L', (shape[1], shape[0]), 0)
+        draw = ImageDraw.Draw(img)
+        points_pil = [tuple(p[::-1]) for p in points2d]
+        draw.polygon(points_pil, outline=1, fill=1)
+        return np.array(img, dtype=bool)
 
     def _paint_indices(
         self,
@@ -1455,10 +1504,8 @@ class Labels(ScalarFieldBase):
             indices = [np.array(x).flatten() for x in indices]
 
         updated_slice = tuple(
-            [
-                slice(min(axis_indices), max(axis_indices) + 1)
-                for axis_indices in indices
-            ]
+            slice(int(axis_indices.min()), int(axis_indices.max()) + 1)
+            for axis_indices in indices
         )
 
         if self.contour > 0:
@@ -1573,14 +1620,26 @@ class Labels(ScalarFieldBase):
         msg : string
             String containing a message that can be used as a tooltip.
         """
-        return '\n'.join(
-            self._get_properties(
-                position,
-                view_direction=view_direction,
-                dims_displayed=dims_displayed,
-                world=world,
-            )
+        value = self.get_value(
+            position,
+            view_direction=view_direction,
+            dims_displayed=dims_displayed,
+            world=world,
         )
+        if value is None:
+            return ''
+
+        properties = self._get_properties(
+            position,
+            view_direction=view_direction,
+            dims_displayed=dims_displayed,
+            world=world,
+        )
+
+        if not properties:
+            return f'{value}'
+
+        return f'{value}\n' + '\n'.join(properties)
 
     def _get_properties(
         self,
@@ -1619,8 +1678,20 @@ class Labels(ScalarFieldBase):
             and not (isinstance(v[idx], float) and np.isnan(v[idx]))
         ]
 
+    def _get_layer_slicing_state(
+        self, data: LayerDataType, cache: bool
+    ) -> _LabelsSlicingState:
+        return _LabelsSlicingState(self, data, cache)
 
-def _coerce_indices_for_vectorization(array, indices: list) -> tuple:
+
+class _LabelsSlicingState(ScalarFieldSlicingState):
+    layer: Labels
+    _slice_request_class = _LabelsSliceRequest
+
+
+def _coerce_indices_for_vectorization(
+    array, indices: Sequence[int | npt.NDArray[np.intp]]
+) -> tuple:
     """Coerces indices so that they can be used for vectorized indexing in the given data array."""
     if _is_array_type(array, 'xarray.DataArray'):
         # Fix indexing for xarray if necessary
