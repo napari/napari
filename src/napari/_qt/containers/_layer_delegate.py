@@ -195,7 +195,7 @@ class LayerDelegate(QStyledItemDelegate):
         icon_size = 16
         type_icon_reserved = 28
         x = rect.right() - type_icon_reserved - icon_size - 2
-        y = rect.top() + (rect.height() - icon_size) // 2
+        y = rect.top() + (rect.height() - icon_size) // 2 - 2
         return QRect(x, y, icon_size, icon_size)
 
     def createEditor(

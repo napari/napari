@@ -6,6 +6,7 @@ from qtpy.QtGui import QImage
 from napari import current_viewer
 from napari._qt.containers.qt_list_model import QtListModel
 from napari.layers import Layer
+from napari.layers.base import LayerLock
 from napari.settings import get_settings
 from napari.utils.translations import trans
 
@@ -83,7 +84,9 @@ class QtLayerListModel(QtListModel[Layer]):
                 Qt.CheckState(value) == Qt.CheckState.Checked
             )
         elif role == LockedRole:
-            self.getItem(index).locked = bool(value)
+            self.getItem(index).locked = (
+                LayerLock.ALL if value else LayerLock.NONE
+            )
             self.dataChanged.emit(index, index, [LockedRole])
             return True
         elif role == Qt.ItemDataRole.EditRole:
