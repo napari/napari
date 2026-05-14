@@ -51,6 +51,7 @@ class VispyGridLinesOverlay(ViewerOverlayMixin, VispySceneOverlay):
         self.viewer.camera.events.orientation.connect(
             self._on_view_direction_change
         )
+        self.viewer.camera.events.zoom.connect(self._on_view_direction_change)
         get_settings().appearance.events.theme.connect(self._on_data_change)
         self.viewer.events.theme.connect(self._on_data_change)
 
@@ -106,6 +107,7 @@ class VispyGridLinesOverlay(ViewerOverlayMixin, VispySceneOverlay):
             view_direction,
             up_direction,
             orientation_flip,
+            zoom=self.viewer.camera.zoom,
             force=force,
         )
 

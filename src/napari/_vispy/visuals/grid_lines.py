@@ -29,9 +29,6 @@ class GridLines3D(Node):
         # so we use a simple empty node with children instead
         self.tick_labels: dict[int, list[Text]] = {0: [], 1: [], 2: []}
         self._last_ticks = np.array((0.0,))
-        self._last_view_is_flipped: tuple[bool, ...] = ()
-        self._last_up_direction: tuple[int, ...] = ()
-        self._last_orientation_flip: tuple[int, ...] = ()
         self.color: ColorValue | str = 'white'
         self.scale = (1, 1, 1)
         self._opacity = 1.0
@@ -97,6 +94,7 @@ class GridLines3D(Node):
         view_direction: tuple[int, ...],
         up_direction: tuple[int, ...],
         orientation_flip: tuple[int, ...],
+        zoom: float,
         force: bool = False,
     ) -> None:
         view_is_flipped = tuple(
@@ -107,13 +105,6 @@ class GridLines3D(Node):
         if len(ranges) == 2:
             ranges = ranges + ((0, 0),)
             view_is_flipped = view_is_flipped + (False,)
-
-        if not force and (
-            np.array_equal(view_is_flipped, self._last_view_is_flipped)
-            and np.array_equal(up_direction, self._last_up_direction)
-            and np.array_equal(orientation_flip, self._last_orientation_flip)
-        ):
-            return
 
         # translate everything with the grid on xy plane, we transpose later
         far_bounds = []
@@ -126,6 +117,9 @@ class GridLines3D(Node):
             farthest_bound = ranges[axis][int(view_is_flipped[axis])]
             far_bounds.append(farthest_bound)
 
+        offset = (
+            10 / zoom**0.5
+        )  # magic numbers, they work ok at a wide range of zooms
         for axis in range(3):
             prev_axis = (axis - 1) % 3
             next_axis = (axis + 1) % 3
@@ -138,53 +132,44 @@ class GridLines3D(Node):
                 # shift according to view angle to maximize visibility and have consistent positioning
                 # these branches were found by trial and error with the goal to reproduce the
                 # tick positioning by plotly (e.g: https://plotly.com/python/3d-scatter-plots/)
-                next_axis_shift = ranges[next_axis][1] - ranges[next_axis][0]
-                prev_axis_shift = ranges[prev_axis][1] - ranges[prev_axis][0]
+                next_axis_shift = (
+                    ranges[next_axis][1] - ranges[next_axis][0] + offset
+                )
+                prev_axis_shift = (
+                    ranges[prev_axis][1] - ranges[prev_axis][0] + offset
+                )
 
                 if axis == 0:
-                    anchor_flip = -1
-                    if not view_is_flipped[next_axis]:
+                    if view_is_flipped[next_axis]:
+                        pass
+                    else:
                         tick.transform.move((0, next_axis_shift, 0))
-                        anchor_flip *= -1
                     if view_is_flipped[prev_axis]:
                         tick.transform.move((0, 0, prev_axis_shift))
-                        anchor_flip *= -1
+                    else:
+                        tick.transform.move((0, 0, -offset))
                 if axis == 1:
-                    anchor_flip = 1
                     if view_is_flipped[next_axis]:
                         tick.transform.move((0, next_axis_shift, 0))
-                        anchor_flip *= -1
-                    if not view_is_flipped[prev_axis]:
+                    else:
+                        tick.transform.move((0, -offset, 0))
+                    if view_is_flipped[prev_axis]:
+                        tick.transform.move((0, 0, -offset))
+                    else:
                         tick.transform.move((0, 0, prev_axis_shift))
-                        anchor_flip *= -1
                 if axis == 2:
-                    anchor_flip = -1
-                    if not view_is_flipped[next_axis]:
+                    if view_is_flipped[next_axis]:
+                        tick.transform.move((0, 0, -offset))
+                    else:
                         tick.transform.move((0, 0, prev_axis_shift))
                     if view_is_flipped[prev_axis]:
                         tick.transform.move((0, next_axis_shift, 0))
-
-                # this is just black magic at this point... but hey, it works
-                if (
-                    up_direction[axis]
-                    * anchor_flip
-                    * orientation_flip[next_axis]
-                    * orientation_flip[prev_axis]
-                    >= 0
-                ):
-                    tick.anchors = ('left', 'center')
-                else:
-                    tick.anchors = ('right', 'center')
-
-                # TODO: the above flips only left/right anchors. We need to do the same for up/down
+                    else:
+                        tick.transform.move((0, -offset, 0))
 
         # rotate grids onto the right axes
         for axis in range(3):
             self.grids[axis].transform.rotate(angle=120 * axis, axis=(1, 1, 1))
-
-        self._last_up_direction = up_direction
-        self._last_view_is_flipped = view_is_flipped
-        self._last_orientation_flip = orientation_flip
 
     def set_ticks(
         self,
@@ -224,15 +209,15 @@ class GridLines3D(Node):
                         font_size=8,
                         font_manager=self.font_manager,
                         face=self.font_family,
+                        anchor_x='center',
+                        anchor_y='center',
                     )
                     tick.transform = STTransform()
                     tick_visuals.append(tick)
                 else:
                     tick = tick_visuals[i]
 
-                # note the extra newlines and spaces are needed to ensure spacing
-                # between the text and the axes regardless of positioning
-                tick.text = f'\n  {val:.3g}  \n'
+                tick.text = f'{val:.3g}'
                 tick.pos = (val, ranges[next_axis].start, 0)
                 tick.color = self.color
                 tick.opacity = self._opacity
