@@ -185,8 +185,12 @@ class LayerList(SelectableEventedList[Layer]):
         super()._process_delete_item(item)
         item.events.extent.disconnect(self._clean_cache)
         item.events._extent_augmented.disconnect(self._clean_cache)
+        item.events.locked.disconnect(self._refresh_selection_ctx_keys)
         self.unlink_layers([item])
         self._clean_cache()
+
+    def _refresh_selection_ctx_keys(self, event):
+        self.selection.events.changed(added={}, removed={})
 
     def _clean_cache(self):
         cached_properties = (
@@ -268,6 +272,7 @@ class LayerList(SelectableEventedList[Layer]):
         new_layer.events.data.connect(
             self._trigger_check_ndim_and_maybe_clean_units
         )
+        new_layer.events.locked.connect(self._refresh_selection_ctx_keys)
         super().insert(index, new_layer)
         self._check_ndim_and_maybe_clean_units(new_layer.ndim)
 

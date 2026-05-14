@@ -9,7 +9,7 @@ from napari._qt.containers._layer_delegate import LayerDelegate
 from napari._qt.containers.qt_layer_model import LockedRole
 from napari._tests.utils import skip_local_focus
 from napari.components import LayerList
-from napari.layers import Image, Shapes
+from napari.layers import Image, Labels, Shapes
 
 
 def test_set_layer_invisible_makes_item_unchecked(qtbot):
@@ -185,6 +185,111 @@ def test_contextual_menu_updates_selection_ctx_keys(monkeypatch, qtbot):
         assert delegate._context_menu.findAction(
             'napari.layer.convert_to_labels'
         ).isEnabled()
+
+
+def _lock_blocks_action(qtbot, monkeypatch, layers_factory, action_id):
+    from napari._app_model import get_app_model
+
+    layer_list, lock_target = layers_factory()
+    layer_list._create_contexts()
+    view = QtLayerList(layer_list)
+    qtbot.addWidget(view)
+    delegate = view.itemDelegate()
+    for lay in layer_list:
+        layer_list.selection.add(lay)
+    index = layer_to_model_index(view, 0)
+
+    monkeypatch.setattr(
+        'app_model.backends.qt.QModelMenu.exec_', lambda self, x: x
+    )
+    app = get_app_model()
+
+    def menu_action_enabled():
+        with app.injection_store.register(providers={LayerList: layer_list}):
+            delegate.show_context_menu(
+                index, view.model(), QPoint(10, 10), parent=view
+            )
+            return delegate._context_menu.findAction(action_id).isEnabled()
+
+    assert menu_action_enabled()
+    lock_target.locked = True
+    assert not menu_action_enabled()
+    lock_target.locked = False
+    assert menu_action_enabled()
+
+
+def test_locked_blocks_convert_to_labels(qtbot, monkeypatch):
+    def factory():
+        layer_list = LayerList()
+        image = Image(np.zeros((4, 3)))
+        layer_list.append(image)
+        return layer_list, image
+
+    _lock_blocks_action(
+        qtbot, monkeypatch, factory, 'napari.layer.convert_to_labels'
+    )
+
+
+def test_locked_blocks_convert_to_image(qtbot, monkeypatch):
+    def factory():
+        layer_list = LayerList()
+        labels = Labels(np.zeros((4, 3), dtype=int))
+        layer_list.append(labels)
+        return layer_list, labels
+
+    _lock_blocks_action(
+        qtbot, monkeypatch, factory, 'napari.layer.convert_to_image'
+    )
+
+
+def test_locked_blocks_split_stack(qtbot, monkeypatch):
+    def factory():
+        layer_list = LayerList()
+        image = Image(np.zeros((4, 3, 3)))
+        layer_list.append(image)
+        return layer_list, image
+
+    _lock_blocks_action(
+        qtbot, monkeypatch, factory, 'napari.layer.split_stack'
+    )
+
+
+def test_locked_blocks_split_rgb(qtbot, monkeypatch):
+    def factory():
+        layer_list = LayerList()
+        image = Image(np.zeros((4, 3, 3)), rgb=True)
+        layer_list.append(image)
+        return layer_list, image
+
+    _lock_blocks_action(qtbot, monkeypatch, factory, 'napari.layer.split_rgb')
+
+
+def test_locked_blocks_merge_stack(qtbot, monkeypatch):
+    def factory():
+        layer_list = LayerList()
+        image_a = Image(np.zeros((4, 3)))
+        image_b = Image(np.zeros((4, 3)))
+        layer_list.append(image_a)
+        layer_list.append(image_b)
+        return layer_list, image_a
+
+    _lock_blocks_action(
+        qtbot, monkeypatch, factory, 'napari.layer.merge_stack'
+    )
+
+
+def test_locked_blocks_merge_rgb(qtbot, monkeypatch):
+    def factory():
+        layer_list = LayerList()
+        image_a = Image(np.zeros((4, 3)))
+        image_b = Image(np.zeros((4, 3)))
+        image_c = Image(np.zeros((4, 3)))
+        layer_list.append(image_a)
+        layer_list.append(image_b)
+        layer_list.append(image_c)
+        return layer_list, image_a
+
+    _lock_blocks_action(qtbot, monkeypatch, factory, 'napari.layer.merge_rgb')
 
 
 def make_qt_layer_list_with_delegate(qtbot):
