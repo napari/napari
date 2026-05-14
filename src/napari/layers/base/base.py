@@ -529,7 +529,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     }
     events: EmitterGroup
 
-    def __init__(
+    def __init__(  # type: ignore[no-untyped-def]
         self,
         data,
         ndim,
@@ -552,7 +552,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         units=None,
         visible=True,
         locked: bool | LayerLock = False,
-    ):
+    ) -> None:
         super().__init__()
 
         if name is None and data is not None:
@@ -572,14 +572,14 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         from napari.layers._source import current_source
 
         self._highlight_visible = True
-        self._unique_id = None
+        self._unique_id: None | uuid.UUID = None
         self._source = current_source()
         self.dask_optimized_slicing = configure_dask(data, cache)
         self._metadata = dict(metadata or {})
         self._opacity = opacity
         self._blending = Blending(blending)
         self._visible = visible
-        self._visible_mode = None
+        self._visible_mode: None | str = None
         self._freeze = False
         self._status = 'Ready'
         self._help = ''
