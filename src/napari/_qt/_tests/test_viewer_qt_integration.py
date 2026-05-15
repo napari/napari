@@ -194,7 +194,7 @@ def test_screenshot(make_napari_viewer, qapp, qtbot):
     viewer = make_napari_viewer(show=True)
     rng = np.random.default_rng(0)
     # Add image
-    data = rng.random((10, 15))
+    data = np.ones((10, 15), dtype=np.uint8)
     viewer.add_image(data)
 
     # Add labels
