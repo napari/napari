@@ -123,6 +123,8 @@ class _VispyViewerTextOverlay(ViewerOverlayMixin, _VispyBaseTextOverlay):
 
 
 class _VispyLayerTextOverlay(LayerOverlayMixin, _VispyBaseTextOverlay):
+    overlay: TextOverlay
+
     def __init__(
         self,
         font_manager: FontManager | None = None,

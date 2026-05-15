@@ -8,6 +8,7 @@ from napari.layers.base._base_constants import InteractionBoxHandle
 
 if TYPE_CHECKING:
     from napari.components.overlays import (
+        SceneOverlay,
         SelectionBoxOverlay,
         TransformBoxOverlay,
     )
@@ -15,6 +16,7 @@ if TYPE_CHECKING:
 
 class _VispyBoundingBoxOverlay(LayerOverlayMixin, VispySceneOverlay):
     node: InteractionBox
+    overlay: SceneOverlay
 
     def __init__(self, **kwargs: Any) -> None:
         super().__init__(node=InteractionBox(), **kwargs)
