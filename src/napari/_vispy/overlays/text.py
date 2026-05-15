@@ -23,18 +23,8 @@ class _VispyBaseTextOverlay(VispyCanvasOverlay):
     overlay: TextOverlay
     node: Text
 
-    def __init__(
-        self,
-        font_manager: FontManager | None = None,
-        font_family: str = 'OpenSans',
-        **kwargs: Any,
-    ) -> None:
-        super().__init__(
-            node=Text(pos=(0, 0), font_manager=font_manager, face=font_family),
-            font_manager=font_manager,
-            font_family=font_family,
-            **kwargs,
-        )
+    def __init__(self, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
 
         self.node.font_size = self.overlay.font_size
         self.node.anchors = ('left', 'bottom')
@@ -46,9 +36,6 @@ class _VispyBaseTextOverlay(VispyCanvasOverlay):
 
         get_settings().appearance.events.theme.connect(self._on_color_change)
         self.viewer.events.theme.connect(self._on_color_change)
-
-        self._connect_events()
-        self.reset()
 
     def _connect_events(self):
         pass
@@ -119,11 +106,37 @@ class _VispyBaseTextOverlay(VispyCanvasOverlay):
 
 
 class _VispyViewerTextOverlay(ViewerOverlayMixin, _VispyBaseTextOverlay):
-    pass
+    def __init__(
+        self,
+        font_manager: FontManager | None = None,
+        font_family: str = 'OpenSans',
+        **kwargs,
+    ) -> None:
+        super().__init__(
+            node=Text(pos=(0, 0), font_manager=font_manager, face=font_family),
+            font_manager=font_manager,
+            font_family=font_family,
+            **kwargs,
+        )
+        self._connect_events()
+        self.reset()
 
 
 class _VispyLayerTextOverlay(LayerOverlayMixin, _VispyBaseTextOverlay):
-    pass
+    def __init__(
+        self,
+        font_manager: FontManager | None = None,
+        font_family: str = 'OpenSans',
+        **kwargs,
+    ) -> None:
+        super().__init__(
+            node=Text(pos=(0, 0), font_manager=font_manager, face=font_family),
+            font_manager=font_manager,
+            font_family=font_family,
+            **kwargs,
+        )
+        self._connect_events()
+        self.reset()
 
 
 class VispyTextOverlay(_VispyViewerTextOverlay):
