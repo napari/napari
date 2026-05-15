@@ -118,7 +118,7 @@ class GridLines3D(Node):
             far_bounds.append(farthest_bound)
 
         # magic numbers, they work ok at a wide range of zooms
-        tick_offset = 13 / zoom
+        tick_offset = 15 / zoom
 
         # offset ticks for each axis so they are positioned nicely for readability,
         # putting them all on the outside of the volume (over the background)
