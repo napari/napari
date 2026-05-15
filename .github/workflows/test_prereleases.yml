@@ -28,12 +28,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [windows-2022, macos-latest, ubuntu-latest]
-        python: [3.12, 3.13]
+        platform: [windows-latest, macos-latest, ubuntu-latest]
+        python: [3.13, 3.14]
         backend: [pyqt5, pyqt6, pyside6]
         include:
           - platform: ubuntu-latest
-            python: 3.12
+            python: 3.13
             backend: pyqt6_no_numba
           - platform: ubuntu-24.04-arm
             python: 3.14
