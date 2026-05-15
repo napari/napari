@@ -1,6 +1,6 @@
 from app_model.types import KeyBinding, KeyCode, KeyMod
 
-_default_shortcuts = {
+_default_shortcuts: dict[str, list[int]] = {
     # viewer
     'napari:toggle_console_visibility': [
         KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KeyC
