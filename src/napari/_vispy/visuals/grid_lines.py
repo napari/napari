@@ -119,6 +119,9 @@ class GridLines3D(Node):
 
         # magic numbers, they work ok at a wide range of zooms
         tick_offset = 10 / zoom**0.5
+
+        # offset ticks for each axis so they are positioned nicely for readability,
+        # putting them all on the outside of the volume (over the background)
         for axis in range(3):
             prev_axis = (axis - 1) % 3
             next_axis = (axis + 1) % 3
