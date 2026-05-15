@@ -112,60 +112,50 @@ class GridLines3D(Node):
                 tick.transform.translate = (0, 0, 0)
 
             # get the translation necessary to bring the grid to the back
-            farthest_bound = ranges[axis][int(view_is_flipped[axis])]
+            # and also the position of the near bound for later
+            far_bound_idx = int(view_is_flipped[axis])
+            farthest_bound = ranges[axis][far_bound_idx]
             far_bounds.append(farthest_bound)
 
-        # TODO: damn, turns out of course we also need to handle the near bounds the same way,
-        #       because the layers may not be at the origin...
-
         # magic numbers, they work ok at a wide range of zooms
-        offset = 10 / zoom**0.5
+        tick_offset = 10 / zoom**0.5
         for axis in range(3):
             prev_axis = (axis - 1) % 3
             next_axis = (axis + 1) % 3
+            # move grid to the back of the whole volume (far bound)
             self.grids[axis].transform.translate((0, 0, far_bounds[prev_axis]))
 
             for tick in self.tick_labels[axis]:
-                # undo shifts caused by grid transform so we're back to the axes
+                # undo shifts caused by grid transform so we're back to the
+                # reference frame of the axes (since ticks are not necessarily
+                # on the same side as the grid lines depending on view)
                 tick.transform.move((0, 0, -far_bounds[prev_axis]))
 
-                # shift according to view angle to maximize visibility and have consistent positioning
-                # these branches were found by trial and error with the goal to reproduce the
+                # shift according to view angle to maximize visibility and have consistent positioning.
+                # These branches were found by trial and error with the goal to reproduce the
                 # tick positioning by plotly (e.g: https://plotly.com/python/3d-scatter-plots/)
-                next_axis_shift = (
-                    ranges[next_axis][1] - ranges[next_axis][0] + offset
-                )
-                prev_axis_shift = (
-                    ranges[prev_axis][1] - ranges[prev_axis][0] + offset
-                )
 
-                if axis == 0:
-                    if view_is_flipped[next_axis]:
-                        tick.transform.move((0, -offset, 0))
+                start_next = ranges[next_axis][0]
+                stop_next = ranges[next_axis][1]
+                shift_next = stop_next - start_next + tick_offset
+
+                start_prev = ranges[prev_axis][0]
+                stop_prev = ranges[prev_axis][1]
+
+                if view_is_flipped[next_axis] ^ view_is_flipped[prev_axis]:
+                    tick.transform.move(
+                        (0, -tick_offset, start_prev - tick_offset)
+                    )
+                else:
+                    if axis == 0:
+                        # special case one axis so it's visually nicer (all axes are on the "outside")
+                        tick.transform.move(
+                            (0, -tick_offset, stop_prev + tick_offset)
+                        )
                     else:
-                        tick.transform.move((0, next_axis_shift, 0))
-                    if view_is_flipped[prev_axis]:
-                        tick.transform.move((0, 0, prev_axis_shift))
-                    else:
-                        tick.transform.move((0, 0, -offset))
-                if axis == 1:
-                    if view_is_flipped[next_axis]:
-                        tick.transform.move((0, next_axis_shift, 0))
-                    else:
-                        tick.transform.move((0, -offset, 0))
-                    if view_is_flipped[prev_axis]:
-                        tick.transform.move((0, 0, -offset))
-                    else:
-                        tick.transform.move((0, 0, prev_axis_shift))
-                if axis == 2:
-                    if view_is_flipped[next_axis]:
-                        tick.transform.move((0, 0, -offset))
-                    else:
-                        tick.transform.move((0, 0, prev_axis_shift))
-                    if view_is_flipped[prev_axis]:
-                        tick.transform.move((0, next_axis_shift, 0))
-                    else:
-                        tick.transform.move((0, -offset, 0))
+                        tick.transform.move(
+                            (0, shift_next, start_prev - tick_offset)
+                        )
 
         # rotate grids onto the right axes
         for axis in range(3):
