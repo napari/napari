@@ -7,7 +7,6 @@ from vispy.scene.visuals import Compound, Ellipse
 from napari._vispy.overlays.base import ViewerOverlayMixin, VispyCanvasOverlay
 from napari.components.overlays.brush_circle import BrushCircleOverlay
 from napari.utils.events import Event
-from napari.viewer import Viewer
 
 if TYPE_CHECKING:
     from vispy.scene import ViewBox
@@ -19,8 +18,6 @@ class VispyBrushCircleOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
     def __init__(
         self,
         *,
-        viewer: Viewer,
-        overlay: BrushCircleOverlay,
         parent: ViewBox | None = None,
         **kwargs: Any,
     ) -> None:
@@ -39,8 +36,6 @@ class VispyBrushCircleOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
 
         super().__init__(
             node=Compound([self._white_circle, self._black_circle]),
-            viewer=viewer,
-            overlay=overlay,
             parent=parent,
             **kwargs,
         )

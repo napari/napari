@@ -1,3 +1,5 @@
+from typing import Any
+
 import numpy as np
 from vispy.visuals.text.text import FontManager
 
@@ -11,15 +13,14 @@ class VispyAxesOverlay(ViewerOverlayMixin, VispySceneOverlay):
     """Axes indicating world coordinate origin and orientation."""
 
     overlay: AxesOverlay
+    node: Axes
 
     def __init__(
         self,
         *,
-        viewer,
-        overlay,
-        parent=None,
         font_manager: FontManager | None = None,
         font_family: str = 'OpenSans',
+        **kwargs: Any,
     ) -> None:
         self._scale = 1.0
 
@@ -28,11 +29,9 @@ class VispyAxesOverlay(ViewerOverlayMixin, VispySceneOverlay):
 
         super().__init__(
             node=Axes(font_manager=font_manager, font_family=font_family),
-            viewer=viewer,
-            overlay=overlay,
-            parent=parent,
             font_manager=font_manager,
             font_family=font_family,
+            **kwargs,
         )
         self.overlay.events.colored.connect(self._on_data_change)
         self.overlay.events.dashed.connect(self._on_data_change)

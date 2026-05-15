@@ -1,3 +1,5 @@
+from typing import Any
+
 from napari._vispy.overlays.base import LayerOverlayMixin, VispySceneOverlay
 from napari._vispy.visuals.interaction_box import InteractionBox
 from napari.components.overlays import SelectionBoxOverlay, TransformBoxOverlay
@@ -5,17 +7,10 @@ from napari.layers.base._base_constants import InteractionBoxHandle
 
 
 class _VispyBoundingBoxOverlay(LayerOverlayMixin, VispySceneOverlay):
-    def __init__(
-        self, *, layer, viewer, overlay, parent=None, **kwargs
-    ) -> None:
-        super().__init__(
-            node=InteractionBox(),
-            layer=layer,
-            viewer=viewer,
-            overlay=overlay,
-            parent=parent,
-            **kwargs,
-        )
+    node: InteractionBox
+
+    def __init__(self, **kwargs: Any) -> None:
+        super().__init__(node=InteractionBox(), **kwargs)
         self.layer.events.set_data.connect(self._on_visible_change)
 
     def _on_bounds_change(self):
@@ -36,16 +31,8 @@ class _VispyBoundingBoxOverlay(LayerOverlayMixin, VispySceneOverlay):
 class VispySelectionBoxOverlay(_VispyBoundingBoxOverlay):
     overlay: SelectionBoxOverlay
 
-    def __init__(
-        self, *, layer, viewer, overlay, parent=None, **kwargs
-    ) -> None:
-        super().__init__(
-            layer=layer,
-            viewer=viewer,
-            overlay=overlay,
-            parent=parent,
-            **kwargs,
-        )
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
         self.overlay.events.bounds.connect(self._on_bounds_change)
         self.overlay.events.handles.connect(self._on_bounds_change)
         self.overlay.events.selected_handle.connect(self._on_bounds_change)
@@ -67,16 +54,8 @@ class VispySelectionBoxOverlay(_VispyBoundingBoxOverlay):
 class VispyTransformBoxOverlay(_VispyBoundingBoxOverlay):
     overlay: TransformBoxOverlay
 
-    def __init__(
-        self, *, layer, viewer, overlay, parent=None, **kwargs
-    ) -> None:
-        super().__init__(
-            layer=layer,
-            viewer=viewer,
-            overlay=overlay,
-            parent=parent,
-            **kwargs,
-        )
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
         self.layer.events.scale.connect(self._on_bounds_change)
         self.layer.events.translate.connect(self._on_bounds_change)
         self.layer.events.rotate.connect(self._on_bounds_change)
