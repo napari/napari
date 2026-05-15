@@ -5,11 +5,12 @@ from typing import TYPE_CHECKING, Any
 from vispy.scene.visuals import Compound, Ellipse
 
 from napari._vispy.overlays.base import ViewerOverlayMixin, VispyCanvasOverlay
-from napari.components.overlays.brush_circle import BrushCircleOverlay
-from napari.utils.events import Event
 
 if TYPE_CHECKING:
     from vispy.scene import ViewBox
+
+    from napari.components.overlays.brush_circle import BrushCircleOverlay
+    from napari.utils.events import Event
 
 
 class VispyBrushCircleOverlay(ViewerOverlayMixin, VispyCanvasOverlay):

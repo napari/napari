@@ -9,11 +9,12 @@ from napari._vispy.overlays.base import (
 )
 from napari._vispy.visuals.text import Text
 from napari.components._viewer_constants import CanvasPosition
-from napari.components.overlays import TextOverlay
 from napari.settings import get_settings
 
 if TYPE_CHECKING:
     from vispy.visuals.text.text import FontManager
+
+    from napari.components.overlays import TextOverlay
 
 
 class _VispyBaseTextOverlay(VispyCanvasOverlay):

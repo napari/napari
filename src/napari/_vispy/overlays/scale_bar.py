@@ -10,12 +10,13 @@ import pint
 
 from napari._vispy.overlays.base import ViewerOverlayMixin, VispyCanvasOverlay
 from napari._vispy.visuals.scale_bar import ScaleBar
-from napari.components.overlays import ScaleBarOverlay
 from napari.settings import get_settings
 from napari.utils._units import PREFERRED_VALUES
 
 if TYPE_CHECKING:
     from vispy.visuals.text.text import FontManager
+
+    from napari.components.overlays import ScaleBarOverlay
 
 
 class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):

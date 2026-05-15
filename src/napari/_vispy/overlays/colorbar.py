@@ -6,7 +6,6 @@ import numpy as np
 
 from napari._vispy.overlays.base import LayerOverlayMixin, VispyCanvasOverlay
 from napari._vispy.visuals.colorbar import ColorBar
-from napari.layers.utils.color_manager import ColorManager
 from napari.settings import get_settings
 from napari.utils.colormaps.colormap_utils import (
     _coerce_contrast_limits,
@@ -19,6 +18,7 @@ if TYPE_CHECKING:
 
     from napari.components.overlays import ColorBarOverlay
     from napari.layers import Image, Layer, Surface
+    from napari.layers.utils.color_manager import ColorManager
     from napari.utils.colormaps import Colormap
 
 

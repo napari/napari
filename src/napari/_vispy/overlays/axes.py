@@ -1,12 +1,17 @@
-from typing import Any
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
-from vispy.visuals.text.text import FontManager
 
 from napari._vispy.overlays.base import ViewerOverlayMixin, VispySceneOverlay
 from napari._vispy.visuals.axes import Axes
-from napari.components.overlays import AxesOverlay
 from napari.utils.theme import get_theme
+
+if TYPE_CHECKING:
+    from vispy.visuals.text.text import FontManager
+
+    from napari.components.overlays import AxesOverlay
 
 
 class VispyAxesOverlay(ViewerOverlayMixin, VispySceneOverlay):
