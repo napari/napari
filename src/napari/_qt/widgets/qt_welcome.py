@@ -9,6 +9,7 @@ from qtpy.QtCore import QSize, Qt, Signal
 from qtpy.QtGui import QPainter
 from qtpy.QtWidgets import (
     QFormLayout,
+    QGridLayout,
     QLabel,
     QStyle,
     QStyleOption,
@@ -99,7 +100,7 @@ class QtWelcomeWidget(QWidget):
         self._tip_label = QtShortcutLabel('')
         self._tip_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._tip_label.setWordWrap(True)
-        self._tip_label.setContentsMargins(32, 0, 32, 0)
+        self._tip_label.setContentsMargins(64, 0, 64, 0)
 
         # setup the shortcuts "table"
         shortcut_layout = QFormLayout()
@@ -122,18 +123,38 @@ class QtWelcomeWidget(QWidget):
         shortcut_layout.setLabelAlignment(Qt.AlignRight)
 
         #  Widget layout of logo and text elements
-        layout = QVBoxLayout()
-        layout.addStretch()
-        layout.setSpacing(10)
-        layout.addWidget(self._image)
-        layout.addSpacing(30)
-        layout.addWidget(self._version_label)
-        layout.addSpacing(30)
-        layout.addWidget(self._label)
-        layout.addLayout(shortcut_layout)
-        layout.addSpacing(30)
-        layout.addWidget(self._tip_label)
-        layout.addStretch()
+        layout = QGridLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+
+        # setup logo layout
+        logo_container = QWidget()
+        logo_container.setStyleSheet('background: transparent;')
+        logo_layout = QVBoxLayout(logo_container)
+        logo_layout.setContentsMargins(0, 0, 0, 0)
+        logo_layout.addStretch(1)
+        logo_layout.addWidget(self._image, alignment=Qt.AlignCenter)
+        logo_layout.addStretch(4)  # Push logo up towards the top
+        layout.addWidget(logo_container, 0, 0)
+
+        # setup text blocks layout
+        text_container = QWidget()
+        text_container.setStyleSheet('background: transparent;')
+        text_layout = QVBoxLayout(text_container)
+        text_layout.setContentsMargins(0, 0, 0, 0)
+        text_layout.setSpacing(2)
+
+        text_layout.addStretch(10)  # push text down
+        text_layout.addWidget(self._version_label)
+        text_layout.addStretch(1)
+        text_layout.addWidget(self._label)
+        text_layout.addLayout(shortcut_layout)
+        text_layout.addStretch(1)
+        text_layout.addWidget(self._tip_label)
+        text_layout.addStretch(1)  # Leave some space at bottom
+
+        # stack text container over the logo container
+        layout.addWidget(text_container, 0, 0)
 
         self.setLayout(layout)
         self.refresh_shortcuts()
