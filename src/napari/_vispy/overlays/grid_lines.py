@@ -114,5 +114,5 @@ class VispyGridLinesOverlay(ViewerOverlayMixin, VispySceneOverlay):
         )
 
     def reset(self) -> None:
-        super().reset()  # type: ignore
+        super().reset()
         self._on_data_change()
