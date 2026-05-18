@@ -139,25 +139,25 @@ def _parse_color_as_rgb(color: str | Color) -> tuple[int, int, int]:
     return color.as_rgb_tuple()[:3]
 
 
-def _shift_luminance(
-    color: tuple[float, float, float], percentage: float
+def _luminance(
+    color: tuple[float, float, float],
+) -> float:
+    r, g, b = color
+    return 0.299 * r + 0.587 * g + 0.114 * b
+
+
+def _change_luminance(
+    color: tuple[float, float, float],
+    target: float,
 ) -> tuple[int, int, int]:
-    """Darkens or lightens a color preserving hue and perceived saturation."""
+    """Remaps a color to a target luminance preserving hue/saturation feel."""
     r, g, b = color
 
-    percentage /= 100
-    # use perceived luminance for darken/lighten
-    lum = 0.299 * r + 0.587 * g + 0.114 * b
-
-    if percentage >= 0:
-        target = lum + (255.0 - lum) * percentage
-    else:
-        target = lum * (1.0 + percentage)
-
+    lum = _luminance(color)
     target = max(0.0, min(255.0, target))
 
     if lum < 1.0:
-        v = max(0, min(255, int(target)))
+        v = int(target)
         return (v, v, v)
 
     scale = target / lum
@@ -166,18 +166,14 @@ def _shift_luminance(
     g *= scale
     b *= scale
 
-    # desaturate colors that were lightened a lot
-    # this is kinda arbitrary, but light colors seem a lot more
-    # saturated than dark colors with the same values
-    # the coefficients at the right are tunable
-    if scale > 1.0:
-        # brighten -> desaturate
-        sat = 1.0 / (1.0 + (scale - 1.0) * 0.5)
-    else:
-        # darken -> saturate
-        sat = 1.0 + (1.0 - scale) * 0.5
+    # tweak saturation depending on brighten/darken amount
+    tweak_amount = 0.5
+    sat = (
+        1.0 / (1.0 + (scale - 1.0) * tweak_amount)
+        if scale > 1.0
+        else 1.0 + (1.0 - scale) * tweak_amount
+    )
 
-    # blend toward a mid-gray as bright as the rgb
     gray = (r + g + b) / 3.0
     r = gray + (r - gray) * sat
     g = gray + (g - gray) * sat
@@ -188,6 +184,17 @@ def _shift_luminance(
         max(0, min(255, int(g))),
         max(0, min(255, int(b))),
     )
+
+
+def _shift_luminance(
+    color: tuple[float, float, float],
+    percentage: float,
+) -> tuple[int, int, int]:
+    """Darkens or lightens a color."""
+    lum = _luminance(color)
+    p = percentage / 100.0
+    target = lum + (255.0 - lum) * p if p >= 0 else lum * (1.0 + p)
+    return _change_luminance(color, target)
 
 
 def darken(
@@ -210,6 +217,15 @@ def lighten(
     percentage *= -1 if theme_type == 'light' else 1
     r, g, b = _shift_luminance(rgb, percentage)
     return f'rgb({r}, {g}, {b})'
+
+
+def _invert_luminance(
+    color: tuple[float, float, float] | Color,
+) -> tuple[int, int, int]:
+    """Inverts luminance around mid-gray."""
+    if isinstance(color, Color):
+        color = color.as_rgb_tuple(alpha=False)  # type:ignore[invalid-assignment]
+    return _change_luminance(color, 255.0 - _luminance(color))
 
 
 def opacity(color: str | Color, value: int = 255) -> str:
@@ -406,6 +422,31 @@ def rebuild_theme_settings():
     settings.appearance.refresh_themes()
 
 
+def invert_theme(theme, **kwargs):
+    new_type = 'dark' if theme.type == 'light' else 'light'
+    inverted_kwargs = {
+        'id': f'{theme.id}-{new_type}',
+        'type': new_type,
+        'label': f'{theme.label} - {new_type.capitalize()}',
+        'background': _invert_luminance(theme.background),
+        'foreground': _invert_luminance(theme.foreground),
+        'primary': _invert_luminance(theme.primary),
+        'secondary': _invert_luminance(theme.secondary),
+        'highlight': _invert_luminance(theme.highlight),
+        'text': _invert_luminance(theme.text),
+        'icon': _invert_luminance(theme.icon),
+        'warning': _invert_luminance(theme.warning),
+        'error': _invert_luminance(theme.error),
+        'current': _invert_luminance(theme.current),
+        'syntax_style': theme.syntax_style,
+        'console': _invert_luminance(theme.console),
+        'canvas': _invert_luminance(theme.canvas),
+        'font_size': theme.font_size,
+    } | kwargs
+
+    return Theme(**inverted_kwargs)
+
+
 # Note: these colors are sometimes lightened / darkened in the qss file.
 DARK = Theme(
     id='dark',
@@ -426,24 +467,12 @@ DARK = Theme(
     canvas='black',
     font_size='12pt' if sys.platform == 'darwin' else '9pt',
 )
-LIGHT = Theme(
+
+LIGHT = invert_theme(
+    DARK,
     id='light',
-    type='light',
     label='Default Light',
-    background='rgb(230, 231, 235)',
-    foreground='rgb(211, 212, 215)',
-    primary='rgb(191, 193, 195)',
-    secondary='rgb(175, 178, 180)',
-    highlight='rgb(170, 172, 175)',
-    text='rgb(52, 52, 55)',
-    icon='rgb(92, 93, 95)',
-    warning='rgb(227, 182, 23)',
-    error='rgb(255, 18, 31)',
-    current='rgb(140, 190, 235)',
     syntax_style='default',
-    console='white',
-    canvas='white',
-    font_size='12pt' if sys.platform == 'darwin' else '9pt',
 )
 
 register_theme('dark', DARK, 'builtin')
@@ -469,8 +498,11 @@ def _install_npe2_themes(themes=None):
             theme_colors = theme.colors.model_dump(exclude_unset=True)
             theme_dict.update(theme_info)
             theme_dict.update(theme_colors)
+            theme = Theme(**theme_dict)
+            inverted = invert_theme(theme)
             try:
-                register_theme(theme.id, theme_dict, manifest.name)
+                register_theme(theme.id, theme, manifest.name)
+                register_theme(inverted.id, inverted, manifest.name)
             except ValueError:
                 logging.getLogger('napari').exception(
                     'Registration theme failed.'
