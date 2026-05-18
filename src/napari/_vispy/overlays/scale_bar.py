@@ -3,22 +3,14 @@ from __future__ import annotations
 import bisect
 from decimal import Decimal
 from math import floor, log
-from typing import TYPE_CHECKING
 
 import numpy as np
 import pint
 
 from napari._vispy.overlays.base import ViewerOverlayMixin, VispyCanvasOverlay
 from napari._vispy.visuals.scale_bar import ScaleBar
-from napari.components.overlays import Overlay, ScaleBarOverlay
-from napari.settings import get_settings
+from napari.components.overlays import ScaleBarOverlay
 from napari.utils._units import PREFERRED_VALUES
-
-if TYPE_CHECKING:
-    from vispy.scene import ViewBox
-    from vispy.visuals.text.text import FontManager
-
-    from napari.components import ViewerModel
 
 
 class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
@@ -28,25 +20,18 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
 
     def __init__(
         self,
-        *,
-        viewer: ViewerModel,
-        overlay: Overlay,
-        parent: ViewBox | None = None,
-        font_manager: FontManager | None = None,
-        font_family: str = 'OpenSans',
+        **kwargs,
     ) -> None:
         self._target_length = 150.0
         self._current_length = 150.0
         self._scale = 1.0
         self._unit = pint.Quantity('1 pixel')
 
+        font_manager = kwargs.get('font_manager')
+        font_family = kwargs.get('font_family', 'OpenSans')
         super().__init__(
             node=ScaleBar(font_manager=font_manager, font_family=font_family),
-            viewer=viewer,
-            overlay=overlay,
-            parent=parent,
-            font_manager=font_manager,
-            font_family=font_family,
+            **kwargs,
         )
 
         self.overlay.events.color.connect(self._on_rendering_change)
@@ -60,9 +45,7 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self.overlay.events.visible.connect(self._on_rendering_change)
 
         self.viewer.camera.events.zoom.connect(self._on_size_or_zoom_change)
-        self.viewer.events.theme.connect(self._on_rendering_change)
-
-        get_settings().appearance.events.theme.connect(
+        self.viewer.canvas.events.background_color.connect(
             self._on_rendering_change
         )
 

@@ -1,15 +1,18 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import numpy as np
 from vispy.scene.visuals import Compound, Line, Markers, Polygon
 
 from napari._vispy.overlays.base import LayerOverlayMixin, VispySceneOverlay
-from napari.components.overlays import LabelsPolygonOverlay
-from napari.components.viewer_model import ViewerModel
-from napari.layers import Labels
 from napari.layers.labels._labels_constants import Mode
 from napari.layers.labels._labels_utils import mouse_event_to_labels_coordinate
 from napari.settings import get_settings
+
+if TYPE_CHECKING:
+    from napari.components.overlays import LabelsPolygonOverlay
+    from napari.layers import Labels
 
 
 def _only_when_enabled(callback):
@@ -41,11 +44,6 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
 
     def __init__(
         self,
-        *,
-        layer: Labels,
-        viewer: ViewerModel,
-        overlay: LabelsPolygonOverlay,
-        parent=None,
         **kwargs,
     ):
         points = [(0, 0), (1, 1)]
@@ -68,10 +66,6 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
 
         super().__init__(
             node=Compound([self._polygon, self._nodes, self._line]),
-            layer=layer,
-            viewer=viewer,
-            overlay=overlay,
-            parent=parent,
             **kwargs,
         )
 
