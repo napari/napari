@@ -129,10 +129,12 @@ optional-numba = [
 ]
 optional = [
     "napari[optional-base,optional-numba,bermuda]",
-    "triangle; python_version <= '3.13'",  # there is no wheel for triangle on python 3.14 at the time and build from source causes problems.
 ]
 bermuda = [
     "bermuda>=0.1.5",
+]
+triangle = [
+    "triangle; python_version <= '3.13'",  # there is no wheel for triangle on python 3.14 at the time and build from source causes problems.
 ]
 partsegcore = [
     "PartSegCore-compiled-backend>=0.15.11",
@@ -215,7 +217,7 @@ docs = [
     "pydeps",
     "seedir",
     # triangle and bermuda needed for docs/guides/triangulation.md
-    "triangle",
+    "triangle; python_version <= '3.13'",  # there is no wheel for triangle on python 3.14 at the time and build from source causes problems.
     "bermuda>=0.1.4",
     "pytest",
     "linkify-it-py",
@@ -314,7 +316,7 @@ docs = [
     "pydeps",
     "seedir",
     # triangle and bermuda needed for docs/guides/triangulation.md
-    "triangle",
+    "triangle; python_version <= '3.13'",  # there is no wheel for triangle on python 3.14 at the time and build from source causes problems.
     "bermuda>=0.1.4",
     "pytest",
     "linkify-it-py",
@@ -537,7 +539,10 @@ filterwarnings = [
   "ignore:__array__ implementation doesn't accept a copy keyword, so passing copy=False failed.",
   "ignore:pkg_resources is deprecated",
   "ignore:Deprecated call to `pkg_resources.declare_namespace",
-  "ignore:Use Group.create_array instead."
+  "ignore:'asyncio.WindowsProactorEventLoopPolicy' is deprecated and slated for removal in Python 3.16:DeprecationWarning", # windows ipykernel issue #8666
+  "ignore:'asyncio.WindowsSelectorEventLoopPolicy' is deprecated and slated for removal in Python 3.16:DeprecationWarning", # windows ipykernel issue #8666
+  "ignore:'asyncio.get_event_loop_policy' is deprecated and slated for removal in Python 3.16:DeprecationWarning",  # windows ipykernel issue #8666
+  "ignore:'asyncio.set_event_loop_policy' is deprecated and slated for removal in Python 3.16:DeprecationWarning",  # windows ipykernel issue #8666
 ]
 markers = [
     "examples: Test of examples",
@@ -703,7 +708,6 @@ module = [
     'napari._qt.widgets.qt_scrollbar',
     'napari._qt.widgets.qt_size_preview',
     'napari._qt.widgets.qt_spinbox',
-    'napari._qt.widgets.qt_theme_sample',
     'napari._qt.widgets.qt_tooltip',
     'napari._qt.widgets.qt_viewer_buttons',
     'napari._qt.widgets.qt_viewer_dock_widget',
@@ -883,7 +887,6 @@ module = [
     "napari._vispy.layers.shapes",
     "napari._vispy.layers.surface",
     "napari.components._viewer_key_bindings",
-    "napari.layers.labels.labels",
     "napari.layers.surface.surface",
     "napari.layers.tracks.tracks",
     "napari.layers.utils.layer_utils",
@@ -892,6 +895,14 @@ module = [
     "napari.utils.misc",
 ]
 check_untyped_defs = false
+disallow_incomplete_defs = false
+disallow_untyped_calls = false
+disallow_untyped_defs = false
+
+[[tool.mypy.overrides]]
+module = [
+    "napari.layers.labels.labels",
+]
 disallow_incomplete_defs = false
 disallow_untyped_calls = false
 disallow_untyped_defs = false
@@ -951,11 +962,8 @@ warn_unused_ignores = false
 
 [[tool.mypy.overrides]]
 module = [
-    "napari._vispy.overlays.bounding_box",
-    "napari._vispy.overlays.brush_circle",
     "napari.utils._test_utils",
 ]
-check_untyped_defs = false
 disallow_untyped_defs = false
 
 [tool.coverage.report]
