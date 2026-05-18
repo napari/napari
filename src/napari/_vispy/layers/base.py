@@ -1,14 +1,18 @@
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
-from typing import Generic, TypeVar, cast
+from typing import TYPE_CHECKING, Generic, TypeVar
 
 import numpy as np
 import pint
-from vispy.scene import VisualNode
 from vispy.visuals.transforms import MatrixTransform
 
 from napari._vispy.utils.gl import BLENDING_MODES, get_max_texture_sizes
 from napari.layers import Layer
 from napari.utils.events import disconnect_events
+
+if TYPE_CHECKING:
+    from vispy.scene import VisualNode
 
 _L = TypeVar('_L', bound=Layer)
 
@@ -158,7 +162,7 @@ class VispyBaseLayer(ABC, Generic[_L]):
 
     def _on_blending_change(self, event=None):
         blending = self.layer.blending
-        blending_kwargs = cast(dict, BLENDING_MODES[blending]).copy()
+        blending_kwargs = BLENDING_MODES[blending].copy()
 
         if self.first_visible:
             # if the first layer, then we should blend differently

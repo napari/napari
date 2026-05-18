@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 from vispy.scene.visuals import Rectangle
@@ -13,6 +13,8 @@ from napari.utils.events import disconnect_events
 from napari.utils.theme import get_theme
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from vispy.scene import Node, ViewBox
     from vispy.visuals.text.text import FontManager
 
@@ -105,7 +107,13 @@ class VispyCanvasOverlay(VispyBaseOverlay):
     overlay: CanvasOverlay
 
     def __init__(
-        self, *, overlay, viewer, node, parent=None, **kwargs
+        self,
+        *,
+        overlay: Overlay,
+        viewer: ViewerModel,
+        node: Node,
+        parent: ViewBox | None = None,
+        **kwargs: Any,
     ) -> None:
 
         super().__init__(
@@ -119,7 +127,7 @@ class VispyCanvasOverlay(VispyBaseOverlay):
         self.overlay.events.box_color.connect(self._on_box_change)
         get_settings().appearance.events.theme.connect(self._on_box_change)
         self.viewer.events.theme.connect(self._on_box_change)
-        self.canvas_position_callback = lambda: None
+        self.canvas_position_callback: Callable[[], None] = lambda: None
 
         self.box = Rectangle(center=(0, 0), border_width=0)
 
@@ -174,7 +182,7 @@ class VispyCanvasOverlay(VispyBaseOverlay):
         opposite = np.clip(opposite, 0, 1)
         # don't change alpha
         opposite[-1] = bgcolor[-1]
-        return opposite
+        return ColorValue(opposite)
 
     def _on_blending_change(self) -> None:
         self.box.set_gl_state(**BLENDING_MODES[self.overlay.blending])
@@ -204,7 +212,13 @@ class VispySceneOverlay(VispyBaseOverlay):
     overlay: SceneOverlay
 
     def __init__(
-        self, *, overlay, viewer, node, parent=None, **kwargs
+        self,
+        *,
+        overlay: Overlay,
+        viewer: ViewerModel,
+        node: Node,
+        parent: ViewBox | None = None,
+        **kwargs: Any,
     ) -> None:
         super().__init__(
             overlay=overlay, viewer=viewer, node=node, parent=parent, **kwargs
@@ -212,11 +226,18 @@ class VispySceneOverlay(VispyBaseOverlay):
         self.node.transform = MatrixTransform()
 
 
-class LayerOverlayMixin:
+class LayerOverlayMixin(VispyBaseOverlay):
     layer: Layer
 
     def __init__(
-        self, *, overlay, layer: Layer, viewer, node, parent=None, **kwargs
+        self,
+        *,
+        overlay: Overlay,
+        layer: Layer,
+        viewer: ViewerModel,
+        node: Node,
+        parent: ViewBox | None = None,
+        **kwargs: Any,
     ) -> None:
         super().__init__(
             node=node,

@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING, Any
+
 import numpy as np
+import numpy.typing as npt
 from vispy.scene.visuals import Compound, Line, Markers, Polygon
 
 from napari._vispy.overlays.base import LayerOverlayMixin, VispySceneOverlay
@@ -10,9 +13,18 @@ from napari.layers import Labels
 from napari.layers.labels._labels_constants import Mode
 from napari.layers.labels._labels_utils import mouse_event_to_labels_coordinate
 from napari.settings import get_settings
+from napari.utils.events import Event
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
+
+    from vispy.app import MouseEvent
+    from vispy.scene import ViewBox
 
 
-def _only_when_enabled(callback):
+def _only_when_enabled(
+    callback: Callable[[VispyLabelsPolygonOverlay, Labels, Event], None],
+) -> Callable[[VispyLabelsPolygonOverlay, Labels, Event], None]:
     """Decorator that wraps a callback of VispyLabelsPolygonOverlay.
 
     It ensures that the callback is only executed when all the conditions are met:
@@ -23,7 +35,9 @@ def _only_when_enabled(callback):
     If 2, 3 are not met, the Labels mode is automatically switched to PAN_ZOOM.
     """
 
-    def decorated_callback(self, layer: Labels, event):
+    def decorated_callback(
+        self: VispyLabelsPolygonOverlay, layer: Labels, event: Event
+    ) -> None:
         if not self.overlay.enabled:
             return
 
@@ -45,9 +59,9 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
         layer: Labels,
         viewer: ViewerModel,
         overlay: LabelsPolygonOverlay,
-        parent=None,
-        **kwargs,
-    ):
+        parent: ViewBox | None = None,
+        **kwargs: Any,
+    ) -> None:
         points = [(0, 0), (1, 1)]
 
         self._nodes_kwargs = {
@@ -99,7 +113,9 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
         self.reset()
         self._update_color()
 
-    def _on_completion_radius_settings_change(self, event=None):
+    def _on_completion_radius_settings_change(
+        self, event: Event | None = None
+    ) -> None:
         completion_radius_setting = (
             get_settings().experimental.completion_radius
         )
@@ -109,11 +125,11 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
             self.overlay.use_double_click_completion_radius = True
             self.overlay.completion_radius = completion_radius_setting
 
-    def _on_enabled_change(self):
+    def _on_enabled_change(self) -> None:
         if self.overlay.enabled:
             self._on_points_change()
 
-    def _on_points_change(self):
+    def _on_points_change(self) -> None:
         num_points = len(self.overlay.points)
         if num_points:
             # Create full-dimensional points for transformation
@@ -148,7 +164,7 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
             **self._nodes_kwargs,
         )
 
-    def _set_color(self, color):
+    def _set_color(self, color: Sequence[float]) -> None:
         border_color = tuple(color[:3]) + (1,)  # always opaque
         polygon_color = color
 
@@ -161,7 +177,7 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
         self._polygon.border_color = border_color
         self._line.set_data(color=border_color)
 
-    def _update_color(self):
+    def _update_color(self) -> None:
         layer = self.layer
         if layer._selected_label == layer.colormap.background_value:
             self._set_color((1, 0, 0, 0))
@@ -171,17 +187,21 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
             )
 
     @_only_when_enabled
-    def _on_mouse_move(self, layer, event):
+    def _on_mouse_move(self, layer: Labels, event: MouseEvent) -> None:
         """Continuously redraw the latest polygon point with the current mouse position."""
         if self._num_points == 0:
             return
 
         pos = self._get_mouse_coordinates(event)
+        if pos is None:
+            return
         self.overlay.points = self.overlay.points[:-1] + [pos.tolist()]
 
     @_only_when_enabled
-    def _on_mouse_press(self, layer, event):
+    def _on_mouse_press(self, layer: Labels, event: Event) -> None:
         pos = self._get_mouse_coordinates(event)
+        if pos is None:
+            return
         dims_displayed = self._dims_displayed
 
         if event.button == 1:  # left mouse click
@@ -210,7 +230,7 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
                 self.overlay.points = self.overlay.points[:-2] + [pos.tolist()]
 
     @_only_when_enabled
-    def _on_mouse_double_click(self, layer, event):
+    def _on_mouse_double_click(self, layer: Labels, event: Event) -> None:
         if event.button == 2:
             self._on_mouse_press(layer, event)
             return None
@@ -233,7 +253,7 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
         self.overlay.add_polygon_to_labels(layer)
         return None
 
-    def _get_mouse_coordinates(self, event):
+    def _get_mouse_coordinates(self, event: MouseEvent) -> None | npt.NDArray:
         pos = mouse_event_to_labels_coordinate(self.layer, event)
         if pos is None:
             return None
@@ -244,18 +264,18 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
         return pos
 
     @property
-    def _dims_displayed(self):
+    def _dims_displayed(self) -> list[int]:
         return self.layer._slice_input.displayed
 
     @property
-    def _num_points(self):
+    def _num_points(self) -> int:
         return len(self.overlay.points)
 
-    def reset(self):
+    def reset(self) -> None:
         super().reset()
         self._on_points_change()
 
-    def close(self):
+    def close(self) -> None:
         self.layer.mouse_move_callbacks.remove(self._on_mouse_move)
         self.layer.mouse_drag_callbacks.remove(self._on_mouse_press)
         self.layer.mouse_double_click_callbacks.remove(

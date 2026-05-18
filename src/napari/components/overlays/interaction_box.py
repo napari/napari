@@ -1,3 +1,5 @@
+import numpy.typing as npt
+
 from napari.components.overlays.base import SceneOverlay
 from napari.layers.utils.interaction_box import (
     InteractionBoxHandle,
@@ -28,7 +30,7 @@ class SelectionBoxOverlay(SceneOverlay):
     handles: bool = False
     selected_handle: InteractionBoxHandle | None = None
 
-    def update_from_points(self, points):
+    def update_from_points(self, points: npt.NDArray) -> None:
         """Create as a bounding box of the given points"""
         self.bounds = calculate_bounds_from_contained_points(points)
 
