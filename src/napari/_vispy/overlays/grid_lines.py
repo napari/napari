@@ -13,11 +13,13 @@ if TYPE_CHECKING:
     from vispy.scene import Node
     from vispy.visuals.text.text import FontManager
 
-    from napari.components.overlays import Overlay
+    from napari.components.overlays import GridLinesOverlay, Overlay
     from napari.components.viewer_model import ViewerModel
 
 
 class VispyGridLinesOverlay(ViewerOverlayMixin, VispySceneOverlay):
+    overlay: GridLinesOverlay
+
     def __init__(
         self,
         *,
