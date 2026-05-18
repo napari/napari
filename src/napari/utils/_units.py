@@ -58,7 +58,7 @@ def _generate_ticks(
     tick_max = np.floor(max_value / step) * step  # type: ignore
 
     # actually generate ticks with the given step
-    return np.arange(tick_min, tick_max + step, step).astype(float)
+    return np.arange(tick_min, tick_max + step, step).astype(float)  # type: ignore
 
 
 def compute_nice_ticks(
