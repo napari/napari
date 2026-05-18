@@ -1,4 +1,4 @@
-from app_model.types import KeyBinding, KeyCode, KeyMod
+from app_model.types import KeyBinding, KeyCode, KeyCombo, KeyMod
 
 _default_shortcuts: dict[str, list[KeyCombo | KeyCode]] = {
     # viewer
