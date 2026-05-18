@@ -174,8 +174,8 @@ def _shift_luminance(
         # brighten -> desaturate
         sat = 1.0 / (1.0 + (scale - 1.0) * 0.5)
     else:
-        # darken -> mildly saturate
-        sat = 1.0 + (1.0 - scale) * 0.15
+        # darken -> saturate
+        sat = 1.0 + (1.0 - scale) * 0.5
 
     # blend toward a mid-gray as bright as the rgb
     gray = (r + g + b) / 3.0
