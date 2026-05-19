@@ -13,7 +13,7 @@ from napari._qt.dialogs.preferences_dialog import (
 from napari._tests.utils import skip_local_focus, skip_on_mac_ci
 from napari._vendor.qt_json_builder.qt_jsonschema_form.widgets import (
     EnumSchemaWidget,
-    FontSizeSchemaWidget,
+    FontResizeSchemaWidget,
     HighlightPreviewWidget,
     HorizontalObjectSchemaWidget,
 )
@@ -98,7 +98,7 @@ def test_font_size_widget(qtbot, pref):
 
     # check custom widget definition usage for the font size setting
     # and default values
-    assert isinstance(font_size_widget, FontSizeSchemaWidget)
+    assert isinstance(font_size_widget, FontResizeSchemaWidget)
     assert get_settings().appearance.font_size == def_font_size
     assert font_size_widget.state == def_font_size
 

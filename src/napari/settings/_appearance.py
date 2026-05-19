@@ -4,7 +4,11 @@ from pydantic import AliasChoices, Field
 
 from napari.settings._fields import Logo, Theme
 from napari.utils.events.evented_model import ComparisonDelayer, EventedModel
-from napari.utils.theme import available_themes, get_theme
+from napari.utils.theme import (
+    _REFERENCE_FONT_SIZE,
+    available_themes,
+    get_theme,
+)
 from napari.utils.translations import trans
 
 
@@ -39,12 +43,14 @@ class AppearanceSettings(EventedModel):
         title='Logo variant',
         description='Select which logo variant to use.',
     )
-    font_size: int = Field(
-        int(get_theme('dark').font_size[:-2]),
-        title=trans._('Font size'),
-        description=trans._('Select the user interface font size.'),
-        ge=5,
-        le=20,
+    font_resize: int = Field(
+        get_theme('dark').font_resize,
+        title=trans._('Font resize'),
+        description=trans._(
+            'Select the resize amount for the interface font size.'
+        ),
+        ge=-_REFERENCE_FONT_SIZE + 1,
+        le=_REFERENCE_FONT_SIZE * 5,
     )
     highlight: HighlightSettings = Field(
         HighlightSettings(),
@@ -73,22 +79,22 @@ class AppearanceSettings(EventedModel):
             values = values.model_dump()
         values = cast(dict, values)
 
-        # Check if a font_size change is needed when changing theme:
-        # If the font_size setting doesn't correspond to the default value
+        # Check if a font_resize change is needed when changing theme:
+        # If the font_resize setting doesn't correspond to the default value
         # of the current theme no change is done, otherwise
-        # the font_size value is set to the new selected theme font size value
+        # the font_resize value is set to the new selected theme font size value
         if 'theme' in values and values['theme'] != self.theme:
             current_theme = get_theme(self.theme)
             new_theme = get_theme(values['theme'])
-            if values['font_size'] == int(current_theme.font_size[:-2]):
-                values['font_size'] = int(new_theme.font_size[:-2])
+            if values['font_resize'] == current_theme.font_resize:
+                values['font_resize'] = new_theme.font_resize
         super().update(values, recurse)
 
     def __setattr__(self, key: str, value: Theme) -> None:
-        # Check if a font_size change is needed when changing theme:
-        # If the font_size setting doesn't correspond to the default value
+        # Check if a font_resize change is needed when changing theme:
+        # If the font_resize setting doesn't correspond to the default value
         # of the current theme no change is done, otherwise
-        # the font_size value is set to the new selected theme font size value
+        # the font_resize value is set to the new selected theme font size value
         if key == 'theme' and value != self.theme:
             with ComparisonDelayer(self):
                 new_theme = None
@@ -100,9 +106,9 @@ class AppearanceSettings(EventedModel):
                 if (
                     new_theme
                     and current_theme
-                    and self.font_size == int(current_theme.font_size[:-2])
+                    and self.font_resize == current_theme.font_resize
                 ):
-                    self.font_size = int(new_theme.font_size[:-2])
+                    self.font_resize = new_theme.font_resize
                 super().__setattr__(key, value)
         else:
             super().__setattr__(key, value)

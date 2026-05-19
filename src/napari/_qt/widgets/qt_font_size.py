@@ -7,10 +7,10 @@ from napari.utils.theme import get_system_theme, get_theme
 from napari.utils.translations import trans
 
 
-class QtFontSizeWidget(QWidget):
+class QtFontResizeWidget(QWidget):
     """
-    Widget to change `font_size` and enable to reset is value to the current
-    selected theme default `font_size` value.
+    Widget to change `font_resize` and enable to reset is value to the current
+    selected theme default `font_resize` value.
     """
 
     valueChanged = Signal(int)
@@ -38,7 +38,7 @@ class QtFontSizeWidget(QWidget):
             # system isn't a theme, so get the name
             current_theme_name = get_system_theme()
         current_theme = get_theme(current_theme_name)
-        self.setValue(int(current_theme.font_size[:-2]))
+        self.setValue(current_theme.font_resize)
 
     def value(self) -> int:
         """
@@ -69,8 +69,8 @@ class QtFontSizeWidget(QWidget):
         Parameters
         ----------
         min_value : int
-            Minimum value the font_size could be set.
+            Minimum value the font_resize could be set.
         max_value : int
-            Maximum value the font_size could be set.
+            Maximum value the font_resize could be set.
         """
         self._spinbox.setRange(min_value, max_value)
