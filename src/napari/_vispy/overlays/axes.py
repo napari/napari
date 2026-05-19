@@ -6,11 +6,11 @@ import numpy as np
 
 from napari._vispy.overlays.base import ViewerOverlayMixin, VispySceneOverlay
 from napari._vispy.visuals.axes import Axes
-from napari.components.overlays import AxesOverlay
 from napari.utils.theme import get_theme
 
 if TYPE_CHECKING:
     from napari._vispy.canvas import CanvasInfo
+    from napari.components.overlays import AxesOverlay
 
 
 class VispyAxesOverlay(ViewerOverlayMixin, VispySceneOverlay):

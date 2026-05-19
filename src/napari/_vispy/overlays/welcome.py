@@ -21,6 +21,7 @@ if TYPE_CHECKING:
 
 class VispyWelcomeOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
     overlay: WelcomeOverlay
+    node: Welcome
 
     def __init__(self, *, canvas_info: CanvasInfo, **kwargs: Overlay) -> None:
         super().__init__(

@@ -15,6 +15,7 @@ if TYPE_CHECKING:
 class VispyBoundingBoxOverlay(LayerOverlayMixin, VispySceneOverlay):
     overlay: BoundingBoxOverlay
     layer: ScalarFieldBase
+    node: BoundingBox
 
     def __init__(self, **kwargs: Any) -> None:
         super().__init__(node=BoundingBox(), **kwargs)

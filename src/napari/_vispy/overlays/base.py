@@ -209,6 +209,7 @@ class VispySceneOverlay(VispyBaseOverlay):
 
 class LayerOverlayMixin:
     layer: Layer
+    overlay: Overlay
 
     def __init__(self, *, layer: Layer, **kwargs) -> None:
         super().__init__(

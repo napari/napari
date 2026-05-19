@@ -1,15 +1,25 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
 from napari._vispy.overlays.base import LayerOverlayMixin, VispySceneOverlay
 from napari._vispy.visuals.interaction_box import InteractionBox
-from napari.components.overlays import SelectionBoxOverlay, TransformBoxOverlay
 from napari.layers.base._base_constants import InteractionBoxHandle
+
+if TYPE_CHECKING:
+    from napari.components.overlays import (
+        SceneOverlay,
+        SelectionBoxOverlay,
+        TransformBoxOverlay,
+    )
 
 
 class _VispyBoundingBoxOverlay(LayerOverlayMixin, VispySceneOverlay):
-    def __init__(self, **kwargs) -> None:
-        super().__init__(
-            node=InteractionBox(),
-            **kwargs,
-        )
+    node: InteractionBox
+    overlay: SceneOverlay
+
+    def __init__(self, **kwargs: Any) -> None:
+        super().__init__(node=InteractionBox(), **kwargs)
         self.layer.events.set_data.connect(self._on_visible_change)
 
     def _on_bounds_change(self):

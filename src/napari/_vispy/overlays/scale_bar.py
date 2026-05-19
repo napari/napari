@@ -10,18 +10,19 @@ import pint
 
 from napari._vispy.overlays.base import ViewerOverlayMixin, VispyCanvasOverlay
 from napari._vispy.visuals.scale_bar import ScaleBar
-from napari.components.overlays import ScaleBarOverlay
 from napari.settings import get_settings
 from napari.utils._units import PREFERRED_VALUES
 
 if TYPE_CHECKING:
     from napari._vispy.canvas import CanvasInfo
+    from napari.components.overlays import ScaleBarOverlay
 
 
 class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
     """Scale bar in world coordinates."""
 
     overlay: ScaleBarOverlay
+    node: ScaleBar
 
     def __init__(self, *, canvas_info: CanvasInfo, **kwargs) -> None:
         self._target_length = 150.0

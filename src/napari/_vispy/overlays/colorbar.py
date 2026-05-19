@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
 from napari._vispy.overlays.base import LayerOverlayMixin, VispyCanvasOverlay
 from napari._vispy.visuals.colorbar import ColorBar
-from napari.layers.utils.color_manager import ColorManager
 from napari.settings import get_settings
 from napari.utils.colormaps.colormap_utils import (
     _coerce_contrast_limits,
@@ -17,8 +16,9 @@ if TYPE_CHECKING:
     from numpy.typing import DTypeLike
 
     from napari._vispy.canvas import CanvasInfo
-    from napari.components.overlays import ColorBarOverlay, Overlay
+    from napari.components.overlays import ColorBarOverlay
     from napari.layers import Image, Layer, Surface
+    from napari.layers.utils.color_manager import ColorManager
     from napari.utils.colormaps import Colormap
 
 
@@ -73,7 +73,7 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
         *,
         layer: Image | Surface,
         canvas_info: CanvasInfo,
-        **kwargs: Overlay,
+        **kwargs: Any,
     ) -> None:
         super().__init__(
             node=ColorBar(canvas_info=canvas_info),
