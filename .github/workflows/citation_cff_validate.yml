@@ -22,4 +22,4 @@ jobs:
           persist-credentials: false
 
       - name: Validate CITATION.cff
-        uses: dieghernan/cff-validator@114aae53e1850c3757733beb60036941900e3dc3 # v4
+        uses: dieghernan/cff-validator@54c8e737314b948f25c0e5524a9d8ae3f39b207b # v5.0.1
