@@ -172,7 +172,7 @@ def test_invisible_layer_keeps_placeholder_rank_in_3d(Layer):
     layer.visible = True
     layer.visible = False
     assert layer._data_view.ndim == 3
-    
+
 
 # ---------------------------------------------------------------------------
 # locked_data_level tests
