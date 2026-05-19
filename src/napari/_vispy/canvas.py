@@ -599,7 +599,7 @@ class VispyCanvas:
         if active.mode != 'pan_zoom':
             for layer in layers:
                 if isinstance(layer, active.__class__) and layer.mode == str(
-                    active.mode
+                    active.mode and layer is not active
                 ):
                     mouse_callbacks(layer, read_only_event)
 
