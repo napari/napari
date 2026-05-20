@@ -6,9 +6,9 @@ import numpy as np
 import pandas as pd
 import pytest
 from psygnal.containers import Selection
+from pydantic import ValidationError
 from vispy.color import get_colormap
 
-from napari._pydantic_compat import ValidationError
 from napari._tests.utils import (
     assert_colors_equal,
     assert_layer_state_equal,
@@ -68,16 +68,16 @@ def test_empty_points_with_features():
     https://github.com/napari/napari/issues/5634
     """
     points = Points(
-        features={'a': np.empty(0, int)},
-        feature_defaults={'a': 0},
+        features={'a': np.empty(0, str)},
+        feature_defaults={'a': 'x'},
         face_color='a',
         face_color_cycle=list('rgb'),
     )
 
     points.add([0, 0])
-    points.feature_defaults['a'] = 1
+    points.feature_defaults['a'] = 'y'
     points.add([50, 50])
-    points.feature_defaults = {'a': 2}
+    points.feature_defaults = {'a': 'z'}
     points.add([100, 100])
 
     assert_colors_equal(points.face_color, list('rgb'))
@@ -434,8 +434,30 @@ def test_adding_points_to_empty():
     assert layer.selected_data == {0}
 
 
+def test_removing_points():
+    """Test removing points, including with selection."""
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    layer = Points(data)
+    # select some points
+    layer.selected_data = {1, 2, 4, 6}
+
+    # Remove points by index
+    layer.remove([0, 2, 5])
+    assert len(layer.data) == shape[0] - 3
+    assert np.array_equal(layer.data, data[[1, 3, 4, 6, 7, 8, 9]])
+
+    # check selection after removal
+    # one selected point was removed, the other indexes need to be shifted
+    assert layer.selected_data == {0, 2, 3}
+
+    # removing nothing should work smoothly
+    layer.remove([])
+
+
 def test_removing_selected_points():
-    """Test selecting points."""
+    """Test removing selected points."""
     shape = (10, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
@@ -458,6 +480,26 @@ def test_removing_selected_points():
     layer.selected_data = {4}
     layer.remove_selected()
     assert len(layer.data) == shape[0] - 3
+
+
+def test_popping_points():
+    """Test popping points."""
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    layer = Points(data)
+
+    # Pop point by default index
+    popped = layer.pop()
+    assert len(layer.data) == shape[0] - 1
+    assert np.array_equal(popped['data'], data[-1])
+    assert np.array_equal(layer.data, data[:-1])
+
+    # Pop a point by index at 3
+    popped = layer.pop(3)
+    assert len(layer.data) == shape[0] - 2
+    assert np.array_equal(popped['data'], data[3])
+    assert np.array_equal(layer.data, data[[0, 1, 2, 4, 5, 6, 7, 8]])
 
 
 def test_deleting_selected_value_changes():
@@ -1002,7 +1044,7 @@ def test_points_errors():
 
     # try adding properties with the wrong number of properties
     with pytest.raises(
-        ValueError, match='(does not match length)|(indices imply)'
+        ValueError, match=r'does not match length|indices imply'
     ):
         Points(data, properties=copy(annotations))
 
@@ -1182,7 +1224,7 @@ def test_colormap_without_properties(attribute):
     data = 20 * np.random.random(shape)
     layer = Points(data)
 
-    with pytest.raises(ValueError, match='must be a valid Points.properties'):
+    with pytest.raises(ValueError, match=r'must be a valid Points.properties'):
         setattr(layer, f'{attribute}_color_mode', 'colormap')
 
 
@@ -1198,7 +1240,7 @@ def test_colormap_with_categorical_properties(attribute):
     with (
         pytest.raises(
             TypeError,
-            match='selected property must be numeric to use ColorMode.COLORMAP',
+            match=r'selected property must be numeric to use ColorMode.COLORMAP',
         ),
         pytest.warns(
             UserWarning,
@@ -1394,19 +1436,21 @@ def test_color_cycle(attribute, color_cycle):
 def test_color_cycle_dict(attribute):
     """Test setting border/face color with a color cycle dict"""
     data = np.array([[0, 0], [100, 0], [0, 100]])
-    properties = {'my_colors': [2, 6, 3]}
+    properties = {'my_colors': ['b', 'x', 'c']}
     points_kwargs = {
         'properties': properties,
         f'{attribute}_color': 'my_colors',
-        f'{attribute}_color_cycle': {1: 'green', 2: 'red', 3: 'blue'},
+        f'{attribute}_color_cycle': {'a': 'green', 'b': 'red', 'c': 'blue'},
     }
     layer = Points(data, **points_kwargs)
 
     color_manager = getattr(layer, f'_{attribute}')
     color_cycle_map = color_manager.categorical_colormap.colormap
-    np.testing.assert_allclose(color_cycle_map[2], [1, 0, 0, 1])  # 2 is red
-    np.testing.assert_allclose(color_cycle_map[3], [0, 0, 1, 1])  # 3 is blue
-    np.testing.assert_allclose(color_cycle_map[6], [1, 1, 1, 1])  # 6 is white
+    np.testing.assert_allclose(color_cycle_map['b'], [1, 0, 0, 1])  # b is red
+    np.testing.assert_allclose(color_cycle_map['c'], [0, 0, 1, 1])  # c is blue
+    np.testing.assert_allclose(
+        color_cycle_map['x'], [1, 1, 1, 1]
+    )  # unkown (x) is white
 
 
 @pytest.mark.parametrize('attribute', ['border', 'face'])
@@ -1753,7 +1797,7 @@ def test_message_3d():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
-    layer._slice_input = _SliceInput(
+    layer._slicing_state._slice_input = _SliceInput(
         ndisplay=3,
         world_slice=_ThickNDSlice.make_full(ndim=2),
         order=(0, 1, 2),
@@ -2346,12 +2390,16 @@ def test_set_properties_with_invalid_shape_errors_safely():
     properties = {
         'class': np.array(['A', 'B', 'C']),
     }
-    points = Points(np.random.rand(3, 2), text='class', properties=properties)
+    points = Points(
+        np.random.default_rng(0).random((3, 2)),
+        text='class',
+        properties=properties,
+    )
     np.testing.assert_equal(points.properties, properties)
     np.testing.assert_array_equal(points.text.values, ['A', 'B', 'C'])
 
     with pytest.raises(
-        ValueError, match='(does not match length)|(indices imply)'
+        ValueError, match=r'does not match length|indices imply'
     ):
         points.properties = {'class': np.array(['D', 'E'])}
 
@@ -2564,7 +2612,7 @@ def test_point_slice_request_response(dims_indices, target_indices):
 
     data_slice = _ThickNDSlice.make_full(point=dims_indices)
 
-    request = layer._make_slice_request_internal(
+    request = layer._slicing_state.make_slice_request_internal(
         layer._slice_input, data_slice
     )
     response = request()
@@ -2738,3 +2786,15 @@ def test_docstring():
     validate_all_params_in_docstring(Points)
     validate_kwargs_sorted(Points)
     validate_docstring_parent_class_consistency(Points)
+
+
+def test_points_layer_display_correct_slice_on_scale(viewer_model):
+    data = np.zeros((60, 60, 60))
+    viewer_model.add_image(data, scale=[0.29, 0.26, 0.26])
+    pts: Points = viewer_model.add_points(name='test', size=1, ndim=3)
+    pts.add((8.7, 0, 0))
+    viewer_model.dims.set_point(0, 30 * 0.29)  # middle plane
+
+    request = pts._slicing_state._make_slice_request(viewer_model.dims)
+    response = request()
+    np.testing.assert_equal(response.indices, [0])

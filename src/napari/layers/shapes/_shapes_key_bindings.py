@@ -1,4 +1,6 @@
-from collections.abc import Callable, Generator
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 import numpy as np
 from app_model.types import KeyCode
@@ -12,7 +14,11 @@ from napari.layers.utils.layer_utils import (
     register_layer_action,
     register_layer_attr_action,
 )
+from napari.utils.notifications import show_info
 from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Generator
 
 
 @Shapes.bind_key(KeyCode.Shift, overwrite=True)
@@ -161,18 +167,26 @@ def paste_shape(layer: Shapes) -> None:
 @register_shapes_action(
     trans._('Select/Deselect all shapes in the current view slice')
 )
-def select_all_shapes(layer: Shapes) -> None:
+def select_shapes_in_slice(layer: Shapes) -> None:
     """Select/Deselect all shapes in the current view slice."""
-    if layer._mode in (Mode.DIRECT, Mode.SELECT):
-        new_selected = set(np.nonzero(layer._data_view._displayed)[0])
+    new_selected = set(np.nonzero(layer._data_view._displayed)[0])
 
-        if new_selected & layer.selected_data == new_selected:
-            # If all visible shapes are already selected, deselect them
-            layer.selected_data = layer.selected_data - new_selected
-        else:
-            # If not all visible shapes are selected, select them
-            layer.selected_data = layer.selected_data | new_selected
-        layer._set_highlight()
+    if new_selected.issubset(layer.selected_data):
+        # If all visible shapes are already selected, deselect them
+        layer.selected_data = layer.selected_data - new_selected
+    else:
+        # If not all visible shapes are selected, select them and replace
+        # any other selection.
+        layer.selected_data = new_selected
+        if new_selected:
+            show_info(
+                trans._(
+                    'Selected {n_new} shapes in this slice.',
+                    n_new=len(new_selected),
+                    deferred=True,
+                )
+            )
+    layer._set_highlight()
 
 
 @register_shapes_action(trans._('Delete any selected shapes'))

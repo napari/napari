@@ -10,35 +10,51 @@ from napari.layers.base._test_util_sample_layer import SampleLayer
 REG = pint.get_application_registry()
 
 
-def test_assign_units():
+@pytest.mark.parametrize(
+    ('units', 'expected'),
+    [
+        (('nm', 'nm'), (REG.nm, REG.nm)),
+        ((REG.nm, REG.nm), (REG.nm, REG.nm)),
+        ('nm', (REG.nm, REG.nm)),
+        (None, (REG.pixel, REG.pixel)),
+        ((None, None), (REG.pixel, REG.pixel)),
+        ((None, 'nm'), (REG.pixel, REG.nm)),
+    ],
+)
+def test_assign_units(units, expected):
+    layer = SampleLayer(np.empty((10, 10)), units=['mm', 'mm'])
+    mock = Mock()
+    layer.events.units.connect(mock)
+    layer.units = units
+    assert layer.units == expected
+    mock.assert_called_once()
+
+
+def test_no_emmit_on_identical_units():
     layer = SampleLayer(np.empty((10, 10)))
     mock = Mock()
     layer.events.units.connect(mock)
-    assert layer.units == (REG.pixel, REG.pixel)
-
     layer.units = ('nm', 'nm')
-    mock.assert_called_once()
-    mock.reset_mock()
-
     assert layer.units == (REG.nm, REG.nm)
-
-    layer.units = (REG.mm, REG.mm)
     mock.assert_called_once()
-    mock.reset_mock()
 
-    assert layer.units == (REG.mm, REG.mm)
-
-    layer.units = ('mm', 'mm')
-    mock.assert_not_called()
-
-    layer.units = 'km'
+    layer.units = ('nm', REG.nm)
     mock.assert_called_once()
-    mock.reset_mock()
-    assert layer.units == (REG.km, REG.km)
 
-    layer.units = None
+    layer.units = (REG.nm, REG.nm)
     mock.assert_called_once()
-    assert layer.units == (REG.pixel, REG.pixel)
+
+
+def test_exception_on_invalid_units():
+    layer = SampleLayer(np.empty((10, 10)))
+    with pytest.raises(ValueError, match='Could not find unit'):
+        layer.units = ('ugh', 'ugh')
+
+    with pytest.raises(ValueError, match='Could not find unit'):
+        layer.units = (1, 1)
+
+    with pytest.raises(ValueError, match='Could not find unit'):
+        layer.units = 1
 
 
 def test_units_constructor():
@@ -74,7 +90,7 @@ def test_axis_labels_assign():
     layer = SampleLayer(np.empty((10, 10)))
     mock = Mock()
     layer.events.axis_labels.connect(mock)
-    assert layer.axis_labels == ('axis -2', 'axis -1')
+    assert layer.axis_labels == ('-2', '-1')
 
     layer.axis_labels = ('x', 'y')
     mock.assert_called_once()
@@ -87,7 +103,7 @@ def test_axis_labels_assign():
 
     layer.axis_labels = None
     mock.assert_called_once()
-    assert layer.axis_labels == ('axis -2', 'axis -1')
+    assert layer.axis_labels == ('-2', '-1')
 
 
 def test_axis_labels_constructor():
@@ -95,7 +111,7 @@ def test_axis_labels_constructor():
     assert layer.axis_labels == ('x', 'y')
 
     layer = SampleLayer(np.empty((10, 10)), axis_labels=None)
-    assert layer.axis_labels == ('axis -2', 'axis -1')
+    assert layer.axis_labels == ('-2', '-1')
 
 
 def test_axis_labels_error():
@@ -203,3 +219,56 @@ def test_invalidate_extent_shear():
     with layer._block_refresh():
         layer.shear = [1]
     npt.assert_array_equal(layer.extent.world, [[0, 0], [28, 19]])
+
+
+def test_get_ray_intersections_anisotropic():
+    """Regression test for #8285.
+
+    With highly anisotropic data (small z, large y/x) the old
+    face-detection approach failed to identify both bounding-box faces,
+    causing a TypeError.  The slab-based intersection now handles
+    arbitrary aspect ratios and returns valid intersection points.
+    """
+    data = np.zeros((5, 5000, 5000))
+    layer = SampleLayer(data)
+
+    # Position and direction from the original issue traceback.
+    position = np.array([5.10589, 3717.37829, 3671.51104])
+    view_direction = np.array([-1.97862e-04, -6.36407e-01, 7.71354e-01])
+    dims_displayed = [0, 1, 2]
+
+    # The ray does intersect the bounding box, so we expect valid points
+    start_point, end_point = layer.get_ray_intersections(
+        position,
+        view_direction=view_direction,
+        dims_displayed=dims_displayed,
+        world=False,
+    )
+    assert start_point is not None
+    assert end_point is not None
+    # Both points should lie on the bounding box faces
+    bb_min = np.array([0, 0, 0])
+    bb_max = np.array([6, 5001, 5001])  # extent is shape + 1
+    for pt in (start_point, end_point):
+        assert np.all(pt >= bb_min - 1e-6)
+        assert np.all(pt <= bb_max + 1e-6)
+
+
+def test_get_ray_intersections_miss():
+    """Ray that misses the bounding box entirely returns (None, None)."""
+    data = np.zeros((5, 5, 5))
+    layer = SampleLayer(data)
+
+    # Position far outside, direction pointing away
+    position = np.array([100.0, 100.0, 100.0])
+    view_direction = np.array([1.0, 0.0, 0.0])
+    dims_displayed = [0, 1, 2]
+
+    start_point, end_point = layer.get_ray_intersections(
+        position,
+        view_direction=view_direction,
+        dims_displayed=dims_displayed,
+        world=False,
+    )
+    assert start_point is None
+    assert end_point is None

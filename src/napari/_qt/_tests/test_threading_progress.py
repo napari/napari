@@ -159,3 +159,4 @@ def test_unstarted_worker_no_widget(make_napari_viewer):
             QtLabeledProgressBar
         )
     )
+    assert viewer.window._task_status_manager.is_busy()

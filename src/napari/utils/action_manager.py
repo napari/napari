@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import warnings
 from collections import defaultdict
-from collections.abc import Callable
 from dataclasses import dataclass
 from functools import cached_property
 from inspect import isgeneratorfunction
@@ -13,6 +12,7 @@ from napari.utils.interactions import Shortcut
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from concurrent.futures import Future
     from typing import Protocol
 
@@ -105,7 +105,7 @@ class ActionManager:
         name: str,
         command: Callable,
         description: str,
-        keymapprovider: KeymapProvider | None,
+        keymapprovider: type[KeymapProvider] | None,
         repeatable: bool = False,
     ):
         """

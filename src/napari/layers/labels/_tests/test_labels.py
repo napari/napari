@@ -1082,11 +1082,24 @@ def test_message():
 
 def test_thumbnail():
     """Test the image thumbnail for square data."""
-    np.random.seed(0)
-    data = np.random.randint(20, size=(30, 30))
+    rng = np.random.default_rng(0)
+    data = rng.integers(20, size=(30, 30))
     layer = Labels(data)
     layer._update_thumbnail()
     assert layer.thumbnail.shape == layer._thumbnail_shape
+
+
+@pytest.mark.parametrize('ndim', [2, 3, 4])
+@pytest.mark.parametrize('ndisplay', [3])
+def test_thumbnail_non_visible(ndim, ndisplay):
+    """Test the image thumbnail is not updated when layer is not visible."""
+    dims = Dims(ndim=ndim, ndisplay=ndisplay)
+    rng = np.random.default_rng(0)
+    data = rng.integers(20, size=(30,) * ndim)
+    layer = Labels(data, visible=False)
+    layer._slice_dims(dims, force=False)
+    layer._update_thumbnail()
+    npt.assert_array_equal(layer.thumbnail[..., :3], 0)
 
 
 @pytest.mark.parametrize('value', [1, 10, 50, -2, -10])
@@ -1225,8 +1238,10 @@ def test_large_label_values():
 
 if parse_version(version('zarr')) > parse_version('3.0.0a0'):
     driver = [(2, 'zarr'), (3, 'zarr3')]
+    ZARR_V3 = True
 else:
     driver = [(2, 'zarr')]
+    ZARR_V3 = False
 
 
 @pytest.mark.parametrize(('zarr_version', 'zarr_driver'), driver)
@@ -1246,7 +1261,9 @@ def test_fill_tensorstore(tmp_path, zarr_version, zarr_driver):
         shape=labels.shape,
         dtype=np.uint32,
         chunks=(1, 1, 8, 9),
-        zarr_version=zarr_version,
+        # zarr < 3 uses zarr_version, zarr > 3 uses zarr_format
+        # This can be removed in favor of zarr_format once napari drops py310
+        **{('zarr_format' if ZARR_V3 else 'zarr_version'): zarr_version},
     )
     labels_temp[:] = labels
     labels_ts_spec = {
@@ -1704,6 +1721,49 @@ def test_color_mapping_with_show_selected_label():
     assert np.allclose(layer.colormap.map(data), mapped_colors_all)
 
 
+def test_show_selected_label_preserved_after_shuffle():
+    """Shuffling colors must not silently disable show_selected_label."""
+    data = np.arange(5, dtype=np.int32)[:, np.newaxis].repeat(5, axis=1)
+    layer = Labels(data)
+    layer.selected_label = 2
+    layer.show_selected_label = True
+
+    seen = {}
+    layer.events.colormap.connect(
+        lambda e: seen.update(use_selection=layer.colormap.use_selection)
+    )
+    layer.new_colormap(seed=0)
+
+    # Selection state must be set before `events.colormap` fires, so the
+    # vispy shader is rebuilt with the right `use_selection`.
+    assert seen['use_selection'] is True
+    # And it must stick on the final colormap.
+    assert layer.colormap.use_selection is True
+    assert layer.colormap.selection == 2
+    label_mask = data == 2
+    npt.assert_allclose(layer.colormap.map(data)[~label_mask], 0)
+
+
+def test_shuffle_does_not_revive_stale_show_selected():
+    """Shuffling must reflect the layer's current show_selected_label state."""
+    data = np.arange(5, dtype=np.int32)[:, np.newaxis].repeat(5, axis=1)
+    layer = Labels(data)
+    layer.selected_label = 2
+
+    # Enable, shuffle (detaches `_original_random_colormap` from the layer's
+    # mutations), then disable. Without the fix, the next shuffle would seed
+    # from the now-stale original and revive `use_selection=True`.
+    layer.show_selected_label = True
+    layer.new_colormap(seed=0)
+    layer.show_selected_label = False
+    layer.new_colormap(seed=1)
+
+    assert layer.colormap.use_selection is False
+    mapped = layer.colormap.map(data)
+    for value in range(1, 5):
+        assert np.any(mapped[data == value] != 0)
+
+
 def test_color_mapping_when_seed_is_changed():
     """Checks if the color mapping is updated when the color palette seed is changed."""
     np.random.seed(0)
@@ -1775,7 +1835,7 @@ def test_negative_label_doesnt_flicker():
     assert tuple(layer.get_color(-1)) != tuple(layer.get_color(5))
     minus_one_color_original = tuple(layer.get_color(-1))
     layer.dims_point = (2, 0, 0)
-    layer._set_view_slice()
+    layer._slicing_state._set_view_slice()
 
     assert tuple(layer.get_color(-1)) == minus_one_color_original
 
@@ -1801,6 +1861,35 @@ def test_get_status_with_custom_index():
         layer.get_status((6, 6))['coordinates']
         == ' [6 6]: 2; text1: 3, text2: -2'
     )
+
+
+def test_get_tooltip_text_with_same_features():
+    """
+    Test that tooltip text for different labels is different, even with
+    identical features.
+    """
+    data = np.array([[0, 1], [2, 0]])
+    features = {
+        'class': ['none', 'A', 'A'],
+        'value': ['none', 100, 100],
+    }
+    layer = Labels(data, features=features)
+
+    value1 = layer.get_value(position=(0, 1))
+    assert value1 == 1
+    tooltip1 = layer._get_tooltip_text(position=(0, 1))
+    features1 = layer._get_properties(position=(0, 1))
+
+    value2 = layer.get_value(position=(1, 0))
+    assert value2 == 2
+    tooltip2 = layer._get_tooltip_text(position=(1, 0))
+    features2 = layer._get_properties(position=(1, 0))
+
+    assert features1 == features2
+    assert tooltip1 != tooltip2
+
+    assert tooltip1 == f'{value1}\n' + '\n'.join(features1)
+    assert tooltip2 == f'{value2}\n' + '\n'.join(features2)
 
 
 def test_labels_features_event():

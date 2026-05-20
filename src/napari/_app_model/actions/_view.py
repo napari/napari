@@ -108,7 +108,7 @@ def _toggle_canvas_ndim(viewer: ViewerModel) -> None:
         viewer.dims.ndisplay = 2
 
 
-VIEW_ACTIONS = [
+VIEW_ACTIONS: list[Action] = [
     Action(
         id='napari.viewer.fit_to_view',
         title=trans._('Fit to View'),

@@ -1,6 +1,7 @@
 """Scale bar model."""
 
-from napari._pydantic_compat import Field
+from pydantic import Field
+
 from napari.components.overlays.base import CanvasOverlay
 from napari.utils.color import ColorValue
 
@@ -31,8 +32,8 @@ class ScaleBarOverlay(CanvasOverlay):
         Background box color.
         See ``ColorValue.validate`` for supported values.
     unit : Optional[str]
-        Unit to be used by the scale bar. The value can be set
-        to `None` to display no units.
+        Unit to be used by the scale bar, equivalent to 1 pixel. Can be a quantity
+        such as "10 nm". The value can be set to `None` to display no units.
     length : Optional[float]
         Fixed length of the scale bar in physical units. If set to `None`,
         it is determined automatically based on zoom level.
@@ -50,9 +51,5 @@ class ScaleBarOverlay(CanvasOverlay):
     color: ColorValue = Field(default_factory=lambda: ColorValue([1, 0, 1, 1]))
     ticks: bool = True
     font_size: float = 10
-    box: bool = False
-    box_color: ColorValue = Field(
-        default_factory=lambda: ColorValue([0, 0, 0, 0.6])
-    )
     unit: str | None = None
     length: float | None = None

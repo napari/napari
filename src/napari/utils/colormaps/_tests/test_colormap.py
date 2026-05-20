@@ -6,8 +6,8 @@ from unittest.mock import patch
 import numpy as np
 import numpy.testing as npt
 import pytest
+from pydantic import ValidationError
 
-from napari._pydantic_compat import ValidationError
 from napari.utils.color import ColorArray
 from napari.utils.colormap_backend import ColormapBackend, set_backend
 from napari.utils.colormaps import (
@@ -90,7 +90,7 @@ def test_wrong_start_control_point():
     """Test wrong start of control points raises an error."""
     colors = np.array([[0, 0, 0, 1], [0, 1, 0, 1], [0, 0, 1, 1]])
     with pytest.raises(
-        ValidationError, match='must start with 0.0 and end with 1.0'
+        ValidationError, match=r'must start with 0.0 and end with 1.0'
     ):
         Colormap(colors, name='testing', controls=[0.1, 0.75, 1])
 
@@ -99,7 +99,7 @@ def test_wrong_end_control_point():
     """Test wrong end of control points raises an error."""
     colors = np.array([[0, 0, 0, 1], [0, 1, 0, 1], [0, 0, 1, 1]])
     with pytest.raises(
-        ValidationError, match='must start with 0.0 and end with 1.0'
+        ValidationError, match=r'must start with 0.0 and end with 1.0'
     ):
         Colormap(colors, name='testing', controls=[0, 0.75, 0.9])
 
@@ -144,7 +144,7 @@ def test_colormap_equality():
 
 def test_colormap_recreate():
     c_map = Colormap('black')
-    Colormap(**c_map.dict())
+    Colormap(**c_map.model_dump())
 
 
 @pytest.mark.parametrize('ndim', range(1, 5))

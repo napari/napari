@@ -4,6 +4,7 @@ import platform
 import re
 import subprocess
 import sys
+import textwrap
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 
@@ -70,6 +71,12 @@ def _sys_name() -> str:
                     capture_output=True,
                 )
                 return f'MacOS {res.stdout.decode().strip()}'
+    return ''
+
+
+def _desktop_env() -> str:
+    if sys.platform == 'linux':
+        return f'{os.getenv("XDG_SESSION_TYPE")} - {os.getenv("XDG_SESSION_DESKTOP")}'
     return ''
 
 
@@ -145,6 +152,30 @@ def get_plugin_list() -> str:
         return f'Failed to load plugin information: <br> {e}'
 
 
+def startup_script() -> str:
+    """Get information about the startup script if executed."""
+
+    from napari.settings import get_settings
+    from napari.utils._startup_script import startup_script_status_info
+
+    if startup_script_status_info is None:
+        script_path = (
+            get_settings().application.startup_script.expanduser().resolve()
+        )
+        if not script_path.samefile(Path()):
+            return f'<br><b>Startup script:</b><br> - script path: {script_path}<br>'
+        return ''
+
+    code_html = startup_script_status_info.script_code.replace('\n', '<br>')
+
+    return textwrap.dedent(f"""
+    <br><b>Startup script:</b><br>
+     - load time: {startup_script_status_info.startup_time}<br>
+     - script path: {startup_script_status_info.script_path}<br>
+     - script code: {code_html}<br>
+    """)
+
+
 def sys_info(as_html: bool = False) -> str:
     """Gathers relevant module versions for troubleshooting purposes.
 
@@ -162,13 +193,16 @@ def sys_info(as_html: bool = False) -> str:
     __sys_name = _sys_name()
     if __sys_name:
         text += f'<b>System</b>: {__sys_name}<br>'
+    __desktop_env = _desktop_env()
+    if __desktop_env:
+        text += f'<b>Session</b>: {__desktop_env}<br>'
 
     text += f'<b>Python</b>: {sys_version}<br>'
 
     try:
         from qtpy import API_NAME, PYQT_VERSION, PYSIDE_VERSION, QtCore
 
-        if API_NAME in {'PySide2', 'PySide6'}:
+        if API_NAME == 'PySide6':
             API_VERSION = PYSIDE_VERSION
         elif API_NAME in {'PyQt5', 'PyQt6'}:
             API_VERSION = PYQT_VERSION
@@ -260,6 +294,7 @@ def sys_info(as_html: bool = False) -> str:
         except PackageNotFoundError:
             text += f'  - {name} not installed<br>'
 
+    _config_path: str | Path | None
     try:
         from napari.settings import get_settings
 
@@ -270,7 +305,7 @@ def sys_info(as_html: bool = False) -> str:
         )
         _config_path = get_settings().config_path
     except ValueError:
-        from napari.utils._appdirs import user_config_dir
+        from napari.utils._platformdirs import user_config_dir
 
         _async_setting = str(os.getenv('NAPARI_ASYNC', 'False'))
         _autoswap_buffers = str(os.getenv('NAPARI_AUTOSWAP', 'False'))
@@ -292,6 +327,7 @@ def sys_info(as_html: bool = False) -> str:
 
     text += '<br><b>Plugins:</b><br>'
     text += get_plugin_list()
+    text += startup_script()
 
     if not as_html:
         text = (

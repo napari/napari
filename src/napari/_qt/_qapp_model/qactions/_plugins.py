@@ -6,7 +6,6 @@ from logging import getLogger
 from app_model.types import Action
 
 from napari._app_model.constants import MenuGroup, MenuId
-from napari._qt.dialogs.qt_plugin_report import QtPluginErrReporter
 from napari._qt.qt_main_window import Window
 from napari.utils.translations import trans
 
@@ -32,12 +31,11 @@ def _show_plugin_install_dialog(window: Window) -> None:
     # This callback is only used when this package is available, thus we do not check
     from napari_plugin_manager.qt_plugin_dialog import QtPluginDialog
 
-    QtPluginDialog(window._qt_window).exec_()
-
-
-def _show_plugin_err_reporter(window: Window) -> None:
-    """Show dialog that allows users to review and report plugin errors."""
-    QtPluginErrReporter(parent=window._qt_window).exec_()  # type: ignore [attr-defined]
+    window._qt_window._plugin_manager_dialog = QtPluginDialog(
+        window._qt_window
+    )
+    if window._qt_window._plugin_manager_dialog is not None:
+        window._qt_window._plugin_manager_dialog.exec_()
 
 
 Q_PLUGINS_ACTIONS: list[Action] = [
@@ -53,20 +51,5 @@ Q_PLUGINS_ACTIONS: list[Action] = [
             }
         ],
         callback=_show_plugin_install_dialog,
-    ),
-    Action(
-        id='napari.window.plugins.plugin_err_reporter',
-        title=trans._('Plugin Errors...'),
-        menus=[
-            {
-                'id': MenuId.MENUBAR_PLUGINS,
-                'group': MenuGroup.PLUGINS,
-                'order': 2,
-            }
-        ],
-        callback=_show_plugin_err_reporter,
-        status_tip=trans._(
-            'Review stack traces for plugin exceptions and notify developers'
-        ),
-    ),
+    )
 ]

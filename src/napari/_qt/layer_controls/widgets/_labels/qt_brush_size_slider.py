@@ -11,6 +11,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
 )
 from napari._qt.utils import qt_signals_blocked
 from napari.layers import Labels
+from napari.utils.events.event_utils import connect_setattr
 from napari.utils.translations import trans
 
 
@@ -45,21 +46,11 @@ class QtBrushSizeSliderControl(QtWidgetControlsBase):
         sld.setMinimum(1)
         sld.setMaximum(40)
         sld.setSingleStep(1)
-        sld.valueChanged.connect(self.change_size)
+        connect_setattr(sld.valueChanged, self._layer, 'brush_size')
         self.brush_size_slider = sld
         self._on_brush_size_change()
 
         self.brush_size_slider_label = QtWrappedLabel(trans._('brush size:'))
-
-    def change_size(self, value: float) -> None:
-        """Change paint brush size.
-
-        Parameters
-        ----------
-        value : float
-            Size of the paint brush.
-        """
-        self._layer.brush_size = value
 
     def _on_brush_size_change(self) -> None:
         """Receive layer model brush size change event and update the slider."""

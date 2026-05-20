@@ -3,11 +3,13 @@ These convenience functions will be useful for searching pypi for packages
 that match the plugin naming convention, and retrieving related metadata.
 """
 
+from __future__ import annotations
+
 import json
-from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
 from functools import lru_cache
 from typing import (
+    TYPE_CHECKING,
     TypedDict,
     cast,
 )
@@ -15,10 +17,14 @@ from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 from npe2 import PackageMetadata
-from typing_extensions import NotRequired
 
 from napari.plugins.utils import normalized_name
 from napari.utils.notifications import show_warning
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
+
+    from typing_extensions import NotRequired
 
 PyPIname = str
 
@@ -118,6 +124,6 @@ def iter_napari_plugin_info() -> Iterator[tuple[PackageMetadata, bool, dict]]:
             'conda_versions': conda_versions,
         }
         info_['name'] = normalized_name(info_['name'])
-        meta = PackageMetadata(**info_)  # type:ignore[call-arg]
+        meta = PackageMetadata(**info_)
 
         yield meta, (info_['name'] in conda_set), extra_info

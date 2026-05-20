@@ -5,7 +5,7 @@ import pytest
 from napari.components import ViewerModel
 from napari.utils.colormaps import (
     AVAILABLE_COLORMAPS,
-    CYMRGB,
+    CMYBGR,
     MAGENTA_GREEN,
     SIMPLE_COLORMAPS,
     Colormap,
@@ -13,7 +13,7 @@ from napari.utils.colormaps import (
 )
 from napari.utils.misc import ensure_iterable, ensure_sequence_of_iterables
 
-base_colormaps = CYMRGB
+base_colormaps = CMYBGR
 two_colormaps = MAGENTA_GREEN
 green_cmap = SIMPLE_COLORMAPS['green']
 red_cmap = SIMPLE_COLORMAPS['red']

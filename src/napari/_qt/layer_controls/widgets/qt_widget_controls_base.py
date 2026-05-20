@@ -1,4 +1,4 @@
-from abc import ABC, abstractclassmethod
+from abc import ABC, abstractmethod
 
 from qtpy.QtCore import QObject, Qt
 from qtpy.QtWidgets import QLabel, QWidget
@@ -44,8 +44,11 @@ class QtWidgetControlsBase(QObject, ABC, metaclass=MetaWidgetControlsBase):
         super().__init__(parent)
         # Setup layer
         self._layer = layer
+        # Track registered callbacks (defined via `attr_to_settr` for example)
+        # so it is possible to disconnect them when the widget is being closed/deleted
+        self._callbacks = []
 
-    @abstractclassmethod
+    @abstractmethod
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
         """
         Enable access to the created labels and control widgets.
@@ -56,12 +59,15 @@ class QtWidgetControlsBase(QObject, ABC, metaclass=MetaWidgetControlsBase):
             List of tuples of the label and widget controls available.
 
         """
+        raise NotImplementedError
 
     def disconnect_widget_controls(self) -> None:
         """
         Disconnect layer from widget controls.
         """
         disconnect_events(self._layer.events, self)
+        for callback in self._callbacks:
+            disconnect_events(self._layer.events, callback)
 
     def deleteLater(self) -> None:
         self.disconnect_widget_controls()

@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import logging
 import weakref
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from collections.abc import Callable
     from typing import Protocol
+
+    from napari.utils.events.event import EmitterGroup
 
     class Emitter(Protocol):
         def connect(self, callback: Callable): ...
@@ -13,7 +16,10 @@ if TYPE_CHECKING:
         def disconnect(self, callback: Callable): ...
 
 
-def disconnect_events(emitter, listener):
+_logger = logging.getLogger(__name__)
+
+
+def disconnect_events(emitter: EmitterGroup, listener: object) -> None:
     """Disconnect all events between an emitter group and a listener.
 
     Parameters
@@ -27,14 +33,35 @@ def disconnect_events(emitter, listener):
         em.disconnect(listener)
 
 
-def connect_setattr(emitter: Emitter, obj, attr: str):
+def connect_setattr(
+    emitter: Emitter,
+    obj,
+    attr: str,
+    convert_fun: Callable[[Any], Any] | None = None,
+) -> None:
     ref = weakref.ref(obj)
+    if convert_fun:
+        # Handle passed `convert_func` function to map emitted values to valid
+        # values accepted for the receiver object attribute.
+        # A `convert_func` is needed to, for example, map `Qt.CheckState`
+        # values to boolean ones when a `QCheckBox` value change is connected
+        # to a layer attribute.
+        # See napari/napari#8154
+        def _cb(*value):
+            if (ob := ref()) is None:
+                emitter.disconnect(_cb)
+                return
 
-    def _cb(*value):
-        if (ob := ref()) is None:
-            emitter.disconnect(_cb)
-            return
-        setattr(ob, attr, value[0] if len(value) == 1 else value)
+            value = tuple(convert_fun(x) for x in value)
+            setattr(ob, attr, value[0] if len(value) == 1 else value)
+    else:
+
+        def _cb(*value):
+            if (ob := ref()) is None:
+                emitter.disconnect(_cb)
+                return
+
+            setattr(ob, attr, value[0] if len(value) == 1 else value)
 
     emitter.connect(_cb)
     # There are scenarios where emitter is deleted before obj.

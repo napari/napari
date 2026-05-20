@@ -56,9 +56,9 @@ _default_shortcuts = {
     'napari:activate_points_transform_mode': [KeyCode.Digit5],
     'napari:select_all_in_slice': [
         KeyCode.KeyA,
-        KeyMod.CtrlCmd | KeyCode.KeyA,
     ],
-    'napari:select_all_data': [KeyMod.Shift | KeyCode.KeyA],
+    'napari:select_append_all_in_slice': [KeyMod.Shift | KeyCode.KeyA],
+    'napari:select_all_data': [KeyMod.CtrlCmd | KeyCode.KeyA],
     'napari:delete_selected_points': [
         KeyCode.Digit1,
         KeyCode.Delete,
@@ -82,7 +82,7 @@ _default_shortcuts = {
     'napari:paste_shape': [KeyMod.CtrlCmd | KeyCode.KeyV],
     'napari:move_shapes_selection_to_front': [KeyCode.KeyF],
     'napari:move_shapes_selection_to_back': [KeyCode.KeyB],
-    'napari:select_all_shapes': [
+    'napari:select_shapes_in_slice': [
         KeyCode.KeyA,
         KeyMod.CtrlCmd | KeyCode.KeyA,
     ],
@@ -97,6 +97,7 @@ _default_shortcuts = {
     'napari:orient_plane_normal_along_y': [KeyCode.KeyY],
     'napari:orient_plane_normal_along_z': [KeyCode.KeyZ],
     'napari:orient_plane_normal_along_view_direction': [KeyCode.KeyO],
+    'napari:auto_contrast_once': [KeyCode.KeyC],
     'napari:activate_image_pan_zoom_mode': [KeyCode.Digit1],
     'napari:activate_image_transform_mode': [KeyCode.Digit2],
     # vectors

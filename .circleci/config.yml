@@ -16,13 +16,14 @@ jobs:
       XDG_CACHE_HOME: /home/circleci/.cache
     steps:
       - checkout:
+          method: full
           path: napari
       - restore_cache:
           keys:
             - pooch
       - run:
           name: Clone docs repo into a subdirectory
-          command: git clone git@github.com:napari/docs.git docs
+          command: git clone --depth=1 git@github.com:napari/docs.git docs
       - run:
           name: Install qt libs + xvfb
           command: sudo apt-get update && sudo apt-get install -y xvfb libegl1 libdbus-1-3 libxkbcommon-x11-0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 libxcb-xinerama0 libxcb-xinput0 libxcb-xfixes0 x11-utils
@@ -36,7 +37,7 @@ jobs:
           name: Install napari-dev
           command: |
             . .venv/bin/activate
-            uv pip install -e "napari/[pyqt5,docs]"
+            uv pip install -e "napari/[pyqt5]" --group napari/pyproject.toml:docs
           environment:
             UV_CONSTRAINT: napari/resources/constraints/constraints_py3.12_docs.txt
       - run:

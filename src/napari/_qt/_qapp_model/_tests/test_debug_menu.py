@@ -86,14 +86,14 @@ def test_start_stop_trace_actions(
         # Check Debug menu exists and actions state
         assert getattr(viewer.window, '_debug_menu', None) is not None
 
-        start_action, menu = get_submenu_action(
+        start_action = get_submenu_action(
             viewer.window._debug_menu,
             'Performance Trace',
             'Start Recording...',
-        )
-        stop_action, menu = get_submenu_action(
+        )[0]
+        stop_action = get_submenu_action(
             viewer.window._debug_menu, 'Performance Trace', 'Stop Recording...'
-        )
+        )[0]
 
         # Check initial actions state
         viewer.window._debug_menu.aboutToShow.emit()
@@ -133,7 +133,9 @@ def test_start_stop_trace_actions(
         # Stop perf widget timer to prevent test failure on teardown
         viewer.window._qt_viewer.dockPerformance.widget().timer.stop()
         qtbot.waitUntil(
-            lambda: not viewer.window._qt_viewer.dockPerformance.widget().timer.isActive()
+            lambda: (
+                not viewer.window._qt_viewer.dockPerformance.widget().timer.isActive()
+            )
         )
     else:
         # Nothing to test

@@ -1,69 +1,100 @@
-import os
-import sys
-from pathlib import Path
 from warnings import warn
 
 from napari.utils.translations import trans
 
 try:
-    from qtpy import API_NAME, QT_VERSION, QtCore
+    from qtpy import API_NAME, QtCore
 except Exception as e:
     if 'No Qt bindings could be found' in str(e):
+        import os
+        import traceback
+        from importlib import import_module
+        from importlib.metadata import version
         from inspect import cleandoc
 
-        installed_with_conda = list(
-            Path(sys.prefix, 'conda-meta').glob('napari-*.json')
+        from napari.utils._env_detection import (
+            detect_environment,
+            detect_installed_qt_bindings,
         )
+
+        qt_api_enforce = os.environ.get('QT_API', '')
+
+        if installed_bindings := detect_installed_qt_bindings():
+            available_qt_bindins = ', '.join(
+                f'{name}={version}'
+                for name, version in installed_bindings.items()
+            )
+            if qt_api_enforce and qt_api_enforce not in installed_bindings:
+                if len(installed_bindings) > 1:
+                    qt_text = f'but {available_qt_bindins} are installed in your environment'
+                else:
+                    qt_text = f'but {available_qt_bindins} is installed in your environment'
+
+                raise ImportError(
+                    cleandoc(
+                        f"""
+                    The Qt bindings enforced by QT_API environment variable are not installed.
+                    You have QT_API={qt_api_enforce} installed, {qt_text}.
+                    """
+                    )
+                ) from e
+
+            name_to_module = {
+                'pyqt5': 'PyQt5',
+                'pyqt6': 'PyQt6',
+                'pyside6': 'PySide6',
+            }
+
+            fail_inf = {}
+
+            for binding in name_to_module:
+                if binding in installed_bindings:
+                    try:
+                        import_module(f'{name_to_module[binding]}.QtWidgets')
+                    except:  # noqa: E722
+                        fail_inf[binding] = traceback.format_exc()
+                    else:
+                        fail_inf[binding] = 'No error'
+
+            error_summary = '\n\n'.join(
+                f'{binding}: {exc}' for binding, exc in fail_inf.items()
+            )
+
+            raise ImportError(
+                cleandoc(f"""
+            Failed to import Qt bindings. We found following Qt bindings installed: {available_qt_bindins}.
+            We have tried to import existing bindings and here are the errors:
+            {error_summary}
+            """)
+            ) from e
 
         raise ImportError(
             trans._(
                 cleandoc(
                     """
-                No Qt bindings could be found.
+                No Qt bindings could be found for napari=={version}.
 
-                napari requires either PyQt5 (default), PyQt6 or PySide2 to be installed in the environment.
+                napari requires either PyQt5, PyQt6 (default) or PySide6 to be installed in the environment.
 
                 With pip, you can install either with:
                   $ pip install -U 'napari[all]'  # default choice
                   $ pip install -U 'napari[pyqt5]'
                   $ pip install -U 'napari[pyqt6]'
-                  $ pip install -U 'napari[pyside2]'
+                  $ pip install -U 'napari[pyside6]'
 
                 With conda, you need to do:
-                  $ conda install -c conda-forge pyqt
-                  $ conda install -c conda-forge pyside2
+                  $ conda install -c conda-forge pyqt6
+                  $ conda install -c conda-forge pyside6
 
                 Our heuristics suggest you are using '{tool}' to manage your packages.
                 """
                 ),
                 deferred=True,
-                tool='conda' if installed_with_conda else 'pip',
+                tool=detect_environment().value,
+                version=version('napari'),
             )
         ) from e
     raise
-
-
-if API_NAME == 'PySide2':
-    # Set plugin path appropriately if using PySide2. This is a bug fix
-    # for when both PyQt5 and Pyside2 are installed
-    import PySide2
-
-    os.environ['QT_PLUGIN_PATH'] = str(
-        Path(PySide2.__file__).parent / 'Qt' / 'plugins'
-    )
-
-if API_NAME == 'PySide6' and sys.version_info[:2] < (3, 10):
-    from packaging import version
-
-    assert isinstance(QT_VERSION, str)
-
-    if version.parse(QT_VERSION) > version.parse('6.3.1'):
-        raise RuntimeError(
-            trans._(
-                'Napari is not expected to work with PySide6 >= 6.3.2 on Python < 3.10',
-                deferred=True,
-            )
-        )
 
 
 # When QT is not the specific version, we raise a warning:

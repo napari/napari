@@ -1,6 +1,11 @@
+from typing import Any
+
+from psygnal import EventedModel
+from pydantic import ConfigDict
+
 from napari.components._viewer_constants import CanvasPosition
 from napari.layers.base._base_constants import Blending
-from napari.utils.events import EventedModel
+from napari.utils.color import ColorValue
 
 
 class Overlay(EventedModel):
@@ -20,6 +25,10 @@ class Overlay(EventedModel):
     order : int
         The rendering order of the overlay: lower numbers get rendered first.
     """
+
+    model_config = EventedModel.model_config | ConfigDict(
+        validate_assignment=True
+    )
 
     visible: bool = False
     opacity: float = 1
@@ -51,8 +60,10 @@ class CanvasOverlay(Overlay):
         The overlay will be duplicated across all grid cells in gridded mode.
     """
 
-    position: CanvasPosition | tuple[int, int] = CanvasPosition.BOTTOM_RIGHT
+    position: CanvasPosition | Any = CanvasPosition.BOTTOM_RIGHT
     blending: Blending = Blending.TRANSLUCENT_NO_DEPTH
+    box: bool = True
+    box_color: ColorValue | None = None
     gridded: bool = False
 
 

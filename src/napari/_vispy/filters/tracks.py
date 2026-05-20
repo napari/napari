@@ -29,13 +29,6 @@ class TracksFilter(Filter):
         this will enable/disable tail fading with time
     vertex_time : 1D array, list
         a vector describing the time associated with each vertex
-
-    TODO
-    ----
-    - the track is still displayed, albeit with fading, once the track has
-     finished but is still within the 'tail_length' window. Should it
-     disappear?
-
     """
 
     VERT_SHADER = """

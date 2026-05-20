@@ -1,76 +1,106 @@
 import numpy as np
-from vispy.scene.visuals import Compound, Line, Rectangle, Text
+from vispy.scene.visuals import Compound, Line
+from vispy.visuals.text.text import FontManager
+
+from napari._vispy.visuals.text import Text
 
 
 class ScaleBar(Compound):
-    def __init__(self) -> None:
-        self._data = np.array(
+    """Scale bar visual with text and line components.
+
+    Layout of Scale Bar Elements (from top to bottom):
+    - Padding
+    - Text
+    - Gap between text and line
+    - Scale line (with optional ticks)
+    - Padding
+    """
+
+    def __init__(
+        self,
+        font_manager: FontManager | None = None,
+        font_family: str = 'OpenSans',
+    ) -> None:
+        # Layout constants
+        self.PADDING = 6  # Space around the entire scale bar
+        self.TICK_LENGTH = 11  # Height of tick marks (odd numbers look better)
+
+        # Line geometry: main line + optional tick marks
+        self._line_data = np.array(
             [
-                [0, 0],
-                [1, 0],
-                [0, -5],
-                [0, 5],
-                [1, -5],
-                [1, 5],
+                [-1, 0],  # Left end of main line
+                [1, 0],  # Right end of main line
+                [-1, -1],  # Left tick mark (bottom)
+                [-1, 1],  # Left tick mark (top)
+                [1, -1],  # Right tick mark (bottom)
+                [1, 1],  # Right tick mark (top)
             ]
         )
 
+        self._color = (1, 1, 1, 1)
+
+        self.text = Text(
+            text='1px',
+            pos=[0.5, 0.5],
+            anchor_x='center',
+            anchor_y='bottom',
+            font_size=10,
+            face=font_family,
+            font_manager=font_manager,
+        )
+        self.line = Line(
+            connect='segments', method='gl', width=3, antialias=True
+        )
         # order matters (last is drawn on top)
-        super().__init__(
-            [
-                Rectangle(center=[0.5, 0.5], width=1.1, height=36),
-                Text(
-                    text='1px',
-                    pos=[0.5, 0.5],
-                    anchor_x='center',
-                    anchor_y='top',
-                    font_size=10,
-                ),
-                Line(connect='segments', method='gl', width=3),
-            ]
+        super().__init__([self.text, self.line])
+
+    def _calculate_layout(self, length: float) -> dict:
+        """Calculate all layout dimensions and positions."""
+        # Text dimensions
+        text_width, text_height = self.text.get_width_height()
+
+        # ceil so there's no flickering due to slight differences between
+        # the heigh of the various digits
+        text_height = np.ceil(text_height)
+
+        width = max(
+            length + self.line.width,
+            text_width,
+        )
+        height = text_height + self.TICK_LENGTH
+
+        line_center_y = text_height + (self.TICK_LENGTH / 2)
+
+        return {
+            'width': width,
+            'height': height,
+            'line_center_y': line_center_y,
+        }
+
+    def set_data(self, *, length, color, ticks, font_size):
+        """Update scale bar with new dimensions and styling."""
+        # font size need to be set first cause layout calculations depend on it
+        self.text.font_size = font_size
+
+        layout = self._calculate_layout(length)
+
+        # Choose line data based on whether ticks are enabled
+        line_data = self._line_data if ticks else self._line_data[:2]
+
+        # Position and scale the line
+        self.line.set_data(
+            pos=line_data * (length / 2, self.TICK_LENGTH / 2)
+            + (
+                layout['width'] / 2,  # Center horizontally
+                layout['line_center_y'],  # Position vertically
+            ),
+            color=color,
         )
 
-    @property
-    def line(self):
-        return self._subvisuals[2]
-
-    @property
-    def text(self):
-        return self._subvisuals[1]
-
-    @property
-    def box(self):
-        return self._subvisuals[0]
-
-    def _update_layout(self, font_size):
-        # convert font_size to logical pixels as vispy does
-        # in vispy/visuals/text/text.py
-        # 96 dpi is used as the napari reference dpi
-        # round to ensure box.height for font_size 10 is 36
-        font_logical_pixels = np.round(font_size * 96 / 72)
-
-        # 18 is the bottom half of the default/initial box
-        # 5 is the padding at the top of the text
-        self.box.height = 18 + font_logical_pixels + 5
-
-        # Text and line should be fixed at the bottom of the box.
-        # At the default font size (10) and box height (36), the position
-        # is in the center (0), so subtract half of the default box height (18)
-        fixed_position_in_box = self.box.height / 2 - 18
-        self.text.pos = [0.5, fixed_position_in_box]
-        self._data = np.array(
-            [
-                [0, fixed_position_in_box],
-                [1, fixed_position_in_box],
-                [0, fixed_position_in_box - 5],
-                [0, fixed_position_in_box + 5],
-                [1, fixed_position_in_box - 5],
-                [1, fixed_position_in_box + 5],
-            ]
-        )
-        self.line.set_data(pos=self._data)
-
-    def set_data(self, color, ticks):
-        data = self._data if ticks else self._data[:2]
-        self.line.set_data(data, color)
+        # Position the text
+        self.text.pos = layout['width'] / 2, 0
         self.text.color = color
+
+        # Return dimensions for the overlay system
+        # Extra padding needed for proper canvas positioning (not sure why padding is needed here, ugh)
+        return layout['width'], layout['height']

@@ -57,6 +57,7 @@ class QtEdgeWidthSliderControl(QtWidgetControlsBase):
             self.edge_width_slider.valueChanged,
             self._layer,
             'current_edge_width',
+            convert_fun=float,
         )
         self.edge_width_slider.setToolTip(
             trans._(
@@ -64,16 +65,6 @@ class QtEdgeWidthSliderControl(QtWidgetControlsBase):
             )
         )
         self.edge_width_label = QtWrappedLabel(trans._('edge width:'))
-
-    def change_width(self, value: float) -> None:
-        """Change edge line width of shapes on the layer model.
-
-        Parameters
-        ----------
-        value : float
-            Line width of shapes.
-        """
-        self._layer.current_edge_width = float(value)
 
     def _on_edge_width_change(self) -> None:
         """Receive layer model edge line width change event and update slider."""

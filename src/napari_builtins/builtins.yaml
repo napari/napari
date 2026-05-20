@@ -173,7 +173,7 @@ contributions:
           '*.sti', '*.stk', '*.svs', '*.swf', '*.targa', '*.tf2', '*.tf8',
           '*.tga', '*.tif', '*.tiff', '*.vtk', '*.wap', '*.wbm', '*.wbmp',
           '*.wdp', '*.webm', '*.webp', '*.wmf', '*.wmv', '*.xbm', '*.xpm',
-          '*.zarr', '*.zif'
+          '*.zarr', '*.zarr/*', '*.zif'
         ]
     - command: napari.get_py_reader
       filename_patterns:
