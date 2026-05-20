@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
 from napari._vispy.overlays.base import LayerOverlayMixin, VispyCanvasOverlay
 from napari._vispy.visuals.colorbar import ColorBar
-from napari.layers.utils.color_manager import ColorManager
 from napari.utils.colormaps.colormap_utils import (
     _coerce_contrast_limits,
     _napari_cmap_to_vispy,
@@ -14,9 +13,11 @@ from napari.utils.colormaps.colormap_utils import (
 
 if TYPE_CHECKING:
     from numpy.typing import DTypeLike
+    from vispy.visuals.text.text import FontManager
 
     from napari.components.overlays import ColorBarOverlay
     from napari.layers import Image, Layer, Surface
+    from napari.layers.utils.color_manager import ColorManager
     from napari.utils.colormaps import Colormap
 
 
@@ -68,12 +69,17 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
 
     def __init__(
         self,
-        **kwargs,
+        *,
+        layer: Layer,
+        font_manager: FontManager | None = None,
+        font_family: str = 'OpenSans',
+        **kwargs: Any,
     ) -> None:
-        font_manager = kwargs.get('font_manager')
-        font_family = kwargs.get('font_family', 'OpenSans')
         super().__init__(
             node=ColorBar(font_manager=font_manager, font_family=font_family),
+            layer=layer,
+            font_manager=font_manager,
+            font_family=font_family,
             **kwargs,
         )
         self.layer: Layer

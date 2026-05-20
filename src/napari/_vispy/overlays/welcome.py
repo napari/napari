@@ -13,21 +13,27 @@ from napari._vispy.visuals.welcome import Welcome
 
 if TYPE_CHECKING:
     from vispy.util.event import Event
+    from vispy.visuals.text.text import FontManager
 
     from napari.components.overlays import WelcomeOverlay
 
 
 class VispyWelcomeOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
     overlay: WelcomeOverlay
+    node: Welcome
 
     def __init__(
         self,
-        **kwargs,
+        *,
+        font_manager: FontManager | None = None,
+        font_family: str = 'OpenSans',
+        **kwargs: Any,
     ) -> None:
-        font_manager = kwargs.get('font_manager')
-        font_family = kwargs.get('font_family', 'OpenSans')
         super().__init__(
-            node=Welcome(font_manager=font_manager, face=font_family), **kwargs
+            node=Welcome(font_manager=font_manager, face=font_family),
+            font_manager=font_manager,
+            font_family=font_family,
+            **kwargs,
         )
         self.viewer.layers.events.inserted.connect(self._on_visible_change)
         self.viewer.layers.events.removed.connect(self._on_visible_change)

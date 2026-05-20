@@ -1,13 +1,23 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING, Any
+
 import numpy as np
 
 from napari._vispy.overlays.base import LayerOverlayMixin, VispySceneOverlay
 from napari._vispy.visuals.bounding_box import BoundingBox
 
+if TYPE_CHECKING:
+    from napari.components.overlays import BoundingBoxOverlay
+    from napari.layers._scalar_field import ScalarFieldBase
+
 
 class VispyBoundingBoxOverlay(LayerOverlayMixin, VispySceneOverlay):
-    def __init__(self, **kwargs):
+    overlay: BoundingBoxOverlay
+    layer: ScalarFieldBase
+    node: BoundingBox
+
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(
             node=BoundingBox(),
             **kwargs,

@@ -42,10 +42,7 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
     layer: Labels
     overlay: LabelsPolygonOverlay
 
-    def __init__(
-        self,
-        **kwargs,
-    ):
+    def __init__(self, **kwargs):
         points = [(0, 0), (1, 1)]
 
         self._nodes_kwargs = {
@@ -176,6 +173,8 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
     @_only_when_enabled
     def _on_mouse_press(self, layer, event):
         pos = self._get_mouse_coordinates(event)
+        if pos is None:
+            return
         dims_displayed = self._dims_displayed
 
         if event.button == 1:  # left mouse click

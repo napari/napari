@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from napari._vispy.overlays.base import ViewerOverlayMixin, VispyCanvasOverlay
+from napari._vispy.visuals.interaction_box import InteractionBox
 from napari.settings import get_settings
 
 if TYPE_CHECKING:
@@ -16,11 +17,10 @@ class VispyZoomOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
     """Zoom box overlay.."""
 
     overlay: ZoomOverlay
+    node: InteractionBox
 
-    def __init__(self, kwargs):
-        super().__init__(
-            **kwargs,
-        )
+    def __init__(self, **kwargs: Any):
+        super().__init__(node=InteractionBox(), **kwargs)
 
         self.overlay.events.position.connect(self._on_position_change)
 
@@ -32,7 +32,9 @@ class VispyZoomOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self.node._highlight_width = (
             settings.appearance.highlight.highlight_thickness
         )
-        self.node._edge_color = settings.appearance.highlight.highlight_color
+        self.node._edge_color = tuple(
+            settings.appearance.highlight.highlight_color
+        )  # type: ignore[assignment]
 
         top_left, bot_right = self.overlay.position
         self.node.set_data(

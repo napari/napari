@@ -3,24 +3,33 @@ from __future__ import annotations
 import bisect
 from decimal import Decimal
 from math import floor, log
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import pint
 
 from napari._vispy.overlays.base import ViewerOverlayMixin, VispyCanvasOverlay
 from napari._vispy.visuals.scale_bar import ScaleBar
-from napari.components.overlays import ScaleBarOverlay
 from napari.utils._units import PREFERRED_VALUES
+
+if TYPE_CHECKING:
+    from vispy.visuals.text.text import FontManager
+
+    from napari.components.overlays import ScaleBarOverlay
 
 
 class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
     """Scale bar in world coordinates."""
 
     overlay: ScaleBarOverlay
+    node: ScaleBar
 
     def __init__(
         self,
-        **kwargs,
+        *,
+        font_manager: FontManager | None = None,
+        font_family: str = 'OpenSans',
+        **kwargs: Any,
     ) -> None:
         self._target_length = 150.0
         self._current_length = 150.0
@@ -31,6 +40,8 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         font_family = kwargs.get('font_family', 'OpenSans')
         super().__init__(
             node=ScaleBar(font_manager=font_manager, font_family=font_family),
+            font_manager=font_manager,
+            font_family=font_family,
             **kwargs,
         )
 
