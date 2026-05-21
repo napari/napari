@@ -94,6 +94,11 @@ authors:
   affiliation: Willing Consulting
   orcid: https://orcid.org/0000-0002-9817-8485
   alias: willingc
+- given-names: Carlos M.
+  family-names: Rodríguez-Reza
+  affiliation: Kyoto University
+  orcid: https://orcid.org/0009-0000-1876-711X
+  alias: carlosmariorr
 - given-names: Loic
   family-names: Royer
   affiliation: Chan Zuckerberg Biohub
@@ -379,11 +384,6 @@ authors:
 - given-names: David
   family-names: Pinto
   alias: MarchisLost
-- given-names: Carlos M.
-  family-names: Rodríguez-Reza
-  affiliation: Kyoto University
-  orcid: https://orcid.org/0009-0000-1876-711X
-  alias: carlosmariorr
 - given-names: David
   family-names: Ross
   affiliation: NanoString Technologies, Inc.
