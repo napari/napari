@@ -17,7 +17,7 @@ import numpy.typing as npt
 
 # TODO decide where types should be defined to have single place for them
 from npe2.types import LayerName as LayerTypeName
-from typing_extensions import TypedDict
+from typing_extensions import TypeAliasType, TypedDict
 
 if TYPE_CHECKING:
     # dask zarr should be imported as `import dask.array as da` But here it is used only in type annotation to
@@ -102,7 +102,7 @@ class SampleDict(TypedDict):
 # while their names should not change (without deprecation), their typing
 # implementations may... or may be rolled over to napari/image-types
 
-ArrayBase: type[np.ndarray] = np.ndarray
+ArrayBase = TypeAliasType('ArrayBase', np.ndarray)
 
 
 ImageData = NewType('ImageData', np.ndarray)
