@@ -353,6 +353,9 @@ authors:
   affiliation: Georg-August-Universität Göttingen
   orcid: https://orcid.org/0000-0001-6562-7187
   alias: constantinpape
+- given-names: Yann
+  family-names: Pellegrini
+  alias: Yann-P
 - given-names: Eric
   family-names: Perlman
   affiliation: Yikes LLC
