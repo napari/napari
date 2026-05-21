@@ -1,4 +1,5 @@
 from napari.components.overlays.base import CanvasOverlay
+from napari.layers.base._base_constants import Blending
 
 
 class ZYXAxesOverlay(CanvasOverlay):
@@ -35,3 +36,4 @@ class ZYXAxesOverlay(CanvasOverlay):
     colored: bool = True
     dashed: bool = False
     arrows: bool = True
+    blending: Blending = Blending.TRANSLUCENT_NO_DEPTH
