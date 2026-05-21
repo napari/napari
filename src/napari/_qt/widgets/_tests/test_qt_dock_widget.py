@@ -1,4 +1,5 @@
 import pytest
+from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QDockWidget,
     QHBoxLayout,
@@ -218,6 +219,29 @@ def test_float_from_bottom_clears_vertical_titlebar_feature(
     )
     assert dw.titleBarWidget() is dw.title
     assert not dw.title.vertical  # horizontal bar on the floating window
+
+
+def test_dock_area_change_updates_custom_title_bar(make_napari_viewer):
+    viewer = make_napari_viewer()
+    widg = QPushButton('button')
+    dw = viewer.window.add_dock_widget(widg, name='test', area='right')
+
+    assert not dw.title.vertical
+    assert not (
+        dw.features()
+        & QDockWidget.DockWidgetFeature.DockWidgetVerticalTitleBar
+    )
+
+    viewer.window._qt_window.addDockWidget(
+        Qt.DockWidgetArea.BottomDockWidgetArea, dw
+    )
+
+    assert dw.titleBarWidget() is dw.title
+    assert dw.title.vertical
+    assert (
+        dw.features()
+        & QDockWidget.DockWidgetFeature.DockWidgetVerticalTitleBar
+    )
 
 
 def test_combine_widgets_error():

@@ -290,6 +290,10 @@ class QtViewerDockWidget(QDockWidget):
                 | self.DockWidgetFeature.DockWidgetVerticalTitleBar
             )
         self.setFeatures(features)
+        if hasattr(self, 'title'):
+            vertical = self._title_bar_vertical(is_floating=False, area=area)
+            if self.title.vertical != vertical:
+                self._update_title_bar(False)
 
     @property
     def is_vertical(self):
@@ -302,12 +306,31 @@ class QtViewerDockWidget(QDockWidget):
                 )
         return self.size().height() > self.size().width()
 
+    def _title_bar_vertical(
+        self,
+        *,
+        is_floating: bool | None = None,
+        area: Qt.DockWidgetArea | None = None,
+    ) -> bool:
+        if is_floating is None:
+            is_floating = self.isFloating()
+        if is_floating:
+            return False
+        if area is None:
+            par = self.parent()
+            if par and hasattr(par, 'dockWidgetArea'):
+                area = par.dockWidgetArea(self)
+        return area in (
+            Qt.DockWidgetArea.TopDockWidgetArea,
+            Qt.DockWidgetArea.BottomDockWidgetArea,
+        )
+
     def _update_title_bar(self, is_floating: bool | None = None) -> None:
         """Recreate the title bar to match the current dock/float state."""
         if is_floating is None:
             is_floating = self.isFloating()
         # Floating windows always use a horizontal (non-rotated) title bar
-        vertical = (not is_floating) and (not self.is_vertical)
+        vertical = self._title_bar_vertical(is_floating=is_floating)
         with qt_signals_blocked(self):
             # When a widget is docked at top/bottom, Qt sets
             # DockWidgetVerticalTitleBar so the custom title bar is placed on
@@ -378,6 +401,7 @@ class QtCustomTitleBar(QLabel):
         self.hide_button.clicked.connect(lambda: self.parent().close())
 
         self.float_button = QPushButton(self)
+        self.float_button.setProperty('floating', str(is_floating))
         self.float_button.setToolTip(
             trans._('dock this panel')
             if is_floating
