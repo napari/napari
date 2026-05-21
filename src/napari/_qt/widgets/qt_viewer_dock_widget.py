@@ -5,7 +5,7 @@ from operator import ior
 from typing import TYPE_CHECKING, Union
 from weakref import ReferenceType, ref
 
-from qtpy.QtCore import Qt
+from qtpy.QtCore import QCoreApplication, QEvent, Qt
 from qtpy.QtWidgets import (
     QDockWidget,
     QFrame,
@@ -344,7 +344,14 @@ class QtViewerDockWidget(QDockWidget):
                     & ~self.DockWidgetFeature.DockWidgetVerticalTitleBar
                 )
                 self.setFeatures(features)
+            old_title = self.titleBarWidget()
             self.setTitleBarWidget(None)
+            if old_title is not None:
+                old_title.setParent(None)
+                old_title.deleteLater()
+                QCoreApplication.sendPostedEvents(
+                    None, QEvent.Type.DeferredDelete
+                )
             self.title = QtCustomTitleBar(
                 self,
                 title=self.name,
@@ -401,7 +408,6 @@ class QtCustomTitleBar(QLabel):
         self.hide_button.clicked.connect(lambda: self.parent().close())
 
         self.float_button = QPushButton(self)
-        self.float_button.setProperty('floating', str(is_floating))
         self.float_button.setToolTip(
             trans._('dock this panel')
             if is_floating
@@ -431,7 +437,7 @@ class QtCustomTitleBar(QLabel):
             layout.setSpacing(4)
             layout.setContentsMargins(0, 8, 0, 8)
             line.setFixedWidth(1)
-            if close_btn:
+            if hasattr(self, 'close_button'):
                 layout.addWidget(
                     self.close_button, 0, Qt.AlignmentFlag.AlignHCenter
                 )
@@ -449,13 +455,14 @@ class QtCustomTitleBar(QLabel):
             layout.setSpacing(4)
             layout.setContentsMargins(8, 1, 8, 0)
             line.setFixedHeight(1)
-            if close_btn:
+            if hasattr(self, 'close_button'):
                 layout.addWidget(self.close_button)
 
             layout.addWidget(self.hide_button)
             layout.addWidget(self.float_button)
             layout.addWidget(line)
             layout.addWidget(self.title)
+            self.title.show()
 
         self.setLayout(layout)
         self.setCursor(Qt.CursorShape.OpenHandCursor)
