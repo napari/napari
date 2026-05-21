@@ -6,7 +6,7 @@ annotated-types==0.7.0
     # via pydantic
 app-model==0.5.1
     # via -r resources/requirements_mypy.in
-ast-serialize==0.4.0
+ast-serialize==0.5.0
     # via mypy
 build==1.5.0
     # via npe2
@@ -14,7 +14,7 @@ certifi==2026.4.22
     # via requests
 charset-normalizer==3.4.7
     # via requests
-click==8.3.3
+click==8.4.0
     # via typer
 docstring-parser==0.18.0
     # via magicgui
@@ -36,7 +36,7 @@ mypy-extensions==1.1.0
     # via mypy
 npe2==0.8.2
     # via -r resources/requirements_mypy.in
-numpy==2.4.4
+numpy==2.4.5
     # via -r resources/requirements_mypy.in
 packaging==26.2
     # via
@@ -96,11 +96,11 @@ tomli-w==1.2.0
     # via npe2
 typer==0.25.1
     # via npe2
-types-pyyaml==6.0.12.20260510
+types-pyyaml==6.0.12.20260518
     # via -r resources/requirements_mypy.in
-types-requests==2.33.0.20260513
+types-requests==2.33.0.20260518
     # via -r resources/requirements_mypy.in
-types-setuptools==82.0.0.20260508
+types-setuptools==82.0.0.20260518
     # via -r resources/requirements_mypy.in
 typing-extensions==4.15.0
     # via
