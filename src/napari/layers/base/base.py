@@ -488,8 +488,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         of a viewer.
     visible : bool
         Whether the layer visual is currently being displayed.
-    units: tuple of pint.Unit
+    units : tuple of pint.Unit
         Units of the layer data in world coordinates.
+        If not explicitly set, these default to pixel.
     z_index : int
         Depth of the layer visual relative to other visuals in the scenecanvas.
 
