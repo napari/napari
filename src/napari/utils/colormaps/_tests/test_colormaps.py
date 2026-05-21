@@ -20,6 +20,15 @@ from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils.colormaps.vendored import cm
 
 
+@pytest.fixture(autouse=True)
+def _reset_colormap_registry():
+    """Reset the colormap registry before each test"""
+    data = dict(AVAILABLE_COLORMAPS)
+    yield
+    AVAILABLE_COLORMAPS.clear()
+    AVAILABLE_COLORMAPS.update(data)
+
+
 @pytest.mark.parametrize('name', list(AVAILABLE_COLORMAPS.keys()))
 def test_colormap(name):
     if name in {'label_colormap', 'custom'}:
@@ -112,30 +121,54 @@ def test_can_accept_named_mpl_colormap():
     assert cmap.name == cmap_name
 
 
-@pytest.mark.filterwarnings('ignore::UserWarning')
 def test_can_accept_vispy_colormaps_in_dict():
     """Test that we can accept vispy colormaps in a dictionary."""
     colors_a = np.array([[0, 0, 0, 1], [0, 1, 0, 1], [0, 0, 1, 1]])
     colors_b = np.array([[0, 0, 0, 1], [1, 0, 0, 1], [0, 0, 1, 1]])
     vispy_cmap_a = VispyColormap(colors_a)
     vispy_cmap_b = VispyColormap(colors_b)
-    cmap = ensure_colormap({'a': vispy_cmap_a, 'b': vispy_cmap_b})
+    with pytest.warns(UserWarning, match='Only the first item in a colormap'):
+        cmap = ensure_colormap({'a': vispy_cmap_a, 'b': vispy_cmap_b})
     assert isinstance(cmap, Colormap)
     np.testing.assert_almost_equal(cmap.colors, colors_a)
     assert cmap.name == 'a'
 
 
-@pytest.mark.filterwarnings('ignore::UserWarning')
 def test_can_accept_napari_colormaps_in_dict():
     """Test that we can accept vispy colormaps in a dictionary"""
     colors_a = np.array([[0, 0, 0, 1], [0, 1, 0, 1], [0, 0, 1, 1]])
     colors_b = np.array([[0, 0, 0, 1], [1, 0, 0, 1], [0, 0, 1, 1]])
     napari_cmap_a = Colormap(colors_a)
     napari_cmap_b = Colormap(colors_b)
-    cmap = ensure_colormap({'a': napari_cmap_a, 'b': napari_cmap_b})
+    with pytest.warns(UserWarning, match='Only the first item in a colormap'):
+        cmap = ensure_colormap({'a': napari_cmap_a, 'b': napari_cmap_b})
     assert isinstance(cmap, Colormap)
     np.testing.assert_almost_equal(cmap.colors, colors_a)
     assert cmap.name == 'a'
+
+
+def test_rename_colormap_in_dict():
+    """Test that we can rename a colormap in a dictionary"""
+    colors_red = np.array([[0.9, 0, 0, 1], [0, 0, 0, 1], [0, 0, 0, 1]])
+    napari_cmap_r = Colormap(colors_red, name='red')
+    cmap = ensure_colormap({'red': napari_cmap_r})
+    assert isinstance(cmap, Colormap)
+    np.testing.assert_almost_equal(cmap.colors, colors_red)
+    assert cmap.name == 'red (1)'
+
+
+def test_rename_colormap_in_dict_multiple():
+    """Test that we can rename a colormap in a dictionary"""
+    colors_red = np.array([[0.9, 0, 0, 1], [0, 0, 0, 1], [0, 0, 0, 1]])
+    color_blue = np.array([[0, 0, 0.9, 1], [0, 0, 0, 1], [0, 0, 0, 1]])
+    napari_cmap_a = Colormap(colors_red, name='red')
+    napari_cmap_b = Colormap(color_blue, name='blue')
+    with pytest.warns(UserWarning, match='Only the first item in a colormap'):
+        cmap = ensure_colormap({'red': napari_cmap_a, 'blue': napari_cmap_b})
+    assert isinstance(cmap, Colormap)
+    np.testing.assert_almost_equal(cmap.colors, colors_red)
+    assert cmap.name == 'red (1)'
+    assert 'blue (1)' in AVAILABLE_COLORMAPS
 
 
 def test_can_accept_colormap_dict():

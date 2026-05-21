@@ -939,30 +939,26 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
                 )
             else:
                 # Convert from vispy colormaps
+                name_li = []
                 for key, cmap in colormap.items():
                     # Convert from vispy colormap
                     if isinstance(cmap, VispyColormap):
                         cmap = convert_vispy_colormap(cmap, name=key)
                     else:
                         cmap.name = key
-                    name = AVAILABLE_COLORMAPS.add_colormap_if_missing(cmap)
-                if len(colormap) == 1:
-                    name = next(iter(colormap))  # first key in dict
-                elif len(colormap) > 1:
-                    name = next(iter(colormap.keys()))
-
+                    name_li.append(
+                        AVAILABLE_COLORMAPS.add_colormap_if_missing(cmap)
+                    )
+                if len(name_li) == 1:
+                    name = name_li[0]
+                elif len(name_li) > 1:
+                    name = name_li[0]
                     warnings.warn(
-                        trans._(
-                            'only the first item in a colormap dict is used as an argument',
-                            deferred=True,
-                        )
+                        'Only the first item in a colormap dict is used as an argument',
                     )
                 else:
                     raise ValueError(
-                        trans._(
-                            'Received an empty dict as a colormap argument.',
-                            deferred=True,
-                        )
+                        'Received an empty dict as a colormap argument.'
                     )
         else:
             cmap = _colormap_from_colors(colormap, AVAILABLE_COLORMAPS)
