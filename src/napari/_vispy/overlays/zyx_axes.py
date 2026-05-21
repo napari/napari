@@ -74,14 +74,6 @@ class VispyZYXAxesOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self.node.axes.transform.matrix = rotation_matrix
         self.node.axes.transform.scale([self._size / 2] * 3)
 
-    def _on_position_change(self, event=None):
-        super()._on_position_change(event)
-        self.node.transform.translate = self.node.transform.translate + [
-            0,
-            0,
-            1000,
-        ]
-
     def reset(self):
         super().reset()
         self._on_data_change()
