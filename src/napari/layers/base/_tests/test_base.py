@@ -219,3 +219,56 @@ def test_invalidate_extent_shear():
     with layer._block_refresh():
         layer.shear = [1]
     npt.assert_array_equal(layer.extent.world, [[0, 0], [28, 19]])
+
+
+def test_get_ray_intersections_anisotropic():
+    """Regression test for #8285.
+
+    With highly anisotropic data (small z, large y/x) the old
+    face-detection approach failed to identify both bounding-box faces,
+    causing a TypeError.  The slab-based intersection now handles
+    arbitrary aspect ratios and returns valid intersection points.
+    """
+    data = np.zeros((5, 5000, 5000))
+    layer = SampleLayer(data)
+
+    # Position and direction from the original issue traceback.
+    position = np.array([5.10589, 3717.37829, 3671.51104])
+    view_direction = np.array([-1.97862e-04, -6.36407e-01, 7.71354e-01])
+    dims_displayed = [0, 1, 2]
+
+    # The ray does intersect the bounding box, so we expect valid points
+    start_point, end_point = layer.get_ray_intersections(
+        position,
+        view_direction=view_direction,
+        dims_displayed=dims_displayed,
+        world=False,
+    )
+    assert start_point is not None
+    assert end_point is not None
+    # Both points should lie on the bounding box faces
+    bb_min = np.array([0, 0, 0])
+    bb_max = np.array([6, 5001, 5001])  # extent is shape + 1
+    for pt in (start_point, end_point):
+        assert np.all(pt >= bb_min - 1e-6)
+        assert np.all(pt <= bb_max + 1e-6)
+
+
+def test_get_ray_intersections_miss():
+    """Ray that misses the bounding box entirely returns (None, None)."""
+    data = np.zeros((5, 5, 5))
+    layer = SampleLayer(data)
+
+    # Position far outside, direction pointing away
+    position = np.array([100.0, 100.0, 100.0])
+    view_direction = np.array([1.0, 0.0, 0.0])
+    dims_displayed = [0, 1, 2]
+
+    start_point, end_point = layer.get_ray_intersections(
+        position,
+        view_direction=view_direction,
+        dims_displayed=dims_displayed,
+        world=False,
+    )
+    assert start_point is None
+    assert end_point is None
