@@ -11,7 +11,8 @@ def test_scale_bar_instantiation(viewer_model):
     assert vispy_scale_bar.overlay.length is None
     model.length = 50
     assert vispy_scale_bar.overlay.length == 50
-    assert vispy_scale_bar._unit == viewer_model.layers.units[-1]
+    assert vispy_scale_bar._unit.units == viewer_model.layers.units[-1]
 
     img.units = ('um', 'um')
-    assert vispy_scale_bar._unit == viewer_model.layers.units[-1]
+    vispy_scale_bar._on_unit_change()
+    assert vispy_scale_bar._unit.units == viewer_model.layers.units[-1]
