@@ -33,7 +33,7 @@ certifi==2026.4.22
     #   requests
 charset-normalizer==3.4.7
     # via requests
-click==8.3.3
+click==8.4.0
     # via
     #   dask
     #   typer
@@ -57,7 +57,7 @@ dask==2026.3.0
     # via napari (pyproject.toml)
 debugpy==1.8.20
     # via ipykernel
-decorator==5.2.1
+decorator==5.3.1
     # via ipython
 distlib==0.4.0
     # via virtualenv
@@ -211,7 +211,7 @@ numba==0.65.1
     # via napari (pyproject.toml)
 numcodecs==0.16.5
     # via zarr
-numpy==2.4.4
+numpy==2.4.5
     # via
     #   napari (pyproject.toml)
     #   bermuda
@@ -522,7 +522,7 @@ superqt==0.8.1
     #   napari-plugin-manager
 sympy==1.14.0
     # via torch
-tensorstore==0.1.83
+tensorstore==0.1.84
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
