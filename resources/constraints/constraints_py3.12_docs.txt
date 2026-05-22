@@ -394,7 +394,7 @@ napari-plugin-manager==0.1.11
     #   ndevio
 napari-skimage==0.6.0
     # via napari (pyproject.toml:docs)
-napari-sphinx-theme==1.1.2
+napari-sphinx-theme==1.1.3
     # via napari (pyproject.toml:docs)
 napari-svg==0.2.1
     # via napari (pyproject.toml)
