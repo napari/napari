@@ -663,7 +663,7 @@ pydantic-extra-types==2.11.1
     #   ome-types
 pydantic-settings==2.14.1
     # via napari (pyproject.toml)
-pydata-sphinx-theme==0.17.1
+pydata-sphinx-theme==0.18.0
     # via napari-sphinx-theme
 pydeps==3.0.6
     # via napari (pyproject.toml:docs)
