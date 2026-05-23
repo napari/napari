@@ -20,15 +20,6 @@ from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils.colormaps.vendored import cm
 
 
-@pytest.fixture(autouse=True)
-def _reset_colormap_registry():
-    """Reset the colormap registry before each test"""
-    data = dict(AVAILABLE_COLORMAPS)
-    yield
-    AVAILABLE_COLORMAPS.clear()
-    AVAILABLE_COLORMAPS.update(data)
-
-
 @pytest.mark.parametrize('name', list(AVAILABLE_COLORMAPS.keys()))
 def test_colormap(name):
     if name in {'label_colormap', 'custom'}:
