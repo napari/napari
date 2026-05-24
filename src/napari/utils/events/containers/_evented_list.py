@@ -256,8 +256,10 @@ class EventedList(TypedMutableSequence[_T]):
         dest_index : int, optional
             The destination index.  All sources will be inserted before this
             index (in pre-move space), by default 0... which has the effect of
-            "bringing to front" everything in ``sources``, or acting as a
-            "reorder" method if ``sources`` contains all indices.
+            moving everything in ``sources`` to the beginning of the list
+            (for a ``LayerList`` this is the bottom of the layer stack, since
+            the last layer is rendered on top), or acting as a "reorder"
+            method if ``sources`` contains all indices.
 
         Returns
         -------
