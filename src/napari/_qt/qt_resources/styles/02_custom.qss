@@ -1,17 +1,3 @@
-QLabel#h1 {
-  font-size: 28px;
-}
-
-QLabel#h2 {
-  font-size: 22px;
-  color: {{ secondary }};
-}
-
-QLabel#h3 {
-  font-size: 18px;
-  color: {{ secondary }};
-}
-
 QtViewer {
    padding-top: 0px;
 }
