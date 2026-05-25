@@ -207,7 +207,7 @@ jobs:
       timeout: 10
       artifacts_suffix: _fragile
       coverage: cov
-
+      posargs: 'tests/fragile_tests'
 
   test_pip_install:
     needs: test_initial
