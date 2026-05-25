@@ -56,6 +56,8 @@ on:
   pull_request:
     paths:
       - '.github/workflows/upgrade_test_constraints.yml'
+      - 'tools/compile_constraints.sh'
+      - 'tools/create_pr_or_update_existing_one.py'
 
 jobs:
   upgrade:
@@ -130,6 +132,13 @@ jobs:
           # This action pushes changes to the bot repo and then opens a PR to the napari repo.
           persist-credentials: 'true'
 
+      - name: Clone napari/napari
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          repository: napari/napari
+          path: napari_main
+          persist-credentials: 'false'
+
       - name: Add napari-bot/napari to napari_repo upstreams
         run: |
           cd napari_repo
@@ -141,13 +150,17 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Upgrade Python dependencies
-        # ADD YOUR CUSTOM DEPENDENCY UPGRADE COMMANDS BELOW
-        run: |
-          set -x
-          bash napari_repo/tools/compile_constraints.sh
 
-      # END PYTHON DEPENDENCIES
+      - name: Upgrade Python dependencies
+        # if triggered by pull request, use branch from which the PR was created;
+        # there is no risk of leaking tokens as pull_request triggered job
+        # do not have access to secrets
+        run: |
+          if [[ "${{ github.event.name }}" == "pull_request" ]]; then
+            bash napari_repo/tools/compile_constraints.sh napari_repo/
+          else
+            bash napari_main/tools/compile_constraints.sh napari_repo/
+          fi
 
       - name: Upload constraints
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
