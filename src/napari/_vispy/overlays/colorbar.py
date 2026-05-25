@@ -15,7 +15,7 @@ from napari.utils.colormaps.colormap_utils import (
 if TYPE_CHECKING:
     from numpy.typing import DTypeLike
 
-    from napari._vispy.canvas import CanvasInfo
+    from napari._vispy.utils.qt_font import FontInfo
     from napari.components.overlays import ColorBarOverlay
     from napari.layers import Image, Layer, Surface
     from napari.layers.utils.color_manager import ColorManager
@@ -72,13 +72,13 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
         self,
         *,
         layer: Image | Surface,
-        canvas_info: CanvasInfo,
+        font_info: FontInfo,
         **kwargs: Any,
     ) -> None:
         super().__init__(
-            node=ColorBar(canvas_info=canvas_info),
+            node=ColorBar(font_info=font_info),
             layer=layer,
-            canvas_info=canvas_info,
+            font_info=font_info,
             **kwargs,
         )
         self.layer: Layer

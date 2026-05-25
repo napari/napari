@@ -1,5 +1,5 @@
-from napari._vispy.canvas import CanvasInfo
 from napari._vispy.overlays.zoom import VispyZoomOverlay
+from napari._vispy.utils.qt_font import FontInfo
 from napari.components.overlays import ZoomOverlay
 from napari.components.viewer_model import ViewerModel
 
@@ -8,7 +8,7 @@ def test_zoom_overlay_initialization():
     viewer = ViewerModel()
     zoom_model = ZoomOverlay()
     zoom_view = VispyZoomOverlay(
-        canvas_info=CanvasInfo(viewer=viewer), overlay=zoom_model
+        viewer=viewer, overlay=zoom_model, font_info=FontInfo()
     )
 
     # change the visibility

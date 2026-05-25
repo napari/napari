@@ -15,7 +15,7 @@ from napari.utils.theme import get_theme
 if TYPE_CHECKING:
     from vispy.scene import Node, ViewBox
 
-    from napari._vispy.canvas import CanvasInfo
+    from napari._vispy.utils.qt_font import FontInfo
     from napari.components.overlays import CanvasOverlay, Overlay, SceneOverlay
     from napari.components.viewer_model import ViewerModel
     from napari.layers import Layer
@@ -36,13 +36,15 @@ class VispyBaseOverlay:
         self,
         *,
         overlay: Overlay,
-        canvas_info: CanvasInfo,
+        font_info: FontInfo,
+        viewer: ViewerModel,
         node: Node,
         parent: ViewBox | None = None,
     ) -> None:
         super().__init__()
         self.overlay = overlay
-        self._canvas_info = canvas_info
+        self._font_info = font_info
+        self.viewer = viewer
 
         self.node = node
         self.node.order = self.overlay.order
@@ -53,14 +55,6 @@ class VispyBaseOverlay:
 
         if parent is not None:
             self.node.parent = parent
-
-    @property
-    def viewer(self) -> ViewerModel:
-        return self.canvas_info.viewer
-
-    @property
-    def canvas_info(self) -> CanvasInfo:
-        return self._canvas_info
 
     def _should_be_visible(self) -> bool:
         return self.overlay.visible

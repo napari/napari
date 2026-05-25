@@ -1,17 +1,13 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 import numpy as np
 from vispy.scene.visuals import Compound, Line, Mesh
 
+from napari._vispy.utils.qt_font import FontInfo
 from napari._vispy.visuals.text import Text
 from napari.layers.shapes._shapes_utils import triangulate_ellipse
 from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils.translations import trans
-
-if TYPE_CHECKING:
-    from napari._vispy.canvas import CanvasInfo
 
 
 def make_dashed_line(num_dashes, axis):
@@ -136,7 +132,7 @@ def color_arrowheads(colors, num_segments):
 class Axes(Compound):
     def __init__(
         self,
-        canvas_info: CanvasInfo,
+        font_info: FontInfo,
     ) -> None:
         self._num_segments_arrowhead = 100
         # CMYRGB for 6 axes data in x, y, z, ... ordering
@@ -201,7 +197,7 @@ class Axes(Compound):
                     font_size=10,
                     anchor_x='center',
                     anchor_y='center',
-                    font_info=canvas_info,
+                    font_info=font_info,
                 ),
             ]
         )

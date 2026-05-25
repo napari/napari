@@ -6,8 +6,6 @@ import numpy as np
 from vispy.scene.visuals import Compound, Line, Markers, Polygon
 
 from napari._vispy.overlays.base import LayerOverlayMixin, VispySceneOverlay
-from napari.components.overlays import LabelsPolygonOverlay
-from napari.layers import Labels
 from napari.layers.labels._labels_constants import Mode
 from napari.layers.labels._labels_utils import mouse_event_to_labels_coordinate
 from napari.settings import get_settings

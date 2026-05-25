@@ -12,7 +12,7 @@ from napari.components._viewer_constants import CanvasPosition
 from napari.settings import get_settings
 
 if TYPE_CHECKING:
-    from napari._vispy.canvas import CanvasInfo
+    from napari._vispy.utils.qt_font import FontInfo
     from napari.components.overlays import TextOverlay
 
 
@@ -105,10 +105,10 @@ class _VispyBaseTextOverlay(VispyCanvasOverlay):
 
 
 class _VispyViewerTextOverlay(ViewerOverlayMixin, _VispyBaseTextOverlay):
-    def __init__(self, canvas_info: CanvasInfo, **kwargs):
+    def __init__(self, font_info: FontInfo, **kwargs):
         super().__init__(
-            node=Text(pos=(0, 0), font_info=canvas_info),
-            canvas_info=canvas_info,
+            node=Text(pos=(0, 0), font_info=font_info),
+            font_info=font_info,
             **kwargs,
         )
         self._connect_events()
@@ -118,10 +118,10 @@ class _VispyViewerTextOverlay(ViewerOverlayMixin, _VispyBaseTextOverlay):
 class _VispyLayerTextOverlay(LayerOverlayMixin, _VispyBaseTextOverlay):
     overlay: TextOverlay
 
-    def __init__(self, canvas_info: CanvasInfo, **kwargs):
+    def __init__(self, font_info: FontInfo, **kwargs):
         super().__init__(
-            node=Text(pos=(0, 0), font_info=canvas_info),
-            canvas_info=canvas_info,
+            node=Text(pos=(0, 0), font_info=font_info),
+            font_info=font_info,
             **kwargs,
         )
         self._connect_events()

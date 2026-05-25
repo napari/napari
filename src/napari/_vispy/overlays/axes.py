@@ -9,7 +9,7 @@ from napari._vispy.visuals.axes import Axes
 from napari.utils.theme import get_theme
 
 if TYPE_CHECKING:
-    from napari._vispy.canvas import CanvasInfo
+    from napari._vispy.utils.qt_font import FontInfo
     from napari.components.overlays import AxesOverlay
 
 
@@ -22,7 +22,7 @@ class VispyAxesOverlay(ViewerOverlayMixin, VispySceneOverlay):
     def __init__(
         self,
         *,
-        canvas_info: CanvasInfo,
+        font_info: FontInfo,
         **kwargs,
     ) -> None:
         self._scale = 1.0
@@ -31,8 +31,8 @@ class VispyAxesOverlay(ViewerOverlayMixin, VispySceneOverlay):
         self._target_length = 80
 
         super().__init__(
-            node=Axes(canvas_info=canvas_info),
-            canvas_info=canvas_info,
+            node=Axes(font_info=font_info),
+            font_info=font_info,
             **kwargs,
         )
         self.overlay.events.colored.connect(self._on_data_change)

@@ -6,7 +6,6 @@ import pytest
 from pint import get_application_registry
 
 from napari._vispy._tests.utils import vispy_image_scene_size
-from napari._vispy.canvas import CanvasInfo
 from napari._vispy.layers.image import VispyImageLayer
 from napari._vispy.utils.qt_font import FontInfo
 from napari._vispy.utils.visual import create_vispy_overlay
@@ -149,13 +148,15 @@ def no_op(layer):
 def test_transforming_child_node(
     im_layer, translate, exp_translate, rotate, exp_rotate
 ):
-    canvas_info = CanvasInfo(viewer=ViewerModel())
-    layer = VispyImageLayer(im_layer, font_info=canvas_info)
+    viewer = ViewerModel()
+    font_info = FontInfo()
+    layer = VispyImageLayer(im_layer, font_info=font_info)
 
     overlay = create_vispy_overlay(
         BoundingBoxOverlay(),
         layer=im_layer,
-        canvas_info=canvas_info,
+        viewer=viewer,
+        font_info=font_info,
         parent=layer.node,
     )
     layer._on_matrix_change()
@@ -194,13 +195,15 @@ def test_transforming_child_node(
 
 
 def test_transforming_child_node_pyramid(pyramid_layer):
-    canvas_info = CanvasInfo(viewer=ViewerModel())
-    layer = VispyImageLayer(pyramid_layer, font_info=canvas_info)
+    viewer = ViewerModel()
+    font_info = FontInfo()
+    layer = VispyImageLayer(pyramid_layer, font_info=font_info)
 
     overlay = create_vispy_overlay(
         BoundingBoxOverlay(),
         layer=pyramid_layer,
-        canvas_info=canvas_info,
+        viewer=viewer,
+        font_info=font_info,
         parent=layer.node,
     )
     layer._on_matrix_change()

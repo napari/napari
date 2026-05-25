@@ -1,5 +1,5 @@
-from napari._vispy.canvas import CanvasInfo
 from napari._vispy.overlays.axes import VispyAxesOverlay
+from napari._vispy.utils.qt_font import FontInfo
 from napari.components import ViewerModel
 from napari.components.overlays import AxesOverlay
 
@@ -9,9 +9,10 @@ def test_init_with_2d_display_of_2_dimensions():
     viewer = ViewerModel()
     viewer.dims.ndim = 2
     viewer.dims.ndisplay = 3
-    canvas_info = CanvasInfo(viewer=viewer)
 
-    axes_view = VispyAxesOverlay(canvas_info=canvas_info, overlay=axes_model)
+    axes_view = VispyAxesOverlay(
+        viewer=viewer, overlay=axes_model, font_info=FontInfo()
+    )
 
     assert tuple(axes_view.node.text.text) == ('-1', '-2')
 
@@ -23,7 +24,7 @@ def test_init_with_2d_display_of_3_dimensions():
     viewer.dims.ndisplay = 2
 
     axes_view = VispyAxesOverlay(
-        canvas_info=CanvasInfo(viewer=viewer), overlay=axes_model
+        viewer=viewer, overlay=axes_model, font_info=FontInfo()
     )
 
     assert tuple(axes_view.node.text.text) == ('-1', '-2')
@@ -36,7 +37,7 @@ def test_init_with_3d_display_of_2_dimensions():
     viewer.dims.ndisplay = 3
 
     axes_view = VispyAxesOverlay(
-        canvas_info=CanvasInfo(viewer=viewer), overlay=axes_model
+        viewer=viewer, overlay=axes_model, font_info=FontInfo()
     )
 
     assert tuple(axes_view.node.text.text) == ('-1', '-2')
@@ -49,7 +50,7 @@ def test_init_with_3d_display_of_3_dimensions():
     viewer.dims.ndisplay = 3
 
     axes_view = VispyAxesOverlay(
-        canvas_info=CanvasInfo(viewer=viewer), overlay=axes_model
+        viewer=viewer, overlay=axes_model, font_info=FontInfo()
     )
 
     assert tuple(axes_view.node.text.text) == ('-1', '-2', '-3')

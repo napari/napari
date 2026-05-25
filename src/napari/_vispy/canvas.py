@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import contextlib
-import dataclasses
 import gc
 from functools import partial
 from itertools import zip_longest
@@ -181,9 +180,8 @@ class VispyCanvas:
         self._last_theme_color = None
         self._background_color_override = None
 
-        self._canvas_info = CanvasInfo(
-            face=font_family, font_manager=font_manager, viewer=viewer
-        )
+        self._font_info = FontInfo(face=font_family, font_manager=font_manager)
+        self.viewer = viewer
         self._scene_canvas = NapariSceneCanvas(
             *args, keys=None, vsync=True, **kwargs
         )
@@ -286,10 +284,6 @@ class VispyCanvas:
             self._update_viewer_overlays
         )
         self.destroyed.connect(self._disconnect_events)
-
-    @property
-    def viewer(self) -> ViewerModel:
-        return self._canvas_info.viewer
 
     @property
     def events(self):
@@ -941,7 +935,8 @@ class VispyCanvas:
         if vispy_overlay is None:
             vispy_overlay = create_vispy_overlay(
                 overlay=overlay,
-                canvas_info=self._canvas_info,
+                font_info=self._font_info,
+                viewer=self.viewer,
                 parent=parent,
             )
             self._overlay_to_visual[overlay].append(vispy_overlay)
@@ -1089,7 +1084,8 @@ class VispyCanvas:
                 vispy_overlay = create_vispy_overlay(
                     overlay=overlay,
                     layer=layer,
-                    canvas_info=self._canvas_info,
+                    font_info=self._font_info,
+                    viewer=self.viewer,
                     parent=parent,
                 )
                 overlay_to_visual[overlay] = vispy_overlay
@@ -1435,9 +1431,4 @@ class VispyCanvas:
 
     def font_info(self) -> FontInfo:
         """Get the vispy visual for a given overlay."""
-        return self._canvas_info
-
-
-@dataclasses.dataclass
-class CanvasInfo(FontInfo):
-    viewer: ViewerModel = dataclasses.field(kw_only=True)
+        return self._font_info

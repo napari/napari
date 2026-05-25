@@ -15,7 +15,7 @@ from napari.settings import get_settings
 if TYPE_CHECKING:
     from vispy.util.event import Event
 
-    from napari._vispy.canvas import CanvasInfo
+    from napari._vispy.utils.qt_font import FontInfo
     from napari.components.overlays import Overlay, WelcomeOverlay
 
 
@@ -23,10 +23,10 @@ class VispyWelcomeOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
     overlay: WelcomeOverlay
     node: Welcome
 
-    def __init__(self, *, canvas_info: CanvasInfo, **kwargs: Overlay) -> None:
+    def __init__(self, *, font_info: FontInfo, **kwargs: Overlay) -> None:
         super().__init__(
-            node=Welcome(canvas_info=canvas_info),
-            canvas_info=canvas_info,
+            node=Welcome(font_info=font_info),
+            font_info=font_info,
             **kwargs,
         )
         self.viewer.events.theme.connect(self._on_theme_change)
