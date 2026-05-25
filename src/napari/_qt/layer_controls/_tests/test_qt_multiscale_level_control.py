@@ -217,7 +217,7 @@ def test_levels_all_enabled_in_2d(qtbot):
 
 
 # ---------------------------------------------------------------------------
-# Displayed axes (order) change tests
+# Displayed dims (order) change tests
 # ---------------------------------------------------------------------------
 _4D_MULTISCALE_DATA = [
     np.zeros((3, 10, 64, 64), dtype=np.uint8),
@@ -240,20 +240,20 @@ def multiscale_4d_controls(qtbot, request):
     return layer, qtctrl
 
 
-def test_order_change_rebuilds_labels(multiscale_4d_controls):
-    """Changing displayed axes should update combobox labels."""
+def test_dims_order_change_rebuilds_labels(multiscale_4d_controls):
+    """Changing displayed dims should update combobox labels."""
     layer, qtctrl = multiscale_4d_controls
 
     combo = qtctrl._multiscale_level_control.level_combobox
     label_before = combo.itemText(1)
 
-    # Change displayed axes from default (2, 3) to (1, 3)
+    # Change displayed dims from default (2, 3) to (1, 3)
     layer._slicing_state._slice_input = _SliceInput(
         ndisplay=2,
         world_slice=_ThickNDSlice.make_full(ndim=4),
         order=(0, 2, 1, 3),
     )
-    qtctrl._on_order_changed()
+    qtctrl._on_dims_order_changed()
 
     label_after = combo.itemText(1)
     assert label_before != label_after

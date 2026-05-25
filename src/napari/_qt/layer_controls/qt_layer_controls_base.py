@@ -256,10 +256,10 @@ class QtLayerControls(QFrame):
         """
         self._set_transform_tool_state()
 
-    def _on_order_changed(self) -> None:
-        """Respond to a change in the axis display order.
+    def _on_dims_order_changed(self) -> None:
+        """Respond to a change in the dims display order.
 
-        Override in subclasses that need to update when displayed axes change
+        Override in subclasses that need to update when displayed dims change
         (e.g. to rebuild multiscale level labels).
         """
 

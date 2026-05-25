@@ -207,8 +207,8 @@ class QtLabelsControls(QtLayerControls):
         self._set_polygon_tool_state()
         super()._on_ndisplay_changed()
 
-    def _on_order_changed(self):
-        """Rebuild multiscale level labels for the new displayed axes."""
+    def _on_dims_order_changed(self):
+        """Rebuild multiscale level labels for the new displayed dims."""
         if self.layer.multiscale:
             self._multiscale_level_control._rebuild_items()
 
