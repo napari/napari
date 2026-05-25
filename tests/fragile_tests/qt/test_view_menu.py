@@ -1,7 +1,7 @@
 import sys
 
 import pytest
-from PyQt6.QtCore import QPoint
+from qtpy.QtCore import QPoint
 
 from napari._app_model import get_app_model
 from napari._tests.utils import skip_local_focus
