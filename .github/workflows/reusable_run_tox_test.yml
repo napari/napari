@@ -161,6 +161,7 @@ jobs:
         run: |
           echo "${MAIN}"
           tox --version
+          # shellcheck disable=SC2086
           python -m tox run --installpkg "${WHEEL_PATH}" -- --basetemp=.pytest_tmp ${POSARGS}
           rm -r .tox
         env:
@@ -173,6 +174,7 @@ jobs:
         if : ${{ env.SECOND != 'none' }}
         shell: bash
         run: |
+          # shellcheck disable=SC2086
           python -m tox run --installpkg "${WHEEL_PATH}" -- --basetemp=.pytest_tmp ${POSARGS}
           rm -r .tox
         env:
@@ -185,6 +187,7 @@ jobs:
         if : ${{ env.THIRD != 'none' }}
         shell: bash
         run: |
+          # shellcheck disable=SC2086
           python -m tox run --installpkg "${WHEEL_PATH}" -- --basetemp=.pytest_tmp ${POSARGS}
           rm -r .tox
         env:
@@ -197,6 +200,7 @@ jobs:
         if: ${{ env.FOURTH != 'none' }}
         shell: bash
         run: |
+          # shellcheck disable=SC2086
           python -m tox run --installpkg "${WHEEL_PATH}" -- --basetemp=.pytest_tmp ${POSARGS}
           rm -r .tox
         env:
