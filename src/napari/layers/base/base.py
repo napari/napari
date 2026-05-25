@@ -20,6 +20,7 @@ from npe2 import plugin_manager as pm
 from napari.layers.base._base_constants import (
     BaseProjectionMode,
     Blending,
+    LayerLock,
     Mode,
 )
 from napari.layers.base._base_mouse_bindings import (
@@ -528,7 +529,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     }
     events: EmitterGroup
 
-    def __init__(
+    def __init__(  # type: ignore[no-untyped-def]
         self,
         data,
         ndim,
@@ -550,7 +551,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         translate=None,
         units=None,
         visible=True,
-    ):
+        locked: bool | LayerLock = False,
+    ) -> None:
         super().__init__()
 
         if name is None and data is not None:
@@ -570,14 +572,14 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         from napari.layers._source import current_source
 
         self._highlight_visible = True
-        self._unique_id = None
+        self._unique_id: None | uuid.UUID = None
         self._source = current_source()
         self.dask_optimized_slicing = configure_dask(data, cache)
         self._metadata = dict(metadata or {})
         self._opacity = opacity
         self._blending = Blending(blending)
         self._visible = visible
-        self._visible_mode = None
+        self._visible_mode: None | str = None
         self._freeze = False
         self._status = 'Ready'
         self._help = ''
@@ -633,6 +635,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
         self.corner_pixels = np.zeros((2, ndim), dtype=int)
         self._editable = True
+        self._locked = self._coerce_lock(locked)
         self._array_like = False
 
         self._thumbnail_shape = (32, 32, 4)
@@ -661,6 +664,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             cursor=Event,
             cursor_size=Event,
             editable=Event,
+            locked=Event,
             extent=Event,
             help=Event,
             loaded=Event,
@@ -986,6 +990,29 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self._editable = editable
         self._on_editable_changed()
         self.events.editable()
+
+    @property
+    def locked(self) -> LayerLock:
+        """LayerLock: which UI operations are locked on this layer.
+
+        ``bool(layer.locked)`` is truthy when any lock flag is set. Setting
+        ``True``/``False`` is equivalent to ``LayerLock.ALL``/``LayerLock.NONE``.
+        """
+        return self._locked
+
+    @locked.setter
+    def locked(self, locked: bool | LayerLock) -> None:
+        new_lock = self._coerce_lock(locked)
+        if self._locked == new_lock:
+            return
+        self._locked = new_lock
+        self.events.locked()
+
+    @staticmethod
+    def _coerce_lock(value: bool | LayerLock) -> LayerLock:
+        if isinstance(value, LayerLock):
+            return value
+        return LayerLock.ALL if value else LayerLock.NONE
 
     def _reset_editable(self) -> None:
         """Reset this layer's editable state based on layer properties."""
