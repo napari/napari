@@ -11,6 +11,8 @@ concurrency:
   group: test-${{ github.ref }}
   cancel-in-progress: true
 
+permissions: {}
+
 env:
   COLUMNS: 120
 
@@ -231,6 +233,7 @@ jobs:
     needs:
       - test
       - test_examples
+      - test-fragile
     uses: napari/shared-workflows/.github/workflows/upload_coverage.yml@main
     with:
       artifact-pattern: 'coverage reports*'
