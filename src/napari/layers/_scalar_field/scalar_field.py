@@ -207,6 +207,7 @@ class ScalarFieldBase(Layer, ABC):
     _interpolation2d: Interpolation
     _interpolation3d: Interpolation
     _level_materializer: Callable[[int], np.ndarray] | None
+    _slicing_state: ScalarFieldSlicingState
 
     def __init__(
         self,
