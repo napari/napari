@@ -964,8 +964,15 @@ def _dangling_qanimations(monkeypatch, request):
     dangling_animations = []
 
     for animation, calling in animation_dkt.items():
-        if animation.state() == QPropertyAnimation.Running:
-            dangling_animations.append((animation, calling))
+        try:
+            if animation.state() == QPropertyAnimation.Running:
+                dangling_animations.append((animation, calling))
+        except RuntimeError as e:
+            if (
+                'wrapped C/C++ object of type' not in e.args[0]
+                and 'Internal C++ object' not in e.args[0]
+            ):
+                raise
 
     for animation, _ in dangling_animations:
         with suppress(RuntimeError):
