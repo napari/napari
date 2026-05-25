@@ -189,6 +189,25 @@ jobs:
       tox_extras: ${{ matrix.tox_extras }}
       timeout: ${{ matrix.timeout-minutes || 40 }}
 
+  test-fragile:
+    name: fragile test
+    uses: ./.github/workflows/reusable_run_tox_test.yml
+    needs: test_initial
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [ ubuntu-latest ]
+        python: [ "3.10", "3.14" ]
+        backend: [ "pyqt6" ]
+        coverage: [ "cov" ]
+    with:
+      python_version: ${{ matrix.python }}
+      platform: ${{ matrix.platform }}
+      qt_backend: ${{ matrix.backend }}
+      timeout: 10
+      artifacts_suffix: _fragile
+      coverage: cov
+
 
   test_pip_install:
     needs: test_initial

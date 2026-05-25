@@ -42,6 +42,10 @@ on:
         required: false
         type: string
         default: ""
+      posargs:
+        required: false
+        type: string
+        default: ""
 
 jobs:
   test:
@@ -157,7 +161,7 @@ jobs:
         run: |
           echo "${MAIN}"
           tox --version
-          python -m tox run --installpkg "${WHEEL_PATH}" -- --basetemp=.pytest_tmp
+          python -m tox run --installpkg "${WHEEL_PATH}" -- --basetemp=.pytest_tmp ${{ inputs.posargs }}
           rm -r .tox
         env:
           BACKEND: ${{ env.MAIN }}
@@ -168,7 +172,7 @@ jobs:
         if : ${{ env.SECOND != 'none' }}
         shell: bash
         run: |
-          python -m tox run --installpkg "${WHEEL_PATH}" -- --basetemp=.pytest_tmp
+          python -m tox run --installpkg "${WHEEL_PATH}" -- --basetemp=.pytest_tmp ${{ inputs.posargs }}
           rm -r .tox
         env:
           BACKEND: ${{ env.SECOND }}
@@ -179,7 +183,7 @@ jobs:
         if : ${{ env.THIRD != 'none' }}
         shell: bash
         run: |
-          python -m tox run --installpkg "${WHEEL_PATH}" -- --basetemp=.pytest_tmp
+          python -m tox run --installpkg "${WHEEL_PATH}" -- --basetemp=.pytest_tmp ${{ inputs.posargs }}
           rm -r .tox
         env:
           BACKEND: ${{ env.THIRD }}
@@ -190,7 +194,7 @@ jobs:
         if: ${{ env.FOURTH != 'none' }}
         shell: bash
         run: |
-          python -m tox run --installpkg "${WHEEL_PATH}" -- --basetemp=.pytest_tmp
+          python -m tox run --installpkg "${WHEEL_PATH}" -- --basetemp=.pytest_tmp ${{ inputs.posargs }}
           rm -r .tox
         env:
           BACKEND: ${{ env.FOURTH }}

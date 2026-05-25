@@ -35,10 +35,15 @@ def test_timing_fast_big_dask(data, kwargs):
 def test_non_visible_images():
     """Test loading non-visible images doesn't trigger compute."""
     data_dask_2D = da.random.random((100_000, 100_000))
+    now = time.monotonic()
     layer = Image(
         data_dask_2D,
         visible=False,
         multiscale=False,
         contrast_limits=[0, 1],
     )
+    elapsed = time.monotonic() - now
     assert layer.data.shape == data_dask_2D.shape
+    assert elapsed < 1, (
+        'Test took too long; some computation was likely not lazy'
+    )

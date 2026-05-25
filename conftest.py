@@ -552,16 +552,16 @@ def pytest_collection_modifyitems(session, config, items):
     test_subset = os.environ.get('NAPARI_TEST_SUBSET')
 
     test_order_prefix = [
-        os.path.join('napari', 'utils'),
-        os.path.join('napari', 'layers'),
-        os.path.join('napari', 'components'),
-        os.path.join('napari', 'settings'),
-        os.path.join('napari', 'plugins'),
-        os.path.join('napari', '_vispy'),
-        os.path.join('napari', '_qt'),
-        os.path.join('napari', 'qt'),
-        os.path.join('napari', '_tests'),
-        os.path.join('napari', '_tests', 'test_examples.py'),
+        os.path.join('napari', 'src/napari/utils'),
+        os.path.join('napari', 'src/napari/layers'),
+        os.path.join('napari', 'src/napari/components'),
+        os.path.join('napari', 'src/napari/settings'),
+        os.path.join('napari', 'src/napari/plugins'),
+        os.path.join('napari', 'src/napari/_vispy'),
+        os.path.join('napari', 'src/napari/_qt'),
+        os.path.join('napari', 'src/napari/qt'),
+        os.path.join('napari', 'src/napari/_tests'),
+        os.path.join('napari', 'src/napari/_tests', 'test_examples.py'),
     ]
     test_order = [[] for _ in test_order_prefix]
     test_order.append([])  # for not matching tests
