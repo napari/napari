@@ -225,11 +225,24 @@ _4D_MULTISCALE_DATA = [
 ]
 
 
-def test_order_change_rebuilds_labels(qtbot):
-    """Changing displayed axes should update combobox labels."""
-    layer = Image(_4D_MULTISCALE_DATA, multiscale=True)
-    qtctrl = QtImageControls(layer)
+@pytest.fixture(
+    params=[
+        (Image, QtImageControls),
+        (Labels, QtLabelsControls),
+    ],
+    ids=['Image', 'Labels'],
+)
+def multiscale_4d_controls(qtbot, request):
+    LayerCls, ControlsCls = request.param
+    layer = LayerCls(_4D_MULTISCALE_DATA, multiscale=True)
+    qtctrl = ControlsCls(layer)
     qtbot.addWidget(qtctrl)
+    return layer, qtctrl
+
+
+def test_order_change_rebuilds_labels(multiscale_4d_controls):
+    """Changing displayed axes should update combobox labels."""
+    layer, qtctrl = multiscale_4d_controls
 
     combo = qtctrl._multiscale_level_control.level_combobox
     label_before = combo.itemText(1)
