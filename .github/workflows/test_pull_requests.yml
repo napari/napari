@@ -111,6 +111,7 @@ jobs:
       coverage: ${{ matrix.coverage }}
       min_req: ${{ matrix.MIN_REQ }}
       artifacts_suffix: "initial"
+      posargs: 'src'
 
   test:
     name: ${{ matrix.platform }}
@@ -190,6 +191,7 @@ jobs:
       coverage: ${{ matrix.coverage }}
       tox_extras: ${{ matrix.tox_extras }}
       timeout: ${{ matrix.timeout-minutes || 40 }}
+      posargs: 'src'
 
   test-fragile:
     name: fragile test

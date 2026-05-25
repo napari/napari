@@ -45,7 +45,7 @@ on:
       posargs:
         required: false
         type: string
-        default: "src"
+        default: ""
 
 jobs:
   test:
