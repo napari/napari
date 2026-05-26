@@ -519,3 +519,4 @@ class TrackManager:
         order.extend([column_map["y"], column_map["x"]])
 
         return data[:, order]
+    
