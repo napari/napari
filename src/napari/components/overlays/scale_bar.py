@@ -1,6 +1,8 @@
 """Scale bar model."""
 
-from pydantic import Field
+import warnings
+
+from pydantic import Field, PrivateAttr
 
 from napari.components.overlays.base import CanvasOverlay
 from napari.utils.color import ColorValue
@@ -51,5 +53,19 @@ class ScaleBarOverlay(CanvasOverlay):
     color: ColorValue = Field(default_factory=lambda: ColorValue([1, 0, 1, 1]))
     ticks: bool = True
     font_size: float = 10
-    unit: str | None = 'pixel'
+    _unit: str | None = PrivateAttr(default='pixel')
     length: float | None = None
+
+    @property
+    def unit(self) -> str | None:
+        return self._unit
+
+    @unit.setter
+    def unit(self, value: str | None):
+        warnings.warn(
+            'Setting unit from the scale_bar is deprecated. Starting in 0.9.0, units will be '
+            'computed from the layers present in the viewer instead.',
+            category=FutureWarning,
+            stacklevel=2,
+        )
+        self._unit = value
