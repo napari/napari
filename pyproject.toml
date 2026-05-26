@@ -590,6 +590,7 @@ always_true=['PYQT6']
 [[tool.mypy.overrides]]
 module = [
   '*._tests.*',
+  '*._tests_fragile.*',
   '*.experimental.*',
   '*._vendor.*',
   '*.benchmarks.*',
