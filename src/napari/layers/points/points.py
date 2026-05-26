@@ -474,6 +474,8 @@ class Points(Layer):
             border_width_is_relative=Event,
             face_color=Event,
             current_face_color=Event,
+            face_contrast_limits=Event,
+            face_colormap=Event,
             border_color=Event,
             current_border_color=Event,
             properties=Event,
@@ -562,6 +564,19 @@ class Points(Layer):
         # Trigger generation of view slice and thumbnail
         self.refresh(extent=False)
         self._slicing_state.slice_done.connect(self._refresh_highlight)
+
+        from napari.components.overlays import ColorBarOverlay
+
+        self._overlays.update(
+            {
+                'face_colorbar': ColorBarOverlay(
+                    colormanager_attribute='_face'
+                ),
+                'border_colorbar': ColorBarOverlay(
+                    colormanager_attribute='_border'
+                ),
+            }
+        )
 
     @property
     def data(self) -> np.ndarray:
@@ -729,6 +744,16 @@ class Points(Layer):
         self.events.feature_defaults()
 
     @property
+    def border_colorbar(self):
+        """The colorbar associated with this layer's color manager."""
+        return self._overlays['border_colorbar']
+
+    @property
+    def face_colorbar(self):
+        """The colorbar associated with this layer's color manager."""
+        return self._overlays['face_colorbar']
+
+    @property
     def property_choices(self) -> dict[str, np.ndarray]:
         return self._feature_table.choices()
 
@@ -875,7 +900,7 @@ class Points(Layer):
         # this will check that it is the correct length.
         if coerced_symbols.size == 1:
             coerced_symbols = np.full(
-                self.data.shape[0], coerced_symbols[0], dtype=object
+                self.data.shape[0], coerced_symbols, dtype=object
             )
         else:
             coerced_symbols = np.array(coerced_symbols)
