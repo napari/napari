@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 import importlib
+from typing import TYPE_CHECKING
 from unittest import mock
 
 import pytest
 from app_model.types import MenuItem, SubmenuItem
-from npe2 import DynamicPlugin
 from qtpy.QtWidgets import QWidget
 
 from napari._app_model import get_app_model
@@ -12,6 +14,9 @@ from napari._qt._qapp_model.qactions import _plugins, init_qactions
 from napari._qt._qplugins._qnpe2 import _toggle_or_get_widget
 from napari._tests.utils import skip_local_popups
 from napari.plugins._tests.test_npe2 import mock_pm  # noqa: F401
+
+if TYPE_CHECKING:
+    from npe2 import DynamicPlugin
 
 
 class DummyWidget(QWidget):
@@ -59,8 +64,8 @@ def test_toggle_or_get_widget(
     # Viewer needs to be visible
     viewer = make_napari_viewer(show=True)
 
-    # Trigger the action, opening the widget: `Widget 1`
-    app.commands.execute_command('tmp_plugin:Widget')
+    # Trigger the action, opening the widget
+    app.commands.execute_command('tmp_plugin.widget1')
     widget = viewer.window._wrapped_dock_widgets[full_name]
     # Widget takes some time to appear
     qtbot.waitUntil(widget.isVisible)
@@ -105,9 +110,9 @@ def test_plugin_single_widget_menu(
     plugin_menu = app.menus.get_menu('napari/plugins')
     assert plugin_menu[0].command.title == 'Widget 1 (Temp Plugin)'
     assert len(viewer.window._wrapped_dock_widgets) == 0
-    assert 'tmp_plugin:Widget 1' in app.commands
+    assert 'tmp_plugin.widget1' in app.commands
     # trigger the action, opening the widget: `Widget 1`
-    app.commands.execute_command('tmp_plugin:Widget 1')
+    app.commands.execute_command('tmp_plugin.widget1')
     assert len(viewer.window._wrapped_dock_widgets) == 1
     assert 'Widget 1 (Temp Plugin)' in viewer.window._wrapped_dock_widgets
 
@@ -135,9 +140,9 @@ def test_plugin_multiple_widget_menu(
     plugin_submenu = app.menus.get_menu('napari/plugins/tmp_plugin')
     assert plugin_submenu[0].command.title == 'Widget 1'
     assert len(viewer.window._wrapped_dock_widgets) == 0
-    assert 'tmp_plugin:Widget 1' in app.commands
+    assert 'tmp_plugin.widget1' in app.commands
     # Trigger the action, opening the first widget: `Widget 1`
-    app.commands.execute_command('tmp_plugin:Widget 1')
+    app.commands.execute_command('tmp_plugin.widget1')
     assert len(viewer.window._wrapped_dock_widgets) == 1
     assert 'Widget 1 (Temp Plugin)' in viewer.window._wrapped_dock_widgets
 
@@ -175,13 +180,13 @@ def test_plugin_menu_plugin_state_change(
     assert len(plugin_submenu) == 2
     assert isinstance(plugin_submenu[0], MenuItem)
     assert plugin_submenu[0].command.title == 'Widget 1'
-    assert 'tmp_plugin:Widget 1' in app.commands
+    assert 'tmp_plugin.widget1' in app.commands
 
     # Disable plugin
     pm.disable(tmp_plugin.name)
     with pytest.raises(KeyError):
         app.menus.get_menu(MenuId.MENUBAR_PLUGINS + '/tmp_plugin')
-    assert 'tmp_plugin:Widget 1' not in app.commands
+    assert 'tmp_plugin.widget1' not in app.commands
 
     # Enable plugin
     pm.enable(tmp_plugin.name)
@@ -189,7 +194,7 @@ def test_plugin_menu_plugin_state_change(
         MenuId.MENUBAR_PLUGINS + '/tmp_plugin'
     )
     assert len(samples_sub_menu) == 2
-    assert 'tmp_plugin:Widget 1' in app.commands
+    assert 'tmp_plugin.widget1' in app.commands
 
 
 def test_plugin_widget_checked(
@@ -204,8 +209,10 @@ def test_plugin_widget_checked(
     app = get_app_model()
     viewer = make_napari_viewer()
 
-    assert 'tmp_plugin:Widget' in app.commands
-    widget_action = viewer.window.plugins_menu.findAction('tmp_plugin:Widget')
+    assert 'tmp_plugin.widget_contrib' in app.commands
+    widget_action = viewer.window.plugins_menu.findAction(
+        'tmp_plugin.widget_contrib'
+    )
     assert not widget_action.isChecked()
     # Trigger the action, opening the widget
     widget_action.trigger()

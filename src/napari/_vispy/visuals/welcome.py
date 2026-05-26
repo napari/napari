@@ -42,7 +42,7 @@ def _load_logo() -> np.ndarray:
 
 
 class Welcome(Node):
-    def __init__(self, font_manager: FontManager, face: str) -> None:
+    def __init__(self, font_manager: FontManager | None, face: str) -> None:
         self.logo_coords = _load_logo()
         super().__init__()
 

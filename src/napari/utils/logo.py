@@ -48,7 +48,7 @@ def _get_seasonal_logo(today: date | None = None, theme: str = 'dark') -> str:
 
 
 def get_logo_path(
-    logo: str, template: str, theme: str, today: date | None = None
+    logo: str, template: str, theme_type: str, today: date | None = None
 ) -> Path:
     if logo not in available_logos():
         raise ValueError(
@@ -58,12 +58,10 @@ def get_logo_path(
     if template not in {'plain', 'padded'}:
         raise ValueError('template must be either "plain" or "padded"')
 
-    # eventually we should actually use the dark/light "type" that the theme spec of npe2 allows,
-    # which is currently unused in napari
-    if theme not in {'dark', 'light'}:
-        theme = 'dark'
+    if theme_type not in {'dark', 'light'}:
+        theme_type = 'dark'
 
     if logo == 'auto':
-        logo = _get_seasonal_logo(today=today, theme=theme)
+        logo = _get_seasonal_logo(today=today, theme=theme_type)
 
-    return _LOGO_DIR / f'{logo}-{template}-{theme}.svg'
+    return _LOGO_DIR / f'{logo}-{template}-{theme_type}.svg'

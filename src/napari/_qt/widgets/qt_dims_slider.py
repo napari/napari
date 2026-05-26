@@ -192,9 +192,12 @@ class QtDimSliderWidget(QWidget):
     def _slider_focused_listener(self) -> None:
         self.dims.last_used = self.axis
 
-    def show_margins_popup(self) -> None:
-        self.margins_popup = QMarginSlidersPopup(self.dims, self.axis, self)
-        self.margins_popup.setParent(self)
+    def show_margins_popup(self):
+        if self.margins_popup is None:
+            self.margins_popup = QMarginSlidersPopup(
+                self.dims, self.axis, self
+            )
+            self.margins_popup.setParent(self)
         self.margins_popup.show_above_mouse()
 
     def _create_play_button_widget(self) -> QtPlayButton:
@@ -225,7 +228,8 @@ class QtDimSliderWidget(QWidget):
     def _pull_label(self):
         """Updates the label LineEdit from the dims model."""
         label = self.dims.axis_labels[self.axis]
-        self.axis_label.setText(label)
+        with qt_signals_blocked(self.axis_label):
+            self.axis_label.setText(label)
 
     def _update_label(self):
         """Update dimension slider label."""
@@ -336,10 +340,13 @@ class QtDimSliderWidget(QWidget):
                 has been reached.
         """
         value = LoopMode(value)
+        if self._loop_mode == value:
+            return
         self._loop_mode = value
-        self.play_button.mode_combo.setCurrentText(
-            str(value).replace('_', ' ')
-        )
+        with qt_signals_blocked(self.play_button.mode_combo):
+            self.play_button.mode_combo.setCurrentText(
+                str(value).replace('_', ' ')
+            )
         self.mode_changed.emit(str(value))
 
     @property

@@ -17,13 +17,14 @@ from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 from npe2 import PackageMetadata
-from typing_extensions import NotRequired
 
 from napari.plugins.utils import normalized_name
 from napari.utils.notifications import show_warning
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
+
+    from typing_extensions import NotRequired
 
 PyPIname = str
 

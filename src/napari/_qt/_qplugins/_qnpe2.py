@@ -128,7 +128,7 @@ def _build_samples_submenu_actions(
         icon = _get_and_validate_icon(cmd, mf)
 
         action: Action = Action(
-            id=f'{mf.name}:{sample.key}',
+            id=f'{mf.name}.{sample.key}',
             title=title,
             icon=icon,
             menus=[{'id': submenu_id, 'group': MenuGroup.NAVIGATION}],
@@ -290,7 +290,7 @@ def _build_widgets_submenu_actions(
 
         widget_actions.append(
             Action(
-                id=f'{mf.name}:{widget.display_name}',
+                id=widget.command,
                 title=title,
                 callback=_widget_callback,
                 menus=action_menus,
