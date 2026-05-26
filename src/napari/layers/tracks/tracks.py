@@ -123,7 +123,6 @@ class Tracks(Layer):
         color_by='track_id',
         colormap='turbo',
         colormaps_dict=None,
-        column_map=None,
         experimental_clipping_planes=None,
         features=None,
         graph=None,
@@ -225,10 +224,6 @@ class Tracks(Layer):
 
         # reset the display before returning
         self._current_displayed_dims = None
-
-        # reorder dataframe columns
-        if column_map is not None:
-            data = normalize_track_data(data, column_map)
 
     @property
     def _extent_data(self) -> np.ndarray:
