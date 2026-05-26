@@ -395,15 +395,7 @@ def test_images_to_stack_lazy_arrays(input_array, expected_type):
     """Test that images_to_stack handles numpy, dask, and zarr arrays correctly."""
     data = input_array
     images = [Image(data) for _ in range(3)]
-
-    if isinstance(input_array, zarr.Array):
-        with pytest.warns(
-            UserWarning,
-            match='zarr array cannot be stacked lazily, using dask array to stack.',
-        ):
-            stack = images_to_stack(images)
-    else:
-        stack = images_to_stack(images)
+    stack = images_to_stack(images)
 
     assert not stack.multiscale
     assert isinstance(stack.data, expected_type)
@@ -428,15 +420,7 @@ def test_images_to_stack_lazy_multiscale_arrays(input_array, expected_type):
         data = [input_array, input_array[::2, ::2]]
 
     images = [Image(data) for _ in range(3)]
-
-    if isinstance(input_array, zarr.Array):
-        with pytest.warns(
-            UserWarning,
-            match='zarr array cannot be stacked lazily, using dask array to stack.',
-        ):
-            stack = images_to_stack(images)
-    else:
-        stack = images_to_stack(images)
+    stack = images_to_stack(images)
 
     assert stack.multiscale
     assert isinstance(stack.data[0], expected_type)
@@ -465,14 +449,7 @@ def test_slice_from_axis_different_array_types(
 
     axis, element = 1, 2
     expected_shape = (3, 4)
-
-    if array_type == 'zarr':
-        with pytest.warns(
-            UserWarning, match='zarr array cannot be sliced lazily'
-        ):
-            result = slice_from_axis(data, axis=axis, element=element)
-    else:
-        result = slice_from_axis(data, axis=axis, element=element)
+    result = slice_from_axis(data, axis=axis, element=element)
 
     # Check result type and shape
     assert isinstance(result, expected_result_type)

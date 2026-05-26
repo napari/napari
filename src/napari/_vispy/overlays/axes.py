@@ -1,21 +1,42 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
 import numpy as np
 
 from napari._vispy.overlays.base import ViewerOverlayMixin, VispySceneOverlay
 from napari._vispy.visuals.axes import Axes
 from napari.utils.theme import get_theme
 
+if TYPE_CHECKING:
+    from vispy.visuals.text.text import FontManager
+
+    from napari.components.overlays import AxesOverlay
+
 
 class VispyAxesOverlay(ViewerOverlayMixin, VispySceneOverlay):
     """Axes indicating world coordinate origin and orientation."""
 
-    def __init__(self, *, viewer, overlay, parent=None) -> None:
-        self._scale = 1
+    overlay: AxesOverlay
+    node: Axes
+
+    def __init__(
+        self,
+        *,
+        font_manager: FontManager | None = None,
+        font_family: str = 'OpenSans',
+        **kwargs: Any,
+    ) -> None:
+        self._scale = 1.0
 
         # Target axes length in canvas pixels
         self._target_length = 80
 
         super().__init__(
-            node=Axes(), viewer=viewer, overlay=overlay, parent=parent
+            node=Axes(font_manager=font_manager, font_family=font_family),
+            font_manager=font_manager,
+            font_family=font_family,
+            **kwargs,
         )
         self.overlay.events.colored.connect(self._on_data_change)
         self.overlay.events.dashed.connect(self._on_data_change)

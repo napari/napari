@@ -1,4 +1,6 @@
-from collections.abc import Callable
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 from napari.layers.base._base_constants import Mode
 from napari.layers.utils.layer_utils import (
@@ -7,6 +9,9 @@ from napari.layers.utils.layer_utils import (
 )
 from napari.layers.vectors.vectors import Vectors
 from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 def register_vectors_action(

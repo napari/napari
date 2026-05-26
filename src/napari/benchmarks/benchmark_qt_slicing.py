@@ -159,9 +159,9 @@ class QtViewerAsyncPointsAndImage2DSuite:
     timeout = 600
 
     skip_params = Skip(
-        if_in_pr=lambda n_points, latency, chunksize: n_points > 2**14
-        or chunksize > 512
-        or latency > 0,
+        if_in_pr=lambda n_points, latency, chunksize: (
+            n_points > 2**14 or chunksize > 512 or latency > 0
+        ),
     )
 
     def setup(self, n_points, latency, chunksize):

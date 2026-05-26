@@ -104,10 +104,10 @@ viewer.add_vectors(
   out_of_slice_display=True,
 )
 
-viewer.camera.angles = (2,-11,-23.5)
+viewer.camera.angles = (0,0,-97)
 viewer.camera.orientation = ('away','up','right')
 viewer.dims.current_step = (11,199, 124, 124)
-
+viewer.fit_to_view()
 
 if __name__ == '__main__':
     napari.run()

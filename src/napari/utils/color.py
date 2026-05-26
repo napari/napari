@@ -1,14 +1,16 @@
 """Contains napari color constants and utilities."""
 
-from collections.abc import Callable, Iterator
-from typing import Union
+from typing import Any
 
 import numpy as np
+from pydantic import GetCoreSchemaHandler
+from pydantic_core import CoreSchema, core_schema
+from typing_extensions import Self
 
 from napari.utils.colormaps.standardize_color import transform_color
 
-ColorValueParam = Union[np.ndarray, list, tuple, str, None]
-ColorArrayParam = Union[np.ndarray, list, tuple, None]
+ColorValueParam = np.ndarray | list | tuple | str | None
+ColorArrayParam = np.ndarray | list | tuple | None
 
 
 class ColorValue(np.ndarray):
@@ -19,17 +21,38 @@ class ColorValue(np.ndarray):
     use the ``validate`` method to coerce a value to a single color.
     """
 
-    def __new__(cls, value: ColorValueParam) -> 'ColorValue':
+    def __new__(cls, value: ColorValueParam) -> Self:
         return cls.validate(value)
 
     @classmethod
-    def __get_validators__(
-        cls,
-    ) -> Iterator[Callable[[ColorValueParam], 'ColorValue']]:
-        yield cls.validate
+    def __get_pydantic_core_schema__(
+        cls, source_type: Any, handler: GetCoreSchemaHandler
+    ) -> CoreSchema:
+        validate_schema = core_schema.no_info_plain_validator_function(
+            cls.validate
+        )
+
+        serialize_schema = core_schema.plain_serializer_function_ser_schema(
+            lambda x: x.tolist(),
+            when_used='json',  # Only convert to list for JSON; keep as array for Python
+        )
+
+        return core_schema.json_or_python_schema(
+            # Schema for JSON inputs (always run validation)
+            json_schema=validate_schema,
+            # Schema for Python inputs (allow existing instances to pass through)
+            python_schema=core_schema.union_schema(
+                [
+                    core_schema.is_instance_schema(cls),
+                    validate_schema,
+                ],
+                mode='left_to_right',
+            ),
+            serialization=serialize_schema,
+        )
 
     @classmethod
-    def validate(cls, value: ColorValueParam) -> 'ColorValue':
+    def validate(cls, value: ColorValueParam) -> Self:
         """Validates and coerces the given value into an array storing one color.
 
         Parameters
@@ -85,20 +108,41 @@ class ColorArray(np.ndarray):
     use the ``validate`` method to coerce a value to an array of colors.
     """
 
-    def __new__(cls, value: ColorArrayParam) -> 'ColorArray':
+    def __new__(cls, value: ColorArrayParam) -> Self:
         return cls.validate(value)
 
     @classmethod
-    def __get_validators__(
-        cls,
-    ) -> Iterator[Callable[[ColorArrayParam], 'ColorArray']]:
-        yield cls.validate
+    def __get_pydantic_core_schema__(
+        cls, source_type: Any, handler: GetCoreSchemaHandler
+    ) -> CoreSchema:
+        validate_schema = core_schema.no_info_plain_validator_function(
+            cls.validate
+        )
+
+        serialize_schema = core_schema.plain_serializer_function_ser_schema(
+            lambda x: x.tolist(),
+            when_used='json',  # Only convert to list for JSON; keep as array for Python
+        )
+
+        return core_schema.json_or_python_schema(
+            # Schema for JSON inputs (always run validation)
+            json_schema=validate_schema,
+            # Schema for Python inputs (allow existing instances to pass through)
+            python_schema=core_schema.union_schema(
+                [
+                    core_schema.is_instance_schema(cls),
+                    validate_schema,
+                ],
+                mode='left_to_right',
+            ),
+            serialization=serialize_schema,
+        )
 
     def __sizeof__(self) -> int:
         return super().__sizeof__() + self.nbytes
 
     @classmethod
-    def validate(cls, value: ColorArrayParam) -> 'ColorArray':
+    def validate(cls, value: ColorArrayParam) -> Self:
         """Validates and coerces the given value into an array storing many colors.
 
         Parameters

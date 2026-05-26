@@ -1,9 +1,8 @@
 import copy
 import warnings
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
-import pandas as pd
 
 from napari.layers.base import Layer, _LayerSlicingState
 from napari.layers.intensity_mixin import IntensityVisualizationMixin
@@ -24,6 +23,9 @@ from napari.utils.events import Event
 from napari.utils.events.event_utils import connect_no_arg
 from napari.utils.geometry import find_nearest_triangle_intersection
 from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    import pandas as pd
 
 
 # Mixin must come before Layer
@@ -62,7 +64,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         provided scale, rotate, and shear values.
     axis_labels : tuple of str, optional
         Dimension names of the layer data.
-        If not provided, axis_labels will be set to (..., 'axis -2', 'axis -1').
+        If not provided, axis_labels will be set to (..., '-2', '-1').
     blending : str
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
@@ -210,6 +212,7 @@ class Surface(IntensityVisualizationMixin, Layer):
     """
 
     _colormaps = AVAILABLE_COLORMAPS
+    _slicing_state: '_SurfaceSlicingState'
 
     def __init__(
         self,
@@ -483,7 +486,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         return extrema
 
     @property
-    def features(self) -> pd.DataFrame:
+    def features(self) -> 'pd.DataFrame':
         """Dataframe-like features table.
 
         It is an implementation detail that this is a `pandas.DataFrame`. In the future,
@@ -503,13 +506,13 @@ class Surface(IntensityVisualizationMixin, Layer):
     @features.setter
     def features(
         self,
-        features: dict[str, np.ndarray] | pd.DataFrame,
+        features: 'dict[str, np.ndarray] | pd.DataFrame',
     ) -> None:
         self._feature_table.set_values(features, num_data=len(self.data[0]))
         self.events.features()
 
     @property
-    def feature_defaults(self) -> pd.DataFrame:
+    def feature_defaults(self) -> 'pd.DataFrame':
         """Dataframe-like with one row of feature default values.
 
         See `features` for more details on the type of this property.
@@ -518,7 +521,7 @@ class Surface(IntensityVisualizationMixin, Layer):
 
     @feature_defaults.setter
     def feature_defaults(
-        self, defaults: dict[str, Any] | pd.DataFrame
+        self, defaults: 'dict[str, Any] | pd.DataFrame'
     ) -> None:
         self._feature_table.set_defaults(defaults)
         self.events.feature_defaults()
@@ -565,7 +568,7 @@ class Surface(IntensityVisualizationMixin, Layer):
             )
         else:
             if isinstance(normals, SurfaceNormals):
-                normals = {k: dict(v) for k, v in normals.dict().items()}
+                normals = {k: dict(v) for k, v in normals.model_dump().items()}
             # ignore modes, they are unmutable cause errors
             for norm_type in ('face', 'vertex'):
                 normals.get(norm_type, {}).pop('mode', None)
@@ -616,15 +619,15 @@ class Surface(IntensityVisualizationMixin, Layer):
         state = self._get_base_state()
         state.update(
             {
-                'colormap': self.colormap.dict(),
+                'colormap': self.colormap.model_dump(),
                 'contrast_limits': self.contrast_limits,
                 'gamma': self.gamma,
                 'shading': self.shading,
                 'data': self.data,
                 'features': self.features,
                 'feature_defaults': self.feature_defaults,
-                'wireframe': self.wireframe.dict(),
-                'normals': self.normals.dict(),
+                'wireframe': self.wireframe.model_dump(),
+                'normals': self.normals.model_dump(),
                 'texture': self.texture,
                 'texcoords': self.texcoords,
                 'vertex_colors': self.vertex_colors,

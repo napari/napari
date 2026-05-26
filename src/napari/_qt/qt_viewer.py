@@ -6,9 +6,7 @@ import sys
 import traceback
 import warnings
 import weakref
-from collections.abc import Sequence
 from pathlib import Path
-from types import FrameType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -22,6 +20,7 @@ from qtpy.QtGui import QGuiApplication, QImage
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 from superqt import ensure_main_thread
 
+from napari._app_model import get_app_model
 from napari._qt.containers import QtLayerList
 from napari._qt.dialogs.qt_reader_dialog import handle_gui_reading
 from napari._qt.dialogs.screenshot_dialog import ScreenshotDialog
@@ -33,7 +32,7 @@ from napari._qt.widgets.qt_viewer_buttons import (
     QtViewerButtons,
 )
 from napari._qt.widgets.qt_viewer_dock_widget import QtViewerDockWidget
-from napari._qt.widgets.qt_welcome import QtWidgetOverlay
+from napari._vispy.utils.qt_font import QtFontManager
 from napari.components.camera import Camera
 from napari.components.layerlist import LayerList
 from napari.errors import MultipleReaderError, ReaderPluginError
@@ -56,11 +55,13 @@ from napari.utils.misc import in_ipython, in_jupyter
 from napari.utils.naming import CallerFrame
 from napari.utils.notifications import show_info
 from napari.utils.translations import trans
-from napari_builtins.io import imsave_extensions
 
 from napari._vispy import VispyCanvas, create_vispy_layer  # isort:skip
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+    from types import FrameType
+
     from napari_console import QtConsole
     from npe2.manifest.contributions import WriterContribution
 
@@ -90,52 +91,6 @@ def _npe2_decode_selected_filter(
     return None
 
 
-def _extension_string_for_layers(
-    layers: Sequence[Layer],
-) -> tuple[str, list[WriterContribution]]:
-    """Return an extension string and the list of corresponding writers.
-
-    The extension string is a ";;" delimeted string of entries. Each entry
-    has a brief description of the file type and a list of extensions.
-
-    The writers, when provided, are the npe2.manifest.io.WriterContribution
-    objects. There is one writer per entry in the extension string. If npe2
-    is not importable, the list of writers will be empty.
-    """
-    # try to use npe2
-    ext_str, writers = _npe2.file_extensions_string_for_layers(layers)
-    if ext_str:
-        return ext_str, writers
-
-    # fallback to old behavior
-
-    if len(layers) == 1:
-        selected_layer = layers[0]
-        # single selected layer.
-        if selected_layer._type_string == 'image':
-            ext = imsave_extensions()
-
-            ext_list = [f'*{val}' for val in ext]
-            ext_str = ';;'.join(ext_list)
-
-            ext_str = trans._(
-                'All Files (*);; Image file types:;;{ext_str}',
-                ext_str=ext_str,
-            )
-
-        elif selected_layer._type_string == 'points':
-            ext_str = trans._('All Files (*);; *.csv;;')
-
-        else:
-            # layer other than image or points
-            ext_str = trans._('All Files (*);;')
-
-    else:
-        # multiple layers.
-        ext_str = trans._('All Files (*);;')
-    return ext_str, []
-
-
 class QtViewer(QSplitter):
     """Qt view for the napari Viewer model.
 
@@ -143,12 +98,12 @@ class QtViewer(QSplitter):
     ----------
     viewer : napari.components.ViewerModel
         Napari viewer containing the rendered scene, layers, and controls.
-    show_welcome_screen : bool, optional
-        Flag to show a welcome message when no layers are present in the
-        canvas. Default is `False`.
     canvas_class : napari._vispy.canvas.VispyCanvas
         The VispyCanvas class providing the Vispy SceneCanvas. Users can also
         have a custom canvas here.
+    show_welcome_screen : bool, optional
+        Flag to show a welcome message when no layers are present in the
+        canvas. Default is `False`.
 
     Attributes
     ----------
@@ -167,8 +122,6 @@ class QtViewer(QSplitter):
         A QtPoll object required for the monitor.
     _remote_manager : napari.components.experimental.remote.RemoteManager
         A remote manager processing commands from remote clients and sending out messages when polled.
-    _welcome_widget : napari._qt.widgets.qt_welcome.QtWidgetOverlay
-        QtWidgetOverlay providing the stacked widgets for the welcome page.
     """
 
     _instances = WeakSet()
@@ -178,12 +131,11 @@ class QtViewer(QSplitter):
         viewer: ViewerModel,
         show_welcome_screen: bool = False,
         canvas_class: type[VispyCanvas] = VispyCanvas,
+        tips: Sequence | None = None,
     ) -> None:
         super().__init__()
         self._instances.add(self)
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
-
-        self._show_welcome_screen = show_welcome_screen
 
         QCoreApplication.setAttribute(
             Qt.AA_UseStyleSheetPropagationInWidgetStyles, True
@@ -204,11 +156,16 @@ class QtViewer(QSplitter):
         self._dockLayerControls = None
         self._dockConsole = None
         self._dockPerformance = None
+        self._show_welcome_screen = show_welcome_screen
+        self._font_manager = QtFontManager()
+        self._overlay_font = QGuiApplication.font().family()
 
         # This dictionary holds the corresponding vispy visual for each layer
         self.canvas = canvas_class(
             viewer=viewer,
             parent=self,
+            font_manager=self._font_manager,
+            font_family=self._overlay_font,
             key_map_handler=self._key_map_handler,
             size=self.viewer._canvas_size,
             autoswap=get_settings().experimental.autoswap_buffers,  # see #5734
@@ -219,16 +176,9 @@ class QtViewer(QSplitter):
             },
         )
 
-        # Stacked widget to provide a welcome page
-        self._welcome_widget = QtWidgetOverlay(self, self.canvas.native)
-        self._welcome_widget.set_welcome_visible(show_welcome_screen)
-        self._welcome_widget.leave.connect(self._leave_canvas)
-        self._welcome_widget.enter.connect(self._enter_canvas)
-
         main_widget = QWidget()
         main_layout = QVBoxLayout()
         main_layout.setContentsMargins(0, 2, 0, 2)
-        main_layout.addWidget(self._welcome_widget)
         main_layout.addWidget(self.dims)
         main_layout.setSpacing(0)
         main_widget.setLayout(main_layout)
@@ -242,8 +192,6 @@ class QtViewer(QSplitter):
         self.viewer.layers.events.inserted.connect(self._update_camera_depth)
         self.viewer.layers.events.removed.connect(self._update_camera_depth)
         self.viewer.dims.events.ndisplay.connect(self._update_camera_depth)
-        self.viewer.layers.events.inserted.connect(self._update_welcome_screen)
-        self.viewer.layers.events.removed.connect(self._update_welcome_screen)
         self.viewer.layers.selection.events.active.connect(
             self._on_active_change
         )
@@ -261,7 +209,9 @@ class QtViewer(QSplitter):
         )
 
         # bind shortcuts stored in settings last.
-        self._bind_shortcuts()
+        with get_app_model().register_with_namespace('QtViewer', self):
+            # we overwrite global injection namespace to ensure that correct QtViewer will be provided.
+            self._bind_shortcuts()
 
         settings = get_settings()
         self._update_dask_cache_settings(settings.application.dask)
@@ -272,6 +222,28 @@ class QtViewer(QSplitter):
 
         for layer in self.viewer.layers:
             self._add_layer(layer)
+
+        # set up welcome screen
+        viewer.welcome_screen.visible = False
+        if tips is not None:
+            viewer.welcome_screen.tips = tips
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        self.viewer.welcome_screen.visible = self._show_welcome_screen
+
+    def hideEvent(self, event):
+        self.viewer.welcome_screen.visible = False
+
+    @property
+    def show_welcome_screen(self) -> bool:
+        """bool: Whether to show the welcome screen when there are no layers."""
+        return self._show_welcome_screen
+
+    @show_welcome_screen.setter
+    def show_welcome_screen(self, value: bool):
+        self._show_welcome_screen = value
+        self.viewer.welcome_screen.visible = value and self.isVisible()
 
     @staticmethod
     def _update_dask_cache_settings(
@@ -669,8 +641,17 @@ class QtViewer(QSplitter):
         # clipping in perspective projection, while still preserving enough
         # bit depth in the depth buffer to avoid artifacts. See discussion at:
         # https://github.com/napari/napari/pull/7529#issuecomment-2594203871
+        #
+        # If depth_value becomes too large, the projection matrix entry
+        # M[2,2] = -(f+n)/(f-n) rounds to exactly -1.0 in float32
+        # (vispy builds the frustum in float32), making the far-plane
+        # inverse singular and breaking volume raycasting (renders black).
+        # Vispy sets far/near = depth_value * 10, so we cap at
+        # depth_value < 2 / (10 * float32_eps). See
+        # https://github.com/vispy/vispy/blob/0a6da357/vispy/scene/cameras/perspective.py#L322
+        max_depth = 2.0 / (10.0 * np.finfo(np.float32).eps)
         for camera in [self.canvas.camera] + self.canvas.grid_cameras:
-            camera._3D_camera.depth_value = 128 * diameter
+            camera._3D_camera.depth_value = min(128 * diameter, max_depth)
 
     def _add_layer(self, layer):
         """When a layer is added, set its parent and order.
@@ -771,7 +752,7 @@ class QtViewer(QSplitter):
             raise OSError(trans._('Nothing to save'))
 
         # prepare list of extensions for drop down menu.
-        ext_str, writers = _extension_string_for_layers(
+        ext_str, writers = _npe2.file_extensions_string_for_layers(
             list(self.viewer.layers.selection)
             if selected
             else self.viewer.layers
@@ -834,11 +815,6 @@ class QtViewer(QSplitter):
 
             update_save_history(saved[0])
 
-    def _update_welcome_screen(self):
-        """Update welcome screen display based on layer count."""
-        if self._show_welcome_screen:
-            self._welcome_widget.set_welcome_visible(not self.viewer.layers)
-
     def screenshot(
         self,
         path: str | None = None,
@@ -883,14 +859,6 @@ class QtViewer(QSplitter):
         if path is not None:
             imsave(path, img)
 
-        if flash:
-            from napari._qt.utils import add_flash_animation
-
-            # Here we are actually applying the effect to the `_welcome_widget`
-            # and not # the `native` widget because it does not work on the
-            # `native` widget. It's probably because the widget is in a stack
-            # with the `QtWelcomeWidget`.
-            add_flash_animation(self._welcome_widget)
         return img
 
     def _screenshot(
@@ -965,11 +933,7 @@ class QtViewer(QSplitter):
             if flash:
                 from napari._qt.utils import add_flash_animation
 
-                # Here we are actually applying the effect to the `_welcome_widget`
-                # and not # the `native` widget because it does not work on the
-                # `native` widget. It's probably because the widget is in a stack
-                # with the `QtWelcomeWidget`.
-                add_flash_animation(self._welcome_widget)
+                add_flash_animation(self)
 
             return img
 
@@ -1163,11 +1127,6 @@ class QtViewer(QSplitter):
         self.viewerButtons.consoleButton.style().polish(
             self.viewerButtons.consoleButton
         )
-
-    def set_welcome_visible(self, visible):
-        """Show welcome screen widget."""
-        self._show_welcome_screen = visible
-        self._welcome_widget.set_welcome_visible(visible)
 
     def keyPressEvent(self, event):
         """Called whenever a key is pressed.
@@ -1465,6 +1424,14 @@ class QtViewer(QSplitter):
         if path is not None:
             imsave(path, img)
         return img
+
+    def font_manager(self) -> QtFontManager:
+        """Return the font manager for this viewer."""
+        return self._font_manager
+
+    def overlay_font(self) -> str:
+        """Return the font used for overlays."""
+        return self._overlay_font
 
 
 if TYPE_CHECKING:

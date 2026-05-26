@@ -2,11 +2,10 @@
 # from napari.utils.events import Event
 # from napari.utils.colormaps import AVAILABLE_COLORMAPS
 
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
 from warnings import warn
 
 import numpy as np
-import pandas as pd
 
 from napari.layers.base import Layer, _LayerSlicingState
 from napari.layers.tracks._track_utils import TrackManager
@@ -14,6 +13,9 @@ from napari.types import LayerDataType
 from napari.utils.colormaps import AVAILABLE_COLORMAPS, Colormap
 from napari.utils.events import Event
 from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    import pandas as pd
 
 
 class Tracks(Layer):
@@ -33,7 +35,7 @@ class Tracks(Layer):
         provided scale, rotate, and shear values.
     axis_labels : tuple of str, optional
         Dimension names of the layer data.
-        If not provided, axis_labels will be set to (..., 'axis -2', 'axis -1').
+        If not provided, axis_labels will be set to (..., '-2', '-1').
     blending : str
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
@@ -399,7 +401,7 @@ class Tracks(Layer):
         self._reset_editable()
 
     @property
-    def features(self) -> pd.DataFrame:
+    def features(self) -> 'pd.DataFrame':
         """Dataframe-like features table.
 
         It is an implementation detail that this is a `pandas.DataFrame`. In the future,
@@ -419,7 +421,7 @@ class Tracks(Layer):
     @features.setter
     def features(
         self,
-        features: dict[str, np.ndarray] | pd.DataFrame,
+        features: 'dict[str, np.ndarray] | pd.DataFrame',
     ) -> None:
         self._manager.features = features
         self._check_color_by_in_features()

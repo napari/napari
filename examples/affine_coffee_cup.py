@@ -75,13 +75,14 @@ def pour_creamer():
 
 # Set viewer camera angles and zoom
 viewer.dims.ndisplay = 3
-viewer.camera.angles = (180, 40, 92)
-viewer.camera.zoom = 1972
+viewer.camera.angles = (180, -27, 5)
 
 # Add button to create new layer with transformed object using magicgui
 viewer.window.add_dock_widget(pour_creamer)
 
 pour_creamer()
+
+viewer.fit_to_view()
 
 if __name__ == "__main__":
     napari.run()

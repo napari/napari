@@ -1,8 +1,8 @@
 """Zoom overlay."""
 
 import pytest
+from pydantic import ValidationError
 
-from napari._pydantic_compat import ValidationError
 from napari.components.overlays.zoom import ZoomOverlay
 
 
@@ -21,3 +21,5 @@ def test_zoom_values():
     # data_positions must be 2-D
     with pytest.raises(ValidationError):
         zoom.position = ((0, 0, 0), (300, 200, 100))
+
+    assert zoom.position == ((0, 0), (300, 200))

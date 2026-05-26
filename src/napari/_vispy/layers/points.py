@@ -107,7 +107,15 @@ class VispyPointsLayer(VispyBaseLayer):
             ]
             if data.ndim == 1:
                 data = np.expand_dims(data, axis=0)
-            size = self.layer.size[data_indices] * self.layer._view_size_scale
+            if isinstance(self.layer._view_size_scale, np.ndarray):
+                size = (
+                    self.layer.size[data_indices]
+                    * self.layer._view_size_scale[self.layer._highlight_index]
+                )
+            else:
+                size = (
+                    self.layer.size[data_indices] * self.layer._view_size_scale
+                )
             border_width = self.layer.border_width[data_indices]
             if self.layer.border_width_is_relative:
                 border_width = border_width * size
@@ -199,13 +207,15 @@ class VispyPointsLayer(VispyBaseLayer):
         self.node.spherical = shading == 'spherical'
 
     def _on_canvas_size_limits_change(self):
-        self.node.points_markers.canvas_size_limits = (
-            self.layer.canvas_size_limits
-        )
+        if len(self.layer.data) == 0:
+            canvas_limits = 0, 0
+        else:
+            canvas_limits = self.layer.canvas_size_limits
+        self.node.points_markers.canvas_size_limits = canvas_limits
         highlight_thickness = (
             get_settings().appearance.highlight.highlight_thickness
         )
-        low, high = self.layer.canvas_size_limits
+        low, high = canvas_limits
         self.node.selection_markers.canvas_size_limits = (
             low + highlight_thickness,
             high + highlight_thickness,

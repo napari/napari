@@ -1,12 +1,18 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import numpy as np
 from vispy.scene.visuals import Compound, Line, Markers, Polygon
 
 from napari._vispy.overlays.base import LayerOverlayMixin, VispySceneOverlay
-from napari.components.overlays import LabelsPolygonOverlay
-from napari.layers import Labels
 from napari.layers.labels._labels_constants import Mode
 from napari.layers.labels._labels_utils import mouse_event_to_labels_coordinate
 from napari.settings import get_settings
+
+if TYPE_CHECKING:
+    from napari.components.overlays import LabelsPolygonOverlay
+    from napari.layers import Labels
 
 
 def _only_when_enabled(callback):
@@ -34,10 +40,9 @@ def _only_when_enabled(callback):
 
 class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
     layer: Labels
+    overlay: LabelsPolygonOverlay
 
-    def __init__(
-        self, *, layer: Labels, overlay: LabelsPolygonOverlay, parent=None
-    ):
+    def __init__(self, **kwargs):
         points = [(0, 0), (1, 1)]
 
         self._nodes_kwargs = {
@@ -58,9 +63,7 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
 
         super().__init__(
             node=Compound([self._polygon, self._nodes, self._line]),
-            layer=layer,
-            overlay=overlay,
-            parent=parent,
+            **kwargs,
         )
 
         self.layer.mouse_move_callbacks.append(self._on_mouse_move)
@@ -104,9 +107,20 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
     def _on_points_change(self):
         num_points = len(self.overlay.points)
         if num_points:
-            points = np.array(self.overlay.points)[
-                :, self._dims_displayed[::-1]
-            ]
+            # Create full-dimensional points for transformation
+            points_full = np.array(self.overlay.points)
+
+            # Apply tile2data inverse transform if downsampling is active.
+            # Polygon points are stored in data coordinates, but the layer's
+            # vispy visual uses texture coordinates when downsampling is active.
+            # We need to convert from data space to texture space for correct rendering.
+            tile2data = self.layer._transforms['tile2data']
+            if hasattr(tile2data, 'scale') and not np.allclose(
+                tile2data.scale, 1.0
+            ):
+                points_full = tile2data.inverse(points_full)
+
+            points = points_full[:, self._dims_displayed[::-1]]
         else:
             points = np.empty((0, 2))
 
@@ -159,6 +173,8 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
     @_only_when_enabled
     def _on_mouse_press(self, layer, event):
         pos = self._get_mouse_coordinates(event)
+        if pos is None:
+            return
         dims_displayed = self._dims_displayed
 
         if event.button == 1:  # left mouse click
