@@ -34,6 +34,7 @@ if __name__ == '__main__':
         Qt.WindowType.SplashScreen
         | Qt.WindowType.FramelessWindowHint
         | Qt.WindowType.WindowStaysOnTopHint
+        | Qt.WindowType.Tool
     )
     splash.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
 
