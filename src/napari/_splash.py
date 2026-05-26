@@ -18,7 +18,7 @@ if __name__ == '__main__':
     pixmap.fill(Qt.GlobalColor.transparent)
     # render logo (hardcoded for reduced performance cost)
     logo = get_logo_path(
-        logo='auto', template='plain', theme=get_system_theme()
+        logo='auto', template='plain', theme_type=get_system_theme()
     )
     painter = QPainter(pixmap)
     renderer = QSvgRenderer(str(logo))
