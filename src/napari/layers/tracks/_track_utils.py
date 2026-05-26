@@ -517,6 +517,6 @@ class TrackManager:
             order.append(column_map['z'])
 
         order.extend([column_map['y'], column_map['x']])
-        
+
         # convert to numpy
         return data[:, order].to_numpy()
