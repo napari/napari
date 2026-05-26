@@ -53,7 +53,7 @@ class ExperimentalSettings(EventedSettings):
             'Multisampling improves quality by rendering more fragments to reduce aliasing, at the cost of some performance.'
         ),
         env='napari_multisampling',
-        requires_restart=True,
+        json_schema_extra={'requires_restart': True},
     )
 
     rdp_epsilon: float = Field(
