@@ -39,7 +39,7 @@ chardet==7.4.3
     # via trackastra
 charset-normalizer==3.4.7
     # via requests
-click==8.3.3
+click==8.4.0
     # via
     #   dask
     #   distributed
@@ -72,7 +72,7 @@ dask==2026.3.0
     #   trackastra
 debugpy==1.8.20
     # via ipykernel
-decorator==5.2.1
+decorator==5.3.1
     # via ipython
 distlib==0.4.0
     # via virtualenv
@@ -274,7 +274,7 @@ numcodecs==0.16.5
     # via
     #   geff
     #   zarr
-numpy==2.4.4
+numpy==2.4.5
     # via
     #   napari (pyproject.toml)
     #   bermuda
@@ -632,13 +632,13 @@ sympy==1.14.0
     # via torch
 tblib==3.2.2
     # via distributed
-tensorstore==0.1.83
+tensorstore==0.1.84
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
 threadpoolctl==3.6.0
     # via scikit-learn
-tifffile==2026.5.2
+tifffile==2026.5.15
     # via
     #   napari (pyproject.toml)
     #   napari (pyproject.toml:gallery)
@@ -716,7 +716,7 @@ urllib3==2.7.0
     #   requests
 virtualenv==21.3.3
     # via napari (pyproject.toml)
-vispy==0.16.1
+vispy==0.16.2
     # via
     #   napari (pyproject.toml)
     #   napari-svg
