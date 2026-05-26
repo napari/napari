@@ -191,7 +191,6 @@ jobs:
       coverage: ${{ matrix.coverage }}
       tox_extras: ${{ matrix.tox_extras }}
       timeout: ${{ matrix.timeout-minutes || 40 }}
-      posargs: 'src'
 
   test-fragile:
     name: fragile test
@@ -211,7 +210,7 @@ jobs:
       timeout: 10
       artifacts_suffix: _fragile
       coverage: cov
-      posargs: 'tests/fragile_tests'
+      posargs: 'src/napari/_tests_fragile'
 
   test_pip_install:
     needs: test_initial
