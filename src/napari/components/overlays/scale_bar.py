@@ -53,7 +53,7 @@ class ScaleBarOverlay(CanvasOverlay):
     color: ColorValue = Field(default_factory=lambda: ColorValue([1, 0, 1, 1]))
     ticks: bool = True
     font_size: float = 10
-    _unit: str | None = PrivateAttr(default='pixel')
+    _unit: str | None = PrivateAttr(default=None)
     length: float | None = None
 
     @property
@@ -62,10 +62,13 @@ class ScaleBarOverlay(CanvasOverlay):
 
     @unit.setter
     def unit(self, value: str | None):
-        warnings.warn(
-            'Setting unit from the scale_bar is deprecated. Starting in 0.9.0, units will be '
-            'computed from the layers present in the viewer instead.',
-            category=FutureWarning,
-            stacklevel=2,
-        )
+        if value is not None:
+            warnings.warn(
+                'Setting unit on the ScaleBar model is deprecated. Units are instead computed from '
+                'the layers in the layerlist. To silence this warning, leave scale_bar unit as `None`, '
+                'and use `Layer.units` to set units for each layer. Starting in v0.8.0, ScaleBar.unit '
+                'will do nothing. Starting from v0.9.0, it will be removed and raise an exception.',
+                category=FutureWarning,
+                stacklevel=4,
+            )
         self._unit = value

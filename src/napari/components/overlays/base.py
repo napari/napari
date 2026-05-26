@@ -27,7 +27,9 @@ class Overlay(EventedModel):
     """
 
     model_config = EventedModel.model_config | ConfigDict(
-        validate_assignment=True
+        validate_assignment=True,
+        allow_property_setters=True,
+        guess_property_dependencies=True,
     )
 
     visible: bool = False
