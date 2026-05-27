@@ -69,6 +69,10 @@ class NapariApplication(Application):
         self.menus.append_menu_items(
             chain(LAYERLIST_CONTEXT_SUBMENUS, VIEW_SUBMENUS, FILE_SUBMENUS)
         )
+        from napari.settings import get_settings
+
+        get_settings().appearance.events.theme.connect(self._on_theme_changed)
+        self._on_theme_changed()
 
     @contextmanager
     def register_with_namespace(self, name: str, obj: object):
@@ -100,6 +104,12 @@ class NapariApplication(Application):
                 f'Application `{app_name}` is not a NapariApplication'
             )
         return app
+
+    def _on_theme_changed(self):
+        from napari.settings import get_settings
+        from napari.utils.theme import get_theme
+
+        self.theme_mode = get_theme(get_settings().appearance.theme).type
 
 
 @lru_cache(maxsize=1)

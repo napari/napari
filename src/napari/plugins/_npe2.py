@@ -428,17 +428,27 @@ def _npe2_submenu_to_app_model(subm: contributions.Submenu) -> SubmenuItem:
     )
 
 
-def _get_and_validate_icon(command, manifest):
-    icon = command.icon or manifest.icon
-    if not icon:
-        return ''
-    if icon and isinstance(icon, str):
-        if len(parts := icon.split(':')) == 2:
-            # fully qualified python name
+def _validate_icon_string(icon):
+    if len(parts := icon.split(':')) == 2:
+        # fully qualified python name or fonticon name
+        try:
             with resources.path(parts[0], parts[1]) as icon_path:
                 return f'file:/{icon_path}'
-        else:
-            # TODO: handle paths relative to the manifest source
+        except ModuleNotFoundError:
+            # probably fonticon name, leave it as is
             pass
+    return None
 
-    return ''
+
+def _get_and_validate_icon(command, manifest):
+    icon = command.icon or manifest.icon
+
+    if not icon:
+        return None
+
+    if isinstance(icon, str):
+        return _validate_icon_string(icon)
+    if isinstance(icon, contributions._icon.Icon):
+        return {k: _validate_icon_string(v) for k, v in dict(icon).items()}
+
+    return None
