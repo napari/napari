@@ -26,10 +26,10 @@ class Overlay(EventedModel):
         The rendering order of the overlay: lower numbers get rendered first.
     """
 
-    model_config = EventedModel.model_config | ConfigDict(
+    model_config = EventedModel.model_config | ConfigDict(  # type: ignore[typeddict-unknown-key]
         validate_assignment=True,
-        allow_property_setters=True,  # type: ignore[typeddict-unknown-key]
-        guess_property_dependencies=True,  # type: ignore[typeddict-unknown-key]
+        allow_property_setters=True,
+        guess_property_dependencies=True,
     )
 
     visible: bool = False
