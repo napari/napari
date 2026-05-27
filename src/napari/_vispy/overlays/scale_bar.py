@@ -64,12 +64,12 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self.reset()
 
     def _on_unit_change(self):
-        if self.viewer.layers.units is not None:
+        if self.overlay.unit is not None:
+            unit = pint.get_application_registry()(self.overlay.unit)
+        elif self.viewer.layers.units is not None:
             unit = self.viewer.layers.units[self.viewer.dims.displayed[-1]]
         else:
-            unit = pint.get_application_registry()(
-                self.overlay.unit or 'pixel'
-            )
+            unit = 'pixel'
         self._unit = unit * 1  # convert unit to quantity
         self._on_size_or_zoom_change(force=True)
 

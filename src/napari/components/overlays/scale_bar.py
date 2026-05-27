@@ -33,9 +33,6 @@ class ScaleBarOverlay(CanvasOverlay):
     box_color : Optional[str | array-like]
         Background box color.
         See ``ColorValue.validate`` for supported values.
-    unit : Optional[str]
-        Unit to be used by the scale bar, equivalent to 1 pixel. Can be a quantity
-        such as "10 nm". The value can be set to `None` to display no units.
     length : Optional[float]
         Fixed length of the scale bar in physical units. If set to `None`,
         it is determined automatically based on zoom level.
@@ -64,11 +61,13 @@ class ScaleBarOverlay(CanvasOverlay):
     def unit(self, value: str | None):
         if value is not None:
             warnings.warn(
-                'Setting unit on the ScaleBar model is deprecated. Units are instead computed from '
+                'Setting unit on the ScaleBar model is deprecated. Units will instead be computed from '
                 'the layers in the layerlist. To silence this warning, leave scale_bar unit as `None`, '
-                'and use `Layer.units` to set units for each layer. Starting in v0.8.0, ScaleBar.unit '
-                'will do nothing. Starting from v0.9.0, it will be removed and raise an exception.',
+                'and use `Layer.units` to set units for each layer. Starting in v0.8.0, setting '
+                'ScaleBar.unit will no longer have an effect. Starting from v0.9.0, it will be '
+                'removed and raise an exception.',
                 category=FutureWarning,
                 stacklevel=4,
             )
         self._unit = value
+        self.events.unit(self._unit)
