@@ -58,7 +58,7 @@ class ScaleBarOverlay(CanvasOverlay):
         return self._unit
 
     @unit.setter
-    def unit(self, value: str | None):
+    def unit(self, value: str | None) -> None:
         if value is not None:
             warnings.warn(
                 'Setting unit on the ScaleBar model is deprecated. Units will instead be computed from '

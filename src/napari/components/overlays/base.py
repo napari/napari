@@ -28,8 +28,8 @@ class Overlay(EventedModel):
 
     model_config = EventedModel.model_config | ConfigDict(
         validate_assignment=True,
-        allow_property_setters=True,
-        guess_property_dependencies=True,
+        allow_property_setters=True,  # type: ignore[typeddict-unknown-key]
+        guess_property_dependencies=True,  # type: ignore[typeddict-unknown-key]
     )
 
     visible: bool = False
