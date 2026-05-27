@@ -443,12 +443,10 @@ def _validate_icon_string(icon):
 def _get_and_validate_icon(command, manifest):
     icon = command.icon or manifest.icon
 
-    if not icon:
-        return None
-
     if isinstance(icon, str):
-        return _validate_icon_string(icon)
+        # just pass dark and it will be used for the rest
+        return {'dark': _validate_icon_string(icon)}
     if isinstance(icon, contributions._icon.Icon):
         return {k: _validate_icon_string(v) for k, v in dict(icon).items()}
 
-    return None
+    return {}

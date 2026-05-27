@@ -6,6 +6,7 @@ from itertools import chain
 from typing import TYPE_CHECKING
 
 from app_model import Application
+from app_model.types import Icon, SubmenuItem
 from in_n_out import Store
 
 from napari._app_model.actions._file import FILE_ACTIONS, FILE_SUBMENUS
@@ -109,7 +110,18 @@ class NapariApplication(Application):
         from napari.settings import get_settings
         from napari.utils.theme import get_theme
 
-        self.theme_mode = get_theme(get_settings().appearance.theme).type
+        theme = get_theme(get_settings().appearance.theme)
+        colors = {'color_dark': theme.icon, 'color_light': theme.icon}
+        for action in self.registered_actions.values():
+            if isinstance(action.icon, Icon):
+                action.icon = dict(action.icon) | colors
+        for _, menu in self.menus:
+            for entry in menu:
+                if isinstance(entry, SubmenuItem) and isinstance(
+                    action.icon, Icon
+                ):
+                    entry.icon = dict(entry.icon) | colors
+        self.theme_mode = theme.type
 
 
 @lru_cache(maxsize=1)
