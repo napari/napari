@@ -196,6 +196,16 @@ class Colormap(EventedModel):
     def colorbar(self):
         return make_colorbar(self)
 
+    def same_colors(self, other: 'Colormap') -> bool:
+        return bool(
+            np.array_equal(self.controls, other.controls)
+            and np.array_equal(self.colors, other.colors)
+            and self.interpolation == other.interpolation
+            and np.all(self.nan_color == other.nan_color)
+            and np.all(self.high_color == other.high_color)
+            and np.all(self.low_color == other.low_color)
+        )
+
 
 class LabelColormapBase(Colormap):
     use_selection: bool = False
