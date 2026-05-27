@@ -52,7 +52,6 @@ class ExperimentalSettings(EventedSettings):
         description=trans._(
             'Multisampling improves quality by rendering more fragments to reduce aliasing, at the cost of some performance.'
         ),
-        env='napari_multisampling',
         json_schema_extra={'requires_restart': True},
     )
 
