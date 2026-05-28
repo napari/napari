@@ -23,6 +23,7 @@ membrane = data[:, 0]
 nuclei = data[:, 1]
 
 viewer = napari.Viewer()
+viewer.scale_bar.visible = True
 viewer.add_image(
     membrane,
     name='membrane-nm',
