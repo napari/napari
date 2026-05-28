@@ -194,6 +194,22 @@ def get_qapp(
                 ),
                 stacklevel=2,
             )
+        if sys.platform == 'linux' and app.platformName() == 'wayland':
+            # A QApplication created before napari was imported (e.g. via
+            # IPython's "%gui qt") locks the Qt platform plugin to Wayland
+            # before napari's _wayland_fix.py  workaround can run.
+            warn(
+                trans._(
+                    'A Qt application was already running on the Wayland '
+                    'platform before napari was imported, so napari could not '
+                    'automatically apply its Wayland startup workaround. If napari '
+                    'fails to launch or throws repeated rendering errors, see '
+                    'https://napari.org/stable/troubleshooting.html#wayland-and-nvidia '
+                    'for the workaround.',
+                    deferred=True,
+                ),
+                stacklevel=2,
+            )
 
     else:
         # automatically determine monitor DPI.
