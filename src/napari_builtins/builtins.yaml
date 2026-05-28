@@ -140,6 +140,7 @@ contributions:
     - id: napari.widgets.features_table
       title: Features table widget
       python_name: napari_builtins._qt.features_table:FeaturesTable
+      icon: 'fa6-solid:table'
 
     # others
     - id: napari.toggle_shape_measures

@@ -436,7 +436,7 @@ def _validate_icon_string(icon):
                 return f'file:/{icon_path}'
         except ModuleNotFoundError:
             # probably fonticon name, leave it as is
-            pass
+            return icon
     return None
 
 
