@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import bisect
+import warnings
 from decimal import Decimal
 from math import floor, log
 from typing import TYPE_CHECKING, Any
@@ -70,7 +71,20 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         if self.overlay.unit is not None:
             unit = pint.get_application_registry()(self.overlay.unit)
         elif self.viewer.layers.units is not None:
-            unit = self.viewer.layers.units[self.viewer.dims.displayed[-1]]
+            units = np.array(self.viewer.layers.units)[
+                list(self.viewer.dims.displayed)
+            ]
+            if any(
+                u.dimensionality != units[0].dimensionality for u in units[1:]
+            ):
+                dim_repr = tuple(str(d.dimensionality) for d in units)
+                warnings.warn(
+                    f'Displayed dimensions have mismatched dimensionality {dim_repr}. '
+                    'The scale bar will only use the unit from the last displayed axis.',
+                    category=RuntimeWarning,
+                    stacklevel=2,
+                )
+            unit = units[-1]
         else:
             unit = pint.get_application_registry()('dimensionless')
         self._unit = unit * 1  # convert unit to quantity
