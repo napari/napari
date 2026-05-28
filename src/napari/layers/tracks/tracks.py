@@ -11,7 +11,6 @@ import pandas as pd
 from napari.layers.base import Layer
 from napari.layers.tracks._track_utils import (
     TrackManager,
-    normalize_track_data,
 )
 from napari.utils.colormaps import AVAILABLE_COLORMAPS, Colormap
 from napari.utils.events import Event
