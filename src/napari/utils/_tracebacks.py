@@ -2,17 +2,16 @@ from __future__ import annotations
 
 import re
 import sys
-from typing import TYPE_CHECKING
+from collections.abc import Callable, Generator
 
 import numpy as np
 
 from napari.types import ExcInfo
 
-if TYPE_CHECKING:
-    from collections.abc import Callable, Generator
+TracebackFormatter = Callable[[ExcInfo, bool, str | None], str]
 
 
-def get_tb_formatter() -> Callable[[ExcInfo, bool, str], str]:
+def get_tb_formatter() -> TracebackFormatter:
     """Return a formatter callable that uses IPython VerboseTB if available.
 
     Imports IPython lazily if available to take advantage of ultratb.VerboseTB.
@@ -34,16 +33,21 @@ def get_tb_formatter() -> Callable[[ExcInfo, bool, str], str]:
         import IPython.core.ultratb
 
         def format_exc_info(
-            info: ExcInfo, as_html: bool, color='Neutral'
+            info: ExcInfo,
+            as_html: bool,
+            color: str | None = None,
         ) -> str:
             # avoid verbose printing of the array data
             with np.printoptions(precision=5, threshold=10, edgeitems=2):
+                color_value = 'Neutral' if color is None else color
                 if IPython.version_info >= (9, 0):
                     vbtb = IPython.core.ultratb.VerboseTB(
-                        theme_name=color.lower()
+                        theme_name=color_value.lower()
                     )
                 else:
-                    vbtb = IPython.core.ultratb.VerboseTB(color_scheme=color)
+                    vbtb = IPython.core.ultratb.VerboseTB(
+                        color_scheme=color_value
+                    )
                 if as_html:
                     ansi_string = vbtb.text(*info).replace(' ', '&nbsp;')
                     html = ''.join(ansi2html(ansi_string))
@@ -89,7 +93,9 @@ def get_tb_formatter() -> Callable[[ExcInfo, bool, str], str]:
                 return cgitb.html(info)
 
             def format_exc_info(
-                info: ExcInfo, as_html: bool, color=None
+                info: ExcInfo,
+                as_html: bool,
+                color: str | None = None,
             ) -> str:
                 # avoid verbose printing of the array data
                 with np.printoptions(precision=5, threshold=10, edgeitems=2):
@@ -131,7 +137,9 @@ def get_tb_formatter() -> Callable[[ExcInfo, bool, str], str]:
         else:
 
             def format_exc_info(
-                info: ExcInfo, as_html: bool, color=None
+                info: ExcInfo,
+                as_html: bool,
+                color: str | None = None,
             ) -> str:
                 # avoid verbose printing of the array data
                 with np.printoptions(precision=5, threshold=10, edgeitems=2):
@@ -183,7 +191,7 @@ def ansi2html(
     """
     previous_end = 0
     in_span = False
-    ansi_codes = []
+    ansi_codes: list[int] = []
     ansi_finder = re.compile('\033\\[([\\d;]*)([a-zA-Z])')
     for match in ansi_finder.finditer(ansi_string):
         yield ansi_string[previous_end : match.start()]
