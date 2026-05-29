@@ -510,17 +510,18 @@ class TrackManager:
 
         return lbl, pos
 
-    def normalize_track_data(data, column_map):
-        required = ['track_id', 't', 'y', 'x']
-        for key in required:
-            if key not in column_map:
-                raise ValueError('key missing')
 
-        order = [column_map['track_id'], column_map['t']]
+def normalize_track_data(data, column_map):
+    required = ['track_id', 't', 'y', 'x']
+    for key in required:
+        if key not in column_map:
+            raise ValueError('key missing')
 
-        if 'z' in column_map:
-            order.append(column_map['z'])
+    order = [column_map['track_id'], column_map['t']]
 
-        order.extend([column_map['y'], column_map['x']])
+    if 'z' in column_map:
+        order.append(column_map['z'])
 
-        return data[:, order]
+    order.extend([column_map['y'], column_map['x']])
+
+    return data[:, order]
