@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import bisect
-import warnings
 from decimal import Decimal
 from math import floor, log
 from typing import TYPE_CHECKING, Any
@@ -13,6 +12,7 @@ from napari._vispy.overlays.base import ViewerOverlayMixin, VispyCanvasOverlay
 from napari._vispy.visuals.scale_bar import ScaleBar
 from napari.settings import get_settings
 from napari.utils._units import PREFERRED_VALUES
+from napari.utils.notifications import show_warning
 
 if TYPE_CHECKING:
     from vispy.visuals.text.text import FontManager
@@ -79,11 +79,9 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
                 u.dimensionality != units[0].dimensionality for u in units[1:]
             ):
                 dim_repr = tuple(str(d.dimensionality) for d in units)
-                warnings.warn(
+                show_warning(
                     f'Displayed dimensions have mismatched dimensionality {dim_repr}. '
                     'The scale bar will only use the unit from the last displayed axis.',
-                    category=RuntimeWarning,
-                    stacklevel=2,
                 )
             unit = units[-1]
         else:
