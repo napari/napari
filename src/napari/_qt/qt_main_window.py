@@ -87,7 +87,7 @@ from napari.utils.misc import (
 )
 from napari.utils.notifications import Notification
 from napari.utils.task_status import Status, TaskStatusManager
-from napari.utils.theme import _themes, get_system_theme
+from napari.utils.theme import _REFERENCE_FONT_SIZE, _themes, get_system_theme
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
@@ -740,7 +740,7 @@ class Window:
         self._update_theme()
         self._update_theme_font_size()
         get_settings().appearance.events.theme.connect(self._update_theme)
-        get_settings().appearance.events.font_size.connect(
+        get_settings().appearance.events.font_resize.connect(
             self._update_theme_font_size
         )
         get_settings().appearance.events.logo.connect(self._update_logo)
@@ -802,7 +802,7 @@ class Window:
         theme.events.warning.connect(self._update_theme_no_event)
         theme.events.current.connect(self._update_theme_no_event)
         theme.events.icon.connect(self._update_theme_no_event)
-        theme.events.font_size.connect(self._update_theme_no_event)
+        theme.events.font_resize.connect(self._update_theme_no_event)
         theme.events.canvas.connect(
             lambda _: self._qt_viewer.canvas._set_theme_change(
                 get_settings().appearance.theme
@@ -827,7 +827,7 @@ class Window:
         theme.events.warning.disconnect(self._update_theme_no_event)
         theme.events.current.disconnect(self._update_theme_no_event)
         theme.events.icon.disconnect(self._update_theme_no_event)
-        theme.events.font_size.disconnect(self._update_theme_no_event)
+        theme.events.font_resize.disconnect(self._update_theme_no_event)
         theme.events.canvas.disconnect(
             lambda _: self._qt_viewer.canvas._set_theme_change(
                 get_settings().appearance.theme
@@ -1576,9 +1576,16 @@ class Window:
     def _update_theme_no_event(self):
         self._update_theme()
 
+    def _adjust_font_size_from_dpi_and_platform(self, font_size):
+        screen = self._qt_window.screen()
+        baseline = 96.0
+        return font_size * (baseline / screen.logicalDotsPerInch())
+
     def _update_theme_font_size(self, event=None):
         settings = get_settings()
-        font_size = event.value if event else settings.appearance.font_size
+        font_resize = event.value if event else settings.appearance.font_resize
+        font_resize = self._adjust_font_size_from_dpi_and_platform(font_resize)
+        font_size = _REFERENCE_FONT_SIZE + font_resize
         extra_variables = {'font_size': f'{font_size}pt'}
         self._update_theme(extra_variables=extra_variables)
 
@@ -1596,9 +1603,11 @@ class Window:
                 actual_theme_name = get_system_theme()
             # check `font_size` value is always passed when updating style
             if 'font_size' not in extra_variables:
-                extra_variables.update(
-                    {'font_size': f'{settings.appearance.font_size}pt'}
+                font_resize = self._adjust_font_size_from_dpi_and_platform(
+                    settings.appearance.font_resize
                 )
+                font_size = _REFERENCE_FONT_SIZE + font_resize
+                extra_variables.update({'font_size': f'{font_size}pt'})
             # set the style sheet with the theme name and extra_variables
             style_sheet = get_stylesheet(
                 actual_theme_name, extra_variables=extra_variables

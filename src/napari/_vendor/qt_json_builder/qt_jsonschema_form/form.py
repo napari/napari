@@ -49,7 +49,7 @@ class WidgetBuilder:
             "text": widgets.TextSchemaWidget,
             "range": widgets.IntegerRangeSchemaWidget,
             "enum": widgets.EnumSchemaWidget,
-            "font_size": widgets.FontSizeSchemaWidget,
+            "font_resize": widgets.FontResizeSchemaWidget,
         },
         "array": {
             "array": widgets.ArraySchemaWidget,

@@ -32,7 +32,7 @@ class PreferencesDialog(QDialog):
         'shortcuts': {'ui:widget': 'shortcuts'},
         'extension2reader': {'ui:widget': 'extension2reader'},
         'dask': {'ui:widget': 'horizontal_object'},
-        'font_size': {'ui:widget': 'font_size'},
+        'font_resize': {'ui:widget': 'font_resize'},
     }
 
     resized = Signal(QSize)

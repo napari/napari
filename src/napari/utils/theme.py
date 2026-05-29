@@ -30,6 +30,9 @@ except (ImportError, RuntimeError):
     use_gradients = False
 
 
+_REFERENCE_FONT_SIZE = 9
+
+
 class Theme(EventedModel):
     """Theme model.
 
@@ -65,8 +68,8 @@ class Theme(EventedModel):
         Color used to indicate something is wrong or could stop functionality.
     current : Color
         Color used to highlight Qt widget.
-    font_size : str
-        Font size (in points, pt) used in the application.
+    font_resize : int
+        Font resize amount (in points, pt) compared to the default.
     """
 
     id: str
@@ -85,7 +88,7 @@ class Theme(EventedModel):
     warning: Color
     error: Color
     current: Color
-    font_size: str = '12pt' if sys.platform == 'darwin' else '9pt'
+    font_resize: int = 0
 
     @field_validator('syntax_style', mode='before')
     @classmethod
@@ -100,26 +103,39 @@ class Theme(EventedModel):
         )
         return value
 
-    @field_validator('font_size', mode='before')
-    @classmethod
-    def _ensure_font_size(cls, value: str) -> str:
+    @property
+    def font_size(self) -> str:
+        val = _REFERENCE_FONT_SIZE + self.font_resize
+        if sys.platform == 'darwin':
+            val = int(val * 96 / 72)
+        return f'{val}pt'
+
+    @font_size.setter
+    def font_size(self, value: str) -> None:
         assert value.endswith('pt'), trans._(
             'Font size must be in points (pt).', deferred=True
         )
-        assert int(value[:-2]) > 0, trans._(
+        val = int(value[:-2])
+        assert val > 0, trans._(
             'Font size must be greater than 0.', deferred=True
         )
-        return value
+        if sys.platform == 'darwin':
+            val = int(val * 72 / 96)
+        self.font_resize = val - _REFERENCE_FONT_SIZE
 
     def to_rgb_dict(self) -> dict[str, Any]:
         """
         This differs from baseclass `dict()` by converting colors to rgb.
         """
         th = super().model_dump()
-        return {
+        th = {
             k: v if not isinstance(v, Color) else v.as_rgb()
             for (k, v) in th.items()
         }
+        # need to do manually because it's not a field
+        th['font_size'] = self.font_size
+        del th['font_resize']
+        return th
 
 
 increase_pattern = re.compile(r'{{\s?increase\((\w+),?\s?([-\d]+)?\)\s?}}')
@@ -130,14 +146,14 @@ lighten_pattern = re.compile(r'{{\s?lighten\((\w+),?\s?([-\d]+)?\)\s?}}')
 opacity_pattern = re.compile(r'{{\s?opacity\((\w+),?\s?([-\d]+)?\)\s?}}')
 
 
-def decrease(font_size: str, pt: int) -> str:
+def decrease(font_size: str, pt: float) -> str:
     """Decrease fontsize."""
-    return f'{int(font_size[:-2]) - int(pt)}pt'
+    return f'{float(font_size[:-2]) - float(pt)}pt'
 
 
-def increase(font_size: str, pt: int) -> str:
+def increase(font_size: str, pt: float) -> str:
     """Increase fontsize."""
-    return f'{int(font_size[:-2]) + int(pt)}pt'
+    return f'{float(font_size[:-2]) + float(pt)}pt'
 
 
 def _parse_color_as_rgb(color: str | Color) -> tuple[int, int, int]:
@@ -388,7 +404,7 @@ DARK = Theme(
     # Console background. HEX: #121212
     console='rgb(18, 18, 18)',
     canvas='black',
-    font_size='12pt' if sys.platform == 'darwin' else '9pt',
+    font_resize=0,
 )
 LIGHT = Theme(
     id='light',
@@ -407,7 +423,7 @@ LIGHT = Theme(
     syntax_style='default',
     console='rgb(255, 255, 255)',
     canvas='white',
-    font_size='12pt' if sys.platform == 'darwin' else '9pt',
+    font_resize=0,
 )
 
 register_theme('dark', DARK, 'builtin')
