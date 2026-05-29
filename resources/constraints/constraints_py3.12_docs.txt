@@ -85,7 +85,7 @@ chardet==7.4.3
     # via trackastra
 charset-normalizer==3.4.7
     # via requests
-click==8.4.0
+click==8.4.1
     # via
     #   dask
     #   distributed
@@ -98,14 +98,7 @@ cloudpickle==3.1.2
     #   dask
     #   distributed
 colorama==0.4.6
-    # via
-    #   build
-    #   click
-    #   ipython
-    #   pytest
-    #   sphinx
-    #   sphinx-autobuild
-    #   tqdm
+    # via sphinx-autobuild
 colorspacious==1.1.2
     # via glasbey
 comm==0.2.3
@@ -114,6 +107,12 @@ contourpy==1.3.3
     # via matplotlib
 coverage==7.14.0
     # via napari (pyproject.toml)
+cuda-bindings==13.2.0
+    # via torch
+cuda-pathfinder==1.5.4
+    # via cuda-bindings
+cuda-toolkit==13.0.2
+    # via torch
 cycler==0.12.1
     # via matplotlib
 dask==2026.3.0
@@ -212,7 +211,7 @@ hsluv==5.0.4
     # via vispy
 hypothesis==6.152.9
     # via napari (pyproject.toml)
-idna==3.15
+idna==3.16
     # via
     #   anyio
     #   requests
@@ -494,6 +493,47 @@ numpy==2.4.6
     #   zarr
 numpydoc==1.10.0
     # via napari (pyproject.toml:docs)
+nvidia-cublas==13.1.1.3
+    # via
+    #   nvidia-cudnn-cu13
+    #   nvidia-cusolver
+    #   torch
+nvidia-cuda-cupti==13.0.85
+    # via cuda-toolkit
+nvidia-cuda-nvrtc==13.0.88
+    # via
+    #   cuda-toolkit
+    #   nvidia-cublas
+nvidia-cuda-runtime==13.0.96
+    # via cuda-toolkit
+nvidia-cudnn-cu13==9.20.0.48
+    # via torch
+nvidia-cufft==12.0.0.61
+    # via cuda-toolkit
+nvidia-cufile==1.15.1.6
+    # via cuda-toolkit
+nvidia-curand==10.4.0.35
+    # via cuda-toolkit
+nvidia-cusolver==12.0.4.66
+    # via cuda-toolkit
+nvidia-cusparse==12.6.3.3
+    # via
+    #   cuda-toolkit
+    #   nvidia-cusolver
+nvidia-cusparselt-cu13==0.8.1
+    # via torch
+nvidia-nccl-cu13==2.29.7
+    # via torch
+nvidia-nvjitlink==13.0.88
+    # via
+    #   cuda-toolkit
+    #   nvidia-cufft
+    #   nvidia-cusolver
+    #   nvidia-cusparse
+nvidia-nvshmem-cu13==3.4.5
+    # via torch
+nvidia-nvtx==13.0.85
+    # via cuda-toolkit
 ome-types==0.6.3
     # via
     #   bioio
@@ -533,6 +573,8 @@ partd==1.4.2
     # via dask
 partsegcore-compiled-backend==0.15.14
     # via napari (pyproject.toml)
+pexpect==4.9.0
+    # via ipython
 pillow==12.2.0
     # via
     #   napari (pyproject.toml)
@@ -594,6 +636,8 @@ psygnal==0.15.1
     #   magic-class
     #   magicgui
     #   npe2
+ptyprocess==0.7.0
+    # via pexpect
 pure-eval==0.2.3
     # via stack-data
 pyautogui==0.9.54
@@ -689,7 +733,7 @@ pytest-pretty==1.3.0
     # via napari (pyproject.toml)
 pytest-qt==4.5.0
     # via napari (pyproject.toml)
-pytest-rerunfailures==16.2
+pytest-rerunfailures==16.3
     # via napari (pyproject.toml)
 python-dateutil==2.9.0.post0
     # via
@@ -702,10 +746,12 @@ python-discovery==1.3.1
     # via virtualenv
 python-dotenv==1.2.2
     # via pydantic-settings
+python3-xlib==0.15
+    # via
+    #   mouseinfo
+    #   pyautogui
 pytweening==1.2.0
     # via pyautogui
-pywin32==311
-    # via napari (pyproject.toml)
 pyyaml==6.0.3
     # via
     #   napari (pyproject.toml)
@@ -801,13 +847,13 @@ shiboken6==6.11.1
     #   pyside6-essentials
 six==1.17.0
     # via python-dateutil
-snowballstemmer==3.0.1
+snowballstemmer==3.1.0
     # via sphinx
 sortedcontainers==2.4.0
     # via
     #   distributed
     #   hypothesis
-soupsieve==2.8.3
+soupsieve==2.8.4
     # via beautifulsoup4
 sphinx==9.1.0
     # via
@@ -864,11 +910,11 @@ sphinxext-opengraph==0.13.0
     # via napari (pyproject.toml:docs)
 sphinxext-rediraffe==0.3.0
     # via napari (pyproject.toml:docs)
-sqlalchemy==2.0.49
+sqlalchemy==2.0.50
     # via jupyter-cache
 stack-data==0.6.3
     # via ipython
-starlette==1.0.0
+starlette==1.1.0
     # via sphinx-autobuild
 stdlib-list==0.12.0
     # via pydeps
@@ -937,6 +983,8 @@ traitlets==5.15.0
     #   qtconsole
 triangle==20250106
     # via napari (pyproject.toml:docs)
+triton==3.7.0
+    # via torch
 typer==0.25.1
     # via
     #   geff
@@ -975,8 +1023,6 @@ typing-inspection==0.4.2
     # via
     #   pydantic
     #   pydantic-settings
-tzdata==2026.2
-    # via pandas
 uc-micro-py==2.0.0
     # via linkify-it-py
 ujson==5.12.1
@@ -986,7 +1032,7 @@ urllib3==2.7.0
     #   botocore
     #   distributed
     #   requests
-uvicorn==0.47.0
+uvicorn==0.48.0
     # via sphinx-autobuild
 virtualenv==21.3.3
     # via napari (pyproject.toml)
@@ -1000,7 +1046,7 @@ wcwidth==0.7.0
     # via prompt-toolkit
 websockets==16.0
     # via sphinx-autobuild
-wrapt==2.1.2
+wrapt==2.2.1
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
