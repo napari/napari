@@ -159,6 +159,21 @@ def test_data_setter_updates_transforms(Layer):
     assert len(layer.scale) == 3
 
 
+@pytest.mark.parametrize('Layer', [Image, Labels])
+def test_invisible_layer_keeps_placeholder_rank_in_3d(Layer):
+    """When ndisplay flips while the layer is invisible, the cached
+    placeholder must still match ndisplay's rank, otherwise vispy crashes
+    with "Volume visual needs a 3D array." when it later reads
+    layer._data_view.
+    """
+    layer = Layer(np.zeros((4, 5, 6), dtype=np.uint8), visible=False)
+    layer._slice_dims(Dims(ndim=3, ndisplay=3))
+    assert layer._data_view.ndim == 3
+    layer.visible = True
+    layer.visible = False
+    assert layer._data_view.ndim == 3
+
+
 # ---------------------------------------------------------------------------
 # locked_data_level tests
 # ---------------------------------------------------------------------------
