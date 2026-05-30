@@ -524,4 +524,5 @@ def normalize_track_data(data, column_map):
 
     order.extend([column_map['y'], column_map['x']])
 
-    return data[:, order]
+    # convert to numpy
+    return data[:, order].to_numpy()
