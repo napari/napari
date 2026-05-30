@@ -297,23 +297,22 @@ class VectorsVisual(ClippingPlanesMixin, Visual):
         view.view_program['u_px_scale'] = view.transforms.pixel_scale
         view.view_program['u_width'] = self._width
 
-        # Set style-specific uniforms
-        # Head width ratio (hardcoded for now, will be configurable in future PR)
-        view.view_program['u_head_width_ratio'] = 4.0
-
-        # Head length ratio varies by style to create line/triangle/arrow appearance
+        # Head length/width ratios create the line/triangle/arrow appearance.
+        # The triangle base and the line both have width == edge_width (as in
+        # the original mesh renderer), so the triangle uses head_width_ratio
+        # = 1.0 rather than the arrow's wider head. (For the line the head is
+        # a degenerate zero-area triangle, so its width ratio is irrelevant.)
         if self._vector_style == 'line':
             # All shaft, no head
             view.view_program['u_head_length_ratio'] = 0.0
+            view.view_program['u_head_width_ratio'] = 1.0
         elif self._vector_style == 'triangle':
-            # All head, no shaft
+            # All head, no shaft; base width matches a line of the same width
             view.view_program['u_head_length_ratio'] = 1.0
-        elif self._vector_style == 'arrow':
-            # Shaft + head (hardcoded ratio for now)
+            view.view_program['u_head_width_ratio'] = 1.0
+        else:  # arrow: shaft + wider head (hardcoded ratio for now)
             view.view_program['u_head_length_ratio'] = 0.25
-        else:
-            # Default to arrow
-            view.view_program['u_head_length_ratio'] = 0.25
+            view.view_program['u_head_width_ratio'] = 4.0
 
         # Calculate direction-independent data-to-screen scale for data mode
         # Transform unit basis vectors and average their screen-space lengths
