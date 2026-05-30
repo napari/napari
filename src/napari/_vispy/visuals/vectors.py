@@ -74,7 +74,7 @@ void main (void) {
 
     // Calculate width in data/world space (scales with zoom)
     // Use precomputed direction-independent scale factor
-    float width_fb = u_width * 0.5 * u_data_scale;
+    float width_fb = 1.5 * u_width * u_data_scale;
 
     // Scale perpendicular offset based on vertex type
     // Shaft (|y| ≤ 0.5): scale = 2.0 (so 0.25 becomes 0.5 = half-width)
@@ -312,7 +312,7 @@ class VectorsVisual(ClippingPlanesMixin, Visual):
             view.view_program['u_head_width_ratio'] = 1.0
         else:  # arrow: shaft + wider head (hardcoded ratio for now)
             view.view_program['u_head_length_ratio'] = 0.25
-            view.view_program['u_head_width_ratio'] = 4.0
+            view.view_program['u_head_width_ratio'] = 3.0
 
         # Calculate direction-independent data-to-screen scale for data mode
         # Transform unit basis vectors and average their screen-space lengths
