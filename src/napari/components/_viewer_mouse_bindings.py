@@ -1,11 +1,18 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import numpy as np
+
+if TYPE_CHECKING:
+    from napari.viewer import Viewer
 
 # This is the minimum size of the zoom box (in pixels) that will
 # trigger a zoom when the user drags the mouse while holding Alt.
 MIN_ZOOMBOX_SIZE = 5
 
 
-def _pan_zoom_enabled(viewer) -> bool:
+def _pan_zoom_enabled(viewer: Viewer) -> bool:
     active_layer = viewer.layers.selection.active
     return active_layer is None or active_layer.mode == 'pan_zoom'
 
