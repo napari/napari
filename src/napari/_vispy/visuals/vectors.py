@@ -74,7 +74,7 @@ void main (void) {
 
     // Calculate width in data/world space (scales with zoom)
     // Use precomputed direction-independent scale factor
-    float width_fb = u_width * u_data_scale;
+    float width_fb = u_width * 0.5 * u_data_scale;
 
     // Scale perpendicular offset based on vertex type
     // Shaft (|y| ≤ 0.5): scale = 2.0 (so 0.25 becomes 0.5 = half-width)
