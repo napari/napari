@@ -123,7 +123,6 @@ class VectorsVisual(ClippingPlanesMixin, Visual):
         self._template_vbo = VertexBuffer()
         self._index_buffer = IndexBuffer()
 
-        # Initialize unified template (used for all styles)
         self._setup_template_vertices()
 
         if len(kwargs) > 0:
@@ -233,25 +232,12 @@ class VectorsVisual(ClippingPlanesMixin, Visual):
             1::2
         ]  # All ends (odd indices)
 
-        # Compute colors per instance
+        # One color per instance (per vector)
         if face_colors is not None and len(face_colors) > 0:
-            # Compute face indices based on vector style
-            # For mesh-based rendering:
-            # - 'line': 2 faces per vector
-            # - 'triangle': 1 face per vector
-            # - 'arrow': 3 faces per vector
-            if vector_style == 'line':
-                face_indices = np.arange(n_segments) * 2
-            elif vector_style == 'triangle':
-                face_indices = np.arange(n_segments)
-            elif vector_style == 'arrow':
-                face_indices = np.arange(n_segments) * 3
-            else:
-                face_indices = np.zeros(n_segments, dtype=int)
-
-            # Clamp indices to valid range
-            face_indices = np.minimum(face_indices, len(face_colors) - 1)
-            instance_data['a_color'] = face_colors[face_indices]
+            assert len(face_colors) == n_segments, (
+                'face_colors must have one color per vector'
+            )
+            instance_data['a_color'] = face_colors
         else:
             # Default white color
             instance_data['a_color'] = [1, 1, 1, 1]
@@ -313,7 +299,7 @@ class VectorsVisual(ClippingPlanesMixin, Visual):
 
         # Set style-specific uniforms
         # Head width ratio (hardcoded for now, will be configurable in future PR)
-        view.view_program['u_head_width_ratio'] = 3.0
+        view.view_program['u_head_width_ratio'] = 4.0
 
         # Head length ratio varies by style to create line/triangle/arrow appearance
         if self._vector_style == 'line':
