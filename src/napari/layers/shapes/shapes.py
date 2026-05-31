@@ -2820,7 +2820,8 @@ class Shapes(Layer):
         indices : List[int]
             List of indices of shapes to remove from the layer.
         """
-        to_remove = sorted(indices, reverse=True)
+        sorted_indices = sorted(indices)
+        to_remove = sorted_indices[::-1]
 
         if len(indices) > 0:
             self.events.data(
@@ -2832,13 +2833,26 @@ class Shapes(Layer):
                 vertex_indices=((),),
             )
             self._data_view.remove_multiple(to_remove)
+            indices_array = np.array(sorted_indices)
+            # Update cached hover/move references before any selection change
+            # fires events.highlight → _outline_shapes. _value and
+            # _moving_value are also reset by _finish_drawing() below, but
+            # _value_stored is not, so all three are updated here.
+            self._value = self._renumber_shape_reference(
+                self._value, indices_array
+            )
+            self._value_stored = self._renumber_shape_reference(
+                self._value_stored, indices_array
+            )
+            self._moving_value = self._renumber_shape_reference(
+                self._moving_value, indices_array
+            )
 
             if len(self.data) == 0 and self.selected_data:
                 self.selected_data.clear()
             elif self.selected_data:
                 selected_not_removed = self.selected_data - set(indices)
                 if selected_not_removed:
-                    indices_array = np.array(to_remove[::-1])
                     remaining_selected = np.fromiter(
                         selected_not_removed,
                         dtype=np.intp,
@@ -2868,6 +2882,34 @@ class Shapes(Layer):
             )
             self.events.features()
         self._finish_drawing()
+
+    @staticmethod
+    def _renumber_shape_reference(
+        value: tuple[int | None, int | None], removed_indices: np.ndarray
+    ) -> tuple[int | None, int | None]:
+        """Update a cached shape reference after removing shapes.
+
+        Parameters
+        ----------
+        value : tuple[int | None, int | None]
+            A ``(shape_index, vertex_index)`` pair to update.
+        removed_indices : np.ndarray
+            Sorted ascending array of shape indices that were removed.
+
+        Returns
+        -------
+        tuple[int | None, int | None]
+            ``(None, None)`` if the referenced shape was removed; otherwise
+            the renumbered ``(shape_index, vertex_index)`` pair accounting for
+            the shift introduced by the removed shapes.
+        """
+        shape_index, vertex_index = value
+        if shape_index is None:
+            return value
+        pos = np.searchsorted(removed_indices, shape_index)
+        if pos < len(removed_indices) and removed_indices[pos] == shape_index:
+            return (None, None)
+        return (shape_index - pos, vertex_index)
 
     def remove_selected(self) -> None:
         """Remove any selected shapes."""

@@ -1551,6 +1551,75 @@ def test_removing_selected_shapes():
     )
 
 
+def test_removing_selected_shapes_clears_cached_shape_references():
+    """Regression test for https://github.com/napari/napari/issues/9019.
+
+    Removing a shape that is referenced by _value must not crash _outline_shapes
+    when the highlight event fires mid-removal. Without the fix this raises
+    IndexError because _outline_shapes accesses the already-deleted shape index.
+    _value and _moving_value are also reset unconditionally by _finish_drawing(),
+    but _value_stored is only cleaned up by the explicit renumber call.
+    """
+    layer = Shapes(np.random.random((2, 4, 2)))
+    # Connect _outline_shapes directly to reproduce the production crash path:
+    # remove() → selected_data.clear() → _set_highlight → events.highlight
+    layer.events.highlight.connect(layer._outline_shapes)
+    layer.selected_data = {1}
+    layer._value = (1, None)
+    layer._value_stored = (1, None)
+    layer._moving_value = (1, None)
+
+    layer.remove_selected()  # raises IndexError without the fix
+
+    assert layer._value == (None, None)
+    assert layer._value_stored == (None, None)
+    assert layer._moving_value == (None, None)
+
+
+def test_renumber_shape_reference():
+    """Unit tests for _renumber_shape_reference covering all three code paths."""
+    removed = np.array([1, 3, 5])
+
+    # None input is a no-op
+    assert Shapes._renumber_shape_reference((None, None), removed) == (
+        None,
+        None,
+    )
+
+    # Shape was removed → cleared
+    assert Shapes._renumber_shape_reference((3, None), removed) == (None, None)
+
+    # Shape survives before any removed index → index unchanged
+    assert Shapes._renumber_shape_reference((0, None), removed) == (0, None)
+
+    # Shape survives after some removed indices → index decremented by offset
+    # Shape 6 survives; 3 indices below it were removed → becomes index 3
+    assert Shapes._renumber_shape_reference((6, 2), removed) == (3, 2)
+
+
+def test_removing_shape_renumbers_cached_hover_reference():
+    """When a shape before the hovered one is deleted, the hover index must
+    be renumbered before events.highlight fires.
+
+    Without the fix, _value still holds the original index (2) after shape 1
+    is removed. Since only indices 0 and 1 remain, _outline_shapes would call
+    _data_view.outline(2) and raise an IndexError.
+    """
+    layer = Shapes(np.random.random((3, 4, 2)))
+    captured_values = []
+    layer.events.highlight.connect(
+        lambda: captured_values.append(layer._value)
+    )
+
+    layer._value = (2, None)  # hovering over the last shape
+    layer.selected_data = {1}  # select the middle shape to delete
+    layer.remove_selected()  # without the fix: IndexError in _outline_shapes
+
+    # The highlight callback must have seen the renumbered index:
+    # shape 2 shifted to index 1 after shape 1 was removed.
+    assert (1, None) in captured_values
+
+
 def test_popping_shapes():
     """Test popping shapes."""
     np.random.seed(0)
