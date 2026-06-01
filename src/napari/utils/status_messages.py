@@ -12,6 +12,13 @@ def format_float(value):
     return f'{value:0.{precision}g}'
 
 
+def format_feature_value(value):
+    """Format a single feature value for display in the status bar."""
+    if isinstance(value, float) or np.issubdtype(type(value), np.floating):
+        return format_float(value)
+    return str(value)
+
+
 def status_format(value):
     """Return a "nice" string representation of a value.
 
