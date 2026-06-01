@@ -12,10 +12,12 @@ class GridLinesOverlay(SceneOverlay):
     ----------
     color : ColorValue or None
         Color of the grid lines, or None for automatic coloring.
-    labels : bool
-        Whether to display ticks and tick labels.
-    n_labels : int
-        How many ticks and labels should be displayed. This number will be
+    axis_labels : bool
+        Whether to display axis labels.
+    tick_labels : bool
+        Whether to display tick labels.
+    n_ticks : int
+        How many ticks labels should be displayed. This number will be
         targeted approximately, to prioritize nice round numbers.
     visible : bool
         If the overlay is visible or not.
@@ -26,6 +28,7 @@ class GridLinesOverlay(SceneOverlay):
     """
 
     color: ColorValue | None = None
-    labels: bool = True
-    n_labels: int = Field(5, ge=2)
+    axis_labels: bool = True
+    tick_labels: bool = True
+    n_ticks: int = Field(5, ge=2)
     blending: Blending = Blending.TRANSLUCENT_NO_DEPTH

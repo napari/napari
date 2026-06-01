@@ -87,10 +87,16 @@ toggle_action_details = [
         'visible',
     ),
     (
-        'napari.window.view.toggle_viewer_grid_lines_labels',
-        trans._('Grid Lines Labels'),
+        'napari.window.view.toggle_viewer_grid_lines_axis_labels',
+        trans._('Grid Lines Tick Labels'),
         'grid_lines',
-        'labels',
+        'axis_labels',
+    ),
+    (
+        'napari.window.view.toggle_viewer_grid_lines_tick_labels',
+        trans._('Grid Lines Tick Labels'),
+        'grid_lines',
+        'tick_labels',
     ),
 ]
 

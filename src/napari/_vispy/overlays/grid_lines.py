@@ -19,6 +19,7 @@ if TYPE_CHECKING:
 
 class VispyGridLinesOverlay(ViewerOverlayMixin, VispySceneOverlay):
     overlay: GridLinesOverlay
+    node: GridLines3D
 
     def __init__(
         self,
@@ -39,8 +40,9 @@ class VispyGridLinesOverlay(ViewerOverlayMixin, VispySceneOverlay):
         )
 
         self.overlay.events.color.connect(self._on_data_change)
-        self.overlay.events.labels.connect(self._on_data_change)
-        self.overlay.events.n_labels.connect(self._on_data_change)
+        self.overlay.events.axis_labels.connect(self._on_data_change)
+        self.overlay.events.tick_labels.connect(self._on_data_change)
+        self.overlay.events.n_ticks.connect(self._on_data_change)
         self.viewer.dims.events.order.connect(self._on_data_change)
         self.viewer.dims.events.range.connect(self._on_data_change)
         self.viewer.dims.events.ndisplay.connect(self._on_data_change)
@@ -63,6 +65,7 @@ class VispyGridLinesOverlay(ViewerOverlayMixin, VispySceneOverlay):
         # napari dims are zyx, but vispy uses xyz
         displayed = self.viewer.dims.displayed[::-1]
         ranges = [self.viewer.dims.range[i] for i in displayed]
+        axis_labels = [self.viewer.dims.axis_labels[i] for i in displayed]
 
         self.node.color = (
             self.overlay.color
@@ -73,7 +76,10 @@ class VispyGridLinesOverlay(ViewerOverlayMixin, VispySceneOverlay):
         self.node.set_extents(ranges)
         # TODO: 'force' should only be used when necesssary!
         self.node.set_ticks(
-            self.overlay.labels, self.overlay.n_labels, ranges, force=True
+            self.overlay.tick_labels, self.overlay.n_ticks, ranges, force=True
+        )
+        self.node.set_axis_labels(
+            self.overlay.axis_labels, ranges, axis_labels
         )
         self._on_blending_change()  # needed to ensure new grids/ticks are up to date
 
@@ -88,9 +94,6 @@ class VispyGridLinesOverlay(ViewerOverlayMixin, VispySceneOverlay):
             view_direction = tuple(
                 np.sign(self.viewer.camera.view_direction)[::-1]
             )
-            up_direction = tuple(
-                np.sign(self.viewer.camera.up_direction)[::-1]
-            )
             orientation_flip = tuple(
                 1 if ori == default_ori else -1
                 for ori, default_ori in zip(
@@ -101,13 +104,11 @@ class VispyGridLinesOverlay(ViewerOverlayMixin, VispySceneOverlay):
             )[::-1]
         else:
             view_direction = (1, 1, 1)
-            up_direction = (1, 1, 1)
             orientation_flip = (1, 1, 1)
 
         self.node.set_view_direction(
             ranges,
             view_direction,
-            up_direction,
             orientation_flip,
             zoom=self.viewer.camera.zoom,
             force=force,
