@@ -101,7 +101,6 @@ class GridLines3D(Node):
         view_direction: tuple[int, ...],
         orientation_flip: tuple[int, ...],
         zoom: float,
-        force: bool = False,
     ) -> None:
         view_is_flipped = tuple(
             d * f >= 0
@@ -196,7 +195,6 @@ class GridLines3D(Node):
         show_ticks: bool,
         n_ticks: int,
         ranges: list[RangeTuple],
-        force: bool = False,
     ) -> None:
         if not show_ticks:
             for axis_ticks in self.tick_labels.values():
