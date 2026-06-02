@@ -43,6 +43,7 @@ from napari.components.overlays import (
     AxesOverlay,
     BrushCircleOverlay,
     CurrentSliceOverlay,
+    CursorLocatorOverlay,
     Overlay,
     ScaleBarOverlay,
     TextOverlay,
@@ -133,6 +134,7 @@ DEFAULT_OVERLAYS = {
     'text': TextOverlay,
     'axes': AxesOverlay,
     'brush_circle': BrushCircleOverlay,
+    'cursor_locator': CursorLocatorOverlay,
     'zoom': ZoomOverlay,
     'current_slice': CurrentSliceOverlay,
 }
