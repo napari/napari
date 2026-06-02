@@ -20,15 +20,6 @@ from napari.utils.events import EventedModel
 from napari.utils.events.containers._evented_dict import EventedDict
 from napari.utils.translations import trans
 
-try:
-    from qtpy import QT_VERSION
-
-    major, minor, *_ = QT_VERSION.split('.')  # type: ignore[attr-defined]
-    use_gradients = (int(major) >= 5) and (int(minor) >= 12)
-    del major, minor, QT_VERSION
-except (ImportError, RuntimeError):
-    use_gradients = False
-
 
 class Theme(EventedModel):
     """Theme model.
@@ -166,22 +157,93 @@ def _parse_color_as_rgb(color: str | Color) -> tuple[int, int, int]:
     return color.as_rgb_tuple()[:3]
 
 
-def darken(color: str | Color, percentage: float = 10) -> str:
-    ratio = 1 - float(percentage) / 100
-    red, green, blue = _parse_color_as_rgb(color)
-    red = min(max(int(red * ratio), 0), 255)
-    green = min(max(int(green * ratio), 0), 255)
-    blue = min(max(int(blue * ratio), 0), 255)
-    return f'rgb({red}, {green}, {blue})'
+def _luminance(
+    color: tuple[float, float, float],
+) -> float:
+    r, g, b = color
+    return 0.299 * r + 0.587 * g + 0.114 * b
 
 
-def lighten(color: str | Color, percentage: float = 10) -> str:
-    ratio = float(percentage) / 100
-    red, green, blue = _parse_color_as_rgb(color)
-    red = min(max(int(red + (255 - red) * ratio), 0), 255)
-    green = min(max(int(green + (255 - green) * ratio), 0), 255)
-    blue = min(max(int(blue + (255 - blue) * ratio), 0), 255)
-    return f'rgb({red}, {green}, {blue})'
+def _change_luminance(
+    color: tuple[float, float, float],
+    target: float,
+) -> tuple[int, int, int]:
+    """Remaps a color to a target luminance preserving hue/saturation feel."""
+    r, g, b = color
+
+    lum = _luminance(color)
+    target = max(0.0, min(255.0, target))
+
+    if lum < 1.0:
+        v = int(target)
+        return (v, v, v)
+
+    scale = target / lum
+
+    r *= scale
+    g *= scale
+    b *= scale
+
+    # tweak saturation depending on brighten/darken amount
+    tweak_amount = 0.5
+    sat = (
+        1.0 / (1.0 + (scale - 1.0) * tweak_amount)
+        if scale > 1.0
+        else 1.0 + (1.0 - scale) * tweak_amount
+    )
+
+    gray = (r + g + b) / 3.0
+    r = gray + (r - gray) * sat
+    g = gray + (g - gray) * sat
+    b = gray + (b - gray) * sat
+
+    return (
+        max(0, min(255, int(r))),
+        max(0, min(255, int(g))),
+        max(0, min(255, int(b))),
+    )
+
+
+def _shift_luminance(
+    color: tuple[float, float, float],
+    percentage: float,
+) -> tuple[int, int, int]:
+    """Darkens or lightens a color."""
+    lum = _luminance(color)
+    p = percentage / 100.0
+    target = lum + (255.0 - lum) * p if p >= 0 else lum * (1.0 + p)
+    return _change_luminance(color, target)
+
+
+def darken(
+    color: str | Color,
+    percentage: float = 10,
+    theme_type: Literal['dark', 'light'] = 'dark',
+) -> str:
+    rgb = _parse_color_as_rgb(color)
+    percentage *= -1 if theme_type == 'dark' else 1
+    r, g, b = _shift_luminance(rgb, percentage)
+    return f'rgb({r}, {g}, {b})'
+
+
+def lighten(
+    color: str | Color,
+    percentage: float = 10,
+    theme_type: Literal['dark', 'light'] = 'dark',
+) -> str:
+    rgb = _parse_color_as_rgb(color)
+    percentage *= -1 if theme_type == 'light' else 1
+    r, g, b = _shift_luminance(rgb, percentage)
+    return f'rgb({r}, {g}, {b})'
+
+
+def _invert_luminance(
+    color: tuple[float, float, float] | Color,
+) -> tuple[int, int, int]:
+    """Inverts luminance around mid-gray."""
+    if isinstance(color, Color):
+        color = color.as_rgb_tuple(alpha=False)  # type:ignore[invalid-assignment]
+    return _change_luminance(color, 255.0 - _luminance(color))
 
 
 def opacity(color: str | Color, value: int = 255) -> str:
@@ -190,8 +252,6 @@ def opacity(color: str | Color, value: int = 255) -> str:
 
 
 def gradient(stops, horizontal: bool = True) -> str:
-    if not use_gradients:
-        return stops[-1]
 
     if horizontal:
         grad = 'qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0, '
@@ -207,23 +267,27 @@ def gradient(stops, horizontal: bool = True) -> str:
 def template(css: str, **theme):
     def _increase_match(matchobj):
         font_size, to_add = matchobj.groups()
-        return increase(theme[font_size], to_add)
+        return increase(theme[font_size], int(to_add))
 
     def _decrease_match(matchobj):
         font_size, to_subtract = matchobj.groups()
-        return decrease(theme[font_size], to_subtract)
+        return decrease(theme[font_size], int(to_subtract))
 
     def darken_match(matchobj):
         color, percentage = matchobj.groups()
-        return darken(theme[color], percentage)
+        return darken(
+            theme[color], float(percentage), theme_type=theme['type']
+        )
 
     def lighten_match(matchobj):
         color, percentage = matchobj.groups()
-        return lighten(theme[color], percentage)
+        return lighten(
+            theme[color], float(percentage), theme_type=theme['type']
+        )
 
     def opacity_match(matchobj):
-        color, percentage = matchobj.groups()
-        return opacity(theme[color], percentage)
+        color, value = matchobj.groups()
+        return opacity(theme[color], int(value))
 
     def gradient_match(matchobj):
         horizontal = matchobj.groups()[1] == 'h'
@@ -376,56 +440,57 @@ def rebuild_theme_settings():
     settings.appearance.refresh_themes()
 
 
+def invert_theme(theme, **kwargs):
+    new_type = 'dark' if theme.type == 'light' else 'light'
+    inverted_kwargs = {
+        'id': f'{theme.id}-{new_type}',
+        'type': new_type,
+        'label': f'{theme.label} - {new_type.capitalize()}',
+        'background': _invert_luminance(theme.background),
+        'foreground': _invert_luminance(theme.foreground),
+        'primary': _invert_luminance(theme.primary),
+        'secondary': _invert_luminance(theme.secondary),
+        'highlight': _invert_luminance(theme.highlight),
+        'text': _invert_luminance(theme.text),
+        'icon': _invert_luminance(theme.icon),
+        'warning': _invert_luminance(theme.warning),
+        'error': _invert_luminance(theme.error),
+        'current': _invert_luminance(theme.current),
+        'syntax_style': theme.syntax_style,
+        'console': _invert_luminance(theme.console),
+        'canvas': _invert_luminance(theme.canvas),
+        'font_size': theme.font_size,
+    } | kwargs
+
+    return Theme(**inverted_kwargs)
+
+
 # Note: these colors are sometimes lightened / darkened in the qss file.
 DARK = Theme(
     id='dark',
     type='dark',
     label='Default Dark',
-    # Widgets / frame background (e.g. Preferences window). HEX: #262930
     background='rgb(38, 41, 48)',
-    # Layer controls background / layer name background. HEX: #414851
-    foreground='rgb(65, 72, 81)',
-    # Layer controls widget background. HEX: #5a626c
-    primary='rgb(90, 98, 108)',
-    # Currently unused. HEX: #868e93
-    secondary='rgb(134, 142, 147)',
-    # Checked button color. HEX: #6a7380
-    highlight='rgb(106, 115, 128)',
-    # Printed text. HEX: #f0f1f2
+    foreground='rgb(50, 55, 65)',
+    primary='rgb(70, 78, 88)',
+    secondary='rgb(86, 95, 108)',
+    highlight='rgb(97, 105, 110)',
     text='rgb(240, 241, 242)',
-    # Button icons. HEX: #d1d2d4
     icon='rgb(209, 210, 212)',
-    # HEX: #e3b617
     warning='rgb(227, 182, 23)',
-    # HEX: #99121f
     error='rgb(153, 18, 31)',
-    # Active layer (blue). HEX: #007acc
-    current='rgb(0, 122, 204)',
-    # Style of the code in built-in console
+    current='rgb(57, 102, 204)',
     syntax_style='native',
-    # Console background. HEX: #121212
     console='rgb(18, 18, 18)',
     canvas='black',
     font_size='12pt' if sys.platform == 'darwin' else '9pt',
 )
-LIGHT = Theme(
+
+LIGHT = invert_theme(
+    DARK,
     id='light',
-    type='light',
     label='Default Light',
-    background='rgb(239, 235, 233)',
-    foreground='rgb(214, 208, 206)',
-    primary='rgb(188, 184, 181)',
-    secondary='rgb(150, 146, 144)',
-    highlight='rgb(163, 158, 156)',
-    text='rgb(59, 58, 57)',
-    icon='rgb(107, 105, 103)',
-    warning='rgb(227, 182, 23)',
-    error='rgb(255, 18, 31)',
-    current='rgb(253, 240, 148)',
     syntax_style='default',
-    console='rgb(255, 255, 255)',
-    canvas='white',
-    font_size='12pt' if sys.platform == 'darwin' else '9pt',
 )
 
 register_theme('dark', DARK, 'builtin')
@@ -451,8 +516,11 @@ def _install_npe2_themes(themes=None):
             theme_colors = theme.colors.model_dump(exclude_unset=True)
             theme_dict.update(theme_info)
             theme_dict.update(theme_colors)
+            theme = Theme(**theme_dict)
+            inverted = invert_theme(theme)
             try:
-                register_theme(theme.id, theme_dict, manifest.name)
+                register_theme(theme.id, theme, manifest.name)
+                register_theme(inverted.id, inverted, manifest.name)
             except ValueError:
                 logging.getLogger('napari').exception(
                     'Registration theme failed.'
