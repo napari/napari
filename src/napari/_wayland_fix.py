@@ -11,6 +11,14 @@ import os
 import sys
 
 
+def _nvidia_driver_loaded() -> bool:
+    """Return True if the proprietary Nvidia kernel module is loaded.
+
+    Uses the existence of ``/proc/driver/nvidia/version`` as a proxy.
+    """
+    return os.path.exists('/proc/driver/nvidia/version')
+
+
 def _fix_wayland_opengl() -> None:
     """Set QT_QPA_PLATFORM=xcb and PYOPENGL_PLATFORM=glx on Linux+Wayland+Nvidia.
 
@@ -35,7 +43,7 @@ def _fix_wayland_opengl() -> None:
     )
     if not wayland_active:
         return
-    if not os.path.exists('/proc/driver/nvidia/version'):
+    if not _nvidia_driver_loaded():
         return
     if not os.environ.get('DISPLAY'):
         return

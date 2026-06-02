@@ -58,24 +58,33 @@ def test_run_outside_ipython(make_napari_viewer, qapp, monkeypatch):
 
 
 def test_wayland_warning_on_preexisting_app(qapp, monkeypatch):
-    """Warn when a pre-existing QApplication is on the Wayland platform."""
+    """Warn when a pre-existing QApplication is on Wayland with Nvidia."""
     monkeypatch.setattr(sys, 'platform', 'linux')
     monkeypatch.setattr(qapp, 'platformName', lambda: 'wayland')
+    monkeypatch.setattr(
+        'napari._qt.qt_event_loop._nvidia_driver_loaded', lambda: True
+    )
     with pytest.warns(UserWarning, match='Wayland startup workaround'):
         get_qapp()
 
 
 @pytest.mark.parametrize(
-    ('platform', 'platform_name'),
+    ('platform', 'platform_name', 'nvidia'),
     [
-        ('linux', 'xcb'),
-        ('darwin', 'cocoa'),
+        ('linux', 'xcb', True),  # not on Wayland
+        ('darwin', 'cocoa', True),  # not Linux
+        ('linux', 'wayland', False),  # Wayland but no Nvidia driver
     ],
 )
-def test_no_wayland_warning(qapp, monkeypatch, platform, platform_name):
-    """No warning when not on the Wayland platform."""
+def test_no_wayland_warning(
+    qapp, monkeypatch, platform, platform_name, nvidia
+):
+    """No warning unless on Linux+Wayland with the Nvidia driver loaded."""
     monkeypatch.setattr(sys, 'platform', platform)
     monkeypatch.setattr(qapp, 'platformName', lambda: platform_name)
+    monkeypatch.setattr(
+        'napari._qt.qt_event_loop._nvidia_driver_loaded', lambda: nvidia
+    )
     with warnings.catch_warnings(record=True) as records:
         warnings.simplefilter('always')
         get_qapp()
