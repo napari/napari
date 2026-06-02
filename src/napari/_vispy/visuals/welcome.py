@@ -15,10 +15,10 @@ from vispy.visuals.transforms import STTransform
 from napari._app_model import get_app_model
 from napari._vispy.utils.text import get_text_metrics
 from napari._vispy.visuals.text import Text
-from napari.resources import get_icon_path
 from napari.settings import get_settings
 from napari.utils.action_manager import action_manager
 from napari.utils.interactions import Shortcut
+from napari.utils.logo import _LOGO_SILHOUETTE
 
 if TYPE_CHECKING:
     from vispy.visuals.text.text import FontManager
@@ -32,7 +32,7 @@ def _load_logo() -> np.ndarray:
     # load logo (disabling logging for some svg reading warnings)
     old_level = vispy_logger.level
     vispy_logger.setLevel(logging.ERROR)
-    coords = Document(get_icon_path('logo_silhouette')).paths[0].vertices[0][0]
+    coords = Document(_LOGO_SILHOUETTE).paths[0].vertices[0][0]
     vispy_logger.setLevel(old_level)
     # drop z: causes issues with polygon agg mode
     coords = coords[:, :2]

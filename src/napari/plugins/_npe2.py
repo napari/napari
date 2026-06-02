@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
+from importlib import resources
 from typing import (
     TYPE_CHECKING,
     cast,
@@ -385,13 +386,14 @@ def _npe2_manifest_to_actions(
     actions: list[Action] = []
     for cmd in mf.contributions.commands or ():
         if cmd.id not in sample_data_ids | widget_ids:
+            icon = _get_and_validate_icon(cmd, mf)
             actions.append(
                 Action(
                     id=cmd.id,
                     title=f'{cmd.title} ({mf.display_name})',
                     category=cmd.category,
                     tooltip=cmd.short_title or cmd.title,
-                    icon=cmd.icon,
+                    icon=icon,
                     enablement=cmd.enablement,
                     callback=cmd.python_name or '',
                     menus=menu_cmds.get(cmd.id),
@@ -424,3 +426,27 @@ def _npe2_submenu_to_app_model(subm: contributions.Submenu) -> SubmenuItem:
         **_when_group_order(subm),
         # enablement= ??  npe2 doesn't have this, but app_model does
     )
+
+
+def _validate_icon_string(icon):
+    if len(parts := icon.split(':')) == 2:
+        # fully qualified python name or fonticon name
+        try:
+            with resources.path(parts[0], parts[1]) as icon_path:
+                return f'file:/{icon_path}'
+        except ModuleNotFoundError:
+            # probably fonticon name, leave it as is
+            return icon
+    return None
+
+
+def _get_and_validate_icon(command, manifest):
+    icon = command.icon or manifest.icon
+
+    if isinstance(icon, str):
+        # just pass dark and it will be used for the rest
+        return {'dark': _validate_icon_string(icon)}
+    if isinstance(icon, contributions._icon.Icon):
+        return {k: _validate_icon_string(v) for k, v in dict(icon).items()}
+
+    return {}
