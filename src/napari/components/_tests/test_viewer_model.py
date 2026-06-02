@@ -864,6 +864,17 @@ def test_open_or_get_error_no_plugin():
         viewer._open_or_raise_error(['my_file.fake'])
 
 
+def test_open_nonexistent_file():
+    """Assert FileNotFoundError is raised for nonexistent local paths."""
+    viewer = ViewerModel()
+
+    with pytest.raises(FileNotFoundError, match='does not exist'):
+        viewer.open('/tmp/nonexistent_file_abc123.png')
+
+    with pytest.raises(FileNotFoundError, match='does not exist'):
+        viewer.open(['/tmp/fake_a.tif', '/tmp/fake_b.tif'], stack=True)
+
+
 def test_open_or_get_error_builtins(builtins: DynamicPlugin, tmp_path):
     """Test builtins is available to read npy files."""
     viewer = ViewerModel()

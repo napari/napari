@@ -203,26 +203,17 @@ class VispySceneOverlay(VispyBaseOverlay):
 
     overlay: SceneOverlay
 
-    def __init__(
-        self, *, overlay, viewer, node, parent=None, **kwargs
-    ) -> None:
-        super().__init__(
-            overlay=overlay, viewer=viewer, node=node, parent=parent, **kwargs
-        )
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
         self.node.transform = MatrixTransform()
 
 
 class LayerOverlayMixin:
     layer: Layer
+    overlay: Overlay
 
-    def __init__(
-        self, *, overlay, layer: Layer, viewer, node, parent=None, **kwargs
-    ) -> None:
+    def __init__(self, *, layer: Layer, **kwargs) -> None:
         super().__init__(
-            node=node,
-            overlay=overlay,
-            viewer=viewer,
-            parent=parent,
             **kwargs,
         )
         self.layer = layer

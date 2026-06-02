@@ -8,6 +8,9 @@ from napari._qt.layer_controls.widgets.qt_face_color import QtFaceColorControl
 from napari._qt.layer_controls.widgets.qt_gamma_slider import (
     QtGammaSliderControl,
 )
+from napari._qt.layer_controls.widgets.qt_multiscale_level_control import (
+    QtMultiscaleLevelControl,
+)
 from napari._qt.layer_controls.widgets.qt_opacity_blending_controls import (
     QtOpacityBlendingControls,
 )
@@ -30,6 +33,7 @@ __all__ = [
     'QtFaceColorControl',
     'QtGammaSliderControl',
     'QtInterpolationComboBoxControl',
+    'QtMultiscaleLevelControl',
     'QtOpacityBlendingControls',
     'QtOutSliceCheckBoxControl',
     'QtProjectionModeControl',

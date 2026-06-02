@@ -9,7 +9,7 @@ from pint import get_application_registry
 
 from napari.components import LayerList
 from napari.layers import Image
-from napari.layers.utils._link_layers import get_linked_layers
+from napari.layers.utils._link_layers import get_linked_layers, layer_is_linked
 
 REG = get_application_registry()
 
@@ -735,3 +735,51 @@ def test_warn_incompatible_overriding_units():
         layer_list.units = ('s', 'nm')
 
     assert layer_list.units == (REG.um, REG.um)
+
+
+def test_unlink_on_delete():
+    """Test that layer is unlinked after user removes the layer from the
+    viewer."""
+    layer1 = Image(np.zeros((5, 5)), name='image1')
+    layer2 = Image(np.zeros((5, 5)), name='image2')
+    layer3 = Image(np.zeros((5, 5)), name='image3')
+    ll = LayerList([layer1, layer2, layer3])
+    ll.link_layers([layer1, layer2, layer3])
+    assert layer_is_linked(layer1)
+    assert layer_is_linked(layer2)
+    assert layer_is_linked(layer3)
+    del ll['image3']
+
+    assert layer_is_linked(layer1)
+    assert layer_is_linked(layer2)
+    assert not layer_is_linked(layer3)
+
+    ll.remove(layer2)
+    assert not layer_is_linked(layer1)
+    assert not layer_is_linked(layer2)
+    assert not layer_is_linked(layer3)
+
+
+def test_remove_selected_skips_locked():
+    """Locked layers should not be removed by remove_selected."""
+    layers = LayerList()
+    layer_a = Image(np.random.random((10, 10)), name='a')
+    layer_b = Image(np.random.random((10, 10)), name='b')
+    layers.append(layer_a)
+    layers.append(layer_b)
+    layer_a.locked = True
+    layers.selection = {layer_a, layer_b}
+    layers.remove_selected()
+    assert len(layers) == 1
+    assert layers[0] is layer_a
+
+
+def test_remove_selected_all_locked():
+    """When all selected layers are locked, none should be removed."""
+    layers = LayerList()
+    layer = Image(np.random.random((10, 10)), name='a')
+    layers.append(layer)
+    layer.locked = True
+    layers.selection = {layer}
+    layers.remove_selected()
+    assert len(layers) == 1

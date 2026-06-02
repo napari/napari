@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import warnings
-from collections.abc import Collection, Generator, Set as AbstractSet
+from collections.abc import Collection
 from typing import TYPE_CHECKING, TypeVar
 
 import numpy as np
@@ -18,6 +18,8 @@ from napari.layers.utils.interaction_box import (
 from napari.utils.events import Event
 
 if TYPE_CHECKING:
+    from collections.abc import Generator, Set as AbstractSet
+
     from napari.layers.points.points import Points
 
 
