@@ -14,11 +14,9 @@ certifi==2026.5.20
     # via requests
 charset-normalizer==3.4.7
     # via requests
-click==8.4.1
-    # via typer
 docstring-parser==0.18.0
     # via magicgui
-idna==3.16
+idna==3.17
     # via requests
 in-n-out==0.2.1
     # via app-model
@@ -44,7 +42,7 @@ packaging==26.2
     #   qtpy
 pathspec==1.1.1
     # via mypy
-platformdirs==4.9.6
+platformdirs==4.10.0
     # via npe2
 psygnal==0.15.1
     # via
@@ -94,7 +92,7 @@ superqt==0.8.2
     # via magicgui
 tomli-w==1.2.0
     # via npe2
-typer==0.25.1
+typer==0.26.4
     # via npe2
 types-pyyaml==6.0.12.20260518
     # via -r resources/requirements_mypy.in
