@@ -30,6 +30,7 @@ from napari._vispy.overlays.text import (
 )
 from napari._vispy.overlays.welcome import VispyWelcomeOverlay
 from napari._vispy.overlays.zoom import VispyZoomOverlay
+from napari._vispy.overlays.zyx_axes import VispyZYXAxesOverlay
 from napari.components.overlays import (
     AxesOverlay,
     BoundingBoxOverlay,
@@ -45,6 +46,7 @@ from napari.components.overlays import (
     TransformBoxOverlay,
     WelcomeOverlay,
     ZoomOverlay,
+    ZYXAxesOverlay,
 )
 from napari.layers import (
     Image,
@@ -76,6 +78,7 @@ overlay_to_visual: dict[type[Overlay], type[VispyBaseOverlay]] = {
     ScaleBarOverlay: VispyScaleBarOverlay,
     TextOverlay: VispyTextOverlay,
     AxesOverlay: VispyAxesOverlay,
+    ZYXAxesOverlay: VispyZYXAxesOverlay,
     BoundingBoxOverlay: VispyBoundingBoxOverlay,
     TransformBoxOverlay: VispyTransformBoxOverlay,
     SelectionBoxOverlay: VispySelectionBoxOverlay,

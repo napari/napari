@@ -48,6 +48,7 @@ from napari.components.overlays import (
     TextOverlay,
     WelcomeOverlay,
     ZoomOverlay,
+    ZYXAxesOverlay,
 )
 from napari.components.tooltip import Tooltip
 from napari.errors import (
@@ -132,6 +133,7 @@ DEFAULT_OVERLAYS = {
     'scale_bar': ScaleBarOverlay,
     'text': TextOverlay,
     'axes': AxesOverlay,
+    'zyx_axes': ZYXAxesOverlay,
     'brush_circle': BrushCircleOverlay,
     'zoom': ZoomOverlay,
     'current_slice': CurrentSliceOverlay,
@@ -326,6 +328,10 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     @property
     def axes(self) -> AxesOverlay:
         return self._overlays['axes']  # type: ignore[return-value]
+
+    @property
+    def zyx_axes(self) -> ZYXAxesOverlay:
+        return self._overlays['zyx_axes']  # type: ignore[return-value]
 
     @property
     def scale_bar(self) -> ScaleBarOverlay:

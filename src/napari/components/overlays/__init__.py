@@ -20,6 +20,7 @@ from napari.components.overlays.text import (
 )
 from napari.components.overlays.welcome import WelcomeOverlay
 from napari.components.overlays.zoom import ZoomOverlay
+from napari.components.overlays.zyx_axes import ZYXAxesOverlay
 
 __all__ = [
     'AxesOverlay',
@@ -37,5 +38,6 @@ __all__ = [
     'TextOverlay',
     'TransformBoxOverlay',
     'WelcomeOverlay',
+    'ZYXAxesOverlay',
     'ZoomOverlay',
 ]
