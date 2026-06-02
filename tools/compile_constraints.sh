@@ -3,7 +3,13 @@ set -e
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
-cd "${SCRIPT_DIR}/.."  # Move to repo root
+repo_root="${SCRIPT_DIR}/.."
+if [ "$#" -gt 0 ] && [ -d "$1" ]; then
+  repo_root="$1"
+  shift
+fi
+
+cd "${repo_root}"
 
 # Decide what to pass to uv pip compile: either a global --upgrade (no args)
 # or one or more --upgrade-package <pkg> for packages that are present in
