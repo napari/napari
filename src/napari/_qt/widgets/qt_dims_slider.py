@@ -222,7 +222,15 @@ class QtDimSliderWidget(QWidget):
 
     def _fps_listener(self, *_) -> None:
         fps = self.play_button.fpsspin.value()
-        fps *= -1 if self.play_button.reverse_check.isChecked() else 1
+        if self.play_button.reverse_check.isChecked():
+            fps *= -1
+            self.play_button.setProperty('reverse', 'True')
+        else:
+            self.play_button.setProperty('reverse', 'False')
+        # polish/unpolish needed to sync the button style
+        self.play_button.style().unpolish(self.play_button)
+        self.play_button.style().polish(self.play_button)
+
         self.__class__.fps.fset(self, fps)
 
     def _pull_label(self):

@@ -35,16 +35,18 @@ QtViewerPushButton[mode="new_labels"]:disabled {
   border: 3px solid {{ background }};
 }
 
+/* TODO: can we avoid this darken/lighten? */
 QtViewerPushButton[mode="new_points"][creation_state="full"],
 QtViewerPushButton[mode="new_shapes"][creation_state="full"],
 QtViewerPushButton[mode="new_labels"][creation_state="full"] {
-  border: 3px solid {{ lighten(current, 25) }};
+  border: 3px solid {{ current }};
 }
 
 QtViewerPushButton[mode="new_points"][creation_state="partial"],
 QtViewerPushButton[mode="new_shapes"][creation_state="partial"],
 QtViewerPushButton[mode="new_labels"][creation_state="partial"] {
-  border: 3px solid {{ darken(current, 5) }};
+  margin: 2px;
+  border: 1px solid {{ current }};
 }
 
 QtViewerPushButton[mode="warning"] {
@@ -53,6 +55,10 @@ QtViewerPushButton[mode="warning"] {
 
 QtViewerPushButton[mode="console"] {
   image: url("theme_{{ id }}:/console.svg");
+}
+
+QtViewerPushButton[mode="console"][expanded=true] {
+  background-color: {{ current }};
 }
 
 QtViewerPushButton[mode="roll"] {
@@ -75,11 +81,21 @@ QtViewerPushButton[mode="ndisplay_button"]:checked {
   max-height: 28px;
   background: qlineargradient(
     x1: 0, y1: 0, x2: 1, y2: 0,
-    stop: 0 {{ foreground }},
-    stop: 0.3 {{ foreground }},
-    stop: 0.5 {{ highlight }},
-    stop: 1 {{ highlight }}
+    stop: 0 {{ primary }},
+    stop: 0.3 {{ primary }},
+    stop: 0.5 {{ current }},
+    stop: 1 {{ current }}
   );
+}
+
+QtViewerPushButton[mode="ndisplay_button"]:checked:hover {
+    background: qlineargradient(
+      x1: 0, y1: 0, x2: 1, y2: 0,
+      stop: 0 {{ highlight }},
+      stop: 0.5 {{ highlight }},
+      stop: 0.7 {{ current }},
+      stop: 1 {{ current }}
+    );
 }
 
 QtViewerPushButton[mode="ndisplay_button"] {
@@ -90,11 +106,21 @@ QtViewerPushButton[mode="ndisplay_button"] {
   max-height: 28px;
   background: qlineargradient(
     x1: 0, y1: 0, x2: 1, y2: 0,
-    stop: 0 {{ highlight }},
-    stop: 0.5 {{ highlight }},
-    stop: 0.7 {{ foreground }},
-    stop: 1 {{ foreground }}
+    stop: 0 {{ current }},
+    stop: 0.5 {{ current }},
+    stop: 0.7 {{ primary }},
+    stop: 1 {{ primary }}
   );
+}
+
+QtViewerPushButton[mode="ndisplay_button"]:hover {
+    background: qlineargradient(
+      x1: 0, y1: 0, x2: 1, y2: 0,
+      stop: 0 {{ current }},
+      stop: 0.5 {{ current }},
+      stop: 0.7 {{ highlight }},
+      stop: 1 {{ highlight }}
+    );
 }
 
 QtViewerPushButton[mode="grid_view_button"]:checked {
@@ -104,6 +130,7 @@ QtViewerPushButton[mode="grid_view_button"]:checked {
 QtViewerPushButton[mode="grid_view_button"] {
   image: url("theme_{{ id }}:/canvas-grid-view.svg");
 }
+
 
 QtModeRadioButton {
   min-height : 28px;
@@ -126,9 +153,9 @@ QtModeRadioButton::indicator:checked {
   background-color: {{ current }};
 }
 
-
+/* TODO: introduce "disabled" as color? */
 QtModeRadioButton::indicator:disabled {
-  background-color: {{ darken(foreground, 20) }}
+  background-color: {{ opacity(primary, 50) }}
 }
 
 QtModeRadioButton::indicator:unchecked:hover {
@@ -157,7 +184,6 @@ QtModeRadioButton[mode="rectangle"]::indicator {
 
 QtModeRadioButton[mode="ellipse"]::indicator {
   image: url("theme_{{ id }}:/ellipse.svg");
-  color: red;
 }
 
 QtModeRadioButton[mode="line"]::indicator {
@@ -236,11 +262,6 @@ QtModePushButton[mode="delete_shape"] {
    image: url("theme_{{ id }}:/delete_shape.svg");
 }
 
-QWidget[emphasized="true"] QtModePushButton[mode="delete_shape"]:pressed {
-  background-color: {{ error }};
-}
-
-
 QtCopyToClipboardButton {
    background-color: {{ background }};
    margin: 0px;
@@ -271,19 +292,14 @@ QtPlayButton[reverse=True] {
 }
 
 QtPlayButton[reverse=False] {
-  background: {{ foreground }};
   image: url("theme_{{ id }}:/playback-forward.svg");
 }
 
-QtPlayButton[reverse=True]:hover, QtPlayButton[reverse=False]:hover {
-  background: {{ primary }};
-}
-
-QtPlayButton[playing=True]:hover {
-  background-color: {{ lighten(error, 10) }};
+QtPlayButton:hover {
+  background: {{ highlight }};
 }
 
 QtPlayButton[playing=True] {
     image: url("theme_{{ id }}:/playback-stop.svg");
-    background-color: {{ error }};
+    background-color: {{ current }};
 }
