@@ -12,13 +12,21 @@ import sys
 
 
 def _fix_wayland_opengl() -> None:
-    """Set QT_QPA_PLATFORM=xcb and PYOPENGL_PLATFORM=glx on Linux+Wayland.
+    """Set QT_QPA_PLATFORM=xcb and PYOPENGL_PLATFORM=glx on Linux+Wayland+Nvidia.
 
-    On Linux+Wayland with Nvidia hardware, the Nvidia driver's incomplete
+    On Linux+Wayland with Nvidia proprietary drivers, the driver's incomplete
     Wayland support causes napari to crash on startup across Qt bindings.
     Forcing XCB (X11 via XWayland) + GLX is the recommended workaround. Uses
     ``os.environ.setdefault`` so any user-set values are never overridden.
     See https://github.com/napari/napari/issues/8808.
+
+    The workaround is gated narrowly to avoid regressing setups it can't help:
+
+    - ``/proc/driver/nvidia/version`` only exists when the proprietary Nvidia
+      kernel module is loaded, so it limits the hack to Nvidia hardware.
+    - ``DISPLAY`` is set only when an X server is reachable, i.e. XWayland
+      is running. Without it, forcing XCB would just abort instead of falling
+      back to the native Wayland session.
     """
     if sys.platform != 'linux':
         return
@@ -26,6 +34,10 @@ def _fix_wayland_opengl() -> None:
         os.environ.get('XDG_SESSION_TYPE', '').lower() == 'wayland'
     )
     if not wayland_active:
+        return
+    if not os.path.exists('/proc/driver/nvidia/version'):
+        return
+    if not os.environ.get('DISPLAY'):
         return
     os.environ.setdefault('QT_QPA_PLATFORM', 'xcb')
     os.environ.setdefault('PYOPENGL_PLATFORM', 'glx')
