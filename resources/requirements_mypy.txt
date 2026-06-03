@@ -10,15 +10,13 @@ ast-serialize==0.5.0
     # via mypy
 build==1.5.0
     # via npe2
-certifi==2026.4.22
+certifi==2026.5.20
     # via requests
 charset-normalizer==3.4.7
     # via requests
-click==8.4.0
-    # via typer
 docstring-parser==0.18.0
     # via magicgui
-idna==3.15
+idna==3.17
     # via requests
 in-n-out==0.2.1
     # via app-model
@@ -36,7 +34,7 @@ mypy-extensions==1.1.0
     # via mypy
 npe2==0.8.2
     # via -r resources/requirements_mypy.in
-numpy==2.4.5
+numpy==2.4.6
     # via -r resources/requirements_mypy.in
 packaging==26.2
     # via
@@ -44,7 +42,7 @@ packaging==26.2
     #   qtpy
 pathspec==1.1.1
     # via mypy
-platformdirs==4.9.6
+platformdirs==4.10.0
     # via npe2
 psygnal==0.15.1
     # via
@@ -90,11 +88,11 @@ rich==15.0.0
     #   typer
 shellingham==1.5.4
     # via typer
-superqt==0.8.1
+superqt==0.8.2
     # via magicgui
 tomli-w==1.2.0
     # via npe2
-typer==0.25.1
+typer==0.26.4
     # via npe2
 types-pyyaml==6.0.12.20260518
     # via -r resources/requirements_mypy.in
