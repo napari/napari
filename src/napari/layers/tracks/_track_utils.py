@@ -511,7 +511,9 @@ class TrackManager:
         return lbl, pos
 
 
-def normalize_track_data(data, column_map):
+def prepare_tracks_data(
+    data: 'pd.DataFrame', column_map: dict[str, str]
+) -> 'pd.DataFrame':
     required = ['track_id', 't', 'y', 'x']
     for key in required:
         if key not in column_map:
