@@ -69,14 +69,26 @@ class NapariSceneCanvas(SceneCanvas_):
         orig_enterEvent = self.native.enterEvent
         orig_leaveEvent = self.native.leaveEvent
 
+        def _qtviewer(widget):
+            parent = widget.parentWidget()
+            while parent is not None:
+                if hasattr(parent, '_enter_canvas') and hasattr(
+                    parent, '_leave_canvas'
+                ):
+                    return parent
+                parent = parent.parentWidget()
+            return None
+
         def enterEvent(self_, event):
-            qtviewer = self_.parent()
-            qtviewer._enter_canvas()
+            qtviewer = _qtviewer(self_)
+            if qtviewer is not None:
+                qtviewer._enter_canvas()
             orig_enterEvent(event)
 
         def leaveEvent(self_, event):
-            qtviewer = self_.parent()
-            qtviewer._leave_canvas()
+            qtviewer = _qtviewer(self_)
+            if qtviewer is not None:
+                qtviewer._leave_canvas()
             orig_leaveEvent(event)
 
         self.native.enterEvent = MethodType(enterEvent, self.native)
