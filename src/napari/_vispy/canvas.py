@@ -69,14 +69,26 @@ class NapariSceneCanvas(SceneCanvas_):
         orig_enterEvent = self.native.enterEvent
         orig_leaveEvent = self.native.leaveEvent
 
+        def _qtviewer(widget):
+            parent = widget.parentWidget()
+            while parent is not None:
+                if hasattr(parent, '_enter_canvas') and hasattr(
+                    parent, '_leave_canvas'
+                ):
+                    return parent
+                parent = parent.parentWidget()
+            return None
+
         def enterEvent(self_, event):
-            qtviewer = self_.parent()
-            qtviewer._enter_canvas()
+            qtviewer = _qtviewer(self_)
+            if qtviewer is not None:
+                qtviewer._enter_canvas()
             orig_enterEvent(event)
 
         def leaveEvent(self_, event):
-            qtviewer = self_.parent()
-            qtviewer._leave_canvas()
+            qtviewer = _qtviewer(self_)
+            if qtviewer is not None:
+                qtviewer._leave_canvas()
             orig_leaveEvent(event)
 
         self.native.enterEvent = MethodType(enterEvent, self.native)
@@ -814,6 +826,8 @@ class VispyCanvas:
             )
         for vispy_layer in self.layer_to_visual.values():
             vispy_layer.world_units = units
+        for overlay in self._overlay_to_visual.get(self.viewer.scale_bar, []):
+            overlay._on_unit_change()
 
     def _remove_layer(self, event: Event) -> None:
         """Upon receiving event closes the Vispy visual, deletes it and reorders the still existing layers.

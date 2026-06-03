@@ -12,6 +12,7 @@ from napari._vispy.overlays.base import ViewerOverlayMixin, VispyCanvasOverlay
 from napari._vispy.visuals.scale_bar import ScaleBar
 from napari.settings import get_settings
 from napari.utils._units import PREFERRED_VALUES
+from napari.utils.notifications import show_warning
 
 if TYPE_CHECKING:
     from vispy.visuals.text.text import FontManager
@@ -56,6 +57,8 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
 
         self.viewer.camera.events.zoom.connect(self._on_size_or_zoom_change)
         self.viewer.events.theme.connect(self._on_rendering_change)
+        self.viewer.dims.events.order.connect(self._on_unit_change)
+        self.viewer.dims.events.ndisplay.connect(self._on_unit_change)
 
         get_settings().appearance.events.theme.connect(
             self._on_rendering_change
@@ -64,7 +67,26 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self.reset()
 
     def _on_unit_change(self):
-        self._unit = pint.get_application_registry()(self.overlay.unit)
+        # NOTE: this is also called by VispyCanvas when layer units are updated
+        #       so it doesn't need to be connected to events for that
+        if self.overlay.unit is not None:
+            unit = pint.get_application_registry()(self.overlay.unit)
+        elif self.viewer.layers.units is not None:
+            units = np.array(self.viewer.layers.units)[
+                list(self.viewer.dims.displayed)
+            ]
+            if any(
+                u.dimensionality != units[0].dimensionality for u in units[1:]
+            ):
+                dim_repr = tuple(str(d.dimensionality) for d in units)
+                show_warning(
+                    f'Displayed dimensions have mismatched dimensionality {dim_repr}. '
+                    'The scale bar will only use the unit from the last displayed axis.',
+                )
+            unit = units[-1]
+        else:
+            unit = pint.get_application_registry()('dimensionless')
+        self._unit = unit * 1  # convert unit to quantity
         self._on_size_or_zoom_change(force=True)
 
     def _on_font_size_change(self):
