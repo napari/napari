@@ -138,7 +138,6 @@ def get_command_shortcut_and_description(
     all_shortcuts = get_settings().shortcuts.shortcuts
     keybinding = app.keybindings.get_keybinding(command_id)
 
-    shortcut = title = None
     if keybinding is not None:
         shortcut = Shortcut(keybinding.keybinding).platform
         title = app.commands[command_id].title
