@@ -135,19 +135,21 @@ def get_command_shortcut_and_description(
 ) -> tuple[str | None, str | None]:
     """Get the command shortcut and description from a command id."""
     app = get_app_model()
-    all_shortcuts = get_settings().shortcuts.shortcuts
-    keybinding = app.keybindings.get_keybinding(command_id)
 
-    if keybinding is not None:
-        shortcut = Shortcut(keybinding.keybinding).platform
-        title = app.commands[command_id].title
-    else:
-        # might be an action_manager action
-        keybinding = all_shortcuts.get(command_id, [None])[0]
-        if keybinding is not None:
-            shortcut = Shortcut(keybinding).platform
-            title = action_manager._actions[command_id].description
-        else:
-            shortcut = title = None
+    app_model_keybinding = app.keybindings.get_keybinding(command_id)
+    if app_model_keybinding is not None:
+        return (
+            Shortcut(app_model_keybinding.keybinding).platform,
+            app.commands[command_id].title,
+        )
 
-    return shortcut, title
+    # might be an action_manager action
+    settings_shortcuts = get_settings().shortcuts.shortcuts
+    action_manager_keybinding = settings_shortcuts.get(command_id, [None])[0]
+    if action_manager_keybinding is not None:
+        return (
+            Shortcut(action_manager_keybinding).platform,
+            action_manager._actions[command_id].description,
+        )
+
+    return None, None

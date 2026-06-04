@@ -1,5 +1,6 @@
 from random import sample
 
+from qtpy.QtCore import QEvent
 from qtpy.QtWidgets import (
     QHBoxLayout,
     QLabel,
@@ -18,20 +19,21 @@ class TipsWidget(QWidget):
 
     def __init__(
         self,
-        parent=None,
+        parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
 
-        self.setLayout(QVBoxLayout())
+        layout = QVBoxLayout()
+        self.setLayout(layout)
 
         self.tips = sample(NAPARI_TIPS, len(NAPARI_TIPS))
         self.current_tip = -1
 
         self.tip = QLabel()
-        self.layout().addWidget(self.tip)
+        layout.addWidget(self.tip)
 
         self.buttons = QHBoxLayout()
-        self.layout().addLayout(self.buttons)
+        layout.addLayout(self.buttons)
 
         self.prev = QPushButton('Previous tip')
         self.next = QPushButton('Next tip')
@@ -42,13 +44,13 @@ class TipsWidget(QWidget):
 
         self.next_tip()
 
-    def prev_tip(self, event=None) -> None:
+    def prev_tip(self, event: QEvent | None = None) -> None:
         self.current_tip -= 1
         self.current_tip %= len(self.tips)
         tip = self.tips[self.current_tip]
         self.tip.setText(format_tip(tip))
 
-    def next_tip(self, event=None) -> None:
+    def next_tip(self, event: QEvent | None = None) -> None:
         self.current_tip += 1
         self.current_tip %= len(self.tips)
         tip = self.tips[self.current_tip]
