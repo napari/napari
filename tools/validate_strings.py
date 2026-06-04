@@ -29,8 +29,7 @@ import tokenize
 import tty
 from contextlib import suppress
 from pathlib import Path
-from types import ModuleType
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 import pytest
 from strings_list import (
@@ -39,6 +38,9 @@ from strings_list import (
     SKIP_WORDS,
     SKIP_WORDS_GLOBAL,
 )
+
+if TYPE_CHECKING:
+    from types import ModuleType
 
 REPO_ROOT = Path(__file__).resolve()
 NAPARI_MODULE = (REPO_ROOT / 'napari').relative_to(REPO_ROOT)
@@ -404,7 +406,7 @@ def find_trans_strings(
     return trans_strings, errors
 
 
-def import_module_by_path(fpath: str) -> ModuleType | None:
+def import_module_by_path(fpath: str) -> 'ModuleType | None':
     """Import a module given py a path.
 
     Parameters

@@ -18,12 +18,13 @@ from typing import (
     Union,
     cast,
 )
+from urllib.parse import urlparse
 
 import numpy as np
+from app_model.expressions import Context
 
 # This cannot be condition to TYPE_CHECKING or the stubgen fails
 # with undefined Context.
-from app_model.expressions import Context
 from pydantic import Field, PrivateAttr, field_validator
 
 from napari import layers
@@ -45,7 +46,6 @@ from napari.components.overlays import (
     Overlay,
     ScaleBarOverlay,
     TextOverlay,
-    WelcomeOverlay,
     ZoomOverlay,
 )
 from napari.components.tooltip import Tooltip
@@ -127,7 +127,6 @@ def _current_theme() -> str:
 
 
 DEFAULT_OVERLAYS = {
-    'welcome': WelcomeOverlay,
     'scale_bar': ScaleBarOverlay,
     'text': TextOverlay,
     'axes': AxesOverlay,
@@ -135,6 +134,21 @@ DEFAULT_OVERLAYS = {
     'zoom': ZoomOverlay,
     'current_slice': CurrentSliceOverlay,
 }
+
+
+def _validate_paths_exist(paths: list[PathLike]) -> None:
+    """Raise FileNotFoundError if any local (non-URL) path does not exist."""
+    for p in paths:
+        p_str = str(p)
+        parsed = urlparse(p_str)
+        if not (parsed.scheme and parsed.netloc) and not Path(p_str).exists():
+            raise FileNotFoundError(
+                trans._(
+                    'Path {path!r} does not exist.',
+                    deferred=True,
+                    path=p_str,
+                )
+            )
 
 
 # KeymapProvider & MousemapProvider should eventually be moved off the ViewerModel
@@ -318,10 +332,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     @property
     def text_overlay(self) -> TextOverlay:
         return self._overlays['text']  # type: ignore[return-value]
-
-    @property
-    def welcome_screen(self):
-        return self._overlays['welcome']
 
     @property
     def _zoom_box(self) -> ZoomOverlay:
@@ -1434,6 +1444,8 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             if isinstance(path, Path | str)
             else [os.fspath(p) for p in path]
         )
+
+        _validate_paths_exist(paths_)
 
         paths: Sequence[PathOrPaths] = paths_
         # If stack is a bool and True, add an additional layer of nesting.

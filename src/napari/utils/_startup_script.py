@@ -1,9 +1,11 @@
 import logging
 import time
+import tokenize
 import warnings
 from dataclasses import dataclass
 from pathlib import Path
 
+from napari.utils.io import execute_python_code
 from napari.utils.translations import trans
 
 
@@ -38,18 +40,32 @@ def _run_configured_startup_script() -> None:
     if not (script_path.exists() and script_path.is_file()):
         warnings.warn(
             trans._(
-                'Startup script path is set to {script_path}. This path does not have a valid startup script. Please check the setting. napari will be launched without a startup script.',
+                'Startup script path is set to {script_path}. '
+                'This path does not have a valid startup script. '
+                'Please check the setting. '
+                'napari will be launched without a startup script.',
                 deferred=True,
                 script_path=script_path,
             )
         )
         return
 
-    from napari_builtins.io._read import (
-        execute_python_code,
-    )
+    try:
+        with tokenize.open(script_path) as file:
+            script_code = file.read()
+    except (OSError, SyntaxError, UnicodeDecodeError) as exc:
+        warnings.warn(
+            trans._(
+                'Failed to read startup script at {script_path}. '
+                'napari will be launched without running it. '
+                'Error: {error_message}',
+                deferred=True,
+                script_path=script_path,
+                error_message=str(exc),
+            )
+        )
+        return
 
-    script_code = script_path.read_text()
     start_time = time.time()
 
     execute_python_code(script_code, script_path)

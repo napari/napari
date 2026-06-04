@@ -20,6 +20,10 @@ QtLayerButtons, QtViewerButtons, QtLayerList {
   min-width: 242px;
 }
 
+QLabel#logo_silhouette {
+  image: url("theme_{{ id }}:/logo_silhouette.svg");
+}
+
 /* ------------- QMainWindow --------- */
 /* QDockWidgets will use the MainWindow styles
 as long as they are docked (though they use the
@@ -630,6 +634,29 @@ QListWidget#Preferences {
  background: {{ background }};
 }
 
+QtWelcomeWidget, QtWelcomeWidget[drag=false] {
+  background: {{ canvas }};
+}
+
+QtWelcomeWidget[drag=true] {
+  background: {{ highlight }};
+}
+
+QtWelcomeLabel {
+ color: {{ darken(text, 25) }};
+ font-size: {{ increase(font_size, 6) }};
+}
+
+QtShortcutLabel {
+ color: {{ darken(text, 25) }};
+ font-size: {{ increase(font_size, 6) }};
+}
+
+QtVersionLabel {
+  color: {{ darken(text, 25) }};
+  font-size: {{ increase(font_size, 6) }};
+}
+
 /* ------------- Narrow scrollbar for qtlayer list --------- */
 
 QtListView {
@@ -750,9 +777,8 @@ QPushButton#lockButton:!checked {
 
 /* ------------- Set size for dims sorter --------- */
 
-QtDimsSorter > QtListView {
-  max-height: 100px;
-  max-width: 150px;
+QtDimsSorter > QtListView::item {
+  padding: 2px;
 }
 
 /* ------------- Lock check buttons for dims sorter --------- */

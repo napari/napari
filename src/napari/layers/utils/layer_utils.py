@@ -4,6 +4,7 @@ import functools
 import inspect
 import warnings
 from collections.abc import Callable, Sequence
+from importlib import import_module
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -13,8 +14,6 @@ from typing import (
 
 import dask
 import numpy as np
-import pandas as pd
-import pint
 
 from napari.utils.action_manager import action_manager
 from napari.utils.events.custom_types import Array
@@ -25,8 +24,17 @@ if TYPE_CHECKING:
     from collections.abc import Mapping
 
     import numpy.typing as npt
+    import pandas as pd
+    import pint
 
     from napari.layers._data_protocols import LayerDataProtocol
+else:
+
+    class _LazyPandas:
+        def __getattr__(self, attr: str) -> Any:
+            return getattr(import_module('pandas'), attr)
+
+    pd = _LazyPandas()
 
 
 class Extent(NamedTuple):

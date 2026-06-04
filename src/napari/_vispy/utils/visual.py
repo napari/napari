@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
-from vispy.scene.widgets.viewbox import ViewBox
 
 from napari._vispy.layers.base import VispyBaseLayer
 from napari._vispy.layers.image import VispyImageLayer
@@ -29,7 +28,6 @@ from napari._vispy.overlays.text import (
     VispyLayerNameOverlay,
     VispyTextOverlay,
 )
-from napari._vispy.overlays.welcome import VispyWelcomeOverlay
 from napari._vispy.overlays.zoom import VispyZoomOverlay
 from napari.components.overlays import (
     AxesOverlay,
@@ -44,7 +42,6 @@ from napari.components.overlays import (
     SelectionBoxOverlay,
     TextOverlay,
     TransformBoxOverlay,
-    WelcomeOverlay,
     ZoomOverlay,
 )
 from napari.layers import (
@@ -58,6 +55,9 @@ from napari.layers import (
     Vectors,
 )
 from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    from vispy.scene.widgets.viewbox import ViewBox
 
 layer_to_visual: dict[type[Layer], type[VispyBaseLayer]] = {
     Image: VispyImageLayer,
@@ -79,7 +79,6 @@ overlay_to_visual: dict[type[Overlay], type[VispyBaseOverlay]] = {
     SelectionBoxOverlay: VispySelectionBoxOverlay,
     BrushCircleOverlay: VispyBrushCircleOverlay,
     LabelsPolygonOverlay: VispyLabelsPolygonOverlay,
-    WelcomeOverlay: VispyWelcomeOverlay,
     ZoomOverlay: VispyZoomOverlay,
     LayerNameOverlay: VispyLayerNameOverlay,
     CurrentSliceOverlay: VispyCurrentSliceOverlay,

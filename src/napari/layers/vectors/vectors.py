@@ -3,7 +3,6 @@ from copy import copy
 from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
-import pandas as pd
 
 from napari.layers.base import Layer, _LayerSlicingState
 from napari.layers.utils._color_manager_constants import ColorMode
@@ -30,6 +29,8 @@ from napari.utils.events.custom_types import Array
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
+    import pandas as pd
+
     from napari.components.dims import Dims
 
 
@@ -194,6 +195,7 @@ class Vectors(Layer):
     """
 
     _projectionclass = VectorsProjectionMode
+    _slicing_state: '_VectorsSlicingState'
 
     # The max number of vectors that will ever be used to render the thumbnail
     # If more vectors are present then they are randomly subsampled
@@ -380,7 +382,7 @@ class Vectors(Layer):
     @features.setter
     def features(
         self,
-        features: dict[str, np.ndarray] | pd.DataFrame,
+        features: 'dict[str, np.ndarray] | pd.DataFrame',
     ) -> None:
         self._feature_table.set_values(features, num_data=len(self.data))
         if self._edge.color_properties is not None:
@@ -424,7 +426,7 @@ class Vectors(Layer):
 
     @feature_defaults.setter
     def feature_defaults(
-        self, defaults: dict[str, Any] | pd.DataFrame
+        self, defaults: 'dict[str, Any] | pd.DataFrame'
     ) -> None:
         self._feature_table.set_defaults(defaults)
         self.events.feature_defaults()
@@ -794,7 +796,9 @@ class _VectorsSlicingState(_LayerSlicingState):
         super().__init__(layer, data, cache)
 
         # Data containing vectors in the currently viewed slice
-        self._view_data = np.empty((0, 2, 2))
+        self._view_data: np.ndarray[
+            tuple[int, Literal[2], Literal[2]], np.dtype[np.floating]
+        ] = np.empty((0, 2, 2))  # type: ignore[assignment]
         self._view_indices = np.array([], dtype=int)
         self._view_alphas: float | np.ndarray = 1.0
 

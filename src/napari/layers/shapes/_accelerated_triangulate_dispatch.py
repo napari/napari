@@ -7,11 +7,16 @@ With this module, downstream modules can import these helper functions without
 knowing which implementation is being used.
 """
 
-from types import ModuleType
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 import numpy as np
 
 from napari.layers.shapes import _accelerated_triangulate_python
+
+if TYPE_CHECKING:
+    from types import ModuleType
 
 _accelerated_triangulate_numba: ModuleType | None
 

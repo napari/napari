@@ -1,5 +1,6 @@
 import os
 from sys import platform
+from unittest.mock import patch
 
 import numpy as np
 import pytest
@@ -291,6 +292,32 @@ def test_update_dims_labels(qtbot):
     assert first_label._elidedText() == view.dims.axis_labels[0]
 
 
+def test_model_axis_label_updates_do_not_write_back(qtbot):
+    """Programmatic model updates should not re-enter through QLineEdit signals."""
+    dims = Dims(ndim=4)
+    view = QtDims(dims)
+    qtbot.addWidget(view)
+
+    calls = []
+    original = Dims.set_axis_label
+
+    def wrapped(self, axis, label):
+        calls.append((axis, label))
+        return original(self, axis, label)
+
+    with patch.object(Dims, 'set_axis_label', wrapped):
+        dims.axis_labels = ('T', 'Z', 'Y', 'X')
+
+    assert dims.axis_labels == ('T', 'Z', 'Y', 'X')
+    assert [widget.axis_label.text() for widget in view.slider_widgets] == [
+        'T',
+        'Z',
+        'Y',
+        'X',
+    ]
+    assert calls == []
+
+
 def test_slider_press_updates_last_used(qtbot):
     """pressing on the slider should update the dims.last_used property"""
     ndim = 5
@@ -347,3 +374,19 @@ def test_play_button(qtbot, mock_qt_method_ctx, qt_dims):
     button.mode_combo.setCurrentText('once')
     assert slider.loop_mode == button.mode_combo.currentText() == 'once'
     qtbot.waitUntil(qt_dims._animation_thread.isFinished)
+
+
+def test_loop_mode_model_update_emits_once(qtbot):
+    dims = Dims(ndim=3)
+    view = QtDims(dims)
+    qtbot.addWidget(view)
+    slider = view.slider_widgets[0]
+
+    observed = []
+    slider.mode_changed.connect(observed.append)
+
+    slider.loop_mode = 'once'
+
+    assert slider.loop_mode == 'once'
+    assert slider.play_button.mode_combo.currentText() == 'once'
+    assert observed == ['once']

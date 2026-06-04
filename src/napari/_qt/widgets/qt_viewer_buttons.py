@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 import warnings
-from enum import Enum, EnumMeta
-from functools import partial, wraps
+from functools import wraps
 from typing import TYPE_CHECKING
 
 from qtpy.QtCore import QEvent, Qt
@@ -37,6 +38,7 @@ from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+    from enum import Enum, EnumMeta
     from typing import Any
 
     from napari.viewer import ViewerModel
@@ -64,7 +66,7 @@ class QtLayerButtons(QFrame):
         Napari viewer containing the rendered scene, layers, and controls.
     """
 
-    def __init__(self, viewer: 'ViewerModel') -> None:
+    def __init__(self, viewer: ViewerModel) -> None:
         super().__init__()
 
         self.viewer = viewer
@@ -82,7 +84,7 @@ class QtLayerButtons(QFrame):
                 'If multiple layers are selected, the new points layer will span their extent.\n'
                 'If no layers are selected, the new points layer will have no scale/transform.\n'
             ),
-            partial(new_points, self.viewer),
+            self._new_points,
         )
 
         self.newShapesButton = QtViewerPushButton(
@@ -94,7 +96,7 @@ class QtLayerButtons(QFrame):
                 'If multiple layers are selected, the new shapes layer will span their extent.\n'
                 'If no layers are selected, the new points layer will have no scale/transform.\n'
             ),
-            partial(new_shapes, self.viewer),
+            self._new_shapes,
         )
 
         self.newLabelsButton = QtViewerPushButton(
@@ -129,6 +131,12 @@ class QtLayerButtons(QFrame):
         )
         self.viewer.layers.events.removed.connect(self._on_selection_changed)
         self._on_selection_changed()
+
+    def _new_points(self):
+        new_points(self.viewer)
+
+    def _new_shapes(self):
+        new_shapes(self.viewer)
 
     def _on_selection_changed(self, event=None) -> None:
         """Update button selection/enablement state based on the layer selection.
@@ -188,7 +196,7 @@ def labeled_double_slider(
     value: float,
     value_range: tuple[float, float],
     decimals: int = 0,
-    callback: 'Callable',
+    callback: Callable,
 ) -> QLabeledDoubleSlider:
     """Create a labeled double slider widget."""
     slider = QLabeledDoubleSlider(parent)
@@ -204,7 +212,7 @@ def enum_combobox(
     parent: QtPopup,
     enum_class: EnumMeta,
     current_enum: Enum,
-    callback: 'Callable[[],Any] | Callable[[Enum],Any]',
+    callback: Callable[[], Any] | Callable[[Enum], Any] | Callable[[str], Any],
 ) -> QEnumComboBox:
     """Create an enum combobox widget."""
     combo = QEnumComboBox(parent, enum_class=enum_class)
@@ -252,7 +260,7 @@ class QtViewerButtons(QFrame):
         Napari viewer containing the rendered scene, layers, and controls.
     """
 
-    def __init__(self, viewer: 'ViewerModel') -> None:
+    def __init__(self, viewer: ViewerModel) -> None:
         super().__init__()
 
         self.viewer = viewer
@@ -351,6 +359,18 @@ class QtViewerButtons(QFrame):
         )
         popup.show()
 
+    def _update_first_camera_angle(self, value: float) -> None:
+        """Update the camera angle along axis 0."""
+        self._update_camera_angles(0, value)
+
+    def _update_second_camera_angle(self, value: float) -> None:
+        """Update the camera angle along axis 1."""
+        self._update_camera_angles(1, value)
+
+    def _update_third_camera_angle(self, value: float) -> None:
+        """Update the camera angle along axis 2."""
+        self._update_camera_angles(2, value)
+
     def _add_3d_camera_controls(
         self,
         popup: QtPopup,
@@ -373,7 +393,7 @@ class QtViewerButtons(QFrame):
             parent=popup,
             value=self.viewer.camera.angles[0],
             value_range=(-180, 180),
-            callback=partial(self._update_camera_angles, 0),
+            callback=self._update_first_camera_angle,
         )
 
         # value_range is [-89, 89] because at >=+/-90 gimbal locks the camera.
@@ -382,14 +402,14 @@ class QtViewerButtons(QFrame):
             parent=popup,
             value=self.viewer.camera.angles[1],
             value_range=(-89, 89),
-            callback=partial(self._update_camera_angles, 1),
+            callback=self._update_second_camera_angle,
         )
 
         self.rx = labeled_double_slider(
             parent=popup,
             value=self.viewer.camera.angles[2],
             value_range=(-180, 180),
-            callback=partial(self._update_camera_angles, 2),
+            callback=self._update_third_camera_angle,
         )
 
         angle_help_symbol = help_tooltip(
@@ -434,6 +454,24 @@ class QtViewerButtons(QFrame):
         grid_layout.addWidget(self.zoom, 1, 1)
         grid_layout.addWidget(zoom_help_symbol, 1, 2)
 
+    def _update_verical_axis_orientation(
+        self, value: VerticalAxisOrientationStr
+    ) -> None:
+        """Update the vertical axis orientation of the camera."""
+        self._update_orientation(VerticalAxisOrientation, value)
+
+    def _update_horizontal_axis_orientation(
+        self, value: HorizontalAxisOrientationStr
+    ) -> None:
+        """Update the horizontal axis orientation of the camera."""
+        self._update_orientation(HorizontalAxisOrientation, value)
+
+    def _update_depth_axis_orientation(
+        self, value: DepthAxisOrientationStr
+    ) -> None:
+        """Update the depth axis orientation of the camera."""
+        self._update_orientation(DepthAxisOrientation, value)
+
     def _add_orientation_controls(
         self,
         popup: QtPopup,
@@ -448,18 +486,14 @@ class QtViewerButtons(QFrame):
             parent=popup,
             enum_class=VerticalAxisOrientation,
             current_enum=self.viewer.camera.orientation[1],
-            callback=partial(
-                self._update_orientation, VerticalAxisOrientation
-            ),
+            callback=self._update_verical_axis_orientation,
         )
 
         self.horizontal_combo = enum_combobox(
             parent=popup,
             enum_class=HorizontalAxisOrientation,
             current_enum=self.viewer.camera.orientation[2],
-            callback=partial(
-                self._update_orientation, HorizontalAxisOrientation
-            ),
+            callback=self._update_horizontal_axis_orientation,
         )
 
         if self.viewer.dims.ndisplay == 2:
@@ -475,9 +509,7 @@ class QtViewerButtons(QFrame):
                 parent=popup,
                 enum_class=DepthAxisOrientation,
                 current_enum=self.viewer.camera.orientation[0],
-                callback=partial(
-                    self._update_orientation, DepthAxisOrientation
-                ),
+                callback=self._update_depth_axis_orientation,
             )
 
             orientation_layout.addWidget(self.depth_combo)
