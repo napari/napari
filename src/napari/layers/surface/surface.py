@@ -211,6 +211,7 @@ class Surface(IntensityVisualizationMixin, Layer):
     """
 
     _colormaps = AVAILABLE_COLORMAPS
+    _slicing_state: '_SurfaceSlicingState'
 
     def __init__(
         self,

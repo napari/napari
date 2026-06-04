@@ -1,8 +1,16 @@
+import re
 import warnings
-from collections import OrderedDict, defaultdict
+from collections import UserDict, defaultdict
+from collections.abc import Mapping
 from functools import lru_cache
 from threading import Lock
-from typing import TYPE_CHECKING, NamedTuple, Union
+from typing import (
+    TYPE_CHECKING,
+    NamedTuple,
+    Protocol,
+    TypeVar,
+    Union,
+)
 
 import numpy as np
 from vispy.color import (
@@ -45,20 +53,70 @@ ValidColormapArg = Union[
     dict,
 ]
 
-matplotlib_colormaps = _MATPLOTLIB_COLORMAP_NAMES = OrderedDict(
-    viridis='viridis',
-    magma='magma',
-    inferno='inferno',
-    plasma='plasma',
-    hsv='hsv',
-    turbo='turbo',
-    twilight='twilight',
-    twilight_shifted='twilight shifted',
-    gist_earth='gist earth',
-    PiYG='PiYG',
-)
+T = TypeVar('T', contravariant=True)
+
+
+class SizedContainer(Protocol[T]):
+    def __contains__(self, item: T, /) -> bool: ...
+
+    def __len__(self) -> int: ...
+
+
+def increment_name(name: str, existing: SizedContainer[str]) -> str:
+    """Increment search for unique colormap name"""
+    if name not in existing:
+        return name
+
+    if m := re.match(r'(.*) \((\d+)\)', name):
+        number = int(m.group(2)) + 1
+        name = m.group(1)
+    else:
+        number = 1
+
+    for i in range(len(existing) + 1):
+        if (text := f'{name} ({number + i})') not in existing:
+            return text
+    raise ValueError(f'Could not find a unique name for {name}')
+
+
+class ColormapDict(UserDict[str, Colormap]):
+    """A dictionary of colormaps.
+
+    Prevent overriding of existing keys.
+    """
+
+    def __setitem__(self, key: str, value: Colormap) -> None:
+        if key in self:
+            raise KeyError(f"Colormap with name '{key}' already exists")
+        super().__setitem__(key, value)
+
+    def add_colormap_if_missing(self, colormap: Colormap) -> str:
+        if colormap.name in self and not self[colormap.name].same_colors(
+            colormap
+        ):
+            new_name = increment_name(colormap.name, self)
+            colormap.name = new_name
+
+        if colormap.name not in self:
+            self[colormap.name] = colormap
+
+        return colormap.name
+
+
+matplotlib_colormaps = _MATPLOTLIB_COLORMAP_NAMES = {
+    'viridis': 'viridis',
+    'magma': 'magma',
+    'inferno': 'inferno',
+    'plasma': 'plasma',
+    'hsv': 'hsv',
+    'turbo': 'turbo',
+    'twilight': 'twilight',
+    'twilight_shifted': 'twilight shifted',
+    'gist_earth': 'gist earth',
+    'PiYG': 'PiYG',
+}
 _MATPLOTLIB_COLORMAP_NAMES_REVERSE = {
-    v: k for k, v in _MATPLOTLIB_COLORMAP_NAMES.items()
+    v: k for k, v in matplotlib_colormaps.items()
 }
 
 # some colormaps use BaseColormap and custom mapping functions instead of
@@ -66,43 +124,43 @@ _MATPLOTLIB_COLORMAP_NAMES_REVERSE = {
 _VISPY_COLORMAPS = {
     k: v for k, v in get_colormaps().items() if isinstance(v, VispyColormap)
 }
-_VISPY_COLORMAP_NAMES = OrderedDict(
-    autumn='autumn',
-    blues='blues',
-    cool='cool',
-    greens='greens',
-    reds='reds',
-    spring='spring',
-    summer='summer',
-    light_blues='light blues',
-    orange='orange',
-    viridis='viridis',
-    coolwarm='coolwarm',
-    PuGr='PuGr',
-    GrBu='GrBu',
-    GrBu_d='GrBu_d',
-    RdBu='RdBu',
-    cubehelix='cubehelix',
-    single_hue='single hue',
-    hsl='hsl',
-    husl='husl',
-    diverging='diverging',
-    RdYeBuCy='RdYeBuCy',
-)
+_VISPY_COLORMAP_NAMES = {
+    'autumn': 'autumn',
+    'blues': 'blues',
+    'cool': 'cool',
+    'greens': 'greens',
+    'reds': 'reds',
+    'spring': 'spring',
+    'summer': 'summer',
+    'light_blues': 'light blues',
+    'orange': 'orange',
+    'viridis': 'viridis',
+    'coolwarm': 'coolwarm',
+    'PuGr': 'PuGr',
+    'GrBu': 'GrBu',
+    'GrBu_d': 'GrBu_d',
+    'RdBu': 'RdBu',
+    'cubehelix': 'cubehelix',
+    'single_hue': 'single hue',
+    'hsl': 'hsl',
+    'husl': 'husl',
+    'diverging': 'diverging',
+    'RdYeBuCy': 'RdYeBuCy',
+}
 
 _VISPY_COLORMAP_NAMES_REVERSE = {
     v: k for k, v in _VISPY_COLORMAP_NAMES.items()
 }
 
-_PRIMARY_COLORS = OrderedDict(
-    red=('red', [1.0, 0.0, 0.0]),
-    green=('green', [0.0, 1.0, 0.0]),
-    blue=('blue', [0.0, 0.0, 1.0]),
-    cyan=('cyan', [0.0, 1.0, 1.0]),
-    magenta=('magenta', [1.0, 0.0, 1.0]),
-    yellow=('yellow', [1.0, 1.0, 0.0]),
-    gray=('gray', [1.0, 1.0, 1.0]),
-)
+_PRIMARY_COLORS = {
+    'red': ('red', [1.0, 0.0, 0.0]),
+    'green': ('green', [0.0, 1.0, 0.0]),
+    'blue': ('blue', [0.0, 0.0, 1.0]),
+    'cyan': ('cyan', [0.0, 1.0, 1.0]),
+    'magenta': ('magenta', [1.0, 0.0, 1.0]),
+    'yellow': ('yellow', [1.0, 1.0, 0.0]),
+    'gray': ('gray', [1.0, 1.0, 1.0]),
+}
 
 SIMPLE_COLORMAPS = {
     name: Colormap(
@@ -697,7 +755,7 @@ ALL_COLORMAPS.update(INVERSE_COLORMAPS)
 ALL_COLORMAPS.update(DISCONTINUOUS_COLORMAPS)
 
 # ... sorted alphabetically by name
-AVAILABLE_COLORMAPS = dict(
+AVAILABLE_COLORMAPS = ColormapDict(
     sorted(ALL_COLORMAPS.items(), key=lambda cmap: cmap[0].lower())
 )
 # lock to allow update of AVAILABLE_COLORMAPS in threads
@@ -724,7 +782,7 @@ def _increment_unnamed_colormap(
     ----------
     existing : list of str
         Names of existing colormaps.
-    name : str, optional
+    name : str, default '[unnamed colormap]'
         Name of colormap to be incremented. by default '[unnamed colormap]'
 
     Returns
@@ -734,11 +792,11 @@ def _increment_unnamed_colormap(
     display_name : str
         Display name of colormap after incrementing.
     """
-    display_name = '[unnamed colormap]'
+    display_name: str = name
     if name == '[unnamed colormap]':
         past_names = [n for n in existing if n.startswith('[unnamed colormap')]
         name = f'[unnamed colormap {len(past_names)}]'
-        display_name = f'[unnamed colormap {len(past_names)}]'
+        display_name = '[unnamed colormap {number}]'
 
     return name, display_name
 
@@ -787,47 +845,31 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
                 name = (
                     colormap.lower() if colormap.startswith('#') else colormap
                 )
-                custom_cmap = _colormap_from_colors(colormap, name)
+                custom_cmap = _colormap_from_colors(
+                    colormap, AVAILABLE_COLORMAPS, name=name
+                )
 
                 if custom_cmap is None:
                     custom_cmap = vispy_or_mpl_colormap(colormap)
 
-                for cmap_ in AVAILABLE_COLORMAPS.values():
-                    if (
-                        np.array_equal(cmap_.controls, custom_cmap.controls)
-                        and np.array_equal(cmap_.colors, custom_cmap.colors)
-                        and cmap_.interpolation == custom_cmap.interpolation
-                        and np.all(cmap_.nan_color == custom_cmap.nan_color)
-                        and np.all(cmap_.high_color == custom_cmap.high_color)
-                        and np.all(cmap_.low_color == custom_cmap.low_color)
-                    ):
-                        custom_cmap = cmap_
-                        break
+                custom_cmap = _ensure_unique_exists(
+                    custom_cmap, AVAILABLE_COLORMAPS
+                )
+            name = AVAILABLE_COLORMAPS.add_colormap_if_missing(custom_cmap)
 
-            name = custom_cmap.name
-            AVAILABLE_COLORMAPS[name] = custom_cmap
         elif isinstance(colormap, Colormap):
-            AVAILABLE_COLORMAPS[colormap.name] = colormap
-            name = colormap.name
+            name = AVAILABLE_COLORMAPS.add_colormap_if_missing(colormap)
         elif isinstance(colormap, VispyColormap):
             # if a vispy colormap instance is provided, make sure we don't already
             # know about it before adding a new unnamed colormap
-            _name = None
-            for key, val in AVAILABLE_COLORMAPS.items():
-                if colormap == val:
-                    _name = key
-                    break
-
-            if _name is None:
-                name, _display_name = _increment_unnamed_colormap(
-                    AVAILABLE_COLORMAPS
-                )
-            else:
-                name = _name
+            name, _display_name = _increment_unnamed_colormap(
+                AVAILABLE_COLORMAPS
+            )
 
             # Convert from vispy colormap
             cmap = convert_vispy_colormap(colormap, name=name)
-            AVAILABLE_COLORMAPS[name] = cmap
+            cmap = _ensure_unique_exists(cmap, AVAILABLE_COLORMAPS)
+            name = AVAILABLE_COLORMAPS.add_colormap_if_missing(cmap)
 
         elif isinstance(colormap, tuple):
             if (
@@ -842,79 +884,79 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
                     cmap = convert_vispy_colormap(cmap, name=name)
                 else:
                     cmap.name = name
-                AVAILABLE_COLORMAPS[name] = cmap
+                name = AVAILABLE_COLORMAPS.add_colormap_if_missing(cmap)
             else:
-                colormap = _colormap_from_colors(colormap)
-                if colormap is None:
+                cmap = _colormap_from_colors(colormap, AVAILABLE_COLORMAPS)
+                if cmap is None:
                     raise TypeError(
-                        'When providing a tuple as a colormap argument, either 1) the first element must be a string and the second a Colormap instance 2) or the tuple should be convertible to one or more colors'
+                        'When providing a tuple as a colormap argument, either 1) the first element must be a string and the second a Colormap instance 2) or the tuple should be convertible to one or more colors',
                     )
-
-                name, _display_name = _increment_unnamed_colormap(
-                    AVAILABLE_COLORMAPS
-                )
-                colormap.update({'name': name, '_display_name': _display_name})
-                AVAILABLE_COLORMAPS[name] = colormap
+                name = AVAILABLE_COLORMAPS.add_colormap_if_missing(cmap)
 
         elif isinstance(colormap, dict):
             if 'colors' in colormap and not (
                 isinstance(colormap['colors'], VispyColormap | Colormap)
             ):
                 cmap = Colormap(**colormap)
-                name = cmap.name
-                AVAILABLE_COLORMAPS[name] = cmap
+                name = AVAILABLE_COLORMAPS.add_colormap_if_missing(cmap)
             elif not all(
                 (isinstance(i, VispyColormap | Colormap))
                 for i in colormap.values()
             ):
                 raise TypeError(
-                    'When providing a dict as a colormap, all values must be Colormap instances'
+                    'When providing a dict as a colormap, all values must be Colormap instances',
                 )
             else:
                 # Convert from vispy colormaps
+                name_li = []
                 for key, cmap in colormap.items():
                     # Convert from vispy colormap
                     if isinstance(cmap, VispyColormap):
                         cmap = convert_vispy_colormap(cmap, name=key)
                     else:
                         cmap.name = key
-                    name = key
-                    colormap[name] = cmap
-                AVAILABLE_COLORMAPS.update(colormap)
-                if len(colormap) == 1:
-                    name = next(iter(colormap))  # first key in dict
-                elif len(colormap) > 1:
-                    name = next(iter(colormap.keys()))
-
+                    name_li.append(
+                        AVAILABLE_COLORMAPS.add_colormap_if_missing(cmap)
+                    )
+                if len(name_li) == 1:
+                    name = name_li[0]
+                elif len(name_li) > 1:
+                    name = name_li[0]
                     warnings.warn(
-                        'only the first item in a colormap dict is used as an argument'
+                        'Only the first item in a colormap dict is used as an argument',
                     )
                 else:
                     raise ValueError(
                         'Received an empty dict as a colormap argument.'
                     )
         else:
-            colormap = _colormap_from_colors(colormap)
-            if colormap is not None:
-                name, _display_name = _increment_unnamed_colormap(
-                    AVAILABLE_COLORMAPS
-                )
-                colormap.update({'name': name, '_display_name': _display_name})
-                AVAILABLE_COLORMAPS[name] = colormap
-            else:
+            cmap = _colormap_from_colors(colormap, AVAILABLE_COLORMAPS)
+            if cmap is None:
                 warnings.warn(
                     f'invalid type for colormap: {type(colormap)}. Must be a {{str, tuple, dict, napari.utils.Colormap, vispy.colors.Colormap}}. Reverting to default'
                 )
                 # Use default colormap
                 name = 'gray'
+            else:
+                name = AVAILABLE_COLORMAPS.add_colormap_if_missing(cmap)
 
     return AVAILABLE_COLORMAPS[name]
 
 
+def _ensure_unique_exists(
+    colormap: Colormap, available_colormaps: Mapping[str, Colormap]
+) -> Colormap:
+    """Check if a colormap already exists in the available colormaps."""
+    for cmap_ in available_colormaps.values():
+        if colormap.same_colors(cmap_):
+            return cmap_
+    return colormap
+
+
 def _colormap_from_colors(
     colors: ColorType,
-    name: str | None = 'custom',
-    display_name: str | None = None,
+    available_colormaps: Mapping[str, Colormap],
+    name: str = '[unnamed colormap]',
 ) -> Colormap | None:
     try:
         color_array = transform_color(colors)
@@ -922,7 +964,19 @@ def _colormap_from_colors(
         return None
     if color_array.shape[0] == 1:
         color_array = np.array([[0, 0, 0, 1], color_array[0]])
-    return Colormap(color_array, name=name, display_name=display_name)
+
+    name, display_name = _increment_unnamed_colormap(
+        available_colormaps, name=name
+    )
+
+    return _ensure_unique_exists(
+        Colormap(
+            name=name,
+            display_name=display_name,
+            colors=color_array,
+        ),
+        available_colormaps,
+    )
 
 
 def make_default_color_array():

@@ -94,14 +94,20 @@ LAYERLIST_CONTEXT_ACTIONS: list[Action] = [
         title='Split Stack',
         callback=_layer_actions._split_stack,
         menus=[{**LAYERCTX_SPLITMERGE, 'when': ~LLSCK.active_layer_is_rgb}],
-        enablement=LLSCK.active_layer_is_image_3d,
+        enablement=(
+            LLSCK.active_layer_is_image_3d
+            & ~LLSCK.any_selected_layers_deletion_locked
+        ),
     ),
     Action(
         id='napari.layer.split_rgb',
         title='Split RGB',
         callback=_layer_actions._split_rgb,
         menus=[{**LAYERCTX_SPLITMERGE, 'when': LLSCK.active_layer_is_rgb}],
-        enablement=LLSCK.active_layer_is_rgb,
+        enablement=(
+            LLSCK.active_layer_is_rgb
+            & ~LLSCK.any_selected_layers_deletion_locked
+        ),
     ),
     Action(
         id='napari.layer.merge_rgb',
@@ -114,6 +120,7 @@ LAYERLIST_CONTEXT_ACTIONS: list[Action] = [
             )
             & (LLSCK.num_selected_image_layers == LLSCK.num_selected_layers)
             & LLSCK.all_selected_layers_same_shape
+            & ~LLSCK.any_selected_layers_deletion_locked
         ),
         menus=[LAYERCTX_SPLITMERGE],
     ),
@@ -128,6 +135,7 @@ LAYERLIST_CONTEXT_ACTIONS: list[Action] = [
             )
             & LLSCK.all_selected_layers_same_type
             & ~LLSCK.selected_empty_shapes_layer
+            & ~LLSCK.any_selected_layers_deletion_locked
         ),
         menus=[LAYERCTX_CONVERSION],
     ),
@@ -138,6 +146,7 @@ LAYERLIST_CONTEXT_ACTIONS: list[Action] = [
         enablement=(
             (LLSCK.num_selected_labels_layers >= 1)
             & LLSCK.all_selected_layers_same_type
+            & ~LLSCK.any_selected_layers_deletion_locked
         ),
         menus=[LAYERCTX_CONVERSION],
     ),
@@ -149,6 +158,7 @@ LAYERLIST_CONTEXT_ACTIONS: list[Action] = [
             (LLSCK.num_selected_layers > 1)
             & (LLSCK.num_selected_image_layers == LLSCK.num_selected_layers)
             & LLSCK.all_selected_layers_same_shape
+            & ~LLSCK.any_selected_layers_deletion_locked
         ),
         menus=[LAYERCTX_SPLITMERGE],
     ),
@@ -156,6 +166,17 @@ LAYERLIST_CONTEXT_ACTIONS: list[Action] = [
         id='napari.layer.toggle_visibility',
         title='Toggle visibility',
         callback=_layer_actions._toggle_visibility,
+        menus=[
+            {
+                'id': MenuId.LAYERLIST_CONTEXT,
+                'group': MenuGroup.NAVIGATION,
+            }
+        ],
+    ),
+    Action(
+        id='napari.layer.toggle_lock',
+        title='Toggle lock',
+        callback=_layer_actions._toggle_lock,
         menus=[
             {
                 'id': MenuId.LAYERLIST_CONTEXT,

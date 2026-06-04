@@ -1,5 +1,6 @@
 import logging
 import time
+import tokenize
 import warnings
 from dataclasses import dataclass
 from pathlib import Path
@@ -37,11 +38,24 @@ def _run_configured_startup_script() -> None:
 
     if not (script_path.exists() and script_path.is_file()):
         warnings.warn(
-            f'Startup script path is set to {script_path}. This path does not have a valid startup script. Please check the setting. napari will be launched without a startup script.'
+            f'Startup script path is set to {script_path}. '
+            'This path does not have a valid startup script. '
+            'Please check the setting. '
+            'napari will be launched without a startup script.',
         )
         return
 
-    script_code = script_path.read_text()
+    try:
+        with tokenize.open(script_path) as file:
+            script_code = file.read()
+    except (OSError, SyntaxError, UnicodeDecodeError) as exc:
+        warnings.warn(
+            f'Failed to read startup script at {script_path}. '
+            'napari will be launched without running it. '
+            f'Error: {exc!s}',
+        )
+        return
+
     start_time = time.time()
 
     execute_python_code(script_code, script_path)

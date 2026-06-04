@@ -43,6 +43,9 @@ class Dims(EventedModel):
         Tuple of ordering the dimensions, where the last dimensions are rendered.
     axis_labels : tuple of str
         Tuple of labels for each dimension.
+    units : tuple of pint.Unit, optional
+        Shared world units for each dimension.
+        If ``None``, no additional unit conversion is applied.
     last_used : int
         Dimension which was last interacted with.
 
@@ -65,6 +68,9 @@ class Dims(EventedModel):
         Tuple of ordering the dimensions, where the last dimensions are rendered.
     axis_labels : tuple of str
         Tuple of labels for each dimension.
+    units : tuple of pint.Unit or None
+        Shared world units for each dimension.
+        If ``None``, no additional unit conversion is applied.
     last_used : int
         Dimension which was last used.
         Tuple the slider position for each dims slider, in world coordinates.
