@@ -411,6 +411,13 @@ NapariQtNotification #source_label {
   font-size: {{ decrease(font_size, 1) }};
 }
 
+NapariQtNotification #notification_actions QPushButton {
+  padding: 4px 12px 4px 12px;
+  font-size: {{ font_size }};
+  min-height: 18px;
+  border-radius: 0;
+}
+
 NapariQtNotification #severity_icon {
   padding: 0;
   margin: 0 0 -3px 0;
