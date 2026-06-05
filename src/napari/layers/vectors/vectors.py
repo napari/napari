@@ -815,13 +815,13 @@ class _VectorsSlicingState(_LayerSlicingState):
         self._view_alphas: float | np.ndarray = 1.0
 
     def _set_view_slice(self):
-        request = self.make_slice_request_internal(
+        request = self._make_slice_request_internal(
             self.layer._slice_input, self.layer._data_slice
         )
         response = request()
         self._update_slice_response(response)
 
-    def make_slice_request(self, dims: 'Dims') -> _VectorSliceRequest:
+    def _make_slice_request(self, dims: 'Dims') -> _VectorSliceRequest:
         """Make a Vectors slice request based on the given dims and these data."""
         slice_input = self.make_slice_input(dims)
         # TODO: [see Image]
@@ -832,9 +832,9 @@ class _VectorsSlicingState(_LayerSlicingState):
         # things either by caching the world-to-data transform on the layer
         # or by lazily evaluating it in the slice task itself.
         data_slice = self._slice_indices(slice_input, dims)
-        return self.make_slice_request_internal(slice_input, data_slice)
+        return self._make_slice_request_internal(slice_input, data_slice)
 
-    def make_slice_request_internal(
+    def _make_slice_request_internal(
         self, slice_input: _SliceInput, data_slice: _ThickNDSlice
     ):
         return _VectorSliceRequest(
