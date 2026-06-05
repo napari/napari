@@ -44,10 +44,10 @@ from napari.components.overlays import (
     BrushCircleOverlay,
     CurrentSliceOverlay,
     Overlay,
+    RectangleSelectOverlay,
     ScaleBarOverlay,
     TextOverlay,
     WelcomeOverlay,
-    ZoomOverlay,
 )
 from napari.components.tooltip import Tooltip
 from napari.errors import (
@@ -133,7 +133,7 @@ DEFAULT_OVERLAYS = {
     'text': TextOverlay,
     'axes': AxesOverlay,
     'brush_circle': BrushCircleOverlay,
-    'zoom': ZoomOverlay,
+    'zoom': RectangleSelectOverlay,
     'current_slice': CurrentSliceOverlay,
 }
 
@@ -340,7 +340,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         return self._overlays['welcome']
 
     @property
-    def _zoom_box(self) -> ZoomOverlay:
+    def _zoom_box(self) -> RectangleSelectOverlay:
         return self._overlays['zoom']  # type: ignore[return-value]
 
     @property
