@@ -17,10 +17,11 @@ Community contributions are very welcome!
 
 import re
 import warnings
+from typing import Final
 
 from napari.utils.interactions import Shortcut
 
-NAPARI_TIPS: tuple[str, ...] = (
+NAPARI_TIPS: Final[tuple[str, ...]] = (
     'You can take a screenshot of the canvas and copy it to your clipboard by pressing {napari.window.file.copy_canvas_screenshot}.',
     'You can change most shortcuts from the File → Preferences → Shortcuts menu.',
     'You can right click many components of the graphical interface to access advanced controls.',
