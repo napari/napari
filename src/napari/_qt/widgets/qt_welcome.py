@@ -177,8 +177,9 @@ class QtWelcomeWidget(QWidget):
 
     def set_tips(self, tips: Sequence[str] | None) -> None:
         """Replace the tip pool and show a random one."""
-        tips = NAPARI_TIPS if tips is None else (tips or ("You're awesome!",))
-        self._tips = tuple(format_tip(tip) for tip in (tips or NAPARI_TIPS))
+        self._tips = (
+            NAPARI_TIPS if tips is None else (tips or ("You're awesome!",))
+        )
         self.show_random_tip()
 
     def show_random_tip(self) -> None:
@@ -197,7 +198,9 @@ class QtWelcomeWidget(QWidget):
 
     def _update_tip_label(self) -> None:
         """Render the current tip after expanding any shortcut placeholders."""
-        self._tip_label.setText(f'Did you know?\n{self._current_tip}')
+        self._tip_label.setText(
+            f'Did you know?\n{format_tip(self._current_tip)}'
+        )
 
     def paintEvent(self, event):
         """Override Qt method.
