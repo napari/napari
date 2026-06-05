@@ -1871,14 +1871,14 @@ def test_view_size():
     layer._slice_dims(Dims(ndim=3, point=(1, 0, 0)))
     assert np.array_equal(layer._view_size, sizes[[2]])
 
-    layer.out_of_slice_display = True
+    layer.projection_mode = 'rescale'
     # NOTE: since a dims slice of thickness 0 defaults back to 1,
-    # out_of_slice_display actually compares the half-size with
+    # rescale projection actually compares the half-size with
     # distance + 0.5, not just distance
     assert len(layer._view_size) == 3
 
     # test a slice with no points
-    layer.out_of_slice_display = False
+    layer.projection_mode = 'all'
     layer._slice_dims(Dims(ndim=3, point=(2, 0, 0)))
     assert np.array_equal(layer._view_size, [])
 
