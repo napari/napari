@@ -390,10 +390,10 @@ class Points(Layer):
         feature_defaults=None,
         features=None,
         metadata=None,
-        n_dimensional=False,
         name=None,
         opacity=1.0,
         out_of_slice_display=False,
+        n_dimensional=False,
         projection_mode='all',
         properties=None,
         property_choices=None,
@@ -553,8 +553,8 @@ class Points(Layer):
             self.canvas_size_limits = canvas_size_limits
             self.shading = shading
             self.antialiasing = antialiasing
-            self.n_dimensional = n_dimensional
             self.out_of_slice_display = out_of_slice_display
+            self.n_dimensional = n_dimensional
 
         # Trigger generation of view slice and thumbnail
         self.refresh(extent=False)
