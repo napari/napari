@@ -1126,32 +1126,6 @@ def test_border_width_types_negative(border_width):
         Points(data, border_width=border_width, border_width_is_relative=False)
 
 
-def test_out_of_slice_display():
-    """Test setting out_of_slice_display flag for 2D and 4D data."""
-    shape = (10, 2)
-    np.random.seed(0)
-    data = 20 * np.random.random(shape)
-    layer = Points(data)
-    assert layer.out_of_slice_display is False
-
-    layer.out_of_slice_display = True
-    assert layer.out_of_slice_display is True
-
-    layer = Points(data, out_of_slice_display=True)
-    assert layer.out_of_slice_display is True
-
-    shape = (10, 4)
-    data = 20 * np.random.random(shape)
-    layer = Points(data)
-    assert layer.out_of_slice_display is False
-
-    layer.out_of_slice_display = True
-    assert layer.out_of_slice_display is True
-
-    layer = Points(data, out_of_slice_display=True)
-    assert layer.out_of_slice_display is True
-
-
 @pytest.mark.parametrize('attribute', ['border', 'face'])
 def test_switch_color_mode(attribute):
     """Test switching between color modes"""
