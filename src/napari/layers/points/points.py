@@ -146,14 +146,14 @@ class Points(Layer):
         is a feature.
     metadata : dict
         Layer metadata.
+    n_dimensional : bool
+        DEPRECATED: If True, renders points not just in central plane but also
+        slightly out of slice according to specified point marker size.
     name : str
         Name of the layer. If not provided then will be guessed using heuristics.
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     out_of_slice_display : bool
-        DEPRECATED: If True, renders points not just in central plane but also
-        slightly out of slice according to specified point marker size.
-    n_dimensional : bool
         DEPRECATED: If True, renders points not just in central plane but also
         slightly out of slice according to specified point marker size.
     projection_mode : str
@@ -390,10 +390,10 @@ class Points(Layer):
         feature_defaults=None,
         features=None,
         metadata=None,
+        n_dimensional=False,
         name=None,
         opacity=1.0,
         out_of_slice_display=False,
-        n_dimensional=False,
         projection_mode='all',
         properties=None,
         property_choices=None,
