@@ -151,8 +151,11 @@ class Points(Layer):
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     out_of_slice_display : bool
-        If True, renders points not just in central plane but also slightly out of slice
-        according to specified point marker size.
+        DEPRECATED: If True, renders points not just in central plane but also
+        slightly out of slice according to specified point marker size.
+    n_dimensional : bool
+        DEPRECATED: If True, renders points not just in central plane but also
+        slightly out of slice according to specified point marker size.
     projection_mode : str
         How data outside the viewed dimensions but inside the thick Dims slice will
         be projected onto the viewed dimensions. Must fit to cls._projectionclass.
