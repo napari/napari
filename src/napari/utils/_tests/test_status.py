@@ -43,3 +43,16 @@ def test_status_format(input_data, expected, monkeypatch):
         get_settings().application, 'float_display_precision', 3
     )
     assert status_format(input_data) == expected
+
+
+def test_status_format_precision_setting(monkeypatch):
+    """test that the float_display_precision setting is respected"""
+    monkeypatch.setattr(
+        get_settings().application, 'float_display_precision', 2
+    )
+    assert (
+        status_format(
+            123.932021,
+        )
+        == '1.2e+02'
+    )

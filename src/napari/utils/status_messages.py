@@ -3,13 +3,12 @@ from collections.abc import Iterable
 import numpy as np
 import numpy.typing as npt
 
-from napari.settings import get_settings
+PRECISION_COUNT = 3
 
 
 def format_float(value):
     """Nice float formatting into strings."""
-    precision = get_settings().application.float_display_precision
-    return f'{value:0.{precision}g}'
+    return f'{value:0.{PRECISION_COUNT}g}'
 
 
 def format_feature_value(value):

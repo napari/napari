@@ -61,6 +61,10 @@ class ApplicationSettings(EventedModel):
         self.events.brush_size_on_mouse_move_modifiers(
             value=self.brush_size_on_mouse_move_modifiers
         )
+        self.events.float_display_precision.connect(
+            float_display_precision_callback
+        )
+        self.events.float_display_precision(value=self.float_display_precision)
 
     first_time: bool = Field(
         True,
@@ -361,3 +365,9 @@ def brush_size_on_mouse_move_modifiers_callback(event: Event) -> None:
     )
 
     change_brush_size_on_mouse_move_modifiers(event.value.split('+'))
+
+
+def float_display_precision_callback(event: Event) -> None:
+    from napari.utils import status_messages
+
+    status_messages.PRECISION_COUNT = event.value
