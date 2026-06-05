@@ -133,7 +133,7 @@ DEFAULT_OVERLAYS = {
     'text': TextOverlay,
     'axes': AxesOverlay,
     'brush_circle': BrushCircleOverlay,
-    'zoom': RectangleSelectOverlay,
+    'selection_rectangle': RectangleSelectOverlay,
     'current_slice': CurrentSliceOverlay,
 }
 
@@ -340,8 +340,8 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         return self._overlays['welcome']
 
     @property
-    def _zoom_box(self) -> RectangleSelectOverlay:
-        return self._overlays['zoom']  # type: ignore[return-value]
+    def _selection_rectangle(self) -> RectangleSelectOverlay:
+        return self._overlays['selection_rectangle']  # type: ignore[return-value]
 
     @property
     def _brush_circle_overlay(self) -> BrushCircleOverlay:

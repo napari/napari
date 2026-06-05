@@ -55,38 +55,43 @@ def drag_to_zoom(viewer, event):
         return
 
     # on mouse press
-    viewer._zoom_box.visible = True
+    viewer._selection_rectangle.visible = True
     press_pos = event.pos[::-1]
     press_position = event.position
     move_pos = press_pos
-    viewer._zoom_box.corners_canvas = (press_pos, press_pos)
+    viewer._selection_rectangle.corners_canvas = (press_pos, press_pos)
     yield
     event.handled = True
 
     # on mouse move
     while event.type == 'mouse_move':
         if 'Alt' not in event.modifiers:
-            viewer._zoom_box.visible = False
+            viewer._selection_rectangle.visible = False
             yield
             return
 
         move_pos = event.pos[::-1]
         move_position = event.position
-        viewer._zoom_box.corners_canvas = (press_pos, move_pos)
-        viewer._zoom_box.corners_world = (press_position, move_position)
+        viewer._selection_rectangle.corners_canvas = (press_pos, move_pos)
+        viewer._selection_rectangle.corners_world = (
+            press_position,
+            move_position,
+        )
         yield
 
     # on mouse release
-    viewer._zoom_box.visible = False
+    viewer._selection_rectangle.visible = False
 
     # only trigger zoom if the box is larger than a MIN_ZOOMBOX_SIZE in pixels
     distance = np.abs(np.array(press_pos) - np.array(move_pos))
     if distance.min() > MIN_ZOOMBOX_SIZE:
         box_size_canvas = np.abs(
-            np.diff(viewer._zoom_box.corners_canvas, axis=0)
+            np.diff(viewer._selection_rectangle.corners_canvas, axis=0)
         )
         ratio = np.min(viewer._get_viewbox_size() / box_size_canvas)
-        box_center_world = np.mean(viewer._zoom_box.corners_world, axis=0)
+        box_center_world = np.mean(
+            viewer._selection_rectangle.corners_world, axis=0
+        )
         camera_center = box_center_world[list(viewer.dims.displayed)]
 
         viewer.camera.zoom = viewer.camera.zoom * np.min(ratio)

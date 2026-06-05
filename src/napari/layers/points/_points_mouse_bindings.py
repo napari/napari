@@ -39,11 +39,12 @@ def select(layer: Points, event: Event) -> Generator[None, None, None]:
     to any existing selection, otherwise these will become the only selected
     points.
     """
-    start_pos = np.array(event.position)[event.dims_displayed]
+    start_pos_canvas = event.pos
+    start_pos_world = np.array(event.position)
 
     if 'Control' in event.modifiers:
         yield
-        yield from _transform_selection_box(layer, event, start_pos)
+        yield from _transform_selection_box(layer, event, start_pos_world)
         return
 
     modify_selection = 'Shift' in event.modifiers
@@ -74,39 +75,43 @@ def select(layer: Points, event: Event) -> Generator[None, None, None]:
 
     # only move points if clicking on a selected point and if we're not modifying
     if value in layer.selected_data and not modify_selection:
-        yield from _move_selection(layer, event, start_pos)
+        yield from _move_selection(layer, event, start_pos_world)
     else:
         # undo previous toggle since we actually wanted to make a selection box
         if value is not None:
             _toggle_selected(layer.selected_data, value)
         initial_selection = set(layer.selected_data)
-        yield from _select_with_box(
-            layer, event, start_pos, initial_selection, modify_selection
+        yield from _select_with_rectangle(
+            layer,
+            event,
+            start_pos_canvas,
+            start_pos_world,
+            initial_selection,
+            modify_selection,
         )
 
 
-def _select_with_box(
+def _select_with_rectangle(
     layer: Points,
     event: Event,
-    start_pos: np.ndarray,
+    start_pos_canvas: np.ndarray,
+    start_pos_world: np.ndarray,
     initial_selection: set,
     modify_selection: bool,
 ) -> Generator[None, None, None]:
-    if len(event.dims_displayed) != 2:
-        return
-
-    box = layer._overlays['selection_box']
-    box.bounds = (start_pos, start_pos)
-    box.handles = False
-    box.selected_handle = None
+    box = layer._overlays['selection_rectangle']
+    box.corners_canvas = (start_pos_canvas, start_pos_canvas)
+    box.corners_world = (start_pos_world, start_pos_world)
     box.visible = True
 
     while event.type == 'mouse_move':
-        pos = np.array(event.position)[event.dims_displayed]
-        box.bounds = (start_pos, pos)
+        pos_canvas = event.pos
+        pos_world = event.position
+        box.corners_canvas = (start_pos_canvas, pos_canvas)
+        box.corners_world = (start_pos_world, pos_world)
         selected = set(
             points_in_box(
-                np.array(box.bounds), layer._view_data, layer._view_size
+                np.array(box.corners_world), layer._view_data, layer._view_size
             )
         )
         if modify_selection:
