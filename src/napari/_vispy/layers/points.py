@@ -107,7 +107,7 @@ class VispyPointsLayer(VispyBaseLayer):
             ]
             if data.ndim == 1:
                 data = np.expand_dims(data, axis=0)
-            size = self.layer.size[data_indices]
+            size = self.layer._view_size[self.layer._highlight_index]
             border_width = self.layer.border_width[data_indices]
             if self.layer.border_width_is_relative:
                 border_width = border_width * size
