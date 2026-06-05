@@ -79,7 +79,7 @@ class _VectorSliceRequest:
             # alpha is only impacted by not displayed data, therefore 1
             return _VectorSliceResponse(
                 indices=np.arange(len(self.data), dtype=int),
-                alphas=1,
+                alphas=np.ones(len(self.data)),
                 slice_input=self.slice_input,
                 request_id=self.id,
             )
@@ -93,9 +93,10 @@ class _VectorSliceRequest:
             request_id=self.id,
         )
 
-    def _get_slice_data(self, not_disp: list[int]) -> tuple[npt.NDArray, int]:
-        data = self.data[:, 0, not_disp]
-        alphas = 1
+    def _get_slice_data(
+        self, not_disp: list[int]
+    ) -> tuple[npt.NDArray, npt.NDArray]:
+        coords_not_disp = self.data[:, 0, not_disp]
 
         point, m_left, m_right = self.data_slice[not_disp].as_array()
 
@@ -112,28 +113,37 @@ class _VectorSliceRequest:
         low[too_thin_slice] -= 0.5
         high[too_thin_slice] += 0.5
 
-        inside_slice = np.all((data >= low) & (data <= high), axis=1)
-        slice_indices = np.where(inside_slice)[0].astype(int)
-
-        if self.out_of_slice_display and self.slice_input.ndim > 2:
+        inside_slice = np.all(
+            (coords_not_disp >= low) & (coords_not_disp <= high), axis=1
+        )
+        if self.projection_mode in ('all', 'none'):
+            valid_vectors = inside_slice
+            alphas = np.ones(len(valid_vectors))
+        elif self.projection_mode == 'fade':
             projected_lengths = abs(self.data[:, 1, not_disp] * self.length)
 
-            # add out of slice points with progressively lower sizes
-            dist_from_low = np.abs(data - low)
-            dist_from_high = np.abs(data - high)
+            # add out of slice vectors with progressively lower alphas
+            dist_from_low = np.abs(coords_not_disp - low)
+            dist_from_high = np.abs(coords_not_disp - high)
             distances = np.minimum(dist_from_low, dist_from_high)
             # anything inside the slice is at distance 0
             distances[inside_slice] = 0
 
             # display vectors that "spill" into the slice
-            matches = np.all(distances <= projected_lengths, axis=1)
-            length_match = projected_lengths[matches]
-            length_match[length_match == 0] = 1
+            valid_vectors = np.all(distances <= projected_lengths, axis=1)
+            if not np.any(valid_vectors):
+                return (
+                    np.empty(0, dtype=int),
+                    np.empty(0, dtype=float),
+                )
+
             # rescale alphas of spilling vectors based on how much they do
-            alphas_per_dim = (length_match - distances[matches]) / length_match
-            alphas_per_dim[length_match == 0] = 1
+            alphas_per_dim = (
+                projected_lengths - distances
+            ) / projected_lengths
             alphas = np.prod(alphas_per_dim, axis=1)
 
-            slice_indices = np.where(matches)[0].astype(int)
+        visible = np.where(valid_vectors)[0].astype(int)
+        alphas = alphas[visible]
 
-        return slice_indices, alphas
+        return visible, alphas

@@ -97,7 +97,7 @@ class Vectors(Layer):
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     out_of_slice_display : bool
-        If True, renders vectors not just in central plane but also slightly out of slice
+        DEPRACATED: If True, renders vectors not just in central plane but also slightly out of slice
         according to specified point marker size.
     projection_mode : str
         How data outside the viewed dimensions but inside the thick Dims slice will
@@ -493,13 +493,25 @@ class Vectors(Layer):
 
     @property
     def out_of_slice_display(self) -> bool:
-        """bool: renders vectors slightly out of slice."""
-        return self._out_of_slice_display
+        """bool: renders points slightly out of slice."""
+        return self._projection_mode == VectorsProjectionMode.FADE
 
     @out_of_slice_display.setter
     def out_of_slice_display(self, out_of_slice_display: bool) -> None:
-        self._out_of_slice_display = out_of_slice_display
+        if out_of_slice_display:
+            warnings.warn(
+                'out_of_slice_display is deprecated. For a similar effect, set projection_mode to '
+                '"rescale" and increase the dims margins to project a thicker slice.',
+                category=FutureWarning,
+                stacklevel=2,
+            )
+        self._projection_mode = (
+            VectorsProjectionMode.FADE
+            if out_of_slice_display
+            else VectorsProjectionMode.ALL
+        )
         self.events.out_of_slice_display()
+        self.events.projection_mode()
         self.refresh(extent=False)
 
     @property
