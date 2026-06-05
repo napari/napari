@@ -16,9 +16,12 @@ from qtpy.QtWidgets import (
 )
 
 from napari import __version__
-from napari._app_model.utils import get_command_shortcut_and_description
 from napari.utils.action_manager import action_manager
-from napari.utils.tips import NAPARI_TIPS, format_tip
+from napari.utils.tips import (
+    NAPARI_TIPS,
+    format_tip,
+    get_command_shortcut_and_description,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Sequence

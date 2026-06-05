@@ -1,3 +1,20 @@
+"""
+This module contains a list of tips and tricks that will be displayed to napari users
+in a variety of places (e.g: the welcome screen shows a random one on each startup.).
+Tips should added as an extra string inside the `NAPARI_TIPS` tuple. They may contain
+format interpolators (in the form `{something}`) which will be replaced as appropriate
+by the `format_tip()` function in `napari.utils. Allowed interpolators are:
+
+- a command_id (e.g. napari.window.view.toggle_viewer_axes) which will be replaced
+  by the relative platform-specific shortcut
+- a keybinding (e.g. Ctrl+Y) for when the above is not possible because the action
+  is not implemented as an app_model command (e.g: increase/decrease brush size)
+
+Community contributions are very welcome!
+"""
+
+# TODO: add to options: a URL (e.g: https://napari.org) which will become a hyperlink where possible
+
 import re
 import warnings
 
@@ -17,6 +34,35 @@ NAPARI_TIPS: tuple[str, ...] = (
 )
 
 
+def get_command_shortcut_and_description(
+    command_id: str,
+) -> tuple[str | None, str | None]:
+    """Get the command shortcut and description from a command id."""
+    from napari._app_model import get_app_model
+    from napari.settings import get_settings
+    from napari.utils.action_manager import action_manager
+
+    app = get_app_model()
+
+    if app_model_keybinding := app.keybindings.get_keybinding(command_id):
+        return (
+            Shortcut(app_model_keybinding.keybinding).platform,
+            app.commands[command_id].title,
+        )
+
+    # might be an action_manager action
+    settings_shortcuts = get_settings().shortcuts.shortcuts
+    if action_manager_keybinding := settings_shortcuts.get(command_id, [None])[
+        0
+    ]:
+        return (
+            Shortcut(action_manager_keybinding).platform,
+            action_manager._actions[command_id].description,
+        )
+
+    return None, None
+
+
 def format_tip(tip: str) -> str:
     """Format a tip with appropriate shortcuts and command keybindings.
 
@@ -28,8 +74,6 @@ def format_tip(tip: str) -> str:
     Note: for some actions, the napari viewer needs to be initialized once
     in order for them to be registered.
     """
-    from napari._app_model.utils import get_command_shortcut_and_description
-
     # TODO: this should use template strings in the future
     for match in re.finditer(r'{(.*?)}', tip):
         command_id = match.group(1)
