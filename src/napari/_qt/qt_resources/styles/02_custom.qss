@@ -20,6 +20,10 @@ QtLayerButtons, QtViewerButtons, QtLayerList {
   min-width: 242px;
 }
 
+QLabel#logo_silhouette {
+  image: url("theme_{{ id }}:/logo_silhouette.svg");
+}
+
 /* ------------- QMainWindow --------- */
 /* QDockWidgets will use the MainWindow styles
 as long as they are docked (though they use the
@@ -407,6 +411,13 @@ NapariQtNotification #source_label {
   font-size: {{ decrease(font_size, 1) }};
 }
 
+NapariQtNotification #notification_actions QPushButton {
+  padding: 4px 12px 4px 12px;
+  font-size: {{ font_size }};
+  min-height: 18px;
+  border-radius: 0;
+}
+
 NapariQtNotification #severity_icon {
   padding: 0;
   margin: 0 0 -3px 0;
@@ -628,6 +639,29 @@ QtFontSizePreview {
 
 QListWidget#Preferences {
  background: {{ background }};
+}
+
+QtWelcomeWidget, QtWelcomeWidget[drag=false] {
+  background: {{ canvas }};
+}
+
+QtWelcomeWidget[drag=true] {
+  background: {{ highlight }};
+}
+
+QtWelcomeLabel {
+ color: {{ darken(text, 25) }};
+ font-size: {{ increase(font_size, 6) }};
+}
+
+QtShortcutLabel {
+ color: {{ darken(text, 25) }};
+ font-size: {{ increase(font_size, 6) }};
+}
+
+QtVersionLabel {
+  color: {{ darken(text, 25) }};
+  font-size: {{ increase(font_size, 6) }};
 }
 
 /* ------------- Narrow scrollbar for qtlayer list --------- */
