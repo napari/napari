@@ -20,16 +20,15 @@ def test_attrs_arrays(Layer, data, ndim):
 
     properties = layer._get_state()
 
-    # Check every property is in call signature
+    # Check every property is also a parameter and viceversa
     signature = inspect.signature(Layer)
-
-    # Check every property is also a parameter.
     for prop in properties:
         assert prop in signature.parameters
-
-    # Check number of properties is same as number in signature
-    # excluding `cache` which is not yet in `_get_state`
-    assert len(properties) == len(signature.parameters) - 1
+    for param in signature.parameters:
+        # excluding `cache` which is not yet in `_get_state`
+        if param == 'cache':
+            continue
+        assert param in properties
 
     # Check new layer can be created
     new_layer = Layer(**properties)
