@@ -514,9 +514,6 @@ class Points(Layer):
         self._current_border_width = (
             np.asarray(border_width) if np.isscalar(border_width) else 0.1
         )
-        self.current_symbol = (
-            np.asarray(symbol) if np.isscalar(symbol) else 'o'
-        )
 
         color_properties = (
             self._feature_table.properties()
@@ -541,15 +538,19 @@ class Points(Layer):
         )
 
         # Save the point style params
-        self.size = size
-        self.shown = shown
-        self.symbol = symbol
-        self.border_width = border_width
-        self.border_width_is_relative = border_width_is_relative
+        with self._block_refresh():
+            self.size = size
+            self.shown = shown
+            self.current_symbol = (
+                np.asarray(symbol) if np.isscalar(symbol) else 'o'
+            )
+            self.symbol = symbol
+            self.border_width = border_width
+            self.border_width_is_relative = border_width_is_relative
 
-        self.canvas_size_limits = canvas_size_limits
-        self.shading = shading
-        self.antialiasing = antialiasing
+            self.canvas_size_limits = canvas_size_limits
+            self.shading = shading
+            self.antialiasing = antialiasing
 
         # Trigger generation of view slice and thumbnail
         self.refresh(extent=False)
