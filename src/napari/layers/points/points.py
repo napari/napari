@@ -269,9 +269,6 @@ class Points(Layer):
     current_face_color : str
         Face color of the marker border for the next point to be added or the currently
         selected point.
-    out_of_slice_display : bool
-        If True, renders points not just in central plane but also slightly out of slice
-        according to specified point marker size.
     selected_data : Selection
         Integer indices of any selected points.
     mode : str
@@ -390,6 +387,7 @@ class Points(Layer):
         feature_defaults=None,
         features=None,
         metadata=None,
+        n_dimensional=False,
         name=None,
         opacity=1.0,
         out_of_slice_display=False,
@@ -479,6 +477,7 @@ class Points(Layer):
             symbol=Event,
             current_symbol=Event,
             out_of_slice_display=Event,
+            n_dimensional=Event,
             highlight=Event,
             shading=Event,
             antialiasing=Event,
@@ -551,6 +550,8 @@ class Points(Layer):
             self.canvas_size_limits = canvas_size_limits
             self.shading = shading
             self.antialiasing = antialiasing
+            self.n_dimensional = n_dimensional
+            self.out_of_slice_display = out_of_slice_display
 
         # Trigger generation of view slice and thumbnail
         self.refresh(extent=False)
@@ -862,6 +863,13 @@ class Points(Layer):
 
     @out_of_slice_display.setter
     def out_of_slice_display(self, out_of_slice_display: bool) -> None:
+        if out_of_slice_display:
+            warnings.warn(
+                'out_of_slice_display is deprecated. For a similar effect, set projection_mode to '
+                '"rescale" and increase the dims margins to project a thicker slice.',
+                category=FutureWarning,
+                stacklevel=2,
+            )
         self._projection_mode = (
             PointsProjectionMode.RESCALE
             if out_of_slice_display
@@ -870,7 +878,18 @@ class Points(Layer):
         self.events.out_of_slice_display()
         self.events.projection_mode()
         self.refresh(extent=False)
-        # TODO: deprecate properly
+
+    @property
+    def n_dimensional(self) -> bool:
+        """
+        This property will soon be deprecated in favor of `out_of_slice_display`. Use that instead.
+        """
+        return self.out_of_slice_display
+
+    @n_dimensional.setter
+    def n_dimensional(self, value: bool) -> None:
+        # deprecation warning fires via out_of_slice_display.setter
+        self.out_of_slice_display = value
 
     @property
     def symbol(self) -> np.ndarray:
@@ -1376,6 +1395,8 @@ class Points(Layer):
                 'properties': self.properties,
                 'property_choices': self.property_choices,
                 'text': self.text.model_dump(),
+                'out_of_slice_display': self.out_of_slice_display,
+                'n_dimensional': self.out_of_slice_display,
                 'size': self.size,
                 'ndim': self.ndim,
                 'data': self.data,
