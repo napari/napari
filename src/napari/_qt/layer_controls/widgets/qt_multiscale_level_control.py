@@ -80,19 +80,37 @@ class QtMultiscaleLevelControl(  # type: ignore[metaclass]
         self.level_combobox = QComboBox(parent)
         self.level_label = QtWrappedLabel(trans._('resolution:'))
 
-        self._rebuild_items()
+        self._rebuild_items(
+            order=self._layer._slice_input.order,
+            ndisplay=self._layer._slice_input.ndisplay,
+        )
         self.level_combobox.currentIndexChanged.connect(
             self._on_combobox_changed
         )
         self._layer.events.locked_data_level.connect(
             self._on_locked_data_level_change
         )
-        self._layer.events.data.connect(self._rebuild_items)
+        self._layer.events.data.connect(self._on_data_change)
 
-    def _rebuild_items(self) -> None:
-        """Populate the combobox from the layer's current level_shapes."""
-        displayed = tuple(self._layer._slice_input.displayed)
-        ndisplay = self._layer._slice_input.ndisplay
+    def _on_data_change(self) -> None:
+        """Rebuild items when layer data changes."""
+        self._rebuild_items(
+            order=self._layer._slice_input.order,
+            ndisplay=self._layer._slice_input.ndisplay,
+        )
+
+    def _rebuild_items(self, order: tuple[int, ...], ndisplay: int) -> None:
+        """Populate the combobox from the layer's current level_shapes.
+
+        Parameters
+        ----------
+        order : tuple of int
+            The dimension order.
+        ndisplay : int
+            The number of displayed dimensions.
+        """
+        # Compute displayed dimensions from order and ndisplay
+        displayed = tuple(order[-ndisplay:])
         with qt_signals_blocked(self.level_combobox):
             self.level_combobox.clear()
             self.level_combobox.addItem('Auto', None)
@@ -104,7 +122,9 @@ class QtMultiscaleLevelControl(  # type: ignore[metaclass]
                 shapes = self._layer.level_shapes
                 itemsize = self._layer.dtype.itemsize
                 for i, shape in enumerate(shapes):
-                    nbytes = int(np.prod(shape) * itemsize)
+                    # Calculate size using only displayed dimensions
+                    displayed_shape = tuple(shape[ax] for ax in displayed)
+                    nbytes = int(np.prod(displayed_shape) * itemsize)
 
                     label = _format_level_label(
                         i, tuple(shape), nbytes, displayed
@@ -159,10 +179,19 @@ class QtMultiscaleLevelControl(  # type: ignore[metaclass]
             else:
                 self.level_combobox.setCurrentIndex(0)
 
-    def _on_display_change_show(self) -> None:
-        """Show the resolution combobox when the layer is multiscale."""
+    def _on_display_change_show(self, ndisplay: int) -> None:
+        """Show the resolution combobox when the layer is multiscale.
+
+        Parameters
+        ----------
+        ndisplay : int
+            The number of displayed dimensions.
+        """
         if self._layer.multiscale:
-            self._rebuild_items()
+            self._rebuild_items(
+                order=self._layer._slice_input.order,
+                ndisplay=ndisplay,
+            )
             self.level_combobox.show()
             self.level_label.show()
 

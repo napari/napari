@@ -124,7 +124,7 @@ class QtLayerControlsContainer(QStackedWidget):
         """
         for widget in self.widgets.values():
             if widget is not self.empty_widget:
-                widget._on_dims_order_changed()
+                widget.order = event.value
 
     def _display(self, event):
         """Change the displayed controls to be those of the target layer.

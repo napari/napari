@@ -72,6 +72,7 @@ class QtLayerControls(QFrame):
         super().__init__()
 
         self._ndisplay: int = 2
+        self._order: tuple[int, ...] = ()
         self._EDIT_BUTTONS: tuple = ()
         self._MODE_BUTTONS: dict = {}
 
@@ -247,6 +248,16 @@ class QtLayerControls(QFrame):
     def ndisplay(self, ndisplay: int) -> None:
         self._ndisplay = ndisplay
         self._on_ndisplay_changed()
+
+    @property
+    def order(self) -> tuple[int, ...]:
+        """The dimension order."""
+        return self._order
+
+    @order.setter
+    def order(self, order: tuple[int, ...]) -> None:
+        self._order = order
+        self._on_dims_order_changed()
 
     def _on_ndisplay_changed(self) -> None:
         """Respond to a change to the number of dimensions displayed in the viewer.

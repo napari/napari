@@ -10,7 +10,6 @@ from napari._qt.layer_controls.widgets.qt_multiscale_level_control import (
     _format_level_label,
 )
 from napari.layers import Image, Labels
-from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
 
 
 # ---------------------------------------------------------------------------
@@ -170,16 +169,15 @@ def test_levels_exceeding_3d_texture_limit_are_disabled(qtbot):
     qtbot.addWidget(qtctrl)
 
     # Switch to 3D display and rebuild items with a mocked texture limit
-    layer._slicing_state._slice_input = _SliceInput(
-        ndisplay=3,
-        world_slice=_ThickNDSlice.make_full(ndim=3),
-        order=(0, 1, 2),
-    )
+    new_order = (0, 1, 2)
+    new_ndisplay = 3
     with patch(
         'napari._qt.layer_controls.widgets.qt_multiscale_level_control.get_max_texture_sizes',
         return_value=(16384, 32),
     ):
-        qtctrl._multiscale_level_control._rebuild_items()
+        qtctrl._multiscale_level_control._rebuild_items(
+            order=new_order, ndisplay=new_ndisplay
+        )
 
     combo = qtctrl._multiscale_level_control.level_combobox
     model = combo.model()
@@ -206,7 +204,10 @@ def test_levels_all_enabled_in_2d(qtbot):
         'napari._qt.layer_controls.widgets.qt_multiscale_level_control.get_max_texture_sizes',
         return_value=(16384, 32),
     ):
-        qtctrl._multiscale_level_control._rebuild_items()
+        qtctrl._multiscale_level_control._rebuild_items(
+            order=layer._slice_input.order,
+            ndisplay=layer._slice_input.ndisplay,
+        )
 
     combo = qtctrl._multiscale_level_control.level_combobox
     model = combo.model()
@@ -242,18 +243,39 @@ def multiscale_4d_controls(qtbot, request):
 
 def test_dims_order_change_rebuilds_labels(multiscale_4d_controls):
     """Changing displayed dims should update combobox labels."""
-    layer, qtctrl = multiscale_4d_controls
+    _layer, qtctrl = multiscale_4d_controls
 
     combo = qtctrl._multiscale_level_control.level_combobox
     label_before = combo.itemText(1)
 
     # Change displayed dims from default (2, 3) to (1, 3)
-    layer._slicing_state._slice_input = _SliceInput(
-        ndisplay=2,
-        world_slice=_ThickNDSlice.make_full(ndim=4),
-        order=(0, 2, 1, 3),
-    )
-    qtctrl._on_dims_order_changed()
+    new_order = (0, 2, 1, 3)
+    qtctrl.order = new_order
 
     label_after = combo.itemText(1)
     assert label_before != label_after
+
+
+def test_multiscale_nbytes_uses_displayed_dims(multiscale_4d_controls):
+    """Size calculation should use only displayed dimensions."""
+    _layer, qtctrl = multiscale_4d_controls
+
+    combo = qtctrl._multiscale_level_control.level_combobox
+
+    # With 2D display showing dims (2, 3), level 0 shape is (3, 10, 64, 64)
+    # Displayed slice is (64, 64) = 4096 bytes for uint8
+    label_2d = combo.itemText(1)
+    assert '4.0 KB' in label_2d or '4.1 KB' in label_2d  # 4096 bytes = 4.0 KB
+
+    # Switch to 3D display showing dims (1, 2, 3)
+    # Displayed slice is (10, 64, 64) = 40960 bytes for uint8
+    qtctrl.order = (0, 1, 2, 3)
+    qtctrl.ndisplay = 3
+
+    label_3d = combo.itemText(1)
+    assert (
+        '41.0 KB' in label_3d or '40.0 KB' in label_3d
+    )  # 40960 bytes ≈ 40 KB
+
+    # The labels should be different because displayed size changed
+    assert label_2d != label_3d
