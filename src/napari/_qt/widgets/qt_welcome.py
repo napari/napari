@@ -86,7 +86,6 @@ class QtWelcomeWidget(QWidget):
         self._tip_label.setContentsMargins(64, 0, 64, 0)
 
         self.set_tips(tips)
-        self.show_random_tip()
 
         # setup the shortcuts "table"
         shortcut_layout = QFormLayout()
@@ -107,6 +106,8 @@ class QtWelcomeWidget(QWidget):
         shortcut_layout.setFieldGrowthPolicy(QFormLayout.FieldsStayAtSizeHint)
         shortcut_layout.setFormAlignment(Qt.AlignHCenter | Qt.AlignTop)
         shortcut_layout.setLabelAlignment(Qt.AlignRight)
+
+        self.refresh_shortcuts()
 
         #  Widget layout of logo and text elements
         layout = QGridLayout()
@@ -143,8 +144,6 @@ class QtWelcomeWidget(QWidget):
         layout.addWidget(text_container, 0, 0)
 
         self.setLayout(layout)
-        self.refresh_shortcuts()
-        self.show_random_tip()
         # The welcome screen is a manual overlay on top of the canvas
         # Need to keep its geometry synced explicitly
         parent_resized = getattr(self.parentWidget(), 'resized', None)
