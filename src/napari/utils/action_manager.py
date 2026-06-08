@@ -85,7 +85,7 @@ class ActionManager:
         self._shortcuts: dict[str, list[str]] = defaultdict(list)
         self._stack: list[str] = []
         self._tooltip_include_action_name = False
-        self.events = EmitterGroup(source=self, shorcut_changed=None)
+        self.events = EmitterGroup(source=self, shortcut_changed=None)
 
     def _debug(self, val):
         self._tooltip_include_action_name = val
@@ -241,7 +241,7 @@ class ActionManager:
 
         # if it's a QPushbutton, we'll remove it when it gets destroyed
         until = getattr(button, 'destroyed', None)
-        self.events.shorcut_changed.connect(_update_tt, until=until)
+        self.events.shortcut_changed.connect(_update_tt, until=until)
 
     def bind_shortcut(self, name: str, shortcut: str) -> None:
         """
@@ -313,7 +313,7 @@ class ActionManager:
 
     def _emit_shortcut_change(self, name: str, shortcut=''):
         tt = self._build_tooltip(name) if name in self._actions else ''
-        self.events.shorcut_changed(name=name, shortcut=shortcut, tooltip=tt)
+        self.events.shortcut_changed(name=name, shortcut=shortcut, tooltip=tt)
 
     def _build_tooltip(self, name: str) -> str:
         """Build tooltip for action `name`."""

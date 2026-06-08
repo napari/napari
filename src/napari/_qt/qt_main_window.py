@@ -22,7 +22,6 @@ from typing import (
 )
 from weakref import WeakValueDictionary
 
-import numpy as np
 from qtpy.QtCore import (
     QEvent,
     QEventLoop,
@@ -33,7 +32,7 @@ from qtpy.QtCore import (
     Qt,
     Slot,
 )
-from qtpy.QtGui import QHideEvent, QImage, QShowEvent
+from qtpy.QtGui import QImage
 from qtpy.QtWidgets import (
     QApplication,
     QDialog,
@@ -96,8 +95,9 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Mapping, MutableMapping, Sequence
     from pathlib import Path
 
+    import numpy as np
     from magicgui.widgets import Widget
-    from qtpy.QtGui import QImage
+    from qtpy.QtGui import QHideEvent, QImage, QShowEvent
 
     from napari.viewer import Viewer
 
@@ -192,11 +192,6 @@ class _QtMainWindow(QMainWindow):
         # this is the line that initializes any Qt-based app-model Actions that
         # were defined somewhere in the `_qt` module and imported in init_qactions
         init_qactions()
-
-        # only after qaction are initialized we can get all shortcuts and actions,
-        # so we have to force update the welcome screen here.
-        viewer.welcome_screen.events.shortcuts()
-        viewer.welcome_screen.events.tips()
 
         with contextlib.suppress(IndexError):
             viewer.cursor.events.position.disconnect(

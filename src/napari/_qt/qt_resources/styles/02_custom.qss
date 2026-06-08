@@ -20,6 +20,10 @@ QtLayerButtons, QtViewerButtons, QtLayerList {
   min-width: 242px;
 }
 
+QLabel#logo_silhouette {
+  image: url("theme_{{ id }}:/logo_silhouette.svg");
+}
+
 /* ------------- QMainWindow --------- */
 /* QDockWidgets will use the MainWindow styles
 as long as they are docked (though they use the
@@ -78,7 +82,6 @@ QMainWindow::separator:vertical {
 
 #QtCustomTitleBar > QLabel {
   color: {{ text }};
-  font-size: {{ decrease(font_size, 1) }};
 }
 
 #QTitleBarCloseButton{
@@ -174,7 +177,6 @@ QtColorBox {
 /* ----------------- QtLayerControls -------------------- */
 
 QtLayerControls > QComboBox, QtLayerControls > QLabel, QtLayerControls, QtPlaneControls > QLabeledSlider > QAbstractSpinBox {
-  font-size: {{ decrease(font_size, 1) }};
   color: {{ text }};
 }
 
@@ -197,7 +199,6 @@ SliderLabel {
   min-height: 16px;
   padding: 0px;
   border-radius: 2px;
-  font-size: {{ decrease(font_size, 1) }};
 }
 
 QWidget[emphasized="true"] SliderLabel {
@@ -213,14 +214,15 @@ QWidget[emphasized="true"] QLabel:disabled {
 }
 
 AutoScaleButtons QPushButton {
-  font-size: {{ decrease(font_size, 3) }};
+  font-size: {{ decrease(font_size, 1) }};
   padding: 4;
 }
 
 PlaneNormalButtons QPushButton {
-    font-size: {{ decrease(font_size, 3) }};
+    font-size: {{ decrease(font_size, 1) }};
     padding: 4;
 }
+
 /* ------------- DimsSliders --------- */
 
 QtDimSliderWidget > QScrollBar::handle[last_used=false]:horizontal {
@@ -243,6 +245,7 @@ QtDimSliderWidget > QLineEdit {
   background-color: {{ background }};
 }
 
+/* ------------- QtModal (Grid, Play, nDisplay, Roll --------- */
 
 #QtModalPopup {
   /* required for rounded corners to not have background color */
@@ -255,8 +258,7 @@ QtDimSliderWidget > QLineEdit {
 }
 
 #QtPopupFrame > QLabel {
-  color: {{ darken(text, 35) }};
-  font-size: {{ font_size }};
+  color: {{ text }};
 }
 
 #playDirectionCheckBox::indicator {
@@ -312,7 +314,6 @@ QtDimSliderWidget > QLineEdit {
 }
 
 #slice_label {
-  font-size: {{ decrease(font_size, 1) }};
   color: {{ secondary }};
   background: transparent;
 }
@@ -407,6 +408,13 @@ NapariQtNotification #source_label {
   font-size: {{ decrease(font_size, 1) }};
 }
 
+NapariQtNotification #notification_actions QPushButton {
+  padding: 4px 12px 4px 12px;
+  font-size: {{ font_size }};
+  min-height: 18px;
+  border-radius: 0;
+}
+
 NapariQtNotification #severity_icon {
   padding: 0;
   margin: 0 0 -3px 0;
@@ -419,8 +427,11 @@ NapariQtNotification #severity_icon {
 /* ------------ Activity Dock ------------ */
 
 #QtCustomTitleLabel {
-  color: {{ primary }};
-  font-size: {{ decrease(font_size, 1) }};
+  color: {{ text }};
+}
+
+#QtActivityButton {
+    font-size: {{ font_size }};
 }
 
 #QtActivityButton:hover {
@@ -630,6 +641,29 @@ QListWidget#Preferences {
  background: {{ background }};
 }
 
+QtWelcomeWidget, QtWelcomeWidget[drag=false] {
+  background: {{ canvas }};
+}
+
+QtWelcomeWidget[drag=true] {
+  background: {{ highlight }};
+}
+
+QtWelcomeLabel {
+ color: {{ darken(text, 25) }};
+ font-size: {{ increase(font_size, 6) }};
+}
+
+QtShortcutLabel {
+ color: {{ darken(text, 25) }};
+ font-size: {{ increase(font_size, 6) }};
+}
+
+QtVersionLabel {
+  color: {{ darken(text, 25) }};
+  font-size: {{ increase(font_size, 6) }};
+}
+
 /* ------------- Narrow scrollbar for qtlayer list --------- */
 
 QtListView {
@@ -750,9 +784,8 @@ QPushButton#lockButton:!checked {
 
 /* ------------- Set size for dims sorter --------- */
 
-QtDimsSorter > QtListView {
-  max-height: 100px;
-  max-width: 150px;
+QtDimsSorter > QtListView::item {
+  padding: 2px;
 }
 
 /* ------------- Lock check buttons for dims sorter --------- */
