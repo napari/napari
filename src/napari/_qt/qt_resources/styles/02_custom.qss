@@ -82,7 +82,6 @@ QMainWindow::separator:vertical {
 
 #QtCustomTitleBar > QLabel {
   color: {{ text }};
-  font-size: {{ decrease(font_size, 1) }};
 }
 
 #QTitleBarCloseButton{
@@ -178,7 +177,6 @@ QtColorBox {
 /* ----------------- QtLayerControls -------------------- */
 
 QtLayerControls > QComboBox, QtLayerControls > QLabel, QtLayerControls, QtPlaneControls > QLabeledSlider > QAbstractSpinBox {
-  font-size: {{ decrease(font_size, 1) }};
   color: {{ text }};
 }
 
@@ -201,7 +199,6 @@ SliderLabel {
   min-height: 16px;
   padding: 0px;
   border-radius: 2px;
-  font-size: {{ decrease(font_size, 1) }};
 }
 
 QWidget[emphasized="true"] SliderLabel {
@@ -217,14 +214,15 @@ QWidget[emphasized="true"] QLabel:disabled {
 }
 
 AutoScaleButtons QPushButton {
-  font-size: {{ decrease(font_size, 3) }};
+  font-size: {{ decrease(font_size, 1) }};
   padding: 4;
 }
 
 PlaneNormalButtons QPushButton {
-    font-size: {{ decrease(font_size, 3) }};
+    font-size: {{ decrease(font_size, 1) }};
     padding: 4;
 }
+
 /* ------------- DimsSliders --------- */
 
 QtDimSliderWidget > QScrollBar::handle[last_used=false]:horizontal {
@@ -247,6 +245,7 @@ QtDimSliderWidget > QLineEdit {
   background-color: {{ background }};
 }
 
+/* ------------- QtModal (Grid, Play, nDisplay, Roll --------- */
 
 #QtModalPopup {
   /* required for rounded corners to not have background color */
@@ -259,8 +258,7 @@ QtDimSliderWidget > QLineEdit {
 }
 
 #QtPopupFrame > QLabel {
-  color: {{ darken(text, 35) }};
-  font-size: {{ font_size }};
+  color: {{ text }};
 }
 
 #playDirectionCheckBox::indicator {
@@ -316,7 +314,6 @@ QtDimSliderWidget > QLineEdit {
 }
 
 #slice_label {
-  font-size: {{ decrease(font_size, 1) }};
   color: {{ secondary }};
   background: transparent;
 }
@@ -430,8 +427,11 @@ NapariQtNotification #severity_icon {
 /* ------------ Activity Dock ------------ */
 
 #QtCustomTitleLabel {
-  color: {{ primary }};
-  font-size: {{ decrease(font_size, 1) }};
+  color: {{ text }};
+}
+
+#QtActivityButton {
+    font-size: {{ font_size }};
 }
 
 #QtActivityButton:hover {
