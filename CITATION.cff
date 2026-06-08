@@ -410,6 +410,11 @@ authors:
   affiliation: University of Wisconsin-Madison
   orcid: https://orcid.org/0009-0002-2400-1940
   alias: gselzer
+- given-names: Nikoloz
+  family-names: Sirmpilatze
+  affiliation: Sainsbury Wellcome Centre - University College London
+  orcid: https://orcid.org/0000-0003-1778-2427
+  alias: niksirbi
 - given-names: MB
   family-names: Smith
   affiliation: AI lab for Living Technologies, University Medical Centre Utrecht (The Netherlands)
