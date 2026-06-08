@@ -684,31 +684,16 @@ class Vectors(Layer):
 
     @property
     def _view_face_color(self) -> np.ndarray:
-        """(Mx4) np.ndarray : colors for the M in view triangles"""
+        """(Mx4) np.ndarray : colors for the M in view vectors"""
 
-        # Create as many colors as there are visible vectors.
+        # One color per visible vector. Instanced rendering draws a single
+        # instance per vector, so (unlike the old mesh renderer) the colors
+        # are not duplicated per triangle face or per display dimension.
         # Using fancy array indexing implicitly creates a new
         # array rather than creating a view of the original one
         # in ColorManager
         face_color = self.edge_color[self._view_indices]
         face_color[:, -1] *= self._view_alphas
-
-        # Generally, several triangles are drawn for each vector,
-        # so we need to duplicate the colors accordingly
-        if self.vector_style == 'line':
-            # Line vectors are drawn with 2 triangles
-            face_color = np.repeat(face_color, 2, axis=0)
-
-        elif self.vector_style == 'triangle':
-            # Triangle vectors are drawn with 1 triangle
-            pass  # No need to duplicate colors
-
-        elif self.vector_style == 'arrow':
-            # Arrow vectors are drawn with 3 triangles
-            face_color = np.repeat(face_color, 3, axis=0)
-
-        if self._slice_input.ndisplay == 3 and self.ndim > 2:
-            face_color = np.vstack([face_color, face_color])
 
         return face_color
 
