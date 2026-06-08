@@ -3,7 +3,7 @@ This module contains a list of tips and tricks that will be displayed to napari 
 in a variety of places (e.g: the welcome screen shows a random one on each startup.).
 Tips should added as an extra string inside the `NAPARI_TIPS` tuple. They may contain
 format interpolators (in the form `{something}`) which will be replaced as appropriate
-by the `format_tip()` function in `napari.utils. Allowed interpolators are:
+by the `format_tip()` function. Allowed interpolators are:
 
 - a command_id (e.g. napari.window.view.toggle_viewer_axes) which will be replaced
   by the relative platform-specific shortcut

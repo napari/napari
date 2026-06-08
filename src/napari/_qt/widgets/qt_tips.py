@@ -1,6 +1,5 @@
 from random import sample
 
-from qtpy.QtCore import QEvent
 from qtpy.QtWidgets import (
     QHBoxLayout,
     QLabel,
@@ -40,18 +39,18 @@ class TipsWidget(QWidget):
         self.next = QPushButton('Next tip')
         self.buttons.addWidget(self.prev)
         self.buttons.addWidget(self.next)
-        self.prev.pressed.connect(self.prev_tip)
-        self.next.pressed.connect(self.next_tip)
+        # self.prev.pressed.connect(self.prev_tip)
+        # self.next.pressed.connect(self.next_tip)
 
         self.next_tip()
 
-    def prev_tip(self, event: QEvent | None = None) -> None:
+    def prev_tip(self) -> None:
         self.current_tip -= 1
         self.current_tip %= len(self.tips)
         tip = self.tips[self.current_tip]
         self.tip.setText(format_tip(tip))
 
-    def next_tip(self, event: QEvent | None = None) -> None:
+    def next_tip(self) -> None:
         self.current_tip += 1
         self.current_tip %= len(self.tips)
         tip = self.tips[self.current_tip]
