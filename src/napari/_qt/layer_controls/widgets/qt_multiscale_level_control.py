@@ -98,6 +98,8 @@ class QtMultiscaleLevelControl(  # type: ignore[metaclass]
 
     def _on_data_change(self) -> None:
         """Rebuild resolution labels when layer data changes."""
+        # When data changes, _slice_input is updated synchronously as part of
+        # setting the data, so we can safely read from it here
         self._update_level_labels(
             order=self._layer._slice_input.order,
             ndisplay=self._layer._slice_input.ndisplay,

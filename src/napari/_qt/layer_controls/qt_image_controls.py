@@ -70,6 +70,8 @@ class QtImageControls(QtBaseImageControls):
             self._render_control._on_display_change_show()
             self._depiction_control._on_display_change_show()
         if self.layer.multiscale:
+            # Pass order/ndisplay from widget properties instead of layer._slice_input
+            # because with async slicing enabled, _slice_input may not be updated yet
             self._multiscale_level_control._update_level_labels(
                 order=self.order, ndisplay=self.ndisplay
             )
@@ -78,6 +80,8 @@ class QtImageControls(QtBaseImageControls):
     def _on_dims_order_changed(self):
         """Rebuild multiscale level labels for the new displayed dims."""
         if self.layer.multiscale:
+            # Pass order/ndisplay from widget properties instead of layer._slice_input
+            # because with async slicing enabled, _slice_input may not be updated yet
             self._multiscale_level_control._update_level_labels(
                 order=self.order, ndisplay=self.ndisplay
             )
