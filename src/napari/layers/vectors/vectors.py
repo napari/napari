@@ -195,6 +195,7 @@ class Vectors(Layer):
     """
 
     _projectionclass = VectorsProjectionMode
+    _slicing_state: '_VectorsSlicingState'
 
     # The max number of vectors that will ever be used to render the thumbnail
     # If more vectors are present then they are randomly subsampled
@@ -795,7 +796,9 @@ class _VectorsSlicingState(_LayerSlicingState):
         super().__init__(layer, data, cache)
 
         # Data containing vectors in the currently viewed slice
-        self._view_data = np.empty((0, 2, 2))
+        self._view_data: np.ndarray[
+            tuple[int, Literal[2], Literal[2]], np.dtype[np.floating]
+        ] = np.empty((0, 2, 2))  # type: ignore[assignment]
         self._view_indices = np.array([], dtype=int)
         self._view_alphas: float | np.ndarray = 1.0
 
