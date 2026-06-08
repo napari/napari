@@ -140,14 +140,12 @@ def test_combobox_updates_on_data_change(multiscale_controls):
         assert combo.itemData(i + 1) == i
 
 
-def test_not_multiscale_has_only_auto_and_is_hidden(qtbot):
-    """Single-scale layer should have only 'Auto' and hide the control."""
+def test_not_multiscale_is_hidden(qtbot):
+    """Single-scale layer should hide the multiscale control."""
     layer = Image(np.zeros((40, 20), dtype=np.uint8))
     qtctrl = QtImageControls(layer)
     qtbot.addWidget(qtctrl)
     ctrl = qtctrl._multiscale_level_control
-    assert ctrl.level_combobox.count() == 1
-    assert ctrl.level_combobox.itemText(0) == 'Auto'
     assert ctrl.level_combobox.isHidden()
     assert ctrl.level_label.isHidden()
 
@@ -175,7 +173,7 @@ def test_levels_exceeding_3d_texture_limit_are_disabled(qtbot):
         'napari._qt.layer_controls.widgets.qt_multiscale_level_control.get_max_texture_sizes',
         return_value=(16384, 32),
     ):
-        qtctrl._multiscale_level_control._rebuild_items(
+        qtctrl._multiscale_level_control._update_level_labels(
             order=new_order, ndisplay=new_ndisplay
         )
 
@@ -204,7 +202,7 @@ def test_levels_all_enabled_in_2d(qtbot):
         'napari._qt.layer_controls.widgets.qt_multiscale_level_control.get_max_texture_sizes',
         return_value=(16384, 32),
     ):
-        qtctrl._multiscale_level_control._rebuild_items(
+        qtctrl._multiscale_level_control._update_level_labels(
             order=layer._slice_input.order,
             ndisplay=layer._slice_input.ndisplay,
         )

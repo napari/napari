@@ -200,11 +200,9 @@ class QtLabelsControls(QtLayerControls):
         else:
             self._render_control._on_display_change_hide()
         if self.layer.multiscale:
-            self._multiscale_level_control._on_display_change_show(
-                ndisplay=self.ndisplay
+            self._multiscale_level_control._update_level_labels(
+                order=self.order, ndisplay=self.ndisplay
             )
-        else:
-            self._multiscale_level_control._on_display_change_hide()
         self._on_editable_or_visible_change()
         self._set_polygon_tool_state()
         super()._on_ndisplay_changed()
@@ -212,7 +210,7 @@ class QtLabelsControls(QtLayerControls):
     def _on_dims_order_changed(self):
         """Rebuild multiscale level labels for the new displayed dims."""
         if self.layer.multiscale:
-            self._multiscale_level_control._rebuild_items(
+            self._multiscale_level_control._update_level_labels(
                 order=self.order, ndisplay=self.ndisplay
             )
 

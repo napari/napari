@@ -80,27 +80,33 @@ class QtMultiscaleLevelControl(  # type: ignore[metaclass]
         self.level_combobox = QComboBox(parent)
         self.level_label = QtWrappedLabel(trans._('resolution:'))
 
-        self._rebuild_items(
-            order=self._layer._slice_input.order,
-            ndisplay=self._layer._slice_input.ndisplay,
-        )
-        self.level_combobox.currentIndexChanged.connect(
-            self._on_combobox_changed
-        )
-        self._layer.events.locked_data_level.connect(
-            self._on_locked_data_level_change
-        )
-        self._layer.events.data.connect(self._on_data_change)
+        # Only set up and show widgets if layer is multiscale
+        if layer.multiscale:
+            self._on_data_change()
+            self.level_combobox.currentIndexChanged.connect(
+                self._on_combobox_changed
+            )
+            self._layer.events.locked_data_level.connect(
+                self._on_locked_data_level_change
+            )
+            self._layer.events.data.connect(self._on_data_change)
+            self.level_combobox.show()
+            self.level_label.show()
+        else:
+            self.level_combobox.hide()
+            self.level_label.hide()
 
     def _on_data_change(self) -> None:
-        """Rebuild items when layer data changes."""
-        self._rebuild_items(
+        """Rebuild resolution labels when layer data changes."""
+        self._update_level_labels(
             order=self._layer._slice_input.order,
             ndisplay=self._layer._slice_input.ndisplay,
         )
 
-    def _rebuild_items(self, order: tuple[int, ...], ndisplay: int) -> None:
-        """Populate the combobox from the layer's current level_shapes.
+    def _update_level_labels(
+        self, order: tuple[int, ...], ndisplay: int
+    ) -> None:
+        """Populate the combobox with resolution level labels.
 
         Parameters
         ----------
@@ -178,27 +184,6 @@ class QtMultiscaleLevelControl(  # type: ignore[metaclass]
                 self.level_combobox.setCurrentIndex(locked + 1)
             else:
                 self.level_combobox.setCurrentIndex(0)
-
-    def _on_display_change_show(self, ndisplay: int) -> None:
-        """Show the resolution combobox when the layer is multiscale.
-
-        Parameters
-        ----------
-        ndisplay : int
-            The number of displayed dimensions.
-        """
-        if self._layer.multiscale:
-            self._rebuild_items(
-                order=self._layer._slice_input.order,
-                ndisplay=ndisplay,
-            )
-            self.level_combobox.show()
-            self.level_label.show()
-
-    def _on_display_change_hide(self) -> None:
-        """Hide the resolution combobox and its label."""
-        self.level_combobox.hide()
-        self.level_label.hide()
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
         """Return the label/widget pairs for this control.

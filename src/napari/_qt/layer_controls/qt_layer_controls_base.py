@@ -72,7 +72,7 @@ class QtLayerControls(QFrame):
         super().__init__()
 
         self._ndisplay: int = 2
-        self._order: tuple[int, ...] = ()
+        self._order: tuple[int, ...] = layer._slice_input.order
         self._EDIT_BUTTONS: tuple = ()
         self._MODE_BUTTONS: dict = {}
 
