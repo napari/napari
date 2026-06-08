@@ -30,6 +30,7 @@ class TipsWidget(QWidget):
         self.current_tip = -1
 
         self.tip = QLabel()
+        self.tip.setWordWrap(True)
         layout.addWidget(self.tip)
 
         self.buttons = QHBoxLayout()
