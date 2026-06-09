@@ -586,7 +586,6 @@ def test_remove_selected_removes_corresponding_attributes():
         symbol=symbol[1:],
         border_width=size[1:],
         features={'feature': feature[1:]},
-        feature_defaults={'feature': feature[0]},
         face_color=color[1:],
         border_color=color[1:],
         text=text,  # computed from feature
@@ -772,15 +771,15 @@ def test_properties(properties):
     assert len(layer.properties['point_type']) == (shape[0] - 2)
     assert np.array_equal(layer.properties['point_type'], remove_properties)
 
-    # test selection of properties
+    # test that selection does not overwrite current_properties
     layer.selected_data = {0}
     selected_annotation = layer.current_properties['point_type']
     assert len(selected_annotation) == 1
-    assert selected_annotation[0] == 'A'
+    assert selected_annotation[0] == 'B'
 
     # test adding points with properties
     layer.add([10, 10])
-    add_annotations = np.concatenate((remove_properties, ['A']), axis=0)
+    add_annotations = np.concatenate((remove_properties, ['B']), axis=0)
     assert np.array_equal(layer.properties['point_type'], add_annotations)
 
     # test copy/paste
@@ -955,11 +954,10 @@ def test_text_from_property_fstring(properties):
     expected_text_3 = [*expected_text_2, 'type-ish: A']
     np.testing.assert_equal(layer.text.values, expected_text_3)
 
-    # add point
-    layer.selected_data = {0}
+    # add point — uses current_properties default ('B'), not the selected point
     new_shape = np.random.random((1, 2))
     layer.add(new_shape)
-    expected_text_4 = [*expected_text_3, 'type-ish: A']
+    expected_text_4 = [*expected_text_3, 'type-ish: B']
     np.testing.assert_equal(layer.text.values, expected_text_4)
 
 
@@ -1394,15 +1392,14 @@ def test_color_cycle(attribute, color_cycle):
     layer_color = getattr(layer, f'{attribute}_color')
     np.testing.assert_allclose(layer_color, color_array)
 
-    # Add new point and test its color
+    # Add new point — uses current_properties default ('B' -> 'blue')
     coord = [18, 18]
-    layer.selected_data = {0}
     layer.add(coord)
     layer_color = getattr(layer, f'{attribute}_color')
     assert len(layer_color) == shape[0] + 1
     np.testing.assert_allclose(
         layer_color,
-        np.vstack((color_array, transform_color('red'))),
+        np.vstack((color_array, transform_color('blue'))),
     )
 
     # Check removing data adjusts colors correctly
@@ -1414,7 +1411,7 @@ def test_color_cycle(attribute, color_cycle):
     assert len(layer_color) == shape[0] - 1
     np.testing.assert_allclose(
         layer_color,
-        np.vstack((color_array[1], color_array[3:], transform_color('red'))),
+        np.vstack((color_array[1], color_array[3:], transform_color('blue'))),
     )
 
     # test adding a point with a new property value
@@ -1555,15 +1552,14 @@ def test_color_colormap(attribute):
     attribute_color = getattr(layer, f'{attribute}_color')
     assert np.array_equal(attribute_color, color_array)
 
-    # Add new point and test its color
+    # Add new point — uses current_properties default (1.5 -> 'white')
     coord = [18, 18]
-    layer.selected_data = {0}
     layer.add(coord)
     attribute_color = getattr(layer, f'{attribute}_color')
     assert len(attribute_color) == shape[0] + 1
     np.testing.assert_allclose(
         attribute_color,
-        np.vstack((color_array, transform_color('black'))),
+        np.vstack((color_array, transform_color('white'))),
     )
 
     # Check removing data adjusts colors correctly
@@ -1578,7 +1574,7 @@ def test_color_colormap(attribute):
             (
                 color_array[1],
                 color_array[3:],
-                transform_color('black'),
+                transform_color('white'),
             )
         ),
     )
@@ -2798,3 +2794,17 @@ def test_points_layer_display_correct_slice_on_scale(viewer_model):
     request = pts._slicing_state._make_slice_request(viewer_model.dims)
     response = request()
     np.testing.assert_equal(response.indices, [0])
+
+
+def test_feature_defaults_not_overwritten_by_selection():
+    """feature_defaults should not change when selecting points."""
+    data = np.array([[0, 0], [10, 10]])
+    features = {'category': ['a', 'b']}
+    layer = Points(data, features=features)
+
+    defaults = {'category': ['c']}
+    layer.feature_defaults = defaults
+
+    layer.selected_data = {0}
+
+    assert layer.feature_defaults['category'][0] == 'c'

@@ -98,17 +98,17 @@ def test_properties(properties):
     assert len(layer.properties['shape_type']) == (shape[0] - 2)
     assert np.array_equal(layer.properties['shape_type'], remove_properties)
 
-    # test selection of properties
+    # test that selection does not overwrite current_properties
     layer.selected_data = {0}
     selected_annotation = layer.current_properties['shape_type']
     assert len(selected_annotation) == 1
-    assert selected_annotation[0] == 'A'
+    assert selected_annotation[0] == 'B'
 
     # test adding shapes with properties
     new_data = np.random.random((1, 4, 2))
     new_shape_type = ['rectangle']
     layer.add(new_data, shape_type=new_shape_type)
-    add_properties = np.concatenate((remove_properties, ['A']), axis=0)
+    add_properties = np.concatenate((remove_properties, ['B']), axis=0)
     assert np.array_equal(layer.properties['shape_type'], add_properties)
 
     # test copy/paste
@@ -323,11 +323,10 @@ def test_text_from_property_fstring(properties):
     expected_text_3 = [*expected_text_2, 'type-ish: A']
     np.testing.assert_equal(layer.text.values, expected_text_3)
 
-    # add shape
-    layer.selected_data = {0}
+    # add shape — uses current_properties (default 'B'), not the selected shape
     new_shape = np.random.random((1, 4, 2))
     layer.add(new_shape)
-    expected_text_4 = [*expected_text_3, 'type-ish: A']
+    expected_text_4 = [*expected_text_3, 'type-ish: B']
     np.testing.assert_equal(layer.text.values, expected_text_4)
 
 
@@ -1863,15 +1862,14 @@ def test_color_cycle(attribute, color_cycle):
     layer_color = getattr(layer, f'{attribute}_color')
     np.testing.assert_allclose(layer_color, color_array)
 
-    # Add new shape and test its color
+    # Add new shape and test its color — uses current_properties default ('B' -> 'blue')
     new_shape = np.random.random((1, 4, 2))
-    layer.selected_data = {0}
     layer.add(new_shape)
     layer_color = getattr(layer, f'{attribute}_color')
     assert len(layer_color) == shape[0] + 1
     np.testing.assert_allclose(
         layer_color,
-        np.vstack((color_array, transform_color('red'))),
+        np.vstack((color_array, transform_color('blue'))),
     )
 
     # Check removing data adjusts colors correctly
@@ -1883,7 +1881,7 @@ def test_color_cycle(attribute, color_cycle):
     assert len(layer_color) == shape[0] - 1
     np.testing.assert_allclose(
         layer_color,
-        np.vstack((color_array[1], color_array[3:], transform_color('red'))),
+        np.vstack((color_array[1], color_array[3:], transform_color('blue'))),
     )
 
     # refresh colors
@@ -2002,15 +2000,14 @@ def test_color_colormap(attribute):
     attribute_color = getattr(layer, f'{attribute}_color')
     assert np.array_equal(attribute_color, color_array)
 
-    # Add new shape and test its color
+    # Add new shape — uses current_properties default (1.5 -> 'white')
     new_shape = np.random.random((1, 4, 2))
-    layer.selected_data = {0}
     layer.add(new_shape)
     attribute_color = getattr(layer, f'{attribute}_color')
     assert len(attribute_color) == shape[0] + 1
     np.testing.assert_allclose(
         attribute_color,
-        np.vstack((color_array, transform_color('black'))),
+        np.vstack((color_array, transform_color('white'))),
     )
 
     # Check removing data adjusts colors correctly
@@ -2025,7 +2022,7 @@ def test_color_colormap(attribute):
             (
                 color_array[1],
                 color_array[3:],
-                transform_color('black'),
+                transform_color('white'),
             )
         ),
     )
@@ -2674,3 +2671,17 @@ def test_finish_drawing_called_when_is_creating():
         layer.mode = 'select'
         mock_finish.assert_called_once()
     assert not layer._is_creating
+
+
+def test_feature_defaults_not_overwritten_by_selection():
+    """feature_defaults should not change when selecting shapes."""
+    data = [np.array([[0, 0], [0, 10], [10, 10], [10, 0]])]
+    features = {'category': ['a']}
+    layer = Shapes(data, features=features)
+
+    defaults = {'category': ['b']}
+    layer.feature_defaults = defaults
+
+    layer.selected_data = {0}
+
+    assert layer.feature_defaults['category'][0] == 'b'
