@@ -39,11 +39,10 @@ def select(layer: Points, event: Event) -> Generator[None, None, None]:
     to any existing selection, otherwise these will become the only selected
     points.
     """
-    start_pos_canvas = event.pos
+    start_pos_canvas = event.pos[::-1]
     start_pos_world = np.array(event.position)
 
     if 'Control' in event.modifiers:
-        yield
         yield from _transform_selection_box(layer, event, start_pos_world)
         return
 
@@ -99,19 +98,21 @@ def _select_with_rectangle(
     initial_selection: set,
     modify_selection: bool,
 ) -> Generator[None, None, None]:
-    box = layer._overlays['selection_rect']
-    box.corners_canvas = (start_pos_canvas, start_pos_canvas)
-    box.corners_world = (start_pos_world, start_pos_world)
-    box.visible = True
+    rect = layer._overlays['selection_rect']
+    rect.corners_canvas = (start_pos_canvas, start_pos_canvas)
+    rect.corners_world = (start_pos_world, start_pos_world)
+    rect.visible = True
 
     while event.type == 'mouse_move':
-        pos_canvas = event.pos
+        pos_canvas = event.pos[::-1]
         pos_world = event.position
-        box.corners_canvas = (start_pos_canvas, pos_canvas)
-        box.corners_world = (start_pos_world, pos_world)
+        rect.corners_canvas = (start_pos_canvas, pos_canvas)
+        rect.corners_world = (start_pos_world, pos_world)
         selected = set(
             points_in_box(
-                np.array(box.corners_world), layer._view_data, layer._view_size
+                np.array(rect.corners_world),
+                layer._view_data,
+                layer._view_size,
             )
         )
         if modify_selection:
@@ -120,7 +121,7 @@ def _select_with_rectangle(
         layer.events.highlight()
         yield
 
-    box.visible = False
+    rect.visible = False
 
 
 def _move_selection(
@@ -139,6 +140,7 @@ def _move_selection(
             vertex_indices=((),),
         )
         pos = np.array(event.position)[event.dims_displayed]
+        # TODO: this is wrong! it should account for transforms...
         shift = pos - start_pos
         layer.data[selected_displayed] = data_orig + shift
         layer.refresh()
@@ -226,7 +228,6 @@ def _transform_selection_box(
     if len(event.dims_displayed) != 2:
         return
 
-    highlight_selection_box_handles(layer, event)
     clicked_handle = box.selected_handle
 
     if clicked_handle is None:

@@ -117,7 +117,9 @@ def calculate_bounds_from_contained_points(
 
 
 def get_nearby_handle(
-    position: np.ndarray, handle_coordinates: np.ndarray
+    position: np.ndarray,
+    handle_coordinates: np.ndarray,
+    tolerance: float | None = None,
 ) -> InteractionBoxHandle | None:
     """
     Get the InteractionBoxHandle close to the given position, within tolerance.
@@ -128,6 +130,9 @@ def get_nearby_handle(
         Position to query for.
     handle_coordinates : np.ndarray
         Coordinates of all the handles (except INSIDE).
+    tolerance : float or None
+        Distance within which the handle will be considered hovered.
+        If unset, it will be guessed from the size of the box.
 
     Returns
     -------
@@ -137,7 +142,7 @@ def get_nearby_handle(
     top_left = handle_coordinates[InteractionBoxHandle.TOP_LEFT]
     bot_right = handle_coordinates[InteractionBoxHandle.BOTTOM_RIGHT]
     dist = np.linalg.norm(position - handle_coordinates, axis=1)
-    tolerance = dist.max() / 100
+    tolerance = tolerance or dist.max() / 100
     close_to_vertex = np.isclose(dist, 0, atol=tolerance)
     if np.any(close_to_vertex):
         idx = int(np.argmax(close_to_vertex))
