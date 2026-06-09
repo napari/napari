@@ -58,6 +58,10 @@ class ApplicationSettings(EventedModel):
         self.events.brush_size_on_mouse_move_modifiers(
             value=self.brush_size_on_mouse_move_modifiers
         )
+        self.events.float_display_precision.connect(
+            float_display_precision_callback
+        )
+        self.events.float_display_precision(value=self.float_display_precision)
 
     first_time: bool = Field(
         True,
@@ -193,6 +197,14 @@ class ApplicationSettings(EventedModel):
         'If equal or greater than 1, it is interpreted as screen pixels.',
     )
 
+    float_display_precision: int = Field(
+        3,
+        ge=1,
+        le=10,
+        title='Float display precision',
+        description='Number of significant digits when displaying float values in the status bar and layer tooltips.',
+    )
+
     confirm_close_window: bool = Field(
         default=True,
         title='Confirm window or application closing',
@@ -289,3 +301,9 @@ def brush_size_on_mouse_move_modifiers_callback(event: Event) -> None:
     )
 
     change_brush_size_on_mouse_move_modifiers(event.value.split('+'))
+
+
+def float_display_precision_callback(event: Event) -> None:
+    from napari.utils import status_messages
+
+    status_messages.PRECISION_COUNT = event.value
