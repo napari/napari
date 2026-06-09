@@ -7,8 +7,8 @@ from pydantic import field_validator
 from napari.components.overlays.base import CanvasOverlay
 
 
-class RectangleSelectOverlay(CanvasOverlay):
-    """A box that can be used to select object.
+class _RectOverlay(CanvasOverlay):
+    """A rectangle that can be used to select object.
 
     Attributes
     ----------
@@ -54,3 +54,11 @@ class RectangleSelectOverlay(CanvasOverlay):
         coord1 = tuple(float(coord) for coord in tup_1)
         coord2 = tuple(float(coord) for coord in tup_2)
         return (coord1, coord2)
+
+
+class ZoomRectOverlay(_RectOverlay):
+    pass
+
+
+class SelectionRectOverlay(_RectOverlay):
+    pass

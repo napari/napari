@@ -1,22 +1,26 @@
-"""Vispy rectangle select overlay."""
+"""Vispy rectangle overlay."""
 
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Optional
 
-from napari._vispy.overlays.base import ViewerOverlayMixin, VispyCanvasOverlay
+from napari._vispy.overlays.base import (
+    LayerOverlayMixin,
+    ViewerOverlayMixin,
+    VispyCanvasOverlay,
+)
 from napari._vispy.visuals.interaction_box import InteractionBox
 from napari.settings import get_settings
 
 if TYPE_CHECKING:
-    from napari.components.overlays import RectangleSelectOverlay
+    from napari.components.overlays import RectangleOverlay
     from napari.utils.events import Event
 
 
-class VispyRectangleSelectOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
-    """A selection rectangle that lives in canvas space."""
+class _VispyRectOverlay(VispyCanvasOverlay):
+    """A rectangle that lives in canvas space."""
 
-    overlay: RectangleSelectOverlay
+    overlay: RectangleOverlay
     node: InteractionBox
 
     def __init__(self, **kwargs: Any):
@@ -47,4 +51,17 @@ class VispyRectangleSelectOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
 
     def reset(self) -> None:
         """Reset the overlay."""
+        self._on_corners_change()
         super().reset()
+
+
+# NOTE: it's useful to have the two separate ones so mouse/key bindings
+#       have access to the respective objects (e.g: for selection or zoom)
+
+
+class VispyViewerRectOverlay(ViewerOverlayMixin, _VispyRectOverlay):
+    """A box overlay to highlight an area on the viewer."""
+
+
+class VispyLayerRectOverlay(LayerOverlayMixin, _VispyRectOverlay):
+    """A box overlay to highlight an area on a layer."""

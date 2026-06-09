@@ -1,11 +1,11 @@
 from napari._vispy.overlays.zoom import VispyRectangleSelectOverlay
-from napari.components.overlays import RectangleSelectOverlay
+from napari.components.overlays import RectangleOverlay
 from napari.components.viewer_model import ViewerModel
 
 
 def test_zoom_overlay_initialization():
     viewer = ViewerModel()
-    zoom_model = RectangleSelectOverlay()
+    zoom_model = RectangleOverlay()
     zoom_view = VispyRectangleSelectOverlay(viewer=viewer, overlay=zoom_model)
 
     # change the visibility

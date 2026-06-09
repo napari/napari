@@ -44,7 +44,7 @@ from napari.components.overlays import (
     BrushCircleOverlay,
     CurrentSliceOverlay,
     Overlay,
-    RectangleSelectOverlay,
+    RectangleOverlay,
     ScaleBarOverlay,
     TextOverlay,
     WelcomeOverlay,
@@ -133,7 +133,7 @@ DEFAULT_OVERLAYS = {
     'text': TextOverlay,
     'axes': AxesOverlay,
     'brush_circle': BrushCircleOverlay,
-    'selection_rectangle': RectangleSelectOverlay,
+    'selection_rectangle': RectangleOverlay,
     'current_slice': CurrentSliceOverlay,
 }
 
@@ -340,7 +340,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         return self._overlays['welcome']
 
     @property
-    def _selection_rectangle(self) -> RectangleSelectOverlay:
+    def _selection_rectangle(self) -> RectangleOverlay:
         return self._overlays['selection_rectangle']  # type: ignore[return-value]
 
     @property
