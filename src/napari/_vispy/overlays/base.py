@@ -206,10 +206,10 @@ class LayerOverlayMixin:
     overlay: Overlay
 
     def __init__(self, *, layer: Layer, **kwargs) -> None:
+        self.layer = layer
         super().__init__(
             **kwargs,
         )
-        self.layer = layer
         # need manual connection here because these overlays are not necessarily
         # always a child of the actual vispy node of the layer (eg, canvas overlays)
         self.layer.events.visible.connect(self._on_visible_change)
