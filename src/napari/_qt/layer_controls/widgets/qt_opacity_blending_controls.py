@@ -69,7 +69,7 @@ class QtOpacityBlendingControls(QtWidgetControlsBase):
         self.opacity_label = QtWrappedLabel('opacity:')
 
         blend_combobox = QEnumComboBox(parent, Blending)
-        blend_combobox.setCurrentEnum(self._layer.blending)
+        blend_combobox.setCurrentEnum(Blending(self._layer.blending))
 
         blend_combobox.currentEnumChanged.connect(self.change_blending)
         self.blend_combobox = blend_combobox
@@ -109,7 +109,7 @@ class QtOpacityBlendingControls(QtWidgetControlsBase):
     def _on_blending_change(self) -> None:
         """Receive layer model blending mode change event and update slider."""
         with self._layer.events.blending.blocker():
-            self.blend_combobox.setCurrentEnum(self._layer.blending)
+            self.blend_combobox.setCurrentEnum(Blending(self._layer.blending))
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
         return [
