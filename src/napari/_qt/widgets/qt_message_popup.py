@@ -34,7 +34,15 @@ class WarnPopup(QDialog):
 
         self.setLayout(main_layout)
 
-        self.setStyleSheet(get_stylesheet(get_settings().appearance.theme))
+        settings = get_settings()
+        font_size = settings.appearance.font_size
+        extra_variables = {'font_size': f'{font_size}pt'}
+
+        self.setStyleSheet(
+            get_stylesheet(
+                settings.appearance.theme, extra_variables=extra_variables
+            )
+        )
         self._xbutton.raise_()
 
     def _close(self):

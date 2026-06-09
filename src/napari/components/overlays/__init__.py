@@ -22,7 +22,6 @@ from napari.components.overlays.text import (
     LayerNameOverlay,
     TextOverlay,
 )
-from napari.components.overlays.welcome import WelcomeOverlay
 
 __all__ = [
     'AxesOverlay',
@@ -40,6 +39,5 @@ __all__ = [
     'SelectionRectOverlay',
     'TextOverlay',
     'TransformBoxOverlay',
-    'WelcomeOverlay',
     'ZoomRectOverlay',
 ]

@@ -2,7 +2,7 @@
 #    uv pip compile --python-version 3.14 --output-file resources/constraints/constraints_py3.14.txt pyproject.toml resources/constraints/version_denylist.txt --extra pyqt6 --extra pyside6 --extra testing --group testing_extra --extra all_optional --exclude resources/constraints/napari_exclude.txt
 aiohappyeyeballs==2.6.2
     # via aiohttp
-aiohttp==3.13.5
+aiohttp==3.14.0
     # via napari (pyproject.toml)
 aiosignal==1.4.0
     # via aiohttp

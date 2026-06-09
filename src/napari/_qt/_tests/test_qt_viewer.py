@@ -12,6 +12,8 @@ import numpy.testing as npt
 import pytest
 from imageio import imread
 from pytestqt.qtbot import QtBot
+from qtpy.QtCore import QEvent, QPointF
+from qtpy.QtGui import QEnterEvent
 from qtpy.QtWidgets import QApplication, QMessageBox
 from scipy import ndimage as ndi
 from vispy.app import MouseEvent
@@ -669,6 +671,57 @@ def test_create_non_empty_viewer_model(qtbot: QtBot) -> None:
     del viewer
     qtbot.wait(50)
     gc.collect()
+
+
+def test_qt_viewer_canvas_is_nested_in_main_widget(
+    qt_viewer: QtViewer,
+) -> None:
+    main_widget = qt_viewer.widget(0)
+
+    assert qt_viewer.count() == 1
+    assert qt_viewer.canvas.native.parentWidget() is main_widget
+    assert main_widget.layout().itemAt(0).widget() is qt_viewer.canvas.native
+    assert main_widget.layout().itemAt(1).widget() is qt_viewer.dims
+
+
+def test_qt_viewer_canvas_hover_state_comes_from_canvas(
+    qt_viewer: QtViewer, viewer_model: ViewerModel
+) -> None:
+    viewer_model.mouse_over_canvas = False
+    viewer_model.status = ''
+
+    canvas = qt_viewer.canvas.native
+    canvas.enterEvent(
+        QEnterEvent(
+            QPointF(10, 10),
+            QPointF(10, 10),
+            QPointF(10, 10),
+        )
+    )
+    assert viewer_model.mouse_over_canvas
+    assert viewer_model.status == 'Ready'
+
+    canvas.leaveEvent(QEvent(QEvent.Type.Leave))
+    assert not viewer_model.mouse_over_canvas
+    assert viewer_model.status == ''
+
+
+def test_qt_viewer_accepts_custom_welcome_tips(
+    qtbot: QtBot, viewer_model: ViewerModel
+) -> None:
+    viewer = QtViewer(viewer=viewer_model, tips=('first tip', 'second tip'))
+    qtbot.addWidget(
+        viewer, before_close_func=lambda widget: widget._instances.clear()
+    )
+
+    with mock.patch(
+        'napari._qt.widgets.qt_welcome.choice',
+        side_effect=lambda available_tips: available_tips[-1],
+    ):
+        viewer._set_welcome_visible(True)
+        assert viewer._welcome_widget._tip_label.text() == (
+            'Did you know?\nsecond tip'
+        )
 
 
 def test_create_non_empty_viewer_model_initializes_world_units(

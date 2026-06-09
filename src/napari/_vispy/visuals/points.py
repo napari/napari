@@ -1,10 +1,15 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from vispy.scene.visuals import Compound
 
 from napari._vispy.visuals.clipping_planes_mixin import ClippingPlanesMixin
 from napari._vispy.visuals.markers import Markers
 from napari._vispy.visuals.text import Text
+
+if TYPE_CHECKING:
+    from napari._vispy.utils.qt_font import FontInfo
 
 
 class PointsVisual(ClippingPlanesMixin, Compound):
@@ -18,13 +23,14 @@ class PointsVisual(ClippingPlanesMixin, Compound):
         - Text labels (vispy.TextVisual)
     """
 
-    def __init__(self) -> None:
+    def __init__(self, font_info: FontInfo) -> None:
         super().__init__(
             [
                 Markers(),
                 Markers(),
-                Text(),
-            ]
+                Text(font_info=font_info),
+            ],
+            font_info=font_info,
         )
         self.scaling = True
 
