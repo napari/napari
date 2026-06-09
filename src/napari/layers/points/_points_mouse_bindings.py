@@ -99,7 +99,7 @@ def _select_with_rectangle(
     initial_selection: set,
     modify_selection: bool,
 ) -> Generator[None, None, None]:
-    box = layer._overlays['selection_rectangle']
+    box = layer._overlays['selection_rect']
     box.corners_canvas = (start_pos_canvas, start_pos_canvas)
     box.corners_world = (start_pos_world, start_pos_world)
     box.visible = True

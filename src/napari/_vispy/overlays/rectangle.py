@@ -13,14 +13,14 @@ from napari._vispy.visuals.interaction_box import InteractionBox
 from napari.settings import get_settings
 
 if TYPE_CHECKING:
-    from napari.components.overlays import RectangleOverlay
+    from napari.components.overlays.rectangle import _RectOverlay
     from napari.utils.events import Event
 
 
 class _VispyRectOverlay(VispyCanvasOverlay):
     """A rectangle that lives in canvas space."""
 
-    overlay: RectangleOverlay
+    overlay: _RectOverlay
     node: InteractionBox
 
     def __init__(self, **kwargs: Any):

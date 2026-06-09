@@ -651,6 +651,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             SelectionBoxOverlay,
             TransformBoxOverlay,
         )
+        from napari.components.overlays.rectangle import SelectionRectOverlay
         from napari.components.overlays.text import LayerNameOverlay
 
         self._overlays: EventedDict[str, Overlay] = EventedDict()
@@ -698,6 +699,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
                 'transform_box': TransformBoxOverlay(),
                 'selection_box': SelectionBoxOverlay(),
                 'bounding_box': BoundingBoxOverlay(),
+                'selection_rect': SelectionRectOverlay(),
                 'layer_name': LayerNameOverlay(),
             }
         )
