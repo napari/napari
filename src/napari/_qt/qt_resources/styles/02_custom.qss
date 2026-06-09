@@ -57,6 +57,11 @@ QMainWindow::separator:vertical {
 
 /* ------------- DockWidgets --------- */
 
+QDockWidget:floating {
+  border: 2px solid {{ foreground }};
+  border-radius: 4px;
+}
+
 #QtCustomTitleBar {
   padding-top:3px;
   background-color: {{ background }};
@@ -64,6 +69,15 @@ QMainWindow::separator:vertical {
 
 #QtCustomTitleBar:hover {
   background-color: {{ darken(background, 10) }};
+}
+
+/* Floating state: distinct title bar so it reads as a standalone window */
+#QtCustomTitleBar[floating="True"] {
+  background-color: {{ foreground }};
+}
+
+#QtCustomTitleBar[floating="True"]:hover {
+  background-color: {{ darken(foreground, 10) }};
 }
 
 #QtCustomTitleBarLine {
@@ -78,6 +92,10 @@ QMainWindow::separator:vertical {
 
 #QtCustomTitleBar > QPushButton:hover {
   background-color: {{ foreground }};
+}
+
+#QtCustomTitleBar[floating="True"] > QPushButton:hover {
+  background-color: {{ darken(foreground, 20) }};
 }
 
 #QtCustomTitleBar > QLabel {
