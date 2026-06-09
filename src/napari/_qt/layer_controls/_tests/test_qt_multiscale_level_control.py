@@ -203,8 +203,8 @@ def test_levels_all_enabled_in_2d(qtbot):
         return_value=(16384, 32),
     ):
         qtctrl._multiscale_level_control._update_level_labels(
-            order=layer._slice_input.order,
-            ndisplay=layer._slice_input.ndisplay,
+            order=qtctrl.order,
+            ndisplay=qtctrl.ndisplay,
         )
 
     combo = qtctrl._multiscale_level_control.level_combobox
