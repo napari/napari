@@ -130,6 +130,9 @@ def _select_with_rectangle(
         )
 
         # TODO: this is broken by changing order, why?
+        #       I think we need to index _view_data with "layer order",
+        #       but not "displayed" because _view_data already is down in
+        #       dimensions based on which are displayed (but not order?)
         selected = set(
             points_in_box(
                 corners_data[:, displayed],
