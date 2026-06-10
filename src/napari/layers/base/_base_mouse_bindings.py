@@ -36,6 +36,7 @@ def highlight_selection_box_handles(layer: Layer, event: Event) -> None:
     )
     pos = np.array(world_to_data(event.position))[event.dims_displayed]
     box = layer._overlays['selection_box']
+    # TODO: something goes wrong here: the y flip of vispy is probably incorrect
     handle_coords = generate_interaction_box_handles(*box.bounds)
     # TODO: this tolerance value is a bit random... could we somehow make *sure* this is
     #       correct and matching the size of the handles in data space?
