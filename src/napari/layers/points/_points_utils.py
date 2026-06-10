@@ -60,29 +60,6 @@ def _create_box_from_corners_3d(
     return box
 
 
-def create_box(data: npt.NDArray) -> npt.NDArray:
-    """Create the axis aligned interaction box of a list of points
-
-    Parameters
-    ----------
-    data : (N, 2) array
-        Points around which the interaction box is created
-
-    Returns
-    -------
-    box : (4, 2) array
-        Vertices of the interaction box
-    """
-    min_val = data.min(axis=0)
-    max_val = data.max(axis=0)
-    tl = np.array([min_val[0], min_val[1]])
-    tr = np.array([max_val[0], min_val[1]])
-    br = np.array([max_val[0], max_val[1]])
-    bl = np.array([min_val[0], max_val[1]])
-    box = np.array([tl, tr, br, bl])
-    return box
-
-
 def points_to_squares(points: npt.NDArray, sizes: npt.NDArray) -> npt.NDArray:
     """Expand points to squares defined by their size
 
@@ -206,16 +183,24 @@ def points_in_box(
     inside : list
         Indices of points inside the box
     """
-    box = create_box(corners)[[0, 2]]
-    # Check all four corners in a square around a given point. If any corner
-    # is inside the box, then that point is considered inside
-    point_corners = points_to_squares(points, sizes)
-    below_top = np.all(box[1] >= point_corners, axis=1)
-    above_bottom = np.all(point_corners >= box[0], axis=1)
-    point_corners_in_box = np.where(np.logical_and(below_top, above_bottom))[0]
-    # Determine indices of points which have at least one corner inside box
-    inside = np.unique(point_corners_in_box % len(points))
-    return list(inside)
+    x_min, y_min = corners.min(axis=0)
+    x_max, y_max = corners.max(axis=0)
+
+    half = sizes / 2
+
+    point_left = points[:, 0] - half
+    point_right = points[:, 0] + half
+    point_top = points[:, 1] - half
+    point_bottom = points[:, 1] + half
+
+    overlaps = (
+        (point_right >= x_min)
+        & (point_left <= x_max)
+        & (point_bottom >= y_min)
+        & (point_top <= y_max)
+    )
+
+    return np.flatnonzero(overlaps).tolist()
 
 
 def fix_data_points(
