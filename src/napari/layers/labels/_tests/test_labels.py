@@ -1553,12 +1553,14 @@ def test_fill_with_xarray():
     np.testing.assert_array_equal(layer.data[1:, :, :], np.zeros((4, 4, 4)))
     # In the associated issue, using xarray.DataArray caused memory allocation
     # problems due to different read indexing rules, so check that the data
-    # saved for undo has the expected vectorized shape and values.
-    undo_data = layer._undo_history[0][0][1]
-    np.testing.assert_array_equal(undo_data, np.zeros((4, 4)))
+    # saved for undo has the expected shape and values (a snapshot of the
+    # filled bounding box: the whole (0, :, :) plane).
+    atom = layer._undo_history[0][0]
+    assert atom.mask is None
+    np.testing.assert_array_equal(atom.old_values, np.zeros((1, 4, 4)))
 
 
-def test_fill_sparse_history_storage():
+def test_fill_scattered_history_stores_masked_atom():
     data = np.zeros((10, 10), dtype=np.uint8)
     data[(0, 0, 9, 9), (0, 9, 0, 9)] = 1
     original = data.copy()
@@ -1567,11 +1569,12 @@ def test_fill_sparse_history_storage():
 
     layer.fill((0, 0), 2)
 
-    history_indices, old_values, new_values = layer._undo_history[0][0]
-    assert isinstance(history_indices[0], np.ndarray)
-    assert isinstance(history_indices[1], np.ndarray)
-    npt.assert_array_equal(old_values, np.ones((4,), dtype=np.uint8))
-    assert new_values == 2
+    atom = layer._undo_history[0][0]
+    assert atom.slice_key == (slice(0, 10), slice(0, 10))
+    assert atom.mask is not None
+    assert np.count_nonzero(atom.mask) == 4
+    npt.assert_array_equal(atom.old_values, np.ones((4,), dtype=np.uint8))
+    assert atom.new_value == 2
 
     layer.undo()
     npt.assert_array_equal(layer.data, original)
@@ -1579,17 +1582,19 @@ def test_fill_sparse_history_storage():
     assert np.count_nonzero(layer.data == 2) == 4
 
 
-def test_fill_full_mask_history_stores_scalar_redo():
+def test_fill_full_bbox_history_drops_mask():
+    """When every pixel in the bbox changed, history stores a single bbox
+    snapshot (mask is None) and the scalar redo label."""
     data = np.zeros((8, 8), dtype=np.uint32)
     layer = Labels(data.copy())
 
     layer.fill((0, 0), 7)
 
-    history_indices, old_values, new_values = layer._undo_history[0][0]
-    assert history_indices == (slice(0, 8), slice(0, 8))
-    npt.assert_array_equal(old_values, data)
-    assert not isinstance(new_values, np.ndarray)
-    assert new_values == 7
+    atom = layer._undo_history[0][0]
+    assert atom.slice_key == (slice(0, 8), slice(0, 8))
+    assert atom.mask is None
+    npt.assert_array_equal(atom.old_values, data)
+    assert atom.new_value == 7
 
     layer.undo()
     npt.assert_array_equal(layer.data, data)
@@ -1599,17 +1604,17 @@ def test_fill_full_mask_history_stores_scalar_redo():
     )
 
 
-def test_paint_partial_dense_history_stores_ndarray_redo():
+def test_paint_partial_bbox_history_stores_masked_atom():
     data = np.zeros((21, 21), dtype=np.uint8)
     layer = Labels(data.copy())
     layer.brush_size = 9
 
     layer.paint((10, 10), 3)
 
-    _, old_values, new_values = layer._undo_history[0][0]
-    assert isinstance(old_values, np.ndarray)
-    assert isinstance(new_values, np.ndarray)
-    assert old_values.shape == new_values.shape
+    atom = layer._undo_history[0][0]
+    assert atom.mask is not None
+    assert atom.mask.dtype == bool
+    assert atom.old_values.shape == (np.count_nonzero(atom.mask),)
 
     layer.undo()
     npt.assert_array_equal(layer.data, data)
@@ -1617,7 +1622,10 @@ def test_paint_partial_dense_history_stores_ndarray_redo():
     assert np.count_nonzero(layer.data == 3) > 0
 
 
-def test_paint_sparse_history_uses_dense_bbox_for_dask():
+def test_paint_history_undo_redo_with_dask():
+    """Masked-atom replay only uses basic slicing on the backend, so
+    undo/redo must work on dask, which cannot replay multi-axis
+    advanced-index assignments."""
     data = np.zeros((2, 21, 21), dtype=np.uint32)
     data[1, 6:15, 6:15] = 3
     data[1, 8, 10] = 0
@@ -1633,16 +1641,65 @@ def test_paint_sparse_history_uses_dense_bbox_for_dask():
     layer.paint((1, 10, 10), 3)
     painted = np.asarray(layer.data).copy()
 
-    history_indices, old_values, new_values = layer._undo_history[0][0]
-    assert history_indices == (1, slice(6, 15), slice(6, 15))
-    assert isinstance(old_values, np.ndarray)
-    assert isinstance(new_values, np.ndarray)
-    assert old_values.shape == new_values.shape == (9, 9)
+    atom = layer._undo_history[0][0]
+    assert atom.slice_key == (slice(1, 2), slice(6, 15), slice(6, 15))
+    assert atom.mask is not None
+    assert atom.mask.shape == (1, 9, 9)
+    # only the four holes actually change value
+    npt.assert_array_equal(atom.old_values, np.zeros((4,), dtype=np.uint32))
+    assert atom.new_value == 3
 
     layer.undo()
     npt.assert_array_equal(np.asarray(layer.data), original)
     layer.redo()
     npt.assert_array_equal(np.asarray(layer.data), painted)
+
+
+def test_fill_scattered_undo_redo_with_xarray():
+    """xarray applies outer (orthogonal) indexing to plain integer arrays,
+    so history replay must only use basic slicing on the backend (the
+    masked update is applied locally). Diagonal pixels are used because
+    their outer product covers 9 points, not 3, so an advanced-indexing
+    replay bug corrupts the data instead of passing.
+    """
+    data = np.zeros((100, 100), dtype=np.uint32)
+    data[(0, 50, 99), (0, 50, 99)] = 1
+    original = data.copy()
+
+    layer = Labels(xr.DataArray(data.copy()))
+    layer.contiguous = False
+
+    layer.fill((0, 0), 2)
+    painted = np.asarray(layer.data).copy()
+
+    atom = layer._undo_history[0][0]
+    assert atom.slice_key == (slice(0, 100), slice(0, 100))
+    assert atom.mask is not None
+
+    layer.undo()
+    npt.assert_array_equal(np.asarray(layer.data), original)
+    layer.redo()
+    npt.assert_array_equal(np.asarray(layer.data), painted)
+
+
+def test_paint_preserve_labels_undo_with_xarray():
+    """Touch-up painting with preserve_labels changes only a sparse set of
+    background pixels; undo must restore exactly those pixels on xarray data.
+    """
+    data = np.ones((50, 50), dtype=np.uint32)
+    holes = ((20, 20, 35), (20, 35, 25))
+    data[holes] = 0
+    original = data.copy()
+
+    layer = Labels(xr.DataArray(data.copy()))
+    layer.preserve_labels = True
+    layer.brush_size = 30
+
+    layer.paint((25, 25), 2)
+    assert np.all(np.asarray(layer.data)[holes] == 2)
+
+    layer.undo()
+    npt.assert_array_equal(np.asarray(layer.data), original)
 
 
 @pytest.mark.parametrize(
@@ -2485,37 +2542,6 @@ def test_paint_int64_view_update_3d_display(ndisplay, n_edit_dimensions):
 
     assert np.any(view_painted != 0)
     assert not np.array_equal(view_before, layer._slice.image.view)
-
-
-def test_merge_slices():
-    """Test the _merge_slices helper utility."""
-    layer = Labels(np.zeros((10, 10), dtype=int))
-
-    # 1. Same int should return int
-    assert layer._merge_slices(2, 2) == 2
-
-    # 2. Different ints should return a range slice
-    s = layer._merge_slices(2, 5)
-    assert isinstance(s, slice)
-    assert s.start == 2
-    assert s.stop == 6
-
-    # 3. int and slice should merge correctly
-    s = layer._merge_slices(2, slice(4, 8))
-    assert isinstance(s, slice)
-    assert s.start == 2
-    assert s.stop == 8
-
-    # 4. slice(None) should always win
-    assert layer._merge_slices(2, slice(None)) == slice(None)
-    assert layer._merge_slices(slice(None), 5) == slice(None)
-    assert layer._merge_slices(slice(4, 8), slice(None)) == slice(None)
-
-    # 5. Overlapping slices
-    s = layer._merge_slices(slice(2, 5), slice(4, 8))
-    assert isinstance(s, slice)
-    assert s.start == 2
-    assert s.stop == 8
 
 
 def test_block_history_with_mask_painting():
