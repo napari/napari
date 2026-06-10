@@ -175,9 +175,15 @@ def _move_selection(
         )
         layer.events.features()
         box = layer._overlays['selection_box']
-        # TODO: this needs to work with any dims and order, currently hardcoded.
-        #       Probably also shouldn't be selected_view
-        box.update_from_points(layer.data[layer._selected_view][:, -2:])
+
+        displayed = dims_displayed_world_to_layer(
+            dims_displayed_world=event.dims_displayed,
+            ndim_world=len(event.position),
+            ndim_layer=layer.ndim,
+        )
+        selected = np.fromiter(layer.selected_data, dtype=int)
+        selected_displayed = np.ix_(selected, displayed)
+        box.update_from_points(layer.data[selected_displayed])
         yield
 
 
@@ -196,9 +202,14 @@ def _resize_selection(
     dragged_handle_coords = handle_coords[dragged_handle]
     handles_vector = dragged_handle_coords - fixed_handle_coords
 
-    selected = tuple(layer.selected_data)
-    selected_displayed = np.ix_(selected, event.dims_displayed)
-    data_orig = layer.data[selected_displayed].copy()
+    displayed = dims_displayed_world_to_layer(
+        dims_displayed_world=event.dims_displayed,
+        ndim_world=len(event.position),
+        ndim_layer=layer.ndim,
+    )
+    selected = np.fromiter(layer.selected_data, dtype=int)
+    selected_displayed = np.ix_(selected, displayed)
+    data_orig_displayed = layer.data[selected_displayed].copy()
 
     while event.type == 'mouse_move':
         layer.events.data(
@@ -207,8 +218,8 @@ def _resize_selection(
             data_indices=selected,
             vertex_indices=((),),
         )
-        pos = np.array(event.position)[event.dims_displayed]
-        shift = pos - start_pos
+        pos = np.array(event.position)
+        shift = (pos - start_pos)[event.dims_displayed]
         with warnings.catch_warnings():
             # a "divide by zero" warning is raised here when resizing along only one axis
             # (i.e: dragging the central handle of the Box).
@@ -218,7 +229,8 @@ def _resize_selection(
             scale = (handles_vector + shift) / handles_vector
             scale = np.nan_to_num(scale, posinf=1, neginf=1, nan=1)
         layer.data[selected_displayed] = (
-            fixed_handle_coords + (data_orig - fixed_handle_coords) * scale
+            fixed_handle_coords
+            + (data_orig_displayed - fixed_handle_coords) * scale
         )
         layer.refresh()
         layer.events.data(
@@ -228,8 +240,7 @@ def _resize_selection(
             vertex_indices=((),),
         )
         layer.events.features()
-        selected = layer.data[np.fromiter(layer.selected_data, dtype=int)]
-        box.update_from_points(selected)
+        box.update_from_points(layer.data[selected_displayed])
         yield
 
 
@@ -300,13 +311,16 @@ def highlight(layer: Points, event: Event) -> None:
     if 'Control' in event.modifiers and len(layer.selected_data) > 1:
         box.handles = True
         box.visible = True
+
         displayed = dims_displayed_world_to_layer(
             dims_displayed_world=event.dims_displayed,
             ndim_world=len(event.position),
             ndim_layer=layer.ndim,
         )
         selected = np.fromiter(layer.selected_data, dtype=int)
-        box.update_from_points(layer.data[selected][:, displayed])
+        selected_displayed = np.ix_(selected, displayed)
+        box.update_from_points(layer.data[selected_displayed])
+        # TODO: this is actually swapped in dimensions for some reason
         highlight_selection_box_handles(layer, event)
     else:
         value = layer._get_value_(
