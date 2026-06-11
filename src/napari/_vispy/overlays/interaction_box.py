@@ -64,6 +64,8 @@ class VispySelectionBoxOverlay(_VispyBoundingBoxOverlay):
         self._on_bounds_change()
 
     def _on_bounds_change(self):
+        # TODO: this should also now be able to work in 3D with proper
+        #       adjustments to rendering and interactions!
         if self.layer._slice_input.ndisplay == 2:
             bounds = np.array(self.overlay.bounds)
             top_left, bot_right = (tuple(point) for point in bounds[:, ::-1])

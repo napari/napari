@@ -106,9 +106,6 @@ def calculate_bounds_from_contained_points(
     Tuple[Tuple[float, float], Tuple[float, float]]
         Top-left and bottom-right corners of the bounding box.
     """
-    if points is None:
-        return None
-
     points = np.atleast_2d(points)
     if points.ndim != 2:
         raise ValueError('only 2D coordinates are accepted')
