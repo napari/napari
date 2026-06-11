@@ -244,9 +244,9 @@ def _rotate_selection(
     layer: Points,
     event: Event,
     start_pos,
-    dragged_handle,
 ) -> Generator[None, None, None]:
     while event.type == 'mouse_move':
+        warnings.warn('rotation not yet implemented')
         yield
 
 
@@ -267,7 +267,7 @@ def _transform_selection_box(
     if clicked_handle == InteractionBoxHandle.INSIDE:
         yield from _move_selection(layer, event, start_pos)
     elif clicked_handle == InteractionBoxHandle.ROTATION:
-        yield from _rotate_selection(layer, event, start_pos, clicked_handle)
+        yield from _rotate_selection(layer, event, start_pos)
     else:
         yield from _resize_selection(layer, event, start_pos, clicked_handle)
 
