@@ -1808,7 +1808,7 @@ class Labels(ScalarFieldBase):
         # _apply_mask_to_data already wrote through and this assignment is a
         # no-op; for copy-returning backends (zarr, tensorstore, dask, ...)
         # this is the actual write-back.
-        self.data[slice_key] = region_data  # type: ignore[index]
+        self.data[slice_key] = region_data
 
         # Update caches (raw and view) for non-shared memory backends
         # This handles mapping the N-D painted region to the currently displayed slice
