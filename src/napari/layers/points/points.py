@@ -76,7 +76,6 @@ class Points(Layer):
     """Points layer.
 
     Parameters
-    120         [Models](../concepts/models.md)
     ----------
     data : array (N, D)
         Coordinates for N points in D dimensions.
