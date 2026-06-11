@@ -18,10 +18,7 @@ class VispyBoundingBoxOverlay(LayerOverlayMixin, VispySceneOverlay):
     node: BoundingBox
 
     def __init__(self, **kwargs: Any) -> None:
-        super().__init__(
-            node=BoundingBox(),
-            **kwargs,
-        )
+        super().__init__(node=BoundingBox(), **kwargs)
         self.layer.events.set_data.connect(self._on_bounds_change)
         self.overlay.events.lines.connect(self._on_lines_change)
         self.overlay.events.line_thickness.connect(
