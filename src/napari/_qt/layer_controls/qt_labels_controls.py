@@ -199,24 +199,9 @@ class QtLabelsControls(QtLayerControls):
             self._render_control._on_display_change_show()
         else:
             self._render_control._on_display_change_hide()
-        if self.layer.multiscale:
-            # Pass order/ndisplay from widget properties instead of layer._slice_input
-            # because with async slicing enabled, _slice_input may not be updated yet
-            self._multiscale_level_control._update_level_labels(
-                order=self.order, ndisplay=self.ndisplay
-            )
         self._on_editable_or_visible_change()
         self._set_polygon_tool_state()
         super()._on_ndisplay_changed()
-
-    def _on_dims_order_changed(self):
-        """Rebuild multiscale level labels for the new displayed dims."""
-        if self.layer.multiscale:
-            # Pass order/ndisplay from widget properties instead of layer._slice_input
-            # because with async slicing enabled, _slice_input may not be updated yet
-            self._multiscale_level_control._update_level_labels(
-                order=self.order, ndisplay=self.ndisplay
-            )
 
     def _set_polygon_tool_state(self):
         if hasattr(self, 'polygon_button'):
