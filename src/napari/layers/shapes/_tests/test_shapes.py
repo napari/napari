@@ -2686,7 +2686,9 @@ def test_remove_shape_that_is_value(remove: list[int]):
         ],
         shape_type='polygon',
     )
+    layer.events.highlight.connect(layer._outline_shapes)
     layer._value = (1, None)
+    layer.selected_data = {1}
 
     layer.remove(remove)
 
