@@ -39,8 +39,8 @@ class TipsWidget(QWidget):
         self.next = QPushButton('Next tip')
         self.buttons.addWidget(self.prev)
         self.buttons.addWidget(self.next)
-        # self.prev.pressed.connect(self.prev_tip)
-        # self.next.pressed.connect(self.next_tip)
+        self.prev.pressed.connect(self.prev_tip)
+        self.next.pressed.connect(self.next_tip)
 
         self.next_tip()
 
