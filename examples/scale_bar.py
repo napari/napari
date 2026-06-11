@@ -19,6 +19,7 @@ viewer.add_image(
     name=('membrane', 'nuclei'),
     channel_axis=1,
     scale=(0.29, 0.26, 0.26),
+    units='um',
 )
 viewer.scale_bar.visible = True
 
