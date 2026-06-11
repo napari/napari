@@ -191,7 +191,9 @@ def _resize_selection(
     fixed_handle = InteractionBoxHandle.opposite_handle(dragged_handle)
 
     # get exact coordinates of original handle to avoid unwanted shifts
-    handle_coords = generate_interaction_box_handles(*box.bounds)
+    # flip bounds to match vispy order which is used for the coordinates of handles
+    bounds = (tuple(point) for point in np.array(box.bounds)[:, ::-1])
+    handle_coords = generate_interaction_box_handles(*bounds)[:, ::-1]
     fixed_handle_coords = handle_coords[fixed_handle]
     dragged_handle_coords = handle_coords[dragged_handle]
     handles_vector = dragged_handle_coords - fixed_handle_coords
