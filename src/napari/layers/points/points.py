@@ -58,6 +58,7 @@ from napari.utils.colormaps.standardize_color import hex_to_name, rgb_to_hex
 from napari.utils.events import Event
 from napari.utils.events.custom_types import Array
 from napari.utils.geometry import project_points_onto_plane, rotate_points
+from napari.utils.status_messages import format_feature_value
 from napari.utils.transforms import Affine
 from napari.utils.translations import trans
 
@@ -2452,7 +2453,7 @@ class Points(Layer):
             return []
 
         return [
-            f'{k}: {v[value]}'
+            f'{k}: {format_feature_value(v[value])}'
             for k, v in self.features.items()
             if k != 'index'
             and len(v) > value

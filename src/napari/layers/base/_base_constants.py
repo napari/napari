@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from enum import IntEnum, auto
+from enum import Flag, IntEnum, auto
 
 from napari.utils.misc import StringEnum
 from napari.utils.translations import trans
@@ -150,3 +150,21 @@ class BaseProjectionMode(StringEnum):
     """
 
     NONE = auto()
+
+
+class LayerLock(Flag):
+    """Flags describing which UI operations are locked on a layer.
+
+    Composable so future lock dimensions can be added without breaking the
+    ``Layer.locked`` API. ``bool(value)`` is truthy when any flag is set.
+
+        * NONE: no operations are locked.
+        * DELETION: layer is protected from UI-driven delete; convert and
+          stack split/merge are also blocked because they delete the
+          original layer.
+        * ALL: every defined lock dimension is engaged.
+    """
+
+    NONE = 0
+    DELETION = auto()
+    ALL = DELETION
