@@ -34,7 +34,7 @@ def highlight_selection_box_handles(layer: Layer, event: Event) -> None:
     world_to_data = (
         layer._transforms[1:].set_slice(layer._slice_input.displayed).inverse
     )
-    pos = np.array(world_to_data(event.position))[event.dims_displayed]
+    pos = np.array(world_to_data(event.position))[event.dims_displayed][::-1]
     box = layer._overlays['selection_box']
     # TODO: something goes wrong here: the y flip of vispy is probably incorrect
     handle_coords = generate_interaction_box_handles(*box.bounds)

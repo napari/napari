@@ -128,18 +128,12 @@ def _select_with_rectangle(
             ndim_world=len(event.position),
             ndim_layer=layer.ndim,
         )
-
-        # TODO: this is broken by changing order, why?
-        #       I think we need to index _view_data with "layer order",
-        #       but not "displayed" because _view_data already is down in
-        #       dimensions based on which are displayed (but not order?)
-        selected = set(
-            points_in_box(
-                corners_data[:, displayed],
-                layer._view_data,
-                layer._view_size,
-            )
+        selected_in_view = points_in_box(
+            corners_data[:, displayed],
+            layer.data[np.ix_(layer._indices_view, displayed)],
+            layer.size[layer._indices_view],
         )
+        selected = layer._indices_view[selected_in_view]
         if modify_selection:
             selected = _toggle_selected(initial_selection, selected)
         layer.selected_data = selected
