@@ -102,8 +102,6 @@ class InteractionBox(Compound):
             if selected is not None:
                 marker_edges[selected] = self.highlight_width
 
-            # TODO: why is this not always showing correctly highlughted markers
-            #       despite the edge width being set to the correct value?
             self.markers.set_data(
                 pos=vertices,
                 size=self._marker_size,

@@ -316,7 +316,6 @@ def highlight(layer: Points, event: Event) -> None:
         selected = np.fromiter(layer.selected_data, dtype=int)
         selected_displayed = np.ix_(selected, displayed)
         box.update_from_points(layer.data[selected_displayed])
-        # TODO: this is actually swapped in dimensions for some reason
         highlight_selection_box_handles(layer, event)
     else:
         value = layer._get_value_(

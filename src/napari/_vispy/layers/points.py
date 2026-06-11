@@ -113,7 +113,7 @@ class VispyPointsLayer(VispyBaseLayer):
             ]
             if data.ndim == 1:
                 data = np.expand_dims(data, axis=0)
-            # TODO: fix size for out_of_slice_display
+            # TODO: fix size for out_of_slice_display (or postpone to after #8786)
             size = self.layer.size[highlighted]
             border_width = self.layer.border_width[highlighted]
             if self.layer.border_width_is_relative:
