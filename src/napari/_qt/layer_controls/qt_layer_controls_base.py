@@ -72,7 +72,6 @@ class QtLayerControls(QFrame):
         super().__init__()
 
         self._ndisplay: int = 2
-        self._order: tuple[int, ...] = layer._slice_input.order
         self._EDIT_BUTTONS: tuple = ()
         self._MODE_BUTTONS: dict = {}
 
@@ -249,16 +248,6 @@ class QtLayerControls(QFrame):
         self._ndisplay = ndisplay
         self._on_ndisplay_changed()
 
-    @property
-    def order(self) -> tuple[int, ...]:
-        """The dimension order."""
-        return self._order
-
-    @order.setter
-    def order(self, order: tuple[int, ...]) -> None:
-        self._order = order
-        self._on_dims_order_changed()
-
     def _on_ndisplay_changed(self) -> None:
         """Respond to a change to the number of dimensions displayed in the viewer.
 
@@ -266,13 +255,6 @@ class QtLayerControls(QFrame):
         to 2D or 3D visualization only like the transform mode button.
         """
         self._set_transform_tool_state()
-
-    def _on_dims_order_changed(self) -> None:
-        """Respond to a change in the dims display order.
-
-        Override in subclasses that need to update when displayed dims change
-        (e.g. to rebuild multiscale level labels).
-        """
 
     def _set_transform_tool_state(self):
         """

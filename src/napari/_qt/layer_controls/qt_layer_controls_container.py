@@ -102,7 +102,6 @@ class QtLayerControlsContainer(QStackedWidget):
         self.viewer.layers.events.removed.connect(self._remove)
         viewer.layers.selection.events.active.connect(self._display)
         viewer.dims.events.ndisplay.connect(self._on_ndisplay_changed)
-        viewer.dims.events.order.connect(self._on_dims_order_changed)
 
     def _on_ndisplay_changed(self, event):
         """Responds to a change in the dimensionality displayed in the canvas.
@@ -115,16 +114,6 @@ class QtLayerControlsContainer(QStackedWidget):
         for widget in self.widgets.values():
             if widget is not self.empty_widget:
                 widget.ndisplay = event.value
-
-    def _on_dims_order_changed(self, event):
-        """Responds to a change in the dims display order.
-
-        Triggers a control refresh so that widgets (e.g. the multiscale
-        level combobox) update their labels for the new displayed dims.
-        """
-        for widget in self.widgets.values():
-            if widget is not self.empty_widget:
-                widget.order = event.value
 
     def _display(self, event):
         """Change the displayed controls to be those of the target layer.
