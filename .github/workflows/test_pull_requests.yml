@@ -11,6 +11,8 @@ concurrency:
   group: test-${{ github.ref }}
   cancel-in-progress: true
 
+permissions: {}
+
 env:
   COLUMNS: 120
 
@@ -189,6 +191,25 @@ jobs:
       tox_extras: ${{ matrix.tox_extras }}
       timeout: ${{ matrix.timeout-minutes || 40 }}
 
+  test-fragile:
+    name: fragile test
+    uses: ./.github/workflows/reusable_run_tox_test.yml
+    needs: test_initial
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [ ubuntu-latest, windows-latest ] #, macos-latest ]
+        python: [ "3.10", "3.14" ]
+        backend: [ "pyqt6", "pyside6", "pyqt5" ]
+        coverage: [ "cov" ]
+    with:
+      python_version: ${{ matrix.python }}
+      platform: ${{ matrix.platform }}
+      qt_backend: ${{ matrix.backend }}
+      timeout: 10
+      artifacts_suffix: _fragile
+      coverage: cov
+      posargs: 'src/napari/_tests_fragile'
 
   test_pip_install:
     needs: test_initial
@@ -212,6 +233,7 @@ jobs:
     needs:
       - test
       - test_examples
+      - test-fragile
     uses: napari/shared-workflows/.github/workflows/upload_coverage.yml@main
     with:
       artifact-pattern: 'coverage reports*'
