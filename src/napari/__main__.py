@@ -370,9 +370,10 @@ def _run_plugin_module(mod, plugin_name):
     run()
 
 
-def main():
+def main() -> None:
     _run()
 
 
 if __name__ == '__main__':
-    sys.exit(main())
+    main()
+    sys.exit(0)
