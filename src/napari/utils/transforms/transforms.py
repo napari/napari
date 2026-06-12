@@ -23,7 +23,6 @@ from napari.utils.transforms.transform_utils import (
     shear_to_matrix,
     translate_to_vector,
 )
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
@@ -60,9 +59,7 @@ class Transform:
     @property
     def inverse(self) -> Transform:
         if self._inverse_func is None:
-            raise ValueError(
-                trans._('Inverse function was not provided.', deferred=True)
-            )
+            raise ValueError('Inverse function was not provided.')
         if 'inverse' not in self._cache_dict:
             self._cache_dict['inverse'] = Transform(
                 self._inverse_func, self.func
@@ -86,9 +83,7 @@ class Transform:
         Transform
             Resulting transform.
         """
-        raise NotImplementedError(
-            trans._('Cannot subset arbitrary transforms.', deferred=True)
-        )
+        raise NotImplementedError('Cannot subset arbitrary transforms.')
 
     def expand_dims(self, axes: Sequence[int]) -> Transform:
         """Return a transform with added axes for non-visible dimensions.
@@ -105,9 +100,7 @@ class Transform:
         Transform
             Resulting transform.
         """
-        raise NotImplementedError(
-            trans._('Cannot subset arbitrary transforms.', deferred=True)
-        )
+        raise NotImplementedError('Cannot subset arbitrary transforms.')
 
     @property
     def _is_diagonal(self):
@@ -204,9 +197,7 @@ class TransformChain(EventedList[_T], Transform, Generic[_T]):
             If the transform chain is empty.
         """
         if len(self) == 0:
-            raise ValueError(
-                trans._('Cannot simplify an empty transform chain.')
-            )
+            raise ValueError('Cannot simplify an empty transform chain.')
 
         if len(self) == 1:
             return self[0]
@@ -464,11 +455,7 @@ class Affine(Transform):
                         )
                     else:
                         raise ValueError(
-                            trans._(
-                                'Only upper triangular or lower triangular matrices are accepted for shear, got {shear}. For other matrices, set the affine_matrix or linear_matrix directly.',
-                                deferred=True,
-                                shear=shear,
-                            )
+                            f'Only upper triangular or lower triangular matrices are accepted for shear, got {shear}. For other matrices, set the affine_matrix or linear_matrix directly.'
                         )
             linear_matrix = compose_linear_matrix(rotate, scale, shear)
 
@@ -607,11 +594,7 @@ class Affine(Transform):
                 self._upper_triangular = is_matrix_upper_triangular(shear)
             else:
                 raise ValueError(
-                    trans._(
-                        'Only upper triangular or lower triangular matrices are accepted for shear, got {shear}. For other matrices, set the affine_matrix or linear_matrix directly.',
-                        deferred=True,
-                        shear=shear,
-                    )
+                    f'Only upper triangular or lower triangular matrices are accepted for shear, got {shear}. For other matrices, set the affine_matrix or linear_matrix directly.'
                 )
         else:
             self._upper_triangular = True
@@ -727,10 +710,7 @@ class Affine(Transform):
 
         if len(axes) != transform.ndim:
             raise ValueError(
-                trans._(
-                    'Dimensionality of provided axes list and transform differ.',
-                    deferred=True,
-                )
+                'Dimensionality of provided axes list and transform differ.'
             )
 
         linear_matrix = np.copy(self.linear_matrix)
@@ -902,10 +882,7 @@ class CompositeAffine(Affine):
     def linear_matrix(self, linear_matrix):
         """Setting the linear matrix of a CompositeAffine transform is not supported."""
         raise NotImplementedError(
-            trans._(
-                'linear_matrix cannot be set directly for a CompositeAffine transform',
-                deferred=True,
-            )
+            'linear_matrix cannot be set directly for a CompositeAffine transform'
         )
 
     @property
@@ -916,10 +893,7 @@ class CompositeAffine(Affine):
     def affine_matrix(self, affine_matrix):
         """Setting the affine matrix of a CompositeAffine transform is not supported."""
         raise NotImplementedError(
-            trans._(
-                'affine_matrix cannot be set directly for a CompositeAffine transform',
-                deferred=True,
-            )
+            'affine_matrix cannot be set directly for a CompositeAffine transform'
         )
 
     def set_slice(self, axes: Sequence[int]) -> CompositeAffine:

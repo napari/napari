@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING, Any
 from qtpy.QtWidgets import QFileDialog, QMessageBox
 
 from napari.utils.misc import in_ipython
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -37,12 +36,10 @@ class ScreenshotDialog(QFileDialog):
         directory=HOME_DIRECTORY,
         history=None,
     ) -> None:
-        super().__init__(parent, trans._('Save screenshot'))
+        super().__init__(parent, 'Save screenshot')
         self.setAcceptMode(QFileDialog.AcceptSave)
         self.setFileMode(QFileDialog.AnyFile)
-        self.setNameFilter(
-            trans._('Image files (*.png *.bmp *.gif *.tif *.tiff)')
-        )
+        self.setNameFilter('Image files (*.png *.bmp *.gif *.tif *.tiff)')
         self.setDirectory(directory)
         self.setHistory(history)
 
@@ -58,11 +55,8 @@ class ScreenshotDialog(QFileDialog):
             if os.path.exists(save_path):
                 res = QMessageBox().warning(
                     self,
-                    trans._('Confirm overwrite'),
-                    trans._(
-                        '{save_path} already exists. Do you want to replace it?',
-                        save_path=save_path,
-                    ),
+                    'Confirm overwrite',
+                    f'{save_path} already exists. Do you want to replace it?',
                     QMessageBox.Yes | QMessageBox.No,
                     QMessageBox.No,
                 )

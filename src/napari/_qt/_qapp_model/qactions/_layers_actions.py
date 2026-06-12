@@ -1,14 +1,13 @@
 from app_model.types import Action, SubmenuItem
 
 from napari._app_model.constants import MenuGroup, MenuId
-from napari.utils.translations import trans
 
 LAYERS_SUBMENUS = [
     (
         MenuId.MENUBAR_LAYERS,
         SubmenuItem(
             submenu=MenuId.LAYERS_VISUALIZE,
-            title=trans._('Visualize'),
+            title='Visualize',
             group=MenuGroup.NAVIGATION,
         ),
     ),
@@ -16,7 +15,7 @@ LAYERS_SUBMENUS = [
         MenuId.MENUBAR_LAYERS,
         SubmenuItem(
             submenu=MenuId.LAYERS_ANNOTATE,
-            title=trans._('Annotate'),
+            title='Annotate',
             group=MenuGroup.NAVIGATION,
         ),
     ),
@@ -24,7 +23,7 @@ LAYERS_SUBMENUS = [
         MenuId.MENUBAR_LAYERS,
         SubmenuItem(
             submenu=MenuId.LAYERS_DATA,
-            title=trans._('Data'),
+            title='Data',
             group=MenuGroup.LAYERS.CONVERT,
         ),
     ),
@@ -32,7 +31,7 @@ LAYERS_SUBMENUS = [
         MenuId.MENUBAR_LAYERS,
         SubmenuItem(
             submenu=MenuId.LAYERS_LAYER_TYPE,
-            title=trans._('Layer Type'),
+            title='Layer Type',
             group=MenuGroup.LAYERS.CONVERT,
         ),
     ),
@@ -40,7 +39,7 @@ LAYERS_SUBMENUS = [
         MenuId.MENUBAR_LAYERS,
         SubmenuItem(
             submenu=MenuId.LAYERS_TRANSFORM,
-            title=trans._('Transform'),
+            title='Transform',
             group=MenuGroup.LAYERS.GEOMETRY,
         ),
     ),
@@ -48,7 +47,7 @@ LAYERS_SUBMENUS = [
         MenuId.MENUBAR_LAYERS,
         SubmenuItem(
             submenu=MenuId.LAYERS_MEASURE,
-            title=trans._('Measure'),
+            title='Measure',
             group=MenuGroup.LAYERS.GEOMETRY,
         ),
     ),
@@ -56,7 +55,7 @@ LAYERS_SUBMENUS = [
         MenuId.MENUBAR_LAYERS,
         SubmenuItem(
             submenu=MenuId.LAYERS_FILTER,
-            title=trans._('Filter'),
+            title='Filter',
             group=MenuGroup.LAYERS.GENERATE,
         ),
     ),
@@ -64,7 +63,7 @@ LAYERS_SUBMENUS = [
         MenuId.MENUBAR_LAYERS,
         SubmenuItem(
             submenu=MenuId.LAYERS_REGISTER,
-            title=trans._('Register'),
+            title='Register',
             group=MenuGroup.LAYERS.GENERATE,
         ),
     ),
@@ -72,7 +71,7 @@ LAYERS_SUBMENUS = [
         MenuId.MENUBAR_LAYERS,
         SubmenuItem(
             submenu=MenuId.LAYERS_PROJECT,
-            title=trans._('Project'),
+            title='Project',
             group=MenuGroup.LAYERS.GENERATE,
         ),
     ),
@@ -80,7 +79,7 @@ LAYERS_SUBMENUS = [
         MenuId.MENUBAR_LAYERS,
         SubmenuItem(
             submenu=MenuId.LAYERS_SEGMENT,
-            title=trans._('Segment'),
+            title='Segment',
             group=MenuGroup.LAYERS.GENERATE,
         ),
     ),
@@ -88,7 +87,7 @@ LAYERS_SUBMENUS = [
         MenuId.MENUBAR_LAYERS,
         SubmenuItem(
             submenu=MenuId.LAYERS_TRACK,
-            title=trans._('Track'),
+            title='Track',
             group=MenuGroup.LAYERS.GENERATE,
         ),
     ),
@@ -96,7 +95,7 @@ LAYERS_SUBMENUS = [
         MenuId.MENUBAR_LAYERS,
         SubmenuItem(
             submenu=MenuId.LAYERS_CLASSIFY,
-            title=trans._('Classify'),
+            title='Classify',
             group=MenuGroup.LAYERS.GENERATE,
         ),
     ),

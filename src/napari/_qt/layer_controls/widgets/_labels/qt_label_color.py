@@ -16,7 +16,6 @@ from napari.layers import Labels
 from napari.layers.labels._labels_utils import get_dtype
 from napari.utils._dtype import get_dtype_limits
 from napari.utils.events import disconnect_events
-from napari.utils.translations import trans
 
 
 class QtColorBox(QWidget):
@@ -43,7 +42,7 @@ class QtColorBox(QWidget):
         self._height = 24
         self.setFixedWidth(self._height)
         self.setFixedHeight(self._height)
-        self.setToolTip(trans._('Selected label color'))
+        self.setToolTip('Selected label color')
 
         self.color = None
 
@@ -148,7 +147,7 @@ class QtLabelControl(QtWidgetControlsBase):
             )
         )
 
-        self.label_color_label = QtWrappedLabel(trans._('label:'))
+        self.label_color_label = QtWrappedLabel('label:')
         self.label_color = QWidget()
         self.label_color.setProperty('emphasized', True)
         color_layout = QHBoxLayout()

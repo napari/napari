@@ -22,7 +22,6 @@ from napari.utils.colormaps import AVAILABLE_COLORMAPS
 from napari.utils.events import Event
 from napari.utils.events.event_utils import connect_no_arg
 from napari.utils.geometry import find_nearest_triangle_intersection
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -282,11 +281,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         # assign mesh data and establish default behavior
         if len(data) not in (2, 3):
             raise ValueError(
-                trans._(
-                    'Surface data tuple must be 2 or 3, specifying vertices, faces, and optionally vertex values, instead got length {length}.',
-                    deferred=True,
-                    length=len(data),
-                )
+                f'Surface data tuple must be 2 or 3, specifying vertices, faces, and optionally vertex values, instead got length {len(data)}.'
             )
         self._vertices = data[0]
         self._faces = data[1]
@@ -367,11 +362,7 @@ class Surface(IntensityVisualizationMixin, Layer):
     def data(self, data):
         if len(data) not in (2, 3):
             raise ValueError(
-                trans._(
-                    'Surface data tuple must be 2 or 3, specifying vertices, faces, and optionally vertex values, instead got length {data_length}.',
-                    deferred=True,
-                    data_length=len(data),
-                )
+                f'Surface data tuple must be 2 or 3, specifying vertices, faces, and optionally vertex values, instead got length {len(data)}.'
             )
         self._vertices = data[0]
         self._faces = data[1]
@@ -792,13 +783,10 @@ class _SurfaceSlicingState(_LayerSlicingState):
             data = data[data_indices]
             if data.ndim > dims:
                 warnings.warn(
-                    trans._(
-                        'Assigning multiple data per vertex after slicing '
-                        'is not allowed. All dimensions corresponding to '
-                        'vertex data must be non-displayed dimensions. Data '
-                        'may not be visible.',
-                        deferred=True,
-                    ),
+                    'Assigning multiple data per vertex after slicing '
+                    'is not allowed. All dimensions corresponding to '
+                    'vertex data must be non-displayed dimensions. Data '
+                    'may not be visible.',
                     category=UserWarning,
                     stacklevel=2,
                 )

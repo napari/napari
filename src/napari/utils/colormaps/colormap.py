@@ -29,7 +29,6 @@ from napari.utils.compat import StrEnum
 from napari.utils.events import EventedModel
 from napari.utils.events.custom_types import Array
 from napari.utils.migrations import deprecated_class_name
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from numba import typed
@@ -118,22 +117,14 @@ class Colormap(EventedModel):
         # Check control end points are correct
         if v[0] != 0 or (len(v) > 1 and v[-1] != 1):
             raise ValueError(
-                trans._(
-                    'Control points must start with 0.0 and end with 1.0. '
-                    'Got {start_control_point} and {end_control_point}',
-                    deferred=True,
-                    start_control_point=v[0],
-                    end_control_point=v[-1],
-                )
+                'Control points must start with 0.0 and end with 1.0. '
+                'Got {v[0]} and {v[-1]}'
             )
 
         # Check control points are sorted correctly
         if not np.array_equal(v, sorted(v)):
             raise ValueError(
-                trans._(
-                    'Control points need to be sorted in ascending order',
-                    deferred=True,
-                )
+                'Control points need to be sorted in ascending order'
             )
 
         # Check number of control points is correct
@@ -143,12 +134,7 @@ class Colormap(EventedModel):
         n_controls = len(v)
         if n_controls != n_controls_target:
             raise ValueError(
-                trans._(
-                    'Wrong number of control points provided. Expected {n_controls_target}, got {n_controls}',
-                    deferred=True,
-                    n_controls_target=n_controls_target,
-                    n_controls=n_controls,
-                )
+                f'Wrong number of control points provided. Expected {n_controls_target}, got {n_controls}'
             )
 
         return v
@@ -175,12 +161,7 @@ class Colormap(EventedModel):
             )
             cols = self.colors[indices.astype(np.int32)]
         else:
-            raise ValueError(
-                trans._(
-                    'Unrecognized Colormap Interpolation Mode',
-                    deferred=True,
-                )
-            )
+            raise ValueError('Unrecognized Colormap Interpolation Mode')
 
         values = values[..., None]
         # map NaNs, lows, and highs

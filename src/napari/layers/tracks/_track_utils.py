@@ -5,7 +5,6 @@ import numpy.typing as npt
 
 from napari.layers.utils.layer_utils import _FeatureTable
 from napari.utils.events.custom_types import Array
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -257,31 +256,18 @@ class TrackManager:
         """validate the coordinate data"""
 
         if data.ndim != 2:
-            raise ValueError(
-                trans._('track vertices should be a NxD array', deferred=True)
-            )
+            raise ValueError('track vertices should be a NxD array')
 
         if data.shape[1] < 4 or data.shape[1] > 5:
-            raise ValueError(
-                trans._(
-                    'track vertices should be 4 or 5-dimensional',
-                    deferred=True,
-                )
-            )
+            raise ValueError('track vertices should be 4 or 5-dimensional')
 
         # check that all IDs are integers
         ids = data[:, 0]
         if not np.array_equal(np.floor(ids), ids):
-            raise ValueError(
-                trans._('track id must be an integer', deferred=True)
-            )
+            raise ValueError('track id must be an integer')
 
         if not all(t >= 0 for t in data[:, 1]):
-            raise ValueError(
-                trans._(
-                    'track timestamps must be greater than zero', deferred=True
-                )
-            )
+            raise ValueError('track timestamps must be greater than zero')
 
         return data
 
@@ -306,13 +292,7 @@ class TrackManager:
             nodes = [node_idx, *parents_idx]
             for node in nodes:
                 if node not in unique_track_ids:
-                    raise ValueError(
-                        trans._(
-                            'graph node {node_idx} not found',
-                            deferred=True,
-                            node_idx=node_idx,
-                        )
-                    )
+                    raise ValueError(f'graph node {node_idx} not found')
 
         return new_graph
 
@@ -374,13 +354,7 @@ class TrackManager:
         """return the properties of tracks by vertex"""
 
         if color_by not in self.properties:
-            raise ValueError(
-                trans._(
-                    'Property {color_by} not found',
-                    deferred=True,
-                    color_by=color_by,
-                )
-            )
+            raise ValueError(f'Property {color_by} not found')
 
         return self.properties[color_by]
 

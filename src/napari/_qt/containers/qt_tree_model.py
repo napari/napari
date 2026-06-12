@@ -5,7 +5,6 @@ from typing import Optional, TypeVar
 from qtpy.QtCore import QMimeData, QModelIndex, Qt
 
 from napari._qt.containers._base_item_model import _BaseEventedItemModel
-from napari.utils.translations import trans
 from napari.utils.tree import Group, Node
 
 logger = logging.getLogger(__name__)
@@ -178,13 +177,7 @@ class QtNodeTreeModel(_BaseEventedItemModel[NodeType]):
 
     def setRoot(self, root: Group[NodeType]):
         if not isinstance(root, Group):
-            raise TypeError(
-                trans._(
-                    'root node must be an instance of {Group}',
-                    deferred=True,
-                    Group=Group,
-                )
-            )
+            raise TypeError(f'root node must be an instance of {Group}')
         super().setRoot(root)
 
     def nestedIndex(self, nested_index: tuple[int, ...]) -> QModelIndex:
@@ -199,12 +192,7 @@ class QtNodeTreeModel(_BaseEventedItemModel[NodeType]):
         elif isinstance(nested_index, int):
             child = nested_index
         else:
-            raise TypeError(
-                trans._(
-                    'nested_index must be an int or tuple of int.',
-                    deferred=True,
-                )
-            )
+            raise TypeError('nested_index must be an int or tuple of int.')
         return self.index(child, 0, parent)
 
 

@@ -10,7 +10,6 @@ from napari._qt.utils import qt_signals_blocked
 from napari._vispy.utils.gl import get_max_texture_sizes
 from napari.layers import Image, Labels
 from napari.utils.misc import human_readable_size
-from napari.utils.translations import trans
 
 
 def _format_level_label(
@@ -78,7 +77,7 @@ class QtMultiscaleLevelControl(  # type: ignore[metaclass]
         self._layer: Image | Labels = layer
 
         self.level_combobox = QComboBox(parent)
-        self.level_label = QtWrappedLabel(trans._('resolution:'))
+        self.level_label = QtWrappedLabel('resolution:')
 
         self._rebuild_items()
         self.level_combobox.currentIndexChanged.connect(
@@ -124,10 +123,7 @@ class QtMultiscaleLevelControl(  # type: ignore[metaclass]
                         if item is not None:
                             item.setEnabled(False)
                             item.setToolTip(
-                                trans._(
-                                    'Exceeds GL_MAX_3D_TEXTURE_SIZE ({max_size})',
-                                    max_size=max_size_3d,
-                                )
+                                f'Exceeds GL_MAX_3D_TEXTURE_SIZE ({max_size_3d})'
                             )
 
             # Reflect current locked state
