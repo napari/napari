@@ -32,15 +32,24 @@ class QtModeRadioButton(QRadioButton):
         self, layer, button_name, mode, *, tooltip=None, checked=False
     ) -> None:
         super().__init__()
-
+        self._layer_enabled = layer.support_mode(mode)
         self.layer_ref = weakref.ref(layer)
         self.setToolTip(tooltip or button_name)
         self.setChecked(checked)
         self.setProperty('mode', button_name)
         self.setFixedWidth(28)
         self.mode = mode
+        self.setEnabled(True)
         if mode is not None:
             self.toggled.connect(self._set_mode)
+
+    def setEnabled(self, enabled):
+        super().setEnabled(enabled and self._layer_enabled)
+
+    def setToolTip(self, text: str):
+        if not self._layer_enabled:
+            text = f'{text} (not supported by this layer)'
+        super().setToolTip(text)
 
     def _set_mode(self, mode_selected):
         """Toggle the mode associated with the layer.
