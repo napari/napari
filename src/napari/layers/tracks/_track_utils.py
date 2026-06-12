@@ -509,3 +509,22 @@ class TrackManager:
             lbl = [f'ID:{i}' for i in self._points_id[lookup]]
 
         return lbl, pos
+
+
+def prepare_tracks_data(
+    data: 'pd.DataFrame', column_map: dict[str, str]
+) -> 'pd.DataFrame':
+    required = ['track_id', 't', 'y', 'x']
+    for key in required:
+        if key not in column_map:
+            raise ValueError('key missing')
+
+    order = [column_map['track_id'], column_map['t']]
+
+    if 'z' in column_map:
+        order.append(column_map['z'])
+
+    order.extend([column_map['y'], column_map['x']])
+
+    # convert to numpy
+    return data[:, order].to_numpy()
