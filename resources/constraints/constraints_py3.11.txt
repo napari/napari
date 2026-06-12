@@ -407,13 +407,13 @@ pyrect==0.2.0
     # via pygetwindow
 pyscreeze==1.0.1
     # via pyautogui
-pyside6==6.11.1
+pyside6==6.11.0
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
-pyside6-addons==6.11.1
+pyside6-addons==6.11.0
     # via pyside6
-pyside6-essentials==6.11.1
+pyside6-essentials==6.11.0
     # via
     #   pyside6
     #   pyside6-addons
@@ -501,7 +501,7 @@ setuptools==81.0.0
     # via torch
 shellingham==1.5.4
     # via typer
-shiboken6==6.11.1
+shiboken6==6.11.0
     # via
     #   pyside6
     #   pyside6-addons
@@ -558,6 +558,7 @@ typer==0.26.4
 typing-extensions==4.15.0
     # via
     #   napari (pyproject.toml)
+    #   aiohttp
     #   aiosignal
     #   app-model
     #   flexcache
