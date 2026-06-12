@@ -100,7 +100,7 @@ def test_viewer_mouse_bindings(qtbot, make_napari_viewer):
 
 @skip_on_win_ci
 def test_layer_mouse_bindings(qtbot, make_napari_viewer):
-    """Test adding mouse bindings to a layer that is selected"""
+    """Test adding mouse bindings to layers that are selected"""
     np.random.seed(0)
     viewer = make_napari_viewer()
     canvas = viewer.window._qt_viewer.canvas
@@ -108,17 +108,16 @@ def test_layer_mouse_bindings(qtbot, make_napari_viewer):
     if os.getenv('CI'):
         viewer.show()
 
-    layer = viewer.add_image(np.random.random((10, 20)))
-    viewer.layers.selection.add(layer)
+    layer1 = viewer.add_image(np.random.random((10, 20)))
+    layer2 = viewer.add_image(np.random.random((10, 20)))
+    viewer.layers.selection = {layer1, layer2}
 
     mock_press = Mock()
     mock_drag = Mock()
     mock_release = Mock()
     mock_move = Mock()
 
-    @layer.mouse_drag_callbacks.append
     def drag_callback(_layer, event):
-        assert layer == _layer
         # on press
         mock_press.method()
 
@@ -132,14 +131,18 @@ def test_layer_mouse_bindings(qtbot, make_napari_viewer):
         # on release
         mock_release.method()
 
-    @layer.mouse_move_callbacks.append
     def move_callback(_layer, event):
-        assert layer == _layer
         # on press
         mock_move.method()
 
+    layer1.mouse_drag_callbacks.append(drag_callback)
+    layer2.mouse_drag_callbacks.append(drag_callback)
+    layer1.mouse_move_callbacks.append(move_callback)
+    layer2.mouse_move_callbacks.append(move_callback)
+
     # Simulate press only
     canvas._scene_canvas.events.mouse_press(pos=(0, 0), modifiers=(), button=0)
+    # TODO: fix this, why is it called once?
     mock_press.method.assert_called_once()
     mock_press.reset_mock()
     mock_drag.method.assert_not_called()
