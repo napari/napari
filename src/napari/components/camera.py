@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Literal, cast
 
 import numpy as np
 from pydantic import field_validator
+from scipy.spatial.transform import Rotation
 
 from napari.utils.camera_orientations import (
     DEFAULT_ORIENTATION_TYPED,
@@ -52,8 +53,8 @@ class Camera(EventedModel):
         0.0,
         0.0,
     )
+    rotation: Rotation = Rotation.identity()
     zoom: float = 1.0
-    angles: tuple[float, float, float] = (0.0, 0.0, 0.0)
     perspective: float = 0
     mouse_pan: bool = True
     mouse_zoom: bool = True
@@ -63,10 +64,18 @@ class Camera(EventedModel):
         HorizontalAxisOrientation,
     ] = DEFAULT_ORIENTATION_TYPED
 
-    @field_validator('center', 'angles', mode='before')
+    @field_validator('center', mode='before')
     @classmethod
     def _ensure_3_tuple(cls, v):
         return ensure_n_tuple(v, n=3)
+
+    @property
+    def angles(self) -> tuple[float, float, float]:
+        return self.rotation.as_euler('xyz', degrees=True)
+
+    @angles.setter
+    def angles(self, angles: tuple[float, float, float]) -> None:
+        self.rotation = Rotation.from_euler('xyz', angles, degrees=True)
 
     @property
     def view_direction(self) -> tuple[float, float, float]:
@@ -76,14 +85,9 @@ class Camera(EventedModel):
         3-tuple. This direction is in 3D scene coordinates, the world coordinate
         system for three currently displayed dimensions.
         """
-        from scipy.spatial.transform import Rotation as R
-
-        # once we're in scene-land, we pretend to be in xyz space (axes names don't
-        # mean anything after all...) which simplifies the logic a lot.
-        rotation = R.from_euler('xyz', self.angles, degrees=True)
         # view direction is given by the z component, but flipping the sign.
         # This is because the default view direction at angles (0, 0, 0) is (-1, 0, 0)
-        return tuple(-rotation.as_matrix()[0])
+        return tuple(-self.rotation.as_matrix()[0])
 
     @property
     def up_direction(self) -> tuple[float, float, float]:
@@ -93,14 +97,9 @@ class Camera(EventedModel):
         3-tuple. This direction is in 3D scene coordinates, the world coordinate
         system for three currently displayed dimensions.
         """
-        from scipy.spatial.transform import Rotation as R
-
-        # once we're in scene-land, we pretend to be in xyz space (axes names don't
-        # mean anything after all...) which simplifies the logic a lot.
-        rotation = R.from_euler('xyz', self.angles, degrees=True)
         # up direction is given by the y component, but flipping the sign.
         # This is because the default up direction at angles (0, 0, 0) is (0, -1, 0)
-        return tuple(-rotation.as_matrix()[1])
+        return tuple(-self.rotation.as_matrix()[1])
 
     def set_view_direction(
         self,
@@ -128,8 +127,6 @@ class Camera(EventedModel):
             to (0, -1, 0) unless the view direction is parallel to the y-axis,
             in which case will default to (-1, 0, 0).
         """
-        from scipy.spatial.transform import Rotation as R
-
         # project up onto view so we can remove the parallel component
         projection = np.dot(up_direction, view_direction) * np.array(
             view_direction
@@ -148,7 +145,7 @@ class Camera(EventedModel):
         matrix = -np.array(
             (view_direction_arr, up_direction_arr, right_direction)
         )
-        self.angles = R.from_matrix(matrix).as_euler('xyz', degrees=True)
+        self.rotation = Rotation.from_matrix(matrix)
 
     def calculate_nd_view_direction(
         self, ndim: int, dims_displayed: tuple[int, ...]
