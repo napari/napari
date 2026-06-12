@@ -866,9 +866,19 @@ def _add_rectangle_ellipse_line(
                 + box_center
             )
         else:
-            new = (box[vertex] - box_center) / np.linalg.norm(
-                box[vertex] - box_center
-            ) * np.linalg.norm(new - box_center) + box_center
+            # get the direction to grow the shape from the mouse coord
+            direction = np.sign(coord - fixed)
+            nonzero_direction = direction[direction != 0]
+            if len(nonzero_direction) == 1:
+                direction[direction == 0] = nonzero_direction[0]
+            elif len(nonzero_direction) == 0:
+                direction = box[vertex] - box_center
+            new = (
+                direction
+                / np.linalg.norm(direction)
+                * np.linalg.norm(new - box_center)
+                + box_center
+            )
 
     drag_scale = (inv_rot @ (new - fixed)) / (inv_rot @ (box[vertex] - fixed))
 
