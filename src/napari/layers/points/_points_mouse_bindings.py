@@ -1,11 +1,21 @@
 from __future__ import annotations
 
+import warnings
+from collections.abc import Collection
 from typing import TYPE_CHECKING, TypeVar
 
 import numpy as np
 
 from napari.layers.base import ActionType
-from napari.layers.points._points_utils import _points_in_box_3d, points_in_box
+from napari.layers.base._base_constants import InteractionBoxHandle
+from napari.layers.base._base_mouse_bindings import (
+    highlight_selection_box_handles,
+)
+from napari.layers.points._points_utils import points_in_box
+from napari.layers.utils.interaction_box import (
+    generate_interaction_box_handles,
+)
+from napari.layers.utils.layer_utils import dims_displayed_world_to_layer
 from napari.utils.events import Event
 
 if TYPE_CHECKING:
@@ -29,11 +39,18 @@ def select(layer: Points, event: Event) -> Generator[None, None, None]:
     Holding shift throughout the entirety of this process will add those points
     to any existing selection, otherwise these will become the only selected
     points.
+
+    Holding Ctrl will show a transformable box around the selected points,
+    allowing to resize/move/rotate the selection using the respective handles.
     """
-    # on press
-    modify_selection = (
-        'Shift' in event.modifiers or 'Control' in event.modifiers
-    )
+    start_pos_canvas = event.pos[::-1]
+    start_pos_world = np.array(event.position)
+
+    if 'Control' in event.modifiers:
+        yield from _transform_selection_box(layer, event, start_pos_world)
+        return
+
+    modify_selection = 'Shift' in event.modifiers
 
     # Get value under the cursor, for points, this is the index of the highlighted
     # if any, or None.
@@ -43,86 +60,216 @@ def select(layer: Points, event: Event) -> Generator[None, None, None]:
         dims_displayed=event.dims_displayed,
         world=True,
     )
-    # if modifying selection add / remove any from existing selection
-    if modify_selection:
-        if value is not None:
-            layer.selected_data = _toggle_selected(layer.selected_data, value)
-    else:
-        if value is not None:
+
+    old_selection = set(layer.selected_data)
+    new_selection = None
+    if value is not None:
+        # if modifying selection add / remove any from existing selection
+        if modify_selection:
+            new_selection = _toggle_selected(layer.selected_data, value)
+        else:
             # If the current index is not in the current list make it the only
             # index selected, otherwise don't change the selection so that
             # the current selection can be dragged together.
             if value not in layer.selected_data:
-                layer.selected_data = {value}
-        else:
-            layer.selected_data = set()
-    layer._set_highlight()
+                new_selection = {value}
+    elif not modify_selection:
+        new_selection = {}
 
-    # Set _drag_start value here to prevent an offset when mouse_move happens
-    # https://github.com/napari/napari/pull/4999
-    layer._set_drag_start(
-        layer.selected_data,
-        layer.world_to_data(event.position),
-        center_by_data=not modify_selection,
-    )
     yield
 
-    # Undo the toggle selected in case of a mouse move with modifiers
-    if modify_selection and value is not None and event.type == 'mouse_move':
-        layer.selected_data = _toggle_selected(layer.selected_data, value)
+    if event.type == 'mouse_release':
+        # it was an actual click (not drag), so we can toggle the selection
+        if new_selection is not None:
+            layer.selected_data = new_selection
+        return
 
-    is_moving = False
-    # on move
-    while event.type == 'mouse_move':
-        coordinates = layer.world_to_data(event.position)
-        # If not holding modifying selection and points selected then drag them
-        if not modify_selection and len(layer.selected_data) > 0:
-            # only emit just before moving
-            if not is_moving:
-                layer.events.data(
-                    value=layer.data,
-                    action=ActionType.CHANGING,
-                    data_indices=tuple(
-                        layer.selected_data,
-                    ),
-                    vertex_indices=((),),
-                )
-            is_moving = True
-            with layer.events.data.blocker():
-                layer._move(layer.selected_data, coordinates)
-        else:
-            # while dragging, update the drag box
-            coord = [coordinates[i] for i in layer._slice_input.displayed]
-            layer._is_selecting = True
-            layer._drag_box = np.array([layer._drag_start, coord])
+    # the following code only happens on *drag*
 
-            # update the drag up and normal vectors on the layer
-            _update_drag_vectors_from_event(layer=layer, event=event)
-
-            layer._set_highlight()
-        yield
-
-    # only emit data once dragging has finished
-    if is_moving:
-        layer._move(layer.selected_data, coordinates)
-        is_moving = False
-
-    # on release
-    layer._drag_start = None
-    if layer._is_selecting:
-        # if drag selection was being performed, select points
-        # using the drag box
-        layer._is_selecting = False
-        n_display = len(event.dims_displayed)
-        _select_points_from_drag(
-            layer=layer, modify_selection=modify_selection, n_display=n_display
+    # only move points if clicking on a selected point and if we're not modifying
+    if value in old_selection and not modify_selection:
+        yield from _move_selection(layer, event, start_pos_world)
+    else:
+        yield from _select_with_rectangle(
+            layer,
+            event,
+            start_pos_canvas,
+            start_pos_world,
+            modify_selection,
         )
 
-    # reset the selection box data and highlights
-    layer._drag_box = None
-    layer._drag_normal = None
-    layer._drag_up = None
-    layer._set_highlight(force=True)
+
+def _select_with_rectangle(
+    layer: Points,
+    event: Event,
+    start_pos_canvas: np.ndarray,
+    start_pos_world: np.ndarray,
+    modify_selection: bool,
+) -> Generator[None, None, None]:
+    rect = layer._overlays['selection_rect']
+    rect.corners_canvas = (start_pos_canvas, start_pos_canvas)
+    rect.corners_world = (start_pos_world, start_pos_world)
+    rect.visible = True
+
+    initial_selection = set(layer.selected_data)
+
+    while event.type == 'mouse_move':
+        pos_canvas = event.pos[::-1]
+        pos_world = event.position
+        rect.corners_canvas = (start_pos_canvas, pos_canvas)
+        rect.corners_world = (start_pos_world, pos_world)
+
+        corners = np.array(rect.corners_world)
+        corners_data = np.array(
+            [layer.world_to_data(corners[0]), layer.world_to_data(corners[1])]
+        )
+        displayed = dims_displayed_world_to_layer(
+            dims_displayed_world=event.dims_displayed,
+            ndim_world=len(event.position),
+            ndim_layer=layer.ndim,
+        )
+        selected_in_view = points_in_box(
+            corners_data[:, displayed],
+            layer.data[np.ix_(layer._indices_view, displayed)],
+            layer.size[layer._indices_view],
+        )
+        selected = layer._indices_view[selected_in_view]
+        if modify_selection:
+            selected = _toggle_selected(initial_selection, selected)
+        layer.selected_data = selected
+        layer.events.highlight()
+        yield
+
+    rect.visible = False
+
+
+def _move_selection(
+    layer: Points, event: Event, start_pos
+) -> Generator[None, None, None]:
+    # do everything relative to the original data to remove drift
+    selected = np.fromiter(layer.selected_data, dtype=int)
+    data_orig = layer.data[selected].copy()
+
+    while event.type == 'mouse_move':
+        layer.events.data(
+            value=layer.data,
+            action=ActionType.CHANGING,
+            data_indices=selected,
+            vertex_indices=((),),
+        )
+        pos = np.array(event.position)
+        shift = layer.world_to_data(pos - start_pos)
+        layer.data[selected] = data_orig + shift
+        layer.refresh()
+        layer.events.data(
+            value=layer.data,
+            action=ActionType.CHANGED,
+            data_indices=selected,
+            vertex_indices=((),),
+        )
+        layer.events.features()
+        box = layer._overlays['selection_box']
+
+        displayed = dims_displayed_world_to_layer(
+            dims_displayed_world=event.dims_displayed,
+            ndim_world=len(event.position),
+            ndim_layer=layer.ndim,
+        )
+        selected = np.fromiter(layer.selected_data, dtype=int)
+        selected_displayed = np.ix_(selected, displayed)
+        box.update_from_points(layer.data[selected_displayed])
+        yield
+
+
+def _resize_selection(
+    layer: Points,
+    event: Event,
+    start_pos,
+    dragged_handle,
+) -> Generator[None, None, None]:
+    box = layer._overlays['selection_box']
+    fixed_handle = InteractionBoxHandle.opposite_handle(dragged_handle)
+
+    # get exact coordinates of original handle to avoid unwanted shifts
+    # flip bounds to match vispy order which is used for the coordinates of handles
+    bounds = (tuple(point) for point in np.array(box.bounds)[:, ::-1])
+    handle_coords = generate_interaction_box_handles(*bounds)[:, ::-1]
+    fixed_handle_coords = handle_coords[fixed_handle]
+    dragged_handle_coords = handle_coords[dragged_handle]
+    handles_vector = dragged_handle_coords - fixed_handle_coords
+
+    displayed = dims_displayed_world_to_layer(
+        dims_displayed_world=event.dims_displayed,
+        ndim_world=len(event.position),
+        ndim_layer=layer.ndim,
+    )
+    selected = np.fromiter(layer.selected_data, dtype=int)
+    selected_displayed = np.ix_(selected, displayed)
+    data_orig_displayed = layer.data[selected_displayed].copy()
+
+    while event.type == 'mouse_move':
+        layer.events.data(
+            value=layer.data,
+            action=ActionType.CHANGING,
+            data_indices=selected,
+            vertex_indices=((),),
+        )
+        pos = np.array(event.position)
+        shift = (pos - start_pos)[event.dims_displayed]
+        with warnings.catch_warnings():
+            # a "divide by zero" warning is raised here when resizing along only one axis
+            # (i.e: dragging the central handle of the Box).
+            # That's intended, because we get inf or nan, which we can then replace with 1s
+            # and thus maintain the size along that axis.
+            warnings.simplefilter('ignore', RuntimeWarning)
+            scale = (handles_vector + shift) / handles_vector
+            scale = np.nan_to_num(scale, posinf=1, neginf=1, nan=1)
+        layer.data[selected_displayed] = (
+            fixed_handle_coords
+            + (data_orig_displayed - fixed_handle_coords) * scale
+        )
+        layer.refresh()
+        layer.events.data(
+            value=layer.data,
+            action=ActionType.CHANGED,
+            data_indices=selected,
+            vertex_indices=((),),
+        )
+        layer.events.features()
+        box.update_from_points(layer.data[selected_displayed])
+        yield
+
+
+def _rotate_selection(
+    layer: Points,
+    event: Event,
+    start_pos,
+) -> Generator[None, None, None]:
+    while event.type == 'mouse_move':
+        warnings.warn('rotation not yet implemented')
+        yield
+
+
+def _transform_selection_box(
+    layer: Points, event: Event, start_pos
+) -> Generator[None, None, None]:
+    box = layer._overlays['selection_box']
+    if len(event.dims_displayed) != 2:
+        return
+
+    clicked_handle = box.selected_handle
+
+    if clicked_handle is None:
+        return
+
+    yield
+
+    if clicked_handle == InteractionBoxHandle.INSIDE:
+        yield from _move_selection(layer, event, start_pos)
+    elif clicked_handle == InteractionBoxHandle.ROTATION:
+        yield from _rotate_selection(layer, event, start_pos)
+    else:
+        yield from _resize_selection(layer, event, start_pos, clicked_handle)
 
 
 DRAG_DIST_THRESHOLD = 5
@@ -150,22 +297,53 @@ def add(layer: Points, event: Event) -> Generator[None, None, None]:
 
 def highlight(layer: Points, event: Event) -> None:
     """Highlight hovered points."""
-    layer._set_highlight()
+    box = layer._overlays['selection_box']
+    # TODO: how to make this appear/disappear on clicking shift
+    #       instead of on mouse move? Separate key binding just on shift?
+    box.visible = False
+    box.handles = False
+    box.selected_handle = None
+
+    if 'Control' in event.modifiers and len(layer.selected_data) > 1:
+        box.handles = True
+        box.visible = True
+
+        displayed = dims_displayed_world_to_layer(
+            dims_displayed_world=event.dims_displayed,
+            ndim_world=len(event.position),
+            ndim_layer=layer.ndim,
+        )
+        selected = np.fromiter(layer.selected_data, dtype=int)
+        selected_displayed = np.ix_(selected, displayed)
+        box.update_from_points(layer.data[selected_displayed])
+        highlight_selection_box_handles(layer, event)
+    else:
+        value = layer._get_value_(
+            position=event.position,
+            view_direction=event.view_direction,
+            dims_displayed=event.dims_displayed,
+            world=True,
+        )
+        if value is None:
+            layer._highlight_index = []
+        else:
+            layer._highlight_index = [value]
+        layer.events.highlight()
 
 
 _T = TypeVar('_T')
 
 
-def _toggle_selected(selection: AbstractSet[_T], value: _T) -> set[_T]:
+def _toggle_selected(
+    selection: AbstractSet[_T], to_toggle: _T | Collection[_T]
+) -> set[_T]:
     """Add or remove value from the selection set.
-
-    This function returns a copy of the existing selection.
 
     Parameters
     ----------
     selection : set
         Set of selected data points to be modified.
-    value : int
+    value : int or Collection
         Index of point to add or remove from selected data set.
 
     Returns
@@ -174,92 +352,10 @@ def _toggle_selected(selection: AbstractSet[_T], value: _T) -> set[_T]:
         Updated selection.
     """
     selection = set(selection)
-    if value in selection:
-        selection.remove(value)
-    else:
-        selection.add(value)
+    to_toggle = (
+        {to_toggle}
+        if not isinstance(to_toggle, Collection)
+        else set(to_toggle)
+    )
+    selection.symmetric_difference_update(to_toggle)
     return selection
-
-
-def _update_drag_vectors_from_event(layer: Points, event: Event) -> None:
-    """Update the drag normal and up vectors on layer from a mouse event.
-
-    Note that in 2D mode, the layer._drag_normal and layer._drag_up
-    are set to None.
-
-    Parameters
-    ----------
-    layer : "napari.layers.Points"
-        The Points layer to update.
-    event
-        The mouse event object.
-    """
-    n_display = len(event.dims_displayed)
-    if n_display == 3:
-        # if in 3D, set the drag normal and up directions
-        # get the indices of the displayed dimensions
-        ndim_world = len(event.position)
-        layer_dims_displayed = layer._slicing_state._world_to_layer_dims(
-            world_dims=event.dims_displayed, ndim_world=ndim_world
-        )
-
-        # get the view direction in displayed data coordinates
-        layer._drag_normal = layer._world_to_displayed_data_ray(
-            event.view_direction, layer_dims_displayed
-        )
-
-        # get the up direction of the camera in displayed data coordinates
-        layer._drag_up = layer._world_to_displayed_data_ray(
-            event.up_direction, layer_dims_displayed
-        )
-
-    else:
-        # if in 2D, set the drag normal and up to None
-        layer._drag_normal = None
-        layer._drag_up = None
-
-
-def _select_points_from_drag(
-    layer: Points, modify_selection: bool, n_display: int
-) -> None:
-    """Select points on a Points layer after a drag event.
-
-    Parameters
-    ----------
-    layer : napari.layers.Points
-        The points layer to select points on.
-    modify_selection : bool
-        Set to true if the selection should modify the current selected data
-        in layer.selected_data.
-    n_display : int
-        The number of dimensions current being displayed
-    """
-    if len(layer._view_data) == 0:
-        # if no data in view, there isn't any data to select
-        layer.selected_data = set()
-    assert layer._drag_box is not None
-    # if there is data in view, find the points in the drag box
-    if n_display == 2:
-        selection = points_in_box(
-            layer._drag_box, layer._view_data, layer._view_size
-        )
-    else:
-        assert layer._drag_normal is not None
-        assert layer._drag_up is not None
-        selection = _points_in_box_3d(
-            layer._drag_box,
-            layer._view_data,
-            layer._view_size,
-            layer._drag_normal,
-            layer._drag_up,
-        )
-
-    # If shift combine drag selection with existing selected ones
-    if modify_selection:
-        new_selected = layer._indices_view[selection]
-        target = set(layer.selected_data).symmetric_difference(
-            set(new_selected)
-        )
-        layer.selected_data = list(target)
-    else:
-        layer.selected_data = layer._indices_view[selection]

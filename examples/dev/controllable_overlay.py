@@ -14,7 +14,7 @@ from napari.components.overlays import SelectionBoxOverlay
 from napari.components.overlays.interaction_box import InteractionBoxHandle
 from napari.layers import Image
 from napari.layers.utils.interaction_box import (
-    generate_interaction_box_vertices,
+    generate_interaction_box_handles,
     get_nearby_handle,
 )
 
@@ -204,7 +204,7 @@ def highlight_roi_box_handles(layer: Image, event: NapariMouseEvent) -> None:
     pos = np.array(world_to_data(event.position))[event.dims_displayed][::-1]
 
     top_left, bot_right = layer._overlays['selection_no_rotation'].bounds
-    handle_coords = generate_interaction_box_vertices(
+    handle_coords = generate_interaction_box_handles(
         top_left[::-1], bot_right[::-1], handles=True
     )
     nearby_handle = get_nearby_handle(pos, handle_coords)

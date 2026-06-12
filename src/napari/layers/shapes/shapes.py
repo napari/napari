@@ -14,7 +14,7 @@ from vispy.color import get_color_names
 from napari.layers.base import Layer, _LayerSlicingState, no_op
 from napari.layers.base._base_constants import ActionType
 from napari.layers.base._base_mouse_bindings import (
-    highlight_box_handles,
+    highlight_transform_box_handles,
     transform_with_box,
 )
 from napari.layers.shapes._accelerated_triangulate_dispatch import (
@@ -387,7 +387,7 @@ class Shapes(Layer):
 
     _move_modes: ClassVar[dict[Mode, Callable[[Shapes, Event], Any]]] = {
         Mode.PAN_ZOOM: no_op,
-        Mode.TRANSFORM: highlight_box_handles,
+        Mode.TRANSFORM: highlight_transform_box_handles,
         Mode.SELECT: highlight,
         Mode.DIRECT: highlight,
         Mode.VERTEX_INSERT: highlight,
