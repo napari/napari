@@ -6,7 +6,7 @@ aiobotocore==3.7.0
     # via s3fs
 aiohappyeyeballs==2.6.2
     # via aiohttp
-aiohttp==3.14.0
+aiohttp==3.14.1
     # via
     #   napari (pyproject.toml)
     #   aiobotocore
@@ -45,7 +45,7 @@ babel==2.18.0
     #   napari (pyproject.toml)
     #   pydata-sphinx-theme
     #   sphinx
-beautifulsoup4==4.14.3
+beautifulsoup4==4.15.0
     # via
     #   gdown
     #   pydata-sphinx-theme
@@ -126,11 +126,11 @@ dask==2026.3.0
     #   bioio-tifffile
     #   distributed
     #   trackastra
-debugpy==1.8.20
+debugpy==1.8.21
     # via ipykernel
 decorator==5.3.1
     # via ipython
-distlib==0.4.0
+distlib==0.4.1
     # via virtualenv
 distributed==2026.3.0
     # via dask
@@ -155,7 +155,7 @@ executing==2.2.1
     # via stack-data
 fastjsonschema==2.21.2
     # via nbformat
-filelock==3.29.0
+filelock==3.29.1
     # via
     #   gdown
     #   python-discovery
@@ -208,14 +208,14 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.155.1
+hypothesis==6.155.2
     # via napari (pyproject.toml)
-idna==3.17
+idna==3.18
     # via
     #   anyio
     #   requests
     #   yarl
-imagecodecs==2026.5.10
+imagecodecs==2026.6.6
     # via
     #   bioio-ome-tiff
     #   bioio-tifffile
@@ -249,7 +249,7 @@ ipykernel==6.31.0
     #   myst-nb
     #   napari-console
     #   qtconsole
-ipython==9.14.0
+ipython==9.14.1
     # via
     #   napari (pyproject.toml)
     #   ipykernel
@@ -286,7 +286,7 @@ jsonschema-specifications==2025.9.1
     # via jsonschema
 jupyter-cache==1.0.1
     # via myst-nb
-jupyter-client==8.8.0
+jupyter-client==8.9.0
     # via
     #   ipykernel
     #   nbclient
@@ -399,6 +399,8 @@ napari-sphinx-theme==1.1.3
     # via napari (pyproject.toml:docs)
 napari-svg==0.2.1
     # via napari (pyproject.toml)
+narwhals==2.22.1
+    # via scikit-learn
 natsort==8.4.0
     # via
     #   nbatch
@@ -406,7 +408,7 @@ natsort==8.4.0
     #   seedir
 nbatch==0.0.5
     # via ndevio
-nbclient==0.10.4
+nbclient==0.11.0
     # via
     #   jupyter-cache
     #   myst-nb
@@ -822,7 +824,7 @@ scikit-image==0.26.0
     #   bioio-ome-zarr
     #   napari-skimage
     #   trackastra
-scikit-learn==1.8.0
+scikit-learn==1.9.0
     # via
     #   glasbey
     #   nilearn
@@ -848,7 +850,7 @@ shiboken6==6.10.3
     #   pyside6-essentials
 six==1.17.0
     # via python-dateutil
-snowballstemmer==3.1.0
+snowballstemmer==3.1.1
     # via sphinx
 sortedcontainers==2.4.0
     # via
@@ -965,14 +967,14 @@ tornado==6.5.6
     #   distributed
     #   ipykernel
     #   jupyter-client
-tqdm==4.67.3
+tqdm==4.68.1
     # via
     #   napari (pyproject.toml)
     #   gdown
     #   trackastra
 trackastra==0.5.3
     # via napari (pyproject.toml:docs)
-traitlets==5.15.0
+traitlets==5.15.1
     # via
     #   ipykernel
     #   ipython
@@ -986,7 +988,7 @@ triangle==20250106
     # via napari (pyproject.toml:docs)
 triton==3.7.0
     # via torch
-typer==0.26.4
+typer==0.26.7
     # via
     #   geff
     #   npe2
@@ -1000,6 +1002,7 @@ typing-extensions==4.15.0
     #   beautifulsoup4
     #   flexcache
     #   flexparser
+    #   jupyter-client
     #   macro-kit
     #   magic-class
     #   magicgui
@@ -1034,7 +1037,7 @@ urllib3==2.7.0
     #   botocore
     #   distributed
     #   requests
-uvicorn==0.48.0
+uvicorn==0.49.0
     # via sphinx-autobuild
 virtualenv==21.4.2
     # via napari (pyproject.toml)
@@ -1044,7 +1047,7 @@ vispy==0.16.2
     #   napari-svg
 watchfiles==1.2.0
     # via sphinx-autobuild
-wcwidth==0.7.0
+wcwidth==0.8.1
     # via prompt-toolkit
 websockets==16.0
     # via sphinx-autobuild
