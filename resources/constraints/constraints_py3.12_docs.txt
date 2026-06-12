@@ -697,8 +697,10 @@ pyproject-hooks==1.2.0
     # via build
 pyqt6==6.11.0
     # via napari (pyproject.toml)
-pyqt6-qt6==6.11.1
-    # via pyqt6
+pyqt6-qt6==6.11.0
+    # via
+    #   napari (pyproject.toml)
+    #   pyqt6
 pyqt6-sip==13.11.1
     # via pyqt6
 pyrect==0.2.0
