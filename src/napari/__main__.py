@@ -5,6 +5,7 @@ napari command line viewer.
 import argparse
 import contextlib
 import logging
+import subprocess
 import sys
 import warnings
 from ast import literal_eval
@@ -209,9 +210,6 @@ def parse_sys_argv():
 
 
 def _run() -> None:
-    from napari import run
-    from napari.settings import get_settings
-
     """Main program."""
     args, kwargs = parse_sys_argv()
 
@@ -225,6 +223,8 @@ def _run() -> None:
     )
 
     if args.reset:
+        from napari.settings import get_settings
+
         if args.settings_path:
             settings = get_settings(path=args.settings_path)
         else:
@@ -232,6 +232,14 @@ def _run() -> None:
         settings.reset()
         settings.save()
         sys.exit('Resetting settings to default values.\n')
+
+    splash_proc = subprocess.Popen(
+        [
+            sys.executable,
+            '-m',
+            'napari._splash',
+        ]
+    )
 
     if args.plugin:
         # make sure plugin is only used when files are specified
@@ -276,9 +284,10 @@ def _run() -> None:
     # once napari has finished starting
     # but in the meantime if the garbage collector runs;
     # in a way that is machine, os, time (and likely weather dependant).
-    # it will collect it and hang napari at start time.
-    # don't show viewer until we've processed all the args
-    viewer = Viewer(show=False)
+    # it will collect it and hang napari at start time.viewer
+
+    # don't show welcome screen until we've processed all the args, for performance
+    viewer = Viewer(show_welcome_screen=False)
     _run_configured_startup_script()
 
     # For backwards compatibility
@@ -342,8 +351,17 @@ def _run() -> None:
     if running_as_constructor_app():
         install_certifi_opener()
         maybe_patch_conda_exe()
-    # now that we've processed all the args, show viewer
-    viewer.show()
+
+    # now that we've processed all the args, show welcome screen if needed
+    viewer.welcome_screen.visible = True
+
+    # hide the splash screen once the viewer is shown
+    from qtpy.QtCore import QTimer
+
+    QTimer.singleShot(100, splash_proc.terminate)
+
+    from napari import run
+
     run(gui_exceptions=True)
 
 
