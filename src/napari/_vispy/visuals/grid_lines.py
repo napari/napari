@@ -98,18 +98,9 @@ class GridLines3D(Node):
     def set_view_direction(
         self,
         ranges: tuple[RangeTuple],
-        view_direction: tuple[int, ...],
-        orientation_flip: tuple[int, ...],
+        view_is_flipped: tuple[bool, ...],
         zoom: float,
     ) -> None:
-        view_is_flipped = tuple(
-            d * f >= 0
-            for d, f in zip(view_direction, orientation_flip, strict=False)
-        )
-
-        if len(ranges) == 2:
-            ranges = ranges + ((0, 0),)
-            view_is_flipped = view_is_flipped + (False,)
 
         # translate everything with the grid on xy plane, we transpose later
         far_bounds = []
