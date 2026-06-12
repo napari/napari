@@ -35,8 +35,8 @@ class NapariMouseEvent(MouseEvent):
     def __init__(
         self,
         event: MouseEvent,
-        view_direction: npt.NDArray[np.float64],
-        up_direction: np.ndarray | None,
+        view_direction: npt.NDArray[np.float64] | None,
+        up_direction: npt.NDArray[np.float64] | None,
         camera_zoom: float,
         position: tuple[float, float],
         dims_displayed: list[int],
