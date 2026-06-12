@@ -98,8 +98,9 @@ pyside6 = [
     "PySide6 > 6.7, !=6.11.1"  # Qt 6.11.1 causes dock widget and layout resizing problems
 ]
 pyqt6 = [
-    "PyQt6 > 6.5, !=6.11.1",  # Qt 6.11.1 causes dock widget and layout resizing problems
-    "PyQt6 != 6.6.1 ; platform_system == 'Darwin'"
+    "PyQt6 > 6.5",
+    "PyQt6 != 6.6.1 ; platform_system == 'Darwin'",
+    "pyqt6-qt6 != 6.11.1"  # Qt 6.11.1 causes dock widget and layout resizing problems
 ]
 pyside = [
     "napari[pyside6]"
