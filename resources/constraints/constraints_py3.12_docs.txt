@@ -6,7 +6,7 @@ aiobotocore==3.7.0
     # via s3fs
 aiohappyeyeballs==2.6.2
     # via aiohttp
-aiohttp==3.13.5
+aiohttp==3.14.0
     # via
     #   napari (pyproject.toml)
     #   aiobotocore
