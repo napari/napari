@@ -14,6 +14,7 @@ from typing import Any
 
 from napari import Viewer
 from napari.errors import ReaderPluginError
+from napari.utils._logging import register_logger_to_napari_handler
 from napari.utils._startup_script import _run_configured_startup_script
 from napari.utils.misc import maybe_patch_conda_exe
 from napari.utils.translations import trans
@@ -232,6 +233,8 @@ def _run() -> None:
         settings.reset()
         settings.save()
         sys.exit('Resetting settings to default values.\n')
+
+    register_logger_to_napari_handler()
 
     if args.plugin:
         # make sure plugin is only used when files are specified
