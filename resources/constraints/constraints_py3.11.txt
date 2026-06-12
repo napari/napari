@@ -397,9 +397,9 @@ pyperclip==1.11.0
     # via mouseinfo
 pyproject-hooks==1.2.0
     # via build
-pyqt6==6.11.0
+pyqt6==6.10.2
     # via napari (pyproject.toml)
-pyqt6-qt6==6.11.0
+pyqt6-qt6==6.10.2
     # via
     #   napari (pyproject.toml)
     #   pyqt6
@@ -409,13 +409,13 @@ pyrect==0.2.0
     # via pygetwindow
 pyscreeze==1.0.1
     # via pyautogui
-pyside6==6.11.0
+pyside6==6.10.3
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
-pyside6-addons==6.11.0
+pyside6-addons==6.10.3
     # via pyside6
-pyside6-essentials==6.11.0
+pyside6-essentials==6.10.3
     # via
     #   pyside6
     #   pyside6-addons
@@ -503,7 +503,7 @@ setuptools==81.0.0
     # via torch
 shellingham==1.5.4
     # via typer
-shiboken6==6.11.0
+shiboken6==6.10.3
     # via
     #   pyside6
     #   pyside6-addons
