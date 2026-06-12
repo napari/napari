@@ -1699,26 +1699,27 @@ def test_color_mapping_when_color_is_changed():
 
 
 def test_color_mapping_with_show_selected_label():
-    """Checks if the color mapping is computed correctly when show_selected_label is activated."""
+    """Layer-level get_color filters non-selected labels when show_selected_label is on."""
 
     data = np.arange(5, dtype=np.int32)[:, np.newaxis].repeat(5, axis=1)
     layer = Labels(data)
-    mapped_colors_all = layer.colormap.map(data)
+    original_colors = {label: layer.get_color(label) for label in range(1, 5)}
+    background_color = layer.colormap.map(layer.colormap.background_value)
 
     layer.show_selected_label = True
 
-    for selected_label in range(5):
+    for selected_label in range(1, 5):
         layer.selected_label = selected_label
-        label_mask = data == selected_label
-        mapped_colors = layer.colormap.map(data)
-
-        npt.assert_allclose(
-            mapped_colors[label_mask], mapped_colors_all[label_mask]
-        )
-        npt.assert_allclose(mapped_colors[np.logical_not(label_mask)], 0)
+        for label in range(1, 5):
+            color = layer.get_color(label)
+            if label == selected_label:
+                npt.assert_allclose(color, original_colors[label])
+            else:
+                npt.assert_allclose(color, background_color)
 
     layer.show_selected_label = False
-    assert np.allclose(layer.colormap.map(data), mapped_colors_all)
+    for label, color in original_colors.items():
+        npt.assert_allclose(layer.get_color(label), color)
 
 
 def test_show_selected_label_preserved_after_shuffle():
@@ -1983,3 +1984,90 @@ def test_view_dtype(visible, dtype):
 def test_view_dtype_int16(visible, dtype):
     layer = Labels(np.arange(25, dtype=dtype).reshape(5, 5), visible=visible)
     assert layer._slice.image.view.dtype == np.uint16
+
+
+def test_show_selected_label_persists_through_shuffle():
+    layer = Labels(np.zeros((4, 4), dtype=np.uint8))
+    layer.selected_label = 2
+    layer.show_selected_label = True
+
+    layer.new_colormap(seed=42)
+
+    assert layer.show_selected_label is True
+    assert layer.selected_label == 2
+
+
+def test_show_selected_label_persists_across_colormap_assign():
+    layer = Labels(np.zeros((4, 4), dtype=np.uint8))
+    layer.selected_label = 3
+    layer.show_selected_label = True
+
+    layer.colormap = label_colormap(49, seed=0.7)
+
+    assert layer.show_selected_label is True
+    assert layer.selected_label == 3
+
+
+def test_show_selected_label_persists_across_color_mode_round_trip():
+    """AUTO → DIRECT → AUTO via colormap setter preserves selection state."""
+    layer = Labels(np.zeros((4, 4), dtype=np.uint8))
+    layer.selected_label = 1
+    layer.show_selected_label = True
+
+    direct = DirectLabelColormap(
+        color_dict={1: 'red', 2: 'green', None: 'transparent'}
+    )
+    layer.colormap = direct
+    assert layer.show_selected_label is True
+    assert layer.selected_label == 1
+
+    layer.colormap = layer._original_random_colormap
+    assert layer.show_selected_label is True
+    assert layer.selected_label == 1
+
+
+def test_labels_constructor_accepts_show_selected_label():
+    layer = Labels(
+        np.zeros((4, 4), dtype=np.uint8),
+        show_selected_label=True,
+        selected_label=3,
+    )
+    assert layer.show_selected_label is True
+    assert layer.selected_label == 3
+
+
+def test_get_state_round_trips_show_selected_label():
+    layer = Labels(np.zeros((4, 4), dtype=np.uint8))
+    layer.selected_label = 4
+    layer.show_selected_label = True
+
+    state = layer._get_state()
+    assert state['show_selected_label'] is True
+    assert state['selected_label'] == 4
+
+    new_layer = Labels(**state)
+    assert new_layer.show_selected_label is True
+    assert new_layer.selected_label == 4
+
+
+def test_show_selected_label_survives_deepcopy():
+    layer = Labels(np.zeros((4, 4), dtype=np.uint8))
+    layer.selected_label = 2
+    layer.show_selected_label = True
+
+    clone = copy.deepcopy(layer)
+    assert clone.show_selected_label is True
+    assert clone.selected_label == 2
+
+
+def test_show_selected_label_setter_fires_event_once():
+    layer = Labels(np.zeros((4, 4), dtype=np.uint8))
+    fired = []
+    layer.events.show_selected_label.connect(
+        lambda e: fired.append(e.show_selected_label)
+    )
+
+    layer.show_selected_label = True
+    layer.show_selected_label = False
+
+    assert fired == [True, False]
