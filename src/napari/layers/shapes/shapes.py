@@ -1679,7 +1679,7 @@ class Shapes(Layer):
         highlights (interaction box, vertices, and outlines) are only drawn for
         the shapes visible in the current slice.
         """
-        indices_view = self._indices_view
+        indices_view = set(self._indices_view.tolist())
         return [i for i in self.selected_data if i in indices_view]
 
     @property
@@ -2648,14 +2648,7 @@ class Shapes(Layer):
         # Only highlight selected shapes that are in view.
         selected_in_view = self._selected_data_in_view
 
-        # Ignore a hover on a shape that is not in view.
-        hover_shape = self._value[0]
-        if hover_shape is not None and hover_shape not in self._indices_view:
-            hover_shape = None
-
-        if self._highlight_visible and (
-            len(selected_in_view) > 0 or hover_shape is not None
-        ):
+        if self._highlight_visible and len(selected_in_view) > 0:
             if self._mode == Mode.SELECT and self._selected_box is not None:
                 # In select mode show the interaction bounding box (with its
                 # vertices and rotation handle). ``_selected_box`` is the single

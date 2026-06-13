@@ -54,8 +54,6 @@ def test_preserve_selection_toggling_3d():
 
     # Toggle 3D mode
     viewer.dims.ndisplay = 3
-    # In some cases we might need to wait for events or call _set_view_slice
-    # but ViewerModel usually handles this.
 
     # Selection should be preserved
     assert layer.selected_data == {0}
