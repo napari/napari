@@ -1,6 +1,45 @@
 import numpy as np
 
 from napari.components import ViewerModel
+from napari.components.dims import Dims
+from napari.layers import Shapes
+
+
+def test_selected_data_in_view():
+    """``_selected_data_in_view`` returns the absolute indices of the selected
+    shapes that fall in the current slice (selection itself is preserved)."""
+    # Shape 0 at z=0, shape 1 at z=1.
+    data = [
+        np.array([[0, 0, 0], [0, 10, 0], [0, 10, 10], [0, 0, 10]]),
+        np.array([[1, 0, 0], [1, 10, 0], [1, 10, 10], [1, 0, 10]]),
+    ]
+    layer = Shapes(data, shape_type='rectangle')
+    dims = Dims(ndim=3, ndisplay=2, order=(0, 1, 2))
+
+    layer.selected_data = {0, 1}
+
+    # View at z=0: only shape 0 is in view.
+    dims.set_point(0, 0)
+    layer._slice_dims(dims)
+    assert list(layer._indices_view) == [0]
+    assert layer._selected_data_in_view == [0]
+
+    # View at z=1: only shape 1 is in view (selection is unchanged).
+    dims.set_point(0, 1)
+    layer._slice_dims(dims)
+    assert list(layer._indices_view) == [1]
+    assert layer._selected_data_in_view == [1]
+
+    # View at z=0.5: no shapes in view.
+    dims.set_point(0, 0.5)
+    layer._slice_dims(dims)
+    assert layer._selected_data_in_view == []
+
+    # With nothing selected it is empty regardless of the slice.
+    dims.set_point(0, 0)
+    layer._slice_dims(dims)
+    layer.selected_data = set()
+    assert layer._selected_data_in_view == []
 
 
 def test_preserve_selection_toggling_3d():
