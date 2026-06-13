@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Generator
 
 
-def get_tb_formatter() -> Callable[[ExcInfo, bool, str | None], str]:
+def get_tb_formatter() -> Callable[[ExcInfo, bool, str], str]:
     """Return a formatter callable that uses IPython VerboseTB if available.
 
     Imports IPython lazily if available to take advantage of ultratb.VerboseTB.
@@ -36,18 +36,16 @@ def get_tb_formatter() -> Callable[[ExcInfo, bool, str | None], str]:
         def format_exc_info(
             info: ExcInfo,
             as_html: bool,
-            color: str | None = None,
+            color: str = '',
         ) -> str:
             # avoid verbose printing of the array data
             with np.printoptions(precision=5, threshold=10, edgeitems=2):
                 if IPython.version_info >= (9, 0):
                     vbtb = IPython.core.ultratb.VerboseTB(
-                        theme_name=(color or 'Neutral').lower()
+                        theme_name=color.lower()
                     )
                 else:
-                    vbtb = IPython.core.ultratb.VerboseTB(
-                        color_scheme=color or 'Neutral'
-                    )
+                    vbtb = IPython.core.ultratb.VerboseTB(color_scheme=color)
                 if as_html:
                     ansi_string = vbtb.text(*info).replace(' ', '&nbsp;')
                     html = ''.join(ansi2html(ansi_string))
@@ -95,7 +93,7 @@ def get_tb_formatter() -> Callable[[ExcInfo, bool, str | None], str]:
             def format_exc_info(
                 info: ExcInfo,
                 as_html: bool,
-                color: str | None = None,
+                color: str = '',
             ) -> str:
                 # avoid verbose printing of the array data
                 with np.printoptions(precision=5, threshold=10, edgeitems=2):
@@ -139,7 +137,7 @@ def get_tb_formatter() -> Callable[[ExcInfo, bool, str | None], str]:
             def format_exc_info(
                 info: ExcInfo,
                 as_html: bool,
-                color: str | None = None,
+                color: str = '',
             ) -> str:
                 # avoid verbose printing of the array data
                 with np.printoptions(precision=5, threshold=10, edgeitems=2):
