@@ -133,6 +133,7 @@ class VispyImageLayer(VispyScalarFieldBaseLayer):
         node=None,
         texture_format='auto',
         layer_node_class=ImageLayerNode,
+        **kwargs,
     ) -> None:
         # Track order to detect transpose/roll. Needs to be set before super().__init__()
         self._last_order = None
@@ -142,6 +143,7 @@ class VispyImageLayer(VispyScalarFieldBaseLayer):
             node=node,
             texture_format=texture_format,
             layer_node_class=layer_node_class,
+            **kwargs,
         )
 
         self.layer.events.interpolation2d.connect(

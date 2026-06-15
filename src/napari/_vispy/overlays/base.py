@@ -14,8 +14,8 @@ from napari.utils.theme import get_theme
 
 if TYPE_CHECKING:
     from vispy.scene import Node, ViewBox
-    from vispy.visuals.text.text import FontManager
 
+    from napari._vispy.utils.qt_font import FontInfo
     from napari.components.overlays import CanvasOverlay, Overlay, SceneOverlay
     from napari.components.viewer_model import ViewerModel
     from napari.layers import Layer
@@ -31,23 +31,20 @@ class VispyBaseOverlay:
     """
 
     overlay: Overlay
-    viewer: ViewerModel
 
     def __init__(
         self,
         *,
         overlay: Overlay,
+        font_info: FontInfo,
         viewer: ViewerModel,
         node: Node,
         parent: ViewBox | None = None,
-        font_manager: FontManager | None = None,
-        font_family: str = 'OpenSans',
     ) -> None:
         super().__init__()
         self.overlay = overlay
+        self._font_info = font_info
         self.viewer = viewer
-        self.font_manager = font_manager
-        self.font_family = font_family
 
         self.node = node
         self.node.order = self.overlay.order
@@ -104,13 +101,9 @@ class VispyCanvasOverlay(VispyBaseOverlay):
 
     overlay: CanvasOverlay
 
-    def __init__(
-        self, *, overlay, viewer, node, parent=None, **kwargs
-    ) -> None:
+    def __init__(self, **kwargs) -> None:
 
-        super().__init__(
-            overlay=overlay, viewer=viewer, node=node, parent=parent, **kwargs
-        )
+        super().__init__(**kwargs)
         self.x_size = 0.0
         self.y_size = 0.0
         self.node.transform = STTransform()
