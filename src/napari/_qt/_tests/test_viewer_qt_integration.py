@@ -217,7 +217,7 @@ def test_welcome_widget_refreshes_tip_on_shortcut_change(make_napari_viewer):
     )
 
     with patch(
-        'napari.utils.tips.get_command_shortcut_and_description',
+        'napari.utils.tips._get_command_shortcut_and_description',
         return_value=('Ctrl+O', 'Open File(s)...'),
     ):
         welcome.refresh()
@@ -227,7 +227,7 @@ def test_welcome_widget_refreshes_tip_on_shortcut_change(make_napari_viewer):
         )
 
     with patch(
-        'napari.utils.tips.get_command_shortcut_and_description',
+        'napari.utils.tips._get_command_shortcut_and_description',
         return_value=('Cmd+O', 'Open File(s)...'),
     ):
         action_manager.events.shortcut_changed(
