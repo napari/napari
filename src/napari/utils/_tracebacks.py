@@ -36,7 +36,7 @@ def get_tb_formatter() -> Callable[[ExcInfo, bool, str], str]:
         def format_exc_info(
             info: ExcInfo,
             as_html: bool,
-            color: str = '',
+            color: str = 'Neutral',
         ) -> str:
             # avoid verbose printing of the array data
             with np.printoptions(precision=5, threshold=10, edgeitems=2):
