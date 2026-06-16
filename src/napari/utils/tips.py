@@ -35,7 +35,7 @@ NAPARI_TIPS: Final[tuple[str, ...]] = (
 )
 
 
-def get_command_shortcut_and_description(
+def _get_command_shortcut_and_description(
     command_id: str,
 ) -> tuple[str | None, str | None]:
     """Get the command shortcut and description from a command id."""
@@ -78,7 +78,7 @@ def format_tip(tip: str) -> str:
     # TODO: this should use template strings in the future
     for match in re.finditer(r'{(.*?)}', tip):
         command_id = match.group(1)
-        shortcut, _ = get_command_shortcut_and_description(command_id)
+        shortcut, _ = _get_command_shortcut_and_description(command_id)
         # this can be none at launch (not yet initialized), will be updated after
         if shortcut is None:
             # maybe it was just a direct keybinding given

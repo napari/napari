@@ -19,8 +19,8 @@ from napari import __version__
 from napari.utils.action_manager import action_manager
 from napari.utils.tips import (
     NAPARI_TIPS,
+    _get_command_shortcut_and_description,
     format_tip,
-    get_command_shortcut_and_description,
 )
 
 if TYPE_CHECKING:
@@ -168,7 +168,7 @@ class QtWelcomeWidget(QWidget):
             shortcut_label,
             description_label,
         ) in self._shortcut_rows:
-            shortcut, description = get_command_shortcut_and_description(
+            shortcut, description = _get_command_shortcut_and_description(
                 command_id
             )
             shortcut_label.setText(shortcut or '')
