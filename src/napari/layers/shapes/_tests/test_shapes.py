@@ -2674,3 +2674,23 @@ def test_finish_drawing_called_when_is_creating():
         layer.mode = 'select'
         mock_finish.assert_called_once()
     assert not layer._is_creating
+
+
+@pytest.mark.parametrize('remove', [[0], [1], [2], [1, 2]])
+def test_remove_shape_that_is_value(remove: list[int]):
+    layer = Shapes(
+        [
+            [(0, 0), (1, 1), (1, 0)],
+            [(0, 0), (1, 1), (0, 1)],
+            [(0, 0), (-1, -1), (-1, 0)],
+        ],
+        shape_type='polygon',
+    )
+    layer.events.highlight.connect(layer._outline_shapes)
+    layer._value = (1, None)
+    layer.selected_data = {1}
+
+    layer.remove(remove)
+
+    assert len(layer.data) > 0
+    assert layer._value == (None, None)
