@@ -261,15 +261,12 @@ def local_zarr_dataset(
     multiscales = group.attrs.get('multiscales', [{}])
     level_paths = [d['path'] for d in multiscales[0].get('datasets', [])]
     if not level_paths:
-        level_paths = sorted(
-            k for k in group.keys() if k.isdigit()
-        )
+        level_paths = sorted(k for k in group.keys() if k.isdigit())
 
     arrays = [group[p] for p in level_paths]
     ndim = arrays[0].ndim
     scale_factors = [
-        tuple(2**level for _ in range(ndim))
-        for level in range(len(arrays))
+        tuple(2**level for _ in range(ndim)) for level in range(len(arrays))
     ]
     return {
         'container': str(path),

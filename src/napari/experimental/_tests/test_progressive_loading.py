@@ -1176,8 +1176,6 @@ def test_glir_hold_defers_all_uploads(monkeypatch):
 
     from napari.experimental import _glir_metering as gm
 
-
-
     class FakeParser:
         def __init__(self):
             self._objects = {}
@@ -1308,8 +1306,10 @@ def test_transform_applied_at_swap_not_before(
     assert dbuf.dirty
 
     qtbot.waitUntil(
-        lambda: dbuf.present()
-        or np.array_equal(np.asarray(transform.matrix), new_matrix),
+        lambda: (
+            dbuf.present()
+            or np.array_equal(np.asarray(transform.matrix), new_matrix)
+        ),
         timeout=5000,
     )
     # the swap applied the captured matrix atomically with the content
@@ -1419,7 +1419,9 @@ def test_interactive_step_disabled(
     viewer = make_napari_viewer()
     viewer.dims.ndisplay = 3
     layer = add_progressive_loading_image(
-        multiscale_3d_arrays, viewer=viewer, interactive_step_rate=1.0,
+        multiscale_3d_arrays,
+        viewer=viewer,
+        interactive_step_rate=1.0,
     )
     loader = layer.metadata['progressive_loader']
     _wait_for_idle_loader(qtbot, loader)

@@ -234,9 +234,9 @@ class VispyBaseLayer(ABC, Generic[_L]):
                 (
                     # displayed dimensions, order inverted to match VisPy,
                     # then adjust by half a pixel per downscale level
-                    self.layer.downsample_factors[data_level][
-                        dims_displayed
-                    ][::-1]
+                    self.layer.downsample_factors[data_level][dims_displayed][
+                        ::-1
+                    ]
                     - 1
                 )
                 / 2

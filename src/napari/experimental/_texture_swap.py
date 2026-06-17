@@ -461,9 +461,7 @@ class DoubleBufferedVolumeTexture:
             transform is not None
             and self._pending_matrix is not None
             and self._held_matrix is not None
-            and np.array_equal(
-                np.asarray(transform.matrix), self._held_matrix
-            )
+            and np.array_equal(np.asarray(transform.matrix), self._held_matrix)
         ):
             transform.matrix = self._pending_matrix
         self._pending_matrix = None

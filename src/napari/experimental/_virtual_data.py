@@ -93,7 +93,9 @@ class VirtualArrayView:
     """
 
     def __init__(
-        self, data: VirtualData, index: tuple[int | tuple[int, int], ...],
+        self,
+        data: VirtualData,
+        index: tuple[int | tuple[int, int], ...],
     ):
         # index has one entry per dimension of ``data``:
         # an int collapses the dimension, a (start, stop) pair keeps it.
@@ -275,7 +277,9 @@ class VirtualData:
             return tuple(self._min_coord), tuple(self._max_coord)
 
     def chunk_aligned_interval(
-        self, min_coord, max_coord,
+        self,
+        min_coord,
+        max_coord,
     ) -> tuple[list[int], list[int]]:
         """Expand ``[min_coord, max_coord)`` outward to chunk boundaries."""
         lo: list[int] = []
@@ -346,7 +350,8 @@ class VirtualData:
                     new_shape,
                 ):
                     next_hyperslice = np.ascontiguousarray(
-                        content, dtype=self.dtype,
+                        content,
+                        dtype=self.dtype,
                     )
             if next_hyperslice is None:
                 next_hyperslice = np.zeros(new_shape, dtype=self.dtype)
@@ -407,7 +412,9 @@ class VirtualData:
                 if hi <= lo:
                     return
                 dst_key.append(
-                    slice(lo - self._min_coord[dim], hi - self._min_coord[dim]),
+                    slice(
+                        lo - self._min_coord[dim], hi - self._min_coord[dim]
+                    ),
                 )
                 src_key.append(slice(lo - int(sl.start), hi - int(sl.start)))
             expected = tuple(s.stop - s.start for s in src_key)
@@ -426,7 +433,8 @@ class VirtualData:
 
     def __array__(self, dtype=None, copy=None) -> np.ndarray:
         return VirtualArrayView(
-            self, tuple((0, s) for s in self.shape),
+            self,
+            tuple((0, s) for s in self.shape),
         ).__array__(dtype=dtype)
 
     def __repr__(self) -> str:
@@ -471,7 +479,9 @@ class MultiScaleVirtualData:
             [
                 hr_dim / level_dim
                 for hr_dim, level_dim in zip(
-                    highest_res.shape, vdata.shape, strict=True,
+                    highest_res.shape,
+                    vdata.shape,
+                    strict=True,
                 )
             ]
             for vdata in self._data
@@ -540,7 +550,10 @@ class MultiScaleVirtualData:
         self._data[level].set_interval(min_coord, max_coord, backdrop=backdrop)
 
     def fill_unloaded_from(
-        self, level: int, src_level: int, region=None,
+        self,
+        level: int,
+        src_level: int,
+        region=None,
     ) -> bool:
         """Fill not-yet-loaded chunk regions of ``level`` from ``src_level``.
 
@@ -619,7 +632,8 @@ class MultiScaleVirtualData:
                 dst_key = tuple(
                     slice(max(rel_start, off), rel_stop)
                     for (rel_start, rel_stop, _absolute), off in zip(
-                        combo, offset,
+                        combo,
+                        offset,
                     )
                 )
                 src_key = tuple(

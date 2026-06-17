@@ -658,9 +658,7 @@ class ProgressiveLoader:
             fetch_workers = min(4, n_cpus - 2)
         self._fetch_workers = max(int(fetch_workers), 1)
         self._max_bytes_per_second = (
-            float(max_bytes_per_second)
-            if max_bytes_per_second
-            else None
+            float(max_bytes_per_second) if max_bytes_per_second else None
         )
         self._limiter: _FetchRateLimiter | None = None
         self._resident_limiter: _FetchRateLimiter | None = None

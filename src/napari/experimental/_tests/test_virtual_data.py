@@ -78,7 +78,8 @@ def test_reads_outside_interval_are_zero(dask_array, base_array):
     result = np.asarray(vdata[0:100, 0:120])
     assert result.shape == (100, 120)
     np.testing.assert_array_equal(
-        result[32:64, 40:80], base_array[32:64, 40:80],
+        result[32:64, 40:80],
+        base_array[32:64, 40:80],
     )
     assert result[:32].sum() == 0
     assert result[64:].sum() == 0
@@ -94,7 +95,8 @@ def test_getitem_composes_like_napari_slicing(dask_array, base_array):
     view = vdata[(slice(None), slice(20, 70))]
     point_view = view[(40,)]
     np.testing.assert_array_equal(
-        np.asarray(point_view), base_array[40, 20:70],
+        np.asarray(point_view),
+        base_array[40, 20:70],
     )
 
 
@@ -142,7 +144,8 @@ def test_set_offset_clips_to_interval(dask_array, base_array):
     # write overlaps the interval only partially
     vdata.set_offset((slice(0, 64), slice(0, 80)), base_array[:64, :80])
     np.testing.assert_array_equal(
-        np.asarray(vdata[32:64, 40:80]), base_array[32:64, 40:80],
+        np.asarray(vdata[32:64, 40:80]),
+        base_array[32:64, 40:80],
     )
 
 
@@ -163,7 +166,8 @@ def test_concurrent_reads_and_writes(dask_array, base_array):
         try:
             for _ in range(50):
                 vdata.set_offset(
-                    (slice(0, 32), slice(0, 40)), base_array[:32, :40],
+                    (slice(0, 32), slice(0, 40)),
+                    base_array[:32, :40],
                 )
         except Exception as e:  # pragma: no cover  # noqa: BLE001
             errors.append(e)
@@ -173,7 +177,8 @@ def test_concurrent_reads_and_writes(dask_array, base_array):
             for i in range(50):
                 offset = (i % 2) * 32
                 vdata.set_interval(
-                    (offset, offset), (offset + 64, offset + 80),
+                    (offset, offset),
+                    (offset + 64, offset + 80),
                 )
         except Exception as e:  # pragma: no cover  # noqa: BLE001
             errors.append(e)
@@ -216,7 +221,8 @@ def test_multiscale_backdrop(base_array):
     # make the coarse level resident and loaded
     msvd[1].set_interval((0, 0), coarse.shape)
     msvd[1].set_offset(
-        (slice(0, coarse.shape[0]), slice(0, coarse.shape[1])), coarse,
+        (slice(0, coarse.shape[0]), slice(0, coarse.shape[1])),
+        coarse,
     )
 
     msvd.set_interval(0, (20, 20), (60, 60), backdrop_level=1)
