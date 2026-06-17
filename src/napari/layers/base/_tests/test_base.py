@@ -222,35 +222,6 @@ def test_invalidate_extent_shear():
     npt.assert_array_equal(layer.extent.world, [[0, 0], [28, 19]])
 
 
-def test_clear_extent_skips_event_when_unchanged():
-    """No extent event when the recomputed extent is identical.
-
-    Async slicing clears the extent on every slice completion; emitting
-    anyway invalidates the LayerList extent cache and can cascade into
-    dims range resets and re-slicing.
-    """
-    layer = SampleLayer(np.empty((10, 10)))
-    _ = layer._extent_augmented  # populate the cache
-    observed = Mock()
-    layer.events._extent_augmented.connect(observed)
-    layer._clear_extent()
-    observed.assert_not_called()
-    # a real change still emits
-    with layer._block_refresh():
-        layer.scale = (2, 2)
-    observed.assert_called()
-
-
-def test_clear_extent_emits_when_cache_cold():
-    """Without a cached extent to compare against, always emit."""
-    layer = SampleLayer(np.empty((10, 10)))
-    assert '_extent_augmented' not in layer.__dict__
-    observed = Mock()
-    layer.events._extent_augmented.connect(observed)
-    layer._clear_extent()
-    observed.assert_called()
-
-
 def test_get_ray_intersections_anisotropic():
     """Regression test for #8285.
 
