@@ -1256,29 +1256,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         )
 
     def _clear_extent(self) -> None:
-        """Clear extent cache and emit extent event if the extent changed.
-
-        The emission invalidates the LayerList extent cache, whose next
-        read recomputes the world extent and can reset dims ranges and
-        re-slice every layer. Async slicing calls this on every slice
-        completion, where the extent never changes (it depends on data
-        shape and transforms, not on the slice), so skipping the
-        unchanged case keeps slice completions cheap on the main thread.
-        """
-        old = self.__dict__.get('_extent_augmented')
+        """Clear extent cache and emit extent event."""
         if 'extent' in self.__dict__:
             del self.extent
         if '_extent_augmented' in self.__dict__:
             del self._extent_augmented
-        if old is not None:
-            new = self._extent_augmented
-            if (
-                old.units == new.units
-                and np.array_equal(old.data, new.data)
-                and np.array_equal(old.world, new.world)
-                and np.array_equal(old.step, new.step)
-            ):
-                return
         self.events._extent_augmented()
 
     @property
