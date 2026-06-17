@@ -75,7 +75,8 @@ def test_combobox_populated(multiscale_controls):
     _layer, qtctrl = multiscale_controls
     combo = qtctrl._multiscale_level_control.level_combobox
     assert combo.count() == 1 + len(_MULTISCALE_DATA)
-    assert combo.itemText(0) == 'Auto'
+    # the Auto entry shows the level currently being rendered
+    assert combo.itemText(0) == f'Auto ({_layer.data_level})'
     assert combo.itemData(0) is None
     for i in range(len(_MULTISCALE_DATA)):
         assert combo.itemData(i + 1) == i
