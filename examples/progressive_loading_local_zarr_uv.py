@@ -7,7 +7,7 @@
 # ]
 #
 # [tool.uv.sources]
-# napari = { git = "https://github.com/kephale/napari", rev = "cc1bf8bc" }
+# napari = { git = "https://github.com/kephale/napari", branch = "progressive-loading-rebase" }
 # ///
 """
 Progressive loading: local multiscale zarr via uv

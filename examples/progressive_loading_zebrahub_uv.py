@@ -9,7 +9,7 @@
 # ]
 #
 # [tool.uv.sources]
-# napari = { git = "https://github.com/kephale/napari", rev = "34070a02" }
+# napari = { git = "https://github.com/kephale/napari", branch = "progressive-loading-rebase" }
 # ///
 """
 Progressive loading: zebrahub via uv
