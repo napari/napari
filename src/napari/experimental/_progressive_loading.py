@@ -1708,9 +1708,7 @@ class ProgressiveLoader:
                 dbuf.release_presents()
                 from napari.experimental import _glir_metering
 
-                _glir_metering.add_drain_callback(
-                    self._on_uploads_drained
-                )
+                _glir_metering.add_drain_callback(self._on_uploads_drained)
             return
 
         LOGGER.debug(
