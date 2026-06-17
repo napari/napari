@@ -11,6 +11,7 @@ from napari.utils.tips import format_tip
         (
             'press {Meta+K} to jump',
             'press ⊞+K to jump',
+            'press ⊞+K to jump',
             'press ⌘K to jump',
         ),
         ('{Space} or {Alt}', '␣ or Alt', 'Space or Alt', '␣ or ⌥'),  # multiple
