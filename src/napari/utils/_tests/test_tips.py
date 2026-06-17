@@ -15,7 +15,7 @@ from napari.utils.tips import format_tip
         ),
         ('{Space} or {Alt}', '␣ or Alt', 'Space or Alt', '␣ or ⌥'),  # multiple
         ('{napari.viewer.fit_to_view}', 'Ctrl+0', 'Ctrl+0', '⌘0'),  # appmodel
-        ('{napari:reset_view}', 'Ctrl+R', '⌘R'),  # action manager
+        ('{napari:reset_view}', 'Ctrl+R', 'Ctrl+R', '⌘R'),  # action manager
     ],
 )
 def test_format_tips(raw, formatted_linux, formatted_win, formatted_mac):
