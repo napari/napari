@@ -3,7 +3,7 @@ import pytest
 
 pytest.importorskip('zarr.abc', reason='requires zarr v3')
 
-from napari.experimental._generative_zarr import (  # noqa: E402
+from napari.experimental._generative_zarr import (
     MandelbrotStore,
     MandelbulbStore,
     mandelbrot,
