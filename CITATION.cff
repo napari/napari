@@ -506,5 +506,10 @@ authors:
   affiliation: Institute of Cell Biology, University of Bern, Switzerland
   orcid: https://orcid.org/0000-0002-3956-9363
   alias: hinderling
+- given-names: Omkar
+  family-names: Kabde
+  affiliation: Chaitanya Bharathi Institute of Technology
+  orcid: https://orcid.org/0009-0006-6163-3882
+  alias: omkar-334
 repository-code: https://github.com/napari/napari
 license: BSD-3-Clause
