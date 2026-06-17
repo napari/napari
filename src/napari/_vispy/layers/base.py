@@ -229,11 +229,12 @@ class VispyBaseLayer(ABC, Generic[_L]):
             # sub-volume tiles) can select any level. The data-space
             # offset is mapped to world units with the layer scale.
             layer_scale = np.asarray(self.layer.scale)[dims_displayed][::-1]
+            data_level: int = getattr(self.layer, 'data_level', 0)
             translate += (
                 (
                     # displayed dimensions, order inverted to match VisPy,
                     # then adjust by half a pixel per downscale level
-                    self.layer.downsample_factors[self.layer.data_level][
+                    self.layer.downsample_factors[data_level][
                         dims_displayed
                     ][::-1]
                     - 1
