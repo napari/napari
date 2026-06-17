@@ -642,13 +642,34 @@ QListWidget#Preferences {
  background: {{ background }};
 }
 
+QtListView {
+  background: {{ background }};
+  outline: none;
+}
+
+/* ------ Welcome Widget ------ */
+
 QtWelcomeWidget, QtWelcomeWidget[drag=false] {
   background: {{ canvas }};
 }
 
-QtListView {
-  background: {{ background }};
-  outline: none;
+QtWelcomeWidget[drag=true] {
+  background: {{ highlight }};
+}
+
+QtWelcomeLabel {
+  color: {{ darken(text, 25) }};
+  font-size: {{ increase(font_size, 6) }};
+}
+
+QtShortcutLabel {
+  color: {{ darken(text, 25) }};
+  font-size: {{ increase(font_size, 6) }};
+}
+
+QtVersionLabel {
+  color: {{ darken(text, 25) }};
+  font-size: {{ increase(font_size, 6) }};
 }
 
 /* ------------- Narrow scrollbar for qtlayer list --------- */
