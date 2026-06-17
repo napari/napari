@@ -1286,7 +1286,7 @@ def test_transform_applied_at_swap_not_before(
     matching the still-rendered front content; at the swap the captured
     matrix applies.
     """
-    viewer, layer, loader = _engaged_3d_dbuf(
+    _viewer, _layer, loader = _engaged_3d_dbuf(
         qtbot, make_napari_viewer, multiscale_3d_arrays
     )
     dbuf = loader._dbuf
@@ -1314,7 +1314,8 @@ def test_transform_applied_at_swap_not_before(
     )
     # the swap applied the captured matrix atomically with the content
     assert np.array_equal(np.asarray(transform.matrix), new_matrix)
-    assert dbuf._held_matrix is None and dbuf._pending_matrix is None
+    assert dbuf._held_matrix is None
+    assert dbuf._pending_matrix is None
 
 
 def test_full_rewrite_present_waits_for_upload_drain(
@@ -1327,7 +1328,7 @@ def test_full_rewrite_present_waits_for_upload_drain(
     GLIR meter — binding the back early would render stale content."""
     from napari.experimental import _glir_metering as gm
 
-    viewer, layer, loader = _engaged_3d_dbuf(
+    _viewer, _layer, loader = _engaged_3d_dbuf(
         qtbot, make_napari_viewer, multiscale_3d_arrays
     )
     dbuf = loader._dbuf
@@ -1355,7 +1356,7 @@ def test_hold_presents_vetoes_until_released(
 ):
     """The loader veto blocks presents (front keeps rendering) until
     released — the no-black-on-unprepared-interval mechanism."""
-    viewer, layer, loader = _engaged_3d_dbuf(
+    _viewer, _layer, loader = _engaged_3d_dbuf(
         qtbot, make_napari_viewer, multiscale_3d_arrays
     )
     dbuf = loader._dbuf

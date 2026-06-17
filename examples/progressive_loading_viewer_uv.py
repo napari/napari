@@ -54,10 +54,10 @@ def _find_multiscales(group, depth=0):
         return group, ms_list[0]
     if depth > 4:
         return None, None
-    for key in group.keys():
+    for key in group:
         try:
             child = group[key]
-        except Exception:
+        except (KeyError, ValueError, OSError):
             continue
         if not hasattr(child, 'attrs'):
             continue
@@ -134,7 +134,7 @@ def main(argv=None):
     arrays, scale = open_ome_zarr(args.path, num_levels=args.levels,
                                   cache_mb=args.cache_mb)
 
-    kwargs = dict(colormap=args.colormap)
+    kwargs = {'colormap': args.colormap}
     if args.contrast is not None:
         kwargs['contrast_limits'] = tuple(args.contrast)
     if scale is not None:

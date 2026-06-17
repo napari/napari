@@ -614,7 +614,7 @@ class ScalarFieldBase(Layer, ABC):
     def _corners_for_locked_level(
         self,
         level: int,
-        displayed_axes,
+        displayed_axes: list[int],
         data_bbox_int: np.ndarray | None = None,
     ) -> np.ndarray:
         """Corner pixels to render for a locked multiscale level.
@@ -681,7 +681,7 @@ class ScalarFieldBase(Layer, ABC):
         corners[1, displayed_axes] = high - 1
         return corners
 
-    def _locked_tile_moved(self, corners: np.ndarray, displayed_axes) -> bool:
+    def _locked_tile_moved(self, corners: np.ndarray, displayed_axes: list[int]) -> bool:
         """Whether new locked-level corners warrant a re-slice.
 
         Uses hysteresis of a quarter of the tile extent so that small

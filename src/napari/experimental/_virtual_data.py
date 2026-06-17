@@ -584,21 +584,21 @@ class MultiScaleVirtualData:
             if region is not None:
                 fill_min = [
                     min(max(int(r), lo), hi)
-                    for r, lo, hi in zip(region[0], fill_min, fill_max)
+                    for r, lo, hi in zip(region[0], fill_min, fill_max, strict=True)
                 ]
                 fill_max = [
                     min(max(int(r), lo), hi)
-                    for r, lo, hi in zip(region[1], dst._min_coord, fill_max)
+                    for r, lo, hi in zip(region[1], dst._min_coord, fill_max, strict=True)
                 ]
-                if any(mx <= mn for mn, mx in zip(fill_min, fill_max)):
+                if any(mx <= mn for mn, mx in zip(fill_min, fill_max, strict=True)):
                     return False
             content = backdrop(fill_min, fill_max)
-            expected = tuple(mx - mn for mn, mx in zip(fill_min, fill_max))
+            expected = tuple(mx - mn for mn, mx in zip(fill_min, fill_max, strict=True))
             if content is None or tuple(content.shape) != expected:
                 return False
             region_key = tuple(
                 slice(mn - lo, mx - lo)
-                for mn, mx, lo in zip(fill_min, fill_max, dst._min_coord)
+                for mn, mx, lo in zip(fill_min, fill_max, dst._min_coord, strict=True)
             )
             if not dst.loaded_chunks:
                 dst.hyperslice[region_key] = content
@@ -623,7 +623,7 @@ class MultiScaleVirtualData:
                     entries.append((start - lo, stop - lo, (start, stop)))
                     start = stop
                 per_dim.append(entries)
-            offset = [mn - lo for mn, lo in zip(fill_min, dst._min_coord)]
+            offset = [mn - lo for mn, lo in zip(fill_min, dst._min_coord, strict=True)]
             wrote = False
             for combo in itertools.product(*per_dim):
                 chunk_id = tuple(absolute for *_rel, absolute in combo)
@@ -634,23 +634,24 @@ class MultiScaleVirtualData:
                     for (rel_start, rel_stop, _absolute), off in zip(
                         combo,
                         offset,
+                        strict=True,
                     )
                 )
                 src_key = tuple(
                     slice(sl.start - off, sl.stop - off)
-                    for sl, off in zip(dst_key, offset)
+                    for sl, off in zip(dst_key, offset, strict=True)
                 )
                 if any(sl.stop <= sl.start for sl in src_key):
                     continue
                 src_clipped = tuple(
                     slice(sl.start, min(sl.stop, dim_len))
-                    for sl, dim_len in zip(src_key, content.shape)
+                    for sl, dim_len in zip(src_key, content.shape, strict=True)
                 )
                 if any(sl.stop <= sl.start for sl in src_clipped):
                     continue
                 dst_clipped = tuple(
                     slice(d.start, d.start + (sc.stop - sc.start))
-                    for d, sc in zip(dst_key, src_clipped)
+                    for d, sc in zip(dst_key, src_clipped, strict=True)
                 )
                 dst.hyperslice[dst_clipped] = content[src_clipped]
                 wrote = True

@@ -34,6 +34,9 @@ skip = [
     'progressive_loading_mandelbulb.py',  # too slow without numba (optional dep)
     'progressive_loading_ome_zarr.py',  # requires network access
     'progressive_loading_zebrahub_uv.py',  # requires network access
+    'progressive_loading_local_zarr_uv.py',  # uv-only launcher
+    'progressive_loading_viewer_uv.py',  # uv-only launcher, requires network access
+    'progressive_loading_local_zarr.py',  # too slow without numba (optional dep)
 ]
 # To skip examples during docs build end name with `_.py`
 
