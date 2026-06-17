@@ -1698,6 +1698,19 @@ class ProgressiveLoader:
             # Everything visible is already resident (e.g. carried over
             # from the previous interval); make sure the canvas shows it.
             self._refresh(final=True)
+            # In 3D the refresh triggers an async re-slice that stages
+            # data into the back buffer via set_data_staged.  Without a
+            # fetch worker there is no _on_fetch_finished to present the
+            # staged content.  Register the GLIR drain callback so the
+            # back buffer swaps to front once its uploads complete.
+            dbuf = self._dbuf3d()
+            if dbuf is not None:
+                dbuf.release_presents()
+                from napari.experimental import _glir_metering
+
+                _glir_metering.add_drain_callback(
+                    self._on_uploads_drained
+                )
             return
 
         LOGGER.debug(
