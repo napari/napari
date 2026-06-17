@@ -61,10 +61,13 @@ def open_zebrahub():
         max_size=int(4e9),
     )
     group = zarr.open_group(store, mode='r')
-    return [group[str(level)] for level in range(NUM_LEVELS)]
+    arrays = [group[str(level)] for level in range(NUM_LEVELS)]
+    ms = dict(group.attrs)['multiscales'][0]
+    scale = ms['datasets'][0]['coordinateTransformations'][0]['scale']
+    return arrays, scale
 
 
-arrays = open_zebrahub()
+arrays, scale = open_zebrahub()
 
 viewer = napari.Viewer()
 layer = add_progressive_loading_image(
@@ -72,6 +75,7 @@ layer = add_progressive_loading_image(
     viewer=viewer,
     contrast_limits=(0, 1000),
     colormap='gray',
+    scale=scale,
 )
 
 if __name__ == '__main__':
