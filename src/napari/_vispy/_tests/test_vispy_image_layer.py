@@ -302,6 +302,9 @@ def test_3d_multiscale_half_voxel_uses_rendered_level():
     # level, so translate_fine would have been [1.5, 1.5, 1.5] too.
     npt.assert_array_almost_equal(translate_fine, [0, 0, 0])
 
+    # Level 2 has downsample factor 4 → half-voxel offset = (4-1)/2 = 1.5
+    npt.assert_array_almost_equal(translate_coarse, [1.5, 1.5, 1.5])
+
 
 def test_world_units_impact_scale():
     nm = get_application_registry().nm
