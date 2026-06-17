@@ -305,6 +305,7 @@ class NapariQtNotification(QDialog):
         )
         self.verticalLayout.addWidget(self.row1_widget, 1)
         self.row2_widget = QWidget(self)
+        self.row2_widget.setObjectName('notification_actions')
         self.row2_widget.hide()
         self.row2 = QHBoxLayout(self.row2_widget)
         self.source_label = QLabel(self.row2_widget)
@@ -315,12 +316,6 @@ class NapariQtNotification(QDialog):
         self.row2.addStretch()
         self.row2.setContentsMargins(12, 2, 16, 12)
         self.row2_widget.setMaximumHeight(34)
-        self.row2_widget.setStyleSheet(
-            'QPushButton{'
-            'padding: 4px 12px 4px 12px; '
-            'font-size: 11px;'
-            'min-height: 18px; border-radius: 0;}'
-        )
         self.verticalLayout.addWidget(self.row2_widget, 0)
         self.setProperty('expanded', False)
         self.resize(self.MIN_WIDTH, 40)
