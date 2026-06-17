@@ -3,7 +3,7 @@ import itertools
 import numpy as np
 import pytest
 
-pytest.importorskip('zarr')
+pytest.importorskip('zarr.experimental', reason='requires zarr v3')
 
 from napari.experimental._progressive_loading_datasets import (
     mandelbrot_dataset,

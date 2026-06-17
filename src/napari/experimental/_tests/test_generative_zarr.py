@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-zarr = pytest.importorskip('zarr')
+pytest.importorskip('zarr.abc', reason='requires zarr v3')
 
 from napari.experimental._generative_zarr import (  # noqa: E402
     MandelbrotStore,
