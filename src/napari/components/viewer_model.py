@@ -218,7 +218,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     # Need to use default factory because slicer is not copyable which
     # is required for default values.
     _layer_slicer: _LayerSlicer = PrivateAttr(default_factory=_LayerSlicer)
-    _layer_list_scroll_progress: int = 0
+    _layer_list_scroll_progress: float = 0
 
     def __init__(
         self, title='napari', ndisplay=2, order=(), axis_labels=()

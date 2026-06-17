@@ -26,10 +26,18 @@ def layers_scroll(viewer, event):
     """Scroll through the layer list."""
     if 'Alt' not in event.modifiers:
         return
+
+    # Use the sum of both axes to handle axis flipping
+    delta = np.sum(event.delta)
+
+    # Clip delta to +/- 1.0 to prevent skipping layers
+    delta = np.clip(delta, -1, 1)
+
     if event.native.inverted():
-        viewer._layer_list_scroll_progress -= event.delta[1]
+        viewer._layer_list_scroll_progress -= delta
     else:
-        viewer._layer_list_scroll_progress += event.delta[1]
+        viewer._layer_list_scroll_progress += delta
+
     while abs(viewer._layer_list_scroll_progress) >= 1:
         if viewer._layer_list_scroll_progress < 0:
             # previous is down the list
