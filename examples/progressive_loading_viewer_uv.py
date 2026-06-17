@@ -6,6 +6,7 @@
 #     "fsspec>=2023.10.0",
 #     "aiohttp",
 #     "requests",
+#     "s3fs",
 # ]
 #
 # [tool.uv.sources]
@@ -50,8 +51,12 @@ def open_ome_zarr(path: str, *, num_levels: int | None = None, cache_mb: int = 4
         from zarr.experimental.cache_store import CacheStore
         from zarr.storage import FsspecStore, MemoryStore
 
+        storage_options = {}
+        if path.startswith('s3://'):
+            storage_options['anon'] = True
+
         store = CacheStore(
-            FsspecStore.from_url(path),
+            FsspecStore.from_url(path, storage_options=storage_options),
             cache_store=MemoryStore(),
             max_size=cache_mb * 1_000_000,
         )
