@@ -46,6 +46,27 @@ def _is_remote(path: str) -> bool:
     return path.startswith(('http://', 'https://', 's3://', 'gs://'))
 
 
+def _find_multiscales(group, depth=0):
+    """Walk into nested groups to find OME multiscales metadata."""
+    attrs = dict(group.attrs)
+    ms_list = attrs.get('multiscales') or attrs.get('ome', {}).get('multiscales')
+    if ms_list:
+        return group, ms_list[0]
+    if depth > 4:
+        return None, None
+    for key in group.keys():
+        try:
+            child = group[key]
+        except Exception:
+            continue
+        if not hasattr(child, 'attrs'):
+            continue
+        result, ms = _find_multiscales(child, depth + 1)
+        if ms is not None:
+            return result, ms
+    return None, None
+
+
 def open_ome_zarr(path: str, *, num_levels: int | None = None, cache_mb: int = 4000):
     if _is_remote(path):
         from zarr.experimental.cache_store import CacheStore
@@ -63,10 +84,14 @@ def open_ome_zarr(path: str, *, num_levels: int | None = None, cache_mb: int = 4
     else:
         store = zarr.storage.LocalStore(path)
 
-    group = zarr.open_group(store, mode='r')
+    root = zarr.open_group(store, mode='r')
+    group, ms = _find_multiscales(root)
 
-    ms = dict(group.attrs).get('multiscales', [{}])[0]
-    datasets = ms.get('datasets', [])
+    if ms is not None:
+        datasets = ms.get('datasets', [])
+    else:
+        group = root
+        datasets = []
 
     if not datasets:
         children = sorted(group.keys(), key=lambda k: (len(k), k))
