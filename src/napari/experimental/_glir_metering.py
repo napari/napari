@@ -143,7 +143,7 @@ def remove_drain_callback(method) -> None:
     _drain_callbacks[:] = [
         ref
         for ref in _drain_callbacks
-        if ref() is not None and ref() != method
+        if (cb := ref()) is not None and cb != method
     ]
 
 

@@ -77,7 +77,6 @@ def test_chunk_priority_3d_orders_by_depth():
         (64, 64, 64),
         camera_center=(32, 32, 32),
         view_direction=(1, 0, 0),
-        zoom=1.0,
     )
     assert len(queue) == 64
     # strictly front-to-back: the chunk closest to the viewer loads first,
@@ -407,20 +406,6 @@ def test_chunk_priority_3d_degenerate_camera():
         # fallback ordering: the most central chunks come first
         first_center = np.array([(sl.start + sl.stop) / 2 for sl in queue[0]])
         assert np.all(np.abs(first_center - 32) <= 16)
-    # a valid camera with a junk zoom value must not warn either (zoom is
-    # unused by the front-to-back ordering)
-    for zoom in (0.0, np.nan, 1e308):
-        with warnings.catch_warnings():
-            warnings.simplefilter('error', RuntimeWarning)
-            queue = chunk_priority_3D(
-                keys,
-                (0, 0, 0),
-                (64, 64, 64),
-                camera_center=(32, 32, 32),
-                view_direction=(1, 0, 0),
-                zoom=zoom,
-            )
-        assert queue[0][0].start == 0  # front-to-back
 
 
 def test_zoom_target_level_3d_uninitialized_camera(

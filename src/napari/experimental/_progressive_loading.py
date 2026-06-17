@@ -237,7 +237,6 @@ def chunk_priority_3D(
     max_coord,
     camera_center,
     view_direction,
-    zoom: float = 1.0,
     center_line_weight: float = 0.5,
 ) -> list[tuple[slice, ...]]:
     """Order chunk keys front-to-back for 3D rendering.
@@ -259,8 +258,6 @@ def chunk_priority_3D(
         i.e. the last 3 dimensions of the chunk keys).
     view_direction : sequence of float
         Camera view direction (3-vector over the displayed dimensions).
-    zoom : float
-        Unused; kept for API compatibility.
     center_line_weight : float
         Weight of the center-line distance term relative to depth (both
         are in this level's data units).
@@ -632,7 +629,7 @@ class ProgressiveLoader:
         tile_max_bytes_3d: int = DEFAULT_TILE_MAX_BYTES_3D,
         max_bytes_per_second: float | None = None,
         interaction_hold: bool = True,
-        interactive_step_rate: float = 2.0,
+        interactive_step_rate: float = 4.0,
     ):
         self._viewer = viewer
         self._layer = layer
@@ -1819,7 +1816,6 @@ class ProgressiveLoader:
             interval[1],
             camera_center=camera_center,
             view_direction=camera.view_direction,
-            zoom=camera.zoom,
         )
 
     def _make_progress(self, total: int, description: str):
