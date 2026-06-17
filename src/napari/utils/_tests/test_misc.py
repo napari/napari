@@ -16,8 +16,10 @@ from napari.utils.misc import (
     ensure_iterable,
     ensure_list_of_layer_data_tuple,
     ensure_sequence_of_iterables,
+    human_readable_size,
     is_iterable,
     pick_equality_operator,
+    str_to_rgb,
 )
 
 ITERABLE = (0, 1, 2)
@@ -270,3 +272,36 @@ def test_ensure_list_of_layer_data_tuple(input_data, expected):
 )
 def test_is_iterable(data, expected):
     assert is_iterable(data) == expected
+
+
+def test_str_to_rgb_warns_and_parses():
+    with pytest.warns(FutureWarning, match='str_to_rgb is deprecated'):
+        assert str_to_rgb('rgb(1, 2, 3)') == [1, 2, 3]
+
+
+def test_str_to_rgb_raises_on_invalid_input():
+    with (
+        pytest.warns(FutureWarning, match='str_to_rgb is deprecated'),
+        pytest.raises(ValueError, match=r"arg not in format 'rgb\(x,y,z\)'"),
+    ):
+        str_to_rgb('not-rgb')
+
+
+@pytest.mark.parametrize(
+    ('size_bytes', 'expected'),
+    [
+        (0, '0.0 B'),
+        (1, '1.0 B'),
+        (999, '999.0 B'),
+        (1000, '1.0 KB'),
+        (1500, '1.5 KB'),
+        (1_000_000, '1.0 MB'),
+        (1_500_000, '1.5 MB'),
+        (1_000_000_000, '1.0 GB'),
+        (1_000_000_000_000, '1.0 TB'),
+        (1_000_000_000_000_000, '1.0 PB'),
+        (2_500_000_000_000_000, '2.5 PB'),
+    ],
+)
+def test_human_readable_size(size_bytes, expected):
+    assert human_readable_size(size_bytes) == expected

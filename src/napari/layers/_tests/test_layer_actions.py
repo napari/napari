@@ -18,6 +18,7 @@ from napari.layers._layer_actions import (
     _show_unselected,
     _split_rgb,
     _split_stack,
+    _toggle_lock,
     _toggle_visibility,
 )
 from napari.utils.transforms import Affine
@@ -120,6 +121,35 @@ def test_toggle_visibility():
     assert layer_list[0].visible is True
 
 
+def test_toggle_lock():
+    """Single locked layer flips to unlocked and back."""
+    layer_list = LayerList()
+    layer_list.append(Points([[0, 0]]))
+    layer_list.selection.active = layer_list[0]
+
+    _toggle_lock(layer_list)
+    assert layer_list[0].locked
+
+    _toggle_lock(layer_list)
+    assert not layer_list[0].locked
+
+
+def test_toggle_lock_mixed_selection():
+    """Mixed selection flips each layer's locked state independently."""
+    layer_list = LayerList()
+    layer_list.append(Points([[0, 0]]))
+    layer_list.append(Points([[0, 0]]))
+    layer_list[0].locked = True
+
+    layer_list.selection.active = layer_list[0]
+    layer_list.selection.add(layer_list[1])
+
+    _toggle_lock(layer_list)
+
+    assert not layer_list[0].locked
+    assert layer_list[1].locked
+
+
 def test_toggle_visibility_with_linked_layers():
     """Test toggling visibility of a layer."""
     layer_list = LayerList()
@@ -156,7 +186,7 @@ def test_duplicate_layers(layer_type):
     layer_list.append(layer_type([], name='test'))
     layer_list.selection.active = layer_list[0]
     layer_list[0].events.data.connect(_dummy)
-    assert len(layer_list[0].events.data.callbacks) == 2
+    assert len(layer_list[0].events.data.callbacks) == 3
     assert len(layer_list) == 1
     _duplicate_layer(layer_list)
     assert len(layer_list) == 2
@@ -164,7 +194,7 @@ def test_duplicate_layers(layer_type):
     assert layer_list[1].name == 'test copy'
     assert layer_list[1].events.source is layer_list[1]
     assert (
-        len(layer_list[1].events.data.callbacks) == 1
+        len(layer_list[1].events.data.callbacks) == 2
     )  # `events` Event Emitter
     assert layer_list[1].source.parent() is layer_list[0]
 

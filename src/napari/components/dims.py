@@ -8,6 +8,7 @@ from typing import (
 )
 
 import numpy as np
+import pint
 from pydantic import field_validator, model_validator
 
 from napari.utils.events import EventedModel
@@ -43,6 +44,9 @@ class Dims(EventedModel):
         Tuple of ordering the dimensions, where the last dimensions are rendered.
     axis_labels : tuple of str
         Tuple of labels for each dimension.
+    units : tuple of pint.Unit, optional
+        Shared world units for each dimension.
+        If ``None``, no additional unit conversion is applied.
     last_used : int
         Dimension which was last interacted with.
 
@@ -65,6 +69,9 @@ class Dims(EventedModel):
         Tuple of ordering the dimensions, where the last dimensions are rendered.
     axis_labels : tuple of str
         Tuple of labels for each dimension.
+    units : tuple of pint.Unit or None
+        Shared world units for each dimension.
+        If ``None``, no additional unit conversion is applied.
     last_used : int
         Dimension which was last used.
         Tuple the slider position for each dims slider, in world coordinates.
@@ -100,6 +107,7 @@ class Dims(EventedModel):
     margin_left: tuple[float, ...] = ()
     margin_right: tuple[float, ...] = ()
     point: tuple[float, ...] = ()
+    units: tuple[pint.Unit, ...] | None = None
 
     last_used: int = 0
 
