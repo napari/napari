@@ -1,4 +1,5 @@
 from napari._vispy.overlays.zoom import VispyZoomOverlay
+from napari._vispy.utils.qt_font import FontInfo
 from napari.components.overlays import ZoomOverlay
 from napari.components.viewer_model import ViewerModel
 
@@ -6,7 +7,9 @@ from napari.components.viewer_model import ViewerModel
 def test_zoom_overlay_initialization():
     viewer = ViewerModel()
     zoom_model = ZoomOverlay()
-    zoom_view = VispyZoomOverlay(viewer=viewer, overlay=zoom_model)
+    zoom_view = VispyZoomOverlay(
+        viewer=viewer, overlay=zoom_model, font_info=FontInfo()
+    )
 
     # change the visibility
     assert zoom_view.node is not None
