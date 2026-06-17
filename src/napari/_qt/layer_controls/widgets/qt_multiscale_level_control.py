@@ -117,7 +117,9 @@ class QtMultiscaleLevelControl(  # type: ignore[metaclass]
                     # 3D. Layers with a 3D tile extent cap render an
                     # at-most-cap-sized sub-volume, so compare that size
                     # instead of the full level shape.
-                    tile_cap = getattr(self._layer, '_max_tile_extent_3d', None)
+                    tile_cap = getattr(
+                        self._layer, '_max_tile_extent_3d', None
+                    )
                     if (
                         ndisplay == 3
                         and max_size_3d is not None
