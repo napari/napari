@@ -55,9 +55,9 @@ class VispyBoundingBoxOverlay(LayerOverlayMixin, VispySceneOverlay):
                 safe_scale = np.where(
                     np.abs(disp_scale) > 1e-12, disp_scale, 1.0
                 )
-                bounds = (
-                    bounds - disp_translate[:, np.newaxis]
-                ) / safe_scale[:, np.newaxis]
+                bounds = (bounds - disp_translate[:, np.newaxis]) / safe_scale[
+                    :, np.newaxis
+                ]
         else:
             bounds = self.layer._display_bounding_box_augmented_data_level(
                 displayed

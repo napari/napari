@@ -633,16 +633,14 @@ class ScalarFieldBase(Layer, ABC):
             viewer = current_viewer()
             if viewer is None:
                 return None
-            world_dir = np.asarray(
-                viewer.camera.view_direction, dtype=float
-            )
+            world_dir = np.asarray(viewer.camera.view_direction, dtype=float)
         except Exception:  # noqa: BLE001
             return None
         if not np.all(np.isfinite(world_dir)):
             return None
         # world_dir has ndisplay components; pad to full ndim
         full_dir = np.zeros(self.ndim, dtype=float)
-        full_dir[list(displayed_axes)] = world_dir[-len(displayed_axes):]
+        full_dir[list(displayed_axes)] = world_dir[-len(displayed_axes) :]
         try:
             data_dir = self._world_to_data_ray(full_dir)
         except Exception:  # noqa: BLE001

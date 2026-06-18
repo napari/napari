@@ -4,6 +4,7 @@ Run:  .venv/bin/python examples/progressive_loading_zebrahub_debug_.py
 """
 
 import logging
+
 import numpy as np
 import zarr
 from zarr.experimental.cache_store import CacheStore
@@ -54,7 +55,7 @@ loader = layer.metadata['progressive_loader']
 print(f"\nlayer.scale = {layer.scale}")
 print(f"_max_tile_extent_3d = {layer._max_tile_extent_3d}")
 print(f"level_shapes = {layer.level_shapes}")
-print(f"downsample_factors:")
+print("downsample_factors:")
 for i, ds in enumerate(layer.downsample_factors):
     print(f"  level {i}: {ds}")
 

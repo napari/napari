@@ -1141,11 +1141,13 @@ class ProgressiveLoader:
             try:
                 view_dir_world = np.asarray(
                     camera.view_direction, dtype=float
-                )[-len(displayed_axes):]
+                )[-len(displayed_axes) :]
                 view_dir_data = np.abs(view_dir_world) / np.maximum(
                     layer_scale, 1e-12
                 )
-                view_dir_data /= np.maximum(np.linalg.norm(view_dir_data), 1e-12)
+                view_dir_data /= np.maximum(
+                    np.linalg.norm(view_dir_data), 1e-12
+                )
                 # screen-plane axes get full extent; depth axis gets a
                 # fraction proportional to its alignment with view dir
                 depth_fraction = np.maximum(view_dir_data, 0.1)
