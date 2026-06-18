@@ -89,8 +89,11 @@ QDockWidget:floating {
 
 #QtCustomTitleBar > QPushButton {
   background-color: none;
+  min-width: 12px;
+  min-height: 12px;
   max-width: 12px;
   max-height: 12px;
+  padding: 2;
 }
 
 #QtCustomTitleBar > QPushButton:hover {
@@ -106,25 +109,16 @@ QDockWidget:floating {
 }
 
 #QTitleBarCloseButton{
-    width: 24px;
-    height: 24px;
-    padding: 2;
     image: url("theme_{{ id }}:/delete_shape.svg");
 }
 
 
 #QTitleBarFloatButton{
     image: url("theme_{{ id }}:/pop_out.svg");
-    width: 24px;
-    height: 24px;
-    padding: 2;
 }
 
 #QTitleBarHideButton{
     image: url("theme_{{ id }}:/visibility_off.svg");
-    width: 24px;
-    height: 24px;
-    padding: 2;
 }
 
 /* ----------------- Console ------------------ */
