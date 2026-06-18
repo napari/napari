@@ -10,7 +10,7 @@ from napari.utils.tips import format_tip
     [
         (
             'press {Meta+K} to jump',
-            'press ⊞+K to jump',
+            'press Super+K to jump',
             'press ⊞+K to jump',
             'press ⌘K to jump',
         ),
