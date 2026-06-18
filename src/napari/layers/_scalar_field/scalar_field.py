@@ -328,6 +328,7 @@ class ScalarFieldBase(Layer, ABC):
         # GL texture limits usable. ``None`` (default) keeps the previous
         # behavior of always slicing the full locked level.
         self._max_tile_extent_3d: int | None = None
+        self._tile_max_bytes_3d: int | None = None
 
         # Set data
         self._data = data
@@ -639,7 +640,40 @@ class ScalarFieldBase(Layer, ABC):
         downsample = np.take(
             np.asarray(self.downsample_factors[level]), displayed_axes
         )
-        tile_extent = np.minimum(shape_at_level, extent_cap)
+        # Compute an anisotropic tile extent that fits the byte budget.
+        # Axes already smaller than the cap keep their full size; the
+        # budget is distributed to larger axes so anisotropic data
+        # (e.g. Z=42, Y=304, X=657) shows more of the volume.
+        tile_bytes = self._tile_max_bytes_3d
+        if tile_bytes is not None:
+            itemsize = max(int(self.dtype.itemsize), 1)
+            max_elements = max(tile_bytes // itemsize, 1)
+            # Start from the full level shape (capped per-axis by the GL
+            # texture limit), then shrink proportionally to fit the byte
+            # budget. Small axes keep their full size while larger axes
+            # shrink — so anisotropic data shows much more of the volume
+            # than a uniform cube cap would.
+            try:
+                from napari._vispy.utils.gl import get_max_texture_sizes
+                _, gl_max = get_max_texture_sizes()
+            except Exception:  # noqa: BLE001
+                gl_max = extent_cap
+            if gl_max is None:
+                gl_max = extent_cap
+            tile_extent = np.minimum(shape_at_level, gl_max).astype(np.int64)
+            for _ in range(len(tile_extent)):
+                vol = int(np.prod(tile_extent))
+                if vol <= max_elements:
+                    break
+                over = np.where(tile_extent > _MIN_TILE_EXTENT_3D)[0]
+                if len(over) == 0:
+                    break
+                ratio = (max_elements / vol) ** (1.0 / len(over))
+                for ax in over:
+                    tile_extent[ax] = max(int(tile_extent[ax] * ratio),
+                                          _MIN_TILE_EXTENT_3D)
+        else:
+            tile_extent = np.minimum(shape_at_level, extent_cap)
         if data_bbox_int is not None and np.all(np.isfinite(data_bbox_int)):
             bbox = np.asarray(data_bbox_int, dtype=float) / downsample
             center = bbox.mean(axis=0)
@@ -666,7 +700,7 @@ class ScalarFieldBase(Layer, ABC):
         tile_extent = np.asarray(tile_extent, dtype=np.int64)
         tile_extent = np.minimum(
             -(-tile_extent // quantum) * quantum,
-            np.minimum(shape_at_level, extent_cap),
+            shape_at_level,
         )
         center = np.clip(center, 0, shape_at_level - 1)
         if np.all(tile_extent >= shape_at_level):

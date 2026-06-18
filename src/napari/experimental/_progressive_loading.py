@@ -350,10 +350,11 @@ def _pack_upload_block(vdata: VirtualData, keys) -> tuple | None:
 
 
 def _tile_extent_3d_for(dtype: np.dtype, interval_max_bytes: int) -> int:
-    """Per-axis extent of 3D sub-volume tiles.
+    """Per-axis extent of 3D sub-volume tiles (isotropic fallback).
 
     The largest cube that fits the interval memory budget, further
     bounded by the GL 3D texture size limit when available.
+    Used as the cap when no per-level shape is known.
     """
     extent = int((interval_max_bytes / np.dtype(dtype).itemsize) ** (1 / 3))
     try:
@@ -365,6 +366,38 @@ def _tile_extent_3d_for(dtype: np.dtype, interval_max_bytes: int) -> int:
     except Exception:  # pragma: no cover - no GL context  # noqa: BLE001
         pass
     return max(extent, 32)
+
+
+def _anisotropic_tile_extent(
+    shape: np.ndarray,
+    max_bytes: int,
+    itemsize: int,
+    gl_max: int | None = None,
+) -> np.ndarray:
+    """Compute a per-axis tile extent that fits the byte budget.
+
+    Axes whose full size already fits are kept whole; the remaining
+    budget is distributed to the larger axes so anisotropic data
+    (e.g. Z=42, Y=304, X=657) uses the budget efficiently instead
+    of being capped to a uniform cube.
+    """
+    shape = np.asarray(shape, dtype=np.int64)
+    tile = shape.copy()
+    if gl_max is not None:
+        tile = np.minimum(tile, gl_max)
+    max_elements = max(max_bytes // max(itemsize, 1), 1)
+    for _ in range(len(shape)):
+        vol = int(np.prod(tile))
+        if vol <= max_elements:
+            break
+        over = np.where(tile > 1)[0]
+        if len(over) == 0:
+            break
+        # shrink the largest axis proportionally
+        ratio = (max_elements / vol) ** (1.0 / len(over))
+        for ax in over:
+            tile[ax] = max(int(tile[ax] * ratio), 1)
+    return np.maximum(tile, 1)
 
 
 # ---------- background fetching ----------
@@ -783,6 +816,7 @@ class ProgressiveLoader:
             min(interval_max_bytes, tile_max_bytes_3d),
         )
         layer._max_tile_extent_3d = self._tile_extent_3d
+        layer._tile_max_bytes_3d = min(interval_max_bytes, tile_max_bytes_3d)
 
         layer._render_margin_2d = 2.0
         self._tile_margin_3d = 1.25
@@ -2650,10 +2684,9 @@ def add_progressive_loading_image(
         name=name,
         **layer_kwargs,
     )
-    layer._max_tile_extent_3d = _tile_extent_3d_for(
-        data.dtype,
-        min(interval_max_bytes, tile_max_bytes_3d),
-    )
+    tile_bytes = min(interval_max_bytes, tile_max_bytes_3d)
+    layer._max_tile_extent_3d = _tile_extent_3d_for(data.dtype, tile_bytes)
+    layer._tile_max_bytes_3d = tile_bytes
     viewer.layers.append(layer)
     # Slice off the main thread: refreshes materialize the visible tile
     # (np.asarray over up to hundreds of MB), which would otherwise block
