@@ -50,6 +50,17 @@ if TYPE_CHECKING:
 
 __all__ = ('ScalarFieldBase',)
 
+#: Lower bound for the per-axis extent of 3D sub-volume tiles, so extreme
+#: zooms do not thrash on tiny slices.
+_MIN_TILE_EXTENT_3D = 32
+
+#: 3D sub-volume tile extents are rounded up to a multiple of this, so
+#: consecutive camera poses produce tiles with repeating shapes. The
+#: viewport-derived extent otherwise jitters by a few voxels per pose,
+#: and every new texture shape costs a GPU (re)allocation — a pipeline
+#: synchronization on slow drivers — and defeats texture reuse/pooling.
+_TILE_EXTENT_QUANTUM_3D = 32
+
 
 def _make_level_materializer(
     data: MultiScaleData,
@@ -305,6 +316,19 @@ class ScalarFieldBase(Layer, ABC):
         # automatically selecting one based on the viewport / 3D mode.
         self._locked_data_level: int | None = None
 
+        # Viewport bbox from the most recent draw, as
+        # (displayed_axes, data_bbox_int); see _update_level_and_corners.
+        self._last_data_bbox: tuple | None = None
+
+        # Experimental: maximum per-axis extent (in data pixels) of the
+        # region sliced for a locked multiscale level in 3D. When set,
+        # locking a level larger than this renders a sub-volume tile of
+        # this size centered on the current view (tracked across camera
+        # moves) instead of the full level — making levels that exceed
+        # GL texture limits usable. ``None`` (default) keeps the previous
+        # behavior of always slicing the full locked level.
+        self._max_tile_extent_3d: int | None = None
+
         # Set data
         self._data = data
         if isinstance(data, MultiScaleData):
@@ -447,13 +471,31 @@ class ScalarFieldBase(Layer, ABC):
             n_levels = len(self.level_shapes)
             if level < 0 or level >= n_levels:
                 return
+        old_level = self._data_level
         self._locked_data_level = level
         if level is not None:
             displayed_axes = self._slice_input.displayed
-            shape_at_level = np.array(self.level_shapes[level])
-            corners = np.zeros((2, self.ndim), dtype=int)
-            corners[1, displayed_axes] = shape_at_level[displayed_axes] - 1
-            self.corner_pixels = corners
+            # Size any 3D sub-volume tile to the viewport instead of the
+            # full memory budget — slicing a budget-sized cube here would
+            # stall the UI before the next draw refines it. Use the
+            # viewport bbox cached from the last draw when available,
+            # falling back to the previous level's corner pixels.
+            data_bbox_int = None
+            if self._last_data_bbox is not None and self._last_data_bbox[
+                0
+            ] == tuple(displayed_axes):
+                data_bbox_int = self._last_data_bbox[1]
+            else:
+                data_bbox_int = (
+                    self.corner_pixels[:, displayed_axes]
+                    * np.take(
+                        np.asarray(self.downsample_factors[old_level]),
+                        displayed_axes,
+                    )
+                ).astype(int)
+            self.corner_pixels = self._corners_for_locked_level(
+                level, displayed_axes, data_bbox_int
+            )
             self._data_level = level
         else:
             self._reset_data_level()
@@ -489,18 +531,27 @@ class ScalarFieldBase(Layer, ABC):
             )
             return
 
+        # remember the viewport bbox (level-0 data coords) so that other
+        # corner computations (e.g. the locked_data_level setter, which
+        # runs outside a draw) can size 3D sub-volume tiles to the view
+        self._last_data_bbox = (tuple(displayed_axes), data_bbox_int)
+
         if self._locked_data_level is not None:
             # User has explicitly locked the data level; skip automatic
-            # level selection and use the full extent of that level.
+            # level selection and use the full extent of that level (or a
+            # view-centered sub-volume tile in 3D when the level exceeds
+            # _max_tile_extent_3d).
             locked = self._locked_data_level
             old_level = self._data_level
             self._data_level = locked
-            corners = np.zeros((2, self.ndim), dtype=int)
-            corners[1, displayed_axes] = (
-                np.take(self.data[locked].shape, displayed_axes) - 1
+            corners = self._corners_for_locked_level(
+                locked, displayed_axes, data_bbox_int
             )
-            self.corner_pixels = corners
-            if old_level != locked:
+            level_changed = old_level != locked
+            if level_changed or self._locked_tile_moved(
+                corners, displayed_axes
+            ):
+                self.corner_pixels = corners
                 self.refresh(extent=False, thumbnail=False)
         elif self._slice_input.ndisplay == 2:
             level, scaled_corners = compute_multiscale_level_and_corners(
@@ -508,6 +559,21 @@ class ScalarFieldBase(Layer, ABC):
                 shape_threshold,
                 self.downsample_factors[:, displayed_axes],
             )
+            margin = getattr(self, '_render_margin_2d', 1.0)
+            if margin > 1.0:
+                # Render a margin around the viewport so pans and
+                # zoom-outs stay inside already-sliced content instead
+                # of exposing unrendered void. A factor of 2 covers
+                # zoom-out exactly to the next level switch in a
+                # factor-2 pyramid. Set by progressive loading.
+                pad = (
+                    (scaled_corners[1] - scaled_corners[0])
+                    * (margin - 1.0)
+                    / 2.0
+                )
+                scaled_corners = np.stack(
+                    [scaled_corners[0] - pad, scaled_corners[1] + pad],
+                )
             corners = np.zeros((2, self.ndim), dtype=int)
             max_coords = np.take(self.data[level].shape, displayed_axes) - 1
             corners[:, displayed_axes] = np.clip(scaled_corners, 0, max_coords)
@@ -544,6 +610,93 @@ class ScalarFieldBase(Layer, ABC):
             self.corner_pixels = corners
             if level_changed:
                 self.refresh(extent=False, thumbnail=False)
+
+    def _corners_for_locked_level(
+        self,
+        level: int,
+        displayed_axes: list[int],
+        data_bbox_int: np.ndarray | None = None,
+    ) -> np.ndarray:
+        """Corner pixels to render for a locked multiscale level.
+
+        Normally the full extent of the level. In 3D, when
+        ``_max_tile_extent_3d`` is set and the level is larger than that
+        extent along a displayed axis, a sub-volume tile of at most that
+        extent is returned instead, centered on ``data_bbox_int`` (the
+        current view in level-0 data coordinates) or the middle of the
+        level.
+        """
+        shape_at_level = np.take(
+            np.asarray(self.level_shapes[level]), displayed_axes
+        )
+        corners = np.zeros((2, self.ndim), dtype=int)
+        corners[1, displayed_axes] = shape_at_level - 1
+
+        extent_cap = self._max_tile_extent_3d
+        if self._slice_input.ndisplay != 3 or extent_cap is None:
+            return corners
+
+        downsample = np.take(
+            np.asarray(self.downsample_factors[level]), displayed_axes
+        )
+        tile_extent = np.minimum(shape_at_level, extent_cap)
+        if data_bbox_int is not None and np.all(np.isfinite(data_bbox_int)):
+            bbox = np.asarray(data_bbox_int, dtype=float) / downsample
+            center = bbox.mean(axis=0)
+            # Bound the tile by the visible extent so deep zooms slice
+            # (and fetch) only what is on screen. The canvas-plane bbox is
+            # degenerate along the view axis, so give every axis at least
+            # the largest on-screen extent (a view-sized cube). A margin
+            # (set by progressive loading) adds pan slack so small camera
+            # translations stay inside the tile instead of re-slicing.
+            view_extent = bbox[1] - bbox[0]
+            view_extent = np.maximum(view_extent, view_extent.max())
+            view_extent = view_extent * getattr(self, '_tile_margin_3d', 1.0)
+            view_extent = np.ceil(view_extent).astype(np.int64)
+            if np.all(view_extent > 0):
+                tile_extent = np.minimum(
+                    tile_extent,
+                    np.maximum(view_extent, _MIN_TILE_EXTENT_3D),
+                )
+        else:
+            center = shape_at_level / 2
+        # quantize so tile shapes repeat across camera poses (texture
+        # reuse); the stable caps (extent_cap, level shape) still apply
+        quantum = _TILE_EXTENT_QUANTUM_3D
+        tile_extent = np.asarray(tile_extent, dtype=np.int64)
+        tile_extent = np.minimum(
+            -(-tile_extent // quantum) * quantum,
+            np.minimum(shape_at_level, extent_cap),
+        )
+        center = np.clip(center, 0, shape_at_level - 1)
+        if np.all(tile_extent >= shape_at_level):
+            return corners
+        low = np.clip(
+            (center - tile_extent / 2).astype(int),
+            0,
+            shape_at_level - tile_extent,
+        )
+        high = low + tile_extent
+        corners[0, displayed_axes] = low
+        corners[1, displayed_axes] = high - 1
+        return corners
+
+    def _locked_tile_moved(self, corners: np.ndarray, displayed_axes: list[int]) -> bool:
+        """Whether new locked-level corners warrant a re-slice.
+
+        Uses hysteresis of a quarter of the tile extent so that small
+        camera movements do not continuously re-slice a sub-volume tile.
+        """
+        current = self.corner_pixels
+        if current.shape != corners.shape:
+            return True
+        extent = (corners[1] - corners[0])[displayed_axes] + 1
+        current_extent = (current[1] - current[0])[displayed_axes] + 1
+        if not np.array_equal(extent, current_extent):
+            return True
+        new_center = corners.mean(axis=0)[displayed_axes]
+        current_center = current.mean(axis=0)[displayed_axes]
+        return bool(np.any(np.abs(new_center - current_center) > extent / 4))
 
     def _reset_thumbnail_level_data(self) -> None:
         """Set ``_thumbnail_level`` and ``_level_materializer`` for the current data.
