@@ -44,7 +44,7 @@ QWidget:disabled {
 /* QAbstractScrollArea is the superclass */
 
 QTextEdit {
-  background-color: {{ primary }};
+  background-color: {{ console }};
   background-clip: padding;
   color: {{ text }};
   selection-background-color: {{ highlight }};
