@@ -7,16 +7,11 @@ QtViewerPushButton{
    min-height : 28px;
    max-height : 28px;
    padding: 0px;
+   margin-top: 3px;  /* to counteract the margin tricks below*/
 }
 
 QtViewerPushButton[mode="delete_button"] {
    image: url("theme_{{ id }}:/delete.svg");
-}
-
-QtViewerPushButton[mode="new_points"],
-QtViewerPushButton[mode="new_shapes"],
-QtViewerPushButton[mode="new_labels"] {
-  border: 3px solid {{ background }};
 }
 
 QtViewerPushButton[mode="new_points"] {
@@ -31,8 +26,19 @@ QtViewerPushButton[mode="new_labels"] {
   image: url("theme_{{ id }}:/new_labels.svg");
 }
 
+QtViewerPushButton[mode="new_points"],
+QtViewerPushButton[mode="new_shapes"],
+QtViewerPushButton[mode="new_labels"] {
+  margin: 3px;
+  margin-top: 6px;
+}
+
+QtViewerPushButton[mode="new_points"]:disabled,
+QtViewerPushButton[mode="new_shapes"]:disabled,
 QtViewerPushButton[mode="new_labels"]:disabled {
   border: 3px solid {{ background }};
+  margin: 0px;
+  margin-top: 3px;
 }
 
 /* TODO: can we avoid this darken/lighten? */
@@ -40,13 +46,16 @@ QtViewerPushButton[mode="new_points"][creation_state="full"],
 QtViewerPushButton[mode="new_shapes"][creation_state="full"],
 QtViewerPushButton[mode="new_labels"][creation_state="full"] {
   border: 3px solid {{ current }};
+  margin: 0px;
+  margin-top: 3px;
 }
 
 QtViewerPushButton[mode="new_points"][creation_state="partial"],
 QtViewerPushButton[mode="new_shapes"][creation_state="partial"],
 QtViewerPushButton[mode="new_labels"][creation_state="partial"] {
-  margin: 2px;
-  border: 1px solid {{ current }};
+  border: 3px solid {{ lighten(current, 20) }};
+  margin: 0px;
+  margin-top: 3px;
 }
 
 QtViewerPushButton[mode="warning"] {
