@@ -35,7 +35,7 @@ def _native_wayland_plugin_available() -> bool:
         try:
             plugins = QLibraryInfo.path(QLibraryInfo.LibraryPath.PluginsPath)
         except AttributeError:  # PyQt5/PySide2 spelling
-            plugins = QLibraryInfo.location(QLibraryInfo.PluginsPath)
+            plugins = QLibraryInfo.location(QLibraryInfo.PluginsPath)  # type: ignore[attr-defined]
         return bool(glob.glob(os.path.join(plugins, 'platforms', '*wayland*')))
     except (ImportError, AttributeError, OSError):
         return True
