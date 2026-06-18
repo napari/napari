@@ -37,19 +37,27 @@ NUM_LABEL_LEVELS = 5
 def open_cosem(path, num_levels):
     """Open a COSEM multiscale group through an in-memory cache."""
     store = CacheStore(
-        FsspecStore.from_url(path, anon=True),
+        FsspecStore.from_url(path, storage_options={'anon': True}),
         cache_store=MemoryStore(),
         max_size=int(2e9),
     )
     group = zarr.open_group(store, mode='r')
     arrays = [group[f's{level}'] for level in range(num_levels)]
     ms = dict(group.attrs)['multiscales'][0]
-    scale = ms['datasets'][0]['coordinateTransformations'][0]['scale']
-    return arrays, scale
+    transforms = ms['datasets'][0]['coordinateTransformations']
+    scale = transforms[0]['scale']
+    translate = [0.0] * len(scale)
+    for t in transforms:
+        if t.get('type') == 'translation':
+            translate = t['translation']
+            break
+    return arrays, scale, translate
 
 
-em_arrays, em_scale = open_cosem(EM_PATH, NUM_EM_LEVELS)
-label_arrays, label_scale = open_cosem(LABEL_PATH, NUM_LABEL_LEVELS)
+em_arrays, em_scale, em_translate = open_cosem(EM_PATH, NUM_EM_LEVELS)
+label_arrays, label_scale, label_translate = open_cosem(
+    LABEL_PATH, NUM_LABEL_LEVELS
+)
 
 viewer = napari.Viewer()
 viewer.dims.ndisplay = 3
@@ -61,6 +69,7 @@ add_progressive_loading_image(
     contrast_limits=(0, 255),
     colormap='gray',
     scale=em_scale,
+    translate=em_translate,
     rendering='attenuated_mip',
 )
 
@@ -69,6 +78,7 @@ add_progressive_loading_labels(
     viewer=viewer,
     name='organelles (crop124)',
     scale=label_scale,
+    translate=label_translate,
 )
 
 if __name__ == '__main__':
