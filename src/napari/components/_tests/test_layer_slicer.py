@@ -1,9 +1,8 @@
 import time
-import weakref
 from concurrent.futures import Future, wait
 from dataclasses import dataclass
 from threading import RLock, current_thread, main_thread
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import pytest
@@ -13,6 +12,9 @@ from napari.components import Dims
 from napari.components._layer_slicer import _LayerSlicer
 from napari.layers import Image, Labels, Points
 from napari.utils.notifications import notification_manager
+
+if TYPE_CHECKING:
+    import weakref
 
 # The following fakes are used to control execution of slicing across
 # multiple threads, while also allowing us to mimic real classes

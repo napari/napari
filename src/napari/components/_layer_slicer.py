@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import logging
 import weakref
-from collections.abc import Iterable
 from concurrent.futures import Executor, Future, ThreadPoolExecutor, wait
 from contextlib import contextmanager
 from threading import RLock
@@ -23,6 +22,8 @@ from napari.settings import get_settings
 from napari.utils.events.event import EmitterGroup, Event
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable
+
     from napari.components import Dims
 
 logger = logging.getLogger('napari.components._layer_slicer')

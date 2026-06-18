@@ -1,14 +1,18 @@
 """guess_rgb, guess_multiscale, guess_labels."""
 
+from __future__ import annotations
+
 import itertools
-from collections.abc import Sequence
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
 
 from napari.layers._data_protocols import LayerDataProtocol
 from napari.layers._multiscale_data import MultiScaleData
 from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 
 def guess_rgb(shape: tuple[int, ...], min_side_len: int = 30) -> bool:

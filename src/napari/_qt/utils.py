@@ -4,7 +4,6 @@ import re
 import signal
 import socket
 import weakref
-from collections.abc import Callable, Iterable, Sequence
 from contextlib import contextmanager, suppress
 from enum import auto
 from functools import partial
@@ -41,6 +40,8 @@ QBYTE_FLAG = '!QBYTE_'
 RICH_TEXT_PATTERN = re.compile('<[^\n]+>')
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Iterable, Sequence
+
     from magicgui.widgets import Widget
 
 
