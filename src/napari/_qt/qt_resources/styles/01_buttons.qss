@@ -148,16 +148,14 @@ QtModeRadioButton {
 }
 
 QtModePushButton {
-  min-height: 24px;
-  min-width: 24px;
-  padding: 2px;
-  margin: 1px
+  min-height: 26px;
+  min-width: 26px;
+  border: 1px solid {{ primary }};
+  border-radius: 3px;
+  padding: 0px;
+  margin: 1px;
 }
 
-QtModePushButton::indicator{
-  border-radius: 3px;
-  border: 1px solid {{ primary }};
-}
 
 QtModeRadioButton::indicator{
   min-height: 28px;
