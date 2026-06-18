@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import types
 from abc import ABC, abstractmethod
 from contextlib import nullcontext
@@ -49,6 +50,8 @@ if TYPE_CHECKING:
 
 
 __all__ = ('ScalarFieldBase',)
+
+_logger = logging.getLogger(__name__)
 
 #: Lower bound for the per-axis extent of 3D sub-volume tiles, so extreme
 #: zooms do not thrash on tiny slices.
@@ -494,8 +497,9 @@ class ScalarFieldBase(Layer, ABC):
                         displayed_axes,
                     )
                 ).astype(int)
+            view_dir = self._view_direction_data(displayed_axes)
             self.corner_pixels = self._corners_for_locked_level(
-                level, displayed_axes, data_bbox_int
+                level, displayed_axes, data_bbox_int, view_dir
             )
             self._data_level = level
         else:
@@ -545,8 +549,9 @@ class ScalarFieldBase(Layer, ABC):
             locked = self._locked_data_level
             old_level = self._data_level
             self._data_level = locked
+            view_dir = self._view_direction_data(displayed_axes)
             corners = self._corners_for_locked_level(
-                locked, displayed_axes, data_bbox_int
+                locked, displayed_axes, data_bbox_int, view_dir
             )
             level_changed = old_level != locked
             if level_changed or self._locked_tile_moved(
@@ -612,11 +617,48 @@ class ScalarFieldBase(Layer, ABC):
             if level_changed:
                 self.refresh(extent=False, thumbnail=False)
 
+    def _view_direction_data(
+        self, displayed_axes: list[int]
+    ) -> np.ndarray | None:
+        """View direction in level-0 data coords for displayed axes.
+
+        Returns None when no viewer is available or the direction
+        cannot be computed (e.g. in 2D).
+        """
+        if self._slice_input.ndisplay != 3:
+            return None
+        try:
+            from napari import current_viewer
+
+            viewer = current_viewer()
+            if viewer is None:
+                return None
+            world_dir = np.asarray(
+                viewer.camera.view_direction, dtype=float
+            )
+        except Exception:  # noqa: BLE001
+            return None
+        if not np.all(np.isfinite(world_dir)):
+            return None
+        # world_dir has ndisplay components; pad to full ndim
+        full_dir = np.zeros(self.ndim, dtype=float)
+        full_dir[list(displayed_axes)] = world_dir[-len(displayed_axes):]
+        try:
+            data_dir = self._world_to_data_ray(full_dir)
+        except Exception:  # noqa: BLE001
+            return None
+        disp_dir = data_dir[list(displayed_axes)]
+        norm = np.linalg.norm(disp_dir)
+        if norm < 1e-12:
+            return None
+        return disp_dir / norm
+
     def _corners_for_locked_level(
         self,
         level: int,
         displayed_axes: list[int],
         data_bbox_int: np.ndarray | None = None,
+        view_direction: np.ndarray | None = None,
     ) -> np.ndarray:
         """Corner pixels to render for a locked multiscale level.
 
@@ -626,6 +668,11 @@ class ScalarFieldBase(Layer, ABC):
         extent is returned instead, centered on ``data_bbox_int`` (the
         current view in level-0 data coordinates) or the middle of the
         level.
+
+        When *view_direction* is given (unit vector in displayed-data
+        coords), the tile center is biased toward the near face of the
+        volume (the side the camera sees first) so that the closest data
+        loads first after a rotation.
         """
         shape_at_level = np.take(
             np.asarray(self.level_shapes[level]), displayed_axes
@@ -648,11 +695,6 @@ class ScalarFieldBase(Layer, ABC):
         if tile_bytes is not None:
             itemsize = max(int(self.dtype.itemsize), 1)
             max_elements = max(tile_bytes // itemsize, 1)
-            # Start from the full level shape (capped per-axis by the GL
-            # texture limit), then shrink proportionally to fit the byte
-            # budget. Small axes keep their full size while larger axes
-            # shrink — so anisotropic data shows much more of the volume
-            # than a uniform cube cap would.
             try:
                 from napari._vispy.utils.gl import get_max_texture_sizes
 
@@ -679,25 +721,19 @@ class ScalarFieldBase(Layer, ABC):
         if data_bbox_int is not None and np.all(np.isfinite(data_bbox_int)):
             bbox = np.asarray(data_bbox_int, dtype=float) / downsample
             center = bbox.mean(axis=0)
-            # Bound the tile by the visible extent so deep zooms slice
-            # (and fetch) only what is on screen. The canvas-plane bbox is
-            # degenerate along the view axis, so give every axis at least
-            # the largest on-screen extent (a view-sized cube). A margin
-            # (set by progressive loading) adds pan slack so small camera
-            # translations stay inside the tile instead of re-slicing.
-            view_extent = bbox[1] - bbox[0]
-            view_extent = np.maximum(view_extent, view_extent.max())
-            view_extent = view_extent * getattr(self, '_tile_margin_3d', 1.0)
-            view_extent = np.ceil(view_extent).astype(np.int64)
-            if np.all(view_extent > 0):
-                tile_extent = np.minimum(
-                    tile_extent,
-                    np.maximum(view_extent, _MIN_TILE_EXTENT_3D),
-                )
+
+            # Bias toward the near face: shift the center against the
+            # view direction so the tile covers the camera-facing side
+            # of the volume rather than its geometric center.
+            if view_direction is not None:
+                vd = np.asarray(view_direction, dtype=float)
+                vd_norm = np.linalg.norm(vd)
+                if vd_norm > 1e-12:
+                    vd = vd / vd_norm
+                    shift = -vd * tile_extent * 0.35
+                    center = center + shift
         else:
             center = shape_at_level / 2
-        # quantize so tile shapes repeat across camera poses (texture
-        # reuse); the stable caps (extent_cap, level shape) still apply
         quantum = _TILE_EXTENT_QUANTUM_3D
         tile_extent = np.asarray(tile_extent, dtype=np.int64)
         tile_extent = np.minimum(

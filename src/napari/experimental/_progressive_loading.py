@@ -1099,7 +1099,9 @@ class ProgressiveLoader:
 
         Sized from the canvas dimensions and zoom so 3D sub-volume tiles
         cover (roughly) what is on screen rather than the whole memory
-        budget.
+        budget. In 3D the depth axis (along the view direction) gets a
+        smaller extent than the screen-plane axes so the tile tracks the
+        rotated frustum.
         """
         camera = self._viewer.camera
         camera_center = np.asarray(camera.center, dtype=float)
@@ -1126,12 +1128,32 @@ class ProgressiveLoader:
             canvas_size = 800
         if not np.isfinite(zoom) or zoom <= 0 or canvas_size <= 0:
             return np.stack([center, center])
-        # world units -> level-0 data units (per displayed axis)
         layer_scale = np.take(
             np.asarray(self._layer.scale, dtype=float),
             list(displayed_axes),
         )
-        half_extent = (canvas_size / zoom) / 2 / np.maximum(layer_scale, 1e-12)
+        screen_half = (canvas_size / zoom) / 2 / np.maximum(layer_scale, 1e-12)
+        # In 3D, project the view direction onto data axes and shrink
+        # the depth axis so the bbox tracks the rotated frustum instead
+        # of always being a uniform cube.
+        half_extent = screen_half.copy()
+        if self._viewer.dims.ndisplay == 3:
+            try:
+                view_dir_world = np.asarray(
+                    camera.view_direction, dtype=float
+                )[-len(displayed_axes):]
+                view_dir_data = np.abs(view_dir_world) / np.maximum(
+                    layer_scale, 1e-12
+                )
+                view_dir_data /= np.maximum(np.linalg.norm(view_dir_data), 1e-12)
+                # screen-plane axes get full extent; depth axis gets a
+                # fraction proportional to its alignment with view dir
+                depth_fraction = np.maximum(view_dir_data, 0.1)
+                half_extent = screen_half * np.maximum(
+                    1.0 - 0.7 * depth_fraction, 0.3
+                )
+            except Exception:  # noqa: BLE001
+                pass
         return np.stack([center - half_extent, center + half_extent])
 
     def _apply_auto_level(self) -> None:
@@ -1165,10 +1187,14 @@ class ProgressiveLoader:
         # centering any sub-volume tile on the camera.
         corners_fn = getattr(layer, '_corners_for_locked_level', None)
         if corners_fn is not None:
+            view_dir = getattr(layer, '_view_direction_data', lambda _: None)(
+                displayed_axes
+            )
             layer.corner_pixels = corners_fn(
                 target,
                 displayed_axes,
                 camera_bbox,
+                view_dir,
             )
         else:
             shape_at_level = np.take(
