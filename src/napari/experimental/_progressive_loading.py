@@ -712,6 +712,8 @@ class ProgressiveLoader:
         self._hold_until = 0.0
         self._hold_s = max(0.15, 1.5 * debounce_ms / 1000.0)
         self._held_batches: list[tuple] = []
+        self._last_step_change_time = 0.0
+        self._step_change_min_interval = 0.2
         self._held_refresh = False
         # Level we set through layer._locked_data_level for 3D auto mode
         # (None when we are not driving the level).
@@ -764,7 +766,7 @@ class ProgressiveLoader:
             # moment interaction starts, so drag frames stay free of
             # uploads, slice cascades and fetch GIL pressure
             (viewer.camera.events, self._on_interaction),
-            (viewer.dims.events.current_step, self._on_interaction),
+            (viewer.dims.events.current_step, self._on_dims_step_change),
             (viewer.camera.events, self._debounced_check),
             (viewer.dims.events.current_step, self._debounced_check),
             (viewer.dims.events.ndisplay, self._debounced_check),
@@ -1317,6 +1319,29 @@ class ProgressiveLoader:
 
         if _glir_metering.is_installed():
             _glir_metering.hold_uploads_until(self._hold_until)
+
+    def _on_dims_step_change(self, event=None) -> None:
+        """Handle a non-displayed dimension change (e.g. time step).
+
+        Unlike camera interaction, each step is a discrete new view.
+        Cancel the old fetch, degrade quality for responsiveness,
+        and start loading the new time step immediately.
+        """
+        if self._closed:
+            return
+        # If we're mid-camera-drag, let the interaction hold handle it;
+        # the debounced _check will fire when interaction settles.
+        if self._holding:
+            return
+        now = time.monotonic()
+        if now - self._last_step_change_time < self._step_change_min_interval:
+            # During rapid play the debounced _check catches the final
+            # position; skip intermediate steps to avoid fetch storms.
+            return
+        self._last_step_change_time = now
+        self._cancel_active()
+        self._degrade_render_quality()
+        self._check()
 
     def _degrade_render_quality(self) -> None:
         """Coarsen the raycast step while frames must stay cheap.
