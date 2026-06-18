@@ -362,7 +362,7 @@ QScrollBar:vertical {
 }
 
 QScrollBar::handle {
-  background: {{ primary }};
+  background: {{ secondary }};
   border-radius: 2px;
 }
 
