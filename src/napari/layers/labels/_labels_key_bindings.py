@@ -181,7 +181,11 @@ def redo(layer: Labels) -> None:
     trans._('Reset the current polygon'),
 )
 def reset_polygon(layer: Labels) -> None:
-    """Reset the drawing of the current polygon."""
+    """Reset the drawing of the current polygon or abort a brush stroke."""
+    brush_stroke = layer._overlays['brush_stroke']
+    if brush_stroke.active:
+        brush_stroke.abort(layer)
+        return
     layer._overlays['polygon'].points = []
 
 
