@@ -264,7 +264,7 @@ class QtDimSliderWidget(QWidget):
             self.slider.setPageStep(1)
             self.slider.setValue(self.dims.current_step[self.axis])
             self.curslice_label.validator().setTop(
-                10 ** (len(str(nsteps)) + 1)
+                10 ** len(str(nsteps + 1))
             )
             self.totslice_label.setText(str(nsteps))
             self.totslice_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
