@@ -1750,3 +1750,102 @@ def test_tile_extent_quantized(qtbot, make_napari_viewer):
         assert all(s % 32 == 0 or s in (322, 512) for s in size)
     # 123/124/127 collapse to one shape; 96/100/130 to two more
     assert len(sizes) <= 3
+
+
+# ---------- Labels progressive loading ----------
+
+
+@pytest.fixture
+def multiscale_label_arrays():
+    """A small in-memory multiscale label pyramid backed by dask."""
+    rng = np.random.default_rng(42)
+    base = rng.integers(0, 10, size=(256, 256), dtype=np.uint16)
+    levels = [base, base[::2, ::2].copy(), base[::4, ::4].copy()]
+    return [da.from_array(level, chunks=(32, 32)) for level in levels]
+
+
+def test_add_progressive_loading_labels(
+    qtbot,
+    make_napari_viewer,
+    multiscale_label_arrays,
+):
+    from napari.experimental._progressive_loading import (
+        add_progressive_loading_labels,
+    )
+
+    viewer = make_napari_viewer()
+    layer = add_progressive_loading_labels(
+        multiscale_label_arrays, viewer=viewer
+    )
+
+    assert len(viewer.layers) == 1
+    assert layer.multiscale
+    assert len(layer.data) == len(multiscale_label_arrays)
+
+    from napari.layers import Labels
+
+    assert isinstance(layer, Labels)
+
+    loader = layer.metadata['progressive_loader']
+    assert isinstance(loader, ProgressiveLoader)
+    _wait_for_idle_loader(qtbot, loader)
+
+    coarsest = loader._data[len(loader._data) - 1]
+    np.testing.assert_array_equal(
+        coarsest.hyperslice,
+        np.asarray(multiscale_label_arrays[-1]),
+    )
+
+    loader.close()
+    qtbot.wait(300)
+
+
+def test_progressive_labels_data_matches_source(
+    qtbot,
+    make_napari_viewer,
+    multiscale_label_arrays,
+):
+    from napari.experimental._progressive_loading import (
+        add_progressive_loading_labels,
+    )
+
+    viewer = make_napari_viewer()
+    layer = add_progressive_loading_labels(
+        multiscale_label_arrays, viewer=viewer
+    )
+    loader = layer.metadata['progressive_loader']
+    _wait_for_idle_loader(qtbot, loader)
+
+    level = layer.data_level
+    vdata = loader._data[level]
+    interval = vdata.interval
+    assert interval is not None
+    key = tuple(slice(mn, mx) for mn, mx in zip(*interval, strict=True))
+    np.testing.assert_array_equal(
+        np.asarray(vdata[key]),
+        np.asarray(multiscale_label_arrays[level][key]),
+    )
+
+    loader.close()
+    qtbot.wait(300)
+
+
+def test_progressive_labels_not_editable(
+    qtbot,
+    make_napari_viewer,
+    multiscale_label_arrays,
+):
+    from napari.experimental._progressive_loading import (
+        add_progressive_loading_labels,
+    )
+
+    viewer = make_napari_viewer()
+    layer = add_progressive_loading_labels(
+        multiscale_label_arrays, viewer=viewer
+    )
+    assert not layer.editable
+
+    loader = layer.metadata['progressive_loader']
+    _wait_for_idle_loader(qtbot, loader)
+    loader.close()
+    qtbot.wait(300)

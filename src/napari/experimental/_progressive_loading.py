@@ -24,7 +24,8 @@ which provides instant low-resolution context everywhere, powers layer
 thumbnails, and serves as the backdrop source for finer levels.
 
 Use :func:`add_progressive_loading_image` to add a progressively loading
-image to a viewer.
+image to a viewer, or :func:`add_progressive_loading_labels` for a labels
+layer.
 
 This is experimental: expect breaking changes and rough edges, and please
 report issues to https://github.com/napari/napari/issues.
@@ -2748,5 +2749,125 @@ def add_progressive_loading_image(
     layer.metadata['progressive_loader'] = loader
     with contextlib.suppress(AttributeError):
         # stop all background work when the window goes away
+        viewer.window._qt_window.destroyed.connect(loader.close)
+    return layer
+
+
+def add_progressive_loading_labels(
+    labels,
+    viewer: napari.Viewer | None = None,
+    name: str | None = None,
+    auto_level_3d: bool = True,
+    max_pixel_size_3d: float = 2.0,
+    interval_max_bytes: int = DEFAULT_INTERVAL_MAX_BYTES,
+    tile_max_bytes_3d: int = DEFAULT_TILE_MAX_BYTES_3D,
+    max_bytes_per_second: float | None = None,
+    interaction_hold: bool = True,
+    interactive_step_rate: float = 4.0,
+    **layer_kwargs,
+):
+    """Add a progressively loading multiscale labels layer to a viewer.
+
+    Works identically to :func:`add_progressive_loading_image` but creates
+    a :class:`~napari.layers.Labels` layer.  Editing is disabled (napari
+    disables editing for multiscale labels), so the layer is read-only.
+
+    Parameters
+    ----------
+    labels : sequence of array-like
+        Multiscale label data, highest resolution first.  Must be integer
+        typed.  Levels may be zarr arrays, dask arrays, or anything
+        implementing ``shape``, ``dtype``, ``chunks``/``chunksize`` and
+        ``__getitem__``.
+    viewer : napari.Viewer, optional
+        The viewer to add the layer to.  A new one is created if not given.
+    name : str, optional
+        Layer name.
+    auto_level_3d : bool
+        Automatically pick the rendered data level from the camera zoom
+        in 3D.
+    max_pixel_size_3d : float
+        Tuning knob for 3D auto level selection.
+    interval_max_bytes : int
+        Memory budget for a single level's resident interval.
+    tile_max_bytes_3d : int
+        Upper bound for a 3D sub-volume tile.
+    max_bytes_per_second : float, optional
+        Rate-limit chunk loading.  ``None`` = unlimited.
+    interaction_hold : bool
+        Suspend all streaming work while the user interacts.
+    interactive_step_rate : float
+        Coarsen the volume raycast step by this factor during interaction.
+    **layer_kwargs
+        Additional keyword arguments passed to the ``Labels`` constructor.
+
+    Returns
+    -------
+    napari.layers.Labels
+        The created layer.  The active :class:`ProgressiveLoader` is stored
+        in ``layer.metadata['progressive_loader']``.
+    """
+    if viewer is None:
+        from napari import Viewer
+
+        viewer = Viewer()
+
+    env_tile = os.environ.get('NAPARI_PROGRESSIVE_TILE_MAX_BYTES_3D')
+    if env_tile:
+        tile_max_bytes_3d = int(float(env_tile))
+
+    data = MultiScaleVirtualData(labels)
+
+    scale = layer_kwargs.get('scale')
+    if scale is None:
+        max_extent = float(max(data.shape))
+        limit = float(2**21)
+        if max_extent > limit:
+            factor = 2.0 ** -int(np.ceil(np.log2(max_extent / limit)))
+            layer_kwargs['scale'] = (factor,) * data.ndim
+            LOGGER.warning(
+                'label extent %.3g exceeds float32 rendering precision; '
+                'scaling the layer by %g to keep it renderable. Pass '
+                'scale= explicitly to override.',
+                max_extent,
+                factor,
+            )
+
+    from napari.layers import Labels
+
+    layer = Labels(
+        data._data,
+        multiscale=True,
+        name=name,
+        **layer_kwargs,
+    )
+    tile_bytes = min(interval_max_bytes, tile_max_bytes_3d)
+    layer._max_tile_extent_3d = _tile_extent_3d_for(data.dtype, tile_bytes)
+    layer._tile_max_bytes_3d = tile_bytes
+    layer._interval_max_bytes_3d = interval_max_bytes
+    viewer.layers.append(layer)
+
+    from napari.settings import get_settings
+
+    get_settings().experimental.async_ = True
+    viewer._layer_slicer._force_sync = False
+
+    from napari.experimental import _glir_metering
+
+    _glir_metering.install()
+    loader = ProgressiveLoader(
+        viewer,
+        layer,
+        data,
+        auto_level_3d=auto_level_3d,
+        max_pixel_size_3d=max_pixel_size_3d,
+        interval_max_bytes=interval_max_bytes,
+        tile_max_bytes_3d=tile_max_bytes_3d,
+        max_bytes_per_second=max_bytes_per_second,
+        interaction_hold=interaction_hold,
+        interactive_step_rate=interactive_step_rate,
+    )
+    layer.metadata['progressive_loader'] = loader
+    with contextlib.suppress(AttributeError):
         viewer.window._qt_window.destroyed.connect(loader.close)
     return layer
