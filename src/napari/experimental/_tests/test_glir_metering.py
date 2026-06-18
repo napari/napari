@@ -224,7 +224,10 @@ def test_install_uninstall_idempotent(monkeypatch):
 
 
 def test_metered_flush_carries_and_drains(monkeypatch):
-
+    monkeypatch.setattr(
+        'vispy.gloo.context.get_current_canvas',
+        lambda: None,
+    )
     parser = FakeParser()
     parser.add_texture3d(1)
     try:
@@ -250,7 +253,10 @@ def test_metered_flush_carries_and_drains(monkeypatch):
 
 
 def test_metered_flush_new_size_cancels_carry(monkeypatch):
-
+    monkeypatch.setattr(
+        'vispy.gloo.context.get_current_canvas',
+        lambda: None,
+    )
     parser = FakeParser()
     parser.add_texture3d(1)
     try:

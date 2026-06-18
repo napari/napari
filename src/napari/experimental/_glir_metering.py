@@ -416,8 +416,10 @@ def _metered_flush(self, parser):
     state.carry = _metered_parse(parser, commands, state, force_defer=holding)
 
     if state.carry and canvas is not None:
-        # keep draining even without interaction
-        canvas.update()
+        try:
+            canvas.update()
+        except RuntimeError:
+            pass
     elif had_carry and not state.carry:
         _notify_drained()
 
@@ -439,7 +441,10 @@ def _metered_flush(self, parser):
         for command in deletes:
             parser._parse(command)
         if state.deferred_deletes and canvas is not None:
-            canvas.update()
+            try:
+                canvas.update()
+            except RuntimeError:
+                pass
 
 
 def install(
