@@ -46,12 +46,10 @@ def test_bounding_box_multiscale_3D(make_napari_viewer, qtbot):
     t2d_scale = np.asarray(tile2data.scale)[list(displayed)]
     t2d_translate = np.asarray(tile2data.translate)[list(displayed)]
     safe_scale = np.where(np.abs(t2d_scale) > 1e-12, t2d_scale, 1.0)
-    expected_bounds = (
-        bounds_lv0 - t2d_translate[:, np.newaxis]
-    ) / safe_scale[:, np.newaxis]
-    expected_vertices = np.array(
-        list(product(*expected_bounds))
-    )
+    expected_bounds = (bounds_lv0 - t2d_translate[:, np.newaxis]) / safe_scale[
+        :, np.newaxis
+    ]
+    expected_vertices = np.array(list(product(*expected_bounds)))
     # roll the coordinates to match the vispy marker vertices
     expected_vertices = np.roll(expected_vertices, shift=-1, axis=1).astype(
         'float'
