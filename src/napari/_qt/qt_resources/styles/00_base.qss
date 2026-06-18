@@ -611,8 +611,18 @@ QStatusBar::item{
   border: None;
 }
 
-/* ----------------- QHeaderView ----------------- */
-QHeaderView::section {
+/* ----------------- QTableView ----------------- */
+QTableView {
   background-color: {{ foreground }};
+  gridline-color: {{ primary }};
+}
+
+QTableView::item:selected {
+  background-color: {{ highlight }};
+}
+
+QHeaderView::section {
+  background-color: {{ primary }};
   padding: 2px;
+  margin: 0px;
 }
