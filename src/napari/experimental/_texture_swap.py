@@ -320,7 +320,10 @@ class DoubleBufferedVolumeTexture:
         if back.interpolation != front.interpolation:
             back.interpolation = front.interpolation
         self._catch_up(back)
-        self._bind(back)
+        try:
+            self._bind(back)
+        except RuntimeError:
+            return False
         self._front, self._back = back, front
 
         # catch the new back up too (off the rendered path), then drop
@@ -342,12 +345,15 @@ class DoubleBufferedVolumeTexture:
             return False
         node = self._node
         old_front, back = self._front, self._back
-        self._catch_up(back)
-        self._bind(back)
-        z, y, x = self._shape
-        node.shared_program['u_shape'] = (x, y, z)
-        node._vol_shape = self._shape
-        node._need_vertex_update = True
+        try:
+            self._catch_up(back)
+            self._bind(back)
+            z, y, x = self._shape
+            node.shared_program['u_shape'] = (x, y, z)
+            node._vol_shape = self._shape
+            node._need_vertex_update = True
+        except RuntimeError:
+            return False
         self._front = back
         self._release(old_front)
         self._reshape_pending = False
@@ -370,7 +376,10 @@ class DoubleBufferedVolumeTexture:
         self._stage_deadline = time.monotonic() + 2.0
         self._trim_log()
         self._apply_pending_transform()
-        node.update()
+        try:
+            node.update()
+        except RuntimeError:
+            pass
         return True
 
     def _bind(self, texture) -> None:

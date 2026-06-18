@@ -379,12 +379,15 @@ def _attach_reset_hook(canvas):
             return
         try:
             parser = c.context.shared.parser
-        except AttributeError:
+        except (AttributeError, RuntimeError):
             return
         _state_for(parser).reset_budget()
 
     # position='first': run before the scene draw issues any flushes
-    canvas.events.draw.connect(_on_draw, position='first')
+    try:
+        canvas.events.draw.connect(_on_draw, position='first')
+    except RuntimeError:
+        return
     _hooked_canvases.add(canvas)
 
 

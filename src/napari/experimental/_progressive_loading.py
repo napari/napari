@@ -2126,7 +2126,7 @@ class ProgressiveLoader:
             if ndisplay is None:
                 ndisplay = self._viewer.dims.ndisplay
             return visual._layer_node.get_node(ndisplay)
-        except (KeyError, AttributeError):  # pragma: no cover - headless
+        except (KeyError, AttributeError, RuntimeError):  # pragma: no cover
             return None
 
     def _get_volume_node(self):
@@ -2265,7 +2265,7 @@ class ProgressiveLoader:
                 if dbuf is not None
                 else tuple(texture.shape[:ndisplay])
             )
-        except (AttributeError, TypeError):  # pragma: no cover
+        except (AttributeError, TypeError, RuntimeError):  # pragma: no cover
             return False
         # The texture holds the corner-pixels crop of the level (the
         # rendered tile), which sits inside the chunk-aligned interval.
@@ -2386,7 +2386,10 @@ class ProgressiveLoader:
                     with contextlib.suppress(Exception):
                         self._dbuf.close()
                     self._dbuf = None
-            node.update()
+            try:
+                node.update()
+            except RuntimeError:
+                pass
         self._maybe_restore_quality()
 
     def _refresh(self, final: bool = False, force: bool = False) -> None:
