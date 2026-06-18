@@ -121,5 +121,7 @@ class ColorBar(Node):
         text = self.ticks._text
         self.ticks._update_subvisuals()  # triggers computing of the tick labels
 
-        width, height = text.get_width_height()
-        return width + self.ticks.tick_label_margin, height
+        width, _ = text.get_width_height()
+        # we only need the height of a single line for the caller
+        _, line_height = text.get_width_height(with_text='-1.00')
+        return width + self.ticks.tick_label_margin, line_height

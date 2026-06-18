@@ -27,8 +27,12 @@ class Text(BaseText):
 
         super().__init__(*args, **kwargs)
 
-    def get_width_height(self) -> tuple[float, float]:
+    def get_width_height(self, with_text=None) -> tuple[float, float]:
+        if with_text is not None:
+            old, self.text = self.text, with_text
         width, height = get_text_width_height(self)
+        if with_text is not None:
+            self.text = old
         return width * self._vispy_dpi_ratio, height * self._vispy_dpi_ratio
 
     @property
