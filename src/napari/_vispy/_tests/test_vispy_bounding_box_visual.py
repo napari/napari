@@ -36,17 +36,21 @@ def test_bounding_box_multiscale_3D(make_napari_viewer, qtbot):
         'float'
     )
 
-    # for multiscale layers, in 3D, the lowest data level is displayed
-    # get the vertices from the lowest data level bounding box, augmented
+    # The bounding box overlay uses level-0 extent transformed through
+    # tile2data.inverse so it represents the full dataset correctly.
+    displayed = viewer.dims.displayed
+    bounds_lv0 = viewer.layers[-1]._display_bounding_box_at_level(
+        displayed, 0
+    ) + np.array([[-0.5, 0.5]])
+    tile2data = viewer.layers[-1]._transforms[0]
+    t2d_scale = np.asarray(tile2data.scale)[list(displayed)]
+    t2d_translate = np.asarray(tile2data.translate)[list(displayed)]
+    safe_scale = np.where(np.abs(t2d_scale) > 1e-12, t2d_scale, 1.0)
+    expected_bounds = (
+        bounds_lv0 - t2d_translate[:, np.newaxis]
+    ) / safe_scale[:, np.newaxis]
     expected_vertices = np.array(
-        list(
-            product(
-                *viewer.layers[-1]._display_bounding_box_at_level(
-                    viewer.dims.displayed, len(viewer.layers[-1].data) - 1
-                )
-                + np.array([[-0.5, 0.5]])
-            )
-        )
+        list(product(*expected_bounds))
     )
     # roll the coordinates to match the vispy marker vertices
     expected_vertices = np.roll(expected_vertices, shift=-1, axis=1).astype(
