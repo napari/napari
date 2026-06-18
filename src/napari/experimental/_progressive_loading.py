@@ -1139,9 +1139,7 @@ class ProgressiveLoader:
         else:
             corners = np.zeros((2, layer.ndim), dtype=int)
             corners[1, displayed_axes] = (
-                np.take(
-                    np.asarray(layer.level_shapes[target]), displayed_axes
-                )
+                np.take(np.asarray(layer.level_shapes[target]), displayed_axes)
                 - 1
             )
             layer.corner_pixels = corners
