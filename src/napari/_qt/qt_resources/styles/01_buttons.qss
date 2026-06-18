@@ -29,16 +29,17 @@ QtViewerPushButton[mode="new_labels"] {
 QtViewerPushButton[mode="new_points"],
 QtViewerPushButton[mode="new_shapes"],
 QtViewerPushButton[mode="new_labels"] {
-  margin: 3px;
-  margin-top: 6px;
+  border: 1px solid {{ opacity(primary, 100) }};
+  margin: 2px;
+  margin-top: 5px;
 }
 
 QtViewerPushButton[mode="new_points"]:disabled,
 QtViewerPushButton[mode="new_shapes"]:disabled,
 QtViewerPushButton[mode="new_labels"]:disabled {
-  border: 3px solid {{ background }};
-  margin: 0px;
-  margin-top: 3px;
+  border: 1px solid {{ opacity(primary, 100) }};
+  margin: 2px;
+  margin-top: 5px;
 }
 
 /* TODO: can we avoid this darken/lighten? */
@@ -142,32 +143,48 @@ QtViewerPushButton[mode="grid_view_button"] {
 
 
 QtModeRadioButton {
-  min-height : 28px;
-  padding: 0px;
+  min-height: 28px;
+  min-width: 28px;
 }
 
-QtModeRadioButton::indicator:unchecked {
+QtModePushButton {
+  min-height: 24px;
+  min-width: 24px;
+  padding: 2px;
+  margin: 1px
+}
+
+QtModePushButton::indicator{
   border-radius: 3px;
-  width: 28px;
-  height: 28px;
+  border: 1px solid {{ primary }};
+}
+
+QtModeRadioButton::indicator{
+  min-height: 28px;
+  min-width: 28px;
+  border-radius: 3px;
+  border: 1px solid {{ primary }};
+}
+
+QtModeRadioButton::indicator:unchecked{
   padding: 0;
   background-color: {{ primary }};
 }
 
-QtModeRadioButton::indicator:checked {
-  border-radius: 3px;
-  height: 28px;
-  width: 28px;
+QtModeRadioButton::indicator:checked{
   padding: 0;
   background-color: {{ current }};
+  border-color: {{ current }};
 }
 
 /* TODO: introduce "disabled" as color? */
-QtModeRadioButton::indicator:disabled {
-  background-color: {{ opacity(primary, 50) }}
+QtModeRadioButton::indicator:disabled,
+QtModePushButton::indicator:disabled {
+  background-color: {{ opacity(primary, 50) }};
 }
 
-QtModeRadioButton::indicator:unchecked:hover {
+QtModeRadioButton::indicator:unchecked:hover,
+QtModePushButton::indicator:hover {
   background-color: {{ highlight }};
 }
 
