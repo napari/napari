@@ -817,6 +817,7 @@ class ProgressiveLoader:
         )
         layer._max_tile_extent_3d = self._tile_extent_3d
         layer._tile_max_bytes_3d = min(interval_max_bytes, tile_max_bytes_3d)
+        layer._interval_max_bytes_3d = interval_max_bytes
 
         layer._render_margin_2d = 2.0
         self._tile_margin_3d = 1.25

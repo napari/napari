@@ -332,6 +332,10 @@ class ScalarFieldBase(Layer, ABC):
         # behavior of always slicing the full locked level.
         self._max_tile_extent_3d: int | None = None
         self._tile_max_bytes_3d: int | None = None
+        # Full interval memory budget.  When a level fits entirely
+        # within this budget, sub-volume tiling is skipped and the
+        # whole level is rendered.  Set by the progressive loader.
+        self._interval_max_bytes_3d: int | None = None
 
         # Set data
         self._data = data
@@ -681,6 +685,15 @@ class ScalarFieldBase(Layer, ABC):
         extent_cap = self._max_tile_extent_3d
         if self._slice_input.ndisplay != 3 or extent_cap is None:
             return corners
+
+        # If the whole level fits in the interval memory budget,
+        # render it in full — no sub-volume tiling needed.
+        interval_budget = self._interval_max_bytes_3d
+        if interval_budget is not None:
+            itemsize = max(int(self.dtype.itemsize), 1)
+            level_bytes = int(np.prod(shape_at_level)) * itemsize
+            if level_bytes <= interval_budget:
+                return corners
 
         downsample = np.take(
             np.asarray(self.downsample_factors[level]), displayed_axes
