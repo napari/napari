@@ -1324,21 +1324,25 @@ class ProgressiveLoader:
         """Handle a non-displayed dimension change (e.g. time step).
 
         Unlike camera interaction, each step is a discrete new view.
-        Cancel the old fetch, degrade quality for responsiveness,
-        and start loading the new time step immediately.
+        Hold the double buffer so the old frame stays visible through
+        the re-slice, cancel the old fetch, and start loading the new
+        time step immediately.
         """
         if self._closed:
             return
-        # If we're mid-camera-drag, let the interaction hold handle it;
-        # the debounced _check will fire when interaction settles.
         if self._holding:
             return
         now = time.monotonic()
         if now - self._last_step_change_time < self._step_change_min_interval:
-            # During rapid play the debounced _check catches the final
-            # position; skip intermediate steps to avoid fetch storms.
             return
         self._last_step_change_time = now
+        # Hold the front buffer *before* anything else so the upcoming
+        # re-slice (napari fires set_data on the same event) cannot
+        # present zeros — the old tile keeps rendering until the new
+        # time point's data arrives and explicitly releases.
+        dbuf = self._dbuf3d()
+        if dbuf is not None:
+            dbuf.hold_presents()
         self._cancel_active()
         self._degrade_render_quality()
         self._check()
