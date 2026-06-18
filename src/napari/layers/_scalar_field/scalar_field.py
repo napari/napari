@@ -655,6 +655,7 @@ class ScalarFieldBase(Layer, ABC):
             # than a uniform cube cap would.
             try:
                 from napari._vispy.utils.gl import get_max_texture_sizes
+
                 _, gl_max = get_max_texture_sizes()
             except Exception:  # noqa: BLE001
                 gl_max = extent_cap
@@ -670,8 +671,9 @@ class ScalarFieldBase(Layer, ABC):
                     break
                 ratio = (max_elements / vol) ** (1.0 / len(over))
                 for ax in over:
-                    tile_extent[ax] = max(int(tile_extent[ax] * ratio),
-                                          _MIN_TILE_EXTENT_3D)
+                    tile_extent[ax] = max(
+                        int(tile_extent[ax] * ratio), _MIN_TILE_EXTENT_3D
+                    )
         else:
             tile_extent = np.minimum(shape_at_level, extent_cap)
         if data_bbox_int is not None and np.all(np.isfinite(data_bbox_int)):
