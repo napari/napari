@@ -681,7 +681,9 @@ class ScalarFieldBase(Layer, ABC):
         corners[1, displayed_axes] = high - 1
         return corners
 
-    def _locked_tile_moved(self, corners: np.ndarray, displayed_axes: list[int]) -> bool:
+    def _locked_tile_moved(
+        self, corners: np.ndarray, displayed_axes: list[int]
+    ) -> bool:
         """Whether new locked-level corners warrant a re-slice.
 
         Uses hysteresis of a quarter of the tile extent so that small
