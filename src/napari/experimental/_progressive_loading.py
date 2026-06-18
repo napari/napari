@@ -1151,9 +1151,7 @@ class ProgressiveLoader:
                     np.asarray(layer.downsample_factors[target]),
                     displayed_axes,
                 )
-                center = (
-                    camera_bbox.mean(axis=0).astype(float) / downsample
-                )
+                center = camera_bbox.mean(axis=0).astype(float) / downsample
                 center = np.clip(center, 0, shape_at_level - 1)
                 low = np.clip(
                     (center - tile_extent / 2).astype(int),
