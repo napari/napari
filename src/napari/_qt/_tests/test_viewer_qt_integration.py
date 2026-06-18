@@ -13,7 +13,7 @@ from qtpy.QtGui import QEnterEvent, QGuiApplication, QKeyEvent
 from qtpy.QtWidgets import QApplication
 
 from napari._qt._tests.test_qt_viewer import qt_viewer
-from napari._tests.utils import skip_on_win_ci
+from napari._tests.utils import skip_local_popups, skip_on_win_ci
 from napari.settings import get_settings
 from napari.utils.action_manager import action_manager
 from napari.utils.theme import available_themes
