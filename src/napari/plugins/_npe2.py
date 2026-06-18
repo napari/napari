@@ -34,15 +34,16 @@ def read(
 
     assert stack is not None
     # npe2 still requires str paths at runtime; normalise Path here
-    paths = [os.fspath(p) for p in paths]
+    str_paths = [os.fspath(p) for p in paths]
     # the goal here would be to make read_get_reader of npe2 aware of "stack",
     # and not have this conditional here.
     # this would also allow the npe2-npe1 shim to do this transform as well
+    npe1_path: str | list[str]
     if stack:
-        npe1_path = paths
+        npe1_path = str_paths
     else:
-        assert len(paths) == 1
-        npe1_path = paths[0]
+        assert len(str_paths) == 1
+        npe1_path = str_paths[0]
     layer_data, reader = io_utils.read_get_reader(
         npe1_path, plugin_name=plugin
     )
