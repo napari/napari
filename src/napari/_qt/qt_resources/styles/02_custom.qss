@@ -183,6 +183,7 @@ QtLayerControlsContainer > QFrame {
   background-color: {{ foreground }};
 }
 
+/* grep for `setProperty('foreground', 'true')` to see uses */
 QWidget[foreground=true] {
   background-color: {{ foreground }};
 }

@@ -37,9 +37,7 @@ QtViewerPushButton[mode="new_labels"] {
 QtViewerPushButton[mode="new_points"]:disabled,
 QtViewerPushButton[mode="new_shapes"]:disabled,
 QtViewerPushButton[mode="new_labels"]:disabled {
-  border: 1px solid {{ opacity(primary, 100) }};
-  margin: 2px;
-  margin-top: 5px;
+  background-color: {{ opacity(primary, 100) }};
 }
 
 /* TODO: can we avoid this darken/lighten? */
@@ -177,8 +175,8 @@ QtModeRadioButton::indicator:checked{
 
 /* TODO: introduce "disabled" as color? */
 QtModeRadioButton::indicator:disabled,
-QtModePushButton::indicator:disabled {
-  background-color: {{ opacity(primary, 50) }};
+QtModePushButton:disabled {
+  background-color: {{ opacity(primary, 200) }};
 }
 
 QtModeRadioButton::indicator:unchecked:hover,
