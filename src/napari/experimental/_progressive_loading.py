@@ -1137,11 +1137,38 @@ class ProgressiveLoader:
                 camera_bbox,
             )
         else:
-            corners = np.zeros((2, layer.ndim), dtype=int)
-            corners[1, displayed_axes] = (
-                np.take(np.asarray(layer.level_shapes[target]), displayed_axes)
-                - 1
+            shape_at_level = np.take(
+                np.asarray(layer.level_shapes[target]), displayed_axes
             )
+            tile_cap = getattr(layer, '_max_tile_extent_3d', None)
+            if tile_cap is not None:
+                tile_extent = np.minimum(shape_at_level, tile_cap)
+            else:
+                tile_extent = shape_at_level
+            corners = np.zeros((2, layer.ndim), dtype=int)
+            if camera_bbox is not None and np.all(np.isfinite(camera_bbox)):
+                downsample = np.take(
+                    np.asarray(layer.downsample_factors[target]),
+                    displayed_axes,
+                )
+                center = (
+                    camera_bbox.mean(axis=0).astype(float) / downsample
+                )
+                center = np.clip(center, 0, shape_at_level - 1)
+                low = np.clip(
+                    (center - tile_extent / 2).astype(int),
+                    0,
+                    shape_at_level - tile_extent,
+                )
+            else:
+                low = np.clip(
+                    ((shape_at_level - tile_extent) // 2).astype(int),
+                    0,
+                    shape_at_level - tile_extent,
+                )
+            high = low + tile_extent
+            corners[0, displayed_axes] = low
+            corners[1, displayed_axes] = high - 1
             layer.corner_pixels = corners
         # Prepare the new level's interval with a backdrop from the level
         # that was just displayed BEFORE napari re-slices, so the previous
