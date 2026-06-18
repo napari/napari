@@ -1129,11 +1129,22 @@ class ProgressiveLoader:
         layer._data_level = target
         # Mirror the corner_pixels update of the locked_data_level setter,
         # centering any sub-volume tile on the camera.
-        layer.corner_pixels = layer._corners_for_locked_level(
-            target,
-            displayed_axes,
-            camera_bbox,
-        )
+        corners_fn = getattr(layer, '_corners_for_locked_level', None)
+        if corners_fn is not None:
+            layer.corner_pixels = corners_fn(
+                target,
+                displayed_axes,
+                camera_bbox,
+            )
+        else:
+            corners = np.zeros((2, layer.ndim), dtype=int)
+            corners[1, displayed_axes] = (
+                np.take(
+                    np.asarray(layer.level_shapes[target]), displayed_axes
+                )
+                - 1
+            )
+            layer.corner_pixels = corners
         # Prepare the new level's interval with a backdrop from the level
         # that was just displayed BEFORE napari re-slices, so the previous
         # resolution stays on screen until new chunks replace it.
