@@ -27,10 +27,11 @@ def _only_when_enabled(callback):
 
     def decorated_callback(self, layer: Labels, event):
         if not self.overlay.enabled:
-            return
+            return None
         if layer._slice_input.ndisplay != 2 or layer.n_edit_dimensions != 2:
-            return
-        callback(self, layer, event)
+            return None
+        # returns a generator for the press callback (pan-during-stroke)
+        return callback(self, layer, event)
 
     return decorated_callback
 
@@ -73,7 +74,6 @@ class VispyLabelsBrushStrokeOverlay(LayerOverlayMixin, VispySceneOverlay):
     def _on_geometry_change(self, event=None):
         if not self.overlay.active:
             self._circle.visible = False
-            self._reset_stroke_state()
             return
 
         dd = list(self._dims_displayed)
@@ -96,13 +96,28 @@ class VispyLabelsBrushStrokeOverlay(LayerOverlayMixin, VispySceneOverlay):
 
     @_only_when_enabled
     def _on_mouse_press(self, layer, event):
-        # only the right button starts an encircle-and-fill stroke
-        if event.button != 2 or self.overlay.active:
+        if not self.overlay.active:
+            # the right button starts an encircle-and-fill stroke
+            if event.button == 2:
+                self._start_stroke(layer, event)
             return
+        if event.button == 2:
+            return
+        # a press during an encircle-stroke pans the canvas until release, then the
+        # stroke resumes on the next mouse move
+        previous_mouse_pan = layer.mouse_pan
+        layer.mouse_pan = True
+        yield
+        while event.type == 'mouse_move':
+            yield
+        layer.mouse_pan = previous_mouse_pan
+        # avoid interpolating a stray line across the panned gap
+        self._last_coord = None
+
+    def _start_stroke(self, layer, event):
         coord = mouse_event_to_labels_coordinate(layer, event)
         if coord is None:
             return
-
         self._reset_stroke_state()
         # hold history open across all the discrete events of this stroke
         layer._begin_stroke()
@@ -149,7 +164,7 @@ class VispyLabelsBrushStrokeOverlay(LayerOverlayMixin, VispySceneOverlay):
         if len(self._stroke_points) > 2:
             layer.paint_polygon(self._stroke_points, layer.selected_label)
         layer._commit_stroke()
-        self.overlay.active = False  # hides circle and resets stroke state
+        self.overlay.active = False  # hides the circle
 
     def _reset_stroke_state(self):
         self._stroke_points = []

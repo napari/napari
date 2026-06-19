@@ -8,9 +8,11 @@ from napari._vispy.overlays.labels_brush_stroke import (
 from napari._vispy.utils.qt_font import FontInfo
 from napari.components import ViewerModel
 from napari.layers.labels._labels_key_bindings import reset_polygon
+from napari.utils._proxies import ReadOnlyWrapper
 from napari.utils.interactions import (
     mouse_move_callbacks,
     mouse_press_callbacks,
+    mouse_release_callbacks,
 )
 
 
@@ -31,6 +33,8 @@ def _make_overlay():
     return layer, overlay, vispy, data
 
 
+# the brush-size-on-mouse-move callback (active in PAINT mode) reads
+# event.modifiers, which the MouseEvent fixture does not define, so set it here.
 def _press(MouseEvent, layer, position):
     event = MouseEvent(
         type='mouse_press', button=2, position=position, dims_displayed=(0, 1)
@@ -122,3 +126,50 @@ def test_leave_and_return_completes_and_fills(MouseEvent):
 
     layer.undo()
     assert np.array_equiv(data, 0)
+
+
+@pytest.mark.usefixtures('qapp')
+def test_click_during_stroke_pans_then_resumes(MouseEvent):
+    layer, overlay, vispy, data = _make_overlay()
+
+    _press(MouseEvent, layer, (15, 15))
+    assert overlay.active is True
+    assert layer.mouse_pan is False  # paint mode default
+
+    # a (non-right) press during the stroke enables camera panning
+    press = ReadOnlyWrapper(
+        MouseEvent(
+            type='mouse_press',
+            button=1,
+            position=(15, 16),
+            dims_displayed=(0, 1),
+        )
+    )
+    mouse_press_callbacks(layer, press)
+    assert layer.mouse_pan is True
+    assert overlay.active is True  # stroke is not aborted
+
+    # dragging pans (no painting while dragging)
+    move = ReadOnlyWrapper(
+        MouseEvent(
+            type='mouse_move',
+            is_dragging=True,
+            position=(25, 25),
+            dims_displayed=(0, 1),
+        )
+    )
+    mouse_move_callbacks(layer, move)
+    assert layer.mouse_pan is True
+
+    # releasing restores panning state and keeps the stroke alive
+    release = ReadOnlyWrapper(
+        MouseEvent(
+            type='mouse_release',
+            button=1,
+            position=(25, 25),
+            dims_displayed=(0, 1),
+        )
+    )
+    mouse_release_callbacks(layer, release)
+    assert layer.mouse_pan is False
+    assert overlay.active is True
