@@ -46,7 +46,6 @@ from napari.components.overlays import (
     Overlay,
     ScaleBarOverlay,
     TextOverlay,
-    WelcomeOverlay,
     ZoomOverlay,
     ZYXAxesOverlay,
 )
@@ -129,7 +128,6 @@ def _current_theme() -> str:
 
 
 DEFAULT_OVERLAYS = {
-    'welcome': WelcomeOverlay,
     'scale_bar': ScaleBarOverlay,
     'text': TextOverlay,
     'axes': AxesOverlay,
@@ -340,10 +338,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     @property
     def text_overlay(self) -> TextOverlay:
         return self._overlays['text']  # type: ignore[return-value]
-
-    @property
-    def welcome_screen(self):
-        return self._overlays['welcome']
 
     @property
     def _zoom_box(self) -> ZoomOverlay:

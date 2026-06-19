@@ -1,14 +1,21 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import numpy as np
 
 from napari._vispy.layers.base import VispyBaseLayer
 from napari._vispy.visuals.vectors import VectorsVisual
 from napari.layers.utils.layer_utils import segment_normal
 
+if TYPE_CHECKING:
+    from napari._vispy.utils.qt_font import FontInfo
+
 
 class VispyVectorsLayer(VispyBaseLayer):
-    def __init__(self, layer) -> None:
-        node = VectorsVisual()
-        super().__init__(layer, node)
+    def __init__(self, layer, font_info: FontInfo) -> None:
+        node = VectorsVisual(font_info=font_info)
+        super().__init__(layer, node, font_info=font_info)
 
         self.layer.events.edge_color.connect(self._on_data_change)
 
