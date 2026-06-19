@@ -376,10 +376,8 @@ class DoubleBufferedVolumeTexture:
         self._stage_deadline = time.monotonic() + 2.0
         self._trim_log()
         self._apply_pending_transform()
-        try:
+        with contextlib.suppress(RuntimeError):
             node.update()
-        except RuntimeError:
-            pass
         return True
 
     def _bind(self, texture) -> None:
@@ -654,18 +652,20 @@ class DoubleBufferedImageTexture:
     @staticmethod
     def _make_sibling(node, front):
         """Create a back texture matching the front's class and format."""
-        from vispy.visuals._scalable_textures import GPUScaledTextureMixin
-
-        if isinstance(front, GPUScaledTextureMixin):
-            texture_format = front.internalformat
-        else:  # pragma: no cover - napari uses GPU-scaled textures
-            texture_format = None
         dtype = getattr(front, '_data_dtype', None) or np.float32
-        rep = np.zeros((1, 1), dtype=dtype)
-        back = node._init_texture(rep, texture_format)
+        front_shape = tuple(front.shape)
+        nch = front_shape[2] if len(front_shape) > 2 else 1
+        if nch in (3, 4):
+            rep = np.zeros((1, 1, nch), dtype=dtype)
+        else:
+            rep = np.zeros((1, 1), dtype=dtype)
+        # Let vispy infer the format from the data shape rather than
+        # copying the front's internalformat: the property can return
+        # a corrupted string when read concurrently with GL work.
+        back = node._init_texture(rep, None)
         back.resize(
-            tuple(front.shape),
-            internalformat=getattr(front, 'internalformat', None),
+            front_shape,
+            internalformat=back.internalformat,
         )
         back._data_dtype = dtype
         if front.clim is not None:

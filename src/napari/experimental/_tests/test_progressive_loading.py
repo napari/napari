@@ -121,6 +121,7 @@ def test_add_progressive_loading_image(
         coarsest.hyperslice,
         np.asarray(multiscale_arrays[-1]),
     )
+    loader.close()
 
 
 def test_progressive_loading_data_matches_source(
@@ -142,6 +143,7 @@ def test_progressive_loading_data_matches_source(
         np.asarray(vdata[key]),
         np.asarray(multiscale_arrays[level][key]),
     )
+    loader.close()
 
 
 def test_locked_data_level_is_loaded(
@@ -164,6 +166,7 @@ def test_locked_data_level_is_loaded(
         np.asarray(vdata[0:256, 0:256]),
         np.asarray(multiscale_arrays[0]),
     )
+    loader.close()
 
 
 def test_removing_layer_closes_loader(
@@ -200,6 +203,7 @@ def test_fetch_pass_is_cancelled_on_view_change(
     # runs) so stale chunks from cancelled passes are dropped
     qtbot.waitUntil(lambda: loader._generation > generation, timeout=10000)
     _wait_for_idle_loader(qtbot, loader)
+    loader.close()
 
 
 def test_contrast_limits_estimated(
@@ -213,6 +217,7 @@ def test_contrast_limits_estimated(
     assert low < high
     loader = layer.metadata['progressive_loader']
     _wait_for_idle_loader(qtbot, loader)
+    loader.close()
 
 
 def test_interval_clamped_to_memory_budget(
@@ -276,6 +281,7 @@ def test_auto_level_3d_follows_zoom(
     qtbot.waitUntil(lambda: layer.data_level == 0, timeout=10000)
     _wait_for_idle_loader(qtbot, loader)
     assert len(loader._data[0].loaded_chunks) > 0
+    loader.close()
 
 
 def test_auto_level_3d_respects_user_pin(
@@ -302,6 +308,7 @@ def test_auto_level_3d_respects_user_pin(
     assert not loader._user_locked
     qtbot.waitUntil(lambda: layer.data_level == 0, timeout=10000)
     _wait_for_idle_loader(qtbot, loader)
+    loader.close()
 
 
 def test_auto_level_3d_released_in_2d(
@@ -322,6 +329,7 @@ def test_auto_level_3d_released_in_2d(
     # napari's own 2D level selection is back in control
     assert layer._locked_data_level is None
     _wait_for_idle_loader(qtbot, loader)
+    loader.close()
 
 
 def test_auto_level_3d_can_be_disabled(
@@ -342,6 +350,7 @@ def test_auto_level_3d_can_be_disabled(
     # napari's 3D behavior: coarsest level
     assert layer.data_level == len(multiscale_3d_arrays) - 1
     _wait_for_idle_loader(qtbot, loader)
+    loader.close()
 
 
 def test_zoom_target_level_respects_memory_budget(
@@ -440,6 +449,7 @@ def test_zoom_target_level_3d_uninitialized_camera(
     viewer.camera.zoom = 50.0
     qtbot.waitUntil(lambda: layer.data_level == 0, timeout=10000)
     _wait_for_idle_loader(qtbot, loader)
+    loader.close()
 
 
 def test_auto_level_3d_survives_selector_echo(
@@ -466,6 +476,7 @@ def test_auto_level_3d_survives_selector_echo(
     viewer.camera.zoom = 50.0
     qtbot.waitUntil(lambda: layer.data_level == 0, timeout=10000)
     _wait_for_idle_loader(qtbot, loader)
+    loader.close()
 
 
 # ---------- never-empty canvas (backdrop across level switches) ----------
@@ -496,6 +507,7 @@ def test_backdrop_prefers_nearest_loaded_level(
     min_coord = np.zeros(2, dtype=np.int64)
     max_coord = np.asarray(loader._data[0].shape, dtype=np.int64)
     assert loader._backdrop_level(0, min_coord, max_coord) == 1
+    loader.close()
 
 
 def test_level_switch_keeps_canvas_filled(
@@ -524,6 +536,7 @@ def test_level_switch_keeps_canvas_filled(
     # source data has no zeros, so any zeros would be unfilled regions
     assert (hyperslice == 0).mean() < 0.05
     _wait_for_idle_loader(qtbot, loader)
+    loader.close()
 
 
 # ---------- 3D sub-volume tiles ----------
@@ -638,6 +651,7 @@ def test_progressive_loading_3d_subvolume_tile(
         np.asarray(loader._data[0][key]),
         np.asarray(multiscale_3d_arrays[0][key]),
     )
+    loader.close()
 
 
 def test_chunk_priority_3d_closest_visible_first():
@@ -678,6 +692,7 @@ def test_auto_label_shows_current_level(
     layer.locked_data_level = 0
     qtbot.waitUntil(lambda: combo.itemText(0) == 'Auto (0)', timeout=10000)
     _wait_for_idle_loader(qtbot, loader)
+    loader.close()
 
 
 # ---------- deep pyramids (zoomed-out economics, world-size limits) ----------
@@ -772,6 +787,7 @@ def test_huge_world_auto_normalized(qtbot, make_napari_viewer):
     assert world_extent <= 2**21
     loader = layer.metadata['progressive_loader']
     _wait_for_idle_loader(qtbot, loader)
+    loader.close()
 
 
 def test_texture_patching_used_in_3d(
@@ -801,6 +817,7 @@ def test_texture_patching_used_in_3d(
         np.asarray(loader._data[0][0:64, 0:64, 0:64]),
         np.asarray(multiscale_3d_arrays[0]),
     )
+    loader.close()
 
 
 def test_texture_patching_used_in_2d(
@@ -848,6 +865,7 @@ def test_texture_patching_used_in_2d(
         np.asarray(loader._data[0][0:256, 0:256]),
         np.asarray(multiscale_arrays[0]),
     )
+    loader.close()
 
 
 def test_texture_patching_used_for_nd_data_in_2d(
@@ -888,6 +906,7 @@ def test_texture_patching_used_for_nd_data_in_2d(
         np.asarray(loader._data[0][z, 0:64, 0:64]),
         np.asarray(multiscale_3d_arrays[0][z]),
     )
+    loader.close()
 
 
 @pytest.mark.parametrize('dtype', [np.float32, np.int16, np.uint16])
@@ -930,6 +949,7 @@ def test_texture_patching_other_dtypes(
         np.asarray(loader._data[0][0:256, 0:256]),
         base,
     )
+    loader.close()
 
 
 def test_progress_updates_deferred(
@@ -969,6 +989,7 @@ def test_progress_updates_deferred(
     qtbot.waitUntil(lambda: bar.count == 3, timeout=2000)
     assert loader._pbar_pending == 0
     loader._pbar = None
+    loader.close()
 
 
 # ---------- fetch rate limiting ----------
@@ -1064,6 +1085,7 @@ def test_loader_unlimited_by_default(
     # gate) but performs no rate pacing
     assert loader._make_limiter().bytes_per_second is None
     _wait_for_idle_loader(qtbot, loader)
+    loader.close()
 
 
 # ---------- interaction hold ----------
@@ -1149,6 +1171,7 @@ def test_interaction_hold_buffers_batches_and_refreshes(
     assert loader._hold_until > _time.monotonic()
     loader._end_hold()
     _wait_for_idle_loader(qtbot, loader)
+    loader.close()
 
 
 def test_interaction_hold_pauses_fetch_limiter(
@@ -1167,6 +1190,7 @@ def test_interaction_hold_pauses_fetch_limiter(
     assert loader._limiter._go.is_set()
     loader._limiter = None
     _wait_for_idle_loader(qtbot, loader)
+    loader.close()
 
 
 def test_glir_hold_defers_all_uploads(monkeypatch):
@@ -1259,6 +1283,7 @@ def test_double_buffer_swaps_and_content_correct(
         np.asarray(loader._data[0][0:64, 0:64, 0:64]),
         np.asarray(multiscale_3d_arrays[0]),
     )
+    loader.close()
 
 
 def _engaged_3d_dbuf(qtbot, make_napari_viewer, arrays):
@@ -1316,6 +1341,7 @@ def test_transform_applied_at_swap_not_before(
     assert np.array_equal(np.asarray(transform.matrix), new_matrix)
     assert dbuf._held_matrix is None
     assert dbuf._pending_matrix is None
+    loader.close()
 
 
 def test_full_rewrite_present_waits_for_upload_drain(
@@ -1347,6 +1373,7 @@ def test_full_rewrite_present_waits_for_upload_drain(
     assert dbuf.present() or dbuf._front is not front_before
     assert dbuf._front is not front_before
     assert node._texture is dbuf._front
+    loader.close()
 
 
 def test_hold_presents_vetoes_until_released(
@@ -1376,6 +1403,7 @@ def test_hold_presents_vetoes_until_released(
         timeout=5000,
     )
     assert dbuf._front is not front_before
+    loader.close()
 
 
 # ---------- interactive render quality (LOD) ----------
@@ -1410,6 +1438,7 @@ def test_interactive_step_degrades_and_restores(
     assert loader._saved_step is None
     assert float(node.relative_step_size) == pytest.approx(base_step)
     _wait_for_idle_loader(qtbot, loader)
+    loader.close()
 
 
 def test_interactive_step_disabled(
@@ -1434,6 +1463,7 @@ def test_interactive_step_disabled(
     assert float(node.relative_step_size) == pytest.approx(base_step)
     loader._end_hold()
     _wait_for_idle_loader(qtbot, loader)
+    loader.close()
 
 
 def test_interactive_step_not_applied_in_2d(
@@ -1449,6 +1479,7 @@ def test_interactive_step_not_applied_in_2d(
     assert loader._saved_step is None
     loader._end_hold()
     _wait_for_idle_loader(qtbot, loader)
+    loader.close()
 
 
 # ---------- LOD coupled to upload backlog ----------
@@ -1487,6 +1518,7 @@ def test_quality_stays_degraded_while_backlog_pending(
     assert loader._saved_step is None
     assert float(node.relative_step_size) == pytest.approx(base_step)
     _wait_for_idle_loader(qtbot, loader)
+    loader.close()
 
 
 def test_drain_callback_restores_quality(
@@ -1513,6 +1545,7 @@ def test_drain_callback_restores_quality(
     assert loader._saved_step is None
     assert float(node.relative_step_size) == pytest.approx(base_step)
     _wait_for_idle_loader(qtbot, loader)
+    loader.close()
 
 
 def test_pass_start_degrades_quality(
@@ -1545,6 +1578,7 @@ def test_pass_start_degrades_quality(
     # idle with no backlog -> the poll restored full quality
     qtbot.waitUntil(lambda: loader._saved_step is None, timeout=5000)
     assert float(node.relative_step_size) == pytest.approx(base_step)
+    loader.close()
 
 
 def test_suppress_next_full_upload_one_shot(
@@ -1579,6 +1613,7 @@ def test_suppress_next_full_upload_one_shot(
     assert not dbuf._suppress_full
     node.set_data(np.ones(shape, dtype=np.uint8))  # next one stages
     assert len(staged) == 1
+    loader.close()
 
 
 # ---------- staged shape changes (level/tile switches) ----------
@@ -1849,3 +1884,30 @@ def test_progressive_labels_not_editable(
     _wait_for_idle_loader(qtbot, loader)
     loader.close()
     qtbot.wait(300)
+
+
+# ---------- RGB progressive loading ----------
+
+
+def test_progressive_loading_rgb(
+    qtbot,
+    make_napari_viewer,
+):
+    """RGB images have an extra channel dim not tracked by viewer.dims."""
+    base = np.random.default_rng(0).integers(
+        0, 255, size=(128, 128, 3), dtype=np.uint8
+    )
+    levels = [
+        da.from_array(base, chunks=(32, 32, 3)),
+        da.from_array(base[::2, ::2], chunks=(32, 32, 3)),
+    ]
+    viewer = make_napari_viewer()
+    layer = add_progressive_loading_image(
+        levels, viewer=viewer, contrast_limits=(0, 255)
+    )
+    loader = layer.metadata['progressive_loader']
+    _wait_for_idle_loader(qtbot, loader)
+
+    vdata = loader._data[loader._resident_level]
+    assert vdata.interval is not None
+    loader.close()

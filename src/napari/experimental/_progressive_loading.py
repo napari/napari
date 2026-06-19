@@ -44,9 +44,7 @@ from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 from typing import TYPE_CHECKING
 
 import numpy as np
-from psygnal import debounced
 from qtpy.QtCore import QTimer
-from superqt import ensure_main_thread
 
 # imported at module load: a lazy first-use import inside a fetch pass
 # costs seconds of main-thread time under fetch-thread GIL pressure
@@ -755,12 +753,21 @@ class ProgressiveLoader:
         self._resident_disabled = False
         self._last_clamp_message: str | None = None
 
-        # Debounced so that continuous camera motion only triggers a fetch
-        # pass once interaction settles.
-        self._debounced_check = debounced(
-            ensure_main_thread(self._check),
-            timeout=debounce_ms,
-        )
+        # QTimer-based debounce: continuous camera motion only triggers a
+        # fetch pass once interaction settles.  Using QTimer keeps the
+        # callback on the main thread (psygnal's debounced fires from a
+        # threading.Timer, which crashes PySide6 when it touches Qt
+        # objects).
+        self._debounce_timer = QTimer()
+        self._debounce_timer.setSingleShot(True)
+        self._debounce_timer.setInterval(debounce_ms)
+        self._debounce_timer.timeout.connect(self._check)
+
+        def _debounced_check(event=None):
+            self._debounce_timer.start()
+
+        _debounced_check.cancel = self._debounce_timer.stop
+        self._debounced_check = _debounced_check
         self._connections = [
             # fast (non-debounced) path: suspend streaming work the
             # moment interaction starts, so drag frames stay free of
@@ -843,6 +850,8 @@ class ProgressiveLoader:
             # kill any pending debounced trigger so no fetch pass can
             # start after close
             self._debounced_check.cancel()
+        with contextlib.suppress(Exception):
+            self._debounce_timer.timeout.disconnect(self._check)
         self._release_auto_level()
         self._cancel_active()
         from napari.experimental import _glir_metering
@@ -937,8 +946,13 @@ class ProgressiveLoader:
             data_point = np.asarray(self._viewer.dims.point, dtype=float)[
                 -ndim:
             ]
+        n_point = len(data_point)
         for d in range(ndim):
             if d not in displayed:
+                if d >= n_point:
+                    # Dimension not tracked by viewer.dims (e.g. RGB
+                    # channel): keep the full extent.
+                    continue
                 point = int(np.round(data_point[d] / factors[d]))
                 point = min(max(point, 0), int(vdata.shape[d]) - 1)
                 min_coord[d] = point
@@ -1730,6 +1744,7 @@ class ProgressiveLoader:
             return False
         corners = self._layer.corner_pixels
         translate = vdata.translate
+        displayed_set = set(displayed)
         src = tuple(
             steps[d] - int(translate[d])
             if d in steps
@@ -1737,6 +1752,8 @@ class ProgressiveLoader:
                 int(corners[0, d]) - int(translate[d]),
                 int(corners[1, d]) + 1 - int(translate[d]),
             )
+            if d in displayed_set
+            else slice(0, int(vdata.shape[d]))
             for d in range(vdata.ndim)
         )
         try:
@@ -1744,7 +1761,7 @@ class ProgressiveLoader:
 
             with vdata.lock:
                 crop = np.ascontiguousarray(vdata.hyperslice[src])
-            if crop.ndim != 2 or 0 in crop.shape:
+            if crop.ndim not in (2, 3) or 0 in crop.shape:
                 return False
             node.set_data(fix_data_dtype(crop))
         except Exception:  # noqa: BLE001 # pragma: no cover - GL mismatch
@@ -1771,13 +1788,12 @@ class ProgressiveLoader:
         # keep the canvas filled until repaired content presents.
         self._data.set_interval(level, min_coord, max_coord)
         if self._viewer.dims.ndisplay == 2:
-            view_min, view_max = self._viewport_box_2d(
-                level,
-                min_coord,
-                max_coord,
-            )
             with contextlib.suppress(Exception):
-                self._backdrop_fill_layered(level, view_min, view_max)
+                self._backdrop_fill_layered(
+                    level,
+                    [int(c) for c in min_coord],
+                    [int(c) for c in max_coord],
+                )
         dbuf = self._dbuf3d()
         if dbuf is not None:
             # the refresh below stages zeros + carry-over; keep the
@@ -1801,13 +1817,12 @@ class ProgressiveLoader:
         # filled content presents.
         self._data.set_interval(level, min_coord, max_coord)
         if self._viewer.dims.ndisplay == 2:
-            view_min, view_max = self._viewport_box_2d(
-                level,
-                min_coord,
-                max_coord,
-            )
             with contextlib.suppress(Exception):
-                self._backdrop_fill_layered(level, view_min, view_max)
+                self._backdrop_fill_layered(
+                    level,
+                    [int(c) for c in min_coord],
+                    [int(c) for c in max_coord],
+                )
         self._repair_backdrop()
         self._active = (level, tuple(min_coord), tuple(max_coord))
 
@@ -2170,8 +2185,14 @@ class ProgressiveLoader:
         except Exception:  # noqa: BLE001 # pragma: no cover - no slice yet
             return None
         steps: dict[int, int] = {}
+        n_slice = len(data_slice.point)
         for d in range(ndim):
             if d in displayed:
+                continue
+            if d >= n_slice:
+                # Dimension not tracked by the slicer (e.g. RGB
+                # channel): fully present in both hyperslice and
+                # texture — skip, don't step.
                 continue
             point = data_slice.point[d]
             if not np.isfinite(point):
@@ -2281,6 +2302,7 @@ class ProgressiveLoader:
         if any(hi[d] <= lo[d] for d in displayed):
             return False
         offset = tuple(lo[d] - box_min[d] for d in displayed)
+        displayed_set = set(displayed)
         try:
             if block is not None:
                 # precomputed contiguous copy from the fetch worker:
@@ -2290,10 +2312,13 @@ class ProgressiveLoader:
                     steps[d] - region_low[d]
                     if d in steps
                     else slice(lo[d] - region_low[d], hi[d] - region_low[d])
+                    if d in displayed_set
+                    else slice(None)
                     for d in range(ndim)
                 )
                 sub = block[inner]
-                if tuple(sub.shape) != tuple(hi[d] - lo[d] for d in displayed):
+                expected = tuple(hi[d] - lo[d] for d in displayed)
+                if sub.shape[: len(expected)] != expected:
                     return False
                 sub = np.ascontiguousarray(sub)
             else:
@@ -2306,6 +2331,8 @@ class ProgressiveLoader:
                         lo[d] - int(translate[d]),
                         hi[d] - int(translate[d]),
                     )
+                    if d in displayed_set
+                    else slice(None)
                     for d in range(ndim)
                 )
                 with vdata.lock:
@@ -2386,10 +2413,8 @@ class ProgressiveLoader:
                     with contextlib.suppress(Exception):
                         self._dbuf.close()
                     self._dbuf = None
-            try:
+            with contextlib.suppress(RuntimeError):
                 node.update()
-            except RuntimeError:
-                pass
         self._maybe_restore_quality()
 
     def _refresh(self, final: bool = False, force: bool = False) -> None:

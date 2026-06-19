@@ -12,8 +12,8 @@ from zarr.storage import FsspecStore, MemoryStore
 
 logging.basicConfig(level=logging.WARNING)
 
-import napari
-from napari.experimental._progressive_loading import (
+import napari  # noqa: E402
+from napari.experimental._progressive_loading import (  # noqa: E402
     add_progressive_loading_image,
 )
 
@@ -84,7 +84,7 @@ def debug_state():
         world_point[displayed] = np.array(cam.center)[-len(displayed):]
         data_center = np.asarray(layer.world_to_data(world_point), dtype=float)
         cam_data = data_center[displayed]
-    except Exception:
+    except Exception:  # noqa: BLE001
         cam_data = None
 
     offset = tile_center_lv0 - cam_data if cam_data is not None else None
@@ -99,7 +99,7 @@ def debug_state():
     print(f"  camera.center={cam.center}  zoom={cam.zoom:.3f}")
 
 
-from qtpy.QtCore import QTimer
+from qtpy.QtCore import QTimer  # noqa: E402
 
 timer = QTimer()
 timer.setInterval(3000)

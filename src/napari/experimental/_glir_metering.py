@@ -32,6 +32,7 @@ with and without metering.
 
 from __future__ import annotations
 
+import contextlib
 import logging
 import os
 import time
@@ -419,10 +420,8 @@ def _metered_flush(self, parser):
     state.carry = _metered_parse(parser, commands, state, force_defer=holding)
 
     if state.carry and canvas is not None:
-        try:
+        with contextlib.suppress(RuntimeError):
             canvas.update()
-        except RuntimeError:
-            pass
     elif had_carry and not state.carry:
         _notify_drained()
 
@@ -444,10 +443,8 @@ def _metered_flush(self, parser):
         for command in deletes:
             parser._parse(command)
         if state.deferred_deletes and canvas is not None:
-            try:
+            with contextlib.suppress(RuntimeError):
                 canvas.update()
-            except RuntimeError:
-                pass
 
 
 def install(
