@@ -19,7 +19,7 @@ class _AxesScene(ViewBox):
         self.axes = Axes(font_info=font_info)
         super().__init__(size=(size, size), bgcolor='transparent')
         self.camera = 'arcball'
-        self.camera.set_state(scale_factor=2.5, fov=0)  # good baseline
+        self.camera.set_state(fov=0)
         self.axes.parent = self.scene
         self.interactive = False
 
@@ -27,11 +27,11 @@ class _AxesScene(ViewBox):
         self.axes.set_gl_state(**kwargs)
 
 
-class VispyZYXAxesOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
+class VispyFloatingAxesOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
     """Axes indicating camera orientation, pinned to a canvas corner."""
 
     def __init__(self, font_info: FontInfo, **kwargs) -> None:
-        self._size = 80
+        self._size = 100
         super().__init__(
             node=_AxesScene(size=self._size, font_info=font_info),
             font_info=font_info,
@@ -93,7 +93,7 @@ class VispyZYXAxesOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
             self.node.camera.set_state(
                 _quaternion=Quaternion(1, 1, 0, 0),
                 center=(0.6, 0.6, 0),
-                scale_factor=1.5,
+                scale_factor=1.5,  # found by testing
             )
             return
 
@@ -108,7 +108,7 @@ class VispyZYXAxesOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         q = Quaternion(*rotation.as_quat(scalar_first=True))
 
         self.node.camera.set_state(
-            _quaternion=q, center=(0, 0, 0), scale_factor=2.5
+            _quaternion=q, center=(0, 0, 0), scale_factor=2.6
         )
 
     def reset(self):

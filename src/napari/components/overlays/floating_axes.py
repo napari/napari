@@ -1,8 +1,9 @@
+from napari.components._viewer_constants import CanvasPosition
 from napari.components.overlays.base import CanvasOverlay
 from napari.layers.base._base_constants import Blending
 
 
-class ZYXAxesOverlay(CanvasOverlay):
+class FloatingAxesOverlay(CanvasOverlay):
     """Axes indicating camera orientation, pinned to a canvas corner.
 
     Attributes
@@ -37,3 +38,4 @@ class ZYXAxesOverlay(CanvasOverlay):
     dashed: bool = False
     arrows: bool = True
     blending: Blending = Blending.TRANSLUCENT_NO_DEPTH
+    position: CanvasPosition = CanvasPosition.BOTTOM_LEFT
