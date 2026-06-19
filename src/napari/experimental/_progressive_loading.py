@@ -72,6 +72,7 @@ except ImportError:
         """No-op stand-in so ``@thread_worker`` doesn't crash at import."""
         return func if func is not None else lambda f: f
 
+
 if TYPE_CHECKING:
     import napari
 

@@ -14,12 +14,12 @@ plain HTTPS from EMBL — no S3 credentials needed.
 .. tags:: experimental
 """
 
+import napari_colormaps  # noqa: F401 – registers colormaps
 import zarr
 from zarr.experimental.cache_store import CacheStore
 from zarr.storage import FsspecStore, MemoryStore
 
 import napari
-import napari_colormaps  # noqa: F401 – registers colormaps
 from napari.experimental._progressive_loading import (
     add_progressive_loading_image,
 )
