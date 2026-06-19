@@ -6,6 +6,14 @@ S3 bucket, converted to OME-Zarr via bioformats2raw.
 Run:  .venv/bin/python examples/progressive_loading_wsi_.py
 """
 
+import sys
+
+try:
+    import s3fs  # noqa: F401
+except ImportError:
+    print('This example requires s3fs: pip install s3fs')
+    sys.exit(0)
+
 import dask.array as da
 import zarr
 from zarr.storage import FsspecStore

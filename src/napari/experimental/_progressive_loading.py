@@ -44,7 +44,6 @@ from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 from typing import TYPE_CHECKING
 
 import numpy as np
-from qtpy.QtCore import QTimer
 
 # imported at module load: a lazy first-use import inside a fetch pass
 # costs seconds of main-thread time under fetch-thread GIL pressure
@@ -57,8 +56,21 @@ from napari.experimental._virtual_data import (
     VirtualData,
     chunk_boundaries,
 )
-from napari.qt.threading import thread_worker
 from napari.utils import progress
+
+# Qt imports are deferred so the module can be imported in headless
+# environments (no Qt backend) — the tests and pure-data helpers
+# (chunk_slices, chunk_priority_*, VirtualData) remain usable.
+try:
+    from qtpy.QtCore import QTimer
+
+    from napari.qt.threading import thread_worker
+except ImportError:
+    QTimer = None  # type: ignore[assignment,misc]
+
+    def thread_worker(func=None, **kwargs):  # type: ignore[misc]
+        """No-op stand-in so ``@thread_worker`` doesn't crash at import."""
+        return func if func is not None else lambda f: f
 
 if TYPE_CHECKING:
     import napari

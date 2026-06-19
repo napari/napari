@@ -1,6 +1,16 @@
+import os
+import sys
+
 import dask.array as da
 import numpy as np
 import pytest
+
+pytest.importorskip('qtpy', reason='requires Qt backend')
+
+pytestmark = pytest.mark.skipif(
+    sys.platform == 'darwin' and os.environ.get('CI') == 'true',
+    reason='Progressive loading tests hang on macOS CI (no real display)',
+)
 
 from napari.experimental._progressive_loading import (
     ProgressiveLoader,
@@ -93,7 +103,11 @@ def _wait_for_idle_loader(qtbot, loader, timeout=30000):
     """Wait until the loader has no in-flight fetch workers."""
 
     def idle():
-        return loader._worker is None and loader._resident_worker is None
+        return (
+            loader._worker is None
+            and loader._resident_worker is None
+            and getattr(loader, '_repair_worker', None) is None
+        )
 
     qtbot.waitUntil(idle, timeout=timeout)
 

@@ -17,6 +17,14 @@ mitochondria instance segmentations from groundtruth crop124.
 .. tags:: experimental
 """
 
+import sys
+
+try:
+    import s3fs  # noqa: F401
+except ImportError:
+    print('This example requires s3fs: pip install s3fs')
+    sys.exit(0)
+
 import zarr
 from zarr.experimental.cache_store import CacheStore
 from zarr.storage import FsspecStore, MemoryStore
