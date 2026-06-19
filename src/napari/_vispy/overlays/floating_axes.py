@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
-from vispy.scene import ViewBox
+from vispy.scene import ArcballCamera, ViewBox
 from vispy.util.quaternion import Quaternion
 
 from napari._vispy.overlays.base import ViewerOverlayMixin, VispyCanvasOverlay
@@ -12,25 +12,27 @@ from napari.utils.theme import get_theme
 
 if TYPE_CHECKING:
     from napari._vispy.utils.qt_font import FontInfo
+    from napari.components.overlays import FloatingAxesOverlay
 
 
 class _AxesScene(ViewBox):
-    def __init__(self, size, font_info: FontInfo):
+    def __init__(self, size: float, font_info: FontInfo) -> None:
         self.axes = Axes(font_info=font_info)
         super().__init__(size=(size, size), bgcolor='transparent')
-        self.camera = 'arcball'
-        self.camera.set_state(fov=0)
+        self.camera = ArcballCamera(fov=0)
         self.axes.parent = self.scene
         self.interactive = False
 
-    def set_gl_state(self, **kwargs):
-        self.axes.set_gl_state(**kwargs)
+    def set_gl_state(self, *args: Any, **kwargs: Any) -> None:
+        self.axes.set_gl_state(*args, **kwargs)
 
 
 class VispyFloatingAxesOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
     """Axes indicating camera orientation, pinned to a canvas corner."""
 
-    def __init__(self, font_info: FontInfo, **kwargs) -> None:
+    overlay: FloatingAxesOverlay
+
+    def __init__(self, font_info: FontInfo, **kwargs: Any) -> None:
         self._size = 100
         super().__init__(
             node=_AxesScene(size=self._size, font_info=font_info),
@@ -55,7 +57,7 @@ class VispyFloatingAxesOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
 
         self.reset()
 
-    def _on_data_change(self, event=None):
+    def _on_data_change(self) -> None:
         """Update visual data like color, dashing, and arrows."""
         # Determine which axes are displayed
         axes = self.viewer.dims.displayed[::-1]
@@ -76,12 +78,12 @@ class VispyFloatingAxesOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self._on_labels_text_change()
         self._on_angles_change()
 
-    def _on_labels_text_change(self):
+    def _on_labels_text_change(self) -> None:
         axes = self.viewer.dims.displayed[::-1]
         axis_labels = [self.viewer.dims.axis_labels[a] for a in axes]
         self.node.axes.text.text = axis_labels
 
-    def _on_angles_change(self, event=None):
+    def _on_angles_change(self) -> None:
         """Update rotation from camera angles."""
         from scipy.spatial.transform import Rotation
 
@@ -99,11 +101,11 @@ class VispyFloatingAxesOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
 
         # NOTE: the following is just copied from VispyCamera implementation
         # flip handedness so the rotation is always righthanded even with axis flipping
-        angles = self.viewer.camera.angles * np.where(flip, -1, 1)
+        angles_flipped = self.viewer.camera.angles * np.where(flip, -1, 1)
         # undo vispy quirks (rotation of 90 digrees and lefthanded y axis)
-        angles = (np.array(angles) * (1, -1, 1)) + (0, 0, 90)
+        angles_fixed = (np.array(angles_flipped) * (1, -1, 1)) + (0, 0, 90)
         # see #8281 for why this is yzx. In short: longstanding vispy bug.
-        rotation = Rotation.from_euler('yzx', angles, degrees=True)
+        rotation = Rotation.from_euler('yzx', angles_fixed, degrees=True)
         # Create and set quaternion
         q = Quaternion(*rotation.as_quat(scalar_first=True))
 
@@ -111,6 +113,6 @@ class VispyFloatingAxesOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
             _quaternion=q, center=(0, 0, 0), scale_factor=2.6
         )
 
-    def reset(self):
+    def reset(self) -> None:
         super().reset()
         self._on_data_change()
