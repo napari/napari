@@ -66,6 +66,7 @@ class ColorManagerWrapper:
 
 class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
     overlay: ColorBarOverlay
+    layer: Image | Surface
 
     def __init__(
         self,
