@@ -29,15 +29,9 @@ QtViewerPushButton[mode="new_labels"] {
 QtViewerPushButton[mode="new_points"],
 QtViewerPushButton[mode="new_shapes"],
 QtViewerPushButton[mode="new_labels"] {
-  border: 1px solid {{ opacity(primary, 100) }};
+  border: 1px solid {{ primary }};
   margin: 2px;
   margin-top: 5px;
-}
-
-QtViewerPushButton[mode="new_points"]:disabled,
-QtViewerPushButton[mode="new_shapes"]:disabled,
-QtViewerPushButton[mode="new_labels"]:disabled {
-  background-color: {{ opacity(primary, 100) }};
 }
 
 /* TODO: can we avoid this darken/lighten? */
@@ -55,6 +49,12 @@ QtViewerPushButton[mode="new_labels"][creation_state="partial"] {
   border: 3px solid {{ lighten(current, 20) }};
   margin: 0px;
   margin-top: 3px;
+}
+
+QtViewerPushButton[mode="new_points"]:disabled,
+QtViewerPushButton[mode="new_shapes"]:disabled,
+QtViewerPushButton[mode="new_labels"]:disabled {
+  background-color: {{ background }};
 }
 
 QtViewerPushButton[mode="warning"] {
@@ -176,7 +176,7 @@ QtModeRadioButton::indicator:checked{
 /* TODO: introduce "disabled" as color? */
 QtModeRadioButton::indicator:disabled,
 QtModePushButton:disabled {
-  background-color: {{ opacity(primary, 200) }};
+  background-color: {{ foreground }};
 }
 
 QtModeRadioButton::indicator:unchecked:hover,

@@ -251,11 +251,11 @@ def gradient(stops, horizontal: bool = True) -> str:
 def template(css: str, **theme):
     def _increase_match(matchobj):
         font_size, to_add = matchobj.groups()
-        return increase(theme[font_size], int(to_add))
+        return increase(theme[font_size], to_add)
 
     def _decrease_match(matchobj):
         font_size, to_subtract = matchobj.groups()
-        return decrease(theme[font_size], int(to_subtract))
+        return decrease(theme[font_size], to_subtract)
 
     def darken_match(matchobj):
         color, percentage = matchobj.groups()
