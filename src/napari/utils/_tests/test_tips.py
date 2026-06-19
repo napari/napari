@@ -14,7 +14,7 @@ from napari.utils.tips import format_tip
             'press ⊞+K to jump',
             'press ⌘K to jump',
         ),
-        ('{Space} or {Alt}', '␣ or Alt', '␣  or Alt', '␣ or ⌥'),  # multiple
+        ('{Space} or {Alt}', '␣ or Alt', '␣ or Alt', '␣ or ⌥'),  # multiple
         ('{napari.viewer.fit_to_view}', 'Ctrl+0', 'Ctrl+0', '⌘0'),  # appmodel
         ('{napari:reset_view}', 'Ctrl+R', 'Ctrl+R', '⌘R'),  # action manager
     ],
