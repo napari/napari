@@ -9,13 +9,14 @@ from unittest.mock import MagicMock, patch
 import numpy as np
 import pytest
 from numpy import testing as npt
-from qtpy.QtCore import QEvent, Qt, QUrl
-from qtpy.QtGui import QGuiApplication, QKeyEvent
+from qtpy.QtCore import QEvent, QPointF, Qt, QUrl
+from qtpy.QtGui import QEnterEvent, QGuiApplication, QKeyEvent
 from qtpy.QtWidgets import QApplication
 
 from napari._qt._tests.test_qt_viewer import qt_viewer
 from napari._tests.utils import skip_local_popups, skip_on_win_ci
 from napari.settings import get_settings
+from napari.utils.action_manager import action_manager
 from napari.utils.theme import available_themes
 
 
@@ -149,6 +150,161 @@ def test_qt_viewer(make_napari_viewer):
     assert viewer.dims.ndim == 2
     assert view.dims.nsliders == viewer.dims.ndim
     assert np.sum(view.dims._displayed_sliders) == 0
+
+
+def test_welcome_widget_visibility(make_napari_viewer):
+    # Welcome screen shown when no layers and show_welcome_screen=True
+    viewer = make_napari_viewer(show=True, show_welcome_screen=True)
+    view = viewer.window._qt_viewer
+
+    assert view.canvas.native.isVisible()
+    assert view._welcome_widget.isVisible()
+
+    viewer.add_image(np.zeros((1, 1)))
+    assert not view._welcome_widget.isVisible()
+
+    viewer.layers.pop(0)
+    assert view._welcome_widget.isVisible()
+
+    # Canvas shown when show_welcome_screen=False (default)
+    viewer2 = make_napari_viewer(show=True, show_welcome_screen=False)
+    view2 = viewer2.window._qt_viewer
+    assert view2.canvas.native.isVisible()
+    assert not view2._welcome_widget.isVisible()
+
+
+def test_welcome_screen_property_setter(make_napari_viewer):
+    """Toggling the show_welcome_screen property correctly updates the widget."""
+    viewer = make_napari_viewer(show=True, show_welcome_screen=False)
+    view = viewer.window._qt_viewer
+
+    assert not view._welcome_widget.isVisible()
+
+    view.show_welcome_screen = True
+    assert view._welcome_widget.isVisible()
+
+    view.show_welcome_screen = False
+    assert not view._welcome_widget.isVisible()
+
+
+def test_welcome_widget_shows_random_tip(make_napari_viewer):
+    viewer = make_napari_viewer(show=False, show_welcome_screen=True)
+    view = viewer.window._qt_viewer
+    welcome = view._welcome_widget
+    tips = ('first tip', 'second tip')
+    chosen_tips = iter(tips)
+
+    def choose_tip(available_tips):
+        assert available_tips == tips
+        return next(chosen_tips)
+
+    with patch(
+        'napari._qt.widgets.qt_welcome.choice',
+        side_effect=choose_tip,
+    ):
+        view.set_welcome_tips(tips)
+        assert welcome._tip_label.text() == 'Did you know?\nfirst tip'
+
+        view._set_welcome_visible(True)
+        assert welcome._tip_label.text() == 'Did you know?\nsecond tip'
+
+
+def test_welcome_widget_refreshes_tip_on_shortcut_change(make_napari_viewer):
+    viewer = make_napari_viewer(show=False, show_welcome_screen=True)
+    welcome = viewer.window._qt_viewer._welcome_widget
+    welcome._current_tip = (
+        'Open files with {napari.window.file.open_files_dialog}.'
+    )
+
+    with patch.object(
+        welcome,
+        '_command_shortcut_and_description',
+        return_value=('Ctrl+O', 'Open File(s)...'),
+    ):
+        welcome.refresh()
+        assert (
+            welcome._tip_label.text()
+            == 'Did you know?\nOpen files with Ctrl+O.'
+        )
+
+    with patch.object(
+        welcome,
+        '_command_shortcut_and_description',
+        return_value=('Cmd+O', 'Open File(s)...'),
+    ):
+        action_manager.events.shortcut_changed(
+            name='napari.window.file.open_files_dialog',
+            shortcut='Cmd+O',
+            tooltip='',
+        )
+        assert (
+            welcome._tip_label.text()
+            == 'Did you know?\nOpen files with Cmd+O.'
+        )
+
+
+def test_welcome_widget_delegates_drag_and_drop_to_viewer(make_napari_viewer):
+    viewer = make_napari_viewer(show=False, show_welcome_screen=True)
+    qt_viewer = viewer.window._qt_viewer
+    welcome = qt_viewer._welcome_widget
+
+    drag_event = MagicMock()
+    drag_event.mimeData.return_value.hasUrls.return_value = True
+
+    welcome.dragEnterEvent(drag_event)
+
+    drag_event.accept.assert_called_once_with()
+    assert welcome.property('drag') is True
+    assert (
+        viewer.status
+        == 'Hold <Alt> key to open plugin selection. Hold <Shift> to open files as stack.'
+    )
+
+    drop_event = MagicMock()
+    drop_urls = [QUrl('file:///tmp/example.tif')]
+    drop_event.mimeData.return_value.urls.return_value = drop_urls
+    with (
+        patch.object(
+            QGuiApplication,
+            'keyboardModifiers',
+            return_value=Qt.KeyboardModifier.NoModifier,
+        ),
+        patch.object(qt_viewer, '_open_from_list_of_urls_data') as open_urls,
+    ):
+        welcome.dropEvent(drop_event)
+
+    open_urls.assert_called_once_with(
+        drop_urls,
+        stack=False,
+        choose_plugin=False,
+    )
+    assert welcome.property('drag') is False
+
+
+@skip_local_popups
+def test_canvas_hover_state_comes_from_canvas(qtbot, make_napari_viewer):
+    viewer = make_napari_viewer(show=True, show_welcome_screen=False)
+    qt_viewer = viewer.window._qt_viewer
+
+    qtbot.waitUntil(qt_viewer.isVisible)
+
+    viewer.mouse_over_canvas = False
+    viewer.status = ''
+
+    canvas = qt_viewer.canvas.native
+    canvas.enterEvent(
+        QEnterEvent(
+            QPointF(10, 10),
+            QPointF(10, 10),
+            QPointF(10, 10),
+        )
+    )
+    assert viewer.mouse_over_canvas
+    assert viewer.status == 'Ready'
+
+    canvas.leaveEvent(QEvent(QEvent.Type.Leave))
+    assert not viewer.mouse_over_canvas
+    assert viewer.status == ''
 
 
 def test_qt_viewer_with_console(make_napari_viewer):

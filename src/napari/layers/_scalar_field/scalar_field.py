@@ -207,6 +207,7 @@ class ScalarFieldBase(Layer, ABC):
     _interpolation2d: Interpolation
     _interpolation3d: Interpolation
     _level_materializer: Callable[[int], np.ndarray] | None
+    _slicing_state: ScalarFieldSlicingState
 
     def __init__(
         self,
@@ -870,6 +871,24 @@ class ScalarFieldSlicingState(_LayerSlicingState):
         )
         response = request()
         self._update_slice_response(response)
+
+    def set_slice_input(self, slice_input: _SliceInput, force: bool) -> bool:
+        changed = super().set_slice_input(slice_input, force)
+        # When the layer is invisible the parent skips set_view_slice to avoid
+        # eagerly fetching data on add, so the cached _slice still has the old
+        # slice_input. Its placeholder image then has the wrong rank for the
+        # new ndisplay (e.g. (1, 1) when ndisplay flipped 2 -> 3). vispy reads
+        # layer._data_view regardless of layer.visible and hands it to
+        # node.set_data, which rejects the wrong-rank array. Refresh just the
+        # placeholder so its shape matches; this stays cheap and never touches
+        # the underlying data.
+        if changed and not self.layer.visible:
+            self._slice = _ScalarFieldSliceResponse.make_empty(
+                slice_input=self._slice_input,
+                rgb=len(self.layer.data.shape) != self.ndim,
+                dtype=self.layer._slice_dtype(),
+            )
+        return changed
 
     def _make_slice_request(self, dims: Dims) -> _ScalarFieldSliceRequest:
         """Make an image slice request based on the given dims and this image."""

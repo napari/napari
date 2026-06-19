@@ -13,10 +13,10 @@ from napari.utils.colormaps.colormap_utils import (
 
 if TYPE_CHECKING:
     from numpy.typing import DTypeLike
-    from vispy.visuals.text.text import FontManager
 
+    from napari._vispy.utils.qt_font import FontInfo
     from napari.components.overlays import ColorBarOverlay
-    from napari.layers import Image, Layer, Surface
+    from napari.layers import Image, Surface
     from napari.layers.utils.color_manager import ColorManager
     from napari.utils.colormaps import Colormap
 
@@ -70,19 +70,14 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
     def __init__(
         self,
         *,
-        layer: Layer,
-        font_manager: FontManager | None = None,
-        font_family: str = 'OpenSans',
+        font_info: FontInfo,
         **kwargs: Any,
     ) -> None:
         super().__init__(
-            node=ColorBar(font_manager=font_manager, font_family=font_family),
-            layer=layer,
-            font_manager=font_manager,
-            font_family=font_family,
+            node=ColorBar(font_info=font_info),
+            font_info=font_info,
             **kwargs,
         )
-        self.layer: Layer
         self.x_size = 50
         self.y_size = 250
 

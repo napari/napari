@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 import numpy as np
 from vispy.scene.visuals import Rectangle
@@ -12,8 +12,8 @@ from napari.utils.events import disconnect_events
 
 if TYPE_CHECKING:
     from vispy.scene import Node, ViewBox
-    from vispy.visuals.text.text import FontManager
 
+    from napari._vispy.utils.qt_font import FontInfo
     from napari.components.canvas import Canvas
     from napari.components.overlays import CanvasOverlay, Overlay, SceneOverlay
     from napari.components.viewer_model import ViewerModel
@@ -30,23 +30,23 @@ class VispyBaseOverlay:
     """
 
     overlay: Overlay
+    canvas: Canvas
 
     def __init__(
         self,
         *,
         overlay: Overlay,
+        font_info: FontInfo,
         viewer: ViewerModel,
+        canvas: Canvas,
         node: Node,
         parent: ViewBox | None = None,
-        font_manager: FontManager | None = None,
-        font_family: str = 'OpenSans',
-        **kwargs: Any,
     ) -> None:
         super().__init__()
         self.overlay = overlay
+        self._font_info = font_info
         self.viewer = viewer
-        self.font_manager = font_manager
-        self.font_family = font_family
+        self.canvas = canvas
 
         self.node = node
         self.node.order = self.overlay.order
@@ -101,22 +101,10 @@ class VispyCanvasOverlay(VispyBaseOverlay):
     """
 
     overlay: CanvasOverlay
-    canvas: Canvas
 
-    def __init__(
-        self, *, overlay, canvas, viewer, node, parent=None, **kwargs
-    ) -> None:
+    def __init__(self, **kwargs) -> None:
 
-        super().__init__(
-            overlay=overlay,
-            canvas=canvas,
-            viewer=viewer,
-            node=node,
-            parent=parent,
-            **kwargs,
-        )
-        self.canvas = canvas
-
+        super().__init__(**kwargs)
         self.x_size = 0.0
         self.y_size = 0.0
         self.node.transform = STTransform()
@@ -226,26 +214,4 @@ class LayerOverlayMixin:
 
 
 class ViewerOverlayMixin:
-    viewer: ViewerModel
-
-    def __init__(
-        self,
-        *,
-        overlay,
-        viewer: ViewerModel,
-        node,
-        parent=None,
-        **kwargs,
-    ) -> None:
-        self.viewer = viewer
-        super().__init__(
-            node=node,
-            overlay=overlay,
-            viewer=viewer,
-            parent=parent,
-            **kwargs,
-        )
-
-    def close(self) -> None:
-        disconnect_events(self.viewer.events, self)
-        super().close()
+    pass

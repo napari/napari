@@ -19,7 +19,7 @@ from napari._vispy.camera import VispyCamera
 from napari._vispy.mouse_event import NapariMouseEvent
 from napari._vispy.utils.cursor import QtCursorVisual
 from napari._vispy.utils.gl import get_max_texture_sizes
-from napari._vispy.utils.qt_font import QtFontManager
+from napari._vispy.utils.qt_font import FontInfo, QtFontManager
 from napari._vispy.utils.visual import create_vispy_overlay
 from napari.components._viewer_constants import CanvasPosition
 from napari.components.overlays import CanvasOverlay, SceneOverlay
@@ -71,14 +71,26 @@ class NapariSceneCanvas(SceneCanvas_):
         orig_enterEvent = self.native.enterEvent
         orig_leaveEvent = self.native.leaveEvent
 
+        def _qtviewer(widget):
+            parent = widget.parentWidget()
+            while parent is not None:
+                if hasattr(parent, '_enter_canvas') and hasattr(
+                    parent, '_leave_canvas'
+                ):
+                    return parent
+                parent = parent.parentWidget()
+            return None
+
         def enterEvent(self_, event):
-            qtviewer = self_.parent()
-            qtviewer._enter_canvas()
+            qtviewer = _qtviewer(self_)
+            if qtviewer is not None:
+                qtviewer._enter_canvas()
             orig_enterEvent(event)
 
         def leaveEvent(self_, event):
-            qtviewer = self_.parent()
-            qtviewer._leave_canvas()
+            qtviewer = _qtviewer(self_)
+            if qtviewer is not None:
+                qtviewer._leave_canvas()
             orig_leaveEvent(event)
 
         self.native.enterEvent = MethodType(enterEvent, self.native)
@@ -180,8 +192,8 @@ class VispyCanvas:
         self._pause_scene_graph = False
         self.max_texture_sizes = None
         self._last_theme_color = None
-        self._font_manager = font_manager
-        self._overlay_font = font_family
+
+        self._font_info = FontInfo(face=font_family, font_manager=font_manager)
         self.viewer = viewer
         self._scene_canvas = NapariSceneCanvas(
             *args, keys=None, vsync=True, **kwargs
@@ -802,6 +814,10 @@ class VispyCanvas:
             )
         for vispy_layer in self.layer_to_visual.values():
             vispy_layer.world_units = units
+        for overlay in self._canvas_overlay_to_visual.get(
+            self.viewer.scale_bar, []
+        ):
+            overlay._on_unit_change()
 
     def _remove_layer(self, event: Event) -> None:
         """Upon receiving event closes the Vispy visual, deletes it and reorders the still existing layers.
@@ -922,11 +938,10 @@ class VispyCanvas:
         if vispy_overlay is None:
             vispy_overlay = create_vispy_overlay(
                 overlay=overlay,
-                font_manager=self._font_manager,
-                font_family=self._overlay_font,
-                parent=parent,
+                font_info=self._font_info,
                 viewer=self.viewer,
                 canvas=self.viewer.canvas,
+                parent=parent,
                 **kwargs,
             )
         else:
@@ -949,9 +964,9 @@ class VispyCanvas:
                 overlay, None
             )
             vispy_overlay = self._create_or_update_vispy_overlay(
-                overlay,
-                vispy_overlay,
-                parent,
+                overlay=overlay,
+                vispy_overlay=vispy_overlay,
+                parent=parent,
             )
             self._scene_overlay_to_visual[overlay] = vispy_overlay
 
@@ -1014,9 +1029,9 @@ class VispyCanvas:
 
                     parent: ViewBox = self.grid[row, col]
                     vispy_overlay = self._create_or_update_vispy_overlay(
-                        overlay,
-                        vispy_overlay,
-                        parent,
+                        overlay=overlay,
+                        vispy_overlay=vispy_overlay,
+                        parent=parent,
                     )
                     if vispy_overlay not in vispy_overlays:
                         vispy_overlays.append(vispy_overlay)
@@ -1024,9 +1039,9 @@ class VispyCanvas:
                 parent = self.view
                 vispy_overlay = vispy_overlays[0] if vispy_overlays else None
                 vispy_overlay = self._create_or_update_vispy_overlay(
-                    overlay,
-                    vispy_overlay,
-                    parent,
+                    overlay=overlay,
+                    vispy_overlay=vispy_overlay,
+                    parent=parent,
                 )
                 if vispy_overlay not in vispy_overlays:
                     vispy_overlays.append(vispy_overlay)
@@ -1087,9 +1102,9 @@ class VispyCanvas:
 
             # we can pass canvas kwargs, it just gets discarded by scene overlays
             vispy_overlay = self._create_or_update_vispy_overlay(
-                overlay,
-                vispy_overlay,
-                parent,
+                overlay=overlay,
+                vispy_overlay=vispy_overlay,
+                parent=parent,
                 layer=layer,
             )
 
@@ -1361,7 +1376,7 @@ class VispyCanvas:
             for layer in self.viewer.layers:
                 self._update_layer_overlays(layer)
             self._on_interactive()
-        self.on_draw(None)
+        self.on_draw()
 
     def _setup_single_view(self):
         for vispy_layer in self.layer_to_visual.values():
@@ -1440,3 +1455,7 @@ class VispyCanvas:
     def _resume_scene_graph_update(self):
         self._pause_scene_graph = False
         self._clean_and_update_scenegraph()
+
+    def font_info(self) -> FontInfo:
+        """Get the vispy visual for a given overlay."""
+        return self._font_info

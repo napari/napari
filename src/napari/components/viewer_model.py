@@ -38,7 +38,6 @@ from napari.components.camera import Camera
 from napari.components.canvas import Canvas
 from napari.components.cursor import Cursor, CursorStyle
 from napari.components.dims import Dims
-from napari.components.grid import GridCanvas
 from napari.components.layerlist import LayerList
 from napari.components.overlays import (
     AxesOverlay,
@@ -328,28 +327,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             stacklevel=2,
         )
         return self.canvas._overlays['text']  # type: ignore[return-value]
-
-    @property
-    def welcome_screen(self):
-        warnings.warn(
-            trans._(
-                'viewer.welcome_screen is a deprecated attribute since 0.7.1. Use viewer.canvas.welcome instead.'
-            ),
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return self.canvas._overlays['welcome']
-
-    @property
-    def grid(self) -> GridCanvas:
-        warnings.warn(
-            trans._(
-                'viewer.grid is a deprecated attribute since 0.7.1. Use viewer.canvas.grid instead.'
-            ),
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return self.canvas.grid
 
     def _tooltip_visible_update(self, event):
         self.tooltip.visible = event.value

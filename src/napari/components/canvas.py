@@ -10,7 +10,6 @@ from napari.components.overlays import (
     CurrentSliceOverlay,
     ScaleBarOverlay,
     TextOverlay,
-    WelcomeOverlay,
     ZoomOverlay,
 )
 from napari.settings import get_settings
@@ -20,7 +19,6 @@ from napari.utils.events import Event, EventedDict, EventedModel
 from napari.utils.theme import get_theme
 
 DEFAULT_CANVAS_OVERLAYS = {
-    'welcome': WelcomeOverlay,
     'scale_bar': ScaleBarOverlay,
     'text': TextOverlay,
     'brush_circle': BrushCircleOverlay,
@@ -120,10 +118,6 @@ class Canvas(EventedModel):
     @property
     def text(self) -> TextOverlay:
         return self._overlays['text']  # type: ignore[return-value]
-
-    @property
-    def welcome(self) -> WelcomeOverlay:
-        return self._overlays['welcome']  # type: ignore[return-value]
 
     @property
     def _zoom_box(self) -> ZoomOverlay:

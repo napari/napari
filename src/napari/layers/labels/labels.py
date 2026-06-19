@@ -70,6 +70,7 @@ from napari.utils.events import EmitterGroup, Event
 from napari.utils.events.custom_types import Array
 from napari.utils.misc import StringEnum, _is_array_type
 from napari.utils.naming import magic_name
+from napari.utils.status_messages import format_feature_value
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
@@ -1670,7 +1671,7 @@ class Labels(ScalarFieldBase):
 
         idx = self._label_index[label_value]
         return [
-            f'{k}: {v[idx]}'
+            f'{k}: {format_feature_value(v[idx])}'
             for k, v in self.features.items()
             if k != 'index'
             and len(v) > idx
