@@ -2,8 +2,8 @@
 Progressive loading: COSEM HeLa cell with organelle labels
 ===========================================================
 
-Load a whole HeLa cell imaged by FIB-SEM (6 368 × 1 600 × 12 000
-voxels, 4 × 4 × 5.24 nm) together with organelle instance
+Load a whole HeLa cell imaged by FIB-SEM (6 368 x 1 600 x 12 000
+voxels, 4 x 4 x 5.24 nm) together with organelle instance
 segmentation labels from the COSEM project. Both the EM intensity
 and the label overlay stream in progressively.
 
@@ -17,7 +17,7 @@ Requires network access and anonymous S3.
 .. tags:: experimental
 """
 
-import napari_colormaps  # noqa: F401 – registers colormaps
+import napari_colormaps  # noqa: F401 - registers colormaps
 import zarr
 from zarr.experimental.cache_store import CacheStore
 from zarr.storage import FsspecStore, MemoryStore

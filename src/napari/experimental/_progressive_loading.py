@@ -904,6 +904,11 @@ class ProgressiveLoader:
             self._viewer.layers.events.removed.disconnect(
                 self._on_layer_removed,
             )
+        with contextlib.suppress(Exception):
+            self._debounce_timer.stop()
+            self._debounce_timer.deleteLater()
+        self._viewer = None  # type: ignore[assignment]
+        self._layer = None  # type: ignore[assignment]
 
     # -- view tracking --
 

@@ -4,17 +4,17 @@ Progressive loading: Platynereis whole-worm EM
 
 Browse a whole 6-day-old *Platynereis dumerilii* worm imaged by
 serial-section electron microscopy at 10 nm XY / 25 nm Z. This is
-the canonical OME-Zarr community demo dataset — 11 416 × 25 916 ×
+the canonical OME-Zarr community demo dataset — 11 416 x 25 916 x
 27 499 voxels with a 10-level pyramid.
 
-The data is highly anisotropic (Z resolution ~2.5× coarser than XY),
+The data is highly anisotropic (Z resolution ~2.5x coarser than XY),
 which exercises the level-of-detail selection logic. Served over
 plain HTTPS from EMBL — no S3 credentials needed.
 
 .. tags:: experimental
 """
 
-import napari_colormaps  # noqa: F401 – registers colormaps
+import napari_colormaps  # noqa: F401 - registers colormaps
 import zarr
 from zarr.experimental.cache_store import CacheStore
 from zarr.storage import FsspecStore, MemoryStore

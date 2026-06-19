@@ -2,14 +2,14 @@
 Progressive loading: 350-gigapixel zebrafish embryo EM
 ======================================================
 
-Browse a 380 928 × 921 600 pixel (~350 gigapixel) sagittal section of
+Browse a 380 928 x 921 600 pixel (~350 gigapixel) sagittal section of
 a zebrafish (*Danio rerio*) embryo with a Google Maps-like pan-and-zoom
 experience. The image is a serial-section electron microscopy montage
 at **1.6 nm/pixel** from the IDR (idr0053, Faas et al., *J. Cell
 Biol.* 2012 — "Virtual nanoscopy").
 
 The 8-level multiscale pyramid is served over HTTPS from the Image
-Data Resource; only the 1024×1024 chunks overlapping your view are
+Data Resource; only the 1024x1024 chunks overlapping your view are
 fetched. Try zooming all the way in to see ultrastructural detail,
 then zoom out to see the entire embryo.
 
@@ -19,7 +19,7 @@ Requires network access (public HTTPS, no credentials).
 """
 
 import dask.array as da
-import napari_colormaps  # noqa: F401 – registers colormaps
+import napari_colormaps  # noqa: F401 - registers colormaps
 import zarr
 from zarr.experimental.cache_store import CacheStore
 from zarr.storage import FsspecStore, MemoryStore

@@ -3,7 +3,7 @@ Progressive loading: COSEM SARS-CoV-2 infected cell
 =====================================================
 
 Browse a SARS-CoV-2 infected Vero (CCL-81) cell imaged by FIB-SEM
-at ~5 nm resolution (6 450 × 5 000 × 3 750 voxels, uint16). Viral
+at ~5 nm resolution (6 450 x 5 000 x 3 750 voxels, uint16). Viral
 particles are visible at full resolution inside the cell.
 
 This dataset uses uint16 intensity values (unlike the uint8 COSEM
@@ -14,7 +14,7 @@ Requires network access and anonymous S3.
 .. tags:: experimental
 """
 
-import napari_colormaps  # noqa: F401 – registers colormaps
+import napari_colormaps  # noqa: F401 - registers colormaps
 import zarr
 from zarr.experimental.cache_store import CacheStore
 from zarr.storage import FsspecStore, MemoryStore

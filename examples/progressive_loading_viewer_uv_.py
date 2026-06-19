@@ -50,15 +50,14 @@ Options::
 """
 
 import argparse
+import contextlib
 
 import zarr
 
 import napari
 
-try:
-    import napari_colormaps  # noqa: F401 – registers colormaps
-except ImportError:
-    pass
+with contextlib.suppress(ImportError):
+    import napari_colormaps  # noqa: F401 - registers colormaps
 
 from napari.experimental._progressive_loading import (
     add_progressive_loading_image,
@@ -238,7 +237,7 @@ def open_ome_zarr(path: str, *, num_levels: int | None = None,
 
     # Trim scale to match squeezed ndim
     if scale is not None and arrays:
-        arr_ndim = arrays[0].ndim if not hasattr(arrays[0], 'ndim') else arrays[0].ndim
+        arr_ndim = arrays[0].ndim
         if len(scale) > arr_ndim:
             scale = scale[-arr_ndim:]
 

@@ -4,7 +4,7 @@ Progressive loading: COSEM zebrafish heart
 
 Stream through the largest volume in the COSEM collection — a zebrafish
 heart imaged by FIB-SEM at ~5 nm isotropic resolution. The full volume
-is 40 152 × 19 814 × 20 629 voxels (~16 billion voxels) with a 15-level
+is 40 152 x 19 814 x 20 629 voxels (~16 billion voxels) with a 15-level
 multiscale pyramid, making it an ideal stress test for progressive
 loading.
 
@@ -17,7 +17,7 @@ Requires network access and anonymous S3 (no credentials needed).
 .. tags:: experimental
 """
 
-import napari_colormaps  # noqa: F401 – registers colormaps
+import napari_colormaps  # noqa: F401 - registers colormaps
 import zarr
 from zarr.experimental.cache_store import CacheStore
 from zarr.storage import FsspecStore, MemoryStore
