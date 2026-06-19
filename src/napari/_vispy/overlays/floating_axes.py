@@ -110,7 +110,7 @@ class VispyFloatingAxesOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         q = Quaternion(*rotation.as_quat(scalar_first=True))
 
         self.node.camera.set_state(
-            _quaternion=q, center=(0, 0, 0), scale_factor=2.6
+            _quaternion=q, center=(0, 0, 0), scale_factor=3.2
         )
 
     def reset(self) -> None:
