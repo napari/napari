@@ -273,9 +273,11 @@ class QtViewerButtons(QFrame):
         )
         self.consoleButton.setProperty('expanded', False)
 
-        enable_console = in_ipython() or in_jupyter() or in_python_repl()
+        kernel_is_running = in_ipython() or in_jupyter() or in_python_repl()
         set_widgets_enabled_with_opacity(
-            parent=self, widgets=[self.consoleButton], enabled=enable_console
+            parent=self,
+            widgets=[self.consoleButton],
+            enabled=not kernel_is_running,
         )
 
         rdb = QtViewerPushButton('roll', action='napari:roll_axes')
