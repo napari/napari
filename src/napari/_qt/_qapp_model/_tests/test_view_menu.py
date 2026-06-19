@@ -3,6 +3,7 @@ import sys
 
 import numpy as np
 import pytest
+from packaging.version import parse as parse_version
 from qtpy import QT_VERSION
 from qtpy.QtCore import QPoint, Qt
 from qtpy.QtWidgets import QApplication
@@ -82,7 +83,7 @@ def test_toggle_axes_scale_bar_attr(
 
 @skip_local_popups
 @pytest.mark.skipif(
-    QT_VERSION == '6.9.0',
+    parse_version(QT_VERSION) >= parse_version('6.9.0'),
     reason='bug in Qt with maximized windows, https://bugreports.qt.io/browse/QTBUG-135844',
 )
 @pytest.mark.flaky(
@@ -135,7 +136,7 @@ def test_toggle_fullscreen_from_normal(make_napari_viewer, qtbot):
     reruns=2, reruns_delay=250, condition=sys.platform == 'darwin'
 )  # sometimes fails on macos CI
 @pytest.mark.skipif(
-    QT_VERSION == '6.9.0',
+    parse_version(QT_VERSION) >= parse_version('6.9.0'),
     reason='bug in Qt with maximized windows, https://bugreports.qt.io/browse/QTBUG-135844',
 )
 @pytest.mark.qt_log_level_fail('WARNING')
