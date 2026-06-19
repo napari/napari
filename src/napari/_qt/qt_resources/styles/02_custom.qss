@@ -740,7 +740,7 @@ QtLayerList::indicator {
 
 QtLayerList::indicator:unchecked {
   image: url("theme_{{ id }}:/visibility_off_50.svg");
-  background: {{ secondary }};
+  background: {{ foreground }};
 }
 
 QtLayerList::indicator:checked {
