@@ -34,6 +34,7 @@ class VispyZYXAxesOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self._size = 80
         super().__init__(
             node=_AxesScene(size=self._size, font_info=font_info),
+            font_info=font_info,
             **kwargs,
         )
         self.x_size = self._size
