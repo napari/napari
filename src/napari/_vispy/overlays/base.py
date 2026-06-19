@@ -95,9 +95,6 @@ class VispyCanvasOverlay(VispyBaseOverlay):
       *not* supposed to be tiled
     - ensure that the napari Overlay model uses the `position` field correctly
       (must be a CanvasPosition enum if tileable, or anything else if "free")
-
-    canvas_position_callback is set by the VispyCanvas object, and is responsible
-    to update the position of all canvas overlays whenever necessary
     """
 
     overlay: CanvasOverlay
