@@ -32,6 +32,8 @@ class QtShadingComboBoxControl(QtWidgetControlsBase):
         Label for the shading value chooser widget.
     """
 
+    _layer: Surface
+
     def __init__(self, parent: QWidget, layer: Surface) -> None:
         super().__init__(parent, layer)
         # Setup layer
@@ -39,7 +41,7 @@ class QtShadingComboBoxControl(QtWidgetControlsBase):
 
         # Setup widgets
         shading_comboBox = QEnumComboBox(parent, Shading)
-        shading_comboBox.setCurrentEnum(self._layer.shading)
+        shading_comboBox.setCurrentEnum(Shading(self._layer.shading))
         shading_comboBox.currentEnumChanged.connect(self.change_shading)
         self.shading_combobox = shading_comboBox
 

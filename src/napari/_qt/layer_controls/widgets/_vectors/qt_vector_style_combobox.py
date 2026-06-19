@@ -34,6 +34,8 @@ class QtVectorStyleComboBoxControl(QtWidgetControlsBase):
         Label for vector_style value chooser widget.
     """
 
+    _layer: Vectors
+
     def __init__(self, parent: QWidget, layer: Vectors) -> None:
         super().__init__(parent, layer)
         # Setup layer
@@ -42,7 +44,9 @@ class QtVectorStyleComboBoxControl(QtWidgetControlsBase):
         # Setup widgets
         # dropdown to select the edge display vector_style
         vector_style_combobox = QEnumComboBox(parent, VectorStyle)
-        vector_style_combobox.setCurrentEnum(self._layer.vector_style)
+        vector_style_combobox.setCurrentEnum(
+            VectorStyle(self._layer.vector_style)
+        )
         self.vector_style_combobox = vector_style_combobox
         connect_setattr(
             self.vector_style_combobox.currentEnumChanged,
