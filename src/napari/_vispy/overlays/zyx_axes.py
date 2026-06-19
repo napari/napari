@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import numpy as np
 from vispy.scene import ViewBox
 from vispy.util.quaternion import Quaternion
@@ -6,10 +10,13 @@ from napari._vispy.overlays.base import ViewerOverlayMixin, VispyCanvasOverlay
 from napari._vispy.visuals.axes import Axes
 from napari.utils.theme import get_theme
 
+if TYPE_CHECKING:
+    from napari._vispy.utils.qt_font import FontInfo
+
 
 class _AxesScene(ViewBox):
-    def __init__(self, size):
-        self.axes = Axes()
+    def __init__(self, size, font_info: FontInfo):
+        self.axes = Axes(font_info=font_info)
         super().__init__(size=(size, size), bgcolor='transparent')
         self.camera = 'arcball'
         self.camera.set_state(scale_factor=2.5, fov=0)  # good baseline
@@ -23,10 +30,10 @@ class _AxesScene(ViewBox):
 class VispyZYXAxesOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
     """Axes indicating camera orientation, pinned to a canvas corner."""
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, font_info: FontInfo, **kwargs) -> None:
         self._size = 80
         super().__init__(
-            node=_AxesScene(size=self._size),
+            node=_AxesScene(size=self._size, font_info=font_info),
             **kwargs,
         )
         self.x_size = self._size
