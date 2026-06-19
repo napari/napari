@@ -705,7 +705,7 @@ QtListView::item:selected {
 }
 
 QtLayerList::item {
-  margin: 2px 2px 2px 28px;
+  margin: 2px 0px 2px 28px;
   border-top-right-radius: 2px;
   border-bottom-right-radius: 2px;
   border: 1px solid {{ primary }};  /* otherwise it's `foreground` for generic lists */
