@@ -5,8 +5,6 @@ from typing import TYPE_CHECKING, Any
 from vispy.scene.visuals import Text as BaseText
 
 from napari._vispy.utils.text import (
-    get_text_width_height,
-from napari._vispy.utils.text import (
     get_text_metrics,
     get_text_width_height,
 )
