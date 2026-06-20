@@ -511,5 +511,10 @@ authors:
   affiliation: Chaitanya Bharathi Institute of Technology
   orcid: https://orcid.org/0009-0006-6163-3882
   alias: omkar-334
+- given-names: Mikkel
+  family-names: Roald-Arbøl
+  affiliation: University of Bonn
+  orcid: https://orcid.org/0000-0002-9998-0058
+  alias: roaldarbol
 repository-code: https://github.com/napari/napari
 license: BSD-3-Clause
