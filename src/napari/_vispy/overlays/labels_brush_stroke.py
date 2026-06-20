@@ -12,11 +12,11 @@ if TYPE_CHECKING:
     from napari.components.overlays import LabelsBrushStrokeOverlay
     from napari.layers import Labels
 
-# circle radius (data units) as a multiple of the brush size, matching cellpose
+# circle radius (data units) as a multiple of the brush size
 RADIUS_FACTOR = 1.8
 
 
-def _only_when_enabled(callback):
+def _only_when_overlay_enabled(callback):
     """Run the callback only when the overlay is enabled and editing in 2D.
 
     Unlike the labels polygon overlay (which is its own mode), this overlay is
@@ -94,7 +94,7 @@ class VispyLabelsBrushStrokeOverlay(LayerOverlayMixin, VispySceneOverlay):
         self._circle.radius = radius
         self._circle.visible = True
 
-    @_only_when_enabled
+    @_only_when_overlay_enabled
     def _on_mouse_press(self, layer, event):
         if not self.overlay.active:
             # the right button starts an encircle-and-fill stroke
@@ -126,7 +126,7 @@ class VispyLabelsBrushStrokeOverlay(LayerOverlayMixin, VispySceneOverlay):
         self.overlay.active = True
         self._paint_to(layer, coord)
 
-    @_only_when_enabled
+    @_only_when_overlay_enabled
     def _on_mouse_move(self, layer, event):
         if not self.overlay.active:
             return
