@@ -1,4 +1,6 @@
-import napari, skimage.data
+import skimage.data
 
-napari.imshow(skimage.data.coins(), name="sample")
+import napari
+
+napari.imshow(skimage.data.coins(), name='sample')
 napari.run()
