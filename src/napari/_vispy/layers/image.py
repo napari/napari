@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import numpy as np
-from vispy.scene import Node
 
 from napari._vispy.layers.scalar_field import (
     _VISPY_FORMAT_TO_DTYPE,
@@ -19,6 +20,9 @@ from napari.utils.colormaps.colormap_utils import (
     _napari_cmap_to_vispy,
 )
 from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    from vispy.scene import Node
 
 
 class ImageLayerNode(ScalarFieldLayerNode):
@@ -129,6 +133,7 @@ class VispyImageLayer(VispyScalarFieldBaseLayer):
         node=None,
         texture_format='auto',
         layer_node_class=ImageLayerNode,
+        **kwargs,
     ) -> None:
         # Track order to detect transpose/roll. Needs to be set before super().__init__()
         self._last_order = None
@@ -138,6 +143,7 @@ class VispyImageLayer(VispyScalarFieldBaseLayer):
             node=node,
             texture_format=texture_format,
             layer_node_class=layer_node_class,
+            **kwargs,
         )
 
         self.layer.events.interpolation2d.connect(

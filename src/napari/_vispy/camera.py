@@ -1,5 +1,4 @@
 import numpy as np
-from scipy.spatial.transform import Rotation
 from vispy.scene import ArcballCamera, BaseCamera, PanZoomCamera
 from vispy.util.quaternion import Quaternion
 
@@ -51,6 +50,8 @@ class VispyCamera:
         """
 
         if isinstance(self._view.camera, MouseToggledArcballCamera):
+            from scipy.spatial.transform import Rotation
+
             # Do conversion from quaternion representation to euler angles
             q = self._view.camera._quaternion
             rotation = Rotation.from_quat([q.x, q.y, q.z, q.w])
@@ -73,6 +74,8 @@ class VispyCamera:
 
         # Only update angles if current camera is 3D camera
         if isinstance(self._view.camera, MouseToggledArcballCamera):
+            from scipy.spatial.transform import Rotation
+
             # flip handedness so the rotation is always righthanded even with axis flipping
             angles = angles * np.where(
                 self._camera._vispy_flipped_axes(ndisplay=3), -1, 1

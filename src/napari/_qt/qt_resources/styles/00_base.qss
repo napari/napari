@@ -180,7 +180,6 @@ QLineEdit {
   min-height: 20px;
   padding: 2px;
   border-radius: 2px;
-  font-size: {{ decrease(font_size, 1) }};
 }
 
 QWidget[emphasized="true"] QLineEdit {

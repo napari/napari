@@ -1,6 +1,7 @@
 import numpy as np
 import pytest
 
+from napari.settings import get_settings
 from napari.utils.status_messages import status_format
 
 STRING = 'hello world'
@@ -35,7 +36,23 @@ COMBINED_FORMATTED = f'[1e+06, {MISSING_FORMATTED}, {STRING_FORMATTED}]'
         (COMBINED, COMBINED_FORMATTED),
     ],
 )
-def test_status_format(input_data, expected):
-    """test various formatting cases embodied in utils.status_messages.status_format"""
+def test_status_format(input_data, expected, monkeypatch):
+    """test various formatting cases embodied in utils.status_messages.status_format with the default parameter 3"""
 
+    monkeypatch.setattr(
+        get_settings().application, 'float_display_precision', 3
+    )
     assert status_format(input_data) == expected
+
+
+def test_status_format_precision_setting(monkeypatch):
+    """test that the float_display_precision setting is respected"""
+    monkeypatch.setattr(
+        get_settings().application, 'float_display_precision', 2
+    )
+    assert (
+        status_format(
+            123.932021,
+        )
+        == '1.2e+02'
+    )

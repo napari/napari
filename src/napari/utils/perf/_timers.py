@@ -1,13 +1,18 @@
 """PerfTimers class and global instance."""
 
+from __future__ import annotations
+
 import contextlib
 import os
-from collections.abc import Generator
 from time import perf_counter_ns
+from typing import TYPE_CHECKING
 
 from napari.utils.perf._event import PerfEvent
 from napari.utils.perf._stat import Stat
 from napari.utils.perf._trace_file import PerfTraceFile
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
 
 USE_PERFMON = os.getenv('NAPARI_PERFMON', '0') != '0'
 

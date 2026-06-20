@@ -277,6 +277,7 @@ def test_toggle_ndisplay(mock_app_model, qt_viewer_buttons, qtbot):
     with app.injection_store.register(
         providers=[
             (lambda: viewer, Viewer, 100),
+            (lambda: viewer, ViewerModel, 100),
         ]
     ):
         qtbot.mouseClick(viewer_buttons.ndisplayButton, Qt.LeftButton)
@@ -339,17 +340,48 @@ def test_layer_buttons_checked_on_selection(qt_layer_buttons):
     viewer, layer_buttons = qt_layer_buttons
 
     # Initially no selection, buttons should not be checked
-    assert not layer_buttons.newPointsButton.isChecked()
-    assert not layer_buttons.newShapesButton.isChecked()
+    assert layer_buttons.newPointsButton.property('mode') == 'new_points'
+    assert layer_buttons.newShapesButton.property('mode') == 'new_shapes'
+    assert layer_buttons.newPointsButton.property('creation_state') == 'none'
+    assert layer_buttons.newShapesButton.property('creation_state') == 'none'
+    assert layer_buttons.newLabelsButton.property('creation_state') == 'none'
+    # no layers in the viewer, labels button is enabled
+    assert layer_buttons.newLabelsButton.isEnabled()
 
-    data_layer = viewer.add_image(np.random.random((10, 15)))
+    data_layer = viewer.add_image(np.zeros((10, 10)))
+    data_layer2 = viewer.add_image(np.zeros((10, 10)))
+    points_layer = viewer.add_points(ndim=2, size=10)
 
-    # Selecting a layer should check the buttons (visual indicator)
+    # Selecting a single layer: buttons indicate single-layer inheritance
     viewer.layers.selection = [data_layer]
-    assert layer_buttons.newPointsButton.isChecked()
-    assert layer_buttons.newShapesButton.isChecked()
+    assert layer_buttons.newPointsButton.property('creation_state') == 'full'
+    assert layer_buttons.newShapesButton.property('creation_state') == 'full'
+    assert layer_buttons.newLabelsButton.property('creation_state') == 'full'
 
-    # Clear selection and buttons should no longer be checked
+    viewer.layers.selection = [points_layer]
+
+    assert layer_buttons.newPointsButton.property('creation_state') == 'full'
+    assert layer_buttons.newShapesButton.property('creation_state') == 'full'
+    assert (
+        layer_buttons.newLabelsButton.property('creation_state') == 'partial'
+    )
+
+    # Selecting multiple layers: buttons indicate multi-layer inheritance
+    viewer.layers.selection = [data_layer, data_layer2]
+    assert (
+        layer_buttons.newPointsButton.property('creation_state') == 'partial'
+    )
+    assert (
+        layer_buttons.newShapesButton.property('creation_state') == 'partial'
+    )
+    assert (
+        layer_buttons.newLabelsButton.property('creation_state') == 'partial'
+    )
+
+    # Clearing selection: buttons return to default state
     viewer.layers.selection.clear()
-    assert not layer_buttons.newPointsButton.isChecked()
-    assert not layer_buttons.newShapesButton.isChecked()
+    assert layer_buttons.newPointsButton.property('creation_state') == 'none'
+    assert layer_buttons.newShapesButton.property('creation_state') == 'none'
+    assert layer_buttons.newLabelsButton.property('creation_state') == 'none'
+    # layers present but none selected, labels button is disabled
+    assert not layer_buttons.newLabelsButton.isEnabled()

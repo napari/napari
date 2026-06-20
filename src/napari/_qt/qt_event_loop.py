@@ -3,7 +3,6 @@ from __future__ import annotations
 import os
 import platform
 import sys
-from pathlib import Path
 from typing import TYPE_CHECKING
 from warnings import warn
 
@@ -14,6 +13,7 @@ from qtpy.QtSvg import QSvgRenderer
 from qtpy.QtWidgets import QApplication, QWidget
 
 from napari import Viewer, __version__
+from napari._qt._qapp_model.injection._qproviders import register_qt_types
 from napari._qt.dialogs.qt_notification import NapariQtNotification
 from napari._qt.qt_event_filters import QtToolTipEventFilter
 from napari._qt.qthreading import (
@@ -21,6 +21,7 @@ from napari._qt.qthreading import (
     wait_for_workers_to_quit,
 )
 from napari._qt.utils import _maybe_allow_interrupt
+from napari._wayland_fix import _nvidia_driver_loaded
 from napari.resources._icons import _theme_path
 from napari.settings import get_settings
 from napari.utils import config, perf
@@ -35,6 +36,8 @@ from napari.utils.theme import _themes, get_system_theme
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from IPython import InteractiveShell
 
 NAPARI_APP_ID = f'napari.napari.viewer.{__version__}'
@@ -44,7 +47,7 @@ def get_icon_path() -> Path:
     return get_logo_path(
         logo=get_settings().appearance.logo,
         template='padded' if platform.system() == 'Darwin' else 'plain',
-        theme=get_system_theme(),
+        theme_type=get_system_theme(),
     )
 
 
@@ -192,6 +195,27 @@ def get_qapp(
                 ),
                 stacklevel=2,
             )
+        if (
+            sys.platform == 'linux'
+            and app.platformName() == 'wayland'
+            and _nvidia_driver_loaded()
+        ):
+            # A QApplication created before napari was imported (e.g. via
+            # IPython's "%gui qt") locks the Qt platform plugin to Wayland
+            # before napari's _wayland_fix.py  workaround can run. Gated on
+            # Nvidia since that's the only setup the workaround helps.
+            warn(
+                trans._(
+                    'A Qt application was already running on the Wayland '
+                    'platform before napari was imported, so napari could not '
+                    'automatically apply its Wayland startup workaround. If napari '
+                    'fails to launch or throws repeated rendering errors, see '
+                    'https://napari.org/stable/troubleshooting.html#wayland-and-nvidia '
+                    'for the workaround.',
+                    deferred=True,
+                ),
+                stacklevel=2,
+            )
 
     else:
         # automatically determine monitor DPI.
@@ -265,6 +289,7 @@ def get_qapp(
             QDir.addSearchPath(f'theme_{name}', str(_theme_path(name)))
 
         register_threadworker_processors()
+        register_qt_types()
 
         notification_manager.notification_ready.connect(
             NapariQtNotification.show_notification
