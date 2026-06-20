@@ -66,7 +66,7 @@ def test_brush_stroke_circle_appears_on_right_click(MouseEvent):
 
 @pytest.mark.usefixtures('qapp')
 def test_live_paint_on_move_is_staged_not_committed(MouseEvent):
-    layer, overlay, vispy, data = _make_overlay()
+    layer, overlay, _vispy, _data = _make_overlay()
 
     _press(MouseEvent, layer, (15, 15))
     # moves staying within the radius do not complete the stroke
@@ -130,7 +130,7 @@ def test_leave_and_return_completes_and_fills(MouseEvent):
 
 @pytest.mark.usefixtures('qapp')
 def test_click_during_stroke_pans_then_resumes(MouseEvent):
-    layer, overlay, vispy, data = _make_overlay()
+    layer, overlay, _vispy, _data = _make_overlay()
 
     _press(MouseEvent, layer, (15, 15))
     assert overlay.active is True
