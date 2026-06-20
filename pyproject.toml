@@ -686,7 +686,6 @@ module = [
     'napari._qt.qt_event_loop',
     'napari._qt.qt_main_window',
     'napari._qt.qt_resources._svg',
-    'napari._qt.qt_viewer',
     'napari._qt.qthreading',
     'napari._qt.utils',
     'napari._qt.widgets._slider_compat',
