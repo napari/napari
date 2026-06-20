@@ -544,6 +544,7 @@ filterwarnings = [
   "ignore:'asyncio.WindowsSelectorEventLoopPolicy' is deprecated and slated for removal in Python 3.16:DeprecationWarning", # windows ipykernel issue #8666
   "ignore:'asyncio.get_event_loop_policy' is deprecated and slated for removal in Python 3.16:DeprecationWarning",  # windows ipykernel issue #8666
   "ignore:'asyncio.set_event_loop_policy' is deprecated and slated for removal in Python 3.16:DeprecationWarning",  # windows ipykernel issue #8666
+  "ignore:System theme detection requires a Qt6 backend:UserWarning",  # delete once Qt5 support is dropped
 ]
 markers = [
     "examples: Test of examples",
