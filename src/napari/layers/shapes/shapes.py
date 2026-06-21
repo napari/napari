@@ -2881,12 +2881,7 @@ class Shapes(Layer):
             )
             self._data_view.remove_multiple(to_remove)
 
-            if self._value[0] in to_remove:
-                self._value = (None, None)
-            elif self._value[0] is not None:
-                indices_removed = np.array(indices) < self._value
-                offset = np.sum(indices_removed)
-                self._value = (self._value[0] - offset, None)
+            self._value = (None, None)
 
             if len(self.data) == 0 and self.selected_data:
                 self.selected_data.clear()
