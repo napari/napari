@@ -12,14 +12,14 @@ pytestmark = pytest.mark.skipif(
     reason='Progressive loading tests hang on macOS CI (no real display)',
 )
 
-from napari.experimental._progressive_loading import (
+from napari.experimental._progressive_loading import (  # noqa: E402
     ProgressiveLoader,
     add_progressive_loading_image,
     chunk_priority_2D,
     chunk_priority_3D,
     chunk_slices,
 )
-from napari.experimental._virtual_data import VirtualData
+from napari.experimental._virtual_data import VirtualData  # noqa: E402
 
 
 @pytest.fixture
@@ -739,13 +739,15 @@ def test_zoom_target_respects_chunk_budget(
     )
     layer.metadata['progressive_loader'] = loader
     _wait_for_idle_loader(qtbot, loader)
-    # close first so the camera change cannot start fetch passes; the
-    # level computation itself is a pure function of the camera state
-    loader.close()
+    # Prevent new fetch passes without destroying the viewer reference
+    # (_zoom_target_level_3d needs self._viewer alive for camera state).
+    loader._closed = True
     viewer.camera.zoom = 0.1  # zoomed out: viewport covers the volume
     target = loader._zoom_target_level_3d()
     # level 0 = 4^3 = 64 chunks > 8; level 1 = 2^3 = 8 chunks fits
     assert target >= 1
+    loader._closed = False
+    loader.close()
 
 
 def test_fill_unloaded_from_repairs_backdrop():

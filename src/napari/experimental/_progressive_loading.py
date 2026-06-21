@@ -906,7 +906,6 @@ class ProgressiveLoader:
             )
         with contextlib.suppress(Exception):
             self._debounce_timer.stop()
-            self._debounce_timer.deleteLater()
         self._viewer = None  # type: ignore[assignment]
         self._layer = None  # type: ignore[assignment]
 
@@ -1046,6 +1045,8 @@ class ProgressiveLoader:
         selects the coarsest level.
         """
         layer = self._layer
+        if self._viewer is None:
+            return len(self._data) - 1
         zoom = float(self._viewer.camera.zoom)
         displayed = list(layer._slice_input.displayed)
         n_levels = len(self._data)
