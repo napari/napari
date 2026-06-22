@@ -264,16 +264,19 @@ class _ScalarFieldSliceRequest:
 
         data = self.data_at_data_level
 
+        # Crop the displayed dimensions to the corner pixels. In 2D this is
+        # the visible canvas region; in 3D the corners normally span the
+        # full level (making this a no-op), but they can describe a
+        # sub-volume tile (see ``_max_tile_extent_3d``).
         translate = np.zeros(self.slice_input.ndim)
         disp_slice = [slice(None) for _ in data.shape]
-        if self.slice_input.ndisplay == 2:
-            for d in self.slice_input.displayed:
-                disp_slice[d] = slice(
-                    self.corner_pixels[0, d],
-                    self.corner_pixels[1, d] + 1,
-                    1,
-                )
-            translate = self.corner_pixels[0] * scale
+        for d in self.slice_input.displayed:
+            disp_slice[d] = slice(
+                self.corner_pixels[0, d],
+                self.corner_pixels[1, d] + 1,
+                1,
+            )
+        translate = self.corner_pixels[0] * scale
 
         # This only needs to be a ScaleTranslate but different types
         # of transforms in a chain don't play nicely together right now.

@@ -30,6 +30,22 @@ skip = [
     'embed_ipython_.py',  # fails without monkeypatch
     'new_theme.py',  # testing theme is extremely slow on CI
     'dynamic-projections-dask.py',  # extremely slow / does not finish
+    'progressive_loading_mandelbrot_.py',  # too slow without numba (optional dep)
+    'progressive_loading_mandelbulb_.py',  # too slow without numba (optional dep)
+    'progressive_loading_ome_zarr_.py',  # requires network access
+    'progressive_loading_zebrahub_uv_.py',  # requires network access
+    'progressive_loading_local_zarr_uv_.py',  # uv-only launcher
+    'progressive_loading_viewer_uv_.py',  # uv-only launcher, requires network access
+    'progressive_loading_local_zarr_.py',  # too slow without numba (optional dep)
+    'progressive_loading_cosem_labels_.py',  # requires network + s3fs
+    'progressive_loading_cosem_labels_debug_.py',  # requires network + s3fs
+    'progressive_loading_wsi_.py',  # requires network + s3fs
+    'progressive_loading_cosem_cardiac_.py',  # requires network + s3fs
+    'progressive_loading_cosem_hela_labels_.py',  # requires network + s3fs
+    'progressive_loading_cosem_covid_.py',  # requires network + s3fs
+    'progressive_loading_giant_2d_.py',  # requires network access
+    'progressive_loading_platynereis_.py',  # requires network access
+    'progressive_loading_zebrahub_debug_.py',  # requires network access
 ]
 # To skip examples during docs build end name with `_.py`
 

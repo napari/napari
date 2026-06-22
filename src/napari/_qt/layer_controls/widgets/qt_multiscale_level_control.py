@@ -88,6 +88,8 @@ class QtMultiscaleLevelControl(  # type: ignore[metaclass]
             self._on_locked_data_level_change
         )
         self._layer.events.data.connect(self._rebuild_items)
+        # set_data fires after every slice, when data_level is up to date
+        self._layer.events.set_data.connect(self._update_auto_label)
 
     def _rebuild_items(self) -> None:
         """Populate the combobox from the layer's current level_shapes."""
@@ -111,11 +113,26 @@ class QtMultiscaleLevelControl(  # type: ignore[metaclass]
                     )
                     self.level_combobox.addItem(label, i)
 
-                    # Disable levels that exceed the GL texture limit in 3D
+                    # Disable levels that exceed the GL texture limit in
+                    # 3D. Layers with a 3D tile extent cap render an
+                    # at-most-cap-sized sub-volume, so compare that size
+                    # instead of the full level shape.
+                    tile_cap = getattr(
+                        self._layer, '_max_tile_extent_3d', None
+                    )
                     if (
                         ndisplay == 3
                         and max_size_3d is not None
-                        and any(shape[ax] > max_size_3d for ax in displayed)
+                        and any(
+                            min(
+                                shape[ax],
+                                tile_cap
+                                if tile_cap is not None
+                                else shape[ax],
+                            )
+                            > max_size_3d
+                            for ax in displayed
+                        )
                     ):
                         item_index = self.level_combobox.count() - 1
                         model = self.level_combobox.model()
@@ -137,6 +154,20 @@ class QtMultiscaleLevelControl(  # type: ignore[metaclass]
                 self.level_combobox.setCurrentIndex(locked + 1)
             else:
                 self.level_combobox.setCurrentIndex(0)
+        self._update_auto_label()
+
+    def _update_auto_label(self) -> None:
+        """Show the level currently being rendered in the "Auto" entry.
+
+        With automatic level selection the rendered resolution changes
+        with the zoom; surfacing it as e.g. ``"Auto (2)"`` gives a live
+        indicator of the level in use.
+        """
+        if not self._layer.multiscale:
+            return
+        label = trans._('Auto ({level})', level=self._layer.data_level)
+        if self.level_combobox.itemText(0) != label:
+            self.level_combobox.setItemText(0, label)
 
     def _on_combobox_changed(self, index: int) -> None:
         """Update the layer's locked data level from the combobox selection.
