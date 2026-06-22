@@ -2,6 +2,8 @@ import os
 import shutil
 import subprocess
 import sys
+import tempfile
+import traceback
 
 
 def _show_error_dialog_windows(message: str, title: str = 'Error') -> None:
@@ -44,7 +46,9 @@ def _show_error_dialog_linux(message: str, title: str = 'Error') -> None:
         )
 
 
-def show_startup_error_dialog(exc: Exception) -> None:
+def show_startup_error_dialog(
+    exc: Exception, title: str, message: str
+) -> None:
     """Display a native OS error dialog before napari has started.
 
     Use this function to report exceptions that occur during
@@ -53,9 +57,18 @@ def show_startup_error_dialog(exc: Exception) -> None:
 
     Note: After successful startup, napari's error handling and logging are used.
     """
-    title = 'Startup Error'
-    message = f'An error occurred while starting napari.\n\nexc: {exc}'
     if sys.stdout is None:  # a guard when napari is run without a terminal
+        try:
+            with tempfile.NamedTemporaryFile(
+                mode='w', delete=False, prefix='napari-error-'
+            ) as temp_file:
+                traceback.print_exception(
+                    type(exc), exc, exc.__traceback__, file=temp_file
+                )
+                message += f'\n\nSee {temp_file.name} for more details.'
+        except Exception:  # noqa: BLE001
+            message += f'\n\n{exc}'
+
         if sys.platform == 'win32':
             _show_error_dialog_windows(message, title)
         elif sys.platform == 'darwin':
@@ -66,13 +79,26 @@ def show_startup_error_dialog(exc: Exception) -> None:
 
 def main() -> None:
     try:
-        from napari.__main__ import main as main_function
+        from napari.__main__ import _build_viewer
+        from napari._qt.qt_event_loop import run
     except Exception as e:
-        show_startup_error_dialog(e)
+        show_startup_error_dialog(
+            e, title='Import Error', message='napari failed to import.'
+        )
         raise
-    else:
-        main_function()
-        sys.exit(0)
+
+    try:
+        _viewer = _build_viewer()
+    except Exception as e:
+        show_startup_error_dialog(
+            e,
+            title='Startup Error',
+            message='napari failed to create a viewer.',
+        )
+        raise
+
+    run(gui_exceptions=True)
+    sys.exit(0)
 
 
 if __name__ == '__main__':
