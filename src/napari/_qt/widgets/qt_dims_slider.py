@@ -83,7 +83,8 @@ class QtDimSliderWidget(QWidget):
         # editingFinished event (the user is expected to change the value)...
         # which is confusing to the user, so instead we use an IntValidator
         # that makes sure the user can only enter integers, but we do our own
-        # value validation in self.change_slice
+        # value validation in self._set_slice_from_label. The upper bound is
+        # updated to fit the data in self._update_range (see #3795).
         self.curslice_label.setValidator(QIntValidator(0, 999999))
 
         self.curslice_label.editingFinished.connect(self._set_slice_from_label)
@@ -270,6 +271,7 @@ class QtDimSliderWidget(QWidget):
             self.slider.setSingleStep(1)
             self.slider.setPageStep(1)
             self.slider.setValue(self.dims.current_step[self.axis])
+            self.curslice_label.validator().setTop(10 ** len(str(nsteps + 1)))
             self.totslice_label.setText(str(nsteps))
             self.totslice_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
             self._update_slice_labels()
