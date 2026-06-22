@@ -19,6 +19,7 @@ Requires network access (public HTTPS, no credentials).
 """
 
 import dask.array as da
+
 try:
     import napari_colormaps  # noqa: F401 - registers colormaps
 except ModuleNotFoundError:
