@@ -70,6 +70,7 @@ from napari.utils.events import EmitterGroup, Event
 from napari.utils.events.custom_types import Array
 from napari.utils.misc import StringEnum, _is_array_type
 from napari.utils.naming import magic_name
+from napari.utils.status_messages import format_feature_value
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
@@ -90,8 +91,11 @@ class Labels(ScalarFieldBase):
     ----------
     data : array or list of array
         Labels data as an array or multiscale. Must be integer type or bools.
-        Please note multiscale rendering is only supported in 2D. In 3D, only
-        the lowest resolution scale is displayed.
+        In 2D, the displayed resolution is chosen automatically based on
+        the viewport. In 3D, the lowest resolution scale is displayed by
+        default. The resolution level can be locked via
+        ``locked_data_level`` or the resolution control in the layer
+        controls UI.
     affine : n-D array or napari.utils.transforms.Affine
         (N+1, N+1) affine transformation matrix in homogeneous coordinates.
         The first (N, N) entries correspond to a linear transform and
@@ -134,9 +138,11 @@ class Labels(ScalarFieldBase):
         represented by a list of array like image data. If not specified by
         the user and if the data is a list of arrays that decrease in shape
         then it will be taken to be multiscale. The first image in the list
-        should be the largest. Please note multiscale rendering is only
-        supported in 2D. In 3D, only the lowest resolution scale is
-        displayed.
+        should be the largest. In 2D, the displayed resolution is chosen
+        automatically based on the viewport. In 3D, the lowest resolution
+        scale is displayed by default. The resolution level can be locked
+        via ``locked_data_level`` or the resolution control in the layer
+        controls UI.
     name : str
         Name of the layer.
     opacity : float
@@ -181,17 +187,21 @@ class Labels(ScalarFieldBase):
     data : array or list of array
         Integer label data as an array or multiscale. Can be N dimensional.
         Every pixel contains an integer ID corresponding to the region it
-        belongs to. The label 0 is rendered as transparent. Please note
-        multiscale rendering is only supported in 2D. In 3D, only
-        the lowest resolution scale is displayed.
+        belongs to. The label 0 is rendered as transparent. In 2D, the
+        displayed resolution is chosen automatically based on the viewport.
+        In 3D, the lowest resolution scale is displayed by default. The
+        resolution level can be locked via ``locked_data_level`` or the
+        resolution control in the layer controls UI.
     axis_labels : tuple of str
         Dimension names of the layer data.
     multiscale : bool
         Whether the data is a multiscale image or not. Multiscale data is
         represented by a list of array like image data. The first image in the
-        list should be the largest. Please note multiscale rendering is only
-        supported in 2D. In 3D, only the lowest resolution scale is
-        displayed.
+        list should be the largest. In 2D, the displayed resolution is chosen
+        automatically based on the viewport. In 3D, the lowest resolution
+        scale is displayed by default. The resolution level can be locked
+        via ``locked_data_level`` or the resolution control in the layer
+        controls UI.
     metadata : dict
         Labels metadata.
     num_colors : int
@@ -1661,7 +1671,7 @@ class Labels(ScalarFieldBase):
 
         idx = self._label_index[label_value]
         return [
-            f'{k}: {v[idx]}'
+            f'{k}: {format_feature_value(v[idx])}'
             for k, v in self.features.items()
             if k != 'index'
             and len(v) > idx

@@ -21,6 +21,7 @@ from napari._qt.qthreading import (
     wait_for_workers_to_quit,
 )
 from napari._qt.utils import _maybe_allow_interrupt
+from napari._wayland_fix import _nvidia_driver_loaded
 from napari.resources._icons import _theme_path
 from napari.settings import get_settings
 from napari.utils import config, perf
@@ -190,6 +191,27 @@ def get_qapp(
             warn(
                 trans._(
                     'Using NAPARI_PERFMON with an already-running QtApp (--gui qt?) is not supported.',
+                    deferred=True,
+                ),
+                stacklevel=2,
+            )
+        if (
+            sys.platform == 'linux'
+            and app.platformName() == 'wayland'
+            and _nvidia_driver_loaded()
+        ):
+            # A QApplication created before napari was imported (e.g. via
+            # IPython's "%gui qt") locks the Qt platform plugin to Wayland
+            # before napari's _wayland_fix.py  workaround can run. Gated on
+            # Nvidia since that's the only setup the workaround helps.
+            warn(
+                trans._(
+                    'A Qt application was already running on the Wayland '
+                    'platform before napari was imported, so napari could not '
+                    'automatically apply its Wayland startup workaround. If napari '
+                    'fails to launch or throws repeated rendering errors, see '
+                    'https://napari.org/stable/troubleshooting.html#wayland-and-nvidia '
+                    'for the workaround.',
                     deferred=True,
                 ),
                 stacklevel=2,
