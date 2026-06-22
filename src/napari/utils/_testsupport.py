@@ -161,6 +161,11 @@ def mock_app_model():
             init_qactions.cache_clear()
 
 
+@pytest.fixture(autouse=True)
+def _disable_qt_warnings(monkeypatch):
+    monkeypatch.setattr('napari._qt.qt_main_window.SHOW_QT_WARNING', False)
+
+
 @pytest.fixture
 def make_napari_viewer(
     qtbot,
