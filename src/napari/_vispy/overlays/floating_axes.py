@@ -16,9 +16,9 @@ if TYPE_CHECKING:
 
 
 class _AxesScene(ViewBox):
-    def __init__(self, size: float, font_info: FontInfo) -> None:
+    def __init__(self, font_info: FontInfo) -> None:
         self.axes = Axes(font_info=font_info)
-        super().__init__(size=(size, size), bgcolor='transparent')
+        super().__init__(bgcolor='transparent')
         self.camera = ArcballCamera(fov=0)
         self.axes.parent = self.scene
         self.interactive = False
@@ -33,19 +33,16 @@ class VispyFloatingAxesOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
     overlay: FloatingAxesOverlay
 
     def __init__(self, font_info: FontInfo, **kwargs: Any) -> None:
-        self._size = 100
         super().__init__(
-            node=_AxesScene(size=self._size, font_info=font_info),
+            node=_AxesScene(font_info=font_info),
             font_info=font_info,
             **kwargs,
         )
-        self.x_size = self._size
-        self.y_size = self._size
-
         self.overlay.events.colored.connect(self._on_data_change)
         self.overlay.events.dashed.connect(self._on_data_change)
         self.overlay.events.labels.connect(self._on_labels_text_change)
         self.overlay.events.arrows.connect(self._on_data_change)
+        self.overlay.events.size.connect(self._on_size_change)
 
         self.viewer.events.theme.connect(self._on_data_change)
         self.viewer.dims.events.order.connect(self._on_data_change)
@@ -56,6 +53,12 @@ class VispyFloatingAxesOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self.viewer.camera.events.connect(self._on_angles_change)
 
         self.reset()
+
+    def _on_size_change(self) -> None:
+        self.node.size = (self.overlay.size, self.overlay.size)
+        self.x_size = self.y_size = self.overlay.size
+        # need to trigger this for re-tiling
+        self._on_position_change()
 
     def _on_data_change(self) -> None:
         """Update visual data like color, dashing, and arrows."""
@@ -116,4 +119,5 @@ class VispyFloatingAxesOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
 
     def reset(self) -> None:
         super().reset()
+        self._on_size_change()
         self._on_data_change()

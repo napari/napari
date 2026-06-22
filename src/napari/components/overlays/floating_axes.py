@@ -21,6 +21,8 @@ class FloatingAxesOverlay(CanvasOverlay):
         y=dashed, z=dotted.
     arrows : bool
         If axes have arrowheads or not.
+    size : float
+        Size taken up by the overlay in canvas pixels.
     visible : bool
         If the overlay is visible or not.
     opacity : float
@@ -37,5 +39,6 @@ class FloatingAxesOverlay(CanvasOverlay):
     colored: bool = True
     dashed: bool = False
     arrows: bool = True
+    size: float = 100
     blending: Blending = Blending.TRANSLUCENT_NO_DEPTH
     position: CanvasPosition = CanvasPosition.BOTTOM_LEFT
