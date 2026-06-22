@@ -348,7 +348,7 @@ def _build_viewer() -> Viewer:
 
 
 def _run() -> None:
-    from napari._qt.qt_event_loop import run
+    from napari import run
 
     _viewer = _build_viewer()
     run(gui_exceptions=True)
