@@ -12,12 +12,12 @@ concurrency:
   group: docs-${{ github.ref }}
   cancel-in-progress: true
 
+permissions: {}
 
 jobs:
   determine-branch-and-directory-name:
     name: Determine branch and directory name
     runs-on: ubuntu-slim
-    permissions: {}
     outputs:
       target_directory: ${{ steps.get-directory-name.outputs.target_directory }}
       repo_reference: ${{ steps.get-directory-name.outputs.branch_name }}
