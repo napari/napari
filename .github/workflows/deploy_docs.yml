@@ -46,7 +46,8 @@ jobs:
     uses: napari/shared-workflows/.github/workflows/build_and_deploy.yml@main
     name: Build and deploy
     needs: determine-branch-and-directory-name
-    secrets: inherit
+    secrets:
+      ACTIONS_DEPLOY_KEY: ${{ secrets.ACTIONS_DEPLOY_KEY }}
     with:
       target_directory: ${{ needs.determine-branch-and-directory-name.outputs.target_directory }}
       napari_ref: ${{ needs.determine-branch-and-directory-name.outputs.repo_reference }}
