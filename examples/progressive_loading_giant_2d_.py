@@ -19,7 +19,10 @@ Requires network access (public HTTPS, no credentials).
 """
 
 import dask.array as da
-import napari_colormaps  # noqa: F401 - registers colormaps
+try:
+    import napari_colormaps  # noqa: F401 - registers colormaps
+except ModuleNotFoundError:
+    pass
 import zarr
 from zarr.experimental.cache_store import CacheStore
 from zarr.storage import FsspecStore, MemoryStore
@@ -63,7 +66,7 @@ layer = add_progressive_loading_image(
     viewer=viewer,
     name='Zebrafish embryo EM (350 Gpx)',
     contrast_limits=(0, 255),
-    colormap='phantom_blue',
+    colormap='cyan',
 )
 
 if __name__ == '__main__':

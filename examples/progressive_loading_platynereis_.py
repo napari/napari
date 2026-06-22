@@ -14,7 +14,10 @@ plain HTTPS from EMBL — no S3 credentials needed.
 .. tags:: experimental
 """
 
-import napari_colormaps  # noqa: F401 - registers colormaps
+try:
+    import napari_colormaps  # noqa: F401 - registers colormaps
+except ModuleNotFoundError:
+    pass
 import zarr
 from zarr.experimental.cache_store import CacheStore
 from zarr.storage import FsspecStore, MemoryStore
@@ -53,7 +56,7 @@ layer = add_progressive_loading_image(
     viewer=viewer,
     name='Platynereis (serial-section EM)',
     contrast_limits=(0, 255),
-    colormap='bioluminescent',
+    colormap='green',
     scale=scale,
     rendering='attenuated_mip',
 )

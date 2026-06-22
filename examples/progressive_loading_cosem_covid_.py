@@ -14,7 +14,10 @@ Requires network access and anonymous S3.
 .. tags:: experimental
 """
 
-import napari_colormaps  # noqa: F401 - registers colormaps
+try:
+    import napari_colormaps  # noqa: F401 - registers colormaps
+except ModuleNotFoundError:
+    pass
 import zarr
 from zarr.experimental.cache_store import CacheStore
 from zarr.storage import FsspecStore, MemoryStore
@@ -55,7 +58,7 @@ layer = add_progressive_loading_image(
     viewer=viewer,
     name='SARS-CoV-2 cell (FIB-SEM)',
     contrast_limits=(0, 65535),
-    colormap='hot_plasma',
+    colormap='inferno',
     scale=scale,
     rendering='attenuated_mip',
 )

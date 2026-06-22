@@ -17,7 +17,10 @@ Requires network access and anonymous S3.
 .. tags:: experimental
 """
 
-import napari_colormaps  # noqa: F401 - registers colormaps
+try:
+    import napari_colormaps  # noqa: F401 - registers colormaps
+except ModuleNotFoundError:
+    pass
 import zarr
 from zarr.experimental.cache_store import CacheStore
 from zarr.storage import FsspecStore, MemoryStore
@@ -68,7 +71,7 @@ add_progressive_loading_image(
     viewer=viewer,
     name='HeLa EM (FIB-SEM)',
     contrast_limits=(0, 255),
-    colormap='polar_night',
+    colormap='gray',
     scale=em_scale,
     translate=em_translate,
     rendering='attenuated_mip',

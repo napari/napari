@@ -17,7 +17,10 @@ Requires network access and anonymous S3 (no credentials needed).
 .. tags:: experimental
 """
 
-import napari_colormaps  # noqa: F401 - registers colormaps
+try:
+    import napari_colormaps  # noqa: F401 - registers colormaps
+except ModuleNotFoundError:
+    pass
 import zarr
 from zarr.experimental.cache_store import CacheStore
 from zarr.storage import FsspecStore, MemoryStore
@@ -58,7 +61,7 @@ layer = add_progressive_loading_image(
     viewer=viewer,
     name='Zebrafish heart (FIB-SEM)',
     contrast_limits=(0, 255),
-    colormap='deep_sea_cb',
+    colormap='turbo',
     scale=scale,
     rendering='attenuated_mip',
 )
