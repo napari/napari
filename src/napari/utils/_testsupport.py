@@ -163,7 +163,11 @@ def mock_app_model():
 
 @pytest.fixture(autouse=True)
 def _disable_qt_warnings(monkeypatch):
-    monkeypatch.setattr('napari._qt.qt_main_window.SHOW_QT_WARNING', False)
+    try:
+        from napari._qt import qt_main_window
+    except ImportError:
+        return
+    monkeypatch.setattr(qt_main_window, 'SHOW_QT_WARNING', False)
 
 
 @pytest.fixture
