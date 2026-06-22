@@ -82,6 +82,7 @@ class VispyFloatingAxesOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         axes = self.viewer.dims.displayed[::-1]
         axis_labels = [self.viewer.dims.axis_labels[a] for a in axes]
         self.node.axes.text.text = axis_labels
+        self.node.axes.text.visible = self.overlay.labels
 
     def _on_angles_change(self) -> None:
         """Update rotation from camera angles."""
