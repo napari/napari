@@ -700,8 +700,9 @@ QtListView::item:hover {
   background-color: {{ highlight }};
 }
 
-QtListView::item:selected {
-  background: {{ current }};
+QtLayerList {
+  font-size: {{ font_size }};
+  font-weight: bold;
 }
 
 QtLayerList::item {
@@ -711,11 +712,15 @@ QtLayerList::item {
   border: 1px solid {{ primary }};  /* otherwise it's `foreground` for generic lists */
 }
 
+QtLayerList::item:selected {
+  background: {{ current }};
+  border: 1px solid {{ current }};
+}
+
 QtLayerList QLineEdit {
   margin: -2px;  /* offset editor back to overlap correctly to layer name */
   background-color: {{ current }};
   selection-background-color: {{ darken(current, 20) }};
-  font-size: {{ font_size }};
 }
 
 /* TODO: all these darken/lighten in the layerlist seem unnecessarily complicated */
