@@ -282,4 +282,4 @@ class Axes(Compound):
         )
 
         self.text.color = axes_colors
-        self.text.pos = text_data + self._text_offsets
+        self.text.pos = text_data + self._text_offsets[:ndisplay]
