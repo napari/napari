@@ -105,6 +105,7 @@ if TYPE_CHECKING:
 _sentinel = object()
 
 SHOW_QT_WARNING = QT5
+# a variable to check if we run with PyQt5 backend. As we dropped PySide it is enough to check Qt version
 
 del QT5
 
