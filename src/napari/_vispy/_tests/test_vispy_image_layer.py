@@ -268,6 +268,44 @@ def test_node_origin_is_consistent_with_multiscale(
     np.testing.assert_array_equal(high_res_origin, low_res_origin)
 
 
+def test_3d_multiscale_half_voxel_uses_rendered_level():
+    """The 3D half-voxel offset must use the rendered level, not the coarsest.
+
+    A deep pyramid (e.g. 10 levels) has coarsest downsample_factors of
+    512. If the offset always used the coarsest level, rendering level 0
+    would apply a ~256-voxel ghost translation — far off-screen. The fix
+    uses data_level so the offset tracks whichever level is displayed.
+    """
+    # 3-level 3D pyramid: level 0 = 64^3, level 1 = 32^3, level 2 = 16^3
+    data = [
+        np.zeros((64, 64, 64)),
+        np.zeros((32, 32, 32)),
+        np.zeros((16, 16, 16)),
+    ]
+    image = Image(data)
+    vispy_image = VispyImageLayer(image, font_info=FontInfo())
+
+    image._slice_dims(Dims(ndim=3, ndisplay=3))
+
+    # Render the finest level (downsample factor 1)
+    image._data_level = 0
+    vispy_image._on_matrix_change()
+    translate_fine = vispy_image.node.transform.matrix[-1, :3].copy()
+
+    # Render the coarsest level (downsample factor 4)
+    image._data_level = 2
+    vispy_image._on_matrix_change()
+    translate_coarse = vispy_image.node.transform.matrix[-1, :3].copy()
+
+    # Level 0 has downsample factor 1 → half-voxel offset = 0.
+    # The old bug applied the coarsest offset (4-1)/2 = 1.5 to every
+    # level, so translate_fine would have been [1.5, 1.5, 1.5] too.
+    npt.assert_array_almost_equal(translate_fine, [0, 0, 0])
+
+    # Level 2 has downsample factor 4 → half-voxel offset = (4-1)/2 = 1.5
+    npt.assert_array_almost_equal(translate_coarse, [1.5, 1.5, 1.5])
+
+
 def test_world_units_impact_scale():
     nm = get_application_registry().nm
     font_info = FontInfo()
