@@ -13,7 +13,8 @@ from skimage import data
 import napari
 
 # create the viewer with an image
-viewer = napari.view_image(data.moon())
+viewer = napari.Viewer()
+layer = viewer.add_image(data.moon())
 
 class Grabber(QWidget):
     def __init__(self) -> None:

@@ -31,7 +31,7 @@ def test_qt_tooltip_event_filter(qtbot, tooltip, is_qt_tag_present):
 
     # event filter object and QEvent
     event_filter_handler = QtToolTipEventFilter()
-    qevent = QEvent(QEvent.ToolTipChange)
+    qevent = QEvent(QEvent.Type.ToolTipChange)
 
     # check if tooltip is changed by the event filter
     widget = QWidget()

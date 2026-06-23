@@ -17,8 +17,8 @@ y = np.linspace(0, 5, 256)[:, np.newaxis]
 img = np.sin(x) ** 10 + np.cos(10 + y * x) * np.cos(x)
 
 # add it to the viewer
-viewer = napari.view_image(img, colormap='viridis')
-layer = viewer.layers[-1]
+viewer = napari.Viewer()
+layer = viewer.add_image(img, colormap='viridis')
 
 # create mpl figure with subplots
 mpl_fig = plt.figure()

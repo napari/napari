@@ -4,7 +4,6 @@ from itertools import cycle, islice
 import numpy as np
 import pytest
 
-from napari._pydantic_compat import ValidationError
 from napari.layers.utils.color_manager import ColorManager, ColorProperties
 from napari.utils.colormaps.categorical_colormap import CategoricalColormap
 from napari.utils.colormaps.standardize_color import transform_color
@@ -69,7 +68,7 @@ def test_categorical_colormap_from_dict(cat_cmap, expected):
 def test_invalid_categorical_colormap():
     colors = np.array([[1, 1, 1, 1], [1, 0, 0, 1], [0, 0, 0, 1]])
     invalid_cmap = 42
-    with pytest.raises(ValidationError):
+    with pytest.raises(TypeError):
         _ = ColorManager(
             colors=colors,
             categorical_colormap=invalid_cmap,
@@ -109,7 +108,7 @@ invalid_keys = {'values': np.array(['A', 'B', 'C'])}
 @pytest.mark.parametrize('c_props', [wrong_type, invalid_keys])
 def test_invalid_color_properties(c_props):
     colors = np.array([[1, 1, 1, 1], [1, 0, 0, 1], [0, 0, 0, 1]])
-    with pytest.raises(ValidationError):
+    with pytest.raises(TypeError):
         _ = ColorManager(
             colors=colors, color_properties=c_props, color_mode='direct'
         )
@@ -388,14 +387,14 @@ def test_init_color_manager_direct(n_colors):
             color_manager.colors, expected_colors
         )
     # test that colormanager state can be saved and loaded
-    cm_dict = color_manager.dict()
+    cm_dict = color_manager.model_dump()
     color_manager_2 = ColorManager._from_layer_kwargs(
         colors=cm_dict, properties={}, n_colors=n_colors
     )
     assert color_manager == color_manager_2
 
     # test json serialization
-    json_str = color_manager.json()
+    json_str = color_manager.model_dump_json()
     cm_json_dict = json.loads(json_str)
     color_manager_3 = ColorManager._from_layer_kwargs(
         colors=cm_json_dict, properties={}, n_colors=n_colors
@@ -425,14 +424,14 @@ def test_init_color_manager_cycle():
     assert color_manager.color_properties.current_value == 'B'
 
     # test that colormanager state can be saved and loaded
-    cm_dict = color_manager.dict()
+    cm_dict = color_manager.model_dump()
     color_manager_2 = ColorManager._from_layer_kwargs(
         colors=cm_dict, properties=properties
     )
     assert color_manager == color_manager_2
 
     # test json serialization
-    json_str = color_manager.json()
+    json_str = color_manager.model_dump_json()
     cm_json_dict = json.loads(json_str)
     color_manager_3 = ColorManager._from_layer_kwargs(
         colors=cm_json_dict, properties={}, n_colors=n_colors
@@ -498,7 +497,7 @@ def test_init_empty_color_manager_cycle():
     )
 
     # test that colormanager state can be saved and loaded
-    cm_dict = color_manager.dict()
+    cm_dict = color_manager.model_dump()
     color_manager_2 = ColorManager._from_layer_kwargs(
         colors=cm_dict, properties=properties
     )
@@ -527,14 +526,14 @@ def test_init_color_manager_colormap():
     assert color_manager.color_properties.current_value == 1.5
 
     # test that colormanager state can be saved and loaded
-    cm_dict = color_manager.dict()
+    cm_dict = color_manager.model_dump()
     color_manager_2 = ColorManager._from_layer_kwargs(
         colors=cm_dict, properties=properties
     )
     assert color_manager == color_manager_2
 
     # test json serialization
-    json_str = color_manager.json()
+    json_str = color_manager.model_dump_json()
     cm_json_dict = json.loads(json_str)
     color_manager_3 = ColorManager._from_layer_kwargs(
         colors=cm_json_dict, properties={}, n_colors=n_colors
@@ -599,7 +598,7 @@ def test_init_empty_color_manager_colormap():
     )
 
     # test that colormanager state can be saved and loaded
-    cm_dict = color_manager.dict()
+    cm_dict = color_manager.model_dump()
     color_manager_2 = ColorManager._from_layer_kwargs(
         colors=cm_dict, properties=properties
     )

@@ -77,6 +77,15 @@ def test_calc_data_range():
     clim = calc_data_range(data)
     np.testing.assert_array_equal(clim, (-1, 10))
 
+    # check that dtype guessing/kwarg works properly (see #8149)
+    data = np.zeros((10, 10, 10), dtype=np.uint8)
+    clim = calc_data_range(data)
+    np.testing.assert_array_equal(clim, (0, 255))
+
+    data = np.zeros((10, 10, 10), dtype=np.float32)
+    clim = calc_data_range(data, dtype=np.uint8)
+    np.testing.assert_array_equal(clim, (0, 255))
+
 
 @pytest.mark.parametrize(
     'data',

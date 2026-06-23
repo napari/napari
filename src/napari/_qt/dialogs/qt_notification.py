@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Sequence
-from typing import cast
+from contextlib import suppress
+from typing import ClassVar
 
 from qtpy.QtCore import (
     QEasingCurve,
@@ -73,6 +74,8 @@ class NapariQtNotification(QDialog):
     message: QElidingLabel
     source_label: QLabel
     severity_icon: QLabel
+
+    _instances: ClassVar[list[NapariQtNotification]] = []
 
     def __init__(
         self,
@@ -155,14 +158,12 @@ class NapariQtNotification(QDialog):
     def show(self):
         """Show the message with a fade and slight slide in from the bottom."""
         super().show()
+        self._instances.append(self)
         self.slide_in()
         if self.parent() is not None and not self.parent().isActiveWindow():
             return
         if self.parent() is not None:
-            notifications = cast(
-                list[NapariQtNotification],
-                self.parent().findChildren(NapariQtNotification),
-            )
+            notifications = self._instances
             for notification in notifications:
                 notification.timer_stop()
         if self.DISMISS_AFTER > 0:
@@ -196,11 +197,11 @@ class NapariQtNotification(QDialog):
         self.timer_stop()
         self.opacity_anim.stop()
         self.geom_anim.stop()
+        with suppress(ValueError):
+            # if show is not called, the element is not in list
+            self._instances.remove(self)
         if self.parent() is not None:
-            notifications = cast(
-                list[NapariQtNotification],
-                self.parent().findChildren(NapariQtNotification),
-            )
+            notifications = self._instances
             if len(notifications) > 1 and notifications[-1] == self:
                 notifications[-2].timer_start()
             self.parent().setFocus()
@@ -315,6 +316,7 @@ class NapariQtNotification(QDialog):
         )
         self.verticalLayout.addWidget(self.row1_widget, 1)
         self.row2_widget = QWidget(self)
+        self.row2_widget.setObjectName('notification_actions')
         self.row2_widget.hide()
         self.row2 = QHBoxLayout(self.row2_widget)
         self.source_label = QLabel(self.row2_widget)
@@ -325,12 +327,6 @@ class NapariQtNotification(QDialog):
         self.row2.addStretch()
         self.row2.setContentsMargins(12, 2, 16, 12)
         self.row2_widget.setMaximumHeight(34)
-        self.row2_widget.setStyleSheet(
-            'QPushButton{'
-            'padding: 4px 12px 4px 12px; '
-            'font-size: 11px;'
-            'min-height: 18px; border-radius: 0;}'
-        )
         self.verticalLayout.addWidget(self.row2_widget, 0)
         self.setProperty('expanded', False)
         self.resize(self.MIN_WIDTH, 40)
@@ -424,7 +420,7 @@ class NapariQtNotification(QDialog):
             and _QtMainWindow.current()
             and _QtMainWindow.current().isVisible()
         ):
-            canvas = _QtMainWindow.current()._qt_viewer._welcome_widget
+            canvas = _QtMainWindow.current()._qt_viewer.canvas.native
             cls.from_notification(notification, canvas).show()
 
 

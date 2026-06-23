@@ -1,8 +1,13 @@
 from __future__ import annotations
 
-from psutil import virtual_memory
+import inspect
+from pathlib import Path
+from typing import Annotated, Any
 
-from napari._pydantic_compat import Field, validator
+from psutil import virtual_memory
+from pydantic import Field, field_validator
+from pydantic_settings import SettingsConfigDict
+
 from napari.settings._constants import (
     BrushSizeOnMouseModifiers,
     LabelDTypes,
@@ -16,18 +21,21 @@ from napari.utils.camera_orientations import (
     HorizontalAxisOrientation,
     VerticalAxisOrientation,
 )
-from napari.utils.events.custom_types import confloat, conint
+from napari.utils.events import Event
+from napari.utils.events.custom_types import NotEqual
 from napari.utils.events.evented_model import EventedModel
 from napari.utils.notifications import NotificationSeverity
 from napari.utils.translations import trans
 
-GridStride = conint(ge=-50, le=50, ne=0)
-GridWidth = conint(ge=-1, ne=0)
-GridHeight = conint(ge=-1, ne=0)
 # we could use a smaller or greater 'le' for spacing,
 # this is just meant to be a somewhat reasonable upper limit,
 # as even on a 4k monitor a 2x2 grid will break calculation with >1300 spacing
-GridSpacing = confloat(ge=0, le=1500, step=5)
+MAX_GRID_SPACING = 1500
+
+GridStride = Annotated[int, NotEqual(0)]
+GridWidth = Annotated[int, Field(ge=-1), NotEqual(0)]
+GridHeight = Annotated[int, Field(ge=-1), NotEqual(0)]
+GridSpacing = Annotated[float, Field(ge=0, le=MAX_GRID_SPACING)]
 
 _DEFAULT_MEM_FRACTION = 0.25
 MAX_CACHE = virtual_memory().total * 0.5 / 1e9
@@ -44,6 +52,20 @@ class DaskSettings(EventedModel):
 
 
 class ApplicationSettings(EventedModel):
+    def __init__(self, **kwargs: Any):
+        super().__init__(**kwargs)
+        # register callback to update brush size on mouse move modifiers
+        self.events.brush_size_on_mouse_move_modifiers.connect(
+            brush_size_on_mouse_move_modifiers_callback
+        )
+        self.events.brush_size_on_mouse_move_modifiers(
+            value=self.brush_size_on_mouse_move_modifiers
+        )
+        self.events.float_display_precision.connect(
+            float_display_precision_callback
+        )
+        self.events.float_display_precision(value=self.float_display_precision)
+
     first_time: bool = Field(
         True,
         title=trans._('First time'),
@@ -189,31 +211,45 @@ class ApplicationSettings(EventedModel):
         ),
     )
 
-    grid_stride: GridStride = Field(  # type: ignore [valid-type]
+    grid_stride: GridStride = Field(
         default=1,
         title=trans._('Grid Stride'),
-        description=trans._('Number of layers to place in each grid square.'),
+        description=trans._(
+            'Number of layers to place in each grid viewbox before moving on to the next viewbox.\n'
+            'A negative stride will cause the order in which the layers are placed in the grid to be reversed.\n'
+            '0 is not a valid entry.'
+        ),
     )
 
-    grid_width: GridWidth = Field(  # type: ignore [valid-type]
+    grid_width: GridWidth = Field(
         default=-1,
         title=trans._('Grid Width'),
         description=trans._('Number of columns in the grid.'),
     )
 
-    grid_height: GridHeight = Field(  # type: ignore [valid-type]
+    grid_height: GridHeight = Field(
         default=-1,
         title=trans._('Grid Height'),
         description=trans._('Number of rows in the grid.'),
     )
 
-    grid_spacing: GridSpacing = Field(  # type: ignore [valid-type]
+    grid_spacing: GridSpacing = Field(
         default=0,
         title=trans._('Grid Spacing'),
         description=trans._(
-            'The amount of spacing inbetween grid viewboxes.'
-            '\nIf between 0 and 1, it is interpreted as a proportion of the size of the viewboxes.'
-            '\nIf equal or greater than 1, it is interpreted as screen pixels.'
+            'The amount of spacing inbetween grid viewboxes.\n'
+            'If between 0 and 1, it is interpreted as a proportion of the size of the viewboxes.\n'
+            'If equal or greater than 1, it is interpreted as screen pixels.'
+        ),
+    )
+
+    float_display_precision: int = Field(
+        3,
+        ge=1,
+        le=10,
+        title=trans._('Float display precision'),
+        description=trans._(
+            'Number of significant digits when displaying float values in the status bar and layer tooltips.'
         ),
     )
 
@@ -265,7 +301,36 @@ class ApplicationSettings(EventedModel):
         ),
     )
 
-    @validator('window_state', allow_reuse=True)
+    startup_script: Path = Field(
+        default=Path(),
+        title=trans._('Full path to a startup script'),
+        description=trans._(
+            'Path to a Python script that will be executed on napari startup.\n'
+            'This can be used to customize the behavior of napari or load specific plugins automatically.',
+        ),
+        json_schema_extra={'file_extension': 'py'},
+    )
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        if name == 'startup_script' and value is not None:
+            # Ensure the script is a valid Python file
+            frame = inspect.currentframe()
+            if frame is None:
+                raise ValueError(
+                    "The 'startup_script' setting can only be set by the napari application itself."
+                )
+
+            caller_frame = frame.f_back
+            if caller_frame is None or not caller_frame.f_globals.get(
+                '__name__', ''
+            ).startswith('napari.'):
+                raise ValueError(
+                    "The 'startup_script' setting can only be set by the napari application itself."
+                )
+        super().__setattr__(name, value)
+
+    @field_validator('window_state')
+    @classmethod
     def _validate_qbtye(cls, v: str) -> str:
         if v and (not isinstance(v, str) or not v.startswith('!QBYTE_')):
             raise ValueError(
@@ -273,8 +338,7 @@ class ApplicationSettings(EventedModel):
             )
         return v
 
-    class Config:
-        use_enum_values = False  # https://github.com/napari/napari/issues/3062
+    model_config = SettingsConfigDict(use_enum_values=False)
 
     class NapariConfig:
         # Napari specific configuration
@@ -293,3 +357,17 @@ class ApplicationSettings(EventedModel):
             'ipy_interactive',
             'plugin_widget_positions',
         )
+
+
+def brush_size_on_mouse_move_modifiers_callback(event: Event) -> None:
+    from napari.layers.labels._labels_mouse_bindings import (
+        change_brush_size_on_mouse_move_modifiers,
+    )
+
+    change_brush_size_on_mouse_move_modifiers(event.value.split('+'))
+
+
+def float_display_precision_callback(event: Event) -> None:
+    from napari.utils import status_messages
+
+    status_messages.PRECISION_COUNT = event.value

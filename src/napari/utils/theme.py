@@ -5,11 +5,12 @@ import re
 import sys
 from ast import literal_eval
 from contextlib import suppress
-from typing import Any
+from typing import Any, Literal
 
 import npe2
+from pydantic import field_validator
+from pydantic_extra_types.color import Color
 
-from napari._pydantic_compat import Color, validator
 from napari.resources._icons import (
     PLUGIN_FILE_NAME,
     _theme_path,
@@ -18,15 +19,6 @@ from napari.resources._icons import (
 from napari.utils.events import EventedModel
 from napari.utils.events.containers._evented_dict import EventedDict
 from napari.utils.translations import trans
-
-try:
-    from qtpy import QT_VERSION
-
-    major, minor, *_ = QT_VERSION.split('.')  # type: ignore[attr-defined]
-    use_gradients = (int(major) >= 5) and (int(minor) >= 12)
-    del major, minor, QT_VERSION
-except (ImportError, RuntimeError):
-    use_gradients = False
 
 
 class Theme(EventedModel):
@@ -39,6 +31,8 @@ class Theme(EventedModel):
         will be saved to.
     label : str
         Name of the theme as it should be shown in the ui.
+    type: str
+        Whether the theme is "dark" or "light" type.
     syntax_style : str
         Name of the console style.
         See for more details: https://pygments.org/docs/styles/
@@ -68,6 +62,7 @@ class Theme(EventedModel):
 
     id: str
     label: str
+    type: Literal['dark', 'light']
     syntax_style: str
     canvas: Color
     console: Color
@@ -81,9 +76,13 @@ class Theme(EventedModel):
     warning: Color
     error: Color
     current: Color
+    # base font sizes differ between platforms
+    # macOS uses 72 dpi while windows and linux use 96
+    # which is a factor of 4/3 so 12 and 9 should be similar
     font_size: str = '12pt' if sys.platform == 'darwin' else '9pt'
 
-    @validator('syntax_style', pre=True, allow_reuse=True)
+    @field_validator('syntax_style', mode='before')
+    @classmethod
     def _ensure_syntax_style(cls, value: str) -> str:
         from pygments.styles import STYLE_MAP
 
@@ -95,7 +94,8 @@ class Theme(EventedModel):
         )
         return value
 
-    @validator('font_size', pre=True)
+    @field_validator('font_size', mode='before')
+    @classmethod
     def _ensure_font_size(cls, value: str) -> str:
         assert value.endswith('pt'), trans._(
             'Font size must be in points (pt).', deferred=True
@@ -109,7 +109,7 @@ class Theme(EventedModel):
         """
         This differs from baseclass `dict()` by converting colors to rgb.
         """
-        th = super().dict()
+        th = super().model_dump()
         return {
             k: v if not isinstance(v, Color) else v.as_rgb()
             for (k, v) in th.items()
@@ -124,14 +124,29 @@ lighten_pattern = re.compile(r'{{\s?lighten\((\w+),?\s?([-\d]+)?\)\s?}}')
 opacity_pattern = re.compile(r'{{\s?opacity\((\w+),?\s?([-\d]+)?\)\s?}}')
 
 
-def decrease(font_size: str, pt: int) -> str:
+def _platform_aware_font_size_adjustment(pt: str) -> float:
+    """Rescale font size adjustments to 72 dpi (macOS)
+
+    Account for platform DPI differences in font size adjustments.
+    macOS uses 72 dpi while windows and linux use 96, so in order for
+    increases and decreases in font size remain proportional,
+    they also need to be scaled by a factor of 96/72.
+    """
+    if sys.platform == 'darwin':
+        return float(pt) * 96 / 72
+    return float(pt)
+
+
+def decrease(font_size: str, pt: str) -> str:
     """Decrease fontsize."""
-    return f'{int(font_size[:-2]) - int(pt)}pt'
+    _pt = _platform_aware_font_size_adjustment(pt)
+    return f'{int(font_size[:-2]) - _pt}pt'
 
 
-def increase(font_size: str, pt: int) -> str:
+def increase(font_size: str, pt: str) -> str:
     """Increase fontsize."""
-    return f'{int(font_size[:-2]) + int(pt)}pt'
+    _pt = _platform_aware_font_size_adjustment(pt)
+    return f'{int(font_size[:-2]) + _pt}pt'
 
 
 def _parse_color_as_rgb(color: str | Color) -> tuple[int, int, int]:
@@ -166,8 +181,6 @@ def opacity(color: str | Color, value: int = 255) -> str:
 
 
 def gradient(stops, horizontal: bool = True) -> str:
-    if not use_gradients:
-        return stops[-1]
 
     if horizontal:
         grad = 'qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0, '
@@ -264,7 +277,7 @@ def get_theme(theme_id: str):
                 themes=available_themes(),
             )
         )
-    theme = _themes[theme_id].copy()
+    theme = _themes[theme_id].model_copy()
     return theme
 
 
@@ -352,26 +365,41 @@ def rebuild_theme_settings():
     settings.appearance.refresh_themes()
 
 
+# Note: these colors are sometimes lightened / darkened in the qss file.
 DARK = Theme(
     id='dark',
+    type='dark',
     label='Default Dark',
+    # Widgets / frame background (e.g. Preferences window). HEX: #262930
     background='rgb(38, 41, 48)',
+    # Layer controls background / layer name background. HEX: #414851
     foreground='rgb(65, 72, 81)',
+    # Layer controls widget background. HEX: #5a626c
     primary='rgb(90, 98, 108)',
+    # Currently unused. HEX: #868e93
     secondary='rgb(134, 142, 147)',
+    # Checked button color. HEX: #6a7380
     highlight='rgb(106, 115, 128)',
+    # Printed text. HEX: #f0f1f2
     text='rgb(240, 241, 242)',
+    # Button icons. HEX: #d1d2d4
     icon='rgb(209, 210, 212)',
+    # HEX: #e3b617
     warning='rgb(227, 182, 23)',
+    # HEX: #99121f
     error='rgb(153, 18, 31)',
+    # Active layer (blue). HEX: #007acc
     current='rgb(0, 122, 204)',
+    # Style of the code in built-in console
     syntax_style='native',
+    # Console background. HEX: #121212
     console='rgb(18, 18, 18)',
     canvas='black',
     font_size='12pt' if sys.platform == 'darwin' else '9pt',
 )
 LIGHT = Theme(
     id='light',
+    type='light',
     label='Default Light',
     background='rgb(239, 235, 233)',
     foreground='rgb(214, 208, 206)',
@@ -404,10 +432,12 @@ def _install_npe2_themes(themes=None):
     ):
         for theme in manifest.contributions.themes or ():
             # get fallback values
-            theme_dict = themes[theme.type].dict()
+            theme_dict = themes[theme.type].model_dump()
             # update available values
-            theme_info = theme.dict(exclude={'colors'}, exclude_unset=True)
-            theme_colors = theme.colors.dict(exclude_unset=True)
+            theme_info = theme.model_dump(
+                exclude={'colors'}, exclude_unset=True
+            )
+            theme_colors = theme.colors.model_dump(exclude_unset=True)
             theme_dict.update(theme_info)
             theme_dict.update(theme_colors)
             try:

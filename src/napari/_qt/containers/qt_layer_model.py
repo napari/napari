@@ -6,11 +6,13 @@ from qtpy.QtGui import QImage
 from napari import current_viewer
 from napari._qt.containers.qt_list_model import QtListModel
 from napari.layers import Layer
+from napari.layers.base import LayerLock
 from napari.settings import get_settings
 from napari.utils.translations import trans
 
 ThumbnailRole = Qt.UserRole + 2
 LoadedRole = Qt.UserRole + 3
+LockedRole = Qt.UserRole + 4
 
 
 class QtLayerListModel(QtListModel[Layer]):
@@ -20,7 +22,7 @@ class QtLayerListModel(QtListModel[Layer]):
             return None
         layer = self.getItem(index)
         viewer = current_viewer()
-        layer_loaded = layer.loaded
+        layer_loaded = layer._slicing_state.loaded
         # Playback with async slicing causes flickering between the thumbnail
         # and loading animation in some cases due quick changes in the loaded
         # state, so report as unloaded in that case to avoid that.
@@ -59,6 +61,8 @@ class QtLayerListModel(QtListModel[Layer]):
             )
         if role == LoadedRole:
             return layer_loaded
+        if role == LockedRole:
+            return layer.locked
         # normally you'd put the icon in DecorationRole, but we do that in the
         # # LayerDelegate which is aware of the theme.
         # if role == Qt.ItemDataRole.DecorationRole:  # icon to show
@@ -79,6 +83,12 @@ class QtLayerListModel(QtListModel[Layer]):
             self.getItem(index).visible = (
                 Qt.CheckState(value) == Qt.CheckState.Checked
             )
+        elif role == LockedRole:
+            self.getItem(index).locked = (
+                LayerLock.ALL if value else LayerLock.NONE
+            )
+            self.dataChanged.emit(index, index, [LockedRole])
+            return True
         elif role == Qt.ItemDataRole.EditRole:
             self.getItem(index).name = value
             role = Qt.ItemDataRole.DisplayRole
@@ -106,6 +116,7 @@ class QtLayerListModel(QtListModel[Layer]):
             'visible': Qt.ItemDataRole.CheckStateRole,
             'name': Qt.ItemDataRole.DisplayRole,
             'loaded': LoadedRole,
+            'locked': LockedRole,
         }.get(event.type)
         roles = [role] if role is not None else []
         row = self.index(event.index)

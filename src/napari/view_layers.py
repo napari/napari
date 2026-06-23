@@ -1,121 +1,18 @@
-"""Methods to create a new viewer instance then add a particular layer type.
+"""Convenience function for creating a viewer and adding image data.
 
-All functions follow this pattern, (where <layer_type> is replaced with one
-of the layer types, like "image", "points", etc...):
-
-.. code-block:: python
-
-    def view_<layer_type>(*args, **kwargs):
-        # ... pop all of the viewer kwargs out of kwargs into viewer_kwargs
-        viewer = Viewer(**viewer_kwargs)
-        add_method = getattr(viewer, f"add_{<layer_type>}")
-        add_method(*args, **kwargs)
-        return viewer
+This module provides the `imshow` function.
 """
 
 import inspect
-from typing import Any
-
-from numpydoc.docscrape import NumpyDocString as _NumpyDocString
+from typing import Any, overload
 
 from napari.components.dims import Dims
 from napari.layers import Image
 from napari.viewer import Viewer
 
-__all__ = [
-    'imshow',
-    'view_image',
-    'view_labels',
-    'view_path',
-    'view_points',
-    'view_shapes',
-    'view_surface',
-    'view_tracks',
-    'view_vectors',
-]
-
-_doc_template = """Create a viewer and add a{n} {layer_string} layer.
-
-{params}
-
-Returns
--------
-viewer : :class:`napari.Viewer`
-    The newly-created viewer.
-"""
-
-_VIEW_DOC = _NumpyDocString(Viewer.__doc__)
-_VIEW_PARAMS = '    ' + '\n'.join(_VIEW_DOC._str_param_list('Parameters')[2:])
-
-
-def _merge_docstrings(add_method, layer_string):
-    # create combined docstring with parameters from add_* and Viewer methods
-    import textwrap
-
-    add_method_doc = _NumpyDocString(add_method.__doc__)
-
-    # this ugliness is because the indentation of the parsed numpydocstring
-    # is different for the first parameter :(
-    lines = add_method_doc._str_param_list('Parameters')
-    lines = lines[:3] + textwrap.dedent('\n'.join(lines[3:])).splitlines()
-    params = '\n'.join(lines) + '\n' + textwrap.dedent(_VIEW_PARAMS)
-    n = 'n' if layer_string.startswith(tuple('aeiou')) else ''
-    return _doc_template.format(n=n, layer_string=layer_string, params=params)
-
-
-def _merge_layer_viewer_sigs_docs(func):
-    """Make combined signature, docstrings, and annotations for `func`.
-
-    This is a decorator that combines information from `Viewer.__init__`,
-    and one of the `viewer.add_*` methods.  It updates the docstring,
-    signature, and type annotations of the decorated function with the merged
-    versions.
-
-    Parameters
-    ----------
-    func : callable
-        `view_<layer_type>` function to modify
-
-    Returns
-    -------
-    func : callable
-        The same function, with merged metadata.
-    """
-    from napari.utils.misc import _combine_signatures
-
-    # get the `Viewer.add_*` method
-    layer_string = func.__name__.replace('view_', '')
-    if layer_string == 'path':
-        add_method = Viewer.open
-    else:
-        add_method = getattr(Viewer, f'add_{layer_string}')
-
-    # merge the docstrings of Viewer and viewer.add_*
-    func.__doc__ = _merge_docstrings(add_method, layer_string)
-
-    # merge the signatures of Viewer and viewer.add_*
-    func.__signature__ = _combine_signatures(
-        add_method,
-        Viewer,
-        return_annotation=Viewer,
-        exclude=('self', 'axis_labels'),
-    )
-
-    # merge the __annotations__
-    func.__annotations__ = {
-        **add_method.__annotations__,
-        **Viewer.__init__.__annotations__,
-        'return': Viewer,
-    }
-
-    # _forwardrefns_ is used by stubgen.py to populate the globals
-    # when evaluate forward references with get_type_hints
-    func._forwardrefns_ = {**add_method.__globals__}
-    return func
-
+__all__ = ['imshow']
 
 _viewer_params = inspect.signature(Viewer).parameters
-_dims_params = Dims.__fields__
 
 
 def _make_viewer_then(
@@ -164,7 +61,7 @@ def _make_viewer_then(
         )
     # separate dims kwargs because we want to set those after adding data
     dims_kwargs = {
-        k: vkwargs.pop(k) for k in list(vkwargs) if k in _dims_params
+        k: vkwargs.pop(k) for k in list(vkwargs) if k in Dims.model_fields
     }
     if viewer is None:
         viewer = Viewer(**vkwargs)
@@ -178,53 +75,86 @@ def _make_viewer_then(
     return viewer, added
 
 
-# Each of the following functions will have this pattern:
-#
-# def view_image(*args, **kwargs):
-#     # ... pop all of the viewer kwargs out of kwargs into viewer_kwargs
-#     viewer = Viewer(**viewer_kwargs)
-#     viewer.add_image(*args, **kwargs)
-#     return viewer
+@overload
+def imshow(
+    data,
+    *,
+    channel_axis: None = ...,
+    affine=...,
+    axis_labels=...,
+    attenuation=...,
+    blending=...,
+    cache=...,
+    colormap=...,
+    contrast_limits=...,
+    custom_interpolation_kernel_2d=...,
+    depiction=...,
+    experimental_clipping_planes=...,
+    gamma=...,
+    interpolation2d=...,
+    interpolation3d=...,
+    iso_threshold=...,
+    metadata=...,
+    multiscale=...,
+    name=...,
+    opacity=...,
+    plane=...,
+    projection_mode=...,
+    rendering=...,
+    rgb=...,
+    rotate=...,
+    scale=...,
+    shear=...,
+    translate=...,
+    units=...,
+    visible=...,
+    viewer=...,
+    title=...,
+    ndisplay=...,
+    order=...,
+    show=...,
+) -> tuple[Viewer, Image]: ...
 
 
-@_merge_layer_viewer_sigs_docs
-def view_image(*args, **kwargs):
-    return _make_viewer_then('add_image', *args, **kwargs)[0]
-
-
-@_merge_layer_viewer_sigs_docs
-def view_labels(*args, **kwargs):
-    return _make_viewer_then('add_labels', *args, **kwargs)[0]
-
-
-@_merge_layer_viewer_sigs_docs
-def view_points(*args, **kwargs):
-    return _make_viewer_then('add_points', *args, **kwargs)[0]
-
-
-@_merge_layer_viewer_sigs_docs
-def view_shapes(*args, **kwargs):
-    return _make_viewer_then('add_shapes', *args, **kwargs)[0]
-
-
-@_merge_layer_viewer_sigs_docs
-def view_surface(*args, **kwargs):
-    return _make_viewer_then('add_surface', *args, **kwargs)[0]
-
-
-@_merge_layer_viewer_sigs_docs
-def view_tracks(*args, **kwargs):
-    return _make_viewer_then('add_tracks', *args, **kwargs)[0]
-
-
-@_merge_layer_viewer_sigs_docs
-def view_vectors(*args, **kwargs):
-    return _make_viewer_then('add_vectors', *args, **kwargs)[0]
-
-
-@_merge_layer_viewer_sigs_docs
-def view_path(*args, **kwargs):
-    return _make_viewer_then('open', *args, **kwargs)[0]
+@overload
+def imshow(
+    data,
+    *,
+    channel_axis: int,
+    affine=...,
+    axis_labels=...,
+    attenuation=...,
+    blending=...,
+    cache=...,
+    colormap=...,
+    contrast_limits=...,
+    custom_interpolation_kernel_2d=...,
+    depiction=...,
+    experimental_clipping_planes=...,
+    gamma=...,
+    interpolation2d=...,
+    interpolation3d=...,
+    iso_threshold=...,
+    metadata=...,
+    multiscale=...,
+    name=...,
+    opacity=...,
+    plane=...,
+    projection_mode=...,
+    rendering=...,
+    rgb=...,
+    rotate=...,
+    scale=...,
+    shear=...,
+    translate=...,
+    units=...,
+    visible=...,
+    viewer=...,
+    title=...,
+    ndisplay=...,
+    order=...,
+    show=...,
+) -> tuple[Viewer, tuple[Image, ...]]: ...
 
 
 def imshow(
@@ -250,7 +180,7 @@ def imshow(
     name=None,
     opacity=1.0,
     plane=None,
-    projection_mode='none',
+    projection_mode='mean',
     rendering='mip',
     rgb=None,
     rotate=None,
@@ -264,7 +194,7 @@ def imshow(
     ndisplay=2,
     order=(),
     show=True,
-) -> tuple[Viewer, list['Image']]:
+) -> tuple[Viewer, Image | tuple[Image, ...]]:
     """Load data into an Image layer and return the Viewer and Layer.
 
     Parameters
@@ -397,7 +327,7 @@ def imshow(
     -------
     viewer : napari.Viewer
         The created or passed viewer.
-    layer(s) : napari.layers.Image or List[napari.layers.Image]
+    layer(s) : napari.layers.Image or tuple of napari.layers.Image
         The added layer(s). (May be more than one if the ``channel_axis`` keyword
         argument is given.
     """

@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
-from vispy.scene.widgets.viewbox import ViewBox
 
 from napari._vispy.layers.base import VispyBaseLayer
 from napari._vispy.layers.image import VispyImageLayer
@@ -17,23 +16,33 @@ from napari._vispy.overlays.axes import VispyAxesOverlay
 from napari._vispy.overlays.base import VispyBaseOverlay
 from napari._vispy.overlays.bounding_box import VispyBoundingBoxOverlay
 from napari._vispy.overlays.brush_circle import VispyBrushCircleOverlay
+from napari._vispy.overlays.colorbar import VispyColorBarOverlay
 from napari._vispy.overlays.interaction_box import (
     VispySelectionBoxOverlay,
     VispyTransformBoxOverlay,
 )
 from napari._vispy.overlays.labels_polygon import VispyLabelsPolygonOverlay
 from napari._vispy.overlays.scale_bar import VispyScaleBarOverlay
-from napari._vispy.overlays.text import VispyTextOverlay
+from napari._vispy.overlays.text import (
+    VispyCurrentSliceOverlay,
+    VispyLayerNameOverlay,
+    VispyTextOverlay,
+)
+from napari._vispy.overlays.zoom import VispyZoomOverlay
 from napari.components.overlays import (
     AxesOverlay,
     BoundingBoxOverlay,
     BrushCircleOverlay,
+    ColorBarOverlay,
+    CurrentSliceOverlay,
     LabelsPolygonOverlay,
+    LayerNameOverlay,
     Overlay,
     ScaleBarOverlay,
     SelectionBoxOverlay,
     TextOverlay,
     TransformBoxOverlay,
+    ZoomOverlay,
 )
 from napari.layers import (
     Image,
@@ -46,6 +55,9 @@ from napari.layers import (
     Vectors,
 )
 from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    from vispy.scene.widgets.viewbox import ViewBox
 
 layer_to_visual: dict[type[Layer], type[VispyBaseLayer]] = {
     Image: VispyImageLayer,
@@ -67,6 +79,10 @@ overlay_to_visual: dict[type[Overlay], type[VispyBaseOverlay]] = {
     SelectionBoxOverlay: VispySelectionBoxOverlay,
     BrushCircleOverlay: VispyBrushCircleOverlay,
     LabelsPolygonOverlay: VispyLabelsPolygonOverlay,
+    ZoomOverlay: VispyZoomOverlay,
+    LayerNameOverlay: VispyLayerNameOverlay,
+    CurrentSliceOverlay: VispyCurrentSliceOverlay,
+    ColorBarOverlay: VispyColorBarOverlay,
 }
 
 

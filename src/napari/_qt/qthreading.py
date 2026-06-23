@@ -1,16 +1,23 @@
+from __future__ import annotations
+
 import inspect
 import warnings
-from collections.abc import Callable, Sequence
 from functools import partial, wraps
-from types import FunctionType, GeneratorType
 from typing import (
+    TYPE_CHECKING,
     TypeVar,
 )
 
 from superqt.utils import _qthreading
 
 from napari.utils.progress import progress
+from napari.utils.task_status import Status
 from napari.utils.translations import trans
+from napari.viewer import current_viewer
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
+    from types import FunctionType, GeneratorType
 
 __all__ = [
     'FunctionWorker',
@@ -62,7 +69,7 @@ def create_worker(
     _start_thread: bool | None = None,
     _connect: dict[str, Callable | Sequence[Callable]] | None = None,
     _progress: bool | dict[str, int | bool | str] | None = None,
-    _worker_class: type[GeneratorWorker] | type[FunctionWorker] | None = None,
+    _worker_class: type[GeneratorWorker | FunctionWorker] | None = None,
     _ignore_errors: bool = False,
     **kwargs,
 ) -> FunctionWorker | GeneratorWorker:
@@ -152,7 +159,7 @@ def create_worker(
         if isinstance(_progress, bool):
             _progress = {}
 
-        desc = _progress.get('desc', None)
+        desc = _progress.get('desc')
         total = int(_progress.get('total', 0))
         if isinstance(worker, FunctionWorker) and total != 0:
             warnings.warn(
@@ -181,6 +188,75 @@ def create_worker(
 
         worker.pbar = pbar
 
+    # signals connection for status handling
+    if viewer := current_viewer():
+        window = viewer.window
+        worker_status_id = window._register_task_status(
+            'napari-worker',
+            Status.PENDING,
+            trans._('{func} execution pending', deferred=True, func=func),
+            cancel_callback=worker.quit,
+        )
+        worker.started.connect(
+            partial(
+                lambda task_status_id, function: window._update_task_status(
+                    task_status_id,
+                    Status.BUSY,
+                    description=trans._(
+                        'Executing {func}', deferred=True, func=function
+                    ),
+                ),
+                worker_status_id,
+                func,
+            )
+        )
+        worker.errored.connect(
+            partial(
+                lambda task_status_id, function: window._update_task_status(
+                    task_status_id,
+                    Status.FAILED,
+                    description=trans._(
+                        '{func} execution failed', deferred=True, func=function
+                    ),
+                ),
+                worker_status_id,
+                func,
+            )
+        )
+        worker.finished.connect(
+            partial(
+                lambda task_status_id, function: window._update_task_status(
+                    task_status_id,
+                    Status.COMPLETED,
+                    description=trans._(
+                        '{func} execution completed',
+                        deferred=True,
+                        func=function,
+                    ),
+                ),
+                worker_status_id,
+                func,
+            )
+        )
+        if hasattr(worker.signals, 'aborted'):
+            worker.aborted.connect(
+                partial(
+                    lambda task_status_id, function: (
+                        window._update_task_status(
+                            task_status_id,
+                            Status.CANCELLED,
+                            description=trans._(
+                                '{func} execution cancelled',
+                                deferred=True,
+                                func=function,
+                            ),
+                        )
+                    ),
+                    worker_status_id,
+                    func,
+                )
+            )
+
     if _start_thread is None:
         _start_thread = _connect is not None
 
@@ -194,7 +270,7 @@ def thread_worker(
     start_thread: bool | None = None,
     connect: dict[str, Callable | Sequence[Callable]] | None = None,
     progress: bool | dict[str, int | bool | str] | None = None,
-    worker_class: type[FunctionWorker] | type[GeneratorWorker] | None = None,
+    worker_class: type[FunctionWorker | GeneratorWorker] | None = None,
     ignore_errors: bool = False,
 ):
     """Decorator that runs a function in a separate thread when called.
@@ -299,6 +375,7 @@ def thread_worker(
             kwargs['_ignore_errors'] = kwargs.get(
                 '_ignore_errors', ignore_errors
             )
+
             return create_worker(
                 func,
                 *args,

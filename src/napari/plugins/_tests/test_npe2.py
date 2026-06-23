@@ -30,32 +30,35 @@ def mock_pm(npe2pm: 'TestPluginManager'):
         yield npe2pm
 
 
-def test_read(mock_pm: 'TestPluginManager'):
-    _, hookimpl = _npe2.read(['some.fzzy'], stack=False)
+def test_read_no_stack(mock_pm: 'TestPluginManager'):
+    _, reader_name = _npe2.read(['some.fzzy'], stack=False)
     mock_pm.commands.get.assert_called_once_with(f'{PLUGIN_NAME}.some_reader')
-    assert hookimpl.plugin_name == PLUGIN_NAME
+    assert reader_name == PLUGIN_NAME
 
-    mock_pm.commands.get.reset_mock()
-    _, hookimpl = _npe2.read(['some.fzzy'], stack=True)
+
+def test_read_with_stack(mock_pm: 'TestPluginManager'):
+    _, _ = _npe2.read(['some.fzzy'], stack=True)
     mock_pm.commands.get.assert_called_once_with(f'{PLUGIN_NAME}.some_reader')
-    mock_pm.commands.get.reset_mock()
+
+
+def test_read_no_compatible_readers(mock_pm: 'TestPluginManager'):
     with pytest.raises(ValueError, match='No compatible readers'):
         _npe2.read(['some.randomext'], stack=False)
     mock_pm.commands.get.assert_not_called()
 
-    mock_pm.commands.get.reset_mock()
-    assert (
+
+def test_read_nonexistent_plugin(mock_pm: 'TestPluginManager'):
+    with pytest.raises(ValueError, match=r'Given reader .* does not exist'):
         _npe2.read(['some.randomext'], stack=True, plugin='not-npe2-plugin')
-        is None
-    )
     mock_pm.commands.get.assert_not_called()
 
-    mock_pm.commands.get.reset_mock()
-    _, hookimpl = _npe2.read(
+
+def test_read_with_explicit_plugin(mock_pm: 'TestPluginManager'):
+    _, reader_name = _npe2.read(
         ['some.fzzy'], stack=False, plugin='my-plugin.some_reader'
     )
     mock_pm.commands.get.assert_called_once_with(f'{PLUGIN_NAME}.some_reader')
-    assert hookimpl.plugin_name == PLUGIN_NAME
+    assert reader_name == PLUGIN_NAME
 
 
 @pytest.mark.skipif(
@@ -182,8 +185,9 @@ def test_plugin_actions(mock_pm: 'TestPluginManager', mock_app_model):
     from napari.plugins import _initialize_plugins
 
     app = get_app_model()
-    # nothing yet registered with this menu
-    assert 'napari/file/new_layer' not in app.menus
+    # default actions registered
+    assert 'napari/file/new_layer' in app.menus
+    assert len(list(app.menus.get_menu('napari/file/new_layer'))) == 3
     # menus_items1 = list(app.menus.get_menu('napari/file/new_layer'))
     # assert 'my-plugin.hello_world' not in app.commands
 
@@ -194,16 +198,17 @@ def test_plugin_actions(mock_pm: 'TestPluginManager', mock_app_model):
     menus_items2 = list(app.menus.get_menu('napari/file/new_layer'))
     assert 'my-plugin.hello_world' in app.commands
 
-    assert len(menus_items2) == 2
+    assert len(menus_items2) == 5
 
     # then disable and re-enable the plugin
 
     mock_pm.disable(PLUGIN_NAME)
 
-    assert 'napari/file/new_layer' not in app.menus
+    assert 'napari/file/new_layer' in app.menus
+    assert len(list(app.menus.get_menu('napari/file/new_layer'))) == 3
 
     mock_pm.enable(PLUGIN_NAME)
 
     menus_items4 = list(app.menus.get_menu('napari/file/new_layer'))
-    assert len(menus_items4) == 2
+    assert len(menus_items4) == 5
     assert 'my-plugin.hello_world' in app.commands

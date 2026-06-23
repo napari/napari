@@ -3,6 +3,7 @@ import os
 from lazy_loader import attach as _attach
 
 from napari._check_numpy_version import limit_numpy1x_threads_on_macos_arm
+from napari._wayland_fix import _fix_wayland_opengl
 
 try:
     from napari._version import version as __version__
@@ -12,8 +13,65 @@ except ImportError:
 # Allows us to use pydata/sparse arrays as layer data
 os.environ.setdefault('SPARSE_AUTO_DENSIFY', '1')
 limit_numpy1x_threads_on_macos_arm()
+# Must run before any napari module that imports vispy/PyOpenGL — PyOpenGL
+# caches its platform at first import and ignores later env-var changes.
+_fix_wayland_opengl()
+
+
+def _check_installation_path():  # pragma: no cover
+    """Check for installation path conflicts.
+
+    Check if napari is present in site-packages. If napari is installed in editable mode,
+    notify the user of a the conflict that napari is also in site-packages.
+    """
+    import sys
+    from pathlib import Path
+
+    if 'pytest' in sys.modules:
+        # pytest is running, skip the check
+        return
+
+    napari_installation_path = Path(__file__).absolute().parent.parent
+    if napari_installation_path.name == 'site-packages':
+        # napari is installed in non-editable mode
+        return
+
+    import numpy as np
+
+    # Use numpy location to determine a site-packages path
+    site_packages_path = Path(np.__file__).absolute().parent.parent
+    if site_packages_path.name != 'site-packages':
+        # numpy is not installed in site-packages
+        return
+
+    napari_site_packages_path = site_packages_path / 'napari'
+    napari_builtins_package_path = site_packages_path / 'napari_builtins'
+
+    path_text = ''
+    if napari_site_packages_path.exists():
+        path_text += (
+            f'Path to a napari directory: {napari_site_packages_path}.\n'
+        )
+    if napari_builtins_package_path.exists():
+        path_text += f'Path to a napari_builtins directory: {napari_builtins_package_path}.\n'
+
+    if path_text:
+        text = (
+            'Mix of local and non local installation detected.\n'
+            'Napari is installed in editable mode but also found napari '
+            'directory in site-packages.\n'
+            f'{path_text}'
+            'Mix of local and non local installation is leading '
+            'to hard to understand errors. '
+            'See https://napari.org/stable/troubleshooting.html#mixed-napari-installations for more details.'
+        )
+        raise RuntimeError(text)
+
+
+_check_installation_path()
 
 del limit_numpy1x_threads_on_macos_arm
+del _fix_wayland_opengl
 del os
 
 # Add everything that needs to be accessible from the napari namespace here.
@@ -33,17 +91,7 @@ _submod_attrs = {
     'plugins.io': ['save_layers'],
     'utils': ['sys_info'],
     'utils.notifications': ['notification_manager'],
-    'view_layers': [
-        'view_image',
-        'view_labels',
-        'view_path',
-        'view_points',
-        'view_shapes',
-        'view_surface',
-        'view_tracks',
-        'view_vectors',
-        'imshow',
-    ],
+    'view_layers': ['imshow'],
     'viewer': ['Viewer', 'current_viewer'],
 }
 

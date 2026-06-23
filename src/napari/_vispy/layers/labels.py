@@ -195,12 +195,15 @@ def _select_colormap_texture(
 class VispyLabelsLayer(VispyScalarFieldBaseLayer):
     layer: 'Labels'
 
-    def __init__(self, layer, node=None, texture_format='r8') -> None:
+    def __init__(
+        self, layer, node=None, texture_format='r8', **kwargs
+    ) -> None:
         super().__init__(
             layer,
             node=node,
             texture_format=texture_format,
             layer_node_class=LabelLayerNode,
+            **kwargs,
         )
 
         self.layer.events.labels_update.connect(self._on_partial_labels_update)
@@ -247,7 +250,7 @@ class VispyLabelsLayer(VispyScalarFieldBaseLayer):
                 # to uint8 or uint16 and background_value is always 0 in a view array.
                 # The LabelColormap is EventedModel, so we need to make
                 # a copy instead of temporary overwrite the background_value
-                colormap = CyclicLabelColormap(**colormap.dict())
+                colormap = CyclicLabelColormap(**colormap.model_dump())
                 colormap.background_value = (
                     colormap._background_as_minimum_dtype(raw_dtype)
                 )
@@ -350,7 +353,7 @@ class LabelLayerNode(ScalarFieldLayerNode):
             interpolation='nearest',
         )
 
-    def get_node(self, ndisplay: int, dtype=None) -> Node:
+    def get_node(self, ndisplay: int, dtype=None, shape=None) -> Node:
         res = self._image_node if ndisplay == 2 else self._volume_node
 
         if (

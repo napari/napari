@@ -8,6 +8,8 @@ from napari._tests.utils import (
 from napari.components._viewer_key_bindings import (
     hold_for_pan_zoom,
     rotate_layers,
+    select_layer_above,
+    select_layer_below,
     show_only_layer_above,
     show_only_layer_below,
     toggle_selected_visibility,
@@ -116,6 +118,19 @@ def test_unselected_visibility_toggle():
     assert viewer.layers[0].visible
     assert viewer.layers[1].visible
     assert viewer.layers[2].visible
+
+
+def test_select_layer_above_below():
+    viewer = make_viewer_with_three_layers()
+    viewer.layers.selection.active = viewer.layers[0]
+    select_layer_above(viewer)
+    assert viewer.layers.selection.active == viewer.layers[1]
+    select_layer_above(viewer)
+    assert viewer.layers.selection.active == viewer.layers[2]
+    select_layer_below(viewer)
+    assert viewer.layers.selection.active == viewer.layers[1]
+    select_layer_below(viewer)
+    assert viewer.layers.selection.active == viewer.layers[0]
 
 
 def test_show_only_layer_above():

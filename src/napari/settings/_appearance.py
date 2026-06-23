@@ -1,7 +1,8 @@
 from typing import Union, cast
 
-from napari._pydantic_compat import Field
-from napari.settings._fields import Theme
+from pydantic import AliasChoices, Field
+
+from napari.settings._fields import Logo, Theme
 from napari.utils.events.evented_model import ComparisonDelayer, EventedModel
 from napari.utils.theme import available_themes, get_theme
 from napari.utils.translations import trans
@@ -17,12 +18,14 @@ class HighlightSettings(EventedModel):
         ge=1,
         le=10,
     )
-    highlight_color: list[float] = Field(
-        [0.0, 0.6, 1.0, 1.0],
-        title=trans._('Highlight color'),
-        description=trans._(
-            'Select the highlight color when hovering over shapes/points.'
-        ),
+    highlight_color: list[float] = (
+        Field(  # TODO: fix type annotation to tuple[float, float, float, float],
+            [0.0, 0.6, 1.0, 1.0],
+            title=trans._('Highlight color'),
+            description=trans._(
+                'Select the highlight color when hovering over shapes/points.'
+            ),
+        )
     )
 
 
@@ -31,7 +34,12 @@ class AppearanceSettings(EventedModel):
         Theme('dark'),
         title=trans._('Theme'),
         description=trans._('Select the user interface theme.'),
-        env='napari_theme',
+        validation_alias=AliasChoices('theme', 'napari_theme'),
+    )
+    logo: Logo = Field(
+        Logo('auto'),
+        title='Logo variant',
+        description='Select which logo variant to use.',
     )
     font_size: int = Field(
         int(get_theme('dark').font_size[:-2]),
@@ -64,7 +72,7 @@ class AppearanceSettings(EventedModel):
         self, values: Union['EventedModel', dict], recurse: bool = True
     ) -> None:
         if isinstance(values, self.__class__):
-            values = values.dict()
+            values = values.model_dump()
         values = cast(dict, values)
 
         # Check if a font_size change is needed when changing theme:
@@ -111,4 +119,6 @@ class AppearanceSettings(EventedModel):
         added (either by a plugin or directly by the user) the enum is updated in
         place, ensuring that Preferences dialog can still be opened.
         """
-        self.schema()['properties']['theme'].update(enum=available_themes())
+        self.model_json_schema()['properties']['theme'].update(
+            enum=available_themes()
+        )

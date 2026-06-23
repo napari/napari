@@ -43,9 +43,11 @@ class InteractionBox(Compound):
         self._highlight_width = 2
         # squares for corners, diamonds for midpoints, disc for rotation handle
         self._marker_symbol = ['square'] * 4 + ['diamond'] * 4 + ['disc']
-        self._edge_color = (0, 0, 1, 1)
+        self._edge_color = (0.0, 0.0, 1.0, 1.0)
 
-        super().__init__([Line(), Markers(antialias=0)], *args, **kwargs)
+        super().__init__(
+            [Line(antialias=True), Markers(antialias=0)], *args, **kwargs
+        )
 
     @property
     def line(self) -> Line:
@@ -62,7 +64,7 @@ class InteractionBox(Compound):
         top_left: tuple[float, float],
         bot_right: tuple[float, float],
         handles: bool = True,
-        selected: int | None = None,
+        selected: int | slice | None = None,
         rotation: bool = True,
     ) -> None:
         """Update the visualized interaction box with new data.
@@ -75,7 +77,7 @@ class InteractionBox(Compound):
             The bottom right corner of the interaction box.
         handles : bool
             Whether to show the handles of the interaction box.
-        selected : int | None
+        selected : int | slice | None
             The index of the selected handle. If None, no handle is selected.
         rotation : bool
             Whether to show the rotation handle. Default is True.
@@ -88,7 +90,12 @@ class InteractionBox(Compound):
         edges = edges if rotation else edges[:4]
         markers = self._marker_symbol if rotation else self._marker_symbol[:8]
 
-        self.line.set_data(pos=vertices, connect=edges)
+        self.line.set_data(
+            pos=vertices,
+            connect=edges,
+            color=self._edge_color,
+            width=self._highlight_width,
+        )
 
         if handles:
             marker_edges = np.zeros(len(vertices))

@@ -58,7 +58,7 @@ def test_3D_multiscale_labels_in_2D():
 
 def test_3D_multiscale_labels_in_3D():
     """Test instantiating Labels layer with 3D data, 3D dims."""
-    data_multiscale, layer = instantiate_3D_multiscale_labels()
+    layer = instantiate_3D_multiscale_labels()[1]
 
     # use 3D dims
     layer._slice_dims(Dims(ndim=3, ndisplay=3))
@@ -83,6 +83,20 @@ def test_3D_multiscale_labels_in_3D():
     assert layer.get_value(
         [5, 0, 5], view_direction=[0, 0, -1], dims_displayed=[0, 1, 2]
     ) == (2, 5)
+
+
+def test_multiscale_labels_data_setter():
+    """Setting .data on a multiscale Labels layer should not crash."""
+    shapes = [(40, 20), (20, 10), (10, 5)]
+    data = [np.zeros(s, dtype=np.int8) for s in shapes]
+    layer = Labels(data, multiscale=True)
+
+    new_data = [np.ones(s, dtype=np.int8) for s in shapes]
+    layer.data = new_data
+
+    assert layer.multiscale is True
+    assert len(layer.data) == 3
+    assert layer.data[0].shape == (40, 20)
 
 
 def instantiate_3D_multiscale_labels():

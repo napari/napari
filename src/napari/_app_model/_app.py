@@ -1,16 +1,39 @@
 from __future__ import annotations
 
+from contextlib import contextmanager
 from functools import lru_cache
+from itertools import chain
+from typing import TYPE_CHECKING
 
 from app_model import Application
+from in_n_out import Store
 
+from napari._app_model.actions._file import FILE_ACTIONS, FILE_SUBMENUS
 from napari._app_model.actions._layerlist_context_actions import (
     LAYERLIST_CONTEXT_ACTIONS,
     LAYERLIST_CONTEXT_SUBMENUS,
 )
-from napari._app_model.actions._view import VIEW_ACTIONS
+from napari._app_model.actions._view import VIEW_ACTIONS, VIEW_SUBMENUS
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
 
 APP_NAME = 'napari'
+
+
+class NapariStore(Store):
+    """A store of a singleton class which represents the Napari application with temporary namespace overrides."""
+
+    @contextmanager
+    def _add_to_namespace(
+        self, name: str, value: object
+    ) -> Generator[None, None, None]:
+        namespace = self.namespace.copy()
+        self.namespace = {**namespace, name: value}
+        try:
+            yield
+        finally:
+            self.namespace = namespace
 
 
 class NapariApplication(Application):
@@ -22,6 +45,8 @@ class NapariApplication(Application):
     registering actions and menus.
     """
 
+    injection_store: NapariStore
+
     def __init__(self, app_name=APP_NAME) -> None:
         # raise_synchronous_exceptions means that commands triggered via
         # ``execute_command`` will immediately raise exceptions. Normally,
@@ -30,13 +55,33 @@ class NapariApplication(Application):
         # exceptions with `.result()`, for now, raising immediately should
         # prevent any unexpected silent errors.  We can turn it off later if we
         # adopt asynchronous command execution.
-        super().__init__(app_name, raise_synchronous_exceptions=True)
+        super().__init__(
+            app_name,
+            raise_synchronous_exceptions=True,
+            injection_store_class=NapariStore,
+        )
 
         self.injection_store.namespace = _napari_names  # type: ignore [assignment]
 
         self.register_actions(LAYERLIST_CONTEXT_ACTIONS)
         self.register_actions(VIEW_ACTIONS)
-        self.menus.append_menu_items(LAYERLIST_CONTEXT_SUBMENUS)
+        self.register_actions(FILE_ACTIONS)
+        self.menus.append_menu_items(
+            chain(LAYERLIST_CONTEXT_SUBMENUS, VIEW_SUBMENUS, FILE_SUBMENUS)
+        )
+
+    @contextmanager
+    def register_with_namespace(self, name: str, obj: object):
+        def provider() -> object:
+            return obj
+
+        with (
+            self.injection_store._add_to_namespace(name, obj.__class__),
+            self.injection_store.register(
+                providers=[(provider, obj.__class__)]
+            ),
+        ):
+            yield
 
     @classmethod
     def get_app_model(cls, app_name: str = APP_NAME) -> NapariApplication:
@@ -47,7 +92,14 @@ class NapariApplication(Application):
         method (provided by the app_model library) to retrieve the application
         instance by name.
         """
-        return Application.get_app(app_name) or cls()
+        app = Application.get_app(app_name)
+        if app is None:
+            return cls()
+        if not isinstance(app, NapariApplication):
+            raise TypeError(
+                f'Application `{app_name}` is not a NapariApplication'
+            )
+        return app
 
 
 @lru_cache(maxsize=1)

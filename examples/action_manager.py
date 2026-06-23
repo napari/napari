@@ -38,7 +38,8 @@ def rotate45(viewer: napari.Viewer):
 
 
 # create the viewer with an image
-viewer = napari.view_image(data.astronaut(), rgb=True)
+viewer = napari.Viewer()
+layer = viewer.add_image(data.astronaut(), rgb=True)
 
 layer_buttons = viewer.window.qt_viewer.layerButtons
 

@@ -1,10 +1,15 @@
 """MutableMapping that emits events when altered."""
 
-from collections.abc import Mapping, Sequence
+from typing import TYPE_CHECKING
+
+from psygnal import EmissionInfo, EventedModel as PsygnalModel
 
 from napari.utils.events.containers._dict import _K, _T, TypedMutableMapping
 from napari.utils.events.event import EmitterGroup, Event
 from napari.utils.events.types import SupportsEvents
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping, Sequence
 
 
 class EventedDict(TypedMutableMapping[_K, _T]):
@@ -46,8 +51,8 @@ class EventedDict(TypedMutableMapping[_K, _T]):
 
     def __init__(
         self,
-        data: Mapping[_K, _T] | None = None,
-        basetype: type[_T] | Sequence[type[_T]] = (),
+        data: 'Mapping[_K, _T] | None' = None,
+        basetype: 'type[_T] | Sequence[type[_T]]' = (),
     ) -> None:
         _events = {
             'changing': None,
@@ -64,9 +69,30 @@ class EventedDict(TypedMutableMapping[_K, _T]):
         else:
             # otherwise create a new one
             self.events = EmitterGroup(
-                source=self, auto_connect=False, **_events
+                source=self,
+                auto_connect=False,
+                **_events,
             )
         super().__init__(data, basetype)
+
+    def first_callback_connect(self):
+        """When the first callback is connected to `self.events`,
+        connect to all child emitters.
+        """
+        for item in self._dict.values():
+            self._connect_child_emitters(item)
+
+    def last_callback_disconnect(self):
+        """When the last callback is disconnected from `self.events`, disconnect
+        from all child emitters.
+        """
+        if self.events.callbacks:
+            # to not disconnect child emitters if there are
+            # still callbacks connected to this emitter
+            return
+
+        for item in self._dict.values():
+            self._disconnect_child_emitters(item)
 
     def __setitem__(self, key: _K, value: _T) -> None:
         old = self._dict.get(key)
@@ -76,7 +102,8 @@ class EventedDict(TypedMutableMapping[_K, _T]):
             self.events.adding(key=key)
             super().__setitem__(key, value)
             self.events.added(key=key, value=value)
-            self._connect_child_emitters(value)
+            if self.events.callbacks:
+                self._connect_child_emitters(value)
         else:
             self.events.changing(key=key)
             super().__setitem__(key, value)
@@ -96,14 +123,29 @@ class EventedDict(TypedMutableMapping[_K, _T]):
         # re-emit with this object's EventEmitter
         self.events(event)
 
+    def _reemit_child_event_psygnal(self, event: EmissionInfo) -> None:
+        source = event.signal.instance
+        if event.path:
+            key = f'{self.key(source)}.{event.path}'
+        else:
+            key = self.key(source)
+        event = Event(value=event.args, key=key, type_name='')
+        event._push_source(source)
+
+        self.events(event)
+
     def _disconnect_child_emitters(self, child: _T) -> None:
         """Disconnect all events from the child from the re-emitter."""
+        if isinstance(child, PsygnalModel):
+            child.events.disconnect(self._reemit_child_event_psygnal)
         if isinstance(child, SupportsEvents):
             child.events.disconnect(self._reemit_child_event)
 
     def _connect_child_emitters(self, child: _T) -> None:
         """Connect all events from the child to be re-emitted."""
-        if isinstance(child, SupportsEvents):
+        if isinstance(child, PsygnalModel):
+            child.events.connect(self._reemit_child_event_psygnal, unique=True)
+        elif isinstance(child, SupportsEvents):
             # make sure the event source has been set on the child
             if child.events.source is None:
                 child.events.source = child

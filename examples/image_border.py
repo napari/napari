@@ -20,10 +20,9 @@ from skimage import data
 
 import napari
 
-# Create a napari viewer with a 3D, 2 channel image, with the `view_image` convenience function.
-viewer = napari.view_image(
-    data.cells3d(), channel_axis=1, name=['membrane', 'nuclei']
-)
+# Create a napari viewer with a 3D, 2 channel image, with the `add_image` convenience function.
+viewer = napari.Viewer()
+membrane, nuclei = viewer.add_image(data.cells3d(), channel_axis=1, name=['membrane', 'nuclei'])
 viewer.grid.enabled = True
 
 # Add a border overlay to each layer, and modify properties of the border overlay.
@@ -38,6 +37,7 @@ viewer.layers[1].bounding_box.line_color = 'orange'
 viewer.layers[1].bounding_box.line_thickness = 2
 viewer.layers[1].bounding_box.opacity = 0.8 # default: 1
 # viewer_2d.layers[1].bounding_box.blending = 'additive' # default: 'translucent'
+viewer.fit_to_view()
 
 if __name__ == '__main__':
     napari.run()

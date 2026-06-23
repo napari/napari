@@ -1,9 +1,12 @@
-from collections.abc import Generator
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
+    from collections.abc import Generator
+
     from napari.utils.tree.group import Group
 
 
@@ -71,14 +74,14 @@ class Node:
             yield obj
             obj = obj.parent
 
-    def root(self) -> 'Node':
+    def root(self) -> Node:
         """Get the root parent."""
         parents = list(self.iter_parents())
         return parents[-1] if parents else self
 
     def traverse(
         self, leaves_only=False, with_ancestors=False
-    ) -> Generator['Node', None, None]:
+    ) -> Generator[Node, None, None]:
         """Recursive all nodes and leaves of the Node.
 
         This is mostly used by :class:`~napari.utils.tree.Group`, which can

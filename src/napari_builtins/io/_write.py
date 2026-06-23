@@ -304,7 +304,7 @@ def write_layer_data_with_plugins(
         with TemporaryDirectory(dir=path) as tmp:
             # Loop through data for each layer
             for layer_data_tuple in layer_data:
-                _, meta, type_ = layer_data_tuple
+                meta = layer_data_tuple[1]
 
                 # Create full path using name of layer
                 # Write out data using first plugin found for this hook spec

@@ -502,6 +502,22 @@ def test_magicgui_add_layer_data_tuple_list(make_napari_viewer):
     assert viewer.layers[1].source.widget == add_layer
 
 
+def test_image_reader_to_layerdata_reader_deprecated_and_wraps_result():
+    def _read(path):
+        assert path == 'fake-path'
+        return np.array([[1, 2], [3, 4]])
+
+    with pytest.warns(
+        DeprecationWarning,
+        match='image_reader_to_layerdata_reader is deprecated in 0.7.1 and will be removed in 0.8.0 release.',
+    ):
+        wrapped = types.image_reader_to_layerdata_reader(_read)
+
+    result = wrapped('fake-path')
+    assert len(result) == 1
+    assert np.array_equal(result[0][0], np.array([[1, 2], [3, 4]]))
+
+
 def test_magicgui_data_updated(make_napari_viewer):
     """Test that magic data parameters stay up to date."""
     viewer = make_napari_viewer()
@@ -620,3 +636,34 @@ def test_from_layer_data_tuple_accept_deprecating_dict(make_napari_viewer):
     assert len(viewer.layers) == 1
     assert isinstance(viewer.layers[0], Image)
     assert viewer.layers[0].name == 'test_image'
+
+
+@pytest.mark.parametrize(
+    ('annotation', 'name_suffix'),
+    [
+        (Image, ''),
+        (types.ImageData, ' (data)'),
+    ],
+)
+def test_layer_rename_updates_combobox(
+    make_napari_viewer, annotation, name_suffix
+):
+    """Test that renaming a layer updates magicgui combobox."""
+    viewer = make_napari_viewer()
+    viewer.add_image(np.zeros((10, 10)), name='Name')
+
+    @magicgui
+    def func(layer: annotation):
+        pass
+
+    viewer.window.add_dock_widget(func)
+
+    combo_widget = func.layer
+
+    assert len(combo_widget.choices) == 1
+    assert combo_widget.current_choice == f'Name{name_suffix}'
+
+    viewer.layers[0].name = 'New Name'
+
+    assert len(combo_widget.choices) == 1
+    assert combo_widget.current_choice == f'New Name{name_suffix}'

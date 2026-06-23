@@ -8,8 +8,8 @@ from app_model.types import (
     KeyCode,
     KeyMod,
     StandardKeyBinding,
-    SubmenuItem,
 )
+from qtpy.QtWidgets import QApplication
 
 from napari._app_model.constants import MenuGroup, MenuId
 from napari._app_model.context import (
@@ -18,77 +18,10 @@ from napari._app_model.context import (
 )
 from napari._qt.qt_main_window import Window
 from napari._qt.qt_viewer import QtViewer
-from napari._qt.widgets.qt_viewer_buttons import add_new_points, add_new_shapes
 from napari.utils.translations import trans
-
-# File submenus
-FILE_SUBMENUS = [
-    (
-        MenuId.MENUBAR_FILE,
-        SubmenuItem(
-            submenu=MenuId.FILE_NEW_LAYER,
-            title=trans._('New Layer'),
-            group=MenuGroup.NAVIGATION,
-            order=0,
-        ),
-    ),
-    (
-        MenuId.MENUBAR_FILE,
-        SubmenuItem(
-            submenu=MenuId.FILE_OPEN_WITH_PLUGIN,
-            title=trans._('Open with Plugin'),
-            group=MenuGroup.OPEN,
-            order=99,
-        ),
-    ),
-    (
-        MenuId.MENUBAR_FILE,
-        SubmenuItem(
-            submenu=MenuId.FILE_SAMPLES,
-            title=trans._('Open Sample'),
-            group=MenuGroup.OPEN,
-            order=100,
-        ),
-    ),
-    (
-        MenuId.MENUBAR_FILE,
-        SubmenuItem(
-            submenu=MenuId.FILE_IO_UTILITIES,
-            title=trans._('IO Utilities'),
-            group=MenuGroup.UTIL,
-            order=101,
-        ),
-    ),
-    (
-        MenuId.MENUBAR_FILE,
-        SubmenuItem(
-            submenu=MenuId.FILE_ACQUIRE,
-            title=trans._('Acquire'),
-            group=MenuGroup.UTIL,
-            order=101,
-        ),
-    ),
-]
 
 
 # File actions
-
-
-def new_labels(qt_viewer: QtViewer):
-    viewer = qt_viewer.viewer
-    viewer._new_labels()
-
-
-def new_points(qt_viewer: QtViewer):
-    viewer = qt_viewer.viewer
-    add_new_points(viewer)
-
-
-def new_shapes(qt_viewer: QtViewer):
-    viewer = qt_viewer.viewer
-    add_new_shapes(viewer)
-
-
 def _open_files_with_plugin(qt_viewer: QtViewer):
     qt_viewer._open_files_dialog(choose_plugin=True)
 
@@ -110,7 +43,13 @@ def _restart(window: Window):
 
 
 def _close_window(window: Window):
-    window._qt_window.close(quit_app=False, confirm_need=True)
+    active_window = QApplication.activeWindow()
+    if active_window is None:
+        return
+    if active_window is not window._qt_window:
+        active_window.close()
+    else:
+        window._qt_window.close(quit_app=False, confirm_need=True)
 
 
 def _close_app(window: Window):
@@ -118,24 +57,6 @@ def _close_app(window: Window):
 
 
 Q_FILE_ACTIONS: list[Action] = [
-    Action(
-        id='napari.window.file.new_layer.new_labels',
-        title=trans._('Labels'),
-        callback=new_labels,
-        menus=[{'id': MenuId.FILE_NEW_LAYER, 'group': MenuGroup.NAVIGATION}],
-    ),
-    Action(
-        id='napari.window.file.new_layer.new_points',
-        title=trans._('Points'),
-        callback=new_points,
-        menus=[{'id': MenuId.FILE_NEW_LAYER, 'group': MenuGroup.NAVIGATION}],
-    ),
-    Action(
-        id='napari.window.file.new_layer.new_shapes',
-        title=trans._('Shapes'),
-        callback=new_shapes,
-        menus=[{'id': MenuId.FILE_NEW_LAYER, 'group': MenuGroup.NAVIGATION}],
-    ),
     Action(
         id='napari.window.file._image_from_clipboard',
         title=trans._('New Image from Clipboard'),

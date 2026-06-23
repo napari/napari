@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 import typing
 
 import numpy as np
+from superqt.utils import qdebounced
 
 from napari._vispy.layers.base import VispyBaseLayer
 from napari._vispy.utils.gl import BLENDING_MODES
@@ -10,16 +13,21 @@ from napari.settings import get_settings
 from napari.utils.events import disconnect_events
 
 if typing.TYPE_CHECKING:
+    from napari._vispy.utils.qt_font import FontInfo
     from napari.layers import Shapes
 
 
 class VispyShapesLayer(VispyBaseLayer):
     node: ShapesVisual
-    layer: 'Shapes'
+    layer: Shapes
 
-    def __init__(self, layer: 'Shapes') -> None:
-        node = ShapesVisual()
-        super().__init__(layer, node)
+    def __init__(self, layer: Shapes, font_info: FontInfo) -> None:
+        node = ShapesVisual(font_info=font_info)
+        super().__init__(layer, node, font_info=font_info)
+
+        self._on_highlight_change_debounc = qdebounced(
+            self._on_highlight_change_impl
+        )
 
         self.layer.events.edge_width.connect(self._on_data_change)
         self.layer.events.edge_color.connect(self._on_data_change)
@@ -67,6 +75,13 @@ class VispyShapesLayer(VispyBaseLayer):
         self.node.update()
 
     def _on_highlight_change(self):
+        if len(self.layer.selected_data) > 1000:
+            # Defer to next frame to avoid blocking UI
+            self._on_highlight_change_debounc()
+        else:
+            self._on_highlight_change_impl()
+
+    def _on_highlight_change_impl(self):
         settings = get_settings()
         self.layer._highlight_width = (
             settings.appearance.highlight.highlight_thickness

@@ -1,15 +1,20 @@
+from __future__ import annotations
+
 import itertools
 import os
 from collections.abc import Callable, Sequence
 from functools import lru_cache
-from types import ModuleType
 from typing import (
+    TYPE_CHECKING,
     Literal,
     overload,
 )
 
 import numpy as np
 from skimage import morphology
+
+if TYPE_CHECKING:
+    from types import ModuleType
 
 
 def always_false(*_):
@@ -154,6 +159,7 @@ def labeled_particles(
     dtype: np.dtype | None = None,
     n: int = 144,
     seed: int | None = None,
+    *,
     return_density: Literal[False] = False,
 ) -> np.ndarray: ...
 
@@ -164,7 +170,8 @@ def labeled_particles(
     dtype: np.dtype | None = None,
     n: int = 144,
     seed: int | None = None,
-    return_density: Literal[True] = True,
+    *,
+    return_density: Literal[True],
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]: ...
 
 
@@ -174,6 +181,7 @@ def labeled_particles(
     dtype: np.dtype | None = None,
     n: int = 144,
     seed: int | None = None,
+    *,
     return_density: bool = False,
 ) -> np.ndarray | tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Generate labeled blobs of given shape and dtype.

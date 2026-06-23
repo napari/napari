@@ -20,11 +20,13 @@ jobs:
     timeout-minutes: 5
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          python-version: 3.12
+          persist-credentials: false
+      - name: Set up Python 3.14
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: 3.14
       - name: Install dependencies
         run: |
           pip install --upgrade pip
@@ -38,18 +40,20 @@ jobs:
     timeout-minutes: 15
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          python-version: "3.12"
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.14"
           cache-dependency-path: pyproject.toml
           cache: 'pip'
       - name: Install Dependencies
         run: pip install --upgrade pip
       - name: Install Napari dev
-        run: pip install -e .[build]
+        run: pip install -e .  --group build
         env:
-          PIP_CONSTRAINT: resources/constraints/constraints_py3.12.txt
+          PIP_CONSTRAINT: resources/constraints/constraints_py3.14.txt
       - name: Make Typestubs
         run: |
           make typestubs
@@ -63,8 +67,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: "3.x"
       - name: Check localization formatting
@@ -91,7 +97,7 @@ jobs:
             backend: pyqt5
             coverage: no_cov
             min_req: ""
-          - python: "3.13"
+          - python: "3.14"
             platform: ubuntu-latest
             backend: pyqt6
             coverage: no_cov
@@ -102,6 +108,7 @@ jobs:
       qt_backend: ${{ matrix.backend }}
       coverage: ${{ matrix.coverage }}
       min_req: ${{ matrix.MIN_REQ }}
+      artifacts_suffix: "initial"
 
   test:
     name: ${{ matrix.platform }}
@@ -111,58 +118,68 @@ jobs:
       fail-fast: false
       matrix:
         platform: [ ubuntu-latest ]
-        python: [ "3.11" ]
-        backend: [ "pyqt5,pyside6" ]
+        python: [ "3.14" ]
+        backend: [ "pyqt5,pyqt6" ]
         coverage: [ cov ]
         include:
-          # Windows py310
+          # when changing these, try to keep full coverage of supported
+          # python versions so we test at least once everywhere
           - python: "3.11"
             platform: windows-latest
-            backend: pyqt5 #,pyside2
+            backend: pyqt5
             coverage: no_cov
-          - python: "3.13"
+          - python: "3.14"
             platform: windows-latest
             backend: pyqt6
             coverage: cov
-          - python: "3.13"
-            platform: macos-13
-            backend: pyqt5
+          - python: "3.14"
+            platform: macos-15-intel
+            backend: pyqt5_no_numba
             coverage: no_cov
-          - python: "3.13"
+            timeout-minutes: 60
+          - python: "3.14"
             platform: macos-latest
-            backend: pyqt5
+            backend: pyqt6
             coverage: no_cov
+            timeout-minutes: 60
           # minimum specified requirements
           - python: "3.10"
             platform: ubuntu-22.04
             backend: pyqt5
             MIN_REQ: 1
             coverage: cov
-          - python: "3.12"
+          # [all] extras
+          - python: "3.13"
             platform: ubuntu-22.04
-            backend: pyqt5
+            backend: pyqt6
             coverage: cov
             tox_extras: "all_optional"
           # test without any Qt backends
-          - python: "3.11"
+          - python: "3.12"
             platform: ubuntu-22.04
             backend: headless
             coverage: no_cov
-          - python: "3.13"
+          # test with torch
+          - python: "3.11"
             platform: ubuntu-latest
             backend: pyqt6
             coverage: cov
             tox_extras: "testing_extra"
           # test with no numba
-          - python: "3.13"
+          - python: "3.14"
             platform: ubuntu-latest
             backend: pyqt6_no_numba
             coverage: cov
-          # pyside2 test
-          - python: "3.10"
+          # pyside6 test
+          - python: "3.14"
             platform: ubuntu-latest
-            backend: pyside2
-            coverage: no_cov
+            backend: pyside6
+            coverage: cov
+          # linux aarch64 test
+          - python: "3.14"
+            platform: ubuntu-24.04-arm
+            backend: pyqt6
+            coverage: cov
     with:
       python_version: ${{ matrix.python }}
       platform: ${{ matrix.platform }}
@@ -170,6 +187,7 @@ jobs:
       min_req: ${{ matrix.MIN_REQ }}
       coverage: ${{ matrix.coverage }}
       tox_extras: ${{ matrix.tox_extras }}
+      timeout: ${{ matrix.timeout-minutes || 40 }}
 
 
   test_pip_install:
@@ -190,14 +208,14 @@ jobs:
 
   coverage_report:
     if: ${{ always() }}
+    secrets: inherit
     needs:
       - test
       - test_examples
-    permissions:
-      id-token: write  # Required for OIDC authentication
-      contents: read    # Required for code checkout
-    uses: ./.github/workflows/reusable_coverage_upload.yml
-    secrets: inherit
+    uses: napari/shared-workflows/.github/workflows/upload_coverage.yml@main
+    with:
+      artifact-pattern: 'coverage reports*'
+
 
   test_benchmarks:
     name: test benchmarks
@@ -207,18 +225,29 @@ jobs:
     env:
       GIT_LFS_SKIP_SMUDGE: 1
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
+          persist-credentials: false
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: 3.12
           cache-dependency-path: pyproject.toml
 
-      - uses: tlambert03/setup-qt-libs@v1
+      - name: Setup headless display
+        uses: pyvista/setup-headless-display-action@5bc8de3bc71fcda7a96439571287a554901541a0 # v4.3
+        with:
+          qt: true
+          wm: herbstluftwm
 
-      - uses: octokit/request-action@v2.x
+      - name: Download benchmark data
+        run: |
+          wget https://data.napari.dev/triangulation-benchmark-shapes.zip
+          unzip triangulation-benchmark-shapes.zip -d src/napari/benchmarks/
+          rm triangulation-benchmark-shapes.zip
+
+      - uses: octokit/request-action@45eef13998ff762839b0a0de9bbcf41970fd056d # v2.x
         # here we get hash of the latest release commit to compare with PR
         id: latest_release
         with:
@@ -239,20 +268,23 @@ jobs:
         run: asv machine --yes
 
       - name: Run benchmarks PR
-        uses: aganders3/headless-gui@v2
-        with:
-          run: |
-            asv run --show-stderr --quick  --attribute timeout=300 HEAD^!
+        run: |
+          asv run --show-stderr --quick  --attribute timeout=300 HEAD^!
         env:
           PR: 1 # prevents asv from running very compute-intensive benchmarks
           PIP_CONSTRAINT: ${{ github.workspace }}/resources/constraints/benchmark.txt
 
       - name: Run benchmarks latest release
         # here we check if the benchmark on the latest release is not broken
-        uses: aganders3/headless-gui@v2
-        with:
-          run: |
-            asv run --show-stderr --quick  --attribute timeout=300  ${{ fromJSON(steps.latest_release.outputs.data).target_commitish }}^!
+        run: |
+          asv run --show-stderr --quick  --attribute timeout=300  ${{ fromJSON(steps.latest_release.outputs.data).target_commitish }}^!
         env:
           PR: 1  # prevents asv from running very compute-intensive benchmarks
           PIP_CONSTRAINT: ${{ github.workspace }}/resources/constraints/benchmark.txt
+
+      - name: Upload triangulation artifacts
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: triangulation-benchmarks
+          path: /tmp/napari*
