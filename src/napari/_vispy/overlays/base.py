@@ -88,6 +88,10 @@ class VispyCanvasOverlay(VispyBaseOverlay):
     Vispy overlay backend for overlays that live in canvas space.
     """
 
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.node.transform = STTransform()
+
     overlay: CanvasOverlay
 
 
@@ -108,7 +112,6 @@ class VispyTiledCanvasOverlay(VispyCanvasOverlay):
         super().__init__(**kwargs)
         self.x_size = 0.0
         self.y_size = 0.0
-        self.node.transform = STTransform()
         self.overlay.events.position.connect(self._on_position_change)
         self.overlay.events.box.connect(self._on_box_change)
         self.overlay.events.box_color.connect(self._on_box_change)
