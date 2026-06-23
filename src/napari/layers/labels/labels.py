@@ -1550,6 +1550,11 @@ class Labels(ScalarFieldBase):
             - max_vals : np.ndarray
                 Maximum (exclusive) indices for each painted dimension.
             Returns None if the polygon operation is invalid.
+
+        Raises
+        ------
+        NotImplementedError
+            If ``dims_to_paint`` is not 2D, because polygon painting is 2D only.
         """
         if len(dims_to_paint) != 2:
             raise NotImplementedError(
@@ -1756,10 +1761,11 @@ class Labels(ScalarFieldBase):
     ) -> None:
         """Universal painting method using a boolean mask within a bounding box.
 
-        This method extracts the common pattern used by both brush painting and
-        polygon painting: extract a region, apply a mask, write back, update caches.
-        It manages cache updates for non-shared memory backends, respects preserve_labels
-        setting (handled by _apply_mask_to_data), and updates undo/redo history
+        This method extracts the common pattern shared by brush painting, fill
+        and polygon painting: extract a region, apply a mask, write back, update
+        caches. It manages cache updates for non-shared memory backends, respects
+        the preserve_labels setting (handled by _apply_mask_to_data), and updates
+        undo/redo history.
 
         Parameters
         ----------
@@ -1966,6 +1972,9 @@ class Labels(ScalarFieldBase):
         ):
             self._slice.image.raw[tuple(view_slices)] = visible_data
 
+        # Contours are recomputed from the raw cache during
+        # _partial_labels_refresh (via _raw_to_displayed), so patching the
+        # texture view cache here would be redundant and immediately stale.
         if self.contour > 0:
             return
 
@@ -1999,6 +2008,10 @@ class Labels(ScalarFieldBase):
         displayed_dims = self._slice_input.displayed
         pt_not_disp = self._get_pt_not_disp()
 
+        # Two coordinate systems: region_slices indexes region_data (full ndim,
+        # so non-displayed dims collapse to an int that picks the visible plane);
+        # view_slices indexes the 2D display caches (one entry per displayed dim,
+        # all slices).
         region_slices: list[slice | int] = [slice(None)] * self.ndim
         view_slices: list[slice] = [slice(None)] * len(displayed_dims)
 
@@ -2020,7 +2033,12 @@ class Labels(ScalarFieldBase):
         visible_data: np.ndarray,
         visible_mask: np.ndarray,
     ) -> tuple[np.ndarray, np.ndarray]:
-        """Transpose data from ascending dimension order to the view's order."""
+        """Transpose data from ascending dimension order to the displayed order.
+
+        ``displayed`` may not be sorted (e.g. a transposed view), so the
+        extracted region (whose axes are in ascending dimension order) is
+        permuted to match the order the display caches expect.
+        """
         displayed_dims = self._slice_input.displayed
         sorted_dims = sorted(displayed_dims)
         if list(displayed_dims) != sorted_dims:
