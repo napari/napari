@@ -2,10 +2,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-import numpy as np
 from vispy.scene import ArcballCamera, ViewBox
 from vispy.util.quaternion import Quaternion
 
+from napari._vispy.camera import (
+    get_vispy_flipped_axes,
+    napari_angles_to_vispy_quat,
+)
 from napari._vispy.overlays.base import ViewerOverlayMixin, VispyCanvasOverlay
 from napari._vispy.visuals.axes import Axes
 from napari.utils.theme import get_theme
@@ -91,33 +94,29 @@ class VispyFloatingAxesOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
 
     def _on_angles_change(self) -> None:
         """Update rotation from camera angles."""
-        from scipy.spatial.transform import Rotation
 
         # ensure camera flip is the same as napari camera
-        flip = self.viewer.camera._vispy_flipped_axes(ndisplay=3)
-        self.node.camera.flip = list(flip)
 
-        if self.viewer.dims.ndisplay == 2:
+        ndisplay = self.viewer.dims.ndisplay
+        flipped_axes = get_vispy_flipped_axes(
+            self.viewer.camera, ndisplay=ndisplay
+        )
+
+        self.node.camera.flip = list(flipped_axes)
+
+        if ndisplay == 2:
             self.node.camera.set_state(
                 _quaternion=Quaternion(1, 1, 0, 0),
                 center=(0.6, 0.6, 0),
                 scale_factor=1.7,  # found by testing
             )
-            return
-
-        # NOTE: the following is just copied from VispyCamera implementation
-        # flip handedness so the rotation is always righthanded even with axis flipping
-        angles_flipped = self.viewer.camera.angles * np.where(flip, -1, 1)
-        # undo vispy quirks (rotation of 90 digrees and lefthanded y axis)
-        angles_fixed = (np.array(angles_flipped) * (1, -1, 1)) + (0, 0, 90)
-        # see #8281 for why this is yzx. In short: longstanding vispy bug.
-        rotation = Rotation.from_euler('yzx', angles_fixed, degrees=True)
-        # Create and set quaternion
-        q = Quaternion(*rotation.as_quat(scalar_first=True))
-
-        self.node.camera.set_state(
-            _quaternion=q, center=(0, 0, 0), scale_factor=3.2
-        )
+        else:
+            quat = napari_angles_to_vispy_quat(
+                self.viewer.camera.angles, flipped_axes
+            )
+            self.node.camera.set_state(
+                _quaternion=quat, center=(0, 0, 0), scale_factor=3.2
+            )
 
     def reset(self) -> None:
         super().reset()
