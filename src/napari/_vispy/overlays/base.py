@@ -86,20 +86,22 @@ class VispyBaseOverlay:
 class VispyCanvasOverlay(VispyBaseOverlay):
     """
     Vispy overlay backend for overlays that live in canvas space.
+    """
 
-    NOTE: Subclasses must follow some rules:
-    - ensure that when `_on_position_change` is called, the x_size and y_size
-      attributes are already updated depending on the overlay size, to ensure
-      proper tiling. Alternatively, override this method if the overlay is
-      *not* supposed to be tiled
-    - ensure that the napari Overlay model uses the `position` field correctly
-      (must be a CanvasPosition enum if tileable, or anything else if "free")
+    overlay: CanvasOverlay
+
+
+class VispyTiledCanvasOverlay(VispyCanvasOverlay):
+    """
+    Vispy canvas overlays that should be tiled around the edges of the canvas.
+
+    NOTE: Subclasses must ensure that when `_on_position_change` is called,
+    the x_size and y_size attributes are already updated depending on the overlay
+    size, to ensure proper tiling.
 
     canvas_position_callback is set by the VispyCanvas object, and is responsible
     to update the position of all canvas overlays whenever necessary
     """
-
-    overlay: CanvasOverlay
 
     def __init__(self, **kwargs) -> None:
 

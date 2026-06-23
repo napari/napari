@@ -4,11 +4,11 @@ import warnings
 
 from pydantic import Field, PrivateAttr
 
-from napari.components.overlays.base import CanvasOverlay
+from napari.components.overlays.base import TiledCanvasOverlay
 from napari.utils.color import ColorValue
 
 
-class ScaleBarOverlay(CanvasOverlay):
+class ScaleBarOverlay(TiledCanvasOverlay):
     """Scale bar indicating size in world coordinates.
 
     Attributes

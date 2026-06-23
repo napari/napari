@@ -13,10 +13,6 @@ class BrushCircleOverlay(CanvasOverlay):
         The position (x, y) of the center of the brush circle on the canvas.
     position_is_frozen : bool
         If True, the overlay does not respond to mouse movements.
-    box : bool
-        Whether the background box is visible or not.
-    box_color : ColorValue or None
-        Background box color. If unset, it defaults to the canvas color.
     gridded : bool
         The overlay will be duplicated across all grid cells in gridded mode.
     visible : bool

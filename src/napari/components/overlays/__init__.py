@@ -3,6 +3,7 @@ from napari.components.overlays.base import (
     CanvasOverlay,
     Overlay,
     SceneOverlay,
+    TiledCanvasOverlay,
 )
 from napari.components.overlays.bounding_box import BoundingBoxOverlay
 from napari.components.overlays.brush_circle import BrushCircleOverlay
@@ -34,6 +35,7 @@ __all__ = [
     'SceneOverlay',
     'SelectionBoxOverlay',
     'TextOverlay',
+    'TiledCanvasOverlay',
     'TransformBoxOverlay',
     'ZoomOverlay',
 ]

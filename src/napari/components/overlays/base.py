@@ -1,5 +1,3 @@
-from typing import Any
-
 from psygnal import EventedModel
 from pydantic import ConfigDict
 
@@ -50,7 +48,33 @@ class CanvasOverlay(Overlay):
 
     Canvas overlays live in canvas space; they do not live in the 2- or 3-dimensional
     scene being rendered, but in the 2D space of the screen.
-    For example: scale bars, colormap bars, etc.
+
+    Attributes
+    ----------
+    gridded : bool
+        The overlay will be duplicated across all grid cells in gridded mode.
+    visible : bool
+        If the overlay is visible or not.
+    opacity : float
+        The opacity of the overlay. 0 is fully transparent.
+    order : int
+        The rendering order of the overlay: lower numbers get rendered first.
+    blending : Blending
+        One of a list of preset blending modes that determines how RGB and
+        alpha values of the overlay get mixed with the visuals below.
+    """
+
+    blending: Blending = Blending.TRANSLUCENT_NO_DEPTH
+
+
+class TiledCanvasOverlay(CanvasOverlay):
+    """
+    Canvas overlay model.
+
+    Canvas overlays live in canvas space; they do not live in the 2- or 3-dimensional
+    scene being rendered, but in the 2D space of the screen.
+    Tiled canvas overlays are not rendered freely on the canvas: they are tiled
+    around the edges.
 
     Attributes
     ----------
@@ -73,7 +97,7 @@ class CanvasOverlay(Overlay):
         alpha values of the overlay get mixed with the visuals below.
     """
 
-    position: CanvasPosition | Any = CanvasPosition.BOTTOM_RIGHT
+    position: CanvasPosition = CanvasPosition.BOTTOM_RIGHT
     blending: Blending = Blending.TRANSLUCENT_NO_DEPTH
     box: bool = True
     box_color: ColorValue | None = None

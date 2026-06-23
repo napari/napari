@@ -32,14 +32,6 @@ class LabelsPolygonOverlay(SceneOverlay):
     completion_radius : int | float
         Defines the radius from the first polygon vertex within which
         the drawing process can be completed by a left double-click.
-    position : CanvasPosition
-        The position of the overlay in the canvas.
-    box : bool
-        Whether the background box is visible or not.
-    box_color : ColorValue or None
-        Background box color. If unset, it defaults to the canvas color.
-    gridded : bool
-        The overlay will be duplicated across all grid cells in gridded mode.
     visible : bool
         If the overlay is visible or not.
     opacity : float
