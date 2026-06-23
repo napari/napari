@@ -50,7 +50,9 @@ class VispyFloatingAxesOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self.viewer.dims.events.axis_labels.connect(
             self._on_labels_text_change
         )
-        self.viewer.camera.events.connect(self._on_angles_change)
+        self.viewer.camera.events.angles.connect(self._on_angles_change)
+        self.viewer.camera.events.orientation.connect(self._on_angles_change)
+        self.viewer.camera.events.orientation2d.connect(self._on_angles_change)
 
         self.reset()
 
