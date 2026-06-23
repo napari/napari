@@ -464,7 +464,7 @@ pydantic-extra-types==2.11.1
     # via
     #   napari (pyproject.toml)
     #   npe2
-pydantic-settings==2.14.1
+pydantic-settings==2.14.2
     # via napari (pyproject.toml)
 pygetwindow==0.0.9
     # via pyautogui
