@@ -98,7 +98,6 @@ class TiledCanvasOverlay(CanvasOverlay):
     """
 
     position: CanvasPosition = CanvasPosition.BOTTOM_RIGHT
-    blending: Blending = Blending.TRANSLUCENT_NO_DEPTH
     box: bool = True
     box_color: ColorValue | None = None
     gridded: bool = False
