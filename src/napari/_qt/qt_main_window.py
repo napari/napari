@@ -245,7 +245,7 @@ class _QtMainWindow(QMainWindow):
 
         if SHOW_QT_WARNING:
             show_warning(
-                'The support for PyQt5 backend is deprecated and will be removed on fall of 2026'
+                'napari support for the PyQt5 backend is deprecated and will be removed in fall of 2026'
             )
 
             SHOW_QT_WARNING = False
