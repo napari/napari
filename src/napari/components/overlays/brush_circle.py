@@ -29,3 +29,4 @@ class BrushCircleOverlay(CanvasOverlay):
     size: int = 10
     position: tuple[int, int] = (0, 0)
     position_is_frozen: bool = False
+    gridded: bool = True

@@ -993,11 +993,10 @@ class VispyCanvas:
 
             vispy_overlays = self._overlay_to_visual.setdefault(overlay, [])
 
+            # NOTE: scene overlays and nontiling canvas ones are always gridded!
             gridded = (
                 self.viewer.grid.enabled
-                and getattr(
-                    overlay, 'gridded', True
-                )  # scene overlays always gridded
+                and getattr(overlay, 'gridded', True)
                 and self.viewer.layers
             )
 
