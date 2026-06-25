@@ -5,7 +5,7 @@ import re
 import sys
 from ast import literal_eval
 from contextlib import suppress
-from typing import Any
+from typing import Any, Literal
 
 import npe2
 from pydantic import field_validator
@@ -20,15 +20,6 @@ from napari.utils.events import EventedModel
 from napari.utils.events.containers._evented_dict import EventedDict
 from napari.utils.translations import trans
 
-try:
-    from qtpy import QT_VERSION
-
-    major, minor, *_ = QT_VERSION.split('.')  # type: ignore[attr-defined]
-    use_gradients = (int(major) >= 5) and (int(minor) >= 12)
-    del major, minor, QT_VERSION
-except (ImportError, RuntimeError):
-    use_gradients = False
-
 
 class Theme(EventedModel):
     """Theme model.
@@ -40,6 +31,8 @@ class Theme(EventedModel):
         will be saved to.
     label : str
         Name of the theme as it should be shown in the ui.
+    type: str
+        Whether the theme is "dark" or "light" type.
     syntax_style : str
         Name of the console style.
         See for more details: https://pygments.org/docs/styles/
@@ -69,6 +62,7 @@ class Theme(EventedModel):
 
     id: str
     label: str
+    type: Literal['dark', 'light']
     syntax_style: str
     canvas: Color
     console: Color
@@ -82,6 +76,9 @@ class Theme(EventedModel):
     warning: Color
     error: Color
     current: Color
+    # base font sizes differ between platforms
+    # macOS uses 72 dpi while windows and linux use 96
+    # which is a factor of 4/3 so 12 and 9 should be similar
     font_size: str = '12pt' if sys.platform == 'darwin' else '9pt'
 
     @field_validator('syntax_style', mode='before')
@@ -127,14 +124,29 @@ lighten_pattern = re.compile(r'{{\s?lighten\((\w+),?\s?([-\d]+)?\)\s?}}')
 opacity_pattern = re.compile(r'{{\s?opacity\((\w+),?\s?([-\d]+)?\)\s?}}')
 
 
-def decrease(font_size: str, pt: int) -> str:
+def _platform_aware_font_size_adjustment(pt: str) -> float:
+    """Rescale font size adjustments to 72 dpi (macOS)
+
+    Account for platform DPI differences in font size adjustments.
+    macOS uses 72 dpi while windows and linux use 96, so in order for
+    increases and decreases in font size remain proportional,
+    they also need to be scaled by a factor of 96/72.
+    """
+    if sys.platform == 'darwin':
+        return float(pt) * 96 / 72
+    return float(pt)
+
+
+def decrease(font_size: str, pt: str) -> str:
     """Decrease fontsize."""
-    return f'{int(font_size[:-2]) - int(pt)}pt'
+    _pt = _platform_aware_font_size_adjustment(pt)
+    return f'{int(font_size[:-2]) - _pt}pt'
 
 
-def increase(font_size: str, pt: int) -> str:
+def increase(font_size: str, pt: str) -> str:
     """Increase fontsize."""
-    return f'{int(font_size[:-2]) + int(pt)}pt'
+    _pt = _platform_aware_font_size_adjustment(pt)
+    return f'{int(font_size[:-2]) + _pt}pt'
 
 
 def _parse_color_as_rgb(color: str | Color) -> tuple[int, int, int]:
@@ -169,8 +181,6 @@ def opacity(color: str | Color, value: int = 255) -> str:
 
 
 def gradient(stops, horizontal: bool = True) -> str:
-    if not use_gradients:
-        return stops[-1]
 
     if horizontal:
         grad = 'qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0, '
@@ -358,6 +368,7 @@ def rebuild_theme_settings():
 # Note: these colors are sometimes lightened / darkened in the qss file.
 DARK = Theme(
     id='dark',
+    type='dark',
     label='Default Dark',
     # Widgets / frame background (e.g. Preferences window). HEX: #262930
     background='rgb(38, 41, 48)',
@@ -388,6 +399,7 @@ DARK = Theme(
 )
 LIGHT = Theme(
     id='light',
+    type='light',
     label='Default Light',
     background='rgb(239, 235, 233)',
     foreground='rgb(214, 208, 206)',

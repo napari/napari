@@ -7,6 +7,7 @@ from pint import get_application_registry
 
 from napari._vispy._tests.utils import vispy_image_scene_size
 from napari._vispy.layers.image import VispyImageLayer
+from napari._vispy.utils.qt_font import FontInfo
 from napari._vispy.utils.visual import create_vispy_overlay
 from napari.components.dims import Dims
 from napari.components.overlays import BoundingBoxOverlay
@@ -22,7 +23,7 @@ def test_3d_slice_of_2d_image_with_order(order):
     with any order should make a small square when displayed in 3D.
     """
     image = Image(np.zeros((4, 2)), scale=(1, 2))
-    vispy_image = VispyImageLayer(image)
+    vispy_image = VispyImageLayer(image, font_info=FontInfo())
 
     image._slice_dims(Dims(ndim=3, ndisplay=3, order=order))
 
@@ -38,7 +39,7 @@ def test_2d_slice_of_3d_image_with_order(order):
     with any order should make a small square when displayed in 2D.
     """
     image = Image(np.zeros((8, 4, 2)), scale=(1, 2, 4))
-    vispy_image = VispyImageLayer(image)
+    vispy_image = VispyImageLayer(image, font_info=FontInfo())
 
     image._slice_dims(Dims(ndim=3, ndisplay=2, order=order))
 
@@ -54,7 +55,7 @@ def test_3d_slice_of_3d_image_with_order(order):
     with any order should make a small cube when displayed in 3D.
     """
     image = Image(np.zeros((8, 4, 2)), scale=(1, 2, 4))
-    vispy_image = VispyImageLayer(image)
+    vispy_image = VispyImageLayer(image, font_info=FontInfo())
 
     image._slice_dims(Dims(ndim=3, ndisplay=3, order=order))
 
@@ -70,7 +71,7 @@ def test_3d_slice_of_4d_image_with_order(order):
     with any order should make a small cube when displayed in 3D.
     """
     image = Image(np.zeros((16, 8, 4, 2)), scale=(1, 2, 4, 8))
-    vispy_image = VispyImageLayer(image)
+    vispy_image = VispyImageLayer(image, font_info=FontInfo())
 
     image._slice_dims(Dims(ndim=4, ndisplay=3, order=order))
 
@@ -87,7 +88,7 @@ def test_no_float32_texture_support(monkeypatch):
         'napari._vispy.layers.image.get_gl_extensions', lambda: ''
     )
     image = Image(np.zeros((16, 8, 4, 2), dtype='uint8'), scale=(1, 2, 4, 8))
-    VispyImageLayer(image)
+    VispyImageLayer(image, font_info=FontInfo())
 
 
 @pytest.fixture
@@ -101,7 +102,7 @@ def pyramid_layer() -> Image:
 
 
 def test_base_create(im_layer):
-    VispyImageLayer(im_layer)
+    VispyImageLayer(im_layer, font_info=FontInfo())
 
 
 def set_translate(layer):
@@ -147,12 +148,15 @@ def no_op(layer):
 def test_transforming_child_node(
     im_layer, translate, exp_translate, rotate, exp_rotate
 ):
-    layer = VispyImageLayer(im_layer)
+    viewer = ViewerModel()
+    font_info = FontInfo()
+    layer = VispyImageLayer(im_layer, font_info=font_info)
 
     overlay = create_vispy_overlay(
         BoundingBoxOverlay(),
         layer=im_layer,
-        viewer=ViewerModel(),
+        viewer=viewer,
+        font_info=font_info,
         parent=layer.node,
     )
     layer._on_matrix_change()
@@ -191,12 +195,15 @@ def test_transforming_child_node(
 
 
 def test_transforming_child_node_pyramid(pyramid_layer):
-    layer = VispyImageLayer(pyramid_layer)
+    viewer = ViewerModel()
+    font_info = FontInfo()
+    layer = VispyImageLayer(pyramid_layer, font_info=font_info)
 
     overlay = create_vispy_overlay(
         BoundingBoxOverlay(),
         layer=pyramid_layer,
-        viewer=ViewerModel(),
+        viewer=viewer,
+        font_info=font_info,
         parent=layer.node,
     )
     layer._on_matrix_change()
@@ -231,13 +238,14 @@ def test_node_origin_is_consistent_with_multiscale(
 ):
     """See https://github.com/napari/napari/issues/6320"""
     scales = (scale,) * ndim
+    font_info = FontInfo()
 
     # Define multi-scale image data with two levels where the
     # higher resolution is twice as high as the lower resolution.
     image = Image(
         data=[np.zeros((8,) * ndim), np.zeros((4,) * ndim)], scale=scales
     )
-    vispy_image = VispyImageLayer(image)
+    vispy_image = VispyImageLayer(image, font_info=font_info)
 
     # Take a full slice at the highest resolution.
     image.corner_pixels = np.array([[0] * ndim, [8] * ndim])
@@ -260,10 +268,49 @@ def test_node_origin_is_consistent_with_multiscale(
     np.testing.assert_array_equal(high_res_origin, low_res_origin)
 
 
+def test_3d_multiscale_half_voxel_uses_rendered_level():
+    """The 3D half-voxel offset must use the rendered level, not the coarsest.
+
+    A deep pyramid (e.g. 10 levels) has coarsest downsample_factors of
+    512. If the offset always used the coarsest level, rendering level 0
+    would apply a ~256-voxel ghost translation — far off-screen. The fix
+    uses data_level so the offset tracks whichever level is displayed.
+    """
+    # 3-level 3D pyramid: level 0 = 64^3, level 1 = 32^3, level 2 = 16^3
+    data = [
+        np.zeros((64, 64, 64)),
+        np.zeros((32, 32, 32)),
+        np.zeros((16, 16, 16)),
+    ]
+    image = Image(data)
+    vispy_image = VispyImageLayer(image, font_info=FontInfo())
+
+    image._slice_dims(Dims(ndim=3, ndisplay=3))
+
+    # Render the finest level (downsample factor 1)
+    image._data_level = 0
+    vispy_image._on_matrix_change()
+    translate_fine = vispy_image.node.transform.matrix[-1, :3].copy()
+
+    # Render the coarsest level (downsample factor 4)
+    image._data_level = 2
+    vispy_image._on_matrix_change()
+    translate_coarse = vispy_image.node.transform.matrix[-1, :3].copy()
+
+    # Level 0 has downsample factor 1 → half-voxel offset = 0.
+    # The old bug applied the coarsest offset (4-1)/2 = 1.5 to every
+    # level, so translate_fine would have been [1.5, 1.5, 1.5] too.
+    npt.assert_array_almost_equal(translate_fine, [0, 0, 0])
+
+    # Level 2 has downsample factor 4 → half-voxel offset = (4-1)/2 = 1.5
+    npt.assert_array_almost_equal(translate_coarse, [1.5, 1.5, 1.5])
+
+
 def test_world_units_impact_scale():
     nm = get_application_registry().nm
+    font_info = FontInfo()
     image = Image(np.zeros((10, 10)), units=('um', 'um'))
-    vispy_image = VispyImageLayer(image)
+    vispy_image = VispyImageLayer(image, font_info=font_info)
 
     assert vispy_image._world_to_layer_units_scale == (1, 1)
 

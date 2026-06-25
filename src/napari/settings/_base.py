@@ -19,7 +19,6 @@ from pydantic import (
     TypeAdapter,
     ValidationError,
 )
-from pydantic.fields import FieldInfo
 from pydantic_settings import (
     BaseSettings,
     EnvSettingsSource,
@@ -40,6 +39,8 @@ _logger = logging.getLogger(__name__)
 if TYPE_CHECKING:
     from collections.abc import Callable
     from typing import Any, Union
+
+    from pydantic.fields import FieldInfo
 
     # TODO: needs to be fixed properly
     SettingsSourceCallable = Any

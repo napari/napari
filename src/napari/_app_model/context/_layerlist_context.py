@@ -194,6 +194,20 @@ def _all_support_colorbar(s: LayerSel) -> bool:
     return bool(s and all(hasattr(x, 'colorbar') for x in s))
 
 
+def _all_support_border_colorbar(s: LayerSel) -> bool:
+    return bool(s and all(hasattr(x, 'border_colorbar') for x in s))
+
+
+def _all_support_face_colorbar(s: LayerSel) -> bool:
+    return bool(s and all(hasattr(x, 'face_colorbar') for x in s))
+
+
+def _any_deletion_locked(s: LayerSel) -> bool:
+    from napari.layers.base import LayerLock
+
+    return any(bool(x.locked & LayerLock.DELETION) for x in s)
+
+
 A = TypeVar('A')
 
 
@@ -344,6 +358,16 @@ class LayerListSelectionContextKeys(ContextNamespace['LayerSel']):
         trans._('True when all selected layers support a colorbar.'),
         _all_support_colorbar,
     )
+    all_selected_layers_support_border_colorbar = ContextKey(
+        False,
+        trans._('True when all selected layers support a border colorbar.'),
+        _all_support_border_colorbar,
+    )
+    all_selected_layers_support_face_colorbar = ContextKey(
+        False,
+        trans._('True when all selected layers support a face colorbar.'),
+        _all_support_face_colorbar,
+    )
     selected_empty_shapes_layer = CallableContextKey(
         False,
         trans._('True when there is a shapes layer without data selected.'),
@@ -353,4 +377,9 @@ class LayerListSelectionContextKeys(ContextNamespace['LayerSel']):
         False,
         trans._('True when the active layer can have a Features table.'),
         _active_supports_features,
+    )
+    any_selected_layers_deletion_locked = ContextKey(
+        False,
+        trans._('True when any selected layer has DELETION lock engaged.'),
+        _any_deletion_locked,
     )

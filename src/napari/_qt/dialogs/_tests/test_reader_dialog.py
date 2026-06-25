@@ -41,14 +41,18 @@ def test_reader_defaults(reader_dialog, tmpdir):
     file_pth = tmpdir.join('my_file.tif')
     widg = reader_dialog(pth=file_pth, readers={'p1': 'p1', 'p2': 'p2'})
 
-    assert widg.findChild(QLabel).text().startswith('Choose reader')
+    labels = widg.findChildren(QLabel)
+    assert labels[0].text().startswith('Choose reader')
+    assert labels[1].text() == 'Manage saved readers in Preferences > Plugins'
     assert widg._get_plugin_choice() == 'p1'
     assert not widg.persist_checkbox.isChecked()
 
 
 def test_reader_with_error_message(reader_dialog):
     widg = reader_dialog(error_message='Test Error')
-    assert widg.findChild(QLabel).text().startswith('Test Error')
+    labels = widg.findChildren(QLabel)
+    assert labels[0].text().startswith('Test Error')
+    assert labels[1].text() == 'Manage saved readers in Preferences > Plugins'
 
 
 def test_reader_dir_with_extension(tmpdir, reader_dialog):
@@ -161,7 +165,7 @@ def test_open_sample_data_shows_all_readers(
             'napari._qt.dialogs.qt_reader_dialog.handle_gui_reading'
         ) as mock_read,
     ):
-        app.commands.execute_command('tmp_plugin:tmp-sample')
+        app.commands.execute_command('tmp_plugin.tmp-sample')
 
     mock_read.assert_called_once_with(
         ['some-path/some-file.fake'],

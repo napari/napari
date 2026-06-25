@@ -21,10 +21,10 @@ from typing import (
 from urllib.parse import urlparse
 
 import numpy as np
+from app_model.expressions import Context
 
 # This cannot be condition to TYPE_CHECKING or the stubgen fails
 # with undefined Context.
-from app_model.expressions import Context
 from pydantic import Field, PrivateAttr, field_validator
 
 from napari import layers
@@ -46,7 +46,6 @@ from napari.components.overlays import (
     Overlay,
     ScaleBarOverlay,
     TextOverlay,
-    WelcomeOverlay,
     ZoomOverlay,
 )
 from napari.components.tooltip import Tooltip
@@ -128,7 +127,6 @@ def _current_theme() -> str:
 
 
 DEFAULT_OVERLAYS = {
-    'welcome': WelcomeOverlay,
     'scale_bar': ScaleBarOverlay,
     'text': TextOverlay,
     'axes': AxesOverlay,
@@ -334,10 +332,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     @property
     def text_overlay(self) -> TextOverlay:
         return self._overlays['text']  # type: ignore[return-value]
-
-    @property
-    def welcome_screen(self):
-        return self._overlays['welcome']
 
     @property
     def _zoom_box(self) -> ZoomOverlay:

@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING
 
 from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
+from napari._qt.layer_controls.widgets import QtMultiscaleLevelControl
 from napari._qt.layer_controls.widgets._labels import (
     QtBrushSizeSliderControl,
     QtColorModeComboBoxControl,
@@ -163,6 +164,8 @@ class QtLabelsControls(QtLayerControls):
         self._add_widget_controls(
             self._display_selected_label_checkbox_control
         )
+        self._multiscale_level_control = QtMultiscaleLevelControl(self, layer)
+        self._add_widget_controls(self._multiscale_level_control)
 
         self._on_ndisplay_changed()
 
@@ -196,6 +199,10 @@ class QtLabelsControls(QtLayerControls):
             self._render_control._on_display_change_show()
         else:
             self._render_control._on_display_change_hide()
+        if self.layer.multiscale:
+            self._multiscale_level_control._on_display_change_show()
+        else:
+            self._multiscale_level_control._on_display_change_hide()
         self._on_editable_or_visible_change()
         self._set_polygon_tool_state()
         super()._on_ndisplay_changed()

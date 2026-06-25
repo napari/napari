@@ -6,7 +6,7 @@ from itertools import product
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from napari.utils._appdirs import user_cache_dir
+from napari.utils._platformdirs import user_cache_dir
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
@@ -174,7 +174,7 @@ def build_theme_svgs(theme_name: str, source) -> str:
         theme_override={
             'warning': 'warning',
             'error': 'error',
-            'logo_silhouette': 'background',
+            'logo_silhouette': 'foreground',
         },
     )
     with (out / PLUGIN_FILE_NAME).open('w') as f:

@@ -2833,6 +2833,8 @@ class Shapes(Layer):
             )
             self._data_view.remove_multiple(to_remove)
 
+            self._value = (None, None)
+
             if len(self.data) == 0 and self.selected_data:
                 self.selected_data.clear()
             elif self.selected_data:
