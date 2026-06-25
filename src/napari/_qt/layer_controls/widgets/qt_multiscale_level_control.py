@@ -71,23 +71,19 @@ class QtMultiscaleLevelControl(  # type: ignore[metaclass]
 
         # Only set up and show widgets if layer is multiscale
         if layer.multiscale:
-            self._on_data_change()
+            self._update_level_labels()
             self.level_combobox.currentIndexChanged.connect(
                 self._on_combobox_changed
             )
             self._layer.events.locked_data_level.connect(
                 self._on_locked_data_level_change
             )
-            self._layer.events.data.connect(self._on_data_change)
+            self._layer.events.data.connect(self._update_level_labels)
             self.level_combobox.show()
             self.level_label.show()
         else:
             self.level_combobox.hide()
             self.level_label.hide()
-
-    def _on_data_change(self) -> None:
-        """Rebuild resolution labels when layer data changes."""
-        self._update_level_labels()
 
     def _update_level_labels(self) -> None:
         """Populate the combobox with resolution level labels."""
