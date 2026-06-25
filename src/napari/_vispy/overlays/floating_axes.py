@@ -18,11 +18,16 @@ if TYPE_CHECKING:
     from napari.components.overlays import FloatingAxesOverlay
 
 
+class NonInteractiveCamera(ArcballCamera):
+    def viewbox_key_event(self, event):
+        return
+
+
 class _AxesScene(ViewBox):
     def __init__(self, font_info: FontInfo) -> None:
         self.axes = Axes(font_info=font_info)
         super().__init__(bgcolor='transparent', border_width=0)
-        self.camera = ArcballCamera(fov=0)
+        self.camera = NonInteractiveCamera(fov=0)
         self.axes.parent = self.scene
         self.interactive = False
 
