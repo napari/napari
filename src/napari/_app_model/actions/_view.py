@@ -63,6 +63,12 @@ toggle_action_details = [
         'visible',
     ),
     (
+        'napari.window.view.toggle_viewer_floating_axes_box',
+        trans._('Floating Axes Box'),
+        'floating_axes',
+        'box',
+    ),
+    (
         'napari.window.view.toggle_viewer_floating_axes_colored',
         trans._('Floating Axes Colored'),
         'floating_axes',
