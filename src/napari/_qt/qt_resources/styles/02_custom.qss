@@ -700,6 +700,10 @@ QtListView::item:hover {
   background-color: {{ highlight }};
 }
 
+QtListView::item:selected {
+  background: {{ current }};
+}
+
 QtLayerList {
   font-size: {{ font_size }};
   font-weight: bold;
@@ -710,11 +714,6 @@ QtLayerList::item {
   border-top-right-radius: 2px;
   border-bottom-right-radius: 2px;
   border: 1px solid {{ primary }};  /* otherwise it's `foreground` for generic lists */
-}
-
-QtLayerList::item:selected {
-  background: {{ current }};
-  border: 1px solid {{ current }};
 }
 
 QtLayerList QLineEdit {
