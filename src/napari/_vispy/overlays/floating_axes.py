@@ -101,12 +101,14 @@ class VispyFloatingAxesOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         flipped_axes = get_vispy_flipped_axes(
             self.viewer.camera, ndisplay=ndisplay
         )
-
-        self.node.camera.flip = list(flipped_axes)[::-1]
+        self.node.camera.flip = list(flipped_axes)
 
         if ndisplay == 2:
+            # quat chosen bring the camera in line with default position.
+            # -1 is because by default vispy has y going down in 2D, but
+            # we're using a 3D camera for everything for simplicity.
             self.node.camera.set_state(
-                _quaternion=Quaternion(1, 1, 0, 0),
+                _quaternion=Quaternion(1, -1, 0, 0),
                 center=(0.6, 0.6, 0),
                 scale_factor=1.7,  # found by testing
             )
