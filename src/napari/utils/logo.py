@@ -21,7 +21,7 @@ def _get_seasonal_logo(today: date | None = None, theme: str = 'dark') -> str:
         'halloween': ((10, 25), (11, 2)),
         'christmas': ((12, 1), (1, 6)),
         'maythefourth': ((5, 1), (5, 10)),
-        'pride': ((6, 24), (7, 2)),  # international pride day 28 june
+        'pride': ((6, 21), (7, 4)),  # international pride day 28 june
     }
 
     theme_variants = {'maythefourth': {'dark': 'sith', 'light': 'jedi'}}
