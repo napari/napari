@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 class _AxesScene(ViewBox):
     def __init__(self, font_info: FontInfo) -> None:
         self.axes = Axes(font_info=font_info)
-        super().__init__(bgcolor='transparent')
+        super().__init__(bgcolor='transparent', border_width=0)
         self.camera = ArcballCamera(fov=0)
         self.axes.parent = self.scene
         self.interactive = False
@@ -96,13 +96,12 @@ class VispyFloatingAxesOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         """Update rotation from camera angles."""
 
         # ensure camera flip is the same as napari camera
-
         ndisplay = self.viewer.dims.ndisplay
         flipped_axes = get_vispy_flipped_axes(
             self.viewer.camera, ndisplay=ndisplay
         )
 
-        self.node.camera.flip = list(flipped_axes)
+        self.node.camera.flip = list(flipped_axes)[::-1]
 
         if ndisplay == 2:
             self.node.camera.set_state(
