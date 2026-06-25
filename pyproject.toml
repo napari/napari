@@ -95,11 +95,12 @@ Documentation = "https://napari.org"
 
 [project.optional-dependencies]
 pyside6 = [
-    "PySide6 > 6.7"
+    "PySide6 > 6.7, !=6.11.0, !=6.11.1"  # Qt 6.11.1 causes dock widget and layout resizing problems
 ]
 pyqt6 = [
     "PyQt6 > 6.5",
-    "PyQt6 != 6.6.1 ; platform_system == 'Darwin'"
+    "PyQt6 != 6.6.1 ; platform_system == 'Darwin'",
+    "pyqt6-qt6 !=6.11.0, !=6.11.1"  # Qt 6.11.1 causes dock widget and layout resizing problems
 ]
 pyside = [
     "napari[pyside6]"
@@ -210,7 +211,7 @@ docs = [
     "sphinxext-opengraph[social-cards]",
     "sphinxext-rediraffe",
     "myst-nb",
-    "napari-sphinx-theme>=1.1.0",
+    "napari-sphinx-theme>=1.1.3",
     "matplotlib",
     "lxml[html_clean]>5",
     "imageio-ffmpeg",
@@ -309,7 +310,7 @@ docs = [
     "sphinxext-opengraph[social-cards]",
     "sphinxext-rediraffe",
     "myst-nb",
-    "napari-sphinx-theme>=1.1.0",
+    "napari-sphinx-theme>=1.1.3",
     "matplotlib",
     "lxml[html_clean]>5",
     "imageio-ffmpeg",
@@ -747,7 +748,6 @@ module = [
     'napari.utils.interactions',
     'napari.utils.key_bindings',
     'napari.utils.mouse_bindings',
-    'napari.utils.shortcuts',
     'napari.utils.stubgen',
     'napari.utils.transforms.transforms',
     'napari.utils.tree.group',

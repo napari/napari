@@ -20,15 +20,6 @@ from napari.utils.events import EventedModel
 from napari.utils.events.containers._evented_dict import EventedDict
 from napari.utils.translations import trans
 
-try:
-    from qtpy import QT_VERSION
-
-    major, minor, *_ = QT_VERSION.split('.')  # type: ignore[attr-defined]
-    use_gradients = (int(major) >= 5) and (int(minor) >= 12)
-    del major, minor, QT_VERSION
-except (ImportError, RuntimeError):
-    use_gradients = False
-
 
 class Theme(EventedModel):
     """Theme model.
@@ -85,6 +76,9 @@ class Theme(EventedModel):
     warning: Color
     error: Color
     current: Color
+    # base font sizes differ between platforms
+    # macOS uses 72 dpi while windows and linux use 96
+    # which is a factor of 4/3 so 12 and 9 should be similar
     font_size: str = '12pt' if sys.platform == 'darwin' else '9pt'
 
     @field_validator('syntax_style', mode='before')
@@ -130,14 +124,29 @@ lighten_pattern = re.compile(r'{{\s?lighten\((\w+),?\s?([-\d]+)?\)\s?}}')
 opacity_pattern = re.compile(r'{{\s?opacity\((\w+),?\s?([-\d]+)?\)\s?}}')
 
 
-def decrease(font_size: str, pt: int) -> str:
+def _platform_aware_font_size_adjustment(pt: str) -> float:
+    """Rescale font size adjustments to 72 dpi (macOS)
+
+    Account for platform DPI differences in font size adjustments.
+    macOS uses 72 dpi while windows and linux use 96, so in order for
+    increases and decreases in font size remain proportional,
+    they also need to be scaled by a factor of 96/72.
+    """
+    if sys.platform == 'darwin':
+        return float(pt) * 96 / 72
+    return float(pt)
+
+
+def decrease(font_size: str, pt: str) -> str:
     """Decrease fontsize."""
-    return f'{int(font_size[:-2]) - int(pt)}pt'
+    _pt = _platform_aware_font_size_adjustment(pt)
+    return f'{int(font_size[:-2]) - _pt}pt'
 
 
-def increase(font_size: str, pt: int) -> str:
+def increase(font_size: str, pt: str) -> str:
     """Increase fontsize."""
-    return f'{int(font_size[:-2]) + int(pt)}pt'
+    _pt = _platform_aware_font_size_adjustment(pt)
+    return f'{int(font_size[:-2]) + _pt}pt'
 
 
 def _parse_color_as_rgb(color: str | Color) -> tuple[int, int, int]:
@@ -148,22 +157,77 @@ def _parse_color_as_rgb(color: str | Color) -> tuple[int, int, int]:
     return color.as_rgb_tuple()[:3]
 
 
-def darken(color: str | Color, percentage: float = 10) -> str:
-    ratio = 1 - float(percentage) / 100
-    red, green, blue = _parse_color_as_rgb(color)
-    red = min(max(int(red * ratio), 0), 255)
-    green = min(max(int(green * ratio), 0), 255)
-    blue = min(max(int(blue * ratio), 0), 255)
-    return f'rgb({red}, {green}, {blue})'
+def _shift_luminance(
+    color: tuple[float, float, float], percentage: float
+) -> tuple[int, int, int]:
+    """Darkens or lightens a color preserving hue and perceived saturation."""
+    r, g, b = color
+
+    percentage /= 100
+    # use perceived luminance for darken/lighten
+    lum = 0.299 * r + 0.587 * g + 0.114 * b
+
+    if percentage >= 0:
+        target = lum + (255.0 - lum) * percentage
+    else:
+        target = lum * (1.0 + percentage)
+
+    target = max(0.0, min(255.0, target))
+
+    if lum < 1.0:
+        v = max(0, min(255, int(target)))
+        return (v, v, v)
+
+    scale = target / lum
+
+    r *= scale
+    g *= scale
+    b *= scale
+
+    # desaturate colors that were lightened a lot
+    # this is kinda arbitrary, but light colors seem a lot more
+    # saturated than dark colors with the same values
+    # the coefficients at the right are tunable
+    if scale > 1.0:
+        # brighten -> desaturate
+        sat = 1.0 / (1.0 + (scale - 1.0) * 0.5)
+    else:
+        # darken -> saturate
+        sat = 1.0 + (1.0 - scale) * 0.5
+
+    # blend toward a mid-gray as bright as the rgb
+    gray = (r + g + b) / 3.0
+    r = gray + (r - gray) * sat
+    g = gray + (g - gray) * sat
+    b = gray + (b - gray) * sat
+
+    return (
+        max(0, min(255, int(r))),
+        max(0, min(255, int(g))),
+        max(0, min(255, int(b))),
+    )
 
 
-def lighten(color: str | Color, percentage: float = 10) -> str:
-    ratio = float(percentage) / 100
-    red, green, blue = _parse_color_as_rgb(color)
-    red = min(max(int(red + (255 - red) * ratio), 0), 255)
-    green = min(max(int(green + (255 - green) * ratio), 0), 255)
-    blue = min(max(int(blue + (255 - blue) * ratio), 0), 255)
-    return f'rgb({red}, {green}, {blue})'
+def darken(
+    color: str | Color,
+    percentage: float = 10,
+    theme_type: Literal['dark', 'light'] = 'dark',
+) -> str:
+    rgb = _parse_color_as_rgb(color)
+    percentage *= -1 if theme_type == 'dark' else 1
+    r, g, b = _shift_luminance(rgb, percentage)
+    return f'rgb({r}, {g}, {b})'
+
+
+def lighten(
+    color: str | Color,
+    percentage: float = 10,
+    theme_type: Literal['dark', 'light'] = 'dark',
+) -> str:
+    rgb = _parse_color_as_rgb(color)
+    percentage *= -1 if theme_type == 'light' else 1
+    r, g, b = _shift_luminance(rgb, percentage)
+    return f'rgb({r}, {g}, {b})'
 
 
 def opacity(color: str | Color, value: int = 255) -> str:
@@ -172,8 +236,6 @@ def opacity(color: str | Color, value: int = 255) -> str:
 
 
 def gradient(stops, horizontal: bool = True) -> str:
-    if not use_gradients:
-        return stops[-1]
 
     if horizontal:
         grad = 'qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0, '
@@ -197,15 +259,19 @@ def template(css: str, **theme):
 
     def darken_match(matchobj):
         color, percentage = matchobj.groups()
-        return darken(theme[color], percentage)
+        return darken(
+            theme[color], float(percentage), theme_type=theme['type']
+        )
 
     def lighten_match(matchobj):
         color, percentage = matchobj.groups()
-        return lighten(theme[color], percentage)
+        return lighten(
+            theme[color], float(percentage), theme_type=theme['type']
+        )
 
     def opacity_match(matchobj):
-        color, percentage = matchobj.groups()
-        return opacity(theme[color], percentage)
+        color, value = matchobj.groups()
+        return opacity(theme[color], int(value))
 
     def gradient_match(matchobj):
         horizontal = matchobj.groups()[1] == 'h'
@@ -363,29 +429,17 @@ DARK = Theme(
     id='dark',
     type='dark',
     label='Default Dark',
-    # Widgets / frame background (e.g. Preferences window). HEX: #262930
     background='rgb(38, 41, 48)',
-    # Layer controls background / layer name background. HEX: #414851
-    foreground='rgb(65, 72, 81)',
-    # Layer controls widget background. HEX: #5a626c
-    primary='rgb(90, 98, 108)',
-    # Currently unused. HEX: #868e93
-    secondary='rgb(134, 142, 147)',
-    # Checked button color. HEX: #6a7380
-    highlight='rgb(106, 115, 128)',
-    # Printed text. HEX: #f0f1f2
+    foreground='rgb(50, 55, 65)',
+    primary='rgb(70, 78, 88)',
+    secondary='rgb(86, 95, 108)',
+    highlight='rgb(97, 105, 110)',
     text='rgb(240, 241, 242)',
-    # Button icons. HEX: #d1d2d4
     icon='rgb(209, 210, 212)',
-    # HEX: #e3b617
     warning='rgb(227, 182, 23)',
-    # HEX: #99121f
     error='rgb(153, 18, 31)',
-    # Active layer (blue). HEX: #007acc
-    current='rgb(0, 122, 204)',
-    # Style of the code in built-in console
+    current='rgb(57, 102, 204)',
     syntax_style='native',
-    # Console background. HEX: #121212
     console='rgb(18, 18, 18)',
     canvas='black',
     font_size='12pt' if sys.platform == 'darwin' else '9pt',
@@ -394,18 +448,18 @@ LIGHT = Theme(
     id='light',
     type='light',
     label='Default Light',
-    background='rgb(239, 235, 233)',
-    foreground='rgb(214, 208, 206)',
-    primary='rgb(188, 184, 181)',
-    secondary='rgb(150, 146, 144)',
-    highlight='rgb(163, 158, 156)',
-    text='rgb(59, 58, 57)',
-    icon='rgb(107, 105, 103)',
+    background='rgb(235, 231, 230)',
+    foreground='rgb(221, 218, 216)',
+    primary='rgb(197, 195, 193)',
+    secondary='rgb(180, 178, 175)',
+    highlight='rgb(175, 172, 170)',
+    text='rgb(52, 52, 55)',
+    icon='rgb(92, 93, 95)',
     warning='rgb(227, 182, 23)',
     error='rgb(255, 18, 31)',
     current='rgb(253, 240, 148)',
     syntax_style='default',
-    console='rgb(255, 255, 255)',
+    console='white',
     canvas='white',
     font_size='12pt' if sys.platform == 'darwin' else '9pt',
 )
