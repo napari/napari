@@ -16,7 +16,7 @@ charset-normalizer==3.4.7
     # via requests
 docstring-parser==0.18.0
     # via magicgui
-idna==3.17
+idna==3.18
     # via requests
 in-n-out==0.2.1
     # via app-model
@@ -92,7 +92,7 @@ superqt==0.8.2
     # via magicgui
 tomli-w==1.2.0
     # via npe2
-typer==0.26.4
+typer==0.26.7
     # via npe2
 types-pyyaml==6.0.12.20260518
     # via -r resources/requirements_mypy.in
