@@ -16,10 +16,12 @@ def available_logos() -> list[str]:
 def _get_seasonal_logo(today: date | None = None, theme: str = 'dark') -> str:
     today = today or date.today()
 
+    # date ranges, adding some buffer around single-day stuff
     ranges = {
         'halloween': ((10, 25), (11, 2)),
         'christmas': ((12, 1), (1, 6)),
-        'maythefourth': ((5, 1), (5, 10)),  # let's give it some leeway :P
+        'maythefourth': ((5, 1), (5, 10)),
+        'pride': ((6, 24), (7, 2)),  # international pride day 28 june
     }
 
     theme_variants = {'maythefourth': {'dark': 'sith', 'light': 'jedi'}}
