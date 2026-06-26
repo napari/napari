@@ -40,16 +40,16 @@ class ScreenshotDialog(QFileDialog):
         history: list[str] | None = None,
     ) -> None:
         super().__init__(parent, trans._('Save screenshot'))
-        self.setAcceptMode(QFileDialog.AcceptSave)
-        self.setFileMode(QFileDialog.AnyFile)
+        self.setAcceptMode(self.AcceptMode.AcceptSave)
+        self.setFileMode(self.FileMode.AnyFile)
         self.setNameFilter(
             trans._('Image files (*.png *.bmp *.gif *.tif *.tiff)')
         )
         self.setDirectory(directory)
-        self.setHistory(history)
+        self.setHistory(history or [])
 
         if in_ipython():
-            self.setOptions(QFileDialog.DontUseNativeDialog)
+            self.setOptions(self.Option.DontUseNativeDialog)
 
         self.save_function = save_function
 
@@ -65,10 +65,11 @@ class ScreenshotDialog(QFileDialog):
                         '{save_path} already exists. Do you want to replace it?',
                         save_path=save_path,
                     ),
-                    QMessageBox.Yes | QMessageBox.No,
-                    QMessageBox.No,
+                    QMessageBox.StandardButton.Yes
+                    | QMessageBox.StandardButton.No,
+                    QMessageBox.StandardButton.No,
                 )
-                if res != QMessageBox.Yes:
+                if res != QMessageBox.StandardButton.Yes:
                     # return in this case since a valid name for the
                     # file is needed so the dialog needs to be visible
                     return
