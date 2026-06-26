@@ -12,7 +12,7 @@ Description:
   Rebuild the constraint files for the napari/napari repository using uv.
 
 Arguments:
-  REPO_ROOT     Optional root path to the upgrading repository.
+  REPO_ROOT     Optional root path to the napari repository.
                 If the first argument is not a directory, the repository's path is set to the parent directory of the script.
   PACKAGE       Optional list of package name(s) to upgrade selectively.
 
