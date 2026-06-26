@@ -10,14 +10,14 @@ from napari._qt.containers.qt_tree_model import QtNodeTreeModel
 from napari.utils.tree import Group, Node
 
 if TYPE_CHECKING:
-    from qtpy.QtCore import QModelIndex
-    from qtpy.QtWidgets import QWidget  # type: ignore[attr-defined]
+    from qtpy.QtCore import QModelIndex  # type: ignore[attr-defined]
+    from qtpy.QtWidgets import QWidget
 
 
 NodeType = TypeVar('NodeType', bound=Node)
 
 
-class QtNodeTreeView(_BaseEventedItemView[NodeType], QTreeView):
+class QtNodeTreeView(_BaseEventedItemView[NodeType], QTreeView):  # type: ignore[misc]
     """A QListView for a :class:`~napari.utils.tree.Group`.
 
     Designed to work with :class:`~napari._qt.containers.QtNodeTreeModel`.
@@ -32,7 +32,7 @@ class QtNodeTreeView(_BaseEventedItemView[NodeType], QTreeView):
     See docstring of :class:`_BaseEventedItemView` for additional background.
     """
 
-    _root: Group[Node]
+    _root: Group[Node]  # type: ignore[assignment]
 
     def __init__(
         self, root: Group[Node], parent: QWidget | None = None
@@ -44,15 +44,17 @@ class QtNodeTreeView(_BaseEventedItemView[NodeType], QTreeView):
         self.setSelectionMode(QTreeView.ExtendedSelection)
         self.setRoot(root)
 
-    def setRoot(self, root: Group[Node]):
-        super().setRoot(root)
+    def setRoot(self, root: Group[Node]) -> None:  # type: ignore[override]
+        super().setRoot(root)  # type: ignore[arg-type]
 
         # make tree look like a list if it contains no lists.
         self.model().rowsRemoved.connect(self._redecorate_root)
         self.model().rowsInserted.connect(self._redecorate_root)
         self._redecorate_root()
 
-    def _redecorate_root(self, parent: QModelIndex = None, *_):
+    def _redecorate_root(
+        self, parent: QModelIndex | None = None, *args: object
+    ) -> None:
         """Add a branch/arrow column only if there are Groups in the root.
 
         This makes the tree fall back to looking like a simple list if there
@@ -63,4 +65,4 @@ class QtNodeTreeView(_BaseEventedItemView[NodeType], QTreeView):
             self.setRootIsDecorated(hasgroup)
 
     def model(self) -> QtNodeTreeModel[NodeType]:
-        return super().model()
+        return super().model()  # type: ignore[return-value]
