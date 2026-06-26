@@ -2,10 +2,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from vispy.scene import ArcballCamera, ViewBox
+from vispy.scene import ViewBox
 from vispy.util.quaternion import Quaternion
 
 from napari._vispy.camera import (
+    MouseToggledArcballCamera,
     get_vispy_flipped_axes,
     napari_angles_to_vispy_quat,
 )
@@ -18,16 +19,12 @@ if TYPE_CHECKING:
     from napari.components.overlays import FloatingAxesOverlay
 
 
-class NonInteractiveCamera(ArcballCamera):
-    def viewbox_key_event(self, event):
-        return
-
-
 class _AxesScene(ViewBox):
     def __init__(self, font_info: FontInfo) -> None:
         self.axes = Axes(font_info=font_info)
         super().__init__(bgcolor='transparent', border_width=0)
-        self.camera = NonInteractiveCamera(fov=0)
+        # MouseToggledPanZoomCamera fixes backspace resetting the view
+        self.camera = MouseToggledArcballCamera(fov=0, interactive=False)
         self.axes.parent = self.scene
         self.interactive = False
 
