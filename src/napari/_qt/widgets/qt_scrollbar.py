@@ -1,5 +1,12 @@
-from qtpy.QtCore import Qt
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+from qtpy.QtCore import Qt  # type: ignore[attr-defined]
 from qtpy.QtWidgets import QScrollBar, QStyle, QStyleOptionSlider
+
+if TYPE_CHECKING:
+    from qtpy.QtGui import QMouseEvent
 
 CC = QStyle.ComplexControl
 SC = QStyle.SubControl
@@ -17,7 +24,7 @@ class ModifiedScrollBar(QScrollBar):
     fully to the clicked position.
     """
 
-    def _move_to_mouse_position(self, event):
+    def _move_to_mouse_position(self, event: QMouseEvent) -> None:
         opt = QStyleOptionSlider()
         self.initStyleOption(opt)
 
@@ -62,13 +69,13 @@ class ModifiedScrollBar(QScrollBar):
             )
         )
 
-    def mouseMoveEvent(self, event):
+    def mouseMoveEvent(self, event: QMouseEvent) -> None:
         if event.buttons() & Qt.MouseButton.LeftButton:
             # dragging with the mouse button down should move the slider
             self._move_to_mouse_position(event)
         return super().mouseMoveEvent(event)
 
-    def mousePressEvent(self, event):
+    def mousePressEvent(self, event: QMouseEvent) -> None:
         if event.button() == Qt.MouseButton.LeftButton:
             # clicking the mouse button should move slider to the clicked point
             self._move_to_mouse_position(event)

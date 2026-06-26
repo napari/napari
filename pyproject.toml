@@ -706,7 +706,6 @@ module = [
     'napari._qt.widgets.qt_plugin_sorter',
     'napari._qt.widgets.qt_progress_bar',
     'napari._qt.widgets.qt_range_slider_popup',
-    'napari._qt.widgets.qt_scrollbar',
     'napari._qt.widgets.qt_size_preview',
     'napari._qt.widgets.qt_spinbox',
     'napari._qt.widgets.qt_tooltip',
