@@ -38,6 +38,7 @@ class QtModeRadioButton(QRadioButton):
         self.setChecked(checked)
         self.setProperty('mode', button_name)
         self.setFixedWidth(28)
+        self.setFixedHeight(28)
         self.mode = mode
         if mode is not None:
             self.toggled.connect(self._set_mode)

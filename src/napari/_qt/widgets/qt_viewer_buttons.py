@@ -19,6 +19,7 @@ from superqt import QEnumComboBox, QLabeledDoubleSlider
 
 from napari._app_model.actions._file import new_points, new_shapes
 from napari._qt.dialogs.qt_modal import QtPopup
+from napari._qt.utils import set_widgets_enabled_with_opacity
 from napari._qt.widgets.qt_dims_sorter import QtDimsSorter
 from napari._qt.widgets.qt_spinbox import QtSpinBox
 from napari._qt.widgets.qt_tooltip import QtToolTipLabel
@@ -179,8 +180,10 @@ class QtLayerButtons(QFrame):
                 LayerCreationState.NONE
             )
 
-        self.newLabelsButton.setEnabled(
-            not self._layers_present_and_none_selected()
+        set_widgets_enabled_with_opacity(
+            parent=self,
+            widgets=[self.newLabelsButton],
+            enabled=not self._layers_present_and_none_selected(),
         )
 
     def _layers_present_and_none_selected(self) -> bool:
@@ -269,8 +272,13 @@ class QtViewerButtons(QFrame):
             'console', action='napari:toggle_console_visibility'
         )
         self.consoleButton.setProperty('expanded', False)
-        if in_ipython() or in_jupyter() or in_python_repl():
-            self.consoleButton.setEnabled(False)
+
+        kernel_is_running = in_ipython() or in_jupyter() or in_python_repl()
+        set_widgets_enabled_with_opacity(
+            parent=self,
+            widgets=[self.consoleButton],
+            enabled=not kernel_is_running,
+        )
 
         rdb = QtViewerPushButton('roll', action='napari:roll_axes')
         self.rollDimsButton = rdb
