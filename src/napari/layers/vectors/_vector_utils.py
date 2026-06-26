@@ -21,7 +21,7 @@ def convert_image_to_coordinates(vectors: npt.NDArray) -> npt.NDArray:
         A list of N vectors with start point and projections of the vector
         in D dimensions.
     """
-    nvect = np.prod(vectors.shape[:-1])
+    nvect = int(np.prod(vectors.shape[:-1]))
     ndim = vectors.shape[-1]
 
     # create coordinate spacing for image
