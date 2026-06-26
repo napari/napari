@@ -19,10 +19,10 @@ class QtSpinBox(QSpinBox):
         self.prohibit = value
 
     def validate(
-        self, value: str, pos: int
+        self, value: str | None, pos: int
     ) -> tuple[QValidator.State, str, int]:
         if value == str(self.prohibit):
-            return QValidator.Invalid, value, pos
+            return QValidator.State.Invalid, value, pos
         return super().validate(value, pos)
 
     def stepBy(self, steps: int) -> None:
