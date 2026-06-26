@@ -77,8 +77,6 @@ if TYPE_CHECKING:
 
 __all__ = ('Labels',)
 
-HistoryItem: TypeAlias = tuple[npt.NDArray, npt.NDArray, npt.NDArray]
-
 
 class _MaskedPaintAtom(NamedTuple):
     """A single undoable mask-based edit of a Labels layer.
@@ -107,6 +105,15 @@ class _MaskedPaintAtom(NamedTuple):
     mask: npt.NDArray[np.bool_] | None
     old_values: np.ndarray
     new_value: int
+
+
+# A single atom stored in the undo/redo history: either a mask-based edit
+# (paint/fill/paint_polygon) or the legacy fancy-index 3-tuple of
+# ``(indices, old_values, new_values)`` produced by ``data_setitem`` (where
+# ``indices`` is a numpy multi-index and the new values may be a scalar).
+HistoryAtom: TypeAlias = (
+    _MaskedPaintAtom | tuple[Any, npt.NDArray, np.ndarray | int]
+)
 
 
 class Labels(ScalarFieldBase):
@@ -466,9 +473,10 @@ class Labels(ScalarFieldBase):
         self._status = self.mode
         self._preserve_labels = False
 
-        self._undo_history: deque[HistoryItem]
-        self._redo_history: deque[HistoryItem]
-        self._staged_history: list[HistoryItem]
+        # Each history undo step is a list of atoms.
+        self._undo_history: deque[list[HistoryAtom]]
+        self._redo_history: deque[list[HistoryAtom]]
+        self._staged_history: list[HistoryAtom]
         self._block_history: bool
 
     def _slice_dtype(self):
@@ -764,6 +772,18 @@ class Labels(ScalarFieldBase):
         )
         return state
 
+    def _validate_label_in_range(self, label: int) -> None:
+        """Raise if ``label`` is outside the layer dtype's representable range."""
+        layer_dtype = get_dtype(self)
+        dtype_lims = get_dtype_limits(layer_dtype)
+        if dtype_lims[0] > label or dtype_lims[1] < label:
+            raise WrongSelectedLabelError(
+                dtype=layer_dtype,
+                value=label,
+                lower_bound=dtype_lims[0],
+                upper_bound=dtype_lims[1],
+            )
+
     @property
     def selected_label(self):
         """int: Index of selected label."""
@@ -773,17 +793,9 @@ class Labels(ScalarFieldBase):
     def selected_label(self, selected_label):
         if selected_label == self.selected_label:
             return
+        self._validate_label_in_range(selected_label)
         # when setting the label to the background, store the previous
         # otherwise, clear it
-        layer_dtype = get_dtype(self)
-        dtype_lims = get_dtype_limits(layer_dtype)
-        if dtype_lims[0] > selected_label or dtype_lims[1] < selected_label:
-            raise WrongSelectedLabelError(
-                dtype=layer_dtype,
-                value=selected_label,
-                lower_bound=dtype_lims[0],
-                upper_bound=dtype_lims[1],
-            )
         if selected_label == self.colormap.background_value:
             self._prev_selected_label = self.selected_label
         else:
@@ -1093,8 +1105,8 @@ class Labels(ScalarFieldBase):
 
         Parameters
         ----------
-        item : List[Tuple[ndarray, ndarray, int]]
-            list of history atoms to append to undo history.
+        item : list of HistoryAtoms
+            They are applied together as a single undoable step.
         """
         self._undo_history.append(item)
         self.events.paint(value=item)
@@ -1212,6 +1224,7 @@ class Labels(ScalarFieldBase):
             Whether to refresh view slice or not. Set to False to batch paint
             calls.
         """
+        self._validate_label_in_range(new_label)
         _, dims_to_paint = self._get_shape_and_dims_to_paint()
 
         fill_info = self._get_flood_mask_and_bbox(
@@ -1399,6 +1412,7 @@ class Labels(ScalarFieldBase):
             Whether to refresh view slice or not. Set to False to batch paint
             calls.
         """
+        self._validate_label_in_range(new_label)
         shape, dims_to_paint = self._get_shape_and_dims_to_paint()
 
         brush_info = self._get_brush_mask_and_bbox(coord, dims_to_paint, shape)
@@ -1503,6 +1517,7 @@ class Labels(ScalarFieldBase):
         new_label : int
             Value of the new label to be filled in.
         """
+        self._validate_label_in_range(new_label)
         shape, dims_to_paint = self._get_shape_and_dims_to_paint()
 
         points = np.array(points, dtype=int)
@@ -2310,7 +2325,12 @@ class _LabelsSlicingState(ScalarFieldSlicingState):
 
 
 class WrongSelectedLabelError(ValueError):
-    """Raised when the selected label is not in the data array."""
+    """Raised when a label value is out of range for the layer's data dtype.
+
+    Raised both when setting ``selected_label`` and when painting
+    (``paint``/``fill``/``paint_polygon``) with a value the data dtype cannot
+    represent.
+    """
 
     def __init__(
         self,
