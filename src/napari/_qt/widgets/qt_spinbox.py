@@ -8,7 +8,7 @@ class QtSpinBox(QSpinBox):
 
     prohibit = None
 
-    def setProhibitValue(self, value: int):
+    def setProhibitValue(self, value: int) -> None:
         """Set value that should not be used in QSpinBox.
 
         Parameters
@@ -18,7 +18,9 @@ class QtSpinBox(QSpinBox):
         """
         self.prohibit = value
 
-    def validate(self, value: str, pos: int):
+    def validate(
+        self, value: str, pos: int
+    ) -> tuple[QValidator.State, str, int]:
         if value == str(self.prohibit):
             return QValidator.Invalid, value, pos
         return super().validate(value, pos)
