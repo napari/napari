@@ -10,7 +10,7 @@ from napari._qt.containers.qt_tree_model import QtNodeTreeModel
 from napari.utils.tree import Group, Node
 
 if TYPE_CHECKING:
-    from qtpy.QtCore import QModelIndex  # type: ignore[attr-defined]
+    from qtpy.QtCore import QModelIndex
     from qtpy.QtWidgets import QWidget
 
 
@@ -39,9 +39,9 @@ class QtNodeTreeView(_BaseEventedItemView[NodeType], QTreeView):  # type: ignore
     ) -> None:
         super().__init__(parent)
         self.setHeaderHidden(True)
-        self.setDragDropMode(QTreeView.InternalMove)
+        self.setDragDropMode(self.DragDropMode.InternalMove)
         self.setDragDropOverwriteMode(False)
-        self.setSelectionMode(QTreeView.ExtendedSelection)
+        self.setSelectionMode(self.SelectionMode.ExtendedSelection)
         self.setRoot(root)
 
     def setRoot(self, root: Group[Node]) -> None:  # type: ignore[override]
