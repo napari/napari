@@ -9,7 +9,7 @@ Usage:
   compile_constraints.sh [REPO_ROOT] [PACKAGE ...]
 
 Description:
-  Rebuild the constraint files for a napari repository using uv.
+  Rebuild the constraint files for the napari/napari repository using uv.
 
 Arguments:
   REPO_ROOT     Optional root path to the upgrading repository.
