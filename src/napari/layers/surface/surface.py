@@ -336,7 +336,6 @@ class Surface(IntensityVisualizationMixin, Layer):
 
         self._contrast_limits = self._contrast_limits_range
         self.colormap = colormap
-        self.contrast_limits = self._contrast_limits
 
         # Trigger generation of view slice and thumbnail.
         # Use _update_dims instead of refresh here because _get_ndim is
@@ -507,6 +506,16 @@ class Surface(IntensityVisualizationMixin, Layer):
     def faces(self) -> np.ndarray:
         return np.asarray(self._faces)
 
+    @faces.setter
+    def faces(self, faces: np.ndarray) -> None:
+        """Array of indices of mesh triangles."""
+
+        self._faces = np.asarray(faces)
+
+        self.refresh(extent=False)
+        self.events.data(value=self.data)
+        self._reset_editable()
+
     @property
     def colormap(self) -> Colormap:
         """Return the colormap to be applied to a property to get the face color.
@@ -523,16 +532,6 @@ class Surface(IntensityVisualizationMixin, Layer):
         self._vertex.continuous_colormap = colormap
         self.events.colormap()
         self.refresh()
-
-    @faces.setter
-    def faces(self, faces: np.ndarray) -> None:
-        """Array of indices of mesh triangles."""
-
-        self.faces = np.asarray(faces)
-
-        self.refresh(extent=False)
-        self.events.data(value=self.data)
-        self._reset_editable()
 
     def _get_ndim(self) -> int:
         """Determine number of dimensions of the layer."""
