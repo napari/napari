@@ -66,13 +66,12 @@ class ScaleBarOverlay(CanvasOverlay):
 
     @unit.setter
     def unit(self, value: str | None) -> None:
-        if value is not None:
-            warnings.warn(
-                'Setting unit on the ScaleBar model is deprecated and no longer has any effect. '
-                'This attribute will be removed in 0.9.0.\n'
-                'Units are instead computed from the layers in the layerlist. '
-                'To silence this warning, leave scale_bar unit as `None`. '
-                'Use `Layer.units` to set units for each layer.',
-                category=FutureWarning,
-                stacklevel=4,
-            )
+        warnings.warn(
+            'Setting unit on the ScaleBar model is deprecated and no longer has any effect. '
+            'This attribute will be removed in 0.9.0.\n'
+            'Units are instead computed from the layers in the layerlist. '
+            'To silence this warning, leave scale_bar unit as `None`. '
+            'Use `Layer.units` to set units for each layer.',
+            category=FutureWarning,
+            stacklevel=4,
+        )
