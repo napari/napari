@@ -12,6 +12,7 @@ from napari.layers.surface._surface_utils import (
 )
 from napari.layers.surface.normals import SurfaceNormals
 from napari.layers.surface.wireframe import SurfaceWireframe
+from napari.layers.utils._color_manager_constants import ColorMode
 from napari.layers.utils.color_manager import ColorManager
 from napari.layers.utils.interactivity_utils import (
     nd_line_segment_to_displayed_data_ray,
@@ -443,6 +444,10 @@ class Surface(IntensityVisualizationMixin, Layer):
 
     @property
     def vertex_colors(self) -> np.ndarray | None:
+        # In COLORMAP mode, return None so vispy uses its colormap on vertex_values.
+        # Only return explicit colors in DIRECT or CYCLE mode.
+        if self._vertex.color_mode == ColorMode.COLORMAP:
+            return None
         return self._vertex.colors
 
     @vertex_colors.setter
@@ -484,6 +489,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         self, contrast_limits: None | tuple[float, float]
     ) -> None:
         self._vertex.contrast_limits = contrast_limits
+        self.events.contrast_limits()
         self.refresh()
 
     @property
@@ -515,6 +521,7 @@ class Surface(IntensityVisualizationMixin, Layer):
     @colormap.setter
     def colormap(self, colormap: ValidColormapArg) -> None:
         self._vertex.continuous_colormap = colormap
+        self.events.colormap()
         self.refresh()
 
     @faces.setter
