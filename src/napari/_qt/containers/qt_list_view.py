@@ -44,5 +44,5 @@ class QtListView(_BaseEventedItemView[ItemType], QListView):
         self.setSelectionMode(QListView.ExtendedSelection)
         self.setRoot(root)
 
-    def model(self) -> QtListModel[ItemType]:
+    def model(self) -> QtListModel[ItemType]:  # type: ignore[override]
         return super().model()
