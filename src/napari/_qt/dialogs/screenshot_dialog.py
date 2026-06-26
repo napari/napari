@@ -12,6 +12,8 @@ from napari.utils.translations import trans
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+    from qtpy.QtWidgets import QWidget
+
 HOME_DIRECTORY = str(Path.home())
 
 
@@ -33,9 +35,9 @@ class ScreenshotDialog(QFileDialog):
     def __init__(
         self,
         save_function: Callable[[str], Any],
-        parent=None,
-        directory=HOME_DIRECTORY,
-        history=None,
+        parent: QWidget | None = None,
+        directory: str = HOME_DIRECTORY,
+        history: list[str] | None = None,
     ) -> None:
         super().__init__(parent, trans._('Save screenshot'))
         self.setAcceptMode(QFileDialog.AcceptSave)
@@ -51,7 +53,7 @@ class ScreenshotDialog(QFileDialog):
 
         self.save_function = save_function
 
-    def accept(self):
+    def accept(self) -> None:
         save_path = self.selectedFiles()[0]
         if os.path.splitext(save_path)[1] == '':
             save_path = save_path + '.png'
