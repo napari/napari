@@ -33,7 +33,9 @@ def get_tb_formatter() -> Callable[[ExcInfo, bool, str], str]:
         import IPython.core.ultratb
 
         def format_exc_info(
-            info: ExcInfo, as_html: bool, color='Neutral'
+            info: ExcInfo,
+            as_html: bool,
+            color: str = 'Neutral',
         ) -> str:
             # avoid verbose printing of the array data
             with np.printoptions(precision=5, threshold=10, edgeitems=2):
@@ -60,7 +62,11 @@ def get_tb_formatter() -> Callable[[ExcInfo, bool, str], str]:
     except ModuleNotFoundError:
         import traceback
 
-        def format_exc_info(info: ExcInfo, as_html: bool, color=None) -> str:
+        def format_exc_info(
+            info: ExcInfo,
+            as_html: bool,
+            color: str = 'Neutral',
+        ) -> str:
             # avoid verbose printing of the array data
             with np.printoptions(precision=5, threshold=10, edgeitems=2):
                 tb_text = ''.join(traceback.format_exception(*info))
@@ -111,7 +117,7 @@ def ansi2html(
     """
     previous_end = 0
     in_span = False
-    ansi_codes = []
+    ansi_codes: list[int] = []
     ansi_finder = re.compile('\033\\[([\\d;]*)([a-zA-Z])')
     for match in ansi_finder.finditer(ansi_string):
         yield ansi_string[previous_end : match.start()]

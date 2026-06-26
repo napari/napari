@@ -1,5 +1,4 @@
 import numpy as np
-from qtpy.QtGui import QStandardItemModel
 from qtpy.QtWidgets import QComboBox, QWidget
 
 from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
@@ -7,7 +6,6 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWrappedLabel,
 )
 from napari._qt.utils import qt_signals_blocked
-from napari._vispy.utils.gl import get_max_texture_sizes
 from napari.layers import Image, Labels
 from napari.utils.misc import human_readable_size
 from napari.utils.translations import trans
@@ -17,7 +15,6 @@ def _format_level_label(
     index: int,
     shape: tuple,
     nbytes: int,
-    displayed_axes: tuple[int, ...] | None = None,
 ) -> str:
     """Build a human-readable label for one multiscale level.
 
@@ -29,21 +26,13 @@ def _format_level_label(
         Full shape of the array at this level.
     nbytes : int
         Size of the array in bytes.
-    displayed_axes : tuple of int, optional
-        Indices of the currently displayed dimensions.  When provided only
-        those dimensions are shown in the label; otherwise the full shape
-        is used.
 
     Returns
     -------
     str
         e.g. ``"0: 256 x 256 x 128 (8.4 MB)"``
     """
-    if displayed_axes is not None:
-        dims = tuple(shape[ax] for ax in displayed_axes)
-    else:
-        dims = shape
-    shape_str = ' \u00d7 '.join(str(s) for s in dims)
+    shape_str = ' \u00d7 '.join(str(s) for s in shape)
     size_str = human_readable_size(nbytes)
     return f'{index}: {shape_str} ({size_str})'
 
@@ -80,55 +69,37 @@ class QtMultiscaleLevelControl(  # type: ignore[metaclass]
         self.level_combobox = QComboBox(parent)
         self.level_label = QtWrappedLabel(trans._('resolution:'))
 
-        self._rebuild_items()
-        self.level_combobox.currentIndexChanged.connect(
-            self._on_combobox_changed
-        )
-        self._layer.events.locked_data_level.connect(
-            self._on_locked_data_level_change
-        )
-        self._layer.events.data.connect(self._rebuild_items)
+        # Only set up and show widgets if layer is multiscale
+        if layer.multiscale:
+            self._update_level_labels()
+            self.level_combobox.currentIndexChanged.connect(
+                self._on_combobox_changed
+            )
+            self._layer.events.locked_data_level.connect(
+                self._on_locked_data_level_change
+            )
+            self._layer.events.data.connect(self._update_level_labels)
+            self.level_combobox.show()
+            self.level_label.show()
+        else:
+            self.level_combobox.hide()
+            self.level_label.hide()
 
-    def _rebuild_items(self) -> None:
-        """Populate the combobox from the layer's current level_shapes."""
-        displayed = tuple(self._layer._slice_input.displayed)
-        ndisplay = self._layer._slice_input.ndisplay
+    def _update_level_labels(self) -> None:
+        """Populate the combobox with resolution level labels."""
         with qt_signals_blocked(self.level_combobox):
             self.level_combobox.clear()
             self.level_combobox.addItem('Auto', None)
 
             if self._layer.multiscale:
-                if ndisplay == 3:
-                    _, max_size_3d = get_max_texture_sizes()
-
                 shapes = self._layer.level_shapes
                 itemsize = self._layer.dtype.itemsize
                 for i, shape in enumerate(shapes):
+                    # Calculate size using full shape
                     nbytes = int(np.prod(shape) * itemsize)
 
-                    label = _format_level_label(
-                        i, tuple(shape), nbytes, displayed
-                    )
+                    label = _format_level_label(i, tuple(shape), nbytes)
                     self.level_combobox.addItem(label, i)
-
-                    # Disable levels that exceed the GL texture limit in 3D
-                    if (
-                        ndisplay == 3
-                        and max_size_3d is not None
-                        and any(shape[ax] > max_size_3d for ax in displayed)
-                    ):
-                        item_index = self.level_combobox.count() - 1
-                        model = self.level_combobox.model()
-                        assert isinstance(model, QStandardItemModel)
-                        item = model.item(item_index)
-                        if item is not None:
-                            item.setEnabled(False)
-                            item.setToolTip(
-                                trans._(
-                                    'Exceeds GL_MAX_3D_TEXTURE_SIZE ({max_size})',
-                                    max_size=max_size_3d,
-                                )
-                            )
 
             # Reflect current locked state
             locked = getattr(self._layer, '_locked_data_level', None)
@@ -158,18 +129,6 @@ class QtMultiscaleLevelControl(  # type: ignore[metaclass]
                 self.level_combobox.setCurrentIndex(locked + 1)
             else:
                 self.level_combobox.setCurrentIndex(0)
-
-    def _on_display_change_show(self) -> None:
-        """Show the resolution combobox when the layer is multiscale."""
-        if self._layer.multiscale:
-            self._rebuild_items()
-            self.level_combobox.show()
-            self.level_label.show()
-
-    def _on_display_change_hide(self) -> None:
-        """Hide the resolution combobox and its label."""
-        self.level_combobox.hide()
-        self.level_label.hide()
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
         """Return the label/widget pairs for this control.
