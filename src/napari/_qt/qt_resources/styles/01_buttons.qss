@@ -7,16 +7,11 @@ QtViewerPushButton{
    min-height : 28px;
    max-height : 28px;
    padding: 0px;
+   margin-top: 3px;  /* to counteract the margin tricks below*/
 }
 
 QtViewerPushButton[mode="delete_button"] {
    image: url("theme_{{ id }}:/delete.svg");
-}
-
-QtViewerPushButton[mode="new_points"],
-QtViewerPushButton[mode="new_shapes"],
-QtViewerPushButton[mode="new_labels"] {
-  border: 3px solid {{ background }};
 }
 
 QtViewerPushButton[mode="new_points"] {
@@ -31,20 +26,35 @@ QtViewerPushButton[mode="new_labels"] {
   image: url("theme_{{ id }}:/new_labels.svg");
 }
 
-QtViewerPushButton[mode="new_labels"]:disabled {
-  border: 3px solid {{ background }};
+QtViewerPushButton[mode="new_points"],
+QtViewerPushButton[mode="new_shapes"],
+QtViewerPushButton[mode="new_labels"] {
+  border: 1px solid {{ primary }};
+  margin: 2px;
+  margin-top: 5px;
 }
 
+/* TODO: can we avoid this darken/lighten? */
 QtViewerPushButton[mode="new_points"][creation_state="full"],
 QtViewerPushButton[mode="new_shapes"][creation_state="full"],
 QtViewerPushButton[mode="new_labels"][creation_state="full"] {
-  border: 3px solid {{ lighten(current, 25) }};
+  border: 3px solid {{ lighten(current, 20) }};
+  margin: 0px;
+  margin-top: 3px;
 }
 
 QtViewerPushButton[mode="new_points"][creation_state="partial"],
 QtViewerPushButton[mode="new_shapes"][creation_state="partial"],
 QtViewerPushButton[mode="new_labels"][creation_state="partial"] {
-  border: 3px solid {{ darken(current, 5) }};
+  border: 3px solid {{ current }};
+  margin: 0px;
+  margin-top: 3px;
+}
+
+QtViewerPushButton[mode="new_points"]:disabled,
+QtViewerPushButton[mode="new_shapes"]:disabled,
+QtViewerPushButton[mode="new_labels"]:disabled {
+  background-color: {{ background }};
 }
 
 QtViewerPushButton[mode="warning"] {
@@ -53,6 +63,10 @@ QtViewerPushButton[mode="warning"] {
 
 QtViewerPushButton[mode="console"] {
   image: url("theme_{{ id }}:/console.svg");
+}
+
+QtViewerPushButton[mode="console"][expanded=true] {
+  background-color: {{ current }};
 }
 
 QtViewerPushButton[mode="roll"] {
@@ -75,11 +89,21 @@ QtViewerPushButton[mode="ndisplay_button"]:checked {
   max-height: 28px;
   background: qlineargradient(
     x1: 0, y1: 0, x2: 1, y2: 0,
-    stop: 0 {{ foreground }},
-    stop: 0.3 {{ foreground }},
-    stop: 0.5 {{ highlight }},
-    stop: 1 {{ highlight }}
+    stop: 0 {{ primary }},
+    stop: 0.3 {{ primary }},
+    stop: 0.5 {{ current }},
+    stop: 1 {{ current }}
   );
+}
+
+QtViewerPushButton[mode="ndisplay_button"]:checked:hover {
+    background: qlineargradient(
+      x1: 0, y1: 0, x2: 1, y2: 0,
+      stop: 0 {{ highlight }},
+      stop: 0.5 {{ highlight }},
+      stop: 0.7 {{ current }},
+      stop: 1 {{ current }}
+    );
 }
 
 QtViewerPushButton[mode="ndisplay_button"] {
@@ -90,11 +114,21 @@ QtViewerPushButton[mode="ndisplay_button"] {
   max-height: 28px;
   background: qlineargradient(
     x1: 0, y1: 0, x2: 1, y2: 0,
-    stop: 0 {{ highlight }},
-    stop: 0.5 {{ highlight }},
-    stop: 0.7 {{ foreground }},
-    stop: 1 {{ foreground }}
+    stop: 0 {{ current }},
+    stop: 0.5 {{ current }},
+    stop: 0.7 {{ primary }},
+    stop: 1 {{ primary }}
   );
+}
+
+QtViewerPushButton[mode="ndisplay_button"]:hover {
+    background: qlineargradient(
+      x1: 0, y1: 0, x2: 1, y2: 0,
+      stop: 0 {{ current }},
+      stop: 0.5 {{ current }},
+      stop: 0.7 {{ highlight }},
+      stop: 1 {{ highlight }}
+    );
 }
 
 QtViewerPushButton[mode="grid_view_button"]:checked {
@@ -105,33 +139,48 @@ QtViewerPushButton[mode="grid_view_button"] {
   image: url("theme_{{ id }}:/canvas-grid-view.svg");
 }
 
+
 QtModeRadioButton {
-  min-height : 28px;
-  padding: 0px;
+  min-height: 28px;
+  min-width: 28px;
 }
 
-QtModeRadioButton::indicator:unchecked {
+QtModePushButton {
+  min-height: 26px;
+  min-width: 26px;
+  border: 1px solid {{ primary }};
   border-radius: 3px;
-  width: 28px;
-  height: 28px;
+  padding: 0px;
+  margin: 1px;
+}
+
+
+QtModeRadioButton::indicator{
+  min-height: 28px;
+  min-width: 28px;
+  border-radius: 3px;
+  border: 1px solid {{ primary }};
+}
+
+QtModeRadioButton::indicator:unchecked{
   padding: 0;
   background-color: {{ primary }};
 }
 
-QtModeRadioButton::indicator:checked {
-  border-radius: 3px;
-  height: 28px;
-  width: 28px;
+QtModeRadioButton::indicator:checked{
   padding: 0;
   background-color: {{ current }};
+  border-color: {{ current }};
 }
 
-
-QtModeRadioButton::indicator:disabled {
-  background-color: {{ darken(foreground, 20) }}
+/* TODO: introduce "disabled" as color? */
+QtModeRadioButton::indicator:disabled,
+QtModePushButton:disabled {
+  background-color: {{ foreground }};
 }
 
-QtModeRadioButton::indicator:unchecked:hover {
+QtModeRadioButton::indicator:unchecked:hover,
+QtModePushButton::indicator:hover {
   background-color: {{ highlight }};
 }
 
@@ -157,7 +206,6 @@ QtModeRadioButton[mode="rectangle"]::indicator {
 
 QtModeRadioButton[mode="ellipse"]::indicator {
   image: url("theme_{{ id }}:/ellipse.svg");
-  color: red;
 }
 
 QtModeRadioButton[mode="line"]::indicator {
@@ -236,11 +284,6 @@ QtModePushButton[mode="delete_shape"] {
    image: url("theme_{{ id }}:/delete_shape.svg");
 }
 
-QWidget[emphasized="true"] QtModePushButton[mode="delete_shape"]:pressed {
-  background-color: {{ error }};
-}
-
-
 QtCopyToClipboardButton {
    background-color: {{ background }};
    margin: 0px;
@@ -271,19 +314,14 @@ QtPlayButton[reverse=True] {
 }
 
 QtPlayButton[reverse=False] {
-  background: {{ foreground }};
   image: url("theme_{{ id }}:/playback-forward.svg");
 }
 
-QtPlayButton[reverse=True]:hover, QtPlayButton[reverse=False]:hover {
-  background: {{ primary }};
-}
-
-QtPlayButton[playing=True]:hover {
-  background-color: {{ lighten(error, 10) }};
+QtPlayButton:hover {
+  background: {{ highlight }};
 }
 
 QtPlayButton[playing=True] {
     image: url("theme_{{ id }}:/playback-stop.svg");
-    background-color: {{ error }};
+    background-color: {{ current }};
 }
