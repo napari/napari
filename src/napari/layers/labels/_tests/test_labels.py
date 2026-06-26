@@ -735,6 +735,21 @@ def test_selecting_label_exception():
         labels.selected_label = -1
 
 
+@pytest.mark.parametrize('new_label', [256, -1])
+def test_painting_out_of_dtype_range_raises(new_label):
+    """paint/fill/paint_polygon reject labels the data dtype cannot hold."""
+    labels = Labels(np.zeros((10, 10), dtype=np.uint8))
+    match = f'The value {new_label}'
+    with pytest.raises(WrongSelectedLabelError, match=match):
+        labels.paint((5, 5), new_label)
+    with pytest.raises(WrongSelectedLabelError, match=match):
+        labels.fill((5, 5), new_label)
+    with pytest.raises(WrongSelectedLabelError, match=match):
+        labels.paint_polygon([[0, 0], [0, 5], [5, 5], [5, 0]], new_label)
+    # data must be untouched after a rejected paint
+    npt.assert_array_equal(labels.data, np.zeros((10, 10), dtype=np.uint8))
+
+
 def test_label_color():
     """Test getting label color."""
     np.random.seed(0)
@@ -1684,6 +1699,80 @@ def test_fill_scattered_undo_redo_with_xarray():
     npt.assert_array_equal(np.asarray(layer.data), original)
     layer.redo()
     npt.assert_array_equal(np.asarray(layer.data), painted)
+
+
+def test_fill_full_bbox_undo_redo_with_dask():
+    """Round-trip the mask=None (whole-bbox) replay branch with dask."""
+    data = np.zeros((8, 8), dtype=np.uint32)
+    original = data.copy()
+    layer = Labels(da.from_array(data, chunks=(8, 8)))
+
+    layer.fill((0, 0), 7)
+    painted = np.asarray(layer.data).copy()
+
+    atom = layer._undo_history[0][0]
+    assert atom.mask is None
+    assert atom.slice_key == (slice(0, 8), slice(0, 8))
+
+    layer.undo()
+    npt.assert_array_equal(np.asarray(layer.data), original)
+    layer.redo()
+    npt.assert_array_equal(np.asarray(layer.data), painted)
+
+
+def test_paint_undo_redo_with_zarr():
+    """End-to-end undo/redo on a zarr backend."""
+    z = zarr.zeros((20, 20), chunks=(10, 10), dtype=np.uint8)
+    original = np.asarray(z).copy()
+
+    layer = Labels(z)
+    layer.refresh()
+    layer.brush_size = 5
+
+    layer.paint((10, 10), 4)
+    painted = np.asarray(layer.data).copy()
+    assert np.count_nonzero(painted == 4) > 0
+
+    atom = layer._undo_history[0][0]
+    assert atom.mask is not None
+
+    layer.undo()
+    npt.assert_array_equal(np.asarray(layer.data), original)
+    layer.redo()
+    npt.assert_array_equal(np.asarray(layer.data), painted)
+
+
+def test_paint_undo_redo_with_tensorstore(tmp_path):
+    """End-to-end undo/redo on a TensorStore backend."""
+    ts = pytest.importorskip('tensorstore')
+
+    data = np.zeros((20, 20), dtype=np.uint32)
+    file_path = str(tmp_path / 'labels.zarr')
+    spec = {
+        'driver': 'zarr',
+        'kvstore': {'driver': 'file', 'path': file_path},
+        'metadata': {'shape': [20, 20], 'dtype': '<u4', 'chunks': [10, 10]},
+        'create': True,
+        'delete_existing': True,
+    }
+    ts_array = ts.open(spec).result()
+    ts_array[:, :] = data
+
+    layer = Labels(ts_array)
+    layer.refresh()
+    layer.brush_size = 5
+
+    layer.paint((10, 10), 4)
+    painted = ts_array.read().result().copy()
+    assert np.count_nonzero(painted == 4) > 0
+
+    atom = layer._undo_history[0][0]
+    assert atom.mask is not None
+
+    layer.undo()
+    npt.assert_array_equal(ts_array.read().result(), data)
+    layer.redo()
+    npt.assert_array_equal(ts_array.read().result(), painted)
 
 
 def test_paint_preserve_labels_undo_with_xarray():
