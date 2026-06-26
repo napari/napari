@@ -93,9 +93,7 @@ class _VectorSliceRequest:
             request_id=self.id,
         )
 
-    def _get_slice_data(
-        self, not_disp: list[int]
-    ) -> tuple[npt.NDArray, int | npt.NDArray]:
+    def _get_slice_data(self, not_disp: list[int]) -> tuple[npt.NDArray, int]:
         data = self.data[:, 0, not_disp]
         alphas = 1
 
