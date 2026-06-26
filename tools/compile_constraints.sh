@@ -26,7 +26,7 @@ Behaviour:
   It will write mypy requirements under REPO_ROOT/resources/.
 
 Expected failures:
-  Will fail if any requested package is not found in the REPO_ROOT/resources/constraints/*.txt files.
+  When PACKAGE arguments are given, the script will fail if any requested package is not found in the REPO_ROOT/resources/constraints/*.txt files.
 
 Requirements:
   - The REPO_ROOT must be a valid napari repository with the correct file structure.
