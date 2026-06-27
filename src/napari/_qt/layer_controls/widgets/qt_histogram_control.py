@@ -24,7 +24,7 @@ class QtHistogramControl(QtWidgetControlsBase):
     Histogram control widget for Image layers.
 
     This widget provides the lazily-created inline histogram content that is
-    shown or hidden via the histogram button on the gamma slider.
+    shown or hidden via the histogram button on the contrast limits control.
 
     Parameters
     ----------
@@ -37,8 +37,12 @@ class QtHistogramControl(QtWidgetControlsBase):
     ----------
     content_widget : QWidget
         The main content widget containing histogram and controls.
-    settings_widget : QtHistogramSettingsWidget
-        Shared widget for histogram mode and log scale controls.
+    histogram_content : QtHistogramContentWidget or None
+        The lazy-created histogram content instance.
+    histogram_widget : QtHistogramWidget or None
+        The histogram visualization widget.
+    settings_widget : QtHistogramSettingsWidget or None
+        Widget for log scale control.
     """
 
     def __init__(self, parent: QWidget, layer: Image) -> None:
@@ -77,7 +81,8 @@ class QtHistogramControl(QtWidgetControlsBase):
         Return an empty list since this widget is dynamically added/removed.
 
         The histogram widget is controlled by the histogram button on the
-        gamma slider and should not be added to the layer controls by default.
+        contrast limits control and should not be added to the layer controls
+        by default.
 
         Returns
         -------
