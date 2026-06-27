@@ -12,8 +12,8 @@ from qtpy.QtWidgets import (
 from napari.settings import get_settings
 from napari.utils.tips import (
     NAPARI_TIPS,
-    _urls_to_html,
     format_tip,
+    urls_to_html,
 )
 
 
@@ -57,7 +57,7 @@ class TipsWidget(QWidget):
     def _render_tip(self, _event=None) -> None:
         tip = self.tips[self.current_tip]
         tip_text = format_tip(tip)
-        tip_html = _urls_to_html(tip_text)
+        tip_html = urls_to_html(tip_text)
         self.tip.setText(tip_html)
 
     def prev_tip(self) -> None:

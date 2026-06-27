@@ -10,6 +10,10 @@ by the `format_tip()` function. Allowed interpolators are:
 - a keybinding (e.g. Ctrl+Y) for when the above is not possible because the action
   is not implemented as an app_model command (e.g: increase/decrease brush size)
 
+Additionally, if tips contain URLs that start with http:// or https://, they can be
+converted to clickable links that will be styled to match the theme text color using
+the `urls_to_html()` function.
+
 Community contributions are very welcome!
 """
 
@@ -103,7 +107,7 @@ def _link_color(theme_name: str | None = None) -> str:
     return theme.text.as_rgb()
 
 
-def _urls_to_html(text: str, theme_name: str | None = None) -> str:
+def urls_to_html(text: str, theme_name: str | None = None) -> str:
     """Convert http(s) URLs in text to clickable HTML anchor tags.
 
     Parameters

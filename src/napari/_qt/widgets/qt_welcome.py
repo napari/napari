@@ -20,8 +20,8 @@ from napari.utils.action_manager import action_manager
 from napari.utils.tips import (
     NAPARI_TIPS,
     _get_command_shortcut_and_description,
-    _urls_to_html,
     format_tip,
+    urls_to_html,
 )
 
 if TYPE_CHECKING:
@@ -213,7 +213,7 @@ class QtWelcomeWidget(QWidget):
         - converts any URLs to clickable HTML links
         """
         tip_text = format_tip(self._current_tip)
-        tip_html = _urls_to_html(tip_text, self._viewer.theme)
+        tip_html = urls_to_html(tip_text, self._viewer.theme)
         self._tip_label.setText(f'Did you know?<br>{tip_html}')
 
     def paintEvent(self, event):

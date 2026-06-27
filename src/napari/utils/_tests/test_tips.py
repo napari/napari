@@ -2,7 +2,7 @@ import sys
 
 import pytest
 
-from napari.utils.tips import _link_color, _urls_to_html, format_tip
+from napari.utils.tips import _link_color, format_tip, urls_to_html
 
 
 @pytest.mark.parametrize(
@@ -55,7 +55,7 @@ def test_format_tips(raw, formatted_linux, formatted_win, formatted_mac):
 def test_urls_to_html_converts_urls(text, expected_body):
     theme = 'dark'
     style = f'<style>a{{color:{_link_color(theme)}}}</style>'
-    assert _urls_to_html(text, theme) == f'{style}{expected_body}'
+    assert urls_to_html(text, theme) == f'{style}{expected_body}'
 
 
 @pytest.mark.parametrize(
@@ -76,13 +76,13 @@ def test_urls_to_html_converts_urls(text, expected_body):
     ],
 )
 def test_urls_to_html_no_urls_escaping(text, expected):
-    assert _urls_to_html(text) == expected
+    assert urls_to_html(text) == expected
 
 
 def test_urls_to_html_multiple_urls():
     theme = 'dark'
     style = f'<style>a{{color:{_link_color(theme)}}}</style>'
-    result = _urls_to_html(
+    result = urls_to_html(
         'Site1: https://napari.org Site2: https://forum.image.sc', theme
     )
     assert 'href="https://napari.org"' in result
@@ -93,7 +93,7 @@ def test_urls_to_html_multiple_urls():
 def test_urls_to_html_escapes_around_urls():
     theme = 'dark'
     style = f'<style>a{{color:{_link_color(theme)}}}</style>'
-    result = _urls_to_html(
+    result = urls_to_html(
         'Use Ctrl+> then visit https://napari.org and see & more', theme
     )
     assert result == (
