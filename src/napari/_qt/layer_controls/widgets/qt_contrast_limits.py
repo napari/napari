@@ -106,24 +106,7 @@ class QContrastLimitsPopup(QtPopup):
         self._layout.setSpacing(6)
         self.frame.setLayout(self._layout)
 
-        # 1. Histogram + settings (Image layers only; Surface not yet supported)
-        self.histogram_content = None
-        self.histogram_widget = None
-        self.settings_widget = None
-        if isinstance(layer, Image):
-            self.histogram_content = QtHistogramContentWidget(
-                layer,
-                viewer=self._viewer,
-                parent=self,
-            )
-            self.histogram_widget = self.histogram_content.histogram_widget
-            self.settings_widget = self.histogram_content.settings_widget
-            self.histogram_content.dock_requested.connect(
-                self._on_dock_requested
-            )
-            self._layout.addWidget(self.histogram_content)
-
-        # 2. Contrast limits slider
+        # 1. Contrast limits slider
         self.slider = QLabeledDoubleRangeSlider(
             Qt.Orientation.Horizontal, parent
         )
@@ -150,6 +133,23 @@ class QContrastLimitsPopup(QtPopup):
         connect_setattr(
             self.slider.rangeChanged, layer, 'contrast_limits_range'
         )
+
+        # 2. Histogram + settings (Image layers only; Surface not yet supported)
+        self.histogram_content = None
+        self.histogram_widget = None
+        self.settings_widget = None
+        if isinstance(layer, Image):
+            self.histogram_content = QtHistogramContentWidget(
+                layer,
+                viewer=self._viewer,
+                parent=self,
+            )
+            self.histogram_widget = self.histogram_content.histogram_widget
+            self.settings_widget = self.histogram_content.settings_widget
+            self.histogram_content.dock_requested.connect(
+                self._on_dock_requested
+            )
+            self._layout.addWidget(self.histogram_content)
 
         # 3. Gamma slider
 
