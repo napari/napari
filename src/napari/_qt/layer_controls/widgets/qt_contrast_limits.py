@@ -259,9 +259,13 @@ class QContrastLimitsPopup(QtPopup):
         parent = self.parent()
         qt_viewer = None
         while parent is not None:
-            if isinstance(parent, QtViewer):
-                qt_viewer = parent
-                break
+            if hasattr(parent, 'add_dock_widget'):
+                try:
+                    if isinstance(parent, QtViewer):
+                        qt_viewer = parent
+                        break
+                except TypeError:
+                    pass
             parent = parent.parent()
 
         if qt_viewer is None:
@@ -524,7 +528,17 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
         self.show_clim_popup()
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
+        # Wrap the contrast limits slider with the histogram button in a row
+        clim_row = QWidget()
+        clim_layout = QHBoxLayout()
+        clim_layout.setContentsMargins(0, 0, 0, 0)
+        clim_layout.setSpacing(2)
+        clim_layout.addWidget(self.contrast_limits_slider)
+        if self.histogram_button is not None:
+            clim_layout.addWidget(self.histogram_button)
+        clim_row.setLayout(clim_layout)
+
         return [
             (self.auto_scale_bar_label, self.auto_scale_bar),
-            (self.contrast_limits_slider_label, self.contrast_limits_slider),
+            (self.contrast_limits_slider_label, clim_row),
         ]
