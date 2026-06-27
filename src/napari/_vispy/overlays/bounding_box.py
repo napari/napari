@@ -4,37 +4,21 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
-from napari import Viewer
 from napari._vispy.overlays.base import LayerOverlayMixin, VispySceneOverlay
 from napari._vispy.visuals.bounding_box import BoundingBox
-from napari.components.overlays import BoundingBoxOverlay
-from napari.layers._scalar_field import ScalarFieldBase
 
 if TYPE_CHECKING:
-    from vispy.scene import ViewBox
+    from napari.components.overlays import BoundingBoxOverlay
+    from napari.layers._scalar_field import ScalarFieldBase
 
 
 class VispyBoundingBoxOverlay(LayerOverlayMixin, VispySceneOverlay):
     overlay: BoundingBoxOverlay
     layer: ScalarFieldBase
+    node: BoundingBox
 
-    def __init__(
-        self,
-        *,
-        layer: ScalarFieldBase,
-        viewer: Viewer,
-        overlay: BoundingBoxOverlay,
-        parent: ViewBox | None = None,
-        **kwargs: Any,
-    ) -> None:
-        super().__init__(
-            node=BoundingBox(),
-            layer=layer,
-            viewer=viewer,
-            overlay=overlay,
-            parent=parent,
-            **kwargs,
-        )
+    def __init__(self, **kwargs: Any) -> None:
+        super().__init__(node=BoundingBox(), **kwargs)
         self.layer.events.set_data.connect(self._on_bounds_change)
         self.overlay.events.lines.connect(self._on_lines_change)
         self.overlay.events.line_thickness.connect(
@@ -58,7 +42,8 @@ class VispyBoundingBoxOverlay(LayerOverlayMixin, VispySceneOverlay):
             # for 3D multiscale layers, the lowest data level is displayed
             # and we need the augmented bounding box
             bounds = self.layer._display_bounding_box_at_level(
-                self.layer._slice_input.displayed, len(self.layer.data) - 1
+                self.layer._slice_input.displayed,
+                len(self.layer.data) - 1,  # type: ignore[arg-type]
             ) + np.array([[-0.5, 0.5]])
 
         if len(bounds) == 2:
