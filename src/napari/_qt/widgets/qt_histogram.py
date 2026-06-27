@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import numpy as np
+from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QVBoxLayout, QWidget
 from vispy.scene import SceneCanvas
 
@@ -160,9 +161,14 @@ class QtHistogramWidget(QWidget):
         )
         theme = get_theme(theme_name)
         self.canvas.bgcolor = theme.canvas.as_hex()
+        # Make the Qt widget background transparent so the parent
+        # background (themed) shows through around the vispy canvas.
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, False)
+        style = f'background-color: {theme.canvas.as_hex()};'
+        self.setStyleSheet(style)
         self.histogram_visual.set_style(
             bar_color=self._layer_bar_color(),
-            lut_color=self._theme_rgba(theme.highlight, 0.95),
+            lut_color=self._theme_rgba(theme.current, 0.95),
             axes_color=self._theme_rgba(theme.text, 0.7),
             text_color=self._theme_rgba(theme.text, 1.0),
         )
