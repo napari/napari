@@ -79,7 +79,7 @@ class HistogramModel(EventedModel):
     def __init__(
         self,
         layer: Image,
-        n_bins: int = 256,
+        n_bins: int | None = None,
         mode: Literal['canvas', 'full'] = 'canvas',
         log_scale: bool = False,
         enabled: bool = False,
@@ -90,8 +90,8 @@ class HistogramModel(EventedModel):
         ----------
         layer : Image
             The layer to compute histogram for.
-        n_bins : int, default: 256
-            Number of histogram bins.
+        n_bins : int, optional
+            Number of histogram bins. If None, auto-computed from dtype.
         mode : {'canvas', 'full'}, default: 'canvas'
             Whether to compute histogram from displayed data or full volume.
         log_scale : bool, default: False
@@ -99,6 +99,8 @@ class HistogramModel(EventedModel):
         enabled : bool, default: False
             Whether histogram responds to data-change events automatically.
         """
+        if n_bins is None:
+            n_bins = self._auto_bins_from_layer(layer)
         super().__init__(
             n_bins=n_bins, mode=mode, log_scale=log_scale, enabled=enabled
         )
@@ -120,6 +122,21 @@ class HistogramModel(EventedModel):
         # When enabled flips True and data is dirty, compute immediately so
         # any widget that just subscribed to bins/counts events gets a result.
         self.events.enabled.connect(self._on_enabled_change)
+
+    @property
+    def range(self) -> tuple[float, float]:
+        """Range of histogram bin edges.
+
+        Returns
+        -------
+        tuple[float, float]
+            (min, max) of the current bin edges.
+        """
+        if self._dirty:
+            self.compute()
+        if len(self._bins) < 2:
+            return (0.0, 1.0)
+        return (float(self._bins[0]), float(self._bins[-1]))
 
     @property
     def bins(self) -> np.ndarray:
@@ -147,6 +164,31 @@ class HistogramModel(EventedModel):
             self.compute()
         return self._counts
 
+    @staticmethod
+    def _auto_bins_from_layer(layer: Image) -> int:
+        """Compute optimal bin count from layer dtype.
+
+        Uses 256 bins for uint8 data (matching the full value range)
+        and 256 bins for all other types as a reasonable default.
+
+        Parameters
+        ----------
+        layer : Image
+            The image layer to compute bin count for.
+
+        Returns
+        -------
+        int
+            Recommended number of bins.
+        """
+        import numpy as np
+
+        dtype = layer.dtype if hasattr(layer, 'dtype') else np.float32
+        if np.issubdtype(np.dtype(dtype), np.unsignedinteger):
+            info = np.iinfo(np.dtype(dtype))
+            return min(int(info.max) + 1, 256)
+        return 256
+
     def compute(self) -> None:
         """Compute histogram from layer data.
 
@@ -164,11 +206,7 @@ class HistogramModel(EventedModel):
             return
 
         # For RGB(A) images convert to luminance so the histogram represents
-        # perceived brightness. For napari rgb=True images the channel axis is
-        # always the last axis regardless of the number of leading dimensions
-        # (e.g. TxHxWxC), so `data[..., :3]` is the correct slice.
-        # There is no dedicated napari utility for this; calc_data_range uses
-        # the same last-axis convention (via `offset = 2 + int(rgb)`).
+        # perceived brightness.
         if self._layer.rgb:
             data = self._rgb_to_luminance(data)
 
@@ -182,6 +220,38 @@ class HistogramModel(EventedModel):
             range_min = float(np.nanmin(data))
             range_max = float(np.nanmax(data))
 
+        bins, counts = self._calc_histogram(data, range_min, range_max)
+        self._bins = bins
+        self._counts = counts
+        self._dirty = False
+        self.events.bins()
+        self.events.counts()
+
+    def _calc_histogram(
+        self,
+        data: np.ndarray,
+        range_min: float,
+        range_max: float,
+    ) -> tuple[np.ndarray, np.ndarray]:
+        """Compute bin edges and counts from data.
+
+        Separates the pure numpy histogram computation from data fetching
+        and preprocessing.
+
+        Parameters
+        ----------
+        data : np.ndarray
+            Preprocessed 1D data array.
+        range_min : float
+            Minimum value for histogram range.
+        range_max : float
+            Maximum value for histogram range.
+
+        Returns
+        -------
+        tuple[np.ndarray, np.ndarray]
+            (bin_edges, counts) — bin edges as float32, counts as float32.
+        """
         # Handle edge case where min == max
         if range_min == range_max:
             range_min = float(range_min) - 0.5
@@ -193,16 +263,14 @@ class HistogramModel(EventedModel):
             range=(float(range_min), float(range_max)),
         )
 
-        self._bins = bins.astype(np.float32)
+        bin_edges = bins.astype(np.float32)
 
         if self.log_scale:
-            self._counts = np.log10(counts + 1).astype(np.float32)
+            hist_counts = np.log10(counts + 1).astype(np.float32)
         else:
-            self._counts = counts.astype(np.float32)
+            hist_counts = counts.astype(np.float32)
 
-        self._dirty = False
-        self.events.bins()
-        self.events.counts()
+        return bin_edges, hist_counts
 
     def _rgb_to_luminance(self, data: np.ndarray) -> np.ndarray:
         """Convert RGB(A) data to perceptual luminance.
@@ -335,8 +403,17 @@ class HistogramModel(EventedModel):
             self.compute()
 
     def reset(self) -> None:
-        """Reset histogram to default settings."""
+        """Reset histogram to default settings and disable.
+
+        Clears cached data, resets all parameters to defaults,
+        and sets enabled=False so no computation occurs until
+        explicitly requested.
+        """
         self.n_bins = 256
         self.log_scale = False
         self.mode = 'canvas'
-        self.compute()
+        self._bins = np.array([0.0, 1.0])
+        self._counts = np.array([0.0])
+        self._dirty = True
+        # Disable last so event handlers see clean state.
+        self.enabled = False
