@@ -701,7 +701,6 @@ module = [
     'napari._qt.widgets.qt_highlight_preview',
     'napari._qt.widgets.qt_keyboard_settings',
     'napari._qt.widgets.qt_logger',
-    'napari._qt.widgets.qt_message_popup',
     'napari._qt.widgets.qt_mode_buttons',
     'napari._qt.widgets.qt_plugin_sorter',
     'napari._qt.widgets.qt_progress_bar',
