@@ -1,6 +1,10 @@
+import enum
 import weakref
+from collections.abc import Callable
 
 from qtpy.QtWidgets import QPushButton, QRadioButton
+
+import napari.layers
 
 
 class QtModeRadioButton(QRadioButton):
@@ -29,7 +33,13 @@ class QtModeRadioButton(QRadioButton):
     """
 
     def __init__(
-        self, layer, button_name, mode, *, tooltip=None, checked=False
+        self,
+        layer: napari.layers.Layer,
+        button_name: str,
+        mode: enum.Enum | None,
+        *,
+        tooltip: str | None = None,
+        checked: bool = False,
     ) -> None:
         super().__init__()
 
@@ -43,7 +53,7 @@ class QtModeRadioButton(QRadioButton):
         if mode is not None:
             self.toggled.connect(self._set_mode)
 
-    def _set_mode(self, mode_selected):
+    def _set_mode(self, mode_selected: bool) -> None:
         """Toggle the mode associated with the layer.
 
         Parameters
@@ -55,9 +65,10 @@ class QtModeRadioButton(QRadioButton):
         if layer is None:
             return
 
-        with layer.events.mode.blocker(self._set_mode):
+        with layer.events.mode.blocker(self._set_mode):  # type: ignore[arg-type]
             if mode_selected:
-                layer.mode = self.mode
+                assert self.mode is not None
+                layer.mode = self.mode.value
 
 
 class QtModePushButton(QPushButton):
@@ -81,7 +92,14 @@ class QtModePushButton(QPushButton):
         The layer instance that this button controls.
     """
 
-    def __init__(self, layer, button_name, *, slot=None, tooltip=None) -> None:
+    def __init__(
+        self,
+        layer: napari.layers.Layer,
+        button_name: str,
+        *,
+        slot: Callable[[], None] | None = None,
+        tooltip: str | None = None,
+    ) -> None:
         super().__init__()
 
         self.layer = layer
