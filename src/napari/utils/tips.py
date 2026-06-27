@@ -30,8 +30,8 @@ NAPARI_TIPS: Final[tuple[str, ...]] = (
     'To zoom in on a specific area, hold {Alt} and draw a rectangle around it.',
     'Hold {napari:hold_for_pan_zoom} to pan/zoom in any mode (e.g. while painting).',
     'While painting labels, hold {Alt} and move the cursor left/right to quickly decrease/increase the brush size.',
-    'If you have questions, you can reach out on our community chat at napari.zulipchat.com!',
-    'The community at forum.image.sc is full of imaging experts sharing knowledge and tools for napari and much, much more!',
+    'If you have questions, you can reach out on our community chat at https://napari.zulipchat.com!',
+    'The community at https://forum.image.sc is full of imaging experts sharing knowledge and tools for napari and much, much more!',
 )
 
 
