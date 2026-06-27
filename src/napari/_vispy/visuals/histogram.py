@@ -374,3 +374,12 @@ class HistogramVisual(Compound):
             axes_color=axes_color,
             text_color=text_color,
         )
+
+    def destroy(self) -> None:
+        """Clean up visual resources to avoid vispy resource leaks.
+
+        Should be called when the visual is no longer needed.
+        """
+        for child in self._subvisuals:
+            if hasattr(child, 'parent') and child.parent is not None:
+                child.parent = None

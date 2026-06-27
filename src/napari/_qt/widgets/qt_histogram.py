@@ -211,4 +211,5 @@ class QtHistogramWidget(QWidget):
         if self._viewer is not None:
             disconnect_events(self._viewer.events, self)
 
+        self.histogram_visual.destroy()
         self.canvas.close()
