@@ -23,6 +23,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
 )
 from napari._qt.utils import qt_signals_blocked
 from napari._qt.widgets.qt_histogram_content import QtHistogramContentWidget
+from napari._qt.widgets.qt_mode_buttons import QtModePushButton
 from napari.layers import Image, Surface
 from napari.utils._dtype import normalize_dtype
 from napari.utils.events.event_utils import connect_no_arg, connect_setattr
@@ -365,6 +366,24 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
             trans._('contrast limits:')
         )
 
+        # Histogram toggle button
+        self.histogram_button = None
+        if isinstance(layer, Image):
+            self.histogram_button = QtModePushButton(
+                self._layer,
+                'histogram',
+                tooltip=trans._(
+                    'Left click to toggle histogram in layer controls.\n'
+                    'Right click to open histogram popup.'
+                ),
+            )
+            self.histogram_button.setCheckable(True)
+            self.histogram_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+            self.histogram_button.toggled.connect(
+                self._on_histogram_button_toggled
+            )
+            self.histogram_button.installEventFilter(self)
+
     def show_clim_popup(self):
         self.clim_popup = QContrastLimitsPopup(
             self._layer,
@@ -400,6 +419,70 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
                 self.clim_popup.slider.setRange(
                     *self._layer.contrast_limits_range
                 )
+
+    def eventFilter(self, obj, event):
+        """Handle right-click on histogram button to show popup."""
+        if (
+            self.histogram_button is not None
+            and obj == self.histogram_button
+            and event.type() == event.Type.MouseButtonPress
+            and event.button() == Qt.MouseButton.RightButton
+        ):
+            self.histogram_button.setDown(False)
+            self.show_histogram_popup()
+            return True
+        return super().eventFilter(obj, event)
+
+    def _on_histogram_button_toggled(self, visible: bool) -> None:
+        """Handle left-click on histogram button to toggle histogram widget."""
+        if not isinstance(self._layer, Image):
+            return
+
+        parent = self.parent()
+        histogram_control = getattr(parent, '_histogram_control', None)
+        if histogram_control is None:
+            return
+
+        histogram_control.ensure_content()
+
+        # Get the layout (QFormLayout)
+        layout = parent.layout()
+
+        if not visible:
+            # Remove histogram widget from layout
+            layout.removeWidget(histogram_control.content_widget)
+            histogram_control.content_widget.hide()
+
+            # Disable histogram computation
+            self._layer.histogram.enabled = False
+        else:
+            # Add histogram widget to layout (after contrast limits row)
+            clim_row = -1
+            for row in range(layout.rowCount()):
+                item = layout.itemAt(row, layout.ItemRole.FieldRole)
+                if item and item.widget() is self.contrast_limits_slider:
+                    clim_row = row
+                    break
+
+            if clim_row >= 0:
+                # Span the histogram across the full form width.
+                layout.insertRow(
+                    clim_row + 1, histogram_control.content_widget
+                )
+                histogram_control.content_widget.show()
+                # Enable histogram computation; _on_enabled_change triggers
+                # an immediate compute if there is pending dirty data.
+                self._layer.histogram.enabled = True
+
+    def show_histogram_popup(self):
+        """Show the histogram popup widget."""
+        if not isinstance(self._layer, Image):
+            return
+
+        # The popup's showEvent manages histogram enable/disable; do not
+        # pre-enable here, or the popup cannot tell whether it was the one
+        # that enabled it and will skip the matching disable on close.
+        self.show_clim_popup()
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
         return [
