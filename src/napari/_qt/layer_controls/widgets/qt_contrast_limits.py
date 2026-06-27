@@ -118,6 +118,9 @@ class QContrastLimitsPopup(QtPopup):
             )
             self.histogram_widget = self.histogram_content.histogram_widget
             self.settings_widget = self.histogram_content.settings_widget
+            self.histogram_content.dock_requested.connect(
+                self._on_dock_requested
+            )
             self._layout.addWidget(self.histogram_content)
 
         # 2. Contrast limits slider
@@ -244,6 +247,42 @@ class QContrastLimitsPopup(QtPopup):
             # hideEvent also fires) is a no-op and avoids a redundant event.
             self._histogram_was_enabled = True
             self._layer.histogram.enabled = False
+
+    def _on_dock_requested(self) -> None:
+        """Pop out histogram to a persistent dock widget."""
+        # Attempt to find the QtViewer by walking up the widget hierarchy.
+        from napari._qt.qt_viewer import QtViewer
+        from napari._qt.widgets.qt_viewer_dock_widget import (
+            QtViewerDockWidget,
+        )
+
+        parent = self.parent()
+        qt_viewer = None
+        while parent is not None:
+            if isinstance(parent, QtViewer):
+                qt_viewer = parent
+                break
+            parent = parent.parent()
+
+        if qt_viewer is None:
+            return
+
+        # Create a new content widget for the dock
+        from napari._qt.widgets.qt_histogram_content import (
+            QtHistogramContentWidget,
+        )
+
+        dock_content = QtHistogramContentWidget(
+            self._layer,
+            viewer=self._viewer,
+        )
+        dock_widget = QtViewerDockWidget(
+            qt_viewer,
+            dock_content,
+            name='Histogram',
+            area='bottom',
+        )
+        qt_viewer.add_dock_widget(dock_widget)
 
     def _cleanup(self) -> None:
         """Disconnect event handlers and clean up widgets."""
