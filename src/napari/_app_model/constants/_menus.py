@@ -33,6 +33,7 @@ class MenuId(StrEnum):
     LAYERS_ANNOTATE = 'napari/layers/annotate'
 
     LAYERS_DATA = 'napari/layers/data'
+    LAYERS_METADATA = 'napari/layers/metadata'
     LAYERS_LAYER_TYPE = 'napari/layers/layer_type'
 
     LAYERS_TRANSFORM = 'napari/layers/transform'
@@ -74,6 +75,7 @@ class MenuId(StrEnum):
             cls.LAYERS_VISUALIZE,
             cls.LAYERS_ANNOTATE,
             cls.LAYERS_DATA,
+            cls.LAYERS_METADATA,
             cls.LAYERS_LAYER_TYPE,
             cls.LAYERS_FILTER,
             cls.LAYERS_TRANSFORM,

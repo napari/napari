@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from app_model.types import Action
+from app_model.types import Action, SubmenuItem
 
 from napari._app_model import get_app_model
 from napari._app_model.constants import MenuId
@@ -66,6 +66,22 @@ def test_update_menu_state_context(make_napari_viewer):
     viewer.window._update_file_menu_state()
     assert dummy_action.isVisible()
     assert dummy_action.isEnabled()
+
+
+def test_layers_menu_has_metadata_submenu(make_napari_viewer):
+    app = get_app_model()
+    make_napari_viewer()
+    layers_menu = app.menus.get_menu(MenuId.MENUBAR_LAYERS)
+    metadata_submenus = [
+        item
+        for item in layers_menu
+        if isinstance(item, SubmenuItem)
+        and item.submenu == MenuId.LAYERS_METADATA
+    ]
+
+    assert len(metadata_submenus) == 1
+    assert metadata_submenus[0].title == 'Metadata'
+    assert app.menus.get_menu(MenuId.LAYERS_METADATA)
 
 
 @pytest.mark.parametrize(
