@@ -1,5 +1,6 @@
 from random import sample
 
+from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QHBoxLayout,
     QLabel,
@@ -8,7 +9,12 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from napari.utils.tips import NAPARI_TIPS, format_tip
+from napari.settings import get_settings
+from napari.utils.tips import (
+    NAPARI_TIPS,
+    _urls_to_html,
+    format_tip,
+)
 
 
 class TipsWidget(QWidget):
@@ -30,6 +36,8 @@ class TipsWidget(QWidget):
 
         self.tip = QLabel()
         self.tip.setWordWrap(True)
+        self.tip.setTextFormat(Qt.TextFormat.RichText)
+        self.tip.setOpenExternalLinks(True)
         layout.addWidget(self.tip)
 
         self.buttons = QHBoxLayout()
@@ -42,16 +50,22 @@ class TipsWidget(QWidget):
         self.prev.pressed.connect(self.prev_tip)
         self.next.pressed.connect(self.next_tip)
 
+        get_settings().appearance.events.theme.connect(self._render_tip)
+
         self.next_tip()
+
+    def _render_tip(self, _event=None) -> None:
+        tip = self.tips[self.current_tip]
+        tip_text = format_tip(tip)
+        tip_html = _urls_to_html(tip_text)
+        self.tip.setText(tip_html)
 
     def prev_tip(self) -> None:
         self.current_tip -= 1
         self.current_tip %= len(self.tips)
-        tip = self.tips[self.current_tip]
-        self.tip.setText(format_tip(tip))
+        self._render_tip()
 
     def next_tip(self) -> None:
         self.current_tip += 1
         self.current_tip %= len(self.tips)
-        tip = self.tips[self.current_tip]
-        self.tip.setText(format_tip(tip))
+        self._render_tip()
