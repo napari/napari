@@ -79,7 +79,7 @@ class HistogramModel(EventedModel):
     def __init__(
         self,
         layer: Image,
-        n_bins: int | None = None,
+        n_bins: int = 256,
         mode: Literal['canvas', 'full'] = 'canvas',
         log_scale: bool = False,
         enabled: bool = False,
@@ -90,8 +90,8 @@ class HistogramModel(EventedModel):
         ----------
         layer : Image
             The layer to compute histogram for.
-        n_bins : int, optional
-            Number of histogram bins. If None, auto-computed from dtype.
+        n_bins : int, default: 256
+            Number of histogram bins.
         mode : {'canvas', 'full'}, default: 'canvas'
             Whether to compute histogram from displayed data or full volume.
         log_scale : bool, default: False
@@ -99,8 +99,6 @@ class HistogramModel(EventedModel):
         enabled : bool, default: False
             Whether histogram responds to data-change events automatically.
         """
-        if n_bins is None:
-            n_bins = self._auto_bins_from_layer(layer)
         super().__init__(
             n_bins=n_bins, mode=mode, log_scale=log_scale, enabled=enabled
         )
@@ -163,34 +161,6 @@ class HistogramModel(EventedModel):
         if self._dirty:
             self.compute()
         return self._counts
-
-    @staticmethod
-    def _auto_bins_from_layer(layer: Image) -> int:
-        """Compute a reasonable bin count from layer dtype and data.
-
-        Uses 256 bins as a universal default — enough to resolve meaningful
-        contrast patterns without excessive memory use.  For uint8 data this
-        exactly covers the full 0-255 range (one bin per value).  For wider
-        types (uint16, float32, etc.) 256 bins provides a coarse-grained
-        histogram that works well for interactive contrast adjustment.
-
-        Parameters
-        ----------
-        layer : Image
-            The image layer to compute bin count for.
-
-        Returns
-        -------
-        int
-            Recommended number of bins (always 256 in this implementation).
-        """
-        import numpy as np
-
-        dtype = layer.dtype if hasattr(layer, 'dtype') else np.float32
-        if np.issubdtype(np.dtype(dtype), np.unsignedinteger):
-            info = np.iinfo(np.dtype(dtype))
-            return min(int(info.max) + 1, 256)
-        return 256
 
     def compute(self) -> None:
         """Compute histogram from layer data.

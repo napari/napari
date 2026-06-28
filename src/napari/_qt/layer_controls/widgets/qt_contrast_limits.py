@@ -366,7 +366,9 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
             trans._('contrast limits:')
         )
 
-        # Histogram toggle button
+        # Histogram toggle button — added directly to the slider's layout
+        # (same approach as the gamma slider) to avoid background mismatch
+        # from a wrapper widget.
         self.histogram_button = None
         if isinstance(layer, Image):
             self.histogram_button = QtModePushButton(
@@ -377,12 +379,16 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
                     'Right click to open histogram popup.'
                 ),
             )
+            self.histogram_button.setParent(self.contrast_limits_slider)
             self.histogram_button.setCheckable(True)
             self.histogram_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
             self.histogram_button.toggled.connect(
                 self._on_histogram_button_toggled
             )
             self.histogram_button.installEventFilter(self)
+            self.contrast_limits_slider.layout().addWidget(
+                self.histogram_button
+            )
 
     def show_clim_popup(self):
         self.clim_popup = QContrastLimitsPopup(
@@ -456,20 +462,13 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
             # Disable histogram computation
             self._layer.histogram.enabled = False
         else:
-            # Add histogram widget to layout (after contrast limits row).
-            # The slider is now wrapped in a QWidget, so search for the
-            # wrapper that contains the slider.
+            # Add histogram widget to layout (after contrast limits row)
             clim_row = -1
             for row in range(layout.rowCount()):
                 item = layout.itemAt(row, layout.ItemRole.FieldRole)
-                if item and item.widget() is not None:
-                    # Check if this widget's layout contains our slider
-                    w = item.widget()
-                    if w.layout() is not None:
-                        idx = w.layout().indexOf(self.contrast_limits_slider)
-                        if idx >= 0:
-                            clim_row = row
-                            break
+                if item and item.widget() is self.contrast_limits_slider:
+                    clim_row = row
+                    break
 
             if clim_row >= 0:
                 # Span the histogram across the full form width.
@@ -492,18 +491,7 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
         self.show_clim_popup()
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
-        # Wrap the contrast limits slider with the histogram button in a row
-        clim_row = QWidget()
-        clim_row.setStyleSheet('')  # inherit parent background
-        clim_layout = QHBoxLayout()
-        clim_layout.setContentsMargins(0, 0, 0, 0)
-        clim_layout.setSpacing(2)
-        clim_layout.addWidget(self.contrast_limits_slider)
-        if self.histogram_button is not None:
-            clim_layout.addWidget(self.histogram_button)
-        clim_row.setLayout(clim_layout)
-
         return [
             (self.auto_scale_bar_label, self.auto_scale_bar),
-            (self.contrast_limits_slider_label, clim_row),
+            (self.contrast_limits_slider_label, self.contrast_limits_slider),
         ]
