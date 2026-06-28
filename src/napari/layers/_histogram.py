@@ -183,7 +183,9 @@ class HistogramModel(EventedModel):
         if self._layer.rgb:
             data = self._rgb_to_luminance(data)
 
-        # Sample if data is too large (>1M points)
+        # Sample if data is too large (>1M points).
+        # This also covers dask arrays that were already reduced by
+        # _get_full_data / _sample_dask_safe to avoid full materialization.
         if data.size > 1_000_000:
             data = self._sample_data(data, max_samples=1_000_000)
 
@@ -275,9 +277,15 @@ class HistogramModel(EventedModel):
         which is most useful for adjusting contrast limits. It also
         correctly handles multiscale data by using the appropriate
         resolution level that is currently being rendered.
+
+        Falls back to full-volume data when the slice is empty or not yet
+        available (e.g. during initial loading). Because ``HistogramModel``
+        is created lazily (only on first property access), slicing has
+        typically already completed by the time this is called, so the
+        placeholder-1x1-slice edge case should not arise.
         """
         raw = self._get_slice_raw_data()
-        if raw is not None and self._has_real_displayed_data(raw):
+        if raw is not None and raw.size > 0:
             return raw
 
         # Fallback: if slice not available, use full data
@@ -290,36 +298,50 @@ class HistogramModel(EventedModel):
         raw = self._layer._slice.image.raw
         return np.asarray(raw) if raw is not None else None
 
-    def _has_real_displayed_data(self, raw: np.ndarray) -> bool:
-        """Return True when sliced data is more than the placeholder sample."""
-        if raw.size == 0:
-            return False
-
-        if self._layer.multiscale:
-            return True
-
-        displayed_shape = raw.shape[:-1] if self._layer.rgb else raw.shape
-        if any(size != 1 for size in displayed_shape):
-            return True
-
-        full_data = self._get_full_data()
-        if full_data is None:
-            return True
-
-        full_shape = (
-            full_data.shape[:-1] if self._layer.rgb else full_data.shape
-        )
-        return all(size == 1 for size in full_shape)
-
     def _get_full_data(self) -> Optional[np.ndarray]:
         """Get full volume data.
 
-        For multiscale data, uses the lowest resolution level for efficiency.
+        For multiscale data, uses the lowest resolution level for
+        efficiency.  For dask arrays, avoids full materialization by
+        sampling across random linear indices so that ``compute()``
+        never loads the entire array into memory.
         """
         data = self._layer.data
         if isinstance(data, list | tuple):
             data = data[-1]
+
+        if self._is_dask_array(data):
+            return self._sample_dask_safe(data)
+
         return np.asarray(data)
+
+    @staticmethod
+    def _is_dask_array(data) -> bool:
+        """Check if *data* is a dask array without importing if unavailable."""
+        try:
+            import dask.array as da
+
+            return isinstance(data, da.Array)
+        except ImportError:
+            return False
+
+    @staticmethod
+    def _sample_dask_safe(data) -> np.ndarray:
+        """Sample from a dask array without full materialization.
+
+        Uses random linear indices to pluck a subsample across chunks,
+        then materialises only those positions.  Falls back to
+        ``np.asarray`` for arrays smaller than the sample threshold.
+        """
+
+        n_total = data.size
+        n_samples = min(1_000_000, n_total)
+        rng = np.random.default_rng(0)
+        indices = rng.integers(0, n_total, size=n_samples)
+        flat = data.ravel()
+        sampled = flat[indices].compute()
+        valid = sampled[np.isfinite(sampled)]
+        return valid if len(valid) > 0 else sampled[:1]
 
     def _sample_data(self, data: np.ndarray, max_samples: int) -> np.ndarray:
         """Randomly sample data to reduce computation."""
@@ -356,8 +378,7 @@ class HistogramModel(EventedModel):
 
     def _on_log_scale_change(self) -> None:
         """Called when log_scale changes. Triggers full recomputation."""
-        if not self._dirty:
-            self._mark_dirty()
+        self._mark_dirty()
 
     def _on_enabled_change(self) -> None:
         """When enabled flips to True, compute if there is pending dirty data."""

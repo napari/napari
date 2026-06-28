@@ -203,6 +203,11 @@ class QtHistogramWidget(QWidget):
         finally:
             self._updating = False
 
+    def closeEvent(self, event) -> None:
+        """Clean up on close to prevent event-listener leaks."""
+        self.cleanup()
+        super().closeEvent(event)
+
     def cleanup(self) -> None:
         """Disconnect event handlers and clean up resources."""
         disconnect_events(self._histogram.events, self)
