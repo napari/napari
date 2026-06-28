@@ -2734,6 +2734,7 @@ def test_fixed_axis_out_of_bounds_raises(method, oob_args):
     ('method', 'good_args'),
     [
         ('paint', (1, 5, 5)),
+        ('fill', (1, 5, 5)),
         ('paint_polygon', [[1, 1, 1], [1, 1, 8], [1, 8, 8]]),
     ],
 )

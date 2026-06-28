@@ -1165,9 +1165,10 @@ class Labels(ScalarFieldBase):
             The list of element to which to append the loaded element. In the
             case of an undo operation, this is the redo queue, and vice versa.
         undoing : bool
-            Whether we are undoing (default) or redoing. In the case of
-            redoing, we apply the "after change" element of a history element
-            (the third element of the history "atom").
+            Whether we are undoing (default) or redoing. When redoing, each
+            atom is replayed forwards, applying its "after change" value
+            (``new_value`` for a ``_MaskedPaintAtom``, or the third element
+            of the legacy 3-tuple).
 
         See Also
         --------
@@ -1759,15 +1760,7 @@ class Labels(ScalarFieldBase):
             return updated_slice
 
         contour_offset = max(1, int(self.contour))
-        return tuple(
-            slice(
-                max(0, axis_slice.start - contour_offset),
-                min(axis_size, axis_slice.stop + contour_offset),
-            )
-            for axis_slice, axis_size in zip(
-                updated_slice, self.data.shape, strict=True
-            )
-        )
+        return expand_slice(updated_slice, self.data.shape, contour_offset)
 
     def _accumulate_updated_slice(
         self, updated_slice: tuple[slice, ...]
