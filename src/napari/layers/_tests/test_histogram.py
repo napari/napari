@@ -83,6 +83,17 @@ class TestEnableDisable:
         assert img.histogram.n_bins == 256
         assert not img.histogram.log_scale
 
+    def test_reset_then_re_enable_computes(self):
+        """Reset followed by re-enable should produce fresh counts."""
+        img = _image(np.random.rand(10, 10))
+        img.histogram.enabled = True
+        _ = img.histogram.counts  # trigger initial compute
+        img.histogram.reset()
+        img.histogram.enabled = True
+        assert img.histogram._dirty is False
+        counts = img.histogram.counts
+        assert len(counts) == 256
+
 
 class TestRangeProperty:
     """Test the range property."""
@@ -173,12 +184,13 @@ class TestDataTypes:
         assert len(counts) > 0
 
     def test_empty_data(self):
-        """A single-point valid layer — histogram should handle gracefully."""
+        """A single-point (1x1) layer — histogram should not crash."""
         img = _image(np.zeros((1, 1), dtype=np.float32))
         img.histogram.enabled = True
-        # Should not crash
-        _ = img.histogram.bins
-        _ = img.histogram.counts
+        bins = img.histogram.bins
+        counts = img.histogram.counts
+        assert len(bins) >= 2
+        assert len(counts) >= 1
 
     def test_with_nan(self):
         data = np.random.rand(20, 20)
@@ -205,11 +217,9 @@ class TestCustomNBins:
         img = _image(np.random.rand(20, 20), colormap='gray')
         img.histogram.enabled = True
         img.histogram.n_bins = 128
-        # Changing n_bins triggers recomputation on next access
+        # Changing n_bins triggers recomputation via _on_params_change.
         counts = img.histogram.counts
-        # n_bins change may or may not have taken effect depending on
-        # whether _mark_dirty was called; check the length
-        assert len(counts) > 0
+        assert len(counts) == 128
 
     def test_large_bins(self):
         img = _image(np.random.rand(20, 20))
@@ -352,28 +362,6 @@ class TestLargeData:
 
 class TestDask:
     """Test histogram with dask arrays (no full materialization)."""
-
-    def test_histogram_model_detects_dask_array(self):
-        dask = pytest.importorskip('dask.array')
-        data = dask.from_array(
-            np.random.rand(20, 20).astype(np.float32), chunks=10
-        )
-        img = _image(data)
-        assert img.histogram._is_dask_array(data)
-
-    def test_histogram_model_does_not_detect_numpy(self):
-        data = np.random.rand(20, 20).astype(np.float32)
-        img = _image(data)
-        assert not img.histogram._is_dask_array(data)
-
-    def test_does_not_detect_multiscale_as_dask(self):
-        data = [
-            np.random.rand(100, 100).astype(np.float32),
-            np.random.rand(50, 50).astype(np.float32),
-        ]
-        img = _image(data, multiscale=True)
-        assert not img.histogram._is_dask_array(data)
-        assert not img.histogram._is_dask_array(data[0])
 
     def test_sample_dask_safe_returns_sample(self):
         dask = pytest.importorskip('dask.array')

@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, Literal, Optional
 import numpy as np
 from pydantic import PrivateAttr
 
+from napari.utils._dask_utils import _is_dask_data
 from napari.utils.events import EventedModel
 
 if TYPE_CHECKING:
@@ -227,10 +228,21 @@ class HistogramModel(EventedModel):
         tuple[np.ndarray, np.ndarray]
             (bin_edges, counts) — bin edges as float32, counts as float32.
         """
-        # Handle edge case where min == max
+        # Handle edge case where min == max (constant data).
+        # For integer types, ±0.5 places bin edges at half-integer
+        # boundaries (e.g. uint8 value 42 → bin [41.5, 42.5]).
+        # For float types, expand by 1 % of the value (min 0.5) to
+        # keep the bin width proportional to the data magnitude.
         if range_min == range_max:
-            range_min = float(range_min) - 0.5
-            range_max = float(range_max) + 0.5
+            if np.issubdtype(self._layer.dtype, np.integer):
+                range_min = float(range_min) - 0.5
+                range_max = float(range_max) + 0.5
+            else:
+                delta = (
+                    max(0.5, abs(range_min) * 0.01) if range_min != 0 else 0.5
+                )
+                range_min = float(range_min) - delta
+                range_max = float(range_max) + delta
 
         counts, bins = np.histogram(
             data.ravel(),
@@ -310,30 +322,18 @@ class HistogramModel(EventedModel):
         if isinstance(data, list | tuple):
             data = data[-1]
 
-        if self._is_dask_array(data):
+        if _is_dask_data(data):
             return self._sample_dask_safe(data)
 
         return np.asarray(data)
-
-    @staticmethod
-    def _is_dask_array(data) -> bool:
-        """Check if *data* is a dask array without importing if unavailable."""
-        try:
-            import dask.array as da
-
-            return isinstance(data, da.Array)
-        except ImportError:
-            return False
 
     @staticmethod
     def _sample_dask_safe(data) -> np.ndarray:
         """Sample from a dask array without full materialization.
 
         Uses random linear indices to pluck a subsample across chunks,
-        then materialises only those positions.  Falls back to
-        ``np.asarray`` for arrays smaller than the sample threshold.
+        then materialises only those positions.
         """
-
         n_total = data.size
         n_samples = min(1_000_000, n_total)
         rng = np.random.default_rng(0)
