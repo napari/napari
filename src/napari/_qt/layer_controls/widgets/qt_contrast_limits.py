@@ -494,6 +494,7 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
         # Wrap the contrast limits slider with the histogram button in a row
         clim_row = QWidget()
+        clim_row.setStyleSheet('')  # inherit parent background
         clim_layout = QHBoxLayout()
         clim_layout.setContentsMargins(0, 0, 0, 0)
         clim_layout.setSpacing(2)

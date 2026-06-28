@@ -166,10 +166,13 @@ class HistogramModel(EventedModel):
 
     @staticmethod
     def _auto_bins_from_layer(layer: Image) -> int:
-        """Compute optimal bin count from layer dtype.
+        """Compute a reasonable bin count from layer dtype and data.
 
-        Uses 256 bins for uint8 data (matching the full value range)
-        and 256 bins for all other types as a reasonable default.
+        Uses 256 bins as a universal default — enough to resolve meaningful
+        contrast patterns without excessive memory use.  For uint8 data this
+        exactly covers the full 0-255 range (one bin per value).  For wider
+        types (uint16, float32, etc.) 256 bins provides a coarse-grained
+        histogram that works well for interactive contrast adjustment.
 
         Parameters
         ----------
@@ -179,7 +182,7 @@ class HistogramModel(EventedModel):
         Returns
         -------
         int
-            Recommended number of bins.
+            Recommended number of bins (always 256 in this implementation).
         """
         import numpy as np
 
