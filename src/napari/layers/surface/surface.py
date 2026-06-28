@@ -305,7 +305,9 @@ class Surface(IntensityVisualizationMixin, Layer):
         self._faces = data[1]
         if len(data) == 3:
             self.features['vertex_values'] = data[2]
-            vertex_colors = 'vertex_values'
+            # for default vertex_colors value, use corresponding stored feature column
+            if isinstance(vertex_colors, str) and vertex_colors == 'white':
+                vertex_colors = 'vertex_values'
             self.feature_defaults = self.features
         else:
             self.features['vertex_values'] = np.ones(len(self._vertices))
@@ -462,7 +464,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         (K0, ..., KL, N, C).
         """
         if vertex_colors is not None and not isinstance(
-            vertex_colors, np.ndarray
+            vertex_colors, np.ndarray | str
         ):
             msg = (
                 f'texture should be None or ndarray; got {type(vertex_colors)}'
@@ -471,6 +473,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         self._vertex._set_color(
             color=vertex_colors,
             n_colors=len(self._vertices),
+            properties=self._feature_table.properties(),
             current_properties=self._feature_table.currents(),
         )
         self._update_dims()
@@ -709,7 +712,7 @@ class Surface(IntensityVisualizationMixin, Layer):
                 'normals': self.normals.model_dump(),
                 'texture': self.texture,
                 'texcoords': self.texcoords,
-                'vertex_colors': self.vertex_colors,
+                'vertex_colors': self.vertex_colors or 'white',
             }
         )
         return state
