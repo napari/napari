@@ -348,3 +348,66 @@ class TestLargeData:
         counts = img.histogram.counts
         assert counts is not None
         assert len(counts) == 256
+
+
+class TestDask:
+    """Test histogram with dask arrays (no full materialization)."""
+
+    def test_histogram_model_detects_dask_array(self):
+        dask = pytest.importorskip('dask.array')
+        data = dask.from_array(
+            np.random.rand(20, 20).astype(np.float32), chunks=10
+        )
+        img = _image(data)
+        assert img.histogram._is_dask_array(data)
+
+    def test_histogram_model_does_not_detect_numpy(self):
+        data = np.random.rand(20, 20).astype(np.float32)
+        img = _image(data)
+        assert not img.histogram._is_dask_array(data)
+
+    def test_does_not_detect_multiscale_as_dask(self):
+        data = [
+            np.random.rand(100, 100).astype(np.float32),
+            np.random.rand(50, 50).astype(np.float32),
+        ]
+        img = _image(data, multiscale=True)
+        assert not img.histogram._is_dask_array(data)
+        assert not img.histogram._is_dask_array(data[0])
+
+    def test_sample_dask_safe_returns_sample(self):
+        dask = pytest.importorskip('dask.array')
+        data = dask.from_array(
+            np.random.rand(500, 500).astype(np.float32), chunks=100
+        )
+        img = _image(data)
+        sampled = img.histogram._sample_dask_safe(data)
+        assert isinstance(sampled, np.ndarray)
+        assert sampled.size > 0
+        assert sampled.size <= 1_000_000
+
+    def test_dask_full_mode_histogram(self):
+        dask = pytest.importorskip('dask.array')
+        data = dask.from_array(
+            np.random.rand(50, 50).astype(np.float32), chunks=25
+        )
+        img = _image(data)
+        img.histogram.mode = 'full'
+        img.histogram.enabled = True
+        counts = img.histogram.counts
+        assert counts is not None
+        assert len(counts) == 256
+        assert counts.sum() > 0
+
+    def test_dask_canvas_mode_slice_histogram(self):
+        dask = pytest.importorskip('dask.array')
+        data = dask.from_array(
+            np.random.rand(5, 50, 50).astype(np.float32), chunks=(1, 25, 25)
+        )
+        img = _image(data)
+        img.histogram.mode = 'canvas'
+        img.histogram.enabled = True
+        counts = img.histogram.counts
+        assert counts is not None
+        assert len(counts) == 256
+        assert counts.sum() > 0
