@@ -169,7 +169,7 @@ def test_histogram_ui_support_boundary(qtbot, layer, supports_histogram):
 
     assert (qtctrl._histogram_control is not None) is supports_histogram
     assert (
-        qtctrl._gamma_slider_control.histogram_button is not None
+        qtctrl._contrast_limits_control.histogram_button is not None
     ) is supports_histogram
 
 

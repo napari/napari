@@ -345,8 +345,6 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         else:
             self._iso_threshold = iso_threshold
 
-        self._histogram = HistogramModel(self)
-
     @property
     def rendering(self) -> str:
         """Return current rendering mode.
@@ -426,17 +424,24 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
 
     @property
     def histogram(self) -> HistogramModel:
-        """Histogram model for this layer.
+        """Histogram model for this layer, created lazily on first access.
 
         The histogram model computes and stores histogram data for the layer,
         responding to changes in layer data, contrast limits, and gamma.
+        The model is not created until the ``histogram`` property is first
+        accessed, saving event-listener overhead on ``Image`` layers that
+        never display a histogram.
 
         Returns
         -------
         HistogramModel
             Histogram model instance for this layer.
         """
-        return self._histogram
+        try:
+            return self._histogram
+        except AttributeError:
+            self._histogram = HistogramModel(self)
+            return self._histogram
 
     @ScalarFieldBase.data.setter  # type: ignore[attr-defined]
     def data(self, data: LayerDataProtocol | MultiScaleData) -> None:

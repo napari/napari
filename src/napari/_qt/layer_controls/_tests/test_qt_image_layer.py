@@ -150,7 +150,7 @@ def test_histogram_button_toggles_inline_histogram(qtbot):
     qtctrl = QtImageControls(layer)
     qtbot.addWidget(qtctrl)
 
-    button = qtctrl._gamma_slider_control.histogram_button
+    button = qtctrl._contrast_limits_control.histogram_button
     assert button is not None
     assert qtctrl._histogram_control is not None
     assert qtctrl._histogram_control.content_widget.isHidden()
@@ -177,7 +177,7 @@ def test_histogram_button_right_click_opens_popup(qtbot):
     qtctrl = QtImageControls(layer)
     qtbot.addWidget(qtctrl)
 
-    button = qtctrl._gamma_slider_control.histogram_button
+    button = qtctrl._contrast_limits_control.histogram_button
     assert button is not None
 
     qtbot.mouseClick(button, Qt.MouseButton.RightButton)

@@ -333,7 +333,7 @@ class HistogramModel(EventedModel):
         if valid_data.size <= max_samples:
             return valid_data
 
-        rng = np.random.default_rng()
+        rng = np.random.default_rng(0)
         indices = rng.choice(valid_data.size, size=max_samples, replace=False)
         return valid_data[indices]
 
@@ -382,11 +382,12 @@ class HistogramModel(EventedModel):
         and sets enabled=False so no computation occurs until
         explicitly requested.
         """
+        # Disable first to avoid wasteful intermediate compute() calls
+        # from the parameter-change event handlers.
+        self.enabled = False
         self.n_bins = 256
         self.log_scale = False
         self.mode = 'canvas'
         self._bins = np.array([0.0, 1.0])
         self._counts = np.array([0.0])
         self._dirty = True
-        # Disable last so event handlers see clean state.
-        self.enabled = False

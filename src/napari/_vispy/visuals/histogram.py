@@ -360,21 +360,6 @@ class HistogramVisual(Compound):
                     self._data_range,
                 )
 
-    def set_colors(
-        self,
-        bar_color: tuple[float, float, float, float] | None = None,
-        lut_color: tuple[float, float, float, float] | None = None,
-        axes_color: tuple[float, float, float, float] | None = None,
-        text_color: tuple[float, float, float, float] | None = None,
-    ) -> None:
-        """Backward-compatible alias for setting histogram visual styling."""
-        self.set_style(
-            bar_color=bar_color,
-            lut_color=lut_color,
-            axes_color=axes_color,
-            text_color=text_color,
-        )
-
     def destroy(self) -> None:
         """Clean up visual resources to avoid vispy resource leaks.
 

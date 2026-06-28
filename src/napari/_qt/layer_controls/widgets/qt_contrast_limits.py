@@ -206,6 +206,11 @@ class QContrastLimitsPopup(QtPopup):
 
         self._layout.addWidget(self._create_widget_from_layout(button_layout))
 
+    def closeEvent(self, event):
+        """Clean up on close to prevent event-listener leaks."""
+        self._cleanup()
+        super().closeEvent(event)
+
     def _cleanup(self) -> None:
         """Disconnect event handlers and clean up widgets."""
         if self._cleaned_up:
