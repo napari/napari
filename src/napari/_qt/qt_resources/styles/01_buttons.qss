@@ -270,7 +270,6 @@ QtModeRadioButton[mode="add_points"]::indicator {
 
 QtModePushButton[mode="histogram"] {
   image: url("theme_{{ id }}:/histogram.svg");
-  border-radius: 3px;
 }
 
 QtModePushButton[mode="histogram"]:hover:!checked {
