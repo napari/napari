@@ -60,7 +60,7 @@ def test_set_features_and_defaults():
     data = (vertices, faces, values)
     layer = Surface(data)
 
-    assert layer.features.shape[1] == layer.feature_defaults.shape[1] == 0
+    assert layer.features.shape[1] == layer.feature_defaults.shape[1] == 1
 
     features = pd.DataFrame(
         {
@@ -167,7 +167,7 @@ def test_random_3D_timeseries_surface():
     np.random.seed(0)
     vertices = np.random.random((10, 3))
     faces = np.random.randint(10, size=(6, 3))
-    values = np.random.random((22, 10))
+    values = np.random.random((10, 10))
     data = (vertices, faces, values)
     layer = Surface(data)
     assert layer.ndim == 4
@@ -197,7 +197,7 @@ def test_random_3D_multitimeseries_surface():
     np.random.seed(0)
     vertices = np.random.random((10, 3))
     faces = np.random.randint(10, size=(6, 3))
-    values = np.random.random((16, 22, 10))
+    values = np.random.random((10, 22, 10))
     data = (vertices, faces, values)
     layer = Surface(data)
     assert layer.ndim == 5
@@ -545,3 +545,7 @@ def test_surface_with_no_visible_faces():
 def test_docstring():
     validate_all_params_in_docstring(Surface)
     validate_kwargs_sorted(Surface)
+
+
+if __name__ == '__main__':
+    test_world_data_extent()
