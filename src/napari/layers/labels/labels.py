@@ -784,6 +784,21 @@ class Labels(ScalarFieldBase):
                 upper_bound=dtype_lims[1],
             )
 
+    def _validate_non_painted_coord(
+        self, slice_coord: list[int], dims_to_paint: list[int]
+    ) -> None:
+        """Resolve negative indexes and bounds-check non-painted dims."""
+        for i, coord in enumerate(slice_coord):
+            if i in dims_to_paint:
+                continue
+            resolved = coord + self.data.shape[i] if coord < 0 else coord
+            if not 0 <= resolved < self.data.shape[i]:
+                raise IndexError(
+                    f'Coordinate {coord} for non-painted dimension {i} is out '
+                    f'of bounds for axis with size {self.data.shape[i]}.'
+                )
+            slice_coord[i] = resolved
+
     @property
     def selected_label(self):
         """int: Index of selected label."""
@@ -1227,16 +1242,17 @@ class Labels(ScalarFieldBase):
         self._validate_label_in_range(new_label)
         _, dims_to_paint = self._get_shape_and_dims_to_paint()
 
+        slice_coord = [int(np.round(c)) for c in coord]
+        self._validate_non_painted_coord(slice_coord, dims_to_paint)
+
         fill_info = self._get_flood_mask_and_bbox(
-            coord, new_label, dims_to_paint
+            slice_coord, new_label, dims_to_paint
         )
 
         if fill_info is None:
             return
 
         mask, min_vals, max_vals, region_data = fill_info
-
-        slice_coord = [int(np.round(c)) for c in coord]
         slice_key = self._build_slice_key(
             slice_coord, dims_to_paint, min_vals, max_vals
         )
@@ -1415,14 +1431,17 @@ class Labels(ScalarFieldBase):
         self._validate_label_in_range(new_label)
         shape, dims_to_paint = self._get_shape_and_dims_to_paint()
 
-        brush_info = self._get_brush_mask_and_bbox(coord, dims_to_paint, shape)
+        slice_coord = [int(np.round(c)) for c in coord]
+        self._validate_non_painted_coord(slice_coord, dims_to_paint)
+
+        brush_info = self._get_brush_mask_and_bbox(
+            slice_coord, dims_to_paint, shape
+        )
 
         if brush_info is None:
             return
 
         mask, min_vals, max_vals = brush_info
-
-        slice_coord = [int(np.round(c)) for c in coord]
         slice_key = self._build_slice_key(
             slice_coord, dims_to_paint, min_vals, max_vals
         )
@@ -1521,6 +1540,8 @@ class Labels(ScalarFieldBase):
         shape, dims_to_paint = self._get_shape_and_dims_to_paint()
 
         points = np.array(points, dtype=int)
+        slice_coord = points[0].tolist()
+        self._validate_non_painted_coord(slice_coord, dims_to_paint)
         polygon_info = self._get_polygon_mask_and_bbox(
             points, dims_to_paint, shape
         )
@@ -1529,8 +1550,6 @@ class Labels(ScalarFieldBase):
             return
 
         mask, min_vals, max_vals = polygon_info
-
-        slice_coord = points[0].tolist()
         slice_key = self._build_slice_key(
             slice_coord, dims_to_paint, min_vals, max_vals
         )

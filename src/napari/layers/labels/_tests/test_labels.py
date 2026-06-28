@@ -2706,3 +2706,87 @@ def test_paint_brush_fully_outside_returns_early():
     layer.paint([-100, -100], 1)
 
     assert len(layer._undo_history) == initial_history_len
+
+
+@pytest.mark.parametrize(
+    ('method', 'oob_args'),
+    [
+        ('paint', (3, 5, 5)),
+        ('fill', (3, 5, 5)),
+        ('paint_polygon', [[3, 1, 1], [3, 1, 8], [3, 8, 8]]),
+    ],
+)
+def test_fixed_axis_out_of_bounds_raises(method, oob_args):
+    """Out-of-bounds non-painted axis should raise, not crash.
+
+    Regression test: _build_slice_key created slice(coord, coord+1) for
+    non-painted dims without bounds checking, producing an empty slice
+    that caused a ValueError during mask/data broadcast.
+    """
+    layer = Labels(np.zeros((3, 10, 10), dtype=np.uint32))
+    layer.brush_size = 5
+
+    with pytest.raises(IndexError, match='out of bounds'):
+        getattr(layer, method)(oob_args, 1)
+
+
+@pytest.mark.parametrize(
+    ('method', 'good_args'),
+    [
+        ('paint', (1, 5, 5)),
+        ('paint_polygon', [[1, 1, 1], [1, 1, 8], [1, 8, 8]]),
+    ],
+)
+def test_fixed_axis_in_bounds_succeeds(method, good_args):
+    """In-bounds paint on non-painted axis should still work."""
+    layer = Labels(np.zeros((3, 10, 10), dtype=np.uint32))
+    layer.brush_size = 5
+    getattr(layer, method)(good_args, 1)
+    assert np.any(layer.data != 0)
+
+
+@pytest.mark.parametrize(
+    ('method', 'args'),
+    [
+        ('paint', (-1, 5, 5)),
+        ('fill', (-1, 5, 5)),
+        ('paint_polygon', [[-1, 1, 1], [-1, 1, 8], [-1, 8, 8]]),
+    ],
+)
+def test_fixed_axis_negative_one_means_last_slice(method, args):
+    """-1 on a non-painted axis should paint the last slice, not the first."""
+    layer = Labels(np.zeros((3, 10, 10), dtype=np.uint32))
+    layer.brush_size = 5
+    getattr(layer, method)(args, 1)
+    assert np.any(layer.data[-1])
+    assert not np.any(layer.data[0])
+
+
+@pytest.mark.parametrize(
+    ('method', 'args'),
+    [
+        ('paint', (-4, 5, 5)),
+        ('fill', (-4, 5, 5)),
+        ('paint_polygon', [[-4, 1, 1], [-4, 1, 8], [-4, 8, 8]]),
+    ],
+)
+def test_fixed_axis_negative_out_of_bounds_raises(method, args):
+    """A negative coord that resolves past the start raises, never wraps."""
+    layer = Labels(np.zeros((3, 10, 10), dtype=np.uint32))
+    layer.brush_size = 5
+    with pytest.raises(IndexError, match='out of bounds'):
+        getattr(layer, method)(args, 1)
+
+
+def test_paint_negative_painted_coord_clips_not_wraps():
+    """A brush off the negative edge clips to the near corner, never wraps.
+
+    Painted dims use a clipped bounding box, so a coordinate off the edge
+    (with a negative painted axis) should paint a partial brush rather than
+    warp Python-style to the opposite edge.
+    """
+    layer = Labels(np.zeros((10, 10), dtype=np.uint32))
+    layer.brush_size = 3
+    layer.paint((-1, -1), 1)
+    assert np.any(layer.data[:3, :3])
+    assert not np.any(layer.data[7:, 7:])
