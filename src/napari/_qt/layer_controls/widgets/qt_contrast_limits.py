@@ -100,7 +100,6 @@ class QContrastLimitsPopup(QtPopup):
         self._layer = layer
         self._viewer = viewer
         self._cleaned_up = False
-        self._histogram_was_enabled = False
 
         self._layout = QVBoxLayout()
         self._layout.setContentsMargins(10, 10, 10, 10)
@@ -206,45 +205,6 @@ class QContrastLimitsPopup(QtPopup):
         button_layout.addStretch()
 
         self._layout.addWidget(self._create_widget_from_layout(button_layout))
-
-    def keyPressEvent(self, event):
-        """On key press lose focus of the lineEdits."""
-        if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
-            self.slider.setFocus()
-            return
-        super().keyPressEvent(event)
-
-    def showEvent(self, event):
-        """Enable histogram when popup is shown."""
-        super().showEvent(event)
-        if self.histogram_widget is not None:
-            self._histogram_was_enabled = self._layer.histogram.enabled
-            if not self._histogram_was_enabled:
-                # _on_enabled_change handles the immediate compute.
-                self._layer.histogram.enabled = True
-
-    def closeEvent(self, event):
-        """Clean up event handlers when popup is closed."""
-        self._disable_histogram()
-        self._cleanup()
-        super().closeEvent(event)
-
-    def hideEvent(self, event):
-        """Clean up event handlers when popup is hidden."""
-        self._disable_histogram()
-        self._cleanup()
-        super().hideEvent(event)
-
-    def _disable_histogram(self) -> None:
-        """Disable histogram when popup is hidden/closed, only if popup enabled it."""
-        if (
-            self.histogram_widget is not None
-            and not self._histogram_was_enabled
-        ):
-            # Mark as already-enabled so a second call (closeEvent fires then
-            # hideEvent also fires) is a no-op and avoids a redundant event.
-            self._histogram_was_enabled = True
-            self._layer.histogram.enabled = False
 
     def _cleanup(self) -> None:
         """Disconnect event handlers and clean up widgets."""
