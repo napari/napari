@@ -265,3 +265,86 @@ class TestLogScale:
         # At least some values should differ
         if len(linear) > 0 and len(logged) > 0:
             assert not np.array_equal(linear, logged)
+
+
+class TestNBinsChange:
+    """Test changing n_bins property."""
+
+    def test_n_bins_change_output_length(self):
+        data = np.random.rand(20, 20)
+        img = _image(data)
+        assert len(img.histogram.counts) == 256
+        img.histogram.n_bins = 128
+        assert len(img.histogram.counts) == 128
+        assert len(img.histogram.bins) == 129
+
+    def test_contrast_limits_range_change(self):
+        data = np.random.rand(20, 20)
+        img = _image(data)
+        img.histogram.enabled = True
+        img.contrast_limits_range = [0.0, 0.5]
+        _ = img.histogram.counts  # trigger recompute
+        assert img.histogram.bins[-1] <= 0.5
+
+
+class TestMultiscale:
+    """Test histogram with multiscale data."""
+
+    def test_multiscale_image(self):
+        data = [
+            np.random.rand(100, 100).astype(np.float32),
+            np.random.rand(50, 50).astype(np.float32),
+        ]
+        img = _image(data, multiscale=True)
+        counts = img.histogram.counts
+        assert counts is not None
+        assert len(counts) > 0
+
+    def test_multiscale_full_uses_coarsest(self):
+        data = [
+            np.arange(10000, dtype=np.float32).reshape((100, 100)),
+            np.arange(2500, dtype=np.float32).reshape((50, 50)),
+            np.arange(625, dtype=np.float32).reshape((25, 25)),
+        ]
+        img = _image(data, multiscale=True)
+        img.histogram.mode = 'full'
+        assert img.histogram.counts.sum() == data[-1].size
+
+
+class TestRGB:
+    """Test histogram with RGB data."""
+
+    def test_rgb_image(self):
+        data = np.random.randint(0, 256, size=(20, 20, 3), dtype=np.uint8)
+        img = _image(data, rgb=True)
+        assert img.histogram is not None
+        counts = img.histogram.counts
+        assert len(counts) > 0
+
+
+class TestEvents:
+    """Test histogram event emissions."""
+
+    def test_bins_and_counts_events_fire(self):
+        data = np.random.rand(20, 20)
+        img = _image(data)
+        bins_fired = []
+        counts_fired = []
+
+        img.histogram.events.bins.connect(lambda: bins_fired.append(True))
+        img.histogram.events.counts.connect(lambda: counts_fired.append(True))
+        img.histogram.compute()
+
+        assert len(bins_fired) > 0
+        assert len(counts_fired) > 0
+
+
+class TestLargeData:
+    """Test histogram with larger datasets."""
+
+    def test_sampling_large_data(self):
+        data = np.random.rand(500, 500).astype(np.float32)
+        img = _image(data)
+        counts = img.histogram.counts
+        assert counts is not None
+        assert len(counts) == 256
