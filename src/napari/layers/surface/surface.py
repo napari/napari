@@ -481,7 +481,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         self._reset_editable()
 
     @property
-    def contrast_limits(self) -> None | tuple[float, float]:
+    def contrast_limits(self) -> tuple[float, float]:
         """
         None, (float, float) : clims for mapping the vertex_color
         colormap property to 0 and 1
