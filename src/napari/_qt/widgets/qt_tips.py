@@ -54,7 +54,7 @@ class TipsWidget(QWidget):
 
         self.next_tip()
 
-    def _render_tip(self, _event=None) -> None:
+    def _render_tip(self) -> None:
         tip = self.tips[self.current_tip]
         tip_text = format_tip(tip)
         tip_html = urls_to_html(tip_text)
