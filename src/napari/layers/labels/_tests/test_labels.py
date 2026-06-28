@@ -2790,3 +2790,35 @@ def test_paint_negative_painted_coord_clips_not_wraps():
     layer.paint((-1, -1), 1)
     assert np.any(layer.data[:3, :3])
     assert not np.any(layer.data[7:, 7:])
+
+
+def test_negative_coord_meaning_follows_axis_role_via_n_edit_dims():
+    """The same -1 coordinate means different things per axis *role*.
+
+    ``n_edit_dimensions`` does not change the coordinate, it changes whether
+    axis 0 is the slice selector or part of the brush:
+
+    - n_edit=2: axis 0 is a non-painted slice selector, addressed like an
+      index, so -1 wraps Python-style to the last slice.
+    - n_edit=3: axis 0 joins the brush as a geometric center, so -1 sits one
+      pixel off the near edge and the bounding box clips to the first slices.
+
+    This asymmetry (index-style wrap vs. geometric clip) is intended; see
+    test_fixed_axis_negative_one_means_last_slice and
+    test_paint_negative_painted_coord_clips_not_wraps for each half.
+    """
+    coord = (-1, 10, 10)
+
+    selector = Labels(np.zeros((10, 20, 20), dtype=np.uint32))
+    selector.brush_size = 5
+    selector.n_edit_dimensions = 2
+    selector.paint(coord, 1)
+    assert np.any(selector.data[-1])  # -1 wrapped to the last slice
+    assert not np.any(selector.data[0])
+
+    brush = Labels(np.zeros((10, 20, 20), dtype=np.uint32))
+    brush.brush_size = 5
+    brush.n_edit_dimensions = 3
+    brush.paint(coord, 1)
+    assert np.any(brush.data[0])  # -1 clipped to the near edge
+    assert not np.any(brush.data[-1])
