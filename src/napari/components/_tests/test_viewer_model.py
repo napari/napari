@@ -1187,15 +1187,25 @@ def test_per_mode_camera_cache_no_layers():
 
 
 def test_per_mode_camera_cache_2d_data():
-    """Test per-mode caching with 2D data (ndim=2 guard)."""
+    """Test per-mode caching with 2D data (ndim=2 guard).
+
+    On first entry to a mode, fit_to_view runs and recalculates zoom.
+    Per-mode caching preserves state between return visits to a mode.
+    """
     viewer = ViewerModel()
     np.random.seed(0)
     viewer.add_image(np.random.random((11, 11)))
     viewer.camera.zoom = 2.5
+    # First entry to 3D: fit_to_view recalculates zoom
     viewer.dims.ndisplay = 3
-    assert viewer.camera.zoom == 2.5
+    zoom_3d = viewer.camera.zoom
+    assert zoom_3d != 2.5
+    # Return to 2D: cached zoom restored
     viewer.dims.ndisplay = 2
     assert viewer.camera.zoom == 2.5
+    # Second entry to 3D: cached 3D zoom restored
+    viewer.dims.ndisplay = 3
+    assert viewer.camera.zoom == zoom_3d
 
 
 def test_per_mode_camera_cache_4d_data():
