@@ -736,7 +736,6 @@ module = [
     'napari.layers.utils.text_manager',
     'napari.utils._magicgui',
     'napari.utils._testsupport',
-    'napari.utils._tracebacks',
     'napari.utils.action_manager',
     'napari.utils.events.containers._evented_dict',
     'napari.utils.events.containers._evented_list',
