@@ -1,3 +1,4 @@
+/* TODO: what even are these h1/2/3 for?? */
 QLabel#h1 {
   font-size: 28px;
 }
@@ -39,6 +40,7 @@ QStatusBar {
 QMainWindow::separator {
   width: 4px;
   height: 4px;
+  padding: 2px;
   border: none;
   background-color: {{ background }};
 }
@@ -64,11 +66,12 @@ QDockWidget:floating {
 
 #QtCustomTitleBar {
   padding-top:3px;
+  padding-bottom:3px;
   background-color: {{ background }};
 }
 
 #QtCustomTitleBar:hover {
-  background-color: {{ darken(background, 10) }};
+  background-color: {{ foreground }};
 }
 
 /* Floating state: distinct title bar so it reads as a standalone window */
@@ -86,12 +89,15 @@ QDockWidget:floating {
 
 #QtCustomTitleBar > QPushButton {
   background-color: none;
+  min-width: 12px;
+  min-height: 12px;
   max-width: 12px;
   max-height: 12px;
+  padding: 2;
 }
 
 #QtCustomTitleBar > QPushButton:hover {
-  background-color: {{ foreground }};
+  background-color: {{ primary }};
 }
 
 #QtCustomTitleBar[floating="True"] > QPushButton:hover {
@@ -103,25 +109,16 @@ QDockWidget:floating {
 }
 
 #QTitleBarCloseButton{
-    width: 24px;
-    height: 24px;
-    padding: 0;
     image: url("theme_{{ id }}:/delete_shape.svg");
 }
 
 
 #QTitleBarFloatButton{
     image: url("theme_{{ id }}:/pop_out.svg");
-    width: 24px;
-    height: 24px;
-    padding: 2 1 2 1;
 }
 
 #QTitleBarHideButton{
     image: url("theme_{{ id }}:/visibility_off.svg");
-    width: 24px;
-    height: 24px;
-    padding: 2 1 2 1;
 }
 
 /* ----------------- Console ------------------ */
@@ -136,8 +133,9 @@ QtConsole > QTextEdit {
   color: {{ text }};
   selection-background-color: {{ highlight }};
   margin: 10px;
-  font-family: Menlo, Consolas, "Ubuntu Mono", "Roboto Mono", "DejaVu Sans Mono", monospace;
+  font-family: monospace, Menlo, Consolas, "Ubuntu Mono", "Roboto Mono", "DejaVu Sans Mono";
   font-size: {{ font_size }};
+  border: 1px solid {{ console }};
 }
 .inverted {
   background-color: {{ background }};
@@ -149,9 +147,13 @@ QtConsole > QTextEdit {
 .in-prompt { color: #6ab825; }
 .out-prompt { color: #b72121; }
 
+QtConsole > QTextEdit:focus {
+  border: 1px solid {{ foreground }};
+}
+
 
 /* controls the area around the canvas */
-QSplitter {
+QtViewer {
   spacing: 0px;
   padding: 0px;
   margin: 0px;
@@ -178,6 +180,12 @@ QtLayerControlsContainer > QFrame {
   padding: 5px;
   padding-right: 8px;
   border-radius: 2px;
+  background-color: {{ foreground }};
+}
+
+/* grep for `setProperty('foreground', 'true')` to see uses */
+QWidget[foreground=true] {
+  background-color: {{ foreground }};
 }
 
 /* the box that shows the current Label color */
@@ -198,37 +206,12 @@ QtLayerControls > QComboBox, QtLayerControls > QLabel, QtLayerControls, QtPlaneC
   color: {{ text }};
 }
 
-QLabeledRangeSlider > QAbstractSpinBox {
-  font-size: {{ font_size }};
-  color: {{ secondary }};
-}
-
-QWidget[emphasized="true"] QDoubleSlider::sub-page:horizontal:disabled {
-    background: {{ primary }};
-}
-
-QWidget[emphasized="true"] QDoubleSlider::handle:disabled {
-    background: {{ primary }};
-}
-
 SliderLabel {
   background-color: {{ darken(background, 15) }};
   color: {{ text }};
   min-height: 16px;
   padding: 0px;
   border-radius: 2px;
-}
-
-QWidget[emphasized="true"] SliderLabel {
-  background-color: {{ background }};
-}
-
-QWidget[emphasized="true"] SliderLabel:disabled {
-    color: {{ opacity(text, 50) }};
-}
-
-QWidget[emphasized="true"] QLabel:disabled {
-    color: {{ opacity(text, 50) }};
 }
 
 AutoScaleButtons QPushButton {
@@ -243,12 +226,8 @@ PlaneNormalButtons QPushButton {
 
 /* ------------- DimsSliders --------- */
 
-QtDimSliderWidget > QScrollBar::handle[last_used=false]:horizontal {
-    background: {{ highlight }};
-}
-
 QtDimSliderWidget > QScrollBar::handle[last_used=true]:horizontal {
-    background: {{ secondary }};
+    background: {{ highlight }};
 }
 
 QtDimSliderWidget > QScrollBar:left-arrow:horizontal {
@@ -296,7 +275,7 @@ QtDimSliderWidget > QLineEdit {
 }
 
 #playDirectionCheckBox::indicator:pressed {
-   background-color: {{ highlight }};
+   background-color: {{ current }};
 }
 
 
@@ -317,8 +296,8 @@ QtDimSliderWidget > QLineEdit {
 }
 
 #CustomColorDialog QLabel {
-  background-color: {{ background }};
-  color: {{ secondary }};
+  background-color: {{ foreground }};
+  color: {{ primary }};
 }
 
 
@@ -332,7 +311,7 @@ QtDimSliderWidget > QLineEdit {
 }
 
 #slice_label {
-  color: {{ secondary }};
+  color: {{ text }};
   background: transparent;
 }
 
@@ -370,7 +349,7 @@ QtHookImplementationListWidget::item {
 }
 
 QtHookImplementationListWidget {
-  background-color: {{ console }};
+  background-color: {{ foreground }};
 }
 
 /* for the error reporter */
@@ -379,7 +358,7 @@ QtHookImplementationListWidget {
 }
 
 QtPluginErrReporter > QTextEdit {
-  background-color: {{ console }};
+  background-color: {{ foreground }};
   background-clip: padding;
   color: {{ text }};
   selection-background-color: {{ highlight }};
@@ -393,7 +372,7 @@ NapariQtNotification > QWidget {
 }
 
 NapariQtNotification::hover{
-  background: {{ lighten(background, 5) }};
+  background: {{ foreground }};
 }
 
 
@@ -422,7 +401,7 @@ NapariQtNotification #close_button {
 }
 
 NapariQtNotification #source_label {
-  color: {{ primary }};
+  color: {{ darken(text, 10) }};
   font-size: {{ decrease(font_size, 1) }};
 }
 
@@ -435,11 +414,10 @@ NapariQtNotification #notification_actions QPushButton {
 
 NapariQtNotification #severity_icon {
   padding: 0;
-  margin: 0 0 -3px 0;
+  margin: 0;
   min-width: 20px;
-  min-height: 18px;
+  min-height: 20px;
   font-size: {{ increase(font_size, 3) }};
-  color: {{ icon }};
 }
 
 /* ------------ Activity Dock ------------ */
@@ -453,7 +431,7 @@ NapariQtNotification #severity_icon {
 }
 
 #QtActivityButton:hover {
-  background-color: {{ lighten(background, 10) }};
+  background-color: {{ foreground }};
 }
 
 /* ------------ Plugin Dialog ------------ */
@@ -659,6 +637,13 @@ QListWidget#Preferences {
  background: {{ background }};
 }
 
+QtListView {
+  background: {{ background }};
+  outline: none;
+}
+
+/* ------ Welcome Widget ------ */
+
 QtWelcomeWidget, QtWelcomeWidget[drag=false] {
   background: {{ canvas }};
 }
@@ -668,13 +653,13 @@ QtWelcomeWidget[drag=true] {
 }
 
 QtWelcomeLabel {
- color: {{ darken(text, 25) }};
- font-size: {{ increase(font_size, 6) }};
+  color: {{ darken(text, 25) }};
+  font-size: {{ increase(font_size, 6) }};
 }
 
 QtShortcutLabel {
- color: {{ darken(text, 25) }};
- font-size: {{ increase(font_size, 6) }};
+  color: {{ darken(text, 25) }};
+  font-size: {{ increase(font_size, 6) }};
 }
 
 QtVersionLabel {
@@ -683,10 +668,6 @@ QtVersionLabel {
 }
 
 /* ------------- Narrow scrollbar for qtlayer list --------- */
-
-QtListView {
-  background: {{ background }};
-}
 
 QtListView QScrollBar:vertical {
   max-width: 8px;
@@ -711,39 +692,41 @@ QtListView QScrollBar:down-arrow {
 QtListView::item {
   padding: 4px;
   margin: 2px 2px 2px 2px;
-  background-color: {{ foreground }};
+  background-color: {{ primary }};
   border: 1px solid {{ foreground }};
 }
 
 QtListView::item:hover {
-  background-color: {{ lighten(foreground, 3) }};
+  background-color: {{ highlight }};
 }
 
-/* in the QSS context "active" means the window is active */
-/* (as opposed to focused on another application) */
-QtListView::item:selected:active{
-  background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 {{ current }}, stop: 1 {{ darken(current, 15) }});
-}
-
-
-QtListView::item:selected:!active {
-  background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 {{ darken(current, 10) }}, stop: 1 {{ darken(current, 25) }});
-}
-
-
-QtListView QLineEdit {
-  background-color: {{ darken(current, 20) }};
-  selection-background-color: {{ lighten(current, 20) }};
-  font-size: {{ font_size }};
+QtListView::item:selected {
+  background: {{ current }};
 }
 
 QtLayerList::item {
-  margin: 2px 2px 2px 28px;
+  margin: 2px 0px 2px 28px;
   border-top-right-radius: 2px;
   border-bottom-right-radius: 2px;
-  border: 0;
+  border: 1px solid {{ primary }};  /* otherwise it's `foreground` for generic lists */
 }
 
+QtLayerList QLineEdit {
+  margin: -2px;  /* offset editor back to overlap correctly to layer name */
+  background-color: {{ current }};
+  selection-background-color: {{ darken(current, 20) }};
+  font-size: {{ font_size }};
+}
+
+/* TODO: all these darken/lighten in the layerlist seem unnecessarily complicated */
+
+/* in the QSS context "focus" means the window is focused _and_ the item is focused */
+QtLayerList::item:selected:focus{
+  background: vgradient({{ lighten(current, 10) }} - {{ current }});
+  border: 1px solid {{ lighten(current, 20) }};
+}
+
+/* eye visibility icon */
 /* the first one is the "partially checked" state */
 QtLayerList::indicator {
   width: 16px;
@@ -757,12 +740,12 @@ QtLayerList::indicator {
 
 QtLayerList::indicator:unchecked {
   image: url("theme_{{ id }}:/visibility_off_50.svg");
-  background: {{ opacity(background, 190) }};
+  background: {{ foreground }};
 }
 
 QtLayerList::indicator:checked {
   image: url("theme_{{ id }}:/visibility.svg");
-  background: {{ opacity(highlight, 190) }};
+  background: {{ secondary }};
 }
 
 
@@ -820,7 +803,7 @@ QtDimsSorter > QtListView::indicator::checked {
 
 QMenu::separator, QModelMenu::separator {
 	height: 1 px;
-	background: {{ opacity(text, 90) }};
+	background: {{ foreground }};
 	margin-left: 17 px;
 	margin-right: 6 px;
 	margin-top: 5 px;
@@ -843,4 +826,12 @@ QMenu, QModelMenu {
 
 QCommandLineEdit, QCommandList, QCommandLabel {
   font-size: {{ increase(font_size, 4) }};
+}
+
+QCommandLineEdit, QCommandList {
+  background-color: {{ foreground }};
+}
+
+QCommandList::item:selected {
+  background-color: {{ primary }};
 }
