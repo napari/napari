@@ -607,8 +607,6 @@ ignore_errors = true
 # mypy napari | cut -f1 -d: | sort | uniq  | tr '/' '.'  | sed 's/\.py//' | awk '{ print "    \047" $0 "\047," }'
 [[tool.mypy.overrides]]
 module = [
-    'napari._qt.code_syntax_highlight',
-    'napari._qt.containers._base_item_model',
     'napari._qt.containers._base_item_view',
     'napari._qt.containers._layer_delegate',
     'napari._qt.containers.qt_axis_model',
