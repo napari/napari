@@ -95,7 +95,9 @@ class _PointSliceRequest:
             request_id=self.id,
         )
 
-    def _get_slice_data(self, not_disp: list[int]) -> tuple[npt.NDArray, int]:
+    def _get_slice_data(
+        self, not_disp: list[int]
+    ) -> tuple[npt.NDArray, npt.NDArray | int]:
         data = self.data[:, not_disp]
         scale = 1
 
