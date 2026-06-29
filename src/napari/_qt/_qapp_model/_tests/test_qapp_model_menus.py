@@ -7,6 +7,7 @@ from napari._app_model.constants import MenuId
 from napari._app_model.context import LayerListContextKeys as LLCK
 from napari._qt._qapp_model import build_qmodel_menu
 from napari._qt._qapp_model._tests.utils import get_submenu_action
+from napari._qt._qapp_model.qactions._layers_actions import LAYERS_SUBMENUS
 from napari.layers import Image
 
 
@@ -68,20 +69,29 @@ def test_update_menu_state_context(make_napari_viewer):
     assert dummy_action.isEnabled()
 
 
-def test_layers_menu_has_metadata_submenu(make_napari_viewer):
+@pytest.mark.parametrize(
+    ('submenu_id', 'submenu_title'),
+    [
+        (item.submenu, item.title)
+        for menu_id, item in LAYERS_SUBMENUS
+        if menu_id == MenuId.MENUBAR_LAYERS
+    ],
+)
+def test_layers_menu_has_declared_submenus(
+    make_napari_viewer, submenu_id, submenu_title
+):
     app = get_app_model()
     make_napari_viewer()
     layers_menu = app.menus.get_menu(MenuId.MENUBAR_LAYERS)
-    metadata_submenus = [
+    submenus = [
         item
         for item in layers_menu
-        if isinstance(item, SubmenuItem)
-        and item.submenu == MenuId.LAYERS_METADATA
+        if isinstance(item, SubmenuItem) and item.submenu == submenu_id
     ]
 
-    assert len(metadata_submenus) == 1
-    assert metadata_submenus[0].title == 'Metadata'
-    assert app.menus.get_menu(MenuId.LAYERS_METADATA)
+    assert len(submenus) == 1
+    assert submenus[0].title == submenu_title
+    assert app.menus.get_menu(submenu_id)
 
 
 @pytest.mark.parametrize(
