@@ -13,7 +13,7 @@ class QtWrappedLabel(QLabel):
     to the right and vertically centered by default.
     """
 
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, *args: object, **kwargs: object) -> None:
         super().__init__(*args, **kwargs)
         self.setWordWrap(True)
         self.setAlignment(
@@ -21,7 +21,7 @@ class QtWrappedLabel(QLabel):
         )
 
 
-class MetaWidgetControlsBase(ABCMeta, type(QObject)):
+class MetaWidgetControlsBase(ABCMeta, type(QObject)):  # type: ignore[misc]
     pass
 
 
@@ -46,7 +46,7 @@ class QtWidgetControlsBase(QObject, metaclass=MetaWidgetControlsBase):
         self._layer = layer
         # Track registered callbacks (defined via `attr_to_settr` for example)
         # so it is possible to disconnect them when the widget is being closed/deleted
-        self._callbacks = []
+        self._callbacks: list[object] = []
 
     @abstractmethod
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
