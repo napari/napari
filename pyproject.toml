@@ -641,8 +641,6 @@ module = [
     'napari._qt.layer_controls.qt_surface_controls',
     'napari._qt.layer_controls.qt_tracks_controls',
     'napari._qt.layer_controls.qt_vectors_controls',
-    'napari._qt.layer_controls.widgets.qt_widget_controls_base',
-    'napari._qt.layer_controls.widgets.qt_face_color',
     'napari._qt.layer_controls.widgets.qt_opacity_blending_controls',
     'napari._qt.layer_controls.widgets.qt_text_visibility',
     'napari._qt.layer_controls.widgets.qt_out_slice_checkbox',

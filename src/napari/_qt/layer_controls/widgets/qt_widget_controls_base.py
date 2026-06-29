@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod
+from abc import ABCMeta, abstractmethod
 
 from qtpy.QtCore import QObject, Qt
 from qtpy.QtWidgets import QLabel, QWidget
@@ -21,11 +21,11 @@ class QtWrappedLabel(QLabel):
         )
 
 
-class MetaWidgetControlsBase(type(ABC), type(QObject)):
+class MetaWidgetControlsBase(ABCMeta, type(QObject)):
     pass
 
 
-class QtWidgetControlsBase(QObject, ABC, metaclass=MetaWidgetControlsBase):
+class QtWidgetControlsBase(QObject, metaclass=MetaWidgetControlsBase):
     """
     Base class that defines base methods for wrapper classes that do the
     connection of events/signals between layer attributes and Qt widgets.
