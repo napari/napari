@@ -746,7 +746,6 @@ module = [
     'napari.utils.mouse_bindings',
     'napari.utils.stubgen',
     'napari.utils.transforms.transforms',
-    'napari.utils.tree.group',
     'napari.view_layers',
     'napari._app_model.injection._processors',
 ]
