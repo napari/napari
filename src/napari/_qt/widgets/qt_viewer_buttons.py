@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 from qtpy.QtCore import QEvent, Qt
 from qtpy.QtWidgets import (
     QApplication,
+    QCheckBox,
     QDoubleSpinBox,
     QFrame,
     QGridLayout,
@@ -572,6 +573,13 @@ class QtViewerButtons(QFrame):
             self._add_3d_camera_controls(popup, grid_layout)
 
         popup.frame.setLayout(grid_layout)
+
+        sync_cb = QCheckBox('Sync camera between 2D/3D')
+        sync_cb.setChecked(self.viewer.camera.sync)
+        sync_cb.toggled.connect(
+            lambda checked: setattr(self.viewer.camera, 'sync', checked)
+        )
+        grid_layout.addWidget(sync_cb, grid_layout.rowCount(), 0, 1, 3)
 
         # Reposition popup, must be done after all widgets are added
         self._position_popup_inside_viewer(popup, self.ndisplayButton)
