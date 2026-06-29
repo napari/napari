@@ -738,7 +738,6 @@ module = [
     'napari.utils.events.containers._evented_list',
     'napari.utils.events.containers._nested_list',
     'napari.utils.events.custom_types',
-    'napari.utils.events.debugging',
     'napari.utils.events.event',
     'napari.utils.events.evented_model',
     'napari.utils.interactions',
