@@ -162,6 +162,19 @@ VIEW_ACTIONS: list[Action] = [
         ],
         callback=_toggle_canvas_ndim,
     ),
+    ViewerModelToggleAction(
+        id='napari.viewer.toggle_camera_sync',
+        title='Toggle Camera Sync',
+        viewer_attribute='camera',
+        sub_attribute='sync',
+        menus=[
+            {
+                'id': MenuId.MENUBAR_VIEW,
+                'group': MenuGroup.ZOOM,
+                'order': 2,
+            }
+        ],
+    ),
     Action(
         id='napari.window.view.toggle_layer_tooltips',
         title=trans._('Toggle Layer Tooltips'),
