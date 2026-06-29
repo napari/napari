@@ -1221,3 +1221,55 @@ def test_fit_to_view_handles_no_layers():
     np.testing.assert_allclose(viewer.camera.center, (0, 255.5, 255.5))
     np.testing.assert_allclose(viewer.camera.angles, (0, 0, 0))
     assert viewer.camera.zoom > 0
+
+
+def test_synced_camera():
+    """Test synced mode center/zoom persistence and dims slider sync."""
+    np.random.seed(0)
+    viewer = ViewerModel()
+    viewer.add_image(np.random.random((11, 11, 11)))
+    viewer.dims.current_step = (2, 0, 0)
+
+    viewer.camera.sync = True
+    viewer.camera.center = (0, 3, 7)
+    viewer.camera.zoom = 2.5
+
+    # 2D→3D: z from dims slider, x/y and zoom persist
+    viewer.dims.ndisplay = 3
+    np.testing.assert_allclose(viewer.camera.center, (2.0, 3.0, 7.0))
+    assert viewer.camera.zoom == 2.5
+
+    # Pan in 3D
+    viewer.camera.center = (5, 8, 12)
+    viewer.camera.zoom = 3.0
+
+    # 3D→2D: dims slider follows camera z
+    viewer.dims.ndisplay = 2
+    np.testing.assert_allclose(viewer.camera.center, (0, 8, 12))
+    assert viewer.camera.zoom == 3.0
+    assert viewer.dims.point[0] == 5.0
+
+    # 2D→3D again: z from updated dims point
+    viewer.dims.ndisplay = 3
+    np.testing.assert_allclose(viewer.camera.center, (5.0, 8.0, 12.0))
+    assert viewer.camera.zoom == 3.0
+
+    # Multiple round trips
+    for _ in range(3):
+        viewer.dims.ndisplay = 2
+        viewer.dims.ndisplay = 3
+    np.testing.assert_allclose(viewer.camera.center, (5.0, 8.0, 12.0))
+
+
+def test_synced_camera_2d_data():
+    """Test synced mode doesn't crash with 2D data (ndim=2)."""
+    np.random.seed(0)
+    viewer = ViewerModel()
+    viewer.add_image(np.random.random((11, 11)))
+    viewer.camera.sync = True
+    viewer.camera.zoom = 2.5
+
+    viewer.dims.ndisplay = 3
+    assert viewer.camera.zoom == 2.5
+    viewer.dims.ndisplay = 2
+    assert viewer.camera.zoom == 2.5
