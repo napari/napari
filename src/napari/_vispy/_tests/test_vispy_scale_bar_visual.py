@@ -46,4 +46,5 @@ def test_scale_bar_inconsistent_units_default_to_pixel(
     ):
         model.unit = 's'
     vispy_scale_bar._on_unit_change()
-    assert vispy_scale_bar._unit.units == 'second'
+    # this has no effect now, it should not change
+    assert vispy_scale_bar._unit.units == 'micrometer'
