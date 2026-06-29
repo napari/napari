@@ -39,9 +39,9 @@ class QtNodeTreeView(_BaseEventedItemView[NodeType], QTreeView):  # type: ignore
     ) -> None:
         super().__init__(parent)
         self.setHeaderHidden(True)
-        self.setDragDropMode(self.DragDropMode.InternalMove)
+        self.setDragDropMode(QTreeView.DragDropMode.InternalMove)
         self.setDragDropOverwriteMode(False)
-        self.setSelectionMode(self.SelectionMode.ExtendedSelection)
+        self.setSelectionMode(QTreeView.SelectionMode.ExtendedSelection)
         self.setRoot(root)
 
     def setRoot(self, root: Group[Node]) -> None:  # type: ignore[override]
