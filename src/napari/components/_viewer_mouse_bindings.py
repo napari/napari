@@ -1,8 +1,20 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import numpy as np
+
+if TYPE_CHECKING:
+    from napari.viewer import Viewer
 
 # This is the minimum size of the zoom box (in pixels) that will
 # trigger a zoom when the user drags the mouse while holding Alt.
 MIN_ZOOMBOX_SIZE = 5
+
+
+def _pan_zoom_enabled(viewer: Viewer) -> bool:
+    active_layer = viewer.layers.selection.active
+    return active_layer is None or active_layer.mode == 'pan_zoom'
 
 
 def dims_scroll(viewer, event):
@@ -50,11 +62,12 @@ def layers_scroll(viewer, event):
 
 
 def double_click_to_zoom(viewer, event):
-    """Zoom in on double click by zoom_factor; zoom out with Alt."""
-    if (
-        viewer.layers.selection.active
-        and viewer.layers.selection.active.mode != 'pan_zoom'
-    ):
+    """Zoom in on double click by zoom_factor; zoom out with Alt.
+
+    Note: only active when there is no selected layer or the active
+    layer is in pan/zoom mode.
+    """
+    if not _pan_zoom_enabled(viewer):
         return
     # if Alt held down, zoom out instead
     zoom_factor = 0.5 if 'Alt' in event.modifiers else 2
@@ -77,8 +90,15 @@ def drag_to_zoom(viewer, event):
     This function allows the user to click and drag the mouse while
     holding the `Alt` key to create a zoom box. When the mouse is released,
     the camera zooms into the selected region.
+
+    Note: only active when there is no selected layer or the active
+    layer is in pan/zoom mode.
     """
-    if 'Alt' not in event.modifiers or event.type != 'mouse_press':
+    if (
+        'Alt' not in event.modifiers
+        or event.type != 'mouse_press'
+        or not _pan_zoom_enabled(viewer)
+    ):
         return
 
     # on mouse press

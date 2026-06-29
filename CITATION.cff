@@ -506,5 +506,10 @@ authors:
   affiliation: Institute of Cell Biology, University of Bern, Switzerland
   orcid: https://orcid.org/0000-0002-3956-9363
   alias: hinderling
+- given-names: Mikkel
+  family-names: Roald-Arbøl
+  affiliation: University of Bonn
+  orcid: https://orcid.org/0000-0002-9998-0058
+  alias: roaldarbol
 repository-code: https://github.com/napari/napari
 license: BSD-3-Clause

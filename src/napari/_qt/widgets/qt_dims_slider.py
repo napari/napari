@@ -83,7 +83,8 @@ class QtDimSliderWidget(QWidget):
         # editingFinished event (the user is expected to change the value)...
         # which is confusing to the user, so instead we use an IntValidator
         # that makes sure the user can only enter integers, but we do our own
-        # value validation in self.change_slice
+        # value validation in self._set_slice_from_label. The upper bound is
+        # updated to fit the data in self._update_range (see #3795).
         self.curslice_label.setValidator(QIntValidator(0, 999999))
 
         self.curslice_label.editingFinished.connect(self._set_slice_from_label)
@@ -222,7 +223,15 @@ class QtDimSliderWidget(QWidget):
 
     def _fps_listener(self, *_) -> None:
         fps = self.play_button.fpsspin.value()
-        fps *= -1 if self.play_button.reverse_check.isChecked() else 1
+        if self.play_button.reverse_check.isChecked():
+            fps *= -1
+            self.play_button.setProperty('reverse', 'True')
+        else:
+            self.play_button.setProperty('reverse', 'False')
+        # polish/unpolish needed to sync the button style
+        self.play_button.style().unpolish(self.play_button)
+        self.play_button.style().polish(self.play_button)
+
         self.__class__.fps.fset(self, fps)
 
     def _pull_label(self):
@@ -262,6 +271,7 @@ class QtDimSliderWidget(QWidget):
             self.slider.setSingleStep(1)
             self.slider.setPageStep(1)
             self.slider.setValue(self.dims.current_step[self.axis])
+            self.curslice_label.validator().setTop(10 ** len(str(nsteps + 1)))
             self.totslice_label.setText(str(nsteps))
             self.totslice_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
             self._update_slice_labels()

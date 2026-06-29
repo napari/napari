@@ -36,6 +36,21 @@ def test_slice_labels(qtbot):
     assert dims.point[0] == 8
 
 
+def test_slice_label_validator_fits_large_dims(qtbot):
+    """The frame box must accept indices for stacks with >6 digits, see #3795."""
+    dims = Dims(ndim=2)
+    dims.set_range(0, (0, 2_000_000, 1))
+    view = QtDims(dims)
+    qtbot.addWidget(view)
+
+    label_edit = view.slider_widgets[0].curslice_label
+    # a 7-digit index is valid for this stack and must be accepted
+    assert label_edit.validator().top() >= 1_999_999
+    label_edit.setText('1500000')
+    label_edit.editingFinished.emit()
+    assert dims.point[0] == 1_500_000
+
+
 def test_not_playing_after_ndim_changes(qt_dims, qtbot):
     """See https://github.com/napari/napari/issues/3998"""
     qt_dims.dims.ndim = 3
