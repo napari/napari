@@ -30,7 +30,9 @@ class _AxesScene(ViewBox):
 
     def set_gl_state(self, *args: Any, **kwargs: Any) -> None:
         self.axes.set_gl_state(*args, **kwargs)
-        self.axes.update_gl_state(depth_test=True)
+        # TODO: fix this issue where depth is not correct but if enabled
+        #       it's used to blend with the whole canvas, not just the overlay "layer"
+        # self.axes.update_gl_state(depth_test=True)
 
 
 class VispyFloatingAxesOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
