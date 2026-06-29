@@ -692,7 +692,6 @@ module = [
     'napari._qt.utils',
     'napari._qt.widgets._slider_compat',
     'napari._qt.widgets.qt_color_swatch',
-    'napari._qt.widgets.qt_dict_table',
     'napari._qt.widgets.qt_dims',
     'napari._qt.widgets.qt_dims_slider',
     'napari._qt.widgets.qt_dims_sorter',
