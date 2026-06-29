@@ -614,7 +614,6 @@ module = [
     'napari._qt.containers.qt_axis_model',
     'napari._qt.containers.qt_layer_model',
     'napari._qt.containers.qt_list_model',
-    'napari._qt.containers.qt_list_view',
     'napari._qt.containers.qt_tree_model',
     'napari._qt.dialogs.confirm_close_dialog',
     'napari._qt.dialogs.preferences_dialog',
