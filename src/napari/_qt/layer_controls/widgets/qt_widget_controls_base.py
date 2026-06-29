@@ -13,7 +13,7 @@ class QtWrappedLabel(QLabel):
     to the right and vertically centered by default.
     """
 
-    def __init__(self, *args: object, **kwargs: object) -> None:
+    def __init__(self, text: str | None = None, parent: QWidget | None = None) -> None:
         super().__init__(*args, **kwargs)
         self.setWordWrap(True)
         self.setAlignment(
