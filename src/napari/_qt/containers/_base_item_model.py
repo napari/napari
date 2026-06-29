@@ -12,6 +12,8 @@ from napari.utils.translations import trans
 if TYPE_CHECKING:
     from qtpy.QtWidgets import QWidget
 
+    from napari.utils.events import Event
+
 _NULL_INDEX = QModelIndex()
 ItemType = TypeVar('ItemType')
 
@@ -246,7 +248,7 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
             par = self.index(i, 0, par)
         return par, idx
 
-    def _on_begin_inserting(self, event: Any) -> None:
+    def _on_begin_inserting(self, event: Event) -> None:
         """Begins a row insertion operation.
 
         See Qt documentation:
@@ -259,7 +261,7 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
         """Must be called after insert operation to update model."""
         self.endInsertRows()
 
-    def _on_begin_removing(self, event: Any) -> None:
+    def _on_begin_removing(self, event: Event) -> None:
         """Begins a row removal operation.
 
         See Qt documentation:
@@ -272,7 +274,7 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
         """Must be called after remove operation to update model."""
         self.endRemoveRows()
 
-    def _on_begin_moving(self, event: Any) -> None:
+    def _on_begin_moving(self, event: Event) -> None:
         """Begins a row move operation.
 
         See Qt documentation:
