@@ -5,43 +5,13 @@ on:
     branches:
       - main
   schedule:
-    - cron: "6 6 * * *" # every morning
+    - cron: "6 6 * * *" #every morning
 
 permissions:
   pull-requests: write
 
+
 jobs:
   remove_label:
-    runs-on: ubuntu-slim
-    steps:
-      - name: Remove label
-        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const { data: issues } = await github.rest.issues.listForRepo({
-              ...context.repo,
-              state: 'closed',
-              per_page: 100,
-              sort: 'updated',
-              direction: 'desc',
-              labels: 'ready to merge',
-            });
-            if (issues.length > 0) {
-              console.log('Found the following closed items with the "ready to merge" label:');
-              for (const issue of issues) {
-                console.log(`- #${issue.number}: ${issue.title}`);
-                try {
-                  await github.rest.issues.removeLabel({
-                    ...context.repo,
-                    issue_number: issue.number,
-                    name: 'ready to merge'
-                  });
-                  console.log(`  > Removed 'ready to merge' label from #${issue.number}`);
-                } catch (error) {
-                  console.error(`  > Failed to remove label from #${issue.number}: ${error.message}`);
-                }
-              }
-            } else {
-              console.log('No closed items found with the "ready to merge" label.');
-            }
+    name: Remove ready to merge label
+    uses: napari/shared-workflows/.github/workflows/remove_ready_to_merge.yml@main # v0.7.0
