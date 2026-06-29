@@ -294,8 +294,11 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
         # Connect events
         self.dims.events.ndisplay.connect(self._update_layers)
+<<<<<<< HEAD
         self.dims.events.ndisplay.connect(self._save_camera_state, position='first')
         self.dims.events.ndisplay.connect(self.fit_to_view)
+=======
+>>>>>>> 0709daa76 (add sync logic to viewer model)
         self.dims.events.ndisplay.connect(self._on_ndisplay_changed)
         self.dims.events.order.connect(self._update_layers)
         self.dims.events.order.connect(self.fit_to_view)
@@ -513,24 +516,39 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         self.camera._cache_state(self._previous_ndisplay)
 
     def _on_ndisplay_changed(self) -> None:
-        """Restore cached camera state for the mode being entered.
+        """Handle ndisplay changes with per-mode caching or sync mode.
 
-        On first entry into a mode (cache miss), fit_to_view's defaults
-        are cached for next time. On subsequent entries, the cached values
-        override the fit_to_view result.
+        Default (``camera.sync=False``): per-mode caching — each mode
+        remembers its own center, zoom, and angles. First entry into a
+        mode uses ``fit_to_view`` defaults.
+
+        When ``camera.sync=True``: shared state — center and zoom persist
+        between modes. The z-component is set from the dims slider on
+        2D→3D and the dims slider tracks the camera z on 3D→2D.
         """
+        if self.camera.sync:
+            center = list(self.camera.center)
+            if len(self.dims.order) >= 3:
+                new_display_dim = self.dims.order[-3]
+                if self.dims.ndisplay == 3:
+                    center[0] = float(self.dims.point[new_display_dim])
+                else:
+                    self.dims.set_point(new_display_dim, center[0])
+                    center[0] = 0.0
+            elif self.dims.ndisplay == 2:
+                center[0] = 0.0
+            self.camera.center = tuple(center)
+            return
+
+        # Per-mode caching (default)
         new_mode = self.dims.ndisplay
         cached = self.camera._pop_cached_state(new_mode)
-
         if cached is not None:
-            # Restore previously cached state for this mode
             self.camera.center = cached['center']
             self.camera.zoom = cached['zoom']
             self.camera.angles = cached['angles']
         else:
-            # First time in this mode — cache fit_to_view's defaults
             self.camera._cache_state(new_mode)
-
         self._previous_ndisplay = new_mode
 
     def _get_scene_parameters(
