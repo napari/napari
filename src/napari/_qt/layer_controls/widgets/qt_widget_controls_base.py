@@ -16,7 +16,7 @@ class QtWrappedLabel(QLabel):
     def __init__(
         self, text: str | None = None, parent: QWidget | None = None
     ) -> None:
-        super().__init__(*args, **kwargs)
+        super().__init__(text, parent)
         self.setWordWrap(True)
         self.setAlignment(
             Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
