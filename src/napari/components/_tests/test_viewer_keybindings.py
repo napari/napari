@@ -48,7 +48,7 @@ def test_theme_toggle_keybinding():
     assert viewer.theme == initial_theme
 
 
-def test_theme_toggle_from_system_theme(monkeypatch):
+def test_theme_toggle_from_system_theme():
     get_settings().appearance.theme = 'system'
     viewer = ViewerModel()
     assert viewer.theme == 'system'
