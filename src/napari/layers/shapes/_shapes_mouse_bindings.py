@@ -90,7 +90,6 @@ def select(layer: Shapes, event: MouseEvent) -> Generator[None, None, None]:
                 layer.selected_data = {shape_under_cursor}
         else:
             layer.selected_data = set()
-    layer._set_highlight()
 
     # we don't update the thumbnail unless a shape has been moved
     update_thumbnail = False
@@ -143,7 +142,6 @@ def select(layer: Shapes, event: MouseEvent) -> Generator[None, None, None]:
     elif layer._is_selecting:
         layer.selected_data = layer._data_view.shapes_in_box(layer._drag_box)
         layer._is_selecting = False
-        layer._set_highlight()
 
     layer._is_moving = False
     layer._drag_start = None
@@ -322,10 +320,9 @@ def initiate_polygon_draw(
     layer._is_creating = True
     data = np.array([coordinates, coordinates])
     layer.add(data, shape_type='path', gui=True)
-    layer.selected_data = Selection({layer.nshapes - 1})
     layer._value = (layer.nshapes - 1, 1)
     layer._moving_value = copy(layer._value)
-    layer._set_highlight()
+    layer.selected_data = Selection({layer.nshapes - 1})
 
 
 def add_path_polygon_lasso(

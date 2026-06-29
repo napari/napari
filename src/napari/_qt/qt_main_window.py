@@ -22,6 +22,7 @@ from typing import (
 )
 from weakref import WeakValueDictionary
 
+from qtpy import QT5
 from qtpy.QtCore import (
     QEvent,
     QEventLoop,
@@ -85,7 +86,7 @@ from napari.utils.misc import (
     in_python_repl,
     running_as_constructor_app,
 )
-from napari.utils.notifications import Notification
+from napari.utils.notifications import Notification, show_warning
 from napari.utils.task_status import Status, TaskStatusManager
 from napari.utils.theme import _themes, get_system_theme
 from napari.utils.translations import trans
@@ -103,6 +104,10 @@ if TYPE_CHECKING:
 
 _sentinel = object()
 
+SHOW_QT_WARNING = QT5
+# a variable to check if we run with PyQt5 backend. As we dropped PySide it is enough to check Qt version
+
+del QT5
 
 MenuStr = Literal[
     'file_menu',
@@ -227,6 +232,8 @@ class _QtMainWindow(QMainWindow):
 
     def showEvent(self, event: QShowEvent):
         """Override to handle window state changes."""
+        global SHOW_QT_WARNING
+
         settings = get_settings()
         # if event loop is not running, we don't want to start the thread
         # If event loop is running, the loopLevel will be above 0
@@ -235,6 +242,14 @@ class _QtMainWindow(QMainWindow):
             and QApplication.instance().thread().loopLevel()
         ):
             self.status_thread.start()
+
+        if SHOW_QT_WARNING:
+            show_warning(
+                'napari support for the PyQt5 backend is deprecated and will be removed in fall of 2026'
+            )
+
+            SHOW_QT_WARNING = False
+
         super().showEvent(event)
 
     def enterEvent(self, a0):
