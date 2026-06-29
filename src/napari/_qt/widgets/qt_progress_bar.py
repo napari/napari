@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from qtpy import QtCore
 from qtpy.QtWidgets import (
     QApplication,
@@ -10,9 +14,11 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from napari.utils.events import Event
 from napari.utils.progress import cancelable_progress, progress
 from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    from napari.utils.events import Event
 
 
 class QtLabeledProgressBar(QWidget):
