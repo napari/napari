@@ -62,6 +62,7 @@ class Camera(EventedModel):
         VerticalAxisOrientation,
         HorizontalAxisOrientation,
     ] = DEFAULT_ORIENTATION_TYPED
+    sync: bool = False
 
     # Per-mode camera state cache: maps ndisplay mode (2 or 3) to
     # {'center': ..., 'zoom': ..., 'angles': ...}.
