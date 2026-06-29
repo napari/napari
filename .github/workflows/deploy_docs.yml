@@ -48,6 +48,8 @@ jobs:
     needs: determine-branch-and-directory-name
     secrets:
       ACTIONS_DEPLOY_KEY: ${{ secrets.ACTIONS_DEPLOY_KEY }}
+      GOOGLE_CALENDAR_ID: ${{ secrets.GOOGLE_CALENDAR_ID }}
+      GOOGLE_CALENDAR_API_KEY: ${{ secrets.GOOGLE_CALENDAR_API_KEY }}
     with:
       target_directory: ${{ needs.determine-branch-and-directory-name.outputs.target_directory }}
       napari_ref: ${{ needs.determine-branch-and-directory-name.outputs.repo_reference }}
