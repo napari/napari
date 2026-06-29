@@ -214,8 +214,6 @@ class QCommandMatchModel(QtCore.QAbstractListModel):
 class QCommandLabel(QtW.QLabel):
     """The label widget to display a command in the palette."""
 
-    DISABLED_COLOR = 'gray'
-
     def __init__(self, cmd: CommandRule | None = None):
         super().__init__()
         self._command: CommandRule | None = None
@@ -255,10 +253,7 @@ class QCommandLabel(QtW.QLabel):
         output_text = ''.join(output_texts)
         self.setText(output_text)
 
-    def set_disabled(self) -> None:
-        """Set the label to disabled."""
-        text = self.command_text()
-        self.setText(colored(text, self.DISABLED_COLOR))
+        return
 
 
 class QCommandList(QtW.QListView):
@@ -371,7 +366,7 @@ class QCommandList(QtW.QListView):
             if _enabled(action, self._app_model_context):
                 lw.set_text_colors(input_text, color=self._match_color)
             else:
-                lw.set_disabled()
+                lw.setDisabled(True)
 
             if row >= max_matches:
                 self._current_max_index = max_matches
