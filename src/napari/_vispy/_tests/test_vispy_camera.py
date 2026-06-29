@@ -147,7 +147,7 @@ def test_camera_model_update_from_vispy_3D(make_napari_viewer):
 
 
 def test_switching_ndisplay_maintains_3D_angles(make_napari_viewer):
-    """Test that switching dims.ndisplay maintains 3D angles."""
+    """Test that per-mode caching preserves 3D angles across round-trips."""
     viewer = make_napari_viewer()
     vispy_camera = viewer.window._qt_viewer.canvas.camera
 
@@ -156,21 +156,19 @@ def test_switching_ndisplay_maintains_3D_angles(make_napari_viewer):
     viewer.add_image(data)
 
     angles_3D = (24, 12, -19)
-    angles_2D = (0, 0, 0)
 
     viewer.dims.ndisplay = 3
     viewer.camera.angles = angles_3D
     np.testing.assert_almost_equal(viewer.camera.angles, vispy_camera.angles)
 
-    # switching to 2D should maintain the model camera angles from 3D
-    # but the vispy camera angles will be the default 2D angles
+    # Per-mode caching: 2D has its own angles (0,0,0), 3D angles are cached
     viewer.dims.ndisplay = 2
-    np.testing.assert_almost_equal(viewer.camera.angles, angles_3D)
-    np.testing.assert_almost_equal(vispy_camera.angles, angles_2D)
+    np.testing.assert_almost_equal(viewer.camera.angles, (0, 0, 0))
+    np.testing.assert_almost_equal(vispy_camera.angles, (0, 0, 0))
 
-    # switching back to 3D should use the model camera angles for the
-    # vispy camera
+    # Switching back to 3D restores the cached 3D angles
     viewer.dims.ndisplay = 3
+    np.testing.assert_almost_equal(viewer.camera.angles, angles_3D)
     np.testing.assert_almost_equal(viewer.camera.angles, vispy_camera.angles)
 
 

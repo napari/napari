@@ -63,6 +63,26 @@ class Camera(EventedModel):
         HorizontalAxisOrientation,
     ] = DEFAULT_ORIENTATION_TYPED
 
+    # Per-mode camera state cache: maps ndisplay mode (2 or 3) to
+    # {'center': ..., 'zoom': ..., 'angles': ...}.
+    # Used to preserve independent camera state when switching between
+    # 2D and 3D views so each mode remembers its own view.
+    _camera_state_cache: dict[int, dict] = {}
+
+    def _cache_state(self, ndisplay_mode: int) -> None:
+        """Save current camera state for a given ndisplay mode."""
+        self._camera_state_cache[ndisplay_mode] = {
+            'center': self.center,
+            'zoom': self.zoom,
+            'angles': self.angles,
+        }
+
+    def _pop_cached_state(
+        self, ndisplay_mode: int
+    ) -> dict | None:
+        """Retrieve and remove cached state for a given ndisplay mode."""
+        return self._camera_state_cache.pop(ndisplay_mode, None)
+
     @field_validator('center', 'angles', mode='before')
     @classmethod
     def _ensure_3_tuple(cls, v):

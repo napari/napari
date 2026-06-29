@@ -1142,6 +1142,76 @@ def test_fit_to_view_2d_data_in_3d_view():
     assert viewer.camera.angles == (45, 30, 60)
 
 
+def test_per_mode_camera_cache_round_trip():
+    """Test that per-mode caching preserves independent state for 2D and 3D."""
+    viewer = ViewerModel()
+    np.random.seed(0)
+    viewer.add_image(np.random.random((11, 11, 11)))
+
+    # Customize 2D view
+    viewer.camera.center = (0, 2, 3)
+    viewer.camera.zoom = 2.5
+
+    # First entry into 3D gets fit_to_view defaults
+    viewer.dims.ndisplay = 3
+    np.testing.assert_allclose(viewer.camera.center, (5.0, 5.0, 5.0))
+
+    # Customize 3D view
+    viewer.camera.center = (7, 8, 9)
+    viewer.camera.zoom = 1.5
+    viewer.camera.angles = (24, 12, -19)
+
+    # Switch back to 2D — should restore the 2D state
+    viewer.dims.ndisplay = 2
+    np.testing.assert_allclose(viewer.camera.center, (0, 2, 3))
+    assert viewer.camera.zoom == 2.5
+
+    # Switch back to 3D — should restore the 3D state
+    viewer.dims.ndisplay = 3
+    np.testing.assert_allclose(viewer.camera.center, (7, 8, 9))
+    assert viewer.camera.zoom == 1.5
+    assert viewer.camera.angles == (24, 12, -19)
+
+    # Multiple round trips: states survive
+    for _ in range(3):
+        viewer.dims.ndisplay = 2
+        viewer.dims.ndisplay = 3
+    np.testing.assert_allclose(viewer.camera.center, (7, 8, 9))
+
+
+def test_per_mode_camera_cache_no_layers():
+    """Test per-mode caching doesn't crash with empty viewer."""
+    viewer = ViewerModel()
+    viewer.dims.ndisplay = 3
+    viewer.dims.ndisplay = 2
+
+
+def test_per_mode_camera_cache_2d_data():
+    """Test per-mode caching with 2D data (ndim=2 guard)."""
+    viewer = ViewerModel()
+    np.random.seed(0)
+    viewer.add_image(np.random.random((11, 11)))
+    viewer.camera.zoom = 2.5
+    viewer.dims.ndisplay = 3
+    assert viewer.camera.zoom == 2.5
+    viewer.dims.ndisplay = 2
+    assert viewer.camera.zoom == 2.5
+
+
+def test_per_mode_camera_cache_4d_data():
+    """Test per-mode caching with 4D data."""
+    viewer = ViewerModel()
+    np.random.seed(0)
+    viewer.add_image(np.random.random((5, 11, 11, 11)))
+    viewer.camera.center = (0, 2, 3)
+    viewer.dims.ndisplay = 3
+    viewer.camera.zoom = 1.5
+    viewer.dims.ndisplay = 2
+    np.testing.assert_allclose(viewer.camera.center, (0, 2, 3))
+    viewer.dims.ndisplay = 3
+    assert viewer.camera.zoom == 1.5
+
+
 def test_fit_to_view_handles_no_layers():
     """Test fit_to_view with no layers."""
     viewer = ViewerModel()

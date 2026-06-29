@@ -294,7 +294,9 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
         # Connect events
         self.dims.events.ndisplay.connect(self._update_layers)
+        self.dims.events.ndisplay.connect(self._save_camera_state, position='first')
         self.dims.events.ndisplay.connect(self.fit_to_view)
+        self.dims.events.ndisplay.connect(self._on_ndisplay_changed)
         self.dims.events.order.connect(self._update_layers)
         self.dims.events.order.connect(self.fit_to_view)
         self.dims.events.point.connect(self._update_layers)
@@ -306,6 +308,10 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         #        can remove the following line. Note that because of this we fire double events,
         #        but this should be ok because we have early returns when slices are unchanged.
         self.dims.events.current_step.connect(self._update_layers)
+
+        # Track previous ndisplay for per-mode camera state caching.
+        self._previous_ndisplay: int = self.dims.ndisplay
+
         self.dims.events.margin_left.connect(self._update_layers)
         self.dims.events.margin_right.connect(self._update_layers)
         self.cursor.events.position.connect(self.update_status_from_cursor)
@@ -501,6 +507,31 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             zoom=self.camera.zoom,
             angles=self.camera.angles,
         )
+
+    def _save_camera_state(self) -> None:
+        """Save camera state for the mode we're leaving (runs at 'first')."""
+        self.camera._cache_state(self._previous_ndisplay)
+
+    def _on_ndisplay_changed(self) -> None:
+        """Restore cached camera state for the mode being entered.
+
+        On first entry into a mode (cache miss), fit_to_view's defaults
+        are cached for next time. On subsequent entries, the cached values
+        override the fit_to_view result.
+        """
+        new_mode = self.dims.ndisplay
+        cached = self.camera._pop_cached_state(new_mode)
+
+        if cached is not None:
+            # Restore previously cached state for this mode
+            self.camera.center = cached['center']
+            self.camera.zoom = cached['zoom']
+            self.camera.angles = cached['angles']
+        else:
+            # First time in this mode — cache fit_to_view's defaults
+            self.camera._cache_state(new_mode)
+
+        self._previous_ndisplay = new_mode
 
     def _get_scene_parameters(
         self,
