@@ -1234,8 +1234,14 @@ def test_large_label_values():
     assert len(np.unique(mapped.reshape((-1, 4)), axis=0)) == 4
 
 
-@pytest.mark.parametrize('zarr_driver', ['zarr', 'zarr3'])
-def test_fill_tensorstore(tmp_path, zarr_driver):
+@pytest.mark.parametrize(
+    ('zarr_format', 'zarr_driver'),
+    [
+        (2, 'zarr'),  # zarr v2 format via tensorstore 'zarr' driver
+        (3, 'zarr3'),  # zarr v3 format via tensorstore 'zarr3' driver
+    ],
+)
+def test_fill_tensorstore(tmp_path, zarr_format, zarr_driver):
     ts = pytest.importorskip('tensorstore')
 
     labels = np.zeros((5, 7, 8, 9), dtype=int)
@@ -1245,14 +1251,13 @@ def test_fill_tensorstore(tmp_path, zarr_driver):
 
     file_path = str(tmp_path / 'labels.zarr')
 
-    zarr_version = 3 if zarr_driver == 'zarr3' else 2
     labels_temp = zarr.open(
         store=file_path,
         mode='w',
         shape=labels.shape,
         dtype=np.uint32,
         chunks=(1, 1, 8, 9),
-        zarr_format=zarr_version,
+        zarr_format=zarr_format,
     )
     labels_temp[:] = labels
     labels_ts_spec = {
