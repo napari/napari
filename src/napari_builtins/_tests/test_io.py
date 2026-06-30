@@ -25,16 +25,8 @@ from napari_builtins.io._write import write_csv
 
 
 def _create_zarr_array(group, name, **kwargs):
-    """This is a helper to handle creating arrays with zarr < 3 and >3.2.0
-
-    Zarr > 3 deprecated `create_dataset` and zarr 3.2.0 removed it, but
-    `create_array` is not part of zarr < 3 API.
-    napari has dropped py310; this can be removed in favor of just `create_array`
-    once the minimum zarr version is > 3.
-    """
-    if hasattr(group, 'create_array'):
-        return group.create_array(name, **kwargs)
-    return group.create_dataset(name, **kwargs)
+    """Create a zarr array in the given group."""
+    return group.create_array(name, **kwargs)
 
 
 if TYPE_CHECKING:

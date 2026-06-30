@@ -3,7 +3,6 @@ import itertools
 import time
 from collections import defaultdict
 from dataclasses import dataclass
-from importlib.metadata import version
 
 import numpy as np
 import numpy.testing as npt
@@ -11,7 +10,6 @@ import pandas as pd
 import pytest
 import xarray as xr
 import zarr
-from packaging.version import parse as parse_version
 from skimage import data as sk_data
 
 from napari._tests.utils import check_layer_world_data_extent
@@ -1236,16 +1234,8 @@ def test_large_label_values():
     assert len(np.unique(mapped.reshape((-1, 4)), axis=0)) == 4
 
 
-if parse_version(version('zarr')) > parse_version('3.0.0a0'):
-    driver = [(2, 'zarr'), (3, 'zarr3')]
-    ZARR_V3 = True
-else:
-    driver = [(2, 'zarr')]
-    ZARR_V3 = False
-
-
-@pytest.mark.parametrize(('zarr_version', 'zarr_driver'), driver)
-def test_fill_tensorstore(tmp_path, zarr_version, zarr_driver):
+@pytest.mark.parametrize('zarr_driver', ['zarr', 'zarr3'])
+def test_fill_tensorstore(tmp_path, zarr_driver):
     ts = pytest.importorskip('tensorstore')
 
     labels = np.zeros((5, 7, 8, 9), dtype=int)
@@ -1255,15 +1245,14 @@ def test_fill_tensorstore(tmp_path, zarr_version, zarr_driver):
 
     file_path = str(tmp_path / 'labels.zarr')
 
+    zarr_version = 3 if zarr_driver == 'zarr3' else 2
     labels_temp = zarr.open(
         store=file_path,
         mode='w',
         shape=labels.shape,
         dtype=np.uint32,
         chunks=(1, 1, 8, 9),
-        # zarr < 3 uses zarr_version, zarr > 3 uses zarr_format
-        # napari has dropped py310; this can be simplified to zarr_format once the minimum zarr version is > 3
-        **{('zarr_format' if ZARR_V3 else 'zarr_version'): zarr_version},
+        zarr_format=zarr_version,
     )
     labels_temp[:] = labels
     labels_ts_spec = {
