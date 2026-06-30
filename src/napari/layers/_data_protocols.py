@@ -6,7 +6,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Protocol,
-    Union,
     runtime_checkable,
 )
 
@@ -44,7 +43,7 @@ def _raise_protocol_error(obj: Any, protocol: type) -> None:
     raise TypeError(message)
 
 
-Index = Union[int, slice, ellipsis]
+Index = int | slice | ellipsis
 
 
 @runtime_checkable

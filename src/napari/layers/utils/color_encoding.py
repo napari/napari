@@ -70,13 +70,11 @@ class ColorEncoding(StyleEncoding[ColorValue, ColorArray], Protocol):
             return value
         if isinstance(value, dict):
             return TypeAdapter(
-                Union[
-                    ConstantColorEncoding,
-                    ManualColorEncoding,
-                    DirectColorEncoding,
-                    NominalColorEncoding,
-                    QuantitativeColorEncoding,
-                ]
+                ConstantColorEncoding
+                | ManualColorEncoding
+                | DirectColorEncoding
+                | NominalColorEncoding
+                | QuantitativeColorEncoding
             ).validate_python(
                 value,
             )

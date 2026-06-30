@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Generic, TypeVar
+from typing import TYPE_CHECKING, TypeVar
 
 from app_model.expressions import ContextNamespace as _ContextNamespace
 
@@ -8,7 +8,7 @@ if TYPE_CHECKING:
 A = TypeVar('A')
 
 
-class ContextNamespace(_ContextNamespace, Generic[A]):
+class ContextNamespace[A](_ContextNamespace):
     """A collection of related keys in a context
 
     meant to be subclassed, with class attributes that are `ContextKeys`.

@@ -327,7 +327,9 @@ def camel_to_spaces(val: str) -> str:
 T = TypeVar('T', str, Path)
 
 
-def abspath_or_url(relpath: T, *, must_exist: bool = False) -> T:
+def abspath_or_url[T: (str, Path)](
+    relpath: T, *, must_exist: bool = False
+) -> T:
     """Utility function that normalizes paths or a sequence thereof.
 
     Expands user directory and converts relpaths to abspaths... but ignores

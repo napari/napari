@@ -9,7 +9,6 @@ from typing import (
     NamedTuple,
     Protocol,
     TypeVar,
-    Union,
 )
 
 import numpy as np
@@ -39,20 +38,20 @@ if TYPE_CHECKING:
     from collections.abc import Iterable
 
 # All parsable input color types that a user can provide
-ColorType = Union[list, tuple, np.ndarray, str, Color, ColorArray]
+ColorType = list | tuple | np.ndarray | str | Color | ColorArray
 
 
-ValidColormapArg = Union[
-    str,
-    ColorType,
-    VispyColormap,
-    Colormap,
-    tuple[str, VispyColormap],
-    tuple[str, Colormap],
-    dict[str, VispyColormap],
-    dict[str, Colormap],
-    dict,
-]
+ValidColormapArg = (
+    str
+    | ColorType
+    | VispyColormap
+    | Colormap
+    | tuple[str, VispyColormap]
+    | tuple[str, Colormap]
+    | dict[str, VispyColormap]
+    | dict[str, Colormap]
+    | dict
+)
 
 T = TypeVar('T', contravariant=True)
 

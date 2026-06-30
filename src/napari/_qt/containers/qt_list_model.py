@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 import pickle
-from typing import TYPE_CHECKING, Optional, TypeVar
+from typing import TYPE_CHECKING, TypeVar
 
 from qtpy.QtCore import QMimeData, QModelIndex, Qt
 
@@ -34,7 +34,7 @@ class QtListModel(_BaseEventedItemModel[ItemType]):
         """
         return [ListIndexMIMEType, 'text/plain']
 
-    def mimeData(self, indices: list[QModelIndex]) -> Optional[QMimeData]:
+    def mimeData(self, indices: list[QModelIndex]) -> QMimeData | None:
         """Return an object containing serialized data from `indices`.
 
         If the list of indexes is empty, or there are no supported MIME types,

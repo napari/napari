@@ -2,7 +2,7 @@
 # from napari.utils.events import Event
 # from napari.utils.colormaps import AVAILABLE_COLORMAPS
 
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 from warnings import warn
 
 import numpy as np
@@ -690,7 +690,7 @@ class _TracksSlicingState(_LayerSlicingState):
 
     def __init__(self, layer: Tracks, data: LayerDataType, cache: bool):
         super().__init__(layer=layer, data=data, cache=cache)
-        self._current_displayed_dims: Optional[list[int]] = None
+        self._current_displayed_dims: list[int] | None = None
 
     def _set_view_slice(self) -> None:
         """Sets the view given the indices to slice with."""

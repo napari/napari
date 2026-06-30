@@ -1,12 +1,10 @@
-from typing import Union
-
 from app_model.expressions import parse_expression
 from app_model.types import Action, MenuItem, SubmenuItem
 
 from napari._app_model import get_app_model
 from napari._app_model.constants import MenuGroup, MenuId
 
-MenuOrSubmenu = Union[MenuItem, SubmenuItem]
+MenuOrSubmenu = MenuItem | SubmenuItem
 
 
 def to_id_key(menu_path: str) -> str:

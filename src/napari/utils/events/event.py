@@ -57,10 +57,8 @@ from collections.abc import Callable, Iterable, Iterator, Sequence
 from functools import partial
 from typing import (
     Any,
-    Generic,
     Literal,
     Optional,
-    TypeVar,
     Union,
     cast,
 )
@@ -202,17 +200,14 @@ class Event:
 _event_repr_depth = 0
 
 
-Callback = Union[Callable[[Event], None], Callable[[], None]]
+Callback = Callable[[Event], None] | Callable[[], None]
 CallbackRef = tuple['weakref.ReferenceType[Any]', str]  # dereferenced method
 CallbackStr = tuple[
-    Union['weakref.ReferenceType[Any]', object], str
+    weakref.ReferenceType[Any] | object, str
 ]  # dereferenced method
 
 
-_T = TypeVar('_T')
-
-
-class _WeakCounter(Generic[_T]):
+class _WeakCounter[T]:
     """
     Similar to collection counter but has weak keys.
 
@@ -220,19 +215,19 @@ class _WeakCounter(Generic[_T]):
     """
 
     def __init__(self) -> None:
-        self._counter: weakref.WeakKeyDictionary[_T, int] = (
+        self._counter: weakref.WeakKeyDictionary[T, int] = (
             weakref.WeakKeyDictionary()
         )
         self._nonecount = 0
 
-    def update(self, iterable: Iterable[_T]):
+    def update(self, iterable: Iterable[T]):
         for it in iterable:
             if it is None:
                 self._nonecount += 1
             else:
                 self._counter[it] = self.get(it, 0) + 1
 
-    def get(self, key: _T, default: int) -> int:
+    def get(self, key: T, default: int) -> int:
         if key is None:
             return self._nonecount
         return self._counter.get(key, default)

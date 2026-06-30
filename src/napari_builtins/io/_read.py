@@ -8,7 +8,7 @@ import tokenize
 from contextlib import suppress
 from glob import glob
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING
 
 import imageio.v3 as iio
 import numpy as np
@@ -217,7 +217,7 @@ def read_zarr_dataset(path: str):
     return image, image[0].shape
 
 
-PathOrStr = Union[str, Path]
+PathOrStr = str | Path
 
 
 def magic_imread(
@@ -514,7 +514,7 @@ csv_reader_functions = {
 
 def csv_to_layer_data(
     path: str, require_type: str | None = None
-) -> Optional[FullLayerData]:
+) -> FullLayerData | None:
     """Return layer data from a CSV file if detected as a valid type.
 
     Parameters

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import warnings
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Generic, TypeVar
+from typing import TYPE_CHECKING, TypeVar
 
 import numpy as np
 import pint
@@ -23,7 +23,7 @@ _T = TypeVar('_T')
 
 
 @dataclass(frozen=True)
-class _ThickNDSlice(Generic[_T]):
+class _ThickNDSlice[T]:
     """Holds the point and the left and right margins of a thick nD slice."""
 
     point: tuple[_T, ...]
