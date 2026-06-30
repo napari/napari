@@ -97,7 +97,7 @@ class _VectorSliceRequest:
         self, not_disp: list[int]
     ) -> tuple[npt.NDArray, npt.NDArray | int]:
         data = self.data[:, 0, not_disp]
-        alphas = 1
+        alphas: npt.NDArray | int = 1
 
         point, m_left, m_right = self.data_slice[not_disp].as_array()
 
