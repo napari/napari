@@ -71,7 +71,7 @@ dependencies = [
     "scipy>=1.14.0",
     "superqt>=0.7.8",
     "tifffile>=2022.7.28",
-    "toolz>=0.12.0",
+    "toolz>=0.12.1",
     "tqdm>=4.56.0",
     "typing_extensions>=4.12",
     "vispy>=0.16.2,<0.17",
@@ -170,7 +170,7 @@ testing = [
     "napari[optional-base, bermuda]",
 ]
 testing_extra = [
-    "torch>=1.10.2",
+    "torch>=1.13.1",
 ]
 # needed for gallery examples
 gallery = [
@@ -268,7 +268,7 @@ testing = [
     "napari[optional-base, bermuda]",
 ]
 testing_extra = [
-    "torch>=1.10.2",
+    "torch>=1.13.1",
 ]
 # needed for gallery examples
 gallery = [
