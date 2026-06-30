@@ -155,7 +155,7 @@ def calc_only_direct_updates(
 def get_changed_dependencies(
     base_branch: str,
     all_packages=False,
-    python_version='3.11',
+    python_version='3.12',
     src_dir: Path | None = None,
 ):
     """
