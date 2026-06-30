@@ -20,7 +20,6 @@ classifiers = [
     "Programming Language :: C",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
@@ -34,7 +33,7 @@ classifiers = [
     "Operating System :: Unix",
     "Operating System :: MacOS",
 ]
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 license = "BSD-3-Clause"
 license-files = [
     "LICENSE",
@@ -52,8 +51,8 @@ dependencies = [
     "napari-plugin-engine>=0.2.1",
     "napari-svg>=0.1.8",
     "npe2>=0.8.1",
-    "numpy>=1.24.2",
-    "pandas>=1.5.0",
+    "numpy>=2.1.0",
+    "pandas>=2.3.0",
     "Pillow>=10.0",
     "pint>=0.17",
     "platformdirs>=4.3.0",
@@ -67,8 +66,8 @@ dependencies = [
     "pywin32 ; platform_system == 'Windows'",
     "PyYAML>=6.0",
     "qtpy>=2.4.0",
-    "scikit-image[data]>=0.20.0",
-    "scipy>=1.14.0",
+    "scikit-image[data]>=0.25.0",
+    "scipy>=1.15.0",
     "superqt>=0.7.8",
     "tifffile>=2022.7.28",
     "toolz>=0.12.0",
@@ -118,7 +117,7 @@ all = [
     "napari[pyqt,optional]"
 ]
 optional-base = [
-    "zarr>=2.12.0", # needed by `builtins` (dask.array.from_zarr) to open zarr
+    "zarr>=3.0.0", # needed by `builtins` (dask.array.from_zarr) to open zarr
     "aiohttp", # needed to open remote files by zarr, replace by extras once https://github.com/zarr-developers/zarr-python/issues/3453 is done
     "napari-metadata>=0.1.0",
     "napari-plugin-manager >=0.1.10, <0.2.0",
@@ -152,7 +151,7 @@ testing = [
     "fsspec>=2023.10.0",
     "hypothesis>=6.8.0",
     "lxml[html_clean]>5",
-    "matplotlib >= 3.6.1",
+    "matplotlib>=3.10.0",
     "pooch>=1.6.0",
     "coverage>7",
     "pretend>=1.0.9",
@@ -163,8 +162,8 @@ testing = [
     "pytest-rerunfailures>=15.1",
     "tensorstore>=0.1.32",
     "virtualenv>=20.17",
-    "xarray>=0.16.2",
-    "IPython>=7.25.0",
+    "xarray>=2024.7.0",
+    "IPython>=8.27.0",
     "qtconsole>=4.5.1",
     "rich>=12.0.0",
     "napari[optional-base,bermuda]",
@@ -175,12 +174,12 @@ testing_extra = [
 # needed for gallery examples
 gallery = [
     "glasbey",
-    "zarr",
+    "zarr>=3.0.0",
     "dask[array,distributed]",
-    "matplotlib",
+    "matplotlib>=3.10.0",
     "pooch",
     "nilearn",
-    "xarray",
+    "xarray>=2024.7.0",
     "h5netcdf[h5py]",
     "tifffile[codecs]",
     "meshio",
@@ -210,7 +209,7 @@ docs = [
     "sphinxext-rediraffe",
     "myst-nb",
     "napari-sphinx-theme>=1.1.3",
-    "matplotlib",
+    "matplotlib>=3.10.0",
     "lxml[html_clean]>5",
     "imageio-ffmpeg",
     "pydeps",
@@ -250,7 +249,7 @@ testing = [
     "fsspec>=2023.10.0",
     "hypothesis>=6.8.0",
     "lxml[html_clean]>5",
-    "matplotlib >= 3.6.1",
+    "matplotlib>=3.10.0",
     "pooch>=1.6.0",
     "coverage>7",
     "pretend>=1.0.9",
@@ -261,8 +260,8 @@ testing = [
     "pytest-rerunfailures>=15.1",
     "tensorstore>=0.1.32",
     "virtualenv>=20.17",
-    "xarray>=0.16.2",
-    "IPython>=7.25.0",
+    "xarray>=2024.7.0",
+    "IPython>=8.27.0",
     "qtconsole>=4.5.1",
     "rich>=12.0.0",
     "napari[optional-base,bermuda]",
@@ -273,12 +272,12 @@ testing_extra = [
 # needed for gallery examples
 gallery = [
     "glasbey",
-    "zarr",
+    "zarr>=3.0.0",
     "dask[array,distributed]",
-    "matplotlib",
+    "matplotlib>=3.10.0",
     "pooch",
     "nilearn",
-    "xarray",
+    "xarray>=2024.7.0",
     "h5netcdf[h5py]",
     "tifffile[codecs]",
     "meshio",
@@ -308,7 +307,7 @@ docs = [
     "sphinxext-rediraffe",
     "myst-nb",
     "napari-sphinx-theme>=1.1.3",
-    "matplotlib",
+    "matplotlib>=3.10.0",
     "lxml[html_clean]>5",
     "imageio-ffmpeg",
     "pydeps",
