@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from qtpy import QtCore
 from qtpy.QtWidgets import (
     QApplication,
@@ -13,12 +17,15 @@ from qtpy.QtWidgets import (
 from napari.utils.progress import cancelable_progress, progress
 from napari.utils.translations import trans
 
+if TYPE_CHECKING:
+    from napari.utils.events import Event
+
 
 class QtLabeledProgressBar(QWidget):
     """QProgressBar with QLabels for description and ETA."""
 
     def __init__(
-        self, parent: QWidget | None = None, prog: progress = None
+        self, parent: QWidget | None = None, prog: progress | None = None
     ) -> None:
         super().__init__(parent)
         self.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose)
@@ -47,38 +54,40 @@ class QtLabeledProgressBar(QWidget):
 
         self.setLayout(base_layout)
 
-    def setRange(self, min_val, max_val):
+    def setRange(self, min_val: int, max_val: int) -> None:
         self.qt_progress_bar.setRange(min_val, max_val)
 
-    def setValue(self, value):
+    def setValue(self, value: int) -> None:
         self.qt_progress_bar.setValue(value)
         QApplication.processEvents()
 
-    def setDescription(self, value):
+    def setDescription(self, value: str) -> None:
         if not value.endswith(': '):
             value = f'{value}: '
         self.description_label.setText(value)
         QApplication.processEvents()
 
-    def _set_value(self, event):
+    def _set_value(self, event: Event) -> None:
         self.setValue(event.value)
 
-    def _get_value(self):
+    def _get_value(self) -> int:
         return self.qt_progress_bar.value()
 
-    def _set_description(self, event):
+    def _set_description(self, event: Event) -> None:
         self.setDescription(event.value)
 
-    def _make_indeterminate(self, event):
+    def _make_indeterminate(self, event: Event) -> None:
         self.setRange(0, 0)
 
-    def _set_eta(self, event):
+    def _set_eta(self, event: Event) -> None:
         self.eta_label.setText(event.value)
 
-    def _set_total(self, event):
+    def _set_total(self, event: Event) -> None:
         self.setRange(0, event.value)
 
-    def _cancel(self):
+    def _cancel(self) -> None:
+        if self.progress is None:
+            return
         self.cancel_button.setText(trans._('Cancelling...'))
         self.progress.cancel()
         self.cancel_button.setText(trans._('Canceled'))
