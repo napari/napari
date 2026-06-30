@@ -512,19 +512,20 @@ class TrackManager:
 
 
 def prepare_tracks_data(
-    data: 'pd.DataFrame', column_map: dict[str, str]
-) -> 'pd.DataFrame':
-    required = ['track_id', 't', 'y', 'x']
-    for key in required:
-        if key not in column_map:
-            raise ValueError('key missing')
+    data: 'pd.DataFrame',
+    track_id: int,
+    t: int,
+    y: int,
+    x: int,
+    z: int | None = None,
+) -> np.ndarray:
 
-    order = [column_map['track_id'], column_map['t']]
+    order = [track_id, t]
 
-    if 'z' in column_map:
-        order.append(column_map['z'])
+    if z is not None:
+        order.append(z)
 
-    order.extend([column_map['y'], column_map['x']])
+    order.extend([y, x])
 
     # convert to numpy
     return data[:, order].to_numpy()
