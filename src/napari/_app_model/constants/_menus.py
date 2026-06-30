@@ -11,7 +11,7 @@ SOME of these (but definitely not all) will be exposed as "contributable"
 menus for plugins to contribute commands and submenu items to.
 """
 
-from napari.utils.compat import StrEnum
+from enum import StrEnum
 
 
 class MenuId(StrEnum):
