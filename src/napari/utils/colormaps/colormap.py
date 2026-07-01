@@ -6,6 +6,7 @@ from typing import (
     Annotated,
     Any,
     Literal,
+    Self,
     cast,
     overload,
 )
@@ -19,7 +20,6 @@ from pydantic import (
     ValidationInfo,
     field_validator,
 )
-from typing_extensions import Self
 
 from napari.utils.color import ColorArray, ColorValue
 from napari.utils.colormaps import _accelerated_cmap as _accel_cmap
