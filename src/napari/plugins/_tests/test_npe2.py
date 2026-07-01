@@ -1,7 +1,7 @@
 from pathlib import Path
 from types import MethodType
 from typing import TYPE_CHECKING
-from unittest.mock import MagicMock
+from unittest.mock import DEFAULT, MagicMock
 
 import npe2
 import numpy as np
@@ -19,6 +19,16 @@ PLUGIN_DISPLAY_NAME = 'My Plugin'  # this matches the sample_manifest
 MANIFEST_PATH = Path(__file__).parent / '_sample_manifest.yaml'
 
 
+def none_reader(*args, **kwargs):
+    return [(None,)]
+
+
+def return_none_reader(val: str):
+    if val == f'{PLUGIN_NAME}.some_reader_none':
+        return lambda *args, **kwargs: none_reader
+    return DEFAULT
+
+
 @pytest.fixture
 def mock_pm(npe2pm: 'TestPluginManager'):
     from napari.plugins import _initialize_plugins
@@ -26,6 +36,9 @@ def mock_pm(npe2pm: 'TestPluginManager'):
     _initialize_plugins.cache_clear()
     mock_reg = MagicMock()
     npe2pm._command_registry = mock_reg
+
+    mock_reg.get.side_effect = return_none_reader
+
     with npe2pm.tmp_plugin(manifest=MANIFEST_PATH):
         yield npe2pm
 
@@ -39,6 +52,13 @@ def test_read_no_stack(mock_pm: 'TestPluginManager'):
 def test_read_with_stack(mock_pm: 'TestPluginManager'):
     _, _ = _npe2.read(['some.fzzy'], stack=True)
     mock_pm.commands.get.assert_called_once_with(f'{PLUGIN_NAME}.some_reader')
+
+
+def test_read_none_reader(mock_pm: 'TestPluginManager'):
+    _a, _b = _npe2.read(['some.nfzzy'], stack=True, plugin=PLUGIN_NAME)
+    mock_pm.commands.get.assert_called_once_with(
+        f'{PLUGIN_NAME}.some_reader_none'
+    )
 
 
 def test_read_no_compatible_readers(mock_pm: 'TestPluginManager'):
