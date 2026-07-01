@@ -189,7 +189,11 @@ else:
 
 
 def _labels_raw_to_texture_direct_numpy(
-    data: np.ndarray, direct_colormap: 'DirectLabelColormap'
+    data: np.ndarray,
+    direct_colormap: 'DirectLabelColormap',
+    *,
+    use_selection: bool = False,
+    selection: int = 0,
 ) -> np.ndarray:
     """Convert labels data to the data type used in the texture.
 
@@ -197,8 +201,8 @@ def _labels_raw_to_texture_direct_numpy(
 
     See `_cast_labels_data_to_texture_dtype_direct` for more details.
     """
-    if direct_colormap.use_selection:
-        return (data == direct_colormap.selection).astype(np.uint8)
+    if use_selection:
+        return (data == selection).astype(np.uint8)
     mapper = direct_colormap._array_map
     if any(x < 0 for x in direct_colormap.color_dict if x is not None):
         half_shape = mapper.shape[0] // 2 - 1
@@ -210,7 +214,11 @@ def _labels_raw_to_texture_direct_numpy(
 
 
 def _labels_raw_to_texture_direct_loop(
-    data: np.ndarray, direct_colormap: 'DirectLabelColormap'
+    data: np.ndarray,
+    direct_colormap: 'DirectLabelColormap',
+    *,
+    use_selection: bool = False,
+    selection: int = 0,
 ) -> np.ndarray:
     """
     Cast direct labels to the minimum type.
@@ -227,8 +235,8 @@ def _labels_raw_to_texture_direct_loop(
     np.ndarray
         The cast data array.
     """
-    if direct_colormap.use_selection:
-        return (data == direct_colormap.selection).astype(np.uint8)
+    if use_selection:
+        return (data == selection).astype(np.uint8)
 
     dkt = direct_colormap._get_typed_dict_mapping(data.dtype)
     target_dtype = minimum_dtype_for_labels(
@@ -267,10 +275,14 @@ def zero_preserving_modulo_partsegcore(
 
 
 def labels_raw_to_texture_direct_partsegcore(
-    data: np.ndarray, direct_colormap: 'DirectLabelColormap'
+    data: np.ndarray,
+    direct_colormap: 'DirectLabelColormap',
+    *,
+    use_selection: bool = False,
+    selection: int = 0,
 ) -> np.ndarray:
-    if direct_colormap.use_selection:
-        dkt = {None: 0, direct_colormap.selection: 1}
+    if use_selection:
+        dkt = {None: 0, selection: 1}
     else:
         iinfo = np.iinfo(data.dtype)
         dkt = {
