@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod
+from abc import ABCMeta, abstractmethod
 
 from qtpy.QtCore import QObject, Qt
 from qtpy.QtWidgets import QLabel, QWidget
@@ -13,19 +13,21 @@ class QtWrappedLabel(QLabel):
     to the right and vertically centered by default.
     """
 
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
+    def __init__(
+        self, text: str | None = None, parent: QWidget | None = None
+    ) -> None:
+        super().__init__(text, parent)
         self.setWordWrap(True)
         self.setAlignment(
             Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
         )
 
 
-class MetaWidgetControlsBase(type(ABC), type(QObject)):
+class MetaWidgetControlsBase(ABCMeta, type(QObject)):  # type: ignore[misc]
     pass
 
 
-class QtWidgetControlsBase(QObject, ABC, metaclass=MetaWidgetControlsBase):
+class QtWidgetControlsBase(QObject, metaclass=MetaWidgetControlsBase):
     """
     Base class that defines base methods for wrapper classes that do the
     connection of events/signals between layer attributes and Qt widgets.
@@ -46,7 +48,7 @@ class QtWidgetControlsBase(QObject, ABC, metaclass=MetaWidgetControlsBase):
         self._layer = layer
         # Track registered callbacks (defined via `attr_to_settr` for example)
         # so it is possible to disconnect them when the widget is being closed/deleted
-        self._callbacks = []
+        self._callbacks: list[object] = []
 
     @abstractmethod
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
