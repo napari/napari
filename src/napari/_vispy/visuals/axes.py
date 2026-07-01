@@ -145,7 +145,7 @@ class Axes(Compound):
             [0, 0, 1, 1],
         ]
 
-        self._text_offsets = 0.1 * np.array([1, 1, 1])
+        self._text_offsets = np.eye(3) * 0.3
 
         # note order is x, y, z for VisPy
         self._line_data2D = np.array(
@@ -282,4 +282,4 @@ class Axes(Compound):
         )
 
         self.text.color = axes_colors
-        self.text.pos = text_data + self._text_offsets
+        self.text.pos = text_data + self._text_offsets[:ndisplay]
