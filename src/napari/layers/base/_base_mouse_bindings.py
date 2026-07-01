@@ -8,6 +8,7 @@ import numpy.typing as npt
 
 from napari.layers.utils.interaction_box import (
     InteractionBoxHandle,
+    generate_interaction_box_handles,
     generate_transform_box_from_layer,
     get_nearby_handle,
 )
@@ -21,7 +22,33 @@ if TYPE_CHECKING:
     from napari.layers.base import Layer
 
 
-def highlight_box_handles(layer: Layer, event: Event) -> None:
+def highlight_selection_box_handles(layer: Layer, event: Event) -> None:
+    """
+    Highlight the hovered handle of a TransformBox.
+    """
+    if len(event.dims_displayed) != 2:
+        return
+
+    # we work in data space so we're axis aligned which simplifies calculation
+    # same as Layer.world_to_data
+    world_to_data = (
+        layer._transforms[1:].set_slice(layer._slice_input.displayed).inverse
+    )
+    pos = np.array(world_to_data(event.position))[event.dims_displayed]
+    box = layer._overlays['selection_box']
+    # flip bounds to match vispy order which is used for the coordinates of handles
+    bounds = (tuple(point) for point in np.array(box.bounds)[:, ::-1])
+    handle_coords = generate_interaction_box_handles(*bounds)[:, ::-1]
+    # TODO: this tolerance value is a bit random... could we somehow make *sure* this is
+    #       correct and matching the size of the handles in data space?
+    tolerance = 10 / event.camera_zoom
+    nearby_handle = get_nearby_handle(pos, handle_coords, tolerance=tolerance)
+
+    # set the selected vertex of the box to the nearby_handle (can also be INSIDE or None)
+    box.selected_handle = nearby_handle
+
+
+def highlight_transform_box_handles(layer: Layer, event: Event) -> None:
     """
     Highlight the hovered handle of a TransformBox.
     """
@@ -37,8 +64,10 @@ def highlight_box_handles(layer: Layer, event: Event) -> None:
     handle_coords = generate_transform_box_from_layer(
         layer, layer._slice_input.displayed
     )
-    # TODO: dynamically set tolerance based on canvas size so it's not hard to pick small layer
-    nearby_handle = get_nearby_handle(pos, handle_coords)
+    # TODO: this tolerance value is a bit random... could we somehow make *sure* this is
+    #       correct and matching the size of the handles in data space?
+    tolerance = 10 / event.camera_zoom
+    nearby_handle = get_nearby_handle(pos, handle_coords, tolerance=tolerance)
 
     # set the selected vertex of the box to the nearby_handle (can also be INSIDE or None)
     layer._overlays['transform_box'].selected_handle = nearby_handle
@@ -193,8 +222,11 @@ def transform_with_box(
     initial_handle_coords_data = generate_transform_box_from_layer(
         layer, layer._slice_input.displayed
     )
+    # TODO: this tolerance value is a bit random... could we somehow make *sure* this is
+    #       correct and matching the size of the handles in data space?
+    tolerance = 10 / event.camera_zoom
     nearby_handle = get_nearby_handle(
-        initial_mouse_pos_data, initial_handle_coords_data
+        initial_mouse_pos_data, initial_handle_coords_data, tolerance=tolerance
     )
 
     if nearby_handle is None:

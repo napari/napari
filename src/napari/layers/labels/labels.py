@@ -24,7 +24,7 @@ from napari.layers._scalar_field.scalar_field import (
 )
 from napari.layers.base import Layer, no_op
 from napari.layers.base._base_mouse_bindings import (
-    highlight_box_handles,
+    highlight_transform_box_handles,
     transform_with_box,
 )
 from napari.layers.image._image_utils import guess_multiscale
@@ -301,7 +301,7 @@ class Labels(ScalarFieldBase):
         dict[StringEnum, Callable[[Labels, Event], None]]
     ] = {  # type: ignore[assignment]
         Mode.PAN_ZOOM: no_op,
-        Mode.TRANSFORM: highlight_box_handles,
+        Mode.TRANSFORM: highlight_transform_box_handles,
         Mode.PICK: no_op,
         Mode.PAINT: brush_size_on_mouse_move,
         Mode.FILL: no_op,

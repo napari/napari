@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 
 @lru_cache
-def generate_interaction_box_vertices(
+def generate_interaction_box_handles(
     top_left: tuple[float, float],
     bot_right: tuple[float, float],
     handles: bool = True,
@@ -85,14 +85,14 @@ def generate_transform_box_from_layer(
 
     # generates in vispy canvas pos, so invert x and y, and then go back
     top_left, bot_right = (tuple(point) for point in bounds.T[:, ::-1])
-    return generate_interaction_box_vertices(
+    return generate_interaction_box_handles(
         top_left, bot_right, handles=True, rotation=True
     )[:, ::-1]
 
 
 def calculate_bounds_from_contained_points(
     points: np.ndarray,
-) -> tuple[tuple[float, float], tuple[float, float]]:
+) -> tuple[tuple[float, float], tuple[float, float]] | None:
     """
     Calculate the top-left and bottom-right corners of an axis-aligned bounding box.
 
@@ -106,23 +106,17 @@ def calculate_bounds_from_contained_points(
     Tuple[Tuple[float, float], Tuple[float, float]]
         Top-left and bottom-right corners of the bounding box.
     """
-    if points is None:
-        return None
-
     points = np.atleast_2d(points)
     if points.ndim != 2:
         raise ValueError('only 2D coordinates are accepted')
 
-    x0 = points[:, 0].min()
-    x1 = points[:, 0].max()
-    y0 = points[:, 1].min()
-    y1 = points[:, 1].max()
-
-    return (x0, x1), (y0, y1)
+    return tuple(points.min(axis=0)), tuple(points.max(axis=0))
 
 
 def get_nearby_handle(
-    position: np.ndarray, handle_coordinates: np.ndarray
+    position: np.ndarray,
+    handle_coordinates: np.ndarray,
+    tolerance: float | None = None,
 ) -> InteractionBoxHandle | None:
     """
     Get the InteractionBoxHandle close to the given position, within tolerance.
@@ -133,6 +127,9 @@ def get_nearby_handle(
         Position to query for.
     handle_coordinates : np.ndarray
         Coordinates of all the handles (except INSIDE).
+    tolerance : float or None
+        Distance within which the handle will be considered hovered.
+        If unset, it will be guessed from the size of the box.
 
     Returns
     -------
@@ -142,7 +139,7 @@ def get_nearby_handle(
     top_left = handle_coordinates[InteractionBoxHandle.TOP_LEFT]
     bot_right = handle_coordinates[InteractionBoxHandle.BOTTOM_RIGHT]
     dist = np.linalg.norm(position - handle_coordinates, axis=1)
-    tolerance = dist.max() / 100
+    tolerance = tolerance or dist.max() / 100
     close_to_vertex = np.isclose(dist, 0, atol=tolerance)
     if np.any(close_to_vertex):
         idx = int(np.argmax(close_to_vertex))

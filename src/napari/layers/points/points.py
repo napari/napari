@@ -3,13 +3,12 @@ from __future__ import annotations
 import numbers
 import typing
 import warnings
-from copy import copy, deepcopy
+from copy import deepcopy
 from typing import (
     TYPE_CHECKING,
     Any,
     ClassVar,
     Literal,
-    Optional,
 )
 
 import numpy as np
@@ -19,7 +18,7 @@ from psygnal.containers import Selection
 from napari.layers.base import Layer, _LayerSlicingState, no_op
 from napari.layers.base._base_constants import ActionType
 from napari.layers.base._base_mouse_bindings import (
-    highlight_box_handles,
+    highlight_transform_box_handles,
     transform_with_box,
 )
 from napari.layers.points._points_constants import (
@@ -29,11 +28,8 @@ from napari.layers.points._points_constants import (
 )
 from napari.layers.points._points_mouse_bindings import add, highlight, select
 from napari.layers.points._points_utils import (
-    _create_box_from_corners_3d,
     coerce_symbols,
-    create_box,
     fix_data_points,
-    points_to_squares,
 )
 from napari.layers.points._slice import _PointSliceRequest, _PointSliceResponse
 from napari.layers.utils._color_manager_constants import ColorMode
@@ -66,8 +62,6 @@ if TYPE_CHECKING:
     from collections.abc import (
         Callable,
         Iterable,
-        Sequence,
-        Set as AbstractSet,
     )
     from itertools import cycle
 
@@ -329,13 +323,6 @@ class Points(Layer):
     _selected_view :
         Integer indices of selected points in the currently viewed slice within
         the `_view_data` array.
-    _selected_box : array (4, 2) or None
-        Four corners of any box either around currently selected points or
-        being created during a drag action. Starting in the top left and
-        going clockwise.
-    _drag_start : list or None
-        Coordinates of first cursor click during a drag action. Gets reset to
-        None after dragging is done.
     """
 
     _slicing_state: _PointsSlicingState
@@ -352,7 +339,7 @@ class Points(Layer):
 
     _move_modes: ClassVar[dict[Mode, Callable[[Points, Event], Any]]] = {
         Mode.PAN_ZOOM: no_op,
-        Mode.TRANSFORM: highlight_box_handles,
+        Mode.TRANSFORM: highlight_transform_box_handles,
         Mode.ADD: no_op,
         Mode.SELECT: highlight,
     }
@@ -429,22 +416,11 @@ class Points(Layer):
         self._selected_data_stored = set()
         self._selected_data_history = set()
         self._selected_data: Selection[int] = Selection()
-        # Index of hovered point
-        self._value = None
-        self._value_stored = None
         self._highlight_index = []
-        # indices of highlighted points in current view
-        self._highlight_box = None
+
         self._mode = Mode.PAN_ZOOM
         self._status = self.mode
 
-        self._drag_start: Optional[np.ndarray] = None
-        self._drag_normal: Optional[np.ndarray] = None
-        self._drag_up: Optional[np.ndarray] = None
-
-        self._drag_box: Optional[np.ndarray] = None
-        self._drag_box_stored: Optional[np.ndarray] = None
-        self._is_selecting = False
         self._clipboard = {}
 
         super().__init__(
@@ -687,7 +663,6 @@ class Points(Layer):
         if selected:
             self._set_highlight()
         else:
-            self._highlight_box = None
             self._highlight_index = []
             self.events.highlight()
 
@@ -1458,27 +1433,6 @@ class Points(Layer):
 
         self._set_highlight()
 
-    def interaction_box(self, index: list[int]) -> np.ndarray | None:
-        """Create the interaction box around a list of points in view.
-
-        Parameters
-        ----------
-        index : list
-            List of points around which to construct the interaction box.
-
-        Returns
-        -------
-        box : np.ndarray or None
-            4x2 array of corners of the interaction box in clockwise order
-            starting in the upper-left corner.
-        """
-        if len(index) > 0:
-            data = self._view_data[index]
-            size = self._view_size[index]
-            data = points_to_squares(data, size)
-            return create_box(data)
-        return None
-
     @Layer.mode.getter
     def mode(self) -> str:
         """str: Interactive mode
@@ -1858,73 +1812,6 @@ class Points(Layer):
         )
         return start_point, end_point
 
-    def _set_highlight(self, force: bool = False) -> None:
-        """Render highlights of shapes including boundaries, vertices,
-        interaction boxes, and the drag selection box when appropriate.
-        Highlighting only occurs in Mode.SELECT.
-
-        Parameters
-        ----------
-        force : bool
-            Bool that forces a redraw to occur when `True`
-        """
-        # Check if any point ids have changed since last call
-        if (
-            self.selected_data == self._selected_data_stored
-            and self._value == self._value_stored
-            and np.array_equal(self._drag_box, self._drag_box_stored)
-        ) and not force:
-            return
-        self._selected_data_stored = Selection(self.selected_data)
-        self._value_stored = copy(self._value)
-        self._drag_box_stored = copy(self._drag_box)
-
-        if self._highlight_visible and (
-            self._value is not None or len(self._selected_view) > 0
-        ):
-            if len(self._selected_view) > 0:
-                index = copy(self._selected_view)
-                # highlight the hovered point if not in adding mode
-                if (
-                    self._value in self._indices_view
-                    and self._mode == Mode.SELECT
-                    and not self._is_selecting
-                ):
-                    hover_point = list(self._indices_view).index(self._value)
-                    if hover_point not in index:
-                        index.append(hover_point)
-                index.sort()
-            else:
-                # only highlight hovered points in select mode
-                if (
-                    self._value in self._indices_view
-                    and self._mode == Mode.SELECT
-                    and not self._is_selecting
-                ):
-                    hover_point = list(self._indices_view).index(self._value)
-                    index = [hover_point]
-                else:
-                    index = []
-
-            self._highlight_index = index
-        else:
-            self._highlight_index = []
-
-        # only display dragging selection box in 2D
-        if self._highlight_visible and self._is_selecting:
-            if self._drag_normal is None:
-                pos = create_box(self._drag_box)
-            else:
-                pos = _create_box_from_corners_3d(
-                    self._drag_box, self._drag_normal, self._drag_up
-                )
-            pos = pos[[*range(4), 0]]
-        else:
-            pos = None
-
-        self._highlight_box = pos
-        self.events.highlight()
-
     def _update_thumbnail(self) -> None:
         """Update thumbnail with current points and colors."""
         colormapped = np.zeros(self._thumbnail_shape)
@@ -2122,68 +2009,6 @@ class Points(Layer):
     def remove_selected(self) -> None:
         """Remove all selected points."""
         self.remove(list(self.selected_data))
-
-    def _move(
-        self,
-        selection_indices: AbstractSet[int],
-        position: Sequence[float]
-        | np.ndarray[tuple[int], np.dtype[np.floating]],
-    ) -> None:
-        """Move points relative to drag start location.
-
-        Parameters
-        ----------
-        selection_indices : Sequence[int]
-            Integer indices of points to move in self.data
-        position : tuple
-            Position to move points to in data coordinates.
-        """
-        if len(selection_indices) > 0:
-            selection_indices = list(selection_indices)
-            disp = list(self._slice_input.displayed)
-            self._set_drag_start(selection_indices, position)
-            center = self.data[np.ix_(selection_indices, disp)].mean(axis=0)
-            shift = np.array(position)[disp] - center - self._drag_start
-            self.data[np.ix_(selection_indices, disp)] = (
-                self.data[np.ix_(selection_indices, disp)] + shift
-            )
-            self.refresh()
-            self.events.data(
-                value=self.data,
-                action=ActionType.CHANGED,
-                data_indices=tuple(selection_indices),
-                vertex_indices=((),),
-            )
-            self.events.features()
-
-    def _set_drag_start(
-        self,
-        selection_indices: AbstractSet[int],
-        position: Sequence[float]
-        | np.ndarray[tuple[int], np.dtype[np.floating]],
-        center_by_data: bool = True,
-    ) -> None:
-        """Store the initial position at the start of a drag event.
-
-        Parameters
-        ----------
-        selection_indices : set of int
-            integer indices of selected data used to index into self.data
-        position : Sequence of numbers
-            position of the drag start in data coordinates.
-        center_by_data : bool
-            Center the drag start based on the selected data.
-            Used for modifier drag_box selection.
-        """
-        selection_indices = list(selection_indices)
-        dims_displayed = list(self._slice_input.displayed)
-        if self._drag_start is None:
-            self._drag_start = np.array(position, dtype=float)[dims_displayed]
-            if len(selection_indices) > 0 and center_by_data:
-                center = self.data[
-                    np.ix_(selection_indices, dims_displayed)
-                ].mean(axis=0)
-                self._drag_start -= center
 
     def _paste_data(self) -> None:
         """Paste any point from clipboard and select them."""
