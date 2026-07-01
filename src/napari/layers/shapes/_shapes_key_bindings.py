@@ -177,7 +177,6 @@ def select_shapes_in_slice(layer: Shapes) -> None:
         layer.selected_data = new_selected
         if new_selected:
             show_info(f'Selected {len(new_selected)} shapes in this slice.')
-    layer._set_highlight()
 
 
 @register_shapes_action('Delete any selected shapes')

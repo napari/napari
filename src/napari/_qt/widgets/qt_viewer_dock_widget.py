@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Union
 from weakref import ReferenceType, ref
 
 from qtpy.QtCore import QCoreApplication, QEvent, Qt
+from qtpy.QtGui import QFontMetrics
 from qtpy.QtWidgets import (
     QDockWidget,
     QFrame,
@@ -445,6 +446,10 @@ class QtCustomTitleBar(QLabel):
 
         self.setLayout(layout)
         self.setCursor(Qt.CursorShape.OpenHandCursor)
+        # set minimum heights to ensure enough space for the title text
+        font_height = QFontMetrics(self.font()).height()
+        self.setMinimumHeight(font_height + 10)
+        self.title.setMinimumHeight(font_height)
 
     def sizeHint(self):
         # this seems to be the correct way to set the height of the titlebar

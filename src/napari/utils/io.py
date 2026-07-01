@@ -183,7 +183,8 @@ def execute_python_code(code: str, script_path: str | Path = '') -> None:
             # code will be executed with `exec(code, namespace)`, set `__name__` to `builtins`.
             # Set `__main__` to execute `if __name__ == '__main__':` blocks
             script_namespace['__name__'] = '__main__'
-            exec(code, script_namespace)
+            code_obj = compile(code, script_path, 'exec', dont_inherit=True)
+            exec(code_obj, script_namespace)
             _add_variables_to_viewer_console(
                 _SCRIPT_NAMESPACES[script_path], patched_viewer
             )

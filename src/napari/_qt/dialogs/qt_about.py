@@ -7,6 +7,7 @@ from qtpy.QtWidgets import (
     QPushButton,
     QTextEdit,
     QVBoxLayout,
+    QWidget,
 )
 
 from napari.utils import citation_text, sys_info
@@ -39,10 +40,10 @@ class QtAbout(QDialog):
         Layout widget for the entire 'About napari' dialog.
     """
 
-    def __init__(self, parent=None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
 
-        self.layout = QVBoxLayout()
+        self._layout = QVBoxLayout()
 
         # Description
         title_label = QLabel(
@@ -51,14 +52,14 @@ class QtAbout(QDialog):
         title_label.setTextInteractionFlags(
             Qt.TextInteractionFlag.TextSelectableByMouse
         )
-        self.layout.addWidget(title_label)
+        self._layout.addWidget(title_label)
 
         # Add information
         self.infoTextBox = QTextEdit()
         self.infoTextBox.setTextInteractionFlags(
             Qt.TextInteractionFlag.TextSelectableByMouse
         )
-        self.infoTextBox.setLineWrapMode(QTextEdit.NoWrap)
+        self.infoTextBox.setLineWrapMode(QTextEdit.LineWrapMode.NoWrap)
         # Add text copy button
         self.infoCopyButton = QtCopyToClipboardButton(self.infoTextBox)
         self.info_layout = QHBoxLayout()
@@ -67,15 +68,17 @@ class QtAbout(QDialog):
             self.infoCopyButton, 0, Qt.AlignmentFlag.AlignTop
         )
         self.info_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
-        self.layout.addLayout(self.info_layout)
+        self._layout.addLayout(self.info_layout)
 
         self.infoTextBox.setText(sys_info(as_html=True))
-        self.infoTextBox.setMinimumSize(
-            int(self.infoTextBox.document().size().width() + 19),
-            int(min(self.infoTextBox.document().size().height() + 10, 500)),
-        )
+        doc = self.infoTextBox.document()
+        if doc is not None:
+            self.infoTextBox.setMinimumSize(
+                int(doc.size().width() + 19),
+                int(min(doc.size().height() + 10, 500)),
+            )
 
-        self.layout.addWidget(QLabel('<b>citation information:</b>'))
+        self._layout.addWidget(QLabel('<b>citation information:</b>'))
         self.citationTextBox = QTextEdit(citation_text)
         self.citationTextBox.setFixedHeight(64)
         self.citationCopyButton = QtCopyToClipboardButton(self.citationTextBox)
@@ -84,12 +87,12 @@ class QtAbout(QDialog):
         self.citation_layout.addWidget(
             self.citationCopyButton, 0, Qt.AlignmentFlag.AlignTop
         )
-        self.layout.addLayout(self.citation_layout)
+        self._layout.addLayout(self.citation_layout)
 
-        self.setLayout(self.layout)
+        self.setLayout(self._layout)
 
     @staticmethod
-    def showAbout(parent=None):
+    def showAbout(parent: QWidget | None = None) -> None:
         """Display the 'About napari' dialog box.
 
         Parameters
@@ -102,7 +105,7 @@ class QtAbout(QDialog):
         d.setObjectName('QtAbout')
         d.setWindowTitle('About')
         d.setWindowModality(Qt.WindowModality.ApplicationModal)
-        d.exec_()
+        d.exec()
 
 
 class QtCopyToClipboardButton(QPushButton):
@@ -119,14 +122,15 @@ class QtCopyToClipboardButton(QPushButton):
         The text box contents linked to copy to clipboard button.
     """
 
-    def __init__(self, text_edit) -> None:
+    def __init__(self, text_edit: QTextEdit) -> None:
         super().__init__()
         self.setObjectName('QtCopyToClipboardButton')
         self.text_edit = text_edit
         self.setToolTip('Copy to clipboard')
         self.clicked.connect(self.copyToClipboard)
 
-    def copyToClipboard(self):
+    def copyToClipboard(self) -> None:
         """Copy text to the clipboard."""
         cb = QtGui.QGuiApplication.clipboard()
-        cb.setText(str(self.text_edit.toPlainText()))
+        if cb is not None:
+            cb.setText(str(self.text_edit.toPlainText()))
