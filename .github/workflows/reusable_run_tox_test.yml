@@ -42,6 +42,10 @@ on:
         required: false
         type: string
         default: ""
+      posargs:
+        required: false
+        type: string
+        default: ""
 
 jobs:
   test:
@@ -157,44 +161,52 @@ jobs:
         run: |
           echo "${MAIN}"
           tox --version
-          python -m tox run --installpkg "${WHEEL_PATH}" -- --basetemp=.pytest_tmp
+          # shellcheck disable=SC2086
+          python -m tox run --installpkg "${WHEEL_PATH}" -- --basetemp=.pytest_tmp ${POSARGS}
           rm -r .tox
         env:
           BACKEND: ${{ env.MAIN }}
           TOX_WORK_DIR: .tox
+          POSARGS: ${{ inputs.posargs }}
 
       - name: Test with tox second qt_backend
         timeout-minutes: ${{ inputs.timeout }}
         if : ${{ env.SECOND != 'none' }}
         shell: bash
         run: |
-          python -m tox run --installpkg "${WHEEL_PATH}" -- --basetemp=.pytest_tmp
+          # shellcheck disable=SC2086
+          python -m tox run --installpkg "${WHEEL_PATH}" -- --basetemp=.pytest_tmp ${POSARGS}
           rm -r .tox
         env:
           BACKEND: ${{ env.SECOND }}
           NAPARI_TEST_SUBSET: qt
+          POSARGS: ${{ inputs.posargs }}
 
       - name: Test with tox third qt_backend
         timeout-minutes: ${{ inputs.timeout }}
         if : ${{ env.THIRD != 'none' }}
         shell: bash
         run: |
-          python -m tox run --installpkg "${WHEEL_PATH}" -- --basetemp=.pytest_tmp
+          # shellcheck disable=SC2086
+          python -m tox run --installpkg "${WHEEL_PATH}" -- --basetemp=.pytest_tmp ${POSARGS}
           rm -r .tox
         env:
           BACKEND: ${{ env.THIRD }}
           NAPARI_TEST_SUBSET: qt
+          POSARGS: ${{ inputs.posargs }}
 
       - name: Test with tox fourth qt_backend
         timeout-minutes: ${{ inputs.timeout }}
         if: ${{ env.FOURTH != 'none' }}
         shell: bash
         run: |
-          python -m tox run --installpkg "${WHEEL_PATH}" -- --basetemp=.pytest_tmp
+          # shellcheck disable=SC2086
+          python -m tox run --installpkg "${WHEEL_PATH}" -- --basetemp=.pytest_tmp ${POSARGS}
           rm -r .tox
         env:
           BACKEND: ${{ env.FOURTH }}
           NAPARI_TEST_SUBSET: qt
+          POSARGS: ${{ inputs.posargs }}
 
       - name: Upload test artifacts
         if: failure()

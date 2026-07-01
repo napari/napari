@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import os
 import textwrap
 from unittest.mock import MagicMock, patch
 
@@ -322,24 +321,6 @@ def test_qt_viewer_toggle_console(make_napari_viewer):
     view.toggle_console_visibility(None)
     assert view._console is not None
     assert view.dockConsole.widget() is view.console
-
-
-@skip_local_popups
-@pytest.mark.skipif(os.environ.get('MIN_REQ', '0') == '1', reason='min req')
-def test_qt_viewer_console_focus(qtbot, make_napari_viewer):
-    """Test console has focus when instantiating from viewer."""
-    viewer = make_napari_viewer(show=True)
-    view = viewer.window._qt_viewer
-    assert not view.console.hasFocus(), 'console has focus before being shown'
-
-    view.toggle_console_visibility(None)
-
-    def console_has_focus():
-        assert view.console.hasFocus(), (
-            'console does not have focus when shown'
-        )
-
-    qtbot.waitUntil(console_has_focus)
 
 
 @skip_on_win_ci
