@@ -162,7 +162,7 @@ def test_value_rgb():
     layer = Image(data, rgb=True)
     layer._slice_dims(Dims(ndim=3, ndisplay=3))
     value = layer.get_value((0,) * 3)
-    assert value == data[0, 0, 0]
+    np.testing.assert_array_equal(value, data[0, 0, 0])
 
 
 def test_message():
