@@ -658,8 +658,7 @@ class QtViewerButtons(QFrame):
         layout.addWidget(dim_sorter)
         pop.frame.setLayout(layout)
 
-        # show popup
-        pop.show_above_mouse()
+        self._position_popup_inside_viewer(pop, self.rollDimsButton)
 
     def _open_grid_popup(self):
         """Open grid options pop up widget."""
@@ -758,7 +757,7 @@ class QtViewerButtons(QFrame):
         grid_layout.addWidget(spacing_help_symbol, 3, 2)
 
         popup.frame.setLayout(grid_layout)
-        popup.show_above_mouse()
+        self._position_popup_inside_viewer(popup, self.gridViewButton)
 
     def _update_grid_width(self, value):
         """Update the width value in grid shape.
