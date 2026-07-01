@@ -699,7 +699,7 @@ module = [
     'napari._qt.widgets.qt_plugin_sorter',
     'napari._qt.widgets.qt_range_slider_popup',
     'napari._qt.widgets.qt_size_preview',
-    'napari._qt.widgets.qt_spinbox',
+    'napari._qt.widgets.qt_tooltip',
     'napari._qt.widgets.qt_viewer_buttons',
     'napari._qt.widgets.qt_viewer_dock_widget',
     'napari._qt.widgets.qt_viewer_status_bar',
