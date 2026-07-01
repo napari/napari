@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import functools
 import inspect
+import numbers
 import warnings
 from collections.abc import Callable, Sequence
 from importlib import import_module
+from operator import index
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -641,6 +643,107 @@ def compute_multiscale_level_and_corners(
     corners = np.array([np.floor(corners[0]), np.ceil(corners[1])]).astype(int)
 
     return level, corners
+
+
+def _chunk_boundaries(axis_chunks: Any, axis_size: int) -> np.ndarray | None:
+    """Return chunk boundary coordinates for one axis.
+
+    This accepts the common chunk metadata forms:
+    - zarr: one regular chunk size for the axis, e.g. ``64``
+    - dask: explicit chunk sizes for the axis, e.g. ``(64, 64, 32)``
+
+    The returned boundaries include both ``0`` and ``axis_size``.  For example,
+    chunks ``(4, 4, 2)`` for an axis of size ``10`` return ``[0, 4, 8, 10]``.
+    """
+    if isinstance(axis_chunks, numbers.Integral):
+        # zarr: a single regular chunk size for the axis, e.g. 4. The edge chunk
+        # may be smaller than this size.
+        chunk_size = index(axis_chunks)
+        if chunk_size <= 0:
+            return None
+        return np.append(np.arange(0, axis_size, chunk_size), axis_size)
+
+    if isinstance(axis_chunks, Sequence) and not isinstance(axis_chunks, str):
+        # dask: explicit per-axis chunk sizes, e.g. (4, 4, 2).
+        try:
+            chunk_sizes = [index(size) for size in axis_chunks]
+        except TypeError:
+            return None
+        if any(size <= 0 for size in chunk_sizes):
+            return None
+        boundaries = np.concatenate([[0], np.cumsum(chunk_sizes)])
+        if boundaries[-1] != axis_size:
+            return None
+        return boundaries
+
+    return None
+
+
+def expand_corners_to_chunk_boundaries(
+    corners: npt.NDArray,
+    data: LayerDataProtocol,
+    axes: Sequence[int],
+) -> npt.NDArray:
+    """Expand inclusive corner bounds to include complete data chunks.
+
+    For chunked arrays, reading any part of a chunk loads the whole chunk
+    from the backing store, so this expands the requested bounds outward to chunk
+    boundaries.
+
+    Parameters
+    ----------
+    corners : array (2, D)
+        Inclusive lower (``corners[0]``) and upper (``corners[1]``) corner
+        pixel bounds in the coordinate space of ``data``. The bounds must be
+        ordered per axis (``corners[0] <= corners[1]``).
+    data : LayerDataProtocol
+        Array whose ``chunks`` metadata drives the expansion. Chunk metadata
+        like that of dask arrays (``chunks`` is a tuple of per-axis chunk-size
+        tuples) or zarr arrays (``chunks`` is the regular chunk shape) is
+        supported.
+    axes : sequence of int
+        Axes to expand, typically the displayed axes. Other axes (e.g. sliced
+        ones) are left untouched, so they keep their single-plane bounds.
+
+    Returns
+    -------
+    array (2, D)
+        Corner bounds expanded outward to chunk boundaries along ``axes``. A
+        new array is returned when expansion happens; ``corners`` is returned
+        unchanged (and unmodified) for arrays without usable chunk metadata.
+    """
+    chunks = getattr(data, 'chunks', None)
+    shape = getattr(data, 'shape', None)
+    if chunks is None or shape is None:
+        return corners
+
+    try:
+        if len(chunks) != len(shape):
+            return corners
+    except TypeError:
+        return corners
+
+    expanded = np.array(corners, copy=True)
+    for axis in axes:
+        try:
+            axis_size = index(shape[axis])
+            boundaries = _chunk_boundaries(chunks[axis], axis_size)
+        except (IndexError, TypeError):
+            return corners
+        if boundaries is None:
+            return corners
+
+        axis_max = boundaries[-1] - 1
+        start = np.clip(expanded[0, axis], 0, axis_max)
+        stop = np.clip(expanded[1, axis], 0, axis_max)
+
+        start_chunk = np.searchsorted(boundaries, start, side='right') - 1
+        stop_chunk = np.searchsorted(boundaries, stop, side='right') - 1
+        # corner bounds are inclusive, while chunk boundaries are exclusive.
+        expanded[0, axis] = boundaries[start_chunk]
+        expanded[1, axis] = boundaries[stop_chunk + 1] - 1
+
+    return expanded
 
 
 def coerce_affine(
