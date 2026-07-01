@@ -527,3 +527,39 @@ def test_update_draw_expands_chunked_multiscale_fov(data):
 
     assert layer.data_level == 0
     np.testing.assert_equal(layer.corner_pixels, [[0, 0], [7, 9]])
+
+
+def test_update_draw_expands_tensorstore_multiscale_fov():
+    ts = pytest.importorskip('tensorstore')
+
+    def tensorstore_level(shape, chunks):
+        return ts.open(
+            {
+                'driver': 'zarr3',
+                'kvstore': {'driver': 'memory'},
+                'metadata': {
+                    'shape': list(shape),
+                    'chunk_grid': {
+                        'name': 'regular',
+                        'configuration': {'chunk_shape': list(chunks)},
+                    },
+                    'data_type': 'uint8',
+                },
+                'create': True,
+            }
+        ).result()
+
+    data = [
+        tensorstore_level((20, 20), (4, 5)),
+        tensorstore_level((10, 10), (3, 4)),
+    ]
+    layer = Image(data, multiscale=True)
+
+    layer._update_draw(
+        scale_factor=1,
+        corner_pixels_displayed=np.array([[2, 2], [6, 5]]),
+        shape_threshold=(10, 10),
+    )
+
+    assert layer.data_level == 0
+    np.testing.assert_equal(layer.corner_pixels, [[0, 0], [7, 9]])

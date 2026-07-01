@@ -679,6 +679,46 @@ def _chunk_boundaries(axis_chunks: Any, axis_size: int) -> np.ndarray | None:
     return None
 
 
+def _chunks_metadata(
+    data: LayerDataProtocol,
+) -> Sequence[int | Sequence[int] | None] | None:
+    """Return zarr/dask-style per-axis ``chunks`` metadata, or ``None``.
+
+    dask and zarr expose this directly as ``chunks``. tensorstore has no
+    ``chunks`` attribute; its read granularity lives on
+    ``chunk_layout.read_chunk.shape``, a per-axis tuple matching the zarr form
+    (with ``None`` for axes that are not chunked). ``read_chunk`` is the
+    smallest independently-readable unit, which is the correct granularity for
+    read-only tile loading -- for sharded stores it is the sub-shard rather
+    than the whole shard.
+
+    Returns
+    -------
+    Sequence[int | Sequence[int] | None] | None
+        A sequence with one entry per axis, each entry either a single chunk
+        size (regular grid, as zarr and tensorstore expose) or a sequence of
+        explicit chunk sizes (as dask exposes).
+        Returns ``None`` when the array exposes no usable chunk metadata.
+    """
+    # zarr/dask-like arrays with ``chunks`` attribute
+    chunks = getattr(data, 'chunks', None)
+    if chunks is not None:
+        return chunks
+
+    # tensorstore arrays with ``chunk_layout.read_chunk.shape`` attribute
+    layout = getattr(data, 'chunk_layout', None)
+    read_chunk = getattr(layout, 'read_chunk', None)
+    if read_chunk is None:
+        return None
+    # Our boundaries assume a chunk grid anchored at 0, matching napari's
+    # 0-based indexing. Skip translated grids rather than compute misaligned
+    # boundaries; the origin is otherwise all zeros (or unspecified None).
+    grid_origin = getattr(layout, 'grid_origin', None) or ()
+    if any(origin not in (0, None) for origin in grid_origin):
+        return None
+    return read_chunk.shape
+
+
 def expand_corners_to_chunk_boundaries(
     corners: npt.NDArray,
     data: LayerDataProtocol,
@@ -697,10 +737,10 @@ def expand_corners_to_chunk_boundaries(
         pixel bounds in the coordinate space of ``data``. The bounds must be
         ordered per axis (``corners[0] <= corners[1]``).
     data : LayerDataProtocol
-        Array whose ``chunks`` metadata drives the expansion. Chunk metadata
-        like that of dask arrays (``chunks`` is a tuple of per-axis chunk-size
-        tuples) or zarr arrays (``chunks`` is the regular chunk shape) is
-        supported.
+        Array whose chunk metadata drives the expansion. Supported forms are
+        dask arrays (``chunks`` is a tuple of per-axis chunk-size tuples), zarr
+        arrays (``chunks`` is the regular chunk shape), and tensorstore arrays
+        (read granularity read from ``chunk_layout.read_chunk``).
     axes : sequence of int
         Axes to expand, typically the displayed axes. Other axes (e.g. sliced
         ones) are left untouched, so they keep their single-plane bounds.
@@ -712,7 +752,7 @@ def expand_corners_to_chunk_boundaries(
         new array is returned when expansion happens; ``corners`` is returned
         unchanged (and unmodified) for arrays without usable chunk metadata.
     """
-    chunks = getattr(data, 'chunks', None)
+    chunks = _chunks_metadata(data)
     shape = getattr(data, 'shape', None)
     if chunks is None or shape is None:
         return corners
