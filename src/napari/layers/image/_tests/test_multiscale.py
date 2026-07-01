@@ -1,6 +1,8 @@
+import dask.array as da
 import numpy as np
 import pytest
 import skimage
+import zarr
 from skimage.transform import pyramid_gaussian
 
 from napari._tests.utils import check_layer_world_data_extent
@@ -498,3 +500,30 @@ def test_update_draw_variable_canvas_size_fixed_fov(
 
     assert layer.data_level == exp_level
     np.testing.assert_equal(layer.corner_pixels, exp_corner_pixels_data)
+
+
+@pytest.mark.parametrize(
+    'data',
+    [
+        [
+            da.zeros((20, 20), chunks=(4, 5)),
+            da.zeros((10, 10), chunks=(3, 4)),
+        ],
+        [
+            zarr.zeros((20, 20), chunks=(4, 5)),
+            zarr.zeros((10, 10), chunks=(3, 4)),
+        ],
+    ],
+    ids=['dask', 'zarr'],
+)
+def test_update_draw_expands_chunked_multiscale_fov(data):
+    layer = Image(data, multiscale=True)
+
+    layer._update_draw(
+        scale_factor=1,
+        corner_pixels_displayed=np.array([[2, 2], [6, 5]]),
+        shape_threshold=(10, 10),
+    )
+
+    assert layer.data_level == 0
+    np.testing.assert_equal(layer.corner_pixels, [[0, 0], [7, 9]])
