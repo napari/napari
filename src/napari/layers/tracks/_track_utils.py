@@ -509,3 +509,23 @@ class TrackManager:
             lbl = [f'ID:{i}' for i in self._points_id[lookup]]
 
         return lbl, pos
+
+
+def prepare_tracks_data(
+    data: 'pd.DataFrame',
+    track_id: int,
+    t: int,
+    y: int,
+    x: int,
+    z: int | None = None,
+) -> np.ndarray:
+
+    order = [track_id, t]
+
+    if z is not None:
+        order.append(z)
+
+    order.extend([y, x])
+
+    # convert to numpy
+    return data[:, order].to_numpy()
