@@ -59,12 +59,12 @@ jobs:
     steps:
       # We need the full repo to avoid this issue
       # https://github.com/actions/checkout/issues/23
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           fetch-depth: 0
           persist-credentials: false
 
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         name: Install Python
         with:
           python-version: ${{ env.PYTHON_VERSION }}
@@ -86,7 +86,7 @@ jobs:
         env:
           PIP_CONSTRAINT: resources/constraints/benchmark.txt
 
-      - uses: octokit/request-action@45eef13998ff762839b0a0de9bbcf41970fd056d # v2.x
+      - uses: octokit/request-action@b66ca9cd744693e9c29b490fc08831ab66c4a970 # v2.x
         id: latest_release
         with:
           route: GET /repos/{owner}/{repo}/releases/latest
