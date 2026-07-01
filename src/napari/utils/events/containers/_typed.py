@@ -2,20 +2,17 @@ import logging
 from collections.abc import Callable, Iterable, MutableSequence, Sequence
 from typing import (
     Any,
+    Self,
     TypeVar,
-    Union,
     overload,
 )
-
-# change on import from typing when drop python 3.10 support
-from typing_extensions import Self
 
 from napari.utils.translations import trans
 
 logger = logging.getLogger(__name__)
 
 
-Index = Union[int, slice]
+Index = int | slice
 
 _T = TypeVar('_T')
 _L = TypeVar('_L', bound=Any)
@@ -253,5 +250,5 @@ class TypedMutableSequence(MutableSequence[_T]):
         return None  # type: ignore
 
 
-def _noop(x: _T) -> _T:
+def _noop[T](x: T) -> T:
     return x

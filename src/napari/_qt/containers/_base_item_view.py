@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from itertools import chain, repeat
-from typing import TYPE_CHECKING, Generic, TypeVar
+from typing import TYPE_CHECKING, TypeVar
 
 from qtpy.QtCore import QItemSelection, QModelIndex, Qt
 
@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from napari.utils.events.containers import SelectableEventedList
 
 
-class _BaseEventedItemView(Generic[ItemType]):
+class _BaseEventedItemView[ItemType]:
     """A QAbstractItemView mixin desigend to work with `SelectableEventedList`.
 
     :class:`~napari.utils.events.SelectableEventedList` is our pure python
@@ -121,7 +121,9 @@ class _BaseEventedItemView(Generic[ItemType]):
         sel_model.select(selection, sel_model.SelectionFlag.ClearAndSelect)
 
 
-def index_of(model: QAbstractItemModel, obj: ItemType) -> QModelIndex:
+def index_of[ItemType](
+    model: QAbstractItemModel, obj: ItemType
+) -> QModelIndex:
     """Find the `QModelIndex` for a given object in the model."""
     fl = Qt.MatchFlag.MatchExactly | Qt.MatchFlag.MatchRecursive
     hits = model.match(

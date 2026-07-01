@@ -92,7 +92,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - python: "3.10"
+          - python: "3.13"
             platform: ubuntu-latest
             backend: pyqt5
             coverage: no_cov
@@ -124,7 +124,7 @@ jobs:
         include:
           # when changing these, try to keep full coverage of supported
           # python versions so we test at least once everywhere
-          - python: "3.11"
+          - python: "3.13"
             platform: windows-latest
             backend: pyqt5
             coverage: no_cov
@@ -143,7 +143,7 @@ jobs:
             coverage: no_cov
             timeout-minutes: 60
           # minimum specified requirements
-          - python: "3.10"
+          - python: "3.12"
             platform: ubuntu-22.04
             backend: pyqt5
             MIN_REQ: 1
@@ -160,7 +160,7 @@ jobs:
             backend: headless
             coverage: no_cov
           # test with torch
-          - python: "3.11"
+          - python: "3.12"
             platform: ubuntu-latest
             backend: pyqt6
             coverage: cov

@@ -3,14 +3,13 @@ import re
 import sys
 import warnings
 from collections.abc import Callable, Hashable, Iterator, Mapping
-from typing import Any, Generic, TypeVar, Union
+from typing import Any, TypeVar, Union
 
 import wrapt
 
 from napari.utils import misc
 from napari.utils.translations import trans
 
-_T = TypeVar('_T')
 _K = TypeVar('_K', bound=Hashable)
 _V = TypeVar('_V')
 
@@ -50,10 +49,10 @@ class ReadOnlyWrapper(wrapt.ObjectProxy):
 _SUNDER = re.compile('^_[^_]')
 
 
-class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
+class PublicOnlyProxy[T](wrapt.ObjectProxy):
     """Proxy to prevent private attribute and item access, recursively."""
 
-    __wrapped__: _T
+    __wrapped__: T
 
     @staticmethod
     def _is_private_attr(name: str) -> bool:

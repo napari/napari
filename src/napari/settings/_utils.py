@@ -3,7 +3,9 @@ from typing import TypeVar
 T = TypeVar('T')
 
 
-def _coerce_extensions_to_globs(reader_settings: dict[str, T]) -> dict[str, T]:
+def _coerce_extensions_to_globs[T](
+    reader_settings: dict[str, T],
+) -> dict[str, T]:
     """Coerce existing reader settings for file extensions to glob patterns"""
     new_settings = {}
     for pattern, reader in reader_settings.items():

@@ -9,7 +9,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     ClassVar,
-    TypeAlias,
 )
 
 import numpy as np
@@ -78,7 +77,7 @@ if TYPE_CHECKING:
 
 __all__ = ('Labels',)
 
-HistoryItem: TypeAlias = tuple[npt.NDArray, npt.NDArray, npt.NDArray]
+type HistoryItem = tuple[npt.NDArray, npt.NDArray, npt.NDArray]
 
 
 class Labels(ScalarFieldBase):

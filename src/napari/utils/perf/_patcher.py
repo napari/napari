@@ -8,12 +8,11 @@ import logging
 import types
 from collections.abc import Callable
 from importlib import import_module
-from typing import Union
 
 from napari.utils.translations import trans
 
 # The parent of a callable is a module or a class, class is of type "type".
-CallableParent = Union[types.ModuleType, type]
+CallableParent = types.ModuleType | type
 
 # An example PatchFunction is:
 # def _patch_perf_timer(parent, callable: str, label: str) -> None

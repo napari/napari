@@ -12,7 +12,6 @@ from collections.abc import Generator, Iterable, MutableSequence
 from typing import (
     NewType,
     TypeVar,
-    Union,
     cast,
     overload,
 )
@@ -24,7 +23,7 @@ from napari.utils.translations import trans
 logger = logging.getLogger(__name__)
 
 NestedIndex = tuple[Index, ...]
-MaybeNestedIndex = Union[Index, NestedIndex]
+MaybeNestedIndex = Index | NestedIndex
 ParentIndex = NewType('ParentIndex', tuple[int, ...])
 _T = TypeVar('_T')
 

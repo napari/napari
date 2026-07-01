@@ -7,8 +7,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     NewType,
-    Optional,
-    Union,
     get_args,
 )
 
@@ -17,14 +15,12 @@ import numpy.typing as npt
 
 # TODO decide where types should be defined to have single place for them
 from npe2.types import LayerName as LayerTypeName
-from typing_extensions import TypeAliasType, TypedDict
+from typing_extensions import TypedDict
 
 if TYPE_CHECKING:
     # dask zarr should be imported as `import dask.array as da` But here it is used only in type annotation to
     # register it as a valid type fom magicgui so is passed as string and requires full qualified name to allow
     # magicgui properly register it.
-    import dask.array  # noqa: ICN001
-    import zarr
     from magicgui.widgets import FunctionGui
     from qtpy.QtWidgets import QWidget
 
@@ -61,32 +57,32 @@ __all__ = [
 # and should probably be replaced by a typing.Protocol
 # note, numpy.typing.ArrayLike (in v1.20) is not quite what we want either,
 # since it includes all valid arguments for np.array() ( int, float, str...)
-ArrayLike = Union[np.ndarray, 'dask.array.Array', 'zarr.Array']
-LayerDataType = Union[npt.ArrayLike, Sequence[npt.ArrayLike]]
+ArrayLike = np.ndarray | 'dask.array.Array' | 'zarr.Array'
+LayerDataType = npt.ArrayLike | Sequence[npt.ArrayLike]
 
 # layer data may be: (data,) (data, meta), or (data, meta, layer_type)
 # using "Any" for the data type until ArrayLike is more mature.
 FullLayerData = tuple[Any, Mapping, LayerTypeName]
-LayerData = Union[tuple[Any], tuple[Any, Mapping], FullLayerData]
+LayerData = tuple[Any] | tuple[Any, Mapping] | FullLayerData
 
-PathLike = Union[str, Path]
-PathOrPaths = Union[PathLike, Sequence[PathLike]]
+PathLike = str | Path
+PathOrPaths = PathLike | Sequence[PathLike]
 ReaderFunction = Callable[[PathOrPaths], list[LayerData]]
 WriterFunction = Callable[[str, list[FullLayerData]], list[str]]
 
-ExcInfo = Union[
-    tuple[type[BaseException], BaseException, TracebackType],
-    tuple[None, None, None],
-]
+ExcInfo = (
+    tuple[type[BaseException], BaseException, TracebackType]
+    | tuple[None, None, None]
+)
 
 # Types for GUI HookSpecs
-WidgetCallable = Callable[..., Union['FunctionGui', 'QWidget']]
-AugmentedWidget = Union[WidgetCallable, tuple[WidgetCallable, dict]]
+WidgetCallable = Callable[..., 'FunctionGui | QWidget']
+AugmentedWidget = WidgetCallable | tuple[WidgetCallable, dict]
 
 
 # Sample Data for napari_provide_sample_data hookspec is either a string/path
 # or a function that returns an iterable of LayerData tuples
-SampleData = Union[PathLike, Callable[..., Iterable[LayerData]]]
+SampleData = PathLike | Callable[..., Iterable[LayerData]]
 
 
 # or... they can provide a dict as follows:
@@ -102,7 +98,7 @@ class SampleDict(TypedDict):
 # while their names should not change (without deprecation), their typing
 # implementations may... or may be rolled over to napari/image-types
 
-ArrayBase = TypeAliasType('ArrayBase', np.ndarray)
+type ArrayBase = np.ndarray
 
 
 ImageData = NewType('ImageData', np.ndarray)
@@ -112,15 +108,15 @@ ShapesData = NewType('ShapesData', list[np.ndarray])
 SurfaceData = NewType('SurfaceData', tuple[np.ndarray, np.ndarray, np.ndarray])
 TracksData = NewType('TracksData', np.ndarray)
 VectorsData = NewType('VectorsData', np.ndarray)
-_LayerData = Union[
-    ImageData,
-    LabelsData,
-    PointsData,
-    ShapesData,
-    SurfaceData,
-    TracksData,
-    VectorsData,
-]
+_LayerData = (
+    ImageData
+    | LabelsData
+    | PointsData
+    | ShapesData
+    | SurfaceData
+    | TracksData
+    | VectorsData
+)
 
 LayerDataTuple = NewType('LayerDataTuple', tuple)
 
@@ -188,12 +184,12 @@ def _register_types_with_magicgui():
             return_callback=partial(_mgui.add_future_data, _from_tuple=False),
         )
         register_type(
-            Optional[data_type],  # type: ignore [call-overload]
+            data_type | None,  # type: ignore [call-overload]
             choices=_mgui.get_layers_data,
             return_callback=_mgui.add_layer_data_to_viewer,
         )
         register_type(
-            Future[Optional[data_type]],  # type: ignore [valid-type]
+            Future[data_type | None],  # type: ignore [valid-type]
             choices=_mgui.get_layers_data,
             return_callback=partial(_mgui.add_future_data, _from_tuple=False),
         )

@@ -70,12 +70,10 @@ class StringEncoding(StyleEncoding[StringValue, StringArray], Protocol):
             return value
         if isinstance(value, dict):
             return TypeAdapter(
-                Union[
-                    ConstantStringEncoding,
-                    ManualStringEncoding,
-                    DirectStringEncoding,
-                    FormatStringEncoding,
-                ]
+                ConstantStringEncoding
+                | ManualStringEncoding
+                | DirectStringEncoding
+                | FormatStringEncoding
             ).validate_python(
                 value,
             )

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Generic, TypeVar, cast
+from typing import TYPE_CHECKING, TypeVar, cast
 
 import numpy as np
 import pint
@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 _L = TypeVar('_L', bound=Layer)
 
 
-class VispyBaseLayer(ABC, Generic[_L]):
+class VispyBaseLayer[L: Layer](ABC):
     """Base object for individual layer views
 
     Meant to be subclassed.
@@ -307,6 +307,7 @@ class VispyBaseLayer(ABC, Generic[_L]):
         visual can finish up what it was doing, such as loading data into
         VRAM or animating itself.
         """
+        return
 
     def close(self):
         """Vispy visual is closing."""

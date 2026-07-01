@@ -11,9 +11,9 @@ from yaml import SafeDumper, dump_all
 from napari.settings._fields import Version
 
 if TYPE_CHECKING:
-    from typing import Any, TypeVar, Union
+    from typing import Any, TypeVar
 
-    IntStr = Union[int, str]
+    IntStr = int | str
     DictStrAny = dict[str, Any]
     from pydantic.main import IncEx
 

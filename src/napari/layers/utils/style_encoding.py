@@ -2,10 +2,8 @@ import warnings
 from abc import ABC, abstractmethod
 from typing import (
     Any,
-    Generic,
     Protocol,
     TypeVar,
-    Union,
     runtime_checkable,
 )
 
@@ -15,7 +13,7 @@ from pydantic import ConfigDict
 from napari.utils.events import EventedModel
 from napari.utils.translations import trans
 
-IndicesType = Union[range, list[int], np.ndarray]
+IndicesType = range | list[int] | np.ndarray
 
 """The variable type of a single style value."""
 StyleValue = TypeVar('StyleValue', bound=np.ndarray)
@@ -122,8 +120,8 @@ class _StyleEncodingModel(EventedModel):
 # https://docs.python.org/3/library/typing.html#generics
 
 
-class _ConstantStyleEncoding(
-    _StyleEncodingModel, Generic[StyleValue, StyleArray]
+class _ConstantStyleEncoding[StyleValue: np.ndarray, StyleArray: np.ndarray](
+    _StyleEncodingModel
 ):
     """Encodes a constant style value.
 
@@ -161,8 +159,8 @@ class _ConstantStyleEncoding(
         return self.model_dump()
 
 
-class _ManualStyleEncoding(
-    _StyleEncodingModel, Generic[StyleValue, StyleArray]
+class _ManualStyleEncoding[StyleValue: np.ndarray, StyleArray: np.ndarray](
+    _StyleEncodingModel
 ):
     """Encodes style values manually.
 
@@ -209,8 +207,8 @@ class _ManualStyleEncoding(
         return self.model_dump()
 
 
-class _DerivedStyleEncoding(
-    _StyleEncodingModel, ABC, Generic[StyleValue, StyleArray]
+class _DerivedStyleEncoding[StyleValue: np.ndarray, StyleArray: np.ndarray](
+    _StyleEncodingModel, ABC
 ):
     """Encodes style values by deriving them from feature values.
 
@@ -273,7 +271,7 @@ class _DerivedStyleEncoding(
         return self.model_dump()
 
 
-def _get_style_values(
+def _get_style_values[StyleValue: np.ndarray, StyleArray: np.ndarray](
     encoding: StyleEncoding[StyleValue, StyleArray],
     indices: IndicesType,
     value_ndim: int = 0,
@@ -283,7 +281,7 @@ def _get_style_values(
     return values if values.ndim == value_ndim else values[indices]
 
 
-def _empty_array_like(value: StyleValue) -> StyleArray:
+def _empty_array_like[StyleValue: np.ndarray](value: StyleValue) -> StyleArray:
     """Returns an empty array with the same type and remaining shape of the given value."""
     shape = (0, *value.shape)
     return np.empty_like(value, shape=shape)

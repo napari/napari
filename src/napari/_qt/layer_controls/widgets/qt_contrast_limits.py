@@ -1,5 +1,3 @@
-from typing import Optional
-
 import numpy as np
 from qtpy.QtCore import Qt, Signal
 from qtpy.QtWidgets import QHBoxLayout, QPushButton, QWidget
@@ -70,7 +68,7 @@ class _QDoubleRangeSlider(QDoubleRangeSlider):
 
 class QContrastLimitsPopup(QRangeSliderPopup):
     def __init__(
-        self, layer: Image | Surface, parent: Optional[QWidget] = None
+        self, layer: Image | Surface, parent: QWidget | None = None
     ) -> None:
         super().__init__(parent)
 
@@ -121,7 +119,7 @@ class QContrastLimitsPopup(QRangeSliderPopup):
 
 class AutoScaleButtons(QWidget):
     def __init__(
-        self, layer: Image | Surface, parent: Optional[QWidget] = None
+        self, layer: Image | Surface, parent: QWidget | None = None
     ) -> None:
         super().__init__(parent=parent)
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime
 import uuid
 from enum import auto
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from napari.utils.misc import StringEnum
 
@@ -26,7 +26,7 @@ class TaskStatusItem:
         provider: str,
         status: Status,
         description: str,
-        cancel_callback: Optional[Callable] = None,
+        cancel_callback: Callable | None = None,
     ) -> None:
         self.id: uuid.UUID = uuid.uuid4()
         self._provider = provider
@@ -87,7 +87,7 @@ class TaskStatusManager:
         provider: str,
         task_status: Status,
         description: str,
-        cancel_callback: Optional[Callable] = None,
+        cancel_callback: Callable | None = None,
     ) -> uuid.UUID:
         item = TaskStatusItem(
             provider, task_status, description, cancel_callback

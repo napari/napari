@@ -3,14 +3,13 @@ from __future__ import annotations
 from collections.abc import Sequence
 from contextlib import suppress
 from typing import (
-    Union,
     overload,
 )
 
 import pint
 
-UnitsLike = Union[None, str, pint.Unit, Sequence[str | pint.Unit]]
-UnitsInfo = Union[None, pint.Unit, tuple[pint.Unit, ...]]
+UnitsLike = None | str | pint.Unit | Sequence[str | pint.Unit]
+UnitsInfo = None | pint.Unit | tuple[pint.Unit, ...]
 
 
 __all__ = (

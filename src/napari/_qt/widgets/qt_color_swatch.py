@@ -1,5 +1,4 @@
 import re
-from typing import Union
 
 import numpy as np
 from qtpy.QtCore import QEvent, Qt, Signal, Slot
@@ -32,7 +31,7 @@ rgba_regex = re.compile(
 )
 
 TRANSPARENT = np.array([0, 0, 0, 0], np.float32)
-AnyColorType = Union[ColorType, QColor]
+AnyColorType = ColorType | QColor
 
 
 class QColorSwatchEdit(QWidget):
