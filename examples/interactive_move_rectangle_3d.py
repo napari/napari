@@ -35,8 +35,8 @@ shapes_layer = viewer.add_shapes(
 )
 viewer.camera.angles = (-170, -20, -170)
 viewer.camera.zoom = 1.5
-viewer.text_overlay.visible = True
-viewer.text_overlay.text = """'click and drag the rectangle to create copies along its normal vector
+viewer.canvas.text.visible = True
+viewer.canvas.text.text = """'click and drag the rectangle to create copies along its normal vector
 """
 
 

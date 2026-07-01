@@ -176,7 +176,7 @@ class QtViewer(QSplitter):
             font_manager=self._font_manager,
             font_family=self._overlay_font,
             key_map_handler=self._key_map_handler,
-            size=self.viewer._canvas_size,
+            size=self.viewer.canvas.size,
             autoswap=get_settings().experimental.autoswap_buffers,  # see #5734
         )
 
@@ -936,7 +936,9 @@ class QtViewer(QSplitter):
                 )
 
             # adjust size by the scale, to return the size in real pixels
-            grid_shape = self.viewer.grid.actual_shape(len(self.viewer.layers))
+            grid_shape = self.viewer.canvas.grid.actual_shape(
+                len(self.viewer.layers)
+            )
             size = np.ceil(scene_size / extent_scale * grid_shape).astype(int)
 
         with self.resize_canvas(size, scale):

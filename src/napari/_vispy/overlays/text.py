@@ -9,7 +9,6 @@ from napari._vispy.overlays.base import (
 )
 from napari._vispy.visuals.text import Text
 from napari.components._viewer_constants import CanvasPosition
-from napari.settings import get_settings
 
 if TYPE_CHECKING:
     from napari._vispy.utils.qt_font import FontInfo
@@ -31,10 +30,9 @@ class _VispyBaseTextOverlay(VispyCanvasOverlay):
         self.overlay.events.color.connect(self._on_color_change)
         self.overlay.events.box.connect(self._on_color_change)
         self.overlay.events.box_color.connect(self._on_color_change)
-        self.overlay.events.font_size.connect(self._on_font_size_change)
+        self.overlay.events.font_size.connect(self._on_position_change)
 
-        get_settings().appearance.events.theme.connect(self._on_color_change)
-        self.viewer.events.theme.connect(self._on_color_change)
+        self.canvas.events.background_color.connect(self._on_color_change)
 
     def _connect_events(self):
         pass
@@ -101,7 +99,6 @@ class _VispyBaseTextOverlay(VispyCanvasOverlay):
         super().reset()
         self._on_text_change()
         self._on_color_change()
-        self._on_font_size_change()
 
 
 class _VispyViewerTextOverlay(ViewerOverlayMixin, _VispyBaseTextOverlay):
