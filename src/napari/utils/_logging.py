@@ -3,7 +3,6 @@ from __future__ import annotations
 import logging
 import sys
 from collections import deque
-from contextlib import contextmanager
 from typing import TYPE_CHECKING
 
 from psygnal import Signal
@@ -12,7 +11,6 @@ _LOG_SEPARATOR = '<NAPARI_LOG_SEPARATOR>'
 
 
 if TYPE_CHECKING:
-    from collections.abc import Generator
     from typing import Any
 
 
@@ -100,19 +98,28 @@ LOG_HANDLER.setFormatter(
 LOG_HANDLER.setLevel(logging.DEBUG)
 
 
-@contextmanager
 def register_logger_to_napari_handler(
-    module: str,
-) -> Generator[None, None, None]:
+    module: str = '',
+) -> None:
     """
     Register a specific module's logger to use our custom log handler.
     """
     logger = logging.getLogger(module)
+    if LOG_HANDLER in logger.handlers:
+        return
     # ensure the default "last resort" logging to console remains
     if not logger.handlers and logging.lastResort:
         logger.addHandler(logging.lastResort)
     logger.addHandler(LOG_HANDLER)
-    yield
+
+
+def _deregister_logger_from_napari_handler(
+    module: str = '',
+) -> None:
+    """
+    Register a specific module's logger to use our custom log handler.
+    """
+    logger = logging.getLogger(module)
     logger.removeHandler(LOG_HANDLER)
 
 
