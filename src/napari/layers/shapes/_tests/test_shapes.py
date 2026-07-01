@@ -1966,9 +1966,9 @@ def test_adding_value_color_cycle(attribute):
     layer = Shapes(data, **shapes_kwargs)
 
     # make shape 0 shape_type C
-    shape_types = layer.properties['shape_type']
+    shape_types = list(layer.features['shape_type'])
     shape_types[0] = 'C'
-    layer.properties['shape_type'] = shape_types
+    layer.features['shape_type'] = shape_types
     layer.refresh_colors(update_color_mapping=False)
 
     color_cycle_map = getattr(layer, f'{attribute}_color_cycle_map')
