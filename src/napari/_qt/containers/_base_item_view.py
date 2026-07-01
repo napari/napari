@@ -1,11 +1,15 @@
 from __future__ import annotations
 
 from itertools import chain, repeat
-from typing import TYPE_CHECKING, Generic, TypeVar
+from typing import TYPE_CHECKING, Generic, TypeVar, cast
 
 from qtpy.QtCore import QItemSelection, QModelIndex, Qt
+from qtpy.QtWidgets import QAbstractItemView
 
-from napari._qt.containers._base_item_model import ItemRole
+from napari._qt.containers._base_item_model import (
+    ItemRole,
+    _BaseEventedItemModel,
+)
 from napari._qt.containers._factory import create_model
 
 ItemType = TypeVar('ItemType')
@@ -13,14 +17,12 @@ ItemType = TypeVar('ItemType')
 if TYPE_CHECKING:
     from qtpy.QtCore import QAbstractItemModel
     from qtpy.QtGui import QKeyEvent
-    from qtpy.QtWidgets import QAbstractItemView
 
-    from napari._qt.containers._base_item_model import _BaseEventedItemModel
     from napari.utils.events import Event
     from napari.utils.events.containers import SelectableEventedList
 
 
-class _BaseEventedItemView(Generic[ItemType]):
+class _BaseEventedItemView(QAbstractItemView, Generic[ItemType]):
     """A QAbstractItemView mixin desigend to work with `SelectableEventedList`.
 
     :class:`~napari.utils.events.SelectableEventedList` is our pure python
@@ -50,27 +52,27 @@ class _BaseEventedItemView(Generic[ItemType]):
     _root: SelectableEventedList[ItemType]
 
     def model(self) -> _BaseEventedItemModel[ItemType]:  # for type hints
-        return super().model()
+        return cast(_BaseEventedItemModel[ItemType], super().model())
 
-    def keyPressEvent(self, e: QKeyEvent) -> None:
+    def keyPressEvent(self, e: QKeyEvent | None) -> None:
         """Delete items with delete key."""
+        if e is None:
+            return None
         if e.key() in (Qt.Key.Key_Backspace, Qt.Key.Key_Delete):
             self._root.remove_selected()
             return None
         return super().keyPressEvent(e)
 
     def currentChanged(
-        self: QAbstractItemView, current: QModelIndex, previous: QModelIndex
-    ):
+        self, current: QModelIndex, previous: QModelIndex
+    ) -> None:
         """The Qt current item has changed. Update the python model."""
         self._root.selection._current = current.data(ItemRole)
         return super().currentChanged(current, previous)
 
     def selectionChanged(
-        self: QAbstractItemView,
-        selected: QItemSelection,
-        deselected: QItemSelection,
-    ):
+        self, selected: QItemSelection, deselected: QItemSelection
+    ) -> None:
         """The Qt Selection has changed. Update the python model."""
         sel = {i.data(ItemRole) for i in selected.indexes()}
         desel = {i.data(ItemRole) for i in deselected.indexes()}
@@ -81,7 +83,7 @@ class _BaseEventedItemView(Generic[ItemType]):
 
     # ###### Non-Qt methods added for SelectableEventedList Model ############
 
-    def setRoot(self, root: SelectableEventedList[ItemType]):
+    def setRoot(self, root: SelectableEventedList[ItemType]) -> None:
         """Call during __init__, to set the python model."""
         self._root = root
         self.setModel(create_model(root, self))
@@ -91,18 +93,22 @@ class _BaseEventedItemView(Generic[ItemType]):
         root.selection.events._current.connect(self._on_py_current_change)
         self._sync_selection_models()
 
-    def _on_py_current_change(self, event: Event):
+    def _on_py_current_change(self, event: Event) -> None:
         """The python model current item has changed. Update the Qt view."""
         sm = self.selectionModel()
+        if sm is None:
+            return
         if not event.value:
             sm.clearCurrentIndex()
         else:
             idx = index_of(self.model(), event.value)
             sm.setCurrentIndex(idx, sm.SelectionFlag.Current)
 
-    def _on_py_selection_change(self, event: Event):
+    def _on_py_selection_change(self, event: Event) -> None:
         """The python model selection has changed. Update the Qt view."""
         sm = self.selectionModel()
+        if sm is None:
+            return
         for is_selected, idx in chain(
             zip(repeat(sm.SelectionFlag.Select), event.added),
             zip(repeat(sm.SelectionFlag.Deselect), event.removed),
@@ -111,9 +117,11 @@ class _BaseEventedItemView(Generic[ItemType]):
             if model_idx.isValid():
                 sm.select(model_idx, is_selected)
 
-    def _sync_selection_models(self):
+    def _sync_selection_models(self) -> None:
         """Clear and re-sync the Qt selection view from the python selection."""
         sel_model = self.selectionModel()
+        if sel_model is None:
+            return
         selection = QItemSelection()
         for i in self._root.selection:
             idx = index_of(self.model(), i)
