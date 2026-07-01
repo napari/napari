@@ -83,7 +83,8 @@ def test_toggle_axes_scale_bar_attr(
 
 @skip_local_popups
 @pytest.mark.skipif(
-    parse_version(QT_VERSION) >= parse_version('6.9.0'),
+    parse_version(QT_VERSION) >= parse_version('6.9.0')
+    and sys.platform == 'win32',
     reason='bug in Qt with maximized windows, https://bugreports.qt.io/browse/QTBUG-135844',
 )
 @pytest.mark.flaky(
