@@ -20,7 +20,6 @@ classifiers = [
     "Programming Language :: C",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
@@ -35,7 +34,7 @@ classifiers = [
     "Operating System :: Unix",
     "Operating System :: MacOS",
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 license = "BSD-3-Clause"
 license-files = [
     "LICENSE",
@@ -53,7 +52,7 @@ dependencies = [
     "napari-plugin-engine>=0.2.1",
     "napari-svg>=0.1.8",
     "npe2>=0.8.1",
-    "numpy>=1.24.2",
+    "numpy>=1.25",
     "pandas>=1.3.3",
     "Pillow>=10.0",
     "pint>=0.17",
@@ -76,7 +75,7 @@ dependencies = [
     "tqdm>=4.56.0",
     "typing_extensions>=4.12",
     "vispy>=0.16.2,<0.17",
-    "wrapt>=1.13.3",
+    "wrapt>=1.14.0",
 ]
 dynamic = [
     "version",
@@ -119,7 +118,7 @@ all = [
     "napari[pyqt,optional]"
 ]
 optional-base = [
-    "zarr>=2.12.0", # needed by `builtins` (dask.array.from_zarr) to open zarr
+    "zarr>=3.0.0", # needed by `builtins` (dask.array.from_zarr) to open zarr
     "aiohttp", # needed to open remote files by zarr, replace by extras once https://github.com/zarr-developers/zarr-python/issues/3453 is done
     "napari-metadata>=0.1.0",
     "napari-plugin-manager >=0.1.10, <0.2.0",
@@ -158,14 +157,13 @@ testing = [
     "coverage>7",
     "pretend>=1.0.9",
     "pyautogui>=0.9.54",
-    "pytest-qt >=4.4.0; python_version > '3.10'",
-    "pytest-qt ==4.4.0; python_version <= '3.10'",
+    "pytest-qt >=4.4.0",
     "pytest-pretty>=1.1.0",
     "pytest>=8.3.5",
     "pytest-rerunfailures>=15.1",
     "tensorstore>=0.1.32",
     "virtualenv>=20.17",
-    "xarray>=0.16.2",
+    "xarray>=2023.5.0",
     "IPython>=7.25.0",
     "qtconsole>=4.5.1",
     "rich>=12.0.0",
@@ -257,14 +255,13 @@ testing = [
     "coverage>7",
     "pretend>=1.0.9",
     "pyautogui>=0.9.54",
-    "pytest-qt >=4.4.0; python_version > '3.10'",
-    "pytest-qt ==4.4.0; python_version <= '3.10'",
+    "pytest-qt >=4.4.0",
     "pytest-pretty>=1.1.0",
     "pytest>=8.3.5",
     "pytest-rerunfailures>=15.1",
     "tensorstore>=0.1.32",
     "virtualenv>=20.17",
-    "xarray>=0.16.2",
+    "xarray>=2023.5.0",
     "IPython>=7.25.0",
     "qtconsole>=4.5.1",
     "rich>=12.0.0",
