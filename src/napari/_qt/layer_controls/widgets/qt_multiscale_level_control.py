@@ -8,7 +8,6 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
 from napari._qt.utils import qt_signals_blocked
 from napari.layers import Image, Labels
 from napari.utils.misc import human_readable_size
-from napari.utils.translations import trans
 
 
 def _format_level_label(
@@ -67,7 +66,7 @@ class QtMultiscaleLevelControl(  # type: ignore[metaclass]
         self._layer: Image | Labels = layer
 
         self.level_combobox = QComboBox(parent)
-        self.level_label = QtWrappedLabel(trans._('resolution:'))
+        self.level_label = QtWrappedLabel('resolution:')
 
         # Only set up and show widgets if layer is multiscale
         if layer.multiscale:

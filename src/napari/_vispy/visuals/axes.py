@@ -7,7 +7,6 @@ from napari._vispy.utils.qt_font import FontInfo
 from napari._vispy.visuals.text import Text
 from napari.layers.shapes._shapes_utils import triangulate_ellipse
 from napari.utils.colormaps.standardize_color import transform_color
-from napari.utils.translations import trans
 
 
 def make_dashed_line(num_dashes, axis):
@@ -75,11 +74,7 @@ def color_lines(colors):
         )
 
     return ValueError(
-        trans._(
-            'Either 2 or 3 colors must be provided, got {number}.',
-            deferred=True,
-            number=len(colors),
-        )
+        f'Either 2 or 3 colors must be provided, got {len(colors)}.'
     )
 
 
@@ -96,11 +91,7 @@ def color_dashed_lines(colors):
         )
 
     return ValueError(
-        trans._(
-            'Either 2 or 3 colors must be provided, got {number}.',
-            deferred=True,
-            number=len(colors),
-        )
+        f'Either 2 or 3 colors must be provided, got {len(colors)}.'
     )
 
 
@@ -121,11 +112,7 @@ def color_arrowheads(colors, num_segments):
         )
 
     return ValueError(
-        trans._(
-            'Either 2 or 3 colors must be provided, got {number}.',
-            deferred=True,
-            number=len(colors),
-        )
+        f'Either 2 or 3 colors must be provided, got {len(colors)}.'
     )
 
 
@@ -251,10 +238,7 @@ class Axes(Compound):
             text_data = self._line_data3D[1::2]
         else:
             raise ValueError(
-                trans._(
-                    'Axes dash status and ndisplay combination not supported',
-                    deferred=True,
-                )
+                'Axes dash status and ndisplay combination not supported'
             )
 
         if arrows and ndisplay == 2:

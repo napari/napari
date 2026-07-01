@@ -18,7 +18,6 @@ from qtpy.QtWidgets import (
 
 from napari._pydantic_util import get_inner_type
 from napari.utils.compat import StrEnum
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from qtpy.QtGui import QCloseEvent, QKeyEvent, QResizeEvent
@@ -41,7 +40,7 @@ class PreferencesDialog(QDialog):
         from napari.settings import get_settings
 
         super().__init__(parent)
-        self.setWindowTitle(trans._('Preferences'))
+        self.setWindowTitle('Preferences')
         self.setMinimumSize(QSize(1065, 470))
 
         self._settings = get_settings()
@@ -51,12 +50,12 @@ class PreferencesDialog(QDialog):
         self._list.currentRowChanged.connect(self._stack.setCurrentIndex)
 
         # Set up buttons
-        self._button_cancel = QPushButton(trans._('Cancel'))
+        self._button_cancel = QPushButton('Cancel')
         self._button_cancel.clicked.connect(self.reject)
-        self._button_ok = QPushButton(trans._('OK'))
+        self._button_ok = QPushButton('OK')
         self._button_ok.clicked.connect(self.accept)
         self._button_ok.setDefault(True)
-        self._button_restore = QPushButton(trans._('Restore defaults'))
+        self._button_restore = QPushButton('Restore defaults')
         self._button_restore.clicked.connect(self._restore_default_dialog)
 
         # Layout
@@ -235,8 +234,8 @@ class PreferencesDialog(QDialog):
 
         response = QMessageBox.question(
             self,
-            trans._('Restore Settings'),
-            trans._('Are you sure you want to restore default settings?'),
+            'Restore Settings',
+            'Are you sure you want to restore default settings?',
             QMessageBox.StandardButton.RestoreDefaults
             | QMessageBox.StandardButton.Cancel,
             QMessageBox.StandardButton.RestoreDefaults,
@@ -251,10 +250,8 @@ class PreferencesDialog(QDialog):
         """Displays the dialog informing user a restart is required."""
         QMessageBox.information(
             self,
-            trans._('Restart required'),
-            trans._(
-                'A restart is required for some new settings to have an effect.'
-            ),
+            'Restart required',
+            'A restart is required for some new settings to have an effect.',
         )
 
     def closeEvent(self, event: 'QCloseEvent') -> None:

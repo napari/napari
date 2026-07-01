@@ -11,7 +11,6 @@ from napari.layers.utils.layer_utils import (
     register_layer_attr_action,
 )
 from napari.utils.notifications import show_info, show_warning
-from napari.utils.translations import trans
 
 MIN_BRUSH_SIZE = 1
 CONVERT_TEXT = 'You can convert the layer dtype in the right-click contextual menu of the layer list.'
@@ -32,38 +31,38 @@ def register_label_mode_action(
     return register_layer_attr_action(Labels, description, 'mode')
 
 
-@register_label_mode_action(trans._('Transform'))
+@register_label_mode_action('Transform')
 def activate_labels_transform_mode(layer: Labels) -> None:
     layer.mode = Mode.TRANSFORM
 
 
-@register_label_mode_action(trans._('Move camera'))
+@register_label_mode_action('Move camera')
 def activate_labels_pan_zoom_mode(layer: Labels) -> None:
     layer.mode = Mode.PAN_ZOOM
 
 
-@register_label_mode_action(trans._('Activate the paint brush'))
+@register_label_mode_action('Activate the paint brush')
 def activate_labels_paint_mode(layer: Labels) -> None:
     layer.mode = Mode.PAINT
 
 
-@register_label_mode_action(trans._('Activate the polygon tool'))
+@register_label_mode_action('Activate the polygon tool')
 def activate_labels_polygon_mode(layer: Labels) -> None:
     layer.mode = Mode.POLYGON
 
 
-@register_label_mode_action(trans._('Activate the fill bucket'))
+@register_label_mode_action('Activate the fill bucket')
 def activate_labels_fill_mode(layer: Labels) -> None:
     layer.mode = Mode.FILL
 
 
-@register_label_mode_action(trans._('Pick mode'))
+@register_label_mode_action('Pick mode')
 def activate_labels_picker_mode(layer: Labels) -> None:
     """Activate the label picker."""
     layer.mode = Mode.PICK
 
 
-@register_label_mode_action(trans._('Activate the label eraser'))
+@register_label_mode_action('Activate the label eraser')
 def activate_labels_erase_mode(layer: Labels) -> None:
     layer.mode = Mode.ERASE
 
@@ -80,9 +79,7 @@ labels_fun_to_mode = [
 
 
 @register_label_action(
-    trans._(
-        'Set the currently selected label to the largest used label plus one'
-    ),
+    'Set the currently selected label to the largest used label plus one',
 )
 def new_label(layer: Labels) -> None:
     """Set the currently selected label to the largest used label plus one."""
@@ -90,10 +87,8 @@ def new_label(layer: Labels) -> None:
         new_selected_label = int(np.max(layer.data)) + 1
         if layer.selected_label == new_selected_label:
             show_info(
-                trans._(
-                    'Current selected label is not being used. You will need to use it first '
-                    'to be able to set the current select label to the next one available',
-                )
+                'Current selected label is not being used. You will need to use it first '
+                'to be able to set the current select label to the next one available'
             )
         else:
             try:
@@ -102,14 +97,12 @@ def new_label(layer: Labels) -> None:
                 show_warning(f'{e.text}\n{CONVERT_TEXT}')
     else:
         show_info(
-            trans._(
-                'Calculating empty label on non-numpy array is not supported'
-            )
+            'Calculating empty label on non-numpy array is not supported'
         )
 
 
 @register_label_action(
-    trans._('Swap between the selected label and the background label'),
+    'Swap between the selected label and the background label',
 )
 def swap_selected_and_background_labels(layer: Labels) -> None:
     """Swap between the selected label and the background label."""
@@ -117,7 +110,7 @@ def swap_selected_and_background_labels(layer: Labels) -> None:
 
 
 @register_label_action(
-    trans._('Decrease the currently selected label by one'),
+    'Decrease the currently selected label by one',
 )
 def decrease_label_id(layer: Labels) -> None:
     try:
@@ -127,7 +120,7 @@ def decrease_label_id(layer: Labels) -> None:
 
 
 @register_label_action(
-    trans._('Increase the currently selected label by one'),
+    'Increase the currently selected label by one',
 )
 def increase_label_id(layer: Labels) -> None:
     try:
@@ -137,7 +130,7 @@ def increase_label_id(layer: Labels) -> None:
 
 
 @register_label_action(
-    trans._('Decrease the paint brush size by one'),
+    'Decrease the paint brush size by one',
     repeatable=True,
 )
 def decrease_brush_size(layer: Labels) -> None:
@@ -150,7 +143,7 @@ def decrease_brush_size(layer: Labels) -> None:
 
 
 @register_label_action(
-    trans._('Increase the paint brush size by one'),
+    'Increase the paint brush size by one',
     repeatable=True,
 )
 def increase_brush_size(layer: Labels) -> None:
@@ -159,7 +152,7 @@ def increase_brush_size(layer: Labels) -> None:
 
 
 @register_layer_attr_action(
-    Labels, trans._('Toggle preserve labels'), 'preserve_labels'
+    Labels, 'Toggle preserve labels', 'preserve_labels'
 )
 def toggle_preserve_labels(layer: Labels) -> None:
     layer.preserve_labels = not layer.preserve_labels
@@ -178,7 +171,7 @@ def redo(layer: Labels) -> None:
 
 
 @register_label_action(
-    trans._('Reset the current polygon'),
+    'Reset the current polygon',
 )
 def reset_polygon(layer: Labels) -> None:
     """Reset the drawing of the current polygon."""
@@ -186,7 +179,7 @@ def reset_polygon(layer: Labels) -> None:
 
 
 @register_label_action(
-    trans._('Complete the current polygon'),
+    'Complete the current polygon',
 )
 def complete_polygon(layer: Labels) -> None:
     """Complete the drawing of the current polygon."""
