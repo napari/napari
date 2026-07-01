@@ -600,9 +600,21 @@ class VispyCanvas:
         )
         mouse_callbacks(self.viewer, read_only_event)
 
-        layer = self.viewer.layers.selection.active
-        if layer is not None:
-            mouse_callbacks(layer, read_only_event)
+        selected = list(self.viewer.layers.selection)
+        if not selected:
+            return
+
+        active = self.viewer.layers.selection.active or selected[0]
+        mouse_callbacks(active, read_only_event)
+
+        for layer in selected:
+            if (
+                layer is not active
+                and isinstance(layer, active.__class__)
+                and layer.mode == str(active.mode)
+                and layer.mode != 'pan_zoom'
+            ):
+                mouse_callbacks(layer, read_only_event)
 
         event.handled = napari_event.handled
 
