@@ -487,6 +487,11 @@ QtListView::item:selected {
   background: {{ current }};
 }
 
+QtLayerList {
+  font-size: {{ font_size }};
+  font-weight: bold;
+}
+
 QtLayerList::item {
   margin: 2px 0px 2px 28px;
   border-top-right-radius: 2px;
@@ -498,7 +503,6 @@ QtLayerList QLineEdit {
   margin: -2px;  /* offset editor back to overlap correctly to layer name */
   background-color: {{ current }};
   selection-background-color: {{ darken(current, 20) }};
-  font-size: {{ font_size }};
 }
 
 /* TODO: all these darken/lighten in the layerlist seem unnecessarily complicated */
