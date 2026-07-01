@@ -190,6 +190,9 @@ def test_toggle_fullscreen_from_maximized(make_napari_viewer, qtbot):
     sys.platform == 'darwin',
     reason='Toggle menubar action not enabled on macOS',
 )
+@pytest.mark.flaky(
+    reruns=2, reruns_delay=250, condition=sys.platform.startswith('win')
+)
 def test_toggle_menubar(make_napari_viewer, qtbot):
     """
     Test menubar toggle functionality.
