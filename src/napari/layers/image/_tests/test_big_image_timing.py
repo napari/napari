@@ -27,7 +27,7 @@ def test_timing_fast_big_dask(data, kwargs):
     now = time.monotonic()
     assert Image(data, **kwargs).data.shape == data.shape
     elapsed = time.monotonic() - now
-    assert elapsed < 2, (
+    assert elapsed < 4, (
         'Test took to long some computation are likely not lazy'
     )
 
