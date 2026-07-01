@@ -5,17 +5,20 @@ from magicgui import magicgui
 from vispy.scene.visuals import Ellipse
 
 import napari
-from napari._vispy.overlays.base import ViewerOverlayMixin, VispyCanvasOverlay
+from napari._vispy.overlays.base import (
+    ViewerOverlayMixin,
+    VispyTiledCanvasOverlay,
+)
 from napari._vispy.utils.visual import overlay_to_visual
 from napari.components._viewer_constants import CanvasPosition
-from napari.components.overlays import CanvasOverlay
+from napari.components.overlays import TiledCanvasOverlay
 from napari.utils.color import ColorValue
 
 
-# the overlay model should inherit from either CanvasOverlay or SceneOverlay
+# the overlay model should inherit from either [Tiled]CanvasOverlay or SceneOverlay
 # depending on if it needs to live in "screen space" or "scene space"
 # (i.e: if it should be affected by camera, dims, ndisplay, ...)
-class DotOverlay(CanvasOverlay):
+class DotOverlay(TiledCanvasOverlay):
     """
     Example overlay using a colored dot to show some state
     """
@@ -26,7 +29,7 @@ class DotOverlay(CanvasOverlay):
 # the vispy overlay class should handle connecting the model to the vispy visual
 # we use the ViewerOverlayMixin because this overlay is attached to the viewer,
 # and not a specific layer
-class VispyDotOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
+class VispyDotOverlay(ViewerOverlayMixin, VispyTiledCanvasOverlay):
     # all arguments are keyword-only. viewer, overlay and parent should always be present.
     def __init__(self, **kwargs):
         # the node argument for the base class is the vispy visual
@@ -39,7 +42,7 @@ class VispyDotOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         # we also need to connect events from the model to callbacks that update the visual
         self.overlay.events.color.connect(self._on_color_change)
         self.overlay.events.size.connect(self._on_size_change)
-        # no need to connect position, since that's in the base classes of CanvasOverlay
+        # no need to connect position, since that's in the base classes of TiledCanvasOverlay
 
         # at the end of the init of subclasses of VispyBaseOverlay we always
         # need to call reset to initialize properly
@@ -50,12 +53,14 @@ class VispyDotOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
 
     def _on_position_change(self, event=None):
         # we can overload the position changing to account for the size, so that the dot
-        # always sticks to the edge; there are `offset` attributes specifically for this
-        self.x_offset = self.y_offset = self.overlay.size / 2
+        # always sticks to the edge; there are `size` attributes specifically for this
+        self.x_size = self.y_size = self.overlay.size
         super()._on_position_change()
 
     def _on_size_change(self, event=None):
-        self.node.radius = self.overlay.size / 2
+        r = self.overlay.size / 2
+        self.node.radius = r
+        self.node.center = np.array((r, r))
         self.x_size = self.overlay.size
         self.y_size = self.overlay.size
         # trigger position update since the radius changed
@@ -112,7 +117,7 @@ def change_size(viewer, event):
         new_pos = event.pos
         drag = new_pos[0] - pos[0]
 
-        viewer._overlays['dot'].size = size + drag
+        viewer._overlays['dot'].size = max(size + drag, 1)
         yield
 
 

@@ -22,7 +22,7 @@ from napari._vispy.utils.gl import get_max_texture_sizes
 from napari._vispy.utils.qt_font import FontInfo, QtFontManager
 from napari._vispy.utils.visual import create_vispy_overlay
 from napari.components._viewer_constants import CanvasPosition
-from napari.components.overlays import CanvasOverlay
+from napari.components.overlays import CanvasOverlay, TiledCanvasOverlay
 from napari.utils._proxies import ReadOnlyWrapper
 from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils.events import disconnect_events
@@ -732,7 +732,7 @@ class VispyCanvas:
             self._needs_overlay_position_update = True
 
         if self._needs_overlay_position_update:
-            self._update_overlay_canvas_positions()
+            self._update_tiled_overlay_positions()
             self._needs_overlay_position_update = False
 
         if self._needs_world_units_update:
@@ -914,29 +914,27 @@ class VispyCanvas:
                 vispy_layer.first_visible = False
             vispy_layer._on_blending_change()
 
-        self._defer_overlay_position_update()
+        self._defer_tiled_overlay_position_update()
 
         self._scene_canvas._draw_order.clear()
         self._scene_canvas.update()
 
-    def _defer_overlay_position_update(self):
+    def _defer_tiled_overlay_position_update(self):
         self._needs_overlay_position_update = True
 
-    def _connect_canvas_overlay_events(self, overlay: Overlay) -> None:
+    def _connect_tiled_overlay_events(self, overlay: Overlay) -> None:
         overlay.events.position.connect(
-            self._update_overlay_canvas_positions, unique=True
+            self._update_tiled_overlay_positions, unique=True
         )
         overlay.events.visible.connect(
-            self._update_overlay_canvas_positions, unique=True
+            self._update_tiled_overlay_positions, unique=True
         )
 
-    def _disconnect_canvas_overlay_events(self, overlay: Overlay) -> None:
+    def _disconnect_tiled_overlay_events(self, overlay: Overlay) -> None:
         overlay.events.position.disconnect(
-            self._update_overlay_canvas_positions
+            self._update_tiled_overlay_positions
         )
-        overlay.events.visible.disconnect(
-            self._update_overlay_canvas_positions
-        )
+        overlay.events.visible.disconnect(self._update_tiled_overlay_positions)
 
     def _create_or_update_vispy_viewer_overlay(
         self,
@@ -955,14 +953,14 @@ class VispyCanvas:
             )
             self._overlay_to_visual[overlay].append(vispy_overlay)
 
-            if isinstance(overlay, CanvasOverlay):
+            if isinstance(overlay, TiledCanvasOverlay):
                 vispy_overlay.canvas_position_callback = (
-                    self._defer_overlay_position_update
+                    self._defer_tiled_overlay_position_update
                 )
 
         else:
             vispy_overlay.node.parent = parent
-            if isinstance(overlay, CanvasOverlay):
+            if isinstance(overlay, TiledCanvasOverlay):
                 vispy_overlay._on_box_change()
 
     def _update_viewer_overlays(self):
@@ -975,8 +973,8 @@ class VispyCanvas:
         for overlay in set(self._overlay_to_visual) - set(
             self.viewer._overlays.values()
         ):
-            if isinstance(overlay, CanvasOverlay):
-                self._disconnect_canvas_overlay_events(overlay)
+            if isinstance(overlay, TiledCanvasOverlay):
+                self._disconnect_tiled_overlay_events(overlay)
             vispy_overlays = self._overlay_to_visual.pop(overlay)
             for vispy_overlay in vispy_overlays:
                 vispy_overlay.close()
@@ -995,11 +993,10 @@ class VispyCanvas:
 
             vispy_overlays = self._overlay_to_visual.setdefault(overlay, [])
 
+            # NOTE: scene overlays and nontiling canvas ones are always gridded!
             gridded = (
                 self.viewer.grid.enabled
-                and getattr(
-                    overlay, 'gridded', True
-                )  # scene overlays always gridded
+                and getattr(overlay, 'gridded', True)
                 and self.viewer.layers
             )
 
@@ -1034,13 +1031,13 @@ class VispyCanvas:
                 )
 
             # connect position callbacks
-            if isinstance(overlay, CanvasOverlay):
-                self._connect_canvas_overlay_events(overlay)
+            if isinstance(overlay, TiledCanvasOverlay):
+                self._connect_tiled_overlay_events(overlay)
                 overlay.events.gridded.connect(
                     self._update_viewer_overlays, unique=True
                 )
 
-        self._update_overlay_canvas_positions()
+        self._update_tiled_overlay_positions()
 
     def _update_layer_overlays(self, layer: Layer) -> None:
         """Update the overlay visuals for each layer in the canvas.
@@ -1059,8 +1056,8 @@ class VispyCanvas:
             )
 
         for overlay in to_remove:
-            if isinstance(overlay, CanvasOverlay):
-                self._disconnect_canvas_overlay_events(overlay)
+            if isinstance(overlay, TiledCanvasOverlay):
+                self._disconnect_tiled_overlay_events(overlay)
             if vispy_overlay := overlay_to_visual.pop(overlay, None):
                 vispy_overlay.close()
 
@@ -1081,7 +1078,8 @@ class VispyCanvas:
             vispy_overlay = overlay_to_visual.get(overlay, None)
 
             if isinstance(overlay, CanvasOverlay):
-                self._connect_canvas_overlay_events(overlay)
+                if isinstance(overlay, TiledCanvasOverlay):
+                    self._connect_tiled_overlay_events(overlay)
 
                 if self.viewer.grid.enabled:
                     row, col = self.viewer.grid.position(
@@ -1103,20 +1101,20 @@ class VispyCanvas:
                     parent=parent,
                 )
                 overlay_to_visual[overlay] = vispy_overlay
-                if isinstance(overlay, CanvasOverlay):
+                if isinstance(overlay, TiledCanvasOverlay):
                     vispy_overlay.canvas_position_callback = (
-                        self._defer_overlay_position_update
+                        self._defer_tiled_overlay_position_update
                     )
             else:
                 vispy_overlay.node.parent = parent
-                if isinstance(overlay, CanvasOverlay):
+                if isinstance(overlay, TiledCanvasOverlay):
                     vispy_overlay._on_box_change()
 
-        self._update_overlay_canvas_positions()
+        self._update_tiled_overlay_positions()
 
-    def _get_ordered_visible_canvas_overlays(
+    def _get_ordered_visible_tiled_overlays(
         self,
-    ) -> Iterator[tuple[CanvasOverlay, VispyBaseOverlay, Node | None]]:
+    ) -> Iterator[tuple[TiledCanvasOverlay, VispyBaseOverlay, Node | None]]:
         """
         Iterator over visible canvas overlays by grid viewbox, in tiling order.
 
@@ -1129,11 +1127,7 @@ class VispyCanvas:
         """
 
         def is_visible_tileable(overlay):
-            return (
-                overlay.visible
-                and isinstance(overlay, CanvasOverlay)
-                and overlay.position in list(CanvasPosition)
-            )
+            return overlay.visible and isinstance(overlay, TiledCanvasOverlay)
 
         def is_gridded(overlay):
             return (
@@ -1206,7 +1200,7 @@ class VispyCanvas:
             yield from reversed(overlays_by_tiling_order['reversed'])
             yield from overlays_by_tiling_order['direct']
 
-    def _update_overlay_canvas_positions(self, event=None):
+    def _update_tiled_overlay_positions(self, event=None):
         # TODO: make settable
         x_padding = y_padding = 10.0
         x_offset_total = {}
@@ -1215,7 +1209,7 @@ class VispyCanvas:
             overlay,
             vispy_overlay,
             view,
-        ) in self._get_ordered_visible_canvas_overlays():
+        ) in self._get_ordered_visible_tiled_overlays():
             # TODO: vertical vs horizontal tiling should be settable!
             x_offset_total.setdefault(
                 view, dict.fromkeys(CanvasPosition, x_padding)
