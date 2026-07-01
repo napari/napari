@@ -20,7 +20,6 @@ classifiers = [
     "Programming Language :: C",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
@@ -35,7 +34,7 @@ classifiers = [
     "Operating System :: Unix",
     "Operating System :: MacOS",
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 license = "BSD-3-Clause"
 license-files = [
     "LICENSE",
@@ -76,7 +75,7 @@ dependencies = [
     "tqdm>=4.56.0",
     "typing_extensions>=4.12",
     "vispy>=0.16.2,<0.17",
-    "wrapt>=1.13.3",
+    "wrapt>=1.14.0",
 ]
 dynamic = [
     "version",
@@ -158,8 +157,7 @@ testing = [
     "coverage>7",
     "pretend>=1.0.9",
     "pyautogui>=0.9.54",
-    "pytest-qt >=4.4.0; python_version > '3.10'",
-    "pytest-qt ==4.4.0; python_version <= '3.10'",
+    "pytest-qt >=4.4.0",
     "pytest-pretty>=1.1.0",
     "pytest>=8.3.5",
     "pytest-rerunfailures>=15.1",
@@ -257,8 +255,7 @@ testing = [
     "coverage>7",
     "pretend>=1.0.9",
     "pyautogui>=0.9.54",
-    "pytest-qt >=4.4.0; python_version > '3.10'",
-    "pytest-qt ==4.4.0; python_version <= '3.10'",
+    "pytest-qt >=4.4.0",
     "pytest-pretty>=1.1.0",
     "pytest>=8.3.5",
     "pytest-rerunfailures>=15.1",
