@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from typing import TYPE_CHECKING, Literal
 
 import numpy as np
@@ -178,11 +179,10 @@ class HistogramModel(EventedModel):
             if self._layer.rgb:
                 data = self._rgb_to_luminance(data)
 
-            # Sample if data is too large.
-            # This also covers dask arrays that were already reduced by
-            # _get_full_data / _sample_dask_safe to avoid full
-            # materialization.
-            if data.size > DEFAULT_MAX_SAMPLES:
+            # For full mode, sample large data to stay responsive.
+            # Canvas mode uses the displayed slice which is already a
+            # manageable subset — no further sampling needed.
+            if self.mode == 'full' and data.size > DEFAULT_MAX_SAMPLES:
                 data = self._sample_data(data, DEFAULT_MAX_SAMPLES)
 
             # Get histogram range from contrast limits range
@@ -242,7 +242,7 @@ class HistogramModel(EventedModel):
                 range_max = float(range_max) + delta
 
         counts, bins = np.histogram(
-            data.ravel(),
+            data,
             bins=self.n_bins,
             range=(float(range_min), float(range_max)),
         )
@@ -306,12 +306,17 @@ class HistogramModel(EventedModel):
         """Get full volume data.
 
         For multiscale data, uses the lowest resolution level for
-        efficiency.  For dask or other lazy arrays, avoids full
-        materialization by sampling across chunks so that ``compute()``
-        never loads the entire array into memory.
+        efficiency.  For dask arrays, avoids full materialization by
+        sampling chunk indices proportionally — only the chunks that
+        are sampled are computed.
         """
         data = self._layer.data
-        if isinstance(data, list | tuple):
+
+        # Unpack multiscale to the coarsest level.
+        # MultiScaleData is a collections.abc.Sequence but not list/tuple.
+        if isinstance(data, Sequence) and not isinstance(
+            data, (np.ndarray, str, bytes)
+        ):
             data = data[-1]
 
         if isinstance(data, np.ndarray):
@@ -320,22 +325,17 @@ class HistogramModel(EventedModel):
         if _is_dask_data(data):
             return self._sample_dask_safe(data)
 
-        # For other lazy array types (tensorstore, zarr, etc.) that
-        # haven't been pre-sliced by the canvas pipeline, try to sample
-        # rather than materializing the full volume.
-        if hasattr(data, 'shape') and data.size > DEFAULT_MAX_SAMPLES:
-            return self._sample_dask_safe(data)
-
         return np.asarray(data)
 
     @staticmethod
     def _sample_dask_safe(data: object) -> np.ndarray:
-        """Sample from a dask array across chunks without full materialization.
+        """Sample uniformly from a dask array without full materialization.
 
-        Iterates over available chunks and draws proportional samples
-        from each, avoiding ``.ravel()`` which would build a large task
-        graph for very large arrays. Only the chunks that are sampled
-        are computed, never the full array.
+        Builds chunk-size metadata (cheap — no data access), randomly
+        selects a subset of chunks proportional to their size, then
+        computes only those chunks.  This avoids both full
+        materialization and spatial bias (unlike a simple ``[:N]``
+        slice which would only sample from the beginning of the array).
 
         Parameters
         ----------
@@ -345,50 +345,47 @@ class HistogramModel(EventedModel):
         Returns
         -------
         np.ndarray
-            Flat array of sampled finite values.
+            Flat array of sampled values.
         """
         import dask.array as da
 
-        data_arr: da.Array = data
-        n_total = data_arr.size
-        n_samples = min(DEFAULT_MAX_SAMPLES, n_total)
+        data_arr = da.asarray(data)
+        n = min(DEFAULT_MAX_SAMPLES, data_arr.size)
+        numblocks = data_arr.numblocks
 
-        # Build list of (slice, chunk_size) for every chunk in the array
-        chunk_slices_and_sizes: list[tuple[tuple[slice, ...], int]] = []
-        for idx in np.ndindex(*data_arr.numblocks):
-            slices: list[slice] = []
-            chunk_size = 1
+        # Build chunk weights from metadata — no data is loaded here.
+        chunk_sizes: list[int] = []
+        for idx in np.ndindex(*numblocks):
+            sz = 1
             for d, i in enumerate(idx):
-                start = sum(data_arr.chunks[d][:i])
-                stop = start + data_arr.chunks[d][i]
-                slices.append(slice(start, stop))
-                chunk_size *= data_arr.chunks[d][i]
-            chunk_slices_and_sizes.append((tuple(slices), chunk_size))
+                sz *= data_arr.chunks[d][i]
+            chunk_sizes.append(sz)
 
-        total_chunk_size = sum(sz for _, sz in chunk_slices_and_sizes)
-        rng = np.random.default_rng(0)
-        sampled_parts: list[np.ndarray] = []
+        rng = np.random.default_rng()
+        n_chunks = len(chunk_sizes)
+        # Select enough chunks to reach ~n_samples while keeping it bounded.
+        n_selected = min(n_chunks, max(1, n // max(1, min(chunk_sizes))))
+        probs = np.asarray(chunk_sizes) / sum(chunk_sizes)
+        selected = rng.choice(n_chunks, size=n_selected, p=probs)
 
-        for chunk_slc, chunk_sz in chunk_slices_and_sizes:
-            n_samp = max(1, int(n_samples * chunk_sz / total_chunk_size))
-            chunk_data = da.asarray(data_arr[chunk_slc])
-            chunk_computed = chunk_data.compute().ravel()
-            if chunk_computed.size <= n_samp:
-                sampled_parts.append(chunk_computed)
+        samples_per = max(1, n // n_selected)
+        parts: list[np.ndarray] = []
+        for ci in selected:
+            idx_tuple = np.unravel_index(ci, numblocks)
+            # Only THIS chunk is computed:
+            block = np.asarray(data_arr.blocks[idx_tuple]).ravel()
+            if block.size <= samples_per:
+                parts.append(block)
             else:
-                chosen = rng.choice(
-                    chunk_computed.size, size=n_samp, replace=False
+                indices = rng.choice(
+                    block.size, size=samples_per, replace=False
                 )
-                sampled_parts.append(chunk_computed[chosen])
+                parts.append(block[indices])
 
-        combined = np.concatenate(sampled_parts)
-        # Trim down to the target sample count if we overshot
-        if combined.size > n_samples:
-            chosen = rng.choice(combined.size, size=n_samples, replace=False)
-            combined = combined[chosen]
-
-        valid = combined[np.isfinite(combined)]
-        return valid if len(valid) > 0 else combined[:1]
+        result = np.concatenate(parts)
+        if result.size > n:
+            result = rng.choice(result, size=n, replace=False)
+        return result
 
     def _sample_data(self, data: np.ndarray, max_samples: int) -> np.ndarray:
         """Randomly sample data to reduce computation."""
@@ -402,7 +399,7 @@ class HistogramModel(EventedModel):
         if valid_data.size <= max_samples:
             return valid_data
 
-        rng = np.random.default_rng(0)
+        rng = np.random.default_rng()
         indices = rng.choice(valid_data.size, size=max_samples, replace=False)
         return valid_data[indices]
 
