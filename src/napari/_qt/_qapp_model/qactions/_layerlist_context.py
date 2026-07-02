@@ -48,7 +48,7 @@ def _set_data_in_clipboard(data: dict) -> None:
         return
 
     json_data = _numpy_to_list(data)
-    json_data = json.dumps(json_data, cls=UnitsEncoder)
+    json_data_str = json.dumps(json_data, cls=UnitsEncoder)
 
     numpy_data = {k: v for k, v in data.items() if isinstance(v, np.ndarray)}
     # maybe change to MessagePack in future
@@ -57,7 +57,7 @@ def _set_data_in_clipboard(data: dict) -> None:
 
     byte_representation = buffer.getvalue()
     mime_data = QMimeData()
-    mime_data.setText(json_data)
+    mime_data.setText(json_data_str)
     mime_data.setData(SPATIAL_MIME_KEY, byte_representation)
 
     clip.setMimeData(mime_data)
