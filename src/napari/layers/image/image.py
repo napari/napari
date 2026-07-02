@@ -8,7 +8,6 @@ from typing import Any, Literal, cast
 
 import numpy as np
 
-from napari.components.histogram import HistogramModel
 from napari.layers._data_protocols import LayerDataProtocol
 from napari.layers._multiscale_data import MultiScaleData
 from napari.layers._scalar_field._slice import _ScalarFieldSliceResponse
@@ -38,6 +37,7 @@ if typing.TYPE_CHECKING:
     import numpy.typing as npt
     import pint
 
+    from napari.components.histogram import HistogramModel
     from napari.types import ArrayLike
     from napari.utils.transforms import Affine
 
@@ -440,6 +440,8 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         try:
             return self._histogram  # type: ignore[has-type]
         except AttributeError:
+            from napari.components.histogram import HistogramModel
+
             self._histogram = HistogramModel(self)
             return self._histogram
 
