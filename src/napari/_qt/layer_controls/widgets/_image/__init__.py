@@ -10,12 +10,10 @@ from napari._qt.layer_controls.widgets._image.qt_render_control import (
 from napari._qt.layer_controls.widgets.qt_histogram_control import (
     QtHistogramControl,
 )
-from napari._qt.widgets.qt_histogram import QtHistogramWidget
 
 __all__ = [
     'QtDepictionControl',
     'QtHistogramControl',
-    'QtHistogramWidget',
     'QtImageRenderControl',
     'QtInterpolationComboBoxControl',
 ]
