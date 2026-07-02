@@ -23,12 +23,13 @@ from napari.utils.translations import trans
 
 __all__ = ('Q_LAYERLIST_CONTEXT_ACTIONS', 'is_valid_spatial_in_clipboard')
 
+SPATIAL_MIME_KEY = 'application/x-napari-layer-spatial-npz'
+
 
 def _numpy_to_list(d: dict) -> dict:
-    for k, v in list(d.items()):
-        if isinstance(v, np.ndarray):
-            d[k] = v.tolist()
-    return d
+    return {
+        k: v.tolist() if isinstance(v, np.ndarray) else v for k, v in d.items()
+    }
 
 
 class UnitsEncoder(json.JSONEncoder):
@@ -46,10 +47,10 @@ def _set_data_in_clipboard(data: dict) -> None:
         show_warning('Cannot access clipboard')
         return
 
-    data_ = _numpy_to_list(data)
-    json_data = json.dumps(data_, cls=UnitsEncoder)
+    json_data = _numpy_to_list(data)
+    json_data = json.dumps(json_data, cls=UnitsEncoder)
 
-    numpy_data = {k: v for k, v in data_.items() if isinstance(v, np.ndarray)}
+    numpy_data = {k: v for k, v in data.items() if isinstance(v, np.ndarray)}
     # maybe change to MessagePack in future
     buffer = BytesIO()
     np.savez(buffer, **numpy_data, allow_pickle=False)
@@ -57,9 +58,7 @@ def _set_data_in_clipboard(data: dict) -> None:
     byte_representation = buffer.getvalue()
     mime_data = QMimeData()
     mime_data.setText(json_data)
-    mime_data.setData(
-        'application/x-napari-layer-spatial-npz', byte_representation
-    )
+    mime_data.setData(SPATIAL_MIME_KEY, byte_representation)
 
     clip.setMimeData(mime_data)
 
@@ -118,9 +117,9 @@ def _get_spatial_from_clipboard(binary: bool = True) -> dict | None:
         # we should never get here, but just in case
         return None
     numpy_data = {}
-    if mime_data.data('application/x-napari-layer-spatial-npz') and binary:
+    if mime_data.data(SPATIAL_MIME_KEY) and binary:
         buff = BytesIO(
-            bytes(mime_data.data('application/x-napari-layer-spatial-npz'))  # type: ignore[call-overload]
+            bytes(mime_data.data(SPATIAL_MIME_KEY))  # type: ignore[call-overload]
         )
         numpy_data = np.load(buff, allow_pickle=False)
 
