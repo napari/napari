@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal, Optional
+from typing import TYPE_CHECKING, Literal
 
 import numpy as np
 from pydantic import PrivateAttr
@@ -11,9 +11,15 @@ from napari.utils._dask_utils import _is_dask_data
 from napari.utils.events import EventedModel
 
 if TYPE_CHECKING:
-    from napari.layers.image.image import Image
+    from napari.layers.image.image import Image  # noqa: TC004
 
 __all__ = ('HistogramModel',)
+
+# Default histogram configuration
+_DEFAULT_N_BINS: int = 256
+_DEFAULT_MAX_SAMPLES: int = 1_000_000
+_DEFAULT_CANVAS_WIDTH: int = 300
+_DEFAULT_CANVAS_HEIGHT: int = 150
 
 
 class HistogramModel(EventedModel):
@@ -61,26 +67,26 @@ class HistogramModel(EventedModel):
     """
 
     # Evented properties
-    n_bins: int = 256
+    n_bins: int = _DEFAULT_N_BINS
     mode: Literal['canvas', 'full'] = 'canvas'
     log_scale: bool = False
     enabled: bool = False
 
-    # Private attributes (use PrivateAttr for pydantic).
-    # Annotated as object here because pydantic does not validate PrivateAttr
-    # types at runtime; the actual type is Image (enforced by the __init__
-    # signature and checked by static type-checkers via TYPE_CHECKING).
-    _layer: object = PrivateAttr()
+    # Private attributes — pydantic's PrivateAttr is not validated at
+    # runtime, so the annotation here is only for documentation and
+    # readability; the true type is ``Image`` (enforced by __init__).
+    _layer: Image = PrivateAttr()
     _bins: np.ndarray = PrivateAttr(
         default_factory=lambda: np.array([0.0, 1.0])
     )
     _counts: np.ndarray = PrivateAttr(default_factory=lambda: np.array([0.0]))
     _dirty: bool = PrivateAttr(default=True)
+    _computing: bool = PrivateAttr(default=False)
 
     def __init__(
         self,
         layer: Image,
-        n_bins: int = 256,
+        n_bins: int = _DEFAULT_N_BINS,
         mode: Literal['canvas', 'full'] = 'canvas',
         log_scale: bool = False,
         enabled: bool = False,
@@ -154,39 +160,47 @@ class HistogramModel(EventedModel):
         This method extracts data from the layer based on the current mode
         (displayed or full), samples if necessary, and computes the histogram.
         """
-        data = self._get_data()
+        if self._computing:
+            return
 
-        if data is None or data.size == 0:
-            self._bins = np.array([0.0, 1.0])
-            self._counts = np.array([0.0])
+        self._computing = True
+        try:
+            data = self._get_data()
+
+            if data is None or data.size == 0:
+                self._bins = np.array([0.0, 1.0])
+                self._counts = np.array([0.0])
+                self._dirty = False
+                self.events.bins()
+                self.events.counts()
+                return
+
+            # For RGB(A) images convert to luminance so the histogram
+            # represents perceived brightness.
+            if self._layer.rgb:
+                data = self._rgb_to_luminance(data)
+
+            # Sample if data is too large.
+            # This also covers dask arrays that were already reduced by
+            # _get_full_data / _sample_dask_safe to avoid full
+            # materialization.
+            if data.size > _DEFAULT_MAX_SAMPLES:
+                data = self._sample_data(data, _DEFAULT_MAX_SAMPLES)
+
+            # Get histogram range from contrast limits range
+            range_min, range_max = self._layer.contrast_limits_range
+            if range_min is None or range_max is None:
+                range_min = float(np.nanmin(data))
+                range_max = float(np.nanmax(data))
+
+            bins, counts = self._calc_histogram(data, range_min, range_max)
+            self._bins = bins
+            self._counts = counts
             self._dirty = False
             self.events.bins()
             self.events.counts()
-            return
-
-        # For RGB(A) images convert to luminance so the histogram represents
-        # perceived brightness.
-        if self._layer.rgb:
-            data = self._rgb_to_luminance(data)
-
-        # Sample if data is too large (>1M points).
-        # This also covers dask arrays that were already reduced by
-        # _get_full_data / _sample_dask_safe to avoid full materialization.
-        if data.size > 1_000_000:
-            data = self._sample_data(data, max_samples=1_000_000)
-
-        # Get histogram range from contrast limits range
-        range_min, range_max = self._layer.contrast_limits_range
-        if range_min is None or range_max is None:
-            range_min = float(np.nanmin(data))
-            range_max = float(np.nanmax(data))
-
-        bins, counts = self._calc_histogram(data, range_min, range_max)
-        self._bins = bins
-        self._counts = counts
-        self._dirty = False
-        self.events.bins()
-        self.events.counts()
+        finally:
+            self._computing = False
 
     def _calc_histogram(
         self,
@@ -257,51 +271,46 @@ class HistogramModel(EventedModel):
             0.2126 * rgb[..., 0] + 0.7152 * rgb[..., 1] + 0.0722 * rgb[..., 2]
         )
 
-    def _get_data(self) -> Optional[np.ndarray]:
+    def _get_data(self) -> np.ndarray | None:
         """Get data from layer based on current mode."""
         if self.mode == 'canvas':
             return self._get_displayed_data()
         return self._get_full_data()
 
-    def _get_displayed_data(self) -> Optional[np.ndarray]:
+    def _get_displayed_data(self) -> np.ndarray | None:
         """Get data from currently displayed slice.
 
-        In 'displayed' mode, the histogram is computed from the visible data
+        In 'canvas' mode, the histogram is computed from the visible data
         that has already been sliced for rendering. This uses the layer's
-        internal _slice.image.raw which contains the data being displayed.
+        ``_slice.image.raw`` which contains the data being displayed.
 
-        This provides a histogram of what the user is actually seeing,
-        which is most useful for adjusting contrast limits. It also
-        correctly handles multiscale data by using the appropriate
-        resolution level that is currently being rendered.
-
-        Falls back to full-volume data when the slice is empty or not yet
-        available (e.g. during initial loading). Because ``HistogramModel``
-        is created lazily (only on first property access), slicing has
-        typically already completed by the time this is called, so the
-        placeholder-1x1-slice edge case should not arise.
+        Returns None if the slice is not yet available (e.g. during initial
+        loading) — the caller will produce empty bins/counts instead of
+        silently falling back to full-volume data. Because
+        ``HistogramModel`` is created lazily (only on first property
+        access), slicing has typically already completed by the time this
+        is called.
         """
         raw = self._get_slice_raw_data()
         if raw is not None and raw.size > 0:
             return raw
+        return None
 
-        # Fallback: if slice not available, use full data
-        return self._get_full_data()
-
-    def _get_slice_raw_data(self) -> Optional[np.ndarray]:
+    def _get_slice_raw_data(self) -> np.ndarray | None:
         """Get the currently sliced raw image data if available."""
-        if self._layer._slice is None:
+        layer_slice = self._layer._slice
+        if layer_slice is None:
             return None
-        raw = self._layer._slice.image.raw
+        raw = layer_slice.image.raw
         return np.asarray(raw) if raw is not None else None
 
-    def _get_full_data(self) -> Optional[np.ndarray]:
+    def _get_full_data(self) -> np.ndarray | None:
         """Get full volume data.
 
         For multiscale data, uses the lowest resolution level for
         efficiency.  For dask or other lazy arrays, avoids full
-        materialization by sampling across random linear indices so
-        that ``compute()`` never loads the entire array into memory.
+        materialization by sampling across chunks so that ``compute()``
+        never loads the entire array into memory.
         """
         data = self._layer.data
         if isinstance(data, list | tuple):
@@ -316,26 +325,72 @@ class HistogramModel(EventedModel):
         # For other lazy array types (tensorstore, zarr, etc.) that
         # haven't been pre-sliced by the canvas pipeline, try to sample
         # rather than materializing the full volume.
-        if hasattr(data, 'shape') and data.size > 1_000_000:  # type: ignore[union-attr]
+        if hasattr(data, 'shape') and data.size > _DEFAULT_MAX_SAMPLES:
             return self._sample_dask_safe(data)
 
-        return np.asarray(data)  # type: ignore[arg-type]
+        return np.asarray(data)
 
     @staticmethod
     def _sample_dask_safe(data: object) -> np.ndarray:
-        """Sample from a dask array without full materialization.
+        """Sample from a dask array across chunks without full materialization.
 
-        Uses random linear indices to pluck a subsample across chunks,
-        then materialises only those positions.
+        Iterates over available chunks and draws proportional samples
+        from each, avoiding ``.ravel()`` which would build a large task
+        graph for very large arrays. Only the chunks that are sampled
+        are computed, never the full array.
+
+        Parameters
+        ----------
+        data : object
+            A dask array.
+
+        Returns
+        -------
+        np.ndarray
+            Flat array of sampled finite values.
         """
-        n_total = data.size  # type: ignore[union-attr]
-        n_samples = min(1_000_000, n_total)
+        import dask.array as da
+
+        data_arr: da.Array = data  # type: ignore[assignment]
+        n_total = data_arr.size
+        n_samples = min(_DEFAULT_MAX_SAMPLES, n_total)
+
+        # Build list of (slice, chunk_size) for every chunk in the array
+        chunk_slices_and_sizes: list[tuple[tuple[slice, ...], int]] = []
+        for idx in np.ndindex(*data_arr.numblocks):
+            slices: list[slice] = []
+            chunk_size = 1
+            for d, i in enumerate(idx):
+                start = sum(data_arr.chunks[d][:i])
+                stop = start + data_arr.chunks[d][i]
+                slices.append(slice(start, stop))
+                chunk_size *= data_arr.chunks[d][i]
+            chunk_slices_and_sizes.append((tuple(slices), chunk_size))
+
+        total_chunk_size = sum(sz for _, sz in chunk_slices_and_sizes)
         rng = np.random.default_rng(0)
-        indices = rng.integers(0, n_total, size=n_samples)
-        flat = data.ravel()  # type: ignore[union-attr]
-        sampled = flat[indices].compute()  # type: ignore[union-attr]
-        valid = sampled[np.isfinite(sampled)]
-        return valid if len(valid) > 0 else sampled[:1]
+        sampled_parts: list[np.ndarray] = []
+
+        for chunk_slc, chunk_sz in chunk_slices_and_sizes:
+            n_samp = max(1, int(n_samples * chunk_sz / total_chunk_size))
+            chunk_data = da.asarray(data_arr[chunk_slc])  # type: ignore[no-untyped-call]
+            chunk_computed = chunk_data.compute().ravel()
+            if chunk_computed.size <= n_samp:
+                sampled_parts.append(chunk_computed)
+            else:
+                chosen = rng.choice(
+                    chunk_computed.size, size=n_samp, replace=False
+                )
+                sampled_parts.append(chunk_computed[chosen])
+
+        combined = np.concatenate(sampled_parts)
+        # Trim down to the target sample count if we overshot
+        if combined.size > n_samples:
+            chosen = rng.choice(combined.size, size=n_samples, replace=False)
+            combined = combined[chosen]
+
+        valid = combined[np.isfinite(combined)]
+        return valid if len(valid) > 0 else combined[:1]
 
     def _sample_data(self, data: np.ndarray, max_samples: int) -> np.ndarray:
         """Randomly sample data to reduce computation."""
@@ -382,12 +437,14 @@ class HistogramModel(EventedModel):
     def _mark_dirty(self) -> None:
         """Mark histogram as needing recomputation.
 
-        If enabled, compute immediately so connected widgets stay live.
-        If disabled, defer — the next explicit access or enabled=True will
-        trigger the compute.
+        If already computing, defer recomputation (the ``_dirty`` flag
+        persists so the next access will recompute).  If not computing
+        and enabled, compute immediately so connected widgets stay live.
+        If disabled, defer — the next explicit access or enabled=True
+        will trigger the compute.
         """
         self._dirty = True
-        if self.enabled:
+        if not self._computing and self.enabled:
             self.compute()
 
     def disconnect(self) -> None:
@@ -396,12 +453,11 @@ class HistogramModel(EventedModel):
         Call this when the layer is removed or the histogram is no
         longer needed to break psygnal event connections.
         """
-        # Disconnect from layer events
-        self._layer.events.data.disconnect(self._on_data_change)  # type: ignore[union-attr]
-        self._layer.events.contrast_limits_range.disconnect(  # type: ignore[union-attr]
+        self._layer.events.data.disconnect(self._on_data_change)
+        self._layer.events.contrast_limits_range.disconnect(
             self._on_range_change
         )
-        self._layer.events.set_data.disconnect(self._on_slice_change)  # type: ignore[union-attr]
+        self._layer.events.set_data.disconnect(self._on_slice_change)
 
         # Disconnect from our own events
         self.events.n_bins.disconnect(self._on_params_change)
@@ -419,7 +475,7 @@ class HistogramModel(EventedModel):
         # Disable first to avoid wasteful intermediate compute() calls
         # from the parameter-change event handlers.
         self.enabled = False
-        self.n_bins = 256
+        self.n_bins = _DEFAULT_N_BINS
         self.log_scale = False
         self.mode = 'canvas'
         self._bins = np.array([0.0, 1.0])
