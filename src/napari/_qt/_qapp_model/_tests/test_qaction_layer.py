@@ -1,11 +1,14 @@
+from io import BytesIO
 from unittest.mock import Mock
 
 import numpy as np
 import numpy.testing as npt
 import pytest
+from PyQt6.QtCore import QMimeData
 from qtpy.QtWidgets import QApplication
 
 from napari._qt._qapp_model.qactions._layerlist_context import (
+    SPATIAL_MIME_KEY,
     _copy_affine_to_clipboard,
     _copy_rotate_to_clipboard,
     _copy_scale_to_clipboard,
@@ -13,6 +16,7 @@ from napari._qt._qapp_model.qactions._layerlist_context import (
     _copy_spatial_to_clipboard,
     _copy_translate_to_clipboard,
     _copy_units_to_clipboard,
+    _get_spatial_from_clipboard,
     _paste_spatial_from_clipboard,
     is_valid_spatial_in_clipboard,
 )
@@ -145,6 +149,26 @@ def test_copy_units_to_clipboard(layer_list):
         layer_list['l3'].units, get_units_from_name(('pixel', 'pixel'))
     )
     npt.assert_array_equal(layer_list['l2'].scale, (1, 1))
+
+
+@pytest.mark.parametrize(
+    ('binary', 'expected'), [(True, [2, 2]), (False, [1, 1])]
+)
+def test_copy_numpy_overwrite(qapp, binary, expected):
+    """Test if a value from a binary buffer overwrites a value from a text buffer."""
+    text_data = '{"units": ["nm", "nm"], "scale": [1, 1]}'
+    buffer = BytesIO()
+    np.savez(buffer, scale=np.array([2, 2]))
+    buffer.seek(0)
+
+    qapp.clipboard().setMimeData(QMimeData())
+    qapp.clipboard().mimeData().setText(text_data)
+    qapp.clipboard().mimeData().setData(SPATIAL_MIME_KEY, buffer.getvalue())
+
+    res = _get_spatial_from_clipboard(binary=binary)
+    assert res is not None
+    assert 'units' in res
+    npt.assert_array_equal(res['scale'], expected)
 
 
 @pytest.mark.usefixtures('qtbot')
