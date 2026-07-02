@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import pickle
+from io import BytesIO
 from typing import Any
 
 import numpy as np
@@ -40,17 +41,24 @@ class UnitsEncoder(json.JSONEncoder):
 
 
 def _set_data_in_clipboard(data: dict) -> None:
-    data = _numpy_to_list(data)
     clip = QApplication.clipboard()
     if clip is None:
         show_warning('Cannot access clipboard')
         return
 
-    d = json.dumps(data, cls=UnitsEncoder)
-    p = pickle.dumps(data)
+    data_ = _numpy_to_list(data)
+    json_data = json.dumps(data_, cls=UnitsEncoder)
+
+    numpy_data = {k: v for k, v in data_.items() if isinstance(v, np.ndarray)}
+    buffer = BytesIO()
+    np.savez(buffer, **numpy_data, allow_pickle=False)
+
+    byte_representation = buffer.getvalue()
     mime_data = QMimeData()
-    mime_data.setText(d)
-    mime_data.setData('application/octet-stream', p)
+    mime_data.setText(json_data)
+    mime_data.setData(
+        'application/x-napari-layer-spatial-npz', byte_representation
+    )
 
     clip.setMimeData(mime_data)
 
@@ -99,7 +107,7 @@ def _copy_units_to_clipboard(layer: Layer) -> None:
     _set_data_in_clipboard({'units': layer.units})
 
 
-def _get_spatial_from_clipboard() -> dict | None:
+def _get_spatial_from_clipboard(binary=True) -> dict | None:
     clip = QApplication.clipboard()
     if clip is None:
         return None
@@ -108,10 +116,19 @@ def _get_spatial_from_clipboard() -> dict | None:
     if mime_data is None:  # pragma: no cover
         # we should never get here, but just in case
         return None
-    if mime_data.data('application/octet-stream'):
-        return pickle.loads(mime_data.data('application/octet-stream'))  # type: ignore[arg-type]
+    numpy_data = {}
+    if mime_data.data('application/x-napari-layer-spatial-npz') and binary:
+        buff = BytesIO(
+            bytes(mime_data.data('application/x-napari-layer-spatial-npz'))
+        )
+        numpy_data = np.load(buff, allow_pickle=False)  # type: ignore[arg-type]
 
-    return json.loads(mime_data.text())
+    json_data: dict = json.loads(mime_data.text())
+    if not isinstance(json_data, dict):
+        return None
+    if numpy_data:
+        json_data.update(**numpy_data)
+    return json_data
 
 
 def _paste_spatial_from_clipboard(ll: LayerList) -> None:
@@ -188,8 +205,8 @@ def _paste_spatial_from_clipboard(ll: LayerList) -> None:
 
 def is_valid_spatial_in_clipboard() -> bool:
     try:
-        loaded = _get_spatial_from_clipboard()
-    except (json.JSONDecodeError, pickle.UnpicklingError):
+        loaded = _get_spatial_from_clipboard(binary=False)
+    except json.JSONDecodeError:
         return False
     if not isinstance(loaded, dict):
         return False
