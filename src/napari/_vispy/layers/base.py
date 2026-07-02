@@ -230,18 +230,13 @@ class VispyBaseLayer(ABC, Generic[_L]):
             # offset is mapped to world units with the layer scale.
             layer_scale = np.asarray(self.layer.scale)[dims_displayed][::-1]
             data_level: int = getattr(self.layer, 'data_level', 0)
-            translate += (
-                (
-                    # displayed dimensions, order inverted to match VisPy,
-                    # then adjust by half a pixel per downscale level
-                    self.layer.downsample_factors[data_level][dims_displayed][
-                        ::-1
-                    ]
-                    - 1
-                )
-                / 2
-                * layer_scale
-            )
+            # grab the downscale factors for this level
+            level_factors = self.layer.downsample_factors[data_level]
+            # keep only the displayed factors, then invert to match VisPy
+            # axis ordering
+            displayed_downsample = level_factors[dims_displayed][::-1]
+            # finally, adjust translate by half a pixel per downscale level
+            translate += (displayed_downsample - 1) / 2 * layer_scale
 
         # Embed in the top left corner of a 4x4 affine matrix
         affine_matrix = np.eye(4)
