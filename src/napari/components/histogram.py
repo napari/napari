@@ -16,10 +16,8 @@ if TYPE_CHECKING:
 __all__ = ('HistogramModel',)
 
 # Default histogram configuration
-_DEFAULT_N_BINS: int = 256
-_DEFAULT_MAX_SAMPLES: int = 1_000_000
-_DEFAULT_CANVAS_WIDTH: int = 300
-_DEFAULT_CANVAS_HEIGHT: int = 150
+DEFAULT_N_BINS: int = 256
+DEFAULT_MAX_SAMPLES: int = 1_000_000
 
 
 class HistogramModel(EventedModel):
@@ -67,7 +65,7 @@ class HistogramModel(EventedModel):
     """
 
     # Evented properties
-    n_bins: int = _DEFAULT_N_BINS
+    n_bins: int = DEFAULT_N_BINS
     mode: Literal['canvas', 'full'] = 'canvas'
     log_scale: bool = False
     enabled: bool = False
@@ -86,7 +84,7 @@ class HistogramModel(EventedModel):
     def __init__(
         self,
         layer: Image,
-        n_bins: int = _DEFAULT_N_BINS,
+        n_bins: int = DEFAULT_N_BINS,
         mode: Literal['canvas', 'full'] = 'canvas',
         log_scale: bool = False,
         enabled: bool = False,
@@ -184,8 +182,8 @@ class HistogramModel(EventedModel):
             # This also covers dask arrays that were already reduced by
             # _get_full_data / _sample_dask_safe to avoid full
             # materialization.
-            if data.size > _DEFAULT_MAX_SAMPLES:
-                data = self._sample_data(data, _DEFAULT_MAX_SAMPLES)
+            if data.size > DEFAULT_MAX_SAMPLES:
+                data = self._sample_data(data, DEFAULT_MAX_SAMPLES)
 
             # Get histogram range from contrast limits range
             range_min, range_max = self._layer.contrast_limits_range
@@ -325,7 +323,7 @@ class HistogramModel(EventedModel):
         # For other lazy array types (tensorstore, zarr, etc.) that
         # haven't been pre-sliced by the canvas pipeline, try to sample
         # rather than materializing the full volume.
-        if hasattr(data, 'shape') and data.size > _DEFAULT_MAX_SAMPLES:
+        if hasattr(data, 'shape') and data.size > DEFAULT_MAX_SAMPLES:
             return self._sample_dask_safe(data)
 
         return np.asarray(data)
@@ -353,7 +351,7 @@ class HistogramModel(EventedModel):
 
         data_arr: da.Array = data
         n_total = data_arr.size
-        n_samples = min(_DEFAULT_MAX_SAMPLES, n_total)
+        n_samples = min(DEFAULT_MAX_SAMPLES, n_total)
 
         # Build list of (slice, chunk_size) for every chunk in the array
         chunk_slices_and_sizes: list[tuple[tuple[slice, ...], int]] = []
@@ -475,7 +473,7 @@ class HistogramModel(EventedModel):
         # Disable first to avoid wasteful intermediate compute() calls
         # from the parameter-change event handlers.
         self.enabled = False
-        self.n_bins = _DEFAULT_N_BINS
+        self.n_bins = DEFAULT_N_BINS
         self.log_scale = False
         self.mode = 'canvas'
         self._bins = np.array([0.0, 1.0])
