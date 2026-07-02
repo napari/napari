@@ -56,8 +56,8 @@ class QtHistogramWidget(QWidget):
         self._appearance = get_settings().appearance
         self._viewer = viewer
         self._updating = False
-        self._target_width = 300
-        self._target_height = 150
+        target_width = 300
+        target_height = 150
 
         theme_name = (
             self._viewer.theme
@@ -68,7 +68,7 @@ class QtHistogramWidget(QWidget):
 
         # Create vispy canvas
         self.canvas = SceneCanvas(
-            size=(self._target_width, self._target_height),
+            size=(target_width, target_height),
             bgcolor=theme.canvas.as_hex(),
             keys=None,
         )
@@ -146,8 +146,12 @@ class QtHistogramWidget(QWidget):
         return (red / 255, green / 255, blue / 255, alpha)
 
     def _layer_bar_color(self) -> tuple[float, ...]:
-        """Use the brightest end of the layer colormap for histogram bars."""
-        rgba = np.atleast_2d(self.layer.colormap.map([1.0]))[0].astype(float)
+        """Use end of colormap for histogram bars.
+
+        Picking the almost highest end (``map([0.8])``) avoids invisibility on
+        dark canvas with reversed colormaps like ``gray_r``.
+        """
+        rgba = np.atleast_2d(self.layer.colormap.map([0.8]))[0].astype(float)
         alpha = max(float(rgba[3]), 0.8)
         return (float(rgba[0]), float(rgba[1]), float(rgba[2]), alpha)
 
@@ -164,7 +168,6 @@ class QtHistogramWidget(QWidget):
             bar_color=self._layer_bar_color(),
             lut_color=self._theme_rgba(theme.highlight, 0.95),
             axes_color=self._theme_rgba(theme.text, 0.7),
-            text_color=self._theme_rgba(theme.text, 1.0),
         )
 
     def _update_histogram(self) -> None:
@@ -176,7 +179,6 @@ class QtHistogramWidget(QWidget):
         try:
             hist = self._histogram
             if not hist.enabled:
-                # Clear visualization if histogram is disabled.
                 self.histogram_visual.set_data()
                 self.canvas.update()
                 return
@@ -189,16 +191,13 @@ class QtHistogramWidget(QWidget):
             clims = self.layer.contrast_limits
             clims_range = self.layer.contrast_limits_range
 
-            # Update the visual with histogram data
             self.histogram_visual.set_data(
                 bins=bins,
                 counts=counts,
-                log_scale=hist.log_scale,
                 gamma=gamma,
                 clims=clims,
                 data_range=clims_range,
             )
-
             self.canvas.update()
         finally:
             self._updating = False

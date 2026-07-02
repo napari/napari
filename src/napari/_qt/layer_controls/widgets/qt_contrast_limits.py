@@ -136,20 +136,15 @@ class QContrastLimitsPopup(QtPopup):
 
         # 2. Histogram + settings (Image layers only; Surface not yet supported)
         self.histogram_content = None
-        self.histogram_widget = None
-        self.settings_widget = None
         if isinstance(layer, Image):
             self.histogram_content = QtHistogramContentWidget(
                 layer,
                 viewer=self._viewer,
                 parent=self,
             )
-            self.histogram_widget = self.histogram_content.histogram_widget
-            self.settings_widget = self.histogram_content.settings_widget
             self._layout.addWidget(self.histogram_content)
 
         # 3. Gamma slider
-
         self.gamma_slider = QLabeledDoubleSlider(Qt.Orientation.Horizontal)
         self.gamma_slider.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.gamma_slider.setMinimum(0.2)
@@ -225,9 +220,6 @@ class QContrastLimitsPopup(QtPopup):
         widget = QWidget()
         widget.setLayout(layout)
         return widget
-
-
-QRangeSliderPopup = QContrastLimitsPopup
 
 
 class AutoScaleButtons(QWidget):
