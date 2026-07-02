@@ -108,7 +108,7 @@ def _copy_units_to_clipboard(layer: Layer) -> None:
     _set_data_in_clipboard({'units': layer.units})
 
 
-def _get_spatial_from_clipboard(binary=True) -> dict | None:
+def _get_spatial_from_clipboard(binary: bool = True) -> dict | None:
     clip = QApplication.clipboard()
     if clip is None:
         return None
@@ -120,9 +120,9 @@ def _get_spatial_from_clipboard(binary=True) -> dict | None:
     numpy_data = {}
     if mime_data.data('application/x-napari-layer-spatial-npz') and binary:
         buff = BytesIO(
-            bytes(mime_data.data('application/x-napari-layer-spatial-npz'))
+            bytes(mime_data.data('application/x-napari-layer-spatial-npz'))  # type: ignore[call-overload]
         )
-        numpy_data = np.load(buff, allow_pickle=False)  # type: ignore[arg-type]
+        numpy_data = np.load(buff, allow_pickle=False)
 
     json_data: dict = json.loads(mime_data.text())
     if not isinstance(json_data, dict):
