@@ -519,6 +519,33 @@ def prepare_tracks_data(
     x: int,
     z: int | None = None,
 ) -> np.ndarray:
+    """Extract and reorder track coordinate columns as a NumPy array.
+
+    The returned array always contains the columns in the order
+    ``[track_id, t, y, x]`` or ``[track_id, t, z, y, x]`` when ``z`` is
+    provided.
+
+    Parameters
+    ----------
+    data : pd.DataFrame
+        Input dataframe containing track data.
+    track_id : int
+        Column index for the track identifier.
+    t : int
+        Column index for the time coordinate.
+    y : int
+        Column index for the y coordinate.
+    x : int
+        Column index for the x coordinate.
+    z : int | None, optional
+        Column index for the z coordinate. If ``None``, no z coordinate is
+        included.
+
+    Returns
+    -------
+    np.ndarray
+        A NumPy array containing the selected columns in the expected order.
+    """
 
     order = [track_id, t]
 

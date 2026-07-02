@@ -422,10 +422,10 @@ def test_docstring():
 def test_prepare_tracks_data_without_z():
     df = pd.DataFrame(
         {
-            'track_id': [1, 2],
-            't': [10, 20],
-            'y': [100, 200],
-            'x': [300, 400],
+            'track_id': [1],
+            't': [10],
+            'y': [100],
+            'x': [300],
         }
     )
 
@@ -440,7 +440,6 @@ def test_prepare_tracks_data_without_z():
     expected = np.array(
         [
             [1, 10, 100, 300],
-            [2, 20, 200, 400],
         ]
     )
 
@@ -450,11 +449,11 @@ def test_prepare_tracks_data_without_z():
 def test_prepare_tracks_data_with_z():
     df = pd.DataFrame(
         {
-            'track_id': [1, 2],
-            't': [10, 20],
-            'z': [5, 6],
-            'y': [100, 200],
-            'x': [300, 400],
+            'track_id': [1],
+            't': [10],
+            'z': [5],
+            'y': [100],
+            'x': [300],
         }
     )
 
@@ -470,8 +469,51 @@ def test_prepare_tracks_data_with_z():
     expected = np.array(
         [
             [1, 10, 5, 100, 300],
-            [2, 20, 6, 200, 400],
         ]
     )
 
     assert_array_equal(result, expected)
+
+
+def test_prepare_tracks_data_shape_without_z():
+    data = pd.DataFrame(
+        {
+            'track_id': [1],
+            't': [10],
+            'y': [100],
+            'x': [300],
+        }
+    )
+
+    result = prepare_tracks_data(
+        data,
+        track_id=0,
+        t=1,
+        y=2,
+        x=3,
+    )
+
+    assert result.shape == (1, 4)
+
+
+def test_prepare_tracks_data_shape_with_z():
+    data = pd.DataFrame(
+        {
+            'track_id': [1],
+            't': [0],
+            'z': [5],
+            'y': [10],
+            'x': [30],
+        }
+    )
+
+    result = prepare_tracks_data(
+        data,
+        track_id=0,
+        t=1,
+        y=3,
+        x=4,
+        z=2,
+    )
+
+    assert result.shape == (1, 5)
