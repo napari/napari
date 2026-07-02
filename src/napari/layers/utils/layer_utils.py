@@ -2,11 +2,10 @@ from __future__ import annotations
 
 import functools
 import inspect
-import numbers
+import operator
 import warnings
 from collections.abc import Callable, Sequence
 from importlib import import_module
-from operator import index
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -649,24 +648,17 @@ def _chunk_boundaries(axis_chunks: Any, axis_size: int) -> np.ndarray | None:
     """Return chunk boundary coordinates for one axis.
 
     This accepts the common chunk metadata forms:
-    - zarr: one regular chunk size for the axis, e.g. ``64``
+    - zarr/tensorstore: one regular chunk size for the axis, e.g. ``64``
     - dask: explicit chunk sizes for the axis, e.g. ``(64, 64, 32)``
 
     The returned boundaries include both ``0`` and ``axis_size``.  For example,
     chunks ``(4, 4, 2)`` for an axis of size ``10`` return ``[0, 4, 8, 10]``.
     """
-    if isinstance(axis_chunks, numbers.Integral):
-        # zarr: a single regular chunk size for the axis, e.g. 4. The edge chunk
-        # may be smaller than this size.
-        chunk_size = index(axis_chunks)
-        if chunk_size <= 0:
-            return None
-        return np.append(np.arange(0, axis_size, chunk_size), axis_size)
-
     if isinstance(axis_chunks, Sequence) and not isinstance(axis_chunks, str):
         # dask: explicit per-axis chunk sizes, e.g. (4, 4, 2).
+        # operator.index coerces numpy ints to Python ints or raises
         try:
-            chunk_sizes = [index(size) for size in axis_chunks]
+            chunk_sizes = [operator.index(size) for size in axis_chunks]
         except TypeError:
             return None
         if any(size <= 0 for size in chunk_sizes):
@@ -676,7 +668,15 @@ def _chunk_boundaries(axis_chunks: Any, axis_size: int) -> np.ndarray | None:
             return None
         return boundaries
 
-    return None
+    # zarr/tensorstore: a single regular chunk size for the axis, e.g. 4. The
+    # edge chunk may be smaller than this size.
+    try:
+        chunk_size = operator.index(axis_chunks)
+    except TypeError:
+        return None
+    if chunk_size <= 0:
+        return None
+    return np.append(np.arange(0, axis_size, chunk_size), axis_size)
 
 
 def _chunks_metadata(
@@ -688,9 +688,7 @@ def _chunks_metadata(
     ``chunks`` attribute; its read granularity lives on
     ``chunk_layout.read_chunk.shape``, a per-axis tuple matching the zarr form
     (with ``None`` for axes that are not chunked). ``read_chunk`` is the
-    smallest independently-readable unit, which is the correct granularity for
-    read-only tile loading -- for sharded stores it is the sub-shard rather
-    than the whole shard.
+    smallest independently-readable unit.
 
     Returns
     -------
@@ -766,7 +764,7 @@ def expand_corners_to_chunk_boundaries(
     expanded = np.array(corners, copy=True)
     for axis in axes:
         try:
-            axis_size = index(shape[axis])
+            axis_size = operator.index(shape[axis])
             boundaries = _chunk_boundaries(chunks[axis], axis_size)
         except (IndexError, TypeError):
             return corners

@@ -1,4 +1,5 @@
 import time
+from types import SimpleNamespace
 
 import numpy as np
 import pandas as pd
@@ -35,14 +36,7 @@ data_dask_plane = da.random.random(
 
 def _make_chunked(shape, chunks):
     """Build a minimal array-like exposing ``shape`` and ``chunks``."""
-
-    class ChunkedArray:
-        pass
-
-    data = ChunkedArray()
-    data.shape = shape
-    data.chunks = chunks
-    return data
+    return SimpleNamespace(shape=shape, chunks=chunks)
 
 
 @pytest.mark.parametrize(
