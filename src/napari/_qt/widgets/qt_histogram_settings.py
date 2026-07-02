@@ -16,7 +16,7 @@ from napari.utils.events.event_utils import connect_setattr, disconnect_events
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
-    from napari.layers._histogram import HistogramModel
+    from napari.components.histogram import HistogramModel
     from napari.utils.events import Event
 
 

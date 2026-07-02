@@ -8,8 +8,8 @@ from typing import Any, Literal, cast
 
 import numpy as np
 
+from napari.components.histogram import HistogramModel
 from napari.layers._data_protocols import LayerDataProtocol
-from napari.layers._histogram import HistogramModel
 from napari.layers._multiscale_data import MultiScaleData
 from napari.layers._scalar_field._slice import _ScalarFieldSliceResponse
 from napari.layers._scalar_field.scalar_field import (

@@ -15,11 +15,15 @@ from napari.utils.theme import get_theme
 
 if TYPE_CHECKING:
     from pydantic_extra_types.color import Color
-    from qtpy.QtGui import QCloseEvent
 
     from napari.components import ViewerModel
     from napari.layers import Image
     from napari.utils.events import Event
+
+# Default histogram canvas dimensions
+_DEFAULT_CANVAS_WIDTH = 300
+_DEFAULT_CANVAS_HEIGHT = 150
+_DEFAULT_CANVAS_MIN_HEIGHT = 100
 
 
 class QtHistogramWidget(QWidget):
@@ -60,8 +64,6 @@ class QtHistogramWidget(QWidget):
         self._appearance = get_settings().appearance
         self._viewer = viewer
         self._updating = False
-        target_width = 300
-        target_height = 150
 
         theme_name = (
             self._viewer.theme
@@ -72,13 +74,13 @@ class QtHistogramWidget(QWidget):
 
         # Create vispy canvas
         self.canvas = SceneCanvas(
-            size=(target_width, target_height),
+            size=(_DEFAULT_CANVAS_WIDTH, _DEFAULT_CANVAS_HEIGHT),
             bgcolor=theme.canvas.as_hex(),
             keys=None,
         )
         # Set parent after creation
         self.canvas.native.setParent(self)
-        self.canvas.native.setMinimumHeight(100)
+        self.canvas.native.setMinimumHeight(_DEFAULT_CANVAS_MIN_HEIGHT)
 
         # Create view - use ViewBox and add_widget pattern from working PR
         from vispy.scene import ViewBox
@@ -113,6 +115,9 @@ class QtHistogramWidget(QWidget):
         layer.events.contrast_limits.connect(self._on_clims_change)
         layer.events.colormap.connect(self._on_colormap_change)
 
+        # Connect to both settings and viewer theme events. The viewer's
+        # ``theme`` field is independent from ``settings.appearance.theme``
+        # — changing one does not fire the other, so both must be watched.
         self._appearance.events.theme.connect(self._on_theme_change)
         if self._viewer is not None:
             self._viewer.events.theme.connect(self._on_theme_change)
@@ -208,11 +213,6 @@ class QtHistogramWidget(QWidget):
             self.canvas.update()
         finally:
             self._updating = False
-
-    def closeEvent(self, event: QCloseEvent | None) -> None:
-        """Clean up on close to prevent event-listener leaks."""
-        self.cleanup()
-        super().closeEvent(event)
 
     def cleanup(self) -> None:
         """Disconnect event handlers and clean up resources."""
