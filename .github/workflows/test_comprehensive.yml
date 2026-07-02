@@ -53,18 +53,22 @@ jobs:
       matrix:
         platform: [ubuntu-latest, windows-latest]
         python: ["3.11", "3.12", "3.13", "3.14"]
-        backend: [pyqt5]
+        backend: [pyqt6]
+        exclude:
+          # tested below with testing_extra
+          - python: "3.14"
+            platform: ubuntu-latest
         include:
-          - python: "3.11"
+          - python: "3.13"
             platform: macos-latest
-            backend: pyqt5
+            backend: pyqt6
           # test with minimum specified requirements
           - python: "3.11"
             platform: ubuntu-22.04
             backend: pyqt5
             MIN_REQ: 1
           # test without any Qt backends
-          - python: "3.11"
+          - python: "3.12"
             platform: ubuntu-22.04
             backend: headless
           - python: "3.14"
