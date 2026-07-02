@@ -351,7 +351,7 @@ class HistogramModel(EventedModel):
         """
         import dask.array as da
 
-        data_arr: da.Array = data  # type: ignore[assignment]
+        data_arr: da.Array = data
         n_total = data_arr.size
         n_samples = min(_DEFAULT_MAX_SAMPLES, n_total)
 
@@ -373,7 +373,7 @@ class HistogramModel(EventedModel):
 
         for chunk_slc, chunk_sz in chunk_slices_and_sizes:
             n_samp = max(1, int(n_samples * chunk_sz / total_chunk_size))
-            chunk_data = da.asarray(data_arr[chunk_slc])  # type: ignore[no-untyped-call]
+            chunk_data = da.asarray(data_arr[chunk_slc])
             chunk_computed = chunk_data.compute().ravel()
             if chunk_computed.size <= n_samp:
                 sampled_parts.append(chunk_computed)
