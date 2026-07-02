@@ -438,7 +438,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
             Histogram model instance for this layer.
         """
         try:
-            return self._histogram
+            return self._histogram  # type: ignore[has-type]
         except AttributeError:
             self._histogram = HistogramModel(self)
             return self._histogram

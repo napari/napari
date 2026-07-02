@@ -267,7 +267,7 @@ class HistogramModel(EventedModel):
         The returned array has the same value range as the input (e.g. 0-255
         for uint8, 0-1 for float).
         """
-        rgb = data[..., :3].astype(np.float32)
+        rgb: np.ndarray = data[..., :3].astype(np.float32)
         return (
             0.2126 * rgb[..., 0] + 0.7152 * rgb[..., 1] + 0.0722 * rgb[..., 2]
         )
@@ -328,7 +328,7 @@ class HistogramModel(EventedModel):
         return np.asarray(data)
 
     @staticmethod
-    def _sample_dask_safe(data) -> np.ndarray:
+    def _sample_dask_safe(data: Any) -> np.ndarray:
         """Sample from a dask array without full materialization.
 
         Uses random linear indices to pluck a subsample across chunks,

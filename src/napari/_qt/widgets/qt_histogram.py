@@ -14,8 +14,12 @@ from napari.utils.events.event_utils import disconnect_events
 from napari.utils.theme import get_theme
 
 if TYPE_CHECKING:
+    from pydantic_extra_types.color import Color
+    from qtpy.QtGui import QCloseEvent
+
     from napari.components import ViewerModel
     from napari.layers import Image
+    from napari.utils.events import Event
 
 
 class QtHistogramWidget(QWidget):
@@ -88,7 +92,7 @@ class QtHistogramWidget(QWidget):
 
         # Set up camera
         self.view.camera = 'panzoom'
-        self.view.camera.set_range(x=(0, 1), y=(0, 1), margin=0.01)  # type: ignore[attr-defined]
+        self.view.camera.set_range(x=(0, 1), y=(0, 1), margin=0.01)
         # Disable viewbox interaction to prevent accidental pan/zoom
         self.view.interactive = False
 
@@ -118,34 +122,37 @@ class QtHistogramWidget(QWidget):
         # Initial update
         self._update_histogram()
 
-    def _on_histogram_change(self, event=None) -> None:
+    def _on_histogram_change(self, event: Event | None = None) -> None:
         """Update visualization when histogram data changes."""
         self._update_histogram()
 
-    def _on_gamma_change(self, event=None) -> None:
+    def _on_gamma_change(self, event: Event | None = None) -> None:
         """Update gamma curve when layer gamma changes."""
         self._update_histogram()
 
-    def _on_clims_change(self, event=None) -> None:
+    def _on_clims_change(self, event: Event | None = None) -> None:
         """Update contrast limit indicators when they change."""
         self._update_histogram()
 
-    def _on_colormap_change(self, event=None) -> None:
+    def _on_colormap_change(self, event: Event | None = None) -> None:
         """Update histogram colors when the layer colormap changes."""
         self._apply_visual_style()
         self._update_histogram()
 
-    def _on_theme_change(self, event=None) -> None:
+    def _on_theme_change(self, event: Event | None = None) -> None:
         """Update canvas and plot styling when the application theme changes."""
         self._apply_visual_style()
         self.canvas.update()
 
-    def _theme_rgba(self, color, alpha: float = 1.0) -> tuple[float, ...]:
+    def _theme_rgba(
+        self, color: Color, alpha: float = 1.0
+    ) -> tuple[float, float, float, float]:
         """Convert a napari theme color to a vispy RGBA tuple."""
-        red, green, blue = color.as_rgb_tuple()
+        rgb = color.as_rgb_tuple(alpha=False)
+        red, green, blue = rgb[0], rgb[1], rgb[2]
         return (red / 255, green / 255, blue / 255, alpha)
 
-    def _layer_bar_color(self) -> tuple[float, ...]:
+    def _layer_bar_color(self) -> tuple[float, float, float, float]:
         """Use end of colormap for histogram bars.
 
         Picking the almost highest end (``map([0.8])``) avoids invisibility on
@@ -202,7 +209,7 @@ class QtHistogramWidget(QWidget):
         finally:
             self._updating = False
 
-    def closeEvent(self, event) -> None:
+    def closeEvent(self, event: QCloseEvent | None) -> None:
         """Clean up on close to prevent event-listener leaks."""
         self.cleanup()
         super().closeEvent(event)

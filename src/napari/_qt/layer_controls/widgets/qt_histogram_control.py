@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from qtpy.QtWidgets import (
     QVBoxLayout,
@@ -14,12 +14,16 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWrappedLabel,
 )
 from napari._qt.widgets.qt_histogram_content import QtHistogramContentWidget
+from napari.layers import Image
 
 if TYPE_CHECKING:
-    from napari.layers import Image
+    from napari._qt.widgets.qt_histogram import QtHistogramWidget
+    from napari._qt.widgets.qt_histogram_settings import (
+        QtHistogramSettingsWidget,
+    )
 
 
-class QtHistogramControl(QtWidgetControlsBase):
+class QtHistogramControl(QtWidgetControlsBase):  # type: ignore[metaclass]
     """
     Histogram control widget for Image layers.
 
@@ -51,9 +55,9 @@ class QtHistogramControl(QtWidgetControlsBase):
         # Create content widget
         self.content_widget = QWidget(parent)
         self.content_widget.hide()
-        self.histogram_content = None
-        self.histogram_widget = None
-        self.settings_widget = None
+        self.histogram_content: QtHistogramContentWidget | None = None
+        self.histogram_widget: QtHistogramWidget | None = None
+        self.settings_widget: QtHistogramSettingsWidget | None = None
 
         self._content_layout = QVBoxLayout()
         self._content_layout.setContentsMargins(4, 4, 4, 4)
@@ -67,7 +71,7 @@ class QtHistogramControl(QtWidgetControlsBase):
 
         viewer = getattr(self.parent(), 'viewer', None)
         self.histogram_content = QtHistogramContentWidget(
-            self._layer,
+            cast(Image, self._layer),
             viewer=viewer,
             parent=self.content_widget,
         )

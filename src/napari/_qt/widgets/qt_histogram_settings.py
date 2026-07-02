@@ -17,6 +17,7 @@ from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from napari.layers._histogram import HistogramModel
+    from napari.utils.events import Event
 
 
 class QtHistogramSettingsWidget(QWidget):
@@ -88,12 +89,12 @@ class QtHistogramSettingsWidget(QWidget):
         """Update model when mode changes in the combobox."""
         self._histogram.mode = mode
 
-    def _on_model_mode_change(self, event=None) -> None:
+    def _on_model_mode_change(self, event: Event | None = None) -> None:
         """Update combobox when mode changes in the model."""
         with qt_signals_blocked(self.mode_combobox):
             self.mode_combobox.setCurrentText(self._histogram.mode)
 
-    def _on_model_log_scale_change(self, event=None) -> None:
+    def _on_model_log_scale_change(self, event: Event | None = None) -> None:
         """Update checkbox when log_scale changes in the model."""
         with qt_signals_blocked(self.log_scale_checkbox):
             self.log_scale_checkbox.setChecked(self._histogram.log_scale)
