@@ -181,7 +181,7 @@ def execute_python_code(code: str, script_path: str | Path = '') -> None:
     with _patched_viewer_new(), _noop_napari_run():
         try:
             patched_viewer = current_viewer()
-            script_key = str(script_path) if script_path else script_path
+            script_key = str(script_path) if script_path else ''
             script_namespace = _SCRIPT_NAMESPACES.setdefault(script_key, {})
             main_module = sys.modules['__main__']
 
