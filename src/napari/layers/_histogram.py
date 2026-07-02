@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal, Optional
+from typing import TYPE_CHECKING, Literal, Optional
 
 import numpy as np
 from pydantic import PrivateAttr
@@ -67,10 +67,10 @@ class HistogramModel(EventedModel):
     enabled: bool = False
 
     # Private attributes (use PrivateAttr for pydantic).
-    # Annotated as Any here because pydantic does not validate PrivateAttr
+    # Annotated as object here because pydantic does not validate PrivateAttr
     # types at runtime; the actual type is Image (enforced by the __init__
     # signature and checked by static type-checkers via TYPE_CHECKING).
-    _layer: Any = PrivateAttr()
+    _layer: object = PrivateAttr()
     _bins: np.ndarray = PrivateAttr(
         default_factory=lambda: np.array([0.0, 1.0])
     )
@@ -121,21 +121,6 @@ class HistogramModel(EventedModel):
         # When enabled flips True and data is dirty, compute immediately so
         # any widget that just subscribed to bins/counts events gets a result.
         self.events.enabled.connect(self._on_enabled_change)
-
-    @property
-    def range(self) -> tuple[float, float]:
-        """Range of histogram bin edges.
-
-        Returns
-        -------
-        tuple[float, float]
-            (min, max) of the current bin edges.
-        """
-        if self._dirty:
-            self.compute()
-        if len(self._bins) < 2:
-            return (0.0, 1.0)
-        return (float(self._bins[0]), float(self._bins[-1]))
 
     @property
     def bins(self) -> np.ndarray:
@@ -314,32 +299,41 @@ class HistogramModel(EventedModel):
         """Get full volume data.
 
         For multiscale data, uses the lowest resolution level for
-        efficiency.  For dask arrays, avoids full materialization by
-        sampling across random linear indices so that ``compute()``
-        never loads the entire array into memory.
+        efficiency.  For dask or other lazy arrays, avoids full
+        materialization by sampling across random linear indices so
+        that ``compute()`` never loads the entire array into memory.
         """
         data = self._layer.data
         if isinstance(data, list | tuple):
             data = data[-1]
 
+        if isinstance(data, np.ndarray):
+            return data
+
         if _is_dask_data(data):
             return self._sample_dask_safe(data)
 
-        return np.asarray(data)
+        # For other lazy array types (tensorstore, zarr, etc.) that
+        # haven't been pre-sliced by the canvas pipeline, try to sample
+        # rather than materializing the full volume.
+        if hasattr(data, 'shape') and data.size > 1_000_000:  # type: ignore[union-attr]
+            return self._sample_dask_safe(data)
+
+        return np.asarray(data)  # type: ignore[arg-type]
 
     @staticmethod
-    def _sample_dask_safe(data: Any) -> np.ndarray:
+    def _sample_dask_safe(data: object) -> np.ndarray:
         """Sample from a dask array without full materialization.
 
         Uses random linear indices to pluck a subsample across chunks,
         then materialises only those positions.
         """
-        n_total = data.size
+        n_total = data.size  # type: ignore[union-attr]
         n_samples = min(1_000_000, n_total)
         rng = np.random.default_rng(0)
         indices = rng.integers(0, n_total, size=n_samples)
-        flat = data.ravel()
-        sampled = flat[indices].compute()
+        flat = data.ravel()  # type: ignore[union-attr]
+        sampled = flat[indices].compute()  # type: ignore[union-attr]
         valid = sampled[np.isfinite(sampled)]
         return valid if len(valid) > 0 else sampled[:1]
 
@@ -395,6 +389,25 @@ class HistogramModel(EventedModel):
         self._dirty = True
         if self.enabled:
             self.compute()
+
+    def disconnect(self) -> None:
+        """Disconnect all event listeners to prevent memory leaks.
+
+        Call this when the layer is removed or the histogram is no
+        longer needed to break psygnal event connections.
+        """
+        # Disconnect from layer events
+        self._layer.events.data.disconnect(self._on_data_change)  # type: ignore[union-attr]
+        self._layer.events.contrast_limits_range.disconnect(  # type: ignore[union-attr]
+            self._on_range_change
+        )
+        self._layer.events.set_data.disconnect(self._on_slice_change)  # type: ignore[union-attr]
+
+        # Disconnect from our own events
+        self.events.n_bins.disconnect(self._on_params_change)
+        self.events.mode.disconnect(self._on_params_change)
+        self.events.log_scale.disconnect(self._on_log_scale_change)
+        self.events.enabled.disconnect(self._on_enabled_change)
 
     def reset(self) -> None:
         """Reset histogram to default settings and disable.
