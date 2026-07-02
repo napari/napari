@@ -4,7 +4,7 @@ from unittest.mock import Mock
 import numpy as np
 import numpy.testing as npt
 import pytest
-from PyQt6.QtCore import QMimeData
+from qtpy.QtCore import QMimeData
 from qtpy.QtWidgets import QApplication
 
 from napari._qt._qapp_model.qactions._layerlist_context import (
