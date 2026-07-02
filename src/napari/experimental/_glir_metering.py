@@ -203,6 +203,10 @@ class _ParserState:
         # run only in flushes with no uploads and no interaction hold.
         # Safe to defer arbitrarily: GLIR ids are never reused.
         self.deferred_deletes: list[tuple] = []
+        # whether the current flush executed any metered DATA command;
+        # drives drain notification for uploads small enough to never
+        # have been carried
+        self.executed_metered = False
 
     def reset_budget(self):
         self.budget_left = self.frame_budget
@@ -363,6 +367,7 @@ def _metered_parse(parser, commands, state, force_defer=False):
                     parser._parse(('DATA', id_, sub_offset, sub))
                     state.budget_left -= sub.nbytes
                     executed_any = True
+                    state.executed_metered = True
                 continue
         parser._parse(command)
     return leftover
@@ -417,12 +422,17 @@ def _metered_flush(self, parser):
     commands = self._filter(carry + new_commands, parser)
     holding = time.monotonic() < _upload_hold_until
     had_carry = bool(carry)
+    state.executed_metered = False
     state.carry = _metered_parse(parser, commands, state, force_defer=holding)
 
     if state.carry and canvas is not None:
         with contextlib.suppress(RuntimeError):
             canvas.update()
-    elif had_carry and not state.carry:
+    elif (had_carry or state.executed_metered) and not state.carry:
+        # notify on any flush that landed metered uploads and ended
+        # clean — not only when a carry drained: uploads small enough
+        # to fit one frame budget are never carried, but a present
+        # (texture swap) may still be waiting on them
         _notify_drained()
 
     if (

@@ -45,7 +45,85 @@ LOGGER = logging.getLogger('napari.experimental._texture_swap')
 DEFAULT_TEXTURE_POOL_SIZE = 8
 
 
-class DoubleBufferedVolumeTexture:
+class _TransformHoldMixin:
+    """Coordinate node-matrix changes with deferred texture presents.
+
+    While a full rewrite/reshape is staged but not yet presented, the
+    node matrix matching the still-rendered FRONT content is held; the
+    matrix napari applies for the staged tile (its origin/scale change
+    in the same ``set_data`` emission) is captured by the loader and
+    applied at the swap, so texture content and tile transform always
+    change in the same frame — the old tile never renders misplaced.
+    """
+
+    _node = None
+    _held_matrix = None
+    _pending_matrix = None
+
+    def _node_matrix_transform(self):
+        transform = getattr(self._node, 'transform', None)
+        return transform if hasattr(transform, 'matrix') else None
+
+    def _begin_transform_hold(self) -> None:
+        """Snapshot the node matrix matching the front's content.
+
+        Called when a full rewrite/reshape is staged, BEFORE napari
+        updates the node matrix for the new tile (vispy layers call
+        ``node.set_data`` first, ``_on_matrix_change`` right after).
+        Idempotent while already holding: the front content does not
+        change between holds, so the first snapshot stays authoritative.
+        """
+        if self._held_matrix is not None:
+            return
+        transform = self._node_matrix_transform()
+        if transform is not None:
+            self._held_matrix = np.array(transform.matrix, copy=True)
+
+    def capture_transform(self) -> None:
+        """Capture napari's new matrix; keep the front-matching one.
+
+        Called by the loader inside the ``set_data`` event emission —
+        after the vispy layer applied the staged tile's matrix, before
+        anything could draw. The new matrix becomes pending (applied at
+        the swap) and the matrix matching the still-rendered front
+        content is restored, so the old tile never renders misplaced.
+        """
+        if self._held_matrix is None:
+            return
+        transform = self._node_matrix_transform()
+        if transform is None:
+            return
+        current = np.asarray(transform.matrix)
+        if np.array_equal(current, self._held_matrix):
+            return
+        self._pending_matrix = np.array(current, copy=True)
+        transform.matrix = self._held_matrix
+
+    def _apply_pending_transform(self) -> None:
+        """Apply the captured matrix at the swap (content now matches).
+
+        Skipped when something other than the captured ``set_data``
+        emission changed the matrix while holding — the external
+        change stands.
+        """
+        transform = self._node_matrix_transform()
+        if (
+            transform is not None
+            and self._pending_matrix is not None
+            and self._held_matrix is not None
+            and np.array_equal(np.asarray(transform.matrix), self._held_matrix)
+        ):
+            transform.matrix = self._pending_matrix
+        self._pending_matrix = None
+        self._held_matrix = None
+
+    def _drop_transform_hold(self) -> None:
+        """Forget the hold without touching the node (fallback paths)."""
+        self._pending_matrix = None
+        self._held_matrix = None
+
+
+class DoubleBufferedVolumeTexture(_TransformHoldMixin):
     """Manage front/back 3D textures for a vispy ``VolumeVisual``.
 
     Parameters
@@ -110,7 +188,37 @@ class DoubleBufferedVolumeTexture:
     # -- construction helpers --
 
     @staticmethod
-    def _make_sibling(node, front):
+    def _seed_texture(node, like, texture_format, rep):
+        """Create a texture for seed data ``rep``, multichannel-aware.
+
+        vispy's ``VolumeVisual._create_texture`` hardcodes
+        ``format='luminance'`` (its placeholder is scalar), so it can
+        never build a texture for an RGB(A) seed: a scalar seed fails
+        the internalformat's channel check and a multichannel seed
+        fails the luminance format check. Multichannel seeds construct
+        the front's texture class directly, letting vispy infer the
+        format from the seed's channel count.
+        """
+        if rep.ndim == 3 or rep.shape[-1] == 1:
+            return node._create_texture(texture_format, rep)
+        prefix = 'rgba'[: rep.shape[-1]]
+        if isinstance(texture_format, str) and texture_format.startswith(
+            prefix
+        ):
+            # GPUScaledTexture derives the multichannel internalformat
+            # by replacing the leading 'r' of a scalar format ('r8' ->
+            # 'rgb8'); an already-resolved multichannel string comes
+            # out garbled ('rgbgb8'), so hand it the scalar form
+            texture_format = 'r' + texture_format[len(prefix) :]
+        return type(like)(
+            rep,
+            interpolation=like.interpolation,
+            internalformat=texture_format,
+            wrapping='clamp_to_edge',
+        )
+
+    @classmethod
+    def _make_sibling(cls, node, front):
         """Create a back texture matching the front's class and format."""
         from vispy.visuals._scalable_textures import GPUScaledTextureMixin
 
@@ -121,8 +229,14 @@ class DoubleBufferedVolumeTexture:
         else:  # pragma: no cover - napari uses GPU-scaled textures
             texture_format = None
         dtype = getattr(front, '_data_dtype', None) or np.float32
-        rep = np.zeros((1, 1, 1), dtype=dtype)
-        back = node._create_texture(texture_format, rep)
+        # Include the channel dimension when the front texture has one
+        # beyond the implicit scalar 1 (e.g. RGB volumes are
+        # (D, H, W, 3)); vispy validates seed channels against the
+        # internalformat.
+        nch = front.shape[3] if len(front.shape) > 3 else 1
+        seed_shape = (1, 1, 1) if nch == 1 else (1, 1, 1, nch)
+        rep = np.zeros(seed_shape, dtype=dtype)
+        back = cls._seed_texture(node, front, texture_format, rep)
         # Route the new texture's GLIR commands into the canvas's shared
         # queue NOW. A fresh texture otherwise parks its allocation and
         # every staged upload in its own local queue until the first
@@ -146,11 +260,13 @@ class DoubleBufferedVolumeTexture:
         texture_format = getattr(node, 'texture_format', None)
         if texture_format is None:  # pragma: no cover - napari sets it
             texture_format = self._front.internalformat
-        rep = np.zeros((1, 1, 1), dtype=vol.dtype)
-        tex = node._create_texture(texture_format, rep)
+        seed_shape = (1, 1, 1) + vol.shape[3:]
+        rep = np.zeros(seed_shape, dtype=vol.dtype)
+        tex = self._seed_texture(node, self._front, texture_format, rep)
         # shared GLIR queue from birth — see _make_sibling for why
         self._front.glir.associate(tex.glir)
-        tex.resize(tuple(vol.shape[:3]))
+        # full data shape: RGB(A) volumes keep their channel dimension
+        tex.resize(tuple(vol.shape))
         tex._data_dtype = vol.dtype
         return self._sync_aux_state(tex)
 
@@ -167,7 +283,13 @@ class DoubleBufferedVolumeTexture:
 
     @staticmethod
     def _pool_key(shape, dtype) -> tuple:
-        return (tuple(shape)[:3], np.dtype(dtype).str)
+        # vispy texture shapes carry an explicit channel dim (scalar
+        # textures end in 1); data shapes may omit it. Normalize so a
+        # retired RGB texture is never reused for a scalar tile of the
+        # same spatial shape (mismatched internalformat).
+        shape = tuple(int(s) for s in shape)
+        channels = shape[3] if len(shape) > 3 else 1
+        return (shape[:3], channels, np.dtype(dtype).str)
 
     def _acquire(self, shape, dtype, create):
         """Reuse a retired texture of this shape/dtype, or create one."""
@@ -399,85 +521,54 @@ class DoubleBufferedVolumeTexture:
             for key in self._applied:
                 self._applied[key] -= applied_min
 
-    @staticmethod
-    def _uploads_settled(deadline: float) -> bool:
+    def _front_pending_full(self) -> bool:
+        """Whether the front is behind a staged full rewrite."""
+        start = self._applied[id(self._front)]
+        return any(
+            offset is None for offset, _data, _clim in self._log[start:]
+        )
+
+    def _queued_upload_bytes(self) -> int:
+        """Bytes of DATA commands queued (pre-flush) for this pair.
+
+        The meter only accounts for uploads it has *deferred*; commands
+        still sitting in the GLIR queue (staged since the last flush)
+        are invisible to ``pending_upload_bytes``, so a present in that
+        window would bind a texture whose rewrite has not run yet.
+        """
+        try:
+            commands = self._front.glir._shared._commands
+            ids = {self._front.id, self._back.id}
+        except AttributeError:  # pragma: no cover - vispy internals moved
+            return 0
+        return sum(
+            command[3].nbytes
+            for command in commands
+            if command[0] == 'DATA' and command[1] in ids
+        )
+
+    def _uploads_settled(self, deadline: float) -> bool:
         """Whether staged uploads have reached the GPU (deadline-bounded).
 
         The GLIR meter defers texture uploads across frames; a swap
         before the drain renders whatever the back texture held before.
         The deadline bounds the wait under a sustained upload stream.
+        Full rewrites additionally wait out the pre-flush window (their
+        upload may not even have been flushed yet, let alone metered);
+        small patch batches skip that check — they complete within one
+        frame budget, ahead of the draw that samples them.
         """
         from napari.experimental import _glir_metering
 
-        return (
-            not _glir_metering.is_installed()
-            or _glir_metering.pending_upload_bytes() <= 0
-            or time.monotonic() >= deadline
+        if not _glir_metering.is_installed():
+            return True
+        if time.monotonic() >= deadline:
+            return True
+        if _glir_metering.pending_upload_bytes() > 0:
+            return False
+        return not (
+            self._front_pending_full() and self._queued_upload_bytes() > 0
         )
-
-    # -- transform coordination --
-
-    def _node_matrix_transform(self):
-        transform = getattr(self._node, 'transform', None)
-        return transform if hasattr(transform, 'matrix') else None
-
-    def _begin_transform_hold(self) -> None:
-        """Snapshot the node matrix matching the front's content.
-
-        Called when a full rewrite/reshape is staged, BEFORE napari
-        updates the node matrix for the new tile (vispy layers call
-        ``node.set_data`` first, ``_on_matrix_change`` right after).
-        Idempotent while already holding: the front content does not
-        change between holds, so the first snapshot stays authoritative.
-        """
-        if self._held_matrix is not None:
-            return
-        transform = self._node_matrix_transform()
-        if transform is not None:
-            self._held_matrix = np.array(transform.matrix, copy=True)
-
-    def capture_transform(self) -> None:
-        """Capture napari's new matrix; keep the front-matching one.
-
-        Called by the loader inside the ``set_data`` event emission —
-        after the vispy layer applied the staged tile's matrix, before
-        anything could draw. The new matrix becomes pending (applied at
-        the swap) and the matrix matching the still-rendered front
-        content is restored, so the old tile never renders misplaced.
-        """
-        if self._held_matrix is None:
-            return
-        transform = self._node_matrix_transform()
-        if transform is None:
-            return
-        current = np.asarray(transform.matrix)
-        if np.array_equal(current, self._held_matrix):
-            return
-        self._pending_matrix = np.array(current, copy=True)
-        transform.matrix = self._held_matrix
-
-    def _apply_pending_transform(self) -> None:
-        """Apply the captured matrix at the swap (content now matches).
-
-        Skipped when something other than the captured ``set_data``
-        emission changed the matrix while holding — the external
-        change stands.
-        """
-        transform = self._node_matrix_transform()
-        if (
-            transform is not None
-            and self._pending_matrix is not None
-            and self._held_matrix is not None
-            and np.array_equal(np.asarray(transform.matrix), self._held_matrix)
-        ):
-            transform.matrix = self._pending_matrix
-        self._pending_matrix = None
-        self._held_matrix = None
-
-    def _drop_transform_hold(self) -> None:
-        """Forget the hold without touching the node (fallback paths)."""
-        self._pending_matrix = None
-        self._held_matrix = None
 
     # -- loader present veto --
 
@@ -517,7 +608,8 @@ class DoubleBufferedVolumeTexture:
         def set_data_staged(vol, clim=None, copy=True):
             if (
                 not isinstance(vol, np.ndarray)
-                or vol.ndim != 3
+                or vol.ndim not in (3, 4)
+                or (vol.ndim == 4 and vol.shape[3] > 4)
                 or node._texture not in (self._front, self._back)
             ):
                 # unexpected payload or someone rebound the texture:
@@ -527,7 +619,16 @@ class DoubleBufferedVolumeTexture:
                 self._drop_transform_hold()
                 self.detach_set_data()
                 return original(vol, clim=clim, copy=copy)
-            same_shape = tuple(vol.shape[:3]) == self.shape
+            # a channel-count change (e.g. scalar -> RGB) must reshape
+            # into a texture of the matching format, never stage_full
+            # into the format-mismatched pair
+            vol_channels = vol.shape[3] if vol.ndim == 4 else 1
+            back_shape = tuple(self._back.shape)
+            back_channels = back_shape[3] if len(back_shape) > 3 else 1
+            same_shape = (
+                tuple(vol.shape[:3]) == self.shape
+                and vol_channels == back_channels
+            )
             if same_shape and self._suppress_full:
                 # caller asserts the GPU pair already matches vol
                 # (every chunk was patched): skip the redundant
@@ -595,7 +696,7 @@ class DoubleBufferedVolumeTexture:
         self._pool = []
 
 
-class DoubleBufferedImageTexture:
+class DoubleBufferedImageTexture(_TransformHoldMixin):
     """Manage front/back 2D textures for a vispy ``ImageVisual``.
 
     Same rationale as :class:`DoubleBufferedVolumeTexture`: chunk
@@ -609,6 +710,12 @@ class DoubleBufferedImageTexture:
     tile under the new tile's transform (misplaced content). 2D tiles
     are small enough that the staged-then-bound upload is the cheap
     part; what matters is that it never re-specifies a bound texture.
+
+    Exception: while a present hold is active (e.g. a time-step change
+    where the freshly sliced content is known junk), a shape change is
+    kept pending instead — the old-shape front stays on screen with its
+    matching held matrix (transform hold), and the swap applies content,
+    quad geometry and the captured matrix together.
 
     Parameters
     ----------
@@ -625,7 +732,7 @@ class DoubleBufferedImageTexture:
         self._pool: list[tuple] = pool if pool is not None else []
         self._pool_max = DEFAULT_TEXTURE_POOL_SIZE
         self._back = self._acquire(
-            self._shape,
+            tuple(self._front.shape),  # full shape: keep channels in the key
             getattr(self._front, '_data_dtype', None) or np.float32,
             lambda: self._make_sibling(node, self._front),
         )
@@ -639,6 +746,14 @@ class DoubleBufferedImageTexture:
         # written texture as a black flash. The pair is stable (reshape
         # resizes in place), so the ids never change.
         self._exempt_ids = set()
+        self._present_hold_until = 0.0
+        # a shape change staged while presents were held: the back
+        # already has the new shape/content, the old-shape front keeps
+        # rendering (with its held matrix) until present() swaps
+        self._reshape_pending = False
+        self._pending_geometry = None
+        self._held_matrix = None
+        self._pending_matrix = None
         from napari.experimental import _glir_metering
 
         for tex in (self._front, self._back):
@@ -687,7 +802,11 @@ class DoubleBufferedImageTexture:
 
     @staticmethod
     def _pool_key(shape, dtype) -> tuple:
-        return (tuple(shape)[:2], np.dtype(dtype).str)
+        # normalize the channel dim (see the 3D pool key): a retired
+        # RGB texture must never be reused for a scalar tile
+        shape = tuple(int(s) for s in shape)
+        channels = shape[2] if len(shape) > 2 else 1
+        return (shape[:2], channels, np.dtype(dtype).str)
 
     def _acquire(self, shape, dtype, create):
         key = self._pool_key(shape, dtype)
@@ -717,10 +836,15 @@ class DoubleBufferedImageTexture:
 
     def matches(self, node) -> bool:
         """Whether this buffer still belongs to ``node``'s texture pair."""
+        if self._node is not node or node._texture not in (
+            self._front,
+            self._back,
+        ):
+            return False
+        # a pending reshape legitimately renders the old-shape front
         return (
-            self._node is node
-            and node._texture in (self._front, self._back)
-            and tuple(node._texture.shape[:2]) == self._shape
+            self._reshape_pending
+            or tuple(node._texture.shape[:2]) == self._shape
         )
 
     # -- staging --
@@ -732,6 +856,10 @@ class DoubleBufferedImageTexture:
 
     def stage_full(self, data) -> None:
         """Stage a full-image rewrite (e.g. a pass-boundary backdrop)."""
+        # if the present is vetoed and napari moves the tile matrix in
+        # this same emission, the loader captures it; the front keeps
+        # its matching matrix until the swap
+        self._begin_transform_hold()
         self._log = [(None, data)]
         for key in self._applied:
             self._applied[key] = 0
@@ -748,6 +876,20 @@ class DoubleBufferedImageTexture:
                 texture.set_data(data, offset=offset)
         self._applied[key] = len(self._log)
 
+    # -- loader present veto (mirrors DoubleBufferedVolumeTexture) --
+
+    def hold_presents(self, timeout: float = 1.5) -> None:
+        """Veto presents while staged content is known to be junk.
+
+        Keeps the front texture on screen (e.g. during a time-step
+        change where the new step's data hasn't arrived yet).
+        Deadline-bounded so a lost release can never starve presents.
+        """
+        self._present_hold_until = time.monotonic() + timeout
+
+    def release_presents(self) -> None:
+        self._present_hold_until = 0.0
+
     # -- presentation --
 
     @property
@@ -759,6 +901,10 @@ class DoubleBufferedImageTexture:
         """Swap the freshly written back texture into the shader."""
         if not self.dirty:
             return False
+        if time.monotonic() < self._present_hold_until:
+            return False
+        if self._reshape_pending:
+            return self._present_reshape()
         front, back = self._front, self._back
         if front.clim is not None and back.clim != front.clim:
             back.set_clim(front.clim)
@@ -769,6 +915,32 @@ class DoubleBufferedImageTexture:
         self._front, self._back = back, front
         self._catch_up(front)
         self._trim_log()
+        self._apply_pending_transform()
+        return True
+
+    def _present_reshape(self) -> bool:
+        """Bind the new-shape back texture once the hold has released.
+
+        The held reshape kept the old-shape front on screen (with its
+        matching held matrix); this swap applies tile content, quad
+        geometry and the captured matrix in the same frame.
+        """
+        node = self._node
+        old_front, back = self._front, self._back
+        self._catch_up(back)
+        self._bind(back)
+        self._front, self._back = back, old_front
+        self._reshape_pending = False
+        if self._pending_geometry is not None:
+            self._apply_geometry(self._pending_geometry)
+            self._pending_geometry = None
+        # the old front is unbound now; the log replay resizes it to
+        # the new shape (scale_and_set_data resizes on shape mismatch)
+        self._catch_up(old_front)
+        self._trim_log()
+        self._apply_pending_transform()
+        with contextlib.suppress(RuntimeError):
+            node.update()
         return True
 
     def _bind(self, texture) -> None:
@@ -811,17 +983,27 @@ class DoubleBufferedImageTexture:
 
         def set_data_staged(image, copy=False):
             data = np.asarray(image)
-            if data.ndim != 2 or node._texture not in (
-                self._front,
-                self._back,
+            if (
+                data.ndim not in (2, 3)
+                or (data.ndim == 3 and data.shape[2] > 4)
+                or node._texture not in (self._front, self._back)
             ):
-                # multichannel or externally rebound texture: fall
-                # back; the loader rebuilds this buffer on its next
-                # patch
+                # unexpected payload or externally rebound texture:
+                # fall back; the loader rebuilds this buffer on its
+                # next patch
                 self._suppress_full = False
                 self.detach_set_data()
                 return original(image, copy=copy)
-            same_shape = tuple(data.shape[:2]) == self._shape
+            # a channel-count change cannot be absorbed by the pair
+            # (mismatched internalformat) — _reshape_now raises and the
+            # original path re-specs the texture instead
+            data_channels = data.shape[2] if data.ndim == 3 else 1
+            back_shape = tuple(self._back.shape)
+            back_channels = back_shape[2] if len(back_shape) > 2 else 1
+            same_shape = (
+                tuple(data.shape[:2]) == self._shape
+                and data_channels == back_channels
+            )
             if same_shape and self._suppress_full:
                 # caller asserts the GPU pair already matches the data
                 # (every chunk was patched): skip the redundant
@@ -857,14 +1039,21 @@ class DoubleBufferedImageTexture:
         re-slice, and GL object deletion syncs the pipeline). Resizing
         the existing pair instead is a SIZE re-spec on textures that
         are unbound at the time, with no object churn at all.
+
+        While a present hold is active the bind is deferred instead:
+        the old-shape front (and the node state matching it) stays on
+        screen and :meth:`_present_reshape` swaps everything at once.
         """
-        node = self._node
         old_front, old_back = self._front, self._back
         dtype = getattr(old_front, '_data_dtype', None)
+        back_shape = tuple(old_back.shape)
+        back_channels = back_shape[2] if len(back_shape) > 2 else 1
+        data_channels = data.shape[2] if data.ndim == 3 else 1
         if (
             old_back is old_front
             or dtype is None
             or np.dtype(data.dtype) != np.dtype(dtype)
+            or data_channels != back_channels
         ):
             # dtype/format change (or degenerate pair): a resized
             # texture would no longer match the scaled format
@@ -872,30 +1061,46 @@ class DoubleBufferedImageTexture:
         internalformat = getattr(old_back, 'internalformat', None)
         new_shape = tuple(data.shape[:2])
         # back is unbound: re-spec and fill it off the rendered path
-        old_back.resize(new_shape, internalformat=internalformat)
+        # (full data shape so RGB(A) keeps its channel dimension)
+        old_back.resize(tuple(data.shape), internalformat=internalformat)
         old_back.check_data_format(data)
         old_back.scale_and_set_data(data)
+        self._shape = new_shape
+        self._log = [(None, data)]
+        if time.monotonic() < self._present_hold_until:
+            # Hold active — keep the old front on screen (no black
+            # flash) together with its matrix (transform hold) and quad
+            # geometry (deferred to _present_reshape). The old front
+            # resizes through the log replay once it is unbound.
+            self._begin_transform_hold()
+            self._applied = {id(old_front): 0, id(old_back): 1}
+            self._reshape_pending = True
+            self._pending_geometry = new_shape
+            return
         self._bind(old_back)
         self._front, self._back = old_back, old_front
-        self._shape = new_shape
-        # the old front is unbound now: re-spec it for future staging
-        # (allocation only, no pixel upload)
-        old_front.resize(new_shape, internalformat=internalformat)
-        # keep the full rewrite in the log: the new back has undefined
-        # content after its re-spec and must replay it before the next
-        # present() may swap it in (the front already applied it above)
-        self._log = [(None, data)]
+        old_front.resize(tuple(data.shape), internalformat=internalformat)
         self._applied = {id(self._front): 1, id(self._back): 0}
-        # geometry follows the data shape
+        self._reshape_pending = False
+        self._pending_geometry = None
+        # any matrix held for an earlier vetoed rewrite is stale now:
+        # the new tile is bound and napari applies its matrix right
+        # after this set_data — that one must stand
+        self._drop_transform_hold()
+        self._apply_geometry(new_shape)
+
+    def _apply_geometry(self, shape) -> None:
+        """Follow a tile shape change in the node's quad and shader state."""
+        node = self._node
         node._need_vertex_update = True
         with contextlib.suppress(Exception):
-            node.shared_program['image_size'] = data.shape[:2][::-1]
+            node.shared_program['image_size'] = tuple(shape[:2])[::-1]
         if node._data_lookup_fn is not None:
             with contextlib.suppress(Exception):
                 # kernel-based (e.g. cubic) lookups carry the texture
                 # shape as a shader parameter
                 if 'shape' in node._data_lookup_fn:
-                    node._data_lookup_fn['shape'] = data.shape[:2][::-1]
+                    node._data_lookup_fn['shape'] = tuple(shape[:2])[::-1]
 
     def suppress_next_full_upload(self) -> None:
         """Skip the next same-shape full rewrite through ``set_data``.
@@ -912,12 +1117,17 @@ class DoubleBufferedImageTexture:
 
     def close(self) -> None:
         """Restore the node and release the spare texture."""
+        self.release_presents()
         from napari.experimental import _glir_metering
 
         for glir_id in self._exempt_ids:
             _glir_metering.discard_unmetered_texture(glir_id)
         self._exempt_ids = set()
         self.detach_set_data()
+        # going forward napari writes the texture directly, so its
+        # latest matrix is the right one
+        with contextlib.suppress(Exception):
+            self._apply_pending_transform()
         self._log = []
         if self._back is not self._front:
             with contextlib.suppress(Exception):  # pragma: no cover

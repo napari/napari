@@ -807,7 +807,10 @@ class ProgressiveLoader:
             (layer.events.set_data, self._on_set_data),
         ]
         for emitter, callback in self._connections:
-            emitter.connect(callback)
+            if callback is self._on_dims_step_change:
+                emitter.connect(callback, position='first')
+            else:
+                emitter.connect(callback)
         viewer.layers.events.removed.connect(self._on_layer_removed)
         # engage the interaction hold on the raw pointer events too:
         # a press/wheel precedes the first camera event by one event,
@@ -829,6 +832,16 @@ class ProgressiveLoader:
         # pre-load (all-zero) content. Disable it: materializing a resident
         # VirtualData is a plain memory copy.
         layer._level_materializer = None
+
+        # GL texture size limits: clamp intervals so no axis exceeds
+        # what the driver can allocate in glTexImage2D / glTexImage3D.
+        try:
+            from napari._vispy.utils.gl import get_max_texture_sizes
+
+            max_2d, _ = get_max_texture_sizes()
+        except Exception:  # noqa: BLE001
+            max_2d = None
+        self._gl_max_texture_size_2d = max_2d
 
         # Enable 3D sub-volume tiles: locking (or auto-selecting) a level
         # larger than this extent renders a view-centered tile of at most
@@ -981,12 +994,27 @@ class ProgressiveLoader:
         min_coord,
         max_coord,
     ) -> tuple[np.ndarray, np.ndarray]:
-        """Shrink an interval around its center to respect the memory cap."""
+        """Shrink an interval around its center to respect the memory cap
+        and the GL maximum texture size."""
         min_coord = np.array(min_coord, dtype=np.int64)
         max_coord = np.array(max_coord, dtype=np.int64)
         requested_min, requested_max = min_coord.copy(), max_coord.copy()
         itemsize = vdata.dtype.itemsize
         extent = np.maximum(max_coord - min_coord, 1)
+
+        gl_max = self._gl_max_texture_size_2d
+        if gl_max is not None:
+            for d in range(len(extent)):
+                if extent[d] > gl_max:
+                    center = (min_coord[d] + max_coord[d]) // 2
+                    half = gl_max // 2
+                    min_coord[d] = max(center - half, 0)
+                    max_coord[d] = min(
+                        min_coord[d] + gl_max, int(vdata.shape[d])
+                    )
+                    min_coord[d] = max(max_coord[d] - gl_max, 0)
+                    extent[d] = max_coord[d] - min_coord[d]
+
         max_elements = self._interval_max_bytes // itemsize
         clamped = False
         while np.prod(extent, dtype=np.int64) > max_elements:
@@ -1294,7 +1322,9 @@ class ProgressiveLoader:
                 and getattr(node, '_texture', None) is not None
             ):
                 with contextlib.suppress(Exception):
-                    self._ensure_dbuf(node)
+                    dbuf = self._ensure_dbuf(node)
+                    if dbuf is not None:
+                        dbuf.hold_presents()
         layer.refresh(extent=False)
 
     def _release_auto_level(self) -> None:
@@ -1363,19 +1393,19 @@ class ProgressiveLoader:
         """
         if self._closed:
             return
+        # Always hold presents on a step change — even while
+        # _holding (camera interaction).  The interaction hold
+        # pauses fetch work; the present hold keeps the old frame
+        # visible so the re-slice cannot flash zeros.
+        dbuf = self._dbuf
+        if dbuf is not None and hasattr(dbuf, 'hold_presents'):
+            dbuf.hold_presents()
         if self._holding:
             return
         now = time.monotonic()
         if now - self._last_step_change_time < self._step_change_min_interval:
             return
         self._last_step_change_time = now
-        # Hold the front buffer *before* anything else so the upcoming
-        # re-slice (napari fires set_data on the same event) cannot
-        # present zeros — the old tile keeps rendering until the new
-        # time point's data arrives and explicitly releases.
-        dbuf = self._dbuf3d()
-        if dbuf is not None:
-            dbuf.hold_presents()
         self._cancel_active()
         self._degrade_render_quality()
         self._check()
@@ -1569,8 +1599,8 @@ class ProgressiveLoader:
         """
         if self._closed or not self._layer.visible:
             return
-        dbuf = self._dbuf3d()
-        if dbuf is not None:
+        dbuf = self._dbuf
+        if dbuf is not None and hasattr(dbuf, 'capture_transform'):
             # napari's vispy layer (connected before this handler) just
             # staged the new tile AND applied its matrix; capture the
             # matrix as pending and restore the front-matching one so
@@ -1782,6 +1812,11 @@ class ProgressiveLoader:
                 crop = np.ascontiguousarray(vdata.hyperslice[src])
             if crop.ndim not in (2, 3) or 0 in crop.shape:
                 return False
+            gl_max = self._gl_max_texture_size_2d
+            if gl_max is not None and any(s > gl_max for s in crop.shape[:2]):
+                # a texture this large cannot be allocated (GLError);
+                # the normal pipeline downsamples oversize slices
+                return False
             node.set_data(fix_data_dtype(crop))
         except Exception:  # noqa: BLE001 # pragma: no cover - GL mismatch
             return False
@@ -1813,8 +1848,8 @@ class ProgressiveLoader:
                     [int(c) for c in min_coord],
                     [int(c) for c in max_coord],
                 )
-        dbuf = self._dbuf3d()
-        if dbuf is not None:
+        dbuf = self._dbuf
+        if dbuf is not None and hasattr(dbuf, 'hold_presents'):
             # the refresh below stages zeros + carry-over; keep the
             # front on screen until the repair worker lands content
             dbuf.hold_presents()
@@ -1858,18 +1893,25 @@ class ProgressiveLoader:
         if not queue:
             # Everything visible is already resident (e.g. carried over
             # from the previous interval); make sure the canvas shows it.
-            self._refresh(final=True)
-            # In 3D the refresh triggers an async re-slice that stages
-            # data into the back buffer via set_data_staged.  Without a
-            # fetch worker there is no _on_fetch_finished to present the
-            # staged content.  Register the GLIR drain callback so the
-            # back buffer swaps to front once its uploads complete.
-            dbuf = self._dbuf3d()
-            if dbuf is not None:
+            # Release any present veto BEFORE the refresh: the resident
+            # content is real, and in 2D the re-slice presents inline —
+            # a lingering step-change hold would veto it with nothing
+            # left to retry.
+            dbuf = self._dbuf
+            if dbuf is not None and hasattr(dbuf, 'release_presents'):
                 dbuf.release_presents()
+                # In 3D the refresh triggers an async re-slice that
+                # stages data into the back buffer via set_data_staged.
+                # Without a fetch worker there is no _on_fetch_finished
+                # to present the staged content; the GLIR drain callback
+                # swaps the back buffer in once its uploads complete.
                 from napari.experimental import _glir_metering
 
                 _glir_metering.add_drain_callback(self._on_uploads_drained)
+            self._refresh(final=True)
+            # present anything already staged (sync 2D re-slices land
+            # inside the refresh; async 3D content presents on drain)
+            self._update_node()
             return
 
         LOGGER.debug(
@@ -1922,8 +1964,8 @@ class ProgressiveLoader:
         ):
             self._dbuf.suppress_next_full_upload()
         self._synced_backdrop_key = None
-        dbuf = self._dbuf3d()
-        if dbuf is not None:
+        dbuf = self._dbuf
+        if dbuf is not None and hasattr(dbuf, 'hold_presents'):
             # this pass-start rewrite is zeros + carry-over until the
             # repair worker lands its backdrop; the front (previous
             # tile, correctly placed via the transform hold) renders
@@ -2143,13 +2185,15 @@ class ProgressiveLoader:
         if generation != self._generation or self._closed:
             return
         self._worker = None
-        dbuf = self._dbuf3d()
-        if dbuf is not None:
+        dbuf = self._dbuf
+        if dbuf is not None and hasattr(dbuf, 'release_presents'):
             # belt for the present veto: the pass is over, so whatever
             # is staged (chunks, backdrop) is the best content there is
             dbuf.release_presents()
-            with contextlib.suppress(Exception):
-                dbuf.present()
+            node = self._get_display_node()
+            if node is not None and dbuf.matches(node):
+                with contextlib.suppress(Exception):
+                    dbuf.present()
         self._maybe_restore_quality()
 
     def _get_display_node(self, ndisplay: int | None = None):
@@ -2165,13 +2209,6 @@ class ProgressiveLoader:
 
     def _get_volume_node(self):
         return self._get_display_node(3)
-
-    def _dbuf3d(self) -> DoubleBufferedVolumeTexture | None:
-        """The 3D double buffer, when that is what is attached."""
-        dbuf = self._dbuf
-        if isinstance(dbuf, DoubleBufferedVolumeTexture):
-            return dbuf
-        return None
 
     def _patch_texture(self, vdata: VirtualData, chunk_key) -> bool:
         """Write one chunk's region into the existing GPU texture."""
@@ -2488,16 +2525,18 @@ class ProgressiveLoader:
                 self._repair_worker = None
             if self._closed:
                 return
-            dbuf = self._dbuf3d()
-            if dbuf is not None:
+            dbuf = self._dbuf
+            if dbuf is not None and hasattr(dbuf, 'release_presents'):
                 dbuf.release_presents()
             if wrote:
                 self._refresh(force=True)
             elif dbuf is not None:
                 # nothing to fill (fully carried over): present whatever
                 # is staged now that the veto is lifted
-                with contextlib.suppress(Exception):
-                    dbuf.present()
+                node = self._get_display_node()
+                if node is not None and dbuf.matches(node):
+                    with contextlib.suppress(Exception):
+                        dbuf.present()
 
         worker.returned.connect(on_done)
         worker.errored.connect(lambda _e: on_done(False))  # pragma: no cover
