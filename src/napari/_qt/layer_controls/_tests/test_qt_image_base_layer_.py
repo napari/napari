@@ -12,7 +12,6 @@ from napari._qt.layer_controls.qt_image_controls_base import (
 )
 from napari._qt.layer_controls.widgets.qt_contrast_limits import (
     QContrastLimitsPopup,
-    QRangeSliderPopup,
     range_to_decimals,
 )
 from napari.components.dims import Dims
@@ -40,7 +39,7 @@ def test_base_controls_creation(qtbot, layer):
     assert tuple(slider_clims) == original_clims
 
 
-@patch.object(QRangeSliderPopup, 'show')
+@patch.object(QContrastLimitsPopup, 'show')
 @pytest.mark.parametrize('layer', [Image(_IMAGE), Surface(_SURF)])
 def test_clim_right_click_shows_popup(mock_show, qtbot, layer):
     """Right clicking on the contrast limits slider should show a popup."""
@@ -70,7 +69,7 @@ def test_changing_model_updates_view(qtbot, layer):
     )
 
 
-@patch.object(QRangeSliderPopup, 'show')
+@patch.object(QContrastLimitsPopup, 'show')
 @pytest.mark.parametrize(
     'layer', [Image(_IMAGE), Image(_IMAGE.astype(np.int32)), Surface(_SURF)]
 )
@@ -152,6 +151,46 @@ def test_tensorstore_clim_popup(qtbot):
     ts = pytest.importorskip('tensorstore')
     layer = Image(ts.array(np.random.rand(20, 20)))
     qtbot.addWidget(QContrastLimitsPopup(layer))
+
+
+@pytest.mark.parametrize(
+    ('layer', 'supports_histogram'),
+    [
+        (Image(_IMAGE), True),
+        (Image(np.dstack([_IMAGE, _IMAGE, _IMAGE]), rgb=True), True),
+        (Surface(_SURF), False),
+    ],
+)
+def test_histogram_ui_support_boundary(qtbot, layer, supports_histogram):
+    """Image layers (including RGB via luminance) should expose histogram UI."""
+    qtctrl = QtBaseImageControls(layer)
+    qtbot.addWidget(qtctrl)
+
+    assert (qtctrl._histogram_control is not None) is supports_histogram
+    assert (
+        qtctrl._contrast_limits_control.histogram_button is not None
+    ) is supports_histogram
+
+
+@pytest.mark.parametrize(
+    ('layer', 'supports_histogram'),
+    [
+        (Image(_IMAGE), True),
+        (Image(np.dstack([_IMAGE, _IMAGE, _IMAGE]), rgb=True), True),
+        (Surface(_SURF), False),
+    ],
+)
+def test_contrast_limits_popup_histogram_boundary(
+    qtbot, layer, supports_histogram
+):
+    """The detailed contrast popup should embed histogram UI for all Image layers."""
+    popup = QContrastLimitsPopup(layer)
+    qtbot.addWidget(popup)
+
+    assert (popup.histogram_content is not None) is supports_histogram
+    if supports_histogram:
+        assert popup.histogram_content.histogram_widget is not None
+        assert popup.histogram_content.settings_widget is not None
 
 
 def test_blending_opacity_slider(qtbot):

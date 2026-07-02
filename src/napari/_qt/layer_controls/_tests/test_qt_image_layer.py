@@ -1,4 +1,5 @@
 import numpy as np
+from qtpy.QtCore import Qt
 
 from napari._qt.layer_controls.qt_image_controls import QtImageControls
 from napari.components.dims import Dims
@@ -142,3 +143,97 @@ def test_auto_contrast_buttons(qtbot):
     dims.point = (4, 8, 8)
     layer._slice_dims(dims)
     assert layer.contrast_limits == [192, 255]
+
+
+def test_histogram_button_toggles_inline_histogram(qtbot):
+    layer = Image(np.random.rand(8, 8))
+    qtctrl = QtImageControls(layer)
+    qtbot.addWidget(qtctrl)
+
+    button = qtctrl._contrast_limits_control.histogram_button
+    assert button is not None
+    assert qtctrl._histogram_control is not None
+    assert qtctrl._histogram_control.content_widget.isHidden()
+
+    qtbot.mouseClick(button, Qt.MouseButton.LeftButton)
+
+    assert not qtctrl._histogram_control.content_widget.isHidden()
+    assert (
+        qtctrl.layout().labelForField(qtctrl._histogram_control.content_widget)
+        is None
+    )
+    assert layer.histogram.enabled
+    assert button.isChecked()
+
+    qtbot.mouseClick(button, Qt.MouseButton.LeftButton)
+
+    assert qtctrl._histogram_control.content_widget.isHidden()
+    assert not layer.histogram.enabled
+    assert not button.isChecked()
+
+
+def test_histogram_button_right_click_opens_popup(qtbot):
+    layer = Image(np.random.rand(8, 8))
+    qtctrl = QtImageControls(layer)
+    qtbot.addWidget(qtctrl)
+
+    button = qtctrl._contrast_limits_control.histogram_button
+    assert button is not None
+
+    qtbot.mouseClick(button, Qt.MouseButton.RightButton)
+
+    popup = qtctrl._contrast_limits_control.clim_popup
+    assert popup is not None
+    assert popup.histogram_content is not None
+    assert popup.histogram_content.histogram_widget is not None
+    assert popup.histogram_content.settings_widget is not None
+    assert not button.isChecked()
+
+    popup.close()
+
+
+def test_histogram_control_lazy_creation(qtbot):
+    """Histogram control should lazily create content on first ensure_content() call."""
+    layer = Image(np.random.rand(8, 8))
+    qtctrl = QtImageControls(layer)
+    qtbot.addWidget(qtctrl)
+
+    # Before ensure_content: content_widget exists but histogram_content is None
+    assert qtctrl._histogram_control is not None
+    assert qtctrl._histogram_control.content_widget is not None
+    assert qtctrl._histogram_control.histogram_content is None
+    assert qtctrl._histogram_control.histogram_widget is None
+    assert qtctrl._histogram_control.settings_widget is None
+
+    # After ensure_content: all sub-widgets exist
+    qtctrl._histogram_control.ensure_content()
+    assert qtctrl._histogram_control.histogram_content is not None
+    assert qtctrl._histogram_control.histogram_widget is not None
+    assert qtctrl._histogram_control.settings_widget is not None
+
+    # Second call is idempotent
+    qtctrl._histogram_control.ensure_content()
+    assert qtctrl._histogram_control.histogram_content is not None
+
+
+def test_two_image_layers_independent_histograms(qtbot, make_napari_viewer):
+    """Two Image layers should each have their own independent histogram."""
+    viewer = make_napari_viewer()
+    layer_a = viewer.add_image(np.random.rand(10, 10), name='a')
+    layer_b = viewer.add_image(np.random.rand(10, 10), name='b')
+
+    # Each layer has its own histogram model
+    assert layer_a.histogram is not layer_b.histogram
+
+    # Each has its own controls with histogram
+    controls_a = viewer.window._qt_viewer.controls.widgets[layer_a]
+    controls_b = viewer.window._qt_viewer.controls.widgets[layer_b]
+    assert controls_a._histogram_control is not None
+    assert controls_b._histogram_control is not None
+    assert controls_a._histogram_control is not controls_b._histogram_control
+
+    # Toggling one doesn't affect the other
+    button_a = controls_a._contrast_limits_control.histogram_button
+    qtbot.mouseClick(button_a, Qt.MouseButton.LeftButton)
+    assert layer_a.histogram.enabled
+    assert not layer_b.histogram.enabled

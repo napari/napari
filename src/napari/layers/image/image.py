@@ -8,6 +8,7 @@ from typing import Any, Literal, cast
 
 import numpy as np
 
+from napari.components.histogram import HistogramModel
 from napari.layers._data_protocols import LayerDataProtocol
 from napari.layers._multiscale_data import MultiScaleData
 from napari.layers._scalar_field._slice import _ScalarFieldSliceResponse
@@ -420,6 +421,27 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         self._attenuation = value
         self._update_thumbnail()
         self.events.attenuation()
+
+    @property
+    def histogram(self) -> HistogramModel:
+        """Histogram model for this layer, created lazily on first access.
+
+        The histogram model computes and stores histogram data for the layer,
+        responding to changes in layer data, contrast limits, and gamma.
+        The model is not created until the ``histogram`` property is first
+        accessed, saving event-listener overhead on ``Image`` layers that
+        never display a histogram.
+
+        Returns
+        -------
+        HistogramModel
+            Histogram model instance for this layer.
+        """
+        try:
+            return self._histogram  # type: ignore[has-type]
+        except AttributeError:
+            self._histogram = HistogramModel(self)
+            return self._histogram
 
     @ScalarFieldBase.data.setter  # type: ignore[attr-defined]
     def data(self, data: LayerDataProtocol | MultiScaleData) -> None:
