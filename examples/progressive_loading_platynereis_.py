@@ -14,10 +14,10 @@ plain HTTPS from EMBL — no S3 credentials needed.
 .. tags:: experimental
 """
 
-try:
+import contextlib
+
+with contextlib.suppress(ModuleNotFoundError):
     import napari_colormaps  # noqa: F401 - registers colormaps
-except ModuleNotFoundError:
-    pass
 import zarr
 from zarr.experimental.cache_store import CacheStore
 from zarr.storage import FsspecStore, MemoryStore

@@ -14,10 +14,10 @@ Requires network access and anonymous S3.
 .. tags:: experimental
 """
 
-try:
+import contextlib
+
+with contextlib.suppress(ModuleNotFoundError):
     import napari_colormaps  # noqa: F401 - registers colormaps
-except ModuleNotFoundError:
-    pass
 import zarr
 from zarr.experimental.cache_store import CacheStore
 from zarr.storage import FsspecStore, MemoryStore
