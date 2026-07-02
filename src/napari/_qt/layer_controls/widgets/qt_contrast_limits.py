@@ -1,4 +1,6 @@
-from typing import Optional
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Optional
 
 import numpy as np
 from qtpy.QtCore import Qt, Signal
@@ -29,6 +31,9 @@ from napari.layers import Image, Surface
 from napari.utils._dtype import normalize_dtype
 from napari.utils.events.event_utils import connect_no_arg, connect_setattr
 from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    from napari.components import ViewerModel
 
 
 def range_to_decimals(range_, dtype):
@@ -93,7 +98,7 @@ class QContrastLimitsPopup(QtPopup):
         self,
         layer: Image | Surface,
         parent: Optional[QWidget] = None,
-        viewer=None,
+        viewer: Optional[ViewerModel] = None,
     ) -> None:
         super().__init__(parent)
 
@@ -200,6 +205,18 @@ class QContrastLimitsPopup(QtPopup):
         button_layout.addStretch()
 
         self._layout.addWidget(self._create_widget_from_layout(button_layout))
+
+    def keyPressEvent(self, event):
+        """Override to prevent Enter from closing the popup.
+
+        Hitting Enter/Return inside the popup should defocus the
+        line-edit rather than closing the window, consistent with
+        the behaviour of the original QRangeSliderPopup.
+        """
+        if event.key() in {Qt.Key.Key_Return, Qt.Key.Key_Enter}:
+            self.slider.setFocus()
+            return
+        super().keyPressEvent(event)
 
     def closeEvent(self, event):
         """Clean up on close to prevent event-listener leaks."""
@@ -404,40 +421,18 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
 
         histogram_control.ensure_content()
 
-        # Get the layout (QFormLayout)
-        layout = parent.layout()
-
-        if not visible:
-            # Remove histogram widget from layout
-            layout.removeWidget(histogram_control.content_widget)
+        # Show or hide the persistent content_widget; it is always present
+        # in the form layout (inserted once by QtBaseImageControls) so we
+        # never need to search layout rows.
+        if visible:
+            histogram_control.content_widget.show()
+            # Enable histogram computation; _on_enabled_change triggers
+            # an immediate compute if there is pending dirty data.
+            self._layer.histogram.enabled = True
+        else:
             histogram_control.content_widget.hide()
-
             # Disable histogram computation
             self._layer.histogram.enabled = False
-        else:
-            # Add histogram widget to layout (after contrast limits row).
-            # The slider + button are wrapped in a QFrame, so search for
-            # the wrapper whose layout contains our slider.
-            clim_row = -1
-            for row in range(layout.rowCount()):
-                item = layout.itemAt(row, layout.ItemRole.FieldRole)
-                if item and item.widget() is not None:
-                    w = item.widget()
-                    if w.layout() is not None:
-                        idx = w.layout().indexOf(self.contrast_limits_slider)
-                        if idx >= 0:
-                            clim_row = row
-                            break
-
-            if clim_row >= 0:
-                # Span the histogram across the full form width.
-                layout.insertRow(
-                    clim_row + 1, histogram_control.content_widget
-                )
-                histogram_control.content_widget.show()
-                # Enable histogram computation; _on_enabled_change triggers
-                # an immediate compute if there is pending dirty data.
-                self._layer.histogram.enabled = True
 
     def show_histogram_popup(self):
         """Show the histogram popup widget."""
