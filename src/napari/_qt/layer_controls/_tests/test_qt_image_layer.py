@@ -184,8 +184,9 @@ def test_histogram_button_right_click_opens_popup(qtbot):
 
     popup = qtctrl._contrast_limits_control.clim_popup
     assert popup is not None
-    assert popup.histogram_widget is not None
-    assert popup.settings_widget is not None
+    assert popup.histogram_content is not None
+    assert popup.histogram_content.histogram_widget is not None
+    assert popup.histogram_content.settings_widget is not None
     assert not button.isChecked()
 
     popup.close()

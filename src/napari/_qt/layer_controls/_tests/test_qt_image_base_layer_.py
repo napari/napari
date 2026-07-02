@@ -12,7 +12,6 @@ from napari._qt.layer_controls.qt_image_controls_base import (
 )
 from napari._qt.layer_controls.widgets.qt_contrast_limits import (
     QContrastLimitsPopup,
-    QRangeSliderPopup,
     range_to_decimals,
 )
 from napari.components.dims import Dims
@@ -40,7 +39,7 @@ def test_base_controls_creation(qtbot, layer):
     assert tuple(slider_clims) == original_clims
 
 
-@patch.object(QRangeSliderPopup, 'show')
+@patch.object(QContrastLimitsPopup, 'show')
 @pytest.mark.parametrize('layer', [Image(_IMAGE), Surface(_SURF)])
 def test_clim_right_click_shows_popup(mock_show, qtbot, layer):
     """Right clicking on the contrast limits slider should show a popup."""
@@ -70,7 +69,7 @@ def test_changing_model_updates_view(qtbot, layer):
     )
 
 
-@patch.object(QRangeSliderPopup, 'show')
+@patch.object(QContrastLimitsPopup, 'show')
 @pytest.mark.parametrize(
     'layer', [Image(_IMAGE), Image(_IMAGE.astype(np.int32)), Surface(_SURF)]
 )
@@ -188,8 +187,10 @@ def test_contrast_limits_popup_histogram_boundary(
     popup = QContrastLimitsPopup(layer)
     qtbot.addWidget(popup)
 
-    assert (popup.histogram_widget is not None) is supports_histogram
-    assert (popup.settings_widget is not None) is supports_histogram
+    assert (popup.histogram_content is not None) is supports_histogram
+    if supports_histogram:
+        assert popup.histogram_content.histogram_widget is not None
+        assert popup.histogram_content.settings_widget is not None
 
 
 def test_blending_opacity_slider(qtbot):
