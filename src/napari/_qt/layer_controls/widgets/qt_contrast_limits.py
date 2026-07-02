@@ -341,6 +341,20 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
             trans._('contrast limits:')
         )
 
+        # Wrap the slider (and optional histogram button) in a QFrame so
+        # they sit on the same row in the form layout.  The QFrame is
+        # created once here and reused in get_widget_controls() — creating
+        # a new QFrame every time would reparent the slider, destroying the
+        # C++ object when the temporary QFrame is collected.
+        self._clim_row = QFrame()
+        self._clim_row.setFrameShape(QFrame.Shape.NoFrame)
+        self._clim_row.setStyleSheet('QFrame { background: transparent; }')
+        self._clim_layout = QHBoxLayout()
+        self._clim_layout.setContentsMargins(0, 0, 0, 0)
+        self._clim_layout.setSpacing(2)
+        self._clim_layout.addWidget(self.contrast_limits_slider)
+        self._clim_row.setLayout(self._clim_layout)
+
         # Histogram toggle button — added alongside the slider via a
         # wrapper widget in get_widget_controls().
         self.histogram_button = None
@@ -359,6 +373,7 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
                 self._on_histogram_button_toggled
             )
             self.histogram_button.installEventFilter(self)
+            self._clim_layout.addWidget(self.histogram_button)
 
     def show_clim_popup(self):
         self.clim_popup = QContrastLimitsPopup(
@@ -445,21 +460,7 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
         self.show_clim_popup()
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
-        # Wrap the contrast limits slider with the histogram button in a row.
-        # Use a QFrame with no frame shape so it inherits the parent's
-        # themed background without introducing its own.
-        clim_row = QFrame()
-        clim_row.setFrameShape(QFrame.Shape.NoFrame)
-        clim_row.setStyleSheet('QFrame { background: transparent; }')
-        clim_layout = QHBoxLayout()
-        clim_layout.setContentsMargins(0, 0, 0, 0)
-        clim_layout.setSpacing(2)
-        clim_layout.addWidget(self.contrast_limits_slider)
-        if self.histogram_button is not None:
-            clim_layout.addWidget(self.histogram_button)
-        clim_row.setLayout(clim_layout)
-
         return [
             (self.auto_scale_bar_label, self.auto_scale_bar),
-            (self.contrast_limits_slider_label, clim_row),
+            (self.contrast_limits_slider_label, self._clim_row),
         ]
