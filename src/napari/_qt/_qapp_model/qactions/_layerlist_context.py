@@ -50,6 +50,7 @@ def _set_data_in_clipboard(data: dict) -> None:
     json_data = json.dumps(data_, cls=UnitsEncoder)
 
     numpy_data = {k: v for k, v in data_.items() if isinstance(v, np.ndarray)}
+    # maybe change to MessagePack in future
     buffer = BytesIO()
     np.savez(buffer, **numpy_data, allow_pickle=False)
 
