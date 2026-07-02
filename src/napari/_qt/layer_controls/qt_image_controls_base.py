@@ -51,5 +51,12 @@ class QtBaseImageControls(QtLayerControls):
         if isinstance(layer, Image):
             self._histogram_control = QtHistogramControl(self, layer)
             self._add_widget_controls(self._histogram_control)
+            # Insert the histogram content widget into the form layout once.
+            # It starts hidden and is shown/hidden by the histogram button
+            # toggle — never inserted/removed at runtime.
+            self.layout().insertRow(
+                self.layout().rowCount() - 1,
+                self._histogram_control.content_widget,
+            )
         self._colormap_control = QtColormapControl(self, layer)
         self._add_widget_controls(self._colormap_control)

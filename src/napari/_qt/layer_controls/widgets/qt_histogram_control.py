@@ -52,7 +52,9 @@ class QtHistogramControl(QtWidgetControlsBase):  # type: ignore[metaclass]
     def __init__(self, parent: QWidget, layer: Image) -> None:
         super().__init__(parent, layer)
 
-        # Create content widget
+        # The content_widget is a persistent container that stays in the
+        # form layout at all times; it is shown/hidden via the histogram
+        # button toggle, never inserted/removed from the layout.
         self.content_widget = QWidget(parent)
         self.content_widget.hide()
         self.histogram_content: QtHistogramContentWidget | None = None
