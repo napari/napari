@@ -66,6 +66,7 @@ class QtHistogramWidget(QWidget):
         self._histogram = layer.histogram
         self._appearance = get_settings().appearance
         self._updating = False
+        self._cleaned_up: bool = False
         self._compute_worker: FunctionWorker | None = None
 
         theme = get_theme(self._appearance.theme)
@@ -198,7 +199,13 @@ class QtHistogramWidget(QWidget):
 
         Reconnects event listeners and reads the freshly computed
         histogram data to update the vispy canvas.
+
+        If the widget has been cleaned up (e.g. closed) while the background
+        thread was running, this method returns early to avoid an error trying
+        to access destroyed objects.
         """
+        if self._cleaned_up:
+            return
         self._compute_worker = None
 
         # Reconnect event-driven updates
@@ -278,7 +285,11 @@ class QtHistogramWidget(QWidget):
 
     def cleanup(self) -> None:
         """Disconnect event handlers and clean up resources."""
+        self._cleaned_up = True
         if self._compute_worker is not None:
+            self._compute_worker.finished.disconnect(
+                self._on_async_compute_done
+            )
             self._compute_worker.quit()
             self._compute_worker = None
         disconnect_events(self._histogram.events, self)
