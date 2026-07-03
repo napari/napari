@@ -117,8 +117,8 @@ class VispyFloatingAxesOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
             # we're using a 3D camera for everything for simplicity.
             self.node.camera.set_state(
                 _quaternion=Quaternion(1, -1, 0, 0),
-                center=(0.6, 0.6, 0),
-                scale_factor=1.7,  # found by testing
+                center=(0.65, 0.65, 0),
+                scale_factor=2.0,  # found by testing
             )
         else:
             quat = napari_angles_to_vispy_quat(
