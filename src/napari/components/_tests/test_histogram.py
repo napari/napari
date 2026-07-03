@@ -5,10 +5,15 @@ These tests do not require Qt and can run in headless mode.
 
 from __future__ import annotations
 
+import warnings
+
 import numpy as np
 import pytest
 
-from napari.components.histogram import DEFAULT_MAX_SAMPLES
+from napari.components.histogram import (
+    _MAX_MATERIALIZE_ELEMENTS,
+    DEFAULT_MAX_SAMPLES,
+)
 from napari.layers import Image
 
 
@@ -590,3 +595,86 @@ class TestZarr:
         assert counts is not None
         assert len(counts) == 256
         assert counts.sum() > 0
+
+
+class TestMaterializationGuard:
+    """Tests for the _get_full_data materialization guard."""
+
+    def test_large_non_chunked_data_skipped_with_warning(self, monkeypatch):
+        """Large non-chunked array-likes should skip full-mode with a warning."""
+        model = _model(np.zeros((10, 10)))
+
+        class LargeArrayLike:
+            size = _MAX_MATERIALIZE_ELEMENTS + 1
+            shape = (10_000, 5_001)
+            dtype = np.dtype(np.float32)
+
+        monkeypatch.setattr(
+            model._layer, '_data', LargeArrayLike(), raising=False
+        )
+        assert not model._has_chunks(model._layer.data)
+
+        with pytest.warns(UserWarning, match='Skipping full-data histogram'):
+            result = model._get_full_data()
+
+        assert result is None
+
+    def test_large_non_chunked_data_without_dtype(self, monkeypatch):
+        """Should also handle array-likes that lack a .dtype."""
+        model = _model(np.zeros((10, 10)))
+
+        class LargeArrayLike:
+            size = _MAX_MATERIALIZE_ELEMENTS + 1
+            shape = (10_000, 5_001)
+
+        monkeypatch.setattr(
+            model._layer, '_data', LargeArrayLike(), raising=False
+        )
+        with pytest.warns(UserWarning, match='Skipping full-data histogram'):
+            result = model._get_full_data()
+
+        assert result is None
+
+    def test_small_non_chunked_data_materializes(self, monkeypatch):
+        """Small non-chunked array-likes should still be materialized."""
+        model = _model(np.zeros((10, 10)))
+
+        class SmallArrayLike:
+            size = 100
+            shape = (10, 10)
+            dtype = np.dtype(np.float32)
+
+        monkeypatch.setattr(
+            model._layer, '_data', SmallArrayLike(), raising=False
+        )
+        with warnings.catch_warnings():
+            warnings.simplefilter('error')
+            result = model._get_full_data()
+
+        assert result is not None
+
+    def test_numpy_data_passes_through(self):
+        """Plain numpy arrays should take the fast path, not hit the guard."""
+        data = np.random.rand(100, 100).astype(np.float32)
+        model = _model(data)
+
+        with warnings.catch_warnings():
+            warnings.simplefilter('error')
+            result = model._get_full_data()
+
+        assert result is data  # same object, not copied
+
+    def test_dask_data_passes_through(self):
+        """Dask arrays should take the chunked path, not hit the guard."""
+        dask = pytest.importorskip('dask.array')
+        data = dask.from_array(
+            np.random.rand(10_000, 10_000).astype(np.float32),
+            chunks=(1000, 1000),
+        )
+        model = _model(data)
+
+        with warnings.catch_warnings():
+            warnings.simplefilter('error')
+            result = model._get_full_data()
+
+        assert result is data  # same object, returned as-is

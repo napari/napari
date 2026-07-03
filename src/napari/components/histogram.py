@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+import warnings
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, Literal
 
@@ -20,6 +21,12 @@ __all__ = ('HistogramModel',)
 # Default histogram configuration
 DEFAULT_N_BINS: int = 256
 DEFAULT_MAX_SAMPLES: int = 1_000_000
+# Maximum number of elements to materialize into a numpy array when
+# the data is not chunked (e.g. h5py datasets).  Used as a safety
+# guard in _get_full_data() — beyond this threshold we skip full-mode
+# computation and warn instead of silently pulling the full array into
+# memory.  ~50M float64 elements ≈ 400 MB.
+_MAX_MATERIALIZE_ELEMENTS: int = 50_000_000
 
 
 class HistogramModel(EventedModel):
@@ -396,9 +403,21 @@ class HistogramModel(EventedModel):
 
         # Last resort: cast to numpy.  Guard against accidentally
         # materializing a very large object (e.g. h5py Dataset) by
-        # checking size against max_samples first.
+        # checking the estimated memory footprint first.
         data_size = data.size if hasattr(data, 'size') else 0
-        if data_size > self.max_samples:
+        if data_size > _MAX_MATERIALIZE_ELEMENTS:
+            dtype_size = (
+                np.dtype(data.dtype).itemsize if hasattr(data, 'dtype') else 8
+            )
+            est_mb = (data_size * dtype_size) / (1024 * 1024)
+            warnings.warn(
+                f'Skipping full-data histogram: materializing '
+                f'{data_size:,} elements (~{est_mb:.0f} MB) would '
+                f'exceed the safety limit of '
+                f'{_MAX_MATERIALIZE_ELEMENTS:,} elements. '
+                f'Use canvas mode or increase max_samples.',
+                stacklevel=2,
+            )
             return None
         return np.asarray(data)
 
