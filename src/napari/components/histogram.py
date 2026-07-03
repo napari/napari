@@ -394,6 +394,12 @@ class HistogramModel(EventedModel):
         if self._has_chunks(data):
             return data
 
+        # Last resort: cast to numpy.  Guard against accidentally
+        # materializing a very large object (e.g. h5py Dataset) by
+        # checking size against max_samples first.
+        data_size = data.size if hasattr(data, 'size') else 0
+        if data_size > self.max_samples:
+            return None
         return np.asarray(data)
 
     @staticmethod
