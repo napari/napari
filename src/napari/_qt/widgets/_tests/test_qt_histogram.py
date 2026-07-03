@@ -114,6 +114,9 @@ def test_qt_histogram_widget_updates_theme(qtbot):
 def test_qt_histogram_widget_updates_from_viewer_theme(
     make_napari_viewer, qtbot
 ):
+    """Histogram widget responds to theme changes via settings (canonical source)."""
+    settings = get_settings()
+    old_theme = settings.appearance.theme
     viewer = make_napari_viewer()
     layer = viewer.add_image(
         np.linspace(0, 1, 64, dtype=np.float32).reshape(8, 8)
@@ -127,17 +130,23 @@ def test_qt_histogram_widget_updates_from_viewer_theme(
     layer.histogram.enabled = True
     layer.histogram.compute()
 
-    viewer.theme = 'light'
-    light_theme = get_theme('light')
+    try:
+        settings.appearance.theme = 'light'
+        light_theme = get_theme('light')
 
-    qtbot.waitUntil(
-        lambda: np.allclose(
-            widget.canvas.bgcolor.rgba[:3],
-            np.array(light_theme.canvas.as_rgb_tuple()) / 255,
+        qtbot.waitUntil(
+            lambda: np.allclose(
+                widget.canvas.bgcolor.rgba[:3],
+                np.array(light_theme.canvas.as_rgb_tuple()) / 255,
+            )
         )
-    )
 
-    assert widget.histogram_visual._lut_color == (
-        *(np.array(light_theme.highlight.as_rgb_tuple(), dtype=float) / 255),
-        0.95,
-    )
+        assert widget.histogram_visual._lut_color == (
+            *(
+                np.array(light_theme.highlight.as_rgb_tuple(), dtype=float)
+                / 255
+            ),
+            0.95,
+        )
+    finally:
+        settings.appearance.theme = old_theme

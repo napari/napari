@@ -429,8 +429,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         The histogram model computes and stores histogram data for the layer,
         responding to changes in layer data, contrast limits, and gamma.
         The model is not created until the ``histogram`` property is first
-        accessed, saving event-listener overhead on ``Image`` layers that
-        never display a histogram.
+        accessed.
 
         Returns
         -------

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional
+from typing import Optional
 
 import numpy as np
 from qtpy.QtCore import Qt, Signal
@@ -31,9 +31,6 @@ from napari.layers import Image, Surface
 from napari.utils._dtype import normalize_dtype
 from napari.utils.events.event_utils import connect_no_arg, connect_setattr
 from napari.utils.translations import trans
-
-if TYPE_CHECKING:
-    from napari.components import ViewerModel
 
 
 def range_to_decimals(range_, dtype):
@@ -98,12 +95,10 @@ class QContrastLimitsPopup(QtPopup):
         self,
         layer: Image | Surface,
         parent: Optional[QWidget] = None,
-        viewer: Optional[ViewerModel] = None,
     ) -> None:
         super().__init__(parent)
 
         self._layer = layer
-        self._viewer = viewer
         self._cleaned_up = False
 
         self._layout = QVBoxLayout()
@@ -144,7 +139,6 @@ class QContrastLimitsPopup(QtPopup):
         if isinstance(layer, Image):
             self.histogram_content = QtHistogramContentWidget(
                 layer,
-                viewer=self._viewer,
                 parent=self,
             )
             self._layout.addWidget(self.histogram_content)
@@ -377,7 +371,6 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
         self.clim_popup = QContrastLimitsPopup(
             self._layer,
             self.parent(),
-            viewer=getattr(self.parent(), 'viewer', None),
         )
         self.clim_popup.setParent(self.parent())
         self.clim_popup.move_to('top', min_length=650)

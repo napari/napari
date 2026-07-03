@@ -71,10 +71,8 @@ class QtHistogramControl(QtWidgetControlsBase):  # type: ignore[metaclass]
         if self.histogram_content is not None:
             return
 
-        viewer = getattr(self.parent(), 'viewer', None)
         self.histogram_content = QtHistogramContentWidget(
             cast(Image, self._layer),
-            viewer=viewer,
             parent=self.content_widget,
         )
         self._content_layout.addWidget(self.histogram_content)

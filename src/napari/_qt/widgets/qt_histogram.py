@@ -16,7 +16,6 @@ from napari.utils.theme import get_theme
 if TYPE_CHECKING:
     from pydantic_extra_types.color import Color
 
-    from napari.components import ViewerModel
     from napari.layers import Image
     from napari.utils.events import Event
 
@@ -54,7 +53,6 @@ class QtHistogramWidget(QWidget):
     def __init__(
         self,
         layer: Image,
-        viewer: ViewerModel | None = None,
         parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
@@ -62,15 +60,9 @@ class QtHistogramWidget(QWidget):
         self.layer = layer
         self._histogram = layer.histogram
         self._appearance = get_settings().appearance
-        self._viewer = viewer
         self._updating = False
 
-        theme_name = (
-            self._viewer.theme
-            if self._viewer is not None
-            else self._appearance.theme
-        )
-        theme = get_theme(theme_name)
+        theme = get_theme(self._appearance.theme)
 
         # Create vispy canvas
         self.canvas = SceneCanvas(
@@ -115,12 +107,10 @@ class QtHistogramWidget(QWidget):
         layer.events.contrast_limits.connect(self._on_clims_change)
         layer.events.colormap.connect(self._on_colormap_change)
 
-        # Connect to both settings and viewer theme events. The viewer's
-        # ``theme`` field is independent from ``settings.appearance.theme``
-        # — changing one does not fire the other, so both must be watched.
+        # Listen to the canonical theme source (settings). The viewer's
+        # ``theme`` field mirrors this via ``qt_main_window._update_theme``,
+        # so listening here covers all theme-change paths.
         self._appearance.events.theme.connect(self._on_theme_change)
-        if self._viewer is not None:
-            self._viewer.events.theme.connect(self._on_theme_change)
 
         self._apply_visual_style()
 
@@ -169,12 +159,7 @@ class QtHistogramWidget(QWidget):
 
     def _apply_visual_style(self) -> None:
         """Apply theme-aware and layer-aware styling to the histogram plot."""
-        theme_name = (
-            self._viewer.theme
-            if self._viewer is not None
-            else self._appearance.theme
-        )
-        theme = get_theme(theme_name)
+        theme = get_theme(self._appearance.theme)
         self.canvas.bgcolor = theme.canvas.as_hex()
         self.histogram_visual.set_style(
             bar_color=self._layer_bar_color(),
@@ -219,8 +204,6 @@ class QtHistogramWidget(QWidget):
         disconnect_events(self._histogram.events, self)
         disconnect_events(self.layer.events, self)
         disconnect_events(self._appearance.events, self)
-        if self._viewer is not None:
-            disconnect_events(self._viewer.events, self)
 
         self.histogram_visual.destroy()
         self.canvas.close()
