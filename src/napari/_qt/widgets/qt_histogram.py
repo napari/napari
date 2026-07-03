@@ -163,6 +163,13 @@ class QtHistogramWidget(QWidget):
         """
         # Cancel any in-flight worker
         if self._compute_worker is not None:
+            # Disconnect the finished signal first so _on_async_compute_done
+            # won't fire when the old worker's thread eventually completes
+            # (quit() cannot forcibly stop a running thread-pool function).
+            self._compute_worker.finished.disconnect(
+                self._on_async_compute_done
+            )
+
             self._compute_worker.quit()
             self._compute_worker = None
 
@@ -184,13 +191,10 @@ class QtHistogramWidget(QWidget):
         # Disconnect ALL event-driven updates during thread to prevent
         # vispy calls from the background thread via gamma/clims/colormap
         # event handlers as well as the histogram model's own events.
-        self._histogram.events.bins.disconnect(self._on_histogram_change)
-        self._histogram.events.counts.disconnect(self._on_histogram_change)
-        self._histogram.events.log_scale.disconnect(self._on_histogram_change)
-        self._histogram.events.enabled.disconnect(self._on_histogram_change)
-        self.layer.events.gamma.disconnect(self._on_gamma_change)
-        self.layer.events.contrast_limits.disconnect(self._on_clims_change)
-        self.layer.events.colormap.disconnect(self._on_colormap_change)
+        # disconnect_events is idempotent — safe to call when events are
+        # already disconnected (e.g. after cancel-and-restart).
+        disconnect_events(self._histogram.events, self)
+        disconnect_events(self.layer.events, self)
 
         def _work() -> None:
             self._histogram.compute()
