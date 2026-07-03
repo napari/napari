@@ -125,8 +125,18 @@ class VispyFloatingAxesOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
                 self.viewer.camera.angles, flipped_axes
             )
             self.node.camera.set_state(
-                _quaternion=quat, center=(0, 0, 0), scale_factor=3.2
+                _quaternion=quat,
+                center=(0, 0, 0),
+                scale_factor=3.4,
             )
+
+        # The 3D viewport is enlarged so the 1-unit-long axes appear the
+        # same on-screen length (50px) as in 2D, and labels have enough
+        # room to stay inside the background box.
+        size = 100 if ndisplay == 2 else 170
+        self.node.size = (size, size)
+        self.x_size = self.y_size = size
+        self._on_position_change()
 
     def reset(self) -> None:
         super().reset()
