@@ -8,6 +8,7 @@ import numpy as np
 from qtpy.QtWidgets import QVBoxLayout, QWidget
 from vispy.scene import SceneCanvas
 
+from napari._qt.qthreading import create_worker
 from napari._vispy.visuals.histogram import HistogramVisual
 from napari.settings import get_settings
 from napari.utils.events.event_utils import disconnect_events
@@ -32,6 +33,10 @@ class QtHistogramWidget(QWidget):
     This widget wraps a HistogramVisual in a vispy SceneCanvas,
     providing a Qt-compatible widget that can be embedded in
     layer controls.
+
+    For chunked arrays in full mode, computation runs in a background
+    thread via :func:`napari._qt.qthreading.create_worker` to keep
+    the UI responsive during I/O-bound loads (e.g. remote S3 zarr).
 
     Parameters
     ----------
@@ -61,6 +66,7 @@ class QtHistogramWidget(QWidget):
         self._histogram = layer.histogram
         self._appearance = get_settings().appearance
         self._updating = False
+        self._compute_worker = None
 
         theme = get_theme(self._appearance.theme)
 
@@ -70,21 +76,17 @@ class QtHistogramWidget(QWidget):
             bgcolor=theme.canvas.as_hex(),
             keys=None,
         )
-        # Set parent after creation
         self.canvas.native.setParent(self)
         self.canvas.native.setMinimumHeight(_DEFAULT_CANVAS_MIN_HEIGHT)
 
-        # Create view - use ViewBox and add_widget pattern from working PR
         from vispy.scene import ViewBox
 
         self.view = ViewBox(parent=self.canvas.scene)
         self.canvas.central_widget.add_widget(self.view)
 
-        # Create histogram visual and add to view's scene
         self.histogram_visual = HistogramVisual()
         self.histogram_visual.parent = self.view.scene
 
-        # Set up camera
         self.view.camera = 'panzoom'
         self.view.camera.set_range(x=(0, 1), y=(0, 1), margin=0.01)
         # Disable viewbox interaction to prevent accidental pan/zoom
@@ -96,7 +98,7 @@ class QtHistogramWidget(QWidget):
         main_layout.addWidget(self.canvas.native)
         self.setLayout(main_layout)
 
-        # Connect to layer histogram events
+        # Connect to model events for live updates from sync compute
         self._histogram.events.bins.connect(self._on_histogram_change)
         self._histogram.events.counts.connect(self._on_histogram_change)
         self._histogram.events.log_scale.connect(self._on_histogram_change)
@@ -106,10 +108,6 @@ class QtHistogramWidget(QWidget):
         layer.events.gamma.connect(self._on_gamma_change)
         layer.events.contrast_limits.connect(self._on_clims_change)
         layer.events.colormap.connect(self._on_colormap_change)
-
-        # Listen to the canonical theme source (settings). The viewer's
-        # ``theme`` field mirrors this via ``qt_main_window._update_theme``,
-        # so listening here covers all theme-change paths.
         self._appearance.events.theme.connect(self._on_theme_change)
 
         self._apply_visual_style()
@@ -148,6 +146,65 @@ class QtHistogramWidget(QWidget):
         )
         self._apply_visual_style(theme_name=theme_name)
         self.canvas.update()
+
+    def _ensure_histogram_computed(self) -> None:
+        """Trigger histogram computation, using a thread for chunked data.
+
+        For in-memory (numpy / small) data, ``compute()`` runs inline
+        and events fire on the main thread as usual.
+
+        For chunked arrays (dask / zarr) in full mode, the actual chunk
+        I/O runs in a background thread so the UI stays responsive.
+        While the thread runs, the widget's event connections are
+        temporarily suspended to prevent vispy updates from the
+        background thread; once the thread finishes, the widget reads
+        the fresh results and reconnects.
+        """
+        # Cancel any in-flight worker
+        if self._compute_worker is not None:
+            self._compute_worker.quit()
+            self._compute_worker = None
+
+        if self._histogram.mode == 'full' and self._histogram._has_chunks(
+            self.layer.data
+        ):
+            self._start_async_compute()
+        else:
+            # Sync path — events fire on the main thread as usual
+            self._histogram.compute()
+
+    def _start_async_compute(self) -> None:
+        """Run histogram compute in a background thread.
+
+        Disconnects event-driven vispy updates during the thread to
+        avoid calling vispy from the background thread.  After the
+        thread finishes, reconnects and reads the fresh results.
+        """
+        # Disconnect event-driven updates during thread
+        self._histogram.events.bins.disconnect(self._on_histogram_change)
+        self._histogram.events.counts.disconnect(self._on_histogram_change)
+
+        def _work():
+            self._histogram.compute()
+
+        self._compute_worker = create_worker(_work)
+        self._compute_worker.finished.connect(self._on_async_compute_done)
+        self._compute_worker.start()
+
+    def _on_async_compute_done(self) -> None:
+        """Called on the main thread when background compute finishes.
+
+        Reconnects event listeners and reads the freshly computed
+        histogram data to update the vispy canvas.
+        """
+        self._compute_worker = None
+
+        # Reconnect event-driven updates
+        self._histogram.events.bins.connect(self._on_histogram_change)
+        self._histogram.events.counts.connect(self._on_histogram_change)
+
+        # Read fresh data and update vispy (safe on main thread)
+        self._update_histogram()
 
     def _theme_rgba(
         self, color: Color, alpha: float = 1.0
@@ -202,7 +259,6 @@ class QtHistogramWidget(QWidget):
             bins = hist.bins
             counts = hist.counts
 
-            # Get current layer properties
             gamma = self.layer.gamma
             clims = self.layer.contrast_limits
             clims_range = self.layer.contrast_limits_range
@@ -220,6 +276,9 @@ class QtHistogramWidget(QWidget):
 
     def cleanup(self) -> None:
         """Disconnect event handlers and clean up resources."""
+        if self._compute_worker is not None:
+            self._compute_worker.quit()
+            self._compute_worker = None
         disconnect_events(self._histogram.events, self)
         disconnect_events(self.layer.events, self)
         disconnect_events(self._appearance.events, self)

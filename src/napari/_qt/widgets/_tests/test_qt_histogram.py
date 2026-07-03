@@ -1,5 +1,7 @@
 import numpy as np
+import pytest
 
+from napari._qt.qthreading import create_worker
 from napari._qt.widgets.qt_histogram import QtHistogramWidget
 from napari._qt.widgets.qt_histogram_content import QtHistogramContentWidget
 from napari._qt.widgets.qt_histogram_settings import QtHistogramSettingsWidget
@@ -150,3 +152,74 @@ def test_qt_histogram_widget_updates_from_viewer_theme(
         )
     finally:
         settings.appearance.theme = old_theme
+
+
+def test_qt_histogram_async_compute_with_dask(qtbot):
+    """Histogram compute on chunked dask data should work via create_worker."""
+    dask = pytest.importorskip('dask.array')
+    data = dask.random.random((500, 500), chunks=(50, 50))
+    layer = Image(data)
+    model = layer.histogram
+    model.mode = 'full'
+    model.max_samples = 50000
+
+    done = [False]
+    result = [None]
+
+    def _work():
+        model.compute()
+        return model.bins, model.counts
+
+    def _on_done(bins_counts):
+        result[0] = bins_counts
+        done[0] = True
+
+    worker = create_worker(_work)
+    worker.returned.connect(_on_done)
+    worker.start()
+
+    qtbot.waitUntil(lambda: done[0], timeout=10000)
+
+    assert result[0] is not None
+    bins, counts = result[0]
+    assert len(bins) == 257
+    assert len(counts) == 256
+    assert counts.sum() > 0
+
+
+def test_qt_histogram_cancel_and_restart(qtbot):
+    """Cancelling an in-flight worker and restarting should work cleanly."""
+    dask = pytest.importorskip('dask.array')
+    data = dask.random.random((2000, 2000), chunks=(50, 50))
+    layer = Image(data)
+    model = layer.histogram
+    model.mode = 'full'
+
+    done = [False]
+    result = [None]
+
+    def _work():
+        model.compute()
+        return model.bins, model.counts
+
+    def _on_done(bins_counts):
+        result[0] = bins_counts
+        done[0] = True
+
+    # Start first worker
+    worker1 = create_worker(_work)
+    worker1.returned.connect(_on_done)
+    worker1.start()
+
+    # Cancel and start second
+    worker1.quit()
+    worker2 = create_worker(_work)
+    worker2.returned.connect(_on_done)
+    worker2.start()
+
+    qtbot.waitUntil(lambda: done[0], timeout=30000)
+
+    assert result[0] is not None
+    bins, counts = result[0]
+    assert len(bins) == 257
+    assert counts.sum() > 0
