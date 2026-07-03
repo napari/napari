@@ -64,7 +64,10 @@ from napari.utils import progress
 try:
     from qtpy.QtCore import QTimer
 
-    from napari.qt.threading import thread_worker
+    # the implementation module, not the public ``napari.qt.threading``
+    # re-export: import-linter forbids ``napari.qt`` in import chains
+    # reachable from ``napari.components``
+    from napari._qt.qthreading import thread_worker
 except ImportError:
     QTimer = None  # type: ignore[assignment,misc]
 

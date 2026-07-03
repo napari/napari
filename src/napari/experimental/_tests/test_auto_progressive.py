@@ -3,12 +3,22 @@
 import dask.array as da
 import numpy as np
 import pytest
+import qtpy
 
 from napari.experimental._tests.test_progressive_loading import (
     _wait_for_idle_loader,
 )
 from napari.layers import Labels
 from napari.settings import get_settings
+
+# The replacement flow works with PySide6 interactively and in plain
+# scripts, but wedges the Qt timer system under pytest's nested event
+# loops (macOS; see PySide6 notes in #9067). CI runs PyQt5/PyQt6.
+skip_pyside_pytest_hang = pytest.mark.skipif(
+    qtpy.API_NAME.startswith('PySide'),
+    reason='attach flow hangs under pytest with PySide6 '
+    '(works interactively); see #9067',
+)
 
 
 @pytest.fixture
@@ -27,6 +37,27 @@ def progressive_setting():
     get_settings().experimental.progressive_loading = True
 
 
+@pytest.fixture(autouse=True)
+def _restore_glir_metering():
+    """Undo the global GLIR metering install done on loader attach.
+
+    Later test modules (test_glir_metering) assert on pristine state.
+    """
+    yield
+    from napari.experimental import _glir_metering
+
+    _glir_metering.uninstall()
+
+
+def _close_loaders(qtbot, viewer):
+    """Wait for and close all loaders so no QTimer outlives the test."""
+    for layer in viewer.layers:
+        loader = layer.metadata.get('progressive_loader')
+        if loader is not None:
+            _wait_for_idle_loader(qtbot, loader)
+            loader.close()
+
+
 def test_no_attach_by_default(qtbot, make_napari_viewer, multiscale_dask):
     """With the setting off (default), multiscale layers are untouched."""
     viewer = make_napari_viewer()
@@ -38,6 +69,7 @@ def test_no_attach_by_default(qtbot, make_napari_viewer, multiscale_dask):
     assert 'progressive_loader' not in layer.metadata
 
 
+@skip_pyside_pytest_hang
 def test_attach_when_enabled(
     qtbot, make_napari_viewer, multiscale_dask, progressive_setting
 ):
@@ -63,9 +95,10 @@ def test_attach_when_enabled(
     assert layer.name == 'pyramid'
     assert layer.opacity == 0.5
     assert layer.contrast_limits == [0, 255]
-    _wait_for_idle_loader(qtbot, layer.metadata['progressive_loader'])
+    _close_loaders(qtbot, viewer)
 
 
+@skip_pyside_pytest_hang
 def test_attach_preserves_layer_position(
     qtbot, make_napari_viewer, multiscale_dask, progressive_setting
 ):
@@ -87,11 +120,10 @@ def test_attach_preserves_layer_position(
         'pyramid',
         'plain2',
     ]
-    _wait_for_idle_loader(
-        qtbot, viewer.layers['pyramid'].metadata['progressive_loader']
-    )
+    _close_loaders(qtbot, viewer)
 
 
+@skip_pyside_pytest_hang
 def test_labels_attach_when_enabled(
     qtbot, make_napari_viewer, progressive_setting
 ):
@@ -114,7 +146,7 @@ def test_labels_attach_when_enabled(
     layer = viewer.layers[0]
     assert isinstance(layer, Labels)
     assert layer.name == 'segments'
-    _wait_for_idle_loader(qtbot, layer.metadata['progressive_loader'])
+    _close_loaders(qtbot, viewer)
 
 
 def test_plain_numpy_multiscale_untouched(
@@ -139,6 +171,7 @@ def test_non_multiscale_untouched(
     assert 'progressive_loader' not in layer.metadata
 
 
+@skip_pyside_pytest_hang
 def test_toggle_off_stops_attaching(
     qtbot, make_napari_viewer, multiscale_dask, progressive_setting
 ):
@@ -165,6 +198,4 @@ def test_toggle_off_stops_attaching(
     qtbot.wait(100)
     assert 'progressive_loader' not in plain.metadata
     assert 'progressive_loader' in viewer.layers['streamed'].metadata
-    _wait_for_idle_loader(
-        qtbot, viewer.layers['streamed'].metadata['progressive_loader']
-    )
+    _close_loaders(qtbot, viewer)
