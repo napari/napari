@@ -254,8 +254,20 @@ def test_qt_histogram_teardown_during_async_compute(qtbot):
 
     # Trigger async compute by calling the internal path used in production
     widget._ensure_histogram_computed()
+    # Capture the worker before cleanup (cleanup sets _compute_worker to None)
+    worker = widget._compute_worker
 
     # Immediately clean up — simulates viewer close while worker is running
     widget.cleanup()
 
     # No crash = success
+
+    # Wait for the worker to finish so the thread pool drains before
+    # the conftest's _dangling_qthread_pool fixture checks for leaks.
+    if worker is not None:
+        from qtpy.QtCore import QThreadPool
+
+        qtbot.waitUntil(
+            lambda: QThreadPool.globalInstance().activeThreadCount() == 0,
+            timeout=10000,
+        )
