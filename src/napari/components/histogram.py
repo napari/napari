@@ -195,7 +195,7 @@ class HistogramModel(EventedModel):
             if self._layer.rgb:
                 data = self._rgb_to_luminance(data)
 
-            if self.mode == 'full' and self._has_chunks(type(data)):
+            if self.mode == 'full' and self._has_chunks(data):
                 # Progressive chunk-by-chunk sampling for dask / zarr
                 self._compute_sampled(data)
             elif self.mode == 'full' and data.size > self.max_samples:
@@ -223,11 +223,20 @@ class HistogramModel(EventedModel):
         self.events.counts()
 
     def _compute_sampled(self, data: Any) -> None:
-        """Compute histogram progressively from chunked arrays (dask / zarr).
+        """Compute histogram from a chunked array (dask / zarr) via random samples.
 
-        Loads chunks in small batches, accumulates running histogram
-        counts, and emits events after each batch so the UI can show
-        a progressive result.
+        Builds chunk-size metadata (cheap — no data access), randomly
+        selects a subset of chunks proportional to their size, then
+        computes only those chunks.  This is critical for remote or
+        disk-backed arrays where loading the full volume would cause
+        an OOM or take minutes.
+
+        .. note::
+            Currently all selected chunks are computed in one blocking
+            pass.  A future improvement could process them in small
+            batches with intermediate ``bins``/``counts`` events so
+            the UI stays responsive during long I/O-bound loads from
+            remote sources.
         """
         n = min(self.max_samples, data.size)
         chunk_sizes = self._chunk_sizes(data)
