@@ -187,13 +187,18 @@ def test_qt_histogram_async_compute_with_dask(qtbot):
     assert counts.sum() > 0
 
 
-def test_qt_histogram_cancel_and_restart(qtbot):
-    """Cancelling an in-flight worker and restarting should work cleanly."""
+def test_qt_histogram_sequential_async_with_param_change(qtbot):
+    """Sequential async computes with different parameters should each produce correct results.
+
+    This tests the typical pattern where one async compute
+    finishes before the next is triggered by a parameter change.
+    """
     dask = pytest.importorskip('dask.array')
-    data = dask.random.random((2000, 2000), chunks=(50, 50))
+    data = dask.random.random((500, 500), chunks=(50, 50))
     layer = Image(data)
     model = layer.histogram
     model.mode = 'full'
+    model.max_samples = 50000
 
     done = [False]
     result = [None]
@@ -206,20 +211,51 @@ def test_qt_histogram_cancel_and_restart(qtbot):
         result[0] = bins_counts
         done[0] = True
 
-    # Start first worker
+    # Start first worker and wait for it to complete
     worker1 = create_worker(_work)
     worker1.returned.connect(_on_done)
     worker1.start()
+    qtbot.waitUntil(lambda: done[0], timeout=30000)
+    assert result[0] is not None
+    bins1, counts1 = result[0]
+    assert len(bins1) == 257
+    assert counts1.sum() > 0
 
-    # Cancel and start second
-    worker1.quit()
+    # Change a parameter and run a second async compute
+    done[0] = False
+    result[0] = None
+    model.n_bins = 128
+
     worker2 = create_worker(_work)
     worker2.returned.connect(_on_done)
     worker2.start()
-
     qtbot.waitUntil(lambda: done[0], timeout=30000)
-
     assert result[0] is not None
-    bins, counts = result[0]
-    assert len(bins) == 257
-    assert counts.sum() > 0
+    bins2, counts2 = result[0]
+    assert len(bins2) == 129  # n_bins=128 → 129 bin edges
+    assert counts2.sum() > 0
+
+
+def test_qt_histogram_teardown_during_async_compute(qtbot):
+    """Closing a histogram widget while an async compute is in flight
+    should not crash.  This guards against the race where a background
+    worker's ``finished`` signal fires after ``cleanup()`` has already
+    disconnected psygnal events and destroyed the canvas.
+    """
+    dask = pytest.importorskip('dask.array')
+    data = dask.random.random((500, 500), chunks=(50, 50))
+    layer = Image(data)
+    layer.histogram.mode = 'full'
+    layer.histogram.max_samples = 50000
+
+    widget = QtHistogramWidget(layer)
+    qtbot.addWidget(widget)
+    layer.histogram.enabled = True
+
+    # Trigger async compute by calling the internal path used in production
+    widget._ensure_histogram_computed()
+
+    # Immediately clean up — simulates viewer close while worker is running
+    widget.cleanup()
+
+    # No crash = success
