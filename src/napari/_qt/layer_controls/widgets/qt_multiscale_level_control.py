@@ -114,8 +114,6 @@ class QtMultiscaleLevelControl(  # type: ignore[metaclass]
 
     def _update_auto_label(self) -> None:
         """Update the 'Auto' entry to show the currently rendered level."""
-        if not self._layer.multiscale:
-            return
         label = trans._('Auto ({level})', level=self._layer.data_level)
         if self.level_combobox.itemText(0) != label:
             self.level_combobox.setItemText(0, label)
