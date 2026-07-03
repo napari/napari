@@ -37,6 +37,22 @@ class ExperimentalSettings(EventedSettings):
         validation_alias=AliasChoices('async_', 'async', 'napari_async'),
         json_schema_extra={'requires_restart': False},
     )
+    progressive_loading: bool = Field(
+        False,
+        title=trans._('Progressive loading of multiscale data'),
+        description=trans._(
+            'Stream newly added multiscale layers progressively, '
+            'viewport-first, instead of loading whole levels at once. '
+            'Applies to chunked (zarr/dask) multiscale layers added '
+            'after enabling. \nEnabling this also turns on asynchronous '
+            'rendering.'
+        ),
+        validation_alias=AliasChoices(
+            'progressive_loading', 'napari_progressive_loading'
+        ),
+        json_schema_extra={'requires_restart': False},
+    )
+
     autoswap_buffers: bool = Field(
         False,
         title=trans._('Enable autoswapping rendering buffers.'),
