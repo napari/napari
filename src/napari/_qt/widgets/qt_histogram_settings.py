@@ -13,7 +13,6 @@ from qtpy.QtWidgets import (
 
 from napari._qt.utils import qt_signals_blocked
 from napari.utils.events.event_utils import connect_setattr, disconnect_events
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from napari.components.histogram import HistogramModel
@@ -57,19 +56,17 @@ class QtHistogramSettingsWidget(QWidget):
         self.mode_combobox.addItems(['canvas', 'full'])
         self.mode_combobox.setCurrentText(histogram_model.mode)
         self.mode_combobox.setToolTip(
-            trans._(
-                'Compute histogram from data shown on canvas or full volume'
-            )
+            'Compute histogram from data shown on canvas or full volume'
         )
         self.mode_combobox.currentTextChanged.connect(self._on_mode_change)
         histogram_model.events.mode.connect(self._on_model_mode_change)
         layout.addWidget(self.mode_combobox)
 
         # Log scale checkbox
-        self.log_scale_checkbox = QCheckBox(trans._('log'))
+        self.log_scale_checkbox = QCheckBox('log')
         self.log_scale_checkbox.setChecked(histogram_model.log_scale)
         self.log_scale_checkbox.setToolTip(
-            trans._('Use logarithmic scale for histogram counts')
+            'Use logarithmic scale for histogram counts'
         )
         connect_setattr(
             self.log_scale_checkbox.toggled,

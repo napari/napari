@@ -29,13 +29,7 @@ class QtModeRadioButton(QRadioButton):
     """
 
     def __init__(
-        self,
-        layer,
-        button_name,
-        mode,
-        *,
-        tooltip=None,
-        checked=False,
+        self, layer, button_name, mode, *, tooltip=None, checked=False
     ) -> None:
         super().__init__()
 
@@ -46,7 +40,8 @@ class QtModeRadioButton(QRadioButton):
         self.setFixedWidth(28)
         self.setFixedHeight(28)
         self.mode = mode
-        self.toggled.connect(self._set_mode)
+        if mode is not None:
+            self.toggled.connect(self._set_mode)
 
     def _set_mode(self, mode_selected):
         """Toggle the mode associated with the layer.
@@ -66,7 +61,7 @@ class QtModeRadioButton(QRadioButton):
 
 
 class QtModePushButton(QPushButton):
-    """Create a push button that triggers a specific action.
+    """Creates a radio button that can trigger a specific action.
 
     Parameters
     ----------
@@ -86,14 +81,7 @@ class QtModePushButton(QPushButton):
         The layer instance that this button controls.
     """
 
-    def __init__(
-        self,
-        layer,
-        button_name,
-        *,
-        slot=None,
-        tooltip=None,
-    ) -> None:
+    def __init__(self, layer, button_name, *, slot=None, tooltip=None) -> None:
         super().__init__()
 
         self.layer = layer

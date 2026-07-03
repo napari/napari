@@ -48,6 +48,7 @@ class QtBaseImageControls(QtLayerControls):
         self._gamma_slider_control = QtGammaSliderControl(self, layer)
         self._add_widget_controls(self._gamma_slider_control)
         self._histogram_control = None
+        # This is because this is shared by both Surface and Image layers
         if isinstance(layer, Image):
             self._histogram_control = QtHistogramControl(self, layer)
             self._add_widget_controls(self._histogram_control)

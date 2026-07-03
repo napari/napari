@@ -127,7 +127,7 @@ class QContrastLimitsPopup(QtPopup):
 
         clim_row = QHBoxLayout()
         clim_row.setContentsMargins(0, 0, 0, 0)
-        clim_row.addWidget(QLabel(trans._('contrast limits:')))
+        clim_row.addWidget(QLabel('contrast limits:'))
         clim_row.addWidget(self.slider)
         self._layout.addLayout(clim_row)
 
@@ -156,15 +156,13 @@ class QContrastLimitsPopup(QtPopup):
         self.gamma_slider.setMaximum(2.0)
         self.gamma_slider.setSingleStep(0.02)
         self.gamma_slider.setValue(layer.gamma)
-        self.gamma_slider.setToolTip(
-            trans._('Adjust gamma correction (0.2 - 2.0)')
-        )
+        self.gamma_slider.setToolTip('Adjust gamma correction (0.2 - 2.0)')
         connect_setattr(self.gamma_slider.valueChanged, layer, 'gamma')
         connect_setattr(layer.events.gamma, self.gamma_slider, 'setValue')
 
         gamma_row = QHBoxLayout()
         gamma_row.setContentsMargins(0, 0, 0, 0)
-        gamma_row.addWidget(QLabel(trans._('gamma:')))
+        gamma_row.addWidget(QLabel('gamma:'))
         gamma_row.addWidget(self.gamma_slider)
         self._layout.addLayout(gamma_row)
 
@@ -184,7 +182,7 @@ class QContrastLimitsPopup(QtPopup):
 
         reset_btn = QPushButton('reset')
         reset_btn.setObjectName('reset_clims_button')
-        reset_btn.setToolTip(trans._('Autoscale contrast to data range'))
+        reset_btn.setToolTip('Autoscale contrast to data range')
         reset_btn.setFixedWidth(45)
         reset_btn.clicked.connect(reset)
         button_layout.addWidget(reset_btn)
@@ -362,7 +360,7 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
             self.histogram_button = QtModePushButton(
                 self._layer,
                 'histogram',
-                tooltip=trans._(
+                tooltip=(
                     'Left click to toggle histogram in layer controls.\n'
                     'Right click to open histogram popup.'
                 ),
