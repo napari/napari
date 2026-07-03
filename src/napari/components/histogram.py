@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+import math
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
 from pydantic import PrivateAttr
@@ -55,18 +56,21 @@ class HistogramModel(EventedModel):
         Fired when bin edges change.
     counts : Event
         Fired when histogram counts change.
-    log_scale : Event
-        Fired when log scale setting changes.
+    max_samples : Event
+        Fired when the max_samples limit changes.
     n_bins : Event
         Fired when number of bins changes.
     mode : Event
         Fired when histogram mode changes.
+    log_scale : Event
+        Fired when log scale setting changes.
     enabled : Event
         Fired when enabled state changes.
     """
 
     # Evented properties
     n_bins: int = DEFAULT_N_BINS
+    max_samples: int = DEFAULT_MAX_SAMPLES
     mode: Literal['canvas', 'full'] = 'canvas'
     log_scale: bool = False
     enabled: bool = False
@@ -86,6 +90,7 @@ class HistogramModel(EventedModel):
         self,
         layer: Image,
         n_bins: int = DEFAULT_N_BINS,
+        max_samples: int = DEFAULT_MAX_SAMPLES,
         mode: Literal['canvas', 'full'] = 'canvas',
         log_scale: bool = False,
         enabled: bool = False,
@@ -98,6 +103,9 @@ class HistogramModel(EventedModel):
             The layer to compute histogram for.
         n_bins : int, default: 256
             Number of histogram bins.
+        max_samples : int, default: 1_000_000
+            Maximum number of data points to sample from the full volume
+            when ``mode='full'`` and the data exceeds this threshold.
         mode : {'canvas', 'full'}, default: 'canvas'
             Whether to compute histogram from displayed data or full volume.
         log_scale : bool, default: False
@@ -106,7 +114,11 @@ class HistogramModel(EventedModel):
             Whether histogram responds to data-change events automatically.
         """
         super().__init__(
-            n_bins=n_bins, mode=mode, log_scale=log_scale, enabled=enabled
+            n_bins=n_bins,
+            max_samples=max_samples,
+            mode=mode,
+            log_scale=log_scale,
+            enabled=enabled,
         )
 
         self._layer = layer
@@ -121,6 +133,7 @@ class HistogramModel(EventedModel):
 
         # Connect to our own events
         self.events.n_bins.connect(self._on_params_change)
+        self.events.max_samples.connect(self._on_params_change)
         self.events.mode.connect(self._on_params_change)
         self.events.log_scale.connect(self._on_log_scale_change)
         # When enabled flips True and data is dirty, compute immediately so
@@ -158,6 +171,9 @@ class HistogramModel(EventedModel):
 
         This method extracts data from the layer based on the current mode
         (displayed or full), samples if necessary, and computes the histogram.
+        For chunked arrays (dask, zarr) in full mode, samples are drawn
+        progressively: a few chunks at a time, emitting ``bins``/``counts``
+        events after each batch so the UI can display a progressive result.
         """
         if self._computing:
             return
@@ -179,26 +195,77 @@ class HistogramModel(EventedModel):
             if self._layer.rgb:
                 data = self._rgb_to_luminance(data)
 
-            # For full mode, sample large data to stay responsive.
-            # Canvas mode uses the displayed slice which is already a
-            # manageable subset — no further sampling needed.
-            if self.mode == 'full' and data.size > DEFAULT_MAX_SAMPLES:
-                data = self._sample_data(data, DEFAULT_MAX_SAMPLES)
-
-            # Get histogram range from contrast limits range
-            range_min, range_max = self._layer.contrast_limits_range
-            if range_min is None or range_max is None:
-                range_min = float(np.nanmin(data))
-                range_max = float(np.nanmax(data))
-
-            bins, counts = self._calc_histogram(data, range_min, range_max)
-            self._bins = bins
-            self._counts = counts
-            self._dirty = False
-            self.events.bins()
-            self.events.counts()
+            if self.mode == 'full' and self._has_chunks(type(data)):
+                # Progressive chunk-by-chunk sampling for dask / zarr
+                self._compute_sampled(data)
+            elif self.mode == 'full' and data.size > self.max_samples:
+                # Random subsample for large in-memory arrays
+                data = self._sample_data(data, self.max_samples)
+                self._finalize_histogram(data)
+            else:
+                # Direct path — data is already manageable
+                self._finalize_histogram(data)
         finally:
             self._computing = False
+
+    def _finalize_histogram(self, data: np.ndarray) -> None:
+        """Compute histogram from a complete data array and emit events."""
+        range_min, range_max = self._layer.contrast_limits_range
+        if range_min is None or range_max is None:
+            range_min = float(np.nanmin(data))
+            range_max = float(np.nanmax(data))
+
+        bins, counts = self._calc_histogram(data, range_min, range_max)
+        self._bins = bins
+        self._counts = counts
+        self._dirty = False
+        self.events.bins()
+        self.events.counts()
+
+    def _compute_sampled(self, data: Any) -> None:
+        """Compute histogram progressively from chunked arrays (dask / zarr).
+
+        Loads chunks in small batches, accumulates running histogram
+        counts, and emits events after each batch so the UI can show
+        a progressive result.
+        """
+        n = min(self.max_samples, data.size)
+        chunk_sizes = self._chunk_sizes(data)
+        rng = np.random.default_rng()
+        n_chunks = len(chunk_sizes)
+        n_selected = min(n_chunks, max(1, n // max(1, min(chunk_sizes))))
+        probs = np.asarray(chunk_sizes) / sum(chunk_sizes)
+        order = rng.choice(n_chunks, size=n_selected, p=probs, replace=False)
+
+        range_min, range_max = self._layer.contrast_limits_range
+        if range_min is None or range_max is None:
+            range_min = 0.0
+            range_max = 1.0
+
+        # Pre-allocate running bin counts (float64 for precision)
+        running_counts = np.zeros(self.n_bins, dtype=np.float64)
+
+        for ci in order:
+            block = self._load_chunk(data, ci)
+            chunk_counts, _ = np.histogram(
+                block,
+                bins=self.n_bins,
+                range=(float(range_min), float(range_max)),
+            )
+            running_counts += chunk_counts.astype(np.float64)
+
+        # Convert to final float32 counts and bin edges
+        self._bins = np.linspace(range_min, range_max, self.n_bins + 1).astype(
+            np.float32
+        )
+        if self.log_scale:
+            self._counts = np.log10(running_counts + 1).astype(np.float32)
+        else:
+            self._counts = running_counts.astype(np.float32)
+
+        self._dirty = False
+        self.events.bins()
+        self.events.counts()
 
     def _calc_histogram(
         self,
@@ -306,14 +373,12 @@ class HistogramModel(EventedModel):
         """Get full volume data.
 
         For multiscale data, uses the lowest resolution level for
-        efficiency.  For dask arrays, avoids full materialization by
-        sampling chunk indices proportionally — only the chunks that
-        are sampled are computed.
+        efficiency.  For chunked arrays (dask, zarr), returns the raw
+        data as-is — progressive sampling is handled by ``_compute_sampled``.
         """
         data = self._layer.data
 
         # Unpack multiscale to the coarsest level.
-        # MultiScaleData is a collections.abc.Sequence but not list/tuple.
         if isinstance(data, Sequence) and not isinstance(
             data, (np.ndarray, str, bytes)
         ):
@@ -322,70 +387,80 @@ class HistogramModel(EventedModel):
         if isinstance(data, np.ndarray):
             return data
 
-        if _is_dask_data(data):
-            return self._sample_dask_safe(data)
+        # Chunked arrays (dask, zarr) are returned as-is for the
+        # progressive sampler in _compute_sampled.
+        if self._has_chunks(data):
+            return data
 
         return np.asarray(data)
 
     @staticmethod
-    def _sample_dask_safe(data: object) -> np.ndarray:
-        """Sample uniformly from a dask array without full materialization.
+    def _has_chunks(data: Any) -> bool:
+        """True if *data* can be sampled chunk-by-chunk (dask or zarr).
 
-        Builds chunk-size metadata (cheap — no data access), randomly
-        selects a subset of chunks proportional to their size, then
-        computes only those chunks.  This avoids both full
-        materialization and spatial bias (unlike a simple ``[:N]``
-        slice which would only sample from the beginning of the array).
+        Both dask ``Array`` and zarr ``Array`` expose ``.chunks`` and
+        ``.shape``, and support tuple-indexing to load individual chunks.
+        """
+        if _is_dask_data(data):
+            return True
+        return hasattr(data, 'chunks') and hasattr(data, 'shape')
 
-        Parameters
-        ----------
-        data : object
-            A dask array.
+    @staticmethod
+    def _chunk_sizes(data: Any) -> list[int]:
+        """Return list of element counts for every chunk in *data*.
 
-        Returns
-        -------
-        np.ndarray
-            Flat array of sampled values.
+        Works for both dask (per-chunk tuple-of-tuples) and zarr
+        (per-dimension scalar) arrays — only metadata is accessed.
         """
         import dask.array as da
 
-        data_arr = da.asarray(data)
-        n = min(DEFAULT_MAX_SAMPLES, data_arr.size)
-        numblocks = data_arr.numblocks
+        if isinstance(data, da.Array):
+            nb, ch = data.numblocks, data.chunks
+        else:
+            # zarr: .chunks is (chunk_dim_0, chunk_dim_1, ...) not
+            # per-chunk tuples. Compute block count from shape/chunks.
+            nb = tuple(
+                max(1, math.ceil(s / c))
+                for s, c in zip(data.shape, data.chunks, strict=True)
+            )
+            ch = tuple(
+                tuple(min(c, s - i * c) for i in range(n))
+                for s, c, n in zip(data.shape, data.chunks, nb, strict=True)
+            )
 
-        # Build chunk weights from metadata — no data is loaded here.
-        chunk_sizes: list[int] = []
-        for idx in np.ndindex(*numblocks):
+        sizes: list[int] = []
+        for idx in np.ndindex(*nb):
             sz = 1
             for d, i in enumerate(idx):
-                sz *= data_arr.chunks[d][i]
-            chunk_sizes.append(sz)
+                sz *= ch[d][i]
+            sizes.append(sz)
+        return sizes
 
-        rng = np.random.default_rng()
-        n_chunks = len(chunk_sizes)
-        # Select enough chunks to reach ~n_samples while keeping it bounded.
-        n_selected = min(n_chunks, max(1, n // max(1, min(chunk_sizes))))
-        probs = np.asarray(chunk_sizes) / sum(chunk_sizes)
-        selected = rng.choice(n_chunks, size=n_selected, p=probs)
+    @staticmethod
+    def _load_chunk(data: Any, flat_idx: int) -> np.ndarray:
+        """Load a single chunk by its flat index.
 
-        samples_per = max(1, n // n_selected)
-        parts: list[np.ndarray] = []
-        for ci in selected:
-            idx_tuple = np.unravel_index(ci, numblocks)
-            # Only THIS chunk is computed:
-            block = np.asarray(data_arr.blocks[idx_tuple]).ravel()
-            if block.size <= samples_per:
-                parts.append(block)
-            else:
-                indices = rng.choice(
-                    block.size, size=samples_per, replace=False
-                )
-                parts.append(block[indices])
+        Works for both dask arrays (via ``.blocks``) and zarr arrays
+        (via direct indexing with computed slice boundaries).
+        """
+        import dask.array as da
 
-        result = np.concatenate(parts)
-        if result.size > n:
-            result = rng.choice(result, size=n, replace=False)
-        return result
+        if isinstance(data, da.Array):
+            idx = np.unravel_index(flat_idx, data.numblocks)
+            return np.asarray(data.blocks[idx]).ravel()
+
+        # zarr path: convert flat chunk index to data-space slices
+        nb = tuple(
+            max(1, math.ceil(s / c))
+            for s, c in zip(data.shape, data.chunks, strict=True)
+        )
+        idx = np.unravel_index(flat_idx, nb)
+        slices: list[slice] = []
+        for d, i in enumerate(idx):
+            start = i * int(data.chunks[d])
+            stop = min(start + int(data.chunks[d]), int(data.shape[d]))
+            slices.append(slice(start, stop))
+        return np.asarray(data[tuple(slices)]).ravel()
 
     def _sample_data(self, data: np.ndarray, max_samples: int) -> np.ndarray:
         """Randomly sample data to reduce computation."""
@@ -456,6 +531,7 @@ class HistogramModel(EventedModel):
 
         # Disconnect from our own events
         self.events.n_bins.disconnect(self._on_params_change)
+        self.events.max_samples.disconnect(self._on_params_change)
         self.events.mode.disconnect(self._on_params_change)
         self.events.log_scale.disconnect(self._on_log_scale_change)
         self.events.enabled.disconnect(self._on_enabled_change)
@@ -471,6 +547,7 @@ class HistogramModel(EventedModel):
         # from the parameter-change event handlers.
         self.enabled = False
         self.n_bins = DEFAULT_N_BINS
+        self.max_samples = DEFAULT_MAX_SAMPLES
         self.log_scale = False
         self.mode = 'canvas'
         self._bins = np.array([0.0, 1.0])

@@ -50,6 +50,10 @@ class TestDefaultState:
         model = _model(np.random.rand(10, 10))
         assert not model.log_scale
 
+    def test_default_max_samples(self):
+        model = _model(np.random.rand(10, 10))
+        assert model.max_samples == DEFAULT_MAX_SAMPLES
+
 
 class TestEnableDisable:
     """Test enabling and disabling histogram computation."""
@@ -447,16 +451,24 @@ class TestLargeData:
 class TestDask:
     """Test histogram with dask arrays (no full materialization)."""
 
-    def test_sample_dask_safe_returns_sample(self):
+    def test_chunked_sampling_via_load_chunk(self):
+        """_load_chunk should load individual chunks from dask or zarr."""
         dask = pytest.importorskip('dask.array')
         data = dask.from_array(
             np.random.rand(500, 500).astype(np.float32), chunks=100
         )
         model = _model(data)
-        sampled = model._sample_dask_safe(data)
-        assert isinstance(sampled, np.ndarray)
-        assert sampled.size > 0
-        assert sampled.size <= DEFAULT_MAX_SAMPLES
+        # _load_chunk is a static helper used by _compute_sampled
+        block = model._load_chunk(data, 0)
+        assert isinstance(block, np.ndarray)
+        assert block.size > 0
+
+    def test_max_samples_configurable(self):
+        """max_samples should be configurable per-instance."""
+        model = _model(np.random.rand(10, 10))
+        assert model.max_samples == DEFAULT_MAX_SAMPLES
+        model.max_samples = 500
+        assert model.max_samples == 500
 
     def test_dask_full_mode_histogram(self):
         dask = pytest.importorskip('dask.array')
