@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 import numpy as np
 from qtpy.QtWidgets import QVBoxLayout, QWidget
@@ -15,6 +15,8 @@ from napari.utils.events.event_utils import disconnect_events
 from napari.utils.theme import get_theme
 
 if TYPE_CHECKING:
+    from collections.abc import Generator
+
     from pydantic_extra_types.color import Color
 
     from napari.layers import Image
@@ -200,14 +202,14 @@ class QtHistogramWidget(QWidget):
         disconnect_events(self._histogram.events, self)
         disconnect_events(self.layer.events, self)
 
-        def _gen():
+        def _gen() -> Generator[tuple[np.ndarray, np.ndarray], None, None]:
             yield from self._histogram.compute_progressive()
 
         worker = create_worker(_gen)  # type: ignore[arg-type]
         worker.yielded.connect(self._on_partial_histogram)
         worker.finished.connect(self._on_async_compute_done)
         worker.start()
-        self._compute_worker = worker
+        self._compute_worker = cast(GeneratorWorker, worker)
 
     def _on_partial_histogram(
         self, bins_counts: tuple[np.ndarray, np.ndarray]
