@@ -22,20 +22,20 @@ from napari.utils.translations import trans
 __all__ = ('Q_LAYERLIST_CONTEXT_ACTIONS', 'is_valid_spatial_in_clipboard')
 
 
-def _numpy_to_list_mat_value(value: Any) -> Any:
+def _numpy_to_list_map_value(value: Any) -> Any:
     if isinstance(value, np.ndarray):
         return value.tolist()
     if isinstance(value, dict):
         return _numpy_to_list(value)
     if isinstance(value, list):
-        return [_numpy_to_list_mat_value(v) for v in value]
+        return [_numpy_to_list_map_value(v) for v in value]
     if isinstance(value, tuple):
-        return tuple(_numpy_to_list_mat_value(v) for v in value)
+        return tuple(_numpy_to_list_map_value(v) for v in value)
     return value
 
 
 def _numpy_to_list(d: dict) -> dict:
-    return {k: _numpy_to_list_mat_value(v) for k, v in d.items()}
+    return {k: _numpy_to_list_map_value(v) for k, v in d.items()}
 
 
 class UnitsEncoder(json.JSONEncoder):
