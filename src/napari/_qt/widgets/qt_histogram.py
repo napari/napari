@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, cast
 
 import numpy as np
 from qtpy.QtWidgets import QVBoxLayout, QWidget
 from vispy.scene import SceneCanvas
 
-from napari._qt.qthreading import create_worker
+from napari._qt.qthreading import FunctionWorker, create_worker
 from napari._vispy.visuals.histogram import HistogramVisual
 from napari.settings import get_settings
 from napari.utils.events.event_utils import disconnect_events
@@ -17,7 +17,6 @@ from napari.utils.theme import get_theme
 if TYPE_CHECKING:
     from pydantic_extra_types.color import Color
 
-    from napari._qt.qthreading import FunctionWorker
     from napari.layers import Image
     from napari.utils.events import Event
 
@@ -192,9 +191,9 @@ class QtHistogramWidget(QWidget):
         worker = create_worker(_work)  # type: ignore[arg-type]
         worker.finished.connect(self._on_async_compute_done)
         worker.start()
-        self._compute_worker = worker
+        self._compute_worker = cast(FunctionWorker, worker)
 
-    def _on_async_compute_done(self) -> None:
+    def _on_async_compute_done(self, _: Any = None) -> None:
         """Called on the main thread when background compute finishes.
 
         Reconnects event listeners and reads the freshly computed
