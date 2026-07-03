@@ -80,6 +80,9 @@ class VispyFloatingAxesOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         # the last NumPy axis corresponds to the first Vispy axis
         reversed_axes = [self.viewer.dims.ndim - 1 - a for a in axes]
 
+        # In 3D mode the default spacing (0.3) looks too tight in the
+        # floating axes viewport, so we use a larger offset for labels.
+        text_offset = 0.45 if len(axes) == 3 else 0.3
         self.node.axes.set_data(
             axes=axes,
             reversed_axes=reversed_axes,
@@ -87,6 +90,7 @@ class VispyFloatingAxesOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
             bg_color=get_theme(self.viewer.theme).canvas,
             dashed=self.overlay.dashed,
             arrows=self.overlay.arrows,
+            text_offset=text_offset,
         )
         self._on_labels_text_change()
         self._on_angles_change()
