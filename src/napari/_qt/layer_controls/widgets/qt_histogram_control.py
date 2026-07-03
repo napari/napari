@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, cast
 
 from qtpy.QtWidgets import (
+    QSizePolicy,
     QVBoxLayout,
     QWidget,
 )
@@ -57,6 +58,13 @@ class QtHistogramControl(QtWidgetControlsBase):  # type: ignore[metaclass]
         # button toggle, never inserted/removed from the layout.
         self.content_widget = QWidget(parent)
         self.content_widget.hide()
+        # Set size policy to Ignored so the form layout doesn't reserve
+        # space for the hidden widget, preventing wide controls after
+        # the histogram is toggled off.
+        self.content_widget.setSizePolicy(
+            QSizePolicy.Policy.Ignored,
+            QSizePolicy.Policy.Ignored,
+        )
         self.histogram_content: QtHistogramContentWidget | None = None
         self.histogram_widget: QtHistogramWidget | None = None
         self.settings_widget: QtHistogramSettingsWidget | None = None

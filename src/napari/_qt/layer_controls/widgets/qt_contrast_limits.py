@@ -10,6 +10,7 @@ from qtpy.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QPushButton,
+    QSizePolicy,
     QVBoxLayout,
     QWidget,
 )
@@ -431,11 +432,22 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
         # in the form layout (inserted once by QtBaseImageControls) so we
         # never need to search layout rows.
         if visible:
+            # Restore size policy so the form layout allocates space
             histogram_control.content_widget.show()
+            histogram_control.content_widget.setSizePolicy(
+                QSizePolicy.Policy.Preferred,
+                QSizePolicy.Policy.Preferred,
+            )
             # Enable histogram computation; _on_enabled_change triggers
             # an immediate compute if there is pending dirty data.
             self._layer.histogram.enabled = True
         else:
+            # Set size policy to Ignored so the form layout collapses the
+            # column and doesn't reserve space for the hidden widget
+            histogram_control.content_widget.setSizePolicy(
+                QSizePolicy.Policy.Ignored,
+                QSizePolicy.Policy.Ignored,
+            )
             histogram_control.content_widget.hide()
             # Disable histogram computation
             self._layer.histogram.enabled = False
