@@ -17,6 +17,7 @@ from napari.utils.theme import get_theme
 if TYPE_CHECKING:
     from pydantic_extra_types.color import Color
 
+    from napari._qt.qthreading import FunctionWorker
     from napari.layers import Image
     from napari.utils.events import Event
 
@@ -66,7 +67,7 @@ class QtHistogramWidget(QWidget):
         self._histogram = layer.histogram
         self._appearance = get_settings().appearance
         self._updating = False
-        self._compute_worker = None
+        self._compute_worker: FunctionWorker | None = None
 
         theme = get_theme(self._appearance.theme)
 
@@ -184,12 +185,14 @@ class QtHistogramWidget(QWidget):
         self._histogram.events.bins.disconnect(self._on_histogram_change)
         self._histogram.events.counts.disconnect(self._on_histogram_change)
 
-        def _work():
+        def _work() -> None:
             self._histogram.compute()
 
-        self._compute_worker = create_worker(_work)
-        self._compute_worker.finished.connect(self._on_async_compute_done)
-        self._compute_worker.start()
+        # mypy: create_worker expects FunctionType but accepts Callable at runtime
+        worker = create_worker(_work)  # type: ignore[arg-type]
+        worker.finished.connect(self._on_async_compute_done)
+        worker.start()
+        self._compute_worker = worker
 
     def _on_async_compute_done(self) -> None:
         """Called on the main thread when background compute finishes.
