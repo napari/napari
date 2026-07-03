@@ -273,3 +273,43 @@ def test_two_image_layers_independent_histograms(qtbot, make_napari_viewer):
     qtbot.mouseClick(button_a, Qt.MouseButton.LeftButton)
     assert layer_a.histogram.enabled
     assert not layer_b.histogram.enabled
+
+
+def test_histogram_popup_and_inline_coexistence(qtbot, make_napari_viewer):
+    """Opening the histogram popup while inline histogram is showing should work.
+
+    Both the inline (layer controls) and popup histogram should be functional
+    without conflicting. Closing the popup should not disable the inline histogram.
+    """
+    viewer = make_napari_viewer()
+    layer = viewer.add_image(np.random.rand(10, 10))
+    controls = viewer.window._qt_viewer.controls.widgets[layer]
+    control = controls._histogram_control
+    assert control is not None
+
+    button = controls._contrast_limits_control.histogram_button
+    assert button is not None
+
+    # 1. Enable inline histogram via left-click
+    qtbot.mouseClick(button, Qt.MouseButton.LeftButton)
+    assert not control.content_widget.isHidden()
+    assert layer.histogram.enabled
+
+    # 2. Open popup via right-click (while inline is showing)
+    qtbot.mouseClick(button, Qt.MouseButton.RightButton)
+    popup = controls._contrast_limits_control.clim_popup
+    assert popup is not None
+    assert popup.histogram_content is not None
+
+    # The popup's histogram should have its own content widget instance
+    assert popup.histogram_content is not control.histogram_content
+
+    # 3. Close popup — inline histogram should still be enabled
+    popup.close()
+    assert layer.histogram.enabled
+    assert not control.content_widget.isHidden()
+
+    # 4. Toggle inline off
+    qtbot.mouseClick(button, Qt.MouseButton.LeftButton)
+    assert control.content_widget.isHidden()
+    assert not layer.histogram.enabled
