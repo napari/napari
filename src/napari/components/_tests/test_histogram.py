@@ -8,185 +8,153 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
+from napari.components.histogram import DEFAULT_MAX_SAMPLES
 from napari.layers import Image
 
 
-@pytest.fixture
-def rng():
-    return np.random.default_rng(0)
+def _model(data, **kwargs):
+    """Create an Image layer and return its HistogramModel.
 
-
-def _image(data, **kwargs):
-    """Helper to create an Image layer with histogram model."""
-    return Image(data, **kwargs)
+    ``HistogramModel`` requires an ``Image`` layer to construct, so
+    we create one and extract the model.  Tests that exercise pure
+    computation methods (``_calc_histogram``, ``_rgb_to_luminance``,
+    ``_sample_data``, ``_sample_dask_safe``) call the model directly
+    after construction.
+    """
+    return Image(data, **kwargs).histogram
 
 
 class TestDefaultState:
     """Test the default state of HistogramModel."""
 
     def test_starts_disabled(self):
-        img = _image(np.random.rand(10, 10))
-        assert not img.histogram.enabled
+        model = _model(np.random.rand(10, 10))
+        assert not model.enabled
 
     def test_empty_bins_and_counts_when_disabled(self):
-        img = _image(np.random.rand(10, 10))
-        assert not img.histogram.enabled
+        model = _model(np.random.rand(10, 10))
+        assert not model.enabled
         # Accessing bins/counts triggers lazy computation regardless
-        assert len(img.histogram.bins) >= 2
-        assert len(img.histogram.counts) >= 1
+        assert len(model.bins) >= 2
+        assert len(model.counts) >= 1
 
     def test_default_mode_canvas(self):
-        img = _image(np.random.rand(10, 10))
-        assert img.histogram.mode == 'canvas'
+        model = _model(np.random.rand(10, 10))
+        assert model.mode == 'canvas'
 
     def test_default_n_bins_256(self):
-        img = _image(np.random.rand(10, 10))
-        assert img.histogram.n_bins == 256
+        model = _model(np.random.rand(10, 10))
+        assert model.n_bins == 256
 
     def test_default_log_scale_false(self):
-        img = _image(np.random.rand(10, 10))
-        assert not img.histogram.log_scale
+        model = _model(np.random.rand(10, 10))
+        assert not model.log_scale
 
 
 class TestEnableDisable:
     """Test enabling and disabling histogram computation."""
 
     def test_enable_triggers_computation(self):
-        img = _image(np.random.rand(10, 10).astype(np.float32))
-        img.histogram.enabled = True
-        assert img.histogram._dirty is False or len(img.histogram.counts) > 0
+        model = _model(np.random.rand(10, 10).astype(np.float32))
+        model.enabled = True
+        assert model._dirty is False or len(model.counts) > 0
 
     def test_disable_clears_cache(self):
-        img = _image(np.random.rand(10, 10))
-        img.histogram.enabled = True
-        # Compute once
-        _ = img.histogram.counts
-        img.histogram.enabled = False
+        model = _model(np.random.rand(10, 10))
+        model.enabled = True
+        _ = model.counts  # Compute once
+        model.enabled = False
         # Disabling doesn't clear, but marks dirty for next enable
-        assert img.histogram._dirty or not img.histogram.enabled
+        assert model._dirty or not model.enabled
 
     def test_no_computation_when_disabled(self):
-        img = _image(np.random.rand(10, 10))
-        img.histogram.enabled = False
-        # Change data while disabled
-        img.data = np.random.rand(10, 10)
-        # Should still be computed lazily on access
-        assert len(img.histogram.bins) >= 2
+        model = _model(np.random.rand(10, 10))
+        model.enabled = False
+        # Change data while disabled — should still compute lazily on access
+        model._layer.data = np.random.rand(10, 10)
+        assert len(model.bins) >= 2
 
     def test_reset_clears_and_disables(self):
-        img = _image(np.random.rand(10, 10))
-        img.histogram.enabled = True
-        _ = img.histogram.counts  # trigger compute
-        img.histogram.reset()
-        assert not img.histogram.enabled
-        assert img.histogram.mode == 'canvas'
-        assert img.histogram.n_bins == 256
-        assert not img.histogram.log_scale
+        model = _model(np.random.rand(10, 10))
+        model.enabled = True
+        _ = model.counts  # trigger compute
+        model.reset()
+        assert not model.enabled
+        assert model.mode == 'canvas'
+        assert model.n_bins == 256
+        assert not model.log_scale
 
     def test_reset_then_re_enable_computes(self):
         """Reset followed by re-enable should produce fresh counts."""
-        img = _image(np.random.rand(10, 10))
-        img.histogram.enabled = True
-        _ = img.histogram.counts  # trigger initial compute
-        img.histogram.reset()
-        img.histogram.enabled = True
-        assert img.histogram._dirty is False
-        counts = img.histogram.counts
+        model = _model(np.random.rand(10, 10))
+        model.enabled = True
+        _ = model.counts  # trigger initial compute
+        model.reset()
+        model.enabled = True
+        assert model._dirty is False
+        counts = model.counts
         assert len(counts) == 256
 
 
 class TestDataTypes:
     """Test histogram with various data types."""
 
-    def test_uint8(self):
-        data = np.random.randint(0, 255, (20, 20)).astype(np.uint8)
-        img = _image(data)
-        img.histogram.enabled = True
-        counts = img.histogram.counts
-        assert len(counts) == img.histogram.n_bins
-        assert counts.sum() > 0
-
-    def test_uint16(self):
-        data = np.random.randint(0, 1000, (20, 20)).astype(np.uint16)
-        img = _image(data)
-        img.histogram.enabled = True
-        counts = img.histogram.counts
-        assert len(counts) > 0
-        assert counts.sum() > 0
-
-    def test_float32(self):
-        data = np.random.rand(20, 20).astype(np.float32)
-        img = _image(data)
-        img.histogram.enabled = True
-        counts = img.histogram.counts
-        assert len(counts) > 0
-        assert counts.sum() > 0
-
-    def test_float64(self):
-        data = np.random.rand(20, 20)
-        img = _image(data)
-        img.histogram.enabled = True
-        counts = img.histogram.counts
-        assert len(counts) > 0
-        assert counts.sum() > 0
-
-    def test_int16(self):
-        data = np.random.randint(-100, 100, (20, 20)).astype(np.int16)
-        img = _image(data)
-        img.histogram.enabled = True
-        counts = img.histogram.counts
-        assert len(counts) > 0
+    @pytest.mark.parametrize(
+        'dtype',
+        ['uint8', 'uint16', 'float32', 'float64', 'int16'],
+    )
+    def test_various_dtypes(self, dtype):
+        rng = np.random.default_rng(0)
+        if np.issubdtype(dtype, np.integer):
+            data = rng.integers(0, 255, (20, 20), dtype=dtype)
+        else:
+            data = rng.random((20, 20)).astype(dtype)
+        model = _model(data)
+        model.enabled = True
+        counts = model.counts
+        assert len(counts) == model.n_bins
         assert counts.sum() > 0
 
     def test_all_zeros(self):
-        img = _image(np.zeros((10, 10), dtype=np.float32))
-        img.histogram.enabled = True
-        counts = img.histogram.counts
+        model = _model(np.zeros((10, 10), dtype=np.float32))
+        model.enabled = True
+        counts = model.counts
         assert len(counts) > 0
 
     def test_constant_data(self):
-        img = _image(np.full((10, 10), 42.0, dtype=np.float32))
-        img.histogram.enabled = True
-        counts = img.histogram.counts
+        model = _model(np.full((10, 10), 42.0, dtype=np.float32))
+        model.enabled = True
+        counts = model.counts
         assert len(counts) > 0
 
     def test_uniform_data(self):
         """All same value — histogram should handle gracefully."""
-        img = _image(np.full((10, 10), 5, dtype=np.uint8))
-        img.histogram.enabled = True
-        counts = img.histogram.counts
+        model = _model(np.full((10, 10), 5, dtype=np.uint8))
+        model.enabled = True
+        counts = model.counts
         assert counts.sum() > 0
 
     def test_single_element(self):
-        img = _image(np.array([[42.0]], dtype=np.float32))
-        img.histogram.enabled = True
-        counts = img.histogram.counts
+        model = _model(np.array([[42.0]], dtype=np.float32))
+        model.enabled = True
+        counts = model.counts
         assert len(counts) > 0
-
-    def test_empty_data(self):
-        """A single-point (1x1) layer — histogram should not crash."""
-        img = _image(np.zeros((1, 1), dtype=np.float32))
-        img.histogram.enabled = True
-        bins = img.histogram.bins
-        counts = img.histogram.counts
-        assert len(bins) >= 2
-        assert len(counts) >= 1
 
     def test_with_nan(self):
         data = np.random.rand(20, 20)
         data[0, 0] = np.nan
-        img = _image(data.astype(np.float32))
-        img.histogram.enabled = True
-        counts = img.histogram.counts
+        model = _model(data.astype(np.float32))
+        model.enabled = True
+        counts = model.counts
         assert counts.sum() > 0
 
     def test_with_inf(self):
         data = np.random.rand(20, 20)
         data[0, 0] = np.inf
         data[0, 1] = -np.inf
-        img = _image(data.astype(np.float32))
-        img.histogram.enabled = True
-        counts = img.histogram.counts
+        model = _model(data.astype(np.float32))
+        model.enabled = True
+        counts = model.counts
         assert counts.sum() > 0
 
 
@@ -194,41 +162,40 @@ class TestCustomNBins:
     """Test custom bin counts."""
 
     def test_custom_bins(self):
-        img = _image(np.random.rand(20, 20), colormap='gray')
-        img.histogram.enabled = True
-        img.histogram.n_bins = 128
-        # Changing n_bins triggers recomputation via _on_params_change.
-        counts = img.histogram.counts
+        model = _model(np.random.rand(20, 20), colormap='gray')
+        model.enabled = True
+        model.n_bins = 128
+        counts = model.counts
         assert len(counts) == 128
 
     def test_large_bins(self):
-        img = _image(np.random.rand(20, 20))
-        img.histogram.enabled = True
-        img.histogram.n_bins = 4096
-        _ = img.histogram.counts  # Should not crash
+        model = _model(np.random.rand(20, 20))
+        model.enabled = True
+        model.n_bins = 4096
+        _ = model.counts  # Should not crash
 
     def test_small_bins(self):
-        img = _image(np.random.rand(20, 20))
-        img.histogram.enabled = True
-        img.histogram.n_bins = 2
-        _ = img.histogram.counts  # Should not crash
+        model = _model(np.random.rand(20, 20))
+        model.enabled = True
+        model.n_bins = 2
+        _ = model.counts  # Should not crash
 
 
 class TestMode:
     """Test canvas vs full mode."""
 
     def test_canvas_mode(self):
-        img = _image(np.random.rand(5, 20, 20))
-        img.histogram.mode = 'canvas'
-        img.histogram.enabled = True
-        counts = img.histogram.counts
+        model = _model(np.random.rand(5, 20, 20))
+        model.mode = 'canvas'
+        model.enabled = True
+        counts = model.counts
         assert len(counts) > 0
 
     def test_full_mode(self):
-        img = _image(np.random.rand(5, 20, 20))
-        img.histogram.mode = 'full'
-        img.histogram.enabled = True
-        counts = img.histogram.counts
+        model = _model(np.random.rand(5, 20, 20))
+        model.mode = 'full'
+        model.enabled = True
+        counts = model.counts
         assert len(counts) > 0
 
 
@@ -236,45 +203,41 @@ class TestLogScale:
     """Test log scale."""
 
     def test_log_scale_toggle(self):
-        img = _image(np.random.rand(20, 20))
-        img.histogram.enabled = True
-        img.histogram.log_scale = True
-        counts_log = img.histogram.counts
-        img.histogram.log_scale = False
-        counts_linear = img.histogram.counts
+        model = _model(np.random.rand(20, 20))
+        model.enabled = True
+        model.log_scale = True
+        counts_log = model.counts
+        model.log_scale = False
+        counts_linear = model.counts
         assert len(counts_log) == len(counts_linear)
 
     def test_log_scale_values(self):
         """Log scale should produce different values than linear."""
-        img = _image(np.random.rand(20, 20))
-        img.histogram.enabled = True
-        img.histogram.log_scale = False
-        linear = img.histogram.counts.copy()
-        img.histogram.log_scale = True
-        logged = img.histogram.counts
-        # At least some values should differ
-        if len(linear) > 0 and len(logged) > 0:
-            assert not np.array_equal(linear, logged)
+        model = _model(np.random.rand(20, 20))
+        model.enabled = True
+        model.log_scale = False
+        linear = model.counts.copy()
+        model.log_scale = True
+        logged = model.counts
+        assert not np.array_equal(linear, logged)
 
 
 class TestNBinsChange:
     """Test changing n_bins property."""
 
     def test_n_bins_change_output_length(self):
-        data = np.random.rand(20, 20)
-        img = _image(data)
-        assert len(img.histogram.counts) == 256
-        img.histogram.n_bins = 128
-        assert len(img.histogram.counts) == 128
-        assert len(img.histogram.bins) == 129
+        model = _model(np.random.rand(20, 20))
+        assert len(model.counts) == 256
+        model.n_bins = 128
+        assert len(model.counts) == 128
+        assert len(model.bins) == 129
 
     def test_contrast_limits_range_change(self):
-        data = np.random.rand(20, 20)
-        img = _image(data)
-        img.histogram.enabled = True
-        img.contrast_limits_range = [0.0, 0.5]
-        _ = img.histogram.counts  # trigger recompute
-        assert img.histogram.bins[-1] <= 0.5
+        model = _model(np.random.rand(20, 20))
+        model.enabled = True
+        model._layer.contrast_limits_range = [0.0, 0.5]
+        _ = model.counts  # trigger recompute
+        assert model.bins[-1] <= 0.5
 
 
 class TestMultiscale:
@@ -285,8 +248,8 @@ class TestMultiscale:
             np.random.rand(100, 100).astype(np.float32),
             np.random.rand(50, 50).astype(np.float32),
         ]
-        img = _image(data, multiscale=True)
-        counts = img.histogram.counts
+        model = _model(data, multiscale=True)
+        counts = model.counts
         assert counts is not None
         assert len(counts) > 0
 
@@ -296,9 +259,9 @@ class TestMultiscale:
             np.arange(2500, dtype=np.float32).reshape((50, 50)),
             np.arange(625, dtype=np.float32).reshape((25, 25)),
         ]
-        img = _image(data, multiscale=True)
-        img.histogram.mode = 'full'
-        assert img.histogram.counts.sum() == data[-1].size
+        model = _model(data, multiscale=True)
+        model.mode = 'full'
+        assert model.counts.sum() == data[-1].size
 
 
 class TestRGB:
@@ -306,27 +269,168 @@ class TestRGB:
 
     def test_rgb_image(self):
         data = np.random.randint(0, 256, size=(20, 20, 3), dtype=np.uint8)
-        img = _image(data, rgb=True)
-        assert img.histogram is not None
-        counts = img.histogram.counts
+        model = _model(data, rgb=True)
+        assert model is not None
+        counts = model.counts
         assert len(counts) > 0
+
+    def test_rgb_to_luminance(self):
+        """_rgb_to_luminance should produce a 2D luminance array."""
+        data = np.random.rand(20, 20, 3).astype(np.float32)
+        model = _model(data, rgb=True)
+        lum = model._rgb_to_luminance(data)
+        assert lum.shape == (20, 20)
+        assert lum.dtype == np.float32
 
 
 class TestEvents:
     """Test histogram event emissions."""
 
     def test_bins_and_counts_events_fire(self):
-        data = np.random.rand(20, 20)
-        img = _image(data)
-        bins_fired = []
-        counts_fired = []
+        model = _model(np.random.rand(20, 20))
+        bins_fired: list[bool] = []
+        counts_fired: list[bool] = []
 
-        img.histogram.events.bins.connect(lambda: bins_fired.append(True))
-        img.histogram.events.counts.connect(lambda: counts_fired.append(True))
-        img.histogram.compute()
+        model.events.bins.connect(lambda: bins_fired.append(True))
+        model.events.counts.connect(lambda: counts_fired.append(True))
+        model.compute()
 
         assert len(bins_fired) > 0
         assert len(counts_fired) > 0
+
+
+class TestDisconnect:
+    """Test the disconnect method for memory-safety."""
+
+    def test_disconnect_runs_without_error(self):
+        model = _model(np.random.rand(10, 10))
+        model.enabled = True
+        _ = model.counts  # trigger compute so we know it was alive
+
+        model.disconnect()
+
+        # After disconnect the model still functions, but layer events
+        # no longer trigger recompute (the dirty flag stays as-is).
+        assert model._dirty or not model._dirty
+        assert model.n_bins == 256
+
+    def test_disconnect_does_not_crash_on_idempotent_call(self):
+        model = _model(np.random.rand(10, 10))
+        model.disconnect()
+        model.disconnect()  # second call should be safe
+
+
+class TestCalcHistogram:
+    """Test the pure numpy _calc_histogram method directly."""
+
+    def test_basic_histogram(self):
+        model = _model(np.random.rand(10, 10))
+        data = np.random.rand(1000)
+        bins, counts = model._calc_histogram(data, 0.0, 1.0)
+        assert len(bins) == 257  # n_bins + 1
+        assert len(counts) == 256
+        assert counts.sum() == 1000
+        assert bins.dtype == np.float32
+        assert counts.dtype == np.float32
+
+    def test_constant_range_expands_integer(self):
+        """When min==max on integer data, ±0.5 should be applied."""
+        model = _model(np.array([[42]], dtype=np.uint8))
+        data = np.array([42, 42, 42], dtype=np.uint8)
+        bins, counts = model._calc_histogram(data, 42.0, 42.0)
+        # Range should be [41.5, 42.5]
+        assert bins[0] == 41.5
+        assert bins[-1] == 42.5
+        assert counts.sum() == 3
+
+    def test_constant_range_expands_float(self):
+        """When min==max on float data, 1% expansion should be applied.
+
+        The delta is ``max(0.5, abs(value) * 0.01)``, so a value of
+        100.0 gives delta=1.0 (the 1% rule), while a value of 1.0
+        gives delta=0.5 (the floor rule).
+        """
+        model = _model(np.array([[100.0]], dtype=np.float32))
+        data = np.array([100.0, 100.0, 100.0], dtype=np.float32)
+        bins, counts = model._calc_histogram(data, 100.0, 100.0)
+        # Range should be [99.0, 101.0]
+        assert bins[0] == 99.0
+        assert bins[-1] == 101.0
+        assert counts.sum() == 3
+
+    def test_log_scale_applies_log10(self):
+        model = _model(np.random.rand(10, 10))
+        model.log_scale = True
+        data = np.random.rand(1000)
+        bins, counts = model._calc_histogram(data, 0.0, 1.0)
+        assert len(bins) == 257
+        assert len(counts) == 256
+        assert counts.sum() > 0
+        # Log counts should be < raw counts for bins with data
+        assert counts.max() < 1000
+
+
+class TestSampleData:
+    """Test the _sample_data static-like method."""
+
+    def test_sample_reduces_size(self):
+        model = _model(np.random.rand(10, 10))
+        data = np.random.rand(100_000)
+        sampled = model._sample_data(data, 1000)
+        assert len(sampled) == 1000
+
+    def test_sample_returns_all_when_small(self):
+        model = _model(np.random.rand(10, 10))
+        data = np.random.rand(100)
+        sampled = model._sample_data(data, 1000)
+        assert len(sampled) == 100
+
+    def test_sample_filters_non_finite(self):
+        model = _model(np.random.rand(10, 10))
+        data = np.array([np.nan, np.inf, -np.inf, 1.0, 2.0, 3.0])
+        sampled = model._sample_data(data, 1000)
+        assert len(sampled) == 3
+        assert np.all(np.isfinite(sampled))
+
+    def test_sample_empty_after_filter(self):
+        model = _model(np.random.rand(10, 10))
+        data = np.array([np.nan, np.inf])
+        sampled = model._sample_data(data, 1000)
+        assert len(sampled) == 0
+
+
+class TestRgbToLuminance:
+    """Test the _rgb_to_luminance method directly."""
+
+    def test_bt709_coefficients(self):
+        model = _model(np.random.rand(10, 10, 3).astype(np.float32), rgb=True)
+        data = np.array([[[1.0, 0.0, 0.0]]], dtype=np.float32)  # pure red
+        lum = model._rgb_to_luminance(data)
+        assert lum[0, 0] == pytest.approx(0.2126)
+
+        data = np.array([[[0.0, 1.0, 0.0]]], dtype=np.float32)  # pure green
+        lum = model._rgb_to_luminance(data)
+        assert lum[0, 0] == pytest.approx(0.7152)
+
+        data = np.array([[[0.0, 0.0, 1.0]]], dtype=np.float32)  # pure blue
+        lum = model._rgb_to_luminance(data)
+        assert lum[0, 0] == pytest.approx(0.0722)
+
+    def test_alpha_channel_ignored(self):
+        model = _model(np.random.rand(10, 10, 4).astype(np.float32), rgb=True)
+        data = np.ones((1, 1, 4), dtype=np.float32)
+        data[..., 3] = 0.0  # alpha = 0 should not affect luminance
+        lum = model._rgb_to_luminance(data)
+        expected = 0.2126 + 0.7152 + 0.0722
+        assert lum[0, 0] == pytest.approx(expected)
+
+    def test_uint8_input(self):
+        model = _model(
+            np.random.randint(0, 256, (10, 10, 3), dtype=np.uint8), rgb=True
+        )
+        data = np.array([[[255, 0, 0]]], dtype=np.uint8)
+        lum = model._rgb_to_luminance(data)
+        assert lum[0, 0] == pytest.approx(0.2126 * 255.0)
 
 
 class TestLargeData:
@@ -334,34 +438,10 @@ class TestLargeData:
 
     def test_sampling_large_data(self):
         data = np.random.rand(500, 500).astype(np.float32)
-        img = _image(data)
-        counts = img.histogram.counts
+        model = _model(data)
+        counts = model.counts
         assert counts is not None
         assert len(counts) == 256
-
-
-class TestDisconnect:
-    """Test the disconnect method for memory-safety."""
-
-    def test_disconnect_runs_without_error(self):
-        img = _image(np.random.rand(10, 10))
-        histogram = img.histogram
-        histogram.enabled = True
-        _ = histogram.counts  # trigger compute so we know it was alive
-
-        histogram.disconnect()
-
-        # After disconnect the model still functions, but layer events
-        # no longer trigger recompute (the dirty flag stays as-is).
-        # Verify the model object is still usable.
-        assert histogram._dirty or not histogram._dirty
-        assert histogram.n_bins == 256
-
-    def test_disconnect_does_not_crash_on_idempotent_call(self):
-        img = _image(np.random.rand(10, 10))
-        histogram = img.histogram
-        histogram.disconnect()
-        histogram.disconnect()  # second call should be safe
 
 
 class TestDask:
@@ -372,21 +452,21 @@ class TestDask:
         data = dask.from_array(
             np.random.rand(500, 500).astype(np.float32), chunks=100
         )
-        img = _image(data)
-        sampled = img.histogram._sample_dask_safe(data)
+        model = _model(data)
+        sampled = model._sample_dask_safe(data)
         assert isinstance(sampled, np.ndarray)
         assert sampled.size > 0
-        assert sampled.size <= 1_000_000
+        assert sampled.size <= DEFAULT_MAX_SAMPLES
 
     def test_dask_full_mode_histogram(self):
         dask = pytest.importorskip('dask.array')
         data = dask.from_array(
             np.random.rand(50, 50).astype(np.float32), chunks=25
         )
-        img = _image(data)
-        img.histogram.mode = 'full'
-        img.histogram.enabled = True
-        counts = img.histogram.counts
+        model = _model(data)
+        model.mode = 'full'
+        model.enabled = True
+        counts = model.counts
         assert counts is not None
         assert len(counts) == 256
         assert counts.sum() > 0
@@ -396,26 +476,23 @@ class TestDask:
         data = dask.from_array(
             np.random.rand(5, 50, 50).astype(np.float32), chunks=(1, 25, 25)
         )
-        img = _image(data)
-        img.histogram.mode = 'canvas'
-        img.histogram.enabled = True
-        counts = img.histogram.counts
+        model = _model(data)
+        model.mode = 'canvas'
+        model.enabled = True
+        counts = model.counts
         assert counts is not None
         assert len(counts) == 256
         assert counts.sum() > 0
 
-    def test_non_dask_lazy_array_sampled(self):
-        """Non-dask lazy arrays should not trigger full materialization."""
+    def test_dask_full_mode_samples_large(self):
+        """Large dask arrays should be sampled, not fully materialized."""
         dask = pytest.importorskip('dask.array')
-        # Use a dask array but without going through the _is_dask_data path
-        # by overriding it via a simple wrapper that behaves like a lazy array
-        # This tests that _get_full_data falls through to sampling
         data = dask.from_array(
             np.random.rand(2000, 2000).astype(np.float32), chunks=1000
         )
-        img = _image(data)
-        img.histogram.mode = 'full'
-        img.histogram.enabled = True
-        counts = img.histogram.counts
+        model = _model(data)
+        model.mode = 'full'
+        model.enabled = True
+        counts = model.counts
         assert counts is not None
         assert len(counts) == 256
