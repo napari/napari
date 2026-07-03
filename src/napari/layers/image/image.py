@@ -437,13 +437,11 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         HistogramModel
             Histogram model instance for this layer.
         """
-        try:
-            return self._histogram  # type: ignore[has-type]
-        except AttributeError:
+        if not hasattr(self, '_histogram'):
             from napari.components.histogram import HistogramModel
 
             self._histogram = HistogramModel(self)
-            return self._histogram
+        return self._histogram
 
     @ScalarFieldBase.data.setter  # type: ignore[attr-defined]
     def data(self, data: LayerDataProtocol | MultiScaleData) -> None:
