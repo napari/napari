@@ -508,3 +508,85 @@ class TestDask:
         counts = model.counts
         assert counts is not None
         assert len(counts) == 256
+
+
+class TestZarr:
+    """Test histogram with zarr arrays (chunked, non-dask)."""
+
+    def test_has_chunks_returns_true_for_zarr(self):
+        zarr = pytest.importorskip('zarr')
+        data = zarr.zeros((50, 50), chunks=(25, 25), dtype=np.float32)
+        model = _model(np.zeros((10, 10)))
+        assert model._has_chunks(data)
+
+    def test_has_chunks_returns_false_for_numpy(self):
+        model = _model(np.zeros((10, 10)))
+        assert not model._has_chunks(np.zeros((50, 50)))
+
+    def test_chunk_sizes_correct_for_zarr(self):
+        zarr = pytest.importorskip('zarr')
+        data = zarr.zeros((50, 50), chunks=(25, 25), dtype=np.float32)
+        model = _model(np.zeros((10, 10)))
+        sizes = model._chunk_sizes(data)
+        # 50x50 with 25x25 chunks = 4 chunks of 625 each
+        assert len(sizes) == 4
+        assert all(s == 625 for s in sizes)
+
+    def test_chunk_sizes_non_uniform_chunks(self):
+        zarr = pytest.importorskip('zarr')
+        # 60x90 with 25x25 chunks → last chunks are partial
+        data = zarr.zeros((60, 90), chunks=(25, 25), dtype=np.float32)
+        model = _model(np.zeros((10, 10)))
+        sizes = model._chunk_sizes(data)
+        # 3 * 4 = 12 chunks (ceil(60/25)=3, ceil(90/25)=4)
+        assert len(sizes) == 12
+        # First chunk = 25*25 = 625
+        assert sizes[0] == 625
+        # Total elements = sum(sizes) = 60*90 = 5400
+        assert sum(sizes) == 5400
+
+    def test_load_chunk_from_zarr(self):
+        zarr = pytest.importorskip('zarr')
+        import numpy as np
+
+        data = zarr.array(np.arange(100, dtype=np.float32).reshape(10, 10))
+        model = _model(np.zeros((10, 10)))
+        chunk = model._load_chunk(data, 0)
+        assert isinstance(chunk, np.ndarray)
+        assert chunk.size > 0
+        # For a 10x10 array with default chunk, flat index 0 loads all
+        assert len(chunk) == 100
+
+    def test_load_chunk_from_zarr_multi_chunk(self):
+        zarr = pytest.importorskip('zarr')
+        import numpy as np
+
+        data = zarr.array(
+            np.arange(2500, dtype=np.float32).reshape(50, 50),
+            chunks=(25, 25),
+        )
+        model = _model(np.zeros((10, 10)))
+        # Chunk (0, 0) = rows 0-24, cols 0-24
+        chunk = model._load_chunk(data, 0)
+        assert len(chunk) == 625
+        # Values are in C-order: each row has 50 elements, so the
+        # first 25 rows each contribute 25 columns = 625 values.
+        # Expected min/max: row 0 col 0 = 0, row 24 col 24 = 24*50+24 = 1224
+        assert float(chunk.min()) == 0.0
+        assert float(chunk.max()) == 1224.0
+
+    def test_zarr_full_mode_histogram(self):
+        zarr = pytest.importorskip('zarr')
+        import numpy as np
+
+        data = zarr.array(
+            np.random.rand(50, 50).astype(np.float32),
+            chunks=(25, 25),
+        )
+        model = _model(data)
+        model.mode = 'full'
+        model.enabled = True
+        counts = model.counts
+        assert counts is not None
+        assert len(counts) == 256
+        assert counts.sum() > 0
