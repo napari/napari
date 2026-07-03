@@ -51,7 +51,6 @@ __all__ = [
     'VectorsData',
     'WidgetCallable',
     'WriterFunction',
-    
 ]
 
 # This is a WOEFULLY inadequate stub for a duck-array type.
@@ -122,9 +121,6 @@ _LayerData = Union[
 ]
 
 LayerDataTuple = NewType('LayerDataTuple', tuple)
-
-
-
 
 
 def _register_types_with_magicgui():
