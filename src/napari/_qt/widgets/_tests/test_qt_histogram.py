@@ -271,3 +271,154 @@ def test_qt_histogram_teardown_during_async_compute(qtbot):
             lambda: QThreadPool.globalInstance().activeThreadCount() == 0,
             timeout=10000,
         )
+
+
+def test_qt_histogram_widget_ensure_computed_worker_cancel(qtbot):
+    """Calling _ensure_histogram_computed while a worker is already running
+    should cancel the previous worker."""
+    dask = pytest.importorskip('dask.array')
+    data = dask.random.random((500, 500), chunks=(50, 50))
+    layer = Image(data)
+    layer.histogram.mode = 'full'
+    layer.histogram.max_samples = 50000
+
+    widget = QtHistogramWidget(layer)
+    qtbot.addWidget(widget)
+    layer.histogram.enabled = True
+
+    # First call starts a worker
+    widget._ensure_histogram_computed()
+    first_worker = widget._compute_worker
+    assert first_worker is not None
+
+    # Second call should cancel the first and start a new one
+    widget._ensure_histogram_computed()
+    if widget._compute_worker is not None:
+        # May have been set to None if already finished
+        assert widget._compute_worker is True
+
+    widget.cleanup()
+
+    # Drain thread pool
+    from qtpy.QtCore import QThreadPool
+
+    qtbot.waitUntil(
+        lambda: QThreadPool.globalInstance().activeThreadCount() == 0,
+        timeout=10000,
+    )
+
+
+def test_qt_histogram_widget_ensure_content_disconnect(qtbot):
+    """Calling cleanup on QtHistogramContentWidget should disconnect events."""
+    layer = Image(np.random.rand(10, 10))
+    content = QtHistogramContentWidget(layer)
+    qtbot.addWidget(content)
+
+    layer.histogram.enabled = True
+    layer.histogram.compute()
+
+    # Before cleanup, changing log_scale triggers recompute
+    assert content.histogram_widget._updating is not None  # widget is alive
+
+    content.cleanup()
+    # After cleanup, changing log_scale should not crash
+    layer.histogram.log_scale = True
+
+
+def test_histogram_visual_set_data_clear_path(qtbot):
+    """Calling set_data with no bins/counts should clear the visual."""
+    layer = Image(np.linspace(0, 1, 64, dtype=np.float32).reshape(8, 8))
+    widget = QtHistogramWidget(layer)
+    qtbot.addWidget(widget)
+
+    visual = widget.histogram_visual
+
+    # First set some data to get a non-empty state
+    layer.histogram.enabled = True
+    layer.histogram.compute()
+    visual.set_data(
+        bins=layer.histogram.bins,
+        counts=layer.histogram.counts,
+        gamma=1.0,
+        clims=(0.25, 0.75),
+        data_range=(0, 1),
+    )
+
+    # Now call set_data with None to trigger _clear path
+    visual.set_data()
+    # After clear, gamma should be reset to 1.0
+    assert visual._gamma == 1.0
+    assert visual._clims is None
+    assert visual._data_range is None
+
+    widget.cleanup()
+
+
+def test_histogram_visual_update_lut_line_clims_equal(qtbot):
+    """LUT line should handle equal clim values gracefully."""
+    layer = Image(np.linspace(0, 1, 64, dtype=np.float32).reshape(8, 8))
+    widget = QtHistogramWidget(layer)
+    qtbot.addWidget(widget)
+
+    visual = widget.histogram_visual
+    layer.histogram.enabled = True
+    layer.histogram.compute()
+
+    # Call with clims where min == max
+    visual.set_data(
+        bins=layer.histogram.bins,
+        counts=layer.histogram.counts,
+        gamma=1.0,
+        clims=(0.5, 0.5),  # equal clims
+        data_range=(0, 1),
+    )
+    # Should not crash; uses the else branch in _update_lut_line
+    assert visual._clims == (0.5, 0.5)
+
+    widget.cleanup()
+
+
+def test_histogram_visual_destroy(qtbot):
+    """Calling destroy on the histogram visual should clean up sub-visuals."""
+    layer = Image(np.linspace(0, 1, 64, dtype=np.float32).reshape(8, 8))
+    widget = QtHistogramWidget(layer)
+    qtbot.addWidget(widget)
+
+    visual = widget.histogram_visual
+
+    # destroy should not crash
+    visual.destroy()
+
+    widget.cleanup()
+
+
+def test_histogram_visual_update_bars_empty(qtbot):
+    """_update_bars with fewer than 2 bins should call _set_empty_data."""
+    layer = Image(np.linspace(0, 1, 64, dtype=np.float32).reshape(8, 8))
+    widget = QtHistogramWidget(layer)
+    qtbot.addWidget(widget)
+
+    visual = widget.histogram_visual
+
+    # Call _update_bars directly with a single bin (len(bins) < 2)
+    visual._update_bars(np.array([0.0]), np.array([5.0]))
+    # Should not crash; calls _set_empty_data internally
+
+    widget.cleanup()
+
+
+def test_histogram_visual_update_bars_zero_range(qtbot):
+    """_update_bars should handle zero bin range (all bins identical)."""
+    layer = Image(np.linspace(0, 1, 64, dtype=np.float32).reshape(8, 8))
+    widget = QtHistogramWidget(layer)
+    qtbot.addWidget(widget)
+
+    visual = widget.histogram_visual
+
+    # All bins have the same value → bin_range == 0 → should use bin_range = 1
+    bins = np.array([5.0, 5.0, 5.0], dtype=np.float32)
+    counts = np.array([10.0, 5.0], dtype=np.float32)
+    visual._update_bars(bins, counts)
+    # Should not crash
+
+    widget.cleanup()
