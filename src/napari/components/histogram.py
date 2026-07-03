@@ -171,9 +171,8 @@ class HistogramModel(EventedModel):
 
         This method extracts data from the layer based on the current mode
         (displayed or full), samples if necessary, and computes the histogram.
-        For chunked arrays (dask, zarr) in full mode, samples are drawn
-        progressively: a few chunks at a time, emitting ``bins``/``counts``
-        events after each batch so the UI can display a progressive result.
+        For chunked arrays (dask, zarr) in full mode, a random subset of
+        chunks is sampled to avoid full materialization.
         """
         if self._computing:
             return
@@ -196,8 +195,8 @@ class HistogramModel(EventedModel):
                 data = self._rgb_to_luminance(data)
 
             if self.mode == 'full' and self._has_chunks(data):
-                # Progressive chunk-by-chunk sampling for dask / zarr
-                self._compute_sampled(data)
+                # Chunked arrays: sample chunks, compute all at once
+                self._compute_chunked(data)
             elif self.mode == 'full' and data.size > self.max_samples:
                 # Random subsample for large in-memory arrays
                 data = self._sample_data(data, self.max_samples)
@@ -222,21 +221,18 @@ class HistogramModel(EventedModel):
         self.events.bins()
         self.events.counts()
 
-    def _compute_sampled(self, data: Any) -> None:
-        """Compute histogram from a chunked array (dask / zarr) via random samples.
+    def _compute_chunked(self, data: Any) -> None:
+        """Compute histogram from a chunked array via random chunk sampling.
 
         Builds chunk-size metadata (cheap — no data access), randomly
         selects a subset of chunks proportional to their size, then
-        computes only those chunks.  This is critical for remote or
-        disk-backed arrays where loading the full volume would cause
-        an OOM or take minutes.
+        loads and histogram-counts them in a single pass.  This avoids
+        full materialization of remote or disk-backed arrays.
 
         .. note::
-            Currently all selected chunks are computed in one blocking
-            pass.  A future improvement could process them in small
-            batches with intermediate ``bins``/``counts`` events so
-            the UI stays responsive during long I/O-bound loads from
-            remote sources.
+            For remote/HTTP data sources with high per-chunk latency,
+            the Qt layer can wrap this in a ``thread_worker`` via
+            :mod:`napari.qt.threading` to keep the UI responsive.
         """
         n = min(self.max_samples, data.size)
         chunk_sizes = self._chunk_sizes(data)
@@ -251,9 +247,7 @@ class HistogramModel(EventedModel):
             range_min = 0.0
             range_max = 1.0
 
-        # Pre-allocate running bin counts (float64 for precision)
         running_counts = np.zeros(self.n_bins, dtype=np.float64)
-
         for ci in order:
             block = self._load_chunk(data, ci)
             chunk_counts, _ = np.histogram(
@@ -263,7 +257,6 @@ class HistogramModel(EventedModel):
             )
             running_counts += chunk_counts.astype(np.float64)
 
-        # Convert to final float32 counts and bin edges
         self._bins = np.linspace(range_min, range_max, self.n_bins + 1).astype(
             np.float32
         )
