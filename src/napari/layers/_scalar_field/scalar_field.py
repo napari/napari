@@ -864,6 +864,20 @@ class ScalarFieldSlicingState(_LayerSlicingState):
         )
 
     def _set_view_slice(self):
+        if (
+            self.layer.multiscale
+            and self._slice_input.ndisplay == 3
+            and self.layer._locked_data_level is None
+        ):
+            displayed = list(self._slice_input.displayed)
+            level = len(self.layer.level_shapes) - 1
+            shape = np.take(
+                np.asarray(self.layer.level_shapes[level]), displayed
+            )
+            corners = np.zeros((2, self.layer.ndim), dtype=int)
+            corners[1, displayed] = shape - 1
+            self.layer._data_level = level
+            self.layer.corner_pixels = corners
         request = self._make_slice_request_internal(
             slice_input=self._slice_input,
             data_slice=self.data_slice,
