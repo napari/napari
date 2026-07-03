@@ -294,8 +294,10 @@ def test_qt_histogram_widget_ensure_computed_worker_cancel(qtbot):
     # Second call should cancel the first and start a new one
     widget._ensure_histogram_computed()
     if widget._compute_worker is not None:
-        # May have been set to None if already finished
-        assert widget._compute_worker is True
+        # If a new worker was created (the first had not yet finished),
+        # it should be a different object. If the first already finished,
+        # _compute_worker may be None — that's OK too.
+        assert widget._compute_worker is not first_worker
 
     widget.cleanup()
 

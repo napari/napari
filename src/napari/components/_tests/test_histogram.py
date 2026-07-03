@@ -678,3 +678,185 @@ class TestMaterializationGuard:
             result = model._get_full_data()
 
         assert result is data  # same object, returned as-is
+
+
+class TestNoneDataPath:
+    """Tests for compute() with None/inaccessible data."""
+
+    def test_compute_with_none_data(self, monkeypatch):
+        """When _get_data() returns None, compute should produce empty bins/counts."""
+        model = _model(np.random.rand(10, 10))
+        model.enabled = True
+        _ = model.counts  # ensure initial compute succeeds
+        assert len(model.counts) == 256
+
+        # Force _get_data to return None
+        def _fake_get_data():
+            return None
+
+        monkeypatch.setattr(model, '_get_data', _fake_get_data)
+        model.compute()
+        assert len(model.bins) == 2
+        assert len(model.counts) == 1
+
+    def test_compute_with_empty_data(self, monkeypatch):
+        """When _get_data() returns empty array, should produce empty bins/counts."""
+        model = _model(np.random.rand(10, 10))
+        model.enabled = True
+        _ = model.counts
+
+        def _fake_get_data():
+            return np.array([])
+
+        monkeypatch.setattr(model, '_get_data', _fake_get_data)
+        model.compute()
+        assert len(model.bins) == 2
+        assert len(model.counts) == 1
+
+    def test_reentrancy_guard(self):
+        """Calling compute() while already computing should be a no-op."""
+
+        model = _model(np.random.rand(10, 10))
+        model._computing = True
+        # This should return immediately without errors
+        model.compute()
+        assert model._computing
+
+    def test_get_data_none_in_canvas_mode_without_slice(self, monkeypatch):
+        """In canvas mode with no slice available, _get_data should return None."""
+        model = _model(np.random.rand(10, 10))
+
+        # Monkeypatch _get_slice_raw_data to return None,
+        # simulating the state before any slice has been computed
+        monkeypatch.setattr(model, '_get_slice_raw_data', lambda: None)
+
+        result = model._get_data()
+        assert result is None
+
+
+class TestEventHandlers:
+    """Test histogram event handler wiring."""
+
+    def test_on_slice_change_only_in_canvas_mode(self):
+        """_on_slice_change should only trigger recompute in canvas mode."""
+        model = _model(np.random.rand(5, 20, 20))
+        model.enabled = True
+        _ = model.counts  # initial compute
+
+        model._dirty = False
+        model.mode = 'full'
+        model._on_slice_change()
+        # In full mode _on_slice_change returns early without calling
+        # _mark_dirty, so _dirty stays False.
+        assert not model._dirty
+
+        model.mode = 'canvas'
+        model._dirty = False
+        model._on_slice_change()
+        # In canvas mode _on_slice_change calls _mark_dirty, which sets
+        # _dirty=True and then calls compute() (since enabled=True).
+        # compute() resets _dirty=False at the end. The net effect is
+        # that the histogram was recomputed — verify it produced valid data.
+        assert not model._dirty
+        assert len(model.counts) == 256
+
+    def test_on_enabled_change_computes_when_dirty(self):
+        """When enabled flips to True and data is dirty, compute should run."""
+        model = _model(np.random.rand(10, 10))
+        model.enabled = True
+        _ = model.counts  # initial compute, clears dirty
+
+        model._dirty = True
+        model._on_enabled_change()
+        # enabled is True and dirty is True, so _mark_dirty called compute()
+        assert not model._dirty
+
+    def test_on_enabled_change_skips_when_disabled(self):
+        """When enabled is False, _on_enabled_change should not compute."""
+        model = _model(np.random.rand(10, 10))
+        model._dirty = True
+        model.enabled = False
+        model._on_enabled_change()
+        assert model._dirty  # still dirty, no compute triggered
+
+    def test_on_params_change_triggers_recompute(self):
+        """Changing n_bins or mode should mark dirty and trigger recompute."""
+        model = _model(np.random.rand(10, 10))
+        model.enabled = True
+        _ = model.counts  # initial compute
+
+        model._dirty = False
+        model.n_bins = 128
+        # Setting n_bins fires event → _on_params_change → _mark_dirty
+        # → compute() → _dirty=False. Verify the result had the right bin count.
+        assert not model._dirty
+        assert len(model.counts) == 128
+
+    def test_log_scale_change_triggers_compute(self):
+        """Changing log_scale should trigger recompute."""
+        model = _model(np.random.rand(10, 10))
+        model.enabled = True
+        _ = model.counts  # initial compute
+
+        model.log_scale = True
+        counts = model.counts
+        assert len(counts) == 256
+        # Verify bin edges have not changed from log scale
+        assert counts.dtype == np.float32
+
+
+class TestCalcHistogramExtended:
+    """Extended tests for _calc_histogram edge cases."""
+
+    def test_constant_range_expands_float_zero(self):
+        """When min==max at zero on float data, delta floor of 0.5 should apply.
+
+        The expansion logic is ``max(0.5, abs(value) * 0.01)`` with a
+        fallback of 0.5 when value is 0, so zero-valued constant data
+        gets a [-0.5, 0.5] range.
+        """
+        model = _model(np.array([[0.0]], dtype=np.float32))
+        data = np.array([0.0, 0.0, 0.0], dtype=np.float32)
+        bins, counts = model._calc_histogram(data, 0.0, 0.0)
+        # Range should be [-0.5, 0.5]
+        assert bins[0] == -0.5
+        assert bins[-1] == 0.5
+        assert counts.sum() == 3
+
+    def test_sample_data_returns_empty(self):
+        """_sample_data should return an empty array when all values are non-finite."""
+        model = _model(np.random.rand(10, 10))
+        data = np.array([np.nan, np.inf, -np.inf])
+        sampled = model._sample_data(data, 1000)
+        assert len(sampled) == 0
+
+    def test_finalize_histogram_falls_back_to_data_range(self, monkeypatch):
+        """When contrast_limits_range is None/None, _finalize_histogram
+        should fall back to nanmin/nanmax of the data."""
+        model = _model(np.random.rand(10, 10).astype(np.float32))
+        data = np.random.rand(100).astype(np.float32)
+        # Bypass the setter validation by targeting the private backing field
+        monkeypatch.setattr(
+            model._layer, '_contrast_limits_range', (None, None)
+        )
+        model._finalize_histogram(data)
+        assert len(model.bins) == 257
+        assert model.bins[-1] > model.bins[0]
+
+    def test_log_scale_with_chunked_compute(self, monkeypatch):
+        """Log scale should be correctly applied in the _compute_chunked path."""
+        dask = pytest.importorskip('dask.array')
+        data = dask.from_array(
+            np.random.rand(100, 100).astype(np.float32), chunks=(50, 50)
+        )
+        model = _model(np.zeros((10, 10)))
+        # We need to set up the model to go through _compute_chunked
+        model._layer = Image(data)
+        model.mode = 'full'
+        model.log_scale = True
+        model.enabled = True
+
+        counts = model.counts
+        assert len(counts) == 256
+        # Log-scaled counts should be non-negative
+        assert np.all(counts >= 0)

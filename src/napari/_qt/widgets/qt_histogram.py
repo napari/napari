@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 from qtpy.QtWidgets import QVBoxLayout, QWidget
 from vispy.scene import SceneCanvas
 
-from napari._qt.qthreading import FunctionWorker, create_worker
+from napari._qt.qthreading import GeneratorWorker, create_worker
 from napari._vispy.visuals.histogram import HistogramVisual
 from napari.settings import get_settings
 from napari.utils.events.event_utils import disconnect_events
@@ -67,7 +67,7 @@ class QtHistogramWidget(QWidget):
         self._appearance = get_settings().appearance
         self._updating = False
         self._cleaned_up: bool = False
-        self._compute_worker: FunctionWorker | None = None
+        self._compute_worker: GeneratorWorker | None = None
 
         theme = get_theme(self._appearance.theme)
 
@@ -187,6 +187,10 @@ class QtHistogramWidget(QWidget):
         Disconnects event-driven vispy updates during the thread to
         avoid calling vispy from the background thread.  After the
         thread finishes, reconnects and reads the fresh results.
+
+        Uses a generator worker so intermediate results are yielded
+        after each chunk, providing incremental display updates for
+        large remote datasets.
         """
         # Disconnect ALL event-driven updates during thread to prevent
         # vispy calls from the background thread via gamma/clims/colormap
@@ -196,14 +200,38 @@ class QtHistogramWidget(QWidget):
         disconnect_events(self._histogram.events, self)
         disconnect_events(self.layer.events, self)
 
-        def _work() -> None:
-            self._histogram.compute()
+        def _gen():
+            yield from self._histogram.compute_progressive()
 
-        # mypy: create_worker expects FunctionType but accepts Callable at runtime
-        worker = create_worker(_work)  # type: ignore[arg-type]
+        worker = create_worker(_gen)  # type: ignore[arg-type]
+        worker.yielded.connect(self._on_partial_histogram)
         worker.finished.connect(self._on_async_compute_done)
         worker.start()
-        self._compute_worker = cast(FunctionWorker, worker)
+        self._compute_worker = worker
+
+    def _on_partial_histogram(
+        self, bins_counts: tuple[np.ndarray, np.ndarray]
+    ) -> None:
+        """Update the vispy canvas with partial histogram data from a chunk.
+
+        Called on the main thread each time the background generator yields
+        ``(bins, counts)``.  We skip the re-entrancy guard since this path
+        is never triggered by model-event handlers (they are disconnected
+        during the background compute).
+        """
+        bins, counts = bins_counts
+        gamma = self.layer.gamma
+        clims = self.layer.contrast_limits
+        clims_range = self.layer.contrast_limits_range
+
+        self.histogram_visual.set_data(
+            bins=bins,
+            counts=counts,
+            gamma=gamma,
+            clims=clims,
+            data_range=clims_range,
+        )
+        self.canvas.update()
 
     def _on_async_compute_done(self, _: Any = None) -> None:
         """Called on the main thread when background compute finishes.
@@ -228,7 +256,14 @@ class QtHistogramWidget(QWidget):
         self.layer.events.contrast_limits.connect(self._on_clims_change)
         self.layer.events.colormap.connect(self._on_colormap_change)
 
-        # Read fresh data and update vispy (safe on main thread)
+        # Emit model events so any listeners (including our own
+        # _on_histogram_change) learn about the fresh data from
+        # the background computation.  The generator path in
+        # _compute_chunked_progressive sets _bins/_counts/_dirty
+        # but does NOT fire model events (it runs on a background
+        # thread where event emission would be unsafe).
+        self._histogram.events.bins()
+        self._histogram.events.counts()
         self._update_histogram()
 
     def _theme_rgba(

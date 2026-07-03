@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import math
 import warnings
-from collections.abc import Sequence
+from collections.abc import Generator, Sequence
 from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
@@ -202,8 +202,15 @@ class HistogramModel(EventedModel):
                 data = self._rgb_to_luminance(data)
 
             if self.mode == 'full' and self._has_chunks(data):
-                # Chunked arrays: sample chunks, compute all at once
-                self._compute_chunked(data)
+                # Chunked arrays: compute via the progressive generator
+                # and drain it (async callers get incremental updates).
+                for _ in self._compute_chunked_progressive(data):
+                    pass
+                # After draining, model state is already set by the
+                # generator's final cycle; emit events so listeners
+                # connected to the synchronous path are notified.
+                self.events.bins()
+                self.events.counts()
             elif self.mode == 'full' and data.size > self.max_samples:
                 # Random subsample for large in-memory arrays
                 data = self._sample_data(data, self.max_samples)
@@ -211,6 +218,55 @@ class HistogramModel(EventedModel):
             else:
                 # Direct path — data is already manageable
                 self._finalize_histogram(data)
+        finally:
+            self._computing = False
+
+    def compute_progressive(
+        self,
+    ) -> Generator[tuple[np.ndarray, np.ndarray], None, None]:
+        """Generator that yields ``(bins, counts)`` for incremental updates.
+
+        For chunked arrays in full mode, yields an intermediate result after
+        each chunk so the caller can update the display progressively.  For
+        non-chunked data (or canvas mode), yields the final result once.
+
+        Yields
+        ------
+        tuple[np.ndarray, np.ndarray]
+            ``(bin_edges, counts)`` — same shape as :attr:`bins` and
+            :attr:`counts`, safe to consume on the main thread.
+        """
+        if self._computing:
+            return
+
+        self._computing = True
+        try:
+            data = self._get_data()
+
+            if data is None or data.size == 0:
+                self._bins = np.array([0.0, 1.0])
+                self._counts = np.array([0.0])
+                self._dirty = False
+                return
+
+            if self._layer.rgb:
+                data = self._rgb_to_luminance(data)
+
+            if self.mode == 'full' and self._has_chunks(data):
+                yield from self._compute_chunked_progressive(data)
+            else:
+                # Non-chunked path: compute once and yield final result
+                if self.mode == 'full' and data.size > self.max_samples:
+                    data = self._sample_data(data, self.max_samples)
+                range_min, range_max = self._layer.contrast_limits_range
+                if range_min is None or range_max is None:
+                    range_min = float(np.nanmin(data))
+                    range_max = float(np.nanmax(data))
+                bins, counts = self._calc_histogram(data, range_min, range_max)
+                self._bins = bins
+                self._counts = counts
+                self._dirty = False
+                yield bins, counts
         finally:
             self._computing = False
 
@@ -228,18 +284,16 @@ class HistogramModel(EventedModel):
         self.events.bins()
         self.events.counts()
 
-    def _compute_chunked(self, data: Any) -> None:
-        """Compute histogram from a chunked array via random chunk sampling.
+    def _compute_chunked_progressive(
+        self, data: Any
+    ) -> Generator[tuple[np.ndarray, np.ndarray], None, None]:
+        """Generator version of :meth:`_compute_chunked` — yields after each chunk.
 
-        Builds chunk-size metadata (cheap — no data access), randomly
-        selects a subset of chunks proportional to their size, then
-        loads and histogram-counts them in a single pass.  This avoids
-        full materialization of remote or disk-backed arrays.
-
-        .. note::
-            For remote/HTTP data sources with high per-chunk latency,
-            the Qt layer can wrap this in a ``thread_worker`` via
-            :mod:`napari.qt.threading` to keep the UI responsive.
+        Provides incremental ``(bins, counts)`` snapshots as each chunk is
+        loaded and histogrammed.  The final yield updates the model's internal
+        ``_bins`` / ``_counts`` and marks it not-dirty, so callers that skip
+        intermediate results (e.g. the synchronous ``compute`` path) still
+        see consistent state.
         """
         n = min(self.max_samples, data.size)
         chunk_sizes = self._chunk_sizes(data)
@@ -264,17 +318,20 @@ class HistogramModel(EventedModel):
             )
             running_counts += chunk_counts.astype(np.float64)
 
-        self._bins = np.linspace(range_min, range_max, self.n_bins + 1).astype(
-            np.float32
-        )
-        if self.log_scale:
-            self._counts = np.log10(running_counts + 1).astype(np.float32)
-        else:
-            self._counts = running_counts.astype(np.float32)
+            bins = np.linspace(range_min, range_max, self.n_bins + 1).astype(
+                np.float32
+            )
+            if self.log_scale:
+                counts = np.log10(running_counts + 1).astype(np.float32)
+            else:
+                counts = running_counts.astype(np.float32)
+            yield bins, counts
 
+        # Update model state for callers that read _bins / _counts directly
+        # after the generator completes.
+        self._bins = bins
+        self._counts = counts
         self._dirty = False
-        self.events.bins()
-        self.events.counts()
 
     def _calc_histogram(
         self,
