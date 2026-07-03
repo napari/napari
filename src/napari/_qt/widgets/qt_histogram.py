@@ -181,9 +181,16 @@ class QtHistogramWidget(QWidget):
         avoid calling vispy from the background thread.  After the
         thread finishes, reconnects and reads the fresh results.
         """
-        # Disconnect event-driven updates during thread
+        # Disconnect ALL event-driven updates during thread to prevent
+        # vispy calls from the background thread via gamma/clims/colormap
+        # event handlers as well as the histogram model's own events.
         self._histogram.events.bins.disconnect(self._on_histogram_change)
         self._histogram.events.counts.disconnect(self._on_histogram_change)
+        self._histogram.events.log_scale.disconnect(self._on_histogram_change)
+        self._histogram.events.enabled.disconnect(self._on_histogram_change)
+        self.layer.events.gamma.disconnect(self._on_gamma_change)
+        self.layer.events.contrast_limits.disconnect(self._on_clims_change)
+        self.layer.events.colormap.disconnect(self._on_colormap_change)
 
         def _work() -> None:
             self._histogram.compute()
@@ -208,9 +215,14 @@ class QtHistogramWidget(QWidget):
             return
         self._compute_worker = None
 
-        # Reconnect event-driven updates
+        # Reconnect ALL event-driven updates (symmetric with _start_async_compute)
         self._histogram.events.bins.connect(self._on_histogram_change)
         self._histogram.events.counts.connect(self._on_histogram_change)
+        self._histogram.events.log_scale.connect(self._on_histogram_change)
+        self._histogram.events.enabled.connect(self._on_histogram_change)
+        self.layer.events.gamma.connect(self._on_gamma_change)
+        self.layer.events.contrast_limits.connect(self._on_clims_change)
+        self.layer.events.colormap.connect(self._on_colormap_change)
 
         # Read fresh data and update vispy (safe on main thread)
         self._update_histogram()
