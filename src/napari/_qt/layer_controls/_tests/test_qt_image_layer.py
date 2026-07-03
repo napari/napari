@@ -216,6 +216,42 @@ def test_histogram_control_lazy_creation(qtbot):
     assert qtctrl._histogram_control.histogram_content is not None
 
 
+def test_histogram_widget_responds_to_viewer_theme_toggle(
+    qtbot, make_napari_viewer
+):
+    """viewer.theme change (Ctrl+Shift+T) should repaint histogram canvas.
+
+    The ``toggle_theme`` keybinding sets ``viewer.theme`` directly without
+    touching ``settings.appearance.theme``. The container bridges this to
+    histogram widgets — verify the canvas repaints with the right colors.
+    """
+    from napari.utils.theme import get_theme
+
+    viewer = make_napari_viewer()
+    layer = viewer.add_image(
+        np.linspace(0, 1, 64, dtype=np.float32).reshape(8, 8)
+    )
+    controls = viewer.window._qt_viewer.controls.widgets[layer]
+    controls._histogram_control.ensure_content()
+    widget = controls._histogram_control.histogram_widget
+    assert widget is not None
+
+    layer.histogram.enabled = True
+    layer.histogram.compute()
+
+    # Pick a theme different from the current one, same as Ctrl+Shift+T.
+    new_theme = 'light' if viewer.theme != 'light' else 'dark'
+    viewer.theme = new_theme
+    expected = get_theme(new_theme)
+
+    qtbot.waitUntil(
+        lambda: np.allclose(
+            widget.canvas.bgcolor.rgba[:3],
+            np.array(expected.canvas.as_rgb_tuple()) / 255,
+        )
+    )
+
+
 def test_two_image_layers_independent_histograms(qtbot, make_napari_viewer):
     """Two Image layers should each have their own independent histogram."""
     viewer = make_napari_viewer()

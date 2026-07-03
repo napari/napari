@@ -135,8 +135,18 @@ class QtHistogramWidget(QWidget):
         self._update_histogram()
 
     def _on_theme_change(self, event: Event | None = None) -> None:
-        """Update canvas and plot styling when the application theme changes."""
-        self._apply_visual_style()
+        """Update canvas and plot styling when the application theme changes.
+
+        Uses ``event.value`` (the new theme) when available, falling back
+        to ``settings.appearance.theme``.  This handles both the settings
+        path (``settings.appearance.events.theme``) and the viewer path
+        (``viewer.events.theme`` from ``toggle_theme`` keybinding, where
+        settings are intentionally not updated).
+        """
+        theme_name = (
+            event.value if event is not None else self._appearance.theme
+        )
+        self._apply_visual_style(theme_name=theme_name)
         self.canvas.update()
 
     def _theme_rgba(
@@ -157,9 +167,18 @@ class QtHistogramWidget(QWidget):
         alpha = max(float(rgba[3]), 0.8)
         return (float(rgba[0]), float(rgba[1]), float(rgba[2]), alpha)
 
-    def _apply_visual_style(self) -> None:
-        """Apply theme-aware and layer-aware styling to the histogram plot."""
-        theme = get_theme(self._appearance.theme)
+    def _apply_visual_style(self, theme_name: str | None = None) -> None:
+        """Apply theme-aware and layer-aware styling to the histogram plot.
+
+        Parameters
+        ----------
+        theme_name : str, optional
+            Theme name to apply. If not provided, reads from
+            ``settings.appearance.theme``.
+        """
+        if theme_name is None:
+            theme_name = self._appearance.theme
+        theme = get_theme(theme_name)
         self.canvas.bgcolor = theme.canvas.as_hex()
         self.histogram_visual.set_style(
             bar_color=self._layer_bar_color(),
