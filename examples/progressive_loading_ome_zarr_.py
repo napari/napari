@@ -14,34 +14,15 @@ Biohub). It requires network access; chunks are cached in memory.
 .. tags:: experimental
 """
 
-import zarr
-from zarr.experimental.cache_store import CacheStore
-from zarr.storage import FsspecStore, MemoryStore
-
 import napari
 from napari.experimental._progressive_loading import (
     add_progressive_loading_image,
 )
+from napari.experimental._progressive_loading_datasets import open_ome_zarr
 
 URL = 'https://public.czbiohub.org/royerlab/zebrahub/imaging/single-objective/ZSNS002.ome.zarr/'
-NUM_LEVELS = 4
 
-
-def open_zebrahub():
-    """Open the zebrahub multiscale levels through an in-memory cache."""
-    store = CacheStore(
-        FsspecStore.from_url(URL),
-        cache_store=MemoryStore(),
-        max_size=int(4e9),
-    )
-    group = zarr.open_group(store, mode='r')
-    arrays = [group[str(level)] for level in range(NUM_LEVELS)]
-    ms = dict(group.attrs)['multiscales'][0]
-    scale = ms['datasets'][0]['coordinateTransformations'][0]['scale']
-    return arrays, scale
-
-
-arrays, scale = open_zebrahub()
+arrays, scale, _translate = open_ome_zarr(URL, num_levels=4)
 
 viewer = napari.Viewer()
 layer = add_progressive_loading_image(

@@ -52,8 +52,6 @@ Options::
 import argparse
 import contextlib
 
-import zarr
-
 import napari
 
 with contextlib.suppress(ImportError):
@@ -62,6 +60,7 @@ with contextlib.suppress(ImportError):
 from napari.experimental._progressive_loading import (
     add_progressive_loading_image,
 )
+from napari.experimental._progressive_loading_datasets import open_ome_zarr
 
 # ── Presets ────────────────────────────────────────────────────────────
 # Each preset defines the URL/path plus sensible defaults so users can
@@ -152,98 +151,6 @@ PRESETS = {
 }
 
 
-def _is_remote(path: str) -> bool:
-    return path.startswith(('http://', 'https://', 's3://', 'gs://'))
-
-
-def _find_multiscales(group, depth=0):
-    """Walk into nested groups to find OME multiscales metadata."""
-    attrs = dict(group.attrs)
-    ms_list = attrs.get('multiscales') or attrs.get('ome', {}).get('multiscales')
-    if ms_list:
-        return group, ms_list[0]
-    if depth > 4:
-        return None, None
-    for key in group:
-        try:
-            child = group[key]
-        except (KeyError, ValueError, OSError):
-            continue
-        if not hasattr(child, 'attrs'):
-            continue
-        result, ms = _find_multiscales(child, depth + 1)
-        if ms is not None:
-            return result, ms
-    return None, None
-
-
-def open_ome_zarr(path: str, *, num_levels: int | None = None,
-                  cache_mb: int = 4000, zarr_format: int | None = None):
-    if _is_remote(path):
-        from zarr.experimental.cache_store import CacheStore
-        from zarr.storage import FsspecStore, MemoryStore
-
-        storage_options = {}
-        if path.startswith('s3://'):
-            storage_options['anon'] = True
-
-        store = CacheStore(
-            FsspecStore.from_url(path, storage_options=storage_options),
-            cache_store=MemoryStore(),
-            max_size=cache_mb * 1_000_000,
-        )
-    else:
-        store = zarr.storage.LocalStore(path)
-
-    open_kw = {'mode': 'r'}
-    if zarr_format is not None:
-        open_kw['zarr_format'] = zarr_format
-
-    root = zarr.open_group(store, **open_kw)
-    group, ms = _find_multiscales(root)
-
-    if ms is not None:
-        datasets = ms.get('datasets', [])
-    else:
-        group = root
-        datasets = []
-
-    if not datasets:
-        children = sorted(group.keys(), key=lambda k: (len(k), k))
-        datasets = [{'path': k} for k in children]
-
-    if num_levels is not None:
-        datasets = datasets[:num_levels]
-
-    arrays = [group[ds['path']] for ds in datasets]
-
-    # Squeeze singleton leading dims (e.g. IDR v0.1 5D → 2D)
-    if arrays and arrays[0].ndim > 3:
-        shape0 = arrays[0].shape
-        leading_singletons = sum(1 for s in shape0 if s == 1)
-        if leading_singletons >= arrays[0].ndim - 2:
-            import dask.array as da
-            arrays = [da.from_zarr(a).squeeze() for a in arrays]
-
-    scale = None
-    try:
-        transforms = datasets[0].get('coordinateTransformations', [])
-        for t in transforms:
-            if t.get('type') == 'scale':
-                scale = t['scale']
-                break
-    except (KeyError, IndexError):
-        pass
-
-    # Trim scale to match squeezed ndim
-    if scale is not None and arrays:
-        arr_ndim = arrays[0].ndim
-        if len(scale) > arr_ndim:
-            scale = scale[-arr_ndim:]
-
-    return arrays, scale
-
-
 def open_generative(name: str):
     from napari.experimental._progressive_loading_datasets import (
         mandelbrot_dataset,
@@ -310,11 +217,14 @@ def main(argv=None):
     # Open data
     if data_path.startswith('__generative_'):
         arrays, scale = open_generative(data_path)
+        translate = None
     else:
         print(f'Opening {data_path} ...')
-        arrays, scale = open_ome_zarr(data_path, num_levels=num_levels,
-                                      cache_mb=args.cache_mb,
-                                      zarr_format=zarr_format)
+        arrays, scale, translate = open_ome_zarr(
+            data_path, num_levels=num_levels,
+            cache_bytes=args.cache_mb * 1_000_000,
+            zarr_format=zarr_format,
+        )
 
     print(f'  {len(arrays)} levels, level 0: shape={arrays[0].shape} '
           f'dtype={arrays[0].dtype}')
@@ -324,6 +234,8 @@ def main(argv=None):
         kwargs['contrast_limits'] = tuple(contrast)
     if scale is not None:
         kwargs['scale'] = scale
+    if translate is not None:
+        kwargs['translate'] = translate
     if threed:
         kwargs['rendering'] = rendering
 

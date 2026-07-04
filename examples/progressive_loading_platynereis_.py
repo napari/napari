@@ -18,35 +18,16 @@ import contextlib
 
 with contextlib.suppress(ModuleNotFoundError):
     import napari_colormaps  # noqa: F401 - registers colormaps
-import zarr
-from zarr.experimental.cache_store import CacheStore
-from zarr.storage import FsspecStore, MemoryStore
 
 import napari
 from napari.experimental._progressive_loading import (
     add_progressive_loading_image,
 )
+from napari.experimental._progressive_loading_datasets import open_ome_zarr
 
 URL = 'https://s3.embl.de/i2k-2020/platy-raw.ome.zarr'
-NUM_LEVELS = 10
 
-
-def open_platynereis():
-    """Open the Platynereis volume through an in-memory cache."""
-    store = CacheStore(
-        FsspecStore.from_url(URL),
-        cache_store=MemoryStore(),
-        max_size=int(4e9),
-    )
-    group = zarr.open_group(store, mode='r')
-    ms = dict(group.attrs)['multiscales'][0]
-    datasets = ms['datasets']
-    arrays = [group[d['path']] for d in datasets[:NUM_LEVELS]]
-    scale = datasets[0]['coordinateTransformations'][0]['scale']
-    return arrays, scale
-
-
-arrays, scale = open_platynereis()
+arrays, scale, _translate = open_ome_zarr(URL, num_levels=10)
 
 viewer = napari.Viewer()
 viewer.dims.ndisplay = 3

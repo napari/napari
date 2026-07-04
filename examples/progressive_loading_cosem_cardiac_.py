@@ -21,37 +21,19 @@ import contextlib
 
 with contextlib.suppress(ModuleNotFoundError):
     import napari_colormaps  # noqa: F401 - registers colormaps
-import zarr
-from zarr.experimental.cache_store import CacheStore
-from zarr.storage import FsspecStore, MemoryStore
 
 import napari
 from napari.experimental._progressive_loading import (
     add_progressive_loading_image,
 )
+from napari.experimental._progressive_loading_datasets import open_ome_zarr
 
 BUCKET = (
     's3://janelia-cosem-datasets'
     '/jrc_zf-cardiac-1/jrc_zf-cardiac-1.zarr/recon-1/em/fibsem-uint8'
 )
-NUM_LEVELS = 15
 
-
-def open_cardiac():
-    """Open the zebrafish cardiac volume through an in-memory cache."""
-    store = CacheStore(
-        FsspecStore.from_url(BUCKET, storage_options={'anon': True}),
-        cache_store=MemoryStore(),
-        max_size=int(4e9),
-    )
-    group = zarr.open_group(store, mode='r')
-    arrays = [group[f's{level}'] for level in range(NUM_LEVELS)]
-    ms = dict(group.attrs)['multiscales'][0]
-    scale = ms['datasets'][0]['coordinateTransformations'][0]['scale']
-    return arrays, scale
-
-
-arrays, scale = open_cardiac()
+arrays, scale, translate = open_ome_zarr(BUCKET, num_levels=15)
 
 viewer = napari.Viewer()
 viewer.dims.ndisplay = 3
@@ -63,6 +45,7 @@ layer = add_progressive_loading_image(
     contrast_limits=(0, 255),
     colormap='turbo',
     scale=scale,
+    translate=translate,
     rendering='attenuated_mip',
 )
 

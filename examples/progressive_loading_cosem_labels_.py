@@ -25,46 +25,20 @@ except ImportError:
     print('This example requires s3fs: pip install s3fs')
     sys.exit(0)
 
-import zarr
-from zarr.experimental.cache_store import CacheStore
-from zarr.storage import FsspecStore, MemoryStore
-
 import napari
 from napari.experimental._progressive_loading import (
     add_progressive_loading_image,
     add_progressive_loading_labels,
 )
+from napari.experimental._progressive_loading_datasets import open_ome_zarr
 
 BUCKET = 's3://janelia-cosem-datasets/jrc_mus-liver/jrc_mus-liver.zarr/recon-1'
 EM_PATH = f'{BUCKET}/em/fibsem-uint8'
 LABEL_PATH = f'{BUCKET}/labels/groundtruth/crop124/all'
-NUM_EM_LEVELS = 5
-NUM_LABEL_LEVELS = 5
 
-
-def open_cosem(path, num_levels):
-    """Open a COSEM multiscale group through an in-memory cache."""
-    store = CacheStore(
-        FsspecStore.from_url(path, storage_options={'anon': True}),
-        cache_store=MemoryStore(),
-        max_size=int(2e9),
-    )
-    group = zarr.open_group(store, mode='r')
-    arrays = [group[f's{level}'] for level in range(num_levels)]
-    ms = dict(group.attrs)['multiscales'][0]
-    transforms = ms['datasets'][0]['coordinateTransformations']
-    scale = transforms[0]['scale']
-    translate = [0.0] * len(scale)
-    for t in transforms:
-        if t.get('type') == 'translation':
-            translate = t['translation']
-            break
-    return arrays, scale, translate
-
-
-em_arrays, em_scale, em_translate = open_cosem(EM_PATH, NUM_EM_LEVELS)
-label_arrays, label_scale, label_translate = open_cosem(
-    LABEL_PATH, NUM_LABEL_LEVELS
+em_arrays, em_scale, em_translate = open_ome_zarr(EM_PATH, num_levels=5)
+label_arrays, label_scale, label_translate = open_ome_zarr(
+    LABEL_PATH, num_levels=5
 )
 
 viewer = napari.Viewer()

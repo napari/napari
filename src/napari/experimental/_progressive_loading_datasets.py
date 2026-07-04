@@ -40,6 +40,149 @@ def _open_cached_multiscale(store, levels: int, cache_bytes: int):
     return [group[str(level)] for level in range(levels)]
 
 
+def _is_remote(path: str) -> bool:
+    return str(path).startswith(('http://', 'https://', 's3://', 'gs://'))
+
+
+def _find_multiscales(group, depth: int = 0):
+    """Walk (up to a few levels) into nested groups for OME multiscales.
+
+    Returns ``(group, multiscales_dict)`` for the first group whose attrs
+    carry a ``multiscales`` list (v0.1-v0.4 or the v0.5 ``ome`` wrapper),
+    or ``(None, None)`` if none is found within ``depth`` levels.
+    """
+    attrs = dict(group.attrs)
+    ome = attrs.get('ome')
+    ms_list = attrs.get('multiscales') or (
+        ome.get('multiscales') if isinstance(ome, dict) else None
+    )
+    if ms_list:
+        return group, ms_list[0]
+    if depth > 4:
+        return None, None
+    for key in group:
+        try:
+            child = group[key]
+        except (KeyError, ValueError, OSError):
+            continue
+        # only groups can hold multiscales metadata; recursing into an
+        # array would iterate its rows and fancy-index it (BoundsCheckError)
+        if not isinstance(child, zarr.Group):
+            continue
+        found, ms = _find_multiscales(child, depth + 1)
+        if ms is not None:
+            return found, ms
+    return None, None
+
+
+def open_ome_zarr(
+    path: str,
+    *,
+    num_levels: int | None = None,
+    cache_bytes: int = DEFAULT_CACHE_BYTES,
+    zarr_format: int | None = None,
+    anon: bool = True,
+    squeeze: bool = True,
+):
+    """Open a local or remote OME-Zarr for progressive loading.
+
+    Consolidates the store setup and OME metadata parsing shared by the
+    progressive-loading examples: remote URLs (``http(s)://``, ``s3://``,
+    ``gs://``) are read through an in-memory :class:`CacheStore`, local
+    paths through a :class:`LocalStore`. The first ``multiscales`` group
+    reachable from the root is used.
+
+    Parameters
+    ----------
+    path : str
+        Local filesystem path or remote URL to the OME-Zarr group.
+    num_levels : int, optional
+        Keep only the first ``num_levels`` resolution levels (default: all).
+    cache_bytes : int
+        Size of the in-memory chunk cache for remote stores.
+    zarr_format : int, optional
+        Force the zarr format (2 or 3) when auto-detection is ambiguous.
+    anon : bool
+        Use anonymous access for ``s3://`` URLs (default True).
+    squeeze : bool
+        Drop leading singleton dimensions (e.g. 5D ``(1,1,1,H,W)`` IDR
+        data) down to the spatial axes, adjusting ``scale``/``translate``
+        to match.
+
+    Returns
+    -------
+    arrays : list
+        Multiscale levels, highest resolution first.
+    scale : list of float or None
+        Per-axis scale from the level-0 coordinate transformations.
+    translate : list of float or None
+        Per-axis translation from the level-0 coordinate transformations.
+    """
+    if _is_remote(path):
+        from zarr.storage import FsspecStore
+
+        storage_options = {'anon': anon} if path.startswith('s3://') else {}
+        store = CacheStore(
+            FsspecStore.from_url(path, storage_options=storage_options),
+            cache_store=MemoryStore(),
+            max_size=cache_bytes,
+        )
+    else:
+        store = LocalStore(str(path))
+
+    open_kw = {'mode': 'r'}
+    if zarr_format is not None:
+        open_kw['zarr_format'] = zarr_format
+    root = zarr.open_group(store, **open_kw)
+
+    group, ms = _find_multiscales(root)
+    datasets = ms.get('datasets', []) if ms is not None else []
+    if not datasets:
+        # no multiscales metadata (or an empty datasets list): treat the
+        # sorted child arrays of the group as the resolution levels
+        group = group if group is not None else root
+        datasets = [
+            {'path': k}
+            for k in sorted(group.keys(), key=lambda k: (len(k), k))
+        ]
+    if num_levels is not None:
+        datasets = datasets[:num_levels]
+    arrays = [group[ds['path']] for ds in datasets]
+
+    scale, translate = None, None
+    if datasets:
+        for t in datasets[0].get('coordinateTransformations', []):
+            if t.get('type') == 'scale':
+                scale = list(t['scale'])
+            elif t.get('type') == 'translation':
+                translate = list(t['translation'])
+
+    if squeeze and arrays and arrays[0].ndim > 3:
+        import dask.array as da
+
+        # collapse only LEADING singleton axes (the t/c axes of 5D
+        # OME-Zarr, e.g. (1,1,1,H,W)) down toward the spatial axes;
+        # interior/trailing singletons are kept so the scale/translate
+        # trim below (which drops leading entries) stays axis-aligned
+        shape0 = arrays[0].shape
+        n_lead = 0
+        while n_lead < len(shape0) - 2 and shape0[n_lead] == 1:
+            n_lead += 1
+        if n_lead:
+            collapse = (0,) * n_lead
+            arrays = [da.from_zarr(a)[collapse] for a in arrays]
+
+    # trim scale/translate to the (possibly squeezed) dimensionality
+    ndim = arrays[0].ndim if arrays else None
+    if ndim is not None:
+        if scale is not None and len(scale) > ndim:
+            scale = scale[-ndim:]
+        if translate is not None and len(translate) > ndim:
+            translate = translate[-ndim:]
+
+    return arrays, scale, translate
+
+
 def mandelbrot_dataset(
     max_levels: int = 14,
     tilesize: int = 512,
@@ -136,6 +279,110 @@ def mandelbulb_dataset(
             (2**level, 2**level, 2**level) for level in range(max_levels)
         ],
         'chunk_size': (tilesize, tilesize, tilesize),
+        'arrays': arrays,
+    }
+
+
+def _escape_to_rgb(chunk, maxiter, dtype=np.uint8):
+    """Map scalar Mandelbulb escape-time values to an RGB triplet.
+
+    The triplet holds 0-255 colour values in ``dtype`` (the store's own
+    dtype: ``uint8``, or ``uint16`` when ``maxiter >= 256``), so the
+    serialized chunk bytes match the array's declared dtype.
+    """
+    norm = chunk.astype(np.float32) / maxiter
+    r = (np.sin(2 * np.pi * norm * 3.0) * 127 + 128).astype(dtype)
+    g = (np.sin(2 * np.pi * norm * 5.0 + 2.0) * 127 + 128).astype(dtype)
+    b = (np.sin(2 * np.pi * norm * 7.0 + 4.0) * 127 + 128).astype(dtype)
+    mask = chunk >= maxiter
+    r[mask] = g[mask] = b[mask] = 0
+    return np.stack([r, g, b], axis=-1)
+
+
+class MandelbulbRGBStore(MandelbulbStore):
+    """Mandelbulb store producing ``(Z, Y, X, 3)`` RGB chunks lazily.
+
+    Reuses :class:`MandelbulbStore`'s escape-time generation and maps each
+    scalar value to an RGB triplet, so the same volume renders as a colour
+    field through the 3D progressive-loading RGB texture path. Chunks use
+    the store's ``dtype`` (``uint8``, or ``uint16`` for ``maxiter >= 256``).
+    """
+
+    def _init_metadata(self):
+        root = zarr.create_group(store=self, zarr_format=3)
+        datasets = [{'path': str(level)} for level in range(self.levels)]
+        root.attrs['multiscales'] = [{'datasets': datasets, 'version': '0.1'}]
+        base_width = self.tilesize * 2**self.levels
+        for level in range(self.levels):
+            width = base_width // 2**level
+            root.create_array(
+                name=str(level),
+                shape=(width, width, width, 3),
+                chunks=(self.tilesize, self.tilesize, self.tilesize, 3),
+                dtype=self.dtype,
+                compressors=None,
+                fill_value=0,
+            )
+
+    def _parse_chunk_key(self, key):
+        parts = key.split('/')
+        # the RGB arrays carry one extra (channel) axis beyond the base
+        # scalar store, so the key has one more coordinate than usual:
+        # level/c/<ndim spatial coords>/rgb_idx
+        if len(parts) != self.ndim + 3 or parts[1] != 'c':
+            return None
+        try:
+            level = int(parts[0])
+            coords = tuple(int(p) for p in parts[2:])
+        except ValueError:
+            return None
+        if not 0 <= level < self.levels:
+            return None
+        return (level, *coords)
+
+    def get_chunk(self, level, *coords):
+        z, y, x, _rgb = coords
+        scalar = super().get_chunk(level, z, y, x)
+        return _escape_to_rgb(scalar, self.maxiter, self.dtype)
+
+
+def mandelbulb_rgb_dataset(
+    max_levels: int = 5,
+    tilesize: int = 32,
+    maxiter: int = 64,
+    order: int = 8,
+    cache_bytes: int = DEFAULT_CACHE_BYTES,
+    cpu_relief: float = 0.5,
+):
+    """Generate a multiscale 3D *RGB* Mandelbulb.
+
+    Like :func:`mandelbulb_dataset` but each voxel is an ``(R, G, B)``
+    uint8 triplet, exercising the RGB texture path in 3D progressive
+    loading. Chunks are generated on first access.
+
+    Returns
+    -------
+    dict
+        Multiscale metadata with the same keys as
+        :func:`mandelbulb_dataset`; ``'arrays'`` levels have a trailing
+        length-3 channel axis.
+    """
+    store = MandelbulbRGBStore(
+        levels=max_levels,
+        tilesize=tilesize,
+        maxiter=maxiter,
+        order=order,
+        cpu_relief=cpu_relief,
+    )
+    arrays = _open_cached_multiscale(store, max_levels, cache_bytes)
+    return {
+        'container': 'mandelbulb_rgb.zarr/',
+        'dataset': '',
+        'scale_levels': max_levels,
+        'scale_factors': [
+            (2**level, 2**level, 2**level) for level in range(max_levels)
+        ],
+        'chunk_size': (tilesize, tilesize, tilesize, 3),
         'arrays': arrays,
     }
 

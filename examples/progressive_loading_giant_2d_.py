@@ -20,45 +20,19 @@ Requires network access (public HTTPS, no credentials).
 
 import contextlib
 
-import dask.array as da
-
 with contextlib.suppress(ModuleNotFoundError):
     import napari_colormaps  # noqa: F401 - registers colormaps
-import zarr
-from zarr.experimental.cache_store import CacheStore
-from zarr.storage import FsspecStore, MemoryStore
 
 import napari
 from napari.experimental._progressive_loading import (
     add_progressive_loading_image,
 )
+from napari.experimental._progressive_loading_datasets import open_ome_zarr
 
+# 5D (1,1,1,H,W) IDR v0.1 data; open_ome_zarr squeezes to 2D
 URL = 'https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.1/4495402.zarr/'
-NUM_LEVELS = 8
 
-
-def open_giant_2d():
-    """Open the IDR giant 2D image through an in-memory cache.
-
-    The raw arrays are 5D (1,1,1,H,W); we squeeze to 2D via dask so
-    the progressive loader sees a plain (H, W) image.
-    """
-    store = CacheStore(
-        FsspecStore.from_url(URL),
-        cache_store=MemoryStore(),
-        max_size=int(4e9),
-    )
-    group = zarr.open_group(store, mode='r', zarr_format=2)
-    ms = dict(group.attrs)['multiscales'][0]
-    datasets = ms['datasets']
-    arrays = [
-        da.from_zarr(group[d['path']]).squeeze()
-        for d in datasets[:NUM_LEVELS]
-    ]
-    return arrays
-
-
-arrays = open_giant_2d()
+arrays, _scale, _translate = open_ome_zarr(URL, num_levels=8, zarr_format=2)
 
 viewer = napari.Viewer()
 
