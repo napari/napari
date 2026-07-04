@@ -197,8 +197,11 @@ class QtHistogramWidget(QWidget):
         ):
             self._start_async_compute()
         else:
-            # Sync path — events fire on the main thread as usual
+            # Sync path — events fire on the main thread as usual.
+            # If an async compute was previously started, events were
+            # disconnected by _start_async_compute() and need reconnecting.
             self._histogram.compute()
+            self._reconnect_events()
 
     def _start_async_compute(self) -> None:
         """Run histogram compute in a background thread.
@@ -252,6 +255,21 @@ class QtHistogramWidget(QWidget):
         )
         self.canvas.update()
 
+    def _reconnect_events(self) -> None:
+        """Reconnect all event-driven updates after an async compute completes
+        or after switching from async to sync mode.
+
+        This is the symmetric counterpart to the disconnects in
+        ``_start_async_compute()``.
+        """
+        self._histogram.events.bins.connect(self._on_histogram_change)
+        self._histogram.events.counts.connect(self._on_histogram_change)
+        self._histogram.events.log_scale.connect(self._on_histogram_change)
+        self._histogram.events.enabled.connect(self._on_histogram_change)
+        self.layer.events.gamma.connect(self._on_gamma_change)
+        self.layer.events.contrast_limits.connect(self._on_clims_change)
+        self.layer.events.colormap.connect(self._on_colormap_change)
+
     def _on_async_compute_done(self, _: Any = None) -> None:
         """Called on the main thread when background compute finishes.
 
@@ -266,14 +284,7 @@ class QtHistogramWidget(QWidget):
             return
         self._compute_worker = None
 
-        # Reconnect ALL event-driven updates (symmetric with _start_async_compute)
-        self._histogram.events.bins.connect(self._on_histogram_change)
-        self._histogram.events.counts.connect(self._on_histogram_change)
-        self._histogram.events.log_scale.connect(self._on_histogram_change)
-        self._histogram.events.enabled.connect(self._on_histogram_change)
-        self.layer.events.gamma.connect(self._on_gamma_change)
-        self.layer.events.contrast_limits.connect(self._on_clims_change)
-        self.layer.events.colormap.connect(self._on_colormap_change)
+        self._reconnect_events()
 
         # Emit model events so any listeners (including our own
         # _on_histogram_change) learn about the fresh data from
