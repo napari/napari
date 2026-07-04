@@ -129,23 +129,42 @@ class HistogramModel(EventedModel):
         )
 
         self._layer = layer
+        self._layer_events_connected = False
 
-        # Connect to layer events to trigger recomputation
-        layer.events.data.connect(self._on_data_change)
-        layer.events.contrast_limits_range.connect(self._on_range_change)
-
-        # set_data fires from Layer._refresh_sync() at the end of both
-        # synchronous and async slice updates
-        layer.events.set_data.connect(self._on_slice_change)
-
-        # Connect to our own events
+        # Connect to our own events (these are internal to the model and
+        # don't leak external callbacks on the layer).
         self.events.n_bins.connect(self._on_params_change)
         self.events.max_samples.connect(self._on_params_change)
         self.events.mode.connect(self._on_params_change)
         self.events.log_scale.connect(self._on_log_scale_change)
-        # When enabled flips True and data is dirty, compute immediately so
-        # any widget that just subscribed to bins/counts events gets a result.
         self.events.enabled.connect(self._on_enabled_change)
+
+    def _connect_layer_events(self) -> None:
+        """Connect to layer events to trigger recomputation.
+
+        Connections are made lazily (only when the histogram is actually
+        computing or enabled) so that they don't leak on the layer when
+        the histogram was never used or when the layer is removed from
+        the viewer.
+        """
+        if self._layer_events_connected:
+            return
+        self._layer_events_connected = True
+        self._layer.events.data.connect(self._on_data_change)
+        self._layer.events.contrast_limits_range.connect(self._on_range_change)
+        self._layer.events.set_data.connect(self._on_slice_change)
+
+    def _disconnect_layer_events(self) -> None:
+        """Disconnect layer events, the symmetric counterpart to
+        ``_connect_layer_events``."""
+        if not self._layer_events_connected:
+            return
+        self._layer_events_connected = False
+        self._layer.events.data.disconnect(self._on_data_change)
+        self._layer.events.contrast_limits_range.disconnect(
+            self._on_range_change
+        )
+        self._layer.events.set_data.disconnect(self._on_slice_change)
 
     @property
     def bins(self) -> np.ndarray:
@@ -185,6 +204,7 @@ class HistogramModel(EventedModel):
             return
 
         self._computing = True
+        self._connect_layer_events()
         try:
             data = self._get_data()
 
@@ -240,6 +260,7 @@ class HistogramModel(EventedModel):
             return
 
         self._computing = True
+        self._connect_layer_events()
         try:
             data = self._get_data()
 
@@ -584,9 +605,17 @@ class HistogramModel(EventedModel):
         self._mark_dirty()
 
     def _on_enabled_change(self) -> None:
-        """When enabled flips to True, compute if there is pending dirty data."""
-        if self.enabled and self._dirty:
-            self.compute()
+        """When enabled flips to True, compute if there is pending dirty data.
+
+        Also manages lazy layer event connections: connect when enabled,
+        disconnect when disabled to avoid leaking callbacks on the layer.
+        """
+        if self.enabled:
+            self._connect_layer_events()
+            if self._dirty:
+                self.compute()
+        else:
+            self._disconnect_layer_events()
 
     def _mark_dirty(self) -> None:
         """Mark histogram as needing recomputation.
@@ -615,11 +644,7 @@ class HistogramModel(EventedModel):
         Call this when the layer is removed or the histogram is no
         longer needed to break psygnal event connections.
         """
-        self._layer.events.data.disconnect(self._on_data_change)
-        self._layer.events.contrast_limits_range.disconnect(
-            self._on_range_change
-        )
-        self._layer.events.set_data.disconnect(self._on_slice_change)
+        self._disconnect_layer_events()
 
         # Disconnect from our own events
         self.events.n_bins.disconnect(self._on_params_change)
