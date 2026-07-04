@@ -30,6 +30,7 @@ from napari._qt.widgets.qt_histogram_content import QtHistogramContentWidget
 from napari._qt.widgets.qt_mode_buttons import QtModePushButton
 from napari.layers import Image, Surface
 from napari.utils._dtype import normalize_dtype
+from napari.utils.events import disconnect_events
 from napari.utils.events.event_utils import connect_no_arg, connect_setattr
 from napari.utils.translations import trans
 
@@ -137,12 +138,24 @@ class QContrastLimitsPopup(QtPopup):
 
         # 2. Histogram + settings (Image layers only; Surface not yet supported)
         self.histogram_content = None
+        self._popup_enabled_histogram = False
         if isinstance(layer, Image):
             self.histogram_content = QtHistogramContentWidget(
                 layer,
                 parent=self,
             )
             self._layout.addWidget(self.histogram_content)
+
+            # Always show the histogram in the popup, regardless of whether
+            # the inline histogram is currently enabled.  We block the
+            # ``enabled`` event so the inline widget does NOT react — the
+            # popup is transient and should not affect the inline state.
+            with layer.histogram.events.enabled.blocker():
+                if not layer.histogram.enabled:
+                    layer.histogram.enabled = True
+                    self._popup_enabled_histogram = True
+            if self._popup_enabled_histogram:
+                layer.histogram.compute()
 
         # 3. Gamma slider
         self.gamma_slider = QLabeledDoubleSlider(Qt.Orientation.Horizontal)
@@ -224,6 +237,12 @@ class QContrastLimitsPopup(QtPopup):
 
         if self.histogram_content is not None:
             self.histogram_content.cleanup()
+
+        # Restore the enabled state if the popup was the one that enabled it.
+        # We block events so the inline widget is unaffected.
+        if self._popup_enabled_histogram and isinstance(self._layer, Image):
+            with self._layer.histogram.events.enabled.blocker():
+                self._layer.histogram.enabled = False
 
     def _create_widget_from_layout(self, layout: QHBoxLayout) -> QWidget:
         """Helper to wrap a layout in a widget."""
@@ -368,6 +387,11 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
             self.histogram_button.installEventFilter(self)
             self._clim_layout.addWidget(self.histogram_button)
 
+            # Sync button checked state when ``enabled`` changes via the API
+            layer.histogram.events.enabled.connect(
+                self._on_histogram_model_enabled
+            )
+
     def show_clim_popup(self):
         self.clim_popup = QContrastLimitsPopup(
             self._layer,
@@ -461,6 +485,24 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
         # pre-enable here, or the popup cannot tell whether it was the one
         # that enabled it and will skip the matching disable on close.
         self.show_clim_popup()
+
+    def _on_histogram_model_enabled(self) -> None:
+        """Sync button checked state when ``layer.histogram.enabled`` changes via the API.
+
+        Uses ``qt_signals_blocked`` so the ``toggled`` signal does NOT fire,
+        preventing recursion into ``_on_histogram_button_toggled`` (which would
+        re-set ``layer.histogram.enabled`` and re-dispatch the event).
+        """
+        if self.histogram_button is None or not isinstance(self._layer, Image):
+            return
+        with qt_signals_blocked(self.histogram_button):
+            self.histogram_button.setChecked(self._layer.histogram.enabled)
+
+    def disconnect_widget_controls(self) -> None:
+        """Disconnect histogram model events and base controls."""
+        if isinstance(self._layer, Image):
+            disconnect_events(self._layer.histogram.events, self)
+        super().disconnect_widget_controls()
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
         return [
