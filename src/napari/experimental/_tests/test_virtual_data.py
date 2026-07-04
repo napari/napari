@@ -9,6 +9,7 @@ from napari.experimental._virtual_data import (
     VirtualData,
     chunk_boundaries,
     chunk_shape_for,
+    chunk_sizes_for,
 )
 
 
@@ -42,6 +43,61 @@ def test_chunk_boundaries_dask(dask_array):
     bounds = chunk_boundaries(dask_array)
     np.testing.assert_array_equal(bounds[0], [0, 32, 64, 96, 100])
     np.testing.assert_array_equal(bounds[1], [0, 40, 80, 120])
+
+
+class _RectilinearArrayStub:
+    """Mimics a zarr array with a rectilinear chunk grid.
+
+    Such arrays expose per-dimension chunk sizes via ``read_chunk_sizes``
+    and raise ``NotImplementedError`` from ``.chunks`` (only defined for
+    regular grids) — so ``read_chunk_sizes`` must be consulted first.
+    """
+
+    shape = (10, 20)
+    dtype = np.dtype('u1')
+    read_chunk_sizes = ((2, 3, 5), (10, 10))
+
+    @property
+    def chunks(self):
+        raise NotImplementedError('chunk grid is not regular')
+
+
+def test_chunk_helpers_rectilinear_stub():
+    arr = _RectilinearArrayStub()
+    assert chunk_sizes_for(arr) == ((2, 3, 5), (10, 10))
+    assert chunk_shape_for(arr) == (5, 10)
+    bounds = chunk_boundaries(arr)
+    np.testing.assert_array_equal(bounds[0], [0, 2, 5, 10])
+    np.testing.assert_array_equal(bounds[1], [0, 10, 20])
+
+
+def test_virtual_data_rectilinear_alignment():
+    vdata = VirtualData(_RectilinearArrayStub())
+    # intervals snap outward to the irregular chunk edges
+    assert vdata.chunk_aligned_interval((1, 0), (4, 5)) == ([0, 0], [5, 10])
+    assert vdata.chunk_aligned_interval((6, 12), (9, 15)) == (
+        [5, 10],
+        [10, 20],
+    )
+
+
+def test_chunk_helpers_zarr_rectilinear():
+    """Exercise a real rectilinear-chunked zarr array when supported."""
+    zarr = pytest.importorskip('zarr')
+    try:
+        with zarr.config.set({'array.rectilinear_chunks': True}):
+            arr = zarr.create_array(
+                {},
+                shape=(10, 20),
+                chunks=((2, 3, 5), (10, 10)),
+                dtype='u1',
+            )
+    except (TypeError, ValueError):
+        pytest.skip('installed zarr lacks rectilinear chunk grids')
+    assert chunk_sizes_for(arr) == ((2, 3, 5), (10, 10))
+    bounds = chunk_boundaries(arr)
+    np.testing.assert_array_equal(bounds[0], [0, 2, 5, 10])
+    np.testing.assert_array_equal(bounds[1], [0, 10, 20])
 
 
 def test_virtual_data_protocol(dask_array):

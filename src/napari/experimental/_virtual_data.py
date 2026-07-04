@@ -38,47 +38,72 @@ if TYPE_CHECKING:
 LOGGER = logging.getLogger(__name__)
 
 
-def chunk_shape_for(array) -> tuple[int, ...]:
-    """Return a per-dimension chunk shape for an array.
+def _regular_chunk_sizes(
+    shape: Sequence[int],
+    chunk_shape: Sequence[int],
+) -> tuple[tuple[int, ...], ...]:
+    """Expand a regular chunk shape into clipped per-dimension sizes."""
+    out = []
+    for size, step in zip(shape, chunk_shape, strict=True):
+        size, step = int(size), max(int(step), 1)
+        n_full, remainder = divmod(size, step)
+        out.append((step,) * n_full + ((remainder,) if remainder else ()))
+    return tuple(out)
 
-    Supports dask arrays (``chunksize``), zarr v2/v3 arrays (``chunks`` as a
-    tuple of ints), and falls back to a bounded chunk shape for plain
-    ndarrays.
+
+def chunk_sizes_for(array) -> tuple[tuple[int, ...], ...]:
+    """Per-dimension sequences of chunk data sizes, clipped to the array.
+
+    Follows the dask ``Array.chunks`` convention: one inner tuple per
+    dimension whose values sum to the array's extent along it. Supports
+    dask arrays (``chunks``), zarr arrays with regular *or* rectilinear
+    chunk grids (``read_chunk_sizes``, or ``chunks`` on zarr versions
+    without rectilinear support), and falls back to a bounded chunk
+    shape for plain ndarrays.
+    """
+    # zarr with rectilinear-chunk-grid support: regular and rectilinear
+    # grids both expose clipped per-dimension sizes (``.chunks`` raises
+    # NotImplementedError for rectilinear grids, so it comes first)
+    sizes = getattr(array, 'read_chunk_sizes', None)
+    if sizes is not None:
+        return tuple(tuple(int(c) for c in dim) for dim in sizes)
+    chunks = getattr(array, 'chunks', None)
+    if chunks is not None:
+        if all(isinstance(c, (int, np.integer)) for c in chunks):
+            # regular grid as a chunk shape (older zarr, h5py, ...)
+            return _regular_chunk_sizes(array.shape, chunks)
+        # dask-style tuple of per-dimension chunk size tuples
+        return tuple(tuple(int(c) for c in dim) for dim in chunks)
+    return _regular_chunk_sizes(
+        array.shape,
+        tuple(min(int(s), 256) for s in array.shape),
+    )
+
+
+def chunk_shape_for(array) -> tuple[int, ...]:
+    """Return a per-dimension (maximum) chunk shape for an array.
+
+    For irregular (rectilinear/dask) grids this is the largest chunk
+    along each dimension, matching dask's ``chunksize``.
     """
     chunksize = getattr(array, 'chunksize', None)  # dask
     if chunksize is not None:
         return tuple(int(c) for c in chunksize)
-    chunks = getattr(array, 'chunks', None)
-    if chunks is not None:
-        if all(isinstance(c, (int, np.integer)) for c in chunks):
-            # zarr (v2 and v3 regular chunk grids)
-            return tuple(int(c) for c in chunks)
-        # dask-style tuple of per-dimension chunk sizes
-        return tuple(int(c[0]) for c in chunks)
-    return tuple(min(int(s), 256) for s in array.shape)
+    return tuple(
+        max(sizes) if sizes else 1 for sizes in chunk_sizes_for(array)
+    )
 
 
 def chunk_boundaries(array) -> list[np.ndarray]:
     """Per-dimension sorted arrays of chunk boundary positions.
 
     Each entry covers ``0`` through ``shape[dim]`` inclusive, so consecutive
-    pairs of values describe one chunk along that dimension. Irregular dask
-    chunks are honored exactly; regular (zarr) grids are reconstructed from
-    the chunk shape.
+    pairs of values describe one chunk along that dimension. Irregular
+    (dask or zarr rectilinear) chunks are honored exactly.
     """
-    chunks = getattr(array, 'chunks', None)
-    if chunks is not None and not all(
-        isinstance(c, (int, np.integer)) for c in chunks
-    ):
-        # dask: tuple of per-dimension chunk size tuples
-        return [
-            np.concatenate([[0], np.cumsum(sizes)]).astype(np.int64)
-            for sizes in chunks
-        ]
-    chunk_shape = chunk_shape_for(array)
     return [
-        np.concatenate([np.arange(0, size, step), [size]]).astype(np.int64)
-        for size, step in zip(array.shape, chunk_shape, strict=True)
+        np.concatenate([[0], np.cumsum(sizes)]).astype(np.int64)
+        for sizes in chunk_sizes_for(array)
     ]
 
 
@@ -256,6 +281,7 @@ class VirtualData:
         self._min_coord: list[int] | None = None
         self._max_coord: list[int] | None = None
         self._boundaries = chunk_boundaries(array)
+        self._chunk_shape = chunk_shape_for(array)
         # Chunk keys (tuples of (start, stop) pairs) whose data is resident
         # in the hyperslice. Maintained by the progressive loader.
         self.loaded_chunks: set[tuple[tuple[int, int], ...]] = set()
@@ -266,7 +292,9 @@ class VirtualData:
 
     @property
     def chunk_shape(self) -> tuple[int, ...]:
-        return chunk_shape_for(self.array)
+        # cached in __init__: the wrapped array is fixed, and this is read
+        # per-level on the interactive interval-sizing path
+        return self._chunk_shape
 
     @property
     def interval(self) -> tuple[tuple[int, ...], tuple[int, ...]] | None:
