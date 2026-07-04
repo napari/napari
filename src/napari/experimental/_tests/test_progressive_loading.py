@@ -1453,6 +1453,53 @@ def test_full_rewrite_present_waits_for_preflush_queue(
     loader.close()
 
 
+def test_dtype_change_rewrite_routes_to_reshape(
+    qtbot,
+    make_napari_viewer,
+    multiscale_3d_arrays,
+    monkeypatch,
+):
+    """A same-shape full rewrite whose dtype resolves to a different GL
+    internalformat (e.g. uint8 -> uint16 across zip-store zarr levels)
+    must reshape into a matching-format texture, not stage_full into the
+    fixed-format pair — otherwise vispy's check_data_format raises at the
+    deferred present (dropping the double buffer). Regression test for
+    that crash path."""
+    _viewer, _layer, loader = _engaged_3d_dbuf(
+        qtbot, make_napari_viewer, multiscale_3d_arrays
+    )
+    dbuf = loader._dbuf
+    node = loader._get_volume_node()
+
+    calls = {'full': 0, 'reshape': 0}
+    orig_full, orig_reshape = dbuf.stage_full, dbuf.stage_reshape
+    monkeypatch.setattr(
+        dbuf,
+        'stage_full',
+        lambda *a, **k: (calls.__setitem__('full', calls['full'] + 1),
+                         orig_full(*a, **k))[1],
+    )
+    monkeypatch.setattr(
+        dbuf,
+        'stage_reshape',
+        lambda *a, **k: (calls.__setitem__('reshape', calls['reshape'] + 1),
+                         orig_reshape(*a, **k))[1],
+    )
+
+    # same spatial shape and channel count, wider dtype -> format change
+    vol = np.full(dbuf.shape, 7, dtype=np.uint16)
+    node.set_data(vol)  # must not raise
+
+    assert calls['reshape'] == 1, 'dtype change was not routed to reshape'
+    assert calls['full'] == 0, 'dtype change wrongly staged as a full rewrite'
+    assert dbuf._reshape_pending
+    # draining and presenting must not raise (the original crash)
+    monkeypatch.setattr(dbuf, '_queued_upload_bytes', lambda: 0)
+    dbuf._reshape_deadline = 0.0
+    dbuf.present()
+    loader.close()
+
+
 def test_hold_presents_vetoes_until_released(
     qtbot,
     make_napari_viewer,

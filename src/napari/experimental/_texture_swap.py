@@ -33,6 +33,33 @@ import numpy as np
 
 LOGGER = logging.getLogger('napari.experimental._texture_swap')
 
+
+def _texture_format_will_change(texture, data, spatial_ndim: int) -> bool:
+    """Whether staging ``data`` would change ``texture``'s GL format.
+
+    A full rewrite whose channel count or dtype resolves to a different
+    internalformat cannot be staged into the fixed-format double-buffer
+    pair (vispy raises from ``check_data_format``); it must go through a
+    reshape that allocates a matching-format texture instead.
+
+    Uses vispy's own ``_internalformat_will_change`` when available (the
+    authoritative check, comparing resolved GL formats rather than raw
+    dtypes), falling back to a channel-count comparison for non-scaled
+    textures.
+    """
+    check = getattr(texture, '_internalformat_will_change', None)
+    if check is not None:
+        try:
+            return bool(check(data))
+        except Exception:  # noqa: BLE001 # pragma: no cover - vispy moved
+            pass
+    tex_shape = tuple(texture.shape)
+    tex_channels = (
+        tex_shape[spatial_ndim] if len(tex_shape) > spatial_ndim else 1
+    )
+    data_channels = data.shape[spatial_ndim] if data.ndim > spatial_ndim else 1
+    return data_channels != tex_channels
+
 #: Retired textures kept for reuse instead of deleted. GL object
 #: deletion synchronizes with the GPU pipeline (profiled ~25ms per
 #: DELETE on busy macOS GL-over-Metal), and reallocation costs another
@@ -619,17 +646,17 @@ class DoubleBufferedVolumeTexture(_TransformHoldMixin):
                 self._drop_transform_hold()
                 self.detach_set_data()
                 return original(vol, clim=clim, copy=copy)
-            # a channel-count change (e.g. scalar -> RGB) must reshape
-            # into a texture of the matching format, never stage_full
-            # into the format-mismatched pair
-            vol_channels = vol.shape[3] if vol.ndim == 4 else 1
-            back_shape = tuple(self._back.shape)
-            back_channels = back_shape[3] if len(back_shape) > 3 else 1
-            same_shape = (
-                tuple(vol.shape[:3]) == self.shape
-                and vol_channels == back_channels
+            # a format change — channel count (scalar -> RGB) OR dtype
+            # (e.g. uint8 -> uint16 between pyramid levels) — must
+            # reshape into a texture of the matching internalformat,
+            # never stage_full into the format-mismatched pair (vispy's
+            # check_data_format would raise at the deferred present)
+            same_format = tuple(
+                vol.shape[:3]
+            ) == self.shape and not _texture_format_will_change(
+                self._back, vol, 3
             )
-            if same_shape and self._suppress_full:
+            if same_format and self._suppress_full:
                 # caller asserts the GPU pair already matches vol
                 # (every chunk was patched): skip the redundant
                 # full-tile upload entirely
@@ -642,12 +669,13 @@ class DoubleBufferedVolumeTexture(_TransformHoldMixin):
                 # upload-drain callback), never here: the staged upload
                 # is metered, so an immediate bind would render the
                 # back texture's stale previous content
-                if same_shape:
+                if same_format:
                     self.stage_full(vol, clim=clim)
                 else:
-                    # a level/tile switch: fill a new-shape texture off
-                    # the rendered path; the swap happens once its
-                    # uploads drain (the old level renders meanwhile)
+                    # a level/tile switch or format change: fill a fresh
+                    # texture (correct shape AND internalformat) off the
+                    # rendered path; the swap happens once its uploads
+                    # drain (the old level renders meanwhile)
                     self.stage_reshape(vol, clim=clim)
             except Exception:  # noqa: BLE001 - dtype/format change
                 self._drop_transform_hold()
@@ -994,17 +1022,15 @@ class DoubleBufferedImageTexture(_TransformHoldMixin):
                 self._suppress_full = False
                 self.detach_set_data()
                 return original(image, copy=copy)
-            # a channel-count change cannot be absorbed by the pair
-            # (mismatched internalformat) — _reshape_now raises and the
-            # original path re-specs the texture instead
-            data_channels = data.shape[2] if data.ndim == 3 else 1
-            back_shape = tuple(self._back.shape)
-            back_channels = back_shape[2] if len(back_shape) > 2 else 1
-            same_shape = (
-                tuple(data.shape[:2]) == self._shape
-                and data_channels == back_channels
+            # a format change — channel count OR dtype — cannot be
+            # absorbed by the fixed-format pair; reshape into a texture
+            # of the matching internalformat instead of stage_full
+            same_format = tuple(
+                data.shape[:2]
+            ) == self._shape and not _texture_format_will_change(
+                self._back, data, 2
             )
-            if same_shape and self._suppress_full:
+            if same_format and self._suppress_full:
                 # caller asserts the GPU pair already matches the data
                 # (every chunk was patched): skip the redundant
                 # full-tile upload entirely
@@ -1013,7 +1039,7 @@ class DoubleBufferedImageTexture(_TransformHoldMixin):
                 return None
             self._suppress_full = False
             try:
-                if same_shape:
+                if same_format:
                     self.stage_full(data)
                     self.present()
                 else:
