@@ -1302,6 +1302,24 @@ def test_double_buffer_swaps_and_content_correct(
     loader.close()
 
 
+def _settle_dbuf(qtbot, dbuf):
+    """Complete any reshape/rewrite still staged after engagement.
+
+    A headless canvas never draws, so the GLIR command queue is never
+    flushed and the pre-flush present gate stays closed; zero the
+    deadlines (the production backstop) and present until the pair is
+    clean, so tests start from a swapped, non-dirty front.
+    """
+
+    def clean():
+        dbuf._stage_deadline = 0.0
+        dbuf._reshape_deadline = 0.0
+        dbuf.present()
+        return not dbuf.dirty and not dbuf._reshape_pending
+
+    qtbot.waitUntil(clean, timeout=10000)
+
+
 def _engaged_3d_dbuf(qtbot, make_napari_viewer, arrays):
     viewer = make_napari_viewer()
     viewer.dims.ndisplay = 3
@@ -1311,6 +1329,7 @@ def _engaged_3d_dbuf(qtbot, make_napari_viewer, arrays):
     layer.locked_data_level = 0
     qtbot.waitUntil(lambda: loader._dbuf is not None, timeout=10000)
     _wait_for_idle_loader(qtbot, loader)
+    _settle_dbuf(qtbot, loader._dbuf)
     return viewer, layer, loader
 
 
@@ -1318,6 +1337,7 @@ def test_transform_applied_at_swap_not_before(
     qtbot,
     make_napari_viewer,
     multiscale_3d_arrays,
+    monkeypatch,
 ):
     """A full rewrite's matrix change rides along with the texture swap.
 
@@ -1331,6 +1351,9 @@ def test_transform_applied_at_swap_not_before(
         qtbot, make_napari_viewer, multiscale_3d_arrays
     )
     dbuf = loader._dbuf
+    # a headless canvas never flushes GLIR, so the pre-flush gate would
+    # only open at the deadline; it is not the subject here
+    monkeypatch.setattr(dbuf, '_queued_upload_bytes', lambda: 0)
     node = loader._get_volume_node()
     transform = node.transform
     old_matrix = np.array(transform.matrix, copy=True)
@@ -1376,6 +1399,9 @@ def test_full_rewrite_present_waits_for_upload_drain(
     dbuf = loader._dbuf
     node = loader._get_volume_node()
     front_before = dbuf._front
+    # isolate the meter gate: the pre-flush (GLIR command queue) gate
+    # never opens on a headless canvas, which never draws/flushes
+    monkeypatch.setattr(dbuf, '_queued_upload_bytes', lambda: 0)
 
     monkeypatch.setattr(gm, 'pending_upload_bytes', lambda: 123456)
     vol = np.full(dbuf.shape, 9, dtype=np.uint8)
@@ -1387,6 +1413,41 @@ def test_full_rewrite_present_waits_for_upload_drain(
     monkeypatch.setattr(gm, 'pending_upload_bytes', lambda: 0)
     # the loader's own present cadence may beat the direct call
     assert dbuf.present() or dbuf._front is not front_before
+    assert dbuf._front is not front_before
+    assert node._texture is dbuf._front
+    loader.close()
+
+
+def test_full_rewrite_present_waits_for_preflush_queue(
+    qtbot,
+    make_napari_viewer,
+    multiscale_3d_arrays,
+    monkeypatch,
+):
+    """No swap while a full rewrite still sits in the GLIR command
+    queue (staged since the last flush): the meter has not seen those
+    uploads yet, so binding the back would render its previous content.
+    Patch-only backlogs do not hold the swap."""
+    _viewer, _layer, loader = _engaged_3d_dbuf(
+        qtbot, make_napari_viewer, multiscale_3d_arrays
+    )
+    dbuf = loader._dbuf
+    node = loader._get_volume_node()
+    front_before = dbuf._front
+
+    vol = np.full(dbuf.shape, 5, dtype=np.uint8)
+    node.set_data(vol)
+    assert dbuf.dirty
+    assert dbuf._front_pending_full()
+    # the staged rewrite is real, so the queue accounts for it
+    assert dbuf._queued_upload_bytes() > 0
+    assert not dbuf.present()
+    assert dbuf._front is front_before
+
+    # a flush empties the queue (simulated: headless canvases never
+    # draw); the swap proceeds
+    monkeypatch.setattr(dbuf, '_queued_upload_bytes', lambda: 0)
+    assert dbuf.present()
     assert dbuf._front is not front_before
     assert node._texture is dbuf._front
     loader.close()
@@ -1701,11 +1762,15 @@ def test_reshape_waits_for_backlog_drain(
     qtbot.waitUntil(lambda: loader._dbuf is not None, timeout=10000)
     _wait_for_idle_loader(qtbot, loader)
     dbuf = loader._dbuf
+    _settle_dbuf(qtbot, dbuf)
     node = loader._get_volume_node()
     old_front = dbuf._front
     old_shape = dbuf.shape
     new_shape = tuple(s // 2 for s in dbuf.shape)
     vol = np.full(new_shape, 7, dtype=np.uint8)
+    # isolate the meter gate: the pre-flush (GLIR command queue) gate
+    # never opens on a headless canvas, which never draws/flushes
+    monkeypatch.setattr(dbuf, '_queued_upload_bytes', lambda: 0)
 
     monkeypatch.setattr(gm, 'pending_upload_bytes', lambda: 32 * 2**20)
     node.set_data(vol)
