@@ -150,7 +150,135 @@ class _TransformHoldMixin:
         self._held_matrix = None
 
 
-class DoubleBufferedVolumeTexture(_TransformHoldMixin):
+class _DoubleBufferedTexture(_TransformHoldMixin):
+    """Shared front/back texture bookkeeping for the 2D and 3D variants.
+
+    Subclasses set :attr:`_spatial_ndim` (2 for images, 3 for volumes) and
+    provide the GL-API-specific pieces (``__init__``, ``_make_sibling``,
+    ``present``, ``_catch_up``, ``_bind``, the stage/reshape family,
+    ``attach_set_data`` and ``close``). Everything here — the
+    retired-texture pool, the present veto, the patch-log dirty/trim
+    bookkeeping, and the ``set_data`` detach — is identical across both.
+    """
+
+    #: number of leading spatial axes (a channel/dtype axis may follow)
+    _spatial_ndim: int = 3
+
+    def _sync_aux_state(self, tex):
+        front = self._front
+        if front.clim is not None:
+            with contextlib.suppress(Exception):
+                tex.set_clim(front.clim)
+        if tex.interpolation != front.interpolation:
+            tex.interpolation = front.interpolation
+        return tex
+
+    # -- retired-texture pool --
+
+    def _pool_key(self, shape, dtype) -> tuple:
+        # vispy texture shapes carry an explicit channel dim (scalar
+        # textures end in 1); data shapes may omit it. Normalize so a
+        # retired multichannel texture is never reused for a scalar tile
+        # of the same spatial shape (mismatched internalformat).
+        nd = self._spatial_ndim
+        shape = tuple(int(s) for s in shape)
+        channels = shape[nd] if len(shape) > nd else 1
+        return (shape[:nd], channels, np.dtype(dtype).str)
+
+    def _acquire(self, shape, dtype, create):
+        """Reuse a retired texture of this shape/dtype, or create one."""
+        key = self._pool_key(shape, dtype)
+        for i in range(len(self._pool) - 1, -1, -1):
+            if self._pool[i][0] == key:
+                _, tex = self._pool.pop(i)
+                return self._sync_aux_state(tex)
+        return create()
+
+    def _release(self, texture) -> None:
+        """Retire a texture for reuse (delete only past the pool cap)."""
+        dtype = getattr(texture, '_data_dtype', None)
+        if self._pool_max <= 0 or dtype is None:
+            with contextlib.suppress(Exception):
+                texture.delete()
+            return
+        key = self._pool_key(texture.shape, dtype)
+        self._pool.append((key, texture))
+        while len(self._pool) > self._pool_max:
+            _, old = self._pool.pop(0)
+            with contextlib.suppress(Exception):
+                old.delete()
+
+    @property
+    def shape(self) -> tuple:
+        """The shape staged content must have (the pair's tile shape).
+
+        During a pending reshape this is already the NEW shape — the
+        old-shape front keeps rendering, but patches target the new
+        back texture.
+        """
+        return self._shape
+
+    def matches(self, node) -> bool:
+        """Whether this buffer still belongs to ``node``'s texture pair."""
+        if self._node is not node or node._texture not in (
+            self._front,
+            self._back,
+        ):
+            return False
+        # a pending reshape legitimately renders the old-shape front;
+        # otherwise an in-place resize of the bound texture (vispy
+        # reuses the object) invalidates the pair
+        nd = self._spatial_ndim
+        return (
+            self._reshape_pending
+            or tuple(node._texture.shape[:nd]) == self._shape
+        )
+
+    # -- presentation bookkeeping --
+
+    @property
+    def dirty(self) -> bool:
+        """Whether the front texture is behind the staged content."""
+        return self._applied[id(self._front)] < len(self._log)
+
+    def _trim_log(self) -> None:
+        applied_min = min(self._applied.values())
+        if applied_min:
+            self._log = self._log[applied_min:]
+            for key in self._applied:
+                self._applied[key] -= applied_min
+
+    # -- loader present veto --
+
+    def hold_presents(self, timeout: float = 1.5) -> None:
+        """Veto presents while staged content is known to be junk.
+
+        Keeps the front texture on screen (e.g. during a time-step
+        change where the new step's data has not arrived yet).
+        Deadline-bounded so a lost release can never starve presents.
+        """
+        self._present_hold_until = time.monotonic() + timeout
+
+    def release_presents(self) -> None:
+        self._present_hold_until = 0.0
+
+    # -- full-refresh interception --
+
+    def suppress_next_full_upload(self) -> None:
+        """Skip the next same-shape full rewrite through ``set_data``.
+
+        One-shot; cleared by the next ``set_data`` whether suppressed
+        or not.
+        """
+        self._suppress_full = True
+
+    def detach_set_data(self) -> None:
+        if self._wrapped_set_data is not None:
+            self._node.set_data = self._wrapped_set_data
+            self._wrapped_set_data = None
+
+
+class DoubleBufferedVolumeTexture(_DoubleBufferedTexture):
     """Manage front/back 3D textures for a vispy ``VolumeVisual``.
 
     Parameters
@@ -161,6 +289,8 @@ class DoubleBufferedVolumeTexture(_TransformHoldMixin):
         format and interpolation is created for staging.
 
     """
+
+    _spatial_ndim = 3
 
     def __init__(self, node, pool: list | None = None):
         self._node = node
@@ -297,75 +427,6 @@ class DoubleBufferedVolumeTexture(_TransformHoldMixin):
         tex._data_dtype = vol.dtype
         return self._sync_aux_state(tex)
 
-    def _sync_aux_state(self, tex):
-        front = self._front
-        if front.clim is not None:
-            with contextlib.suppress(Exception):
-                tex.set_clim(front.clim)
-        if tex.interpolation != front.interpolation:
-            tex.interpolation = front.interpolation
-        return tex
-
-    # -- retired-texture pool --
-
-    @staticmethod
-    def _pool_key(shape, dtype) -> tuple:
-        # vispy texture shapes carry an explicit channel dim (scalar
-        # textures end in 1); data shapes may omit it. Normalize so a
-        # retired RGB texture is never reused for a scalar tile of the
-        # same spatial shape (mismatched internalformat).
-        shape = tuple(int(s) for s in shape)
-        channels = shape[3] if len(shape) > 3 else 1
-        return (shape[:3], channels, np.dtype(dtype).str)
-
-    def _acquire(self, shape, dtype, create):
-        """Reuse a retired texture of this shape/dtype, or create one."""
-        key = self._pool_key(shape, dtype)
-        for i in range(len(self._pool) - 1, -1, -1):
-            if self._pool[i][0] == key:
-                _, tex = self._pool.pop(i)
-                return self._sync_aux_state(tex)
-        return create()
-
-    def _release(self, texture) -> None:
-        """Retire a texture for reuse (delete only past the pool cap)."""
-        dtype = getattr(texture, '_data_dtype', None)
-        if self._pool_max <= 0 or dtype is None:
-            with contextlib.suppress(Exception):
-                texture.delete()
-            return
-        key = self._pool_key(texture.shape, dtype)
-        self._pool.append((key, texture))
-        while len(self._pool) > self._pool_max:
-            _, old = self._pool.pop(0)
-            with contextlib.suppress(Exception):
-                old.delete()
-
-    @property
-    def shape(self) -> tuple:
-        """The shape staged content must have (the pair's tile shape).
-
-        During a pending reshape this is already the NEW shape — the
-        old-shape front keeps rendering, but patches target the new
-        back texture.
-        """
-        return self._shape
-
-    def matches(self, node) -> bool:
-        """Whether this buffer still belongs to ``node``'s texture pair."""
-        if self._node is not node or node._texture not in (
-            self._front,
-            self._back,
-        ):
-            return False
-        # a pending reshape legitimately renders the old-shape front;
-        # otherwise an in-place resize of the bound texture (vispy
-        # reuses the object) invalidates the pair
-        return (
-            self._reshape_pending
-            or tuple(node._texture.shape[:3]) == self._shape
-        )
-
     # -- staging --
 
     def stage(self, offset, data) -> None:
@@ -435,11 +496,6 @@ class DoubleBufferedVolumeTexture(_TransformHoldMixin):
         self._applied[key] = len(self._log)
 
     # -- presentation --
-
-    @property
-    def dirty(self) -> bool:
-        """Whether the front texture is behind the staged content."""
-        return self._applied[id(self._front)] < len(self._log)
 
     def present(self) -> bool:
         """Swap the freshly written back texture into the shader.
@@ -541,13 +597,6 @@ class DoubleBufferedVolumeTexture(_TransformHoldMixin):
         node.shared_program['clim'] = texture.clim_normalized
         node._texture = texture
 
-    def _trim_log(self) -> None:
-        applied_min = min(self._applied.values())
-        if applied_min:
-            self._log = self._log[applied_min:]
-            for key in self._applied:
-                self._applied[key] -= applied_min
-
     def _front_pending_full(self) -> bool:
         """Whether the front is behind a staged full rewrite."""
         start = self._applied[id(self._front)]
@@ -596,22 +645,6 @@ class DoubleBufferedVolumeTexture(_TransformHoldMixin):
         return not (
             self._front_pending_full() and self._queued_upload_bytes() > 0
         )
-
-    # -- loader present veto --
-
-    def hold_presents(self, timeout: float = 1.5) -> None:
-        """Veto presents while staged content is known to be junk.
-
-        The loader holds when a refresh stages an interval that has no
-        real content yet (zeros + carry-over ahead of the repair
-        worker) and releases when the repair lands or the pass ends;
-        the front keeps rendering meanwhile. Deadline-bounded so a lost
-        release can never starve presents.
-        """
-        self._present_hold_until = time.monotonic() + timeout
-
-    def release_presents(self) -> None:
-        self._present_hold_until = 0.0
 
     # -- full-refresh interception --
 
@@ -687,21 +720,6 @@ class DoubleBufferedVolumeTexture(_TransformHoldMixin):
         node.set_data = set_data_staged
         self._wrapped_set_data = original
 
-    def suppress_next_full_upload(self) -> None:
-        """Skip the next same-shape full rewrite through ``set_data``.
-
-        For when the caller knows the GPU pair already holds exactly
-        the content the rewrite would upload (e.g. the deferred
-        end-of-pass reconcile after a fully-patched pass). One-shot;
-        cleared by the next ``set_data`` whether suppressed or not.
-        """
-        self._suppress_full = True
-
-    def detach_set_data(self) -> None:
-        if self._wrapped_set_data is not None:
-            self._node.set_data = self._wrapped_set_data
-            self._wrapped_set_data = None
-
     def close(self) -> None:
         """Restore the node and release the spare texture.
 
@@ -724,7 +742,7 @@ class DoubleBufferedVolumeTexture(_TransformHoldMixin):
         self._pool = []
 
 
-class DoubleBufferedImageTexture(_TransformHoldMixin):
+class DoubleBufferedImageTexture(_DoubleBufferedTexture):
     """Manage front/back 2D textures for a vispy ``ImageVisual``.
 
     Same rationale as :class:`DoubleBufferedVolumeTexture`: chunk
@@ -752,6 +770,8 @@ class DoubleBufferedImageTexture(_TransformHoldMixin):
         front texture; a sibling back texture of the same class,
         format and interpolation is created for staging.
     """
+
+    _spatial_ndim = 2
 
     def __init__(self, node, pool: list | None = None):
         self._node = node
@@ -817,64 +837,6 @@ class DoubleBufferedImageTexture(_TransformHoldMixin):
             back.interpolation = front.interpolation
         return back
 
-    def _sync_aux_state(self, tex):
-        front = self._front
-        if front.clim is not None:
-            with contextlib.suppress(Exception):
-                tex.set_clim(front.clim)
-        if tex.interpolation != front.interpolation:
-            tex.interpolation = front.interpolation
-        return tex
-
-    # -- retired-texture pool (2-tuple keys: never collide with 3D) --
-
-    @staticmethod
-    def _pool_key(shape, dtype) -> tuple:
-        # normalize the channel dim (see the 3D pool key): a retired
-        # RGB texture must never be reused for a scalar tile
-        shape = tuple(int(s) for s in shape)
-        channels = shape[2] if len(shape) > 2 else 1
-        return (shape[:2], channels, np.dtype(dtype).str)
-
-    def _acquire(self, shape, dtype, create):
-        key = self._pool_key(shape, dtype)
-        for i in range(len(self._pool) - 1, -1, -1):
-            if self._pool[i][0] == key:
-                _, tex = self._pool.pop(i)
-                return self._sync_aux_state(tex)
-        return create()
-
-    def _release(self, texture) -> None:
-        dtype = getattr(texture, '_data_dtype', None)
-        if self._pool_max <= 0 or dtype is None:
-            with contextlib.suppress(Exception):
-                texture.delete()
-            return
-        key = self._pool_key(texture.shape, dtype)
-        self._pool.append((key, texture))
-        while len(self._pool) > self._pool_max:
-            _, old = self._pool.pop(0)
-            with contextlib.suppress(Exception):
-                old.delete()
-
-    @property
-    def shape(self) -> tuple:
-        """The (rows, cols) shape staged content must have."""
-        return self._shape
-
-    def matches(self, node) -> bool:
-        """Whether this buffer still belongs to ``node``'s texture pair."""
-        if self._node is not node or node._texture not in (
-            self._front,
-            self._back,
-        ):
-            return False
-        # a pending reshape legitimately renders the old-shape front
-        return (
-            self._reshape_pending
-            or tuple(node._texture.shape[:2]) == self._shape
-        )
-
     # -- staging --
 
     def stage(self, offset, data) -> None:
@@ -904,26 +866,7 @@ class DoubleBufferedImageTexture(_TransformHoldMixin):
                 texture.set_data(data, offset=offset)
         self._applied[key] = len(self._log)
 
-    # -- loader present veto (mirrors DoubleBufferedVolumeTexture) --
-
-    def hold_presents(self, timeout: float = 1.5) -> None:
-        """Veto presents while staged content is known to be junk.
-
-        Keeps the front texture on screen (e.g. during a time-step
-        change where the new step's data hasn't arrived yet).
-        Deadline-bounded so a lost release can never starve presents.
-        """
-        self._present_hold_until = time.monotonic() + timeout
-
-    def release_presents(self) -> None:
-        self._present_hold_until = 0.0
-
     # -- presentation --
-
-    @property
-    def dirty(self) -> bool:
-        """Whether the front texture is behind the staged content."""
-        return self._applied[id(self._front)] < len(self._log)
 
     def present(self) -> bool:
         """Swap the freshly written back texture into the shader."""
@@ -985,13 +928,6 @@ class DoubleBufferedImageTexture(_TransformHoldMixin):
                 texture.clim_normalized
             )
         node._texture = texture
-
-    def _trim_log(self) -> None:
-        applied_min = min(self._applied.values())
-        if applied_min:
-            self._log = self._log[applied_min:]
-            for key in self._applied:
-                self._applied[key] -= applied_min
 
     # -- full-refresh interception --
 
@@ -1127,19 +1063,6 @@ class DoubleBufferedImageTexture(_TransformHoldMixin):
                 # shape as a shader parameter
                 if 'shape' in node._data_lookup_fn:
                     node._data_lookup_fn['shape'] = tuple(shape[:2])[::-1]
-
-    def suppress_next_full_upload(self) -> None:
-        """Skip the next same-shape full rewrite through ``set_data``.
-
-        One-shot; cleared by the next ``set_data`` whether suppressed
-        or not.
-        """
-        self._suppress_full = True
-
-    def detach_set_data(self) -> None:
-        if self._wrapped_set_data is not None:
-            self._node.set_data = self._wrapped_set_data
-            self._wrapped_set_data = None
 
     def close(self) -> None:
         """Restore the node and release the spare texture."""
