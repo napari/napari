@@ -60,6 +60,7 @@ def _texture_format_will_change(texture, data, spatial_ndim: int) -> bool:
     data_channels = data.shape[spatial_ndim] if data.ndim > spatial_ndim else 1
     return data_channels != tex_channels
 
+
 #: Retired textures kept for reuse instead of deleted. GL object
 #: deletion synchronizes with the GPU pipeline (profiled ~25ms per
 #: DELETE on busy macOS GL-over-Metal), and reallocation costs another

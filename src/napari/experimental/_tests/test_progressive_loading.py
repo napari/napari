@@ -1476,14 +1476,18 @@ def test_dtype_change_rewrite_routes_to_reshape(
     monkeypatch.setattr(
         dbuf,
         'stage_full',
-        lambda *a, **k: (calls.__setitem__('full', calls['full'] + 1),
-                         orig_full(*a, **k))[1],
+        lambda *a, **k: (
+            calls.__setitem__('full', calls['full'] + 1),
+            orig_full(*a, **k),
+        )[1],
     )
     monkeypatch.setattr(
         dbuf,
         'stage_reshape',
-        lambda *a, **k: (calls.__setitem__('reshape', calls['reshape'] + 1),
-                         orig_reshape(*a, **k))[1],
+        lambda *a, **k: (
+            calls.__setitem__('reshape', calls['reshape'] + 1),
+            orig_reshape(*a, **k),
+        )[1],
     )
 
     # same spatial shape and channel count, wider dtype -> format change
