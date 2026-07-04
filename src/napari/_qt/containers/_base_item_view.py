@@ -51,8 +51,8 @@ class _BaseEventedItemView(QAbstractItemView, Generic[ItemType]):
     # ########## Reimplemented Public Qt Functions ##################
     _root: SelectableEventedList[ItemType]
 
-    def model(self) -> _BaseEventedItemModel[ItemType]:  # for type hints
-        return cast(_BaseEventedItemModel[ItemType], super().model())
+    def model(self) -> _BaseEventedItemModel[ItemType]:
+        return super().model()  # type: ignore[return-value]
 
     def keyPressEvent(self, e: QKeyEvent | None) -> None:
         """Delete items with delete key."""
