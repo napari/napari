@@ -596,9 +596,17 @@ class HistogramModel(EventedModel):
         and enabled, compute immediately so connected widgets stay live.
         If disabled, defer — the next explicit access or enabled=True
         will trigger the compute.
+
+        For chunked arrays (dask, zarr) in full mode, synchronous
+        computation would block the main thread on I/O (e.g. remote
+        zarr).  In this case we defer to the async consumer (e.g.
+        ``QtHistogramWidget._ensure_histogram_computed``) and skip
+        the eager ``compute()`` call here.
         """
         self._dirty = True
         if not self._computing and self.enabled:
+            if self.mode == 'full' and self._has_chunks(self._layer.data):
+                return
             self.compute()
 
     def disconnect(self) -> None:

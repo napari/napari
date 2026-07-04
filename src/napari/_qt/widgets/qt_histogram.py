@@ -106,6 +106,13 @@ class QtHistogramWidget(QWidget):
         self._histogram.events.counts.connect(self._on_histogram_change)
         self._histogram.events.log_scale.connect(self._on_histogram_change)
         self._histogram.events.enabled.connect(self._on_histogram_change)
+        # Connect to mode, n_bins, and max_samples events to trigger
+        # (re)computation.  For chunked data in full mode, this picks
+        # up where _mark_dirty() deferred synchronous compute() and
+        # routes through the async GeneratorWorker path instead.
+        self._histogram.events.mode.connect(self._on_recompute_needed)
+        self._histogram.events.n_bins.connect(self._on_recompute_needed)
+        self._histogram.events.max_samples.connect(self._on_recompute_needed)
 
         # Connect to layer events that affect visualization
         layer.events.gamma.connect(self._on_gamma_change)
@@ -121,6 +128,16 @@ class QtHistogramWidget(QWidget):
     def _on_histogram_change(self, event: Event | None = None) -> None:
         """Update visualization when histogram data changes."""
         self._update_histogram()
+
+    def _on_recompute_needed(self, event: Event | None = None) -> None:
+        """Respond to mode, n_bins, or max_samples changes.
+
+        For chunked data in full mode, ``_mark_dirty()`` defers to the
+        async consumer, so this handler triggers the ``GeneratorWorker``
+        path.  For all other cases ``_ensure_histogram_computed`` will
+        either no-op (data hasn't changed) or call ``compute()`` sync.
+        """
+        self._ensure_histogram_computed()
 
     def _on_gamma_change(self, event: Event | None = None) -> None:
         """Update gamma curve when layer gamma changes."""
@@ -339,15 +356,24 @@ class QtHistogramWidget(QWidget):
     def cleanup(self) -> None:
         """Disconnect event handlers and clean up resources."""
         self._cleaned_up = True
+
+        # Disconnect events first to prevent new computation triggers
+        # during teardown.
+        disconnect_events(self._histogram.events, self)
+        disconnect_events(self.layer.events, self)
+        disconnect_events(self._appearance.events, self)
+
+        # Request abort from the worker.  If the generator is between
+        # chunks, it will exit on the next loop iteration.  If it's
+        # mid-chunk (blocking on I/O) the thread pool will terminate
+        # it at shutdown — the _cleaned_up guard in
+        # _on_async_compute_done prevents stale callbacks.
         if self._compute_worker is not None:
             self._compute_worker.finished.disconnect(
                 self._on_async_compute_done
             )
             self._compute_worker.quit()
             self._compute_worker = None
-        disconnect_events(self._histogram.events, self)
-        disconnect_events(self.layer.events, self)
-        disconnect_events(self._appearance.events, self)
 
         self.histogram_visual.destroy()
         self.canvas.close()

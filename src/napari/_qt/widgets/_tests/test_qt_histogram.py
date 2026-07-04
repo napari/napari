@@ -424,3 +424,59 @@ def test_histogram_visual_update_bars_zero_range(qtbot):
     # Should not crash
 
     widget.cleanup()
+
+
+def test_qt_histogram_mode_switch_uses_async_for_chunked_data(qtbot):
+    """Switching to full mode on chunked data should use async compute,
+    not block the main thread on synchronous chunk I/O.
+
+    Regression test for the issue where setting mode='full' on a
+    dask- or zarr-backed Image layer would synchronously iterate
+    chunks in HistogramModel._mark_dirty()/compute(), blocking the
+    viewer while each chunk was loaded over I/O (e.g. remote zarr).
+
+    The fix: _mark_dirty() skips compute() for chunked+full data,
+    and QtHistogramWidget._on_model_mode_change() triggers the
+    GeneratorWorker-based async path instead.
+    """
+    dask = pytest.importorskip('dask.array')
+    data = dask.random.random((500, 500), chunks=(50, 50))
+    layer = Image(data)
+    layer.histogram.enabled = True
+
+    widget = QtHistogramWidget(layer)
+    qtbot.addWidget(widget)
+
+    # Initial state: model is clean from the canvas-mode compute that
+    # ran during __init__.
+    assert not layer.histogram._dirty
+
+    # Switch to full mode.  In the buggy code this would trigger
+    # _mark_dirty() → compute() → synchronous chunk iteration.
+    layer.histogram.mode = 'full'
+
+    # After _mark_dirty() with the fix: _dirty should be True but
+    # compute() should NOT have been called (it was deferred for
+    # chunked data).  If _dirty is False here, compute() ran
+    # synchronously — the regression.
+    assert layer.histogram._dirty, (
+        '_mark_dirty() called compute() synchronously on mode switch '
+        'with chunked data — this would block the main thread'
+    )
+
+    # The widget should have started an async worker via
+    # _on_model_mode_change() → _ensure_histogram_computed().
+    # For small in-memory dask arrays the worker may already have
+    # finished, but if it's still running or just-completed we
+    # verify that the async path was taken by waiting for results.
+    qtbot.waitUntil(
+        lambda: not layer.histogram._dirty,
+        timeout=30000,
+    )
+
+    # Verify valid histogram results from the async path
+    assert len(layer.histogram.bins) == 257
+    assert len(layer.histogram.counts) == 256
+    assert layer.histogram.counts.sum() > 0
+
+    widget.cleanup()
