@@ -16,6 +16,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
 )
 from napari._qt.widgets.qt_histogram_content import QtHistogramContentWidget
 from napari.layers import Image
+from napari.utils.events import disconnect_events
 
 if TYPE_CHECKING:
     from napari._qt.widgets.qt_histogram import QtHistogramWidget
@@ -74,6 +75,36 @@ class QtHistogramControl(QtWidgetControlsBase):  # type: ignore[metaclass]
         self._content_layout.setSpacing(4)
         self.content_widget.setLayout(self._content_layout)
 
+        # Connect to histogram model enabled event to show/hide widget
+        # when the API is used directly (e.g. layer.histogram.enabled = True)
+        # Use the local ``layer`` parameter (typed ``Image``) instead of
+        # ``self._layer`` (typed ``Layer``) to satisfy Pylance.
+        layer.histogram.events.enabled.connect(
+            self._on_histogram_enabled_changed
+        )
+
+    def _on_histogram_enabled_changed(self) -> None:
+        """Show/hide the histogram widget when ``enabled`` changes via the API.
+
+        This bridges the programmatic API (``layer.histogram.enabled = True``)
+        to the UI, so that enabling/disabling the histogram from code also
+        shows/hides the inline widget in the layer controls.
+        """
+        layer = cast(Image, self._layer)
+        if layer.histogram.enabled:
+            self.ensure_content()
+            self.content_widget.show()
+            self.content_widget.setSizePolicy(
+                QSizePolicy.Policy.Preferred,
+                QSizePolicy.Policy.Preferred,
+            )
+        else:
+            self.content_widget.setSizePolicy(
+                QSizePolicy.Policy.Ignored,
+                QSizePolicy.Policy.Ignored,
+            )
+            self.content_widget.hide()
+
     def ensure_content(self) -> None:
         """Create the histogram UI lazily when it is first requested."""
         if self.histogram_content is not None:
@@ -105,6 +136,7 @@ class QtHistogramControl(QtWidgetControlsBase):  # type: ignore[metaclass]
 
     def disconnect_widget_controls(self) -> None:
         """Disconnect event handlers and clean up."""
+        disconnect_events(cast(Image, self._layer).histogram.events, self)
         super().disconnect_widget_controls()
         if self.histogram_content is not None:
             self.histogram_content.cleanup()
