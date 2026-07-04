@@ -313,3 +313,106 @@ def test_histogram_popup_and_inline_coexistence(qtbot, make_napari_viewer):
     qtbot.mouseClick(button, Qt.MouseButton.LeftButton)
     assert control.content_widget.isHidden()
     assert not layer.histogram.enabled
+
+
+def test_api_enable_shows_inline_widget(qtbot):
+    """``layer.histogram.enabled = True`` via API should show the inline content_widget."""
+    layer = Image(np.random.rand(8, 8))
+    qtctrl = QtImageControls(layer)
+    qtbot.addWidget(qtctrl)
+
+    control = qtctrl._histogram_control
+    assert control is not None
+    assert control.content_widget.isHidden()
+
+    # API enable — should show widget and trigger computation
+    layer.histogram.enabled = True
+
+    assert not control.content_widget.isHidden()
+    assert control.histogram_content is not None
+    # Bin edges should have been computed
+    assert len(layer.histogram.bins) == 257
+
+    # API disable — should hide widget
+    layer.histogram.enabled = False
+    assert control.content_widget.isHidden()
+
+
+def test_api_enable_syncs_button_checked_state(qtbot):
+    """``layer.histogram.enabled`` changes via API should sync the button's checked state."""
+    layer = Image(np.random.rand(8, 8))
+    qtctrl = QtImageControls(layer)
+    qtbot.addWidget(qtctrl)
+
+    button = qtctrl._contrast_limits_control.histogram_button
+    assert button is not None
+    assert not button.isChecked()
+
+    # API enable — button should become checked
+    layer.histogram.enabled = True
+    assert button.isChecked()
+
+    # API disable — button should become unchecked
+    layer.histogram.enabled = False
+    assert not button.isChecked()
+
+
+def test_popup_shows_histogram_without_affecting_inline(qtbot):
+    """Right-click popup should always show histogram and not affect inline widget state."""
+    layer = Image(np.random.rand(8, 8))
+    qtctrl = QtImageControls(layer)
+    qtbot.addWidget(qtctrl)
+
+    control = qtctrl._histogram_control
+    button = qtctrl._contrast_limits_control.histogram_button
+    assert control.content_widget.isHidden()
+    assert not button.isChecked()
+
+    # Right-click to open popup
+    qtbot.mouseClick(button, Qt.MouseButton.RightButton)
+
+    popup = qtctrl._contrast_limits_control.clim_popup
+    assert popup is not None
+    assert popup.histogram_content is not None
+    assert popup.histogram_content.histogram_widget is not None
+    assert popup.histogram_content.settings_widget is not None
+
+    # The popup should have triggered histogram computation
+    assert len(layer.histogram.bins) >= 2
+
+    # Inline widget should NOT have been affected — events were blocked so
+    # the inline listeners never fired. Content stays hidden, button unchecked.
+    assert control.content_widget.isHidden()
+    assert not button.isChecked()
+
+    # Close popup — inline state should still be unchanged
+    popup.close()
+    assert control.content_widget.isHidden()
+    assert not button.isChecked()
+
+
+def test_popup_does_not_disable_inline_histogram(qtbot):
+    """Popup should not disable an already-enabled inline histogram on close."""
+    layer = Image(np.random.rand(8, 8))
+    qtctrl = QtImageControls(layer)
+    qtbot.addWidget(qtctrl)
+
+    # Enable inline histogram first
+    layer.histogram.enabled = True
+    assert not qtctrl._histogram_control.content_widget.isHidden()
+    assert qtctrl._contrast_limits_control.histogram_button.isChecked()
+
+    # Open popup via right-click
+    qtbot.mouseClick(
+        qtctrl._contrast_limits_control.histogram_button,
+        Qt.MouseButton.RightButton,
+    )
+    popup = qtctrl._contrast_limits_control.clim_popup
+    assert popup is not None
+    assert popup.histogram_content is not None
+
+    # Close popup — inline histogram should still be enabled
+    popup.close()
+    assert layer.histogram.enabled
+    assert not qtctrl._histogram_control.content_widget.isHidden()
+    assert qtctrl._contrast_limits_control.histogram_button.isChecked()
