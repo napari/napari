@@ -105,6 +105,11 @@ DEFAULT_MAX_CHUNKS_PER_PASS = 1024
 #: ~700ms typical interaction stalls, at the cost of a wider tile-shape
 #: vocabulary (covered by the texture pool).
 DEFAULT_TILE_MAX_BYTES_3D = int(16e6)
+#: Largest world extent (per axis) that vispy's float32 render path keeps
+#: pixel-accurate; measured — vanilla 3D rendering goes blank at/beyond
+#: 2**22, so deep pyramids without an explicit scale are downscaled to
+#: keep the largest axis under this.
+FLOAT32_EXTENT_LIMIT = 2**21
 
 
 # ---------- chunk geometry ----------
@@ -2213,12 +2218,6 @@ class ProgressiveLoader:
     def _get_volume_node(self):
         return self._get_display_node(3)
 
-    def _patch_texture(self, vdata: VirtualData, chunk_key) -> bool:
-        """Write one chunk's region into the existing GPU texture."""
-        low = [int(sl.start) for sl in chunk_key]
-        high = [int(sl.stop) for sl in chunk_key]
-        return self._patch_texture_region(vdata, low, high)
-
     def _displayed_plane(self, level: int):
         """The displayed dims and the fixed level-coordinate steps of
         every other dim for the current slice.
@@ -2708,6 +2707,104 @@ def _estimate_contrast_limits(array) -> tuple[float, float] | None:
     return low, high
 
 
+def _resolve_viewer_and_tile_cap(viewer, tile_max_bytes_3d):
+    """Create a viewer if needed and apply the tile-cap env override."""
+    if viewer is None:
+        from napari import Viewer
+
+        viewer = Viewer()
+    env_tile = os.environ.get('NAPARI_PROGRESSIVE_TILE_MAX_BYTES_3D')
+    if env_tile:
+        tile_max_bytes_3d = int(float(env_tile))
+    return viewer, tile_max_bytes_3d
+
+
+def _normalize_scale_for_float32(data, layer_kwargs, kind: str) -> None:
+    """Downscale deep pyramids so world extents stay float32-renderable.
+
+    vispy renders with float32: world extents beyond the precision limit
+    lose pixel accuracy and 3D rendering goes blank. If the caller did not
+    pass an explicit ``scale``, pick a power-of-two factor that keeps the
+    largest axis under :data:`FLOAT32_EXTENT_LIMIT`.
+    """
+    if layer_kwargs.get('scale') is not None:
+        return
+    max_extent = float(max(data.shape))
+    limit = float(FLOAT32_EXTENT_LIMIT)
+    if max_extent > limit:
+        factor = 2.0 ** -int(np.ceil(np.log2(max_extent / limit)))
+        layer_kwargs['scale'] = (factor,) * data.ndim
+        LOGGER.warning(
+            '%s extent %.3g exceeds float32 rendering precision; scaling '
+            'the layer by %g to keep it renderable. Pass scale= explicitly '
+            'to override.',
+            kind,
+            max_extent,
+            factor,
+        )
+
+
+def _attach_progressive_loader(
+    layer,
+    data,
+    viewer,
+    *,
+    interval_max_bytes,
+    tile_max_bytes_3d,
+    auto_level_3d,
+    max_pixel_size_3d,
+    max_bytes_per_second,
+    interaction_hold,
+    interactive_step_rate,
+) -> ProgressiveLoader:
+    """Wire a constructed multiscale layer to a :class:`ProgressiveLoader`.
+
+    Shared tail of :func:`add_progressive_loading_image` and
+    :func:`add_progressive_loading_labels`: set the 3D tile extent before
+    the layer controls are built (so the resolution selector knows fine
+    levels render as sub-volume tiles and does not disable them), append
+    the layer, enable async slicing and GLIR upload metering, construct
+    the loader, and register window-close teardown.
+    """
+    tile_bytes = min(interval_max_bytes, tile_max_bytes_3d)
+    layer._max_tile_extent_3d = _tile_extent_3d_for(data.dtype, tile_bytes)
+    layer._tile_max_bytes_3d = tile_bytes
+    viewer.layers.append(layer)
+    # Slice off the main thread: refreshes materialize the visible tile
+    # (np.asarray over up to hundreds of MB), which would otherwise block
+    # the UI. Layer.refresh only routes through the async slicer when the
+    # experimental setting is on; VirtualData access is lock-guarded, so
+    # concurrent slicing is safe.
+    from napari.settings import get_settings
+
+    get_settings().experimental.async_ = True
+    viewer._layer_slicer._force_sync = False
+    # Meter GLIR 3D texture uploads: without this, vispy drains every
+    # queued glTexSubImage3D inside the next draw — including interaction
+    # frames — which stalls the GUI for seconds on slow GL drivers
+    # (macOS GL-over-Metal).
+    from napari.experimental import _glir_metering
+
+    _glir_metering.install()
+    loader = ProgressiveLoader(
+        viewer,
+        layer,
+        data,
+        auto_level_3d=auto_level_3d,
+        max_pixel_size_3d=max_pixel_size_3d,
+        interval_max_bytes=interval_max_bytes,
+        tile_max_bytes_3d=tile_max_bytes_3d,
+        max_bytes_per_second=max_bytes_per_second,
+        interaction_hold=interaction_hold,
+        interactive_step_rate=interactive_step_rate,
+    )
+    layer.metadata['progressive_loader'] = loader
+    with contextlib.suppress(AttributeError):
+        # stop all background work when the window goes away
+        viewer.window._qt_window.destroyed.connect(loader.close)
+    return loader
+
+
 def add_progressive_loading_image(
     img,
     viewer: napari.Viewer | None = None,
@@ -2783,36 +2880,11 @@ def add_progressive_loading_image(
         in ``layer.metadata['progressive_loader']``.
 
     """
-    if viewer is None:
-        from napari import Viewer
-
-        viewer = Viewer()
-
-    env_tile = os.environ.get('NAPARI_PROGRESSIVE_TILE_MAX_BYTES_3D')
-    if env_tile:
-        tile_max_bytes_3d = int(float(env_tile))
-
+    viewer, tile_max_bytes_3d = _resolve_viewer_and_tile_cap(
+        viewer, tile_max_bytes_3d
+    )
     data = MultiScaleVirtualData(img)
-
-    # vispy renders with float32: world extents beyond 2**24 lose pixel
-    # precision and 3D rendering goes blank entirely. If the caller did
-    # not specify a scale, normalize the world size of very deep pyramids.
-    scale = layer_kwargs.get('scale')
-    if scale is None:
-        max_extent = float(max(data.shape))
-        # vanilla napari 3D rendering goes blank for world extents at or
-        # beyond 2**22 (measured; float32 precision in the render path)
-        limit = float(2**21)
-        if max_extent > limit:
-            factor = 2.0 ** -int(np.ceil(np.log2(max_extent / limit)))
-            layer_kwargs['scale'] = (factor,) * data.ndim
-            LOGGER.warning(
-                'image extent %.3g exceeds float32 rendering precision; '
-                'scaling the layer by %g to keep it renderable. Pass '
-                'scale= explicitly to override.',
-                max_extent,
-                factor,
-            )
+    _normalize_scale_for_float32(data, layer_kwargs, 'image')
 
     if contrast_limits is None:
         contrast_limits = _estimate_contrast_limits(data.arrays[-1])
@@ -2820,9 +2892,7 @@ def add_progressive_loading_image(
     from napari.layers import Image
 
     # Construct the layer directly (instead of viewer.add_image) so the
-    # 3D tile extent is set before the layer controls are built — the
-    # resolution selector then knows fine levels render as sub-volume
-    # tiles and does not disable them.
+    # 3D tile extent can be set before the layer controls are built.
     layer = Image(
         data._data,
         multiscale=True,
@@ -2832,42 +2902,18 @@ def add_progressive_loading_image(
         name=name,
         **layer_kwargs,
     )
-    tile_bytes = min(interval_max_bytes, tile_max_bytes_3d)
-    layer._max_tile_extent_3d = _tile_extent_3d_for(data.dtype, tile_bytes)
-    layer._tile_max_bytes_3d = tile_bytes
-    viewer.layers.append(layer)
-    # Slice off the main thread: refreshes materialize the visible tile
-    # (np.asarray over up to hundreds of MB), which would otherwise block
-    # the UI. Layer.refresh only routes through the async slicer when the
-    # experimental setting is on; VirtualData access is lock-guarded, so
-    # concurrent slicing is safe.
-    from napari.settings import get_settings
-
-    get_settings().experimental.async_ = True
-    viewer._layer_slicer._force_sync = False
-    # Meter GLIR 3D texture uploads: without this, vispy drains every
-    # queued glTexSubImage3D inside the next draw — including interaction
-    # frames — which stalls the GUI for seconds on slow GL drivers
-    # (macOS GL-over-Metal).
-    from napari.experimental import _glir_metering
-
-    _glir_metering.install()
-    loader = ProgressiveLoader(
-        viewer,
+    _attach_progressive_loader(
         layer,
         data,
-        auto_level_3d=auto_level_3d,
-        max_pixel_size_3d=max_pixel_size_3d,
+        viewer,
         interval_max_bytes=interval_max_bytes,
         tile_max_bytes_3d=tile_max_bytes_3d,
+        auto_level_3d=auto_level_3d,
+        max_pixel_size_3d=max_pixel_size_3d,
         max_bytes_per_second=max_bytes_per_second,
         interaction_hold=interaction_hold,
         interactive_step_rate=interactive_step_rate,
     )
-    layer.metadata['progressive_loader'] = loader
-    with contextlib.suppress(AttributeError):
-        # stop all background work when the window goes away
-        viewer.window._qt_window.destroyed.connect(loader.close)
     return layer
 
 
@@ -2925,31 +2971,11 @@ def add_progressive_loading_labels(
         The created layer.  The active :class:`ProgressiveLoader` is stored
         in ``layer.metadata['progressive_loader']``.
     """
-    if viewer is None:
-        from napari import Viewer
-
-        viewer = Viewer()
-
-    env_tile = os.environ.get('NAPARI_PROGRESSIVE_TILE_MAX_BYTES_3D')
-    if env_tile:
-        tile_max_bytes_3d = int(float(env_tile))
-
+    viewer, tile_max_bytes_3d = _resolve_viewer_and_tile_cap(
+        viewer, tile_max_bytes_3d
+    )
     data = MultiScaleVirtualData(labels)
-
-    scale = layer_kwargs.get('scale')
-    if scale is None:
-        max_extent = float(max(data.shape))
-        limit = float(2**21)
-        if max_extent > limit:
-            factor = 2.0 ** -int(np.ceil(np.log2(max_extent / limit)))
-            layer_kwargs['scale'] = (factor,) * data.ndim
-            LOGGER.warning(
-                'label extent %.3g exceeds float32 rendering precision; '
-                'scaling the layer by %g to keep it renderable. Pass '
-                'scale= explicitly to override.',
-                max_extent,
-                factor,
-            )
+    _normalize_scale_for_float32(data, layer_kwargs, 'label')
 
     from napari.layers import Labels
 
@@ -2959,33 +2985,16 @@ def add_progressive_loading_labels(
         name=name,
         **layer_kwargs,
     )
-    tile_bytes = min(interval_max_bytes, tile_max_bytes_3d)
-    layer._max_tile_extent_3d = _tile_extent_3d_for(data.dtype, tile_bytes)
-    layer._tile_max_bytes_3d = tile_bytes
-    layer._interval_max_bytes_3d = interval_max_bytes
-    viewer.layers.append(layer)
-
-    from napari.settings import get_settings
-
-    get_settings().experimental.async_ = True
-    viewer._layer_slicer._force_sync = False
-
-    from napari.experimental import _glir_metering
-
-    _glir_metering.install()
-    loader = ProgressiveLoader(
-        viewer,
+    _attach_progressive_loader(
         layer,
         data,
-        auto_level_3d=auto_level_3d,
-        max_pixel_size_3d=max_pixel_size_3d,
+        viewer,
         interval_max_bytes=interval_max_bytes,
         tile_max_bytes_3d=tile_max_bytes_3d,
+        auto_level_3d=auto_level_3d,
+        max_pixel_size_3d=max_pixel_size_3d,
         max_bytes_per_second=max_bytes_per_second,
         interaction_hold=interaction_hold,
         interactive_step_rate=interactive_step_rate,
     )
-    layer.metadata['progressive_loader'] = loader
-    with contextlib.suppress(AttributeError):
-        viewer.window._qt_window.destroyed.connect(loader.close)
     return layer
