@@ -3,7 +3,6 @@ from typing import TYPE_CHECKING
 from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
 from napari._qt.layer_controls.widgets import (
     QtFaceColorControl,
-    QtOutSliceCheckBoxControl,
     QtProjectionModeControl,
     QtTextVisibilityControl,
 )
@@ -38,8 +37,6 @@ class QtPointsControls(QtLayerControls):
         Widget that wraps slider controlling size of points.
     _face_color_control : napari._qt.layer_controls.widgets.QtFaceColorControl
         Widget to select display color for points faces.
-    _out_slice_checkbox_control : napari._qt.layer_controls.widgets.QtOutSliceCheckBoxControl
-        Widget that wraps a checkbox to indicate whether to render out of slice.
     _projection_mode_control : napari._qt.layer_controls.widgets.QtProjectionModeControl
         Widget that wraps dropdown menu to select the projection mode for the layer.
     _symbol_combobox_control : napari._qt.layer_controls.widgets._points.QtSymbolComboBoxControl
@@ -118,10 +115,6 @@ class QtPointsControls(QtLayerControls):
         self._add_widget_controls(self._border_color_control)
         self._text_visibility_control = QtTextVisibilityControl(self, layer)
         self._add_widget_controls(self._text_visibility_control)
-        self._out_slice_checkbox_control = QtOutSliceCheckBoxControl(
-            self, layer
-        )
-        self._add_widget_controls(self._out_slice_checkbox_control)
 
     def _on_mode_change(self, event):
         """Update ticks in checkbox widgets when points layer mode is changed.

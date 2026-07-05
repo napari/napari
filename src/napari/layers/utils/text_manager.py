@@ -282,12 +282,12 @@ class TextManager(EventedModel):
         text_coords = anchor_coords + translation
         return text_coords, anchor_x, anchor_y
 
-    def view_text(self, indices_view: np.ndarray) -> np.ndarray:
+    def view_text(self, view_indices: np.ndarray) -> np.ndarray:
         """Get the values of the text elements in view
 
         Parameters
         ----------
-        indices_view : (N x 1) np.ndarray
+        view_indices : (N x 1) np.ndarray
             Indices of the text elements in view
 
         Returns
@@ -295,16 +295,16 @@ class TextManager(EventedModel):
         text : (N x 1) np.ndarray
             Array of text strings for the N text elements in view
         """
-        values = _get_style_values(self.string, indices_view)
+        values = _get_style_values(self.string, view_indices)
         return (
-            np.broadcast_to(values, len(indices_view))
+            np.broadcast_to(values, len(view_indices))
             if values.ndim == 0
             else values
         )
 
-    def _view_color(self, indices_view: np.ndarray) -> np.ndarray:
+    def _view_color(self, view_indices: np.ndarray) -> np.ndarray:
         """Get the colors of the text elements at the given indices."""
-        return _get_style_values(self.color, indices_view, value_ndim=1)
+        return _get_style_values(self.color, view_indices, value_ndim=1)
 
     @classmethod
     def _from_layer(
