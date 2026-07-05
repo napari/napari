@@ -549,7 +549,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
                     center[0] = 0.0
             elif self.dims.ndisplay == 2:
                 center[0] = 0.0
-            self.camera.center = tuple(center)
+            self.camera.center = center[0], center[1], center[2]
             return
 
         if self.camera.mode == CameraMode.LEGACY:
