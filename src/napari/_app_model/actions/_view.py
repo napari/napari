@@ -1,5 +1,5 @@
 from app_model import Action
-from app_model.types import StandardKeyBinding, SubmenuItem
+from app_model.types import StandardKeyBinding, SubmenuItem, ToggleRule
 
 from napari._app_model.actions._toggle_action import ViewerModelToggleAction
 from napari._app_model.constants import MenuGroup, MenuId
@@ -196,6 +196,21 @@ VIEW_ACTIONS.append(
     ),
 )
 
+VIEW_ACTIONS.append(
+    Action(
+        id='napari.window.view.toggle_layer_tooltips',
+        title=trans._('Toggle Layer Tooltips'),
+        menus=[
+            {
+                'id': MenuId.MENUBAR_VIEW,
+                'group': MenuGroup.RENDER,
+                'order': 10,
+            }
+        ],
+        callback=_tooltip_visibility_toggle,
+        toggled=ToggleRule(get_current=_get_current_tooltip_visibility),
+    ),
+)
 
 for cmd, cmd_title, viewer_attr, sub_attr in toggle_action_details:
     VIEW_ACTIONS.append(
