@@ -92,7 +92,7 @@ def test_chunk_helpers_zarr_rectilinear():
                 chunks=((2, 3, 5), (10, 10)),
                 dtype='u1',
             )
-    except (TypeError, ValueError):
+    except (AttributeError, TypeError, ValueError):
         pytest.skip('installed zarr lacks rectilinear chunk grids')
     assert chunk_sizes_for(arr) == ((2, 3, 5), (10, 10))
     bounds = chunk_boundaries(arr)
