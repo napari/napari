@@ -201,7 +201,7 @@ class VirtualArrayView:
 
     def __array__(self, dtype=None, copy=None) -> np.ndarray:
         data = self._data
-        out = np.zeros(self.shape, dtype=data.dtype)
+        out = np.full(self.shape, data.fill_value, dtype=data.dtype)
         with data.lock:
             if data._min_coord is not None:
                 src_key: list = []
@@ -268,16 +268,17 @@ class VirtualData:
 
     """
 
-    def __init__(self, array, scale_level: int = 0):
+    def __init__(self, array, scale_level: int = 0, fill_value=0):
         self.array = array
         self.dtype = np.dtype(array.dtype)
         self.shape = tuple(int(s) for s in array.shape)
         self.ndim = len(self.shape)
         self.scale_level = scale_level
+        self.fill_value = fill_value
 
         self.lock = threading.RLock()
         self.translate: tuple[int, ...] = (0,) * self.ndim
-        self.hyperslice = np.zeros((0,) * self.ndim, dtype=self.dtype)
+        self.hyperslice = np.full((0,) * self.ndim, fill_value, dtype=self.dtype)
         self._min_coord: list[int] | None = None
         self._max_coord: list[int] | None = None
         self._boundaries = chunk_boundaries(array)
@@ -382,7 +383,7 @@ class VirtualData:
                         dtype=self.dtype,
                     )
             if next_hyperslice is None:
-                next_hyperslice = np.zeros(new_shape, dtype=self.dtype)
+                next_hyperslice = np.full(new_shape, self.fill_value, dtype=self.dtype)
 
             # Carry over data overlapping the previous interval to avoid
             # re-fetching and visual flashing.
@@ -489,12 +490,12 @@ class MultiScaleVirtualData:
 
     """
 
-    def __init__(self, arrays: Sequence):
+    def __init__(self, arrays: Sequence, fill_value=0):
         if len(arrays) == 0:
             raise ValueError('arrays must be a non-empty sequence')
         self.arrays = list(arrays)
         self._data = [
-            VirtualData(array, scale_level=level)
+            VirtualData(array, scale_level=level, fill_value=fill_value)
             for level, array in enumerate(self.arrays)
         ]
         highest_res = self._data[0]
