@@ -10,6 +10,7 @@ from napari._tests.utils import (
     layer_test_data,
 )
 from napari.components import ViewerModel
+from napari.components.camera import CameraMode
 from napari.errors import MultipleReaderError, ReaderPluginError
 from napari.errors.reader_errors import NoAvailableReaderError
 from napari.layers import Image
@@ -1233,14 +1234,14 @@ def test_fit_to_view_handles_no_layers():
     assert viewer.camera.zoom > 0
 
 
-def test_synced_camera():
-    """Test synced mode center/zoom persistence and dims slider sync."""
+def test_shared_camera():
+    """Test shared mode center/zoom persistence and dims slider sync."""
     np.random.seed(0)
     viewer = ViewerModel()
     viewer.add_image(np.random.random((11, 11, 11)))
     viewer.dims.current_step = (2, 0, 0)
 
-    viewer.camera.sync = True
+    viewer.camera.mode = CameraMode.SHARED
     viewer.camera.center = (0, 3, 7)
     viewer.camera.zoom = 2.5
 
@@ -1271,15 +1272,36 @@ def test_synced_camera():
     np.testing.assert_allclose(viewer.camera.center, (5.0, 8.0, 12.0))
 
 
-def test_synced_camera_2d_data():
-    """Test synced mode doesn't crash with 2D data (ndim=2)."""
+def test_shared_camera_2d_data():
+    """Test shared mode doesn't crash with 2D data (ndim=2)."""
     np.random.seed(0)
     viewer = ViewerModel()
     viewer.add_image(np.random.random((11, 11)))
-    viewer.camera.sync = True
+    viewer.camera.mode = CameraMode.SHARED
     viewer.camera.zoom = 2.5
 
     viewer.dims.ndisplay = 3
     assert viewer.camera.zoom == 2.5
     viewer.dims.ndisplay = 2
     assert viewer.camera.zoom == 2.5
+
+
+def test_legacy_mode():
+    """Test legacy mode calls fit_to_view on every ndisplay switch."""
+    np.random.seed(0)
+    viewer = ViewerModel()
+    viewer.add_image(np.random.random((11, 11, 11)))
+
+    viewer.camera.mode = CameraMode.LEGACY
+
+    # Customize 2D view
+    viewer.camera.center = (0, 2, 3)
+    viewer.camera.zoom = 2.5
+
+    # Switch to 3D — should call fit_to_view (not preserve 2D state)
+    viewer.dims.ndisplay = 3
+    np.testing.assert_allclose(viewer.camera.center, (5.0, 5.0, 5.0))
+
+    # Switch back to 2D — should call fit_to_view again
+    viewer.dims.ndisplay = 2
+    np.testing.assert_allclose(viewer.camera.center, (0.0, 5.0, 5.0))
