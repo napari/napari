@@ -1126,32 +1126,6 @@ def test_border_width_types_negative(border_width):
         Points(data, border_width=border_width, border_width_is_relative=False)
 
 
-def test_out_of_slice_display():
-    """Test setting out_of_slice_display flag for 2D and 4D data."""
-    shape = (10, 2)
-    np.random.seed(0)
-    data = 20 * np.random.random(shape)
-    layer = Points(data)
-    assert layer.out_of_slice_display is False
-
-    layer.out_of_slice_display = True
-    assert layer.out_of_slice_display is True
-
-    layer = Points(data, out_of_slice_display=True)
-    assert layer.out_of_slice_display is True
-
-    shape = (10, 4)
-    data = 20 * np.random.random(shape)
-    layer = Points(data)
-    assert layer.out_of_slice_display is False
-
-    layer.out_of_slice_display = True
-    assert layer.out_of_slice_display is True
-
-    layer = Points(data, out_of_slice_display=True)
-    assert layer.out_of_slice_display is True
-
-
 @pytest.mark.parametrize('attribute', ['border', 'face'])
 def test_switch_color_mode(attribute):
     """Test switching between color modes"""
@@ -1897,14 +1871,14 @@ def test_view_size():
     layer._slice_dims(Dims(ndim=3, point=(1, 0, 0)))
     assert np.array_equal(layer._view_size, sizes[[2]])
 
-    layer.out_of_slice_display = True
+    layer.projection_mode = 'rescale'
     # NOTE: since a dims slice of thickness 0 defaults back to 1,
-    # out_of_slice_display actually compares the half-size with
+    # rescale projection actually compares the half-size with
     # distance + 0.5, not just distance
     assert len(layer._view_size) == 3
 
     # test a slice with no points
-    layer.out_of_slice_display = False
+    layer.projection_mode = 'all'
     layer._slice_dims(Dims(ndim=3, point=(2, 0, 0)))
     assert np.array_equal(layer._view_size, [])
 
@@ -2465,71 +2439,6 @@ def test_shown():
     assert np.all(layer.shown[:-2])
     assert layer.shown[-2] == False  # noqa
     assert layer.shown[-1] == True  # noqa
-
-
-def test_shown_view_size_and_view_data_have_the_same_dimension():
-    data = [[0, 0, 0], [1, 1, 1]]
-    # Data with default settings
-    layer = Points(
-        data, out_of_slice_display=False, shown=[True, True], size=3
-    )
-    assert layer._view_size.shape[0] == layer._view_data.shape[0]
-    assert layer._view_size.shape[0] == 1
-    assert np.array_equal(layer._view_size, [3])
-
-    # shown == [True, False]
-    layer = Points(
-        data, out_of_slice_display=False, shown=[True, False], size=3
-    )
-    assert layer._view_size.shape[0] == layer._view_data.shape[0]
-    assert layer._view_size.shape[0] == 1
-    assert np.array_equal(layer._view_size, [3])
-
-    # shown == [False, True]
-    layer = Points(
-        data, out_of_slice_display=False, shown=[False, True], size=3
-    )
-    assert layer._view_size.shape[0] == layer._view_data.shape[0]
-    assert layer._view_size.shape[0] == 0
-    assert np.array_equal(layer._view_size, [])
-
-    # shown == [False, False]
-    layer = Points(
-        data, out_of_slice_display=False, shown=[False, False], size=3
-    )
-    assert layer._view_size.shape[0] == layer._view_data.shape[0]
-    assert layer._view_size.shape[0] == 0
-    assert np.array_equal(layer._view_size, [])
-
-    # Out of slice display == True
-    layer = Points(data, out_of_slice_display=True, shown=[True, True], size=3)
-    assert layer._view_size.shape[0] == layer._view_data.shape[0]
-    assert layer._view_size.shape[0] == 2
-    assert np.array_equiv(layer._view_size, [3, 2])
-
-    # Out of slice display == True && shown == [True, False]
-    layer = Points(
-        data, out_of_slice_display=True, shown=[True, False], size=3
-    )
-    assert layer._view_size.shape[0] == layer._view_data.shape[0]
-    assert layer._view_size.shape[0] == 1
-    assert np.array_equal(layer._view_size, [3])
-
-    # Out of slice display == True && shown == [False, True]
-    layer = Points(
-        data, out_of_slice_display=True, shown=[False, True], size=3
-    )
-    assert layer._view_size.shape[0] == layer._view_data.shape[0]
-    assert layer._view_size.shape[0] == 1
-    assert np.array_equal(layer._view_size, [2])
-
-    # Out of slice display == True && shown == [False, False]
-    layer = Points(
-        data, out_of_slice_display=True, shown=[False, False], size=3
-    )
-    assert layer._view_size.shape[0] == layer._view_data.shape[0]
-    assert layer._view_size.shape[0] == 0
-    assert np.array_equal(layer._view_size, [])
 
 
 def test_empty_data_from_tuple():
