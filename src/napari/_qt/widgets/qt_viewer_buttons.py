@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING
 from qtpy.QtCore import QEvent, Qt
 from qtpy.QtWidgets import (
     QApplication,
-    QCheckBox,
     QDoubleSpinBox,
     QFrame,
     QGridLayout,
@@ -26,6 +25,7 @@ from napari._qt.widgets.qt_spinbox import QtSpinBox
 from napari._qt.widgets.qt_tooltip import QtToolTipLabel
 from napari.layers._scalar_field import ScalarFieldBase
 from napari.utils.action_manager import action_manager
+from napari.utils.camera_mode import CameraMode
 from napari.utils.camera_orientations import (
     DepthAxisOrientation,
     DepthAxisOrientationStr,
@@ -557,6 +557,31 @@ class QtViewerButtons(QFrame):
             self.orientation_help_symbol
         )
 
+    def _add_camera_mode_controls(
+        self,
+        popup: QtPopup,
+        grid_layout: QGridLayout,
+    ) -> None:
+        """Add camera mode selector to the popup."""
+        row = grid_layout.rowCount()
+        self.camera_mode_combo = enum_combobox(
+            parent=popup,
+            enum_class=CameraMode,
+            current_enum=self.viewer.camera.mode,
+            callback=lambda v: setattr(self.viewer.camera, 'mode', v),
+        )
+        mode_help_symbol = help_tooltip(
+            parent=popup,
+            text='Controls how camera state is managed when switching between '
+            '2D and 3D views. '
+            '"Separate" remembers each mode\'s state independently. '
+            '"Shared" preserves center, zoom, and angles between modes. '
+            '"Legacy" resets the view on every switch.',
+        )
+        grid_layout.addWidget(QLabel(trans._('Camera mode:')), row, 0)
+        grid_layout.addWidget(self.camera_mode_combo, row, 1)
+        grid_layout.addWidget(mode_help_symbol, row, 2)
+
     def open_ndisplay_camera_popup(self) -> None:
         """Show controls for camera settings based on ndisplay mode."""
         popup = QtPopup(self)
@@ -572,14 +597,10 @@ class QtViewerButtons(QFrame):
         if self.viewer.dims.ndisplay == 3:
             self._add_3d_camera_controls(popup, grid_layout)
 
-        popup.frame.setLayout(grid_layout)
+        # Add camera mode selector
+        self._add_camera_mode_controls(popup, grid_layout)
 
-        sync_cb = QCheckBox('Sync camera between 2D/3D')
-        sync_cb.setChecked(self.viewer.camera.sync)
-        sync_cb.toggled.connect(
-            lambda checked: setattr(self.viewer.camera, 'sync', checked)
-        )
-        grid_layout.addWidget(sync_cb, grid_layout.rowCount(), 0, 1, 3)
+        popup.frame.setLayout(grid_layout)
 
         # Reposition popup, must be done after all widgets are added
         self._position_popup_inside_viewer(popup, self.ndisplayButton)
