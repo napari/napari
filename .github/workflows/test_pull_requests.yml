@@ -119,7 +119,7 @@ jobs:
       matrix:
         platform: [ ubuntu-latest ]
         python: [ "3.14" ]
-        backend: [ "pyqt6,pyside6" ]
+        backend: [ "pyqt5,pyqt6" ]
         coverage: [ cov ]
         include:
           # when changing these, try to keep full coverage of supported
@@ -134,12 +134,12 @@ jobs:
             coverage: cov
           - python: "3.14"
             platform: macos-15-intel
-            backend: pyqt5
+            backend: pyqt5_no_numba
             coverage: no_cov
             timeout-minutes: 60
           - python: "3.14"
             platform: macos-latest
-            backend: pyqt6_no_numba
+            backend: pyqt6
             coverage: no_cov
             timeout-minutes: 60
           # minimum specified requirements
@@ -169,6 +169,11 @@ jobs:
           - python: "3.14"
             platform: ubuntu-latest
             backend: pyqt6_no_numba
+            coverage: cov
+          # pyside6 test
+          - python: "3.14"
+            platform: ubuntu-latest
+            backend: pyside6
             coverage: cov
           # linux aarch64 test
           - python: "3.14"
