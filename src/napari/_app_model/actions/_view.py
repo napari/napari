@@ -1,9 +1,10 @@
 from app_model import Action
-from app_model.types import StandardKeyBinding, SubmenuItem, ToggleRule
+from app_model.types import StandardKeyBinding, SubmenuItem
 
 from napari._app_model.actions._toggle_action import ViewerModelToggleAction
 from napari._app_model.constants import MenuGroup, MenuId
 from napari.components import ViewerModel
+from napari.components.camera import CameraMode
 from napari.settings import get_settings
 from napari.utils.translations import trans
 
@@ -108,6 +109,15 @@ def _toggle_canvas_ndim(viewer: ViewerModel) -> None:
         viewer.dims.ndisplay = 2
 
 
+def _cycle_camera_mode(viewer: ViewerModel) -> None:
+    if viewer.camera.mode == CameraMode.SEPARATE:
+        viewer.camera.mode = CameraMode.SHARED
+    elif viewer.camera.mode == CameraMode.SHARED:
+        viewer.camera.mode = CameraMode.LEGACY
+    else:
+        viewer.camera.mode = CameraMode.SEPARATE
+
+
 VIEW_ACTIONS: list[Action] = [
     Action(
         id='napari.viewer.fit_to_view',
@@ -162,11 +172,12 @@ VIEW_ACTIONS: list[Action] = [
         ],
         callback=_toggle_canvas_ndim,
     ),
-    ViewerModelToggleAction(
-        id='napari.viewer.toggle_camera_sync',
-        title='Toggle Camera Sync',
-        viewer_attribute='camera',
-        sub_attribute='sync',
+]
+
+VIEW_ACTIONS.append(
+    Action(
+        id='napari.viewer.cycle_camera_mode',
+        title=trans._('Cycle Camera Mode'),
         menus=[
             {
                 'id': MenuId.MENUBAR_VIEW,
@@ -174,21 +185,10 @@ VIEW_ACTIONS: list[Action] = [
                 'order': 2,
             }
         ],
+        callback=_cycle_camera_mode,
     ),
-    Action(
-        id='napari.window.view.toggle_layer_tooltips',
-        title=trans._('Toggle Layer Tooltips'),
-        menus=[
-            {
-                'id': MenuId.MENUBAR_VIEW,
-                'group': MenuGroup.RENDER,
-                'order': 10,
-            }
-        ],
-        callback=_tooltip_visibility_toggle,
-        toggled=ToggleRule(get_current=_get_current_tooltip_visibility),
-    ),
-]
+)
+
 
 for cmd, cmd_title, viewer_attr, sub_attr in toggle_action_details:
     VIEW_ACTIONS.append(
