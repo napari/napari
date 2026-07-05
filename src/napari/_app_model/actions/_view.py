@@ -110,12 +110,19 @@ def _toggle_canvas_ndim(viewer: ViewerModel) -> None:
 
 
 def _cycle_camera_mode(viewer: ViewerModel) -> None:
-    if viewer.camera.mode == CameraMode.SEPARATE:
-        viewer.camera.mode = CameraMode.SHARED
-    elif viewer.camera.mode == CameraMode.SHARED:
-        viewer.camera.mode = CameraMode.LEGACY
-    else:
-        viewer.camera.mode = CameraMode.SEPARATE
+    """Cycle through the available camera modes
+
+    Use the string repr of current index to find the mode in the list,
+    then increment the index and wrap around to the start of the list.
+    """
+    modes = list(CameraMode)
+    str_modes = [str(m) for m in modes]
+    viewer.camera.mode = modes[
+        (str_modes.index(str(viewer.camera.mode)) + 1) % len(modes)
+    ]
+    from napari.utils.notifications import show_info
+
+    show_info(f'Camera mode: {viewer.camera.mode.value}')
 
 
 VIEW_ACTIONS: list[Action] = [
