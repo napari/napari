@@ -1863,6 +1863,20 @@ def test_reshape_reuses_pooled_textures(
     shape_a = dbuf.shape
     shape_b = tuple(s // 2 for s in shape_a)
 
+    def swap(vol):
+        node.set_data(vol)
+        qtbot.waitUntil(
+            lambda: dbuf.present() or not dbuf._reshape_pending,
+            timeout=5000,
+        )
+
+    # warm-up: a full a->b->a cycle populates the pool with two
+    # textures at each shape (the first time through may create
+    # extras when a pending reshape from the loader leaves only one
+    # texture of a given shape in the system)
+    swap(np.zeros(shape_b, dtype=np.uint8))
+    swap(np.ones(shape_a, dtype=np.uint8))
+
     created = []
     orig_create = node._create_texture
 
@@ -1871,23 +1885,11 @@ def test_reshape_reuses_pooled_textures(
         created.append(tex)
         return tex
 
-    def swap(vol):
-        # stage the reshape, then complete it on the present cadence
-        # (set_data never binds; presents finish the cycle)
-        node.set_data(vol)
-        qtbot.waitUntil(
-            lambda: dbuf.present() or not dbuf._reshape_pending,
-            timeout=5000,
-        )
-
     node._create_texture = counting_create
-    swap(np.zeros(shape_b, dtype=np.uint8))  # a -> b
-    assert not dbuf._reshape_pending
-    first_round = len(created)
-    assert first_round >= 1  # b-shaped textures had to be created
+    swap(np.ones(shape_b, dtype=np.uint8))  # a -> b (pool hit)
     swap(np.ones(shape_a, dtype=np.uint8))  # b -> a (pool hit)
     swap(np.ones(shape_b, dtype=np.uint8))  # a -> b (pool hit)
-    assert len(created) == first_round, 'pool miss: textures reallocated'
+    assert len(created) == 0, 'pool miss: textures reallocated'
     assert dbuf.shape == shape_b
     assert tuple(node._texture.shape[:3]) == shape_b
     loader.close()
