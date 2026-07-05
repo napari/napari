@@ -39,7 +39,15 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from weakref import WeakKeyDictionary, ref
 
-from qtpy.QtCore import QPoint, QSize, Qt, Signal
+from qtpy.QtCore import (
+    QEvent,
+    QModelIndex,
+    QPoint,
+    QRect,
+    QSize,
+    Qt,
+    Signal,
+)
 from qtpy.QtGui import QMouseEvent, QMovie, QPixmap
 from qtpy.QtWidgets import QStyledItemDelegate
 
@@ -56,11 +64,15 @@ from napari._qt.qt_resources import QColoredSVGIcon
 from napari.resources import LOADING_GIF_PATH
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from qtpy import QtCore
+    from qtpy.QtCore import QAbstractItemModel
     from qtpy.QtGui import QPainter
     from qtpy.QtWidgets import QStyleOptionViewItem, QWidget
 
     from napari.components.layerlist import LayerList
+    from napari.layers import Layer
 
 
 class LayerDelegate(QStyledItemDelegate):
@@ -82,21 +94,25 @@ class LayerDelegate(QStyledItemDelegate):
 
     loading_frame_changed = Signal()
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._load_movie = QMovie(LOADING_GIF_PATH)
         self._load_movie.setScaledSize(QSize(18, 18))
         self._load_movie.frameChanged.connect(self.loading_frame_changed)
-        self._layer_visibility_states = WeakKeyDictionary()
-        self._alt_click_layer = lambda: None
+        self._layer_visibility_states: WeakKeyDictionary[Layer, bool] = (
+            WeakKeyDictionary()
+        )
+        self._alt_click_layer: Callable[[], Layer | None] = lambda: None
 
     def paint(
         self,
-        painter: QPainter,
+        painter: QPainter | None,
         option: QStyleOptionViewItem,
         index: QtCore.QModelIndex,
-    ):
+    ) -> None:
         """Paint the item in the model at `index`."""
+        if painter is None:
+            return
         # update the icon based on layer type
         option.textElideMode = Qt.TextElideMode.ElideMiddle
         self.get_layer_icon(option, index)
@@ -110,14 +126,14 @@ class LayerDelegate(QStyledItemDelegate):
         self._paint_lock_icon(painter, option, index)
 
     def get_layer_icon(
-        self, option: QStyleOptionViewItem, index: QtCore.QModelIndex
-    ):
+        self, option: QStyleOptionViewItem, index: QModelIndex
+    ) -> None:
         """Add the appropriate QIcon to the item based on the layer type."""
         layer = index.data(ItemRole)
         if layer is None:
             return
         if hasattr(layer, 'is_group') and layer.is_group():  # for layer trees
-            expanded = option.widget.isExpanded(index)
+            expanded = option.widget.isExpanded(index)  # type: ignore[attr-defined]
             icon_name = 'folder-open' if expanded else 'folder'
         else:
             icon_name = f'new_{layer._type_string}'
@@ -140,7 +156,7 @@ class LayerDelegate(QStyledItemDelegate):
         painter: QPainter,
         option: QStyleOptionViewItem,
         index: QtCore.QModelIndex,
-    ):
+    ) -> None:
         """Paint loading layer indicator."""
         loaded = index.data(LoadedRole)
         if not loaded:
@@ -151,7 +167,12 @@ class LayerDelegate(QStyledItemDelegate):
             load_rect.setHeight(h)
             painter.drawPixmap(load_rect, self._load_movie.currentPixmap())
 
-    def _paint_thumbnail(self, painter, option, index):
+    def _paint_thumbnail(
+        self,
+        painter: QPainter,
+        option: QStyleOptionViewItem,
+        index: QModelIndex,
+    ) -> None:
         """paint the layer thumbnail."""
         # paint the thumbnail
         # MAGICNUMBER: numbers from the margin applied in the stylesheet to
@@ -163,7 +184,7 @@ class LayerDelegate(QStyledItemDelegate):
             # movie. This is needed since there is only one instance of the
             # delegate and therefore only one instance of the load movie shared
             # between all the layer items.
-            all_loaded = index.model().sourceModel().all_loaded()
+            all_loaded = index.model().sourceModel().all_loaded()  # type: ignore[union-attr]
             if all_loaded:
                 self._load_movie.setPaused(True)
 
@@ -174,7 +195,12 @@ class LayerDelegate(QStyledItemDelegate):
             image = index.data(ThumbnailRole)
             painter.drawPixmap(thumb_rect, QPixmap.fromImage(image))
 
-    def _paint_lock_icon(self, painter, option, index):
+    def _paint_lock_icon(
+        self,
+        painter: QPainter,
+        option: QStyleOptionViewItem,
+        index: QModelIndex,
+    ) -> None:
         """Paint a lock icon when the layer is locked. No icon when unlocked."""
         if not index.data(LockedRole):
             return
@@ -187,7 +213,9 @@ class LayerDelegate(QStyledItemDelegate):
         lock_rect = self._lock_icon_rect(option, index)
         painter.drawPixmap(lock_rect, colored_icon.pixmap(lock_rect.size()))
 
-    def _lock_icon_rect(self, option, index):
+    def _lock_icon_rect(
+        self, option: QStyleOptionViewItem, index: QModelIndex
+    ) -> QRect:
         """Return the QRect for the lock icon."""
         from qtpy.QtCore import QRect
 
@@ -200,24 +228,25 @@ class LayerDelegate(QStyledItemDelegate):
 
     def createEditor(
         self,
-        parent: QWidget,
+        parent: QWidget | None,
         option: QStyleOptionViewItem,
         index: QtCore.QModelIndex,
-    ) -> QWidget:
+    ) -> QWidget | None:
         """User has double clicked on layer name."""
         # necessary for geometry, otherwise editor takes up full width.
         self.get_layer_icon(option, index)
         editor = super().createEditor(parent, option, index)
         # make sure editor has same alignment as the display name
-        editor.setAlignment(
-            Qt.AlignmentFlag(index.data(Qt.ItemDataRole.TextAlignmentRole))
-        )
+        if editor is not None:
+            editor.setAlignment(  # type: ignore[attr-defined]
+                Qt.AlignmentFlag(index.data(Qt.ItemDataRole.TextAlignmentRole))
+            )
         return editor
 
     def editorEvent(
         self,
-        event: QtCore.QEvent,
-        model: QtCore.QAbstractItemModel,
+        event: QtCore.QEvent | None,
+        model: QtCore.QAbstractItemModel | None,
         option: QStyleOptionViewItem,
         index: QtCore.QModelIndex,
     ) -> bool:
@@ -225,14 +254,17 @@ class LayerDelegate(QStyledItemDelegate):
 
         This can be used to customize how the delegate handles mouse/key events
         """
+        if event is None or model is None:
+            return super().editorEvent(event, model, option, index)
         if (
-            event.type() == QMouseEvent.MouseButtonRelease
+            event.type() == QEvent.Type.MouseButtonRelease
+            and isinstance(event, QMouseEvent)
             and event.button() == Qt.MouseButton.RightButton
         ):
             pnt = (
                 event.globalPosition().toPoint()
                 if hasattr(event, 'globalPosition')
-                else event.globalPos()
+                else event.globalPos()  # type: ignore[attr-defined]
             )
 
             self.show_context_menu(index, model, pnt, option.widget)
@@ -240,9 +272,13 @@ class LayerDelegate(QStyledItemDelegate):
         # if the user clicks quickly on the visibility checkbox, we *don't*
         # want it to be interpreted as a double-click.  We want the visibility
         # to simply be toggled.
-        if event.type() == QMouseEvent.MouseButtonDblClick:
+        if event.type() == QEvent.Type.MouseButtonDblClick and isinstance(
+            event, QMouseEvent
+        ):
             self.initStyleOption(option, index)
             style = option.widget.style()
+            if style is None:
+                return super().editorEvent(event, model, option, index)
             check_rect = style.subElementRect(
                 style.SubElement.SE_ItemViewItemCheckIndicator,
                 option,
@@ -264,12 +300,16 @@ class LayerDelegate(QStyledItemDelegate):
 
         # catch alt-click on the vis checkbox and hide *other* layer visibility
         # on second alt-click, restore the visibility state of the layers
-        if event.type() == QMouseEvent.MouseButtonRelease and (
-            event.button() == Qt.MouseButton.LeftButton
-            and event.modifiers() == Qt.AltModifier
+        if (
+            event.type() == QEvent.Type.MouseButtonRelease
+            and isinstance(event, QMouseEvent)
+            and event.button() == Qt.MouseButton.LeftButton
+            and event.modifiers() == Qt.KeyboardModifier.AltModifier
         ):
             self.initStyleOption(option, index)
             style = option.widget.style()
+            if style is None:
+                return super().editorEvent(event, model, option, index)
             check_rect = style.subElementRect(
                 style.SubElement.SE_ItemViewItemCheckIndicator,
                 option,
@@ -279,11 +319,15 @@ class LayerDelegate(QStyledItemDelegate):
                 return self._show_on_alt_click_hide_others(model, index)
 
         # on regular click of visibility icon, clear alt-click state
-        if event.type() == QMouseEvent.MouseButtonRelease and (
-            event.button() == Qt.MouseButton.LeftButton
+        if (
+            event.type() == QEvent.Type.MouseButtonRelease
+            and isinstance(event, QMouseEvent)
+            and event.button() == Qt.MouseButton.LeftButton
         ):
             self.initStyleOption(option, index)
             style = option.widget.style()
+            if style is None:
+                return super().editorEvent(event, model, option, index)
             check_rect = style.subElementRect(
                 style.SubElement.SE_ItemViewItemCheckIndicator,
                 option,
@@ -299,12 +343,12 @@ class LayerDelegate(QStyledItemDelegate):
         self,
         model: QtCore.QAbstractItemModel,
         index: QtCore.QModelIndex,
-    ) -> QtCore.QAbstractItemModel:
+    ) -> bool:
         """On alt/option click of a layer show the layer, hide other layers,
         to be restored once a layer is alt/option-clicked a second time.
         """
-        alt_clicked_layer = index.data(ItemRole)
-        layer_list: LayerList = model.sourceModel()._root
+        alt_clicked_layer: Layer = index.data(ItemRole)
+        layer_list: LayerList = model.sourceModel()._root  # type: ignore[attr-defined]
         # show the alt-clicked layer
         state = Qt.CheckState.Checked
         if self._alt_click_layer() is None:
@@ -334,7 +378,13 @@ class LayerDelegate(QStyledItemDelegate):
 
         return model.setData(index, state, Qt.ItemDataRole.CheckStateRole)
 
-    def show_context_menu(self, index, model, pos: QPoint, parent):
+    def show_context_menu(
+        self,
+        index: QModelIndex,
+        model: QAbstractItemModel,
+        pos: QPoint,
+        parent: QWidget | None,
+    ) -> None:
         """Show the layerlist context menu.
         To add a new item to the menu, update the _LAYER_ACTIONS dict.
         """
@@ -343,7 +393,7 @@ class LayerDelegate(QStyledItemDelegate):
                 MenuId.LAYERLIST_CONTEXT, parent=parent
             )
 
-        layer_list: LayerList = model.sourceModel()._root
+        layer_list: LayerList = model.sourceModel()._root  # type: ignore[attr-defined]
         ctx = get_context(layer_list)
         self._context_menu.update_from_context(ctx)
-        self._context_menu.exec_(pos)
+        self._context_menu.exec(pos)
