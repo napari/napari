@@ -3,13 +3,14 @@
 import dask.array as da
 import numpy as np
 import pytest
-import qtpy
 
-from napari.experimental._tests.test_progressive_loading import (
+qtpy = pytest.importorskip('qtpy', reason='requires Qt backend')
+
+from napari.experimental._tests.test_progressive_loading import (  # noqa: E402
     _wait_for_idle_loader,
 )
-from napari.layers import Labels
-from napari.settings import get_settings
+from napari.layers import Labels  # noqa: E402
+from napari.settings import get_settings  # noqa: E402
 
 # The replacement flow works with PySide6 interactively and in plain
 # scripts, but wedges the Qt timer system under pytest's nested event
