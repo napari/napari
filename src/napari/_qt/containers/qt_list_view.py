@@ -8,14 +8,14 @@ from napari._qt.containers._base_item_view import _BaseEventedItemView
 from napari._qt.containers.qt_list_model import QtListModel
 
 if TYPE_CHECKING:
-    from qtpy.QtWidgets import QWidget  # type: ignore[attr-defined]
+    from qtpy.QtWidgets import QWidget
 
     from napari.utils.events.containers import SelectableEventedList
 
 ItemType = TypeVar('ItemType')
 
 
-class QtListView(_BaseEventedItemView[ItemType], QListView):
+class QtListView(_BaseEventedItemView[ItemType], QListView):  # type: ignore[misc]
     """A QListView for a :class:`~napari.utils.events.SelectableEventedList`.
 
     Designed to work with :class:`~napari._qt.containers.QtListModel`.
@@ -39,10 +39,10 @@ class QtListView(_BaseEventedItemView[ItemType], QListView):
         parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
-        self.setDragDropMode(QListView.InternalMove)
+        self.setDragDropMode(QtListView.DragDropMode.InternalMove)
         self.setDragDropOverwriteMode(False)
-        self.setSelectionMode(QListView.ExtendedSelection)
+        self.setSelectionMode(QtListView.SelectionMode.ExtendedSelection)
         self.setRoot(root)
 
     def model(self) -> QtListModel[ItemType]:
-        return super().model()
+        return super().model()  # type: ignore[return-value]
