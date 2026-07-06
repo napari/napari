@@ -122,7 +122,7 @@ jobs:
           if grep -Ei "^[[:space:]]*alias:[[:space:]]*${PR_AUTHOR}[[:space:]]*$" CITATION.cff; then
             echo "Found alias '$PR_AUTHOR' in CITATION.cff."
           else
-            printf '%s\n' "::warning file=CITATION.cff,title=Missing citation::GitHub username '${PR_AUTHOR}' not found in CITATION.cff. Add yourself with: given-names, family-names, affiliation, alias: ${PR_AUTHOR}." \
+            printf '%s\n' "::warning file=CITATION.cff,title=Missing citation::GitHub username '${PR_AUTHOR}' not found in CITATION.cff." \
             "" \
             "GitHub username '${PR_AUTHOR}' not found as an alias in CITATION.cff under authors." \
             "" \
