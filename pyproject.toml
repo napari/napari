@@ -350,7 +350,7 @@ napari = "napari.utils._testsupport"
 napari_builtins = "napari_builtins:builtins.yaml"
 
 [project.scripts]
-napari = "napari.__main__:main"
+napari = "napari._main:main"
 
 [tool.setuptools]
 zip-safe = false
@@ -544,6 +544,7 @@ filterwarnings = [
   "ignore:'asyncio.WindowsSelectorEventLoopPolicy' is deprecated and slated for removal in Python 3.16:DeprecationWarning", # windows ipykernel issue #8666
   "ignore:'asyncio.get_event_loop_policy' is deprecated and slated for removal in Python 3.16:DeprecationWarning",  # windows ipykernel issue #8666
   "ignore:'asyncio.set_event_loop_policy' is deprecated and slated for removal in Python 3.16:DeprecationWarning",  # windows ipykernel issue #8666
+  "ignore:System theme detection requires a Qt6 backend:UserWarning",  # delete once Qt5 support is dropped
 ]
 markers = [
     "examples: Test of examples",
@@ -617,7 +618,6 @@ module = [
     'napari._qt.containers.qt_tree_model',
     'napari._qt.dialogs.confirm_close_dialog',
     'napari._qt.dialogs.preferences_dialog',
-    'napari._qt.dialogs.qt_about',
     'napari._qt.dialogs.qt_activity_dialog',
     'napari._qt.dialogs.qt_modal',
     'napari._qt.dialogs.qt_notification',
@@ -692,13 +692,10 @@ module = [
     'napari._qt.widgets.qt_dict_table',
     'napari._qt.widgets.qt_dims',
     'napari._qt.widgets.qt_dims_slider',
-    'napari._qt.widgets.qt_dims_sorter',
     'napari._qt.widgets.qt_extension2reader',
-    'napari._qt.widgets.qt_font_size',
     'napari._qt.widgets.qt_highlight_preview',
     'napari._qt.widgets.qt_keyboard_settings',
     'napari._qt.widgets.qt_logger',
-    'napari._qt.widgets.qt_message_popup',
     'napari._qt.widgets.qt_mode_buttons',
     'napari._qt.widgets.qt_plugin_sorter',
     'napari._qt.widgets.qt_progress_bar',
