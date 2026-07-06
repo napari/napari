@@ -4,13 +4,13 @@ This script reads your project's pyproject.toml (PEP 621 format) and iterates ov
 dependencies (both main and extras). For each dependency that is a binary dependency
 (i.e. one that provides platform-specific wheels), it checks whether the version specified
 as the minimal (from a lower-bound like ">=1.3.0") provides a wheel compatible with a given
-Python version (e.g. 3.10).
+Python version (e.g. 3.12).
 
 If not, it searches (in ascending order) for the lowest version (above the specified minimal)
 that provides a compatible wheel and reports the problematic packages with the recommended version bump.
 
 Requirements:
-  - Python 3.11+ uses the built-in tomllib; older versions require the external 'toml' package.
+  - Python 3.12+ uses the built-in tomllib; older versions require the external 'toml' package.
   - Install requests and packaging (and toml if needed).
 
 Usage: Run this script in your project root (where pyproject.toml is located).
@@ -39,7 +39,7 @@ from packaging.version import InvalidVersion, Version
 
 def parse_min_python_version(requires_python: str):
     """
-    Extracts the minimal Python version from a requires-python string (e.g. ">=3.10").
+    Extracts the minimal Python version from a requires-python string (e.g. ">=3.12").
     Assumes a specifier like ">=X.Y" is present.
     """
     m = re.search(r'>=\s*([\d\.]+)', requires_python)
@@ -81,7 +81,7 @@ def wheel_supports_python(filename: str, required_py_ver: Version) -> bool:
       - For CPython wheels:
           • If the ABI tag contains "abi3" (e.g. cp38-abi3), assume it works for any CPython version
             that is equal to or newer than the tagged version.
-          • Otherwise, the wheel's tag (e.g. "cp310") must match the required version exactly.
+          • Otherwise, the wheel's tag (e.g. "cp312") must match the required version exactly.
     """
     try:
         _, _, _, tags = parse_wheel_filename(filename)

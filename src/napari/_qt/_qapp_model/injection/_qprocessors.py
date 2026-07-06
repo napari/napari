@@ -11,7 +11,6 @@ from functools import partial
 from typing import (
     TYPE_CHECKING,
     Any,
-    Optional,
     Union,
     get_origin,
 )
@@ -201,9 +200,7 @@ def _add_future_data(
 
 
 QPROCESSORS: dict[object, Callable] = {
-    Optional[
-        tuple[FunctionGui | QWidget | Widget, str]
-    ]: _add_plugin_dock_widget,
+    tuple[FunctionGui | QWidget | Widget, str] | None: _add_plugin_dock_widget,
     types.LayerDataTuple: _add_layer_data_tuples_to_viewer,
     list[types.LayerDataTuple]: _add_layer_data_tuples_to_viewer,
     layers.Layer: _add_layer_to_viewer,

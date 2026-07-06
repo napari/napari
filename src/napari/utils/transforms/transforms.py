@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Generic, TypeVar, overload
+from typing import TYPE_CHECKING, TypeVar, overload
 
 import numpy as np
 import numpy.typing as npt
@@ -126,7 +126,7 @@ class Transform:
 _T = TypeVar('_T', bound=Transform)
 
 
-class TransformChain(EventedList[_T], Transform, Generic[_T]):
+class TransformChain[T: Transform](EventedList[T], Transform):
     def __init__(self, transforms: Iterable[Transform] | None = None) -> None:
         if transforms is None:
             transforms = []

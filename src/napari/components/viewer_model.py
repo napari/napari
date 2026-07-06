@@ -15,7 +15,6 @@ from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
-    Union,
     cast,
 )
 from urllib.parse import urlparse
@@ -215,7 +214,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         default_factory=LayerList, frozen=True
     )  # Need to create custom JSON encoder for layer!
     help: str = ''
-    status: Union[str, Dict[str, str]] = 'Ready'
+    status: str | Dict[str, str] = 'Ready'
     tooltip: Tooltip = Field(default_factory=Tooltip, frozen=True)
     theme: str = Field(default_factory=_current_theme)
     title: str = 'napari'

@@ -1,4 +1,4 @@
-from typing import Any, TypeAlias, cast
+from typing import Any, cast
 
 import numpy as np
 import numpy.typing as npt
@@ -8,7 +8,7 @@ from napari.utils.events import EventedModel, SelectableEventedList
 from napari.utils.geometry import intersect_line_with_plane_3d
 from napari.utils.translations import trans
 
-Point3D: TypeAlias = tuple[float, float, float]
+type Point3D = tuple[float, float, float]
 
 
 class Plane(EventedModel):

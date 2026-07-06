@@ -9,7 +9,6 @@ from typing import (
     Any,
     ClassVar,
     Literal,
-    Optional,
 )
 
 import numpy as np
@@ -438,12 +437,12 @@ class Points(Layer):
         self._mode = Mode.PAN_ZOOM
         self._status = self.mode
 
-        self._drag_start: Optional[np.ndarray] = None
-        self._drag_normal: Optional[np.ndarray] = None
-        self._drag_up: Optional[np.ndarray] = None
+        self._drag_start: np.ndarray | None = None
+        self._drag_normal: np.ndarray | None = None
+        self._drag_up: np.ndarray | None = None
 
-        self._drag_box: Optional[np.ndarray] = None
-        self._drag_box_stored: Optional[np.ndarray] = None
+        self._drag_box: np.ndarray | None = None
+        self._drag_box_stored: np.ndarray | None = None
         self._is_selecting = False
         self._clipboard = {}
 

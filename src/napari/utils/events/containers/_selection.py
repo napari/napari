@@ -1,7 +1,7 @@
 from collections import deque
 from collections.abc import Iterable, MutableSet
 from types import GeneratorType
-from typing import TYPE_CHECKING, Any, Generic, TypeVar, Union, get_args
+from typing import TYPE_CHECKING, Any, TypeVar, Union, get_args
 
 from pydantic import GetCoreSchemaHandler
 from pydantic_core import core_schema
@@ -13,7 +13,6 @@ if TYPE_CHECKING:
     from pydantic_core.core_schema import DictSchema, TypedDictSchema
 
 _T = TypeVar('_T')
-_S = TypeVar('_S')
 
 
 def sequence_like(v: Any) -> bool:
@@ -235,20 +234,20 @@ class Selection(EventedSet[_T]):
         return {'selection': super()._json_encode(), '_current': self._current}
 
 
-class Selectable(Generic[_S]):
+class Selectable[S]:
     """Mixin that adds a selection model to an object."""
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        self._selection: Selection[_S] = Selection()
+        self._selection: Selection[S] = Selection()
         super().__init__(*args, **kwargs)
 
     @property
-    def selection(self) -> Selection[_S]:
+    def selection(self) -> Selection[S]:
         """Get current selection."""
         return self._selection
 
     @selection.setter
-    def selection(self, new_selection: Iterable[_S]) -> None:
+    def selection(self, new_selection: Iterable[S]) -> None:
         """Set selection, without deleting selection model object."""
         self._selection.intersection_update(new_selection)
         self._selection.update(new_selection)

@@ -3,7 +3,7 @@ from __future__ import annotations
 import contextlib
 from collections.abc import Callable
 from functools import partial
-from typing import TYPE_CHECKING, Optional, TypeVar, cast
+from typing import TYPE_CHECKING, TypeVar, cast
 from weakref import ref
 
 from app_model.expressions import ContextKey
@@ -256,7 +256,7 @@ class LayerListSelectionContextKeys(ContextNamespace['LayerSel']):
         trans._('True when the active layer is RGB.'),
         _is_rgb,
     )
-    active_layer_type = ContextKey['LayerSel', Optional[str]](
+    active_layer_type = ContextKey['LayerSel', str | None](
         None,
         trans._(
             'Lowercase name of active layer type, or None of none active.'
@@ -301,14 +301,14 @@ class LayerListSelectionContextKeys(ContextNamespace['LayerSel']):
         trans._('Number of selected tracks layers.'),
         _n_selected_tracks,
     )
-    active_layer_ndim = ContextKey['LayerSel', Optional[int]](
+    active_layer_ndim = ContextKey['LayerSel', int | None](
         None,
         trans._(
             'Number of dimensions in the active layer, or `None` if nothing is active.'
         ),
         _active_ndim,
     )
-    active_layer_shape = ContextKey['LayerSel', Optional[tuple[int, ...]]](
+    active_layer_shape = ContextKey['LayerSel', tuple[int, ...] | None](
         (),
         trans._('Shape of the active layer, or `None` if nothing is active.'),
         _active_shape,

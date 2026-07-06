@@ -16,8 +16,6 @@ from typing import (
     Any,
     ClassVar,
     Literal,
-    Optional,
-    Union,
     cast,
 )
 from weakref import WeakValueDictionary
@@ -283,7 +281,7 @@ class _QtMainWindow(QMainWindow):
         return super().statusBar()
 
     @classmethod
-    def current(cls) -> Optional[_QtMainWindow]:
+    def current(cls) -> _QtMainWindow | None:
         return cls._instances[-1] if cls._instances else None
 
     @classmethod
@@ -921,7 +919,7 @@ class Window:
         provider: str,
         task_status: Status,
         description: str,
-        cancel_callback: Optional[Callable] = None,
+        cancel_callback: Callable | None = None,
     ) -> uuid.UUID:
         """
         Register a long running task status.
@@ -1125,7 +1123,7 @@ class Window:
 
     def add_dock_widget(
         self,
-        widget: Union[QWidget, Widget],
+        widget: QWidget | Widget,
         *,
         name: str = '',
         area: str | None = None,

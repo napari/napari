@@ -1,5 +1,3 @@
-from typing import Optional
-
 from qtpy.QtWidgets import QWidget
 
 from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
@@ -36,7 +34,7 @@ class QtEdgeColorControl(QtWidgetControlsBase):
     """
 
     def __init__(
-        self, parent: QWidget, layer: Shapes, tooltip: Optional[str] = None
+        self, parent: QWidget, layer: Shapes, tooltip: str | None = None
     ) -> None:
         super().__init__(parent, layer)
         # Setup widgets

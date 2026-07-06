@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import MutableSequence
-from typing import TYPE_CHECKING, Any, Generic, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from qtpy.QtCore import QAbstractItemModel, QModelIndex, Qt
 
@@ -27,7 +27,7 @@ _BASE_FLAGS = (
 )
 
 
-class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
+class _BaseEventedItemModel[ItemType](QAbstractItemModel):
     """A QAbstractItemModel desigend to work with `SelectableEventedList`.
 
     :class:`~napari.utils.events.SelectableEventedList` is our pure python

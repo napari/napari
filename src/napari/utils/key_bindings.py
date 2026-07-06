@@ -37,14 +37,13 @@ import time
 from collections import ChainMap
 from collections.abc import Callable, Mapping
 from types import EllipsisType, MethodType
-from typing import Union
 
 from app_model.types import KeyBinding, KeyCode, KeyMod
 from vispy.util import keys
 
 from napari.utils.translations import trans
 
-KeyBindingLike = Union[KeyBinding, str, int]
+KeyBindingLike = KeyBinding | str | int
 Keymap = Mapping[KeyBinding | EllipsisType, Callable | EllipsisType]
 
 # global user keymap; to be made public later in refactoring process

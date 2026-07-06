@@ -1,5 +1,3 @@
-from typing import Optional
-
 from qtpy.QtWidgets import QWidget
 
 from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
@@ -39,7 +37,7 @@ class QtFaceColorControl(QtWidgetControlsBase):
         self,
         parent: QWidget,
         layer: Shapes | Points,
-        tooltip: Optional[str] = None,
+        tooltip: str | None = None,
     ) -> None:
         super().__init__(parent, layer)
         # Setup widgets

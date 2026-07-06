@@ -156,7 +156,7 @@ def highlight(layer: Points, event: Event) -> None:
 _T = TypeVar('_T')
 
 
-def _toggle_selected(selection: AbstractSet[_T], value: _T) -> set[_T]:
+def _toggle_selected[T](selection: AbstractSet[_T], value: _T) -> set[_T]:
     """Add or remove value from the selection set.
 
     This function returns a copy of the existing selection.

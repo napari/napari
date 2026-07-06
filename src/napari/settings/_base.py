@@ -38,7 +38,7 @@ _logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from collections.abc import Callable
-    from typing import Any, Union
+    from typing import Any
 
     from pydantic.fields import FieldInfo
 
@@ -47,7 +47,7 @@ if TYPE_CHECKING:
 
     from napari.utils.events import Event
 
-    IntStr = Union[int, str]
+    IntStr = int | str
     from pydantic.main import IncEx
 
     DictStrAny = dict[str, Any]

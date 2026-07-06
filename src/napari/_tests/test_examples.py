@@ -17,7 +17,8 @@ from napari.utils.notifications import notification_manager
 fpath = os.path.join(*__file__.split(os.path.sep)[-4:])
 if '--test-examples' not in sys.argv and fpath not in sys.argv:
     pytest.skip(
-        'Use `napari/_tests/test_examples.py` to test examples.', allow_module_level=True
+        'Use `napari/_tests/test_examples.py` to test examples.',
+        allow_module_level=True,
     )
 
 # not testing these examples
@@ -38,11 +39,15 @@ skip = [
 skip_dev = ['leaking_check.py', 'demo_shape_creation.py']
 
 EXAMPLE_DIR = Path(__file__).parent.parent.parent.parent / 'examples/'
-DEV_EXAMPLE_DIR = Path(__file__).parent.parent.parent.parent / 'examples' / 'dev'
+DEV_EXAMPLE_DIR = (
+    Path(__file__).parent.parent.parent.parent / 'examples' / 'dev'
+)
 # using f.name here and re-joining at `run_path()` for test key presentation
 # (works even if the examples list is empty, as opposed to using an ids lambda)
 examples = [f.name for f in EXAMPLE_DIR.glob('*.py') if f.name not in skip]
-dev_examples = [f.name for f in DEV_EXAMPLE_DIR.glob('*.py') if f.name not in skip_dev]
+dev_examples = [
+    f.name for f in DEV_EXAMPLE_DIR.glob('*.py') if f.name not in skip_dev
+]
 
 
 # still some CI segfaults, but only on windows with pyqt5
@@ -53,14 +58,11 @@ if os.getenv('CI') and os.name == 'nt' and 'to_screenshot.py' in examples:
     examples.remove('to_screenshot.py')
 
 
-
-
 @pytest.fixture(autouse=True)
 def _mock_pooch(monkeypatch):
     from napari.utils._examples_data import napari_choose_downloader
 
     monkeypatch.setattr(core, 'choose_downloader', napari_choose_downloader)
-
 
 
 @pytest.fixture

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from napari._vispy.overlays.base import ViewerOverlayMixin, VispyCanvasOverlay
 from napari._vispy.visuals.interaction_box import InteractionBox
@@ -26,7 +26,7 @@ class VispyZoomOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
 
         self.reset()
 
-    def _on_position_change(self, event: Optional[Event] = None) -> None:
+    def _on_position_change(self, event: Event | None = None) -> None:
         """Change position."""
         settings = get_settings()
         self.node._highlight_width = (

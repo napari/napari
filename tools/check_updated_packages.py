@@ -7,7 +7,6 @@ import re
 import subprocess  # nosec
 import sys
 from pathlib import Path
-
 from tomllib import loads
 
 REPO_DIR = Path(__file__).parent.parent
@@ -156,7 +155,7 @@ def calc_only_direct_updates(
 def get_changed_dependencies(
     base_branch: str,
     all_packages=False,
-    python_version='3.10',
+    python_version='3.12',
     src_dir: Path | None = None,
 ):
     """

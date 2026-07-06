@@ -1,0 +1,23 @@
+name: Update SPEC 0 dependencies
+
+on:
+  schedule:
+    # Day 3 of each quarter — allows 2-day buffer after quarterly schedule release on day 1
+    - cron: "0 0 3 1,4,7,10 *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: scientific-python/spec0-action@8b8b76f254aecce36e6f07de7dde174cb3cafa81 # v1.3
+        with:
+          update_all: 0  # does not update non-SPEC 0 dependencies
