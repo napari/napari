@@ -157,7 +157,6 @@ testing = [
     "pooch>=1.6.0",
     "coverage>7",
     "pretend>=1.0.9",
-    "pyautogui>=0.9.54",
     "pytest-qt >=4.4.0; python_version > '3.10'",
     "pytest-qt ==4.4.0; python_version <= '3.10'",
     "pytest-pretty>=1.1.0",
@@ -256,7 +255,6 @@ testing = [
     "pooch>=1.6.0",
     "coverage>7",
     "pretend>=1.0.9",
-    "pyautogui>=0.9.54",
     "pytest-qt >=4.4.0; python_version > '3.10'",
     "pytest-qt ==4.4.0; python_version <= '3.10'",
     "pytest-pretty>=1.1.0",
@@ -350,7 +348,7 @@ napari = "napari.utils._testsupport"
 napari_builtins = "napari_builtins:builtins.yaml"
 
 [project.scripts]
-napari = "napari.__main__:main"
+napari = "napari._main:main"
 
 [tool.setuptools]
 zip-safe = false
@@ -544,6 +542,7 @@ filterwarnings = [
   "ignore:'asyncio.WindowsSelectorEventLoopPolicy' is deprecated and slated for removal in Python 3.16:DeprecationWarning", # windows ipykernel issue #8666
   "ignore:'asyncio.get_event_loop_policy' is deprecated and slated for removal in Python 3.16:DeprecationWarning",  # windows ipykernel issue #8666
   "ignore:'asyncio.set_event_loop_policy' is deprecated and slated for removal in Python 3.16:DeprecationWarning",  # windows ipykernel issue #8666
+  "ignore:System theme detection requires a Qt6 backend:UserWarning",  # delete once Qt5 support is dropped
 ]
 markers = [
     "examples: Test of examples",
@@ -617,7 +616,6 @@ module = [
     'napari._qt.containers.qt_tree_model',
     'napari._qt.dialogs.confirm_close_dialog',
     'napari._qt.dialogs.preferences_dialog',
-    'napari._qt.dialogs.qt_about',
     'napari._qt.dialogs.qt_activity_dialog',
     'napari._qt.dialogs.qt_modal',
     'napari._qt.dialogs.qt_notification',
