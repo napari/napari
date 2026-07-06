@@ -49,7 +49,6 @@ class Transform:
         self._inverse_func = inverse
         self.name = name
         self._cache_dict = {}
-        self._old_cache_dict = {}
 
         if func is tz.identity:
             self._inverse_func = tz.identity
@@ -121,8 +120,6 @@ class Transform:
 
     def _clean_cache(self):
         self._cache_dict.clear()
-        # self._old_cache_dict = self._cache_dict
-        # self._cache_dict = {}
         self.changed.emit()
 
 
