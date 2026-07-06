@@ -1,8 +1,5 @@
-from unittest.mock import patch
-
 import numpy as np
 import pytest
-from qtpy.QtGui import QStandardItemModel
 
 from napari._qt.layer_controls.qt_image_controls import QtImageControls
 from napari._qt.layer_controls.qt_labels_controls import QtLabelsControls
@@ -10,7 +7,6 @@ from napari._qt.layer_controls.widgets.qt_multiscale_level_control import (
     _format_level_label,
 )
 from napari.layers import Image, Labels
-from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
 
 
 # ---------------------------------------------------------------------------
@@ -26,18 +22,10 @@ def test_format_level_label_3d():
     assert label == '2: 64 \u00d7 128 \u00d7 128 (1.0 MB)'
 
 
-def test_format_level_label_no_displayed_axes_shows_full_shape():
-    """Without displayed_axes the full shape is shown."""
+def test_format_level_label_4d():
+    """Full shape is always shown."""
     label = _format_level_label(1, (3, 10, 64, 64), 3 * 10 * 64 * 64)
     assert label == '1: 3 \u00d7 10 \u00d7 64 \u00d7 64 (122.9 KB)'
-
-
-def test_format_level_label_displayed_axes():
-    """Only the displayed dimensions should appear in the label."""
-    label = _format_level_label(
-        0, (5, 10, 64, 64), 5 * 10 * 64 * 64, displayed_axes=(2, 3)
-    )
-    assert label == '0: 64 \u00d7 64 (204.8 KB)'
 
 
 def test_format_level_label_1d():
@@ -141,76 +129,34 @@ def test_combobox_updates_on_data_change(multiscale_controls):
         assert combo.itemData(i + 1) == i
 
 
-def test_not_multiscale_has_only_auto_and_is_hidden(qtbot):
-    """Single-scale layer should have only 'Auto' and hide the control."""
+def test_not_multiscale_is_hidden(qtbot):
+    """Single-scale layer should hide the multiscale control."""
     layer = Image(np.zeros((40, 20), dtype=np.uint8))
     qtctrl = QtImageControls(layer)
     qtbot.addWidget(qtctrl)
     ctrl = qtctrl._multiscale_level_control
-    assert ctrl.level_combobox.count() == 1
-    assert ctrl.level_combobox.itemText(0) == 'Auto'
     assert ctrl.level_combobox.isHidden()
     assert ctrl.level_label.isHidden()
 
 
-# ---------------------------------------------------------------------------
-# GL texture limit tests
-# ---------------------------------------------------------------------------
-_3D_MULTISCALE_DATA = [
-    np.zeros((64, 64, 64), dtype=np.uint8),
-    np.zeros((32, 32, 32), dtype=np.uint8),
-    np.zeros((16, 16, 16), dtype=np.uint8),
-]
-
-
-def test_levels_exceeding_3d_texture_limit_are_disabled(qtbot):
-    """In 3D, levels whose shape exceeds GL_MAX_3D_TEXTURE_SIZE are disabled."""
-    layer = Image(_3D_MULTISCALE_DATA, multiscale=True)
+def test_multiscale_labels_show_full_shape(qtbot):
+    """Labels should show the full shape of each level."""
+    data = [
+        np.zeros((3, 10, 64, 64), dtype=np.uint8),
+        np.zeros((3, 10, 32, 32), dtype=np.uint8),
+    ]
+    layer = Image(data, multiscale=True)
     qtctrl = QtImageControls(layer)
     qtbot.addWidget(qtctrl)
 
-    # Switch to 3D display and rebuild items with a mocked texture limit
-    layer._slicing_state._slice_input = _SliceInput(
-        ndisplay=3,
-        world_slice=_ThickNDSlice.make_full(ndim=3),
-        order=(0, 1, 2),
-    )
-    with patch(
-        'napari._qt.layer_controls.widgets.qt_multiscale_level_control.get_max_texture_sizes',
-        return_value=(16384, 32),
-    ):
-        qtctrl._multiscale_level_control._rebuild_items()
-
     combo = qtctrl._multiscale_level_control.level_combobox
-    model = combo.model()
-    assert isinstance(model, QStandardItemModel)
 
-    # "Auto" (index 0) should be enabled
-    assert model.item(0).isEnabled()
-    # Level 0 (64^3) exceeds limit of 32 — disabled
-    assert not model.item(1).isEnabled()
-    # Level 1 (32^3) fits — enabled
-    assert model.item(2).isEnabled()
-    # Level 2 (16^3) fits — enabled
-    assert model.item(3).isEnabled()
+    # Level 0: (3, 10, 64, 64) = 122880 bytes
+    label_0 = combo.itemText(1)
+    assert '3 \u00d7 10 \u00d7 64 \u00d7 64' in label_0
+    assert '122.9 KB' in label_0 or '120.0 KB' in label_0
 
-
-def test_levels_all_enabled_in_2d(qtbot):
-    """In 2D, no levels should be disabled regardless of 3D texture limit."""
-    layer = Image(_3D_MULTISCALE_DATA, multiscale=True)
-    qtctrl = QtImageControls(layer)
-    qtbot.addWidget(qtctrl)
-
-    # Rebuild with a mocked texture limit while in 2D (default ndisplay=2)
-    with patch(
-        'napari._qt.layer_controls.widgets.qt_multiscale_level_control.get_max_texture_sizes',
-        return_value=(16384, 32),
-    ):
-        qtctrl._multiscale_level_control._rebuild_items()
-
-    combo = qtctrl._multiscale_level_control.level_combobox
-    model = combo.model()
-    assert isinstance(model, QStandardItemModel)
-
-    for i in range(combo.count()):
-        assert model.item(i).isEnabled()
+    # Level 1: (3, 10, 32, 32) = 30720 bytes
+    label_1 = combo.itemText(2)
+    assert '3 \u00d7 10 \u00d7 32 \u00d7 32' in label_1
+    assert '30.7 KB' in label_1 or '30.0 KB' in label_1

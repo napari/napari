@@ -748,7 +748,9 @@ class ScalarFieldBase(Layer, ABC):
             # data are always consistent (data_level and the slice
             # can be temporarily out of sync).
             im_slice = self._slice.image.raw
-            slice_shape = np.array(im_slice.shape)
+            # Use only the displayed spatial dims; an RGB slice carries a
+            # trailing channel axis that is absent from level_shapes.
+            slice_shape = np.array(im_slice.shape)[: len(dims_displayed)]
             level0_shape = np.array(self.level_shapes[0])
             ds = level0_shape[dims_displayed] / slice_shape
             start_point = start_point[dims_displayed] / ds

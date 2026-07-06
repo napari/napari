@@ -415,6 +415,11 @@ authors:
   affiliation: University of Wisconsin-Madison
   orcid: https://orcid.org/0009-0002-2400-1940
   alias: gselzer
+- given-names: Rupesh
+  family-names: Sharma
+  affiliation: Mangalmay Institute of Management & Technology
+  orcid: https://orcid.org/0009-0000-8849-7055
+  alias: Rupeshhsharma
 - given-names: Nikoloz
   family-names: Sirmpilatze
   affiliation: Sainsbury Wellcome Centre - University College London
@@ -506,5 +511,10 @@ authors:
   affiliation: Institute of Cell Biology, University of Bern, Switzerland
   orcid: https://orcid.org/0000-0002-3956-9363
   alias: hinderling
+- given-names: Mikkel
+  family-names: Roald-Arbøl
+  affiliation: University of Bonn
+  orcid: https://orcid.org/0000-0002-9998-0058
+  alias: roaldarbol
 repository-code: https://github.com/napari/napari
 license: BSD-3-Clause
