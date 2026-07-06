@@ -19,11 +19,11 @@ viewer.add_image(
     name=('membrane', 'nuclei'),
     channel_axis=1,
     scale=(0.29, 0.26, 0.26),
+    units='um',
 )
 viewer.scale_bar.visible = True
 
 # Text options
-viewer.scale_bar.unit = 'um'  # set to None to diplay no unit
 viewer.scale_bar.length = 23  # length, in units, of the scale bar
 viewer.scale_bar.font_size = 20  # default is 10
 

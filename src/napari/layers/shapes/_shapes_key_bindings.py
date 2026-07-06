@@ -186,7 +186,6 @@ def select_shapes_in_slice(layer: Shapes) -> None:
                     deferred=True,
                 )
             )
-    layer._set_highlight()
 
 
 @register_shapes_action(trans._('Delete any selected shapes'))

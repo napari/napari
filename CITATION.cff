@@ -132,6 +132,11 @@ authors:
   affiliation: Quansight
   orcid: https://orcid.org/0000-0003-1759-4194
   alias: dalthviz
+- given-names: Mélodie
+  family-names: Ambroset
+  affiliation: INRAE, Nantes, France
+  orcid: https://orcid.org/0000-0001-8071-836X
+  alias: mambroset
 - given-names: Oren
   family-names: Amsalem
   affiliation: Harvard Medical School, BIDMC
@@ -410,6 +415,11 @@ authors:
   affiliation: University of Wisconsin-Madison
   orcid: https://orcid.org/0009-0002-2400-1940
   alias: gselzer
+- given-names: Nikoloz
+  family-names: Sirmpilatze
+  affiliation: Sainsbury Wellcome Centre - University College London
+  orcid: https://orcid.org/0000-0003-1778-2427
+  alias: niksirbi
 - given-names: MB
   family-names: Smith
   affiliation: AI lab for Living Technologies, University Medical Centre Utrecht (The Netherlands)
@@ -496,5 +506,10 @@ authors:
   affiliation: Institute of Cell Biology, University of Bern, Switzerland
   orcid: https://orcid.org/0000-0002-3956-9363
   alias: hinderling
+- given-names: Mikkel
+  family-names: Roald-Arbøl
+  affiliation: University of Bonn
+  orcid: https://orcid.org/0000-0002-9998-0058
+  alias: roaldarbol
 repository-code: https://github.com/napari/napari
 license: BSD-3-Clause
