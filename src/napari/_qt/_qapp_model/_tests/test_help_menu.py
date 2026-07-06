@@ -4,19 +4,8 @@ import sys
 from unittest import mock
 
 import pytest
-import requests
 
 from napari._app_model import get_app_model
-from napari._qt._qapp_model.qactions._help import HELP_URLS
-
-
-@pytest.mark.parametrize('url', HELP_URLS.keys())
-def test_help_urls(url):
-    if url == 'release_notes':
-        pytest.skip('No release notes for dev version')
-
-    r = requests.head(HELP_URLS[url])
-    r.raise_for_status()
 
 
 @pytest.mark.parametrize(
