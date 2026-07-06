@@ -124,10 +124,10 @@ jobs:
             echo "Found alias '$PR_AUTHOR' in CITATION.cff."
           else
             echo "::warning::GitHub username '$PR_AUTHOR' not found as an alias in CITATION.cff under authors."
-            echo "::warning::You are welcome to modify this PR to include your authorship in CITATION.cff;"
-            echo "::warning::citations for community contributors are listed in alphabetical order by family-names."
-            echo "::warning::Otherwise, a napari core team member can add the below information to the file."
-            printf '%s\n' "::warning::Citation format example:" \
+            echo "You are welcome to modify this PR to include your authorship in CITATION.cff;"
+            echo "citations for community contributors are listed in alphabetical order by family-names."
+            echo "Otherwise, a napari core team member can add the below information to the file."
+            printf '%s\n' "Citation format example:" \
             '```yaml' \
             "- given-names: <first name>" \
             "  family-names: <last name>" \
