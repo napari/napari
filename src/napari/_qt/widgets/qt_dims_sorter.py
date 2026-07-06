@@ -1,13 +1,14 @@
-from qtpy.QtWidgets import QGridLayout, QLabel, QWidget
+from qtpy.QtWidgets import QAbstractScrollArea, QGridLayout, QLabel, QWidget
 
 from napari._qt.containers import QtListView
 from napari._qt.containers.qt_axis_model import AxisList, AxisModel
 from napari._qt.widgets.qt_tooltip import QtToolTipLabel
 from napari.components import Dims
+from napari.utils.events import Event
 from napari.utils.translations import trans
 
 
-def set_dims_order(dims: Dims, order: tuple[int, ...]):
+def set_dims_order(dims: Dims, order: tuple[int, ...]) -> None:
     """Set dimension order of Dims object to order.
 
     Parameters
@@ -18,7 +19,7 @@ def set_dims_order(dims: Dims, order: tuple[int, ...]):
         New dimension order.
     """
     if type(order[0]) is AxisModel:
-        order = [a.axis for a in order]
+        order = tuple(a.axis for a in order)
     dims.order = order
 
 
@@ -49,9 +50,9 @@ class QtDimsSorter(QWidget):
         self.axis_list = AxisList.from_dims(self.dims)
 
         self.view = QtListView(self.axis_list)
-        if len(self.axis_list) <= 2:
-            # prevent excess space in popup
-            self.view.setSizeAdjustPolicy(QtListView.AdjustToContents)
+        self.view.setSizeAdjustPolicy(
+            QAbstractScrollArea.SizeAdjustPolicy.AdjustToContents
+        )
 
         layout = QGridLayout()
         self.setLayout(layout)
@@ -68,9 +69,9 @@ class QtDimsSorter(QWidget):
 
         widget_title = QLabel(trans._('Dims. Ordering'), self)
 
-        self.layout().addWidget(widget_title, 0, 0)
-        self.layout().addWidget(widget_tooltip, 0, 1)
-        self.layout().addWidget(self.view, 1, 0, 1, 2)
+        layout.addWidget(widget_title, 0, 0)
+        layout.addWidget(widget_tooltip, 0, 1)
+        layout.addWidget(self.view, 1, 0, 1, 2)
 
         # connect axis_list and dims
         self.axis_list.events.reordered.connect(
@@ -80,10 +81,10 @@ class QtDimsSorter(QWidget):
             self._dims_order_callback,
         )
 
-    def _axis_list_reorder_callback(self, event):
+    def _axis_list_reorder_callback(self, event: Event) -> None:
         set_dims_order(self.dims, event.value)
 
-    def _dims_order_callback(self, event):
+    def _dims_order_callback(self, event: Event) -> None:
         # Regenerate AxisList upon Dims side order changes for easy cleanup
         self.axis_list = AxisList.from_dims(self.dims)
         self.view.setRoot(self.axis_list)

@@ -1,23 +1,13 @@
-QLabel#h1 {
-  font-size: 28px;
-}
-
-QLabel#h2 {
-  font-size: 22px;
-  color: {{ secondary }};
-}
-
-QLabel#h3 {
-  font-size: 18px;
-  color: {{ secondary }};
-}
-
 QtViewer {
    padding-top: 0px;
 }
 
 QtLayerButtons, QtViewerButtons, QtLayerList {
   min-width: 242px;
+}
+
+QLabel#logo_silhouette {
+  image: url("theme_{{ id }}:/logo_silhouette.svg");
 }
 
 /* ------------- QMainWindow --------- */
@@ -35,6 +25,7 @@ QStatusBar {
 QMainWindow::separator {
   width: 4px;
   height: 4px;
+  padding: 2px;
   border: none;
   background-color: {{ background }};
 }
@@ -53,13 +44,28 @@ QMainWindow::separator:vertical {
 
 /* ------------- DockWidgets --------- */
 
+QDockWidget:floating {
+  border: 2px solid {{ foreground }};
+  border-radius: 4px;
+}
+
 #QtCustomTitleBar {
   padding-top:3px;
+  padding-bottom:3px;
   background-color: {{ background }};
 }
 
 #QtCustomTitleBar:hover {
-  background-color: {{ darken(background, 10) }};
+  background-color: {{ foreground }};
+}
+
+/* Floating state: distinct title bar so it reads as a standalone window */
+#QtCustomTitleBar[floating="True"] {
+  background-color: {{ foreground }};
+}
+
+#QtCustomTitleBar[floating="True"]:hover {
+  background-color: {{ darken(foreground, 10) }};
 }
 
 #QtCustomTitleBarLine {
@@ -68,39 +74,36 @@ QMainWindow::separator:vertical {
 
 #QtCustomTitleBar > QPushButton {
   background-color: none;
+  min-width: 12px;
+  min-height: 12px;
   max-width: 12px;
   max-height: 12px;
+  padding: 2;
 }
 
 #QtCustomTitleBar > QPushButton:hover {
-  background-color: {{ foreground }};
+  background-color: {{ primary }};
+}
+
+#QtCustomTitleBar[floating="True"] > QPushButton:hover {
+  background-color: {{ darken(foreground, 20) }};
 }
 
 #QtCustomTitleBar > QLabel {
   color: {{ text }};
-  font-size: {{ decrease(font_size, 1) }};
 }
 
 #QTitleBarCloseButton{
-    width: 24px;
-    height: 24px;
-    padding: 0;
     image: url("theme_{{ id }}:/delete_shape.svg");
 }
 
 
 #QTitleBarFloatButton{
     image: url("theme_{{ id }}:/pop_out.svg");
-    width: 24px;
-    height: 24px;
-    padding: 2 1 2 1;
 }
 
 #QTitleBarHideButton{
     image: url("theme_{{ id }}:/visibility_off.svg");
-    width: 24px;
-    height: 24px;
-    padding: 2 1 2 1;
 }
 
 /* ----------------- Console ------------------ */
@@ -115,8 +118,9 @@ QtConsole > QTextEdit {
   color: {{ text }};
   selection-background-color: {{ highlight }};
   margin: 10px;
-  font-family: Menlo, Consolas, "Ubuntu Mono", "Roboto Mono", "DejaVu Sans Mono", monospace;
+  font-family: monospace, Menlo, Consolas, "Ubuntu Mono", "Roboto Mono", "DejaVu Sans Mono";
   font-size: {{ font_size }};
+  border: 1px solid {{ console }};
 }
 .inverted {
   background-color: {{ background }};
@@ -128,9 +132,13 @@ QtConsole > QTextEdit {
 .in-prompt { color: #6ab825; }
 .out-prompt { color: #b72121; }
 
+QtConsole > QTextEdit:focus {
+  border: 1px solid {{ foreground }};
+}
+
 
 /* controls the area around the canvas */
-QSplitter {
+QtViewer {
   spacing: 0px;
   padding: 0px;
   margin: 0px;
@@ -157,6 +165,12 @@ QtLayerControlsContainer > QFrame {
   padding: 5px;
   padding-right: 8px;
   border-radius: 2px;
+  background-color: {{ foreground }};
+}
+
+/* grep for `setProperty('foreground', 'true')` to see uses */
+QWidget[foreground=true] {
+  background-color: {{ foreground }};
 }
 
 /* the box that shows the current Label color */
@@ -174,21 +188,7 @@ QtColorBox {
 /* ----------------- QtLayerControls -------------------- */
 
 QtLayerControls > QComboBox, QtLayerControls > QLabel, QtLayerControls, QtPlaneControls > QLabeledSlider > QAbstractSpinBox {
-  font-size: {{ decrease(font_size, 1) }};
   color: {{ text }};
-}
-
-QLabeledRangeSlider > QAbstractSpinBox {
-  font-size: {{ font_size }};
-  color: {{ secondary }};
-}
-
-QWidget[emphasized="true"] QDoubleSlider::sub-page:horizontal:disabled {
-    background: {{ primary }};
-}
-
-QWidget[emphasized="true"] QDoubleSlider::handle:disabled {
-    background: {{ primary }};
 }
 
 SliderLabel {
@@ -197,38 +197,22 @@ SliderLabel {
   min-height: 16px;
   padding: 0px;
   border-radius: 2px;
-  font-size: {{ decrease(font_size, 1) }};
-}
-
-QWidget[emphasized="true"] SliderLabel {
-  background-color: {{ background }};
-}
-
-QWidget[emphasized="true"] SliderLabel:disabled {
-    color: {{ opacity(text, 50) }};
-}
-
-QWidget[emphasized="true"] QLabel:disabled {
-    color: {{ opacity(text, 50) }};
 }
 
 AutoScaleButtons QPushButton {
-  font-size: {{ decrease(font_size, 3) }};
+  font-size: {{ decrease(font_size, 1) }};
   padding: 4;
 }
 
 PlaneNormalButtons QPushButton {
-    font-size: {{ decrease(font_size, 3) }};
+    font-size: {{ decrease(font_size, 1) }};
     padding: 4;
 }
+
 /* ------------- DimsSliders --------- */
 
-QtDimSliderWidget > QScrollBar::handle[last_used=false]:horizontal {
-    background: {{ highlight }};
-}
-
 QtDimSliderWidget > QScrollBar::handle[last_used=true]:horizontal {
-    background: {{ secondary }};
+    background: {{ highlight }};
 }
 
 QtDimSliderWidget > QScrollBar:left-arrow:horizontal {
@@ -243,6 +227,7 @@ QtDimSliderWidget > QLineEdit {
   background-color: {{ background }};
 }
 
+/* ------------- QtModal (Grid, Play, nDisplay, Roll --------- */
 
 #QtModalPopup {
   /* required for rounded corners to not have background color */
@@ -255,8 +240,7 @@ QtDimSliderWidget > QLineEdit {
 }
 
 #QtPopupFrame > QLabel {
-  color: {{ darken(text, 35) }};
-  font-size: {{ font_size }};
+  color: {{ text }};
 }
 
 #playDirectionCheckBox::indicator {
@@ -276,7 +260,7 @@ QtDimSliderWidget > QLineEdit {
 }
 
 #playDirectionCheckBox::indicator:pressed {
-   background-color: {{ highlight }};
+   background-color: {{ current }};
 }
 
 
@@ -297,8 +281,8 @@ QtDimSliderWidget > QLineEdit {
 }
 
 #CustomColorDialog QLabel {
-  background-color: {{ background }};
-  color: {{ secondary }};
+  background-color: {{ foreground }};
+  color: {{ primary }};
 }
 
 
@@ -312,8 +296,7 @@ QtDimSliderWidget > QLineEdit {
 }
 
 #slice_label {
-  font-size: {{ decrease(font_size, 1) }};
-  color: {{ secondary }};
+  color: {{ text }};
   background: transparent;
 }
 
@@ -351,7 +334,7 @@ QtHookImplementationListWidget::item {
 }
 
 QtHookImplementationListWidget {
-  background-color: {{ console }};
+  background-color: {{ foreground }};
 }
 
 /* for the error reporter */
@@ -360,7 +343,7 @@ QtHookImplementationListWidget {
 }
 
 QtPluginErrReporter > QTextEdit {
-  background-color: {{ console }};
+  background-color: {{ foreground }};
   background-clip: padding;
   color: {{ text }};
   selection-background-color: {{ highlight }};
@@ -374,7 +357,7 @@ NapariQtNotification > QWidget {
 }
 
 NapariQtNotification::hover{
-  background: {{ lighten(background, 5) }};
+  background: {{ foreground }};
 }
 
 
@@ -403,238 +386,71 @@ NapariQtNotification #close_button {
 }
 
 NapariQtNotification #source_label {
-  color: {{ primary }};
+  color: {{ darken(text, 10) }};
   font-size: {{ decrease(font_size, 1) }};
+}
+
+NapariQtNotification #notification_actions QPushButton {
+  padding: 4px 12px 4px 12px;
+  font-size: {{ font_size }};
+  min-height: 18px;
+  border-radius: 0;
 }
 
 NapariQtNotification #severity_icon {
   padding: 0;
-  margin: 0 0 -3px 0;
+  margin: 0;
   min-width: 20px;
-  min-height: 18px;
+  min-height: 20px;
   font-size: {{ increase(font_size, 3) }};
-  color: {{ icon }};
 }
 
 /* ------------ Activity Dock ------------ */
 
 #QtCustomTitleLabel {
-  color: {{ primary }};
-  font-size: {{ decrease(font_size, 1) }};
+  color: {{ text }};
+}
+
+#QtActivityButton {
+    font-size: {{ font_size }};
 }
 
 #QtActivityButton:hover {
-  background-color: {{ lighten(background, 10) }};
+  background-color: {{ foreground }};
 }
 
-/* ------------ Plugin Dialog ------------ */
-
-QCollapsible#install_info_button {
-  background-color: {{ darken(foreground, 20) }};
-  color: {{ darken(text, 15) }};
-}
-QWidget#info_widget {
-  background-color: {{ darken(foreground, 20) }};
-  margin: 0px;
-  padding: 0px;
-  font: 11px;
-}
-
-QLabel#author_text {
-  color: {{ darken(text, 35) }};
-}
-
-QPushButton#install_choice {
-  background-color: {{ current }};
-  color: {{ darken(text, 35) }};
-}
-
-QPushButton#plugin_name_web {
-  background-color: {{ darken(foreground, 20) }};
-}
-
-QPushButton#plugin_name_web:hover {
-  background-color: {{ foreground }}
-}
-
-QPushButton#plugin_name {
-  background-color: {{ darken(foreground, 20) }};
-}
-QPushButton#plugin_name:hover {
-  background-color: {{ darken(foreground, 20) }};
-}
-
-
-QWidget#install_choice_widget {
-  background-color: {{ darken(foreground, 20) }};
-  color: {{ darken(text, 35) }};
-  margin: 0px;
-  padding: 0px;
-  font: 11px;
-}
-
-QPluginList {
-  background: {{ console }};
-}
-
-PluginListItem {
-  background: {{ darken(foreground, 20) }};
-  padding: 0;
-  margin: 2px 4px;
-  border-radius: 3px;
-}
-
-PluginListItem#unavailable {
-  background: {{ lighten(foreground, 20) }};
-  padding: 0;
-  margin: 2px 4px;
-  border-radius: 3px;
-}
-
-PluginListItem QCheckBox::indicator:disabled {
-  background-color: {{ opacity(foreground, 127) }};
-  image: url("theme_{{ id }}:/check_50.svg");
-}
-
-QPushButton#install_button {
-  background-color: {{ current }}
-}
-
-QPushButton#install_button:hover {
-  background-color: {{ lighten(current, 10) }}
-}
-
-QPushButton#install_button:pressed {
-  background-color: {{ darken(current, 10) }}
-}
-
-QPushButton#install_button:disabled {
-  background-color: {{ lighten(current, 20) }}
-}
-
-QPushButton#remove_button {
-  background-color: {{ error }}
-}
-
-QPushButton#remove_button:hover {
-  background-color: {{ lighten(error, 10) }}
-}
-
-QPushButton#remove_button:pressed {
-  background-color: {{ darken(error, 10) }}
-}
-
-QPushButton#busy_button:pressed {
-  background-color: {{ darken(secondary, 10) }}
-}
-
-QPushButton#busy_button {
-  background-color: {{ secondary }}
-}
-
-QPushButton#busy_button:hover {
-  background-color: {{ lighten(secondary, 10) }}
-}
-
-QPushButton#busy_button:pressed {
-  background-color: {{ darken(secondary, 10) }}
-}
-
-QPushButton#close_button:disabled {
-  background-color: {{ lighten(secondary, 10) }}
-}
-
-
-#small_text {
-  color: {{ opacity(text, 150) }};
-  font-size: {{ decrease(font_size, 2) }};
-}
-
-#small_italic_text {
-  color: {{ opacity(text, 150) }};
-  font-size: {{ font_size }};
-  font-style: italic;
-}
-
-#plugin_manager_process_status{
-  background: {{ background }};
-  color: {{ opacity(text, 200) }};
-}
-
-#info_icon {
-  image: url("theme_{{ id }}:/info.svg");
-  min-width: 18px;
-  min-height: 18px;
-  margin: 2px;
-}
-
-#warning_icon {
-  image: url("theme_{{ id }}:/warning.svg");
-  max-width: 14px;
-  max-height: 14px;
-  min-width: 14px;
-  min-height: 14px;
-  margin: 0px;
-  margin-left: 1px;
-  padding: 2px;
-  background: darken(foreground, 20);
-}
-
-#warning_icon:hover{
-  background: {{ foreground }};
-}
-
-#warning_icon:pressed{
-  background: {{ primary }};
-}
-
-#error_label, #success_label, #help_label, #righthand_label, #lefthand_label {
-  max-width: 18px;
-  max-height: 18px;
-  min-width: 18px;
-  min-height: 18px;
-  margin: 0px;
-  margin-left: 1px;
-  padding: 2px;
-}
-#error_label {
-  image: url("theme_{{ id }}:/warning.svg");
-}
-
-#success_label {
-  image: url("theme_{{ id }}:/check.svg");
-}
-
-#help_label {
-  image: url("theme_{{ id }}:/help_50.svg");
-}
-
-#righthand_label {
-  image: url("theme_{{ id }}:/righthand_50.svg");
-}
-
-#lefthand_label {
-  image: url("theme_{{ id }}:/lefthand_50.svg");
-}
-
-QtPluginDialog QSplitter{
-  padding-right: 2;
-}
-
-QtFontSizePreview {
-  border: 1px solid {{ foreground }};
-  border-radius: 5px;
-}
-
-QListWidget#Preferences {
- background: {{ background }};
-}
-
-/* ------------- Narrow scrollbar for qtlayer list --------- */
 
 QtListView {
   background: {{ background }};
+  outline: none;
 }
+
+/* ------ Welcome Widget ------ */
+
+QtWelcomeWidget, QtWelcomeWidget[drag=false] {
+  background: {{ canvas }};
+}
+
+QtWelcomeWidget[drag=true] {
+  background: {{ highlight }};
+}
+
+QtWelcomeLabel {
+  color: {{ darken(text, 25) }};
+  font-size: {{ increase(font_size, 6) }};
+}
+
+QtShortcutLabel {
+  color: {{ darken(text, 25) }};
+  font-size: {{ increase(font_size, 6) }};
+}
+
+QtVersionLabel {
+  color: {{ darken(text, 25) }};
+  font-size: {{ increase(font_size, 6) }};
+}
+
+/* ------------- Narrow scrollbar for qtlayer list --------- */
 
 QtListView QScrollBar:vertical {
   max-width: 8px;
@@ -659,39 +475,41 @@ QtListView QScrollBar:down-arrow {
 QtListView::item {
   padding: 4px;
   margin: 2px 2px 2px 2px;
-  background-color: {{ foreground }};
+  background-color: {{ primary }};
   border: 1px solid {{ foreground }};
 }
 
 QtListView::item:hover {
-  background-color: {{ lighten(foreground, 3) }};
+  background-color: {{ highlight }};
 }
 
-/* in the QSS context "active" means the window is active */
-/* (as opposed to focused on another application) */
-QtListView::item:selected:active{
-  background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 {{ current }}, stop: 1 {{ darken(current, 15) }});
-}
-
-
-QtListView::item:selected:!active {
-  background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 {{ darken(current, 10) }}, stop: 1 {{ darken(current, 25) }});
-}
-
-
-QtListView QLineEdit {
-  background-color: {{ darken(current, 20) }};
-  selection-background-color: {{ lighten(current, 20) }};
-  font-size: {{ font_size }};
+QtListView::item:selected {
+  background: {{ current }};
 }
 
 QtLayerList::item {
-  margin: 2px 2px 2px 28px;
+  margin: 2px 0px 2px 28px;
   border-top-right-radius: 2px;
   border-bottom-right-radius: 2px;
-  border: 0;
+  border: 1px solid {{ primary }};  /* otherwise it's `foreground` for generic lists */
 }
 
+QtLayerList QLineEdit {
+  margin: -2px;  /* offset editor back to overlap correctly to layer name */
+  background-color: {{ current }};
+  selection-background-color: {{ darken(current, 20) }};
+  font-size: {{ font_size }};
+}
+
+/* TODO: all these darken/lighten in the layerlist seem unnecessarily complicated */
+
+/* in the QSS context "focus" means the window is focused _and_ the item is focused */
+QtLayerList::item:selected:focus{
+  background: vgradient({{ lighten(current, 10) }} - {{ current }});
+  border: 1px solid {{ lighten(current, 20) }};
+}
+
+/* eye visibility icon */
 /* the first one is the "partially checked" state */
 QtLayerList::indicator {
   width: 16px;
@@ -705,12 +523,12 @@ QtLayerList::indicator {
 
 QtLayerList::indicator:unchecked {
   image: url("theme_{{ id }}:/visibility_off_50.svg");
-  background: {{ opacity(background, 190) }};
+  background: {{ foreground }};
 }
 
 QtLayerList::indicator:checked {
   image: url("theme_{{ id }}:/visibility.svg");
-  background: {{ opacity(highlight, 190) }};
+  background: {{ secondary }};
 }
 
 
@@ -750,9 +568,8 @@ QPushButton#lockButton:!checked {
 
 /* ------------- Set size for dims sorter --------- */
 
-QtDimsSorter > QtListView {
-  max-height: 100px;
-  max-width: 150px;
+QtDimsSorter > QtListView::item {
+  padding: 2px;
 }
 
 /* ------------- Lock check buttons for dims sorter --------- */
@@ -769,7 +586,7 @@ QtDimsSorter > QtListView::indicator::checked {
 
 QMenu::separator, QModelMenu::separator {
 	height: 1 px;
-	background: {{ opacity(text, 90) }};
+	background: {{ foreground }};
 	margin-left: 17 px;
 	margin-right: 6 px;
 	margin-top: 5 px;
@@ -792,4 +609,12 @@ QMenu, QModelMenu {
 
 QCommandLineEdit, QCommandList, QCommandLabel {
   font-size: {{ increase(font_size, 4) }};
+}
+
+QCommandLineEdit, QCommandList {
+  background-color: {{ foreground }};
+}
+
+QCommandList::item:selected {
+  background-color: {{ primary }};
 }
