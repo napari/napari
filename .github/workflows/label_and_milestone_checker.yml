@@ -131,10 +131,12 @@ jobs:
             "Otherwise, a napari core team member can add your information." \
             "" \
             "Citation format example:" \
-            '  - given-names: <first name>' \
-            '    family-names: <last name>' \
-            '    affiliation: <required> (e.g. napari University)' \
-            '    orcid: https://orcid.org/<ORCID> <optional>' \
-            "    alias: ${PR_AUTHOR}"
+            '```yaml' \
+            '- given-names: <first name>' \
+            '  family-names: <last name>' \
+            '  affiliation: <optional> (e.g. napari University)' \
+            '  orcid: https://orcid.org/<ORCID> <optional>' \
+            "  alias: ${PR_AUTHOR}" \
+            '```' \
             exit 1
           fi
