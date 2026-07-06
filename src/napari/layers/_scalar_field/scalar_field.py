@@ -609,16 +609,24 @@ class ScalarFieldBase(Layer, ABC):
                 self.corner_pixels = corners
                 self.refresh(extent=False, thumbnail=False)
         else:
-            # 3D: use the coarsest level, full extent
+            # 3D: use the coarsest level. Route through the same tiling
+            # as the locked path: a huge coarsest level (common in very
+            # large datasets) rendered at full extent produces a texture
+            # the GL driver refuses to load ("texture unloadable"), which
+            # draws as the zero texture — a black canvas. With no tile
+            # caps configured (vanilla napari) this still returns the
+            # full extent.
             new_level = len(self.level_shapes) - 1
             level_changed = self._data_level != new_level
             self._data_level = new_level
-            corners = np.zeros((2, self.ndim), dtype=int)
-            corners[1, displayed_axes] = (
-                np.take(self.data[new_level].shape, displayed_axes) - 1
+            view_dir = self._view_direction_data(displayed_axes)
+            corners = self._corners_for_locked_level(
+                new_level, displayed_axes, data_bbox_int, view_dir
             )
-            self.corner_pixels = corners
-            if level_changed:
+            if level_changed or self._locked_tile_moved(
+                corners, displayed_axes
+            ):
+                self.corner_pixels = corners
                 self.refresh(extent=False, thumbnail=False)
 
     def _view_direction_data(
@@ -686,12 +694,24 @@ class ScalarFieldBase(Layer, ABC):
         if self._slice_input.ndisplay != 3 or extent_cap is None:
             return corners
 
+        try:
+            from napari._vispy.utils.gl import get_max_texture_sizes
+
+            _, gl_max_3d = get_max_texture_sizes()
+        except Exception:  # noqa: BLE001
+            gl_max_3d = None
+
         # If the whole level fits in the interval memory budget,
-        # render it in full — no sub-volume tiling needed.
+        # render it in full — no sub-volume tiling needed. Sized by
+        # TEXTURE bytes (napari uploads non-uint8 data as float32), and
+        # only when every axis fits the driver's 3D texture limit: an
+        # oversized allocation renders as the zero texture (black).
         interval_budget = self._interval_max_bytes_3d
-        if interval_budget is not None:
-            itemsize = max(int(self.dtype.itemsize), 1)
-            level_bytes = int(np.prod(shape_at_level)) * itemsize
+        if interval_budget is not None and (
+            gl_max_3d is None or np.all(shape_at_level <= gl_max_3d)
+        ):
+            tex_itemsize = 1 if self.dtype == np.uint8 else 4
+            level_bytes = int(np.prod(shape_at_level)) * tex_itemsize
             if level_bytes <= interval_budget:
                 return corners
 
@@ -706,14 +726,7 @@ class ScalarFieldBase(Layer, ABC):
         if tile_bytes is not None:
             itemsize = max(int(self.dtype.itemsize), 1)
             max_elements = max(tile_bytes // itemsize, 1)
-            try:
-                from napari._vispy.utils.gl import get_max_texture_sizes
-
-                _, gl_max = get_max_texture_sizes()
-            except Exception:  # noqa: BLE001
-                gl_max = extent_cap
-            if gl_max is None:
-                gl_max = extent_cap
+            gl_max = gl_max_3d if gl_max_3d is not None else extent_cap
             tile_extent = np.minimum(shape_at_level, gl_max).astype(np.int64)
             for _ in range(len(tile_extent)):
                 vol = int(np.prod(tile_extent))
@@ -1105,9 +1118,12 @@ class ScalarFieldSlicingState(_LayerSlicingState):
 
     def _set_view_slice(self):
         # When switching to 3D without a viewer (no _update_draw),
-        # corner_pixels may still reflect the 2D view.  Ensure they
-        # cover the full coarsest level so slicing produces correct
-        # 3D data.
+        # corner_pixels may still reflect the 2D view. Reset them for
+        # the coarsest level — through the same tiling as locked levels:
+        # a huge coarsest level at full extent produces a texture the
+        # GL driver refuses to load, which renders as the zero texture
+        # (black canvas). Without tile caps (vanilla napari) this is
+        # the full level extent, as before.
         if (
             self.layer.multiscale
             and self._slice_input.ndisplay == 3
@@ -1115,13 +1131,15 @@ class ScalarFieldSlicingState(_LayerSlicingState):
         ):
             displayed = list(self._slice_input.displayed)
             level = len(self.layer.level_shapes) - 1
-            shape = np.take(
-                np.asarray(self.layer.level_shapes[level]), displayed
-            )
-            corners = np.zeros((2, self.layer.ndim), dtype=int)
-            corners[1, displayed] = shape - 1
+            data_bbox = None
+            last_bbox = getattr(self.layer, '_last_data_bbox', None)
+            if last_bbox is not None and last_bbox[0] == tuple(displayed):
+                data_bbox = last_bbox[1]
+            view_dir = self.layer._view_direction_data(displayed)
             self.layer._data_level = level
-            self.layer.corner_pixels = corners
+            self.layer.corner_pixels = self.layer._corners_for_locked_level(
+                level, displayed, data_bbox, view_dir
+            )
         request = self._make_slice_request_internal(
             slice_input=self._slice_input,
             data_slice=self.data_slice,
