@@ -230,7 +230,7 @@ class LayerDelegate(QStyledItemDelegate):
         self,
         parent: QWidget | None,
         option: QStyleOptionViewItem,
-        index: QtCore.QModelIndex,
+        index: QModelIndex,
     ) -> QWidget | None:
         """User has double clicked on layer name."""
         # necessary for geometry, otherwise editor takes up full width.
