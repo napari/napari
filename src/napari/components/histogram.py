@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 __all__ = ('HistogramModel',)
 
 # Default histogram configuration
-DEFAULT_N_BINS: int = 256
+DEFAULT_BINS: int = 256
 DEFAULT_MAX_SAMPLES: int = 1_000_000
 # Maximum number of elements to materialize into a numpy array when
 # the data is not chunked (e.g. h5py datasets).  Used as a safety
@@ -39,34 +39,28 @@ class HistogramModel(EventedModel):
     ----------
     layer : Image
         The layer to compute histogram for.
-    n_bins : int, default: 256
-        Number of histogram bins.
+    bins : int, default: 256
+        Number of histogram bins (matches ``np.histogram(data, bins=...)``).
     mode : {'canvas', 'full'}, default: 'canvas'
         Whether to compute histogram from displayed data or full volume.
     log_scale : bool, default: False
         Use logarithmic scale for histogram counts.
     enabled : bool, default: False
         Whether histogram responds to data-change events automatically.
-        When False the model is still computed on explicit access to
-        ``bins`` or ``counts`` and when flipped to True.
 
     Attributes
     ----------
-    bins : np.ndarray
-        Histogram bin edges (length n_bins + 1).
     counts : np.ndarray
-        Histogram counts per bin (length n_bins).
+        Histogram counts per bin (length bins).
 
     Events
     ------
-    bins : Event
-        Fired when bin edges change.
     counts : Event
-        Fired when histogram counts change.
+        Fired when histogram data is recomputed.
+    bins : Event
+        Fired when the number of bins changes.
     max_samples : Event
         Fired when the max_samples limit changes.
-    n_bins : Event
-        Fired when number of bins changes.
     mode : Event
         Fired when histogram mode changes.
     log_scale : Event
@@ -76,7 +70,7 @@ class HistogramModel(EventedModel):
     """
 
     # Evented properties
-    n_bins: int = DEFAULT_N_BINS
+    bins: int = DEFAULT_BINS
     max_samples: int = DEFAULT_MAX_SAMPLES
     mode: Literal['canvas', 'full'] = 'canvas'
     log_scale: bool = False
@@ -86,7 +80,7 @@ class HistogramModel(EventedModel):
     # runtime, so the annotation here is only for documentation and
     # readability; the true type is ``Image`` (enforced by __init__).
     _layer: Image = PrivateAttr()
-    _bins: np.ndarray = PrivateAttr(
+    _bin_edges: np.ndarray = PrivateAttr(
         default_factory=lambda: np.array([0.0, 1.0])
     )
     _counts: np.ndarray = PrivateAttr(default_factory=lambda: np.array([0.0]))
@@ -96,7 +90,7 @@ class HistogramModel(EventedModel):
     def __init__(
         self,
         layer: Image,
-        n_bins: int = DEFAULT_N_BINS,
+        bins: int = DEFAULT_BINS,
         max_samples: int = DEFAULT_MAX_SAMPLES,
         mode: Literal['canvas', 'full'] = 'canvas',
         log_scale: bool = False,
@@ -108,8 +102,8 @@ class HistogramModel(EventedModel):
         ----------
         layer : Image
             The layer to compute histogram for.
-        n_bins : int, default: 256
-            Number of histogram bins.
+        bins : int, default: 256
+            Number of histogram bins (matches ``np.histogram(data, bins=...)``).
         max_samples : int, default: 1_000_000
             Maximum number of data points to sample from the full volume
             when ``mode='full'`` and the data exceeds this threshold.
@@ -121,7 +115,7 @@ class HistogramModel(EventedModel):
             Whether histogram responds to data-change events automatically.
         """
         super().__init__(
-            n_bins=n_bins,
+            bins=bins,
             max_samples=max_samples,
             mode=mode,
             log_scale=log_scale,
@@ -133,7 +127,7 @@ class HistogramModel(EventedModel):
 
         # Connect to our own events (these are internal to the model and
         # don't leak external callbacks on the layer).
-        self.events.n_bins.connect(self._on_params_change)
+        self.events.bins.connect(self._on_params_change)
         self.events.max_samples.connect(self._on_params_change)
         self.events.mode.connect(self._on_params_change)
         self.events.log_scale.connect(self._on_log_scale_change)
@@ -167,29 +161,14 @@ class HistogramModel(EventedModel):
         self._layer.events.set_data.disconnect(self._on_slice_change)
 
     @property
-    def bins(self) -> np.ndarray:
-        """Histogram bin edges.
-
-        Returns
-        -------
-        np.ndarray
-            Array of bin edges with length n_bins + 1.
-        """
-        if self._dirty:
-            self.compute()
-        return self._bins
-
-    @property
     def counts(self) -> np.ndarray:
         """Histogram counts per bin.
 
         Returns
         -------
         np.ndarray
-            Array of counts with length n_bins.
+            Array of counts with length ``self.bins``.
         """
-        if self._dirty:
-            self.compute()
         return self._counts
 
     def compute(self) -> None:
@@ -209,10 +188,9 @@ class HistogramModel(EventedModel):
             data = self._get_data()
 
             if data is None or data.size == 0:
-                self._bins = np.array([0.0, 1.0])
+                self._bin_edges = np.array([0.0, 1.0])
                 self._counts = np.array([0.0])
                 self._dirty = False
-                self.events.bins()
                 self.events.counts()
                 return
 
@@ -229,7 +207,6 @@ class HistogramModel(EventedModel):
                 # After draining, model state is already set by the
                 # generator's final cycle; emit events so listeners
                 # connected to the synchronous path are notified.
-                self.events.bins()
                 self.events.counts()
             elif self.mode == 'full' and data.size > self.max_samples:
                 # Random subsample for large in-memory arrays
@@ -253,8 +230,8 @@ class HistogramModel(EventedModel):
         Yields
         ------
         tuple[np.ndarray, np.ndarray]
-            ``(bin_edges, counts)`` — same shape as :attr:`bins` and
-            :attr:`counts`, safe to consume on the main thread.
+            ``(bin_edges, counts)`` — bin edge values and per-bin counts,
+            safe to consume on the main thread.
         """
         if self._computing:
             return
@@ -265,7 +242,7 @@ class HistogramModel(EventedModel):
             data = self._get_data()
 
             if data is None or data.size == 0:
-                self._bins = np.array([0.0, 1.0])
+                self._bin_edges = np.array([0.0, 1.0])
                 self._counts = np.array([0.0])
                 self._dirty = False
                 return
@@ -283,11 +260,13 @@ class HistogramModel(EventedModel):
                 if range_min is None or range_max is None:
                     range_min = float(np.nanmin(data))
                     range_max = float(np.nanmax(data))
-                bins, counts = self._calc_histogram(data, range_min, range_max)
-                self._bins = bins
+                bin_edges, counts = self._calc_histogram(
+                    data, range_min, range_max
+                )
+                self._bin_edges = bin_edges
                 self._counts = counts
                 self._dirty = False
-                yield bins, counts
+                yield bin_edges, counts
         finally:
             self._computing = False
 
@@ -298,11 +277,10 @@ class HistogramModel(EventedModel):
             range_min = float(np.nanmin(data))
             range_max = float(np.nanmax(data))
 
-        bins, counts = self._calc_histogram(data, range_min, range_max)
-        self._bins = bins
+        bin_edges, counts = self._calc_histogram(data, range_min, range_max)
+        self._bin_edges = bin_edges
         self._counts = counts
         self._dirty = False
-        self.events.bins()
         self.events.counts()
 
     def _compute_chunked_progressive(
@@ -312,9 +290,9 @@ class HistogramModel(EventedModel):
 
         Provides incremental ``(bins, counts)`` snapshots as each chunk is
         loaded and histogrammed.  The final yield updates the model's internal
-        ``_bins`` / ``_counts`` and marks it not-dirty, so callers that skip
-        intermediate results (e.g. the synchronous ``compute`` path) still
-        see consistent state.
+        ``_bin_edges`` / ``_counts`` and marks it not-dirty, so callers that
+        skip intermediate results (e.g. the synchronous ``compute`` path)
+        still see consistent state.
         """
         n = min(self.max_samples, data.size)
         chunk_sizes = self._chunk_sizes(data)
@@ -329,17 +307,17 @@ class HistogramModel(EventedModel):
             range_min = 0.0
             range_max = 1.0
 
-        running_counts = np.zeros(self.n_bins, dtype=np.float64)
+        running_counts = np.zeros(self.bins, dtype=np.float64)
         for ci in order:
             block = self._load_chunk(data, ci)
             chunk_counts, _ = np.histogram(
                 block,
-                bins=self.n_bins,
+                bins=self.bins,
                 range=(float(range_min), float(range_max)),
             )
             running_counts += chunk_counts.astype(np.float64)
 
-            bins = np.linspace(range_min, range_max, self.n_bins + 1).astype(
+            bins = np.linspace(range_min, range_max, self.bins + 1).astype(
                 np.float32
             )
             if self.log_scale:
@@ -348,9 +326,9 @@ class HistogramModel(EventedModel):
                 counts = running_counts.astype(np.float32)
             yield bins, counts
 
-        # Update model state for callers that read _bins / _counts directly
+        # Update model state for callers that read _bin_edges / _counts
         # after the generator completes.
-        self._bins = bins
+        self._bin_edges = bins
         self._counts = counts
         self._dirty = False
 
@@ -397,7 +375,7 @@ class HistogramModel(EventedModel):
 
         counts, bins = np.histogram(
             data,
-            bins=self.n_bins,
+            bins=self.bins,
             range=(float(range_min), float(range_max)),
         )
 
@@ -597,7 +575,7 @@ class HistogramModel(EventedModel):
             self._mark_dirty()
 
     def _on_params_change(self) -> None:
-        """Called when n_bins or mode changes."""
+        """Called when bins, mode, or max_samples changes."""
         self._mark_dirty()
 
     def _on_log_scale_change(self) -> None:
@@ -647,7 +625,7 @@ class HistogramModel(EventedModel):
         self._disconnect_layer_events()
 
         # Disconnect from our own events
-        self.events.n_bins.disconnect(self._on_params_change)
+        self.events.bins.disconnect(self._on_params_change)
         self.events.max_samples.disconnect(self._on_params_change)
         self.events.mode.disconnect(self._on_params_change)
         self.events.log_scale.disconnect(self._on_log_scale_change)
@@ -663,10 +641,10 @@ class HistogramModel(EventedModel):
         # Disable first to avoid wasteful intermediate compute() calls
         # from the parameter-change event handlers.
         self.enabled = False
-        self.n_bins = DEFAULT_N_BINS
+        self.bins = DEFAULT_BINS
         self.max_samples = DEFAULT_MAX_SAMPLES
         self.log_scale = False
         self.mode = 'canvas'
-        self._bins = np.array([0.0, 1.0])
+        self._bin_edges = np.array([0.0, 1.0])
         self._counts = np.array([0.0])
         self._dirty = True

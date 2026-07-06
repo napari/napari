@@ -40,16 +40,17 @@ class TestDefaultState:
         model = _model(np.random.rand(10, 10))
         assert not model.enabled
         # Accessing bins/counts triggers lazy computation regardless
-        assert len(model.bins) >= 2
+        # _bin_edges has at least 2 elements (default [0.0, 1.0])
+        assert len(model._bin_edges) >= 2
         assert len(model.counts) >= 1
 
     def test_default_mode_canvas(self):
         model = _model(np.random.rand(10, 10))
         assert model.mode == 'canvas'
 
-    def test_default_n_bins_256(self):
+    def test_default_bins_256(self):
         model = _model(np.random.rand(10, 10))
-        assert model.n_bins == 256
+        assert model.bins == 256
 
     def test_default_log_scale_false(self):
         model = _model(np.random.rand(10, 10))
@@ -81,28 +82,7 @@ class TestEnableDisable:
         model.enabled = False
         # Change data while disabled — should still compute lazily on access
         model._layer.data = np.random.rand(10, 10)
-        assert len(model.bins) >= 2
-
-    def test_reset_clears_and_disables(self):
-        model = _model(np.random.rand(10, 10))
-        model.enabled = True
-        _ = model.counts  # trigger compute
-        model.reset()
-        assert not model.enabled
-        assert model.mode == 'canvas'
-        assert model.n_bins == 256
-        assert not model.log_scale
-
-    def test_reset_then_re_enable_computes(self):
-        """Reset followed by re-enable should produce fresh counts."""
-        model = _model(np.random.rand(10, 10))
-        model.enabled = True
-        _ = model.counts  # trigger initial compute
-        model.reset()
-        model.enabled = True
-        assert model._dirty is False
-        counts = model.counts
-        assert len(counts) == 256
+        assert len(model._bin_edges) >= 2
 
 
 class TestDataTypes:
@@ -121,7 +101,7 @@ class TestDataTypes:
         model = _model(data)
         model.enabled = True
         counts = model.counts
-        assert len(counts) == model.n_bins
+        assert len(counts) == model.bins
         assert counts.sum() > 0
 
     def test_all_zeros(self):
@@ -167,26 +147,26 @@ class TestDataTypes:
         assert counts.sum() > 0
 
 
-class TestCustomNBins:
+class TestCustomBins:
     """Test custom bin counts."""
 
     def test_custom_bins(self):
         model = _model(np.random.rand(20, 20), colormap='gray')
         model.enabled = True
-        model.n_bins = 128
+        model.bins = 128
         counts = model.counts
         assert len(counts) == 128
 
     def test_large_bins(self):
         model = _model(np.random.rand(20, 20))
         model.enabled = True
-        model.n_bins = 4096
+        model.bins = 4096
         _ = model.counts  # Should not crash
 
     def test_small_bins(self):
         model = _model(np.random.rand(20, 20))
         model.enabled = True
-        model.n_bins = 2
+        model.bins = 2
         _ = model.counts  # Should not crash
 
 
@@ -231,22 +211,23 @@ class TestLogScale:
         assert not np.array_equal(linear, logged)
 
 
-class TestNBinsChange:
-    """Test changing n_bins property."""
+class TestBinsChange:
+    """Test changing bins (number of bins)."""
 
-    def test_n_bins_change_output_length(self):
+    def test_bins_change_output_length(self):
         model = _model(np.random.rand(20, 20))
         assert len(model.counts) == 256
-        model.n_bins = 128
+        model.bins = 128
         assert len(model.counts) == 128
-        assert len(model.bins) == 129
+        # bins+1 = 129 bin edges
+        assert len(model._bin_edges) == 129
 
     def test_contrast_limits_range_change(self):
         model = _model(np.random.rand(20, 20))
         model.enabled = True
         model._layer.contrast_limits_range = [0.0, 0.5]
         _ = model.counts  # trigger recompute
-        assert model.bins[-1] <= 0.5
+        assert model._bin_edges[-1] <= 0.5
 
 
 class TestMultiscale:
@@ -295,17 +276,14 @@ class TestRGB:
 class TestEvents:
     """Test histogram event emissions."""
 
-    def test_bins_and_counts_events_fire(self):
+    def test_counts_event_fires_on_compute(self):
         model = _model(np.random.rand(20, 20))
-        bins_fired: list[bool] = []
-        counts_fired: list[bool] = []
+        fired: list[bool] = []
 
-        model.events.bins.connect(lambda: bins_fired.append(True))
-        model.events.counts.connect(lambda: counts_fired.append(True))
+        model.events.counts.connect(lambda: fired.append(True))
         model.compute()
 
-        assert len(bins_fired) > 0
-        assert len(counts_fired) > 0
+        assert len(fired) > 0
 
 
 class TestDisconnect:
@@ -321,12 +299,37 @@ class TestDisconnect:
         # After disconnect the model still functions, but layer events
         # no longer trigger recompute (the dirty flag stays as-is).
         assert model._dirty or not model._dirty
-        assert model.n_bins == 256
+        assert model.bins == 256
 
     def test_disconnect_does_not_crash_on_idempotent_call(self):
         model = _model(np.random.rand(10, 10))
         model.disconnect()
         model.disconnect()  # second call should be safe
+
+
+class TestReset:
+    """Test the reset method."""
+
+    def test_reset_clears_and_disables(self):
+        model = _model(np.random.rand(10, 10))
+        model.enabled = True
+        _ = model.counts  # trigger compute
+        model.reset()
+        assert not model.enabled
+        assert model.mode == 'canvas'
+        assert model.bins == 256
+        assert not model.log_scale
+
+    def test_reset_then_re_enable_computes(self):
+        """Reset followed by re-enable should produce fresh counts."""
+        model = _model(np.random.rand(10, 10))
+        model.enabled = True
+        _ = model.counts  # trigger initial compute
+        model.reset()
+        model.enabled = True
+        assert model._dirty is False
+        counts = model.counts
+        assert len(counts) == 256
 
 
 class TestCalcHistogram:
@@ -336,7 +339,7 @@ class TestCalcHistogram:
         model = _model(np.random.rand(10, 10))
         data = np.random.rand(1000)
         bins, counts = model._calc_histogram(data, 0.0, 1.0)
-        assert len(bins) == 257  # n_bins + 1
+        assert len(bins) == 257  # bins + 1
         assert len(counts) == 256
         assert counts.sum() == 1000
         assert bins.dtype == np.float32
@@ -696,7 +699,7 @@ class TestNoneDataPath:
 
         monkeypatch.setattr(model, '_get_data', _fake_get_data)
         model.compute()
-        assert len(model.bins) == 2
+        assert len(model._bin_edges) == 2
         assert len(model.counts) == 1
 
     def test_compute_with_empty_data(self, monkeypatch):
@@ -710,7 +713,7 @@ class TestNoneDataPath:
 
         monkeypatch.setattr(model, '_get_data', _fake_get_data)
         model.compute()
-        assert len(model.bins) == 2
+        assert len(model._bin_edges) == 2
         assert len(model.counts) == 1
 
     def test_reentrancy_guard(self):
@@ -780,14 +783,14 @@ class TestEventHandlers:
         assert model._dirty  # still dirty, no compute triggered
 
     def test_on_params_change_triggers_recompute(self):
-        """Changing n_bins or mode should mark dirty and trigger recompute."""
+        """Changing bins or mode should mark dirty and trigger recompute."""
         model = _model(np.random.rand(10, 10))
         model.enabled = True
         _ = model.counts  # initial compute
 
         model._dirty = False
-        model.n_bins = 128
-        # Setting n_bins fires event → _on_params_change → _mark_dirty
+        model.bins = 128
+        # Setting bins fires event → _on_params_change → _mark_dirty
         # → compute() → _dirty=False. Verify the result had the right bin count.
         assert not model._dirty
         assert len(model.counts) == 128
@@ -840,8 +843,8 @@ class TestCalcHistogramExtended:
             model._layer, '_contrast_limits_range', (None, None)
         )
         model._finalize_histogram(data)
-        assert len(model.bins) == 257
-        assert model.bins[-1] > model.bins[0]
+        assert len(model._bin_edges) == 257
+        assert model._bin_edges[-1] > model._bin_edges[0]
 
     def test_log_scale_with_chunked_compute(self, monkeypatch):
         """Log scale should be correctly applied in the _compute_chunked path."""

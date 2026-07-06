@@ -102,15 +102,14 @@ class QtHistogramWidget(QWidget):
         self.setLayout(main_layout)
 
         # Connect to model events for live updates from sync compute
-        self._histogram.events.bins.connect(self._on_histogram_change)
         self._histogram.events.counts.connect(self._on_histogram_change)
         self._histogram.events.enabled.connect(self._on_histogram_change)
-        # Connect to mode, n_bins, max_samples, and log_scale events to
+        # Connect to mode, bins, max_samples, and log_scale events to
         # trigger (re)computation.  For chunked data in full mode, this
         # picks up where _mark_dirty() deferred synchronous compute()
         # and routes through the async GeneratorWorker path instead.
         self._histogram.events.mode.connect(self._on_recompute_needed)
-        self._histogram.events.n_bins.connect(self._on_recompute_needed)
+        self._histogram.events.bins.connect(self._on_recompute_needed)
         self._histogram.events.max_samples.connect(self._on_recompute_needed)
         self._histogram.events.log_scale.connect(self._on_recompute_needed)
 
@@ -130,7 +129,7 @@ class QtHistogramWidget(QWidget):
         self._update_histogram()
 
     def _on_recompute_needed(self, event: Event | None = None) -> None:
-        """Respond to mode, n_bins, max_samples, or log_scale changes.
+        """Respond to mode, bins, max_samples, or log_scale changes.
 
         For chunked data in full mode, ``_mark_dirty()`` defers to the
         async consumer, so this handler triggers the ``GeneratorWorker``
@@ -269,11 +268,10 @@ class QtHistogramWidget(QWidget):
         """
         disconnect_events(self._histogram.events, self)
         disconnect_events(self.layer.events, self)
-        self._histogram.events.bins.connect(self._on_histogram_change)
         self._histogram.events.counts.connect(self._on_histogram_change)
         self._histogram.events.enabled.connect(self._on_histogram_change)
         self._histogram.events.mode.connect(self._on_recompute_needed)
-        self._histogram.events.n_bins.connect(self._on_recompute_needed)
+        self._histogram.events.bins.connect(self._on_recompute_needed)
         self._histogram.events.max_samples.connect(self._on_recompute_needed)
         self._histogram.events.log_scale.connect(self._on_recompute_needed)
         self.layer.events.gamma.connect(self._on_gamma_change)
@@ -296,13 +294,12 @@ class QtHistogramWidget(QWidget):
 
         self._reconnect_events()
 
-        # Emit model events so any listeners (including our own
+        # Emit the counts event so any listeners (including our own
         # _on_histogram_change) learn about the fresh data from
         # the background computation.  The generator path in
-        # _compute_chunked_progressive sets _bins/_counts/_dirty
+        # _compute_chunked_progressive sets _bin_edges/_counts/_dirty
         # but does NOT fire model events (it runs on a background
         # thread where event emission would be unsafe).
-        self._histogram.events.bins()
         self._histogram.events.counts()
         self._update_histogram()
 
@@ -346,12 +343,11 @@ class QtHistogramWidget(QWidget):
     def _update_histogram(self) -> None:
         """Update the histogram visual with current data.
 
-        Reads ``_bins`` and ``_counts`` directly (rather than the public
-        ``bins``/``counts`` properties) to guarantee this method never
-        triggers a synchronous ``compute()`` — the properties check
-        ``_dirty`` and call ``compute()`` if set.  The private attributes
-        always hold the last computed (or default) values, and callers
-        always invoke this method after a compute has completed.
+        Reads ``_bin_edges`` and ``_counts`` directly (the private
+        attributes) to guarantee this method never triggers a synchronous
+        ``compute()``.  The private attributes always hold the last
+        computed (or default) values, and callers always invoke this
+        method after a compute has completed.
         """
         if self._updating:
             return
@@ -363,7 +359,7 @@ class QtHistogramWidget(QWidget):
                 self.canvas.update()
                 return
 
-            bins = self._histogram._bins
+            bin_edges = self._histogram._bin_edges
             counts = self._histogram._counts
 
             gamma = self.layer.gamma
@@ -371,7 +367,7 @@ class QtHistogramWidget(QWidget):
             clims_range = self.layer.contrast_limits_range
 
             self.histogram_visual.set_data(
-                bins=bins,
+                bins=bin_edges,
                 counts=counts,
                 gamma=gamma,
                 clims=clims,

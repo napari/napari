@@ -168,7 +168,7 @@ def test_qt_histogram_async_compute_with_dask(qtbot):
 
     def _work():
         model.compute()
-        return model.bins, model.counts
+        return model._bin_edges, model._counts
 
     def _on_done(bins_counts):
         result[0] = bins_counts
@@ -205,7 +205,7 @@ def test_qt_histogram_sequential_async_with_param_change(qtbot):
 
     def _work():
         model.compute()
-        return model.bins, model.counts
+        return model._bin_edges, model._counts
 
     def _on_done(bins_counts):
         result[0] = bins_counts
@@ -224,7 +224,7 @@ def test_qt_histogram_sequential_async_with_param_change(qtbot):
     # Change a parameter and run a second async compute
     done[0] = False
     result[0] = None
-    model.n_bins = 128
+    model.bins = 128
 
     worker2 = create_worker(_work)
     worker2.returned.connect(_on_done)
@@ -232,7 +232,7 @@ def test_qt_histogram_sequential_async_with_param_change(qtbot):
     qtbot.waitUntil(lambda: done[0], timeout=30000)
     assert result[0] is not None
     bins2, counts2 = result[0]
-    assert len(bins2) == 129  # n_bins=128 → 129 bin edges
+    assert len(bins2) == 129  # bins=128 → 129 bin edges
     assert counts2.sum() > 0
 
 
