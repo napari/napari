@@ -52,11 +52,11 @@ _S = TypeVar('_S')
 _R = TypeVar('_R')
 
 
-class FunctionWorker(_qthreading.FunctionWorker[_R], _NotifyingMixin): ...
+class FunctionWorker(_NotifyingMixin, _qthreading.FunctionWorker[_R]): ...
 
 
 class GeneratorWorker(
-    _qthreading.GeneratorWorker[_Y, _S, _R], _NotifyingMixin
+    _NotifyingMixin, _qthreading.GeneratorWorker[_Y, _S, _R]
 ): ...
 
 
@@ -212,12 +212,16 @@ def create_worker(
         )
         worker.errored.connect(
             partial(
-                lambda task_status_id, function: window._update_task_status(
-                    task_status_id,
-                    Status.FAILED,
-                    description=trans._(
-                        '{func} execution failed', deferred=True, func=function
-                    ),
+                lambda task_status_id, function, exc: (
+                    window._update_task_status(
+                        task_status_id,
+                        Status.FAILED,
+                        description=trans._(
+                            '{func} execution failed',
+                            deferred=True,
+                            func=function,
+                        ),
+                    )
                 ),
                 worker_status_id,
                 func,
