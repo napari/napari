@@ -49,6 +49,7 @@ class Transform:
         self._inverse_func = inverse
         self.name = name
         self._cache_dict = {}
+        self._old_cache_dict = {}
 
         if func is tz.identity:
             self._inverse_func = tz.identity
@@ -120,6 +121,8 @@ class Transform:
 
     def _clean_cache(self):
         self._cache_dict.clear()
+        # self._old_cache_dict = self._cache_dict
+        # self._cache_dict = {}
         self.changed.emit()
 
 
@@ -159,6 +162,8 @@ class TransformChain(EventedList[_T], Transform, Generic[_T]):
     def __getitem__(self, key: slice) -> TransformChain[_T]: ...
 
     def __getitem__(self, key):
+        if isinstance(key, slice):
+            return super().__getitem__(key)
         if f'getitem_{key}' not in self._cache_dict:
             self._cache_dict[f'getitem_{key}'] = super().__getitem__(key)
         return self._cache_dict[f'getitem_{key}']
