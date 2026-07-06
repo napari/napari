@@ -396,14 +396,6 @@ authors:
   affiliation: Yikes LLC
   orcid: https://orcid.org/0000-0001-5542-1302
   alias: perlman
-- given-names: Eric
-  family-names: Perlman
-  affiliation: Yikes LLC
-  orcid: https://orcid.org/0000-0001-5542-1302
-  alias: perlman
-- given-names: Kim
-  family-names: Pevey
-  alias: kcpevey
 - given-names: Kim
   family-names: Pevey
   alias: kcpevey
@@ -477,11 +469,6 @@ authors:
   affiliation: Houston Methodist Research Institute
   orcid: https://orcid.org/0000-0001-7815-7014
   alias: wulinteousa2-hash
-- given-names: Rensu Petrus
-  family-names: Theart
-  affiliation: Department of Electrical and Electronic Engineering, Stellenbosch University
-  orcid: https://orcid.org/0000-0003-0508-1690
-  alias: rensutheart
 - given-names: Rensu Petrus
   family-names: Theart
   affiliation: Department of Electrical and Electronic Engineering, Stellenbosch University
