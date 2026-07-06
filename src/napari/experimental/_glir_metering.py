@@ -203,6 +203,13 @@ class _ParserState:
         # run only in flushes with no uploads and no interaction hold.
         # Safe to defer arbitrarily: GLIR ids are never reused.
         self.deferred_deletes: list[tuple] = []
+        # ids whose deferred DELETE has executed. Deferral reorders
+        # deletes past later flushes, so commands for these ids can
+        # still arrive (e.g. from another canvas's queue on a shared
+        # context) — they are void and must be dropped, exactly as an
+        # inline delete would have voided them. Ids are never reused,
+        # so membership stays valid for the parser's lifetime.
+        self.dead_ids: set = set()
         # whether the current flush executed any metered DATA command;
         # drives drain notification for uploads small enough to never
         # have been carried
@@ -369,7 +376,22 @@ def _metered_parse(parser, commands, state, force_defer=False):
                     executed_any = True
                     state.executed_metered = True
                 continue
-        parser._parse(command)
+        try:
+            parser._parse(command)
+        except RuntimeError as exc:
+            if 'does not exist' not in str(exc):
+                raise
+            # the deferred DELETE drain reorders deletes past later
+            # flushes, so a command can arrive for an object that no
+            # longer exists (or does not exist YET, when its CREATE
+            # sits in another queue of a shared context)
+            if id_ in state.dead_ids:
+                continue  # deleted: the command is void, drop it
+            # not created yet: keep it (and everything ordered behind
+            # it) in the carry until its CREATE arrives
+            LOGGER.debug('deferring %s for missing object %s', cmd, id_)
+            deferred_ids.add(id_)
+            leftover.append(command)
     return leftover
 
 
@@ -452,6 +474,7 @@ def _metered_flush(self, parser):
         state.deferred_deletes = state.deferred_deletes[n:]
         for command in deletes:
             parser._parse(command)
+            state.dead_ids.add(command[1])
         if state.deferred_deletes and canvas is not None:
             with contextlib.suppress(RuntimeError):
                 canvas.update()

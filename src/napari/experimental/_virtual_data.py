@@ -107,6 +107,24 @@ def chunk_boundaries(array) -> list[np.ndarray]:
     ]
 
 
+def chunk_ids_in_region(boundaries, lo, hi):
+    """Iterate chunk ids (tuples of ``(start, stop)``) intersecting a region.
+
+    ``boundaries`` is the per-dimension boundary list of
+    :func:`chunk_boundaries`; ``[lo, hi)`` is a half-open region in the
+    same coordinates.
+    """
+    per_dim = []
+    for dim, bounds in enumerate(boundaries):
+        starts, stops = bounds[:-1], bounds[1:]
+        first = int(np.searchsorted(stops, int(lo[dim]), side='right'))
+        last = int(np.searchsorted(starts, int(hi[dim]), side='left'))
+        per_dim.append(
+            [(int(starts[i]), int(stops[i])) for i in range(first, last)],
+        )
+    return itertools.product(*per_dim)
+
+
 class VirtualArrayView:
     """A lazy, zero-padded view into a :class:`VirtualData`.
 
@@ -286,6 +304,11 @@ class VirtualData:
         # Chunk keys (tuples of (start, stop) pairs) whose data is resident
         # in the hyperslice. Maintained by the progressive loader.
         self.loaded_chunks: set[tuple[tuple[int, int], ...]] = set()
+        # Best-effort provenance per resident chunk: the scale level the
+        # chunk's current content came from (this level = real data; a
+        # coarser level = upsampled backdrop). Feeds debugging overlays;
+        # absent entries mean unknown origin (typically still zeros).
+        self.chunk_source: dict[tuple[tuple[int, int], ...], int] = {}
 
     @property
     def size(self) -> int:
@@ -335,7 +358,13 @@ class VirtualData:
                 for d in range(self.ndim)
             )
 
-    def set_interval(self, min_coord, max_coord, backdrop=None) -> None:
+    def set_interval(
+        self,
+        min_coord,
+        max_coord,
+        backdrop=None,
+        backdrop_source: int | None = None,
+    ) -> None:
         """Set the resident interval, preserving overlapping data.
 
         The interval is expanded outward to chunk boundaries. Data that
@@ -351,6 +380,10 @@ class VirtualData:
             ``backdrop(min_coord, max_coord) -> np.ndarray | None`` returning
             initial content for the new hyperslice (e.g. upsampled data from
             a coarser scale). Called with the chunk-aligned interval.
+        backdrop_source : int, optional
+            Scale level the backdrop content comes from; recorded in
+            ``chunk_source`` (debug provenance) for chunks the backdrop
+            initialized.
 
         """
         new_min, new_max = self.chunk_aligned_interval(min_coord, max_coord)
@@ -382,6 +415,7 @@ class VirtualData:
                         content,
                         dtype=self.dtype,
                     )
+            used_backdrop = next_hyperslice is not None
             if next_hyperslice is None:
                 next_hyperslice = np.full(new_shape, self.fill_value, dtype=self.dtype)
 
@@ -423,6 +457,23 @@ class VirtualData:
                     for d, (start, stop) in enumerate(key)
                 )
             }
+            self.chunk_source = {
+                key: src
+                for key, src in self.chunk_source.items()
+                if all(
+                    new_min[d] <= start and stop <= new_max[d]
+                    for d, (start, stop) in enumerate(key)
+                )
+            }
+            if backdrop_source is not None and used_backdrop:
+                # debug provenance: chunks not carried over start out
+                # showing the backdrop source's (upsampled) content
+                for chunk_id in chunk_ids_in_region(
+                    self._boundaries,
+                    new_min,
+                    new_max,
+                ):
+                    self.chunk_source.setdefault(chunk_id, backdrop_source)
 
     def set_offset(self, key: tuple[slice, ...], value) -> None:
         """Write ``value`` at ``key`` (absolute coordinates), clipped.
@@ -576,7 +627,12 @@ class MultiScaleVirtualData:
             if backdrop_level is not None
             else None
         )
-        self._data[level].set_interval(min_coord, max_coord, backdrop=backdrop)
+        self._data[level].set_interval(
+            min_coord,
+            max_coord,
+            backdrop=backdrop,
+            backdrop_source=backdrop_level if backdrop is not None else None,
+        )
 
     def fill_unloaded_from(
         self,
@@ -641,6 +697,12 @@ class MultiScaleVirtualData:
             )
             if not dst.loaded_chunks:
                 dst.hyperslice[region_key] = content
+                for chunk_id in chunk_ids_in_region(
+                    dst._boundaries,
+                    fill_min,
+                    fill_max,
+                ):
+                    dst.chunk_source[chunk_id] = src_level
                 return True
             # per-dimension chunk extents covering the fill region, as
             # (hyperslice_start, hyperslice_stop, absolute_id) entries
@@ -696,5 +758,6 @@ class MultiScaleVirtualData:
                     for d, sc in zip(dst_key, src_clipped, strict=True)
                 )
                 dst.hyperslice[dst_clipped] = content[src_clipped]
+                dst.chunk_source[chunk_id] = src_level
                 wrote = True
             return wrote

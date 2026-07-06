@@ -15,9 +15,12 @@ change it:
    newly exposed regions from a coarser resident level (so the canvas is
    never empty),
 3. fetches the missing chunks on a background thread in priority order
-   (view-center first in 2D; camera depth/center-line in 3D), writing each
-   chunk into the virtual data and refreshing the layer through napari's
-   normal slicing pipeline.
+   (view-center first in 2D; camera depth/center-line in 3D) — first a
+   coarse-to-fine ladder over the levels between the resident coarsest
+   and the target, each upsampled into the target's unloaded regions as
+   it arrives so the view sharpens progressively, then the target level
+   itself — writing each chunk into the virtual data and refreshing the
+   layer through napari's normal slicing pipeline.
 
 The lowest-resolution level is kept fully resident (up to a size limit),
 which provides instant low-resolution context everywhere, powers layer
@@ -654,6 +657,17 @@ class ProgressiveLoader:
         resumes when interaction settles (the debounced check). This
         keeps interaction frames free of upload work, slice-completion
         event cascades, and fetch-thread GIL pressure.
+    coarse_first : bool
+        Resolve a fresh view coarse-to-fine: before fetching the target
+        level, fetch the (few, cheap) missing chunks of every level
+        between the resident coarsest and the target, coarsest first,
+        upsampling each into the target's unloaded regions as it
+        arrives. The view sharpens through the intermediate resolutions
+        while the (possibly slow, e.g. remote) target level streams,
+        instead of jumping straight from the coarsest backdrop to the
+        target. Chunk counts shrink geometrically with coarseness, so
+        the ladder adds roughly 1/3 extra fetch volume in 2D and 1/7
+        in 3D.
     interactive_step_rate : float
         Multiply the volume raycast step size by this factor while the
         user interacts, restoring full quality when interaction
@@ -683,10 +697,16 @@ class ProgressiveLoader:
         max_bytes_per_second: float | None = None,
         interaction_hold: bool = True,
         interactive_step_rate: float = 4.0,
+        coarse_first: bool = True,
     ):
         self._viewer = viewer
         self._layer = layer
         self._data = data
+        self._coarse_first = bool(coarse_first)
+        # (level, chunk queue) fetch stages of the active pass, coarse
+        # to fine, the target level last; _stage_index is the running one
+        self._stages: list[tuple[int, list]] = []
+        self._stage_index = 0
         self._refresh_interval_s = refresh_interval_s
         self._interval_max_bytes = interval_max_bytes
         self._auto_level_3d = auto_level_3d
@@ -769,6 +789,10 @@ class ProgressiveLoader:
 
         self._resident_worker = None
         self._repair_worker = None
+        # a repair was requested while one was running: chain a
+        # follow-up over the (possibly moved) region when it finishes
+        self._repair_again = False
+        self._debug_overlay = None
         self._resident_level = len(data) - 1
         self._resident_max_bytes = resident_max_bytes
         self._resident_disabled = False
@@ -875,10 +899,38 @@ class ProgressiveLoader:
         if event.value is self._layer:
             self.close()
 
+    def enable_debug_overlay(self):
+        """Show chunk wireframes and a resolution HUD for this layer.
+
+        Draws one rectangle per chunk of the rendered level's resident
+        interval, colored by content state (real data, backdrop source
+        distance, or unfilled), and reports the rendered/target levels
+        and fetch-ladder progress in the viewer's text overlay. Also
+        enabled by ``NAPARI_PROGRESSIVE_DEBUG=1`` or
+        ``add_progressive_loading_image(..., debug_overlay=True)``.
+
+        Returns the :class:`~napari.experimental._debug_overlay.ChunkDebugOverlay`.
+        """
+        if self._closed:
+            return None
+        if self._debug_overlay is None:
+            from napari.experimental._debug_overlay import ChunkDebugOverlay
+
+            self._debug_overlay = ChunkDebugOverlay(self)
+        return self._debug_overlay
+
+    def disable_debug_overlay(self) -> None:
+        """Remove the chunk debug overlay (no-op when not enabled)."""
+        overlay, self._debug_overlay = self._debug_overlay, None
+        if overlay is not None:
+            with contextlib.suppress(Exception):
+                overlay.close()
+
     def close(self) -> None:
         """Disconnect from the viewer and stop all background fetching."""
         if self._closed:
             return
+        self.disable_debug_overlay()
         self._closed = True
         with contextlib.suppress(Exception):
             # kill any pending debounced trigger so no fetch pass can
@@ -1530,6 +1582,7 @@ class ProgressiveLoader:
         self._apply_auto_level()
         self._ensure_resident()
         level = int(layer.data_level)
+        self._ensure_renderable_corners_3d(level)
         min_coord, max_coord = self._level_interval(level)
         if np.any(max_coord <= min_coord):
             return
@@ -1550,6 +1603,59 @@ class ProgressiveLoader:
                 self._refresh(final=True, force=True)
             return
         self._start_fetch(level, min_coord, max_coord)
+
+    def _ensure_renderable_corners_3d(self, level: int) -> None:
+        """Retile 3D corner pixels whose crop no GL driver could load.
+
+        Whatever path produced them (level switches mid-interaction,
+        stale slices, external corner writes), corners spanning far more
+        than the 3D tile budget yield a texture the driver refuses —
+        vispy then samples the zero texture and the canvas goes black.
+        Rewrite such corners into a view-centered tile through the same
+        tiling used by locked/auto level selection. Belt and braces: the
+        corner-producing paths are individually capped, but a black
+        canvas is bad enough to deserve a final guard.
+        """
+        if self._viewer.dims.ndisplay != 3:
+            return
+        layer = self._layer
+        corners_fn = getattr(layer, '_corners_for_locked_level', None)
+        tile_bytes = getattr(layer, '_tile_max_bytes_3d', None)
+        if corners_fn is None or tile_bytes is None:
+            return
+        displayed = list(layer._slice_input.displayed)
+        if len(displayed) != 3:
+            return
+        span = (
+            layer.corner_pixels[1, displayed]
+            - layer.corner_pixels[0, displayed]
+            + 1
+        )
+        # napari uploads non-uint8 data as float32
+        tex_itemsize = 1 if self._data.dtype == np.uint8 else 4
+        crop_bytes = int(np.prod(span, dtype=np.int64)) * tex_itemsize
+        # allowance: levels within the interval budget legitimately
+        # render whole (the tiling's own shortcut), and quantized tiles
+        # exceed the tile budget a little — only corners clearly beyond
+        # both are rewritten
+        allowance = max(4 * int(tile_bytes), int(self._interval_max_bytes))
+        if crop_bytes <= allowance:
+            return
+        bbox = self._camera_bbox_level0(displayed)
+        view_dir = getattr(layer, '_view_direction_data', lambda _d: None)(
+            displayed,
+        )
+        with contextlib.suppress(Exception):
+            corners = corners_fn(level, displayed, bbox, view_dir)
+            if not np.array_equal(corners, layer.corner_pixels):
+                LOGGER.warning(
+                    'progressive loading: 3D corner pixels span %.0f MB '
+                    'of texture (tile budget %.0f MB); retiling to keep '
+                    'the texture loadable',
+                    crop_bytes / 1e6,
+                    tile_bytes / 1e6,
+                )
+                layer.corner_pixels = corners
 
     def _backdrop_level(self, level: int, min_coord, max_coord) -> int | None:
         """Pick the best level to initialize newly exposed regions from.
@@ -1879,6 +1985,13 @@ class ProgressiveLoader:
         # filled content presents.
         self._data.set_interval(level, min_coord, max_coord)
         if self._viewer.dims.ndisplay == 2:
+            # the FULL interval, synchronously. Restricting this to the
+            # recorded viewport box is tempting (4x less work with the
+            # render margin) but wrong: that box comes from the last
+            # rendered slice and lags the camera exactly during fast
+            # pans/zooms, leaving freshly exposed screen area unfilled
+            # (black) until a repair lands. Coverage beats the saved
+            # milliseconds.
             with contextlib.suppress(Exception):
                 self._backdrop_fill_layered(
                     level,
@@ -1888,15 +2001,7 @@ class ProgressiveLoader:
         self._repair_backdrop()
         self._active = (level, tuple(min_coord), tuple(max_coord))
 
-        interval = vdata.interval
-        keys = chunk_slices(vdata, interval=interval)
-        if self._viewer.dims.ndisplay == 3:
-            queue = self._prioritize_3d(level, keys, interval)
-        else:
-            queue = chunk_priority_2D(keys, interval[0], interval[1])
-        queue = [
-            key for key in queue if _chunk_id(key) not in vdata.loaded_chunks
-        ]
+        queue = self._stage_queue(level)
 
         if not queue:
             # Everything visible is already resident (e.g. carried over
@@ -1922,17 +2027,21 @@ class ProgressiveLoader:
             self._update_node()
             return
 
+        stages = [(level, queue)]
+        if self._coarse_first:
+            stages = self._ladder_stages(level, min_coord, max_coord) + stages
+
         LOGGER.debug(
-            'starting fetch pass: level=%d interval=%s chunks=%d',
+            'starting fetch pass: level=%d interval=%s stages=%s',
             level,
-            interval,
-            len(queue),
+            vdata.interval,
+            [(lvl, len(q)) for lvl, q in stages],
         )
 
         self._generation += 1
         generation = self._generation
         self._chunks_done = 0
-        self._chunks_total = len(queue)
+        self._chunks_total = sum(len(q) for _, q in stages)
         self._pass_all_patched = True
         self._needs_final_reconcile = False
         if self._dbuf is not None:
@@ -1940,7 +2049,7 @@ class ProgressiveLoader:
             # matches" assertion from a previous reconcile
             self._dbuf._suppress_full = False
         self._pbar = self._make_progress(
-            len(queue),
+            self._chunks_total,
             f'{self._layer.name}: loading level {level}',
         )
 
@@ -1982,11 +2091,125 @@ class ProgressiveLoader:
         self._degrade_render_quality()
         self._refresh(force=True)
 
+        self._limiter = self._make_limiter()
+        self._stages = stages
+        self._start_stage(generation, 0)
+
+    def _stage_queue(
+        self,
+        level: int,
+        region=None,
+    ) -> list[tuple[slice, ...]]:
+        """Missing chunks of ``level``'s interval, in priority order.
+
+        ``region`` restricts the queue to a sub-region of the interval
+        (ladder stages fetch only the view's footprint at their level,
+        not whatever else the level keeps resident).
+        """
+        vdata = self._data[level]
+        interval = region if region is not None else vdata.interval
+        if interval is None:
+            return []
+        keys = chunk_slices(vdata, interval=interval)
+        if self._viewer.dims.ndisplay == 3:
+            queue = self._prioritize_3d(level, keys, interval)
+        else:
+            queue = chunk_priority_2D(keys, interval[0], interval[1])
+        return [
+            key for key in queue if _chunk_id(key) not in vdata.loaded_chunks
+        ]
+
+    def _ladder_stages(
+        self,
+        target: int,
+        min_coord,
+        max_coord,
+    ) -> list[tuple[int, list]]:
+        """Fetch stages for the levels between the resident coarsest and
+        the target, coarsest first.
+
+        Resolving a fresh view coarse-to-fine keeps the display
+        sharpening while a slow target level streams: each rung's
+        chunks arrive quickly (counts shrink geometrically with
+        coarseness) and are upsampled into the target's unloaded
+        regions (:meth:`_on_intermediate_chunks`), replacing the
+        coarsest-level backdrop step by step.
+        """
+        stages: list[tuple[int, list]] = []
+        factors = self._data._scale_factors
+        ndim = self._data.ndim
+        # a resident backdrop keeps every freshly created ladder
+        # interval showing real content from the start, so the layered
+        # backdrop fills can never source zeros from it
+        resident_loaded = bool(self._data[self._resident_level].loaded_chunks)
+        for lvl in range(self._resident_level - 1, target, -1):
+            vdata = self._data[lvl]
+            ratio = [
+                factors[target][d] / factors[lvl][d] for d in range(ndim)
+            ]
+            region_min = np.array(
+                [
+                    int(np.floor(min_coord[d] * ratio[d]))
+                    for d in range(ndim)
+                ],
+                dtype=np.int64,
+            )
+            region_max = np.array(
+                [int(np.ceil(max_coord[d] * ratio[d])) for d in range(ndim)],
+                dtype=np.int64,
+            )
+            region_min = np.clip(region_min, 0, vdata.shape)
+            region_max = np.clip(region_max, 0, vdata.shape)
+            if np.any(region_max <= region_min):
+                continue
+            region_min, region_max = self._clamp_interval(
+                vdata,
+                region_min,
+                region_max,
+            )
+            if not vdata.covers(region_min, region_max):
+                # never clobber a level's already-fetched data with a
+                # smaller interval (scrolling back would re-show coarse
+                # content): grow to the union when the budget allows
+                new_min, new_max = region_min, region_max
+                existing = vdata.interval
+                if existing is not None:
+                    union_min = np.minimum(new_min, existing[0])
+                    union_max = np.maximum(new_max, existing[1])
+                    c_min, c_max = self._clamp_interval(
+                        vdata,
+                        union_min,
+                        union_max,
+                    )
+                    if np.all(c_min <= region_min) and np.all(
+                        region_max <= c_max,
+                    ):
+                        new_min, new_max = c_min, c_max
+                self._data.set_interval(
+                    lvl,
+                    new_min,
+                    new_max,
+                    backdrop_level=self._resident_level
+                    if resident_loaded
+                    else None,
+                )
+            queue = self._stage_queue(lvl, region=(region_min, region_max))
+            if queue:
+                stages.append((lvl, queue))
+        return stages
+
+    def _start_stage(self, generation: int, index: int) -> None:
+        level, queue = self._stages[index]
+        self._stage_index = index
+        vdata = self._data[level]
+        final_stage = index == len(self._stages) - 1
+
         def apply(chunk_key, chunk, vdata=vdata):
             # worker thread: lock-guarded numpy writes; the main thread
             # only handles GPU patching and bookkeeping per batch
             vdata.set_offset(chunk_key, chunk)
             vdata.loaded_chunks.add(_chunk_id(chunk_key))
+            vdata.chunk_source[_chunk_id(chunk_key)] = vdata.scale_level
 
         def pack(keys, vdata=vdata):
             # worker thread: precompute the contiguous union-region block
@@ -1995,11 +2218,11 @@ class ProgressiveLoader:
             return keys, _pack_upload_block(vdata, keys)
 
         use_pack = (
-            self._texture_patching
+            final_stage
+            and self._texture_patching
             and self._viewer.dims.ndisplay in (2, 3)
             and vdata.ndim >= self._viewer.dims.ndisplay
         )
-        self._limiter = self._make_limiter()
         worker = _fetch_chunks(
             vdata.array,
             queue,
@@ -2011,9 +2234,22 @@ class ProgressiveLoader:
         worker.yielded.connect(
             lambda batch: self._on_chunks(generation, vdata, batch),
         )
-        worker.finished.connect(lambda: self._on_fetch_finished(generation))
+        worker.finished.connect(
+            lambda: self._on_stage_finished(generation, index),
+        )
         self._worker = worker
         worker.start()
+
+    def _on_stage_finished(self, generation: int, index: int) -> None:
+        if generation != self._generation or self._closed:
+            return
+        if index + 1 < len(self._stages):
+            # fold the finished rung into the rendered level off-thread
+            # (per-batch folds are skipped while a repair is running)
+            self._repair_backdrop()
+            self._start_stage(generation, index + 1)
+        else:
+            self._on_fetch_finished(generation)
 
     def _prioritize_3d(self, level, keys, interval):
         camera = self._viewer.camera
@@ -2123,6 +2359,7 @@ class ProgressiveLoader:
 
     def _cancel_active(self) -> None:
         self._generation += 1
+        self._stages = []
         self._held_batches.clear()  # all stale now
         if self._limiter is not None:
             # wake workers sleeping on rate pacing so the pass winds
@@ -2152,6 +2389,16 @@ class ProgressiveLoader:
         self._chunks_done += len(batch)
         if self._pbar is not None:
             self._advance_progress(len(batch))
+        target = (
+            self._active[0]
+            if self._active is not None
+            else int(self._layer.data_level)
+        )
+        if vdata.scale_level != target:
+            # a coarse-first ladder stage: not rendered directly — fold
+            # it into the target level's backdrop instead
+            self._on_intermediate_chunks(vdata, batch)
+            return
         final = self._chunks_done >= self._chunks_total
         if final:
             self._close_progress(self._pbar)
@@ -2188,6 +2435,23 @@ class ProgressiveLoader:
         ):
             self._last_node_update = now
             self._update_node()
+
+    def _on_intermediate_chunks(self, vdata: VirtualData, batch) -> None:
+        """Fold a ladder stage's fresh chunks into the rendered level.
+
+        Intermediate levels are never rendered directly: their payoff is
+        upsampling into the target level's not-yet-loaded chunks,
+        replacing the coarser backdrop there so the view sharpens level
+        by level while the target fetch streams. The fold runs on the
+        repair worker: the gather never blocks the GUI thread (drag
+        events during streaming stay responsive), and the repair's
+        layered coarsest-first fill means a partially loaded rung can
+        never write content coarser than what is already shown. Folds
+        coalesce naturally — repairs run one at a time — and the stage
+        end triggers a final one for anything skipped.
+        """
+        if batch:
+            self._repair_backdrop()
 
     def _on_fetch_finished(self, generation: int) -> None:
         if generation != self._generation or self._closed:
@@ -2514,7 +2778,13 @@ class ProgressiveLoader:
         if np.any(max_coord <= min_coord):
             return
         if self._repair_worker is not None:
-            return  # one repair at a time; _check will re-trigger if needed
+            # one repair at a time — but never DROP a request: the
+            # running repair covers a stale region during fast moves,
+            # and every other trigger may land while it is busy, which
+            # would leave the fresh region unfilled (black) until some
+            # unrelated later event. Chain a follow-up run instead.
+            self._repair_again = True
+            return
 
         @thread_worker
         def repair():
@@ -2539,6 +2809,9 @@ class ProgressiveLoader:
                 if node is not None and dbuf.matches(node):
                     with contextlib.suppress(Exception):
                         dbuf.present()
+            if self._repair_again:
+                self._repair_again = False
+                self._repair_backdrop()
 
         worker.returned.connect(on_done)
         worker.errored.connect(lambda _e: on_done(False))  # pragma: no cover
@@ -2644,6 +2917,7 @@ class ProgressiveLoader:
         def apply(chunk_key, chunk, vdata=vdata):
             vdata.set_offset(chunk_key, chunk)
             vdata.loaded_chunks.add(_chunk_id(chunk_key))
+            vdata.chunk_source[_chunk_id(chunk_key)] = vdata.scale_level
 
         self._resident_limiter = self._make_limiter()
         worker = _fetch_chunks(
@@ -2756,6 +3030,8 @@ def _attach_progressive_loader(
     max_bytes_per_second,
     interaction_hold,
     interactive_step_rate,
+    coarse_first,
+    debug_overlay=None,
 ) -> ProgressiveLoader:
     """Wire a constructed multiscale layer to a :class:`ProgressiveLoader`.
 
@@ -2797,8 +3073,13 @@ def _attach_progressive_loader(
         max_bytes_per_second=max_bytes_per_second,
         interaction_hold=interaction_hold,
         interactive_step_rate=interactive_step_rate,
+        coarse_first=coarse_first,
     )
     layer.metadata['progressive_loader'] = loader
+    if debug_overlay is None:
+        debug_overlay = bool(os.environ.get('NAPARI_PROGRESSIVE_DEBUG'))
+    if debug_overlay:
+        loader.enable_debug_overlay()
     with contextlib.suppress(AttributeError):
         # stop all background work when the window goes away
         viewer.window._qt_window.destroyed.connect(loader.close)
@@ -2819,6 +3100,8 @@ def add_progressive_loading_image(
     max_bytes_per_second: float | None = None,
     interaction_hold: bool = True,
     interactive_step_rate: float = 4.0,
+    coarse_first: bool = True,
+    debug_overlay: bool | None = None,
     **layer_kwargs,
 ):
     """Add a progressively loading multiscale image to a viewer.
@@ -2870,6 +3153,14 @@ def add_progressive_loading_image(
         Coarsen the volume raycast step by this factor during
         interaction, restoring full quality on settle (see
         :class:`ProgressiveLoader`). 1.0 disables.
+    coarse_first : bool
+        Resolve fresh views coarse-to-fine through the intermediate
+        pyramid levels before the target level (see
+        :class:`ProgressiveLoader`).
+    debug_overlay : bool, optional
+        Show chunk wireframes and a resolution HUD (see
+        :meth:`ProgressiveLoader.enable_debug_overlay`). Defaults to
+        the ``NAPARI_PROGRESSIVE_DEBUG`` environment variable.
     **layer_kwargs
         Additional keyword arguments passed to ``viewer.add_image``.
 
@@ -2913,6 +3204,8 @@ def add_progressive_loading_image(
         max_bytes_per_second=max_bytes_per_second,
         interaction_hold=interaction_hold,
         interactive_step_rate=interactive_step_rate,
+        coarse_first=coarse_first,
+        debug_overlay=debug_overlay,
     )
     return layer
 
@@ -2928,6 +3221,8 @@ def add_progressive_loading_labels(
     max_bytes_per_second: float | None = None,
     interaction_hold: bool = True,
     interactive_step_rate: float = 4.0,
+    coarse_first: bool = True,
+    debug_overlay: bool | None = None,
     **layer_kwargs,
 ):
     """Add a progressively loading multiscale labels layer to a viewer.
@@ -2962,6 +3257,12 @@ def add_progressive_loading_labels(
         Suspend all streaming work while the user interacts.
     interactive_step_rate : float
         Coarsen the volume raycast step by this factor during interaction.
+    coarse_first : bool
+        Resolve fresh views coarse-to-fine through the intermediate
+        pyramid levels before the target level.
+    debug_overlay : bool, optional
+        Show chunk wireframes and a resolution HUD. Defaults to the
+        ``NAPARI_PROGRESSIVE_DEBUG`` environment variable.
     **layer_kwargs
         Additional keyword arguments passed to the ``Labels`` constructor.
 
@@ -2996,5 +3297,7 @@ def add_progressive_loading_labels(
         max_bytes_per_second=max_bytes_per_second,
         interaction_hold=interaction_hold,
         interactive_step_rate=interactive_step_rate,
+        coarse_first=coarse_first,
+        debug_overlay=debug_overlay,
     )
     return layer
