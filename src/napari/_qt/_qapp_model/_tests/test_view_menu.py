@@ -200,7 +200,7 @@ def _mouse_move_to(widget, pos):
     ``QPointF``). This branch can be removed when Qt5 support is dropped.
     """
     global_pos = widget.mapToGlobal(QPoint(pos.x(), pos.y()))
-    if QT_VERSION.startswith('5')
+    if QT_VERSION.startswith('5'):
         event = QMouseEvent(
             QEvent.Type.MouseMove,
             pos,
