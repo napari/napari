@@ -1,10 +1,11 @@
 import sys
 
 import numpy.testing as npt
-import pyautogui
 import pytest
 from pydantic import BaseModel
-from qtpy.QtCore import QPoint, Qt
+from qtpy.QtCore import QEvent, QPoint, Qt
+from qtpy.QtGui import QKeyEvent
+from qtpy.QtTest import QTest
 from qtpy.QtWidgets import QApplication
 
 from napari._pydantic_util import get_inner_type
@@ -307,12 +308,6 @@ def test_preferences_dialog_not_dismissed_by_keybind_confirm(
     Notes:
         * Skipped on macOS CI due to accessibility permissions not being
           settable on macOS GitHub Actions runners.
-        * For this test to pass locally, you need to give the Terminal/iTerm/VSCode
-          application accessibility permissions:
-              `System Settings > Privacy & Security > Accessibility`
-
-        See https://github.com/asweigart/pyautogui/issues/247 and
-        https://github.com/asweigart/pyautogui/issues/247#issuecomment-437668855
     """
     shortcut_widget = (
         pref._stack.widget(3).widget().widget.widgets['shortcuts']
@@ -346,9 +341,26 @@ def test_preferences_dialog_not_dismissed_by_keybind_confirm(
         pos=item_pos,
     )
     qtbot.waitUntil(lambda: QApplication.focusWidget() is not None)
-    pyautogui.press('delete')
+
+    editor = QApplication.focusWidget()
+    assert editor is not None
+    # Send a ShortcutOverride event to trigger Delete handling,
+    # which clears the selected shortcut text
+    delete_event = QKeyEvent(
+        QEvent.Type.ShortcutOverride,
+        Qt.Key.Key_Delete,
+        Qt.KeyboardModifier.NoModifier,
+    )
+    QApplication.sendEvent(editor, delete_event)
     qtbot.wait(100)
-    pyautogui.press(confirm_key)
+
+    # Confirm the change with the given key
+    confirm_key_map = {
+        'enter': Qt.Key.Key_Enter,
+        'return': Qt.Key.Key_Return,
+        'tab': Qt.Key.Key_Tab,
+    }
+    QTest.keyClick(editor, confirm_key_map[confirm_key])
     qtbot.wait(100)
 
     # ensure the dialog is still open
