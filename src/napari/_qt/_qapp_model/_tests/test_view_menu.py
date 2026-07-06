@@ -194,10 +194,6 @@ def _mouse_move_to(widget, pos):
     Uses ``QApplication.sendEvent`` instead of ``QTest.mouseMove`` because
     the latter bypasses QApplication event filters in Qt6, making it unreliable
     for testing the event-filter-based menubar toggle behavior.
-
-    The ``try/except TypeError`` handles the ``QMouseEvent`` constructor
-    signature difference between Qt5 (expects ``QPoint``) and Qt6 (expects
-    ``QPointF``). This branch can be removed when Qt5 support is dropped.
     """
     global_pos = widget.mapToGlobal(QPoint(pos.x(), pos.y()))
     if QT_VERSION.startswith('5'):
