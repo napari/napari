@@ -75,7 +75,7 @@ dependencies = [
     "toolz>=0.11.0",
     "tqdm>=4.56.0",
     "typing_extensions>=4.12",
-    "vispy>=0.16.1,<0.17",
+    "vispy>=0.16.2,<0.17",
     "wrapt>=1.13.3",
 ]
 dynamic = [
@@ -95,11 +95,12 @@ Documentation = "https://napari.org"
 
 [project.optional-dependencies]
 pyside6 = [
-    "PySide6 > 6.7"
+    "PySide6 > 6.7, !=6.11.0, !=6.11.1"  # Qt 6.11.1 causes dock widget and layout resizing problems
 ]
 pyqt6 = [
     "PyQt6 > 6.5",
-    "PyQt6 != 6.6.1 ; platform_system == 'Darwin'"
+    "PyQt6 != 6.6.1 ; platform_system == 'Darwin'",
+    "pyqt6-qt6 !=6.11.0, !=6.11.1"  # Qt 6.11.1 causes dock widget and layout resizing problems
 ]
 pyside = [
     "napari[pyside6]"
@@ -196,7 +197,7 @@ docs = [
     "napari-skimage",
     "ndevio",
     "numpydoc>=1.0.0",
-    "sphinx<8",
+    "sphinx>=8",
     "sphinx-autobuild",
     "sphinx-tabs",
     "sphinx-tags",
@@ -210,7 +211,7 @@ docs = [
     "sphinxext-opengraph[social-cards]",
     "sphinxext-rediraffe",
     "myst-nb",
-    "napari-sphinx-theme>=1.1.0",
+    "napari-sphinx-theme>=1.1.3",
     "matplotlib",
     "lxml[html_clean]>5",
     "imageio-ffmpeg",
@@ -295,7 +296,7 @@ docs = [
     "napari-skimage",
     "ndevio",
     "numpydoc>=1.0.0",
-    "sphinx<8",
+    "sphinx>=8",
     "sphinx-autobuild",
     "sphinx-tabs",
     "sphinx-tags",
@@ -309,7 +310,7 @@ docs = [
     "sphinxext-opengraph[social-cards]",
     "sphinxext-rediraffe",
     "myst-nb",
-    "napari-sphinx-theme>=1.1.0",
+    "napari-sphinx-theme>=1.1.3",
     "matplotlib",
     "lxml[html_clean]>5",
     "imageio-ffmpeg",
@@ -349,7 +350,7 @@ napari = "napari.utils._testsupport"
 napari_builtins = "napari_builtins:builtins.yaml"
 
 [project.scripts]
-napari = "napari.__main__:main"
+napari = "napari._main:main"
 
 [tool.setuptools]
 zip-safe = false
@@ -539,7 +540,11 @@ filterwarnings = [
   "ignore:__array__ implementation doesn't accept a copy keyword, so passing copy=False failed.",
   "ignore:pkg_resources is deprecated",
   "ignore:Deprecated call to `pkg_resources.declare_namespace",
-  "ignore:Use Group.create_array instead."
+  "ignore:'asyncio.WindowsProactorEventLoopPolicy' is deprecated and slated for removal in Python 3.16:DeprecationWarning", # windows ipykernel issue #8666
+  "ignore:'asyncio.WindowsSelectorEventLoopPolicy' is deprecated and slated for removal in Python 3.16:DeprecationWarning", # windows ipykernel issue #8666
+  "ignore:'asyncio.get_event_loop_policy' is deprecated and slated for removal in Python 3.16:DeprecationWarning",  # windows ipykernel issue #8666
+  "ignore:'asyncio.set_event_loop_policy' is deprecated and slated for removal in Python 3.16:DeprecationWarning",  # windows ipykernel issue #8666
+  "ignore:System theme detection requires a Qt6 backend:UserWarning",  # delete once Qt5 support is dropped
 ]
 markers = [
     "examples: Test of examples",
@@ -610,12 +615,9 @@ module = [
     'napari._qt.containers.qt_axis_model',
     'napari._qt.containers.qt_layer_model',
     'napari._qt.containers.qt_list_model',
-    'napari._qt.containers.qt_list_view',
     'napari._qt.containers.qt_tree_model',
-    'napari._qt.containers.qt_tree_view',
     'napari._qt.dialogs.confirm_close_dialog',
     'napari._qt.dialogs.preferences_dialog',
-    'napari._qt.dialogs.qt_about',
     'napari._qt.dialogs.qt_activity_dialog',
     'napari._qt.dialogs.qt_modal',
     'napari._qt.dialogs.qt_notification',
@@ -623,7 +625,6 @@ module = [
     'napari._qt.dialogs.qt_plugin_dialog',
     'napari._qt.dialogs.qt_plugin_report',
     'napari._qt.dialogs.qt_reader_dialog',
-    'napari._qt.dialogs.screenshot_dialog',
     'napari._qt.experimental.qt_chunk_receiver',
     'napari._qt.experimental.qt_poll',
     'napari._qt.layer_controls.qt_colormap_combobox',
@@ -691,21 +692,15 @@ module = [
     'napari._qt.widgets.qt_dict_table',
     'napari._qt.widgets.qt_dims',
     'napari._qt.widgets.qt_dims_slider',
-    'napari._qt.widgets.qt_dims_sorter',
     'napari._qt.widgets.qt_extension2reader',
-    'napari._qt.widgets.qt_font_size',
     'napari._qt.widgets.qt_highlight_preview',
     'napari._qt.widgets.qt_keyboard_settings',
     'napari._qt.widgets.qt_logger',
-    'napari._qt.widgets.qt_message_popup',
     'napari._qt.widgets.qt_mode_buttons',
     'napari._qt.widgets.qt_plugin_sorter',
-    'napari._qt.widgets.qt_progress_bar',
     'napari._qt.widgets.qt_range_slider_popup',
-    'napari._qt.widgets.qt_scrollbar',
     'napari._qt.widgets.qt_size_preview',
     'napari._qt.widgets.qt_spinbox',
-    'napari._qt.widgets.qt_tooltip',
     'napari._qt.widgets.qt_viewer_buttons',
     'napari._qt.widgets.qt_viewer_dock_widget',
     'napari._qt.widgets.qt_viewer_status_bar',
@@ -732,22 +727,18 @@ module = [
     'napari.layers.utils.text_manager',
     'napari.utils._magicgui',
     'napari.utils._testsupport',
-    'napari.utils._tracebacks',
     'napari.utils.action_manager',
     'napari.utils.events.containers._evented_dict',
     'napari.utils.events.containers._evented_list',
     'napari.utils.events.containers._nested_list',
     'napari.utils.events.custom_types',
-    'napari.utils.events.debugging',
     'napari.utils.events.event',
     'napari.utils.events.evented_model',
     'napari.utils.interactions',
     'napari.utils.key_bindings',
     'napari.utils.mouse_bindings',
-    'napari.utils.shortcuts',
     'napari.utils.stubgen',
     'napari.utils.transforms.transforms',
-    'napari.utils.tree.group',
     'napari.view_layers',
     'napari._app_model.injection._processors',
 ]
