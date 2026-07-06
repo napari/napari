@@ -1347,7 +1347,7 @@ class Labels(ScalarFieldBase):
 
             bbox_slices = tuple(
                 slice(min_v, max_v)
-                for min_v, max_v in zip(min_vals, max_vals, strict=False)
+                for min_v, max_v in zip(min_vals, max_vals, strict=True)
             )
             cropped_mask = mask[bbox_slices]
 
