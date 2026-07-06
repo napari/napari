@@ -295,13 +295,12 @@ class QtHistogramWidget(QWidget):
         self._reconnect_events()
 
         # Emit the counts event so any listeners (including our own
-        # _on_histogram_change) learn about the fresh data from
-        # the background computation.  The generator path in
-        # _compute_chunked_progressive sets _bin_edges/_counts/_dirty
-        # but does NOT fire model events (it runs on a background
-        # thread where event emission would be unsafe).
+        # _on_histogram_change → _update_histogram()) learn about the
+        # fresh data from the background computation.  The generator
+        # path in _compute_chunked_progressive sets _bin_edges/_counts/
+        # _dirty but does NOT fire model events (it runs on a
+        # background thread where event emission would be unsafe).
         self._histogram.events.counts()
-        self._update_histogram()
 
     def _theme_rgba(
         self, color: Color, alpha: float = 1.0
