@@ -780,7 +780,7 @@ class ShapeList:
             )
         else:
             self._displayed = np.array([])
-        disp_indices: IndexArray = np.nonzero(self._displayed)[0]  # type: ignore[assignment]
+        disp_indices: IndexArray = np.nonzero(self._displayed)[0]
 
         z_order = self._mesh.triangles_z_order
 
@@ -1133,8 +1133,8 @@ class ShapeList:
         self._vertices_index = np.zeros(1, dtype=IndexDtype)
         self._z_index = np.empty(0, dtype=IndexDtype)
         self._z_order = np.empty(0, dtype=ZOrderDtype)
-        self._edge_color = np.empty((0, 4), dtype=ShapeColorDtype)  # type: ignore[assignment]
-        self._face_color = np.empty((0, 4), dtype=ShapeColorDtype)  # type: ignore[assignment]
+        self._edge_color = np.empty((0, 4), dtype=ShapeColorDtype)
+        self._face_color = np.empty((0, 4), dtype=ShapeColorDtype)
         self._mesh.clear()
         self._update_displayed()
 
@@ -1911,7 +1911,7 @@ class ShapeList:
     ]:
         data = np.array([s[1].bounding_box for s in self._visible_shapes])
         if data.size == 0:
-            return np.empty((0, self.ndisplay)), np.empty((0, self.ndisplay))  # type: ignore[return-value]
+            return np.empty((0, self.ndisplay)), np.empty((0, self.ndisplay))
         return data[:, 0], data[:, 1]
 
     @cached_property
