@@ -8,7 +8,7 @@ from warnings import warn
 
 from qtpy import PYQT5
 from qtpy.QtCore import QDir, QRectF, QSize, Qt
-from qtpy.QtGui import QIcon, QPainter, QPixmap
+from qtpy.QtGui import QIcon, QPainter, QPixmap, QSurfaceFormat
 from qtpy.QtSvg import QSvgRenderer
 from qtpy.QtWidgets import QApplication, QWidget
 
@@ -231,6 +231,21 @@ def get_qapp(
             QApplication.setAttribute(
                 Qt.ApplicationAttribute.AA_UseHighDpiPixmaps
             )
+
+        # Share OpenGL contexts between Qt's RHI compositor and embedded
+        # OpenGL widgets (e.g. vispy's QGLWidget). This prevents state
+        # conflicts on macOS where Qt's RHI falls back to OpenGL ES when
+        # the window surface format is forced to OpenGL by a child widget.
+        QApplication.setAttribute(
+            Qt.ApplicationAttribute.AA_ShareOpenGLContexts
+        )
+
+        # Set a well-defined default OpenGL surface format before any context
+        # is created, ensuring Qt's RHI and QGLWidget use compatible formats.
+        # This must be done before the QApplication is instantiated.
+        fmt = QSurfaceFormat()
+        fmt.setSwapBehavior(QSurfaceFormat.SwapBehavior.DoubleBuffer)
+        QSurfaceFormat.setDefaultFormat(fmt)
 
         argv = sys.argv.copy()
         if sys.platform == 'darwin' and not argv[0].endswith('napari'):
