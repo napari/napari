@@ -28,4 +28,4 @@ jobs:
         run: uv run --with PyYAML python tools/check_citation_authors.py check-order
 
       - name: Validate CITATION.cff schema
-        run: uvx cffconvert --validate
+        run: uvx cffconvert@45126d07c5866674d438c0c905dc2c76fb0a15af --validate  # v2.0.0
