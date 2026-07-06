@@ -590,6 +590,79 @@ def test_corners_for_locked_level_subvolume(
     assert (corners[1] - corners[0] + 1)[list(displayed)].max() == 16
 
 
+def test_unlocked_3d_view_tiled_when_capped(
+    qtbot,
+    make_napari_viewer,
+):
+    """Vanilla (unlocked) 3D rendering also respects the tile caps.
+
+    A huge coarsest level rendered at full extent produces a texture
+    the GL driver refuses to load, which draws as the zero texture — a
+    black canvas. With the caps set (progressive loading), the unlocked
+    3D path must tile like the locked one; without them (vanilla
+    napari) it keeps the full extent.
+    """
+    viewer = make_napari_viewer()
+    viewer.dims.ndisplay = 3
+    base = np.zeros((512, 512, 512), dtype=np.uint8)
+    levels = [base, base[::2, ::2, ::2]]
+    layer = viewer.add_image(levels, multiscale=True)
+    displayed = list(layer._slice_input.displayed)
+    bbox = np.array([[0.0, 0.0, 0.0], [511.0, 511.0, 511.0]])
+
+    # vanilla: no caps -> full coarsest extent (unchanged behavior)
+    layer._update_level_and_corners(bbox, (1, 1), displayed)
+    extent = (
+        layer.corner_pixels[1, displayed]
+        - layer.corner_pixels[0, displayed]
+        + 1
+    )
+    assert extent.max() == 256
+
+    # capped (as progressive loading configures): a bounded tile
+    layer._max_tile_extent_3d = 64
+    layer._tile_max_bytes_3d = 64**3
+    layer._interval_max_bytes_3d = 64**3
+    layer._update_level_and_corners(bbox, (1, 1), displayed)
+    extent = (
+        layer.corner_pixels[1, displayed]
+        - layer.corner_pixels[0, displayed]
+        + 1
+    )
+    assert np.all(extent <= 64)
+
+
+def test_corners_full_level_respects_gl_texture_limit(
+    qtbot,
+    make_napari_viewer,
+    multiscale_3d_arrays,
+    monkeypatch,
+):
+    """The "level fits the memory budget, render it whole" shortcut must
+    not return corners whose axes exceed the driver's 3D texture limit —
+    the allocation fails and the canvas renders black."""
+    monkeypatch.setattr(
+        'napari._vispy.utils.gl.get_max_texture_sizes',
+        lambda: (16384, 32),
+    )
+    viewer = make_napari_viewer()
+    viewer.dims.ndisplay = 3
+    layer = viewer.add_image(
+        list(multiscale_3d_arrays),
+        multiscale=True,
+        contrast_limits=(0, 255),
+    )
+    layer._max_tile_extent_3d = 32
+    layer._tile_max_bytes_3d = 32**3
+    # generous memory budget: without the axis check, level 0 (64^3)
+    # would be returned whole despite exceeding the 32-texel GL limit
+    layer._interval_max_bytes_3d = 10**9
+    displayed = layer._slice_input.displayed
+    corners = layer._corners_for_locked_level(0, displayed)
+    extent = (corners[1] - corners[0] + 1)[list(displayed)]
+    assert np.all(extent <= 32)
+
+
 def test_locked_tile_hysteresis(
     qtbot,
     make_napari_viewer,
@@ -1698,8 +1771,12 @@ def test_pass_start_degrades_quality(
 
     loader._degrade_render_quality = spy
     # lock to a level other than the one already rendered, forcing a
-    # new pass (with its full backdrop upload)
-    layer.locked_data_level = 1 if int(layer.data_level) == 0 else 0
+    # new pass (with its full backdrop upload); the coarse-first ladder
+    # may already have prefetched that level, so forget its chunks to
+    # guarantee the switch really starts a pass
+    other = 1 if int(layer.data_level) == 0 else 0
+    loader._data[other].loaded_chunks.clear()
+    layer.locked_data_level = other
     qtbot.waitUntil(lambda: len(degraded_steps) > 0, timeout=10000)
     assert degraded_steps[0] > base_step
     _wait_for_idle_loader(qtbot, loader)

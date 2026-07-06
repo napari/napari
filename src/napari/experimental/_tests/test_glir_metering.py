@@ -207,7 +207,10 @@ def test_small_2d_texture_not_metered(parser):
 
 
 def test_install_uninstall_idempotent(monkeypatch):
-
+    # viewer-based suites (progressive loading, debug overlay) leave
+    # metering installed for the session; start from a clean slate so
+    # "original" really is vispy's flush regardless of test order
+    gm.uninstall()
     original = glir._GlirQueueShare.flush
     try:
         assert gm.install()
@@ -429,3 +432,195 @@ def test_uninstall_flushes_deferred_deletes(monkeypatch):
     finally:
         gm.uninstall()
     assert parser.executed == [('DELETE', 3)]
+
+
+def test_glir_flush_never_exceeds_frame_budget(monkeypatch):
+    """No single flush uploads more than one frame budget of texture data.
+
+    This is the mechanism bound behind "one draw can't stall for seconds
+    on a giant upload": however much DATA accumulates between draws (a
+    level switch stages a whole tile at once), each flush lands at most
+    ``frame_budget_bytes`` (plus at most one indivisible slab) and
+    carries the rest — for 3D volumes and large 2D image tiles alike.
+    """
+    monkeypatch.setattr(
+        'vispy.gloo.context.get_current_canvas',
+        lambda: None,
+    )
+    parser = FakeParser()
+    parser.add_texture3d(1)
+    parser.add_texture2d(2)
+    budget, slab = 4 * 2**20, 2**20
+    try:
+        assert gm.install(frame_budget_bytes=budget, slab_bytes=slab)
+        state = gm._state_for(parser)
+        queue = glir.GlirQueue()
+        volume = np.zeros((128, 512, 512), dtype=np.uint8)  # 32 MiB
+        image = np.zeros((2048, 4096), dtype=np.uint8)  # 8 MiB
+        queue.command('DATA', 1, (0, 0, 0), volume)
+        queue.command('DATA', 2, (0, 0), image)
+
+        total = 0
+        for _ in range(64):
+            executed_before = len(parser.executed)
+            state.reset_budget()  # what the per-draw canvas hook does
+            queue.flush(parser)
+            flushed = data_bytes(parser.executed[executed_before:])
+            assert flushed <= budget + slab, (
+                f'one flush uploaded {flushed} bytes '
+                f'(> budget {budget} + slab {slab})'
+            )
+            total += flushed
+            if not state.carry:
+                break
+        # metering bounds each frame but loses nothing overall
+        assert state.carry == []
+        assert total == volume.nbytes + image.nbytes
+    finally:
+        gm.uninstall()
+
+
+class _DrainSpy:
+    """Bound-method holder for add_drain_callback (WeakMethod target)."""
+
+    def __init__(self):
+        self.drains = 0
+
+    def on_drain(self):
+        self.drains += 1
+
+
+def test_metered_upload_within_budget_still_notifies_drain(monkeypatch):
+    """A clean flush that landed metered uploads notifies, carry or not.
+
+    Uploads small enough to fit one frame budget are never carried, but
+    a present (texture swap) may still be gated on them; if the drain
+    notification only fired when a carry emptied, that present would
+    wait for the next interaction — the "stops loading tiles until I
+    touch the viewer" stall.
+    """
+    monkeypatch.setattr(
+        'vispy.gloo.context.get_current_canvas',
+        lambda: None,
+    )
+    parser = FakeParser()
+    parser.add_texture3d(1)
+    spy = _DrainSpy()
+    try:
+        assert gm.install(frame_budget_bytes=4 * 2**20, slab_bytes=2**20)
+        gm.add_drain_callback(spy.on_drain)
+        state = gm._state_for(parser)
+        queue = glir.GlirQueue()
+
+        # no metered uploads at all: no notification
+        queue.command('UNIFORM', 7, 'u_x', 'float', 1.0)
+        queue.flush(parser)
+        assert spy.drains == 0
+
+        # within-budget upload: executed immediately, never carried —
+        # the flush ends clean and MUST still notify
+        small = np.zeros((4, 64, 64), dtype=np.uint8)
+        queue.command('DATA', 1, (0, 0, 0), small)
+        queue.flush(parser)
+        assert spy.drains == 1
+
+        # over-budget upload: no notification while the carry drains,
+        # exactly one when the flush that empties it ends clean
+        big = np.zeros((32, 512, 512), dtype=np.uint8)  # 8 MiB
+        queue.command('DATA', 1, (0, 0, 0), big)
+        state.reset_budget()
+        queue.flush(parser)
+        assert state.carry
+        assert spy.drains == 1
+        for _ in range(8):
+            state.reset_budget()
+            queue.flush(parser)
+            if not state.carry:
+                break
+        assert state.carry == []
+        assert spy.drains == 2
+    finally:
+        gm.remove_drain_callback(spy.on_drain)
+        gm.uninstall()
+
+
+class StrictParser(FakeParser):
+    """FakeParser that enforces vispy's object-existence invariant.
+
+    Real ``GlirParser._parse`` raises ``RuntimeError(... does not
+    exist)`` for object commands whose id was never created (or was
+    deleted); mimic that so ordering regressions surface.
+    """
+
+    def _parse(self, command):
+        cmd, id_ = command[0], command[1]
+        if cmd == 'CREATE':
+            self._objects[id_] = object()
+        elif cmd == 'DELETE':
+            self._objects.pop(id_, None)
+        elif (
+            cmd in ('SIZE', 'DATA', 'WRAPPING', 'INTERPOLATION')
+            and id_ not in self._objects
+        ):
+            raise RuntimeError(
+                f'Cannot {cmd} object {id_} because it does not exist',
+            )
+        super()._parse(command)
+
+
+def test_deferred_delete_voids_later_commands(monkeypatch):
+    """Commands arriving after a deferred DELETE executed must be
+    dropped, not crash.
+
+    The deferred-DELETE drain reorders deletes past later flushes, so a
+    SIZE/DATA for the dead object (e.g. from another canvas's queue on
+    a shared context) can reach the parser after the object is gone —
+    vanilla vispy would have voided it inline. Regression test for
+    ``RuntimeError: Cannot SIZE object N because it does not exist``.
+    """
+    monkeypatch.setattr(
+        'vispy.gloo.context.get_current_canvas',
+        lambda: None,
+    )
+    parser = StrictParser()
+    try:
+        assert gm.install(frame_budget_bytes=2**20, slab_bytes=2**20)
+        queue = glir.GlirQueue()
+        queue.command('CREATE', 5, 'VertexBuffer')
+        queue.command('DELETE', 5)
+        queue.flush(parser)  # quiet flush: the deferred delete drains
+        state = gm._states[parser]
+        assert state.deferred_deletes == []
+        assert 5 in state.dead_ids
+        # a late command for the dead object: dropped, no crash
+        queue.command('SIZE', 5, 1024)
+        queue.flush(parser)
+        assert state.carry == []
+        assert all(c[:2] != ('SIZE', 5) for c in parser.executed)
+    finally:
+        gm.uninstall()
+
+
+def test_command_before_create_carried_until_create(monkeypatch):
+    """A command for a not-yet-created object defers instead of crashing
+    and executes once its CREATE has arrived."""
+    monkeypatch.setattr(
+        'vispy.gloo.context.get_current_canvas',
+        lambda: None,
+    )
+    parser = StrictParser()
+    try:
+        assert gm.install(frame_budget_bytes=2**20, slab_bytes=2**20)
+        queue = glir.GlirQueue()
+        queue.command('SIZE', 9, 1024)
+        queue.flush(parser)  # would previously raise
+        state = gm._states[parser]
+        assert state.carry == [('SIZE', 9, 1024)]
+        queue.command('CREATE', 9, 'VertexBuffer')
+        queue.flush(parser)  # carried SIZE precedes CREATE: retried
+        state.reset_budget()
+        queue.flush(parser)  # object now exists: the SIZE lands
+        assert state.carry == []
+        assert ('SIZE', 9, 1024) in parser.executed
+    finally:
+        gm.uninstall()
