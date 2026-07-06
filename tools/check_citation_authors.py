@@ -9,10 +9,11 @@ Usage:
         Rewrite only the community-contributor section into the expected
         alphabetical order. The core-team block is preserved as-is.
 
-    python tools/check_citation_authors.py audit-missing [--issue-body]
-        Compare GitHub contributors for ``napari/napari`` against the
-        ``alias`` values in ``CITATION.cff`` and print either the missing
-        usernames or a ready-to-paste issue body with ``@mentions``.
+    python tools/check_citation_authors.py audit-missing [--repo ...] [--org ...] [--issue-body]
+        Compare GitHub contributors across one or more repos (or an entire
+        GitHub org) against the ``alias`` values in ``CITATION.cff`` and
+        print either the missing usernames or a ready-to-paste issue body
+        with ``@mentions``.
 
 Notes:
     - The top block in ``CITATION.cff`` is an explicitly maintained core-team
@@ -284,7 +285,39 @@ def fetch_github_contributors(repo: str) -> list[str]:
     return contributors
 
 
-def missing_contributors(path: Path, repo: str) -> list[str]:
+def fetch_org_repos(org: str) -> list[str]:
+    """Fetch all non-archived, non-fork repos in a GitHub organization."""
+    result = subprocess.run(
+        ['gh', 'api', f'/orgs/{org}/repos', '--paginate', '--slurp'],
+        check=False,
+        capture_output=True,
+        text=True,
+        cwd=REPO_ROOT,
+    )
+    if result.returncode != 0:
+        stderr = result.stderr.strip() or 'Unknown gh api error.'
+        raise RuntimeError(f'Failed to fetch org repos: {stderr}')
+
+    payload = json.loads(result.stdout)
+    if not isinstance(payload, list):
+        raise TypeError('Unexpected GitHub API response for org repos.')
+
+    repos: list[str] = []
+    for page in payload:
+        if not isinstance(page, list):
+            continue
+        for item in page:
+            if not isinstance(item, dict):
+                continue
+            if item.get('archived') or item.get('fork'):
+                continue
+            full_name = item.get('full_name')
+            if isinstance(full_name, str):
+                repos.append(full_name)
+    return sorted(repos)
+
+
+def missing_contributors(path: Path, repos: list[str]) -> list[str]:
     authors = get_authors(load_citation_data(path))
     aliases = {
         github_login_key(author.get('alias', ''))
@@ -292,18 +325,26 @@ def missing_contributors(path: Path, repo: str) -> list[str]:
         if isinstance(author.get('alias'), str)
         and author.get('alias', '').strip()
     }
-    return [
-        login
-        for login in fetch_github_contributors(repo)
-        if github_login_key(login) not in aliases
-    ]
+    seen: set[str] = set()
+    missing: list[str] = []
+    for repo in repos:
+        for login in fetch_github_contributors(repo):
+            key = github_login_key(login)
+            if key in seen:
+                continue
+            seen.add(key)
+            if key not in aliases:
+                missing.append(login)
+    return missing
 
 
-def format_issue_body(logins: list[str], repo: str) -> str:
+def format_issue_body(logins: list[str], repos: list[str]) -> str:
+    repos_str = ', '.join(repos)
     mentions = ' '.join(f'@{login}' for login in logins)
     lines = [
         'The following GitHub contributors appear to have commits in '
-        f'{repo} but do not currently have an `alias` entry in `CITATION.cff`.',
+        f'{repos_str} but do not currently have an `alias` entry in '
+        '`CITATION.cff`.',
         '',
         'If you would like to be included, please open a PR that adds your '
         'entry in alphabetical order by `family-names` within the community '
@@ -314,15 +355,32 @@ def format_issue_body(logins: list[str], repo: str) -> str:
     return '\n'.join(lines)
 
 
-def audit_missing(path: Path, repo: str, issue_body: bool) -> int:
+def audit_missing(
+    path: Path, repos: list[str], org: str | None, issue_body: bool
+) -> int:
+    if org:
+        org_repos = fetch_org_repos(org)
+        # Deduplicate while preserving order: org repos first, then extras
+        seen_repos: set[str] = set()
+        combined: list[str] = []
+        for r in org_repos + repos:
+            if r not in seen_repos:
+                seen_repos.add(r)
+                combined.append(r)
+        repos = combined
+        print(
+            f'Scanning {len(repos)} repos from org "{org}"...',
+            file=sys.stderr,
+        )
+
     try:
-        logins = missing_contributors(path, repo)
+        logins = missing_contributors(path, repos)
     except RuntimeError as error:
         print(str(error), file=sys.stderr)
         return 1
 
     if issue_body:
-        print(format_issue_body(logins, repo))
+        print(format_issue_body(logins, repos))
         return 0
 
     if not logins:
@@ -357,8 +415,17 @@ def build_parser() -> argparse.ArgumentParser:
     )
     audit_parser.add_argument(
         '--repo',
-        default='napari/napari',
-        help='GitHub repository in owner/name format.',
+        action='append',
+        dest='repos',
+        default=['napari/napari'],
+        help='GitHub repository in owner/name format (may be given multiple times).',
+    )
+    audit_parser.add_argument(
+        '--org',
+        help=(
+            'GitHub organization name; scans all non-archived, non-fork '
+            'repos (e.g. --org napari). Can be combined with --repo.'
+        ),
     )
     audit_parser.add_argument(
         '--issue-body',
@@ -378,7 +445,9 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == 'write-order':
         return write_order(args.citation_path)
     if args.command == 'audit-missing':
-        return audit_missing(args.citation_path, args.repo, args.issue_body)
+        return audit_missing(
+            args.citation_path, args.repos, args.org, args.issue_body
+        )
 
     parser.error(f'Unsupported command: {args.command}')
     return 2
