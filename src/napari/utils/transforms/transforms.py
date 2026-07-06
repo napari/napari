@@ -159,11 +159,11 @@ class TransformChain(EventedList[_T], Transform, Generic[_T]):
     def __getitem__(self, key: slice) -> TransformChain[_T]: ...
 
     def __getitem__(self, key):
-        if isinstance(key, slice):
-            return super().__getitem__(key)
-        if f'getitem_{key}' not in self._cache_dict:
-            self._cache_dict[f'getitem_{key}'] = super().__getitem__(key)
-        return self._cache_dict[f'getitem_{key}']
+        """get item from the transform chain.
+
+        overload for typing purposes.
+        """
+        return super().__getitem__(key)
 
     def __setitem__(self, key, value):
         if key in self and hasattr(self[key], 'changed'):
