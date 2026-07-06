@@ -2,7 +2,7 @@ import inspect
 import os
 import site
 from textwrap import indent
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING
 
 from pydantic import Field, PrivateAttr
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -47,7 +47,7 @@ class EventDebugSettings(BaseSettings):
     # (i.e. events that get triggered by other events)
     nesting_allowance: int = 0
 
-    _cur_depth: ClassVar[int] = PrivateAttr(0)
+    _cur_depth: int = PrivateAttr(default=0)
 
     model_config = SettingsConfigDict(
         env_prefix='event_debug_',
@@ -67,7 +67,9 @@ def _shorten_fname(fname: str) -> str:
     return fname.replace(ROOT_DIR, 'napari')
 
 
-def log_event_stack(event: 'Event', cfg: EventDebugSettings = _SETTINGS):
+def log_event_stack(
+    event: 'Event', cfg: EventDebugSettings = _SETTINGS
+) -> None:
     """Print info about what caused this event to be emitted.s"""
 
     if cfg.include_events:
@@ -122,7 +124,7 @@ def log_event_stack(event: 'Event', cfg: EventDebugSettings = _SETTINGS):
 
     # spy on nested events...
     # (i.e. events that were emitted while another was being emitted)
-    def _pop_source():
+    def _pop_source() -> None:
         cfg._cur_depth -= 1
         return event._sources.pop()
 
