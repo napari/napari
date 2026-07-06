@@ -200,16 +200,7 @@ def _mouse_move_to(widget, pos):
     ``QPointF``). This branch can be removed when Qt5 support is dropped.
     """
     global_pos = widget.mapToGlobal(QPoint(pos.x(), pos.y()))
-    try:
-        event = QMouseEvent(
-            QEvent.Type.MouseMove,
-            QPointF(pos),
-            QPointF(global_pos),
-            Qt.MouseButton.NoButton,
-            Qt.MouseButton.NoButton,
-            Qt.KeyboardModifier.NoModifier,
-        )
-    except TypeError:
+    if QT_VERSION.startswith('5')
         event = QMouseEvent(
             QEvent.Type.MouseMove,
             pos,
@@ -218,6 +209,16 @@ def _mouse_move_to(widget, pos):
             Qt.MouseButton.NoButton,
             Qt.KeyboardModifier.NoModifier,
         )
+    else:
+        event = QMouseEvent(
+            QEvent.Type.MouseMove,
+            QPointF(pos),
+            QPointF(global_pos),
+            Qt.MouseButton.NoButton,
+            Qt.MouseButton.NoButton,
+            Qt.KeyboardModifier.NoModifier,
+        )
+
     QApplication.sendEvent(widget, event)
 
 
