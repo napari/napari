@@ -216,9 +216,8 @@ def test_welcome_widget_refreshes_tip_on_shortcut_change(make_napari_viewer):
         'Open files with {napari.window.file.open_files_dialog}.'
     )
 
-    with patch.object(
-        welcome,
-        '_command_shortcut_and_description',
+    with patch(
+        'napari.utils.tips._get_command_shortcut_and_description',
         return_value=('Ctrl+O', 'Open File(s)...'),
     ):
         welcome.refresh()
@@ -227,9 +226,8 @@ def test_welcome_widget_refreshes_tip_on_shortcut_change(make_napari_viewer):
             == 'Did you know?\nOpen files with Ctrl+O.'
         )
 
-    with patch.object(
-        welcome,
-        '_command_shortcut_and_description',
+    with patch(
+        'napari.utils.tips._get_command_shortcut_and_description',
         return_value=('Cmd+O', 'Open File(s)...'),
     ):
         action_manager.events.shortcut_changed(

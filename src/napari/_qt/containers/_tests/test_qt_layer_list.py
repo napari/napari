@@ -1,5 +1,3 @@
-import threading
-
 import numpy as np
 from qtpy.QtCore import QModelIndex, QPoint, Qt
 from qtpy.QtWidgets import QLineEdit, QStyleOptionViewItem
@@ -309,15 +307,19 @@ def make_qt_layer_list_with_delegate(qtbot):
 @skip_local_focus
 def test_drag_and_drop_layers(qtbot):
     """
-    Test drag and drop actions with pyautogui to change layer list order.
+    Test layer reordering via drag-and-drop mime data protocol.
 
-    Notes:
-        * For this test to pass locally on macOS, you need to give the Terminal/iTerm
-          application accessibility permissions:
-              `System Settings > Privacy & Security > Accessibility`
+    Drag-and-drop simulation via QTest/QMouseEvent does not work on Windows
+    because QDrag.exec() uses a native event loop that cannot see
+    programmatically-sent Qt events. Only OS-level input injection (like
+    pyautogui) can feed that queue.
 
-        See https://github.com/asweigart/pyautogui/issues/247 and
-        https://github.com/asweigart/pyautogui/issues/247#issuecomment-437668855.
+    This test instead exercises the drag-drop data pipeline directly:
+    - model.mimeData()  — encodes the selection (same as view.startDrag)
+    - model.dropMimeData() — decodes and applies the drop (same as view.dropEvent)
+
+    These are the napari-specific parts of the drag-and-drop implementation.
+    The mouse gesture itself is pure Qt framework code tested upstream.
     """
     view, images = make_qt_layer_list_with_layers(qtbot)
     with qtbot.waitExposed(view):
@@ -329,38 +331,24 @@ def test_drag_and_drop_layers(qtbot):
     )
     assert name == images[-1].name
 
-    # drag and drop event simulation
-    base_pos = view.mapToGlobal(view.rect().topLeft())
-    start_pos = base_pos + QPoint(50, 10)
-    start_x = start_pos.x()
-    start_y = start_pos.y()
-    end_pos = base_pos + QPoint(100, 100)
-    end_x = end_pos.x()
-    end_y = end_pos.y()
+    # Create mime data for image2 (view row 0, which is source row 1).
+    # The view model (ReverseProxyModel) handles index mapping.
+    src_view_index = layer_to_model_index(view, 0)
+    mime_data = view.model().mimeData([src_view_index])
+    assert mime_data is not None
 
-    drag_drop = threading.Thread(
-        target=drag_and_drop, args=(start_x, start_y, end_x, end_y)
+    # Drop at the end of the view (destRow=-1), which ReverseProxyModel
+    # maps to source row 0, effectively moving image2 to the front.
+    result = view.model().dropMimeData(
+        mime_data, Qt.DropAction.MoveAction, -1, 0, QModelIndex()
     )
-    drag_drop.start()
+    assert result
 
-    def check_drag_and_drop():
-        # check layerlist first element corresponds with first layer in the GUI
-        name = view.model().data(
-            layer_to_model_index(view, 0), Qt.ItemDataRole.DisplayRole
-        )
-        return name == images[0].name
-
-    qtbot.waitUntil(check_drag_and_drop)
-
-
-def drag_and_drop(start_x, start_y, end_x, end_y):
-    # simulate a drag and drop action with pyautogui
-    import pyautogui
-
-    pyautogui.moveTo(start_x, start_y, duration=0.2)
-    pyautogui.mouseDown()
-    pyautogui.moveTo(end_x, end_y, duration=0.2)
-    pyautogui.mouseUp()
+    # Verify new order — image2 moved to the front, so view row 0 = image1
+    name = view.model().data(
+        layer_to_model_index(view, 0), Qt.ItemDataRole.DisplayRole
+    )
+    assert name == images[0].name
 
 
 def make_qt_layer_list_with_layer(qtbot) -> tuple[QtLayerList, Image]:
