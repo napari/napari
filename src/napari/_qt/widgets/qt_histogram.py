@@ -104,15 +104,15 @@ class QtHistogramWidget(QWidget):
         # Connect to model events for live updates from sync compute
         self._histogram.events.bins.connect(self._on_histogram_change)
         self._histogram.events.counts.connect(self._on_histogram_change)
-        self._histogram.events.log_scale.connect(self._on_histogram_change)
         self._histogram.events.enabled.connect(self._on_histogram_change)
-        # Connect to mode, n_bins, and max_samples events to trigger
-        # (re)computation.  For chunked data in full mode, this picks
-        # up where _mark_dirty() deferred synchronous compute() and
-        # routes through the async GeneratorWorker path instead.
+        # Connect to mode, n_bins, max_samples, and log_scale events to
+        # trigger (re)computation.  For chunked data in full mode, this
+        # picks up where _mark_dirty() deferred synchronous compute()
+        # and routes through the async GeneratorWorker path instead.
         self._histogram.events.mode.connect(self._on_recompute_needed)
         self._histogram.events.n_bins.connect(self._on_recompute_needed)
         self._histogram.events.max_samples.connect(self._on_recompute_needed)
+        self._histogram.events.log_scale.connect(self._on_recompute_needed)
 
         # Connect to layer events that affect visualization
         layer.events.gamma.connect(self._on_gamma_change)
@@ -130,7 +130,7 @@ class QtHistogramWidget(QWidget):
         self._update_histogram()
 
     def _on_recompute_needed(self, event: Event | None = None) -> None:
-        """Respond to mode, n_bins, or max_samples changes.
+        """Respond to mode, n_bins, max_samples, or log_scale changes.
 
         For chunked data in full mode, ``_mark_dirty()`` defers to the
         async consumer, so this handler triggers the ``GeneratorWorker``
@@ -202,6 +202,9 @@ class QtHistogramWidget(QWidget):
             # disconnected by _start_async_compute() and need reconnecting.
             self._histogram.compute()
             self._reconnect_events()
+            # Re-read the fresh data even if events fired while disconnected
+            # (e.g. after cancelling an in-flight async worker).
+            self._update_histogram()
 
     def _start_async_compute(self) -> None:
         """Run histogram compute in a background thread.
@@ -259,13 +262,20 @@ class QtHistogramWidget(QWidget):
         """Reconnect all event-driven updates after an async compute completes
         or after switching from async to sync mode.
 
-        This is the symmetric counterpart to the disconnects in
-        ``_start_async_compute()``.
+        Always disconnects first to prevent double-connections when events
+        were never disconnected (e.g. normal sync path without a prior
+        async compute).  This is the symmetric counterpart to the disconnects
+        in ``_start_async_compute()``.
         """
+        disconnect_events(self._histogram.events, self)
+        disconnect_events(self.layer.events, self)
         self._histogram.events.bins.connect(self._on_histogram_change)
         self._histogram.events.counts.connect(self._on_histogram_change)
-        self._histogram.events.log_scale.connect(self._on_histogram_change)
         self._histogram.events.enabled.connect(self._on_histogram_change)
+        self._histogram.events.mode.connect(self._on_recompute_needed)
+        self._histogram.events.n_bins.connect(self._on_recompute_needed)
+        self._histogram.events.max_samples.connect(self._on_recompute_needed)
+        self._histogram.events.log_scale.connect(self._on_recompute_needed)
         self.layer.events.gamma.connect(self._on_gamma_change)
         self.layer.events.contrast_limits.connect(self._on_clims_change)
         self.layer.events.colormap.connect(self._on_colormap_change)
@@ -334,20 +344,27 @@ class QtHistogramWidget(QWidget):
         )
 
     def _update_histogram(self) -> None:
-        """Update the histogram visual with current data."""
+        """Update the histogram visual with current data.
+
+        Reads ``_bins`` and ``_counts`` directly (rather than the public
+        ``bins``/``counts`` properties) to guarantee this method never
+        triggers a synchronous ``compute()`` — the properties check
+        ``_dirty`` and call ``compute()`` if set.  The private attributes
+        always hold the last computed (or default) values, and callers
+        always invoke this method after a compute has completed.
+        """
         if self._updating:
             return
 
         self._updating = True
         try:
-            hist = self._histogram
-            if not hist.enabled:
+            if not self._histogram.enabled:
                 self.histogram_visual.set_data()
                 self.canvas.update()
                 return
 
-            bins = hist.bins
-            counts = hist.counts
+            bins = self._histogram._bins
+            counts = self._histogram._counts
 
             gamma = self.layer.gamma
             clims = self.layer.contrast_limits
