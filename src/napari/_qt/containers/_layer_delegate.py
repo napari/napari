@@ -155,7 +155,7 @@ class LayerDelegate(QStyledItemDelegate):
         self,
         painter: QPainter,
         option: QStyleOptionViewItem,
-        index: QtCore.QModelIndex,
+        index: QModelIndex,
     ) -> None:
         """Paint loading layer indicator."""
         loaded = index.data(LoadedRole)
