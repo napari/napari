@@ -286,27 +286,6 @@ class TestEvents:
         assert len(fired) > 0
 
 
-class TestDisconnect:
-    """Test the disconnect method for memory-safety."""
-
-    def test_disconnect_runs_without_error(self):
-        model = _model(np.random.rand(10, 10))
-        model.enabled = True
-        _ = model.counts  # trigger compute so we know it was alive
-
-        model.disconnect()
-
-        # After disconnect the model still functions, but layer events
-        # no longer trigger recompute (the dirty flag stays as-is).
-        assert model._dirty or not model._dirty
-        assert model.bins == 256
-
-    def test_disconnect_does_not_crash_on_idempotent_call(self):
-        model = _model(np.random.rand(10, 10))
-        model.disconnect()
-        model.disconnect()  # second call should be safe
-
-
 class TestReset:
     """Test the reset method."""
 

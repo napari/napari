@@ -616,21 +616,6 @@ class HistogramModel(EventedModel):
                 return
             self.compute()
 
-    def disconnect(self) -> None:
-        """Disconnect all event listeners to prevent memory leaks.
-
-        Call this when the layer is removed or the histogram is no
-        longer needed to break psygnal event connections.
-        """
-        self._disconnect_layer_events()
-
-        # Disconnect from our own events
-        self.events.bins.disconnect(self._on_params_change)
-        self.events.max_samples.disconnect(self._on_params_change)
-        self.events.mode.disconnect(self._on_params_change)
-        self.events.log_scale.disconnect(self._on_log_scale_change)
-        self.events.enabled.disconnect(self._on_enabled_change)
-
     def reset(self) -> None:
         """Reset histogram to default settings and disable.
 
