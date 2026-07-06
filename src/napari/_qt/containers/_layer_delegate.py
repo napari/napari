@@ -245,8 +245,8 @@ class LayerDelegate(QStyledItemDelegate):
 
     def editorEvent(
         self,
-        event: QtCore.QEvent | None,
-        model: QtCore.QAbstractItemModel | None,
+        event: QEvent | None,
+        model: QAbstractItemModel | None,
         option: QStyleOptionViewItem,
         index: QtCore.QModelIndex,
     ) -> bool:
