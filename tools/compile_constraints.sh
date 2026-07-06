@@ -1,7 +1,52 @@
 #!/bin/bash
 set -e
 
-SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+usage() {
+
+  cat <<'EOF'
+
+Usage:
+  compile_constraints.sh [REPO_ROOT] [PACKAGE ...]
+
+Description:
+  Rebuild the constraint files for the napari/napari repository using uv.
+
+Arguments:
+  REPO_ROOT     Optional root path to the napari repository.
+                If the first argument is not a directory, the repository's path is set to the parent directory of the script.
+  PACKAGE       Optional list of package name(s) to upgrade selectively.
+
+Behaviour:
+  If no PACKAGE arguments are given, it will perform a global upgrade.
+  All PACKAGE arguments are validated against the constraint files in REPO_ROOT/resources/constraints/*.txt
+  The main dependency definitions are read from the pyproject.toml file in REPO_ROOT.
+  It will apply additional restrictions from REPO_ROOT/resources/constraints/.
+  It will write the version-specific constraints under REPO_ROOT/resources/constraints/.
+  It will write the docs/examples constraints under REPO_ROOT/resources/constraints/.
+  It will write mypy requirements under REPO_ROOT/resources/.
+
+Expected failures:
+  When PACKAGE arguments are given, the script will fail if any requested package is not found in the REPO_ROOT/resources/constraints/*.txt files.
+
+Requirements:
+  - The REPO_ROOT must be a valid napari repository with the correct file structure.
+  - uv needs to be installed.
+
+Examples:
+  compile_constraints.sh
+  compile_constraints.sh /path/to/napari
+  compile_constraints.sh superqt tifffile
+  compile_constraints.sh /path/to/napari superqt tifffile
+
+EOF
+}
+
+if [[ "$#" -gt 0 && ("${1:-}" == "-h" || "${1:-}" == "--help") ]]; then
+  usage
+  exit 0
+fi
+
+SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 
 repo_root="${SCRIPT_DIR}/.."
 if [ "$#" -gt 0 ] && [ -d "$1" ]; then
@@ -18,7 +63,7 @@ if [ "$#" -eq 0 ]; then
   upgrade_flag=(--upgrade)
 else
   # collect constraint files (use nullglob-like handling)
-  constraint_files=( "resources/constraints"/*.txt )
+  constraint_files=("resources/constraints"/*.txt)
 
   # start with empty list of upgrade-package pairs
   upgrade_flag=()
@@ -32,7 +77,7 @@ else
   # create a temporary concatenated file of all constraints to simplify searching
   tmp_constraints=$(mktemp)
   trap 'rm -f "$tmp_constraints"' EXIT
-  cat "${constraint_files[@]}" > "$tmp_constraints"
+  cat "${constraint_files[@]}" >"$tmp_constraints"
 
   # collect missing packages so we can report them all at once
   missing_pkgs=()
@@ -74,9 +119,8 @@ constraints="resources/constraints"
 flags=(--quiet --extra pyqt6 --extra pyside6 --extra testing --group testing_extra --extra all_optional --exclude ${constraints}/napari_exclude.txt)
 
 for pyv in 3.10 3.11 3.12 3.13 3.14; do
-uv pip compile --python-version ${pyv} --output-file ${constraints}/constraints_py${pyv}.txt "${upgrade_flag[@]}" ${pyproject_toml} ${constraints}/version_denylist.txt "${flags[@]}"
+  uv pip compile --python-version ${pyv} --output-file ${constraints}/constraints_py${pyv}.txt "${upgrade_flag[@]}" ${pyproject_toml} ${constraints}/version_denylist.txt "${flags[@]}"
 done
-
 
 uv pip compile --python-version 3.12 --output-file ${constraints}/constraints_py3.12_examples.txt "${upgrade_flag[@]}" ${pyproject_toml} ${constraints}/version_denylist.txt ${constraints}/version_denylist_examples.txt --group gallery "${flags[@]}"
 uv pip compile --python-version 3.12 --output-file ${constraints}/constraints_py3.12_docs.txt "${upgrade_flag[@]}" ${pyproject_toml} ${constraints}/version_denylist.txt ${constraints}/version_denylist_examples.txt --group docs "${flags[@]}"
