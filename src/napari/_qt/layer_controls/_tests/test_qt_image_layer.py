@@ -331,7 +331,7 @@ def test_api_enable_shows_inline_widget(qtbot):
     assert not control.content_widget.isHidden()
     assert control.histogram_content is not None
     # Bin edges should have been computed
-    assert len(layer.histogram.bins) == 257
+    assert len(layer.histogram._bin_edges) == 257
 
     # API disable — should hide widget
     layer.histogram.enabled = False
@@ -378,7 +378,7 @@ def test_popup_shows_histogram_without_affecting_inline(qtbot):
     assert popup.histogram_content.settings_widget is not None
 
     # The popup should have triggered histogram computation
-    assert len(layer.histogram.bins) >= 2
+    assert len(layer.histogram._bin_edges) >= 2
 
     # Inline widget should NOT have been affected — events were blocked so
     # the inline listeners never fired. Content stays hidden, button unchecked.

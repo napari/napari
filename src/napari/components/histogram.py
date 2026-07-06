@@ -164,11 +164,17 @@ class HistogramModel(EventedModel):
     def counts(self) -> np.ndarray:
         """Histogram counts per bin.
 
+        Triggers lazy computation if the model is dirty.  The widget
+        reads ``_counts`` directly to avoid accidentally triggering
+        compute during visual updates.
+
         Returns
         -------
         np.ndarray
             Array of counts with length ``self.bins``.
         """
+        if self._dirty:
+            self.compute()
         return self._counts
 
     def compute(self) -> None:
