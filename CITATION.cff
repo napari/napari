@@ -397,6 +397,10 @@ authors:
 - given-names: David
   family-names: Pinto
   alias: MarchisLost
+- given-names: Anthony
+  family-names: Reksoatmodjo
+  affiliation: Translucence Biosystems
+  alias: Modjular
 - given-names: David
   family-names: Ross
   affiliation: NanoString Technologies, Inc.
