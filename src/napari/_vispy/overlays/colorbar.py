@@ -165,7 +165,7 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
         else:
             color = self._get_fgcolor()
 
-        text_width, text_height = self.node.set_ticks_and_get_text_size(
+        text_width, line_height = self.node.set_ticks_and_get_text_size(
             tick_length=self.overlay.tick_length,
             font_size=self.overlay.font_size,
             clim=_coerce_contrast_limits(
@@ -180,7 +180,7 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
             + self.overlay.tick_length  # Tick marks length
             + text_width  # Text width with margins
         )
-        self.y_size = self.overlay.size[1] + text_height / 2
+        self.y_size = self.overlay.size[1] + line_height / 2
 
         self._on_position_change()
 
