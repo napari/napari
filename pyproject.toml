@@ -53,11 +53,11 @@ dependencies = [
     "napari-svg>=0.1.8",
     "npe2>=0.8.1",
     "numpy>=1.25",
-    "pandas>=1.3.3",
+    "pandas>=1.5.0",
     "Pillow>=10.0",
     "pint>=0.17",
     "platformdirs>=4.3.0",
-    "psutil>=5.9.0",
+    "psutil>=5.9.4",
     "psygnal>=0.14.2",
     "pydantic>=2.8.0",
     "pygments>=2.13.0",
@@ -67,15 +67,15 @@ dependencies = [
     "pywin32 ; platform_system == 'Windows'",
     "PyYAML>=6.0",
     "qtpy>=2.4.0",
-    "scikit-image[data]>=0.19.1",
+    "scikit-image[data]>=0.20.0",
     "scipy>=1.14.0",
     "superqt>=0.7.8",
     "tifffile>=2022.7.28",
-    "toolz>=0.11.0",
+    "toolz>=0.12.1",
     "tqdm>=4.56.0",
     "typing_extensions>=4.12",
     "vispy>=0.16.2,<0.17",
-    "wrapt>=1.14.0",
+    "wrapt>=1.14.1",
 ]
 dynamic = [
     "version",
@@ -156,7 +156,6 @@ testing = [
     "pooch>=1.6.0",
     "coverage>7",
     "pretend>=1.0.9",
-    "pyautogui>=0.9.54",
     "pytest-qt >=4.4.0",
     "pytest-pretty>=1.1.0",
     "pytest>=8.3.5",
@@ -170,7 +169,7 @@ testing = [
     "napari[optional-base, bermuda]",
 ]
 testing_extra = [
-    "torch>=1.10.2",
+    "torch>=1.13.1",
 ]
 # needed for gallery examples
 gallery = [
@@ -254,7 +253,6 @@ testing = [
     "pooch>=1.6.0",
     "coverage>7",
     "pretend>=1.0.9",
-    "pyautogui>=0.9.54",
     "pytest-qt >=4.4.0",
     "pytest-pretty>=1.1.0",
     "pytest>=8.3.5",
@@ -268,7 +266,7 @@ testing = [
     "napari[optional-base, bermuda]",
 ]
 testing_extra = [
-    "torch>=1.10.2",
+    "torch>=1.13.1",
 ]
 # needed for gallery examples
 gallery = [
@@ -347,7 +345,7 @@ napari = "napari.utils._testsupport"
 napari_builtins = "napari_builtins:builtins.yaml"
 
 [project.scripts]
-napari = "napari.__main__:main"
+napari = "napari._main:main"
 
 [tool.setuptools]
 zip-safe = false
@@ -541,6 +539,7 @@ filterwarnings = [
   "ignore:'asyncio.WindowsSelectorEventLoopPolicy' is deprecated and slated for removal in Python 3.16:DeprecationWarning", # windows ipykernel issue #8666
   "ignore:'asyncio.get_event_loop_policy' is deprecated and slated for removal in Python 3.16:DeprecationWarning",  # windows ipykernel issue #8666
   "ignore:'asyncio.set_event_loop_policy' is deprecated and slated for removal in Python 3.16:DeprecationWarning",  # windows ipykernel issue #8666
+  "ignore:System theme detection requires a Qt6 backend:UserWarning",  # delete once Qt5 support is dropped
 ]
 markers = [
     "examples: Test of examples",
@@ -694,9 +693,10 @@ module = [
     'napari._qt.widgets.qt_logger',
     'napari._qt.widgets.qt_mode_buttons',
     'napari._qt.widgets.qt_plugin_sorter',
-    'napari._qt.widgets.qt_range_slider_popup',
+    'napari._qt.widgets.qt_progress_bar',
+    'napari._qt.widgets.qt_scrollbar',
     'napari._qt.widgets.qt_size_preview',
-    'napari._qt.widgets.qt_spinbox',
+    'napari._qt.widgets.qt_tooltip',
     'napari._qt.widgets.qt_viewer_buttons',
     'napari._qt.widgets.qt_viewer_dock_widget',
     'napari._qt.widgets.qt_viewer_status_bar',
@@ -727,7 +727,7 @@ module = [
     'napari.utils.events.containers._evented_dict',
     'napari.utils.events.containers._evented_list',
     'napari.utils.events.containers._nested_list',
-    'napari.utils.events.custom_types',
+    'napari.utils.events.debugging',
     'napari.utils.events.event',
     'napari.utils.events.evented_model',
     'napari.utils.interactions',

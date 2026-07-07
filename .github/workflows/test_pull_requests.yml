@@ -138,7 +138,7 @@ jobs:
             coverage: no_cov
             timeout-minutes: 60
           - python: "3.14"
-            platform: macos-latest
+            platform: macos-15
             backend: pyqt6
             coverage: no_cov
             timeout-minutes: 60
