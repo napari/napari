@@ -9,7 +9,7 @@ from qtpy.QtCore import QMimeData, QModelIndex, Qt
 from napari._qt.containers._base_item_model import _BaseEventedItemModel
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Iterable, Sequence
 
 logger = logging.getLogger(__name__)
 ListIndexMIMEType = 'application/x-list-index'
@@ -34,7 +34,7 @@ class QtListModel(_BaseEventedItemModel[ItemType]):
         """
         return [ListIndexMIMEType, 'text/plain']
 
-    def mimeData(self, indices: list[QModelIndex]) -> Optional[QMimeData]:
+    def mimeData(self, indices: Iterable[QModelIndex]) -> Optional[QMimeData]:
         """Return an object containing serialized data from `indices`.
 
         If the list of indexes is empty, or there are no supported MIME types,
@@ -49,7 +49,7 @@ class QtListModel(_BaseEventedItemModel[ItemType]):
 
     def dropMimeData(
         self,
-        data: QMimeData,
+        data: QMimeData | None,
         action: Qt.DropAction,
         destRow: int,
         col: int,
