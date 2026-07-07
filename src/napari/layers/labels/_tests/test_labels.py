@@ -1262,7 +1262,7 @@ def test_fill_tensorstore(tmp_path, zarr_version, zarr_driver):
         dtype=np.uint32,
         chunks=(1, 1, 8, 9),
         # zarr < 3 uses zarr_version, zarr > 3 uses zarr_format
-        # This can be removed in favor of zarr_format once napari drops py310
+        # napari has dropped py310; this can be simplified to zarr_format once the minimum zarr version is > 3
         **{('zarr_format' if ZARR_V3 else 'zarr_version'): zarr_version},
     )
     labels_temp[:] = labels
