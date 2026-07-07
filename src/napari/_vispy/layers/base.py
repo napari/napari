@@ -245,6 +245,20 @@ class VispyBaseLayer(ABC, Generic[_L]):
 
         child_offset = np.zeros(len(dims_displayed))
 
+        if (
+            self._array_like
+            and self.layer._slice_input.ndisplay == 3
+            and self.layer.multiscale
+        ):
+            # In 3D, sub-volume tiles have nonzero corner_pixels[0].
+            # The volume node transform positions the tile correctly,
+            # but child nodes (bounding box overlay) should not inherit
+            # this offset — undo it so overlays stay at the full data
+            # extent.
+            cp0 = self.layer.corner_pixels[0][dims_displayed][::-1]
+            if np.any(cp0 != 0):
+                child_offset = -cp0.astype(float)
+
         if self._array_like and self.layer._slice_input.ndisplay == 2:
             # Perform pixel offset to shift origin from top left corner
             # of pixel to center of pixel.
