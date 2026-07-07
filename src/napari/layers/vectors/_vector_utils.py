@@ -33,11 +33,11 @@ def convert_image_to_coordinates(vectors: npt.NDArray) -> npt.NDArray:
     # TODO: consider whether it might be good to check for sparsity and
     # only include nonzero vectors. This can have up-front performance cost but may
     # lead to (significant) performance and memory savings
-    projections = np.reshape(vectors, (nvect, ndim))
+    projections = np.reshape(vectors, (int(nvect), int(ndim)))
     # TODO: consider whether it might be good to check for sparsity and
     # only include nonzero vectors. Up front performance cost but can
     # lead to (significant) performance and memory savings
-    projections = np.reshape(vectors, (nvect, ndim))
+    projections = np.reshape(vectors, (int(nvect), int(ndim)))
 
     # stack them along axis 1
     coord_vectors = np.stack([coordinates, projections], axis=1)
