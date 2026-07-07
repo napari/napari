@@ -158,6 +158,67 @@ def test_line_fixed_angles(create_known_shapes_layer):
     assert np.allclose(theta, 45.0)
 
 
+@pytest.mark.parametrize('shape_type', ['rectangle', 'ellipse'])
+@pytest.mark.parametrize(
+    ('known_non_shape_end', 'expected_sign'),
+    [
+        # Diagonal drags: verify all four quadrants
+        ([40, 60], [1, 1]),
+        ([0, 10], [-1, -1]),
+        ([0, 60], [-1, 1]),
+        ([40, 10], [1, -1]),
+        # Axis-aligned drags: zero component filled from the nonzero one
+        ([40, 30], [1, 1]),  # pure South -> SE
+        ([0, 30], [-1, -1]),  # pure North -> NW
+        ([20, 60], [1, 1]),  # pure East  -> SE
+        ([20, 10], [-1, -1]),  # pure West  -> NW
+    ],
+)
+def test_add_fixed_aspect_shape_in_drag_direction(
+    shape_type,
+    known_non_shape_end,
+    expected_sign,
+    create_known_shapes_layer,
+):
+    """Locked-aspect shapes should expand into the cursor quadrant."""
+    layer, n_shapes, known_non_shape = create_known_shapes_layer
+
+    layer.mode = f'add_{shape_type}'
+    layer._fixed_aspect = True
+
+    event = read_only_mouse_event(
+        type='mouse_press',
+        position=known_non_shape,
+    )
+    mouse_press_callbacks(layer, event)
+
+    event = read_only_mouse_event(
+        type='mouse_move',
+        is_dragging=True,
+        position=known_non_shape_end,
+    )
+    mouse_move_callbacks(layer, event)
+
+    event = read_only_mouse_event(
+        type='mouse_release',
+        position=known_non_shape_end,
+    )
+    mouse_release_callbacks(layer, event)
+
+    assert len(layer.data) == n_shapes + 1
+
+    new_shape = layer.data[-1]
+    start = np.asarray(known_non_shape, dtype=float)
+
+    # the press point should be one of the four corners (the fixed anchor)
+    assert any(np.allclose(v, start) for v in new_shape)
+    # the shape center should lie in the expected quadrant relative to the press point
+    assert np.all(np.sign(new_shape.mean(axis=0) - start) == expected_sign)
+    # the bounding box must be square (equal width and height)
+    bbox_size = np.max(new_shape, axis=0) - np.min(new_shape, axis=0)
+    assert np.isclose(bbox_size[0], bbox_size[1], rtol=1e-3)
+
+
 def test_path_tablet(create_known_shapes_layer):
     layer, n_shapes, _ = create_known_shapes_layer
     desired_shape = np.array([[20, 30], [10, 50], [60, 40], [80, 20]])
