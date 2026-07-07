@@ -624,7 +624,6 @@ module = [
     'napari._qt.experimental.qt_poll',
     'napari._qt.layer_controls.qt_colormap_combobox',
     'napari._qt.layer_controls.qt_image_controls',
-    'napari._qt.layer_controls.qt_image_controls_base',
     'napari._qt.layer_controls.qt_labels_controls',
     'napari._qt.layer_controls.qt_layer_controls_base',
     'napari._qt.layer_controls.qt_layer_controls_container',
