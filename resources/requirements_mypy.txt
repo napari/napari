@@ -6,21 +6,21 @@ annotated-types==0.7.0
     # via pydantic
 app-model==0.5.1
     # via -r resources/requirements_mypy.in
-ast-serialize==0.5.0
+ast-serialize==0.6.0
     # via mypy
 build==1.5.0
     # via npe2
-certifi==2026.5.20
+certifi==2026.6.17
     # via requests
 charset-normalizer==3.4.7
     # via requests
 docstring-parser==0.18.0
     # via magicgui
-idna==3.17
+idna==3.18
     # via requests
 in-n-out==0.2.1
     # via app-model
-librt==0.11.0
+librt==0.12.0
     # via mypy
 magicgui==0.10.2
     # via -r resources/requirements_mypy.in
@@ -32,9 +32,9 @@ mypy==2.1.0
     # via -r resources/requirements_mypy.in
 mypy-extensions==1.1.0
     # via mypy
-npe2==0.8.2
+npe2==0.8.3
     # via -r resources/requirements_mypy.in
-numpy==2.4.6
+numpy==2.5.1
     # via -r resources/requirements_mypy.in
 packaging==26.2
     # via
@@ -92,15 +92,15 @@ superqt==0.8.2
     # via magicgui
 tomli-w==1.2.0
     # via npe2
-typer==0.26.4
+typer==0.26.8
     # via npe2
 types-pyyaml==6.0.12.20260518
     # via -r resources/requirements_mypy.in
 types-requests==2.33.0.20260518
     # via -r resources/requirements_mypy.in
-types-setuptools==82.0.0.20260518
+types-setuptools==83.0.0.20260706
     # via -r resources/requirements_mypy.in
-typing-extensions==4.15.0
+typing-extensions==4.16.0
     # via
     #   app-model
     #   magicgui

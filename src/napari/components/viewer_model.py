@@ -33,6 +33,7 @@ from napari.components._viewer_mouse_bindings import (
     dims_scroll,
     double_click_to_zoom,
     drag_to_zoom,
+    layers_scroll,
 )
 from napari.components.camera import Camera
 from napari.components.cursor import Cursor, CursorStyle
@@ -43,6 +44,7 @@ from napari.components.overlays import (
     AxesOverlay,
     BrushCircleOverlay,
     CurrentSliceOverlay,
+    FloatingAxesOverlay,
     Overlay,
     ScaleBarOverlay,
     TextOverlay,
@@ -130,6 +132,7 @@ DEFAULT_OVERLAYS = {
     'scale_bar': ScaleBarOverlay,
     'text': TextOverlay,
     'axes': AxesOverlay,
+    'floating_axes': FloatingAxesOverlay,
     'brush_circle': BrushCircleOverlay,
     'zoom': ZoomOverlay,
     'current_slice': CurrentSliceOverlay,
@@ -232,6 +235,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     # Need to use default factory because slicer is not copyable which
     # is required for default values.
     _layer_slicer: _LayerSlicer = PrivateAttr(default_factory=_LayerSlicer)
+    _layer_list_scroll_progress: float = 0
 
     def __init__(
         self, title='napari', ndisplay=2, order=(), axis_labels=()
@@ -315,6 +319,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
         # Add mouse callback
         self.mouse_wheel_callbacks.append(dims_scroll)
+        self.mouse_wheel_callbacks.append(layers_scroll)
         self.mouse_double_click_callbacks.append(double_click_to_zoom)
         self.mouse_drag_callbacks.append(drag_to_zoom)
 
@@ -324,6 +329,10 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     @property
     def axes(self) -> AxesOverlay:
         return self._overlays['axes']  # type: ignore[return-value]
+
+    @property
+    def floating_axes(self) -> FloatingAxesOverlay:
+        return self._overlays['floating_axes']  # type: ignore[return-value]
 
     @property
     def scale_bar(self) -> ScaleBarOverlay:
