@@ -522,20 +522,6 @@ class _QtMainWindow(QMainWindow):
                 parent = getattr(parent, '_parent', None)
 
     def show(self, block=False):
-        if not self.isVisible():
-            settings = get_settings()
-            if (
-                not settings.application.first_time
-                and settings.application.save_window_geometry
-            ):
-                window_size = settings.application.window_size
-                window_position = settings.application.window_position
-                if window_size:
-                    self.resize(*window_size)
-                if window_position:
-                    self.move(*window_position)
-            else:
-                self.resize(800, 600)
         super().show()
         self._qt_viewer.setFocus()
         if block:
@@ -1545,7 +1531,18 @@ class Window:
                 )
             ) from e
 
-        if not settings.application.first_time:
+        if settings.application.first_time:
+            settings.application.first_time = False
+            try:
+                self._qt_window.resize(self._qt_window.layout().sizeHint())
+            except (AttributeError, RuntimeError) as e:
+                raise RuntimeError(
+                    trans._(
+                        'This viewer has already been closed and deleted. Please create a new one.',
+                        deferred=True,
+                    )
+                ) from e
+        else:
             try:
                 if settings.application.save_window_geometry:
                     self._qt_window._set_window_settings(
@@ -1563,8 +1560,6 @@ class Window:
                     category=RuntimeWarning,
                     stacklevel=2,
                 )
-        else:
-            settings.application.first_time = False
 
         # Resize axis labels now that window is shown
         self._qt_viewer.dims._resize_axis_labels()
