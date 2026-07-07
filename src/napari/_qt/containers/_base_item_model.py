@@ -145,18 +145,16 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
         """
         return 1
 
-    def rowCount(self, parent: QModelIndex | None = None) -> int:
+    def rowCount(self, parent: QModelIndex = _NULL_INDEX) -> int:
         """Returns the number of rows under the given parent.
 
         When the parent is valid it means that rowCount is returning the number
         of children of parent.
         """
-        if parent is None:
-            parent = QModelIndex()
-        try:
-            return len(cast(Sized, self.getItem(parent)))
-        except TypeError:
-            return 0
+        item = self.getItem(parent)
+        if isinstance(item, Sized):
+            return len(item)
+        return 0
 
     def index(
         self, row: int, column: int = 0, parent: QModelIndex | None = None
