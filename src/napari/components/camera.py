@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal, cast
+from typing import TYPE_CHECKING
 
 import numpy as np
 from pydantic import field_validator
@@ -228,36 +228,3 @@ class Camera(EventedModel):
         if sum(diffs) % 2 != 0:
             return Handedness.LEFT
         return Handedness.RIGHT
-
-    def _vispy_flipped_axes(
-        self, ndisplay: Literal[2, 3] = 2
-    ) -> tuple[int, int, int]:
-        # Note: the Vispy axis order is xyz, or horizontal, vertical, depth,
-        # while the napari axis order is zyx / plane-row-column, or depth, vertical,
-        # horizontal — i.e. it is exactly inverted. This switch happens when data
-        # is passed from napari to Vispy, usually with a transposition. In the camera
-        # models, this means that the order of these orientations appear in the
-        # opposite order to that in napari.components.Camera.
-        #
-        # Note that the default Vispy camera orientations come from Vispy, not from us.
-        vispy_default_orientation = (
-            ('right', 'up', 'towards')
-            if ndisplay == 2
-            else ('right', 'down', 'away')
-        )
-
-        # Vispy uses xyz coordinates; napari uses zyx coordinates. We therefore
-        # start by inverting the order of coordinates coming from the napari
-        # camera model:
-        orientation_xyz = self.orientation[::-1]
-        # The Vispy camera flip is a tuple of three ints in {0, 1}, indicating
-        # whether they are flipped relative to the Vispy default.
-        return cast(
-            tuple[int, int, int],
-            tuple(
-                int(ori != default_ori)
-                for ori, default_ori in zip(
-                    orientation_xyz, vispy_default_orientation, strict=True
-                )
-            ),
-        )

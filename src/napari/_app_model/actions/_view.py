@@ -14,6 +14,12 @@ VIEW_SUBMENUS = [
     ),
     (
         MenuId.MENUBAR_VIEW,
+        SubmenuItem(
+            submenu=MenuId.VIEW_FLOATING_AXES, title=trans._('Floating Axes')
+        ),
+    ),
+    (
+        MenuId.MENUBAR_VIEW,
         SubmenuItem(submenu=MenuId.VIEW_SCALEBAR, title=trans._('Scale Bar')),
     ),
 ]
@@ -51,6 +57,42 @@ toggle_action_details = [
         'arrows',
     ),
     (
+        'napari.window.view.toggle_viewer_floating_axes',
+        trans._('Floating Axes Visible'),
+        'floating_axes',
+        'visible',
+    ),
+    (
+        'napari.window.view.toggle_viewer_floating_axes_box',
+        trans._('Floating Axes Box'),
+        'floating_axes',
+        'box',
+    ),
+    (
+        'napari.window.view.toggle_viewer_floating_axes_colored',
+        trans._('Floating Axes Colored'),
+        'floating_axes',
+        'colored',
+    ),
+    (
+        'napari.window.view.toggle_viewer_floating_axes_labels',
+        trans._('Floating Axes Labels'),
+        'floating_axes',
+        'labels',
+    ),
+    (
+        'napari.window.view.toggle_viewer_floating_axes_dashed',
+        trans._('Floating Axes Dashed'),
+        'floating_axes',
+        'dashed',
+    ),
+    (
+        'napari.window.view.toggle_viewer_floating_axes_arrows',
+        trans._('Floating Axes Arrows'),
+        'floating_axes',
+        'arrows',
+    ),
+    (
         'napari.window.view.toggle_viewer_scale_bar',
         trans._('Scale Bar Visible'),
         'scale_bar',
@@ -76,7 +118,11 @@ toggle_action_details = [
     ),
 ]
 
-MENUID_DICT = {'axes': MenuId.VIEW_AXES, 'scale_bar': MenuId.VIEW_SCALEBAR}
+MENUID_DICT = {
+    'axes': MenuId.VIEW_AXES,
+    'floating_axes': MenuId.VIEW_FLOATING_AXES,
+    'scale_bar': MenuId.VIEW_SCALEBAR,
+}
 
 
 def _tooltip_visibility_toggle() -> None:
