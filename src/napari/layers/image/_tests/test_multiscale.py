@@ -354,6 +354,18 @@ def test_value():
     np.testing.assert_allclose(value, (2, data[2][0, 0]))
 
 
+def test_value_rgb():
+    """Test getting the value of the rgb data at the current coordinates."""
+    shapes = [(40, 20, 3), (20, 10, 3), (10, 5, 3)]
+    np.random.seed(0)
+    data = [np.random.random(s) for s in shapes]
+    layer = Image(data, multiscale=True, rgb=True)
+    value = layer.get_value((0,) * 2)
+    assert layer.data_level == 2
+    assert value[0] == 2
+    np.testing.assert_allclose(value[1], data[2][0, 0])
+
+
 def test_corner_value():
     """Test getting the value of the data at the new position."""
     shapes = [(40, 20), (20, 10), (10, 5)]
