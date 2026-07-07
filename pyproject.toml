@@ -157,7 +157,6 @@ testing = [
     "pooch>=1.6.0",
     "coverage>7",
     "pretend>=1.0.9",
-    "pyautogui>=0.9.54",
     "pytest-qt >=4.4.0; python_version > '3.10'",
     "pytest-qt ==4.4.0; python_version <= '3.10'",
     "pytest-pretty>=1.1.0",
@@ -256,7 +255,6 @@ testing = [
     "pooch>=1.6.0",
     "coverage>7",
     "pretend>=1.0.9",
-    "pyautogui>=0.9.54",
     "pytest-qt >=4.4.0; python_version > '3.10'",
     "pytest-qt ==4.4.0; python_version <= '3.10'",
     "pytest-pretty>=1.1.0",
@@ -350,7 +348,7 @@ napari = "napari.utils._testsupport"
 napari_builtins = "napari_builtins:builtins.yaml"
 
 [project.scripts]
-napari = "napari.__main__:main"
+napari = "napari._main:main"
 
 [tool.setuptools]
 zip-safe = false
@@ -544,6 +542,7 @@ filterwarnings = [
   "ignore:'asyncio.WindowsSelectorEventLoopPolicy' is deprecated and slated for removal in Python 3.16:DeprecationWarning", # windows ipykernel issue #8666
   "ignore:'asyncio.get_event_loop_policy' is deprecated and slated for removal in Python 3.16:DeprecationWarning",  # windows ipykernel issue #8666
   "ignore:'asyncio.set_event_loop_policy' is deprecated and slated for removal in Python 3.16:DeprecationWarning",  # windows ipykernel issue #8666
+  "ignore:System theme detection requires a Qt6 backend:UserWarning",  # delete once Qt5 support is dropped
 ]
 markers = [
     "examples: Test of examples",
@@ -697,9 +696,10 @@ module = [
     'napari._qt.widgets.qt_logger',
     'napari._qt.widgets.qt_mode_buttons',
     'napari._qt.widgets.qt_plugin_sorter',
-    'napari._qt.widgets.qt_range_slider_popup',
+    'napari._qt.widgets.qt_progress_bar',
+    'napari._qt.widgets.qt_scrollbar',
     'napari._qt.widgets.qt_size_preview',
-    'napari._qt.widgets.qt_spinbox',
+    'napari._qt.widgets.qt_tooltip',
     'napari._qt.widgets.qt_viewer_buttons',
     'napari._qt.widgets.qt_viewer_dock_widget',
     'napari._qt.widgets.qt_viewer_status_bar',
@@ -730,7 +730,7 @@ module = [
     'napari.utils.events.containers._evented_dict',
     'napari.utils.events.containers._evented_list',
     'napari.utils.events.containers._nested_list',
-    'napari.utils.events.custom_types',
+    'napari.utils.events.debugging',
     'napari.utils.events.event',
     'napari.utils.events.evented_model',
     'napari.utils.interactions',
