@@ -124,8 +124,8 @@ optional-base = [
     "napari-plugin-manager >=0.1.10, <0.2.0",
 ]
 optional-numba = [
-    "numba>=0.57.1,<=0.62.1 ; platform_system == 'Darwin' and platform_machine == 'x86_64'",
-    "numba>=0.57.1 ; platform_system != 'Darwin' or platform_machine != 'x86_64'",
+    "numba>=0.58.0,<=0.62.1 ; platform_system == 'Darwin' and platform_machine == 'x86_64'",
+    "numba>=0.58.0 ; platform_system != 'Darwin' or platform_machine != 'x86_64'",
 ]
 optional = [
     "napari[optional-base,optional-numba,bermuda]",
