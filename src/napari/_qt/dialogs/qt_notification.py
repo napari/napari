@@ -118,19 +118,8 @@ class NapariQtNotification(QDialog):
         from napari.utils.theme import get_theme
 
         settings = get_settings()
-        theme = settings.appearance.theme
-        default_color = get_theme(theme).icon.as_hex()
-
-        # FIXME: Should these be defined at the theme level?
-        # Currently there is a warning one
-        colors = {
-            'error': '#D85E38',
-            'warning': '#E3B617',
-            'info': default_color,
-            'debug': default_color,
-            'none': default_color,
-        }
-        color = colors.get(severity, default_color)
+        theme = get_theme(settings.appearance.theme)
+        color = getattr(theme, severity, theme.icon).as_hex()
         icon = QColoredSVGIcon.from_resources(severity)
         self.severity_icon.setPixmap(icon.colored(color=color).pixmap(15, 15))
 
