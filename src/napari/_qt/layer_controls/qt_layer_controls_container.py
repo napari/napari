@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from qtpy.QtWidgets import QFrame, QStackedWidget
 
 from napari._qt.layer_controls.qt_image_controls import QtImageControls
@@ -28,8 +32,16 @@ layer_to_controls = {
     Tracks: QtTracksControls,
 }
 
+if TYPE_CHECKING:
+    from napari._qt.layer_controls.qt_layer_controls_base import (
+        QtLayerControls,
+    )
+    from napari.components import ViewerModel
+    from napari.layers.base import Layer
+    from napari.utils.events import Event
 
-def create_qt_layer_controls(layer):
+
+def create_qt_layer_controls(layer: Layer) -> QtLayerControls:
     """
     Create a qt controls widget for a layer based on its layer type.
 
@@ -46,7 +58,7 @@ def create_qt_layer_controls(layer):
     controls : napari.layers.base.QtLayerControls
         Qt controls widget
     """
-    candidates = []
+    candidates: list[type[Layer]] = []
     for layer_type in layer_to_controls:
         if isinstance(layer, layer_type):
             candidates.append(layer_type)
@@ -64,7 +76,7 @@ def create_qt_layer_controls(layer):
     # Sort the list of candidates by 'lineage'
     candidates.sort(key=lambda layer_type: layer_cls.mro().index(layer_type))
     controls = layer_to_controls[candidates[0]]
-    return controls(layer)
+    return controls(layer)  # type: ignore[arg-type]
 
 
 class QtLayerControlsContainer(QStackedWidget):
@@ -86,14 +98,14 @@ class QtLayerControlsContainer(QStackedWidget):
         widgets[layer] = controls
     """
 
-    def __init__(self, viewer) -> None:
+    def __init__(self, viewer: ViewerModel) -> None:
         super().__init__()
         self.viewer = viewer
 
         self.setMouseTracking(True)
         self.empty_widget = QFrame()
         self.empty_widget.setObjectName('empty_controls_widget')
-        self.widgets = {}
+        self.widgets: dict[Layer, QtLayerControls] = {}
         self.addWidget(self.empty_widget)
         self.setCurrentWidget(self.empty_widget)
 
@@ -102,7 +114,7 @@ class QtLayerControlsContainer(QStackedWidget):
         viewer.layers.selection.events.active.connect(self._display)
         viewer.dims.events.ndisplay.connect(self._on_ndisplay_changed)
 
-    def _on_ndisplay_changed(self, event):
+    def _on_ndisplay_changed(self, event: Event) -> None:
         """Responds to a change in the dimensionality displayed in the canvas.
 
         Parameters
@@ -114,7 +126,7 @@ class QtLayerControlsContainer(QStackedWidget):
             if widget is not self.empty_widget:
                 widget.ndisplay = event.value
 
-    def _display(self, event):
+    def _display(self, event: Event) -> None:
         """Change the displayed controls to be those of the target layer.
 
         Parameters
@@ -129,7 +141,7 @@ class QtLayerControlsContainer(QStackedWidget):
             controls = self.widgets[layer]
             self.setCurrentWidget(controls)
 
-    def _add(self, event):
+    def _add(self, event: Event) -> None:
         """Add the controls target layer to the list of control widgets.
 
         Parameters
@@ -143,7 +155,7 @@ class QtLayerControlsContainer(QStackedWidget):
         self.addWidget(controls)
         self.widgets[layer] = controls
 
-    def _remove(self, event):
+    def _remove(self, event: Event) -> None:
         """Remove the controls target layer from the list of control widgets.
 
         Parameters
@@ -156,5 +168,4 @@ class QtLayerControlsContainer(QStackedWidget):
         self.removeWidget(controls)
         controls.hide()
         controls.deleteLater()
-        controls = None
         del self.widgets[layer]
