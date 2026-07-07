@@ -402,6 +402,10 @@ authors:
 - given-names: David
   family-names: Pinto
   alias: MarchisLost
+- given-names: Anthony
+  family-names: Reksoatmodjo
+  affiliation: Translucence Biosystems
+  alias: Modjular
 - given-names: David
   family-names: Ross
   affiliation: NanoString Technologies, Inc.
@@ -425,6 +429,10 @@ authors:
   affiliation: Mangalmay Institute of Management & Technology
   orcid: https://orcid.org/0009-0000-8849-7055
   alias: Rupeshhsharma
+- given-names: Imad Uddin
+  family-names: Sheikh
+  affiliation: Indiana Wesleyan University
+  alias: isheikh8492
 - given-names: Nikoloz
   family-names: Sirmpilatze
   affiliation: Sainsbury Wellcome Centre - University College London
