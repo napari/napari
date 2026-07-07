@@ -199,10 +199,6 @@ class QtLabelsControls(QtLayerControls):
             self._render_control._on_display_change_show()
         else:
             self._render_control._on_display_change_hide()
-        if self.layer.multiscale:
-            self._multiscale_level_control._on_display_change_show()
-        else:
-            self._multiscale_level_control._on_display_change_hide()
         self._on_editable_or_visible_change()
         self._set_polygon_tool_state()
         super()._on_ndisplay_changed()
