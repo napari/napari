@@ -1,10 +1,15 @@
-import enum
+from __future__ import annotations
+
 import weakref
-from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 from qtpy.QtWidgets import QPushButton, QRadioButton
 
-import napari.layers
+if TYPE_CHECKING:
+    import enum
+    from collections.abc import Callable
+
+    import napari.layers
 
 
 class QtModeRadioButton(QRadioButton):
