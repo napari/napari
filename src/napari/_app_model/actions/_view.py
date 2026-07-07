@@ -16,6 +16,12 @@ VIEW_SUBMENUS = [
         MenuId.MENUBAR_VIEW,
         SubmenuItem(submenu=MenuId.VIEW_SCALEBAR, title=trans._('Scale Bar')),
     ),
+    (
+        MenuId.MENUBAR_VIEW,
+        SubmenuItem(
+            submenu=MenuId.VIEW_GRIDLINES, title=trans._('Grid Lines')
+        ),
+    ),
 ]
 
 
@@ -74,9 +80,31 @@ toggle_action_details = [
         'scale_bar',
         'ticks',
     ),
+    (
+        'napari.window.view.toggle_viewer_grid_lines',
+        trans._('Grid Lines Visible'),
+        'grid_lines',
+        'visible',
+    ),
+    (
+        'napari.window.view.toggle_viewer_grid_lines_axis_labels',
+        trans._('Grid Lines Tick Labels'),
+        'grid_lines',
+        'axis_labels',
+    ),
+    (
+        'napari.window.view.toggle_viewer_grid_lines_tick_labels',
+        trans._('Grid Lines Tick Labels'),
+        'grid_lines',
+        'tick_labels',
+    ),
 ]
 
-MENUID_DICT = {'axes': MenuId.VIEW_AXES, 'scale_bar': MenuId.VIEW_SCALEBAR}
+MENUID_DICT = {
+    'axes': MenuId.VIEW_AXES,
+    'scale_bar': MenuId.VIEW_SCALEBAR,
+    'grid_lines': MenuId.VIEW_GRIDLINES,
+}
 
 
 def _tooltip_visibility_toggle() -> None:
