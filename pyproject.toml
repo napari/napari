@@ -621,7 +621,6 @@ module = [
     'napari._qt.dialogs.qt_plugin_report',
     'napari._qt.dialogs.qt_reader_dialog',
     'napari._qt.experimental.qt_chunk_receiver',
-    'napari._qt.experimental.qt_poll',
     'napari._qt.layer_controls.qt_colormap_combobox',
     'napari._qt.layer_controls.qt_image_controls',
     'napari._qt.layer_controls.qt_image_controls_base',
