@@ -8,7 +8,6 @@ from napari.components.dims import Dims
 from napari.layers.image import Image
 
 
-@pytest.mark.skip(reason='to test')
 def test_image_rendering(make_napari_viewer):
     """Test 3D image with different rendering."""
     viewer = make_napari_viewer()

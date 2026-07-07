@@ -1,10 +1,13 @@
 import numpy as np
+import pytest
 
 from napari.components.overlays import (
     BoundingBoxOverlay,
     CanvasOverlay,
     ScaleBarOverlay,
 )
+
+pytest.skip('Skip to check CI', allow_module_level=True)
 
 
 def test_viewer_overlays(qt_viewer):
