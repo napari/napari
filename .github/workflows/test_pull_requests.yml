@@ -125,11 +125,11 @@ jobs:
           # when changing these, try to keep full coverage of supported
           # python versions so we test at least once everywhere
           - python: "3.11"
-            platform: windows-latest
+            platform: macos-15
             backend: pyqt5
             coverage: no_cov
           - python: "3.14"
-            platform: windows-latest
+            platform: macos-15
             backend: pyqt6
             coverage: cov
           - python: "3.14"
