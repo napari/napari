@@ -29,7 +29,8 @@ def _create_zarr_array(group, name, **kwargs):
 
     Zarr > 3 deprecated `create_dataset` and zarr 3.2.0 removed it, but
     `create_array` is not part of zarr < 3 API.
-    Once napari drops py310, this can be removed in favor of just `create_array`.
+    napari has dropped py310; this can be removed in favor of just `create_array`
+    once the minimum zarr version is > 3.
     """
     if hasattr(group, 'create_array'):
         return group.create_array(name, **kwargs)

@@ -1,11 +1,10 @@
 """Contains napari color constants and utilities."""
 
-from typing import Any
+from typing import Any, Self
 
 import numpy as np
 from pydantic import GetCoreSchemaHandler
 from pydantic_core import CoreSchema, core_schema
-from typing_extensions import Self
 
 from napari.utils.colormaps.standardize_color import transform_color
 
