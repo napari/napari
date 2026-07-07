@@ -20,13 +20,11 @@ from vispy.color import (
     get_colormap,
     get_colormaps,
 )
-from vispy.color.colormap import LUT_len
 
 from napari.utils.colormaps import _accelerated_cmap
 from napari.utils.colormaps.bop_colors import bopd
 from napari.utils.colormaps.colormap import (
     Colormap,
-    ColormapInterpolationMode,
     CyclicLabelColormap,
     DirectLabelColormap,
 )
@@ -378,68 +376,6 @@ def low_discrepancy_image(image, seed=0.5, margin=1 / 256) -> np.ndarray:
     # Clear zero (background) values, matching the shader behavior in _glsl_label_step
     image_out[image == 0] = 0.0
     return image_out
-
-
-def color_dict_to_colormap(colors):
-    """Generate a color map based on the given color dictionary.
-
-    .. deprecated:: 0.7.1
-        ``color_dict_to_colormap`` is deprecated as of ``0.7.1`` and will be
-        removed in ``0.8.0``.
-
-    Parameters
-    ----------
-    colors : dict of int to array of float, shape (4)
-        Mapping between labels and color
-
-    Returns
-    -------
-    colormap : napari.utils.Colormap
-        Colormap constructed with provided control colors
-    label_color_index : dict of int
-        Mapping of Label to color control point within colormap
-    """
-
-    warnings.warn(
-        'color_dict_to_colormap is deprecated in 0.7.1 and will be removed in '
-        '0.8.0 release. Construct a Colormap and label-to-control mapping directly.',
-        category=FutureWarning,
-        stacklevel=2,
-    )
-
-    MAX_DISTINCT_COLORS = LUT_len
-
-    control_colors = np.unique(list(colors.values()), axis=0)
-
-    if len(control_colors) >= MAX_DISTINCT_COLORS:
-        warnings.warn(
-            trans._(
-                'Label layers with more than {max_distinct_colors} distinct colors will not render correctly. This layer has {distinct_colors}.',
-                deferred=True,
-                distinct_colors=str(len(control_colors)),
-                max_distinct_colors=str(MAX_DISTINCT_COLORS),
-            ),
-            category=UserWarning,
-        )
-
-    colormap = Colormap(
-        colors=control_colors, interpolation=ColormapInterpolationMode.ZERO
-    )
-
-    control2index = {
-        tuple(color): control_point
-        for color, control_point in zip(
-            colormap.colors, colormap.controls, strict=False
-        )
-    }
-
-    control_small_delta = 0.5 / len(control_colors)
-    label_color_index = {
-        label: np.float32(control2index[tuple(color)] + control_small_delta)
-        for label, color in colors.items()
-    }
-
-    return colormap, label_color_index
 
 
 def _low_discrepancy(dim, n, seed=0.5):
