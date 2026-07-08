@@ -403,9 +403,7 @@ class HistogramModel(EventedModel):
         for uint8, 0-1 for float).
         """
         rgb: np.ndarray = data[..., :3].astype(np.float32)
-        return (
-            0.2126 * rgb[..., 0] + 0.7152 * rgb[..., 1] + 0.0722 * rgb[..., 2]
-        )
+        return rgb @ np.array([0.2126, 0.7152, 0.0722], dtype=np.float32)
 
     def _get_data(self) -> np.ndarray | None:
         """Get data from layer based on current mode."""
