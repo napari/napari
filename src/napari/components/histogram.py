@@ -456,13 +456,13 @@ class HistogramModel(EventedModel):
         if isinstance(data, np.ndarray):
             return data
 
-        # Chunked arrays (dask, zarr) are returned as-is for the
-        # progressive sampler in _compute_sampled.
+        # Chunked arrays (dask, zarr, h5py with chunks) are returned
+        # as-is for the progressive sampler in _compute_sampled.
         if self._has_chunks(data):
             return data
 
         # Last resort: cast to numpy.  Guard against accidentally
-        # materializing a very large object (e.g. h5py Dataset) by
+        # materializing a very large object (contiguous h5py) by
         # checking the estimated memory footprint first.
         data_size = data.size if hasattr(data, 'size') else 0
         if data_size > _MAX_MATERIALIZE_ELEMENTS:
@@ -483,14 +483,16 @@ class HistogramModel(EventedModel):
 
     @staticmethod
     def _has_chunks(data: Any) -> bool:
-        """True if *data* can be sampled chunk-by-chunk (dask or zarr).
+        """True if *data* can be sampled chunk-by-chunk (daskm zarr, h5py).
 
-        Both dask ``Array`` and zarr ``Array`` expose ``.chunks`` and
-        ``.shape``, and support tuple-indexing to load individual chunks.
+        h5py datasets all have a ``.chunks`` attribute, but it is None for
+        unchunked/contiguous datasets:
+        https://docs.h5py.org/en/latest/high/dataset.html#chunked-storage
         """
         if _is_dask_data(data):
             return True
-        return hasattr(data, 'chunks') and hasattr(data, 'shape')
+        chunks = getattr(data, 'chunks', None)
+        return chunks is not None and hasattr(data, 'shape')
 
     @staticmethod
     def _chunk_sizes(data: Any) -> list[int]:
