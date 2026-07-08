@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 # or the Python file reader. It maps the script path to the
 # namespace. This global dict should only be modified; overwriting
 # it may break other scripts that are already running.
-_SCRIPT_NAMESPACES: dict[str | Path, dict[str, Any]] = {}
+_SCRIPT_NAMESPACES: dict[str, dict[str, Any]] = {}
 
 
 def imsave(filename: str, data: np.ndarray):
@@ -181,7 +181,7 @@ def execute_python_code(code: str, script_path: str | Path = '') -> None:
     with _patched_viewer_new(), _noop_napari_run():
         try:
             patched_viewer = current_viewer()
-            script_key = str(script_path) if script_path else ''
+            script_key = str(script_path)
             script_namespace = _SCRIPT_NAMESPACES.setdefault(script_key, {})
             main_module = sys.modules['__main__']
 
