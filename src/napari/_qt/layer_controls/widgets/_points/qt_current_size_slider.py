@@ -17,7 +17,7 @@ from napari.utils.events.event_utils import connect_setattr
 from napari.utils.translations import trans
 
 
-class QtCurrentSizeSliderControl(QtWidgetControlsBase):
+class QtCurrentSizeSliderControl(QtWidgetControlsBase):  # type: ignore[metaclass]
     """
     Class that wraps the connection of events/signals between the current
     size layer attribute and Qt widgets.
@@ -36,6 +36,8 @@ class QtCurrentSizeSliderControl(QtWidgetControlsBase):
     size_slider_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for the size chooser widget.
     """
+
+    _layer: Points
 
     def __init__(self, parent: QWidget, layer: Points) -> None:
         super().__init__(parent, layer)
