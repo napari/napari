@@ -152,6 +152,11 @@ authors:
   affiliation: SETI Institute/NASA ARC
   orcid: https://orcid.org/0000-0002-0253-2313
   alias:  AndrewAnnex
+- given-names: Anwai
+  family-names: Archit
+  affiliation: Georg-August-Universität Göttingen
+  orcid: https://orcid.org/0009-0002-9533-8620
+  alias: anwai98
 - given-names: Constantin
   family-names: Aronssohn
   orcid: https://orcid.org/0009-0008-5607-9463
@@ -249,6 +254,11 @@ authors:
   affiliation: EMBL Heidelberg, Germany
   orcid: https://orcid.org/0000-0002-2255-2960
   alias: VolkerH
+- given-names: Teun A.P.M.
+  family-names: Huijben
+  affiliation: Biohub, San Francisco
+  orcid: https://orcid.org/0000-0002-8984-2882
+  alias: TeunHuijben
 - given-names: Katherine
   family-names: Hutchings
   affiliation: University College London
@@ -397,6 +407,10 @@ authors:
 - given-names: David
   family-names: Pinto
   alias: MarchisLost
+- given-names: Anthony
+  family-names: Reksoatmodjo
+  affiliation: Translucence Biosystems
+  alias: Modjular
 - given-names: David
   family-names: Ross
   affiliation: NanoString Technologies, Inc.
@@ -415,6 +429,15 @@ authors:
   affiliation: University of Wisconsin-Madison
   orcid: https://orcid.org/0009-0002-2400-1940
   alias: gselzer
+- given-names: Rupesh
+  family-names: Sharma
+  affiliation: Mangalmay Institute of Management & Technology
+  orcid: https://orcid.org/0009-0000-8849-7055
+  alias: Rupeshhsharma
+- given-names: Imad Uddin
+  family-names: Sheikh
+  affiliation: Indiana Wesleyan University
+  alias: isheikh8492
 - given-names: Nikoloz
   family-names: Sirmpilatze
   affiliation: Sainsbury Wellcome Centre - University College London
@@ -506,6 +529,11 @@ authors:
   affiliation: Institute of Cell Biology, University of Bern, Switzerland
   orcid: https://orcid.org/0000-0002-3956-9363
   alias: hinderling
+- given-names: Omkar
+  family-names: Kabde
+  affiliation: Chaitanya Bharathi Institute of Technology
+  orcid: https://orcid.org/0009-0006-6163-3882
+  alias: omkar-334
 - given-names: Mikkel
   family-names: Roald-Arbøl
   affiliation: University of Bonn
