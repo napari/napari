@@ -137,7 +137,7 @@ def test_auto_label_shows_data_level(multiscale_controls):
 
     layer._data_level = 1
     layer.events.set_data()
-    assert combo.itemText(0) == 'Auto (2)'
+    assert combo.itemText(0) == 'Auto (1)'
 
 
 def test_not_multiscale_is_hidden(qtbot):
