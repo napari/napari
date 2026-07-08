@@ -98,8 +98,7 @@ class LayerDelegate(QStyledItemDelegate):
     ):
         """Paint the item in the model at `index`."""
         # Guard against stale indices (e.g. layer was removed while
-        # an async paint event was queued).  index.data on an invalid
-        # index returns None.
+        # an async paint event was queued).
         if not index.isValid():
             return
         # update the icon based on layer type
