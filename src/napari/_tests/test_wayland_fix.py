@@ -21,14 +21,15 @@ def _apply_env(monkeypatch, env):
     monkeypatch.delenv('PYOPENGL_PLATFORM', raising=False)
 
 
-def _patch_gpu(monkeypatch, nvidia, wayland_plugin):
-    """Stub the Nvidia-driver and native-Wayland-plugin probes."""
+def _patch_gpu(monkeypatch, nvidia, wayland_plugin, qt_from_conda=False):
+    """Stub the Nvidia-driver, Wayland-plugin and conda-Qt probes."""
     monkeypatch.setattr(_wayland_fix, '_nvidia_driver_loaded', lambda: nvidia)
     monkeypatch.setattr(
         _wayland_fix,
         '_native_wayland_plugin_available',
         lambda: wayland_plugin,
     )
+    monkeypatch.setattr(_wayland_fix, '_qt_from_conda', lambda: qt_from_conda)
 
 
 @pytest.mark.parametrize(
@@ -72,6 +73,28 @@ def test_fix_wayland_opengl_sets_vars(monkeypatch, nvidia, wayland_plugin):
     _fix_wayland_opengl()
     assert os.environ['QT_QPA_PLATFORM'] == 'xcb'
     assert os.environ['PYOPENGL_PLATFORM'] == 'glx'
+
+
+@pytest.mark.parametrize(
+    ('wayland_plugin', 'qt_from_conda', 'expect_hint'),
+    [
+        (False, True, True),  # conda Qt without qt6-wayland: hint
+        (False, False, False),  # pip Qt bundles the plugin differently
+        (True, True, False),  # plugin present: native Wayland works
+    ],
+)
+def test_fix_wayland_opengl_no_display_hint(
+    monkeypatch, capsys, wayland_plugin, qt_from_conda, expect_hint
+):
+    """Prints an install hint when Qt cannot load any platform plugin."""
+    monkeypatch.setattr(sys, 'platform', 'linux')
+    _patch_gpu(monkeypatch, False, wayland_plugin, qt_from_conda)
+    _apply_env(monkeypatch, {'WAYLAND_DISPLAY': 'wayland-0'})
+    _fix_wayland_opengl()
+    err = capsys.readouterr().err
+    assert ('qt6-wayland' in err) == expect_hint
+    assert 'QT_QPA_PLATFORM' not in os.environ
+    assert 'PYOPENGL_PLATFORM' not in os.environ
 
 
 def test_fix_wayland_opengl_does_not_override(monkeypatch):
