@@ -301,8 +301,7 @@ class QtHistogramWidget(QWidget):
         self, color: Color, alpha: float = 1.0
     ) -> tuple[float, float, float, float]:
         """Convert a napari theme color to a vispy RGBA tuple."""
-        rgb = color.as_rgb_tuple(alpha=False)
-        red, green, blue = rgb[0], rgb[1], rgb[2]
+        red, green, blue = color.as_rgb_tuple(alpha=False)
         return (red / 255, green / 255, blue / 255, alpha)
 
     def _layer_bar_color(self) -> tuple[float, float, float, float]:
