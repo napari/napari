@@ -1,5 +1,6 @@
 from collections import defaultdict
 from collections.abc import MutableMapping, Sequence
+from enum import StrEnum
 from functools import cached_property
 from typing import (
     TYPE_CHECKING,
@@ -25,7 +26,6 @@ from napari.utils.color import ColorArray, ColorValue
 from napari.utils.colormaps import _accelerated_cmap as _accel_cmap
 from napari.utils.colormaps.colorbars import make_colorbar
 from napari.utils.colormaps.standardize_color import transform_color
-from napari.utils.compat import StrEnum
 from napari.utils.events import EventedModel
 from napari.utils.events.custom_types import Array
 from napari.utils.migrations import deprecated_class_name
