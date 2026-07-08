@@ -15,8 +15,6 @@ from napari.utils.events.event_utils import disconnect_events
 from napari.utils.theme import get_theme
 
 if TYPE_CHECKING:
-    from collections.abc import Generator
-
     from pydantic_extra_types.color import Color
 
     from napari.layers import Image
