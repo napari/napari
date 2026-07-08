@@ -321,3 +321,35 @@ def test_world_units_impact_scale():
 
     vispy_image.world_units = None
     assert vispy_image._world_to_layer_units_scale == (1, 1)
+
+
+def test_changing_data_dimensionality_updates_units_scale():
+    """Regression test for https://github.com/napari/napari/issues/9164
+
+    When a layer's data changes dimensionality (e.g., 2D -> 3D), the
+    cached _world_to_layer_units_scale must be updated to match the
+    new ndim before _on_matrix_change tries to index it.
+    """
+    font_info = FontInfo()
+
+    # Start with 2D data
+    image = Image(np.zeros((10, 10)))
+    vispy_image = VispyImageLayer(image, font_info=font_info)
+    assert vispy_image._world_to_layer_units_scale == (1, 1)
+
+    # Changing data to 3D should not cause an IndexError in
+    # _on_matrix_change (called via _on_data_change).
+    image.data = np.zeros((5, 10, 10))
+    assert len(vispy_image._world_to_layer_units_scale) == image.ndim
+    # _on_matrix_change should succeed without IndexError
+    vispy_image._on_matrix_change()
+
+    # Changing back to 2D should also work
+    image.data = np.zeros((10, 10))
+    assert len(vispy_image._world_to_layer_units_scale) == image.ndim
+    vispy_image._on_matrix_change()
+
+    # Changing from 2D to 4D should also work
+    image.data = np.zeros((3, 5, 10, 10))
+    assert len(vispy_image._world_to_layer_units_scale) == image.ndim
+    vispy_image._on_matrix_change()
