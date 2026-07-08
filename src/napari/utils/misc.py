@@ -11,7 +11,7 @@ import os
 import re
 import sys
 import warnings
-from enum import Enum, EnumMeta, StrEnum
+from enum import Enum, StrEnum
 from os import fspath, path as os_path
 from pathlib import Path
 from typing import (
@@ -243,13 +243,7 @@ def formatdoc(obj):
     return obj
 
 
-class StringEnumMeta(EnumMeta):
-    def __getitem__(self, item: str) -> StringEnum:  # type: ignore[override]
-        """Case-insensitive name lookup: MyEnum['tHiNg'] -> MyEnum.THING."""
-        return super().__getitem__(item.upper())
-
-
-class StringEnum(StrEnum, metaclass=StringEnumMeta):
+class StringEnum(StrEnum):
     @staticmethod
     def _generate_next_value_(
         name: str, start: int, count: int, last_values: list[str]
