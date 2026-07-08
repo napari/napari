@@ -135,7 +135,7 @@ def test_auto_label_shows_data_level(multiscale_controls):
     combo = qtctrl._multiscale_level_control.level_combobox
     assert combo.itemText(0) == f'Auto ({layer.data_level})'
 
-    layer._data_level = 2
+    layer._data_level = 1
     layer.events.set_data()
     assert combo.itemText(0) == 'Auto (2)'
 
