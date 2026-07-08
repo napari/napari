@@ -118,7 +118,7 @@ all = [
     "napari[pyqt,optional]"
 ]
 optional-base = [
-    "zarr>=3.0.0", # needed by `builtins` (dask.array.from_zarr) to open zarr
+    "zarr>=3.0.8", # needed by `builtins` (dask.array.from_zarr) to open zarr
     "aiohttp", # needed to open remote files by zarr, replace by extras once https://github.com/zarr-developers/zarr-python/issues/3453 is done
     "napari-metadata>=0.1.0",
     "napari-plugin-manager >=0.1.10, <0.2.0",

@@ -86,7 +86,8 @@ def test_zarr_nested(tmp_path):
     image_name = 'my_image'
     root_path = tmp_path / 'dataset.zarr'
     grp = zarr.open(store=str(root_path), mode='a')
-    grp.create_array(image_name, data=image)
+    grp.create_array(image_name, shape=image.shape, dtype=image.dtype)
+    grp[image_name][...] = image
 
     image_in = magic_imread([str(root_path / image_name)])
     np.testing.assert_array_equal(image, image_in)
@@ -97,7 +98,8 @@ def test_zarr_with_unrelated_file(tmp_path):
     image_name = 'my_image'
     root_path = tmp_path / 'dataset.zarr'
     grp = zarr.open(store=str(root_path), mode='a')
-    grp.create_array(image_name, data=image)
+    grp.create_array(image_name, shape=image.shape, dtype=image.dtype)
+    grp[image_name][...] = image
 
     txt_file_path = root_path / 'unrelated.txt'
     txt_file_path.touch()
@@ -415,9 +417,11 @@ def test_zarr_multiple_groups_reads_first(tmp_path, monkeypatch):
     data0 = np.zeros((10, 10))
 
     group_one = root.create_group('1')
-    group_one.create_array('data', data=data1)
+    group_one.create_array('data', shape=data1.shape, dtype=data1.dtype)
+    group_one['data'][...] = data1
     group_zero = root.create_group('0')
-    group_zero.create_array('data', data=data0)
+    group_zero.create_array('data', shape=data0.shape, dtype=data0.dtype)
+    group_zero['data'][...] = data0
 
     # Mock show_info to check if it was called
     mock_show_info = MagicMock()
