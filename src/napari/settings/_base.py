@@ -6,6 +6,7 @@ import logging
 import os
 import warnings
 from collections.abc import Mapping
+from enum import StrEnum
 from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal
@@ -28,7 +29,6 @@ from pydantic_settings import (
 
 from napari._pydantic_util import get_inner_type, get_origin
 from napari.settings._yaml import PydanticYamlMixin
-from napari.utils.compat import StrEnum
 from napari.utils.events import EmitterGroup, EventedModel
 from napari.utils.misc import StringEnum, deep_update
 from napari.utils.translations import trans
