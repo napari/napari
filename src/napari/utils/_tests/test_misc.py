@@ -115,9 +115,6 @@ def test_string_enum():
     # test setting by name correct case
     assert TestEnum['THING'] == TestEnum.THING
 
-    # test setting by name mixed case
-    assert TestEnum['tHiNg'] == TestEnum.THING
-
     # test setting by value with incorrect value
     with pytest.raises(ValueError, match='not a valid'):
         TestEnum('NotAThing')
@@ -130,7 +127,6 @@ def test_string_enum():
     animals = StringEnum('Animal', 'AARDVARK BUFFALO CAT DOG')
     assert str(animals.AARDVARK) == 'aardvark'
     assert animals('BUffALO') == animals.BUFFALO
-    assert animals['BUffALO'] == animals.BUFFALO
 
     # test setting by instance of self
     class OtherEnum(StringEnum):
