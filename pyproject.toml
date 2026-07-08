@@ -639,7 +639,6 @@ module = [
     'napari._qt.layer_controls.qt_points_controls',
     'napari._qt.layer_controls.qt_shapes_controls',
     'napari._qt.layer_controls.qt_surface_controls',
-    'napari._qt.layer_controls.qt_tracks_controls',
     'napari._qt.layer_controls.qt_vectors_controls',
     'napari._qt.layer_controls.widgets.qt_widget_controls_base',
     'napari._qt.layer_controls.widgets.qt_face_color',
