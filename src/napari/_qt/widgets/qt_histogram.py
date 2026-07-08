@@ -224,10 +224,7 @@ class QtHistogramWidget(QWidget):
         disconnect_events(self._histogram.events, self)
         disconnect_events(self.layer.events, self)
 
-        def _gen() -> Generator[tuple[np.ndarray, np.ndarray], None, None]:
-            yield from self._histogram.compute_progressive()
-
-        worker = create_worker(_gen)  # type: ignore[arg-type]
+        worker = create_worker(self._histogram.compute_progressive)  # type: ignore[arg-type]
         worker.yielded.connect(self._on_partial_histogram)
         worker.finished.connect(self._on_async_compute_done)
         worker.start()
