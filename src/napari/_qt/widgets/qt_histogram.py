@@ -15,8 +15,6 @@ from napari.utils.events.event_utils import disconnect_events
 from napari.utils.theme import get_theme
 
 if TYPE_CHECKING:
-    from collections.abc import Generator
-
     from pydantic_extra_types.color import Color
 
     from napari.layers import Image
@@ -224,10 +222,7 @@ class QtHistogramWidget(QWidget):
         disconnect_events(self._histogram.events, self)
         disconnect_events(self.layer.events, self)
 
-        def _gen() -> Generator[tuple[np.ndarray, np.ndarray], None, None]:
-            yield from self._histogram.compute_progressive()
-
-        worker = create_worker(_gen)  # type: ignore[arg-type]
+        worker = create_worker(self._histogram.compute_progressive)  # type: ignore[arg-type]
         worker.yielded.connect(self._on_partial_histogram)
         worker.finished.connect(self._on_async_compute_done)
         worker.start()
@@ -306,8 +301,7 @@ class QtHistogramWidget(QWidget):
         self, color: Color, alpha: float = 1.0
     ) -> tuple[float, float, float, float]:
         """Convert a napari theme color to a vispy RGBA tuple."""
-        rgb = color.as_rgb_tuple(alpha=False)
-        red, green, blue = rgb[0], rgb[1], rgb[2]
+        red, green, blue = color.as_rgb_tuple(alpha=False)
         return (red / 255, green / 255, blue / 255, alpha)
 
     def _layer_bar_color(self) -> tuple[float, float, float, float]:
