@@ -339,7 +339,7 @@ def test_histogram_visual_set_data_clear_path(qtbot):
     layer.histogram.enabled = True
     layer.histogram.compute()
     visual.set_data(
-        bins=layer.histogram._bin_edges,
+        bin_edges=layer.histogram._bin_edges,
         counts=layer.histogram.counts,
         gamma=1.0,
         clims=(0.25, 0.75),
@@ -368,7 +368,7 @@ def test_histogram_visual_update_lut_line_clims_equal(qtbot):
 
     # Call with clims where min == max
     visual.set_data(
-        bins=layer.histogram._bin_edges,
+        bin_edges=layer.histogram._bin_edges,
         counts=layer.histogram.counts,
         gamma=1.0,
         clims=(0.5, 0.5),  # equal clims
