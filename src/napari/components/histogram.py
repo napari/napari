@@ -585,8 +585,33 @@ class HistogramModel(EventedModel):
         self._mark_dirty()
 
     def _on_log_scale_change(self) -> None:
-        """Called when log_scale changes. Triggers full recomputation."""
-        self._mark_dirty()
+        """Called when log_scale changes. Transforms counts without recomputing.
+
+        Log scale is a display-only transform on the already-computed counts.
+        No need to recompute the histogram from data — just apply or reverse
+        the log10 transform on ``_counts`` directly.
+
+        The reverse transform (log → linear) is an approximation via
+        ``10**counts - 1``, which is sufficient for display purposes.
+        If the model is dirty, the next compute() will produce fresh counts
+        with the correct log_scale applied via _calc_histogram.
+        """
+        if self._dirty or len(self._counts) <= 1:
+            # Can't transform dirty or empty counts; next compute will
+            # apply log_scale correctly via _calc_histogram.
+            self._mark_dirty()
+            return
+
+        if self.log_scale:
+            self._counts = np.log10(np.maximum(self._counts, 0) + 1).astype(
+                np.float32
+            )
+        else:
+            # Approximate inverse of log10(counts + 1)
+            self._counts = np.maximum(10**self._counts - 1, 0).astype(
+                np.float32
+            )
+        self.events.counts()
 
     def _on_enabled_change(self) -> None:
         """When enabled flips to True, compute if there is pending dirty data.
