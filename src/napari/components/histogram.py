@@ -174,7 +174,7 @@ class HistogramModel(EventedModel):
             Array of counts with length ``self.bins``.
         """
         if self._dirty:
-            self.compute()
+            self._compute_sync()
         return self._counts
 
     def _set_empty_data(self) -> None:
@@ -183,93 +183,66 @@ class HistogramModel(EventedModel):
         self._counts = np.array([0.0])
         self._dirty = False
 
-    def _compute_generator(
+    def _compute_sync(self) -> None:
+        """Run synchronous histogram computation and emit events.
+
+        Iterates the ``compute()`` generator and emits ``events.counts()``
+        on completion.  Used by internal callers that need sync computation.
+        """
+        for _ in self.compute():
+            pass
+        self.events.counts()
+
+    def compute(
         self,
     ) -> Generator[tuple[np.ndarray, np.ndarray], None, None]:
-        """Shared computation used by both ``compute()`` and ``compute_progressive()``.
+        """Generator yielding ``(bin_edges, counts)`` for histogram computation.
 
-        Yields ``(bin_edges, counts)`` tuples — once for non-chunked data,
-        progressively per-chunk for chunked arrays in full mode.
-        Does **not** emit model events; callers are responsible for that.
+        For chunked arrays in full mode, yields an intermediate result after
+        each chunk so the caller can update the display progressively (e.g.
+        via a ``GeneratorWorker`` in a background thread).  For non-chunked
+        data, yields the final result once.
+
+        Does **not** emit ``events.counts()`` — sync callers should use
+        ``_compute_sync()`` instead; async callers should emit the event
+        on the main thread after the generator completes.
 
         Yields
         ------
         tuple[np.ndarray, np.ndarray]
             ``(bin_edges, counts)`` — bin edge values and per-bin counts.
         """
-        data = self._get_data()
-
-        if data is None or data.size == 0:
-            self._set_empty_data()
+        if self._computing:
             return
 
-        # For RGB(A) images convert to luminance so the histogram
-        # represents perceived brightness.
-        # Sample pixel positions BEFORE conversion to avoid
-        # materializing the full float32 intermediate for large arrays.
-        if self._layer.rgb:
-            data = self._sample_rgb_and_luminance(data)
-            if data.size == 0:
+        self._computing = True
+        self._connect_layer_events()
+        try:
+            data = self._get_data()
+
+            if data is None or data.size == 0:
                 self._set_empty_data()
                 return
 
-        if self.mode == 'full' and self._has_chunks(data):
-            yield from self._compute_chunked_progressive(data)
-        else:
-            # Always sample large data to keep the UI responsive,
-            # regardless of mode.
-            if data.size > self.max_samples:
-                data = self._sample_data(data, self.max_samples)
-            self._finalize_histogram(data)
-            yield self._bin_edges, self._counts
+            # For RGB(A) images convert to luminance so the histogram
+            # represents perceived brightness.
+            # Sample pixel positions BEFORE conversion to avoid
+            # materializing the full float32 intermediate for large arrays.
+            if self._layer.rgb:
+                data = self._sample_rgb_and_luminance(data)
+                if data.size == 0:
+                    self._set_empty_data()
+                    return
 
-    def compute(self) -> None:
-        """Compute histogram from layer data.
-
-        Synchronous entry point.  Extracts data based on the current mode
-        (canvas or full), samples if necessary, and computes the histogram.
-        For chunked arrays in full mode, iterates all chunks synchronously;
-        for non-chunked data computes once.
-
-        Emits ``events.counts()`` on completion.
-        """
-        if self._computing:
-            return
-
-        self._computing = True
-        self._connect_layer_events()
-        try:
-            for _ in self._compute_generator():
-                pass
-            self.events.counts()
-        finally:
-            self._computing = False
-
-    def compute_progressive(
-        self,
-    ) -> Generator[tuple[np.ndarray, np.ndarray], None, None]:
-        """Generator that yields ``(bin_edges, counts)`` for incremental updates.
-
-        For chunked arrays in full mode, yields an intermediate result after
-        each chunk so the caller can update the display progressively.  For
-        non-chunked data (or canvas mode), yields the final result once.
-
-        Does **not** emit ``events.counts()`` — the async caller (e.g.
-        ``QtHistogramWidget._on_async_compute_done``) is responsible for that.
-
-        Yields
-        ------
-        tuple[np.ndarray, np.ndarray]
-            ``(bin_edges, counts)`` — bin edge values and per-bin counts,
-            safe to consume on the main thread.
-        """
-        if self._computing:
-            return
-
-        self._computing = True
-        self._connect_layer_events()
-        try:
-            yield from self._compute_generator()
+            if self.mode == 'full' and self._has_chunks(data):
+                yield from self._compute_chunked_progressive(data)
+            else:
+                # Always sample large data to keep the UI responsive,
+                # regardless of mode.
+                if data.size > self.max_samples:
+                    data = self._sample_data(data, self.max_samples)
+                self._finalize_histogram(data)
+                yield self._bin_edges, self._counts
         finally:
             self._computing = False
 
@@ -649,7 +622,7 @@ class HistogramModel(EventedModel):
         if self.enabled:
             self._connect_layer_events()
             if self._dirty:
-                self.compute()
+                self._compute_sync()
         else:
             self._disconnect_layer_events()
 
@@ -672,7 +645,7 @@ class HistogramModel(EventedModel):
         if not self._computing and self.enabled:
             if self.mode == 'full' and self._has_chunks(self._layer.data):
                 return
-            self.compute()
+            self._compute_sync()
 
     def reset(self) -> None:
         """Reset histogram to default settings and disable.

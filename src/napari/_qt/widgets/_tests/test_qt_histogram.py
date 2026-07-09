@@ -167,7 +167,7 @@ def test_qt_histogram_async_compute_with_dask(qtbot):
     result = [None]
 
     def _work():
-        model.compute()
+        list(model.compute())
         return model._bin_edges, model._counts
 
     def _on_done(bins_counts):
@@ -204,7 +204,7 @@ def test_qt_histogram_sequential_async_with_param_change(qtbot):
     result = [None]
 
     def _work():
-        model.compute()
+        list(model.compute())
         return model._bin_edges, model._counts
 
     def _on_done(bins_counts):

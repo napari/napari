@@ -194,10 +194,9 @@ class QtHistogramWidget(QWidget):
         ):
             self._start_async_compute()
         else:
-            # Sync path — events fire on the main thread as usual.
-            # If an async compute was previously started, events were
-            # disconnected by _start_async_compute() and need reconnecting.
-            self._histogram.compute()
+            # Sync path — _compute_sync() iterates the generator
+            # and emits events.counts() internally.
+            self._histogram._compute_sync()
             self._reconnect_events()
             # Re-read the fresh data even if events fired while disconnected
             # (e.g. after cancelling an in-flight async worker).
@@ -222,7 +221,7 @@ class QtHistogramWidget(QWidget):
         disconnect_events(self._histogram.events, self)
         disconnect_events(self.layer.events, self)
 
-        worker = create_worker(self._histogram.compute_progressive)  # type: ignore[arg-type]
+        worker = create_worker(self._histogram.compute)  # type: ignore[arg-type]
         worker.yielded.connect(self._on_partial_histogram)
         worker.finished.connect(self._on_async_compute_done)
         worker.start()

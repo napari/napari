@@ -353,7 +353,7 @@ class TestEvents:
         fired: list[bool] = []
 
         model.events.counts.connect(lambda: fired.append(True))
-        model.compute()
+        model._compute_sync()
 
         assert len(fired) > 0
 
@@ -512,7 +512,7 @@ class TestLargeData:
         model = _model(data)
         model.enabled = True
         model.max_samples = 100_000
-        model.compute()
+        list(model.compute())
         assert len(model.counts) == 256
         assert model.counts.sum() > 0
 
@@ -524,7 +524,7 @@ class TestLargeData:
         model.mode = 'full'
         model.enabled = True
         model.max_samples = 100_000
-        model.compute()
+        list(model.compute())
         assert len(model.counts) == 256
         assert model.counts.sum() > 0
 
@@ -771,7 +771,7 @@ class TestNoneDataPath:
             return None
 
         monkeypatch.setattr(model, '_get_data', _fake_get_data)
-        model.compute()
+        list(model.compute())
         assert len(model._bin_edges) == 2
         assert len(model.counts) == 1
 
@@ -785,7 +785,7 @@ class TestNoneDataPath:
             return np.array([])
 
         monkeypatch.setattr(model, '_get_data', _fake_get_data)
-        model.compute()
+        list(model.compute())
         assert len(model._bin_edges) == 2
         assert len(model.counts) == 1
 
@@ -794,8 +794,10 @@ class TestNoneDataPath:
 
         model = _model(np.random.rand(10, 10))
         model._computing = True
-        # This should return immediately without errors
-        model.compute()
+        # Should return immediately without executing
+        gen = model.compute()
+        with pytest.raises(StopIteration):
+            next(gen)
         assert model._computing
 
     def test_compute_progressive_reentrancy_guard(self):
@@ -803,7 +805,7 @@ class TestNoneDataPath:
         model = _model(np.random.rand(10, 10))
         model._computing = True
         # Should return immediately without yielding
-        results = list(model.compute_progressive())
+        results = list(model.compute())
         assert len(results) == 0
         assert model._computing
 
@@ -968,7 +970,7 @@ class TestComputeProgressive:
         model.enabled = True
 
         # Collect all yielded results
-        results = list(model.compute_progressive())
+        results = list(model.compute())
 
         # Should have yielded at least one intermediate result
         assert len(results) >= 1
@@ -987,7 +989,7 @@ class TestComputeProgressive:
         """compute_progressive on non-chunked data should yield the final result once."""
         model = _model(np.random.rand(10, 10))
         model.enabled = True
-        results = list(model.compute_progressive())
+        results = list(model.compute())
         assert len(results) == 1
         bin_edges, counts = results[0]
         assert len(bin_edges) == 257
@@ -1003,6 +1005,6 @@ class TestComputeProgressive:
             return None
 
         monkeypatch.setattr(model, '_get_data', _fake_get_data)
-        results = list(model.compute_progressive())
+        results = list(model.compute())
         assert len(results) == 0
         assert not model._dirty
