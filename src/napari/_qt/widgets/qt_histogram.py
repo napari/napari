@@ -99,17 +99,17 @@ class QtHistogramWidget(QWidget):
         main_layout.addWidget(self.canvas.native)
         self.setLayout(main_layout)
 
-        # Connect to model events for live updates from sync compute
+        # Connect to model events for live updates of visual from sync compute
         self._histogram.events.counts.connect(self._on_histogram_change)
         self._histogram.events.enabled.connect(self._on_histogram_change)
-        # Connect to mode, bins, max_samples, and log_scale events to
-        # trigger (re)computation.  For chunked data in full mode, this
-        # picks up where _mark_dirty() deferred synchronous compute()
-        # and routes through the async GeneratorWorker path instead.
+        self._histogram.events.log_scale.connect(self._on_histogram_change)
+        # Connect to mode, bins, and max_samples events to trigger
+        # (re)computation.  For chunked data in full mode, this picks up
+        # where _mark_dirty() deferred synchronous compute() and routes
+        # through the async GeneratorWorker path instead.
         self._histogram.events.mode.connect(self._on_recompute_needed)
         self._histogram.events.bins.connect(self._on_recompute_needed)
         self._histogram.events.max_samples.connect(self._on_recompute_needed)
-        self._histogram.events.log_scale.connect(self._on_recompute_needed)
 
         # Connect to layer events that affect visualization
         layer.events.gamma.connect(self._on_gamma_change)
