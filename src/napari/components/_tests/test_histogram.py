@@ -67,22 +67,43 @@ class TestEnableDisable:
     def test_enable_triggers_computation(self):
         model = _model(np.random.rand(10, 10).astype(np.float32))
         model.enabled = True
-        assert model._dirty is False or len(model.counts) > 0
+        # After enable, compute() should have run and cleared the dirty flag
+        assert model._dirty is False
+        assert len(model.counts) == 256
 
-    def test_disable_clears_cache(self):
+    def test_disable_disconnects_layer_events(self):
+        """Disabling should disconnect layer events and preserve cached data."""
         model = _model(np.random.rand(10, 10))
         model.enabled = True
-        _ = model.counts  # Compute once
+        _ = model.counts  # Compute once, clears dirty
+        assert model._layer_events_connected
+
         model.enabled = False
-        # Disabling doesn't clear, but marks dirty for next enable
-        assert model._dirty or not model.enabled
+        # Layer events should be disconnected
+        assert not model._layer_events_connected
+        # Cached bin edges should be preserved (not cleared)
+        assert len(model._bin_edges) == 257
 
     def test_no_computation_when_disabled(self):
+        """When disabled, changing layer data should not trigger computation.
+
+        Layer events are disconnected when ``enabled`` is False, so
+        ``_mark_dirty`` is never called.  The model should remain in
+        its default state until explicitly enabled.
+        """
         model = _model(np.random.rand(10, 10))
         model.enabled = False
-        # Change data while disabled — should still compute lazily on access
+        # Model starts dirty and enabled=False keeps it that way
+        assert model._dirty
+        assert list(model._bin_edges) == [0.0, 1.0]
+        assert list(model._counts) == [0.0]
+
+        # Change data while disabled — model should stay dirty (no compute)
+        # and cached values should remain default.
         model._layer.data = np.random.rand(10, 10)
-        assert len(model._bin_edges) >= 2
+        assert model._dirty
+        assert list(model._bin_edges) == [0.0, 1.0]
+        assert list(model._counts) == [0.0]
 
 
 class TestDataTypes:
@@ -828,8 +849,13 @@ class TestEventHandlers:
         assert not model._dirty
         assert len(model.counts) == 128
 
-    def test_log_scale_change_triggers_compute(self):
-        """Changing log_scale should trigger recompute."""
+    def test_log_scale_change_transforms_counts_in_place(self):
+        """Changing log_scale should transform counts in-place without recompute.
+
+        ``_on_log_scale_change`` applies ``log10(counts + 1)`` to
+        existing counts — it does NOT recompute the histogram from
+        data.  Verify the transform preserves length and dtype.
+        """
         model = _model(np.random.rand(10, 10))
         model.enabled = True
         _ = model.counts  # initial compute
@@ -837,8 +863,9 @@ class TestEventHandlers:
         model.log_scale = True
         counts = model.counts
         assert len(counts) == 256
-        # Verify bin edges have not changed from log scale
         assert counts.dtype == np.float32
+        # Log-scaled values should be smaller than original raw counts
+        assert counts.max() < 256
 
 
 class TestCalcHistogramExtended:

@@ -113,7 +113,7 @@ def test_qt_histogram_widget_updates_theme(qtbot):
         widget.cleanup()
 
 
-def test_qt_histogram_widget_updates_from_viewer_theme(
+def test_qt_histogram_widget_updates_from_settings_theme(
     make_napari_viewer, qtbot
 ):
     """Histogram widget responds to theme changes via settings (canonical source)."""
