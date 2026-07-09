@@ -33,6 +33,7 @@ from napari.components._viewer_mouse_bindings import (
     dims_scroll,
     double_click_to_zoom,
     drag_to_zoom,
+    layers_scroll,
 )
 from napari.components.camera import Camera
 from napari.components.cursor import Cursor, CursorStyle
@@ -43,10 +44,10 @@ from napari.components.overlays import (
     AxesOverlay,
     BrushCircleOverlay,
     CurrentSliceOverlay,
+    FloatingAxesOverlay,
     Overlay,
     ScaleBarOverlay,
     TextOverlay,
-    WelcomeOverlay,
     ZoomOverlay,
 )
 from napari.components.tooltip import Tooltip
@@ -128,10 +129,10 @@ def _current_theme() -> str:
 
 
 DEFAULT_OVERLAYS = {
-    'welcome': WelcomeOverlay,
     'scale_bar': ScaleBarOverlay,
     'text': TextOverlay,
     'axes': AxesOverlay,
+    'floating_axes': FloatingAxesOverlay,
     'brush_circle': BrushCircleOverlay,
     'zoom': ZoomOverlay,
     'current_slice': CurrentSliceOverlay,
@@ -234,6 +235,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     # Need to use default factory because slicer is not copyable which
     # is required for default values.
     _layer_slicer: _LayerSlicer = PrivateAttr(default_factory=_LayerSlicer)
+    _layer_list_scroll_progress: float = 0
 
     def __init__(
         self, title='napari', ndisplay=2, order=(), axis_labels=()
@@ -317,6 +319,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
         # Add mouse callback
         self.mouse_wheel_callbacks.append(dims_scroll)
+        self.mouse_wheel_callbacks.append(layers_scroll)
         self.mouse_double_click_callbacks.append(double_click_to_zoom)
         self.mouse_drag_callbacks.append(drag_to_zoom)
 
@@ -328,16 +331,16 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         return self._overlays['axes']  # type: ignore[return-value]
 
     @property
+    def floating_axes(self) -> FloatingAxesOverlay:
+        return self._overlays['floating_axes']  # type: ignore[return-value]
+
+    @property
     def scale_bar(self) -> ScaleBarOverlay:
         return self._overlays['scale_bar']  # type: ignore[return-value]
 
     @property
     def text_overlay(self) -> TextOverlay:
         return self._overlays['text']  # type: ignore[return-value]
-
-    @property
-    def welcome_screen(self):
-        return self._overlays['welcome']
 
     @property
     def _zoom_box(self) -> ZoomOverlay:
@@ -406,15 +409,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         exclude = kwargs.pop('exclude', set())
         exclude = exclude.union(EXCLUDE_DICT)
         return super().model_dump(exclude=exclude, **kwargs)
-
-    def dict(self, **kwargs):
-        """Convert to a dictionary.
-
-        .. deprecated:: 0.7.0
-             `dict` will be removed in napari 0.8.0 it is replaced by
-             `model_dump` following pydantic 1 to 2 changes.
-        """
-        self.model_dump(**kwargs)
 
     def __hash__(self):
         return id(self)

@@ -21,8 +21,9 @@ from napari.utils.transforms._units import get_units_from_name
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
+    from typing import Self
+
     from npe2.manifest.io import WriterContribution
-    from typing_extensions import Self
 
 __all__ = ('LayerList',)
 
@@ -185,8 +186,12 @@ class LayerList(SelectableEventedList[Layer]):
         super()._process_delete_item(item)
         item.events.extent.disconnect(self._clean_cache)
         item.events._extent_augmented.disconnect(self._clean_cache)
+        item.events.locked.disconnect(self._refresh_selection_ctx_keys)
         self.unlink_layers([item])
         self._clean_cache()
+
+    def _refresh_selection_ctx_keys(self, event):
+        self.selection.events.changed(added={}, removed={})
 
     def _clean_cache(self):
         cached_properties = (
@@ -268,6 +273,7 @@ class LayerList(SelectableEventedList[Layer]):
         new_layer.events.data.connect(
             self._trigger_check_ndim_and_maybe_clean_units
         )
+        new_layer.events.locked.connect(self._refresh_selection_ctx_keys)
         super().insert(index, new_layer)
         self._check_ndim_and_maybe_clean_units(new_layer.ndim)
 
@@ -275,9 +281,31 @@ class LayerList(SelectableEventedList[Layer]):
         """Remove selected layers from LayerList, but first unlink them."""
         if not self.selection:
             return
-        self.unlink_layers(self.selection)
+        deletable = {layer for layer in self.selection if not layer.locked}
+        locked = self.selection - deletable
+        if locked:
+            from napari.utils.notifications import show_info
+
+            names = ', '.join(
+                repr(lay.name) for lay in sorted(locked, key=lambda x: x.name)
+            )
+            show_info(
+                trans._(
+                    'Layer(s) {names} are locked and cannot be deleted.',
+                    deferred=False,
+                    names=names,
+                )
+            )
+        if not deletable:
+            return
+        self.unlink_layers(deletable)
+        remaining_locked = locked & set(self)
+        self.selection.intersection_update(deletable)
         with self.batched_update():
             super().remove_selected()
+        if remaining_locked:
+            self.selection.clear()
+            self.selection.update(remaining_locked)
 
     def toggle_selected_visibility(self):
         """Toggle visibility of selected layers"""

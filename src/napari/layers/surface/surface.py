@@ -212,6 +212,7 @@ class Surface(IntensityVisualizationMixin, Layer):
     """
 
     _colormaps = AVAILABLE_COLORMAPS
+    _slicing_state: '_SurfaceSlicingState'
 
     def __init__(
         self,
@@ -477,9 +478,11 @@ class Surface(IntensityVisualizationMixin, Layer):
             # the number of additional vertex value dimensions and the
             # dimensionality of the vertices themselves
             if self.vertex_values.ndim > 1:
-                mins = [0] * (self.vertex_values.ndim - 1) + list(mins)
-                maxs = [n - 1 for n in self.vertex_values.shape[:-1]] + list(
-                    maxs
+                mins = np.array(
+                    [0] * (self.vertex_values.ndim - 1) + list(mins)
+                )
+                maxs = np.array(
+                    [n - 1 for n in self.vertex_values.shape[:-1]] + list(maxs)
                 )
             extrema = np.vstack([mins, maxs])
         return extrema

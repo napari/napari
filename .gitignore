@@ -182,3 +182,42 @@ src/napari/resources/icons/_themes/
 tools/perfmon/*/traces-*.json
 
 github_cache.sqlite
+
+# ─── Agentic coding ───
+# Local overrides & personal instruction variants
+CLAUDE*.md
+AGENTS*.md
+RULES*.md
+*PLAN*.md
+*.prompt.md
+*.local.md
+*instructions.md
+
+# Agent tool state directories
+.claude/
+.windsurf/
+.aider*
+.continue/
+.codeium/
+
+# Agent skill definitions, prompts & agents, catches also the .github/ path
+*/skills/
+*/prompts/
+*/agents/
+
+# Agent session transcripts, logs, scratch
+.agent/
+.agent-workspace/
+.agent-scratch/
+agent-logs/
+*.session.json
+*.transcript.*
+
+# MCP configs (frequently contain tokens/credentials)
+*.mcp.local.json
+
+# Agent caches / embeddings / vector stores
+.agent-cache/
+.context-cache/
+.embeddings/
+.vectorstore/
