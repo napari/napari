@@ -180,6 +180,9 @@ def test_histogram_button_right_click_opens_popup(qtbot):
     button = qtctrl._contrast_limits_control.histogram_button
     assert button is not None
 
+    # Enable histogram first so the popup includes histogram content
+    layer.histogram.enabled = True
+
     qtbot.mouseClick(button, Qt.MouseButton.RightButton)
 
     popup = qtctrl._contrast_limits_control.clim_popup
@@ -187,7 +190,7 @@ def test_histogram_button_right_click_opens_popup(qtbot):
     assert popup.histogram_content is not None
     assert popup.histogram_content.histogram_widget is not None
     assert popup.histogram_content.settings_widget is not None
-    assert not button.isChecked()
+    assert button.isChecked()  # enabled=True syncs the button
 
     popup.close()
 
@@ -357,8 +360,8 @@ def test_api_enable_syncs_button_checked_state(qtbot):
     assert not button.isChecked()
 
 
-def test_popup_shows_histogram_without_affecting_inline(qtbot):
-    """Right-click popup should always show histogram and not affect inline widget state."""
+def test_popup_does_not_include_histogram_when_disabled(qtbot):
+    """Right-click popup should only include histogram when ``enabled`` is True."""
     layer = Image(np.random.rand(8, 8))
     qtctrl = QtImageControls(layer)
     qtbot.addWidget(qtctrl)
@@ -368,20 +371,15 @@ def test_popup_shows_histogram_without_affecting_inline(qtbot):
     assert control.content_widget.isHidden()
     assert not button.isChecked()
 
-    # Right-click to open popup
+    # Right-click to open popup — histogram is disabled, so popup has no
+    # histogram content.  Inline state must remain unchanged.
     qtbot.mouseClick(button, Qt.MouseButton.RightButton)
 
     popup = qtctrl._contrast_limits_control.clim_popup
     assert popup is not None
-    assert popup.histogram_content is not None
-    assert popup.histogram_content.histogram_widget is not None
-    assert popup.histogram_content.settings_widget is not None
+    assert popup.histogram_content is None
 
-    # The popup should have triggered histogram computation
-    assert len(layer.histogram._bin_edges) >= 2
-
-    # Inline widget should NOT have been affected — events were blocked so
-    # the inline listeners never fired. Content stays hidden, button unchecked.
+    # Inline widget should not have been affected
     assert control.content_widget.isHidden()
     assert not button.isChecked()
 

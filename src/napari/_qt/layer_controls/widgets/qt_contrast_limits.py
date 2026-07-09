@@ -138,24 +138,12 @@ class QContrastLimitsPopup(QtPopup):
 
         # 2. Histogram + settings (Image layers only; Surface not yet supported)
         self.histogram_content = None
-        self._popup_enabled_histogram = False
-        if isinstance(layer, Image):
+        if isinstance(layer, Image) and layer.histogram.enabled:
             self.histogram_content = QtHistogramContentWidget(
                 layer,
                 parent=self,
             )
             self._layout.addWidget(self.histogram_content)
-
-            # Always show the histogram in the popup, regardless of whether
-            # the inline histogram is currently enabled.  We block the
-            # ``enabled`` event so the inline widget does NOT react — the
-            # popup is transient and should not affect the inline state.
-            with layer.histogram.events.enabled.blocker():
-                if not layer.histogram.enabled:
-                    layer.histogram.enabled = True
-                    self._popup_enabled_histogram = True
-            if self._popup_enabled_histogram:
-                layer.histogram.compute()
 
         # 3. Gamma slider
         self.gamma_slider = QLabeledDoubleSlider(Qt.Orientation.Horizontal)
@@ -237,12 +225,6 @@ class QContrastLimitsPopup(QtPopup):
 
         if self.histogram_content is not None:
             self.histogram_content.cleanup()
-
-        # Restore the enabled state if the popup was the one that enabled it.
-        # We block events so the inline widget is unaffected.
-        if self._popup_enabled_histogram and isinstance(self._layer, Image):
-            with self._layer.histogram.events.enabled.blocker():
-                self._layer.histogram.enabled = False
 
     def _create_widget_from_layout(self, layout: QHBoxLayout) -> QWidget:
         """Helper to wrap a layout in a widget."""
