@@ -177,16 +177,61 @@ class HistogramModel(EventedModel):
             self.compute()
         return self._counts
 
+    def _set_empty_data(self) -> None:
+        """Set histogram to empty bin/edge state."""
+        self._bin_edges = np.array([0.0, 1.0])
+        self._counts = np.array([0.0])
+        self._dirty = False
+
+    def _compute_generator(
+        self,
+    ) -> Generator[tuple[np.ndarray, np.ndarray], None, None]:
+        """Shared computation used by both ``compute()`` and ``compute_progressive()``.
+
+        Yields ``(bin_edges, counts)`` tuples — once for non-chunked data,
+        progressively per-chunk for chunked arrays in full mode.
+        Does **not** emit model events; callers are responsible for that.
+
+        Yields
+        ------
+        tuple[np.ndarray, np.ndarray]
+            ``(bin_edges, counts)`` — bin edge values and per-bin counts.
+        """
+        data = self._get_data()
+
+        if data is None or data.size == 0:
+            self._set_empty_data()
+            return
+
+        # For RGB(A) images convert to luminance so the histogram
+        # represents perceived brightness.
+        # Sample pixel positions BEFORE conversion to avoid
+        # materializing the full float32 intermediate for large arrays.
+        if self._layer.rgb:
+            data = self._sample_rgb_and_luminance(data)
+            if data.size == 0:
+                self._set_empty_data()
+                return
+
+        if self.mode == 'full' and self._has_chunks(data):
+            yield from self._compute_chunked_progressive(data)
+        else:
+            # Always sample large data to keep the UI responsive,
+            # regardless of mode.
+            if data.size > self.max_samples:
+                data = self._sample_data(data, self.max_samples)
+            self._finalize_histogram(data)
+            yield self._bin_edges, self._counts
+
     def compute(self) -> None:
         """Compute histogram from layer data.
 
-        This method extracts data from the layer based on the current mode
-        (displayed or full), samples if necessary, and computes the histogram.
-        For chunked arrays (dask, zarr) in full mode, a random subset of
-        chunks is sampled to avoid full materialization.
+        Synchronous entry point.  Extracts data based on the current mode
+        (canvas or full), samples if necessary, and computes the histogram.
+        For chunked arrays in full mode, iterates all chunks synchronously;
+        for non-chunked data computes once.
 
-        For large data (numpy or other non-chunked), sampling is applied
-        regardless of mode to keep the UI responsive.
+        Emits ``events.counts()`` on completion.
         """
         if self._computing:
             return
@@ -194,44 +239,9 @@ class HistogramModel(EventedModel):
         self._computing = True
         self._connect_layer_events()
         try:
-            data = self._get_data()
-
-            if data is None or data.size == 0:
-                self._bin_edges = np.array([0.0, 1.0])
-                self._counts = np.array([0.0])
-                self._dirty = False
-                self.events.counts()
-                return
-
-            # For RGB(A) images convert to luminance so the histogram
-            # represents perceived brightness.
-            # Sample pixel positions BEFORE conversion to avoid
-            # materializing the full float32 intermediate for large arrays.
-            if self._layer.rgb:
-                data = self._sample_rgb_and_luminance(data)
-                if data.size == 0:
-                    self._bin_edges = np.array([0.0, 1.0])
-                    self._counts = np.array([0.0])
-                    self._dirty = False
-                    self.events.counts()
-                    return
-
-            if self.mode == 'full' and self._has_chunks(data):
-                # Chunked arrays: compute via the progressive generator
-                # and drain it (async callers get incremental updates).
-                for _ in self._compute_chunked_progressive(data):
-                    pass
-                # After draining, model state is already set by the
-                # generator's final cycle; emit events so listeners
-                # connected to the synchronous path are notified.
-                self.events.counts()
-            else:
-                # Always sample large data to keep the UI responsive,
-                # regardless of mode.  This prevents blocking on large
-                # numpy arrays even in canvas mode at default zoom.
-                if data.size > self.max_samples:
-                    data = self._sample_data(data, self.max_samples)
-                self._finalize_histogram(data)
+            for _ in self._compute_generator():
+                pass
+            self.events.counts()
         finally:
             self._computing = False
 
@@ -243,6 +253,9 @@ class HistogramModel(EventedModel):
         For chunked arrays in full mode, yields an intermediate result after
         each chunk so the caller can update the display progressively.  For
         non-chunked data (or canvas mode), yields the final result once.
+
+        Does **not** emit ``events.counts()`` — the async caller (e.g.
+        ``QtHistogramWidget._on_async_compute_done``) is responsible for that.
 
         Yields
         ------
@@ -256,45 +269,21 @@ class HistogramModel(EventedModel):
         self._computing = True
         self._connect_layer_events()
         try:
-            data = self._get_data()
-
-            if data is None or data.size == 0:
-                self._bin_edges = np.array([0.0, 1.0])
-                self._counts = np.array([0.0])
-                self._dirty = False
-                return
-
-            if self._layer.rgb:
-                data = self._sample_rgb_and_luminance(data)
-                if data.size == 0:
-                    self._bin_edges = np.array([0.0, 1.0])
-                    self._counts = np.array([0.0])
-                    self._dirty = False
-                    return
-
-            if self.mode == 'full' and self._has_chunks(data):
-                yield from self._compute_chunked_progressive(data)
-            else:
-                # Non-chunked path: compute once and yield final result.
-                # Always sample large data regardless of mode.
-                if data.size > self.max_samples:
-                    data = self._sample_data(data, self.max_samples)
-                range_min, range_max = self._layer.contrast_limits_range
-                if range_min is None or range_max is None:
-                    range_min = float(np.nanmin(data))
-                    range_max = float(np.nanmax(data))
-                bin_edges, counts = self._calc_histogram(
-                    data, range_min, range_max
-                )
-                self._bin_edges = bin_edges
-                self._counts = counts
-                self._dirty = False
-                yield bin_edges, counts
+            yield from self._compute_generator()
         finally:
             self._computing = False
 
     def _finalize_histogram(self, data: np.ndarray) -> None:
-        """Compute histogram from a complete data array and emit events."""
+        """Compute histogram from a complete data array.
+
+        Sets ``_bin_edges``, ``_counts``, and clears the dirty flag.
+        Does **not** emit ``events.counts()`` — callers handle that.
+
+        Parameters
+        ----------
+        data : np.ndarray
+            Pre-processed data array to histogram (already sampled if needed).
+        """
         range_min, range_max = self._layer.contrast_limits_range
         if range_min is None or range_max is None:
             range_min = float(np.nanmin(data))
@@ -304,7 +293,6 @@ class HistogramModel(EventedModel):
         self._bin_edges = bin_edges
         self._counts = counts
         self._dirty = False
-        self.events.counts()
 
     def _compute_chunked_progressive(
         self, data: Any
@@ -428,18 +416,6 @@ class HistogramModel(EventedModel):
         For large RGB arrays, randomly samples ``max_samples`` pixel positions
         BEFORE converting to luminance to avoid materializing the full float32
         intermediate array. For small data, delegates to ``_rgb_to_luminance``.
-
-        Parameters
-        ----------
-        data : np.ndarray
-            RGB(A) data with shape ``(..., C)`` where C ≥ 3.
-
-        Returns
-        -------
-        np.ndarray
-            1D float32 luminance array of at most ``max_samples`` elements
-            (sampled path) or 2D array of shape ``(H, W)`` (full path).
-            NaN/Inf values are filtered out.
         """
         n_pixels = data.size // data.shape[-1]
         if n_pixels <= self.max_samples:
