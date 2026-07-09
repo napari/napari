@@ -1518,7 +1518,7 @@ def test_large_label_values():
     assert len(np.unique(mapped.reshape((-1, 4)), axis=0)) == 4
 
 
-if parse_version(version('zarr')) > parse_version('3.0.0a0'):
+if parse_version(version('tensorstore')) > parse_version('0.1.42'):
     driver = [(2, 'zarr'), (3, 'zarr3')]
     ZARR_V3 = True
 else:
@@ -1526,8 +1526,8 @@ else:
     ZARR_V3 = False
 
 
-@pytest.mark.parametrize(('zarr_version', 'zarr_driver'), driver)
-def test_fill_tensorstore(tmp_path, zarr_version, zarr_driver):
+@pytest.mark.parametrize(('zarr_format', 'zarr_driver'), driver)
+def test_fill_tensorstore(tmp_path, zarr_format, zarr_driver):
     ts = pytest.importorskip('tensorstore')
 
     labels = np.zeros((5, 7, 8, 9), dtype=int)
@@ -1537,15 +1537,16 @@ def test_fill_tensorstore(tmp_path, zarr_version, zarr_driver):
 
     file_path = str(tmp_path / 'labels.zarr')
 
+    kwargs = {} if ZARR_V3 else {'compressor': None}
+
     labels_temp = zarr.open(
         store=file_path,
         mode='w',
         shape=labels.shape,
         dtype=np.uint32,
         chunks=(1, 1, 8, 9),
-        # zarr < 3 uses zarr_version, zarr > 3 uses zarr_format
-        # napari has dropped py310; this can be simplified to zarr_format once the minimum zarr version is > 3
-        **{('zarr_format' if ZARR_V3 else 'zarr_version'): zarr_version},
+        zarr_format=zarr_format,
+        **kwargs,
     )
     labels_temp[:] = labels
     labels_ts_spec = {
