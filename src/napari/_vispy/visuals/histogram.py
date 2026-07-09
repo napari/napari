@@ -54,7 +54,7 @@ class HistogramVisual(Compound):
 
     def set_data(
         self,
-        bins: np.ndarray | None = None,
+        bin_edges: np.ndarray | None = None,
         counts: np.ndarray | None = None,
         gamma: float = 1.0,
         clims: tuple[float, float] | None = None,
@@ -65,7 +65,7 @@ class HistogramVisual(Compound):
 
         Parameters
         ----------
-        bins : np.ndarray, optional
+        bin_edges : np.ndarray, optional
             Bin edges from histogram computation.
         counts : np.ndarray, optional
             Count values for each bin.
@@ -77,9 +77,9 @@ class HistogramVisual(Compound):
             Full data range (min, max) for normalizing positions.
         """
         if (
-            bins is None
+            bin_edges is None
             or counts is None
-            or len(bins) == 0
+            or len(bin_edges) == 0
             or len(counts) == 0
         ):
             self._clear()
@@ -89,7 +89,7 @@ class HistogramVisual(Compound):
         self._clims = clims
         self._data_range = data_range
 
-        self._update_bars(bins, counts)
+        self._update_bars(bin_edges, counts)
         self._update_axes()
 
         if clims is not None and data_range is not None:
@@ -119,15 +119,15 @@ class HistogramVisual(Compound):
         self._data_range = None
         self._set_empty_data()
 
-    def _update_bars(self, bins: np.ndarray, counts: np.ndarray) -> None:
-        """Update the bar chart mesh from bins and counts."""
-        if len(bins) < 2 or len(counts) == 0:
+    def _update_bars(self, bin_edges: np.ndarray, counts: np.ndarray) -> None:
+        """Update the bar chart mesh from bin_edges and counts."""
+        if len(bin_edges) < 2 or len(counts) == 0:
             self._set_empty_data()
             return
 
         # Normalize to [0, 1]
-        bin_min = bins[0]
-        bin_range = bins[-1] - bin_min
+        bin_min = bin_edges[0]
+        bin_range = bin_edges[-1] - bin_min
         if bin_range == 0:
             bin_range = 1
 
@@ -138,8 +138,8 @@ class HistogramVisual(Compound):
         # Create vertices and faces for the bar mesh
         # Each bar is represented as two triangles (4 vertices, 2 faces).
         n_bins = len(counts)
-        x_lefts = (bins[:n_bins] - bin_min) / bin_range
-        x_rights = (bins[1:] - bin_min) / bin_range
+        x_lefts = (bin_edges[:n_bins] - bin_min) / bin_range
+        x_rights = (bin_edges[1:] - bin_min) / bin_range
         y_tops = counts.astype(np.float32) / max_count
 
         # Build mesh
