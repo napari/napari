@@ -361,7 +361,12 @@ def test_api_enable_syncs_button_checked_state(qtbot):
 
 
 def test_popup_does_not_include_histogram_when_disabled(qtbot):
-    """Right-click popup should only include histogram when ``enabled`` is True."""
+    """Right-click popup's histogram content should be hidden when ``enabled`` is False.
+
+    The histogram content widget is always present for Image layers (to avoid
+    layout blink on toggle), but starts hidden.  Inline state must remain
+    unaffected by opening the popup.
+    """
     layer = Image(np.random.rand(8, 8))
     qtctrl = QtImageControls(layer)
     qtbot.addWidget(qtctrl)
@@ -371,13 +376,14 @@ def test_popup_does_not_include_histogram_when_disabled(qtbot):
     assert control.content_widget.isHidden()
     assert not button.isChecked()
 
-    # Right-click to open popup — histogram is disabled, so popup has no
-    # histogram content.  Inline state must remain unchanged.
+    # Right-click to open popup — histogram is disabled, so popup
+    # histogram content should be hidden.
     qtbot.mouseClick(button, Qt.MouseButton.RightButton)
 
     popup = qtctrl._contrast_limits_control.clim_popup
     assert popup is not None
-    assert popup.histogram_content is None
+    assert popup.histogram_content is not None
+    assert popup.histogram_content.isHidden()
 
     # Inline widget should not have been affected
     assert control.content_widget.isHidden()
