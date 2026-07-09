@@ -205,8 +205,16 @@ class HistogramModel(EventedModel):
 
             # For RGB(A) images convert to luminance so the histogram
             # represents perceived brightness.
+            # Sample pixel positions BEFORE conversion to avoid
+            # materializing the full float32 intermediate for large arrays.
             if self._layer.rgb:
-                data = self._rgb_to_luminance(data)
+                data = self._sample_rgb_and_luminance(data)
+                if data.size == 0:
+                    self._bin_edges = np.array([0.0, 1.0])
+                    self._counts = np.array([0.0])
+                    self._dirty = False
+                    self.events.counts()
+                    return
 
             if self.mode == 'full' and self._has_chunks(data):
                 # Chunked arrays: compute via the progressive generator
@@ -257,7 +265,12 @@ class HistogramModel(EventedModel):
                 return
 
             if self._layer.rgb:
-                data = self._rgb_to_luminance(data)
+                data = self._sample_rgb_and_luminance(data)
+                if data.size == 0:
+                    self._bin_edges = np.array([0.0, 1.0])
+                    self._counts = np.array([0.0])
+                    self._dirty = False
+                    return
 
             if self.mode == 'full' and self._has_chunks(data):
                 yield from self._compute_chunked_progressive(data)
@@ -408,6 +421,39 @@ class HistogramModel(EventedModel):
         """
         rgb: np.ndarray = data[..., :3].astype(np.float32)
         return rgb @ np.array([0.2126, 0.7152, 0.0722], dtype=np.float32)
+
+    def _sample_rgb_and_luminance(self, data: np.ndarray) -> np.ndarray:
+        """Convert RGB(A) data to luminance, sampling pixels first for large data.
+
+        For large RGB arrays, randomly samples ``max_samples`` pixel positions
+        BEFORE converting to luminance to avoid materializing the full float32
+        intermediate array. For small data, delegates to ``_rgb_to_luminance``.
+
+        Parameters
+        ----------
+        data : np.ndarray
+            RGB(A) data with shape ``(..., C)`` where C ≥ 3.
+
+        Returns
+        -------
+        np.ndarray
+            1D float32 luminance array of at most ``max_samples`` elements
+            (sampled path) or 2D array of shape ``(H, W)`` (full path).
+            NaN/Inf values are filtered out.
+        """
+        n_pixels = data.size // data.shape[-1]
+        if n_pixels <= self.max_samples:
+            return self._rgb_to_luminance(data)
+
+        rng = np.random.default_rng()
+        pixel_indices = rng.choice(
+            n_pixels, size=self.max_samples, replace=False
+        )
+        nd_indices = np.unravel_index(pixel_indices, data.shape[:-1])
+        sampled_rgb = data[nd_indices + (slice(None),)]
+        luminance = self._rgb_to_luminance(sampled_rgb)
+        valid = np.isfinite(luminance)
+        return luminance[valid]
 
     def _get_data(self) -> np.ndarray | None:
         """Get data from layer based on current mode."""
