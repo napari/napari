@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 from qtpy.QtCore import QEvent, Qt
 from qtpy.QtWidgets import (
     QApplication,
+    QCheckBox,
     QDoubleSpinBox,
     QFrame,
     QGridLayout,
@@ -26,7 +27,6 @@ from napari._qt.widgets.qt_spinbox import QtSpinBox
 from napari._qt.widgets.qt_tooltip import QtToolTipLabel
 from napari.layers._scalar_field import ScalarFieldBase
 from napari.utils.action_manager import action_manager
-from napari.utils.camera_mode import CameraMode
 from napari.utils.camera_orientations import (
     DepthAxisOrientation,
     DepthAxisOrientationStr,
@@ -557,30 +557,31 @@ class QtViewerButtons(QFrame):
             self.orientation_help_symbol
         )
 
-    def _add_camera_mode_controls(
+    def _add_camera_synced_controls(
         self,
         popup: QtPopup,
         grid_layout: QGridLayout,
     ) -> None:
-        """Add camera mode selector to the popup."""
+        """Add synced camera toggle to the popup."""
         row = grid_layout.rowCount()
-        self.camera_mode_combo = enum_combobox(
-            parent=popup,
-            enum_class=CameraMode,
-            current_enum=self.viewer.camera.mode,
-            callback=lambda v: setattr(self.viewer.camera, 'mode', v),
+        self.camera_synced_checkbox = QCheckBox(trans._('Sync 2D/3D camera'))
+        self.camera_synced_checkbox.setChecked(self.viewer.camera.synced)
+        self.camera_synced_checkbox.stateChanged.connect(
+            lambda checked: setattr(
+                self.viewer.camera, 'synced', bool(checked)
+            )
         )
-        mode_help_symbol = help_tooltip(
+        synced_help_symbol = help_tooltip(
             parent=popup,
-            text='Controls how camera state is managed when switching between '
-            '2D and 3D views. '
-            '"Separate" remembers each mode\'s state independently. '
-            '"Shared" preserves center, zoom, and angles between modes. '
-            '"Legacy" resets the view on every switch.',
+            text=(
+                'Controls how camera state is managed when switching between '
+                '2D and 3D views. When checked, camera center and zoom are '
+                'shared between modes. When unchecked, each mode remembers '
+                'its own camera state independently.'
+            ),
         )
-        grid_layout.addWidget(QLabel(trans._('Camera mode:')), row, 0)
-        grid_layout.addWidget(self.camera_mode_combo, row, 1)
-        grid_layout.addWidget(mode_help_symbol, row, 2)
+        grid_layout.addWidget(self.camera_synced_checkbox, row, 0, 1, 2)
+        grid_layout.addWidget(synced_help_symbol, row, 2)
 
     def open_ndisplay_camera_popup(self) -> None:
         """Show controls for camera settings based on ndisplay mode."""
@@ -597,8 +598,8 @@ class QtViewerButtons(QFrame):
         if self.viewer.dims.ndisplay == 3:
             self._add_3d_camera_controls(popup, grid_layout)
 
-        # Add camera mode selector
-        self._add_camera_mode_controls(popup, grid_layout)
+        # Add synced camera toggle
+        self._add_camera_synced_controls(popup, grid_layout)
 
         popup.frame.setLayout(grid_layout)
 
