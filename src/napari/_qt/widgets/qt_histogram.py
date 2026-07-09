@@ -99,19 +99,15 @@ class QtHistogramWidget(QWidget):
         main_layout.addWidget(self.canvas.native)
         self.setLayout(main_layout)
 
-        # Connect to model events for live updates of visual from sync compute
-        self._histogram.events.counts.connect(self._update_histogram)
-        self._histogram.events.enabled.connect(self._update_histogram)
-        self._histogram.events.log_scale.connect(self._update_histogram)
-        # Connect to mode, bins, and max_samples events to trigger
-        # (re)computation.  For chunked data in full mode, this picks up
-        # where _mark_dirty() deferred synchronous compute() and routes
-        # through the async GeneratorWorker path instead.
-        self._histogram.events.mode.connect(self._ensure_histogram_computed)
-        self._histogram.events.bins.connect(self._ensure_histogram_computed)
-        self._histogram.events.max_samples.connect(
-            self._ensure_histogram_computed
-        )
+        # Connect model events to a single handler that decides whether
+        # to re-render or trigger async compute, depending on whether the
+        # model computed synchronously or deferred for chunked full data.
+        self._histogram.events.counts.connect(self._on_model_event)
+        self._histogram.events.enabled.connect(self._on_model_event)
+        self._histogram.events.log_scale.connect(self._on_model_event)
+        self._histogram.events.mode.connect(self._on_model_event)
+        self._histogram.events.bins.connect(self._on_model_event)
+        self._histogram.events.max_samples.connect(self._on_model_event)
 
         # Connect to layer events that affect visualization
         layer.events.gamma.connect(self._update_histogram)
@@ -127,6 +123,21 @@ class QtHistogramWidget(QWidget):
         """Update histogram colors when the layer colormap changes."""
         self._apply_visual_style()
         self._update_histogram()
+
+    def _on_model_event(self) -> None:
+        """Respond to model property changes — re-render or trigger async compute.
+
+        The model's own event handlers (``_mark_dirty``,
+        ``_on_log_scale_change``) either compute synchronously (clearing
+        ``_dirty`` and emitting ``events.counts()``), or defer for chunked
+        full-mode data (leaving ``_dirty=True``).  This handler picks up
+        deferred work via async compute, and otherwise just re-renders the
+        fresh data already in the model.
+        """
+        if self._histogram._dirty and self._histogram.enabled:
+            self._ensure_histogram_computed()
+        else:
+            self._update_histogram()
 
     def _on_theme_change(self, event: Event | None = None) -> None:
         """Update canvas and plot styling when the application theme changes.
