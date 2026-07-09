@@ -6,6 +6,7 @@ import numpy as np
 from qtpy.QtCore import Qt, Signal
 from qtpy.QtWidgets import (
     QApplication,
+    QCheckBox,
     QFrame,
     QHBoxLayout,
     QLabel,
@@ -136,16 +137,7 @@ class QContrastLimitsPopup(QtPopup):
             self.slider.rangeChanged, layer, 'contrast_limits_range'
         )
 
-        # 2. Histogram + settings (Image layers only; Surface not yet supported)
-        self.histogram_content = None
-        if isinstance(layer, Image) and layer.histogram.enabled:
-            self.histogram_content = QtHistogramContentWidget(
-                layer,
-                parent=self,
-            )
-            self._layout.addWidget(self.histogram_content)
-
-        # 3. Gamma slider
+        # 2. Gamma slider
         self.gamma_slider = QLabeledDoubleSlider(Qt.Orientation.Horizontal)
         self.gamma_slider.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.gamma_slider.setMinimum(0.2)
@@ -196,9 +188,45 @@ class QContrastLimitsPopup(QtPopup):
             range_btn.clicked.connect(layer.reset_contrast_limits_range)
             button_layout.addWidget(range_btn)
 
+        # Histogram toggle checkbox (Image layers only)
+        if isinstance(layer, Image):
+            self._histogram_enabled_checkbox = QCheckBox('histogram')
+            self._histogram_enabled_checkbox.setChecked(
+                layer.histogram.enabled
+            )
+            self._histogram_enabled_checkbox.setToolTip(
+                'Show histogram in this popup'
+            )
+            self._histogram_enabled_checkbox.toggled.connect(
+                self._on_popup_histogram_toggled
+            )
+            button_layout.addWidget(self._histogram_enabled_checkbox)
+
         button_layout.addStretch()
 
         self._layout.addWidget(self._create_widget_from_layout(button_layout))
+
+        # Histogram content — created after all non-histogram layout items
+        # so _frame_base_height captures the true baseline (clim + gamma + buttons).
+        self.histogram_content = None
+        self._histogram_enabled_checkbox = None
+        self._frame_base_height: int = 0
+        if isinstance(layer, Image):
+            self.histogram_content = QtHistogramContentWidget(
+                layer,
+                parent=self,
+            )
+            # Capture frame height with all non-histogram items in place
+            self._layout.activate()
+            self._frame_base_height = self.frame.sizeHint().height()
+            # Insert between clim row (0) and gamma row (now index 1)
+            self._layout.insertWidget(1, self.histogram_content)
+            if not layer.histogram.enabled:
+                self.histogram_content.setFixedHeight(0)
+                self.histogram_content.hide()
+            layer.histogram.events.enabled.connect(
+                self._on_external_histogram_enabled
+            )
 
     def keyPressEvent(self, event):
         """Override to prevent Enter from closing the popup.
@@ -217,14 +245,80 @@ class QContrastLimitsPopup(QtPopup):
         self._cleanup()
         super().closeEvent(event)
 
+    def sizeHint(self):
+        """Return the preferred size, excluding the histogram when hidden.
+
+        ``move_to`` calls ``sizeHint()`` to set the popup's initial geometry,
+        but ``QLayout.sizeHint()`` includes hidden widgets.  We override so
+        the initial height is correct regardless of histogram visibility.
+        """
+        hint = super().sizeHint()
+        if self.histogram_content and self.histogram_content.isHidden():
+            outer = self.layout().contentsMargins()
+            hint.setHeight(
+                self._frame_base_height + outer.top() + outer.bottom()
+            )
+        return hint
+
+    def _base_height(self) -> int:
+        """Popup height without the histogram widget."""
+        outer = self.layout().contentsMargins()
+        return self._frame_base_height + outer.top() + outer.bottom()
+
+    def _on_popup_histogram_toggled(self, visible: bool) -> None:
+        """Handle the popup's histogram checkbox toggle."""
+        if self.histogram_content is None:
+            return
+        if visible:
+            h = self.histogram_content.sizeHint().height()
+            self.histogram_content.setFixedHeight(h)
+            self.histogram_content.show()
+            self._layer.histogram.enabled = True
+            self.setFixedHeight(
+                self._base_height() + h + self._layout.spacing()
+            )
+        else:
+            self.histogram_content.setFixedHeight(0)
+            self.histogram_content.hide()
+            self._layer.histogram.enabled = False
+            self.setFixedHeight(self._base_height())
+
+    def _on_external_histogram_enabled(self) -> None:
+        """Sync checkbox when ``layer.histogram.enabled`` changes from outside."""
+        if self._histogram_enabled_checkbox is not None:
+            with qt_signals_blocked(self._histogram_enabled_checkbox):
+                self._histogram_enabled_checkbox.setChecked(
+                    self._layer.histogram.enabled
+                )
+            if self.histogram_content is not None:
+                if self._layer.histogram.enabled:
+                    h = self.histogram_content.sizeHint().height()
+                    self.histogram_content.setFixedHeight(h)
+                    self.histogram_content.show()
+                    self.setFixedHeight(
+                        self._base_height() + h + self._layout.spacing()
+                    )
+                else:
+                    self.histogram_content.setFixedHeight(0)
+                    self.histogram_content.hide()
+                    self.setFixedHeight(self._base_height())
+
     def _cleanup(self) -> None:
         """Disconnect event handlers and clean up widgets."""
         if self._cleaned_up:
             return
         self._cleaned_up = True
 
+        if isinstance(self._layer, Image):
+            self._layer.histogram.events.enabled.disconnect(
+                self._on_external_histogram_enabled
+            )
+        # Clear fixed-height constraint so the popup doesn't persist it
+        self.setMaximumHeight(16777215)
+        self.setMinimumHeight(0)
         if self.histogram_content is not None:
             self.histogram_content.cleanup()
+            self.histogram_content = None
 
     def _create_widget_from_layout(self, layout: QHBoxLayout) -> QWidget:
         """Helper to wrap a layout in a widget."""
