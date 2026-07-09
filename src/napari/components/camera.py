@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 import numpy as np
-from pydantic import Field, PrivateAttr, field_validator
+from pydantic import PrivateAttr, field_validator
 
 from napari.utils.camera_orientations import (
     DEFAULT_ORIENTATION_TYPED,
@@ -77,15 +77,7 @@ class Camera(EventedModel):
         VerticalAxisOrientation,
         HorizontalAxisOrientation,
     ] = DEFAULT_ORIENTATION_TYPED
-    synced: bool = Field(
-        default=True,
-        description=(
-            'If True, camera center and zoom are shared between 2D '
-            'and 3D views, with the depth (z) component synced via '
-            'the dims slider. If False, each ndisplay mode '
-            'independently remembers its own camera state.'
-        ),
-    )
+    synced: bool = True
 
     # Per-mode camera state cache for the "separate" (synced=False) mode.
     _cached_2d_state: _CameraState | None = PrivateAttr(None)
