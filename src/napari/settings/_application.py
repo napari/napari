@@ -15,7 +15,6 @@ from napari.settings._constants import (
 )
 from napari.settings._fields import Language
 from napari.utils._base import _DEFAULT_LOCALE
-from napari.utils.camera_mode import CameraMode
 from napari.utils.camera_orientations import (
     DEFAULT_ORIENTATION_TYPED,
     DepthAxisOrientation,
@@ -212,15 +211,14 @@ class ApplicationSettings(EventedModel):
         ),
     )
 
-    camera_mode: CameraMode = Field(
-        default=CameraMode.SEPARATE,
-        title='Camera Mode',
+    synced: bool = Field(
+        default=True,
+        title='Synced Camera',
         description=(
-            'Controls how camera state is managed when switching between\n'
-            '2D and 3D views.\n'
-            'Separate — each mode remembers its own center, zoom, and angles.\n'
-            'Shared — center and zoom are shared between 2D and 3D.\n'
-            'Legacy — no caching; fit_to_view is called on every switch.'
+            'If True, camera center and zoom are shared between 2D\n'
+            'and 3D views, with the depth (z) component synced via\n'
+            'the dims slider. If False, each ndisplay mode\n'
+            'independently remembers its own camera state.'
         ),
     )
 
