@@ -337,7 +337,7 @@ def test_histogram_visual_set_data_clear_path(qtbot):
 
     # First set some data to get a non-empty state
     layer.histogram.enabled = True
-    layer.histogram.compute()
+    list(layer.histogram.compute())
     visual.set_data(
         bin_edges=layer.histogram._bin_edges,
         counts=layer.histogram.counts,
@@ -364,7 +364,7 @@ def test_histogram_visual_update_lut_line_clims_equal(qtbot):
 
     visual = widget.histogram_visual
     layer.histogram.enabled = True
-    layer.histogram.compute()
+    list(layer.histogram.compute())
 
     # Call with clims where min == max
     visual.set_data(

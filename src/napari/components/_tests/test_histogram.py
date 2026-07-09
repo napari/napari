@@ -64,10 +64,13 @@ class TestDefaultState:
 class TestEnableDisable:
     """Test enabling and disabling histogram computation."""
 
-    def test_enable_triggers_computation(self):
+    def test_enable_triggers_computation_for_non_chunked(self):
+        """Enabling should trigger compute for non-chunked data."""
         model = _model(np.random.rand(10, 10).astype(np.float32))
+        assert not model._layer_events_connected
         model.enabled = True
-        # After enable, compute() should have run and cleared the dirty flag
+        assert model._layer_events_connected
+        # Non-chunked data computes synchronously on enable.
         assert model._dirty is False
         assert len(model.counts) == 256
 
@@ -349,12 +352,12 @@ class TestEvents:
     """Test histogram event emissions."""
 
     def test_compute_generator_sets_model_state(self):
-        """Iterating compute() generator should set model state."""
+        """Calling ``counts`` triggers lazy compute and sets model state."""
         model = _model(np.random.rand(20, 20))
-        list(model.compute())
+        _ = model.counts  # triggers lazy compute via the generator
         assert len(model._bin_edges) == 257
-        assert len(model.counts) == 256
-        assert model.counts.sum() > 0
+        assert len(model._counts) == 256
+        assert model._counts.sum() > 0
 
 
 class TestReset:
@@ -377,6 +380,7 @@ class TestReset:
         _ = model.counts  # trigger initial compute
         model.reset()
         model.enabled = True
+        # Non-chunked data computes synchronously on enable.
         assert model._dirty is False
         counts = model.counts
         assert len(counts) == 256
@@ -842,16 +846,20 @@ class TestEventHandlers:
         model._on_slice_change()
         assert model._dirty, 'slice change in canvas mode should mark dirty'
 
-    def test_on_enabled_change_computes_when_dirty(self):
-        """When enabled flips to True and data is dirty, compute should run."""
+    def test_on_enabled_change_connects_events_when_enabled(self):
+        """_on_enabled_change should connect layer events when enabled."""
         model = _model(np.random.rand(10, 10))
         model.enabled = True
-        _ = model.counts  # initial compute, clears dirty
+        _ = model.counts  # initial compute
+        model.enabled = False  # disconnect
+        assert not model._layer_events_connected
 
-        model._dirty = True
-        model._on_enabled_change()
-        # enabled is True and dirty is True, so _mark_dirty called compute()
-        assert not model._dirty
+        model._on_enabled_change()  # enabled is False, so disconnect
+        assert not model._layer_events_connected
+
+        model.enabled = True
+        # enabled=True via _on_enabled_change connects layer events
+        assert model._layer_events_connected
 
     def test_on_enabled_change_skips_when_disabled(self):
         """When enabled is False, _on_enabled_change should not compute."""
