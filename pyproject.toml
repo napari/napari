@@ -43,7 +43,7 @@ dependencies = [
     "app-model>=0.5.0,<0.6.0",
     "cachey>=0.2.1",
     "certifi>=2018.1.18",
-    "dask[array]>=2021.10.0",
+    "dask[array]>=2022.1.1",
     "imageio>=2.20,!=2.22.1",
     "jsonschema>=3.2.0",
     "lazy_loader>=0.3",
