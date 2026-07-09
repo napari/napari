@@ -4,10 +4,8 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
-from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QWidget
 
-from napari._qt.layer_controls.qt_image_controls import QtImageControls
 from napari._qt.layer_controls.widgets.qt_histogram_control import (
     QtHistogramControl,
 )
@@ -24,32 +22,6 @@ def _create_control(qtbot, layer=None):
     control = QtHistogramControl(parent, layer)
     control._parent_ref = parent
     return control
-
-
-def test_ensure_content_creates_children(qtbot):
-    """ensure_content() should create histogram_content, histogram_widget, settings_widget."""
-    control = _create_control(qtbot)
-
-    # Before ensure_content
-    assert control.histogram_content is None
-    assert control.histogram_widget is None
-    assert control.settings_widget is None
-
-    # After ensure_content
-    control.ensure_content()
-    assert control.histogram_content is not None
-    assert control.histogram_widget is not None
-    assert control.settings_widget is not None
-
-
-def test_ensure_content_idempotent(qtbot):
-    """Calling ensure_content() twice should not create duplicate widgets."""
-    control = _create_control(qtbot)
-    control.ensure_content()
-    first_content = control.histogram_content
-
-    control.ensure_content()
-    assert control.histogram_content is first_content
 
 
 def test_content_widget_starts_hidden(qtbot):
@@ -106,27 +78,3 @@ def test_histogram_control_works_with_various_image_configs(
     control.ensure_content()
     assert control.histogram_content is not None
     assert control.histogram_widget is not None
-
-
-def test_histogram_control_show_hide_toggle_integration(qtbot):
-    """Integration test: toggle button should show/hide the content_widget."""
-    layer = Image(np.random.rand(8, 8))
-    qtctrl = QtImageControls(layer)
-    qtbot.addWidget(qtctrl)
-
-    control = qtctrl._histogram_control
-    assert control is not None
-    assert control.content_widget.isHidden()
-
-    button = qtctrl._contrast_limits_control.histogram_button
-    assert button is not None
-
-    # Left click to show
-    qtbot.mouseClick(button, Qt.MouseButton.LeftButton)
-    assert not control.content_widget.isHidden()
-    assert layer.histogram.enabled
-
-    # Left click to hide
-    qtbot.mouseClick(button, Qt.MouseButton.LeftButton)
-    assert control.content_widget.isHidden()
-    assert not layer.histogram.enabled

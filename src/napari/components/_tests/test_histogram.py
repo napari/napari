@@ -138,11 +138,22 @@ class TestDataTypes:
         assert len(counts) > 0
 
     def test_uniform_data(self):
-        """All same value — histogram should handle gracefully."""
+        """All same value — histogram should handle gracefully.
+
+        For integer constant data, ``_calc_histogram`` expands the range
+        by ±0.5, so bin edges span half-integer boundaries.
+        """
         model = _model(np.full((10, 10), 5, dtype=np.uint8))
         model.enabled = True
         counts = model.counts
         assert counts.sum() > 0
+        # Bin edges should span the expanded range around the constant value
+        assert model._bin_edges[0] < 5.0
+        assert model._bin_edges[-1] > 5.0
+        # All 100 elements should fall into a single bin
+        assert counts.sum() == 100
+        # At least one bin captures all the data
+        assert np.any(counts == 100)
 
     def test_single_element(self):
         model = _model(np.array([[42.0]], dtype=np.float32))
@@ -151,14 +162,19 @@ class TestDataTypes:
         assert len(counts) > 0
 
     def test_with_nan(self):
+        """NaN values should be filtered out — all counts should be finite."""
         data = np.random.rand(20, 20)
         data[0, 0] = np.nan
         model = _model(data.astype(np.float32))
         model.enabled = True
         counts = model.counts
         assert counts.sum() > 0
+        assert np.all(np.isfinite(counts)), (
+            'NaN in data should not produce NaN in counts'
+        )
 
     def test_with_inf(self):
+        """Inf values should be filtered out — all counts should be finite."""
         data = np.random.rand(20, 20)
         data[0, 0] = np.inf
         data[0, 1] = -np.inf
@@ -166,6 +182,9 @@ class TestDataTypes:
         model.enabled = True
         counts = model.counts
         assert counts.sum() > 0
+        assert np.all(np.isfinite(counts)), (
+            'Inf in data should not produce NaN/Inf in counts'
+        )
 
 
 class TestCustomBins:

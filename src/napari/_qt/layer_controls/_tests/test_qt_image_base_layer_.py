@@ -183,7 +183,8 @@ def test_histogram_ui_support_boundary(qtbot, layer, supports_histogram):
 def test_contrast_limits_popup_histogram_boundary(
     qtbot, layer, supports_histogram
 ):
-    """The contrast popup only embeds histogram UI when histogram is enabled."""
+    """The contrast popup embeds histogram UI only when the layer type supports it
+    AND histogram was enabled before popup creation."""
     if supports_histogram:
         layer.histogram.enabled = True
     popup = QContrastLimitsPopup(layer)
