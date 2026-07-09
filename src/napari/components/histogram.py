@@ -320,11 +320,14 @@ class HistogramModel(EventedModel):
                 return
             yield bins, counts
 
-        # Update model state for callers that read _bin_edges / _counts
-        # after the generator completes.
-        self._bin_edges = bins
-        self._counts = counts
-        self._dirty = False
+        # Stale guard: only update model state if this generation is
+        # still current.  Without this, a stale async worker that
+        # finishes all its chunks after a newer inline compute has
+        # already set state would overwrite the fresh data.
+        if self._compute_generation == generation:
+            self._bin_edges = bins
+            self._counts = counts
+            self._dirty = False
 
     def _calc_histogram(
         self,
