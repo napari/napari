@@ -244,7 +244,7 @@ class QtHistogramWidget(QWidget):
         clims_range = self.layer.contrast_limits_range
 
         self.histogram_visual.set_data(
-            bins=bins,
+            bin_edges=bins,
             counts=counts,
             gamma=gamma,
             clims=clims,
@@ -265,10 +265,10 @@ class QtHistogramWidget(QWidget):
         disconnect_events(self.layer.events, self)
         self._histogram.events.counts.connect(self._on_histogram_change)
         self._histogram.events.enabled.connect(self._on_histogram_change)
+        self._histogram.events.log_scale.connect(self._on_histogram_change)
         self._histogram.events.mode.connect(self._on_recompute_needed)
         self._histogram.events.bins.connect(self._on_recompute_needed)
         self._histogram.events.max_samples.connect(self._on_recompute_needed)
-        self._histogram.events.log_scale.connect(self._on_recompute_needed)
         self.layer.events.gamma.connect(self._on_gamma_change)
         self.layer.events.contrast_limits.connect(self._on_clims_change)
         self.layer.events.colormap.connect(self._on_colormap_change)
@@ -363,7 +363,7 @@ class QtHistogramWidget(QWidget):
             clims_range = self.layer.contrast_limits_range
 
             self.histogram_visual.set_data(
-                bins=bin_edges,
+                bin_edges=bin_edges,
                 counts=counts,
                 gamma=gamma,
                 clims=clims,
