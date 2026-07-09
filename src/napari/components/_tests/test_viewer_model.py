@@ -10,7 +10,6 @@ from napari._tests.utils import (
     layer_test_data,
 )
 from napari.components import ViewerModel
-from napari.components.camera import CameraMode
 from napari.errors import MultipleReaderError, ReaderPluginError
 from napari.errors.reader_errors import NoAvailableReaderError
 from napari.layers import Image
@@ -708,7 +707,8 @@ def test_camera():
 
     viewer.dims.ndisplay = 3
     assert viewer.dims.ndisplay == 3
-    assert viewer.camera.center == (4.5, 7, 9.5)
+    # Synced mode: z from dims slider, x/y and zoom persist from 2D
+    assert viewer.camera.center == (4.0, 7.0, 9.5)
     assert viewer.camera.angles == (0, 0, 0)
 
     viewer.dims.ndisplay = 2
@@ -1143,9 +1143,48 @@ def test_fit_to_view_2d_data_in_3d_view():
     assert viewer.camera.angles == (45, 30, 60)
 
 
-def test_per_mode_camera_cache_round_trip():
-    """Test that per-mode caching preserves independent state for 2D and 3D."""
+def test_synced_camera():
+    """Test synced mode center/zoom persistence and dims slider sync."""
+    np.random.seed(0)
     viewer = ViewerModel()
+    viewer.add_image(np.random.random((11, 11, 11)))
+    viewer.dims.current_step = (2, 0, 0)
+
+    # synced=True by default
+    viewer.camera.center = (0, 3, 7)
+    viewer.camera.zoom = 2.5
+
+    # 2D→3D: z from dims slider, x/y and zoom persist
+    viewer.dims.ndisplay = 3
+    np.testing.assert_allclose(viewer.camera.center, (2.0, 3.0, 7.0))
+    assert viewer.camera.zoom == 2.5
+
+    # Pan in 3D
+    viewer.camera.center = (5, 8, 12)
+    viewer.camera.zoom = 3.0
+
+    # 3D→2D: dims slider follows camera z
+    viewer.dims.ndisplay = 2
+    np.testing.assert_allclose(viewer.camera.center, (0, 8, 12))
+    assert viewer.camera.zoom == 3.0
+    assert viewer.dims.point[0] == 5.0
+
+    # 2D→3D again: z from updated dims point
+    viewer.dims.ndisplay = 3
+    np.testing.assert_allclose(viewer.camera.center, (5.0, 8.0, 12.0))
+    assert viewer.camera.zoom == 3.0
+
+    # Multiple round trips
+    for _ in range(3):
+        viewer.dims.ndisplay = 2
+        viewer.dims.ndisplay = 3
+    np.testing.assert_allclose(viewer.camera.center, (5.0, 8.0, 12.0))
+
+
+def test_separate_camera_cache_round_trip():
+    """Test that separate mode (synced=False) preserves independent state for 2D and 3D."""
+    viewer = ViewerModel()
+    viewer.camera.synced = False
     np.random.seed(0)
     viewer.add_image(np.random.random((11, 11, 11)))
 
@@ -1180,49 +1219,6 @@ def test_per_mode_camera_cache_round_trip():
     np.testing.assert_allclose(viewer.camera.center, (7, 8, 9))
 
 
-def test_per_mode_camera_cache_no_layers():
-    """Test per-mode caching doesn't crash with empty viewer."""
-    viewer = ViewerModel()
-    viewer.dims.ndisplay = 3
-    viewer.dims.ndisplay = 2
-
-
-def test_per_mode_camera_cache_2d_data():
-    """Test per-mode caching with 2D data (ndim=2 guard).
-
-    On first entry to a mode, fit_to_view runs and recalculates zoom.
-    Per-mode caching preserves state between return visits to a mode.
-    """
-    viewer = ViewerModel()
-    np.random.seed(0)
-    viewer.add_image(np.random.random((11, 11)))
-    viewer.camera.zoom = 2.5
-    # First entry to 3D: fit_to_view recalculates zoom
-    viewer.dims.ndisplay = 3
-    zoom_3d = viewer.camera.zoom
-    assert zoom_3d != 2.5
-    # Return to 2D: cached zoom restored
-    viewer.dims.ndisplay = 2
-    assert viewer.camera.zoom == 2.5
-    # Second entry to 3D: cached 3D zoom restored
-    viewer.dims.ndisplay = 3
-    assert viewer.camera.zoom == zoom_3d
-
-
-def test_per_mode_camera_cache_4d_data():
-    """Test per-mode caching with 4D data."""
-    viewer = ViewerModel()
-    np.random.seed(0)
-    viewer.add_image(np.random.random((5, 11, 11, 11)))
-    viewer.camera.center = (0, 2, 3)
-    viewer.dims.ndisplay = 3
-    viewer.camera.zoom = 1.5
-    viewer.dims.ndisplay = 2
-    np.testing.assert_allclose(viewer.camera.center, (0, 2, 3))
-    viewer.dims.ndisplay = 3
-    assert viewer.camera.zoom == 1.5
-
-
 def test_fit_to_view_handles_no_layers():
     """Test fit_to_view with no layers."""
     viewer = ViewerModel()
@@ -1232,76 +1228,3 @@ def test_fit_to_view_handles_no_layers():
     np.testing.assert_allclose(viewer.camera.center, (0, 255.5, 255.5))
     np.testing.assert_allclose(viewer.camera.angles, (0, 0, 0))
     assert viewer.camera.zoom > 0
-
-
-def test_shared_camera():
-    """Test shared mode center/zoom persistence and dims slider sync."""
-    np.random.seed(0)
-    viewer = ViewerModel()
-    viewer.add_image(np.random.random((11, 11, 11)))
-    viewer.dims.current_step = (2, 0, 0)
-
-    viewer.camera.mode = CameraMode.SHARED
-    viewer.camera.center = (0, 3, 7)
-    viewer.camera.zoom = 2.5
-
-    # 2D→3D: z from dims slider, x/y and zoom persist
-    viewer.dims.ndisplay = 3
-    np.testing.assert_allclose(viewer.camera.center, (2.0, 3.0, 7.0))
-    assert viewer.camera.zoom == 2.5
-
-    # Pan in 3D
-    viewer.camera.center = (5, 8, 12)
-    viewer.camera.zoom = 3.0
-
-    # 3D→2D: dims slider follows camera z
-    viewer.dims.ndisplay = 2
-    np.testing.assert_allclose(viewer.camera.center, (0, 8, 12))
-    assert viewer.camera.zoom == 3.0
-    assert viewer.dims.point[0] == 5.0
-
-    # 2D→3D again: z from updated dims point
-    viewer.dims.ndisplay = 3
-    np.testing.assert_allclose(viewer.camera.center, (5.0, 8.0, 12.0))
-    assert viewer.camera.zoom == 3.0
-
-    # Multiple round trips
-    for _ in range(3):
-        viewer.dims.ndisplay = 2
-        viewer.dims.ndisplay = 3
-    np.testing.assert_allclose(viewer.camera.center, (5.0, 8.0, 12.0))
-
-
-def test_shared_camera_2d_data():
-    """Test shared mode doesn't crash with 2D data (ndim=2)."""
-    np.random.seed(0)
-    viewer = ViewerModel()
-    viewer.add_image(np.random.random((11, 11)))
-    viewer.camera.mode = CameraMode.SHARED
-    viewer.camera.zoom = 2.5
-
-    viewer.dims.ndisplay = 3
-    assert viewer.camera.zoom == 2.5
-    viewer.dims.ndisplay = 2
-    assert viewer.camera.zoom == 2.5
-
-
-def test_legacy_mode():
-    """Test legacy mode calls fit_to_view on every ndisplay switch."""
-    np.random.seed(0)
-    viewer = ViewerModel()
-    viewer.add_image(np.random.random((11, 11, 11)))
-
-    viewer.camera.mode = CameraMode.LEGACY
-
-    # Customize 2D view
-    viewer.camera.center = (0, 2, 3)
-    viewer.camera.zoom = 2.5
-
-    # Switch to 3D — should call fit_to_view (not preserve 2D state)
-    viewer.dims.ndisplay = 3
-    np.testing.assert_allclose(viewer.camera.center, (5.0, 5.0, 5.0))
-
-    # Switch back to 2D — should call fit_to_view again
-    viewer.dims.ndisplay = 2
-    np.testing.assert_allclose(viewer.camera.center, (0.0, 5.0, 5.0))
