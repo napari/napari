@@ -36,14 +36,12 @@ finally:
 
 import sys
 import time
-from functools import partial
 
 import numpy as np
+import qtpy.QtGui
 import qtpy.QtWidgets
 
 import napari
-
-viewer, state = None, None
 
 
 def radarray(N):
@@ -202,117 +200,122 @@ def iterate_accelerated_flock_forever(boids, num_workers=8):
 
 timestamp_last_update = time.monotonic()
 boids_layer = None
+control_widget = None
 
 
-def update_points_in_display(boids):
+def update_points_in_display(boids, state):
     global timestamp_last_update
-    if boids_layer:
+    if boids_layer is not None:
         boids_layer.data = boids.pos
         timestamp_this_update = time.monotonic()
         elapsed_time_update, timestamp_last_update = (
             (timestamp_this_update - timestamp_last_update),
             timestamp_this_update,
         )
-        boids_layer.name = f"Iter_{boids.iteration} ({elapsed_time_update:0.3f}s/iter) {state['num_boids']}-on-{state['num_workers']}-procs"
+        boids_layer.name = (
+            f"Iter_{boids.iteration} ({elapsed_time_update:.3f}s/iter) "
+            f"{state['num_boids']}-boids-on-{state['num_workers']}-procs"
+        )
 
 
-def add_relaunch_buttons():
-    global line_edit_num_boids, line_edit_num_procs, checkbox_hide_prev
-    remove_execution_control_buttons()
+class BoidsControlWidget(qtpy.QtWidgets.QWidget):
+    """Dock widget with controls for a running Boids simulation.
 
-    info_label_num_boids = qtpy.QtWidgets.QLabel()
-    info_label_num_boids.setText('Number of "Boids"')
-    line_edit_num_boids = qtpy.QtWidgets.QLineEdit()
-    line_edit_num_boids.setText(str(state.get("num_boids", 1500)))
-    line_edit_num_boids.setValidator(qtpy.QtGui.QDoubleValidator())
-    info_label_num_procs = qtpy.QtWidgets.QLabel()
-    info_label_num_procs.setText("Number of Processes")
-    line_edit_num_procs = qtpy.QtWidgets.QLineEdit()
-    line_edit_num_procs.setText(str(state.get("num_workers", 1)))
-    line_edit_num_procs.setValidator(qtpy.QtGui.QDoubleValidator())
-    checkbox_hide_prev = qtpy.QtWidgets.QCheckBox()
-    checkbox_hide_prev.setText("Hide Previous Sim")
-    checkbox_hide_prev.setChecked(True)
-    launch_button = qtpy.QtWidgets.QPushButton("Launch New Sim!")
-    launch_button.clicked.connect(update_state_then_launch_main)
+    All controls are built once. Button enabled states and text change as
+    the simulation moves between idle, running, and finished states.
+    """
 
-    widget = qtpy.QtWidgets.QWidget()
-    layout = qtpy.QtWidgets.QVBoxLayout()
-    widget.setLayout(layout)
-    layout.addWidget(info_label_num_boids)
-    layout.addWidget(line_edit_num_boids)
-    layout.addWidget(info_label_num_procs)
-    layout.addWidget(line_edit_num_procs)
-    layout.addWidget(checkbox_hide_prev)
-    layout.addWidget(launch_button)
-    viewer.window.add_dock_widget(widget)
+    def __init__(self, viewer, worker, state):
+        super().__init__()
+        self._viewer = viewer
+        self._worker = worker
+        self._state = state
+        self._paused = False
 
+        layout = qtpy.QtWidgets.QVBoxLayout(self)
 
-def get_values_from_relaunch_buttons():
-    global line_edit_num_boids, line_edit_num_procs, checkbox_hide_prev
-    return (
-        int(line_edit_num_boids.text()),
-        int(line_edit_num_procs.text()),
-        checkbox_hide_prev.checkState(),
-    )
+        form = qtpy.QtWidgets.QFormLayout()
+        self._edit_num_boids = qtpy.QtWidgets.QLineEdit(
+            str(state.get("num_boids", 1500))
+        )
+        self._edit_num_boids.setValidator(qtpy.QtGui.QIntValidator(1, 100_000))
+        self._edit_num_procs = qtpy.QtWidgets.QLineEdit(
+            str(state.get("num_workers", 1))
+        )
+        self._edit_num_procs.setValidator(qtpy.QtGui.QIntValidator(1, 256))
+        form.addRow("Number of Boids", self._edit_num_boids)
+        form.addRow("Number of Processes", self._edit_num_procs)
+        layout.addLayout(form)
 
+        self._hide_prev_check = qtpy.QtWidgets.QCheckBox("Hide previous sim")
+        self._hide_prev_check.setChecked(True)
+        self._hide_prev_check.setVisible(False)
+        layout.addWidget(self._hide_prev_check)
 
-def action_start_button(worker):
-    global boids_layer
-    for layer in viewer.layers:
-        if layer.name.startswith("Boids3D"):
-            boids_layer = layer
-            break
-    else:
-        boids_layer = layer  # Hope for the best.
-    worker.start()
+        self._start_btn = qtpy.QtWidgets.QPushButton("Start Sim")
+        self._pause_btn = qtpy.QtWidgets.QPushButton("Pause")
+        self._stop_btn = qtpy.QtWidgets.QPushButton("Terminate")
+        for btn in (self._start_btn, self._pause_btn, self._stop_btn):
+            layout.addWidget(btn)
+        self._pause_btn.setEnabled(False)
+        self._stop_btn.setEnabled(False)
 
+        self._start_btn.clicked.connect(self._on_start)
+        self._pause_btn.clicked.connect(self._on_pause_resume)
+        self._stop_btn.clicked.connect(self._on_stop)
+        worker.finished.connect(self._on_worker_finished)
 
-def action_terminate_button(worker):
-    global boids_layer
-    worker.quit()  # Beware, update_points_in_display() may still be running.
-    boids_layer = None
+    def _on_start(self):
+        self._worker.start()
+        self._start_btn.setEnabled(False)
+        self._edit_num_boids.setEnabled(False)
+        self._edit_num_procs.setEnabled(False)
+        self._pause_btn.setEnabled(True)
+        self._stop_btn.setEnabled(True)
 
+    def _on_pause_resume(self):
+        if self._paused:
+            self._worker.resume()
+            self._pause_btn.setText("Pause")
+        else:
+            self._worker.pause()
+            self._pause_btn.setText("Resume")
+        self._paused = not self._paused
 
-def add_execution_control_buttons(viewer, worker):
-    widget = qtpy.QtWidgets.QWidget()
-    layout = qtpy.QtWidgets.QVBoxLayout()
-    widget.setLayout(layout)
-    start_button = qtpy.QtWidgets.QPushButton("Start Sim")
-    start_button.clicked.connect(partial(action_start_button, worker))
-    pause_button = qtpy.QtWidgets.QPushButton("Pause")
-    pause_button.clicked.connect(worker.pause)
-    resume_button = qtpy.QtWidgets.QPushButton("Resume")
-    resume_button.clicked.connect(worker.resume)
-    stop_button = qtpy.QtWidgets.QPushButton("Terminate")
-    stop_button.clicked.connect(partial(action_terminate_button, worker))
-    all_buttons = (start_button, pause_button, resume_button, stop_button)
-    for button in all_buttons:
-        worker.finished.connect(button.clicked.disconnect)
-        layout.addWidget(button)
-    viewer.window.add_dock_widget(widget)
-    return all_buttons
+    def _on_stop(self):
+        global boids_layer
+        self._worker.quit()
+        boids_layer = None
 
+    def _on_worker_finished(self):
+        self._edit_num_boids.setEnabled(True)
+        self._edit_num_procs.setEnabled(True)
+        self._pause_btn.setEnabled(False)
+        self._pause_btn.setText("Pause")
+        self._stop_btn.setEnabled(False)
+        self._hide_prev_check.setVisible(True)
+        self._start_btn.setText("Launch New Sim!")
+        self._start_btn.setEnabled(True)
+        self._start_btn.clicked.disconnect(self._on_start)
+        self._start_btn.clicked.connect(self._on_relaunch)
 
-def remove_execution_control_buttons():
-    viewer.window.remove_dock_widget("all")
-
-
-def update_state_then_launch_main():
-    global state
-    num_boids, num_procs, hide_prior = get_values_from_relaunch_buttons()
-    if hide_prior:
-        viewer.layers[-1].visible = False
-    state["num_boids"] = num_boids
-    state["num_workers"] = num_procs
-    state["parallel"] = num_procs > 1
-    return main(**state)
+    def _on_relaunch(self):
+        num_boids = int(self._edit_num_boids.text())
+        num_procs = int(self._edit_num_procs.text())
+        if self._hide_prev_check.isChecked() and self._viewer.layers:
+            self._viewer.layers[-1].visible = False
+        self._state.update(
+            num_boids=num_boids,
+            num_workers=num_procs,
+            parallel=num_procs > 1,
+        )
+        main(**self._state)
 
 
 def main(
     num_boids=500, width=600, height=600, depth=800, parallel=False, num_workers=1
 ):
-    global viewer, state
+    global boids_layer, control_widget
     state = {
         'num_boids': num_boids,
         'width': width,
@@ -325,20 +328,24 @@ def main(
 
     title = f"napari+{'Dragon' if 'dragon' in sys.modules else 'multiprocessing'}"
     viewer = napari.current_viewer() or napari.Viewer(title=title, ndisplay=3)
-    viewer.dims.ndisplay = 3  # In case we're reusing an existing viewer.
-    remove_execution_control_buttons()
-    viewer.add_points(
+    viewer.dims.ndisplay = 3  # ensure 3-D display when reusing an existing viewer
+
+    if control_widget is not None:
+        viewer.window.remove_dock_widget(control_widget)
+        control_widget = None
+
+    boids_layer = viewer.add_points(
         boids.pos, 3, name="Boids3D"
-    )  # Show initial starting points/data.
+    )
 
     if not parallel:
         worker = iterate_flock_forever(boids)
     else:
         worker = iterate_accelerated_flock_forever(boids, num_workers=num_workers)
-    worker.yielded.connect(partial(update_points_in_display, boids))
+    worker.yielded.connect(lambda _: update_points_in_display(boids, state))
 
-    add_execution_control_buttons(viewer, worker)
-    worker.finished.connect(add_relaunch_buttons)
+    control_widget = BoidsControlWidget(viewer, worker, state)
+    viewer.window.add_dock_widget(control_widget, area='right', name='Boids Controls')
 
     return boids, viewer, worker
 
