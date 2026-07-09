@@ -214,12 +214,12 @@ class HistogramModel(EventedModel):
                 # generator's final cycle; emit events so listeners
                 # connected to the synchronous path are notified.
                 self.events.counts()
-            elif self.mode == 'full' and data.size > self.max_samples:
-                # Random subsample for large in-memory arrays
-                data = self._sample_data(data, self.max_samples)
-                self._finalize_histogram(data)
             else:
-                # Direct path — data is already manageable
+                # Always sample large data to keep the UI responsive,
+                # regardless of mode.  This prevents blocking on large
+                # numpy arrays even in canvas mode at default zoom.
+                if data.size > self.max_samples:
+                    data = self._sample_data(data, self.max_samples)
                 self._finalize_histogram(data)
         finally:
             self._computing = False
