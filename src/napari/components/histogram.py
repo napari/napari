@@ -184,6 +184,9 @@ class HistogramModel(EventedModel):
         (displayed or full), samples if necessary, and computes the histogram.
         For chunked arrays (dask, zarr) in full mode, a random subset of
         chunks is sampled to avoid full materialization.
+
+        For large data (numpy or other non-chunked), sampling is applied
+        regardless of mode to keep the UI responsive.
         """
         if self._computing:
             return
@@ -227,7 +230,7 @@ class HistogramModel(EventedModel):
     def compute_progressive(
         self,
     ) -> Generator[tuple[np.ndarray, np.ndarray], None, None]:
-        """Generator that yields ``(bins, counts)`` for incremental updates.
+        """Generator that yields ``(bin_edges, counts)`` for incremental updates.
 
         For chunked arrays in full mode, yields an intermediate result after
         each chunk so the caller can update the display progressively.  For
@@ -259,8 +262,9 @@ class HistogramModel(EventedModel):
             if self.mode == 'full' and self._has_chunks(data):
                 yield from self._compute_chunked_progressive(data)
             else:
-                # Non-chunked path: compute once and yield final result
-                if self.mode == 'full' and data.size > self.max_samples:
+                # Non-chunked path: compute once and yield final result.
+                # Always sample large data regardless of mode.
+                if data.size > self.max_samples:
                     data = self._sample_data(data, self.max_samples)
                 range_min, range_max = self._layer.contrast_limits_range
                 if range_min is None or range_max is None:
@@ -292,12 +296,12 @@ class HistogramModel(EventedModel):
     def _compute_chunked_progressive(
         self, data: Any
     ) -> Generator[tuple[np.ndarray, np.ndarray], None, None]:
-        """Generator version of :meth:`_compute_chunked` — yields after each chunk.
+        """Generator that yields ``(bin_edges, counts)`` after each chunk.
 
-        Provides incremental ``(bins, counts)`` snapshots as each chunk is
-        loaded and histogrammed.  The final yield updates the model's internal
-        ``_bin_edges`` / ``_counts`` and marks it not-dirty, so callers that
-        skip intermediate results (e.g. the synchronous ``compute`` path)
+        Provides incremental histogram snapshots as each chunk is loaded.
+        The final yield updates the model's internal ``_bin_edges`` /
+        ``_counts`` and marks it not-dirty, so callers that skip
+        intermediate results (e.g. the synchronous ``compute`` path)
         still see consistent state.
         """
         n = min(self.max_samples, data.size)
@@ -443,7 +447,8 @@ class HistogramModel(EventedModel):
 
         For multiscale data, uses the lowest resolution level for
         efficiency.  For chunked arrays (dask, zarr), returns the raw
-        data as-is — progressive sampling is handled by ``_compute_sampled``.
+        data as-is — sampling is handled by
+        ``_compute_chunked_progressive``.
         """
         data = self._layer.data
 
@@ -457,7 +462,7 @@ class HistogramModel(EventedModel):
             return data
 
         # Chunked arrays (dask, zarr, h5py with chunks) are returned
-        # as-is for the progressive sampler in _compute_sampled.
+        # as-is for the progressive sampler in _compute_chunked_progressive.
         if self._has_chunks(data):
             return data
 
@@ -483,7 +488,7 @@ class HistogramModel(EventedModel):
 
     @staticmethod
     def _has_chunks(data: Any) -> bool:
-        """True if *data* can be sampled chunk-by-chunk (daskm zarr, h5py).
+        """True if *data* can be sampled chunk-by-chunk (dask, zarr, h5py).
 
         h5py datasets all have a ``.chunks`` attribute, but it is None for
         unchunked/contiguous datasets:
