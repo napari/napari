@@ -11,7 +11,7 @@ import numpy as np
 from pydantic import PrivateAttr
 
 from napari.utils._dask_utils import _is_dask_data
-from napari.utils.events import EventedModel
+from napari.utils.events import Event, EventedModel
 
 if TYPE_CHECKING:
     from napari.layers.image.image import Image  # noqa: TC004
@@ -128,9 +128,9 @@ class HistogramModel(EventedModel):
 
         # Connect to our own events (these are internal to the model and
         # don't leak external callbacks on the layer).
-        self.events.bins.connect(self._on_params_change)
-        self.events.max_samples.connect(self._on_params_change)
-        self.events.mode.connect(self._on_params_change)
+        self.events.bins.connect(self._mark_dirty)
+        self.events.max_samples.connect(self._mark_dirty)
+        self.events.mode.connect(self._mark_dirty)
         self.events.log_scale.connect(self._on_log_scale_change)
         self.events.enabled.connect(self._on_enabled_change)
 
@@ -145,8 +145,8 @@ class HistogramModel(EventedModel):
         if self._layer_events_connected:
             return
         self._layer_events_connected = True
-        self._layer.events.data.connect(self._on_data_change)
-        self._layer.events.contrast_limits_range.connect(self._on_range_change)
+        self._layer.events.data.connect(self._mark_dirty)
+        self._layer.events.contrast_limits_range.connect(self._mark_dirty)
         self._layer.events.set_data.connect(self._on_slice_change)
 
     def _disconnect_layer_events(self) -> None:
@@ -155,10 +155,8 @@ class HistogramModel(EventedModel):
         if not self._layer_events_connected:
             return
         self._layer_events_connected = False
-        self._layer.events.data.disconnect(self._on_data_change)
-        self._layer.events.contrast_limits_range.disconnect(
-            self._on_range_change
-        )
+        self._layer.events.data.disconnect(self._mark_dirty)
+        self._layer.events.contrast_limits_range.disconnect(self._mark_dirty)
         self._layer.events.set_data.disconnect(self._on_slice_change)
 
     @property
@@ -580,39 +578,26 @@ class HistogramModel(EventedModel):
         indices = rng.choice(valid_data.size, size=max_samples, replace=False)
         return valid_data[indices]
 
-    def _on_data_change(self) -> None:
-        """Called when layer data changes."""
-        self._mark_dirty()
-
-    def _on_range_change(self) -> None:
-        """Called when contrast limits range changes."""
-        self._mark_dirty()
-
     def _on_slice_change(self) -> None:
         """Called when the displayed slice changes."""
         if self.mode == 'canvas':
             self._mark_dirty()
 
-    def _on_params_change(self) -> None:
-        """Called when bins, mode, or max_samples changes."""
-        self._mark_dirty()
-
     def _on_log_scale_change(self) -> None:
         """Called when log_scale changes. Transforms counts without recomputing.
 
-        Log scale is a display-only transform on the already-computed counts.
-        No need to recompute the histogram from data — just apply or reverse
-        the log10 transform on ``_counts`` directly.
-
-        The reverse transform (log → linear) is an approximation via
-        ``10**counts - 1``, which is sufficient for display purposes.
-        If the model is dirty, the next compute() will produce fresh counts
-        with the correct log_scale applied via _calc_histogram.
+        When the model is clean, applies log10 (or inverse) to existing counts
+        in-place.  When dirty, triggers compute which applies log_scale via
+        ``_calc_histogram``.  For chunked full-mode data, defers to the
+        widget's async worker to avoid blocking on I/O.
         """
         if self._dirty or len(self._counts) <= 1:
-            # Can't transform dirty or empty counts; next compute will
-            # apply log_scale correctly via _calc_histogram.
-            self._mark_dirty()
+            # Defer chunked full-mode to the widget's async worker.
+            if self.mode == 'full' and self._has_chunks(self._layer.data):
+                return
+            for _ in self.compute():
+                pass
+            self.events.counts()
             return
 
         if self.log_scale:
@@ -627,37 +612,30 @@ class HistogramModel(EventedModel):
         self.events.counts()
 
     def _on_enabled_change(self) -> None:
-        """When enabled flips to True, compute if there is pending dirty data.
-
-        Also manages lazy layer event connections: connect when enabled,
-        disconnect when disabled to avoid leaking callbacks on the layer.
-        """
+        """When enabled flips to True, compute if dirty (non-chunked) or
+        connect layer events and defer to widget (chunked full-mode)."""
         if self.enabled:
             self._connect_layer_events()
             if self._dirty:
-                for _ in self.compute():
-                    pass
+                self._mark_dirty()
         else:
             self._disconnect_layer_events()
 
-    def _mark_dirty(self) -> None:
-        """Mark histogram as needing recomputation.
+    def _mark_dirty(self, event: Event | None = None) -> None:
+        """Mark histogram as needing recomputation and compute if possible.
 
-        If already computing, defer recomputation (the ``_dirty`` flag
-        persists so the next access will recompute).  If not computing
-        and enabled, compute immediately so connected widgets stay live.
-        If disabled, defer — the next explicit access or enabled=True
-        will trigger the compute.
-
-        For chunked arrays (dask, zarr) in full mode, synchronous
-        computation would block the main thread on I/O (e.g. remote
-        zarr).  In this case we defer to the async consumer (e.g.
-        ``QtHistogramWidget._ensure_histogram_computed``) and skip
-        the eager ``compute()`` call here.
+        For chunked arrays (dask, zarr) in full mode, defers computation
+        to the widget's async ``GeneratorWorker`` to avoid blocking the
+        main thread on I/O.  For all other cases, computes synchronously
+        so the histogram updates immediately.
         """
         self._dirty = True
-        # Computation is triggered by the widget's event handler.
-        # For explicit sync access, callers iterate ``compute()`` directly.
+        if not self._computing and self.enabled:
+            if self.mode == 'full' and self._has_chunks(self._layer.data):
+                return
+            for _ in self.compute():
+                pass
+            self.events.counts()
 
     def reset(self) -> None:
         """Reset histogram to default settings and disable.
