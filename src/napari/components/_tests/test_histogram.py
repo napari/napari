@@ -798,6 +798,15 @@ class TestNoneDataPath:
         model.compute()
         assert model._computing
 
+    def test_compute_progressive_reentrancy_guard(self):
+        """Calling compute_progressive() while already computing should be a no-op."""
+        model = _model(np.random.rand(10, 10))
+        model._computing = True
+        # Should return immediately without yielding
+        results = list(model.compute_progressive())
+        assert len(results) == 0
+        assert model._computing
+
     def test_get_data_none_in_canvas_mode_without_slice(self, monkeypatch):
         """In canvas mode with no slice available, _get_data should return None."""
         model = _model(np.random.rand(10, 10))
@@ -942,3 +951,58 @@ class TestCalcHistogramExtended:
         assert len(counts) == 256
         # Log-scaled counts should be non-negative
         assert np.all(counts >= 0)
+
+
+class TestComputeProgressive:
+    """Test the compute_progressive generator method."""
+
+    def test_progressive_yields_intermediate_on_chunked_data(self):
+        """compute_progressive should yield intermediate results for chunked data."""
+        dask = pytest.importorskip('dask.array')
+        data = dask.from_array(
+            np.random.rand(500, 500).astype(np.float32), chunks=(50, 50)
+        )
+        model = _model(np.zeros((10, 10)))
+        model._layer = Image(data)
+        model.mode = 'full'
+        model.enabled = True
+
+        # Collect all yielded results
+        results = list(model.compute_progressive())
+
+        # Should have yielded at least one intermediate result
+        assert len(results) >= 1
+        for bin_edges, counts in results:
+            assert len(bin_edges) == 257  # bins + 1
+            assert len(counts) == 256
+            assert counts.sum() > 0
+            assert bin_edges.dtype == np.float32
+            assert counts.dtype == np.float32
+
+        # After completion, model state should be consistent
+        assert not model._dirty
+        assert len(model._bin_edges) == 257
+
+    def test_progressive_non_chunked_yields_once(self):
+        """compute_progressive on non-chunked data should yield the final result once."""
+        model = _model(np.random.rand(10, 10))
+        model.enabled = True
+        results = list(model.compute_progressive())
+        assert len(results) == 1
+        bin_edges, counts = results[0]
+        assert len(bin_edges) == 257
+        assert len(counts) == 256
+        assert counts.sum() > 0
+
+    def test_progressive_handles_none_data(self, monkeypatch):
+        """compute_progressive with no data should yield nothing but clear dirty."""
+        model = _model(np.random.rand(10, 10))
+        model.enabled = True
+
+        def _fake_get_data():
+            return None
+
+        monkeypatch.setattr(model, '_get_data', _fake_get_data)
+        results = list(model.compute_progressive())
+        assert len(results) == 0
+        assert not model._dirty
