@@ -420,3 +420,35 @@ def test_popup_does_not_disable_inline_histogram(qtbot):
     assert layer.histogram.enabled
     assert not qtctrl._histogram_control.content_widget.isHidden()
     assert qtctrl._contrast_limits_control.histogram_button.isChecked()
+
+
+def test_popup_histogram_checkbox_toggle(qtbot):
+    """Popup histogram checkbox should show/hide histogram content."""
+    layer = Image(np.random.rand(8, 8))
+    qtctrl = QtImageControls(layer)
+    qtbot.addWidget(qtctrl)
+
+    # Open popup
+    qtbot.mouseClick(
+        qtctrl._contrast_limits_control.histogram_button,
+        Qt.MouseButton.RightButton,
+    )
+    popup = qtctrl._contrast_limits_control.clim_popup
+    assert popup is not None
+    assert popup._histogram_enabled_checkbox is not None
+
+    # Histogram starts hidden
+    assert popup.histogram_content.isHidden()
+    assert not popup._histogram_enabled_checkbox.isChecked()
+
+    # Check the checkbox — histogram should show
+    popup._histogram_enabled_checkbox.setChecked(True)
+    qtbot.waitUntil(lambda: not popup.histogram_content.isHidden())
+    assert layer.histogram.enabled
+
+    # Uncheck — histogram should hide
+    popup._histogram_enabled_checkbox.setChecked(False)
+    qtbot.waitUntil(lambda: popup.histogram_content.isHidden())
+    assert not layer.histogram.enabled
+
+    popup.close()
