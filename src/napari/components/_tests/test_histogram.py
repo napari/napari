@@ -210,6 +210,38 @@ class TestLogScale:
         logged = model.counts
         assert not np.array_equal(linear, logged)
 
+    def test_log_scale_toggle_triggers_counts_event(self):
+        """Toggling log_scale should fire ``events.counts``, not recompute."""
+        model = _model(np.random.rand(20, 20))
+        model.enabled = True
+        _ = model.counts  # initial compute, clears dirty
+
+        events = []
+        model.events.counts.connect(lambda: events.append('counts'))
+        model.events.bins.connect(lambda: events.append('bins'))
+
+        # Clear the flag set during initial compute
+        events.clear()
+        model._dirty = False
+        model.log_scale = True
+
+        assert 'counts' in events
+        assert 'bins' not in events  # no recompute = no bins event
+
+    def test_log_scale_toggle_preserves_bin_edges(self):
+        """Bin edges should remain unchanged after log_scale toggle."""
+        model = _model(np.random.rand(20, 20))
+        model.enabled = True
+        _ = model.counts
+        original_edges = model._bin_edges.copy()
+
+        model._dirty = False
+        model.log_scale = True
+        assert np.array_equal(model._bin_edges, original_edges)
+
+        model.log_scale = False
+        assert np.array_equal(model._bin_edges, original_edges)
+
 
 class TestBinsChange:
     """Test changing bins (number of bins)."""
@@ -427,12 +459,34 @@ class TestRgbToLuminance:
 class TestLargeData:
     """Test histogram with larger datasets."""
 
-    def test_sampling_large_data(self):
-        data = np.random.rand(500, 500).astype(np.float32)
+    def test_large_data_sampling_canvas_mode(self):
+        """Large data should sample in canvas mode.
+
+        Previously sampling only applied in ``mode='full'``, causing
+        blocking on large 2D numpy arrays at default zoom.
+        Verifies that ``_sample_data`` is called when
+        ``data.size > max_samples`` regardless of mode.
+        """
+        rng = np.random.default_rng(42)
+        data = rng.random((2000, 2000)).astype(np.float32)  # 4M > 1M default
         model = _model(data)
-        counts = model.counts
-        assert counts is not None
-        assert len(counts) == 256
+        model.enabled = True
+        model.max_samples = 100_000
+        model.compute()
+        assert len(model.counts) == 256
+        assert model.counts.sum() > 0
+
+    def test_large_data_full_mode_samples(self):
+        """Large data in full mode should sample."""
+        rng = np.random.default_rng(42)
+        data = rng.random((2000, 2000)).astype(np.float32)
+        model = _model(data)
+        model.mode = 'full'
+        model.enabled = True
+        model.max_samples = 100_000
+        model.compute()
+        assert len(model.counts) == 256
+        assert model.counts.sum() > 0
 
 
 class TestDask:

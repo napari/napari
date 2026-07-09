@@ -103,6 +103,7 @@ class QContrastLimitsPopup(QtPopup):
 
         self._layer = layer
         self._cleaned_up = False
+        self._histogram_enabled_checkbox = None
 
         self._layout = QVBoxLayout()
         self._layout.setContentsMargins(10, 10, 10, 10)
@@ -209,7 +210,6 @@ class QContrastLimitsPopup(QtPopup):
         # Histogram content — created after all non-histogram layout items
         # so _frame_base_height captures the true baseline (clim + gamma + buttons).
         self.histogram_content = None
-        self._histogram_enabled_checkbox = None
         self._frame_base_height: int = 0
         if isinstance(layer, Image):
             self.histogram_content = QtHistogramContentWidget(
