@@ -100,48 +100,27 @@ class QtHistogramWidget(QWidget):
         self.setLayout(main_layout)
 
         # Connect to model events for live updates of visual from sync compute
-        self._histogram.events.counts.connect(self._on_histogram_change)
-        self._histogram.events.enabled.connect(self._on_histogram_change)
-        self._histogram.events.log_scale.connect(self._on_histogram_change)
+        self._histogram.events.counts.connect(self._update_histogram)
+        self._histogram.events.enabled.connect(self._update_histogram)
+        self._histogram.events.log_scale.connect(self._update_histogram)
         # Connect to mode, bins, and max_samples events to trigger
         # (re)computation.  For chunked data in full mode, this picks up
         # where _mark_dirty() deferred synchronous compute() and routes
         # through the async GeneratorWorker path instead.
-        self._histogram.events.mode.connect(self._on_recompute_needed)
-        self._histogram.events.bins.connect(self._on_recompute_needed)
-        self._histogram.events.max_samples.connect(self._on_recompute_needed)
+        self._histogram.events.mode.connect(self._ensure_histogram_computed)
+        self._histogram.events.bins.connect(self._ensure_histogram_computed)
+        self._histogram.events.max_samples.connect(
+            self._ensure_histogram_computed
+        )
 
         # Connect to layer events that affect visualization
-        layer.events.gamma.connect(self._on_gamma_change)
-        layer.events.contrast_limits.connect(self._on_clims_change)
+        layer.events.gamma.connect(self._update_histogram)
+        layer.events.contrast_limits.connect(self._update_histogram)
         layer.events.colormap.connect(self._on_colormap_change)
         self._appearance.events.theme.connect(self._on_theme_change)
 
-        self._apply_visual_style()
-
         # Initial update
-        self._update_histogram()
-
-    def _on_histogram_change(self, event: Event | None = None) -> None:
-        """Update visualization when histogram data changes."""
-        self._update_histogram()
-
-    def _on_recompute_needed(self, event: Event | None = None) -> None:
-        """Respond to mode, bins, max_samples, or log_scale changes.
-
-        For chunked data in full mode, ``_mark_dirty()`` defers to the
-        async consumer, so this handler triggers the ``GeneratorWorker``
-        path.  For all other cases ``_ensure_histogram_computed`` will
-        either no-op (data hasn't changed) or call ``compute()`` sync.
-        """
-        self._ensure_histogram_computed()
-
-    def _on_gamma_change(self, event: Event | None = None) -> None:
-        """Update gamma curve when layer gamma changes."""
-        self._update_histogram()
-
-    def _on_clims_change(self, event: Event | None = None) -> None:
-        """Update contrast limit indicators when they change."""
+        self._apply_visual_style()
         self._update_histogram()
 
     def _on_colormap_change(self, event: Event | None = None) -> None:
@@ -164,7 +143,7 @@ class QtHistogramWidget(QWidget):
         self._apply_visual_style(theme_name=theme_name)
         self.canvas.update()
 
-    def _ensure_histogram_computed(self) -> None:
+    def _ensure_histogram_computed(self, event: Event | None = None) -> None:
         """Trigger histogram computation in a background thread.
 
         Uses a ``GeneratorWorker`` so intermediate results are yielded
@@ -173,15 +152,20 @@ class QtHistogramWidget(QWidget):
         """
         # Cancel any in-flight worker
         if self._compute_worker is not None:
-            # Disconnect the finished signal first so _on_async_compute_done
-            # won't fire when the old worker's thread eventually completes
-            # (quit() cannot forcibly stop a running thread-pool function).
+            # Disconnect both signals so no stale callbacks fire.
             self._compute_worker.finished.disconnect(
                 self._on_async_compute_done
             )
+            self._compute_worker.yielded.disconnect(self._on_partial_histogram)
 
             self._compute_worker.quit()
             self._compute_worker = None
+            # The old worker's generator holds _computing=True, which would
+            # block both _mark_dirty's inline compute and any new worker's
+            # compute via the reentrancy guard.  Reset the flag so the new
+            # worker can proceed.  The old worker's finally block will
+            # redundantly set _computing=False on exit — harmless.
+            self._histogram._computing = False
 
         worker = create_worker(self._histogram.compute)  # type: ignore[arg-type]
         worker.yielded.connect(self._on_partial_histogram)
@@ -216,21 +200,13 @@ class QtHistogramWidget(QWidget):
     def _on_async_compute_done(self, _: Any = None) -> None:
         """Called on the main thread when background compute finishes.
 
-        Emits the counts event so the histogram visual re-reads the
+        Emits ``events.counts()`` so the histogram visual re-reads the
         freshly computed histogram data from the model.
-
-        If the widget has been cleaned up (e.g. closed) while the background
-        thread was running, this method returns early to avoid an error trying
-        to access destroyed objects.
         """
         if self._cleaned_up:
             return
         self._compute_worker = None
 
-        # The generator already set _bin_edges/_counts/_dirty in the
-        # background thread.  Emit counts on the main thread so
-        # _on_histogram_change fires and _update_histogram() re-reads
-        # the fresh state.
         self._histogram.events.counts()
 
     def _theme_rgba(
@@ -272,8 +248,11 @@ class QtHistogramWidget(QWidget):
             axes_color=self._theme_rgba(theme.text, 0.7),
         )
 
-    def _update_histogram(self) -> None:
+    def _update_histogram(self, event: Event | None = None) -> None:
         """Update the histogram visual with current data.
+
+        Accepts an optional event argument so it can be connected directly
+        to psygnal events without a wrapper.
 
         Reads ``_bin_edges`` and ``_counts`` directly (the private
         attributes) to guarantee this method never triggers a synchronous
