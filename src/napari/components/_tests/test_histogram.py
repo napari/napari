@@ -348,14 +348,13 @@ class TestRGB:
 class TestEvents:
     """Test histogram event emissions."""
 
-    def test_counts_event_fires_on_compute(self):
+    def test_compute_generator_sets_model_state(self):
+        """Iterating compute() generator should set model state."""
         model = _model(np.random.rand(20, 20))
-        fired: list[bool] = []
-
-        model.events.counts.connect(lambda: fired.append(True))
-        model._compute_sync()
-
-        assert len(fired) > 0
+        list(model.compute())
+        assert len(model._bin_edges) == 257
+        assert len(model.counts) == 256
+        assert model.counts.sum() > 0
 
 
 class TestReset:
@@ -827,25 +826,21 @@ class TestEventHandlers:
     def test_on_slice_change_only_in_canvas_mode(self):
         """_on_slice_change should only trigger recompute in canvas mode."""
         model = _model(np.random.rand(5, 20, 20))
-        model.enabled = True
-        _ = model.counts  # initial compute
+        list(model.compute())  # initial compute, clears dirty
 
-        model._dirty = False
+        # In full mode, slice changes are ignored (no access to canvas data).
         model.mode = 'full'
+        list(model.compute())  # compute full-mode, clears dirty
         model._on_slice_change()
-        # In full mode _on_slice_change returns early without calling
-        # _mark_dirty, so _dirty stays False.
-        assert not model._dirty
+        assert not model._dirty, (
+            'slice change in full mode should not mark dirty'
+        )
 
+        # In canvas mode, slice changes mark dirty.
         model.mode = 'canvas'
-        model._dirty = False
+        list(model.compute())  # compute canvas, clears dirty
         model._on_slice_change()
-        # In canvas mode _on_slice_change calls _mark_dirty, which sets
-        # _dirty=True and then calls compute() (since enabled=True).
-        # compute() resets _dirty=False at the end. The net effect is
-        # that the histogram was recomputed — verify it produced valid data.
-        assert not model._dirty
-        assert len(model.counts) == 256
+        assert model._dirty, 'slice change in canvas mode should mark dirty'
 
     def test_on_enabled_change_computes_when_dirty(self):
         """When enabled flips to True and data is dirty, compute should run."""
@@ -870,13 +865,12 @@ class TestEventHandlers:
         """Changing bins or mode should mark dirty and trigger recompute."""
         model = _model(np.random.rand(10, 10))
         model.enabled = True
-        _ = model.counts  # initial compute
+        list(model.compute())  # initial compute
 
-        model._dirty = False
         model.bins = 128
         # Setting bins fires event → _on_params_change → _mark_dirty
-        # → compute() → _dirty=False. Verify the result had the right bin count.
-        assert not model._dirty
+        # → _dirty=True. Iterate compute() to get fresh results.
+        list(model.compute())
         assert len(model.counts) == 128
 
     def test_log_scale_change_transforms_counts_in_place(self):

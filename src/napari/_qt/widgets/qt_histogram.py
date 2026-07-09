@@ -165,17 +165,11 @@ class QtHistogramWidget(QWidget):
         self.canvas.update()
 
     def _ensure_histogram_computed(self) -> None:
-        """Trigger histogram computation, using a thread for chunked data.
+        """Trigger histogram computation in a background thread.
 
-        For in-memory (numpy / small) data, ``compute()`` runs inline
-        and events fire on the main thread as usual.
-
-        For chunked arrays (dask / zarr) in full mode, the actual chunk
-        I/O runs in a background thread so the UI stays responsive.
-        While the thread runs, the widget's event connections are
-        temporarily suspended to prevent vispy updates from the
-        background thread; once the thread finishes, the widget reads
-        the fresh results and reconnects.
+        Uses a ``GeneratorWorker`` so intermediate results are yielded
+        progressively for chunked data (e.g. remote zarr), while
+        non-chunked data completes with a single yield.
         """
         # Cancel any in-flight worker
         if self._compute_worker is not None:
@@ -188,38 +182,6 @@ class QtHistogramWidget(QWidget):
 
             self._compute_worker.quit()
             self._compute_worker = None
-
-        if self._histogram.mode == 'full' and self._histogram._has_chunks(
-            self.layer.data
-        ):
-            self._start_async_compute()
-        else:
-            # Sync path — _compute_sync() iterates the generator
-            # and emits events.counts() internally.
-            self._histogram._compute_sync()
-            self._reconnect_events()
-            # Re-read the fresh data even if events fired while disconnected
-            # (e.g. after cancelling an in-flight async worker).
-            self._update_histogram()
-
-    def _start_async_compute(self) -> None:
-        """Run histogram compute in a background thread.
-
-        Disconnects event-driven vispy updates during the thread to
-        avoid calling vispy from the background thread.  After the
-        thread finishes, reconnects and reads the fresh results.
-
-        Uses a generator worker so intermediate results are yielded
-        after each chunk, providing incremental display updates for
-        large remote datasets.
-        """
-        # Disconnect ALL event-driven updates during thread to prevent
-        # vispy calls from the background thread via gamma/clims/colormap
-        # event handlers as well as the histogram model's own events.
-        # disconnect_events is idempotent — safe to call when events are
-        # already disconnected (e.g. after cancel-and-restart).
-        disconnect_events(self._histogram.events, self)
-        disconnect_events(self.layer.events, self)
 
         worker = create_worker(self._histogram.compute)  # type: ignore[arg-type]
         worker.yielded.connect(self._on_partial_histogram)
@@ -251,32 +213,11 @@ class QtHistogramWidget(QWidget):
         )
         self.canvas.update()
 
-    def _reconnect_events(self) -> None:
-        """Reconnect all event-driven updates after an async compute completes
-        or after switching from async to sync mode.
-
-        Always disconnects first to prevent double-connections when events
-        were never disconnected (e.g. normal sync path without a prior
-        async compute).  This is the symmetric counterpart to the disconnects
-        in ``_start_async_compute()``.
-        """
-        disconnect_events(self._histogram.events, self)
-        disconnect_events(self.layer.events, self)
-        self._histogram.events.counts.connect(self._on_histogram_change)
-        self._histogram.events.enabled.connect(self._on_histogram_change)
-        self._histogram.events.log_scale.connect(self._on_histogram_change)
-        self._histogram.events.mode.connect(self._on_recompute_needed)
-        self._histogram.events.bins.connect(self._on_recompute_needed)
-        self._histogram.events.max_samples.connect(self._on_recompute_needed)
-        self.layer.events.gamma.connect(self._on_gamma_change)
-        self.layer.events.contrast_limits.connect(self._on_clims_change)
-        self.layer.events.colormap.connect(self._on_colormap_change)
-
     def _on_async_compute_done(self, _: Any = None) -> None:
         """Called on the main thread when background compute finishes.
 
-        Reconnects event listeners and reads the freshly computed
-        histogram data to update the vispy canvas.
+        Emits the counts event so the histogram visual re-reads the
+        freshly computed histogram data from the model.
 
         If the widget has been cleaned up (e.g. closed) while the background
         thread was running, this method returns early to avoid an error trying
@@ -286,14 +227,10 @@ class QtHistogramWidget(QWidget):
             return
         self._compute_worker = None
 
-        self._reconnect_events()
-
-        # Emit the counts event so any listeners (including our own
-        # _on_histogram_change → _update_histogram()) learn about the
-        # fresh data from the background computation.  The generator
-        # path in _compute_chunked_progressive sets _bin_edges/_counts/
-        # _dirty but does NOT fire model events (it runs on a
-        # background thread where event emission would be unsafe).
+        # The generator already set _bin_edges/_counts/_dirty in the
+        # background thread.  Emit counts on the main thread so
+        # _on_histogram_change fires and _update_histogram() re-reads
+        # the fresh state.
         self._histogram.events.counts()
 
     def _theme_rgba(
