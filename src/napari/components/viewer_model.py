@@ -35,7 +35,7 @@ from napari.components._viewer_mouse_bindings import (
     drag_to_zoom,
     layers_scroll,
 )
-from napari.components.camera import Camera, CameraMode
+from napari.components.camera import Camera
 from napari.components.cursor import Cursor, CursorStyle
 from napari.components.dims import Dims
 from napari.components.grid import GridCanvas
@@ -274,10 +274,8 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         settings.application.events.horizontal_axis_orientation.connect(
             self._update_camera_orientation
         )
-        self._update_camera_mode()
-        settings.application.events.camera_mode.connect(
-            self._update_camera_mode
-        )
+        self._update_camera_synced()
+        settings.application.events.synced.connect(self._update_camera_synced)
 
         self._update_viewer_grid()
         settings.application.events.grid_stride.connect(
@@ -374,10 +372,10 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             settings.application.horizontal_axis_orientation,
         )
 
-    def _update_camera_mode(self):
-        """Update camera mode based on settings."""
+    def _update_camera_synced(self):
+        """Update camera synced mode based on settings."""
         settings = get_settings()
-        self.camera.mode = settings.application.camera_mode
+        self.camera.synced = settings.application.synced
 
     def _update_viewer_grid(self):
         """Keep viewer grid settings up to date with settings values."""
@@ -518,24 +516,23 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     def _save_camera_state(self) -> None:
         """Save camera state for the mode we're leaving (runs at 'first').
 
-        Only saves when mode is SEPARATE or SHARED. Does nothing for
-        LEGACY mode since LEGACY calls ``fit_to_view`` unconditionally.
+        Always caches the current camera state so that the "separate"
+        (synced=False) mode can restore it when returning to this
+        ndisplay mode. Caching is harmless in synced mode since
+        ``_on_ndisplay_changed`` does not use the cached values there.
         """
-        if self.camera.mode == CameraMode.LEGACY:
-            return
         self.camera._cache_state(self._previous_ndisplay)
 
     def _on_ndisplay_changed(self) -> None:
-        """Handle ndisplay changes based on the current camera mode.
+        """Handle ndisplay changes based on the current camera synced mode.
 
-        * ``SEPARATE`` — each mode remembers its own center, zoom, and angles.
-          First entry into a mode uses ``fit_to_view`` defaults.
-        * ``SHARED`` — center and zoom persist between modes. The z-component
-          is set from the dims slider on 2D→3D and the dims slider tracks the
-          camera z on 3D→2D.
-        * ``LEGACY`` — no caching; ``fit_to_view`` is called on every switch.
+        * ``synced=True`` — center and zoom persist between modes.
+          The depth (z) component is set from the dims slider on 2D→3D
+          and the dims slider tracks the camera z on 3D→2D.
+        * ``synced=False`` — each mode remembers its own center, zoom,
+          and angles independently (per-mode caching).
         """
-        if self.camera.mode == CameraMode.SHARED:
+        if self.camera.synced:
             center = list(self.camera.center)
             if len(self.dims.order) >= 3:
                 new_display_dim = self.dims.order[-3]
@@ -549,11 +546,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             self.camera.center = center[0], center[1], center[2]
             return
 
-        if self.camera.mode == CameraMode.LEGACY:
-            self.fit_to_view()
-            return
-
-        # CameraMode.SEPARATE: per-mode caching
+        # Separate (synced=False) — per-mode caching
         new_mode = self.dims.ndisplay
         cached = self.camera._pop_cached_state(new_mode)
         if cached is not None:
