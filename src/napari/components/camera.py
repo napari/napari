@@ -4,9 +4,8 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 import numpy as np
-from pydantic import field_validator
+from pydantic import Field, PrivateAttr, field_validator
 
-from napari.utils.camera_mode import CameraMode
 from napari.utils.camera_orientations import (
     DEFAULT_ORIENTATION_TYPED,
     DepthAxisOrientation,
@@ -78,12 +77,19 @@ class Camera(EventedModel):
         VerticalAxisOrientation,
         HorizontalAxisOrientation,
     ] = DEFAULT_ORIENTATION_TYPED
-    mode: CameraMode = CameraMode.SEPARATE
+    synced: bool = Field(
+        default=True,
+        description=(
+            'If True, camera center and zoom are shared between 2D '
+            'and 3D views, with the depth (z) component synced via '
+            'the dims slider. If False, each ndisplay mode '
+            'independently remembers its own camera state.'
+        ),
+    )
 
-    # Per-mode camera state cache: explicit attributes for 2D and 3D modes.
-    # These are populated and consumed by ViewerModel's ndisplay-change handlers.
-    _cached_2d_state: _CameraState | None = None
-    _cached_3d_state: _CameraState | None = None
+    # Per-mode camera state cache for the "separate" (synced=False) mode.
+    _cached_2d_state: _CameraState | None = PrivateAttr(None)
+    _cached_3d_state: _CameraState | None = PrivateAttr(None)
 
     def _cache_state(self, ndisplay_mode: int) -> None:
         """Save current camera state for a given ndisplay mode."""
