@@ -86,6 +86,7 @@ class HistogramModel(EventedModel):
     _counts: np.ndarray = PrivateAttr(default_factory=lambda: np.array([0.0]))
     _dirty: bool = PrivateAttr(default=True)
     _computing: bool = PrivateAttr(default=False)
+    _compute_generation: int = PrivateAttr(default=0)
 
     def __init__(
         self,
@@ -174,7 +175,8 @@ class HistogramModel(EventedModel):
             Array of counts with length ``self.bins``.
         """
         if self._dirty:
-            self._compute_sync()
+            for _ in self.compute():
+                pass
         return self._counts
 
     def _set_empty_data(self) -> None:
@@ -182,16 +184,6 @@ class HistogramModel(EventedModel):
         self._bin_edges = np.array([0.0, 1.0])
         self._counts = np.array([0.0])
         self._dirty = False
-
-    def _compute_sync(self) -> None:
-        """Run synchronous histogram computation and emit events.
-
-        Iterates the ``compute()`` generator and emits ``events.counts()``
-        on completion.  Used by internal callers that need sync computation.
-        """
-        for _ in self.compute():
-            pass
-        self.events.counts()
 
     def compute(
         self,
@@ -203,9 +195,9 @@ class HistogramModel(EventedModel):
         via a ``GeneratorWorker`` in a background thread).  For non-chunked
         data, yields the final result once.
 
-        Does **not** emit ``events.counts()`` — sync callers should use
-        ``_compute_sync()`` instead; async callers should emit the event
-        on the main thread after the generator completes.
+        Does **not** emit ``events.counts()`` — the caller (e.g.
+        ``_on_async_compute_done`` on the main thread) is responsible for
+        emitting after the generator completes.
 
         Yields
         ------
@@ -216,6 +208,8 @@ class HistogramModel(EventedModel):
             return
 
         self._computing = True
+        self._compute_generation += 1
+        generation = self._compute_generation
         self._connect_layer_events()
         try:
             data = self._get_data()
@@ -235,7 +229,7 @@ class HistogramModel(EventedModel):
                     return
 
             if self.mode == 'full' and self._has_chunks(data):
-                yield from self._compute_chunked_progressive(data)
+                yield from self._compute_chunked_progressive(data, generation)
             else:
                 # Always sample large data to keep the UI responsive,
                 # regardless of mode.
@@ -268,7 +262,7 @@ class HistogramModel(EventedModel):
         self._dirty = False
 
     def _compute_chunked_progressive(
-        self, data: Any
+        self, data: Any, generation: int
     ) -> Generator[tuple[np.ndarray, np.ndarray], None, None]:
         """Generator that yields ``(bin_edges, counts)`` after each chunk.
 
@@ -277,6 +271,16 @@ class HistogramModel(EventedModel):
         ``_counts`` and marks it not-dirty, so callers that skip
         intermediate results (e.g. the synchronous ``compute`` path)
         still see consistent state.
+
+        Parameters
+        ----------
+        data : Any
+            Chunked array (dask, zarr, etc.).
+        generation : int
+            Generation counter from the calling ``compute()`` invocation.
+            If ``self._compute_generation`` differs, intermediate results
+            are discarded to prevent stale async data from overwriting
+            fresher computations.
         """
         n = min(self.max_samples, data.size)
         chunk_sizes = self._chunk_sizes(data)
@@ -308,6 +312,12 @@ class HistogramModel(EventedModel):
                 counts = np.log10(running_counts + 1).astype(np.float32)
             else:
                 counts = running_counts.astype(np.float32)
+
+            # Stale guard: if a newer compute was started, discard
+            # intermediate results to prevent stale async data from
+            # overwriting fresh state.
+            if self._compute_generation != generation:
+                return
             yield bins, counts
 
         # Update model state for callers that read _bin_edges / _counts
@@ -622,7 +632,8 @@ class HistogramModel(EventedModel):
         if self.enabled:
             self._connect_layer_events()
             if self._dirty:
-                self._compute_sync()
+                for _ in self.compute():
+                    pass
         else:
             self._disconnect_layer_events()
 
@@ -642,10 +653,8 @@ class HistogramModel(EventedModel):
         the eager ``compute()`` call here.
         """
         self._dirty = True
-        if not self._computing and self.enabled:
-            if self.mode == 'full' and self._has_chunks(self._layer.data):
-                return
-            self._compute_sync()
+        # Computation is triggered by the widget's event handler.
+        # For explicit sync access, callers iterate ``compute()`` directly.
 
     def reset(self) -> None:
         """Reset histogram to default settings and disable.
