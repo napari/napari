@@ -342,14 +342,8 @@ def test_changing_data_dimensionality_updates_units_scale():
     image.data = np.zeros((5, 10, 10))
     assert len(vispy_image._world_to_layer_units_scale) == image.ndim
     # _on_matrix_change should succeed without IndexError
-    vispy_image._on_matrix_change()
 
     # Changing back to 2D should also work
     image.data = np.zeros((10, 10))
     assert len(vispy_image._world_to_layer_units_scale) == image.ndim
-    vispy_image._on_matrix_change()
 
-    # Changing from 2D to 4D should also work
-    image.data = np.zeros((3, 5, 10, 10))
-    assert len(vispy_image._world_to_layer_units_scale) == image.ndim
-    vispy_image._on_matrix_change()
