@@ -222,7 +222,6 @@ class QContrastLimitsPopup(QtPopup):
             # Insert between clim row (0) and gamma row (now index 1)
             self._layout.insertWidget(1, self.histogram_content)
             if not layer.histogram.enabled:
-                self.histogram_content.setFixedHeight(0)
                 self.histogram_content.hide()
             layer.histogram.events.enabled.connect(
                 self._on_external_histogram_enabled
@@ -265,23 +264,25 @@ class QContrastLimitsPopup(QtPopup):
         outer = self.layout().contentsMargins()
         return self._frame_base_height + outer.top() + outer.bottom()
 
-    def _on_popup_histogram_toggled(self, visible: bool) -> None:
-        """Handle the popup's histogram checkbox toggle."""
+    def _set_histogram_visible(self, visible: bool) -> None:
+        """Show or hide the histogram content and resize the popup."""
         if self.histogram_content is None:
             return
         if visible:
             h = self.histogram_content.sizeHint().height()
-            self.histogram_content.setFixedHeight(h)
             self.histogram_content.show()
             self._layer.histogram.enabled = True
             self.setFixedHeight(
                 self._base_height() + h + self._layout.spacing()
             )
         else:
-            self.histogram_content.setFixedHeight(0)
             self.histogram_content.hide()
             self._layer.histogram.enabled = False
             self.setFixedHeight(self._base_height())
+
+    def _on_popup_histogram_toggled(self, visible: bool) -> None:
+        """Handle the popup's histogram checkbox toggle."""
+        self._set_histogram_visible(visible)
 
     def _on_external_histogram_enabled(self) -> None:
         """Sync checkbox when ``layer.histogram.enabled`` changes from outside."""
@@ -291,17 +292,7 @@ class QContrastLimitsPopup(QtPopup):
                     self._layer.histogram.enabled
                 )
             if self.histogram_content is not None:
-                if self._layer.histogram.enabled:
-                    h = self.histogram_content.sizeHint().height()
-                    self.histogram_content.setFixedHeight(h)
-                    self.histogram_content.show()
-                    self.setFixedHeight(
-                        self._base_height() + h + self._layout.spacing()
-                    )
-                else:
-                    self.histogram_content.setFixedHeight(0)
-                    self.histogram_content.hide()
-                    self.setFixedHeight(self._base_height())
+                self._set_histogram_visible(self._layer.histogram.enabled)
 
     def _cleanup(self) -> None:
         """Disconnect event handlers and clean up widgets."""
@@ -313,9 +304,6 @@ class QContrastLimitsPopup(QtPopup):
             self._layer.histogram.events.enabled.disconnect(
                 self._on_external_histogram_enabled
             )
-        # Clear fixed-height constraint so the popup doesn't persist it
-        self.setMaximumHeight(16777215)
-        self.setMinimumHeight(0)
         if self.histogram_content is not None:
             self.histogram_content.cleanup()
             self.histogram_content = None
