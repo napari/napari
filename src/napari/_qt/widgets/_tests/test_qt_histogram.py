@@ -405,6 +405,8 @@ def test_histogram_visual_update_bars_empty(qtbot):
     # Call _update_bars directly with a single bin (len(bins) < 2)
     visual._update_bars(np.array([0.0]), np.array([5.0]))
     # Should not crash; calls _set_empty_data internally
+    # After _set_empty_data, the bars mesh should have 3 dummy vertices
+    assert visual._bars.mesh_data.get_vertices() is not None
 
     widget.cleanup()
 
@@ -421,7 +423,37 @@ def test_histogram_visual_update_bars_zero_range(qtbot):
     bins = np.array([5.0, 5.0, 5.0], dtype=np.float32)
     counts = np.array([10.0, 5.0], dtype=np.float32)
     visual._update_bars(bins, counts)
-    # Should not crash
+    # Should not crash; with 2 bins, should produce 8 vertices (4 per bar)
+    vertices = visual._bars.mesh_data.get_vertices()
+    assert vertices is not None
+    assert len(vertices) == 8, (
+        'zero-range bars should produce 8 vertices for 2 bins'
+    )
+
+    widget.cleanup()
+
+
+def test_qt_histogram_layer_bar_color(qtbot):
+    """_layer_bar_color should return a 4-tuple based on the layer's colormap."""
+    layer = Image(np.linspace(0, 1, 64, dtype=np.float32).reshape(8, 8))
+    widget = QtHistogramWidget(layer)
+    qtbot.addWidget(widget)
+
+    # Default colormap (gray) → bar color should be a 4-element tuple
+    color = widget._layer_bar_color()
+    assert len(color) == 4
+    assert all(0 <= c <= 1 for c in color)
+
+    # With a reversed colormap, the bar color should still be non-zero
+    # (the method uses map([0.8]) to avoid black-on-black for gray_r)
+    layer.colormap = 'gray_r'
+    color_r = widget._layer_bar_color()
+    assert len(color_r) == 4
+    # Even on a reversed colormap, the 0.8 position is near-white, so at
+    # least one channel should be > 0.5.
+    assert any(c > 0.5 for c in color_r), (
+        f'gray_r bar color should be light, got {color_r}'
+    )
 
     widget.cleanup()
 
