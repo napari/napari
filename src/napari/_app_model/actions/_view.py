@@ -4,7 +4,6 @@ from app_model.types import StandardKeyBinding, SubmenuItem, ToggleRule
 from napari._app_model.actions._toggle_action import ViewerModelToggleAction
 from napari._app_model.constants import MenuGroup, MenuId
 from napari.components import ViewerModel
-from napari.components.camera import CameraMode
 from napari.settings import get_settings
 from napari.utils.translations import trans
 
@@ -155,20 +154,12 @@ def _toggle_canvas_ndim(viewer: ViewerModel) -> None:
         viewer.dims.ndisplay = 2
 
 
-def _cycle_camera_mode(viewer: ViewerModel) -> None:
-    """Cycle through the available camera modes
-
-    Use the string repr of current index to find the mode in the list,
-    then increment the index and wrap around to the start of the list.
-    """
-    modes = list(CameraMode)
-    str_modes = [str(m) for m in modes]
-    viewer.camera.mode = modes[
-        (str_modes.index(str(viewer.camera.mode)) + 1) % len(modes)
-    ]
+def _toggle_synced_camera(viewer: ViewerModel) -> None:
+    """Toggle the camera synced mode between synced and separate."""
+    viewer.camera.synced = not viewer.camera.synced
     from napari.utils.notifications import show_info
 
-    show_info(f'Camera mode: {viewer.camera.mode.value}')
+    show_info(f'Camera synced: {viewer.camera.synced}')
 
 
 VIEW_ACTIONS: list[Action] = [
@@ -229,8 +220,8 @@ VIEW_ACTIONS: list[Action] = [
 
 VIEW_ACTIONS.append(
     Action(
-        id='napari.viewer.cycle_camera_mode',
-        title=trans._('Cycle Camera Mode'),
+        id='napari.viewer.toggle_synced_camera',
+        title=trans._('Toggle Synced Camera'),
         menus=[
             {
                 'id': MenuId.MENUBAR_VIEW,
@@ -238,7 +229,7 @@ VIEW_ACTIONS.append(
                 'order': 2,
             }
         ],
-        callback=_cycle_camera_mode,
+        callback=_toggle_synced_camera,
     ),
 )
 
