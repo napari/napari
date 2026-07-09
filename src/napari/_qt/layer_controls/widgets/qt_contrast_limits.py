@@ -155,7 +155,7 @@ class QContrastLimitsPopup(QtPopup):
         gamma_row.addWidget(self.gamma_slider)
         self._layout.addLayout(gamma_row)
 
-        # 4. Reset / full range buttons
+        # 3. Reset / full range buttons
         button_layout = QHBoxLayout()
         button_layout.setContentsMargins(0, 5, 0, 0)
         button_layout.setSpacing(5)

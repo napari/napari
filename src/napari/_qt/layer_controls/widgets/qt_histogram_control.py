@@ -48,7 +48,7 @@ class QtHistogramControl(QtWidgetControlsBase):  # type: ignore[metaclass]
     histogram_widget : QtHistogramWidget or None
         The histogram visualization widget.
     settings_widget : QtHistogramSettingsWidget or None
-        Widget for log scale control.
+        Widget for histogram mode and log scale controls.
     """
 
     def __init__(self, parent: QWidget, layer: Image) -> None:

@@ -542,7 +542,7 @@ class TestDask:
             np.random.rand(500, 500).astype(np.float32), chunks=100
         )
         model = _model(data)
-        # _load_chunk is a static helper used by _compute_sampled
+        # _load_chunk is a static helper used by _compute_chunked_progressive
         block = model._load_chunk(data, 0)
         assert isinstance(block, np.ndarray)
         assert block.size > 0
@@ -939,13 +939,13 @@ class TestCalcHistogramExtended:
         assert model._bin_edges[-1] > model._bin_edges[0]
 
     def test_log_scale_with_chunked_compute(self, monkeypatch):
-        """Log scale should be correctly applied in the _compute_chunked path."""
+        """Log scale should be correctly applied in the _compute_chunked_progressive path."""
         dask = pytest.importorskip('dask.array')
         data = dask.from_array(
             np.random.rand(100, 100).astype(np.float32), chunks=(50, 50)
         )
         model = _model(np.zeros((10, 10)))
-        # We need to set up the model to go through _compute_chunked
+        # We need to set up the model to go through _compute_chunked_progressive
         model._layer = Image(data)
         model.mode = 'full'
         model.log_scale = True
