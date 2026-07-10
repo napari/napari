@@ -1,5 +1,4 @@
 import os
-from unittest.mock import patch
 
 import numpy as np
 import pytest
@@ -39,10 +38,19 @@ def test_base_controls_creation(qtbot, layer):
     assert tuple(slider_clims) == original_clims
 
 
-@patch.object(QContrastLimitsPopup, 'show')
 @pytest.mark.parametrize('layer', [Image(_IMAGE), Surface(_SURF)])
-def test_clim_right_click_shows_popup(mock_show, qtbot, layer):
+def test_clim_right_click_shows_popup(qtbot, layer, monkeypatch):
     """Right clicking on the contrast limits slider should show a popup."""
+    # Suppress the actual window with a plain recorder function rather than a
+    # Mock.  QContrastLimitsPopup connects a signal to one of its own bound
+    # methods in __init__, so opening the popup makes PySide6 build the class
+    # metaobject (parsePythonType), which walks the class __dict__.  A Mock
+    # left there by patch.object crashes that walk (segfault on
+    # PySide6 6.10 / Python 3.14); a plain function is introspected safely.
+    show_calls = []
+    monkeypatch.setattr(
+        QContrastLimitsPopup, 'show', lambda self: show_calls.append(self)
+    )
     qtctrl = QtBaseImageControls(layer)
     qtbot.addWidget(qtctrl)
     qtbot.mousePress(
@@ -53,7 +61,7 @@ def test_clim_right_click_shows_popup(mock_show, qtbot, layer):
     # this mock doesn't seem to be working on cirrus windows
     # but it works on local windows tests...
     if not (os.name == 'nt' and os.getenv('CI')):
-        mock_show.assert_called_once()
+        assert len(show_calls) == 1
 
 
 @pytest.mark.parametrize('layer', [Image(_IMAGE), Surface(_SURF)])
@@ -69,12 +77,15 @@ def test_changing_model_updates_view(qtbot, layer):
     )
 
 
-@patch.object(QContrastLimitsPopup, 'show')
 @pytest.mark.parametrize(
     'layer', [Image(_IMAGE), Image(_IMAGE.astype(np.int32)), Surface(_SURF)]
 )
-def test_range_popup_clim_buttons(mock_show, qtbot, qapp, layer):
+def test_range_popup_clim_buttons(qtbot, qapp, layer, monkeypatch):
     """The buttons in the clim_popup should adjust the contrast limits value"""
+    # Plain no-op function instead of a Mock: a Mock in the popup class
+    # __dict__ segfaults PySide6's metaobject introspection (see
+    # test_clim_right_click_shows_popup).
+    monkeypatch.setattr(QContrastLimitsPopup, 'show', lambda self: None)
     # this test relies implicitly on ndisplay=3 which is now a broken assumption?
     layer._slice_dims(Dims(ndim=3, ndisplay=3))
     qtctrl = QtBaseImageControls(layer)
