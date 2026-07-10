@@ -323,6 +323,12 @@ class HistogramModel(EventedModel):
 
         running_counts = np.zeros(self.bins, dtype=np.float64)
         for ci in order:
+            # Early stale guard: check before the I/O-bound chunk load so
+            # that aborted workers (e.g. after a mode switch to canvas)
+            # exit quickly instead of blocking the thread pool on a chunk
+            # whose results will be discarded anyway.
+            if self._compute_generation != generation:
+                return
             block = self._load_chunk(data, ci)
             chunk_counts, _ = np.histogram(
                 block,
@@ -339,9 +345,9 @@ class HistogramModel(EventedModel):
             else:
                 counts = running_counts.astype(np.float32)
 
-            # Stale guard: if a newer compute was started, discard
-            # intermediate results to prevent stale async data from
-            # overwriting fresh state.
+            # Post-load guard: also check after computation to prevent
+            # a freshly-computed partial from overwriting state that was
+            # set by a newer compute while this chunk was loading.
             if self._compute_generation != generation:
                 return
             yield bins, counts
