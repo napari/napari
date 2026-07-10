@@ -187,7 +187,10 @@ class QtHistogramWidget(QWidget):
 
         worker = cast(
             GeneratorWorker,
-            create_worker(self._histogram.compute),  # type: ignore[arg-type]
+            create_worker(
+                self._histogram.compute,
+                _progress={'desc': 'Computing histogram'},
+            ),  # type: ignore[arg-type]
         )
         worker.yielded.connect(self._on_partial_histogram)
         worker.finished.connect(self._on_async_compute_done)
@@ -204,6 +207,12 @@ class QtHistogramWidget(QWidget):
         """
         worker.finished.disconnect()
         worker.yielded.disconnect()
+        # ``create_worker(_progress=...)`` connects ``pbar.close`` to
+        # ``worker.finished``; disconnecting above drops it too, so close the
+        # progress indicator here to avoid leaking a spinner on abort/restart.
+        pbar = getattr(worker, 'pbar', None)
+        if pbar is not None:
+            pbar.close()
         worker.quit()
         self._histogram._computing = False
 
