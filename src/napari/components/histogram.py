@@ -87,6 +87,24 @@ class HistogramModel(EventedModel):
     _dirty: bool = PrivateAttr(default=True)
     _computing: bool = PrivateAttr(default=False)
     _compute_generation: int = PrivateAttr(default=0)
+    # Set True (on the main thread) by the first view that starts a
+    # background compute for this model, so the other view sharing the model
+    # (e.g. the inline histogram vs. the contrast-limits popup) does not start
+    # a second, competing worker: two concurrent workers would fight over
+    # ``_computing`` / ``_compute_generation`` (corrupting the progressive
+    # accumulation) and double the remote I/O.  A plain bool keeps Qt out of
+    # this (non-Qt) model — the Qt widget layer owns the actual worker object.
+    # Distinct from ``_computing`` (set inside the worker thread) because
+    # scheduling must be serialized on the main thread before the thread runs.
+    _compute_scheduled: bool = PrivateAttr(default=False)
+    # Cached full-mode result: (bin_edges, counts, log_scale_at_compute_time).
+    # Full-mode compute is costly and slice-independent, so we keep the last
+    # result and restore it on switch-back instead of recomputing.  Canvas
+    # mode is cheap and not cached.  Invalidated by data/param changes (see
+    # ``_invalidate``); a slice change never touches it (full is unaffected).
+    _full_cache: tuple[np.ndarray, np.ndarray, bool] | None = PrivateAttr(
+        default=None
+    )
 
     def __init__(
         self,
@@ -126,11 +144,19 @@ class HistogramModel(EventedModel):
         self._layer = layer
         self._layer_events_connected = False
 
+        # Render-only broadcast event (psygnal, like every other event here —
+        # no Qt).  The widget layer emits this after each progressive chunk so
+        # that *all* views sharing this model (the inline histogram and the
+        # contrast-limits popup) re-render the partial in lockstep, regardless
+        # of which view owns the compute.  Unlike ``events.counts`` (which
+        # views also use as a recompute trigger), this never restarts compute.
+        self.events.add(partial_computed=Event)
+
         # Connect to our own events (these are internal to the model and
         # don't leak external callbacks on the layer).
-        self.events.bins.connect(self._mark_dirty)
-        self.events.max_samples.connect(self._mark_dirty)
-        self.events.mode.connect(self._mark_dirty)
+        self.events.bins.connect(self._invalidate)
+        self.events.max_samples.connect(self._invalidate)
+        self.events.mode.connect(self._on_mode_change)
         self.events.log_scale.connect(self._on_log_scale_change)
         self.events.enabled.connect(self._on_enabled_change)
 
@@ -145,8 +171,8 @@ class HistogramModel(EventedModel):
         if self._layer_events_connected:
             return
         self._layer_events_connected = True
-        self._layer.events.data.connect(self._mark_dirty)
-        self._layer.events.contrast_limits_range.connect(self._mark_dirty)
+        self._layer.events.data.connect(self._invalidate)
+        self._layer.events.contrast_limits_range.connect(self._invalidate)
         self._layer.events.set_data.connect(self._on_slice_change)
 
     def _disconnect_layer_events(self) -> None:
@@ -155,8 +181,8 @@ class HistogramModel(EventedModel):
         if not self._layer_events_connected:
             return
         self._layer_events_connected = False
-        self._layer.events.data.disconnect(self._mark_dirty)
-        self._layer.events.contrast_limits_range.disconnect(self._mark_dirty)
+        self._layer.events.data.disconnect(self._invalidate)
+        self._layer.events.contrast_limits_range.disconnect(self._invalidate)
         self._layer.events.set_data.disconnect(self._on_slice_change)
 
     @property
@@ -258,6 +284,8 @@ class HistogramModel(EventedModel):
         self._bin_edges = bin_edges
         self._counts = counts
         self._dirty = False
+        if self.mode == 'full':
+            self._full_cache = (bin_edges, counts, self.log_scale)
 
     def _compute_chunked_progressive(
         self, data: Any, generation: int
@@ -326,6 +354,8 @@ class HistogramModel(EventedModel):
             self._bin_edges = bins
             self._counts = counts
             self._dirty = False
+            # This generator only runs for chunked full mode, so cache it.
+            self._full_cache = (bins, counts, self.log_scale)
 
     def _calc_histogram(
         self,
@@ -600,6 +630,15 @@ class HistogramModel(EventedModel):
             self.events.counts()
             return
 
+        self._apply_log_scale()
+
+    def _apply_log_scale(self) -> None:
+        """Transform ``_counts`` in place to match ``self.log_scale``, then emit.
+
+        The caller is responsible for only invoking this on an actual flip.
+        Shared by ``_on_log_scale_change`` (live toggle) and ``_on_mode_change``
+        (restoring a cached full histogram computed in the other log state).
+        """
         if self.log_scale:
             self._counts = np.log10(np.maximum(self._counts, 0) + 1).astype(
                 np.float32
@@ -620,6 +659,41 @@ class HistogramModel(EventedModel):
                 self._mark_dirty()
         else:
             self._disconnect_layer_events()
+
+    def _invalidate(self, event: Event | None = None) -> None:
+        """Drop the cached full histogram, then mark dirty.
+
+        Cache-clearing is kept out of ``_mark_dirty`` so the mode-restore path
+        can call ``_mark_dirty`` without discarding the cache it may reuse.
+        Connected to the events that actually change histogram values: layer
+        ``data``/``contrast_limits_range`` and the ``bins``/``max_samples``
+        params.  (A slice change goes through ``_on_slice_change`` instead and
+        leaves the full cache intact, since full mode is slice-independent.)
+        """
+        self._full_cache = None
+        self._mark_dirty(event)
+
+    def _on_mode_change(self) -> None:
+        """Handle a mode switch, restoring the cached full histogram if present.
+
+        Full-mode compute is costly and slice-independent, so switching back to
+        ``full`` restores the cached result (adjusting only for a log-scale
+        difference) instead of recomputing.  Canvas mode is cheap and always
+        recomputes via ``_mark_dirty``.
+        """
+        if self.mode == 'full' and self._full_cache is not None:
+            bin_edges, counts, cached_log = self._full_cache
+            self._bin_edges = bin_edges
+            self._counts = counts
+            self._dirty = False
+            if cached_log != self.log_scale:
+                # Counts were computed in the other log state; reuse the live
+                # toggle transform to bring them to the current setting.
+                self._apply_log_scale()
+            else:
+                self.events.counts()
+            return
+        self._mark_dirty()
 
     def _mark_dirty(self, event: Event | None = None) -> None:
         """Mark histogram as needing recomputation and compute if possible.
@@ -654,3 +728,4 @@ class HistogramModel(EventedModel):
         self._bin_edges = np.array([0.0, 1.0])
         self._counts = np.array([0.0])
         self._dirty = True
+        self._full_cache = None

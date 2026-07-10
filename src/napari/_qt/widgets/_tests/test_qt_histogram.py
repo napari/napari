@@ -512,3 +512,133 @@ def test_qt_histogram_mode_switch_uses_async_for_chunked_data(qtbot):
     assert layer.histogram.counts.sum() > 0
 
     widget.cleanup()
+
+
+def _full_data_counts(base, hist, clims_range):
+    """Ground-truth full-data histogram for comparison with the model."""
+    ground_truth, _ = np.histogram(
+        base.ravel(),
+        bins=hist.bins,
+        range=tuple(float(v) for v in clims_range),
+    )
+    return ground_truth.astype(np.int64)
+
+
+def test_two_views_share_single_worker_and_both_animate(qtbot):
+    """Two histogram views on one layer (inline + popup) share a single
+    compute worker, yet *both* animate progressively — regardless of which
+    view owns the worker.
+
+    Regression test for the popup staying blank while the inline animated:
+    the two views used to run competing workers over the shared model,
+    corrupting the progressive accumulation, and only the worker-owning view
+    rendered chunk-by-chunk.
+    """
+    dask = pytest.importorskip('dask.array')
+    # Deterministic data with all chunks sampled (size < max_samples), so the
+    # final accumulation is exactly a full-data np.histogram.
+    base = np.arange(256 * 256, dtype=np.uint16).reshape(256, 256)
+    layer = Image(dask.from_array(base, chunks=(32, 32)))  # 64 chunks
+    layer.histogram.mode = 'full'
+
+    # Whichever view reaches _ensure_histogram_computed first owns the single
+    # worker; the other must still animate from partial_computed broadcasts.
+    view_a = QtHistogramWidget(layer)
+    view_b = QtHistogramWidget(layer)
+    qtbot.addWidget(view_a)
+    qtbot.addWidget(view_b)
+
+    # Count how many times each view's visual is actually redrawn.
+    draws = {'a': 0, 'b': 0}
+    orig_a = view_a.histogram_visual.set_data
+    orig_b = view_b.histogram_visual.set_data
+
+    def count_a(*args, **kwargs):
+        draws['a'] += 1
+        return orig_a(*args, **kwargs)
+
+    def count_b(*args, **kwargs):
+        draws['b'] += 1
+        return orig_b(*args, **kwargs)
+
+    view_a.histogram_visual.set_data = count_a
+    view_b.histogram_visual.set_data = count_b
+
+    hist = layer.histogram
+    layer.histogram.enabled = True  # triggers the shared async compute
+
+    qtbot.waitUntil(
+        lambda: not hist._compute_scheduled and not hist._dirty,
+        timeout=15000,
+    )
+
+    # Both views animated progressively from the single worker's chunks.
+    assert draws['a'] > 1
+    assert draws['b'] > 1
+    # Single-worker invariant held to completion — nothing left dangling.
+    assert not hist._compute_scheduled
+    assert view_a._compute_worker is None
+    assert view_b._compute_worker is None
+    # The result is the full accumulation, not a single-chunk fragment.
+    assert np.array_equal(
+        hist._counts.astype(np.int64),
+        _full_data_counts(base, hist, layer.contrast_limits_range),
+    )
+
+    view_a.cleanup()
+    view_b.cleanup()
+    from qtpy.QtCore import QThreadPool
+
+    qtbot.waitUntil(
+        lambda: QThreadPool.globalInstance().activeThreadCount() == 0,
+        timeout=10000,
+    )
+
+
+def test_closing_owning_view_mid_compute_hands_off_to_survivor(qtbot):
+    """Closing the view that owns the in-flight worker nudges a surviving
+    view to finish the compute, instead of stranding it with partial data.
+
+    Covers closing the contrast-limits popup mid-load while the inline
+    histogram remains open.
+    """
+    dask = pytest.importorskip('dask.array')
+    base = np.arange(256 * 256, dtype=np.uint16).reshape(256, 256)
+    layer = Image(dask.from_array(base, chunks=(32, 32)))
+    layer.histogram.mode = 'full'
+
+    view_a = QtHistogramWidget(layer)
+    view_b = QtHistogramWidget(layer)
+    qtbot.addWidget(view_a)
+    qtbot.addWidget(view_b)
+
+    hist = layer.histogram
+    layer.histogram.enabled = True  # starts the shared worker synchronously
+
+    # Identify the owning view and close it before the compute finishes.
+    assert hist._compute_scheduled
+    if view_a._compute_worker is not None:
+        owner, survivor = view_a, view_b
+    else:
+        owner, survivor = view_b, view_a
+    assert hist._dirty  # compute has not completed yet
+    owner.cleanup()
+
+    # The survivor must take over and finish the compute correctly.
+    qtbot.waitUntil(
+        lambda: not hist._compute_scheduled and not hist._dirty,
+        timeout=15000,
+    )
+    assert survivor._compute_worker is None
+    assert np.array_equal(
+        hist._counts.astype(np.int64),
+        _full_data_counts(base, hist, layer.contrast_limits_range),
+    )
+
+    survivor.cleanup()
+    from qtpy.QtCore import QThreadPool
+
+    qtbot.waitUntil(
+        lambda: QThreadPool.globalInstance().activeThreadCount() == 0,
+        timeout=10000,
+    )

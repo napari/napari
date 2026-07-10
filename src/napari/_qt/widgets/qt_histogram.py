@@ -108,6 +108,9 @@ class QtHistogramWidget(QWidget):
         self._histogram.events.mode.connect(self._on_model_event)
         self._histogram.events.bins.connect(self._on_model_event)
         self._histogram.events.max_samples.connect(self._on_model_event)
+        # Progressive partials are broadcast on a render-only channel so this
+        # view animates chunk-by-chunk even when another view owns the worker.
+        self._histogram.events.partial_computed.connect(self._update_histogram)
 
         # Connect to layer events that affect visualization
         layer.events.gamma.connect(self._update_histogram)
@@ -160,65 +163,92 @@ class QtHistogramWidget(QWidget):
         Uses a ``GeneratorWorker`` so intermediate results are yielded
         progressively for chunked data (e.g. remote zarr), while
         non-chunked data completes with a single yield.
+
+        At most one worker runs per model.  The inline histogram and the
+        popup share one model, so the first view to reach here claims the
+        compute — flipping the model's Qt-free ``_compute_scheduled`` flag on
+        the main thread — and owns the worker.  The other view returns and
+        instead animates from ``events.partial_computed`` broadcasts,
+        rendering the final result on ``events.counts()``.  The owner may
+        abort and restart its own worker (e.g. on a parameter change) to
+        recompute with fresh settings.
         """
-        # Cancel any in-flight worker
         if self._compute_worker is not None:
-            # Disconnect both signals so no stale callbacks fire.
-            self._compute_worker.finished.disconnect(
-                self._on_async_compute_done
-            )
-            self._compute_worker.yielded.disconnect(self._on_partial_histogram)
-
-            self._compute_worker.quit()
+            # We own the in-flight worker: abort and restart so a parameter
+            # change recomputes with fresh settings (we stay the owner, so
+            # ``_compute_scheduled`` stays True throughout).
+            self._abort_worker(self._compute_worker)
             self._compute_worker = None
-            # The old worker's generator holds _computing=True, which would
-            # block both _mark_dirty's inline compute and any new worker's
-            # compute via the reentrancy guard.  Reset the flag so the new
-            # worker can proceed.  The old worker's finally block will
-            # redundantly set _computing=False on exit — harmless.
-            self._histogram._computing = False
+        elif self._histogram._compute_scheduled:
+            # Another view drives the shared compute; it reacts to the same
+            # model event and (re)starts as needed.  We animate from its
+            # partial_computed broadcasts and render on events.counts().
+            return
 
-        worker = create_worker(self._histogram.compute)  # type: ignore[arg-type]
+        worker = cast(
+            GeneratorWorker,
+            create_worker(
+                self._histogram.compute,
+                _progress={'desc': 'Computing histogram'},
+            ),  # type: ignore[arg-type]
+        )
         worker.yielded.connect(self._on_partial_histogram)
         worker.finished.connect(self._on_async_compute_done)
+        self._compute_worker = worker
+        self._histogram._compute_scheduled = True
         worker.start()
-        self._compute_worker = cast(GeneratorWorker, worker)
+
+    def _abort_worker(self, worker: GeneratorWorker) -> None:
+        """Disconnect our slots from *worker* and ask its generator to stop.
+
+        Resets the model's ``_computing`` re-entrancy guard so a replacement
+        compute can proceed; the aborted generator's ``finally`` clears it
+        again — harmless.
+        """
+        worker.finished.disconnect()
+        worker.yielded.disconnect()
+        # ``create_worker(_progress=...)`` connects ``pbar.close`` to
+        # ``worker.finished``; disconnecting above drops it too, so close the
+        # progress indicator here to avoid leaking a spinner on abort/restart.
+        pbar = getattr(worker, 'pbar', None)
+        if pbar is not None:
+            pbar.close()
+        worker.quit()
+        self._histogram._computing = False
 
     def _on_partial_histogram(
         self, bins_counts: tuple[np.ndarray, np.ndarray]
     ) -> None:
-        """Update the vispy canvas with partial histogram data from a chunk.
+        """Publish a partial histogram result and broadcast it to all views.
 
         Called on the main thread each time the background generator yields
-        ``(bins, counts)``.  We skip the re-entrancy guard since this path
-        is never triggered by model-event handlers (they are disconnected
-        during the background compute).
+        ``(bins, counts)`` — only on the view that owns the worker.  We write
+        the partial into the shared model and emit ``partial_computed`` so
+        that every view (this one and, e.g., the inline histogram or the
+        popup) re-renders the same snapshot in lockstep.  This decouples
+        *which view drives the worker* from *which views animate*, so the
+        visible view always updates even when the other one owns the worker.
         """
         if self._cleaned_up:
             return
         bins, counts = bins_counts
-        gamma = self.layer.gamma
-        clims = self.layer.contrast_limits
-        clims_range = self.layer.contrast_limits_range
-
-        self.histogram_visual.set_data(
-            bin_edges=bins,
-            counts=counts,
-            gamma=gamma,
-            clims=clims,
-            data_range=clims_range,
-        )
-        self.canvas.update()
+        self._histogram._bin_edges = bins
+        self._histogram._counts = counts
+        self._histogram.events.partial_computed()
 
     def _on_async_compute_done(self, _: Any = None) -> None:
-        """Called on the main thread when background compute finishes.
+        """Called on the main thread when our background compute finishes.
 
-        Emits ``events.counts()`` so the histogram visual re-reads the
-        freshly computed histogram data from the model.
+        Releases the shared compute slot and emits ``events.counts()`` so
+        every view (this widget and any other sharing the model, e.g. the
+        popup vs the inline histogram) re-reads the freshly computed data.
+        Only the owning view connects this slot, so reaching here means we
+        held the compute.
         """
         if self._cleaned_up:
             return
         self._compute_worker = None
+        self._histogram._compute_scheduled = False
 
         self._histogram.events.counts()
 
@@ -306,29 +336,36 @@ class QtHistogramWidget(QWidget):
         self._cleaned_up = True
 
         # Disconnect events first to prevent new computation triggers
-        # during teardown.
+        # during teardown.  This also stops *this* widget from reacting to
+        # the counts() nudge emitted below, so only surviving views do.
         disconnect_events(self._histogram.events, self)
         disconnect_events(self.layer.events, self)
         disconnect_events(self._appearance.events, self)
 
-        # Request abort from the worker.  If the generator is between
-        # chunks, it will exit on the next loop iteration.  If it's
-        # mid-chunk (blocking on I/O) the thread pool will terminate
-        # it at shutdown — the _cleaned_up guard in
-        # _on_async_compute_done and _on_partial_histogram prevents
-        # stale callbacks.
-        if self._compute_worker is not None:
-            self._compute_worker.finished.disconnect(
-                self._on_async_compute_done
-            )
-            self._compute_worker.yielded.disconnect(self._on_partial_histogram)
-            self._compute_worker.quit()
-            self._compute_worker = None
-            # The old worker's generator holds _computing=True, which
-            # would block future compute() calls via the reentrancy
-            # guard.  Reset it so a new histogram can be created
-            # later without a stuck flag.
-            self._histogram._computing = False
+        # Abort the worker if we own one.  If the generator is between
+        # chunks it exits on the next iteration; if it's mid-chunk (blocking
+        # on I/O) the thread pool terminates it at shutdown — the
+        # _cleaned_up guard in _on_async_compute_done and
+        # _on_partial_histogram prevents stale callbacks either way.  Each
+        # view only ever holds its own worker, so there's no shared handle
+        # to reconcile.
+        owned_unfinished = False
+        worker = self._compute_worker
+        self._compute_worker = None
+        if worker is not None:
+            self._abort_worker(worker)
+            self._histogram._compute_scheduled = False
+            # If the compute had not finished (still dirty), our aborted
+            # worker will never emit counts(), so a surviving view must
+            # restart the load.
+            owned_unfinished = self._histogram._dirty
 
         self.histogram_visual.destroy()
         self.canvas.close()
+
+        # Nudge any surviving view (e.g. the inline histogram when the popup
+        # closes mid-load) to take over the compute we were driving.  Our
+        # own model-event subscriptions are already gone, so this reaches
+        # only other views — or no-one, harmlessly.
+        if owned_unfinished and self._histogram.enabled:
+            self._histogram.events.counts()
