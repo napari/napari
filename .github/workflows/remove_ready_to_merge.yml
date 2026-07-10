@@ -14,4 +14,4 @@ permissions:
 jobs:
   remove_label:
     name: Remove ready to merge label
-    uses: napari/shared-workflows/.github/workflows/remove_ready_to_merge.yml@main # v0.7.0
+    uses: napari/shared-workflows/.github/workflows/remove_ready_to_merge.yml@200f011f642fd89598422aa14d361113a9bd8059 # pinned to 2026.07.09
