@@ -188,9 +188,9 @@ class QtHistogramWidget(QWidget):
         worker = cast(
             GeneratorWorker,
             create_worker(
-                self._histogram.compute,
+                self._histogram.compute,  # type: ignore[arg-type]
                 _progress={'desc': 'Computing histogram'},
-            ),  # type: ignore[arg-type]
+            ),
         )
         worker.yielded.connect(self._on_partial_histogram)
         worker.finished.connect(self._on_async_compute_done)
