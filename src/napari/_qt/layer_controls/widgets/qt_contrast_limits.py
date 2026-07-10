@@ -27,7 +27,6 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWrappedLabel,
 )
 from napari._qt.utils import qt_signals_blocked
-from napari._qt.widgets.qt_histogram_content import QtHistogramContentWidget
 from napari._qt.widgets.qt_mode_buttons import QtModePushButton
 from napari.layers import Image, Surface
 from napari.utils._dtype import normalize_dtype
@@ -189,7 +188,14 @@ class QContrastLimitsPopup(QtPopup):
             range_btn.clicked.connect(layer.reset_contrast_limits_range)
             button_layout.addWidget(range_btn)
 
-        # Histogram toggle checkbox (Image layers only)
+        # Histogram toggle checkbox (Image layers only).  The checkbox
+        # itself is always created (simple Qt widget, safe), but the
+        # QtHistogramContentWidget (vispy canvas) is deferred to
+        # _ensure_histogram_content() to avoid a PySide6 segfault when
+        # creating native GL widgets during __init__.
+        self._histogram_enabled_checkbox = None
+        self.histogram_content = None
+        self._frame_base_height: int = 0
         if isinstance(layer, Image):
             self._histogram_enabled_checkbox = QCheckBox('histogram')
             self._histogram_enabled_checkbox.setChecked(
@@ -202,30 +208,28 @@ class QContrastLimitsPopup(QtPopup):
                 self._on_popup_histogram_toggled
             )
             button_layout.addWidget(self._histogram_enabled_checkbox)
+            # If histogram was already enabled, create content lazily
+            # when the popup is shown (showEvent), not during __init__.
+            if layer.histogram.enabled:
+                self._needs_content_on_show = True
+            else:
+                self._needs_content_on_show = False
 
         button_layout.addStretch()
 
         self._layout.addWidget(self._create_widget_from_layout(button_layout))
 
-        # Histogram content — created after all non-histogram layout items
-        # so _frame_base_height captures the true baseline (clim + gamma + buttons).
-        self.histogram_content = None
-        self._frame_base_height: int = 0
-        if isinstance(layer, Image):
-            self.histogram_content = QtHistogramContentWidget(
-                layer,
-                parent=self,
-            )
-            # Capture frame height with all non-histogram items in place
-            self._layout.activate()
-            self._frame_base_height = self.frame.sizeHint().height()
-            # Insert between clim row (0) and gamma row (now index 1)
-            self._layout.insertWidget(1, self.histogram_content)
-            if not layer.histogram.enabled:
-                self.histogram_content.hide()
-            layer.histogram.events.enabled.connect(
-                self._on_external_histogram_enabled
-            )
+        # Capture frame height WITHOUT histogram (baseline)
+        self._layout.activate()
+        self._frame_base_height = self.frame.sizeHint().height()
+
+    def showEvent(self, event):
+        """Create histogram content lazily on first show to avoid PySide6
+        segfault during __init__ when vispy native widgets are created."""
+        super().showEvent(event)
+        if getattr(self, '_needs_content_on_show', False):
+            self._needs_content_on_show = False
+            self._ensure_histogram_content()
 
     def keyPressEvent(self, event):
         """Override to prevent Enter from closing the popup.
@@ -244,31 +248,60 @@ class QContrastLimitsPopup(QtPopup):
         self._cleanup()
         super().closeEvent(event)
 
-    def sizeHint(self):
-        """Return the preferred size, excluding the histogram when hidden.
+    def _cleanup(self) -> None:
+        """Disconnect event handlers and clean up widgets."""
+        if self._cleaned_up:
+            return
+        self._cleaned_up = True
 
-        ``move_to`` calls ``sizeHint()`` to set the popup's initial geometry,
-        but ``QLayout.sizeHint()`` includes hidden widgets.  We override so
-        the initial height is correct regardless of histogram visibility.
-        """
-        hint = super().sizeHint()
-        if self.histogram_content and self.histogram_content.isHidden():
-            outer = self.layout().contentsMargins()
-            hint.setHeight(
-                self._frame_base_height + outer.top() + outer.bottom()
+        if isinstance(self._layer, Image):
+            self._layer.histogram.events.enabled.disconnect(
+                self._on_external_histogram_enabled
             )
-        return hint
+        if self.histogram_content is not None:
+            self.histogram_content.cleanup()
+            self.histogram_content = None
 
     def _base_height(self) -> int:
         """Popup height without the histogram widget."""
         outer = self.layout().contentsMargins()
         return self._frame_base_height + outer.top() + outer.bottom()
 
+    def _ensure_histogram_content(self) -> None:
+        """Lazy-create the histogram content widget and wire up events.
+
+        Called once, either from showEvent (if histogram was enabled before
+        the popup was opened) or from _set_histogram_visible (if the user
+        checks the checkbox after the popup is already visible).
+        """
+        if self.histogram_content is not None or not isinstance(
+            self._layer, Image
+        ):
+            return
+
+        from napari._qt.widgets.qt_histogram_content import (
+            QtHistogramContentWidget,
+        )
+
+        self.histogram_content = QtHistogramContentWidget(
+            self._layer,
+            parent=self,
+        )
+        self._layout.insertWidget(1, self.histogram_content)
+        if not self._layer.histogram.enabled:
+            self.histogram_content.hide()
+        self._layer.histogram.events.enabled.connect(
+            self._on_external_histogram_enabled
+        )
+
     def _set_histogram_visible(self, visible: bool) -> None:
         """Show or hide the histogram content and resize the popup."""
-        if self.histogram_content is None:
+        if not isinstance(self._layer, Image):
             return
         if visible:
+            self._ensure_histogram_content()
+            if self.histogram_content is None:
+                return
             h = self.histogram_content.sizeHint().height()
             self.histogram_content.show()
             self._layer.histogram.enabled = True
@@ -276,7 +309,8 @@ class QContrastLimitsPopup(QtPopup):
                 self._base_height() + h + self._layout.spacing()
             )
         else:
-            self.histogram_content.hide()
+            if self.histogram_content is not None:
+                self.histogram_content.hide()
             self._layer.histogram.enabled = False
             self.setFixedHeight(self._base_height())
 
@@ -293,20 +327,6 @@ class QContrastLimitsPopup(QtPopup):
                 )
             if self.histogram_content is not None:
                 self._set_histogram_visible(self._layer.histogram.enabled)
-
-    def _cleanup(self) -> None:
-        """Disconnect event handlers and clean up widgets."""
-        if self._cleaned_up:
-            return
-        self._cleaned_up = True
-
-        if isinstance(self._layer, Image):
-            self._layer.histogram.events.enabled.disconnect(
-                self._on_external_histogram_enabled
-            )
-        if self.histogram_content is not None:
-            self.histogram_content.cleanup()
-            self.histogram_content = None
 
     def _create_widget_from_layout(self, layout: QHBoxLayout) -> QWidget:
         """Helper to wrap a layout in a widget."""
@@ -544,10 +564,6 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
         """Show the histogram popup widget."""
         if not isinstance(self._layer, Image):
             return
-
-        # The popup's showEvent manages histogram enable/disable; do not
-        # pre-enable here, or the popup cannot tell whether it was the one
-        # that enabled it and will skip the matching disable on close.
         self.show_clim_popup()
 
     def _on_histogram_model_enabled(self) -> None:
