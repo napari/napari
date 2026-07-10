@@ -230,6 +230,40 @@ class TestMode:
         counts = model.counts
         assert len(counts) > 0
 
+    def test_full_result_cached_across_mode_switch(self):
+        """full -> canvas -> full restores the cached result, no recompute."""
+        model = _model(np.random.rand(5, 20, 20))
+        model.enabled = True
+
+        model.mode = 'full'
+        full_counts = model.counts.copy()
+        gen = model._compute_generation
+
+        model.mode = 'canvas'
+        _ = model.counts  # canvas recomputes
+
+        model.mode = 'full'  # should restore from cache, not recompute
+        assert not model._dirty
+        np.testing.assert_array_equal(model.counts, full_counts)
+        # only the canvas switch bumped the generation; the switch back to
+        # full restored from cache without re-entering compute()
+        assert model._compute_generation == gen + 1
+
+    def test_full_cache_invalidated_by_bins_change(self):
+        """A parameter change while away from full forces a recompute."""
+        model = _model(np.random.rand(5, 20, 20))
+        model.enabled = True
+        model.mode = 'full'
+        _ = model.counts
+        assert model._full_cache is not None
+
+        model.mode = 'canvas'
+        model.bins = 64
+        assert model._full_cache is None
+
+        model.mode = 'full'
+        assert len(model.counts) == 64
+
 
 class TestLogScale:
     """Test log scale."""
