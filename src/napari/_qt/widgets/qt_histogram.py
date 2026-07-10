@@ -201,20 +201,31 @@ class QtHistogramWidget(QWidget):
     def _abort_worker(self, worker: GeneratorWorker) -> None:
         """Disconnect our slots from *worker* and ask its generator to stop.
 
-        Resets the model's ``_computing`` re-entrancy guard so a replacement
-        compute can proceed; the aborted generator's ``finally`` clears it
-        again — harmless.
+        Only disconnects **our** specific slots (``_on_async_compute_done``,
+        ``_on_partial_histogram``), leaving napari's built-in handlers
+        (task status cleanup, progress bar close) attached so they fire
+        normally when the aborted worker's thread pool thread finishes its
+        current chunk and exits.
+
+        Resets the model's ``_computing`` re-entrancy guard and
+        ``_compute_scheduled`` flag so a replacement compute can proceed.
+        The aborted generator's ``finally`` also clears ``_computing``
+        (harmless double reset).
+
+        ``_compute_scheduled`` is cleared here because we disconnected
+        ``_on_async_compute_done``, so that callback (which normally
+        clears ``_compute_scheduled``) will never fire for this worker.
+        Without this clear, the flag would leak as ``True`` forever,
+        preventing any future async compute for the model.
         """
-        worker.finished.disconnect()
-        worker.yielded.disconnect()
-        # ``create_worker(_progress=...)`` connects ``pbar.close`` to
-        # ``worker.finished``; disconnecting above drops it too, so close the
-        # progress indicator here to avoid leaking a spinner on abort/restart.
+        worker.finished.disconnect(self._on_async_compute_done)
+        worker.yielded.disconnect(self._on_partial_histogram)
         pbar = getattr(worker, 'pbar', None)
         if pbar is not None:
             pbar.close()
         worker.quit()
         self._histogram._computing = False
+        self._histogram._compute_scheduled = False
 
     def _on_partial_histogram(
         self, bins_counts: tuple[np.ndarray, np.ndarray]
@@ -228,8 +239,14 @@ class QtHistogramWidget(QWidget):
         popup) re-renders the same snapshot in lockstep.  This decouples
         *which view drives the worker* from *which views animate*, so the
         visible view always updates even when the other one owns the worker.
+
+        Yields from a stale worker that was aborted mid-compute are
+        discarded when the model already has clean data (e.g. after a
+        canvas-mode sync compute that bumped the generation).  Without
+        this guard, a full-mode chunk that completed after the mode
+        switch would overwrite the canvas histogram with stale data.
         """
-        if self._cleaned_up:
+        if self._cleaned_up or not self._histogram._dirty:
             return
         bins, counts = bins_counts
         self._histogram._bin_edges = bins
